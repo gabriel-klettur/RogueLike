@@ -1,5 +1,6 @@
 import pygame
 from entities.player import Player
+from entities.obstacle import Obstacle
 from utils.loader import load_image
 
 class Game:
@@ -8,7 +9,11 @@ class Game:
         self.running = True
         self.background = load_image("assets/tiles/floor.png", (1200, 800))
         self.collision_mask = load_image("assets/tiles/floor_collision_mask.png", (1200, 800))
-        self.player = Player(1000, 750)
+        self.player = Player(800, 600)
+        self.obstacles = [
+            Obstacle(300, 700),
+            Obstacle(600, 725),
+        ]
 
     def handle_events(self):
         
@@ -20,7 +25,7 @@ class Game:
         if keys[pygame.K_DOWN]: dy = 1
         if keys[pygame.K_LEFT]: dx = -1
         if keys[pygame.K_RIGHT]: dx = 1
-        self.player.move(dx, dy, self.collision_mask)
+        self.player.move(dx, dy, self.collision_mask, self.obstacles)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -30,6 +35,8 @@ class Game:
         pass
 
     def render(self):
-        self.screen.blit(self.background, (0, 0))  # dibujar fondo completo
-        self.player.render(self.screen)
+        self.screen.blit(self.background, (0, 0))
+        for obstacle in self.obstacles:
+            obstacle.render(self.screen)
+        self.player.render(self.screen)        
         pygame.display.flip()

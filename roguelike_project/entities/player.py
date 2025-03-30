@@ -1,5 +1,6 @@
 import pygame
 from utils.loader import load_image
+from config import DEBUG
 
 class Player:
     def __init__(self, x, y):
@@ -9,6 +10,9 @@ class Player:
         self.direction = "down"  # dirección inicial
         self.sprites = self.load_sprites()
         self.sprite = self.sprites[self.direction]
+        self.sprite_size = (96, 128)  # Tamaño real del sprite que estás usando
+        self.hitbox = pygame.Rect(self.x + 20, self.y + 96, 56, 28)  # pies
+        self.rect = pygame.Rect(self.x, self.y, *self.sprite_size)
 
     def load_sprites(self):
         directions = [
@@ -21,27 +25,29 @@ class Player:
             sprites[dir] = load_image(path, (96, 128))
         return sprites
 
-    def move(self, dx, dy, collision_mask):
-        if dx == 0 and dy == 0:
-            return  # no se está moviendo, evitar cambio de sprite innecesario
-
-        self.update_direction(dx, dy)  # <--- ACTUALIZA LA DIRECCIÓN
-        self.sprite = self.sprites[self.direction]  # <--- ACTUALIZA EL SPRITE
+    def move(self, dx, dy, collision_mask, obstacles):
+        if dx != 0 or dy != 0:
+            self.update_direction(dx, dy)
+            self.sprite = self.sprites[self.direction]
 
         new_x = self.x + dx * self.speed
         new_y = self.y + dy * self.speed
+        px = new_x + self.sprite_size[0] // 2
+        py = new_y + self.sprite_size[1] - 10  # Punto de los "pies"        
 
-        # Punto central del sprite
-        px = new_x + 16
-        py = new_y + 16
-
-        # Validar que no se sale del mapa
         if 0 <= px < collision_mask.get_width() and 0 <= py < collision_mask.get_height():
             color = collision_mask.get_at((px, py))
-
             if color == pygame.Color(255, 255, 255):  # blanco = caminable
+                future_hitbox = self.hitbox.move(dx * self.speed, dy * self.speed)
+                for obstacle in obstacles:
+                    if future_hitbox.colliderect(obstacle.rect):
+                        return
+
+                # Movimiento válido
                 self.x = new_x
                 self.y = new_y
+                self.hitbox.topleft = (self.x + 20, self.y + 96)
+
 
     def update_direction(self, dx, dy):
         if dx == -1 and dy == -1:
@@ -63,3 +69,6 @@ class Player:
 
     def render(self, screen):
         screen.blit(self.sprite, (self.x, self.y))
+
+        if DEBUG:
+            pygame.draw.rect(screen, (0, 255, 0), self.hitbox, 2)
