@@ -1,22 +1,65 @@
 # entities/remote_player/base.py
 
 import pygame
+from utils.loader import load_image
 
 class RemotePlayer:
-    def __init__(self, x, y, pid=None):
+    def __init__(self, x, y, pid, character="first_hero", direction="down", health=100, mana=50, energy=100):
         self.x = x
         self.y = y
-        self.color = (0, 255, 255)
-        self.radius = 20
         self.pid = pid
+        self.character = character
+        self.direction = direction
+        self.health = health
+        self.mana = mana
+        self.energy = energy
+        self.max_health = 100
+        self.max_mana = 50
+        self.max_energy = 100
+        self.sprite_size = (96, 128)
+
+        self.sprites = self.load_sprites(character)
+        self.sprite = self.sprites.get(direction, list(self.sprites.values())[0])
+
+    def load_sprites(self, name):
+        directions = [
+            "up", "down", "left", "right",
+            "up_left", "up_right", "down_left", "down_right"
+        ]
+        sprites = {}
+        for dir in directions:
+            path = f"assets/characters/{name}/{name}_{dir}.png"
+            sprites[dir] = load_image(path, self.sprite_size)
+        return sprites
 
     def render(self, screen, camera):
         pos = camera.apply((self.x, self.y))
-        pygame.draw.circle(screen, self.color, pos, self.radius)
+        screen.blit(self.sprite, pos)
 
-        # Dibujar ID encima del jugador (opcional, para debug)
-        if self.pid:
-            font = pygame.font.SysFont("Arial", 14)
-            text = font.render(self.pid[:6], True, (255, 255, 255))
-            rect = text.get_rect(center=(pos[0], pos[1] - 30))
+        self.render_status_bars(screen, pos)
+        self.render_id(screen, pos)
+
+    def render_status_bars(self, screen, pos):
+        x, y = pos[0] + 18, pos[1] - 65
+        bar_width, bar_height = 60, 20
+        spacing = 2
+        font = pygame.font.SysFont("Arial", 12)
+
+        def draw_bar(current, max_value, color, y_offset):
+            pygame.draw.rect(screen, (40, 40, 40), (x, y + y_offset, bar_width, bar_height))
+            fill = int(bar_width * (current / max_value))
+            pygame.draw.rect(screen, color, (x, y + y_offset, fill, bar_height))
+            pygame.draw.rect(screen, (0, 0, 0), (x, y + y_offset, bar_width, bar_height), 1)
+            text = font.render(f"{int(current)}/{int(max_value)}", True, (255, 255, 255))
+            rect = text.get_rect(center=(x + bar_width // 2, y + y_offset + bar_height // 2))
             screen.blit(text, rect)
+
+        draw_bar(self.health, self.max_health, (0, 255, 0), 0)
+        draw_bar(self.mana, self.max_mana, (0, 128, 255), bar_height + spacing)
+        draw_bar(self.energy, self.max_energy, (255, 50, 50), (bar_height + spacing) * 2)
+
+    def render_id(self, screen, pos):
+        font = pygame.font.SysFont("Arial", 14)
+        text = font.render(self.pid[:6], True, (255, 255, 255))
+        rect = text.get_rect(center=(pos[0] + self.sprite_size[0] // 2, pos[1] - 80))
+        screen.blit(text, rect)

@@ -10,10 +10,10 @@ class WebSocketClient:
     def __init__(self, url, player):
         self.url = url
         self.player = player
-        self.id = str(uuid.uuid4())  # Este ID se usará para identificarte
+        self.id = str(uuid.uuid4())
         self.ws = None
         self.running = True
-        self.remote_players = {}  # Jugadores remotos
+        self.remote_players = {}
 
     def start(self):
         def run():
@@ -37,25 +37,25 @@ class WebSocketClient:
                     "id": self.id,
                     "x": self.player.x,
                     "y": self.player.y,
+                    "character": self.player.character_name,
+                    "direction": self.player.direction,
+                    "health": self.player.stats.health,
+                    "mana": self.player.stats.mana,
+                    "energy": self.player.stats.energy
                 }
                 self.ws.send(json.dumps(data))
             except Exception as e:
                 print(f"❌ Error al enviar datos: {e}")
                 self.running = False
                 break
-            time.sleep(1)
+            time.sleep(0.05)
 
     def receive_loop(self):
         while self.running:
             try:
-                message = self.ws.recv()
-                print(f"📨 Mensaje bruto recibido: {message}")
+                message = self.ws.recv()                
                 data = json.loads(message)
-
-                # Si no viene con clave "remote_players", asumimos que data YA ES el diccionario de jugadores
-                self.remote_players = data  # ✅ CAMBIO CRUCIAL
-
-                print(f"📥 Recibido: {list(self.remote_players.keys())}")
+                self.remote_players = data
             except Exception as e:
                 print(f"❌ Error al recibir datos: {e}")
                 self.running = False
