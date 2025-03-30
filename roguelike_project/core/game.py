@@ -9,9 +9,9 @@ class Game:
     def __init__(self, screen):
         self.screen = screen
         self.running = True
-        self.background = load_image("assets/tiles/floor.png", (1200, 800))
-        self.collision_mask = load_image("assets/tiles/floor_collision_mask.png", (1200, 800))
-        self.player = Player(800, 600)
+        self.background = load_image("assets/tiles/floor.png", (2408, 1024))
+        self.collision_mask = load_image("assets/tiles/floor_collision_mask.png", (2408, 1024))
+        self.player = Player(600, 600)
         self.obstacles = [
             Obstacle(300, 700),
             Obstacle(600, 725),
@@ -46,6 +46,8 @@ class Game:
         self.camera.update(self.player)
 
     def render(self):
+        self.screen.fill((0, 0, 0))  # ← Fondo negro para zonas fuera del mapa
+
         self.screen.blit(self.background, self.camera.apply((0, 0)))
         for obstacle in self.obstacles:
             obstacle.render(self.screen, self.camera)
