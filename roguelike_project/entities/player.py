@@ -38,22 +38,31 @@ class Player:
             self.update_direction(dx, dy)
             self.sprite = self.sprites[self.direction]
 
-        new_x = self.x + dx * self.speed
-        new_y = self.y + dy * self.speed
-        px = new_x + self.sprite_size[0] // 2
-        py = new_y + self.sprite_size[1] - 10
+        # Movimiento en X
+        if dx != 0:
+            new_x = self.x + dx * self.speed
+            px = new_x + self.sprite_size[0] // 2
+            py = self.y + self.sprite_size[1] - 10
+            if 0 <= px < collision_mask.get_width() and 0 <= py < collision_mask.get_height():
+                color = collision_mask.get_at((px, py))
+                if color == pygame.Color(255, 255, 255):
+                    future_hitbox = self.hitbox.move(dx * self.speed, 0)
+                    if not any(future_hitbox.colliderect(ob.rect) for ob in obstacles):
+                        self.x = new_x
+                        self.hitbox.topleft = (self.x + 20, self.y + 96)
 
-        if 0 <= px < collision_mask.get_width() and 0 <= py < collision_mask.get_height():
-            color = collision_mask.get_at((px, py))
-            if color == pygame.Color(255, 255, 255):
-                future_hitbox = self.hitbox.move(dx * self.speed, dy * self.speed)
-                for obstacle in obstacles:
-                    if future_hitbox.colliderect(obstacle.rect):
-                        return
-
-                self.x = new_x
-                self.y = new_y
-                self.hitbox.topleft = (self.x + 20, self.y + 96)
+        # Movimiento en Y
+        if dy != 0:
+            new_y = self.y + dy * self.speed
+            px = self.x + self.sprite_size[0] // 2
+            py = new_y + self.sprite_size[1] - 10
+            if 0 <= px < collision_mask.get_width() and 0 <= py < collision_mask.get_height():
+                color = collision_mask.get_at((px, py))
+                if color == pygame.Color(255, 255, 255):
+                    future_hitbox = self.hitbox.move(0, dy * self.speed)
+                    if not any(future_hitbox.colliderect(ob.rect) for ob in obstacles):
+                        self.y = new_y
+                        self.hitbox.topleft = (self.x + 20, self.y + 96)
 
     def update_direction(self, dx, dy):
         if dx == -1 and dy == -1:
