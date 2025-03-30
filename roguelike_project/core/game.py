@@ -1,5 +1,5 @@
 import pygame
-from entities.player import Player
+from entities.player.base import Player
 from entities.obstacle import Obstacle
 from utils.loader import load_image
 from ui.menu import Menu
