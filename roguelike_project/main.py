@@ -13,7 +13,7 @@ def main():
         game.handle_events()                                    # Maneja los eventos (teclado, ratón, etc.)
         game.update()                                           # Actualiza la lógica del juego (movimiento, colisiones, etc.)              
         game.render()                                           # Renderiza la pantalla (dibuja los objetos en la ventana)
-        clock.tick(60)                                          # Controla la velocidad de fotogramas (60 FPS)                    
+        game.clock.tick(60)                                          # Controla la velocidad de fotogramas (60 FPS)                    
 
     pygame.quit()
 

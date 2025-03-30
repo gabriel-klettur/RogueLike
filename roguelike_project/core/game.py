@@ -17,6 +17,8 @@ class Game:
             Obstacle(600, 725),
         ]
         self.camera = Camera(1200, 800)
+        self.clock = pygame.time.Clock()
+        self.font = pygame.font.SysFont("Arial", 18)
         self.show_menu = False
         self.menu = Menu(["Cambiar personaje", "Salir"])
 
@@ -50,13 +52,21 @@ class Game:
     def render(self):
         self.screen.fill((0, 0, 0))
         self.screen.blit(self.background, self.camera.apply((0, 0)))
+
         for obstacle in self.obstacles:
             obstacle.render(self.screen, self.camera)
+
         self.player.render(self.screen, self.camera)
         self.player.render_hud(self.screen, self.camera)
 
         if self.show_menu:
             self.menu.draw(self.screen)
+
+        # ✅ Mostrar FPS al final, con fondo para mayor visibilidad
+        fps = self.clock.get_fps()
+        fps_text = self.font.render(f"FPS: {int(fps)}", True, (255, 255, 255))
+        pygame.draw.rect(self.screen, (0, 0, 0), (8, 8, 60, 22))  # Fondo negro
+        self.screen.blit(fps_text, (10, 10))
 
         pygame.display.flip()
 
