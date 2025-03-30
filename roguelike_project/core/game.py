@@ -28,6 +28,8 @@ class Game:
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     self.show_menu = not self.show_menu
+                elif event.key == pygame.K_q:
+                    self.player.restore_all()
                 elif self.show_menu:
                     result = self.menu.handle_input(event)
                     if result:
@@ -46,12 +48,12 @@ class Game:
         self.camera.update(self.player)
 
     def render(self):
-        self.screen.fill((0, 0, 0))  # ← Fondo negro para zonas fuera del mapa
-
+        self.screen.fill((0, 0, 0))
         self.screen.blit(self.background, self.camera.apply((0, 0)))
         for obstacle in self.obstacles:
             obstacle.render(self.screen, self.camera)
         self.player.render(self.screen, self.camera)
+        self.player.render_hud(self.screen, self.camera)
 
         if self.show_menu:
             self.menu.draw(self.screen)

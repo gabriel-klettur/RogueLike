@@ -1,4 +1,5 @@
 import pygame
+import time
 from utils.loader import load_image
 from config import DEBUG
 
@@ -11,7 +12,6 @@ class Player:
         self.direction = "down"
         self.sprite_size = (96, 128)
 
-        # 🎯 Stats personalizados según el personaje
         if character_name == "valkyria":
             self.max_health = 120
             self.max_mana = 80
@@ -24,6 +24,9 @@ class Player:
         self.health = self.max_health
         self.mana = self.max_mana
         self.energy = self.max_energy
+
+        self.restore_cooldown = 5
+        self.last_restore_time = -999
 
         self.load_character_assets()
 
@@ -46,9 +49,11 @@ class Player:
 
     def change_character(self, new_character_name):
         self.character_name = new_character_name
-        self.__init__(self.x, self.y, new_character_name)  # reinicia stats y sprites
+        self.__init__(self.x, self.y, new_character_name)
 
     def move(self, dx, dy, collision_mask, obstacles):
+        collided = False
+
         if dx != 0 or dy != 0:
             self.update_direction(dx, dy)
             self.sprite = self.sprites[self.direction]
@@ -61,7 +66,11 @@ class Player:
                 color = collision_mask.get_at((px, py))
                 if color == pygame.Color(255, 255, 255):
                     future_hitbox = self.hitbox.move(dx * self.speed, 0)
-                    if not any(future_hitbox.colliderect(ob.rect) for ob in obstacles):
+                    for ob in obstacles:
+                        if future_hitbox.colliderect(ob.rect):
+                            collided = True
+                            break
+                    if not collided:
                         self.x = new_x
                         self.hitbox.topleft = (self.x + 20, self.y + 96)
 
@@ -73,9 +82,33 @@ class Player:
                 color = collision_mask.get_at((px, py))
                 if color == pygame.Color(255, 255, 255):
                     future_hitbox = self.hitbox.move(0, dy * self.speed)
-                    if not any(future_hitbox.colliderect(ob.rect) for ob in obstacles):
+                    for ob in obstacles:
+                        if future_hitbox.colliderect(ob.rect):
+                            collided = True
+                            break
+                    if not collided:
                         self.y = new_y
                         self.hitbox.topleft = (self.x + 20, self.y + 96)
+
+        if collided:
+            self.take_damage()
+
+    def take_damage(self):
+        self.health = max(0, self.health - 10)
+        self.mana = max(0, self.mana - 5)
+        self.energy = max(0, self.energy - 15)
+        print("💥 Daño recibido: -10 vida, -5 maná, -15 energía")
+
+    def restore_all(self):
+        now = time.time()
+        if now - self.last_restore_time >= self.restore_cooldown:
+            self.health = self.max_health
+            self.mana = self.max_mana
+            self.energy = self.max_energy
+            self.last_restore_time = now
+            print("🧪 Barras restauradas al máximo")
+        else:
+            print("⌛ Aún en cooldown...")
 
     def update_direction(self, dx, dy):
         if dx == -1 and dy == -1:
@@ -96,12 +129,8 @@ class Player:
             self.direction = "down"
 
     def render(self, screen, camera):
-        # Dibuja el sprite
         screen.blit(self.sprite, camera.apply((self.x, self.y)))
-
-        # Dibuja barras de estado
         self.draw_status_bars(screen, camera)
-
         if DEBUG:
             pygame.draw.rect(screen, (0, 255, 0), camera.apply(self.hitbox.topleft) + self.hitbox.size, 2)
 
@@ -113,17 +142,10 @@ class Player:
         font = pygame.font.SysFont("Arial", 12)
 
         def draw_bar(current, max_value, color, y_offset):
-            # FONDO
             pygame.draw.rect(screen, (40, 40, 40), (x, y + y_offset, bar_width, bar_height))
-
-            # VALOR LLENO
             fill = int(bar_width * (current / max_value))
             pygame.draw.rect(screen, color, (x, y + y_offset, fill, bar_height))
-
-            # BORDE
             pygame.draw.rect(screen, (0, 0, 0), (x, y + y_offset, bar_width, bar_height), 1)
-
-            # TEXTO CENTRADO
             text = font.render(f"{int(current)}/{int(max_value)}", True, (255, 255, 255))
             text_rect = text.get_rect(center=(x + bar_width // 2, y + y_offset + bar_height // 2))
             screen.blit(text, text_rect)
@@ -131,3 +153,29 @@ class Player:
         draw_bar(self.health, self.max_health, (0, 255, 0), 0)
         draw_bar(self.mana, self.max_mana, (0, 128, 255), bar_height + spacing)
         draw_bar(self.energy, self.max_energy, (255, 50, 50), (bar_height + spacing) * 2)
+
+    def render_hud(self, screen, camera):
+        icon = load_image("assets/ui/restore_icon.png", (48, 48))
+        icon_x, icon_y = camera.apply((
+            self.x + self.sprite_size[0] // 2 - 24,
+            self.y + self.sprite_size[1] + 50
+        ))
+        screen.blit(icon, (icon_x, icon_y))
+
+        now = time.time()
+        elapsed = now - self.last_restore_time
+        cooldown = self.restore_cooldown
+
+        if elapsed < cooldown:
+            ratio = 1 - (elapsed / cooldown)
+            overlay_height = int(48 * ratio)
+            overlay = pygame.Surface((48, overlay_height))
+            overlay.set_alpha(180)
+            overlay.fill((0, 0, 0))
+            screen.blit(overlay, (icon_x, icon_y + (48 - overlay_height)))
+
+            font = pygame.font.SysFont("Arial", 16)
+            remaining = int(cooldown - elapsed) + 1
+            text = font.render(str(remaining), True, (255, 255, 255))
+            text_rect = text.get_rect(center=(icon_x + 24, icon_y + 24))
+            screen.blit(text, text_rect)
