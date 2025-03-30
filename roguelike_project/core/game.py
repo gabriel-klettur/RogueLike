@@ -56,7 +56,9 @@ class Game:
 
     def execute_menu_option(self, selected):
         if selected == "Cambiar personaje":
-            print("🔁 Cambiar personaje (funcionalidad pendiente)")
+            new_name = "valkyria" if self.player.character_name == "first_hero" else "first_hero"
+            self.player.change_character(new_name)
+            print(f"✅ Cambiado a personaje: {new_name}")
             self.show_menu = False
         elif selected == "Salir":
             self.running = False
