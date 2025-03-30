@@ -20,4 +20,10 @@ def render_game(state):
     pygame.draw.rect(screen, (0, 0, 0), (8, 8, 60, 22))
     screen.blit(fps_text, (10, 10))
 
+    
+    # Mostrar modo de juego
+    mode_text = state.font.render(f"Modo: {state.mode}", True, (255, 255, 255))
+    pygame.draw.rect(screen, (0, 0, 0), (8, 30, 130, 22))
+    screen.blit(mode_text, (10, 32))
+
     pygame.display.flip()

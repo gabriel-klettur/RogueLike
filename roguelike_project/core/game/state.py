@@ -8,7 +8,9 @@ class GameState:
         self.camera = camera
         self.clock = clock
         self.font = font
-        self.menu = menu
+        self.menu = menu        
 
         self.running = True
         self.show_menu = False
+
+        self.mode = "local"  # o "online"
