@@ -9,9 +9,7 @@ class Obstacle:
         self.rect = pygame.Rect(x + 8, y + 8, 48, 48)
         self.sprite = load_image(sprite_path, size)
 
-    def render(self, screen):
-        screen.blit(self.sprite, (self.x, self.y))
-
+    def render(self, screen, camera):
+        screen.blit(self.sprite, camera.apply((self.x, self.y)))
         if DEBUG:
-            # Dibujar rectángulo de colisión en rojo
-            pygame.draw.rect(screen, (255, 0, 0), self.rect, 2)
+            pygame.draw.rect(screen, (255, 0, 0), camera.apply(self.rect.topleft) + self.rect.size, 2)

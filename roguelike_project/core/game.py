@@ -3,6 +3,7 @@ from entities.player import Player
 from entities.obstacle import Obstacle
 from utils.loader import load_image
 from ui.menu import Menu
+from core.camera import Camera
 
 class Game:
     def __init__(self, screen):
@@ -15,6 +16,7 @@ class Game:
             Obstacle(300, 700),
             Obstacle(600, 725),
         ]
+        self.camera = Camera(1200, 800)
         self.show_menu = False
         self.menu = Menu(["Cambiar personaje", "Salir"])
 
@@ -41,13 +43,13 @@ class Game:
             self.player.move(dx, dy, self.collision_mask, self.obstacles)
 
     def update(self):
-        pass
+        self.camera.update(self.player)
 
     def render(self):
-        self.screen.blit(self.background, (0, 0))
+        self.screen.blit(self.background, self.camera.apply((0, 0)))
         for obstacle in self.obstacles:
-            obstacle.render(self.screen)
-        self.player.render(self.screen)
+            obstacle.render(self.screen, self.camera)
+        self.player.render(self.screen, self.camera)
 
         if self.show_menu:
             self.menu.draw(self.screen)

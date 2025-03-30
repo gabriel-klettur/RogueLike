@@ -82,7 +82,7 @@ class Player:
         elif dy == 1:
             self.direction = "down"
 
-    def render(self, screen):
-        screen.blit(self.sprite, (self.x, self.y))
+    def render(self, screen, camera):
+        screen.blit(self.sprite, camera.apply((self.x, self.y)))
         if DEBUG:
-            pygame.draw.rect(screen, (0, 255, 0), self.hitbox, 2)
+            pygame.draw.rect(screen, (0, 255, 0), camera.apply(self.hitbox.topleft) + self.hitbox.size, 2)
