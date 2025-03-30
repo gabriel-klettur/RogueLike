@@ -1,4 +1,7 @@
+# core/game/render.py
+
 import pygame
+from core.game.multiplayer import render_remote_players
 
 def render_game(state):
     screen = state.screen
@@ -11,6 +14,8 @@ def render_game(state):
     state.player.render(screen, state.camera)
     state.player.render_hud(screen, state.camera)
 
+    render_remote_players(state)  # 👈 Aquí renderizamos los jugadores remotos
+
     if state.show_menu:
         state.menu.draw(screen)
 
@@ -20,8 +25,7 @@ def render_game(state):
     pygame.draw.rect(screen, (0, 0, 0), (8, 8, 60, 22))
     screen.blit(fps_text, (10, 10))
 
-    
-    # Mostrar modo de juego
+    # Mostrar modo
     mode_text = state.font.render(f"Modo: {state.mode}", True, (255, 255, 255))
     pygame.draw.rect(screen, (0, 0, 0), (8, 30, 130, 22))
     screen.blit(mode_text, (10, 32))
