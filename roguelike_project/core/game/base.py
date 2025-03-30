@@ -2,12 +2,13 @@ import pygame
 from .events import handle_events
 from .render import render_game
 from .state import GameState
-from entities.player.base import Player
-from entities.obstacle import Obstacle
-from utils.loader import load_image
-from ui.menu import Menu
-from core.camera import Camera
-from network.client import WebSocketClient  # ✅ Importa el cliente WebSocket
+
+from roguelike_project.entities.player.base import Player
+from roguelike_project.entities.obstacle import Obstacle
+from roguelike_project.utils.loader import load_image
+from roguelike_project.ui.menu import Menu
+from roguelike_project.core.camera import Camera
+from roguelike_project.network.client import WebSocketClient  # ✅ Importa el cliente WebSocket
 
 class Game:
     def __init__(self, screen):

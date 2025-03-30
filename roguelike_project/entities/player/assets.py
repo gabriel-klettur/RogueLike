@@ -1,4 +1,4 @@
-from utils.loader import load_image
+from roguelike_project.utils.loader import load_image
 
 def load_character_assets(character_name):
     directions = [

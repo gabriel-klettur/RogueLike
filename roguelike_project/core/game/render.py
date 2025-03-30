@@ -1,7 +1,7 @@
 # core/game/render.py
 
 import pygame
-from core.game.multiplayer import render_remote_players
+from roguelike_project.core.game.multiplayer import render_remote_players
 
 def render_game(state):
     screen = state.screen

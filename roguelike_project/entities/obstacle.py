@@ -1,6 +1,6 @@
 import pygame
-from utils.loader import load_image
-from config import DEBUG
+from roguelike_project.utils.loader import load_image
+from roguelike_project.config import DEBUG
 
 class Obstacle:
     def __init__(self, x, y, sprite_path="assets/objects/rock.png", size=(64, 64)):

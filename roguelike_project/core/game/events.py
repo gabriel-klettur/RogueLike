@@ -1,5 +1,5 @@
 import pygame
-from network.client import WebSocketClient  # ✅ Importación necesaria
+from roguelike_project.network.client import WebSocketClient  # ✅ Importación necesaria
 
 def handle_events(state):
     for event in pygame.event.get():

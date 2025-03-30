@@ -1,6 +1,6 @@
 import pygame
-from config import DEBUG
-from utils.loader import load_image
+from roguelike_project.config import DEBUG
+from roguelike_project.utils.loader import load_image
 import time
 
 class PlayerRenderer:
