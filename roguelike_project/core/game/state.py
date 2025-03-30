@@ -9,6 +9,7 @@ class GameState:
         self.clock = clock
         self.font = font
         self.menu = menu        
+        self.remote_entities = {}  # ✅ Se añade al estado
 
         self.running = True
         self.show_menu = False

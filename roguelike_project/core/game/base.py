@@ -25,9 +25,10 @@ class Game:
             clock=pygame.time.Clock(),
             font=pygame.font.SysFont("Arial", 18),
             menu=None
-        )
-
+        )        
+        
         self.state.menu = Menu(state=self.state)
+        self.state.remote_entities = {}  # ✅ Cache para RemotePlayers
 
         # ✅ Si el modo es online, conecta el WebSocket
         if self.state.mode == "online":
