@@ -5,8 +5,7 @@ from roguelike_project.core.game.multiplayer import render_remote_players
 
 def render_game(state):
     screen = state.screen
-    screen.fill((0, 0, 0))
-    screen.blit(state.background, state.camera.apply((0, 0)))
+    screen.fill((0, 0, 0))    
 
     #!----------------------------- Renderizar tiles ------------------------------
     for tile in state.tiles:

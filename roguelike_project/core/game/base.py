@@ -9,33 +9,26 @@ from roguelike_project.utils.loader import load_image
 from roguelike_project.ui.menu import Menu
 from roguelike_project.core.camera import Camera
 from roguelike_project.network.client import WebSocketClient
-from roguelike_project.map.map_loader import load_map_from_text
 
+from roguelike_project.map.map_generator import generate_dungeon_map, merge_handmade_with_generated
+from roguelike_project.map.lobby_map import LOBBY_MAP
+from roguelike_project.map.map_loader import load_map_from_text
 
 class Game:
     def __init__(self, screen):
-        # 🗺️ Mapa de prueba
-        self.map_data = [
-            "####################",
-            "#..................#",
-            "#..................#",
-            "#.......##.........#",
-            "#..................#",
-            "#..................#",
-            "#..........##......#",
-            "#..................#",
-            "#..................#",
-            "#..................#",
-            "#..................#",
-            "#..................#",
-            "####################"
-        ]
+        dungeon = generate_dungeon_map(60, 40)
+        print("\n🗺️ Mapa generado:")
+        for row in dungeon:
+            print("".join(row))
+        self.map_data = merge_handmade_with_generated(LOBBY_MAP, dungeon, offset_x=5, offset_y=5)
+        print("\n🔗 Mapa fusionado con Lobby:")
+        for row in self.map_data:
+            print("".join(row))
         self.tiles = load_map_from_text(self.map_data)
 
-        # 🧠 Estado inicial del juego
         self.state = GameState(
             screen=screen,
-            background=load_image("assets/tiles/floor.png", (3551, 1024)),  # ⬅️ Podés reemplazar luego            
+            background=None,
             player=Player(600, 600),
             obstacles=[
                 Obstacle(300, 700),
@@ -45,13 +38,12 @@ class Game:
             clock=pygame.time.Clock(),
             font=pygame.font.SysFont("Arial", 18),
             menu=None,
-            tiles=self.tiles  # ✅ Se agrega tiles al estado
+            tiles=self.tiles  # ✅ se pasa correctamente
         )
 
         self.state.menu = Menu(state=self.state)
         self.state.remote_entities = {}
 
-        # 🌐 Modo online: conecta WebSocket si aplica
         if self.state.mode == "online":
             try:
                 self.websocket = WebSocketClient("ws://localhost:8000/ws", self.state.player)
