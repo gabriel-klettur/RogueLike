@@ -5,7 +5,6 @@ from .state import GameState
 
 from roguelike_project.entities.player.base import Player
 from roguelike_project.entities.obstacle import Obstacle
-from roguelike_project.utils.loader import load_image
 from roguelike_project.ui.menu import Menu
 from roguelike_project.core.camera import Camera
 from roguelike_project.network.client import WebSocketClient
