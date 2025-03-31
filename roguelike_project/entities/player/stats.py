@@ -22,7 +22,7 @@ class PlayerStats:
         self.health = max(0, self.health - 10)
         self.mana = max(0, self.mana - 5)
         self.energy = max(0, self.energy - 15)
-        print("💥 Daño recibido: -10 vida, -5 maná, -15 energía")
+        #print("💥 Daño recibido: -10 vida, -5 maná, -15 energía")
 
     def restore_all(self):
         now = time.time()
@@ -31,6 +31,6 @@ class PlayerStats:
             self.mana = self.max_mana
             self.energy = self.max_energy
             self.last_restore_time = now
-            print("🧪 Barras restauradas al máximo")
-        else:
-            print("⌛ Aún en cooldown...")
+            #print("🧪 Barras restauradas al máximo")
+        #else:
+            #print("⌛ Aún en cooldown...")
