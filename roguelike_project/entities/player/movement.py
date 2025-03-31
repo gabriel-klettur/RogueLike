@@ -5,46 +5,41 @@ class PlayerMovement:
         self.player = player
         self.speed = 4
 
-    def move(self, dx, dy, collision_mask, obstacles):
+    def move(self, dx, dy, obstacles, solid_tiles):
         collided = False
 
         if dx != 0 or dy != 0:
             self.update_direction(dx, dy)
             self.player.sprite = self.player.sprites[self.player.direction]
 
-        if dx != 0:
-            new_x = self.player.x + dx * self.speed
-            px = new_x + self.player.sprite_size[0] // 2
-            py = self.player.y + self.player.sprite_size[1] - 10
-            if 0 <= px < collision_mask.get_width() and 0 <= py < collision_mask.get_height():
-                color = collision_mask.get_at((px, py))
-                if color == pygame.Color(255, 255, 255):
-                    future_hitbox = self.get_hitbox(new_x, self.player.y)
-                    for ob in obstacles:
-                        if future_hitbox.colliderect(ob.rect):
-                            collided = True
-                            break
-                    if not collided:
-                        self.player.x = new_x
-                        self.player.hitbox.topleft = (self.player.x + 20, self.player.y + 96)
+        # Hitbox futura con movimiento aplicado
+        future_hitbox = self.get_hitbox(
+            self.player.x + dx * self.speed,
+            self.player.y + dy * self.speed
+        )
 
-        if dy != 0:
-            new_y = self.player.y + dy * self.speed
-            px = self.player.x + self.player.sprite_size[0] // 2
-            py = new_y + self.player.sprite_size[1] - 10
-            if 0 <= px < collision_mask.get_width() and 0 <= py < collision_mask.get_height():
-                color = collision_mask.get_at((px, py))
-                if color == pygame.Color(255, 255, 255):
-                    future_hitbox = self.get_hitbox(self.player.x, new_y)
-                    for ob in obstacles:
-                        if future_hitbox.colliderect(ob.rect):
-                            collided = True
-                            break
-                    if not collided:
-                        self.player.y = new_y
-                        self.player.hitbox.topleft = (self.player.x + 20, self.player.y + 96)
+        # Colisión con tiles sólidos
+        for tile in solid_tiles:
+            if future_hitbox.colliderect(tile.rect):
+                collided = True
+                break
 
-        if collided:
+        # Colisión con obstáculos
+        if not collided:
+            for ob in obstacles:
+                if future_hitbox.colliderect(ob.rect):
+                    collided = True
+                    break
+
+        # Movimiento si no hay colisión
+        if not collided:
+            self.player.x += dx * self.speed
+            self.player.y += dy * self.speed
+            if self.player.hitbox is None:
+                self.player.hitbox = self.get_hitbox(self.player.x, self.player.y)
+            else:
+                self.player.hitbox.topleft = (self.player.x + 20, self.player.y + 96)
+        else:
             self.player.take_damage()
 
     def get_hitbox(self, x, y):

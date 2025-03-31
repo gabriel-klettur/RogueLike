@@ -8,14 +8,21 @@ def render_game(state):
     screen.fill((0, 0, 0))
     screen.blit(state.background, state.camera.apply((0, 0)))
 
+    #!----------------------------- Renderizar tiles ------------------------------
+    for tile in state.tiles:
+        tile.render(screen, state.camera)
+
+    #!----------------------------- Renderizar obstáculos -------------------------
     for obstacle in state.obstacles:
         obstacle.render(screen, state.camera)
 
     state.player.render(screen, state.camera)
     state.player.render_hud(screen, state.camera)
 
-    render_remote_players(state)  # 👈 Aquí renderizamos los jugadores remotos
+    #!----------------------------- Renderizar jugadores remotos ------------------
+    render_remote_players(state)  
 
+    #!----------------------------- Renderizar menu -------------------------------
     if state.show_menu:
         state.menu.draw(screen)
 
@@ -30,4 +37,5 @@ def render_game(state):
     pygame.draw.rect(screen, (0, 0, 0), (8, 30, 130, 22))
     screen.blit(mode_text, (10, 32))
 
-    pygame.display.flip()
+    
+    pygame.display.flip()   # Actualiza la pantalla

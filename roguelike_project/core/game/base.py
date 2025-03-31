@@ -8,14 +8,34 @@ from roguelike_project.entities.obstacle import Obstacle
 from roguelike_project.utils.loader import load_image
 from roguelike_project.ui.menu import Menu
 from roguelike_project.core.camera import Camera
-from roguelike_project.network.client import WebSocketClient  # ✅ Importa el cliente WebSocket
+from roguelike_project.network.client import WebSocketClient
+from roguelike_project.map.map_loader import load_map_from_text
+
 
 class Game:
     def __init__(self, screen):
+        # 🗺️ Mapa de prueba
+        self.map_data = [
+            "####################",
+            "#..................#",
+            "#..................#",
+            "#.......##.........#",
+            "#..................#",
+            "#..................#",
+            "#..........##......#",
+            "#..................#",
+            "#..................#",
+            "#..................#",
+            "#..................#",
+            "#..................#",
+            "####################"
+        ]
+        self.tiles = load_map_from_text(self.map_data)
+
+        # 🧠 Estado inicial del juego
         self.state = GameState(
             screen=screen,
-            background=load_image("assets/tiles/floor.png", (3551, 1024)),
-            collision_mask=load_image("assets/tiles/floor_collision_mask.png", (3551, 1024)),
+            background=load_image("assets/tiles/floor.png", (3551, 1024)),  # ⬅️ Podés reemplazar luego            
             player=Player(600, 600),
             obstacles=[
                 Obstacle(300, 700),
@@ -24,13 +44,14 @@ class Game:
             camera=Camera(1200, 800),
             clock=pygame.time.Clock(),
             font=pygame.font.SysFont("Arial", 18),
-            menu=None
-        )        
-        
-        self.state.menu = Menu(state=self.state)
-        self.state.remote_entities = {}  # ✅ Cache para RemotePlayers
+            menu=None,
+            tiles=self.tiles  # ✅ Se agrega tiles al estado
+        )
 
-        # ✅ Si el modo es online, conecta el WebSocket
+        self.state.menu = Menu(state=self.state)
+        self.state.remote_entities = {}
+
+        # 🌐 Modo online: conecta WebSocket si aplica
         if self.state.mode == "online":
             try:
                 self.websocket = WebSocketClient("ws://localhost:8000/ws", self.state.player)

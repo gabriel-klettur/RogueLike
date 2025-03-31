@@ -23,7 +23,8 @@ def handle_events(state):
         if keys[pygame.K_DOWN]: dy = 1
         if keys[pygame.K_LEFT]: dx = -1
         if keys[pygame.K_RIGHT]: dx = 1
-        state.player.move(dx, dy, state.collision_mask, state.obstacles)
+        solid_tiles = [tile for tile in state.tiles if tile.solid]
+        state.player.move(dx, dy, state.obstacles, solid_tiles)
 
 def execute_menu_option(selected, state):
     if selected == "Cambiar personaje":

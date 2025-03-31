@@ -2,6 +2,7 @@ from .stats import PlayerStats
 from .movement import PlayerMovement
 from .renderer import PlayerRenderer
 from .assets import load_character_assets
+from roguelike_project.map.map_loader import load_map_from_text
 
 class Player:
     def __init__(self, x, y, character_name="first_hero"):
