@@ -1,7 +1,7 @@
 import pygame
-from .events import handle_events
-from .render import render_game
-from .state import GameState
+from roguelike_project.core.game.logic.events import handle_events
+from roguelike_project.core.game.render.render import render_game
+from roguelike_project.core.game.logic.state import GameState
 
 from roguelike_project.entities.player.base import Player
 from roguelike_project.entities.obstacle import Obstacle
