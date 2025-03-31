@@ -1,5 +1,3 @@
-# entities/remote_player/base.py
-
 import pygame
 from roguelike_project.utils.loader import load_image
 
@@ -33,17 +31,19 @@ class RemotePlayer:
         return sprites
 
     def render(self, screen, camera):
+        scaled_sprite = pygame.transform.scale(self.sprite, camera.scale(self.sprite_size))
         pos = camera.apply((self.x, self.y))
-        screen.blit(self.sprite, pos)
+        screen.blit(scaled_sprite, pos)
 
-        self.render_status_bars(screen, pos)
-        self.render_id(screen, pos)
+        self.render_status_bars(screen, pos, camera)
+        self.render_id(screen, pos, camera)
 
-    def render_status_bars(self, screen, pos):
-        x, y = pos[0] + 18, pos[1] - 65
-        bar_width, bar_height = 60, 20
-        spacing = 2
-        font = pygame.font.SysFont("Arial", 12)
+    def render_status_bars(self, screen, pos, camera):
+        x, y = pos[0] + int(18 * camera.zoom), pos[1] - int(65 * camera.zoom)
+        bar_width = int(60 * camera.zoom)
+        bar_height = int(20 * camera.zoom)
+        spacing = int(2 * camera.zoom)
+        font = pygame.font.SysFont("Arial", int(12 * camera.zoom))
 
         def draw_bar(current, max_value, color, y_offset):
             pygame.draw.rect(screen, (40, 40, 40), (x, y + y_offset, bar_width, bar_height))
@@ -58,8 +58,8 @@ class RemotePlayer:
         draw_bar(self.mana, self.max_mana, (0, 128, 255), bar_height + spacing)
         draw_bar(self.energy, self.max_energy, (255, 50, 50), (bar_height + spacing) * 2)
 
-    def render_id(self, screen, pos):
-        font = pygame.font.SysFont("Arial", 14)
+    def render_id(self, screen, pos, camera):
+        font = pygame.font.SysFont("Arial", int(14 * camera.zoom))
         text = font.render(self.pid[:6], True, (255, 255, 255))
-        rect = text.get_rect(center=(pos[0] + self.sprite_size[0] // 2, pos[1] - 80))
+        rect = text.get_rect(center=(pos[0] + int(self.sprite_size[0] * camera.zoom / 2), pos[1] - int(80 * camera.zoom)))
         screen.blit(text, rect)

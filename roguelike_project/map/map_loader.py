@@ -15,9 +15,12 @@ class Tile:
         self.rect = pygame.Rect(x, y, TILE_SIZE, TILE_SIZE)
 
     def render(self, screen, camera):
-        screen.blit(self.sprite, camera.apply((self.x, self.y)))
+        scaled_sprite = pygame.transform.scale(self.sprite, camera.scale((self.sprite.get_width(), self.sprite.get_height())))
+        screen.blit(scaled_sprite, camera.apply((self.x, self.y)))
+
         if self.solid:
-            pygame.draw.rect(screen, (255, 0, 0), camera.apply(self.rect.topleft) + self.rect.size, 1)
+            scaled_rect = pygame.Rect(camera.apply(self.rect.topleft), camera.scale(self.rect.size))
+            pygame.draw.rect(screen, (255, 0, 0), scaled_rect, 1)
 
 def load_tile_images():
     return {

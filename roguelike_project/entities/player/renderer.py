@@ -8,28 +8,31 @@ class PlayerRenderer:
         self.player = player
 
     def render(self, screen, camera):
-        screen.blit(self.player.sprite, camera.apply((self.player.x, self.player.y)))
+        scaled_sprite = pygame.transform.scale(
+            self.player.sprite, camera.scale(self.player.sprite_size)
+        )
+        screen.blit(scaled_sprite, camera.apply((self.player.x, self.player.y)))
 
+        scaled_size = camera.scale(self.player.sprite_size)
         self.player.rect = pygame.Rect(self.player.x, self.player.y, *self.player.sprite_size)
         self.player.hitbox = pygame.Rect(self.player.x + 20, self.player.y + 96, 56, 28)
 
         self.draw_status_bars(screen, camera)
 
         if DEBUG:
-            pygame.draw.rect(
-                screen,
-                (0, 255, 0),
-                camera.apply(self.player.hitbox.topleft) + self.player.hitbox.size,
-                2
+            scaled_hitbox = pygame.Rect(
+                camera.apply(self.player.hitbox.topleft),
+                camera.scale(self.player.hitbox.size)
             )
+            pygame.draw.rect(screen, (0, 255, 0), scaled_hitbox, 2)
 
     def draw_status_bars(self, screen, camera):
         stats = self.player.stats
-        bar_width = 60
-        bar_height = 20
-        spacing = 2
+        bar_width = int(60 * camera.zoom)
+        bar_height = int(20 * camera.zoom)
+        spacing = int(2 * camera.zoom)
         x, y = camera.apply((self.player.x + 18, self.player.y - 65))
-        font = pygame.font.SysFont("Arial", 12)
+        font = pygame.font.SysFont("Arial", int(12 * camera.zoom))
 
         def draw_bar(current, max_value, color, y_offset):
             pygame.draw.rect(screen, (40, 40, 40), (x, y + y_offset, bar_width, bar_height))
@@ -45,7 +48,10 @@ class PlayerRenderer:
         draw_bar(stats.energy, stats.max_energy, (255, 50, 50), (bar_height + spacing) * 2)
 
     def render_hud(self, screen, camera):
-        icon = load_image("assets/ui/restore_icon.png", (48, 48))
+        icon_size = camera.scale((48, 48))
+        icon = pygame.transform.scale(
+            load_image("assets/ui/restore_icon.png", (48, 48)), icon_size
+        )
         icon_x, icon_y = camera.apply((
             self.player.x + self.player.sprite_size[0] // 2 - 24,
             self.player.y + self.player.sprite_size[1] + 50
@@ -58,16 +64,16 @@ class PlayerRenderer:
 
         if elapsed < cooldown:
             ratio = 1 - (elapsed / cooldown)
-            overlay_height = int(48 * ratio)
+            overlay_height = int(icon_size[1] * ratio)
 
             if overlay_height > 0:
-                overlay = pygame.Surface((48, overlay_height))
+                overlay = pygame.Surface((icon_size[0], overlay_height))
                 overlay.set_alpha(180)
                 overlay.fill((0, 0, 0))
-                screen.blit(overlay, (icon_x, icon_y + (48 - overlay_height)))
+                screen.blit(overlay, (icon_x, icon_y + (icon_size[1] - overlay_height)))
 
-            font = pygame.font.SysFont("Arial", 16)
+            font = pygame.font.SysFont("Arial", int(16 * camera.zoom))
             remaining = int(cooldown - elapsed) + 1
             text = font.render(str(remaining), True, (255, 255, 255))
-            text_rect = text.get_rect(center=(icon_x + 24, icon_y + 24))
+            text_rect = text.get_rect(center=(icon_x + icon_size[0] // 2, icon_y + icon_size[1] // 2))
             screen.blit(text, text_rect)

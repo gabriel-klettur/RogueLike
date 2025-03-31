@@ -15,6 +15,11 @@ def handle_events(state):
                 result = state.menu.handle_input(event)
                 if result:
                     execute_menu_option(result, state)
+        elif event.type == pygame.MOUSEWHEEL:
+            if event.y > 0:
+                state.camera.zoom = min(state.camera.zoom + 0.1, 2.0)  # Zoom in
+            elif event.y < 0:
+                state.camera.zoom = max(state.camera.zoom - 0.1, 0.5)  # Zoom out
 
     if not state.show_menu:
         keys = pygame.key.get_pressed()
