@@ -1,3 +1,5 @@
+#Path: roguelike_project/entities/remote_player/base.py
+
 import pygame
 from roguelike_project.utils.loader import load_image
 

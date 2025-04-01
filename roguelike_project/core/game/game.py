@@ -1,3 +1,5 @@
+#Path: roguelike_project/core/game/game.py
+
 import pygame
 from roguelike_project.entities.player.base import Player
 from roguelike_project.entities.obstacle import Obstacle

@@ -1,3 +1,5 @@
+#Path: roguelike_project/entities/player/base.py
+
 from .stats import PlayerStats
 from .movement import PlayerMovement
 from .renderer import PlayerRenderer
