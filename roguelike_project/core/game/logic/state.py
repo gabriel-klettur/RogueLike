@@ -1,7 +1,7 @@
 # core/game/state.py
 
 class GameState:
-    def __init__(self, screen, background, player, obstacles, camera, clock, font, menu, tiles):
+    def __init__(self, screen, background, player, obstacles, camera, clock, font, menu, tiles, enemies=None):
         self.screen = screen
         self.background = background        
         self.player = player
@@ -12,6 +12,7 @@ class GameState:
         self.menu = menu        
         self.tiles = tiles  # ✅ Aquí se guarda
         self.remote_entities = {}
+        self.enemies = enemies or []
 
         self.running = True
         self.show_menu = False

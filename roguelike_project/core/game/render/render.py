@@ -1,5 +1,3 @@
-# core/game/render/render.py
-
 import pygame
 from roguelike_project.core.game.multiplayer.multiplayer import render_remote_players
 from roguelike_project.core.game.render.minimap import render_minimap
@@ -19,12 +17,13 @@ def render_game(state):
     for projectile in state.player.projectiles:
         projectile.render(screen, state.camera)
 
+    for enemy in state.enemies:
+        enemy.render(screen, state.camera)
+
     state.player.render(screen, state.camera)
     state.player.render_hud(screen, state.camera)
 
-
     draw_mouse_crosshair(screen, state.camera)
-
     render_remote_players(state)
 
     if state.show_menu:
@@ -43,7 +42,5 @@ def render_game(state):
         mode_text = state.font.render(f"Modo: {state.mode}", True, (255, 255, 255))
         pygame.draw.rect(screen, (0, 0, 0), (8, 30, 130, 22))
         screen.blit(mode_text, (10, 32))
-
-    
 
     pygame.display.flip()

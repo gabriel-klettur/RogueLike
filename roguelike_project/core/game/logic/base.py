@@ -13,6 +13,8 @@ from roguelike_project.map.map_generator import generate_dungeon_map, merge_hand
 from roguelike_project.map.lobby_map import LOBBY_MAP
 from roguelike_project.map.map_loader import load_map_from_text
 
+from roguelike_project.entities.npc.monster import Monster  # al principio del archivo
+
 class Game:
     def __init__(self, screen):
         dungeon = generate_dungeon_map(60, 40)
@@ -33,11 +35,14 @@ class Game:
                 Obstacle(300, 700),
                 Obstacle(600, 725),
             ],
+            enemies=[
+                Monster(800, 600),  # 📍 posición inicial
+            ],
             camera=Camera(1200, 800),
             clock=pygame.time.Clock(),
             font=pygame.font.SysFont("Arial", 18),
             menu=None,
-            tiles=self.tiles  # ✅ se pasa correctamente
+            tiles=self.tiles
         )
 
         self.state.menu = Menu(state=self.state)
@@ -60,10 +65,13 @@ class Game:
         self.state.camera.update(self.state.player)
 
         solid_tiles = [tile for tile in self.state.tiles if tile.solid]
-        enemies = list(self.state.remote_entities.values()) 
+        enemies = self.state.enemies + list(self.state.remote_entities.values())  # ✅ ACTUALIZADO
 
         for projectile in self.state.player.projectiles:
             projectile.update(solid_tiles=solid_tiles, enemies=enemies)
+
+        for enemy in enemies:
+            enemy.update()
 
         self.state.player.projectiles = [p for p in self.state.player.projectiles if p.alive]
 
