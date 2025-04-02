@@ -59,11 +59,12 @@ class Game:
     def update(self):
         self.state.camera.update(self.state.player)
 
-        # Actualizar proyectiles
-        for projectile in self.state.player.projectiles:
-            projectile.update()
+        solid_tiles = [tile for tile in self.state.tiles if tile.solid]
+        enemies = list(self.state.remote_entities.values()) 
 
-        # Eliminar proyectiles muertos
+        for projectile in self.state.player.projectiles:
+            projectile.update(solid_tiles=solid_tiles, enemies=enemies)
+
         self.state.player.projectiles = [p for p in self.state.player.projectiles if p.alive]
 
     def render(self):

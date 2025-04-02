@@ -21,6 +21,9 @@ class RemotePlayer:
         self.sprites = self.load_sprites(character)
         self.sprite = self.sprites.get(direction, list(self.sprites.values())[0])
 
+        self.hitbox = pygame.Rect(self.x + 20, self.y + 96, 56, 28)
+        self.alive = True
+
     def load_sprites(self, name):
         directions = [
             "up", "down", "left", "right",
@@ -33,6 +36,9 @@ class RemotePlayer:
         return sprites
 
     def render(self, screen, camera):
+        if not self.alive:
+            return
+
         scaled_sprite = pygame.transform.scale(self.sprite, camera.scale(self.sprite_size))
         pos = camera.apply((self.x, self.y))
         screen.blit(scaled_sprite, pos)
@@ -65,3 +71,13 @@ class RemotePlayer:
         text = font.render(self.pid[:6], True, (255, 255, 255))
         rect = text.get_rect(center=(pos[0] + int(self.sprite_size[0] * camera.zoom / 2), pos[1] - int(80 * camera.zoom)))
         screen.blit(text, rect)
+
+    def take_damage(self, amount):
+        self.health -= amount
+        print(f"\U0001F4A5 Enemigo dañado: -{amount} HP")
+        if self.health <= 0:
+            self.alive = False
+            print("\u2620\ufe0f Enemigo eliminado")
+
+    def update(self):
+        self.hitbox.topleft = (self.x + 20, self.y + 96)
