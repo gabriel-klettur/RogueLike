@@ -42,7 +42,6 @@
 | `18_progression_system.md`             | Sistema de niveles, habilidades, progresión del jugador.                |
 | `19_quest_system.md`                    | Diseño de misiones, flujo de tareas, recompensas.                       |
 | `20_city_upgrade_system.md`            | Progresión del pueblo, mejoras compartidas, economía del juego.         |
-| `21_mod_support.md`                     | Cómo soportar mapas, personajes o reglas personalizadas.                |
 
 ---
 
@@ -50,10 +49,10 @@
 
 | Archivo                                  | Propósito                                                                 |
 |-----------------------------------------|---------------------------------------------------------------------------|
-| `22_tilemap_system.md`                 | Generación procedural, fusión de mapas, tipos de tile.                  |
-| `23_work_flow_for_tiles.md`           | Cómo diseñar, testear y agregar tiles al sistema.                       |
-| `24_minimap_system.md`                | Generación, render y sincronización del minimapa.                       |
-| `25_world_events.md`                  | Eventos globales en el mundo, bosses, spawn, clima (futuro).            |
+| `21_tilemap_system.md`                 | Generación procedural, fusión de mapas, tipos de tile.                  |
+| `22_work_flow_for_tiles.md`           | Cómo diseñar, testear y agregar tiles al sistema.                       |
+| `23_minimap_system.md`                | Generación, render y sincronización del minimapa.                       |
+| `24_world_events.md`                  | Eventos globales en el mundo, bosses, spawn, clima (futuro).            |
 
 ---
 
@@ -61,9 +60,9 @@
 
 | Archivo                                  | Propósito                                                                 |
 |-----------------------------------------|---------------------------------------------------------------------------|
-| `26_testing_manual.md`                 | Casos de prueba por sistema y validaciones manuales.                    |
-| `27_testing_automatizado.md`           | Testing con `unittest`, qué módulos son testeables.                     |
-| `28_debug_tools.md`                    | Herramientas visuales y comandos de depuración.                         |
+| `25_testing_manual.md`                 | Casos de prueba por sistema y validaciones manuales.                    |
+| `26_testing_automatizado.md`           | Testing con `unittest`, qué módulos son testeables.                     |
+| `27_debug_tools.md`                    | Herramientas visuales y comandos de depuración.                         |
 
 ---
 
@@ -71,8 +70,7 @@
 
 | Archivo                                  | Propósito                                                                 |
 |-----------------------------------------|---------------------------------------------------------------------------|
-| `29_build_pipeline.md`                 | Cómo crear ejecutables (`pyinstaller`, `.spec`).                         |
-| `30_requirements_and_dependencies.md`  | Dependencias externas y cómo gestionarlas.                              |
-| `31_roadmap_futuro.md`                 | Cambios planeados más allá del MVP (ej. PvP, gremios, tiempo real).     |
+| `28_build_pipeline.md`                 | Cómo crear ejecutables (`pyinstaller`, `.spec`).                         |
+| `29_roadmap_futuro.md`                 | Cambios planeados más allá del MVP (ej. PvP, gremios, tiempo real).     |
 
 ---

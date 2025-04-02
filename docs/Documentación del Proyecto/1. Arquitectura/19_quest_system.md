@@ -1,9 +1,5 @@
 # 📜 19. Quest System – Diseño de Misiones y Flujo de Tareas
 
-Este documento detalla el sistema de misiones del juego: cómo se estructuran, almacenan, presentan y completan las tareas que dan dirección, lore y recompensas al jugador.
-
----
-
 ## 🎯 Objetivo
 
 - Proveer un sistema **modular y escalable** para misiones.
