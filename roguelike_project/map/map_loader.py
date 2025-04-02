@@ -2,6 +2,7 @@
 
 import pygame
 from roguelike_project.utils.loader import load_image
+from roguelike_project.config import DEBUG
 
 TILE_SIZE = 64
 
@@ -20,7 +21,9 @@ class Tile:
 
         if self.solid:
             scaled_rect = pygame.Rect(camera.apply(self.rect.topleft), camera.scale(self.rect.size))
-            pygame.draw.rect(screen, (255, 0, 0), scaled_rect, 1)
+
+            if DEBUG:
+                pygame.draw.rect(screen, (255, 255, 0), scaled_rect, 1)            
 
 def load_tile_images():
     return {

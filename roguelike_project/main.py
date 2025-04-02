@@ -4,11 +4,15 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import pygame
 from roguelike_project.core.game.logic.base import Game
+from roguelike_project.config import DEBUG
 
 def main():
     pygame.init()                                               # Inicializa Pygame
-    screen = pygame.display.set_mode((1200, 800))                # Crea la ventana del juego
+    screen = pygame.display.set_mode((1200, 800))               # Crea la ventana del juego
     pygame.display.set_caption("Roguelike")                     # Establece el título de la ventana    
+
+    if DEBUG:                                                   # Si estamos en modo debug
+        pygame.mouse.set_visible(True)                         # Oculta el cursor del ratón
 
     game = Game(screen)                                         # Crea una instancia del juego
 
