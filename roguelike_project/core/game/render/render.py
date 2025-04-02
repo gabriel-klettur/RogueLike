@@ -28,7 +28,7 @@ def render_game(state):
     # FPS
     fps = state.clock.get_fps()
     fps_text = state.font.render(f"FPS: {int(fps)}", True, (255, 255, 255))
-    pygame.draw.rect(screen, (0, 0, 0), (8, 8, 60, 22))
+    pygame.draw.rect(screen, (0, 0, 0), (8, 8, 130, 22))
     screen.blit(fps_text, (10, 10))
 
     # Modo
