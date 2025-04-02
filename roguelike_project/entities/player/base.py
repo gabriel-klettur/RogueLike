@@ -1,10 +1,7 @@
-#Path: roguelike_project/entities/player/base.py
-
 from .stats import PlayerStats
 from .movement import PlayerMovement
 from .renderer import PlayerRenderer
 from .assets import load_character_assets
-from roguelike_project.map.map_loader import load_map_from_text
 
 class Player:
     def __init__(self, x, y, character_name="first_hero"):
@@ -35,7 +32,7 @@ class Player:
     def restore_all(self):
         self.stats.restore_all()
 
-    def render(self, screen, camera):
+    def render(self, screen, camera):        
         self.renderer.render(screen, camera)
 
     def render_hud(self, screen, camera):

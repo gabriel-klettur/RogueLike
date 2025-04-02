@@ -3,6 +3,7 @@
 import pygame
 from roguelike_project.core.game.multiplayer.multiplayer import render_remote_players
 from roguelike_project.core.game.render.minimap import render_minimap
+from roguelike_project.utils.mouse import draw_mouse_crosshair
 
 def render_game(state):
     screen = state.screen
@@ -16,6 +17,8 @@ def render_game(state):
 
     state.player.render(screen, state.camera)
     state.player.render_hud(screen, state.camera)
+
+    draw_mouse_crosshair(screen, state.camera)
 
     render_remote_players(state)
 

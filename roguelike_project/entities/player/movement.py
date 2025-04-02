@@ -8,10 +8,6 @@ class PlayerMovement:
     def move(self, dx, dy, obstacles, solid_tiles):
         collided = False
 
-        if dx != 0 or dy != 0:
-            self.update_direction(dx, dy)
-            self.player.sprite = self.player.sprites[self.player.direction]
-
         # Hitbox futura con movimiento aplicado
         future_hitbox = self.get_hitbox(
             self.player.x + dx * self.speed,

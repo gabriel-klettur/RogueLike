@@ -1,6 +1,9 @@
 import pygame
 from roguelike_project.config import DEBUG
 from roguelike_project.utils.loader import load_image
+from roguelike_project.utils.mouse import get_direction_from_angle
+from roguelike_project.utils.debug import draw_player_aim_line
+from roguelike_project.utils.mouse import draw_mouse_crosshair
 import time
 
 class PlayerRenderer:
@@ -8,23 +11,46 @@ class PlayerRenderer:
         self.player = player
 
     def render(self, screen, camera):
+        # ✅ Calcular dirección según mouse
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+        world_mouse_x = mouse_x / camera.zoom + camera.offset_x
+        world_mouse_y = mouse_y / camera.zoom + camera.offset_y
+
+        player_center_x = self.player.x + self.player.sprite_size[0] / 2
+        player_center_y = self.player.y + self.player.sprite_size[1] / 2
+
+        dx = world_mouse_x - player_center_x
+        dy = world_mouse_y - player_center_y
+
+        angle = -pygame.math.Vector2(dx, dy).angle_to((0, -1))
+        direction = get_direction_from_angle(angle)
+
+        # Actualizar sprite
+        self.player.direction = direction
+        self.player.sprite = self.player.sprites[direction]
+
+        # Renderizar sprite
         scaled_sprite = pygame.transform.scale(
             self.player.sprite, camera.scale(self.player.sprite_size)
         )
         screen.blit(scaled_sprite, camera.apply((self.player.x, self.player.y)))
 
-        scaled_size = camera.scale(self.player.sprite_size)
+        # Rects
         self.player.rect = pygame.Rect(self.player.x, self.player.y, *self.player.sprite_size)
         self.player.hitbox = pygame.Rect(self.player.x + 20, self.player.y + 96, 56, 28)
 
         self.draw_status_bars(screen, camera)
+
+        draw_mouse_crosshair(screen, camera)
 
         if DEBUG:
             scaled_hitbox = pygame.Rect(
                 camera.apply(self.player.hitbox.topleft),
                 camera.scale(self.player.hitbox.size)
             )
-            pygame.draw.rect(screen, (0, 255, 0), scaled_hitbox, 2)
+            pygame.draw.rect(screen, (0, 255, 0), scaled_hitbox, 2)            
+            draw_player_aim_line(screen, camera, self.player)
+            #print(f"📌 Dirección: {self.player.direction} | Sprite: {self.player.sprite}")
 
     def draw_status_bars(self, screen, camera):
         stats = self.player.stats
