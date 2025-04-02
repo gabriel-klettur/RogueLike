@@ -59,5 +59,12 @@ class Game:
     def update(self):
         self.state.camera.update(self.state.player)
 
+        # Actualizar proyectiles
+        for projectile in self.state.player.projectiles:
+            projectile.update()
+
+        # Eliminar proyectiles muertos
+        self.state.player.projectiles = [p for p in self.state.player.projectiles if p.alive]
+
     def render(self):
         render_game(self.state)

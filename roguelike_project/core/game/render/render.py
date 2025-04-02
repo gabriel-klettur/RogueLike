@@ -16,6 +16,9 @@ def render_game(state):
     for obstacle in state.obstacles:
         obstacle.render(screen, state.camera)
 
+    for projectile in state.player.projectiles:
+        projectile.render(screen, state.camera)
+
     state.player.render(screen, state.camera)
     state.player.render_hud(screen, state.camera)
 

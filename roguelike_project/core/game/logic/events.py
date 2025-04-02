@@ -20,6 +20,19 @@ def handle_events(state):
                 state.camera.zoom = min(state.camera.zoom + 0.1, 2.0)  # Zoom in
             elif event.y < 0:
                 state.camera.zoom = max(state.camera.zoom - 0.1, 0.5)  # Zoom out
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Click izquierdo
+            mouse_x, mouse_y = pygame.mouse.get_pos()
+            world_mouse_x = mouse_x / state.camera.zoom + state.camera.offset_x
+            world_mouse_y = mouse_y / state.camera.zoom + state.camera.offset_y
+
+            player_center_x = state.player.x + state.player.sprite_size[0] / 2
+            player_center_y = state.player.y + state.player.sprite_size[1] / 2
+
+            dx = world_mouse_x - player_center_x
+            dy = world_mouse_y - player_center_y
+
+            angle = -pygame.math.Vector2(dx, dy).angle_to((1, 0))
+            state.player.shoot(angle)
 
     if not state.show_menu:
         keys = pygame.key.get_pressed()
