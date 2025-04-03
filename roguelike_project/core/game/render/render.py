@@ -4,6 +4,9 @@ from roguelike_project.core.game.render.minimap import render_minimap
 from roguelike_project.utils.mouse import draw_mouse_crosshair
 from roguelike_project.config import DEBUG
 
+# Renderiza el juego en la pantalla
+# Se encarga de dibujar los tiles, obstáculos, edificios, proyectiles, enemigos y el jugador
+#! El orden importa, ya que los objetos se dibujan en el orden en que se encuentran en la lista
 def render_game(state):
     screen = state.screen
     screen.fill((0, 0, 0))    
@@ -13,6 +16,9 @@ def render_game(state):
 
     for obstacle in state.obstacles:
         obstacle.render(screen, state.camera)
+
+    for building in getattr(state, "buildings", []):
+        building.render(screen, state.camera)
 
     for projectile in state.player.projectiles:
         projectile.render(screen, state.camera)
