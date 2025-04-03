@@ -1,6 +1,19 @@
+# roguelike_project/config.py
 
-# Debug mode for development
+# Debug Mode
 DEBUG = True
 
-# 🌐 WebSocket Server
+# Pantalla
+SCREEN_WIDTH = 1200
+SCREEN_HEIGHT = 800
+FPS = 60
+
+# Fuente principal
+FONT_NAME = "Arial"
+FONT_SIZE = 18
+
+# Tamaño de tile
+TILE_SIZE = 64
+
+# WebSocket URL
 WEBSOCKET_URL = "ws://localhost:8000/ws"

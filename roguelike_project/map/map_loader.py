@@ -5,7 +5,7 @@ from roguelike_project.utils.loader import load_image
 from roguelike_project.config import DEBUG
 import random
 
-TILE_SIZE = 64
+from roguelike_project.config import TILE_SIZE
 
 class Tile:
     def __init__(self, x, y, tile_type, sprite):

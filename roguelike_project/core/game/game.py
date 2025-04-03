@@ -8,6 +8,8 @@ from roguelike_project.core.game.systems.network_manager import NetworkManager
 from roguelike_project.ui.menu import Menu
 from roguelike_project.core.camera import Camera
 
+from roguelike_project.config import SCREEN_WIDTH, SCREEN_HEIGHT, FONT_NAME, FONT_SIZE
+
 class Game:
     def __init__(self, screen):
         self.map_data, self.tiles = build_map()
@@ -20,9 +22,9 @@ class Game:
             obstacles=obstacles,
             buildings=buildings,
             enemies=enemies,
-            camera=Camera(1200, 800),
+            camera=Camera(SCREEN_WIDTH, SCREEN_HEIGHT),
             clock=pygame.time.Clock(),
-            font=pygame.font.SysFont("Arial", 18),
+            font=pygame.font.SysFont(FONT_NAME, FONT_SIZE),
             menu=None,
             tiles=self.tiles
         )
