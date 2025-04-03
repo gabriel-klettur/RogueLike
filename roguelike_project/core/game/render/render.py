@@ -43,4 +43,19 @@ def render_game(state):
         pygame.draw.rect(screen, (0, 0, 0), (8, 30, 130, 22))
         screen.blit(mode_text, (10, 32))
 
+        # Posición del jugador
+        player_x = round(state.player.x)
+        player_y = round(state.player.y)
+        pos_text = state.font.render(f"Pos: ({player_x}, {player_y})", True, (255, 255, 255))
+        pygame.draw.rect(screen, (0, 0, 0), (8, 52, 180, 22))
+        screen.blit(pos_text, (10, 54))
+
+        # Posición del mouse
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+        world_x = round(mouse_x / state.camera.zoom + state.camera.offset_x)
+        world_y = round(mouse_y / state.camera.zoom + state.camera.offset_y)
+        mouse_text = state.font.render(f"Mouse: ({world_x}, {world_y})", True, (255, 255, 255))
+        pygame.draw.rect(screen, (0, 0, 0), (8, 74, 200, 22))
+        screen.blit(mouse_text, (10, 76))
+
     pygame.display.flip()

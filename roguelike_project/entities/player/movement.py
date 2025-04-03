@@ -3,7 +3,7 @@ import pygame
 class PlayerMovement:
     def __init__(self, player):
         self.player = player
-        self.speed = 4
+        self.speed = 20
 
     def move(self, dx, dy, obstacles, solid_tiles):
         collided = False
