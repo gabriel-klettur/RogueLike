@@ -3,7 +3,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import pygame
-from roguelike_project.core.game.logic.base import Game
+from roguelike_project.core.game.game import Game
 from roguelike_project.config import DEBUG
 
 def main():
