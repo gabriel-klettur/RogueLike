@@ -13,7 +13,12 @@ from roguelike_project.map.map_generator import generate_dungeon_map, merge_hand
 from roguelike_project.map.lobby_map import LOBBY_MAP
 from roguelike_project.map.map_loader import load_map_from_text
 
-from roguelike_project.entities.npc.monster import Monster  # al principio del archivo
+#!------------------------ Monstruos -----------------------------------------
+from roguelike_project.entities.npc.monster import Monster
+
+#!------------------------ Edificios -----------------------------------------
+from roguelike_project.entities.buildings.building import Building
+
 
 class Game:
     def __init__(self, screen):
@@ -34,9 +39,46 @@ class Game:
             obstacles=[
                 Obstacle(300, 700),
                 Obstacle(600, 725),
+                Building(
+                    x=1300,
+                    y=-600,
+                    image_path="assets/buildings/temples/catholic.png",
+                    scale=(1024, 1024)  
+                ),
+                Building(
+                    x=0,
+                    y=-600,
+                    image_path="assets/buildings/temples/satanist.png",
+                    scale=(1024, 1024)  
+                ),
+                Building(
+                    x=1300,
+                    y=200,
+                    image_path="assets/buildings/shops/alchemy_1.png",        
+                    scale=(512, 1024)            
+                ),
+                Building(
+                    x=1800,
+                    y=400,
+                    image_path="assets/buildings/shops/healer_1.png",                    
+                    scale=(512, 512)            
+                ),
+                Building(
+                    x=2500,
+                    y=500,
+                    image_path="assets/buildings/shops/healer.png",                     
+                    scale=(512, 512)            
+                ),
+                Building(
+                    x=2900,
+                    y=-600,
+                    image_path="assets/buildings/castles/castle_1.png",                                        
+                    scale=(3072, 2048)            
+                ),
             ],
             enemies=[
                 Monster(800, 600),  # 📍 posición inicial
+                Monster(800, 800),  # 📍 posición inicial
             ],
             camera=Camera(1200, 800),
             clock=pygame.time.Clock(),
@@ -65,7 +107,7 @@ class Game:
         self.state.camera.update(self.state.player)
 
         solid_tiles = [tile for tile in self.state.tiles if tile.solid]
-        enemies = self.state.enemies + list(self.state.remote_entities.values())  # ✅ ACTUALIZADO
+        enemies = self.state.enemies + list(self.state.remote_entities.values())
 
         for projectile in self.state.player.projectiles:
             projectile.update(solid_tiles=solid_tiles, enemies=enemies)
