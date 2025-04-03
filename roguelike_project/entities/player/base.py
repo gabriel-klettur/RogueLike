@@ -3,6 +3,7 @@ from .movement import PlayerMovement
 from .renderer import PlayerRenderer
 from .assets import load_character_assets
 from roguelike_project.entities.projectiles.fireball import Fireball 
+from roguelike_project.entities.projectiles.explosion import Explosion
 
 class Player:
     def __init__(self, x, y, character_name="first_hero"):
@@ -19,6 +20,7 @@ class Player:
         self.hitbox = None
 
         self.projectiles = []
+        self.explosions = []
 
         self.movement = PlayerMovement(self)
         self.renderer = PlayerRenderer(self)
@@ -29,7 +31,7 @@ class Player:
     def shoot(self, angle):
         center_x = self.x + self.sprite_size[0] // 2
         center_y = self.y + self.sprite_size[1] // 2
-        fireball = Fireball(center_x, center_y, angle)
+        fireball = Fireball(center_x, center_y, angle, self.explosions)
         self.projectiles.append(fireball)
 
     def move(self, dx, dy, collision_mask, obstacles):
@@ -40,6 +42,17 @@ class Player:
 
     def restore_all(self):
         self.stats.restore_all()
+
+    def update(self, solid_tiles, enemies):
+        # Actualizar proyectiles
+        self.projectiles = [p for p in self.projectiles if p.alive]
+        for projectile in self.projectiles:
+            projectile.update(solid_tiles=solid_tiles, enemies=enemies)
+
+        # Actualizar explosiones
+        self.explosions = [e for e in self.explosions if not e.finished]
+        for explosion in self.explosions:
+            explosion.update()
 
     def render(self, screen, camera):        
         self.renderer.render(screen, camera)

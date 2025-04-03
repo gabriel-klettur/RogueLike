@@ -1,5 +1,3 @@
-### 🔁 Archivo: roguelike_project/entities/projectiles/base.py
-
 import pygame
 import math
 
@@ -18,10 +16,10 @@ class Projectile:
         self.dy = math.sin(radians) * speed
 
         self.rect = pygame.Rect(self.x, self.y, *self.size)
-        self.mask = pygame.mask.from_surface(self.sprite)  # ✅
+        self.mask = pygame.mask.from_surface(self.sprite)
         self.alive = True
         self.damage = 10
-
+        self.on_explode = None
 
     def update(self, solid_tiles=None, enemies=None):
         self.x += self.dx
@@ -42,12 +40,16 @@ class Projectile:
                 if self.mask.overlap(enemy.mask, offset):
                     if hasattr(enemy, 'take_damage'):
                         enemy.take_damage(self.damage)
+                    if self.on_explode:
+                        self.on_explode(self.x, self.y)
                     self.alive = False
                     return
 
         if solid_tiles:
             for tile in solid_tiles:
                 if tile.solid and self.rect.colliderect(tile.rect):
+                    if self.on_explode:
+                        self.on_explode(self.x, self.y)
                     self.alive = False
                     return
 

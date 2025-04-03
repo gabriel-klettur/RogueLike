@@ -10,3 +10,9 @@ def load_image(path, scale=None):
     if scale:
         image = pygame.transform.scale(image, scale)
     return image
+
+def load_explosion_frames(path_format, count, scale=None):
+    return [
+        load_image(path_format.format(i), scale)
+        for i in range(count)
+    ]
