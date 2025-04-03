@@ -42,15 +42,7 @@ class PlayerMovement:
         return pygame.Rect(x + 20, y + 96, 56, 28)
 
     def update_direction(self, dx, dy):
-        if dx == -1 and dy == -1:
-            self.player.direction = "up_left"
-        elif dx == 1 and dy == -1:
-            self.player.direction = "up_right"
-        elif dx == -1 and dy == 1:
-            self.player.direction = "down_left"
-        elif dx == 1 and dy == 1:
-            self.player.direction = "down_right"
-        elif dx == -1:
+        if dx == -1:
             self.player.direction = "left"
         elif dx == 1:
             self.player.direction = "right"

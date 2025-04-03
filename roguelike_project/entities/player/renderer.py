@@ -22,7 +22,8 @@ class PlayerRenderer:
         dx = world_mouse_x - player_center_x
         dy = world_mouse_y - player_center_y
 
-        angle = -pygame.math.Vector2(dx, dy).angle_to((0, -1))
+        raw_angle = pygame.math.Vector2(dx, dy).angle_to((0, -1))
+        angle = raw_angle % 360  # 🔁 convierte negativos a rango 0–360
         direction = get_direction_from_angle(angle)
 
         # Actualizar sprite

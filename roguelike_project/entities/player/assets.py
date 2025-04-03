@@ -1,10 +1,7 @@
 from roguelike_project.utils.loader import load_image
 
 def load_character_assets(character_name):
-    directions = [
-        "up", "down", "left", "right",
-        "up_left", "up_right", "down_left", "down_right"
-    ]
+    directions = ["up", "down", "left", "right"]
     sprite_size = (96, 128)
     sprites = {}
     for direction in directions:

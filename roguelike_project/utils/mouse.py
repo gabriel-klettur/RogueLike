@@ -1,23 +1,14 @@
 import pygame
 
 def get_direction_from_angle(angle):
-    if -22.5 <= angle < 22.5:
+    if 315 <= angle or angle < 45:
         return "up"
-    elif 22.5 <= angle < 67.5:
-        return "up_right"
-    elif 67.5 <= angle < 112.5:
-        return "right"
-    elif 112.5 <= angle < 157.5:
-        return "down_right"
-    elif angle >= 157.5 or angle < -157.5:
-        return "down"
-    elif -157.5 <= angle < -112.5:
-        return "down_left"
-    elif -112.5 <= angle < -67.5:
+    elif 45 <= angle < 135:
         return "left"
-    elif -67.5 <= angle < -22.5:
-        return "up_left"
-    return "down"
+    elif 135 <= angle < 225:
+        return "down"
+    elif 225 <= angle < 315:
+        return "right"
 
 def draw_mouse_crosshair(screen, camera):
     
