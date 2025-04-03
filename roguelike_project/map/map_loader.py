@@ -3,6 +3,7 @@
 import pygame
 from roguelike_project.utils.loader import load_image
 from roguelike_project.config import DEBUG
+import random
 
 TILE_SIZE = 64
 
@@ -26,8 +27,12 @@ class Tile:
                 pygame.draw.rect(screen, (255, 255, 0), scaled_rect, 1)            
 
 def load_tile_images():
+    floor_variants = [
+        load_image(f"assets/tiles/floor_{i}.png", (TILE_SIZE, TILE_SIZE))
+        for i in range(1, 8)
+    ]
     return {
-        ".": load_image("assets/tiles/floor.png", (TILE_SIZE, TILE_SIZE)),
+        ".": floor_variants,
         "#": load_image("assets/tiles/wall.png", (TILE_SIZE, TILE_SIZE))
     }
 
@@ -40,5 +45,13 @@ def load_map_from_text(map_data):
             if char in tile_images:
                 x = col_idx * TILE_SIZE
                 y = row_idx * TILE_SIZE
-                tiles.append(Tile(x, y, char, tile_images[char]))
+
+                # Si hay múltiples variantes (como "."), elegimos aleatoriamente
+                sprite = (
+                    random.choice(tile_images[char])
+                    if isinstance(tile_images[char], list)
+                    else tile_images[char]
+                )
+
+                tiles.append(Tile(x, y, char, sprite))
     return tiles
