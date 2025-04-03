@@ -58,4 +58,22 @@ def render_game(state):
         pygame.draw.rect(screen, (0, 0, 0), (8, 74, 200, 22))
         screen.blit(mouse_text, (10, 76))
 
+        # Coordenadas del tile
+        tile_col = int(world_x // 64)  # TILE_SIZE = 64
+        tile_row = int(world_y // 64)
+        tile_text = "?"
+
+        # Buscar el tipo de tile correspondiente
+        for tile in state.tiles:
+            if tile.rect.collidepoint(world_x, world_y):
+                tile_text = tile.tile_type
+                break
+
+        # Mostrar info del tile
+        tile_info = state.font.render(
+            f"Tile: ({tile_col}, {tile_row}) Tipo: '{tile_text}'", True, (255, 255, 255)
+        )
+        pygame.draw.rect(screen, (0, 0, 0), (8, 96, 250, 22))
+        screen.blit(tile_info, (10, 98))
+
     pygame.display.flip()

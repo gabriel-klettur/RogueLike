@@ -1,7 +1,7 @@
 import random
 
-MAP_WIDTH = 80
-MAP_HEIGHT = 45
+MAP_WIDTH = 300
+MAP_HEIGHT = 300
 
 def intersect(room1, room2):
     x1a, y1a, x2a, y2a = room1
