@@ -17,6 +17,13 @@ class Tile:
         self.rect = pygame.Rect(x, y, TILE_SIZE, TILE_SIZE)
 
     def render(self, screen, camera):
+        # Handle case where camera is None (for static rendering)
+        if camera is None:
+            # Render at original size and position
+            screen.blit(self.sprite, (self.x, self.y))
+            return pygame.Rect(self.x, self.y, TILE_SIZE, TILE_SIZE)
+        
+        # Normal rendering with camera
         scaled_sprite = pygame.transform.scale(self.sprite, camera.scale((self.sprite.get_width(), self.sprite.get_height())))
         screen.blit(scaled_sprite, camera.apply((self.x, self.y)))
 
