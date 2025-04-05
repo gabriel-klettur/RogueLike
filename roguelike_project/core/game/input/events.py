@@ -41,6 +41,9 @@ def handle_events(state):
         if keys[pygame.K_DOWN]: dy = 1
         if keys[pygame.K_LEFT]: dx = -1
         if keys[pygame.K_RIGHT]: dx = 1
+
+        state.player.is_walking = dx != 0 or dy != 0  # ✅ Solo si se presionan teclas
+
         solid_tiles = [tile for tile in state.tiles if tile.solid]
         state.player.move(dx, dy, state.obstacles, solid_tiles)
 

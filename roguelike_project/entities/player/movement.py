@@ -4,8 +4,14 @@ class PlayerMovement:
     def __init__(self, player):
         self.player = player
         self.speed = 20
+        self.is_moving = False 
 
     def move(self, dx, dy, obstacles, solid_tiles):
+        self.is_moving = False  # Reseteamos al inicio
+
+        if dx != 0 or dy != 0:
+            self.update_direction(dx, dy)
+
         collided = False
 
         # Hitbox futura con movimiento aplicado
@@ -31,6 +37,7 @@ class PlayerMovement:
         if not collided:
             self.player.x += dx * self.speed
             self.player.y += dy * self.speed
+            self.is_moving = True  # ✅ Movimiento permitido
             if self.player.hitbox is None:
                 self.player.hitbox = self.get_hitbox(self.player.x, self.player.y)
             else:
