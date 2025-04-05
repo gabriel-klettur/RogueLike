@@ -6,7 +6,7 @@ from roguelike_project.utils.loader import load_image, load_explosion_frames
 class Fireball(Projectile):
     def __init__(self, x, y, angle, explosions_list=None):
         sprite = load_image("assets/projectiles/fireball.png", (64, 64))
-        speed = 10
+        speed = 40
         lifespan = 60
         super().__init__(x, y, angle, speed, lifespan, sprite)
         self.damage = 10
