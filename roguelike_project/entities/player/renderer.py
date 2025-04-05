@@ -55,6 +55,12 @@ class PlayerRenderer:
             pygame.draw.rect(screen, (0, 255, 0), scaled_hitbox, 2)
             draw_player_aim_line(screen, camera, self.player)
 
+        # Actualizar explosiones y quitar las acabadas
+        for explosion in self.player.explosions[:]:  # Hacer copia con [:] para modificar durante la iteracion de forma segura
+            explosion.update()
+            if explosion.finished:
+                self.player.explosions.remove(explosion)
+
         # 💥 Render explosiones activas
         for explosion in self.player.explosions:
             explosion.render(screen, camera)
