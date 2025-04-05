@@ -14,3 +14,6 @@ https://www.pixellab.ai/
 ### AI generated art
 https://app.runwayml.com/
 
+
+### asset pack for platforms
+https://zegley.itch.io/2d-platformermetroidvania-asset-pack
