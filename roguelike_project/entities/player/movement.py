@@ -1,4 +1,6 @@
 import pygame
+import math
+
 
 class PlayerMovement:
     def __init__(self, player):
@@ -11,6 +13,12 @@ class PlayerMovement:
 
         if dx != 0 or dy != 0:
             self.update_direction(dx, dy)
+
+            # Normalizamos si hay movimiento diagonal
+            if dx != 0 and dy != 0:
+                norm = math.sqrt(dx ** 2 + dy ** 2)
+                dx /= norm
+                dy /= norm
 
         collided = False
 
