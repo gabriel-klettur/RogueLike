@@ -8,6 +8,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from roguelike_project.core.game.game import Game
 from roguelike_project.config import DEBUG, FPS
+from roguelike_project.utils.debug_overlay import render_debug_overlay  # NUEVO
 
 # --- Debug Tools ---
 def init_debug():
@@ -21,18 +22,6 @@ def init_debug():
 
 def track_performance(perf_log, key, start_time):
     perf_log[key].append(time.perf_counter() - start_time)
-
-def print_debug_stats(perf_log, sample_size):
-    avg_frame = sum(perf_log['frame_times']) / sample_size
-    avg_fps = 1 / avg_frame if avg_frame > 0 else 0
-    print(f"\n🎯 Performance (últimos {sample_size} frames):")
-    print(f"  FPS: {avg_fps:.1f} (Objetivo: {FPS})")
-    print(f"  Eventos: {sum(perf_log['handle_events'])/sample_size:.4f}s/frame")
-    print(f"  Update : {sum(perf_log['update'])/sample_size:.4f}s/frame")
-    print(f"  Render : {sum(perf_log['render'])/sample_size:.4f}s/frame")
-
-    for key in perf_log:
-        perf_log[key] = []
 
 # --- Main Loop ---
 def main():
@@ -66,13 +55,14 @@ def main():
         game.render()
         if DEBUG: track_performance(performance_log, 'render', t)
 
-        game.state.clock.tick(FPS)
-
-        # FPS tracking
+        # Mostrar overlay de debug (después del render principal)
         if DEBUG:
             track_performance(performance_log, 'frame_times', frame_start)
-            if len(performance_log['frame_times']) >= sample_size:
-                print_debug_stats(performance_log, sample_size)
+            render_debug_overlay(screen, performance_log)
+
+        # Actualizar pantalla completa
+        pygame.display.flip()
+        game.state.clock.tick(FPS)
 
     pygame.quit()
 
