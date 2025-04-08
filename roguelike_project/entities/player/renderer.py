@@ -8,9 +8,23 @@ from roguelike_project.utils.debug import draw_player_aim_line
 class PlayerRenderer:
     def __init__(self, player):
         self.player = player
+        self._cached_fonts = {}
+        self._icon_scaled = {}
+        self._icon_original = load_image("assets/ui/restore_icon.png", (48, 48))
+
+    def get_font(self, size):
+        if size not in self._cached_fonts:
+            self._cached_fonts[size] = pygame.font.SysFont("Arial", size)
+        return self._cached_fonts[size]
+
+    def get_scaled_icon(self, zoom):
+        if zoom not in self._icon_scaled:
+            size = int(48 * zoom)
+            self._icon_scaled[zoom] = pygame.transform.scale(self._icon_original, (size, size))
+        return self._icon_scaled[zoom]
 
     def render(self, screen, camera):
-        if not camera.is_in_view(self.player.x, self.player.y, self.player.sprite_size):  # ✅ Visibilidad
+        if not camera.is_in_view(self.player.x, self.player.y, self.player.sprite_size):
             return
 
         # Dirección hacia el mouse
@@ -29,7 +43,7 @@ class PlayerRenderer:
         direction = get_direction_from_angle(angle)
         self.player.direction = direction
 
-        # Elegir frame (idle o walk)
+        # Elegir frame
         if self.player.is_walking:
             frames = self.player.sprites[direction]["walk"]
             frame = int(pygame.time.get_ticks() / 150) % len(frames)
@@ -72,13 +86,14 @@ class PlayerRenderer:
         bar_height = int(20 * camera.zoom)
         spacing = int(2 * camera.zoom)
         x, y = camera.apply((self.player.x + 18, self.player.y - 65))
-        font = pygame.font.SysFont("Arial", int(12 * camera.zoom))
+        font = self.get_font(int(12 * camera.zoom))
 
         def draw_bar(current, max_value, color, y_offset):
             pygame.draw.rect(screen, (40, 40, 40), (x, y + y_offset, bar_width, bar_height))
             fill = int(bar_width * (current / max_value))
             pygame.draw.rect(screen, color, (x, y + y_offset, fill, bar_height))
             pygame.draw.rect(screen, (0, 0, 0), (x, y + y_offset, bar_width, bar_height), 1)
+
             text = font.render(f"{int(current)}/{int(max_value)}", True, (255, 255, 255))
             text_rect = text.get_rect(center=(x + bar_width // 2, y + y_offset + bar_height // 2))
             screen.blit(text, text_rect)
@@ -88,11 +103,9 @@ class PlayerRenderer:
         draw_bar(stats.energy, stats.max_energy, (255, 50, 50), (bar_height + spacing) * 2)
 
     def render_hud(self, screen, camera):
-        icon_size = camera.scale((48, 48))
-        icon = pygame.transform.scale(
-            load_image("assets/ui/restore_icon.png", (48, 48)),
-            icon_size
-        )
+        zoom = camera.zoom
+        icon = self.get_scaled_icon(zoom)
+
         icon_x, icon_y = camera.apply((
             self.player.x + self.player.sprite_size[0] // 2 - 24,
             self.player.y + self.player.sprite_size[1] + 50
@@ -105,16 +118,15 @@ class PlayerRenderer:
 
         if elapsed < cooldown:
             ratio = 1 - (elapsed / cooldown)
-            overlay_height = int(icon_size[1] * ratio)
+            overlay_height = int(icon.get_height() * ratio)
 
             if overlay_height > 0:
-                overlay = pygame.Surface((icon_size[0], overlay_height))
-                overlay.set_alpha(180)
-                overlay.fill((0, 0, 0))
-                screen.blit(overlay, (icon_x, icon_y + (icon_size[1] - overlay_height)))
+                overlay = pygame.Surface((icon.get_width(), overlay_height), pygame.SRCALPHA)
+                overlay.fill((0, 0, 0, 180))
+                screen.blit(overlay, (icon_x, icon_y + (icon.get_height() - overlay_height)))
 
-            font = pygame.font.SysFont("Arial", int(16 * camera.zoom))
+            font = self.get_font(int(16 * zoom))
             remaining = int(cooldown - elapsed) + 1
             text = font.render(str(remaining), True, (255, 255, 255))
-            text_rect = text.get_rect(center=(icon_x + icon_size[0] // 2, icon_y + icon_size[1] // 2))
+            text_rect = text.get_rect(center=(icon_x + icon.get_width() // 2, icon_y + icon.get_height() // 2))
             screen.blit(text, text_rect)
