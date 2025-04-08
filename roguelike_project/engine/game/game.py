@@ -1,12 +1,12 @@
 import pygame
-from roguelike_project.core.game.input.events import handle_events
-from roguelike_project.core.game.systems.state import GameState
-from roguelike_project.core.game.systems.map_manager import build_map
-from roguelike_project.core.game.systems.entity_loader import load_entities
-from roguelike_project.core.game.systems.network_manager import NetworkManager
-from roguelike_project.ui.menu import Menu
-from roguelike_project.core.camera import Camera
-from roguelike_project.core.game.render.render import Renderer
+from roguelike_project.engine.game.input.events import handle_events
+from roguelike_project.engine.game.systems.state import GameState
+from roguelike_project.engine.game.systems.map_manager import build_map
+from roguelike_project.engine.game.systems.entity_loader import load_entities
+from roguelike_project.engine.game.systems.network_manager import NetworkManager
+from roguelike_project.ui.menus.menu import Menu
+from roguelike_project.engine.camera import Camera
+from roguelike_project.engine.game.render.render import Renderer
 from roguelike_project.config import SCREEN_WIDTH, SCREEN_HEIGHT, FONT_NAME, FONT_SIZE
 
 class Game:

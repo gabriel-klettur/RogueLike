@@ -6,7 +6,7 @@ import pygame
 # Agregar el path del proyecto
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from roguelike_project.core.game.game import Game
+from roguelike_project.engine.game.game import Game
 from roguelike_project.config import DEBUG, FPS
 from roguelike_project.utils.debug_overlay import render_debug_overlay  # NUEVO
 
