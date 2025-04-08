@@ -26,17 +26,17 @@ class Renderer:
             else:
                 func()
 
-        benchmark("--tiles", lambda: self._render_tiles(state, cam, screen))
-        benchmark("--obstacles", lambda: self._render_obstacles(state, cam, screen))
-        benchmark("--buildings", lambda: self._render_buildings(state, cam, screen))
-        benchmark("--projectiles", lambda: self._render_projectiles(state, cam, screen))
-        benchmark("--enemies", lambda: self._render_enemies(state, cam, screen))
-        benchmark("--player", lambda: self._render_player(state, cam, screen))
-        benchmark("--hud", lambda: state.player.render_hud(screen, cam))
-        benchmark("--crosshair", lambda: draw_mouse_crosshair(screen, cam))
-        benchmark("--remote_players", lambda: render_remote_players(state))
-        benchmark("--menu", lambda: self._render_menu(state, screen))
-        benchmark("--minimap", lambda: self._render_minimap(state))
+        benchmark("--3.1. tiles", lambda: self._render_tiles(state, cam, screen))
+        benchmark("--3.2. obstacles", lambda: self._render_obstacles(state, cam, screen))
+        benchmark("--3.3. buildings", lambda: self._render_buildings(state, cam, screen))
+        benchmark("--3.4. projectiles", lambda: self._render_projectiles(state, cam, screen))
+        benchmark("--3.5. enemies", lambda: self._render_enemies(state, cam, screen))
+        benchmark("--3.6. player", lambda: self._render_player(state, cam, screen))
+        benchmark("--3.7. hud", lambda: state.player.render_hud(screen, cam))
+        benchmark("--3.8. crosshair", lambda: draw_mouse_crosshair(screen, cam))
+        benchmark("--3.9. remote_players", lambda: render_remote_players(state))
+        benchmark("--3.10. menu", lambda: self._render_menu(state, screen))
+        benchmark("--3.11. minimap", lambda: self._render_minimap(state))
         
         if DEBUG and perf_log is not None:
             extra_lines = self._get_custom_debug_lines(state)

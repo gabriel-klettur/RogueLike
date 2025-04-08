@@ -3,7 +3,8 @@ from .movement import PlayerMovement
 from .renderer import PlayerRenderer
 from .assets import load_character_assets
 from roguelike_project.entities.projectiles.fireball import Fireball 
-from roguelike_project.entities.projectiles.explosion import Explosion
+from roguelike_project.entities.projectiles.laser_shot import LaserShot
+
 
 class Player:
     def __init__(self, x, y, character_name="first_hero"):
@@ -22,6 +23,7 @@ class Player:
 
         self.projectiles = []
         self.explosions = []
+        self.lasers = []
 
         self.movement = PlayerMovement(self)
         self.renderer = PlayerRenderer(self)
@@ -54,9 +56,18 @@ class Player:
         self.explosions = [e for e in self.explosions if not e.finished]
         for explosion in self.explosions:
             explosion.update()
+        
+        for laser in self.lasers:
+            laser.update()
+        self.lasers = [l for l in self.lasers if not l.finished]
 
     def render(self, screen, camera):        
         self.renderer.render(screen, camera)
 
     def render_hud(self, screen, camera):
         self.renderer.render_hud(screen, camera)
+
+    def fire_laser(self, target_x, target_y):        
+        center_x = self.x + self.sprite_size[0] // 2
+        center_y = self.y + self.sprite_size[1] // 2
+        self.lasers.append(LaserShot(center_x, center_y, target_x, target_y))

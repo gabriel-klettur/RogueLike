@@ -32,9 +32,9 @@ def main():
 
     # ✅ Decorar dinámicamente funciones si estamos en modo DEBUG
     if DEBUG:
-        game.handle_events = benchmark(performance_log, 'handle_events')(game.handle_events)
-        game.update = benchmark(performance_log, 'update')(game.update)
-        game.render = benchmark(performance_log, '**TOTAL RENDER')(game.render)
+        game.handle_events = benchmark(performance_log, '1. handle_events')(game.handle_events)
+        game.update = benchmark(performance_log, '2. update')(game.update)
+        game.render = benchmark(performance_log, '3. **TOTAL RENDER')(game.render)
 
     while game.state.running:
         frame_start = time.perf_counter()

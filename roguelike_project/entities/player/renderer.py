@@ -80,6 +80,9 @@ class PlayerRenderer:
         for explosion in self.player.explosions:
             explosion.render(screen, camera)
 
+        for laser in getattr(self.player, "lasers", []):
+                    laser.render(screen, camera)
+
     def draw_status_bars(self, screen, camera):
         stats = self.player.stats
         bar_width = int(60 * camera.zoom)
