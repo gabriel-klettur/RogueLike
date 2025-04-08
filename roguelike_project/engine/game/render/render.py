@@ -12,52 +12,59 @@ class Renderer:
     def render_game(self, state):
         screen = state.screen
         self._dirty_rects = []
-
-        # Limpiar pantalla
         screen.fill((0, 0, 0))
 
-        # Dibujar tiles
-        for tile in state.tiles:
-            dirty = tile.render(screen, state.camera)
-            if dirty:
-                self._dirty_rects.append(dirty)
+        cam = state.camera
 
-        # Dibujar obstáculos estáticos
+        # Tiles visibles
+        for tile in state.tiles:
+            if cam.is_in_view(tile.x, tile.y, (TILE_SIZE, TILE_SIZE)):
+                dirty = tile.render(screen, cam)
+                if dirty:
+                    self._dirty_rects.append(dirty)
+
+        # Obstáculos estáticos visibles
         for obstacle in state.obstacles:
             if getattr(obstacle, 'is_static', True):
-                dirty = obstacle.render(screen, state.camera)
-                if dirty:
-                    self._dirty_rects.append(dirty)
+                if cam.is_in_view(obstacle.x, obstacle.y, obstacle.size):
+                    dirty = obstacle.render(screen, cam)
+                    if dirty:
+                        self._dirty_rects.append(dirty)
 
-        # Buildings no estáticos
+        # Buildings visibles
         for building in getattr(state, "buildings", []):
             if not getattr(building, 'is_static', False):
-                dirty = building.render(screen, state.camera)
+                size = (building.image.get_width(), building.image.get_height())
+                if cam.is_in_view(building.x, building.y, size):
+                    dirty = building.render(screen, cam)
+                    if dirty:
+                        self._dirty_rects.append(dirty)
+
+        # Proyectiles del jugador visibles
+        for projectile in state.player.projectiles:
+            if cam.is_in_view(projectile.x, projectile.y, projectile.size):
+                dirty = projectile.render(screen, cam)
                 if dirty:
                     self._dirty_rects.append(dirty)
 
-        # Proyectiles del jugador
-        for projectile in state.player.projectiles:
-            dirty = projectile.render(screen, state.camera)
-            if dirty:
-                self._dirty_rects.append(dirty)
-
-        # Enemigos
+        # Enemigos visibles
         for enemy in state.enemies:
-            dirty = enemy.render(screen, state.camera)
+            if cam.is_in_view(enemy.x, enemy.y, enemy.sprite_size):
+                dirty = enemy.render(screen, cam)
+                if dirty:
+                    self._dirty_rects.append(dirty)
+
+        # Jugador visible
+        if cam.is_in_view(state.player.x, state.player.y, state.player.sprite_size):
+            dirty = state.player.render(screen, cam)
             if dirty:
                 self._dirty_rects.append(dirty)
-
-        # Jugador
-        dirty = state.player.render(screen, state.camera)
-        if dirty:
-            self._dirty_rects.append(dirty)
 
         # HUD
-        state.player.render_hud(screen, state.camera)
-        draw_mouse_crosshair(screen, state.camera)
+        state.player.render_hud(screen, cam)
+        draw_mouse_crosshair(screen, cam)
 
-        # Jugadores remotos
+        # Jugadores remotos (filtrado vendrá después)
         render_remote_players(state)
 
         # Menú
@@ -65,7 +72,7 @@ class Renderer:
             menu_rect = state.menu.draw(screen)
             self._dirty_rects.append(menu_rect)
 
-        # Minimap
+        # Minimapa
         minimap_rect = render_minimap(state)
         self._dirty_rects.append(minimap_rect)
 

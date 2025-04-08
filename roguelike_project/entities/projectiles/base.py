@@ -54,4 +54,10 @@ class Projectile:
                     return
 
     def render(self, screen, camera):
+        if not self.alive:
+            return
+
+        if not camera.is_in_view(self.x, self.y, self.size):  # ✅ Visibilidad
+            return
+
         screen.blit(self.sprite, camera.apply((self.x, self.y)))

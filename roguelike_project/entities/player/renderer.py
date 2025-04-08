@@ -10,6 +10,9 @@ class PlayerRenderer:
         self.player = player
 
     def render(self, screen, camera):
+        if not camera.is_in_view(self.player.x, self.player.y, self.player.sprite_size):  # ✅ Visibilidad
+            return
+
         # Dirección hacia el mouse
         mouse_x, mouse_y = pygame.mouse.get_pos()
         world_mouse_x = mouse_x / camera.zoom + camera.offset_x

@@ -73,6 +73,9 @@ class Monster:
         if not self.alive:
             return
 
+        if not camera.is_in_view(self.x, self.y, self.sprite_size):
+            return
+
         scaled_sprite = pygame.transform.scale(self.sprite, camera.scale(self.sprite_size))
         screen.blit(scaled_sprite, camera.apply((self.x, self.y)))
 

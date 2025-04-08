@@ -1,5 +1,3 @@
-# core/game/multiplayer.py
-
 from roguelike_project.entities.remote_player.base import RemotePlayer
 
 def render_remote_players(state):
@@ -20,4 +18,6 @@ def render_remote_players(state):
             rp.energy = data.get("energy", 100)
             rp.sprite = rp.sprites.get(rp.direction, rp.sprite)
 
-            rp.render(state.screen, state.camera)
+            # ✅ Solo renderizar si está visible en cámara
+            if state.camera.is_in_view(rp.x, rp.y, rp.sprite_size):
+                rp.render(state.screen, state.camera)

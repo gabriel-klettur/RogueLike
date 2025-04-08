@@ -20,7 +20,12 @@ class Explosion:
                 self.finished = True
 
     def render(self, screen, camera):
-        if not self.finished:
-            frame = self.frames[self.current_frame]
-            scaled = pygame.transform.scale(frame, (64, 64))
-            screen.blit(scaled, camera.apply((self.x, self.y)))
+        if self.finished:
+            return
+
+        if not camera.is_in_view(self.x, self.y, (64, 64)):  # ✅ Visibilidad
+            return
+
+        frame = self.frames[self.current_frame]
+        scaled = pygame.transform.scale(frame, (64, 64))
+        screen.blit(scaled, camera.apply((self.x, self.y)))
