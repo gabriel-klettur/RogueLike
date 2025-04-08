@@ -45,8 +45,15 @@ class Renderer:
         pygame.display.flip()
 
     def _render_tiles(self, state, cam, screen):
+        visible_rect = pygame.Rect(
+            cam.offset_x,
+            cam.offset_y,
+            cam.screen_width / cam.zoom,
+            cam.screen_height / cam.zoom
+        )
+
         for tile in state.tiles:
-            if cam.is_in_view(tile.x, tile.y, (TILE_SIZE, TILE_SIZE)):
+            if visible_rect.colliderect(tile.rect):
                 dirty = tile.render(screen, cam)
                 if dirty:
                     self._dirty_rects.append(dirty)
