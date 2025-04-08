@@ -8,7 +8,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from roguelike_project.engine.game.game import Game
 from roguelike_project.config import DEBUG, FPS
-from roguelike_project.utils.debug_overlay import render_debug_overlay  # NUEVO
+from roguelike_project.utils.debug_overlay import render_debug_overlay
+from roguelike_project.utils.benchmark import benchmark  # ✅ Decorador profesional
 
 # --- Debug Tools ---
 def init_debug():
@@ -20,9 +21,6 @@ def init_debug():
         'frame_times': []
     }
 
-def track_performance(perf_log, key, start_time):
-    perf_log[key].append(time.perf_counter() - start_time)
-
 # --- Main Loop ---
 def main():
     pygame.init()
@@ -30,37 +28,29 @@ def main():
     pygame.display.set_caption("Roguelike")
 
     performance_log = init_debug() if DEBUG else None
-    sample_size = 60
 
     game = Game(screen)
 
     if not hasattr(game, 'state'):
         raise RuntimeError("Game state not initialized properly!")
 
+    # ✅ Decorar dinámicamente funciones si estamos en modo DEBUG
+    if DEBUG:
+        game.handle_events = benchmark(performance_log, 'handle_events')(game.handle_events)
+        game.update = benchmark(performance_log, 'update')(game.update)
+        game.render = benchmark(performance_log, 'render')(game.render)
+
     while game.state.running:
         frame_start = time.perf_counter()
 
-        # Eventos
-        t = time.perf_counter()
         game.handle_events()
-        if DEBUG: track_performance(performance_log, 'handle_events', t)
-
-        # Update
-        t = time.perf_counter()
         game.update()
-        if DEBUG: track_performance(performance_log, 'update', t)
-
-        # Render
-        t = time.perf_counter()
         game.render()
-        if DEBUG: track_performance(performance_log, 'render', t)
 
-        # Mostrar overlay de debug (después del render principal)
         if DEBUG:
-            track_performance(performance_log, 'frame_times', frame_start)
+            performance_log["frame_times"].append(time.perf_counter() - frame_start)
             render_debug_overlay(screen, performance_log)
 
-        # Actualizar pantalla completa
         pygame.display.flip()
         game.state.clock.tick(FPS)
 
