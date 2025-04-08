@@ -10,6 +10,7 @@ class Player:
         self.x = x
         self.y = y
         self.character_name = character_name
+        self.is_walking = False
 
         self.stats = PlayerStats(character_name)
         self.sprites, self.sprite_size = load_character_assets(character_name)

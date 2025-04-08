@@ -1,28 +1,53 @@
 import sys
 import os
+import time
+import pygame
+from collections import defaultdict
+
+# Agregar el path del proyecto
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-import pygame
-from roguelike_project.core.game.game import Game
-from roguelike_project.config import DEBUG
+from roguelike_project.engine.game.game import Game
+from roguelike_project.config import DEBUG, FPS
+from roguelike_project.utils.debug_overlay import render_debug_overlay
+from roguelike_project.utils.benchmark import benchmark  # ✅ Decorador profesional
 
-from roguelike_project.config import FPS
+# --- Debug Tools ---
+def init_debug():
+    pygame.mouse.set_visible(True)
+    return defaultdict(list)
 
+# --- Main Loop ---
 def main():
-    pygame.init()                                               # Inicializa Pygame
-    screen = pygame.display.set_mode((1200, 800))               # Crea la ventana del juego
-    pygame.display.set_caption("Roguelike")                     # Establece el título de la ventana    
+    pygame.init()
+    screen = pygame.display.set_mode((1200, 800), pygame.HWSURFACE | pygame.DOUBLEBUF)
+    pygame.display.set_caption("Roguelike")
 
-    if DEBUG:                                                   # Si estamos en modo debug
-        pygame.mouse.set_visible(True)                         # Oculta el cursor del ratón
+    performance_log = init_debug() if DEBUG else None
 
-    game = Game(screen)                                         # Crea una instancia del juego
+    game = Game(screen)
 
-    while game.state.running:                                         # Bucle principal del juego 
-        game.handle_events()                                    # Maneja los eventos (teclado, ratón, etc.)
-        game.update()                                           # Actualiza la lógica del juego (movimiento, colisiones, etc.)              
-        game.render()                                           # Renderiza la pantalla (dibuja los objetos en la ventana)
-        game.state.clock.tick(FPS)                                          # Controla la velocidad de fotogramas (60 FPS)                    
+    if not hasattr(game, 'state'):
+        raise RuntimeError("Game state not initialized properly!")
+
+    # ✅ Decorar dinámicamente funciones si estamos en modo DEBUG
+    if DEBUG:
+        game.handle_events = benchmark(performance_log, 'handle_events')(game.handle_events)
+        game.update = benchmark(performance_log, 'update')(game.update)
+        game.render = benchmark(performance_log, '**TOTAL RENDER')(game.render)
+
+    while game.state.running:
+        frame_start = time.perf_counter()
+
+        game.handle_events()
+        game.update()
+        game.render(performance_log)
+
+        if DEBUG:
+            performance_log["FPS"].append(time.perf_counter() - frame_start)            
+
+        pygame.display.flip()
+        game.state.clock.tick(FPS)
 
     pygame.quit()
 

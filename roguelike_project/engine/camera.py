@@ -1,5 +1,3 @@
-#Path: roguelike_project/core/camera.py
-
 class Camera:
     def __init__(self, screen_width, screen_height):
         self.screen_width = screen_width
@@ -20,3 +18,9 @@ class Camera:
         """Escala (ancho, alto) según el zoom"""
         w, h = size
         return int(w * self.zoom), int(h * self.zoom)
+
+    def is_in_view(self, x, y, size):
+        """Verifica si un objeto en (x, y) con tamaño (w, h) está dentro del área visible"""
+        screen_x, screen_y = self.apply((x, y))
+        w, h = self.scale(size)
+        return -w < screen_x < self.screen_width and -h < screen_y < self.screen_height
