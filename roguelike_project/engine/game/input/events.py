@@ -1,4 +1,5 @@
 import pygame
+import time
 from roguelike_project.network.client import WebSocketClient  # ✅ Importación necesaria
 
 def handle_events(state):
@@ -15,11 +16,13 @@ def handle_events(state):
                 result = state.menu.handle_input(event)
                 if result:
                     execute_menu_option(result, state)
+
         elif event.type == pygame.MOUSEWHEEL:
             if event.y > 0:
                 state.camera.zoom = min(state.camera.zoom + 0.1, 2.0)  # Zoom in
             elif event.y < 0:
                 state.camera.zoom = max(state.camera.zoom - 0.1, 0.5)  # Zoom out
+
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:  # Click izquierdo
                 mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -35,19 +38,14 @@ def handle_events(state):
                 angle = -pygame.math.Vector2(dx, dy).angle_to((1, 0))
                 state.player.shoot(angle)
 
-            elif event.button == 3:  # Click derecho
-                mouse_x, mouse_y = pygame.mouse.get_pos()
-                world_mouse_x = mouse_x / state.camera.zoom + state.camera.offset_x
-                world_mouse_y = mouse_y / state.camera.zoom + state.camera.offset_y
-                state.player.fire_laser(world_mouse_x, world_mouse_y)
+            elif event.button == 3:  # Click derecho presionado
+                state.player.shooting_laser = True
+                state.player.last_laser_time = 0  # reiniciar temporizador
 
-        # 💡 Aquí lo agregamos fuera del for loop:
-    
-    if pygame.mouse.get_pressed()[2]:  # Botón derecho presionado
-        mouse_x, mouse_y = pygame.mouse.get_pos()
-        world_mouse_x = mouse_x / state.camera.zoom + state.camera.offset_x
-        world_mouse_y = mouse_y / state.camera.zoom + state.camera.offset_y
-        state.player.fire_laser(world_mouse_x, world_mouse_y)
+        elif event.type == pygame.MOUSEBUTTONUP:
+            if event.button == 3:  # Soltar click derecho
+                state.player.shooting_laser = False
+                state.player.lasers.clear()
 
     if not state.show_menu:
         keys = pygame.key.get_pressed()
@@ -61,6 +59,16 @@ def handle_events(state):
 
         solid_tiles = [tile for tile in state.tiles if tile.solid]
         state.player.move(dx, dy, state.obstacles, solid_tiles)
+
+    # 🔁 Lógica continua para láser mientras esté presionado el click derecho
+    if getattr(state.player, "shooting_laser", False):
+        now = time.time()
+        if now - getattr(state.player, "last_laser_time", 0) >= 0.01:
+            mouse_x, mouse_y = pygame.mouse.get_pos()
+            world_mouse_x = mouse_x / state.camera.zoom + state.camera.offset_x
+            world_mouse_y = mouse_y / state.camera.zoom + state.camera.offset_y
+            state.player.fire_laser(world_mouse_x, world_mouse_y)
+            state.player.last_laser_time = now
 
 def execute_menu_option(selected, state):
     if selected == "Cambiar personaje":
@@ -87,7 +95,6 @@ def execute_menu_option(selected, state):
                 except Exception as e:
                     print(f"❌ Error al conectar WebSocket: {e}")
                     state.websocket_connected = False
-
         else:
             print("🔌 Desconectado, modo local activado.")
             state.mode = "local"

@@ -4,7 +4,7 @@ from .renderer import PlayerRenderer
 from .assets import load_character_assets
 from roguelike_project.entities.projectiles.fireball import Fireball 
 from roguelike_project.entities.projectiles.laser_shot import LaserShot
-
+import pygame
 
 class Player:
     def __init__(self, x, y, character_name="first_hero"):
@@ -57,9 +57,16 @@ class Player:
         for explosion in self.explosions:
             explosion.update()
         
-        for laser in self.lasers:
-            laser.update()
-        self.lasers = [l for l in self.lasers if not l.finished]
+        if self.shooting_laser:
+            mouse_x, mouse_y = pygame.mouse.get_pos()
+            world_mouse_x = mouse_x / self.renderer.camera.zoom + self.renderer.camera.offset_x
+            world_mouse_y = mouse_y / self.renderer.camera.zoom + self.renderer.camera.offset_y
+            self.fire_laser(world_mouse_x, world_mouse_y)
+
+        # Actualizar láseres (eliminar los expirados)
+        for laser in self.lasers[:]:
+            if not laser.update():
+                self.lasers.remove(laser)
 
     def render(self, screen, camera):        
         self.renderer.render(screen, camera)
@@ -67,7 +74,14 @@ class Player:
     def render_hud(self, screen, camera):
         self.renderer.render_hud(screen, camera)
 
-    def fire_laser(self, target_x, target_y):        
+    def fire_laser(self, target_x, target_y):
         center_x = self.x + self.sprite_size[0] // 2
         center_y = self.y + self.sprite_size[1] // 2
-        self.lasers.append(LaserShot(center_x, center_y, target_x, target_y))
+        new_laser = LaserShot(center_x, center_y, target_x, target_y)
+        
+        # 🚀 Agregar nueva instancia
+        self.lasers.append(new_laser)
+
+        # 🧹 Limitar a 3 láseres activos (efecto continuo)
+        if len(self.lasers) > 3:
+            self.lasers.pop(0)
