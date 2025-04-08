@@ -45,11 +45,11 @@ def main():
 
         game.handle_events()
         game.update()
-        game.render()
+        game.render(performance_log)
 
         if DEBUG:
             performance_log["frame_times"].append(time.perf_counter() - frame_start)
-            render_debug_overlay(screen, performance_log)
+            #render_debug_overlay(screen, performance_log, position=(8, 130))
 
         pygame.display.flip()
         game.state.clock.tick(FPS)

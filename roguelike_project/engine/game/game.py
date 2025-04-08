@@ -78,8 +78,8 @@ class Game:
 
         self.state.player.projectiles = [p for p in self.state.player.projectiles if p.alive]
 
-    def render(self):
-        self.renderer.render_game(self.state)
+    def render(self, perf_log=None):
+        self.renderer.render_game(self.state, perf_log)
 
     def run(self):
         """Main game loop"""
