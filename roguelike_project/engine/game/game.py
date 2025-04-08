@@ -16,7 +16,7 @@ class Game:
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont(FONT_NAME, FONT_SIZE)
         self.camera = Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
-        
+
         # Initialize state with minimum required attributes
         self.state = GameState(
             screen=screen,
@@ -28,31 +28,34 @@ class Game:
             clock=self.clock,
             font=self.font,
             menu=None,  # Will be set after creation
-            tiles=None,  # Will be set after loading
+            tiles=None,  # Deprecated (replaced by tile_map)
             enemies=None
         )
-        
+
         self.state.running = True
-        
-        # Now load game content
-        self.map_data, self.tiles = build_map()
+
+        # Load map and entities
+        self.map_data, self.tile_map = build_map()
         player, obstacles, buildings, enemies = load_entities()
-        
+
         # Update state with loaded content
         self.state.player = player
         self.state.obstacles = obstacles
         self.state.buildings = buildings
         self.state.enemies = enemies
-        self.state.tiles = self.tiles
-        
+        self.state.tile_map = self.tile_map
+
+        # Optional: keep flat list of tiles for compatibility
+        self.state.tiles = [tile for row in self.tile_map for tile in row]
+
         # Initialize remaining systems
         self.renderer = Renderer()
-        self.state.menu = Menu(self.state)  # Pass the state reference
+        self.state.menu = Menu(self.state)
         self.state.remote_entities = {}
         self.state.running = True
         self.state.show_menu = False
         self.state.mode = "local"
-        
+
         # Network initialization
         self.network = NetworkManager(self.state)
         if self.state.mode == "online":
