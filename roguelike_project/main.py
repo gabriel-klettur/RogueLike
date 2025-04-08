@@ -2,6 +2,7 @@ import sys
 import os
 import time
 import pygame
+from collections import defaultdict
 
 # Agregar el path del proyecto
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -14,12 +15,7 @@ from roguelike_project.utils.benchmark import benchmark  # ✅ Decorador profesi
 # --- Debug Tools ---
 def init_debug():
     pygame.mouse.set_visible(True)
-    return {
-        'handle_events': [],
-        'update': [],
-        'render': [],
-        'frame_times': []
-    }
+    return defaultdict(list)
 
 # --- Main Loop ---
 def main():
@@ -38,7 +34,7 @@ def main():
     if DEBUG:
         game.handle_events = benchmark(performance_log, 'handle_events')(game.handle_events)
         game.update = benchmark(performance_log, 'update')(game.update)
-        game.render = benchmark(performance_log, 'render')(game.render)
+        game.render = benchmark(performance_log, '**TOTAL RENDER')(game.render)
 
     while game.state.running:
         frame_start = time.perf_counter()
@@ -48,8 +44,7 @@ def main():
         game.render(performance_log)
 
         if DEBUG:
-            performance_log["frame_times"].append(time.perf_counter() - frame_start)
-            #render_debug_overlay(screen, performance_log, position=(8, 130))
+            performance_log["FPS"].append(time.perf_counter() - frame_start)            
 
         pygame.display.flip()
         game.state.clock.tick(FPS)

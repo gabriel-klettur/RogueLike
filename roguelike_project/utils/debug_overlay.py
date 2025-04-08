@@ -1,48 +1,57 @@
-# roguelike_project/utils/debug_overlay.py
+import pygame
 
 import pygame
-from roguelike_project.config import FPS
 
-_font_cache = None
+def render_debug_overlay(screen, perf_log, extra_lines=None, position=(8, 8), font_size=18):
+    font = pygame.font.SysFont("Consolas", font_size)
+    lines = []
 
-def get_font():
-    global _font_cache
-    if _font_cache is None:
-        _font_cache = pygame.font.SysFont("consolas", 18)
-    return _font_cache
+    # --- Calcular anchos para alinear texto ---
+    label_width = 0
+    value_width = 0
+    formatted_data = []
 
-def render_debug_overlay(screen, perf_log, sample_size=60, position=(8, 130), extra_lines=None):
-    def avg(key):
-        data = perf_log.get(key, [])
-        if not data:
-            return 0.0
-        return sum(data[-sample_size:]) / min(len(data), sample_size)
+    for key in perf_log.keys():
+        samples = perf_log[key][-60:]
+        if samples:
+            avg_time_ms = sum(samples) / len(samples) * 1000
+            label = f"{key:<18}"  # Campo fijo de 18 caracteres (izq)
+            value = f"{avg_time_ms:>6.2f} ms"  # Campo fijo de 6 + 'ms'
+            formatted_data.append((label, value))
+            label_width = max(label_width, font.size(label)[0])
+            value_width = max(value_width, font.size(value)[0])
 
-    avg_frame = avg("frame_times")
-    avg_fps = 1 / avg_frame if avg_frame > 0 else 0
-
-    debug_lines = [
-        f"FPS: {avg_fps:.1f}",
-        f"Eventos: {avg('handle_events'):.4f}s",
-        f"Update : {avg('update'):.4f}s",
-        f"Render : {avg('render'):.4f}s"
-    ]
+    # --- Añadir líneas formateadas ---
+    for label, value in formatted_data:
+        lines.append((label, value))
 
     if extra_lines:
-        debug_lines += extra_lines
+        lines.append(("", ""))  # Espaciado
+        for custom in extra_lines:
+            lines.append((custom, ""))  # Solo texto plano a la izquierda
 
-    font = get_font()
-    width = 300
-    height = 20 * len(debug_lines) + 10
-    x, y = position
+    # --- Renderizado ---
+    y = position[1]
+    padding_x = 10
+    padding_y = 4
+    spacing = 4
 
-    overlay_surface = pygame.Surface((width, height), pygame.SRCALPHA)
-    overlay_surface.fill((0, 0, 0, 180))
-    screen.blit(overlay_surface, (x, y))
+    for left, right in lines:
+        left_surf = font.render(left, True, (255, 255, 255))
+        right_surf = font.render(right, True, (200, 200, 200)) if right else None
 
-    for i, line in enumerate(debug_lines):
-        text_surface = font.render(line, True, (255, 255, 0))
-        screen.blit(text_surface, (x + 10, y + 5 + i * 20))
+        height = max(left_surf.get_height(), right_surf.get_height() if right_surf else 0)
+        width = label_width + value_width + padding_x * 2
 
-    for key in perf_log:
-        perf_log[key] = perf_log[key][-sample_size:]
+        bg_rect = pygame.Rect(position[0], y, width, height + padding_y * 2)
+        bg_surface = pygame.Surface((bg_rect.width, bg_rect.height), pygame.SRCALPHA)
+        bg_surface.fill((0, 0, 0, 180))  # Fondo semi-transparente
+
+        screen.blit(bg_surface, bg_rect)
+        screen.blit(left_surf, (bg_rect.x + padding_x, bg_rect.y + padding_y))
+
+        if right_surf:
+            screen.blit(right_surf, (bg_rect.x + label_width + padding_x + 8, bg_rect.y + padding_y))
+
+        y += height + padding_y + spacing
+
