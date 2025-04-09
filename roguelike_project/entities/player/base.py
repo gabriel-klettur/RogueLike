@@ -2,8 +2,8 @@ from .stats import PlayerStats
 from .movement import PlayerMovement
 from .renderer import PlayerRenderer
 from .assets import load_character_assets
-from roguelike_project.entities.projectiles.fireball import Fireball 
-from roguelike_project.entities.projectiles.laser_shot import LaserShot
+from roguelike_project.entities.combat.types.fireball import Fireball 
+from roguelike_project.entities.combat.visual_effects.laser_beam import LaserShot
 import pygame
 
 class Player:

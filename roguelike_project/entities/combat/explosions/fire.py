@@ -1,17 +1,17 @@
 import random
 import math
-from roguelike_project.entities.projectiles.particle import Particle
+from roguelike_project.entities.combat.base.particle import Particle
 
-class ElectricExplosion:
-    def __init__(self, x, y, particle_count=35):
+class FireExplosion:
+    def __init__(self, x, y, particle_count=40):
         self.particles = [
             Particle(
                 x, y,
                 angle=random.uniform(0, 2 * math.pi),
-                speed=random.uniform(3, 6),
-                color=random.choice([(0, 255, 255), (150, 255, 255), (255, 255, 255)]),
-                size=random.randint(1, 4),
-                lifespan=random.randint(10, 20)
+                speed=random.uniform(4, 8),
+                color=random.choice([(255, 100, 0), (255, 180, 0), (255, 255, 0)]),
+                size=random.randint(3, 6),
+                lifespan=random.randint(15, 30)
             )
             for _ in range(particle_count)
         ]

@@ -1,8 +1,8 @@
 import pygame
 import math
 import random
-from roguelike_project.entities.projectiles.particle import Particle
-from roguelike_project.entities.projectiles.explosions.electric_explosion import ElectricExplosion  # 👈 Asegúrate de tener este archivo
+from roguelike_project.entities.combat.base.particle import Particle
+from roguelike_project.entities.combat.explosions.electric import ElectricExplosion  # 👈 Asegúrate de tener este archivo
 
 class LaserShot:
     def __init__(self, x1, y1, x2, y2, particle_count=60):
