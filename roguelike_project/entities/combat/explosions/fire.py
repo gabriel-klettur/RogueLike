@@ -4,6 +4,8 @@ from roguelike_project.entities.combat.base.particle import Particle
 
 class FireExplosion:
     def __init__(self, x, y, particle_count=40):
+        self.x = x
+        self.y = y
         self.particles = [
             Particle(
                 x, y,

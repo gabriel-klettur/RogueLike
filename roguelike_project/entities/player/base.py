@@ -50,8 +50,8 @@ class Player:
         for projectile in self.projectiles:
             projectile.update(solid_tiles=solid_tiles, enemies=enemies)
 
-        # Actualizar explosiones (una sola vez)
-        self.explosions = [e for e in self.explosions if not e.finished]
+        # Actualizar explosiones in-place para no romper la referencia original
+        self.explosions[:] = [e for e in self.explosions if not e.finished]
         for explosion in self.explosions:
             explosion.update()
 

@@ -4,6 +4,8 @@ from roguelike_project.entities.combat.base.particle import Particle
 
 class DarkExplosion:
     def __init__(self, x, y, particle_count=25):
+        self.x = x
+        self.y = y
         self.particles = [
             Particle(
                 x, y,

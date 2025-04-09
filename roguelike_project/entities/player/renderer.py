@@ -24,16 +24,15 @@ class PlayerRenderer:
             self._icon_scaled[zoom] = pygame.transform.scale(self._icon_original, (size, size))
         return self._icon_scaled[zoom]
 
-    def render(self, screen, camera):
+    def render(self, screen, camera):    
+        if not camera.is_in_view(self.player.x, self.player.y, self.player.sprite_size):
+            return        
         
         for explosion in self.player.explosions:
             explosion.render(screen, camera)
 
         for laser in getattr(self.player, "lasers", []):
             laser.render(screen, camera)
-
-        if not camera.is_in_view(self.player.x, self.player.y, self.player.sprite_size):
-            return        
 
         # Dirección hacia el mouse
         mouse_x, mouse_y = pygame.mouse.get_pos()
