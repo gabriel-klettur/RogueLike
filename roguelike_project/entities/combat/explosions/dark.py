@@ -24,5 +24,6 @@ class DarkExplosion:
         self.finished = len(self.particles) == 0
 
     def render(self, screen, camera):
+        print(f"🧨 Dibujando {len(self.particles)} partículas Magicas Dark en ({self.x}, {self.y})")  # Debug opcional
         for p in self.particles:
             p.render(screen, camera)

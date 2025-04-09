@@ -7,6 +7,7 @@ from roguelike_project.utils.debug import draw_player_aim_line
 
 class PlayerRenderer:
     def __init__(self, player):
+        self.state = None
         self.player = player
         self._cached_fonts = {}
         self._icon_scaled = {}
@@ -24,8 +25,15 @@ class PlayerRenderer:
         return self._icon_scaled[zoom]
 
     def render(self, screen, camera):
+        
+        for explosion in self.player.explosions:
+            explosion.render(screen, camera)
+
+        for laser in getattr(self.player, "lasers", []):
+            laser.render(screen, camera)
+
         if not camera.is_in_view(self.player.x, self.player.y, self.player.sprite_size):
-            return
+            return        
 
         # Dirección hacia el mouse
         mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -71,17 +79,6 @@ class PlayerRenderer:
             )
             pygame.draw.rect(screen, (0, 255, 0), scaled_hitbox, 2)
             draw_player_aim_line(screen, camera, self.player)
-
-        for explosion in self.player.explosions[:]:
-            explosion.update()
-            if explosion.finished:
-                self.player.explosions.remove(explosion)
-
-        for explosion in self.player.explosions:
-            explosion.render(screen, camera)
-
-        for laser in getattr(self.player, "lasers", []):
-                    laser.render(screen, camera)
 
     def draw_status_bars(self, screen, camera):
         stats = self.player.stats

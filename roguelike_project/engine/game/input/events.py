@@ -67,7 +67,7 @@ def handle_events(state):
             mouse_x, mouse_y = pygame.mouse.get_pos()
             world_mouse_x = mouse_x / state.camera.zoom + state.camera.offset_x
             world_mouse_y = mouse_y / state.camera.zoom + state.camera.offset_y
-            state.player.fire_laser(world_mouse_x, world_mouse_y)
+            state.player.fire_laser(world_mouse_x, world_mouse_y, state)
             state.player.last_laser_time = now
 
 def execute_menu_option(selected, state):

@@ -10,7 +10,7 @@ class Fireball(Projectile):
 
     def __init__(self, x, y, angle, explosions_list=None):
         sprite = load_image("assets/projectiles/fireball.png", (64, 64))
-        speed = 40
+        speed = 10
         lifespan = 60
         super().__init__(x, y, angle, speed, lifespan, sprite)
         self.damage = 10
@@ -22,10 +22,11 @@ class Fireball(Projectile):
             )
 
         def explode(x, y):
+            print(f"🔥 ¡Explosión ejecutada en ({x}, {y})!")
             if self.explosions_list is not None:
                 explosion_cls = Fireball.explosion_types[Fireball._explosion_index]
+                print(f"🧨 Clase de explosión usada: {explosion_cls}")
                 self.explosions_list.append(explosion_cls(x, y))
-                # Avanzar índice circular
                 Fireball._explosion_index = (Fireball._explosion_index + 1) % len(Fireball.explosion_types)
 
         self.on_explode = explode

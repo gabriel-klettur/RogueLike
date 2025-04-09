@@ -30,8 +30,7 @@ class Game:
             menu=None,  # Will be set after creation
             tiles=None,  # Deprecated (replaced by tile_map)
             enemies=None
-        )
-
+        )        
         self.state.running = True
 
         # Load map and entities
@@ -50,6 +49,7 @@ class Game:
 
         # Initialize remaining systems
         self.renderer = Renderer()
+        self.state.player.renderer.state = self.state  # ✅ Conexión necesaria para láser con daño
         self.state.menu = Menu(self.state)
         self.state.remote_entities = {}
         self.state.running = True
@@ -73,8 +73,10 @@ class Game:
         solid_tiles = [tile for tile in self.state.tiles if tile.solid]
         enemies = self.state.enemies + list(self.state.remote_entities.values())
 
-        for projectile in self.state.player.projectiles:
-            projectile.update(solid_tiles=solid_tiles, enemies=enemies)
+        self.state.player.update(solid_tiles, enemies)
+
+        #for projectile in self.state.player.projectiles:
+        #    projectile.update(solid_tiles=solid_tiles, enemies=enemies)
 
         for enemy in enemies:
             enemy.update()
