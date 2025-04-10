@@ -1,11 +1,11 @@
+# roguelike_project/entities/player/renderer.py
+
 import pygame
 import time
 from roguelike_project.config import DEBUG
 from roguelike_project.utils.loader import load_image
 from roguelike_project.utils.mouse import get_direction_from_angle, draw_mouse_crosshair
 from roguelike_project.utils.debug import draw_player_aim_line
-
-from roguelike_project.entities.combat.combat_controller import render_combat_effects
 
 
 class PlayerRenderer:
@@ -27,12 +27,12 @@ class PlayerRenderer:
             self._icon_scaled[zoom] = pygame.transform.scale(self._icon_original, (size, size))
         return self._icon_scaled[zoom]
 
-    def render(self, screen, camera):    
+    def render(self, screen, camera):
         if not camera.is_in_view(self.player.x, self.player.y, self.player.sprite_size):
-            return        
-        
-        render_combat_effects(self.player, screen, camera)
+            return
 
+        # ✅ Renderizar efectos de combate (explosiones, proyectiles, láseres)
+        self.player.combat.render(screen, camera)
 
         # Dirección hacia el mouse
         mouse_x, mouse_y = pygame.mouse.get_pos()

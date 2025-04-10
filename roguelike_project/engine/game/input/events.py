@@ -1,7 +1,6 @@
 import pygame
 import time
-from roguelike_project.network.client import WebSocketClient  # ✅ Importación necesaria
-from roguelike_project.entities.combat.combat_controller import shoot_laser  # ✅ Nuevo import
+from roguelike_project.network.client import WebSocketClient  # ✅ Conexión en multijugador
 
 def handle_events(state):
     for event in pygame.event.get():
@@ -20,9 +19,9 @@ def handle_events(state):
 
         elif event.type == pygame.MOUSEWHEEL:
             if event.y > 0:
-                state.camera.zoom = min(state.camera.zoom + 0.1, 2.0)  # Zoom in
+                state.camera.zoom = min(state.camera.zoom + 0.1, 2.0)
             elif event.y < 0:
-                state.camera.zoom = max(state.camera.zoom - 0.1, 0.5)  # Zoom out
+                state.camera.zoom = max(state.camera.zoom - 0.1, 0.5)
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:  # Click izquierdo
@@ -37,16 +36,18 @@ def handle_events(state):
                 dy = world_mouse_y - player_center_y
 
                 angle = -pygame.math.Vector2(dx, dy).angle_to((1, 0))
-                state.player.shoot(angle)
+
+                # ✅ Disparo delegado al sistema de combate
+                state.player.combat.shoot_fireball(angle)
 
             elif event.button == 3:  # Click derecho presionado
-                state.player.shooting_laser = True
-                state.player.last_laser_time = 0  # reiniciar temporizador
+                state.player.combat.shooting_laser = True
+                state.player.combat.last_laser_time = 0
 
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 3:  # Soltar click derecho
-                state.player.shooting_laser = False
-                state.player.lasers.clear()
+                state.player.combat.shooting_laser = False
+                state.player.combat.lasers.clear()
 
     if not state.show_menu:
         keys = pygame.key.get_pressed()
@@ -56,23 +57,22 @@ def handle_events(state):
         if keys[pygame.K_LEFT]: dx = -1
         if keys[pygame.K_RIGHT]: dx = 1
 
-        state.player.is_walking = dx != 0 or dy != 0  # ✅ Solo si se presionan teclas
-
+        state.player.is_walking = dx != 0 or dy != 0
         solid_tiles = [tile for tile in state.tiles if tile.solid]
         state.player.move(dx, dy, state.obstacles, solid_tiles)
 
-    # 🔁 Lógica continua para láser mientras esté presionado el click derecho
-    if getattr(state.player, "shooting_laser", False):
+    # 🔁 Fuego continuo de láser mientras esté presionado el click derecho
+    if state.player.combat.shooting_laser:
         now = time.time()
-        if now - getattr(state.player, "last_laser_time", 0) >= 0.01:
+        if now - state.player.combat.last_laser_time >= 0.01:
             mouse_x, mouse_y = pygame.mouse.get_pos()
             world_mouse_x = mouse_x / state.camera.zoom + state.camera.offset_x
             world_mouse_y = mouse_y / state.camera.zoom + state.camera.offset_y
 
-            enemies = state.enemies + list(state.remote_entities.values())  # ✅ Enemigos combinados
-            shoot_laser(state.player, world_mouse_x, world_mouse_y, enemies)  # ✅ Llamada refactorizada
+            enemies = state.enemies + list(state.remote_entities.values())
+            state.player.combat.shoot_laser(world_mouse_x, world_mouse_y, enemies)
 
-            state.player.last_laser_time = now
+            state.player.combat.last_laser_time = now
 
 def execute_menu_option(selected, state):
     if selected == "Cambiar personaje":
@@ -89,7 +89,6 @@ def execute_menu_option(selected, state):
             print("🌐 Conectando al servidor...")
             state.mode = "online"
 
-            # ✅ Conectar WebSocket si no estaba conectado
             if not hasattr(state, "websocket") or not state.websocket:
                 try:
                     state.websocket = WebSocketClient("ws://localhost:8000/ws", state.player)
@@ -103,7 +102,6 @@ def execute_menu_option(selected, state):
             print("🔌 Desconectado, modo local activado.")
             state.mode = "local"
 
-            # ✅ Desconectar WebSocket si estaba activo
             if hasattr(state, "websocket") and state.websocket:
                 try:
                     state.websocket.stop()
