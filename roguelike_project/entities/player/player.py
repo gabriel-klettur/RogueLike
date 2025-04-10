@@ -12,8 +12,7 @@ class Player:
         self.character_name = character_name
         self.is_walking = False
         self.state = None
-
-        self.stats = PlayerStats(character_name)
+        
         self.sprites, self.sprite_size = load_character_assets(character_name)
         self.direction = "down"
         self.sprite = self.sprites[self.direction]
@@ -21,6 +20,7 @@ class Player:
         self.rect = None
         self.hitbox = None
 
+        self.stats = PlayerStats(character_name)
         self.movement = PlayerMovement(self)
         self.renderer = PlayerRenderer(self)
 
