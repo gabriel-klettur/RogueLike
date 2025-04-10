@@ -1,6 +1,7 @@
 import pygame
 import time
 from roguelike_project.network.client import WebSocketClient  # ✅ Importación necesaria
+from roguelike_project.entities.combat.combat_controller import shoot_laser  # ✅ Nuevo import
 
 def handle_events(state):
     for event in pygame.event.get():
@@ -67,7 +68,10 @@ def handle_events(state):
             mouse_x, mouse_y = pygame.mouse.get_pos()
             world_mouse_x = mouse_x / state.camera.zoom + state.camera.offset_x
             world_mouse_y = mouse_y / state.camera.zoom + state.camera.offset_y
-            state.player.fire_laser(world_mouse_x, world_mouse_y, state)
+
+            enemies = state.enemies + list(state.remote_entities.values())  # ✅ Enemigos combinados
+            shoot_laser(state.player, world_mouse_x, world_mouse_y, enemies)  # ✅ Llamada refactorizada
+
             state.player.last_laser_time = now
 
 def execute_menu_option(selected, state):

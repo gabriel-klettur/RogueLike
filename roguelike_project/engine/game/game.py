@@ -1,3 +1,5 @@
+# Path: roguelike_project/engine/game/game.py
+
 import pygame
 from roguelike_project.engine.game.input.events import handle_events
 from roguelike_project.engine.game.systems.state import GameState
@@ -7,95 +9,93 @@ from roguelike_project.engine.game.systems.network_manager import NetworkManager
 from roguelike_project.ui.menus.menu import Menu
 from roguelike_project.engine.camera import Camera
 from roguelike_project.engine.game.render.render import Renderer
+from roguelike_project.engine.game.update_manager import update_game
 from roguelike_project.config import SCREEN_WIDTH, SCREEN_HEIGHT, FONT_NAME, FONT_SIZE
 
 class Game:
     def __init__(self, screen):
-        # Initialize essential components first
         self.screen = screen
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont(FONT_NAME, FONT_SIZE)
         self.camera = Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
+        
+        # Dividir la inicialización en pasos bien diferenciados
+        self._init_state()       #* Inicializar el estado del juego.
+        self._init_map()         # Cargar el mapa.
+        self._init_entities()    # Cargar entidades (jugador, enemigos, obstáculos, etc.).
+        self._init_systems()     # Otros sistemas: renderer, menú, red, etc.
 
-        # Initialize state with minimum required attributes
+    #! ---------------------------------------------------------------------------------------
+    #! ---------------------------------- Initialization -------------------------------------
+    #! ---------------------------------------------------------------------------------------
+    
+    def _init_state(self):
+        """Configura el estado inicial del juego."""
         self.state = GameState(
-            screen=screen,
-            background=None,
-            player=None,  # Will be set after loading
-            obstacles=None,
-            buildings=None,
-            camera=self.camera,
-            clock=self.clock,
-            font=self.font,
-            menu=None,  # Will be set after creation
-            tiles=None,  # Deprecated (replaced by tile_map)
-            enemies=None
-        )        
+            screen=self.screen,     # Pantalla del juego
+            background=None,        # Fondo del juego
+            player=None,            # Jugador
+            obstacles=None,         # Obstáculos
+            buildings=None,         # Edificios
+            camera=self.camera,     # Cámara del juego
+            clock=self.clock,       # Reloj del juego
+            font=self.font,         # Fuente del juego
+            menu=None,              # Menú del juego
+            tiles=None,             # Tiles del mapa
+            enemies=None            # Enemigos del juego
+        )
         self.state.running = True
-
-        # Load map and entities
-        self.map_data, self.tile_map = build_map()
+        
+    def _init_map(self):
+        """Carga y configura el mapa del juego."""
+        self.map_data, self.state.tile_map = build_map()
+        # Creamos una lista plana de tiles para compatibilidad (si es necesario)
+        self.state.tiles = [tile for row in self.state.tile_map for tile in row]
+        
+    def _init_entities(self):
+        """Carga y configura las entidades del juego (jugador, enemigos, obstáculos, edificios)."""
         player, obstacles, buildings, enemies = load_entities()
-
-        # Update state with loaded content
         self.state.player = player
         self.state.obstacles = obstacles
         self.state.buildings = buildings
         self.state.enemies = enemies
-        self.state.tile_map = self.tile_map
-
-        # Optional: keep flat list of tiles for compatibility
-        self.state.tiles = [tile for row in self.tile_map for tile in row]
-
-        # Initialize remaining systems
+        
+    def _init_systems(self):
+        """Inicializa el renderer, el menú, la red y otros sistemas auxiliares."""
         self.renderer = Renderer()
-        self.state.player.renderer.state = self.state  # ✅ Conexión necesaria para láser con daño
+        self.state.player.renderer.state = self.state  # Asegura la conexión para láser y otros efectos
         self.state.menu = Menu(self.state)
         self.state.remote_entities = {}
-        self.state.running = True
         self.state.show_menu = False
         self.state.mode = "local"
-
-        # Network initialization
+        
         self.network = NetworkManager(self.state)
         if self.state.mode == "online":
             self.network.connect()
+    
+
+    #! ---------------------------------------------------------------------------------------
+    #! ----------------------------------- Game Loop -----------------------------------------
+    #! ---------------------------------------------------------------------------------------
 
     def handle_events(self):
         handle_events(self.state)
-
+    
     def update(self):
-        if not self.state.running:
-            return
-
-        self.state.camera.update(self.state.player)
-
-        solid_tiles = [tile for tile in self.state.tiles if tile.solid]
-        enemies = self.state.enemies + list(self.state.remote_entities.values())
-
-        self.state.player.update(solid_tiles, enemies)
-
-        #for projectile in self.state.player.projectiles:
-        #    projectile.update(solid_tiles=solid_tiles, enemies=enemies)
-
-        for enemy in enemies:
-            enemy.update()
-
-        self.state.player.projectiles = [p for p in self.state.player.projectiles if p.alive]
-
+        # Usa el update centralizado separado en otro módulo
+        update_game(self.state)
+    
     def render(self, perf_log=None):
         self.renderer.render_game(self.state, perf_log)
-
+    
     def run(self):
-        """Main game loop"""
         while self.state.running:
             self.handle_events()
             self.update()
             self.render()
             self.state.clock.tick(60)
-
+    
     def quit(self):
-        """Clean up resources"""
         if hasattr(self, 'network'):
             self.network.disconnect()
         pygame.quit()
