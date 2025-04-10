@@ -17,18 +17,18 @@ from roguelike_project.config import SCREEN_WIDTH, SCREEN_HEIGHT, FONT_NAME, FON
 from roguelike_project.systems.systems_manager import SystemsManager
 
 class Game:
-    def __init__(self, screen):
+    def __init__(self, screen, perf_log=None):
         self.screen = screen
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont(FONT_NAME, FONT_SIZE)
         self.camera = Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
         
-        self._init_state()
+        self._init_state(perf_log)            
         self._init_map()
         self._init_entities()
         self._init_systems()
 
-    def _init_state(self):
+    def _init_state(self, perf_log):
         self.state = GameState(
             screen=self.screen,
             background=None,
@@ -43,6 +43,7 @@ class Game:
             enemies=None
         )
         self.state.running = True
+        self.state.perf_log = perf_log
         
     def _init_map(self):
         self.map_data, self.state.tile_map = build_map()

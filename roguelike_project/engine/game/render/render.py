@@ -44,7 +44,7 @@ class Renderer:
         benchmark("--3.3. buildings", lambda: self._render_buildings(state, cam, screen))        
         benchmark("--3.4. enemies", lambda: self._render_enemies(state, cam, screen))
         benchmark("--3.5. player", lambda: self._render_player(state, cam, screen))
-        benchmark("--3.6. combat_effects", lambda: self._render_combat(state, cam, screen))
+        benchmark("--3.6. **TOTAL: combat_effects", lambda: self._render_combat(state, cam, screen))
         benchmark("--3.7. hud", lambda: state.player.render_hud(screen, cam))
         benchmark("--3.8. crosshair", lambda: draw_mouse_crosshair(screen, cam))
         benchmark("--3.9. remote_players", lambda: render_remote_players(state))

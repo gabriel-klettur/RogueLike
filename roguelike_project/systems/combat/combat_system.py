@@ -1,9 +1,9 @@
-# roguelike_project/entities/combat/combat_system.py
+# roguelike_project/systems/combat/combat_system.py
 
-import time
 import pygame
 from roguelike_project.systems.combat.types.fireball import Fireball
 from roguelike_project.systems.combat.visual_effects.laser_beam import LaserShot
+from roguelike_project.utils.benchmark import benchmark  # ✅ Importar decorador
 
 class CombatSystem:
     def __init__(self, state):
@@ -31,7 +31,7 @@ class CombatSystem:
 
         if len(self.lasers) > 3:
             self.lasers.pop(0)
-
+    
     def update(self):
         solid_tiles = [tile for tile in self.state.tiles if tile.solid]
         enemies = self.state.enemies + list(self.state.remote_entities.values())
@@ -46,27 +46,41 @@ class CombatSystem:
         for e in self.explosions:
             e.update()
 
-        # 🔁 Láser continuo (ya lo maneja events.py pero este update también limpia)
+        # 🔁 Láser continuo
         for laser in self.lasers[:]:
             if not laser.update():
                 self.lasers.remove(laser)
 
+    @benchmark(lambda self: self.state.perf_log, "----3.6.1 explosions")
+    def _render_explosions(self, screen, camera):
+        dirty = []
+        for explosion in self.explosions:
+            d = explosion.render(screen, camera)
+            if d:
+                dirty.append(d)
+        return dirty
+
+    @benchmark(lambda self: self.state.perf_log, "----3.6.2 lasers")
+    def _render_lasers(self, screen, camera):
+        dirty = []
+        for laser in self.lasers:
+            d = laser.render(screen, camera)
+            if d:
+                dirty.append(d)
+        return dirty
+
+    @benchmark(lambda self: self.state.perf_log, "----3.6.3 projectiles")
+    def _render_projectiles(self, screen, camera):
+        dirty = []
+        for projectile in self.projectiles:
+            d = projectile.render(screen, camera)
+            if d:
+                dirty.append(d)
+        return dirty
+
     def render(self, screen, camera):
         dirty_rects = []
-
-        for explosion in self.explosions:
-            dirty = explosion.render(screen, camera)
-            if dirty:
-                dirty_rects.append(dirty)
-
-        for laser in self.lasers:
-            dirty = laser.render(screen, camera)
-            if dirty:
-                dirty_rects.append(dirty)
-
-        for projectile in self.projectiles:
-            dirty = projectile.render(screen, camera)
-            if dirty:
-                dirty_rects.append(dirty)
-
+        dirty_rects += self._render_explosions(screen, camera)
+        dirty_rects += self._render_lasers(screen, camera)
+        dirty_rects += self._render_projectiles(screen, camera)
         return dirty_rects
