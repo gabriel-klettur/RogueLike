@@ -5,7 +5,7 @@ import math
 class PlayerMovement:
     def __init__(self, player):
         self.player = player
-        self.speed = 20
+        self.speed = 10
         self.is_moving = False 
 
     def move(self, dx, dy, obstacles, solid_tiles):

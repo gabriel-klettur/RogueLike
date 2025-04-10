@@ -38,15 +38,10 @@ def main():
     #! --------------------------------------------------------------------------------------- !#
     #! -------------------------------  Main game engine loop -------------------------------- !#
     #! --------------------------------------------------------------------------------------- !#
-    while game.state.running:
-        frame_start = time.perf_counter()
-
+    while game.state.running:        
         game.handle_events()
         game.update()
-        game.render(performance_log)
-
-        if DEBUG:
-            performance_log["FPS"].append(time.perf_counter() - frame_start)            
+        game.render(performance_log)    
 
         pygame.display.flip()
         game.state.clock.tick(FPS)

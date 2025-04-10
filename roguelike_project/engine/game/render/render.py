@@ -52,7 +52,7 @@ class Renderer:
         benchmark("--3.11. minimap", lambda: self._render_minimap(state))
         
         if DEBUG and perf_log is not None:
-            extra_lines = self._get_custom_debug_lines(state)
+            extra_lines = [state] + self._get_custom_debug_lines(state)
             render_debug_overlay(screen, perf_log, extra_lines=extra_lines, position=(8, 8))
 
         pygame.display.flip()

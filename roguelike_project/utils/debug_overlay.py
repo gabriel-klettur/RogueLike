@@ -1,7 +1,5 @@
 import pygame
 
-import pygame
-
 def render_debug_overlay(screen, perf_log, extra_lines=None, position=(8, 8), font_size=18):
     font = pygame.font.SysFont("Consolas", font_size)
     lines = []
@@ -15,20 +13,28 @@ def render_debug_overlay(screen, perf_log, extra_lines=None, position=(8, 8), fo
         samples = perf_log[key][-60:]
         if samples:
             avg_time_ms = sum(samples) / len(samples) * 1000
-            label = f"{key:<18}"  # Campo fijo de 18 caracteres (izq)
-            value = f"{avg_time_ms:>6.2f} ms"  # Campo fijo de 6 + 'ms'
+            label = f"{key:<18}"  # Campo fijo de 18 caracteres
+            value = f"{avg_time_ms:>6.2f} ms"  # Tiempo por frame en milisegundos
             formatted_data.append((label, value))
             label_width = max(label_width, font.size(label)[0])
             value_width = max(value_width, font.size(value)[0])
+
+    # ➕ Mostrar FPS reales y aclaración del frame time
+    if extra_lines and isinstance(extra_lines, list) and hasattr(extra_lines[0], "clock"):
+        state = extra_lines.pop(0)  # Extraemos el estado
+        real_fps = state.clock.get_fps()
+        lines.append(("____FPS (real):", f"{real_fps:>6.2f} FPS"))
+        lines.append(("____Frame Time avg", f"{(1000/real_fps):>6.2f} ms" if real_fps > 0 else "--"))
 
     # --- Añadir líneas formateadas ---
     for label, value in formatted_data:
         lines.append((label, value))
 
+    # --- Añadir líneas adicionales personalizadas ---
     if extra_lines:
         lines.append(("", ""))  # Espaciado
         for custom in extra_lines:
-            lines.append((custom, ""))  # Solo texto plano a la izquierda
+            lines.append((custom, ""))  # Texto plano sin valor a la derecha
 
     # --- Renderizado ---
     y = position[1]
@@ -38,7 +44,7 @@ def render_debug_overlay(screen, perf_log, extra_lines=None, position=(8, 8), fo
 
     for left, right in lines:
         left_surf = font.render(left, True, (255, 255, 255))
-        right_surf = font.render(right, True, (200, 200, 200)) if right else None
+        right_surf = pygame.font.Font(None, font_size).render(right, True, (200, 255, 200)) if right else None
 
         height = max(left_surf.get_height(), right_surf.get_height() if right_surf else 0)
         width = label_width + value_width + padding_x * 2
@@ -54,4 +60,3 @@ def render_debug_overlay(screen, perf_log, extra_lines=None, position=(8, 8), fo
             screen.blit(right_surf, (bg_rect.x + label_width + padding_x + 8, bg_rect.y + padding_y))
 
         y += height + padding_y + spacing
-
