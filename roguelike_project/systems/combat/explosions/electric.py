@@ -1,6 +1,6 @@
 import random
 import math
-from roguelike_project.systems.combat.base.particle import Particle
+from roguelike_project.systems.combat.particles.particle import Particle
 
 class ElectricExplosion:
     def __init__(self, x, y, particle_count=35):
@@ -25,7 +25,6 @@ class ElectricExplosion:
         self.particles = [p for p in self.particles if p.age < p.lifespan]
         self.finished = len(self.particles) == 0
 
-    def render(self, screen, camera):
-        print(f"🧨 Dibujando {len(self.particles)} partículas Magicas Electricas en ({self.x}, {self.y})")  # Debug opcional
+    def render(self, screen, camera):        
         for p in self.particles:
             p.render(screen, camera)

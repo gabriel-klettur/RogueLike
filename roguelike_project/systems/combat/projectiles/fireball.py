@@ -1,5 +1,5 @@
 import pygame
-from roguelike_project.systems.combat.base.projectile import Projectile
+from roguelike_project.systems.combat.projectiles.base_projectile import Projectile
 from roguelike_project.utils.loader import load_image, load_explosion_frames
 from roguelike_project.systems.combat.explosions import EXPLOSION_TYPES
 
@@ -21,11 +21,9 @@ class Fireball(Projectile):
                 "assets/projectiles/explosion_{}.png", 4, (64, 64)
             )
 
-        def explode(x, y):
-            print(f"🔥 ¡Explosión ejecutada en ({x}, {y})!")
+        def explode(x, y):            
             if self.explosions_list is not None:
-                explosion_cls = Fireball.explosion_types[Fireball._explosion_index]
-                print(f"🧨 Clase de explosión usada: {explosion_cls}")
+                explosion_cls = Fireball.explosion_types[Fireball._explosion_index]                
                 self.explosions_list.append(explosion_cls(x, y))
                 Fireball._explosion_index = (Fireball._explosion_index + 1) % len(Fireball.explosion_types)
 

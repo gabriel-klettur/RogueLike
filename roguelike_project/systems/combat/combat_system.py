@@ -1,8 +1,8 @@
 # roguelike_project/systems/combat/combat_system.py
 
 import pygame
-from roguelike_project.systems.combat.types.fireball import Fireball
-from roguelike_project.systems.combat.visual_effects.laser_beam import LaserShot
+from roguelike_project.systems.combat.projectiles.fireball import Fireball
+from roguelike_project.systems.combat.effects.laser_beam import LaserBeam
 from roguelike_project.utils.benchmark import benchmark  # ✅ Importar decorador
 
 class CombatSystem:
@@ -26,7 +26,7 @@ class CombatSystem:
     def shoot_laser(self, target_x, target_y, enemies):
         center_x = self.player.x + self.player.sprite_size[0] // 2
         center_y = self.player.y + self.player.sprite_size[1] // 2
-        laser = LaserShot(center_x, center_y, target_x, target_y, enemies=enemies)
+        laser = LaserBeam(center_x, center_y, target_x, target_y, enemies=enemies)
         self.lasers.append(laser)
 
         if len(self.lasers) > 3:

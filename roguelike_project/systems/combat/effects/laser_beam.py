@@ -1,10 +1,10 @@
 import pygame
 import math
 import random
-from roguelike_project.systems.combat.base.particle import Particle
+from roguelike_project.systems.combat.particles.particle import Particle
 from roguelike_project.systems.combat.explosions.electric import ElectricExplosion  # ⚡ Explosión visual
 
-class LaserShot:
+class LaserBeam:
     def __init__(self, x1, y1, x2, y2, particle_count=60, enemies=None, damage=0.25):
         self.particles = []
         self.finished = False
@@ -43,7 +43,7 @@ class LaserShot:
             ))
 
     def update(self):
-        print("🔁 LaserShot.update() ejecutado")  # ⬅️ Asegura que estamos dentro
+        
         # Actualizar partículas
         for p in self.particles:
             p.update()
@@ -53,30 +53,22 @@ class LaserShot:
         if self.explosion:
             self.explosion.update()
 
-        # 🧠 Verificar colisiones con enemigos
-        print("👁️ Llamando a check_collisions() desde update()")
+        # 🧠 Verificar colisiones con enemigos        
         self.check_collisions()
 
         # Verificar si terminó
-        self.finished = len(self.particles) == 0 and (self.explosion is None or self.explosion.finished)
-        print(f"❓ LaserShot terminado: {self.finished} (Partículas: {len(self.particles)}, Explosión terminada: {self.explosion.finished if self.explosion else 'N/A'})")
+        self.finished = len(self.particles) == 0 and (self.explosion is None or self.explosion.finished)        
 
         return not self.finished  # Para permitir eliminación desde player.update()
 
-    def check_collisions(self):
-        print("👁️ Entrando a check_collisions()")
-        if not self.enemies:
-            print("⚠️ No hay enemigos en la lista.")
-            return
-
-        print(f"🔎 Comprobando colisiones con {len(self.enemies)} enemigos...")
+    def check_collisions(self):        
+        if not self.enemies:            
+            return        
 
         for enemy in self.enemies:
-            if not enemy.alive:
-                print(f"❌ Enemigo {id(enemy)} está muerto. Saltando.")
+            if not enemy.alive:                
                 continue
-            if id(enemy) in self._damaged_ids:
-                print(f"🔁 Enemigo {id(enemy)} ya fue dañado. Saltando.")
+            if id(enemy) in self._damaged_ids:                
                 continue
 
             # Coordenadas del enemigo
@@ -88,23 +80,18 @@ class LaserShot:
             x2, y2 = self.target
             dx, dy = x2 - x1, y2 - y1
             length_sq = dx ** 2 + dy ** 2
-            if length_sq == 0:
-                print("⛔ Longitud del rayo es 0. Saltando este enemigo.")
+            if length_sq == 0:                
                 continue
 
             t = max(0, min(1, ((ex - x1) * dx + (ey - y1) * dy) / length_sq))
             closest_x = x1 + t * dx
             closest_y = y1 + t * dy
-            dist = math.hypot(ex - closest_x, ey - closest_y)
+            dist = math.hypot(ex - closest_x, ey - closest_y)            
 
-            print(f"🧪 Enemigo {id(enemy)}: distancia al rayo = {dist:.1f}")
-
-            if dist <= 100:  # Aumentado para pruebas
-                print(f"💥 Daño al enemigo {id(enemy)} en posición ({ex:.1f}, {ey:.1f}) con distancia {dist:.1f}")
+            if dist <= 100:
                 enemy.take_damage(self.damage)
-                self._damaged_ids.add(id(enemy))
-            else:
-                print(f"📏 Sin colisión con enemigo {id(enemy)} (dist = {dist:.1f})")
+                self._damaged_ids.add(id(enemy))            
+                
 
     def render(self, screen, camera):
         for p in self.particles:

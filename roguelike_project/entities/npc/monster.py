@@ -35,11 +35,9 @@ class Monster:
         self.step_progress = 0
 
     def take_damage(self, amount):
-        self.health -= amount
-        print(f"💥 Monstruo dañado: -{amount} HP")
+        self.health -= amount        
         if self.health <= 0:
-            self.alive = False
-            print("☠️ Monstruo eliminado")
+            self.alive = False            
 
     def update(self):
         if not self.alive:
