@@ -41,16 +41,15 @@ class Renderer:
 
         benchmark("--3.1. tiles", lambda: self._render_tiles(state, cam, screen))
         benchmark("--3.2. obstacles", lambda: self._render_obstacles(state, cam, screen))
-        benchmark("--3.3. buildings", lambda: self._render_buildings(state, cam, screen))
-        benchmark("--3.4. projectiles", lambda: self._render_projectiles(state, cam, screen))
-        benchmark("--3.5. enemies", lambda: self._render_enemies(state, cam, screen))
-        benchmark("--3.6. player", lambda: self._render_player(state, cam, screen))
-        benchmark("--3.7. combat_effects", lambda: self._render_combat(state, cam, screen))
-        benchmark("--3.8. hud", lambda: state.player.render_hud(screen, cam))
-        benchmark("--3.9. crosshair", lambda: draw_mouse_crosshair(screen, cam))
-        benchmark("--3.10. remote_players", lambda: render_remote_players(state))
-        benchmark("--3.11. menu", lambda: self._render_menu(state, screen))
-        benchmark("--3.12. minimap", lambda: self._render_minimap(state))
+        benchmark("--3.3. buildings", lambda: self._render_buildings(state, cam, screen))        
+        benchmark("--3.4. enemies", lambda: self._render_enemies(state, cam, screen))
+        benchmark("--3.5. player", lambda: self._render_player(state, cam, screen))
+        benchmark("--3.6. combat_effects", lambda: self._render_combat(state, cam, screen))
+        benchmark("--3.7. hud", lambda: state.player.render_hud(screen, cam))
+        benchmark("--3.8. crosshair", lambda: draw_mouse_crosshair(screen, cam))
+        benchmark("--3.9. remote_players", lambda: render_remote_players(state))
+        benchmark("--3.10. menu", lambda: self._render_menu(state, screen))
+        benchmark("--3.11. minimap", lambda: self._render_minimap(state))
         
         if DEBUG and perf_log is not None:
             extra_lines = self._get_custom_debug_lines(state)
@@ -99,13 +98,6 @@ class Renderer:
                     dirty = building.render(screen, cam)
                     if dirty:
                         self._dirty_rects.append(dirty)
-
-    def _render_projectiles(self, state, cam, screen):        
-        for projectile in state.combat.projectiles:
-            if cam.is_in_view(projectile.x, projectile.y, projectile.size):
-                dirty = projectile.render(screen, cam)
-                if dirty:
-                    self._dirty_rects.append(dirty)
 
     def _render_enemies(self, state, cam, screen):
         for enemy in state.enemies:
