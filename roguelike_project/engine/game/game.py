@@ -13,6 +13,9 @@ from roguelike_project.engine.game.render.render import Renderer
 from roguelike_project.engine.game.update_manager import update_game
 from roguelike_project.config import SCREEN_WIDTH, SCREEN_HEIGHT, FONT_NAME, FONT_SIZE
 
+# ✅ Nuevo import desde systems externos al engine
+from roguelike_project.systems.systems_manager import SystemsManager
+
 class Game:
     def __init__(self, screen):
         self.screen = screen
@@ -60,15 +63,13 @@ class Game:
         self.state.show_menu = False
         self.state.mode = "local"
 
-        self._init_combat_system()  # ✅ nuevo sistema de combate global
+        # ✅ Inicializamos el nuevo SystemsManager
+        self.systems = SystemsManager(self.state)
+        self.state.combat = self.systems.combat
 
         self.network = NetworkManager(self.state)
         if self.state.mode == "online":
             self.network.connect()
-
-    def _init_combat_system(self):
-        from roguelike_project.entities.combat.combat_system import CombatSystem
-        self.state.combat = CombatSystem(self.state)
 
     def handle_events(self):
         handle_events(self.state)

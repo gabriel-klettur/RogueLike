@@ -2,8 +2,8 @@
 
 import time
 import pygame
-from roguelike_project.entities.combat.types.fireball import Fireball
-from roguelike_project.entities.combat.visual_effects.laser_beam import LaserShot
+from roguelike_project.systems.combat.types.fireball import Fireball
+from roguelike_project.systems.combat.visual_effects.laser_beam import LaserShot
 
 class CombatSystem:
     def __init__(self, state):
