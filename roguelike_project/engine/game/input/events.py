@@ -1,6 +1,6 @@
 import pygame
 import time
-from roguelike_project.network.client import WebSocketClient  # ✅ Conexión en multijugador
+from roguelike_project.network.client import WebSocketClient
 
 def handle_events(state):
     for event in pygame.event.get():
@@ -37,17 +37,17 @@ def handle_events(state):
 
                 angle = -pygame.math.Vector2(dx, dy).angle_to((1, 0))
 
-                # ✅ Disparo delegado al sistema de combate
-                state.player.combat.shoot_fireball(angle)
+                # ✅ Disparo delegado al sistema global de combate
+                state.combat.shoot_fireball(angle)
 
             elif event.button == 3:  # Click derecho presionado
-                state.player.combat.shooting_laser = True
-                state.player.combat.last_laser_time = 0
+                state.combat.shooting_laser = True
+                state.combat.last_laser_time = 0
 
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 3:  # Soltar click derecho
-                state.player.combat.shooting_laser = False
-                state.player.combat.lasers.clear()
+                state.combat.shooting_laser = False
+                state.combat.lasers.clear()
 
     if not state.show_menu:
         keys = pygame.key.get_pressed()
@@ -61,18 +61,18 @@ def handle_events(state):
         solid_tiles = [tile for tile in state.tiles if tile.solid]
         state.player.move(dx, dy, state.obstacles, solid_tiles)
 
-    # 🔁 Fuego continuo de láser mientras esté presionado el click derecho
-    if state.player.combat.shooting_laser:
+    # 🔁 Fuego continuo de láser
+    if state.combat.shooting_laser:
         now = time.time()
-        if now - state.player.combat.last_laser_time >= 0.01:
+        if now - state.combat.last_laser_time >= 0.01:
             mouse_x, mouse_y = pygame.mouse.get_pos()
             world_mouse_x = mouse_x / state.camera.zoom + state.camera.offset_x
             world_mouse_y = mouse_y / state.camera.zoom + state.camera.offset_y
 
             enemies = state.enemies + list(state.remote_entities.values())
-            state.player.combat.shoot_laser(world_mouse_x, world_mouse_y, enemies)
+            state.combat.shoot_laser(world_mouse_x, world_mouse_y, enemies)
 
-            state.player.combat.last_laser_time = now
+            state.combat.last_laser_time = now
 
 def execute_menu_option(selected, state):
     if selected == "Cambiar personaje":

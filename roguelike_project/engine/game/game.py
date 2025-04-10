@@ -1,6 +1,7 @@
-# Path: roguelike_project/engine/game/game.py
+# roguelike_project/engine/game/game.py
 
 import pygame
+
 from roguelike_project.engine.game.input.events import handle_events
 from roguelike_project.engine.game.systems.state import GameState
 from roguelike_project.engine.game.systems.map_manager import build_map
@@ -19,41 +20,32 @@ class Game:
         self.font = pygame.font.SysFont(FONT_NAME, FONT_SIZE)
         self.camera = Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
         
-        # Dividir la inicialización en pasos bien diferenciados
-        self._init_state()       #* Inicializar el estado del juego.
-        self._init_map()         # Cargar el mapa.
-        self._init_entities()    # Cargar entidades (jugador, enemigos, obstáculos, etc.).
-        self._init_systems()     # Otros sistemas: renderer, menú, red, etc.
+        self._init_state()
+        self._init_map()
+        self._init_entities()
+        self._init_systems()
 
-    #! ---------------------------------------------------------------------------------------
-    #! ---------------------------------- Initialization -------------------------------------
-    #! ---------------------------------------------------------------------------------------
-    
     def _init_state(self):
-        """Configura el estado inicial del juego."""
         self.state = GameState(
-            screen=self.screen,     # Pantalla del juego
-            background=None,        # Fondo del juego
-            player=None,            # Jugador
-            obstacles=None,         # Obstáculos
-            buildings=None,         # Edificios
-            camera=self.camera,     # Cámara del juego
-            clock=self.clock,       # Reloj del juego
-            font=self.font,         # Fuente del juego
-            menu=None,              # Menú del juego
-            tiles=None,             # Tiles del mapa
-            enemies=None            # Enemigos del juego
+            screen=self.screen,
+            background=None,
+            player=None,
+            obstacles=None,
+            buildings=None,
+            camera=self.camera,
+            clock=self.clock,
+            font=self.font,
+            menu=None,
+            tiles=None,
+            enemies=None
         )
         self.state.running = True
         
     def _init_map(self):
-        """Carga y configura el mapa del juego."""
         self.map_data, self.state.tile_map = build_map()
-        # Creamos una lista plana de tiles para compatibilidad (si es necesario)
         self.state.tiles = [tile for row in self.state.tile_map for tile in row]
         
     def _init_entities(self):
-        """Carga y configura las entidades del juego (jugador, enemigos, obstáculos, edificios)."""
         player, obstacles, buildings, enemies = load_entities()
         self.state.player = player
         self.state.obstacles = obstacles
@@ -61,40 +53,39 @@ class Game:
         self.state.enemies = enemies
         
     def _init_systems(self):
-        """Inicializa el renderer, el menú, la red y otros sistemas auxiliares."""
         self.renderer = Renderer()
-        self.state.player.renderer.state = self.state  # Asegura la conexión para láser y otros efectos
+        self.state.player.renderer.state = self.state
         self.state.menu = Menu(self.state)
         self.state.remote_entities = {}
         self.state.show_menu = False
         self.state.mode = "local"
-        
+
+        self._init_combat_system()  # ✅ nuevo sistema de combate global
+
         self.network = NetworkManager(self.state)
         if self.state.mode == "online":
             self.network.connect()
-    
 
-    #! ---------------------------------------------------------------------------------------
-    #! ----------------------------------- Game Loop -----------------------------------------
-    #! ---------------------------------------------------------------------------------------
+    def _init_combat_system(self):
+        from roguelike_project.entities.combat.combat_system import CombatSystem
+        self.state.combat = CombatSystem(self.state)
 
     def handle_events(self):
         handle_events(self.state)
-    
+
     def update(self):
-        # Usa el update centralizado separado en otro módulo
         update_game(self.state)
-    
+
     def render(self, perf_log=None):
         self.renderer.render_game(self.state, perf_log)
-    
+
     def run(self):
         while self.state.running:
             self.handle_events()
             self.update()
             self.render()
             self.state.clock.tick(60)
-    
+
     def quit(self):
         if hasattr(self, 'network'):
             self.network.disconnect()

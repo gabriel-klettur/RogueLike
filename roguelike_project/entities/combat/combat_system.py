@@ -1,14 +1,15 @@
 # roguelike_project/entities/combat/combat_system.py
 
-import pygame
 import time
+import pygame
 from roguelike_project.entities.combat.types.fireball import Fireball
 from roguelike_project.entities.combat.visual_effects.laser_beam import LaserShot
 
-
 class CombatSystem:
-    def __init__(self, owner):
-        self.owner = owner  # normalmente será el player
+    def __init__(self, state):
+        self.state = state
+        self.player = state.player
+
         self.projectiles = []
         self.explosions = []
         self.lasers = []
@@ -17,42 +18,35 @@ class CombatSystem:
         self.last_laser_time = 0
 
     def shoot_fireball(self, angle):
-        x = self.owner.x + self.owner.sprite_size[0] // 2
-        y = self.owner.y + self.owner.sprite_size[1] // 2
-        fireball = Fireball(x, y, angle, self.explosions)
+        center_x = self.player.x + self.player.sprite_size[0] // 2
+        center_y = self.player.y + self.player.sprite_size[1] // 2
+        fireball = Fireball(center_x, center_y, angle, self.explosions)
         self.projectiles.append(fireball)
 
     def shoot_laser(self, target_x, target_y, enemies):
-        x = self.owner.x + self.owner.sprite_size[0] // 2
-        y = self.owner.y + self.owner.sprite_size[1] // 2
-        laser = LaserShot(x, y, target_x, target_y, enemies=enemies)
+        center_x = self.player.x + self.player.sprite_size[0] // 2
+        center_y = self.player.y + self.player.sprite_size[1] // 2
+        laser = LaserShot(center_x, center_y, target_x, target_y, enemies=enemies)
         self.lasers.append(laser)
 
         if len(self.lasers) > 3:
             self.lasers.pop(0)
 
-    def update(self, state):
-        solid_tiles = [tile for tile in state.tiles if tile.solid]
-        enemies = state.enemies + list(state.remote_entities.values())
+    def update(self):
+        solid_tiles = [tile for tile in self.state.tiles if tile.solid]
+        enemies = self.state.enemies + list(self.state.remote_entities.values())
 
         # Actualizar proyectiles
+        self.projectiles = [p for p in self.projectiles if p.alive]
         for p in self.projectiles:
             p.update(solid_tiles, enemies)
-        self.projectiles = [p for p in self.projectiles if p.alive]
 
         # Actualizar explosiones
+        self.explosions[:] = [e for e in self.explosions if not e.finished]
         for e in self.explosions:
             e.update()
-        self.explosions[:] = [e for e in self.explosions if not e.finished]
 
-        # Fuego continuo de láser
-        if self.shooting_laser:
-            mouse_x, mouse_y = pygame.mouse.get_pos()
-            world_x = mouse_x / state.camera.zoom + state.camera.offset_x
-            world_y = mouse_y / state.camera.zoom + state.camera.offset_y
-            self.shoot_laser(world_x, world_y, enemies)
-
-        # Actualizar láseres
+        # 🔁 Láser continuo (ya lo maneja events.py pero este update también limpia)
         for laser in self.lasers[:]:
             if not laser.update():
                 self.lasers.remove(laser)
@@ -62,5 +56,3 @@ class CombatSystem:
             explosion.render(screen, camera)
         for laser in self.lasers:
             laser.render(screen, camera)
-        for projectile in self.projectiles:
-            projectile.render(screen, camera)

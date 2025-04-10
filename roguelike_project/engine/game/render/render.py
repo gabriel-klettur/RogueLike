@@ -82,8 +82,8 @@ class Renderer:
                     if dirty:
                         self._dirty_rects.append(dirty)
 
-    def _render_projectiles(self, state, cam, screen):
-        for projectile in state.player.combat.projectiles:
+    def _render_projectiles(self, state, cam, screen):        
+        for projectile in state.combat.projectiles:
             if cam.is_in_view(projectile.x, projectile.y, projectile.size):
                 dirty = projectile.render(screen, cam)
                 if dirty:

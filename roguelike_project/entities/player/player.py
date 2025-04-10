@@ -4,7 +4,6 @@ from .stats import PlayerStats
 from .movement import PlayerMovement
 from .renderer import PlayerRenderer
 from .assets import load_character_assets
-from roguelike_project.entities.combat.combat_system import CombatSystem  # 🆕 nuevo sistema
 
 class Player:
     def __init__(self, x, y, character_name="first_hero"):
@@ -24,7 +23,6 @@ class Player:
 
         self.movement = PlayerMovement(self)
         self.renderer = PlayerRenderer(self)
-        self.combat = CombatSystem(self)  # ✅ Sistema de combate encapsulado
 
     def change_character(self, new_character_name):
         self.__init__(self.x, self.y, new_character_name)
@@ -38,13 +36,7 @@ class Player:
     def restore_all(self):
         self.stats.restore_all()
 
-    def shoot(self, angle):
-        self.combat.shoot_fireball(angle)  # ✅ delegamos en combat
-
-    def update(self, solid_tiles, enemies):
-        self.combat.update(self.renderer.state)  # ✅ delegamos en combat
-
-    def render(self, screen, camera):
+    def render(self, screen, camera):        
         self.renderer.render(screen, camera)
 
     def render_hud(self, screen, camera):
