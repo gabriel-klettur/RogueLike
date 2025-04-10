@@ -52,7 +52,21 @@ class CombatSystem:
                 self.lasers.remove(laser)
 
     def render(self, screen, camera):
+        dirty_rects = []
+
         for explosion in self.explosions:
-            explosion.render(screen, camera)
+            dirty = explosion.render(screen, camera)
+            if dirty:
+                dirty_rects.append(dirty)
+
         for laser in self.lasers:
-            laser.render(screen, camera)
+            dirty = laser.render(screen, camera)
+            if dirty:
+                dirty_rects.append(dirty)
+
+        for projectile in self.projectiles:
+            dirty = projectile.render(screen, camera)
+            if dirty:
+                dirty_rects.append(dirty)
+
+        return dirty_rects

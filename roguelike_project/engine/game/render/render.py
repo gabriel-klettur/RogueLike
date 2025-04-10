@@ -8,6 +8,19 @@ from roguelike_project.utils.debug_overlay import render_debug_overlay
 
 
 class Renderer:
+    """
+        Sistema de renderizado principal del juego.
+
+        Utiliza una lista de 'dirty rects' (_dirty_rects) para rastrear las regiones de la pantalla
+        que han cambiado y necesitan ser redibujadas. Esta técnica permite optimizar el rendimiento 
+        al evitar el redibujado completo de la pantalla en cada frame, especialmente útil en juegos 
+        con muchos elementos estáticos y solo algunos en movimiento.
+
+        Cada método de renderizado (como _render_tiles, _render_enemies, etc.) devuelve rectángulos 
+        sucios que se almacenan en self._dirty_rects si corresponde. Luego, estos rectángulos pueden 
+        ser utilizados por futuras optimizaciones con pygame.display.update(dirty_rects).
+    """
+
     def __init__(self):
         self._dirty_rects = []
 
@@ -75,7 +88,8 @@ class Renderer:
                         self._dirty_rects.append(dirty)
     
     def _render_combat(self, state, cam, screen):
-        state.combat.render(screen, cam)
+        dirty_rects = state.combat.render(screen, cam)
+        self._dirty_rects.extend(dirty_rects)
 
     def _render_buildings(self, state, cam, screen):
         for building in getattr(state, "buildings", []):
