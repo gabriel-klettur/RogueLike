@@ -10,22 +10,26 @@ def handle_events(state):
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 state.show_menu = not state.show_menu
+
             elif event.key == pygame.K_q:
                 state.player.restore_all()
+
             elif state.show_menu:
                 result = state.menu.handle_input(event)
                 if result:
                     execute_menu_option(result, state)
+
             elif event.key == pygame.K_f:
-                state.combat.cast_firework_spell()
+                state.combat.effects.spawn_firework()
+
             elif event.key == pygame.K_r:
-                state.combat.place_smoke_emitter()
+                state.combat.effects.spawn_smoke_emitter()
+
             elif event.key == pygame.K_l:
                 mx, my = pygame.mouse.get_pos()
                 world_x = mx / state.camera.zoom + state.camera.offset_x
                 world_y = my / state.camera.zoom + state.camera.offset_y
-                state.combat.shoot_lightning((world_x, world_y))
-
+                state.combat.effects.spawn_lightning((world_x, world_y))
 
         elif event.type == pygame.MOUSEWHEEL:
             if event.y > 0:
@@ -47,17 +51,17 @@ def handle_events(state):
 
                 angle = -pygame.math.Vector2(dx, dy).angle_to((1, 0))
 
-                # ✅ Disparo delegado al sistema global de combate
-                state.combat.shoot_fireball(angle)
+                # ✅ Disparo delegado al manager de proyectiles
+                state.combat.projectiles.spawn_fireball(angle)
 
             elif event.button == 3:  # Click derecho presionado
-                state.combat.shooting_laser = True
-                state.combat.last_laser_time = 0
+                state.combat.effects.shooting_laser = True
+                state.combat.effects.last_laser_time = 0
 
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 3:  # Soltar click derecho
-                state.combat.shooting_laser = False
-                state.combat.lasers.clear()
+                state.combat.effects.shooting_laser = False
+                state.combat.effects.lasers.clear()
 
     if not state.show_menu:
         keys = pygame.key.get_pressed()
@@ -72,17 +76,17 @@ def handle_events(state):
         state.player.move(dx, dy, state.obstacles, solid_tiles)
 
     # 🔁 Fuego continuo de láser
-    if state.combat.shooting_laser:
+    if state.combat.effects.shooting_laser:
         now = time.time()
-        if now - state.combat.last_laser_time >= 0.01:
+        if now - state.combat.effects.last_laser_time >= 0.01:
             mouse_x, mouse_y = pygame.mouse.get_pos()
             world_mouse_x = mouse_x / state.camera.zoom + state.camera.offset_x
             world_mouse_y = mouse_y / state.camera.zoom + state.camera.offset_y
 
             enemies = state.enemies + list(state.remote_entities.values())
-            state.combat.shoot_laser(world_mouse_x, world_mouse_y, enemies)
+            state.combat.effects.spawn_laser(world_mouse_x, world_mouse_y, enemies)
 
-            state.combat.last_laser_time = now
+            state.combat.effects.last_laser_time = now
 
 def execute_menu_option(selected, state):
     if selected == "Cambiar personaje":

@@ -1,6 +1,6 @@
 # roguelike_project/systems/systems_manager.py
 
-from roguelike_project.systems.combat.combat_system import CombatSystem
+from roguelike_project.systems.combat.managers.combat_system import CombatSystem
 
 class SystemsManager:
     def __init__(self, state):
