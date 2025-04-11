@@ -20,6 +20,12 @@ def handle_events(state):
                 state.combat.cast_firework_spell()
             elif event.key == pygame.K_r:
                 state.combat.place_smoke_emitter()
+            elif event.key == pygame.K_l:
+                mx, my = pygame.mouse.get_pos()
+                world_x = mx / state.camera.zoom + state.camera.offset_x
+                world_y = my / state.camera.zoom + state.camera.offset_y
+                state.combat.shoot_lightning((world_x, world_y))
+
 
         elif event.type == pygame.MOUSEWHEEL:
             if event.y > 0:

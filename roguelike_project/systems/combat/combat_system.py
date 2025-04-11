@@ -6,6 +6,8 @@ from roguelike_project.systems.combat.effects.laser_beam import LaserBeam
 from roguelike_project.systems.combat.effects.firework_launch import FireworkLaunch  
 from roguelike_project.systems.combat.explosions.firework_explosion import FireworkExplosion  
 from roguelike_project.systems.combat.effects.smoke_emitter import SmokeEmitter
+from roguelike_project.systems.combat.effects.lightning import Lightning
+
 from roguelike_project.utils.benchmark import benchmark 
 
 class CombatSystem:
@@ -18,6 +20,7 @@ class CombatSystem:
         self.lasers = []
         self.smoke_emitters = []
         self.fireworks = [] 
+        self.lightnings = []
 
         self.shooting_laser = False
         self.last_laser_time = 0
@@ -54,6 +57,12 @@ class CombatSystem:
         emitter = SmokeEmitter(center_x, center_y)
         self.smoke_emitters.append(emitter)
 
+    def shoot_lightning(self, target_pos):
+        start_x = self.player.x + self.player.sprite_size[0] // 2
+        start_y = self.player.y + self.player.sprite_size[1] // 2
+        lightning = Lightning((start_x, start_y), target_pos)
+        self.lightnings.append(lightning)
+
     def update(self):
         solid_tiles = [tile for tile in self.state.tiles if tile.solid]
         enemies = self.state.enemies + list(self.state.remote_entities.values())
@@ -80,12 +89,18 @@ class CombatSystem:
                 self.fireworks.remove(fw)
                 self.explosions.append(FireworkExplosion(fw.x, fw.y))
         
+        # 💨 Actualizar humo
         for emitter in self.smoke_emitters:
             wind_x = (pygame.mouse.get_pos()[0] - self.state.screen.get_width() // 2) / 1000
             emitter.apply_force(pygame.math.Vector2(wind_x, 0))
             emitter.update()
         
         self.smoke_emitters = [e for e in self.smoke_emitters if len(e.particles) > 0]
+
+        # ⚡ Actualizar rayos
+        self.lightnings[:] = [l for l in self.lightnings if l.lifetime > 0]
+        for lightning in self.lightnings:
+            lightning.update()
 
     @benchmark(lambda self: self.state.perf_log, "----3.6.1 explosions")
     def _render_explosions(self, screen, camera):
@@ -122,6 +137,17 @@ class CombatSystem:
             if d:
                 dirty.append(d)
         return dirty
+    
+    @benchmark(lambda self: self.state.perf_log, "----3.6.5 lightnings")
+    def _render_lightnings(self, screen, camera):
+        dirty = []
+        for lightning in self.lightnings:
+            d = lightning.render(screen, camera)
+            if d:
+                dirty.append(d)
+        return dirty
+    
+
 
     def render(self, screen, camera):
         dirty_rects = []
@@ -129,6 +155,7 @@ class CombatSystem:
         dirty_rects += self._render_lasers(screen, camera)
         dirty_rects += self._render_projectiles(screen, camera)
         dirty_rects += self._render_fireworks(screen, camera)
+        dirty_rects += self._render_lightnings(screen, camera)
 
         for emitter in self.smoke_emitters:
             emitter.render(screen, camera)
