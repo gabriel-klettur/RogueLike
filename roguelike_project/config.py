@@ -4,8 +4,8 @@
 DEBUG = True
 
 # Pantalla
-SCREEN_WIDTH = 1200
-SCREEN_HEIGHT = 800
+SCREEN_WIDTH = 1600
+SCREEN_HEIGHT = 950
 FPS = 60
 
 # Fuente principal
