@@ -44,7 +44,9 @@ def handle_events(state):
                 mx, my = pygame.mouse.get_pos()
                 world_x = mx / state.camera.zoom + state.camera.offset_x
                 world_y = my / state.camera.zoom + state.camera.offset_y
-                state.player.movement.teleport(world_x, world_y)        
+                state.player.movement.teleport(world_x, world_y)                        
+                state.combat.effects.spawn_teleport_beam(state.player.x, state.player.y)                
+    
 
         elif event.type == pygame.MOUSEWHEEL:
             if event.y > 0:

@@ -18,6 +18,8 @@ class PlayerMovement:
         self.dash_direction = pygame.Vector2(0, 0)  # Dirección del dash
         self.is_dashing = False  # Bandera para saber si estamos en dash
 
+
+
     def teleport(self, mx, my):
         """ Teletransporta al jugador hacia la dirección del ratón """
         now = pygame.time.get_ticks() / 1000  # Obtén el tiempo actual en segundos
@@ -34,7 +36,7 @@ class PlayerMovement:
 
         if distance != 0:
             dx /= distance
-            dy /= distance
+            dy /= distance        
 
         # Mover al jugador 300 píxeles en esa dirección
         self.player.x += dx * self.teleport_distance
