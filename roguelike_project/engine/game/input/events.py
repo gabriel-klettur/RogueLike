@@ -25,6 +25,8 @@ def handle_events(state):
                 world_x = mx / state.camera.zoom + state.camera.offset_x
                 world_y = my / state.camera.zoom + state.camera.offset_y
                 state.combat.shoot_lightning((world_x, world_y))
+            elif event.key == pygame.K_t:
+                state.combat.place_flame()
 
 
         elif event.type == pygame.MOUSEWHEEL:
