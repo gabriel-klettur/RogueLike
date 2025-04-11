@@ -7,6 +7,7 @@ class PlayerMovement:
         self.player = player
         self.speed = 10
         self.is_moving = False 
+        self.last_move_dir = pygame.Vector2(0, 0)  # 🧭 Dirección del último movimiento
 
     def move(self, dx, dy, obstacles, solid_tiles):
         self.is_moving = False  # Reseteamos al inicio
@@ -19,6 +20,11 @@ class PlayerMovement:
                 norm = math.sqrt(dx ** 2 + dy ** 2)
                 dx /= norm
                 dy /= norm
+
+            # Guardamos la dirección del movimiento normalizado
+            self.last_move_dir = pygame.Vector2(dx, dy)
+        else:
+            self.last_move_dir = pygame.Vector2(0, 0)
 
         collided = False
 

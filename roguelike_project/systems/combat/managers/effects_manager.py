@@ -1,18 +1,24 @@
 import pygame
 from pygame.math import Vector2
 
+# Attack Effects
 from roguelike_project.systems.combat.effects.laser_beam import LaserBeam
-from roguelike_project.systems.combat.effects.smoke_emitter import SmokeEmitter
 from roguelike_project.systems.combat.effects.lightning import Lightning
+
+# Auras
+from roguelike_project.systems.combat.effects.healing_aura import HealingAura
 from roguelike_project.utils.benchmark import benchmark
+
+# Other Effects
+from roguelike_project.systems.combat.effects.smoke_emitter import SmokeEmitter
 
 class EffectsManager:
     def __init__(self, state):
         self.state = state
-        self.lasers = []
-        self.fireworks = []
+        self.lasers = []        
         self.smoke_emitters = []
         self.lightnings = []
+        self.healing_auras = []
 
         self.shooting_laser = False
         self.last_laser_time = 0
@@ -31,6 +37,11 @@ class EffectsManager:
     def spawn_lightning(self, target_pos):
         px = self._player_center()
         self.lightnings.append(Lightning(px, target_pos))
+
+    def spawn_healing_aura(self):
+        px = self._player_center()
+        self.healing_auras.append(HealingAura(self.state.player))
+
     
     def update(self):
         # 🔁 Lasers
@@ -50,11 +61,16 @@ class EffectsManager:
         for lightning in self.lightnings:
             lightning.update()
 
+        # 💖 Healing Auras                
+        for aura in self.healing_auras:
+            aura.update()
+        self.healing_auras = [a for a in self.healing_auras if not a.is_empty()]
+
     @benchmark(lambda self: self.state.perf_log, "----3.6.2 effects_render")
     def render(self, screen, camera):
         dirty_rects = []
 
-        for group in [self.lasers, self.fireworks, self.smoke_emitters, self.lightnings]:
+        for group in [self.lasers, self.healing_auras, self.smoke_emitters, self.lightnings]:
             for effect in group:
                 if (d := effect.render(screen, camera)):
                     dirty_rects.append(d)

@@ -10,9 +10,9 @@ def handle_events(state):
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 state.show_menu = not state.show_menu
-
+            
             elif event.key == pygame.K_q:
-                state.player.restore_all()
+                state.player.stats.restore_all(state)
 
             elif state.show_menu:
                 result = state.menu.handle_input(event)

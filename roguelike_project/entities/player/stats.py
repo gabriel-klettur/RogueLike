@@ -24,13 +24,16 @@ class PlayerStats:
         self.energy = max(0, self.energy - 15)
         #print("💥 Daño recibido: -10 vida, -5 maná, -15 energía")
 
-    def restore_all(self):
+    def restore_all(self, state=None):
         now = time.time()
         if now - self.last_restore_time >= self.restore_cooldown:
             self.health = self.max_health
             self.mana = self.max_mana
             self.energy = self.max_energy
             self.last_restore_time = now
-            #print("🧪 Barras restauradas al máximo")
-        #else:
-            #print("⌛ Aún en cooldown...")
+            
+            if state:
+                state.combat.effects.spawn_healing_aura()
+
+            return True
+        return False
