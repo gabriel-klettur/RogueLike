@@ -29,7 +29,7 @@ def handle_events(state):
             elif event.key == pygame.K_r:
                 state.combat.effects.spawn_smoke_emitter()
 
-            elif event.key == pygame.K_l:
+            elif event.key == pygame.K_z:
                 mx, my = pygame.mouse.get_pos()
                 world_x = mx / state.camera.zoom + state.camera.offset_x
                 world_y = my / state.camera.zoom + state.camera.offset_y
@@ -74,6 +74,10 @@ def handle_events(state):
         if keys[pygame.K_DOWN]: dy = 1
         if keys[pygame.K_LEFT]: dx = -1
         if keys[pygame.K_RIGHT]: dx = 1
+        if keys[pygame.K_w]: dy = -1
+        if keys[pygame.K_s]: dy = 1
+        if keys[pygame.K_a]: dx = -1
+        if keys[pygame.K_d]: dx = 1
 
         state.player.is_walking = dx != 0 or dy != 0
         solid_tiles = [tile for tile in state.tiles if tile.solid]
