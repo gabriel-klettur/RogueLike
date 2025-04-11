@@ -7,7 +7,6 @@ from roguelike_project.systems.combat.effects.firework_launch import FireworkLau
 from roguelike_project.systems.combat.explosions.firework_explosion import FireworkExplosion  
 from roguelike_project.systems.combat.effects.smoke_emitter import SmokeEmitter
 from roguelike_project.systems.combat.effects.lightning import Lightning
-from roguelike_project.systems.combat.effects.flame import Flame
 
 from roguelike_project.utils.benchmark import benchmark 
 
@@ -22,15 +21,9 @@ class CombatSystem:
         self.smoke_emitters = []
         self.fireworks = [] 
         self.lightnings = []
-        self.flames = []
 
         self.shooting_laser = False
         self.last_laser_time = 0
-
-    def place_flame(self):
-        center_x = self.player.x + self.player.sprite_size[0] // 2
-        center_y = self.player.y + self.player.sprite_size[1] // 2
-        self.flames.append(Flame(center_x, center_y))
 
     def shoot_fireball(self, angle):
         center_x = self.player.x + self.player.sprite_size[0] // 2
@@ -101,10 +94,6 @@ class CombatSystem:
         for lightning in self.lightnings:
             lightning.update()
 
-        self.flames = [f for f in self.flames if f.is_alive()]
-        for flame in self.flames:
-            flame.update()
-
     @benchmark(lambda self: self.state.perf_log, "----3.6.1 explosions")
     def _render_explosions(self, screen, camera):
         dirty = []
@@ -167,8 +156,4 @@ class CombatSystem:
         dirty_rects += self._render_fireworks(screen, camera)
         dirty_rects += self._render_lightnings(screen, camera)
         dirty_rects += self._render_smoke_emitters(screen, camera)
-
-        for flame in self.flames:
-            flame.render(screen, camera)
-
         return dirty_rects
