@@ -34,6 +34,10 @@ def handle_events(state):
                 world_x = mx / state.camera.zoom + state.camera.offset_x
                 world_y = my / state.camera.zoom + state.camera.offset_y
                 state.combat.effects.spawn_lightning((world_x, world_y))
+            
+            elif event.key == pygame.K_x:
+                x, y = state.combat.effects._mouse_world()
+                state.combat.effects.spawn_pixel_fire(x, y)
 
         elif event.type == pygame.MOUSEWHEEL:
             if event.y > 0:

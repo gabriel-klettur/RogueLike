@@ -12,6 +12,7 @@ from roguelike_project.utils.benchmark import benchmark
 # Other Effects
 from roguelike_project.systems.combat.effects.smoke_emitter import SmokeEmitter
 from roguelike_project.systems.combat.effects.sphere_magic_shield import SphereMagicShield
+from roguelike_project.systems.combat.effects.pixel_fire import PixelFireEffect
 
 class EffectsManager:
     def __init__(self, state):
@@ -21,9 +22,13 @@ class EffectsManager:
         self.lightnings = []
         self.healing_auras = []
         self.magic_shields = []
+        self.pixel_fires = []
 
         self.shooting_laser = False
         self.last_laser_time = 0
+
+    def spawn_pixel_fire(self, x, y):
+        self.pixel_fires.append(PixelFireEffect(x, y))
 
     def spawn_magic_shield(self):
         self.magic_shields.append(SphereMagicShield(self.state.player))
@@ -75,11 +80,15 @@ class EffectsManager:
             shield.update()
         self.magic_shields = [s for s in self.magic_shields if not s.is_finished()]
 
+        self.pixel_fires = [f for f in self.pixel_fires if not f.is_empty()]
+        for fire in self.pixel_fires:
+            fire.update()
+
     @benchmark(lambda self: self.state.perf_log, "----3.6.2 effects_render")
     def render(self, screen, camera):
         dirty_rects = []
 
-        for group in [self.lasers,self.magic_shields, self.healing_auras, self.smoke_emitters, self.lightnings]:
+        for group in [self.lasers, self.pixel_fires, self.magic_shields, self.healing_auras, self.smoke_emitters, self.lightnings]:
             for effect in group:
                 if (d := effect.render(screen, camera)):
                     dirty_rects.append(d)
