@@ -18,6 +18,10 @@ def handle_events(state):
                 result = state.menu.handle_input(event)
                 if result:
                     execute_menu_option(result, state)
+            
+            elif event.key == pygame.K_1:
+                if state.player.stats.activate_shield():
+                    state.combat.effects.spawn_magic_shield()
 
             elif event.key == pygame.K_f:
                 state.combat.projectiles.spawn_firework()
