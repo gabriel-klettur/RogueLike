@@ -1,15 +1,49 @@
 import pygame
 import math
 
-
 class PlayerMovement:
     def __init__(self, player):
         self.player = player
-        self.speed = 10
+        self.speed = 10  # Velocidad normal de movimiento
         self.is_moving = False 
-        self.last_move_dir = pygame.Vector2(0, 0)  # 🧭 Dirección del último movimiento
+        self.last_move_dir = pygame.Vector2(0, 0)  # Dirección del último movimiento
+        
+        self.teleport_distance = 1000  # Distancia del teleport en píxeles
+        self.teleport_cooldown = 0  # Tiempo en segundos para el cooldown del teleport
+        self.last_teleport_time = 0  # Tiempo en que se realizó el último teleport
+
+        self.dash_speed = 150  # Velocidad del dash (más rápido que la normal)
+        self.dash_duration = 0.2  # Duración del dash en segundos
+        self.dash_time_left = 0  # Tiempo restante del dash
+        self.dash_direction = pygame.Vector2(0, 0)  # Dirección del dash
+        self.is_dashing = False  # Bandera para saber si estamos en dash
+
+    def teleport(self, mx, my):
+        """ Teletransporta al jugador hacia la dirección del ratón """
+        now = pygame.time.get_ticks() / 1000  # Obtén el tiempo actual en segundos
+        if now - self.last_teleport_time < self.teleport_cooldown:
+            return  # Si el cooldown no ha pasado, no hacemos nada
+
+        # Calcular la dirección del ratón
+        player_center_x = self.player.x + self.player.sprite_size[0] / 2
+        player_center_y = self.player.y + self.player.sprite_size[1] / 2
+
+        dx = mx - player_center_x
+        dy = my - player_center_y
+        distance = math.sqrt(dx ** 2 + dy ** 2)
+
+        if distance != 0:
+            dx /= distance
+            dy /= distance
+
+        # Mover al jugador 300 píxeles en esa dirección
+        self.player.x += dx * self.teleport_distance
+        self.player.y += dy * self.teleport_distance
+
+        self.last_teleport_time = now  # Actualiza el tiempo del último teleport
 
     def move(self, dx, dy, obstacles, solid_tiles):
+        """ Movimiento normal del jugador """
         self.is_moving = False  # Reseteamos al inicio
 
         if dx != 0 or dy != 0:

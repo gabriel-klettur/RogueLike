@@ -3,6 +3,7 @@ import time
 from roguelike_project.network.client import WebSocketClient
 
 def handle_events(state):
+    
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             state.running = False
@@ -38,6 +39,12 @@ def handle_events(state):
             elif event.key == pygame.K_x:
                 x, y = state.combat.effects._mouse_world()
                 state.combat.effects.spawn_pixel_fire(x, y)
+            
+            elif event.key == pygame.K_c:  #! -------------------------------- Teleportar al jugador
+                mx, my = pygame.mouse.get_pos()
+                world_x = mx / state.camera.zoom + state.camera.offset_x
+                world_y = my / state.camera.zoom + state.camera.offset_y
+                state.player.movement.teleport(world_x, world_y)        
 
         elif event.type == pygame.MOUSEWHEEL:
             if event.y > 0:
@@ -58,8 +65,7 @@ def handle_events(state):
                 dy = world_mouse_y - player_center_y
 
                 angle = -pygame.math.Vector2(dx, dy).angle_to((1, 0))
-
-                # ✅ Disparo delegado al manager de proyectiles
+                
                 state.combat.projectiles.spawn_fireball(angle)
 
             elif event.button == 3:  # Click derecho presionado
