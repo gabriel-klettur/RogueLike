@@ -2,11 +2,8 @@ import pygame
 from pygame.math import Vector2
 
 from roguelike_project.systems.combat.effects.laser_beam import LaserBeam
-from roguelike_project.systems.combat.effects.firework_launch import FireworkLaunch
 from roguelike_project.systems.combat.effects.smoke_emitter import SmokeEmitter
 from roguelike_project.systems.combat.effects.lightning import Lightning
-from roguelike_project.systems.combat.explosions.firework_explosion import FireworkExplosion
-
 from roguelike_project.utils.benchmark import benchmark
 
 class EffectsManager:
@@ -27,11 +24,6 @@ class EffectsManager:
         if len(self.lasers) > 3:
             self.lasers.pop(0)
 
-    def spawn_firework(self):
-        px = self._player_center()
-        mouse = self._mouse_world()
-        self.fireworks.append(FireworkLaunch(px[0], px[1], *mouse))
-
     def spawn_smoke_emitter(self):
         px = self._player_center()
         self.smoke_emitters.append(SmokeEmitter(*px))
@@ -45,13 +37,6 @@ class EffectsManager:
         for laser in self.lasers[:]:
             if not laser.update():
                 self.lasers.remove(laser)
-
-        # 🎆 Fireworks + explosions
-        for fw in self.fireworks[:]:
-            fw.update()
-            if fw.finished:
-                self.fireworks.remove(fw)
-                self.state.combat.explosions.add_explosion(FireworkExplosion(fw.x, fw.y))
 
         # 🌫️ Smoke Emitters
         for emitter in self.smoke_emitters:

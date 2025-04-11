@@ -20,7 +20,7 @@ def handle_events(state):
                     execute_menu_option(result, state)
 
             elif event.key == pygame.K_f:
-                state.combat.effects.spawn_firework()
+                state.combat.projectiles.spawn_firework()
 
             elif event.key == pygame.K_r:
                 state.combat.effects.spawn_smoke_emitter()

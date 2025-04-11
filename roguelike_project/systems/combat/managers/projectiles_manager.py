@@ -1,17 +1,25 @@
 from roguelike_project.systems.combat.projectiles.fireball import Fireball
+from roguelike_project.systems.combat.effects.firework_launch import FireworkLaunch
+from roguelike_project.systems.combat.explosions.firework_explosion import FireworkExplosion
 from roguelike_project.utils.benchmark import benchmark
+import pygame
 
 class ProjectilesManager:
     def __init__(self, state):
         self.state = state
         self.projectiles = []
+        self.fireworks = []
 
     def spawn_fireball(self, angle):
-        px = self.state.player.x + self.state.player.sprite_size[0] // 2
-        py = self.state.player.y + self.state.player.sprite_size[1] // 2
-        fireball = Fireball(px, py, angle, self.state.combat.explosions.explosions)
+        px = self._player_center()
+        fireball = Fireball(*px, angle, self.state.combat.explosions.explosions)
         self.projectiles.append(fireball)
-    
+
+    def spawn_firework(self):
+        px = self._player_center()
+        mouse = self._mouse_world()
+        self.fireworks.append(FireworkLaunch(px[0], px[1], *mouse))
+
     def update(self):
         tiles = [t for t in self.state.tiles if t.solid]
         enemies = self.state.enemies + list(self.state.remote_entities.values())
@@ -20,11 +28,27 @@ class ProjectilesManager:
         for p in self.projectiles:
             p.update(tiles, enemies)
 
-    @benchmark(lambda self: self.state.perf_log, "----3.6.1 projectiles_render")
+        for fw in self.fireworks[:]:
+            fw.update()
+            if fw.finished:
+                self.fireworks.remove(fw)
+                self.state.combat.explosions.add_explosion(FireworkExplosion(fw.x, fw.y))
+
+    @benchmark(lambda self: self.state.perf_log, "----3.6.3 projectiles")
     def render(self, screen, camera):
-        dirty_rects = []
-        for projectile in self.projectiles:
-            d = projectile.render(screen, camera)
-            if d:
-                dirty_rects.append(d)
-        return dirty_rects
+        dirty = []
+        for projectile in self.projectiles + self.fireworks:
+            if (d := projectile.render(screen, camera)):
+                dirty.append(d)
+        return dirty
+
+    def _player_center(self):
+        p = self.state.player
+        return (p.x + p.sprite_size[0] // 2, p.y + p.sprite_size[1] // 2)
+
+    def _mouse_world(self):
+        mx, my = pygame.mouse.get_pos()
+        return (
+            mx / self.state.camera.zoom + self.state.camera.offset_x,
+            my / self.state.camera.zoom + self.state.camera.offset_y
+        )
