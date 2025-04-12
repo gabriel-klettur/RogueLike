@@ -62,7 +62,7 @@ class PlayerStats:
             self.last_restore_time = now
 
             if state:
-                state.combat.effects.spawn_healing_aura()
+                state.effects.spawn_healing_aura()
 
             return True
         return False

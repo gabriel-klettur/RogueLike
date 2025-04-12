@@ -45,6 +45,7 @@ class Renderer:
         benchmark("--3.4. enemies", lambda: self._render_enemies(state, cam, screen))
         benchmark("--3.5. player", lambda: self._render_player(state, cam, screen))
         benchmark("--3.6. **TOTAL: combat_effects", lambda: self._render_combat(state, cam, screen))
+        benchmark("--999. effects", lambda: self._render_effects(state, cam, screen))
         benchmark("--3.7. hud", lambda: state.player.render_hud(screen, cam))
         benchmark("--3.8. crosshair", lambda: draw_mouse_crosshair(screen, cam))
         benchmark("--3.9. remote_players", lambda: render_remote_players(state))
@@ -56,6 +57,11 @@ class Renderer:
             render_debug_overlay(screen, perf_log, extra_lines=extra_lines, position=(8, 8))
 
         pygame.display.flip()
+
+    def _render_effects(self, state, cam, screen):
+        """ Render combat-related effects (lasers, auras, projectiles) """
+        dirty_rects = state.systems.effects.render(screen, cam)
+        self._dirty_rects.extend(dirty_rects)
 
     def _render_tiles(self, state, cam, screen):
         tile_map = state.tile_map

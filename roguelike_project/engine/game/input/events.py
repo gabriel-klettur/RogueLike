@@ -21,7 +21,7 @@ def handle_events(state):
 
             elif event.key == pygame.K_1:
                 if state.player.stats.activate_shield():
-                    state.combat.effects.spawn_magic_shield()
+                    state.systems.effects.spawn_magic_shield()
                     state.player.stats.last_shield_time = time.time()
 
             elif event.key == pygame.K_f:
@@ -29,19 +29,19 @@ def handle_events(state):
                 state.player.stats.last_firework_time = time.time()
 
             elif event.key == pygame.K_r:
-                state.combat.effects.spawn_smoke_emitter()
+                state.systems.effects.spawn_smoke_emitter()
                 state.player.stats.last_smoke_time = time.time()
 
             elif event.key == pygame.K_z:
                 mx, my = pygame.mouse.get_pos()
                 world_x = mx / state.camera.zoom + state.camera.offset_x
                 world_y = my / state.camera.zoom + state.camera.offset_y
-                state.combat.effects.spawn_lightning((world_x, world_y))
+                state.systems.effects.spawn_lightning((world_x, world_y))
                 state.player.stats.last_lightning_time = time.time()
 
             elif event.key == pygame.K_x:
-                x, y = state.combat.effects._mouse_world()
-                state.combat.effects.spawn_pixel_fire(x, y)
+                x, y = state.systems.effects._mouse_world()
+                state.systems.effects.spawn_pixel_fire(x, y)
                 state.player.stats.last_pixel_fire_time = time.time()
 
             elif event.key == pygame.K_c:
@@ -49,7 +49,7 @@ def handle_events(state):
                 world_x = mx / state.camera.zoom + state.camera.offset_x
                 world_y = my / state.camera.zoom + state.camera.offset_y
                 state.player.movement.teleport(world_x, world_y)
-                state.combat.effects.spawn_teleport_beam(state.player.x, state.player.y)
+                state.systems.effects.spawn_teleport_beam(state.player.x, state.player.y)
 
             elif event.key == pygame.K_v:
                 state.player.movement.start_dash_towards_mouse()
@@ -79,13 +79,13 @@ def handle_events(state):
                 state.combat.projectiles.spawn_fireball(angle)
 
             elif event.button == 3:
-                state.combat.effects.shooting_laser = True
-                state.combat.effects.last_laser_time = 0
+                state.systems.effects.shooting_laser = True
+                state.systems.effects.last_laser_time = 0
 
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 3:
-                state.combat.effects.shooting_laser = False
-                state.combat.effects.lasers.clear()
+                state.systems.effects.shooting_laser = False
+                state.systems.effects.lasers.clear()
 
     if not state.show_menu:
         keys = pygame.key.get_pressed()
@@ -104,17 +104,17 @@ def handle_events(state):
         state.player.move(dx, dy, state.obstacles, solid_tiles)
 
     # 🔁 Fuego continuo de láser
-    if state.combat.effects.shooting_laser:
+    if state.systems.effects.shooting_laser:
         now = time.time()
-        if now - state.combat.effects.last_laser_time >= 0.01:
+        if now - state.systems.effects.last_laser_time >= 0.01:
             mouse_x, mouse_y = pygame.mouse.get_pos()
             world_mouse_x = mouse_x / state.camera.zoom + state.camera.offset_x
             world_mouse_y = mouse_y / state.camera.zoom + state.camera.offset_y
 
             enemies = state.enemies + list(state.remote_entities.values())
-            state.combat.effects.spawn_laser(world_mouse_x, world_mouse_y, enemies)
+            state.systems.effects.spawn_laser(world_mouse_x, world_mouse_y, enemies)
 
-            state.combat.effects.last_laser_time = now
+            state.systems.effects.last_laser_time = now
 
 def execute_menu_option(selected, state):
     if selected == "Cambiar personaje":

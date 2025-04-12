@@ -70,7 +70,7 @@ class PlayerMovement:
         self.last_dash_time = now
         self.player.stats.energy -= 10
 
-        self.player.state.combat.effects.spawn_dash_trail(self.player, direction)
+        self.player.state.effects.spawn_dash_trail(self.player, direction)
 
     def update_dash(self, solid_tiles, obstacles):
         if not self.is_dashing:
@@ -91,8 +91,8 @@ class PlayerMovement:
 
         if collided:
             self.is_dashing = False
-            self.player.state.combat.effects.spawn_dash_bounce(self.player.x, self.player.y)
-            self.player.state.combat.effects.stop_dash_trails()
+            self.player.state.effects.spawn_dash_bounce(self.player.x, self.player.y)
+            self.player.state.effects.stop_dash_trails()
             return
 
         self.player.x += dx
@@ -100,7 +100,7 @@ class PlayerMovement:
         self.dash_time_left -= delta
         if self.dash_time_left <= 0:
             self.is_dashing = False
-            self.player.state.combat.effects.stop_dash_trails()
+            self.player.state.effects.stop_dash_trails()
 
     def move(self, dx, dy, obstacles, solid_tiles):
         self.is_moving = False

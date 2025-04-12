@@ -14,3 +14,5 @@ def update_game(state):
     )
 
     state.combat.update()
+
+    state.effects.update()

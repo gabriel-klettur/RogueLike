@@ -66,9 +66,11 @@ class Game:
         self.state.show_menu = False
         self.state.mode = "local"
 
-        # ✅ Inicializamos el nuevo SystemsManager
+        # ✅ Inicializamos el nuevo SystemsManager y lo asignamos a state.systems
         self.systems = SystemsManager(self.state)
+        self.state.systems = self.systems  # Aseguramos que 'systems' esté en state
         self.state.combat = self.systems.combat
+        self.state.effects = self.systems.effects  # Añadido para que efectos estén correctamente referenciados
 
         self.network = NetworkManager(self.state)
         if self.state.mode == "online":
