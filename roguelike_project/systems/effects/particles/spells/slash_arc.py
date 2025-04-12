@@ -1,17 +1,16 @@
+# roguelike_project/systems/effects/particles/spells/slash_arc.py
+
 import pygame
 import math
-import random
-from roguelike_project.systems.effects.particles.particle import Particle
 
-class SlashArc:
+class SlashArcEffect:
     def __init__(self, player, direction):
         self.player = player
         self.direction = direction
         self.particles = []
         self.timer = 0
-        self.duration = 0.2  # duración en segundos
-        self.offsets = []  # guardamos offsets relativos para cada partícula
-
+        self.duration = 0.2  # duración visual en segundos
+        self.offsets = []
         self.create_symmetric_slash_particles()
 
     def create_symmetric_slash_particles(self):
@@ -31,7 +30,6 @@ class SlashArc:
             size = int(4 + scale_factor * 8)
             color = (100 + int(155 * scale_factor), 220, 255)
 
-            # No guardamos posición fija, solo el offset
             self.offsets.append({
                 "angle": angle,
                 "speed": speed,

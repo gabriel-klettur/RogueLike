@@ -1,22 +1,19 @@
 import pygame
 from pygame.math import Vector2
 
-# Attack Effects
+# Visual-only effects
 from roguelike_project.systems.effects.particles.spells.laser_beam import LaserBeam
 from roguelike_project.systems.effects.particles.spells.lightning import Lightning
-
-# Auras
 from roguelike_project.systems.effects.particles.spells.healing_aura import HealingAura
-from roguelike_project.utils.benchmark import benchmark
-
-# Other Effects
 from roguelike_project.systems.effects.particles.spells.smoke_emitter import SmokeEmitter
 from roguelike_project.systems.effects.particles.spells.sphere_magic_shield import SphereMagicShield
 from roguelike_project.systems.effects.particles.spells.pixel_fire import PixelFireEffect
 from roguelike_project.systems.effects.particles.spells.teleport_beam import TeleportBeamEffect
 from roguelike_project.systems.effects.particles.spells.dash_trail import DashTrail
 from roguelike_project.systems.effects.particles.spells.dash_bounce import DashBounce
-from roguelike_project.systems.effects.particles.spells.slash_arc import SlashArc
+from roguelike_project.systems.effects.particles.spells.slash_arc import SlashArcEffect
+
+from roguelike_project.utils.benchmark import benchmark
 
 class SpellsSystem:
     def __init__(self, state):
@@ -30,13 +27,13 @@ class SpellsSystem:
         self.teleport_beams = []
         self.dash_trails = []
         self.dash_bounces = []
-        self.slash_attack = []
+        self.slash_effects = []
 
         self.shooting_laser = False
         self.last_laser_time = 0
 
     def spawn_slash_arc(self, player, direction):
-        self.slash_attack.append(SlashArc(player, direction))
+        self.slash_effects.append(SlashArcEffect(player, direction))
 
     def spawn_dash_trail(self, player, direction):
         self.dash_trails.append(DashTrail(player, direction))
@@ -60,7 +57,6 @@ class SpellsSystem:
     def spawn_laser(self, x, y, enemies):
         px = self._player_center()
         self.lasers.append(LaserBeam(px[0], px[1], x, y, enemies=enemies))
-
         if len(self.lasers) > 3:
             self.lasers.pop(0)
 
@@ -76,7 +72,6 @@ class SpellsSystem:
         px = self._player_center()
         self.healing_auras.append(HealingAura(self.state.player))
 
-    
     def update(self):
         # 🔁 Lasers
         for laser in self.lasers[:]:
@@ -121,15 +116,26 @@ class SpellsSystem:
             b.update()
         self.dash_bounces = [b for b in self.dash_bounces if not b.is_finished()]
 
-        for effect in self.slash_attack:
+        for effect in self.slash_effects:
             effect.update()
-        self.slash_attack = [e for e in self.slash_attack if not e.is_finished()]
+        self.slash_effects = [e for e in self.slash_effects if not e.is_finished()]
 
     @benchmark(lambda self: self.state.perf_log, "----3.6.2 effects_render")
     def render(self, screen, camera):
         dirty_rects = []
 
-        for group in [self.lasers,self.slash_attack, self.dash_trails, self.dash_bounces, self.teleport_beams, self.pixel_fires, self.magic_shields, self.healing_auras, self.smoke_emitters, self.lightnings]:
+        for group in [
+            self.lasers,
+            self.slash_effects,
+            self.dash_trails,
+            self.dash_bounces,
+            self.teleport_beams,
+            self.pixel_fires,
+            self.magic_shields,
+            self.healing_auras,
+            self.smoke_emitters,
+            self.lightnings
+        ]:
             for effect in group:
                 if (d := effect.render(screen, camera)):
                     dirty_rects.append(d)
