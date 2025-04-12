@@ -1,8 +1,8 @@
-# roguelike_project/systems/combat/explosions/firework_explosion.py
+# roguelike_project/systems/effects/explosions/firework_explosion.py
 
 import random
 import math
-from roguelike_project.systems.combat.particles.particle import Particle
+from roguelike_project.systems.effects.particles.particle import Particle
 
 class FireworkExplosion:
     def __init__(self, x, y, particle_count=60):

@@ -1,7 +1,7 @@
 import pygame
 import random
 import math
-from roguelike_project.systems.combat.particles.particle import Particle
+from roguelike_project.systems.effects.particles.particle import Particle
 
 class DashTrail:
     def __init__(self, player, direction):

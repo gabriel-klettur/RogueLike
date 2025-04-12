@@ -1,7 +1,7 @@
 import pygame
 import math
 import random
-from roguelike_project.systems.combat.particles.particle import Particle
+from roguelike_project.systems.effects.particles.particle import Particle
 
 class SlashArc:
     def __init__(self, player, direction):

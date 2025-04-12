@@ -2,21 +2,21 @@ import pygame
 from pygame.math import Vector2
 
 # Attack Effects
-from roguelike_project.systems.combat.effects.laser_beam import LaserBeam
-from roguelike_project.systems.combat.effects.lightning import Lightning
+from roguelike_project.systems.effects.particles.laser_beam import LaserBeam
+from roguelike_project.systems.effects.particles.lightning import Lightning
 
 # Auras
-from roguelike_project.systems.combat.effects.healing_aura import HealingAura
+from roguelike_project.systems.effects.particles.healing_aura import HealingAura
 from roguelike_project.utils.benchmark import benchmark
 
 # Other Effects
-from roguelike_project.systems.combat.effects.smoke_emitter import SmokeEmitter
-from roguelike_project.systems.combat.effects.sphere_magic_shield import SphereMagicShield
-from roguelike_project.systems.combat.effects.pixel_fire import PixelFireEffect
-from roguelike_project.systems.combat.effects.teleport_beam import TeleportBeamEffect
-from roguelike_project.systems.combat.effects.dash_trail import DashTrail
-from roguelike_project.systems.combat.effects.dash_bounce import DashBounce
-from roguelike_project.systems.combat.effects.slash_arc import SlashArc
+from roguelike_project.systems.effects.particles.smoke_emitter import SmokeEmitter
+from roguelike_project.systems.effects.particles.sphere_magic_shield import SphereMagicShield
+from roguelike_project.systems.effects.particles.pixel_fire import PixelFireEffect
+from roguelike_project.systems.effects.particles.teleport_beam import TeleportBeamEffect
+from roguelike_project.systems.effects.particles.dash_trail import DashTrail
+from roguelike_project.systems.effects.particles.dash_bounce import DashBounce
+from roguelike_project.systems.effects.particles.slash_arc import SlashArc
 
 class EffectsManager:
     def __init__(self, state):

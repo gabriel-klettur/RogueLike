@@ -1,6 +1,6 @@
 from roguelike_project.systems.combat.managers.projectiles_manager import ProjectilesManager
 from roguelike_project.systems.combat.managers.explosions_manager import ExplosionsManager
-from roguelike_project.systems.combat.managers.effects_manager import EffectsManager
+from roguelike_project.systems.effects.effects_system import EffectsManager
 from roguelike_project.utils.benchmark import benchmark
 
 class CombatSystem:
