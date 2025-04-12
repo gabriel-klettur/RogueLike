@@ -30,13 +30,13 @@ class EffectsManager:
         self.teleport_beams = []
         self.dash_trails = []
         self.dash_bounces = []
-        self.active_effects = []        #!!!SLASH Cambiar nombre
+        self.slash_attack = []
 
         self.shooting_laser = False
         self.last_laser_time = 0
 
     def spawn_slash_arc(self, player, direction):
-        self.active_effects.append(SlashArc(player, direction))
+        self.slash_attack.append(SlashArc(player, direction))
 
     def spawn_dash_trail(self, player, direction):
         self.dash_trails.append(DashTrail(player, direction))
@@ -121,15 +121,15 @@ class EffectsManager:
             b.update()
         self.dash_bounces = [b for b in self.dash_bounces if not b.is_finished()]
 
-        for effect in self.active_effects:
+        for effect in self.slash_attack:
             effect.update()
-        self.active_effects = [e for e in self.active_effects if not e.is_finished()]
+        self.slash_attack = [e for e in self.slash_attack if not e.is_finished()]
 
     @benchmark(lambda self: self.state.perf_log, "----3.6.2 effects_render")
     def render(self, screen, camera):
         dirty_rects = []
 
-        for group in [self.lasers,self.active_effects, self.dash_trails, self.dash_bounces, self.teleport_beams, self.pixel_fires, self.magic_shields, self.healing_auras, self.smoke_emitters, self.lightnings]:
+        for group in [self.lasers,self.slash_attack, self.dash_trails, self.dash_bounces, self.teleport_beams, self.pixel_fires, self.magic_shields, self.healing_auras, self.smoke_emitters, self.lightnings]:
             for effect in group:
                 if (d := effect.render(screen, camera)):
                     dirty_rects.append(d)
