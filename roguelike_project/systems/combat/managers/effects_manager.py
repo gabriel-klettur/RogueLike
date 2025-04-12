@@ -15,6 +15,7 @@ from roguelike_project.systems.combat.effects.sphere_magic_shield import SphereM
 from roguelike_project.systems.combat.effects.pixel_fire import PixelFireEffect
 from roguelike_project.systems.combat.effects.teleport_beam import TeleportBeamEffect
 from roguelike_project.systems.combat.effects.dash_trail import DashTrail
+from roguelike_project.systems.combat.effects.dash_bounce import DashBounce
 
 class EffectsManager:
     def __init__(self, state):
@@ -40,8 +41,7 @@ class EffectsManager:
             trail.stop()
 
     def spawn_dash_bounce(self, x, y):
-        # TODO: Implementar efecto de rebote visual
-        print("💥 Rebotó contra un obstáculo.")
+        self.dash_bounces.append(DashBounce(x, y))
 
     def spawn_teleport_beam(self, x, y):
         self.teleport_beams.append(TeleportBeamEffect(x, y))
@@ -111,6 +111,10 @@ class EffectsManager:
         for trail in self.dash_trails:
             trail.update()
         self.dash_trails = [t for t in self.dash_trails if not t.is_finished()]
+
+        for b in self.dash_bounces:
+            b.update()
+        self.dash_bounces = [b for b in self.dash_bounces if not b.is_finished()]
 
     @benchmark(lambda self: self.state.perf_log, "----3.6.2 effects_render")
     def render(self, screen, camera):
