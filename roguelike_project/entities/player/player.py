@@ -3,6 +3,7 @@
 from .stats import PlayerStats
 from .movement import PlayerMovement
 from .renderer import PlayerRenderer
+from .attack import PlayerAttack
 from .assets import load_character_assets
 
 class Player:
@@ -23,6 +24,7 @@ class Player:
         self.stats = PlayerStats(character_name)
         self.movement = PlayerMovement(self)
         self.renderer = PlayerRenderer(self)
+        self.attack = PlayerAttack(self)
 
     def change_character(self, new_character_name):
         self.__init__(self.x, self.y, new_character_name)

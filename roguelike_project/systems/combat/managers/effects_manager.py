@@ -16,6 +16,7 @@ from roguelike_project.systems.combat.effects.pixel_fire import PixelFireEffect
 from roguelike_project.systems.combat.effects.teleport_beam import TeleportBeamEffect
 from roguelike_project.systems.combat.effects.dash_trail import DashTrail
 from roguelike_project.systems.combat.effects.dash_bounce import DashBounce
+from roguelike_project.systems.combat.effects.slash_arc import SlashArc
 
 class EffectsManager:
     def __init__(self, state):
@@ -28,10 +29,14 @@ class EffectsManager:
         self.pixel_fires = []
         self.teleport_beams = []
         self.dash_trails = []
-        self.dash_bounces = []        
+        self.dash_bounces = []
+        self.active_effects = []        #!!!SLASH Cambiar nombre
 
         self.shooting_laser = False
         self.last_laser_time = 0
+
+    def spawn_slash_arc(self, player, direction):
+        self.active_effects.append(SlashArc(player, direction))
 
     def spawn_dash_trail(self, player, direction):
         self.dash_trails.append(DashTrail(player, direction))
@@ -116,11 +121,15 @@ class EffectsManager:
             b.update()
         self.dash_bounces = [b for b in self.dash_bounces if not b.is_finished()]
 
+        for effect in self.active_effects:
+            effect.update()
+        self.active_effects = [e for e in self.active_effects if not e.is_finished()]
+
     @benchmark(lambda self: self.state.perf_log, "----3.6.2 effects_render")
     def render(self, screen, camera):
         dirty_rects = []
 
-        for group in [self.lasers,self.dash_trails, self.dash_bounces, self.teleport_beams, self.pixel_fires, self.magic_shields, self.healing_auras, self.smoke_emitters, self.lightnings]:
+        for group in [self.lasers,self.active_effects, self.dash_trails, self.dash_bounces, self.teleport_beams, self.pixel_fires, self.magic_shields, self.healing_auras, self.smoke_emitters, self.lightnings]:
             for effect in group:
                 if (d := effect.render(screen, camera)):
                     dirty_rects.append(d)

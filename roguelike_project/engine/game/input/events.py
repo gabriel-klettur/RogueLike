@@ -49,6 +49,9 @@ def handle_events(state):
             
             elif event.key == pygame.K_v:
                 state.player.movement.start_dash_towards_mouse()
+            
+            elif event.key == pygame.K_e:
+                state.player.attack.perform_basic_attack()
     
 
         elif event.type == pygame.MOUSEWHEEL:
