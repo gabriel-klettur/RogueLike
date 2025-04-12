@@ -18,6 +18,7 @@ class PlayerStats:
         self.restore_cooldown = 5
         self.last_restore_time = -999
 
+        self.last_shield_time = 0  # ✅ Agregado
         self.shield_points = 0
         self.shield_activated_at = -999
         self.shield_cooldown = 20  # Cooldown entre usos

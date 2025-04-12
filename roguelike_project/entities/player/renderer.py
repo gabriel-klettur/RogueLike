@@ -11,19 +11,89 @@ class PlayerRenderer:
         self.state = None
         self.player = player
         self._cached_fonts = {}
-        self._icon_scaled = {}
-        self._icon_original = load_image("assets/ui/restore_icon.png", (48, 48))
+        self._scaled_icons = {}
+
+        restore_icon = load_image("assets/ui/restore_icon.png", (48, 48))
+        dash_icon = load_image("assets/ui/dash_icon.png", (48, 48))
+        slash_icon = load_image("assets/ui/slash_icon.png", (48, 48))
+        shield_icon = load_image("assets/ui/shield_icon.png", (48, 48))
+        firework_icon = load_image("assets/ui/firework_icon.png", (48, 48))
+        smoke_icon = load_image("assets/ui/smoke_icon.png", (48, 48))
+        lightning_icon = load_image("assets/ui/lightning_icon.png", (48, 48))
+        pixel_fire_icon = load_image("assets/ui/pixel_fire_icon.png", (48, 48))
+        teleport_icon = load_image("assets/ui/teleport_icon.png", (48, 48))
+        generic_icon = load_image("assets/ui/generic_icon.png", (48, 48))
+
+        self.abilities = [
+            {
+                "name": "Restore",
+                "key": "Q",
+                "cooldown": lambda: self.player.stats.restore_cooldown,
+                "last_used": lambda: self.player.stats.last_restore_time,
+                "icon": restore_icon
+            },
+            {
+                "name": "Dash",
+                "key": "V",
+                "cooldown": lambda: 2,
+                "last_used": lambda: self.player.movement.last_dash_time,
+                "icon": dash_icon
+            },
+            {
+                "name": "Slash",
+                "key": "E",
+                "cooldown": lambda: 0.5,
+                "last_used": lambda: self.player.attack.last_attack_time,
+                "icon": slash_icon
+            },
+            {
+                "name": "Shield",
+                "key": "1",
+                "cooldown": lambda: 10,
+                "last_used": lambda: self.player.stats.last_shield_time,
+                "icon": shield_icon
+            },
+            {
+                "name": "Firework",
+                "key": "F",
+                "cooldown": lambda: 0,
+                "last_used": lambda: 0,
+                "icon": firework_icon
+            },
+            {
+                "name": "Smoke",
+                "key": "R",
+                "cooldown": lambda: 0,
+                "last_used": lambda: 0,
+                "icon": smoke_icon
+            },
+            {
+                "name": "Lightning",
+                "key": "Z",
+                "cooldown": lambda: 0,
+                "last_used": lambda: 0,
+                "icon": lightning_icon
+            },
+            {
+                "name": "Pixel Fire",
+                "key": "X",
+                "cooldown": lambda: 0,
+                "last_used": lambda: 0,
+                "icon": pixel_fire_icon
+            },
+            {
+                "name": "Teleport",
+                "key": "C",
+                "cooldown": lambda: self.player.movement.teleport_cooldown,
+                "last_used": lambda: self.player.movement.last_teleport_time,
+                "icon": teleport_icon
+            }
+        ]
 
     def get_font(self, size):
         if size not in self._cached_fonts:
             self._cached_fonts[size] = pygame.font.SysFont("Arial", size)
         return self._cached_fonts[size]
-
-    def get_scaled_icon(self, zoom):
-        if zoom not in self._icon_scaled:
-            size = int(48 * zoom)
-            self._icon_scaled[zoom] = pygame.transform.scale(self._icon_original, (size, size))
-        return self._icon_scaled[zoom]
 
     def render(self, screen, camera):
         if not camera.is_in_view(self.player.x, self.player.y, self.player.sprite_size):
@@ -64,6 +134,7 @@ class PlayerRenderer:
         self.player.hitbox = pygame.Rect(self.player.x + 20, self.player.y + 96, 56, 28)
 
         self.draw_status_bars(screen, camera)
+        self.render_hud(screen, camera)
         draw_mouse_crosshair(screen, camera)
 
         if DEBUG:
@@ -97,30 +168,46 @@ class PlayerRenderer:
         draw_bar(stats.energy, stats.max_energy, (255, 50, 50), (bar_height + spacing) * 2)
 
     def render_hud(self, screen, camera):
-        zoom = camera.zoom
-        icon = self.get_scaled_icon(zoom)
-
-        icon_x, icon_y = camera.apply((
-            self.player.x + self.player.sprite_size[0] // 2 - 24,
-            self.player.y + self.player.sprite_size[1] + 50
-        ))
-        screen.blit(icon, (icon_x, icon_y))
-
         now = time.time()
-        elapsed = now - self.player.stats.last_restore_time
-        cooldown = self.player.stats.restore_cooldown
+        font = self.get_font(16)
+        icon_size = 48
+        spacing = 60
 
-        if elapsed < cooldown:
-            ratio = 1 - (elapsed / cooldown)
-            overlay_height = int(icon.get_height() * ratio)
+        total_width = len(self.abilities) * spacing
+        start_x = (screen.get_width() - total_width) // 2
+        start_y = screen.get_height() - 90
 
-            if overlay_height > 0:
-                overlay = pygame.Surface((icon.get_width(), overlay_height), pygame.SRCALPHA)
-                overlay.fill((0, 0, 0, 180))
-                screen.blit(overlay, (icon_x, icon_y + (icon.get_height() - overlay_height)))
+        for i, ability in enumerate(self.abilities):
+            if icon_size not in self._scaled_icons:
+                self._scaled_icons[icon_size] = {}
+            if ability["name"] not in self._scaled_icons[icon_size]:
+                self._scaled_icons[icon_size][ability["name"]] = pygame.transform.scale(ability["icon"], (icon_size, icon_size))
 
-            font = self.get_font(int(16 * zoom))
-            remaining = int(cooldown - elapsed) + 1
-            text = font.render(str(remaining), True, (255, 255, 255))
-            text_rect = text.get_rect(center=(icon_x + icon.get_width() // 2, icon_y + icon.get_height() // 2))
-            screen.blit(text, text_rect)
+            icon = self._scaled_icons[icon_size][ability["name"]]
+            icon_x = start_x + i * spacing
+            icon_y = start_y
+
+            # Dibujar ícono
+            screen.blit(icon, (icon_x, icon_y))
+
+            # Cooldown visual
+            elapsed = now - ability["last_used"]()
+            cooldown = ability["cooldown"]()
+            if elapsed < cooldown:
+                ratio = 1 - (elapsed / cooldown)
+                overlay_height = int(icon_size * ratio)
+                if overlay_height > 0:
+                    overlay = pygame.Surface((icon_size, overlay_height), pygame.SRCALPHA)
+                    overlay.fill((0, 0, 0, 180))
+                    screen.blit(overlay, (icon_x, icon_y + (icon_size - overlay_height)))
+
+                remaining = int(cooldown - elapsed) + 1
+                text = font.render(str(remaining), True, (255, 255, 255))
+                text_rect = text.get_rect(center=(icon_x + icon_size // 2, icon_y + icon_size // 2))
+                screen.blit(text, text_rect)
+
+            # Tecla asignada
+            key_font = self.get_font(14)
+            key_text = key_font.render(ability["key"], True, (255, 255, 0))
+            key_rect = key_text.get_rect(center=(icon_x + icon_size // 2, icon_y - 12))
+            screen.blit(key_text, key_rect)
