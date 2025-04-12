@@ -2,21 +2,21 @@ import pygame
 from pygame.math import Vector2
 
 # Attack Effects
-from roguelike_project.systems.effects.particles.laser_beam import LaserBeam
-from roguelike_project.systems.effects.particles.lightning import Lightning
+from roguelike_project.systems.effects.particles.spells.laser_beam import LaserBeam
+from roguelike_project.systems.effects.particles.spells.lightning import Lightning
 
 # Auras
-from roguelike_project.systems.effects.particles.healing_aura import HealingAura
+from roguelike_project.systems.effects.particles.spells.healing_aura import HealingAura
 from roguelike_project.utils.benchmark import benchmark
 
 # Other Effects
-from roguelike_project.systems.effects.particles.smoke_emitter import SmokeEmitter
-from roguelike_project.systems.effects.particles.sphere_magic_shield import SphereMagicShield
-from roguelike_project.systems.effects.particles.pixel_fire import PixelFireEffect
-from roguelike_project.systems.effects.particles.teleport_beam import TeleportBeamEffect
-from roguelike_project.systems.effects.particles.dash_trail import DashTrail
-from roguelike_project.systems.effects.particles.dash_bounce import DashBounce
-from roguelike_project.systems.effects.particles.slash_arc import SlashArc
+from roguelike_project.systems.effects.particles.spells.smoke_emitter import SmokeEmitter
+from roguelike_project.systems.effects.particles.spells.sphere_magic_shield import SphereMagicShield
+from roguelike_project.systems.effects.particles.spells.pixel_fire import PixelFireEffect
+from roguelike_project.systems.effects.particles.spells.teleport_beam import TeleportBeamEffect
+from roguelike_project.systems.effects.particles.spells.dash_trail import DashTrail
+from roguelike_project.systems.effects.particles.spells.dash_bounce import DashBounce
+from roguelike_project.systems.effects.particles.spells.slash_arc import SlashArc
 
 class EffectsManager:
     def __init__(self, state):

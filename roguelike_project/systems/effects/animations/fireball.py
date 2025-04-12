@@ -1,7 +1,7 @@
 import pygame
 from roguelike_project.systems.effects.animations.projectiles import Projectile
 from roguelike_project.utils.loader import load_image
-from roguelike_project.systems.combat.explosions.fire import FireExplosion
+from roguelike_project.systems.effects.particles.explosions.fire import FireExplosion
 
 class Fireball(Projectile):
     # Lista cíclica de tipos        
