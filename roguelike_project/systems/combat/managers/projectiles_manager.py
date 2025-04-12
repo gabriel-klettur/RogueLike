@@ -1,7 +1,7 @@
-from roguelike_project.systems.combat.projectiles.fireball import Fireball
 from roguelike_project.systems.effects.particles.firework_launch import FireworkLaunch
 from roguelike_project.systems.combat.explosions.firework_explosion import FireworkExplosion
 from roguelike_project.utils.benchmark import benchmark
+from roguelike_project.systems.effects.animations.fireball import Fireball
 import pygame
 
 class ProjectilesManager:
