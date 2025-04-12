@@ -46,6 +46,9 @@ def handle_events(state):
                 world_y = my / state.camera.zoom + state.camera.offset_y
                 state.player.movement.teleport(world_x, world_y)                        
                 state.combat.effects.spawn_teleport_beam(state.player.x, state.player.y)                
+            
+            elif event.key == pygame.K_v:
+                state.player.movement.start_dash_towards_mouse()
     
 
         elif event.type == pygame.MOUSEWHEEL:

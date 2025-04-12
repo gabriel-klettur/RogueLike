@@ -1,5 +1,3 @@
-# roguelike_project/engine/game/game.py
-
 import pygame
 
 from roguelike_project.engine.game.input.events import handle_events
@@ -55,10 +53,14 @@ class Game:
         self.state.obstacles = obstacles
         self.state.buildings = buildings
         self.state.enemies = enemies
-        
+
     def _init_systems(self):
         self.renderer = Renderer()
+        
+        # ✅ Asignar estado a player y renderer
         self.state.player.renderer.state = self.state
+        self.state.player.state = self.state  # ← Esta línea es CLAVE para evitar el error del dash
+
         self.state.menu = Menu(self.state)
         self.state.remote_entities = {}
         self.state.show_menu = False

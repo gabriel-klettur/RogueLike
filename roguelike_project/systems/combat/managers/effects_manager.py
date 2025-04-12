@@ -14,6 +14,7 @@ from roguelike_project.systems.combat.effects.smoke_emitter import SmokeEmitter
 from roguelike_project.systems.combat.effects.sphere_magic_shield import SphereMagicShield
 from roguelike_project.systems.combat.effects.pixel_fire import PixelFireEffect
 from roguelike_project.systems.combat.effects.teleport_beam import TeleportBeamEffect
+from roguelike_project.systems.combat.effects.dash_trail import DashTrail
 
 class EffectsManager:
     def __init__(self, state):
@@ -25,9 +26,22 @@ class EffectsManager:
         self.magic_shields = []
         self.pixel_fires = []
         self.teleport_beams = []
+        self.dash_trails = []
+        self.dash_bounces = []        
 
         self.shooting_laser = False
         self.last_laser_time = 0
+
+    def spawn_dash_trail(self, player, direction):
+        self.dash_trails.append(DashTrail(player, direction))
+
+    def stop_dash_trails(self):
+        for trail in self.dash_trails:
+            trail.stop()
+
+    def spawn_dash_bounce(self, x, y):
+        # TODO: Implementar efecto de rebote visual
+        print("💥 Rebotó contra un obstáculo.")
 
     def spawn_teleport_beam(self, x, y):
         self.teleport_beams.append(TeleportBeamEffect(x, y))
@@ -93,11 +107,16 @@ class EffectsManager:
             beam.update()
         self.teleport_beams = [b for b in self.teleport_beams if not b.is_finished()]
 
+        # 💨 Dash Trail
+        for trail in self.dash_trails:
+            trail.update()
+        self.dash_trails = [t for t in self.dash_trails if not t.is_finished()]
+
     @benchmark(lambda self: self.state.perf_log, "----3.6.2 effects_render")
     def render(self, screen, camera):
         dirty_rects = []
 
-        for group in [self.lasers, self.teleport_beams, self.pixel_fires, self.magic_shields, self.healing_auras, self.smoke_emitters, self.lightnings]:
+        for group in [self.lasers,self.dash_trails, self.dash_bounces, self.teleport_beams, self.pixel_fires, self.magic_shields, self.healing_auras, self.smoke_emitters, self.lightnings]:
             for effect in group:
                 if (d := effect.render(screen, camera)):
                     dirty_rects.append(d)
