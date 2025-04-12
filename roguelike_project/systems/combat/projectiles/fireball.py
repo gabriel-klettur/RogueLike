@@ -1,12 +1,10 @@
 import pygame
 from roguelike_project.systems.combat.projectiles.base_projectile import Projectile
-from roguelike_project.utils.loader import load_image, load_explosion_frames
-from roguelike_project.systems.combat.explosions.explosion_factory import EXPLOSION_TYPES
+from roguelike_project.utils.loader import load_image
+from roguelike_project.systems.combat.explosions.fire import FireExplosion
 
 class Fireball(Projectile):
-    # Lista cíclica de tipos
-    explosion_types = list(EXPLOSION_TYPES.values())
-    _explosion_index = 0
+    # Lista cíclica de tipos        
 
     def __init__(self, x, y, angle, explosions_list=None):
         sprite = load_image("assets/projectiles/fireball.png", (64, 64))
@@ -16,15 +14,9 @@ class Fireball(Projectile):
         self.damage = 10
         self.explosions_list = explosions_list
 
-        if not hasattr(Fireball, "explosion_frames"):
-            Fireball.explosion_frames = load_explosion_frames(
-                "assets/projectiles/explosion_{}.png", 4, (64, 64)
-            )
-
         def explode(x, y):            
             if self.explosions_list is not None:
-                explosion_cls = Fireball.explosion_types[Fireball._explosion_index]                
-                self.explosions_list.append(explosion_cls(x, y))
-                Fireball._explosion_index = (Fireball._explosion_index + 1) % len(Fireball.explosion_types)
+                # Usamos directamente FireExplosion en lugar de acceder a EXPLOSION_TYPES
+                self.explosions_list.append(FireExplosion(x, y))
 
         self.on_explode = explode
