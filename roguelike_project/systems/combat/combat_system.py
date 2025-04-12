@@ -1,6 +1,6 @@
 # roguelike_project/systems/combat/combat_system.py
 
-from roguelike_project.systems.combat.managers.projectiles_manager import ProjectilesManager
+from roguelike_project.systems.effects.animations.projectiles_system import ProjectilesManager
 from roguelike_project.systems.combat.managers.explosions_manager import ExplosionsManager
 
 class CombatSystem:
