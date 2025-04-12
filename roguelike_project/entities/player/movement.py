@@ -1,5 +1,6 @@
 import pygame
 import math
+import time
 
 class PlayerMovement:
     def __init__(self, player):
@@ -9,7 +10,7 @@ class PlayerMovement:
         self.last_move_dir = pygame.Vector2(0, 0)
         
         self.teleport_distance = 1000
-        self.teleport_cooldown = 0
+        self.teleport_cooldown = 0.5
         self.last_teleport_time = 0
 
         self.dash_speed = 2000
@@ -18,12 +19,14 @@ class PlayerMovement:
         self.dash_direction = pygame.Vector2(0, 0)
         self.is_dashing = False
         self.last_dash_time = 0
-        self.dash_cooldown = 1  # 2 segundos
+        self.dash_cooldown = 2
 
     def teleport(self, mx, my):
-        now = pygame.time.get_ticks() / 1000
+        now = time.time()
         if now - self.last_teleport_time < self.teleport_cooldown:
             return
+
+        self.last_teleport_time = now
 
         player_center_x = self.player.x + self.player.sprite_size[0] / 2
         player_center_y = self.player.y + self.player.sprite_size[1] / 2
@@ -38,10 +41,9 @@ class PlayerMovement:
 
         self.player.x += dx * self.teleport_distance
         self.player.y += dy * self.teleport_distance
-        self.last_teleport_time = now
 
     def start_dash_towards_mouse(self):
-        now = pygame.time.get_ticks() / 1000
+        now = time.time()
         if self.is_dashing:
             return
         if now - self.last_dash_time < self.dash_cooldown:
@@ -68,7 +70,7 @@ class PlayerMovement:
         self.last_dash_time = now
         self.player.stats.energy -= 10
 
-        self.player.state.combat.effects.spawn_dash_trail(self.player, direction)  # ✅ cambio importante
+        self.player.state.combat.effects.spawn_dash_trail(self.player, direction)
 
     def update_dash(self, solid_tiles, obstacles):
         if not self.is_dashing:
@@ -85,12 +87,12 @@ class PlayerMovement:
         )
 
         collided = any(future_hitbox.colliderect(t.rect) for t in solid_tiles) or \
-                any(future_hitbox.colliderect(o.rect) for o in obstacles)
+                   any(future_hitbox.colliderect(o.rect) for o in obstacles)
 
         if collided:
             self.is_dashing = False
             self.player.state.combat.effects.spawn_dash_bounce(self.player.x, self.player.y)
-            self.player.state.combat.effects.stop_dash_trails()  # ✅ detener partículas
+            self.player.state.combat.effects.stop_dash_trails()
             return
 
         self.player.x += dx
@@ -98,7 +100,7 @@ class PlayerMovement:
         self.dash_time_left -= delta
         if self.dash_time_left <= 0:
             self.is_dashing = False
-            self.player.state.combat.effects.stop_dash_trails()  # ✅ detener partículas
+            self.player.state.combat.effects.stop_dash_trails()
 
     def move(self, dx, dy, obstacles, solid_tiles):
         self.is_moving = False

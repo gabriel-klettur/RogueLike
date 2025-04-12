@@ -56,29 +56,29 @@ class PlayerRenderer:
             {
                 "name": "Firework",
                 "key": "F",
-                "cooldown": lambda: 0,
-                "last_used": lambda: 0,
+                "cooldown": lambda: self.player.stats.firework_cooldown,
+                "last_used": lambda: self.player.stats.last_firework_time,
                 "icon": firework_icon
             },
             {
                 "name": "Smoke",
                 "key": "R",
-                "cooldown": lambda: 0,
-                "last_used": lambda: 0,
+                "cooldown": lambda: self.player.stats.smoke_cooldown,
+                "last_used": lambda: self.player.stats.last_smoke_time,
                 "icon": smoke_icon
             },
             {
                 "name": "Lightning",
                 "key": "Z",
-                "cooldown": lambda: 0,
-                "last_used": lambda: 0,
+                "cooldown": lambda: self.player.stats.lightning_cooldown,
+                "last_used": lambda: self.player.stats.last_lightning_time,
                 "icon": lightning_icon
             },
             {
                 "name": "Pixel Fire",
                 "key": "X",
-                "cooldown": lambda: 0,
-                "last_used": lambda: 0,
+                "cooldown": lambda: self.player.stats.pixel_fire_cooldown,
+                "last_used": lambda: self.player.stats.last_pixel_fire_time,
                 "icon": pixel_fire_icon
             },
             {

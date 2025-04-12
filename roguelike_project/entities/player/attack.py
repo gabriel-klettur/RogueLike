@@ -1,20 +1,21 @@
 import pygame
+import time
 
 class PlayerAttack:
     def __init__(self, player):
         self.player = player
-        self.last_attack_time = 0
-        self.attack_cooldown = 0.5  # medio segundo entre ataques
+        self.last_attack_time = 0  # Usado por el HUD
+        self.attack_cooldown = 0.2  # medio segundo entre ataques
 
     def perform_basic_attack(self):
-        now = pygame.time.get_ticks() / 1000
+        now = time.time()
         if now - self.last_attack_time < self.attack_cooldown:
             return
         self.last_attack_time = now
 
-        # Posición inicial desde los pies del jugador
+        # Posición inicial desde el centro del jugador
         x = self.player.x + self.player.sprite_size[0] // 2
-        y = self.player.y + self.player.sprite_size[1]
+        y = self.player.y + self.player.sprite_size[1]  # pies
 
         # Dirección según orientación del jugador
         direction_map = {

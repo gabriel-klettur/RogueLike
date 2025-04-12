@@ -24,6 +24,18 @@ class PlayerStats:
         self.shield_cooldown = 20  # Cooldown entre usos
         self.shield_duration = 10  # Tiempo máximo activo (segundos)
 
+        self.firework_cooldown = 5
+        self.last_firework_time = 0
+
+        self.smoke_cooldown = 6
+        self.last_smoke_time = 0
+
+        self.lightning_cooldown = 4
+        self.last_lightning_time = 0
+
+        self.pixel_fire_cooldown = 3
+        self.last_pixel_fire_time = 0
+
     def take_damage(self):
         dmg_health = 10
         dmg_mana = 5

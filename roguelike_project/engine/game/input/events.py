@@ -3,7 +3,6 @@ import time
 from roguelike_project.network.client import WebSocketClient
 
 def handle_events(state):
-    
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             state.running = False
@@ -11,7 +10,7 @@ def handle_events(state):
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 state.show_menu = not state.show_menu
-            
+
             elif event.key == pygame.K_q:
                 state.player.stats.restore_all(state)
 
@@ -19,40 +18,44 @@ def handle_events(state):
                 result = state.menu.handle_input(event)
                 if result:
                     execute_menu_option(result, state)
-            
+
             elif event.key == pygame.K_1:
                 if state.player.stats.activate_shield():
                     state.combat.effects.spawn_magic_shield()
+                    state.player.stats.last_shield_time = time.time()
 
             elif event.key == pygame.K_f:
                 state.combat.projectiles.spawn_firework()
+                state.player.stats.last_firework_time = time.time()
 
             elif event.key == pygame.K_r:
                 state.combat.effects.spawn_smoke_emitter()
+                state.player.stats.last_smoke_time = time.time()
 
             elif event.key == pygame.K_z:
                 mx, my = pygame.mouse.get_pos()
                 world_x = mx / state.camera.zoom + state.camera.offset_x
                 world_y = my / state.camera.zoom + state.camera.offset_y
                 state.combat.effects.spawn_lightning((world_x, world_y))
-            
+                state.player.stats.last_lightning_time = time.time()
+
             elif event.key == pygame.K_x:
                 x, y = state.combat.effects._mouse_world()
                 state.combat.effects.spawn_pixel_fire(x, y)
-            
-            elif event.key == pygame.K_c:  #! -------------------------------- Teleportar al jugador
+                state.player.stats.last_pixel_fire_time = time.time()
+
+            elif event.key == pygame.K_c:
                 mx, my = pygame.mouse.get_pos()
                 world_x = mx / state.camera.zoom + state.camera.offset_x
                 world_y = my / state.camera.zoom + state.camera.offset_y
-                state.player.movement.teleport(world_x, world_y)                        
-                state.combat.effects.spawn_teleport_beam(state.player.x, state.player.y)                
-            
+                state.player.movement.teleport(world_x, world_y)
+                state.combat.effects.spawn_teleport_beam(state.player.x, state.player.y)
+
             elif event.key == pygame.K_v:
                 state.player.movement.start_dash_towards_mouse()
-            
+
             elif event.key == pygame.K_e:
                 state.player.attack.perform_basic_attack()
-    
 
         elif event.type == pygame.MOUSEWHEEL:
             if event.y > 0:
@@ -61,7 +64,7 @@ def handle_events(state):
                 state.camera.zoom = max(state.camera.zoom - 0.1, 0.5)
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:  # Click izquierdo
+            if event.button == 1:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
                 world_mouse_x = mouse_x / state.camera.zoom + state.camera.offset_x
                 world_mouse_y = mouse_y / state.camera.zoom + state.camera.offset_y
@@ -73,15 +76,14 @@ def handle_events(state):
                 dy = world_mouse_y - player_center_y
 
                 angle = -pygame.math.Vector2(dx, dy).angle_to((1, 0))
-                
                 state.combat.projectiles.spawn_fireball(angle)
 
-            elif event.button == 3:  # Click derecho presionado
+            elif event.button == 3:
                 state.combat.effects.shooting_laser = True
                 state.combat.effects.last_laser_time = 0
 
         elif event.type == pygame.MOUSEBUTTONUP:
-            if event.button == 3:  # Soltar click derecho
+            if event.button == 3:
                 state.combat.effects.shooting_laser = False
                 state.combat.effects.lasers.clear()
 
@@ -128,7 +130,6 @@ def execute_menu_option(selected, state):
         if state.mode == "local":
             print("🌐 Conectando al servidor...")
             state.mode = "online"
-
             if not hasattr(state, "websocket") or not state.websocket:
                 try:
                     state.websocket = WebSocketClient("ws://localhost:8000/ws", state.player)
@@ -141,7 +142,6 @@ def execute_menu_option(selected, state):
         else:
             print("🔌 Desconectado, modo local activado.")
             state.mode = "local"
-
             if hasattr(state, "websocket") and state.websocket:
                 try:
                     state.websocket.stop()
