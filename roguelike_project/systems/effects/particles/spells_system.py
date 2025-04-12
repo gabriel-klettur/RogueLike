@@ -18,7 +18,7 @@ from roguelike_project.systems.effects.particles.spells.dash_trail import DashTr
 from roguelike_project.systems.effects.particles.spells.dash_bounce import DashBounce
 from roguelike_project.systems.effects.particles.spells.slash_arc import SlashArc
 
-class EffectsManager:
+class SpellsSystem:
     def __init__(self, state):
         self.state = state
         self.lasers = []        

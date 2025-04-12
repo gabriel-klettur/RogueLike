@@ -1,12 +1,12 @@
 # roguelike_project/systems/systems_manager.py
 
 from roguelike_project.systems.combat.combat_system import CombatSystem
-from roguelike_project.systems.effects.effects_system import EffectsManager
+from roguelike_project.systems.effects.particles.spells_system import SpellsSystem
 
 class SystemsManager:
     def __init__(self, state):
         self.combat = CombatSystem(state)
-        self.effects = EffectsManager(state)
+        self.effects = SpellsSystem(state)
 
     def update(self):
         self.combat.update()

@@ -1,12 +1,12 @@
 # roguelike_project/systems/combat/combat_system.py
 
 from roguelike_project.systems.effects.animations.projectiles_system import ProjectilesManager
-from roguelike_project.systems.combat.managers.explosions_manager import ExplosionsManager
+from roguelike_project.systems.effects.particles.explosions_system import ExplosionSystem
 
 class CombatSystem:
     def __init__(self, state):
         self.state = state
-        self.explosions = ExplosionsManager(state)
+        self.explosions = ExplosionSystem(state)
         self.projectiles = ProjectilesManager(state)
 
     def update(self):

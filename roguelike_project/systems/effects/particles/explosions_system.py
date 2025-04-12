@@ -1,6 +1,6 @@
 from roguelike_project.utils.benchmark import benchmark
 
-class ExplosionsManager:
+class ExplosionSystem:
     def __init__(self, state):
         self.state = state
         self.explosions = []
