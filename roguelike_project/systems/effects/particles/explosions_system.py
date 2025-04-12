@@ -6,6 +6,7 @@ class ExplosionSystem:
         self.explosions = []
 
     def add_explosion(self, explosion_obj):
+        print("✅ Añadida explosión:", explosion_obj)  # Debug opcional
         self.explosions.append(explosion_obj)
     
     def update(self):

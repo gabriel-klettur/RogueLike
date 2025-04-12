@@ -4,6 +4,9 @@ def update_game(state):
 
     state.camera.update(state.player)
 
+    state.systems.update()
+
+    #!------------------ ESTO DEBERIAMOS MEJORARLO ------------------
     enemies = state.enemies + list(state.remote_entities.values())    
     for enemy in enemies:
         enemy.update()
@@ -13,6 +16,6 @@ def update_game(state):
         state.obstacles
     )
 
-    state.combat.update()
+    #!---------------------------------------------------------------
 
-    state.effects.update()
+    

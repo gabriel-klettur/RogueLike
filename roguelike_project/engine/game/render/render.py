@@ -51,6 +51,7 @@ class Renderer:
         benchmark("--3.9. remote_players", lambda: render_remote_players(state))
         benchmark("--3.10. menu", lambda: self._render_menu(state, screen))
         benchmark("--3.11. minimap", lambda: self._render_minimap(state))
+        benchmark("--3.12. all_systems", lambda: state.systems.render(screen, cam))
         
         if DEBUG and perf_log is not None:
             extra_lines = [state] + self._get_custom_debug_lines(state)

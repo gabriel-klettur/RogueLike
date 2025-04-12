@@ -3,14 +3,32 @@
 from roguelike_project.systems.combat.combat_system import CombatSystem
 from roguelike_project.systems.effects.particles.spells_system import SpellsSystem
 
+from roguelike_project.systems.effects.particles.explosions_system import ExplosionSystem
+
 class SystemsManager:
     def __init__(self, state):
         self.combat = CombatSystem(state)
         self.effects = SpellsSystem(state)
+        self.explosions = ExplosionSystem(state)
+        
 
     def update(self):
         self.combat.update()
-        self.effects.update()
+        self.effects.update()        
+        self.explosions.update()
 
     def render(self, screen, camera):
-        return self.combat.render(screen, camera) + self.effects.render(screen, camera)
+        return (
+            self._render_combat(screen, camera) +
+            self._render_effects(screen, camera) +            
+            self._render_explosions(screen, camera)
+        )
+    
+    def _render_combat(self, screen, camera):
+        return self.combat.render(screen, camera)
+    
+    def _render_effects(self, screen, camera):
+        return self.effects.render(screen, camera)
+    
+    def _render_explosions(self, screen, camera):
+        return self.explosions.render(screen, camera)

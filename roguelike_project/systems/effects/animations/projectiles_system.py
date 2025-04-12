@@ -12,7 +12,7 @@ class ProjectilesManager:
 
     def spawn_fireball(self, angle):
         px = self._player_center()
-        fireball = Fireball(*px, angle, self.state.combat.explosions.explosions)
+        fireball = Fireball(*px, angle, self.state.systems.explosions)
         self.projectiles.append(fireball)
 
     def spawn_firework(self):
@@ -32,7 +32,7 @@ class ProjectilesManager:
             fw.update()
             if fw.finished:
                 self.fireworks.remove(fw)
-                self.state.combat.explosions.add_explosion(FireworkExplosion(fw.x, fw.y))
+                self.state.systems.explosions.add_explosion(FireworkExplosion(fw.x, fw.y))
 
     @benchmark(lambda self: self.state.perf_log, "----3.6.3 projectiles")
     def render(self, screen, camera):
