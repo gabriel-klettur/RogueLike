@@ -142,6 +142,7 @@ class PlayerMovement:
                 self.player.hitbox.topleft = (self.player.x + 20, self.player.y + 96)
         else:
             self.player.take_damage()
+            print("🧱 Recibido daño por colision de movimiento")
 
     def get_hitbox(self, x, y):
         return pygame.Rect(x + 20, y + 96, 56, 28)
