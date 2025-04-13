@@ -17,21 +17,16 @@ class Tile:
         self.rect = pygame.Rect(x, y, TILE_SIZE, TILE_SIZE)
 
     def render(self, screen, camera):
-        # Handle case where camera is None (for static rendering)
         if camera is None:
-            # Render at original size and position
             screen.blit(self.sprite, (self.x, self.y))
             return pygame.Rect(self.x, self.y, TILE_SIZE, TILE_SIZE)
-        
-        # Normal rendering with camera
+
         scaled_sprite = pygame.transform.scale(self.sprite, camera.scale((self.sprite.get_width(), self.sprite.get_height())))
         screen.blit(scaled_sprite, camera.apply((self.x, self.y)))
 
-        if self.solid:
+        if self.solid and DEBUG:
             scaled_rect = pygame.Rect(camera.apply(self.rect.topleft), camera.scale(self.rect.size))
-
-            if DEBUG:
-                pygame.draw.rect(screen, (255, 255, 0), scaled_rect, 1)            
+            pygame.draw.rect(screen, (255, 255, 0), scaled_rect, 1)
 
 def load_tile_images():
     floor_variants = [
@@ -45,20 +40,22 @@ def load_tile_images():
 
 def load_map_from_text(map_data):
     tile_images = load_tile_images()
-    tiles = []
+    tile_map = []
 
     for row_idx, row in enumerate(map_data):
+        row_tiles = []
         for col_idx, char in enumerate(row):
             if char in tile_images:
                 x = col_idx * TILE_SIZE
                 y = row_idx * TILE_SIZE
 
-                # Si hay múltiples variantes (como "."), elegimos aleatoriamente
                 sprite = (
                     random.choice(tile_images[char])
                     if isinstance(tile_images[char], list)
                     else tile_images[char]
                 )
 
-                tiles.append(Tile(x, y, char, sprite))
-    return tiles
+                row_tiles.append(Tile(x, y, char, sprite))
+        tile_map.append(row_tiles)
+
+    return tile_map

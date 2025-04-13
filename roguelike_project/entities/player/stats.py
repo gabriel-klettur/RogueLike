@@ -18,19 +18,67 @@ class PlayerStats:
         self.restore_cooldown = 5
         self.last_restore_time = -999
 
-    def take_damage(self):
-        self.health = max(0, self.health - 10)
-        self.mana = max(0, self.mana - 5)
-        self.energy = max(0, self.energy - 15)
-        #print("💥 Daño recibido: -10 vida, -5 maná, -15 energía")
+        self.last_shield_time = 0  # ✅ Agregado
+        self.shield_points = 0
+        self.shield_activated_at = -999
+        self.shield_cooldown = 20  # Cooldown entre usos
+        self.shield_duration = 10  # Tiempo máximo activo (segundos)
 
-    def restore_all(self):
+        self.firework_cooldown = 5
+        self.last_firework_time = 0
+
+        self.smoke_cooldown = 6
+        self.last_smoke_time = 0
+
+        self.lightning_cooldown = 4
+        self.last_lightning_time = 0
+
+        self.pixel_fire_cooldown = 3
+        self.last_pixel_fire_time = 0
+
+    def take_damage(self):
+        dmg_health = 10
+        dmg_mana = 5
+        dmg_energy = 15
+
+        if self.shield_points > 0:
+            absorbed = min(dmg_health, self.shield_points)
+            self.shield_points -= absorbed
+            dmg_health -= absorbed
+            print(f"🛡️ Escudo absorbió {absorbed}. Restantes: {self.shield_points}")
+            if self.shield_points <= 0:
+                print("💥 Escudo destruido")
+
+        self.health = max(0, self.health - dmg_health)
+        self.mana = max(0, self.mana - dmg_mana)
+        self.energy = max(0, self.energy - dmg_energy)
+
+    def restore_all(self, state=None):
         now = time.time()
         if now - self.last_restore_time >= self.restore_cooldown:
             self.health = self.max_health
             self.mana = self.max_mana
             self.energy = self.max_energy
             self.last_restore_time = now
-            #print("🧪 Barras restauradas al máximo")
-        #else:
-            #print("⌛ Aún en cooldown...")
+
+            if state:
+                state.effects.spawn_healing_aura()
+
+            return True
+        return False
+
+    def activate_shield(self, amount=50):
+        now = time.time()
+        if now - self.shield_activated_at < self.shield_cooldown:
+            print("⛔ Escudo aún en cooldown.")
+            return False
+
+        self.shield_points = amount
+        self.shield_activated_at = now
+        print(f"🛡️ Escudo activado con {amount} puntos.")
+        return True
+
+    def is_shield_active(self):
+        if self.shield_points <= 0:
+            return False
+        return time.time() - self.shield_activated_at <= self.shield_duration

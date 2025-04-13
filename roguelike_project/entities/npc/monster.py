@@ -3,12 +3,13 @@ from roguelike_project.utils.loader import load_image
 from roguelike_project.config import DEBUG
 
 class Monster:
-    def __init__(self, x, y):
+    def __init__(self, x, y, name="Monster"):
         self.x = x
         self.y = y
         self.health = 60
         self.max_health = 60
         self.sprite_size = (256, 256)
+        self.name = name
 
         # Sprites por dirección
         self.sprites = {
@@ -35,11 +36,9 @@ class Monster:
         self.step_progress = 0
 
     def take_damage(self, amount):
-        self.health -= amount
-        print(f"💥 Monstruo dañado: -{amount} HP")
+        self.health -= amount        
         if self.health <= 0:
-            self.alive = False
-            print("☠️ Monstruo eliminado")
+            self.alive = False            
 
     def update(self):
         if not self.alive:
@@ -71,6 +70,9 @@ class Monster:
 
     def render(self, screen, camera):
         if not self.alive:
+            return
+
+        if not camera.is_in_view(self.x, self.y, self.sprite_size):
             return
 
         scaled_sprite = pygame.transform.scale(self.sprite, camera.scale(self.sprite_size))
