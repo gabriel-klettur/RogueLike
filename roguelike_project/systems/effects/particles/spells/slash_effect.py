@@ -1,9 +1,7 @@
-# roguelike_project/systems/effects/particles/spells/slash_arc.py
-
 import pygame
 import math
 
-class SlashArcEffect:
+class SlashEffect:
     def __init__(self, player, direction):
         self.player = player
         self.direction = direction

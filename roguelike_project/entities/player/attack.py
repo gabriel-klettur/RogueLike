@@ -26,4 +26,4 @@ class PlayerAttack:
         }
         direction = direction_map.get(self.player.direction, pygame.Vector2(1, 0))
 
-        self.player.state.effects.spawn_slash_arc(self.player, direction)
+        self.player.state.effects.spawn_slash_effect(self.player, direction)

@@ -11,7 +11,7 @@ from roguelike_project.systems.effects.particles.spells.pixel_fire import PixelF
 from roguelike_project.systems.effects.particles.spells.teleport_beam import TeleportBeamEffect
 from roguelike_project.systems.effects.particles.spells.dash_trail import DashTrail
 from roguelike_project.systems.effects.particles.spells.dash_bounce import DashBounce
-from roguelike_project.systems.effects.particles.spells.slash_arc import SlashArcEffect
+from roguelike_project.systems.effects.particles.spells.slash_effect import SlashEffect
 
 from roguelike_project.utils.benchmark import benchmark
 
@@ -32,8 +32,8 @@ class SpellsSystem:
         self.shooting_laser = False
         self.last_laser_time = 0
 
-    def spawn_slash_arc(self, player, direction):
-        self.slash_effects.append(SlashArcEffect(player, direction))
+    def spawn_slash_effect(self, player, direction):
+        self.slash_effects.append(SlashEffect(player, direction))
 
     def spawn_dash_trail(self, player, direction):
         self.dash_trails.append(DashTrail(player, direction))

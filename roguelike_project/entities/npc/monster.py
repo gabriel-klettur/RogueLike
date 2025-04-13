@@ -3,12 +3,13 @@ from roguelike_project.utils.loader import load_image
 from roguelike_project.config import DEBUG
 
 class Monster:
-    def __init__(self, x, y):
+    def __init__(self, x, y, name="Monster"):
         self.x = x
         self.y = y
         self.health = 60
         self.max_health = 60
         self.sprite_size = (256, 256)
+        self.name = name
 
         # Sprites por dirección
         self.sprites = {
