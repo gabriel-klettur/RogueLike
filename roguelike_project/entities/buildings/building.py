@@ -8,6 +8,7 @@ class Building:
         self.x = x
         self.y = y
         self.solid = solid
+        self.image_path = image_path  # ✅ ← Agregá esta línea
 
         self.image = load_image(image_path)
         if scale:
