@@ -15,5 +15,6 @@ def load_buildings():
         Building(1100, 466, "assets/buildings/others/fuente.png", solid=True, scale=(600, 600)),
         Building(600, 966, "assets/buildings/shops/blacksmith.png", solid=True, scale=(1200, 1200)),
         Building(2100, 1066, "assets/buildings/houses/orden_house.png", solid=True, scale=(1200, 1200)),
-        Building(3600, 1266, "assets/buildings/shops/jewlery_shop.png", solid=True, scale=(1000, 1000))        
+        Building(3600, 1266, "assets/buildings/shops/jewlery_shop.png", solid=True, scale=(1000, 1000)),   
+        Building(5000, 1766, "assets/buildings/others/guillotina.png", solid=True, scale=(400, 400))        
     ]
