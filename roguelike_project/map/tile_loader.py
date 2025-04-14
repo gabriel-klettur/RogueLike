@@ -6,14 +6,23 @@ import random
 from roguelike_project.config import TILE_SIZE
 from roguelike_project.map.tile import Tile
 
-def load_tile_images():
+def load_tile_images(theme="default"):
+    path = "assets/tiles"
+
     floor_variants = [
-        load_image(f"assets/tiles/floor_{i}.png", (TILE_SIZE, TILE_SIZE))
-        for i in range(1, 8)
+        load_image(f"{path}/floor_{i}.png", (TILE_SIZE, TILE_SIZE))
+        for i in range(1, 2)
     ]
+
+    dungeon_variants = [
+        load_image(f"{path}/dungeon_{i}.png", (TILE_SIZE, TILE_SIZE))
+        for i in range(1, 2)  # ajusta según los archivos que tengas
+    ]
+
     return {
-        ".": floor_variants,
-        "#": load_image("assets/tiles/wall.png", (TILE_SIZE, TILE_SIZE))
+        ".": floor_variants,       # Piso normal
+        "#": load_image(f"{path}/wall.png", (TILE_SIZE, TILE_SIZE)),  # Pared
+        "D": dungeon_variants      # Piso de dungeon
     }
 
 def load_map_from_text(map_data):
