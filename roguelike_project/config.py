@@ -1,7 +1,7 @@
 # roguelike_project/config.py
 
 # Debug Mode
-DEBUG = False
+DEBUG = True
 
 # Pantalla
 SCREEN_WIDTH = 1600
