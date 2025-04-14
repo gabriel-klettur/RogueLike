@@ -1,11 +1,13 @@
 from roguelike_project.entities.buildings.building import Building
 
+
+#! El orden funciona como la posicion z de los edificios para el orden del renderizado
 def load_buildings():
     return [
-        Building(1300, -600, "assets/buildings/temples/catholic.png", (1024, 1024)),
-        Building(0, -600, "assets/buildings/temples/satanist.png", (1024, 1024)),
-        Building(1300, 200, "assets/buildings/shops/alchemy_1.png", (512, 1024)),
-        Building(1800, 400, "assets/buildings/shops/healer_1.png", (512, 512)),
-        Building(2500, 500, "assets/buildings/shops/healer.png", (512, 512)),
-        Building(2900, -600, "assets/buildings/castles/castle_1.png", (3072, 2048)),
+        Building(3000, -900, "assets/buildings/castles/castle_1.png", scale=(3072, 2048)),
+        Building(1800, -600, "assets/buildings/temples/catholic.png", solid=True, scale=(1024, 1024)),
+        Building(500, -600, "assets/buildings/temples/satanist.png", solid=True, scale=(1024, 1024)),
+        Building(1950, 400, "assets/buildings/shops/alchemy_1.png", (512, 1024)),
+        Building(3200, 900, "assets/buildings/shops/healer_1.png", (512, 512)),
+        Building(4300, 966, "assets/buildings/shops/healer.png", (512, 512))
     ]
