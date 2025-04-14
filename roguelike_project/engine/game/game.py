@@ -43,10 +43,12 @@ class Game:
         self.state.running = True
         self.state.perf_log = perf_log
         
+    #! ---------------------------------- MAP ----------------------------------
     def _init_map(self):
         self.map_data, self.state.tile_map = build_map()
         self.state.tiles = [tile for row in self.state.tile_map for tile in row]
         
+    #!  ------------------------------- ENTITIES --------------------------------
     def _init_entities(self):
         player, obstacles, buildings, enemies = load_entities()
         self.state.player = player
@@ -54,6 +56,7 @@ class Game:
         self.state.buildings = buildings
         self.state.enemies = enemies
 
+    #! -------------------------------- SYSTEMS --------------------------------
     def _init_systems(self):
         self.renderer = Renderer()
         
