@@ -1,8 +1,9 @@
-
+# roguelike_project/map/map_merger.py
 
 import random
 
-from roguelike_project.map.dungeon_generator import find_closest_room_center, create_horizontal_tunnel, create_vertical_tunnel
+from roguelike_project.map.geometry import find_closest_room_center
+from roguelike_project.map.dungeon_generator import create_horizontal_tunnel, create_vertical_tunnel
 
 def merge_handmade_with_generated(handmade_map, generated_map, offset_x=0, offset_y=0, merge_mode="center_to_center", dungeon_rooms=None):
     print("🔀 Iniciando merge del lobby con dungeon...")
@@ -31,9 +32,12 @@ def merge_handmade_with_generated(handmade_map, generated_map, offset_x=0, offse
 def connect_from_lobby_exit(map_, lobby_map, offset_x, offset_y, dungeon_rooms):
     print("📡 Buscando punto de salida del lobby...")
     exit_pos = find_exit_from_lobby(lobby_map, offset_x, offset_y)
+
     if not exit_pos:
-        print("❌ No se encontró salida en el lobby.")
-        return
+        print("⚠️ Forzando salida central en borde inferior del lobby.")
+        mid_x = len(lobby_map[0]) // 2
+        ensure_lobby_exit_at(lobby_map, mid_x, len(lobby_map) - 1)
+        exit_pos = (offset_x + mid_x, offset_y + len(lobby_map) - 1)
 
     exit_x, exit_y = exit_pos
     print(f"🚪 Punto de salida del lobby: ({exit_x}, {exit_y})")
@@ -49,7 +53,6 @@ def connect_from_lobby_exit(map_, lobby_map, offset_x, offset_y, dungeon_rooms):
         print("📏 Trayectoria: Vertical ➝ Horizontal")
         create_vertical_tunnel(map_, exit_y, target_y, exit_x)
         create_horizontal_tunnel(map_, exit_x, target_x, target_y)
-
 
 def find_exit_from_lobby(lobby_map, offset_x, offset_y):
     print("🔍 Buscando un '.' en el borde inferior del lobby...")
@@ -72,3 +75,9 @@ def find_exit_from_lobby(lobby_map, offset_x, offset_y):
 
     print("⚠️ No se encontró una salida válida en el lobby.")
     return None
+
+def ensure_lobby_exit_at(lobby_map, x, y):
+    print(f"🧱 Forzando salida en lobby en coordenada relativa ({x}, {y})")
+    row = list(lobby_map[y])
+    row[x] = "."
+    lobby_map[y] = "".join(row)

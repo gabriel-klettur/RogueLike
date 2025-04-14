@@ -1,12 +1,18 @@
-# roguelike_project/map/map_generator.py
+# roguelike_project/map/dungeon_generator.py
 
 import random
 from roguelike_project.config import DUNGEON_WIDTH, DUNGEON_HEIGHT
+from roguelike_project.map.geometry import intersect, center_of
 
-from roguelike_project.map.geometry import intersect, center_of, find_closest_room_center
-
-
-def generate_dungeon_map(width=DUNGEON_WIDTH, height=DUNGEON_HEIGHT, max_rooms=10, room_min_size=10, room_max_size=20, return_rooms=False):
+def generate_dungeon_map(
+    width=DUNGEON_WIDTH,
+    height=DUNGEON_HEIGHT,
+    max_rooms=10,
+    room_min_size=10,
+    room_max_size=20,
+    return_rooms=False,
+    avoid_zone=None
+):
     print("📦 Generando dungeon procedural...")
     map_ = [["#" for _ in range(width)] for _ in range(height)]
     rooms = []
@@ -16,11 +22,20 @@ def generate_dungeon_map(width=DUNGEON_WIDTH, height=DUNGEON_HEIGHT, max_rooms=1
         h = random.randint(room_min_size, room_max_size)
         x = random.randint(1, width - w - 1)
         y = random.randint(1, height - h - 1)
-
         new_room = (x, y, x + w, y + h)
+
+        # Validar colisión con otras habitaciones
         if any(intersect(room, new_room) for room in rooms):
             print(f"⛔ Habitación {i} descartada por colisión")
             continue
+
+        # Validar colisión con zona protegida (conexión)
+        if avoid_zone:
+            zx1, zy1, zx2, zy2 = avoid_zone
+            x1, y1, x2, y2 = new_room
+            if not (x2 < zx1 or x1 > zx2 or y2 < zy1 or y1 > zy2):
+                print(f"⛔ Habitación {i} bloqueada por zona de conexión segura")
+                continue
 
         print(f"✅ Habitación {i} aceptada en: {new_room}")
         for i_ in range(y, y + h):
@@ -40,9 +55,7 @@ def generate_dungeon_map(width=DUNGEON_WIDTH, height=DUNGEON_HEIGHT, max_rooms=1
         rooms.append(new_room)
 
     print(f"🏰 Total habitaciones generadas: {len(rooms)}")
-    if return_rooms:
-        return map_, rooms
-    return map_
+    return (map_, rooms) if return_rooms else map_
 
 def create_horizontal_tunnel(map_, x1, x2, y):
     print(f"🛠️  Crear pasillo horizontal en Y={y}, de X={x1} a X={x2}")
@@ -53,6 +66,3 @@ def create_vertical_tunnel(map_, y1, y2, x):
     print(f"🛠️  Crear pasillo vertical en X={x}, de Y={y1} a Y={y2}")
     for y in range(min(y1, y2), max(y1, y2) + 1):
         map_[y][x] = "."
-
-
-
