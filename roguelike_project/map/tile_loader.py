@@ -16,14 +16,27 @@ def load_tile_images(theme="default"):
 
     dungeon_variants = [
         load_image(f"{path}/dungeon_{i}.png", (TILE_SIZE, TILE_SIZE))
-        for i in range(1, 2)  # ajusta según los archivos que tengas
+        for i in range(1, 2)
+    ]
+
+    room_variants = [
+        load_image(f"{path}/dungeon_{i}.png", (TILE_SIZE, TILE_SIZE))
+        for i in range(1, 2)
+    ]
+
+    tunnel_variants = [
+        load_image(f"{path}/dungeon_{i}.png", (TILE_SIZE, TILE_SIZE))
+        for i in range(1, 2)
     ]
 
     return {
-        ".": floor_variants,       # Piso normal
-        "#": load_image(f"{path}/wall.png", (TILE_SIZE, TILE_SIZE)),  # Pared
-        "D": dungeon_variants      # Piso de dungeon
+        ".": floor_variants,
+        "#": load_image(f"{path}/wall.png", (TILE_SIZE, TILE_SIZE)),
+        "D": dungeon_variants,  # Podés mantener esto si lo usás en otras partes
+        "O": room_variants,
+        "=": tunnel_variants
     }
+
 
 def load_map_from_text(map_data):
     tile_images = load_tile_images()

@@ -40,7 +40,7 @@ def generate_dungeon_map(
         print(f"✅ Habitación {i} aceptada en: {new_room}")
         for i_ in range(y, y + h):
             for j in range(x, x + w):
-                map_[i_][j] = "D"
+                map_[i_][j] = "O"
 
         if rooms:
             prev_x, prev_y = center_of(rooms[-1])
@@ -59,8 +59,8 @@ def generate_dungeon_map(
 
 def create_horizontal_tunnel(map_, x1, x2, y):
     for x in range(min(x1, x2), max(x1, x2) + 1):
-        map_[y][x] = "D"
+        map_[y][x] = "="
 
 def create_vertical_tunnel(map_, y1, y2, x):
     for y in range(min(y1, y2), max(y1, y2) + 1):
-        map_[y][x] = "D"
+        map_[y][x] = "="
