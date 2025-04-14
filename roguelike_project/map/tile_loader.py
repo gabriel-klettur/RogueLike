@@ -11,22 +11,19 @@ def load_tile_images(theme="default"):
 
     floor_variants = [
         load_image(f"{path}/floor_{i}.png", (TILE_SIZE, TILE_SIZE))
-        for i in range(1, 2)
+        for i in range(1, 1)
     ]
 
     dungeon_variants = [
-        load_image(f"{path}/dungeon_{i}.png", (TILE_SIZE, TILE_SIZE))
-        for i in range(1, 2)
+        load_image(f"{path}/dungeon_1.png", (TILE_SIZE, TILE_SIZE))
     ]
 
     room_variants = [
-        load_image(f"{path}/dungeon_{i}.png", (TILE_SIZE, TILE_SIZE))
-        for i in range(1, 2)
+        load_image(f"{path}/dungeon_1.png", (TILE_SIZE, TILE_SIZE))  # reutilizado por ahora
     ]
 
     tunnel_variants = [
-        load_image(f"{path}/dungeon_{i}.png", (TILE_SIZE, TILE_SIZE))
-        for i in range(1, 2)
+        load_image(f"{path}/dungeon_1.png", (TILE_SIZE, TILE_SIZE))  # reutilizado por ahora
     ]
 
     return {
