@@ -11,7 +11,7 @@ def load_tile_images(theme="default"):
 
     floor_variants = [
         load_image(f"{path}/floor_{i}.png", (TILE_SIZE, TILE_SIZE))
-        for i in range(1, 2)
+        for i in range(1, 8)
     ]
 
     dungeon_variants = [
