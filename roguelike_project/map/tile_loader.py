@@ -25,7 +25,7 @@ def load_tile_images(theme="default"):
     ]
 
     tunnel_variants = [
-        load_image(f"{path}/dungeon_{i}.png", (TILE_SIZE, TILE_SIZE))
+        load_image(f"{path}/dungeon_c_{i}.png", (TILE_SIZE, TILE_SIZE))
         for i in range(1, 2)
     ]
 
