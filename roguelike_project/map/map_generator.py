@@ -15,12 +15,12 @@ def center_of(room):
     x1, y1, x2, y2 = room
     return (x1 + x2) // 2, (y1 + y2) // 2
 
-def create_h_corridor(map_, x1, x2, y):
+def create_horizontal_tunnel(map_, x1, x2, y):
     print(f"🛠️  Crear pasillo horizontal en Y={y}, de X={x1} a X={x2}")
     for x in range(min(x1, x2), max(x1, x2) + 1):
         map_[y][x] = "."
 
-def create_v_corridor(map_, y1, y2, x):
+def create_vertical_tunnel(map_, y1, y2, x):
     print(f"🛠️  Crear pasillo vertical en X={x}, de Y={y1} a Y={y2}")
     for y in range(min(y1, y2), max(y1, y2) + 1):
         map_[y][x] = "."
@@ -50,11 +50,11 @@ def generate_dungeon_map(width=DUNGEON_WIDTH, height=DUNGEON_HEIGHT, max_rooms=1
             prev_x, prev_y = center_of(rooms[-1])
             new_x, new_y = center_of(new_room)
             if random.random() < 0.5:
-                create_h_corridor(map_, prev_x, new_x, prev_y)
-                create_v_corridor(map_, prev_y, new_y, new_x)
+                create_horizontal_tunnel(map_, prev_x, new_x, prev_y)
+                create_vertical_tunnel(map_, prev_y, new_y, new_x)
             else:
-                create_v_corridor(map_, prev_y, new_y, prev_x)
-                create_h_corridor(map_, prev_x, new_x, new_y)
+                create_vertical_tunnel(map_, prev_y, new_y, prev_x)
+                create_horizontal_tunnel(map_, prev_x, new_x, new_y)
 
         rooms.append(new_room)
 
@@ -102,12 +102,12 @@ def connect_from_lobby_exit(map_, lobby_map, offset_x, offset_y, dungeon_rooms):
 
     if random.random() < 0.5:
         print("📏 Trayectoria: Horizontal ➝ Vertical")
-        create_h_corridor(map_, exit_x, target_x, exit_y)
-        create_v_corridor(map_, exit_y, target_y, target_x)
+        create_horizontal_tunnel(map_, exit_x, target_x, exit_y)
+        create_vertical_tunnel(map_, exit_y, target_y, target_x)
     else:
         print("📏 Trayectoria: Vertical ➝ Horizontal")
-        create_v_corridor(map_, exit_y, target_y, exit_x)
-        create_h_corridor(map_, exit_x, target_x, target_y)
+        create_vertical_tunnel(map_, exit_y, target_y, exit_x)
+        create_horizontal_tunnel(map_, exit_x, target_x, target_y)
 
 def find_closest_room_center(source_x, source_y, dungeon_rooms):
     print(f"🔍 Buscando sala más cercana desde ({source_x}, {source_y})")
