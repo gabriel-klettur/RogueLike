@@ -1,7 +1,7 @@
 # core/game/render/minimap.py
 
 import pygame
-from roguelike_project.map import map_loader
+from roguelike_project.map import tile_loader
 
 def render_minimap(state):
     minimap_width = 200
@@ -14,12 +14,12 @@ def render_minimap(state):
     center_x = minimap_width // 2
     center_y = minimap_height // 2
 
-    player_tile_x = state.player.x // map_loader.TILE_SIZE
-    player_tile_y = state.player.y // map_loader.TILE_SIZE
+    player_tile_x = state.player.x // tile_loader.TILE_SIZE
+    player_tile_y = state.player.y // tile_loader.TILE_SIZE
 
     for tile in state.tiles:
-        tile_x = tile.x // map_loader.TILE_SIZE
-        tile_y = tile.y // map_loader.TILE_SIZE
+        tile_x = tile.x // tile_loader.TILE_SIZE
+        tile_y = tile.y // tile_loader.TILE_SIZE
 
         dx = (tile_x - player_tile_x) * tile_size
         dy = (tile_y - player_tile_y) * tile_size
