@@ -1,7 +1,7 @@
 import time
 import pygame
 from roguelike_project.engine.game.multiplayer.multiplayer import render_remote_players
-from roguelike_project.engine.game.render.minimap import render_minimap
+from roguelike_project.engine.game.render.minimap.minimap import render_minimap
 from roguelike_project.utils.mouse import draw_mouse_crosshair
 from roguelike_project.config import DEBUG, TILE_SIZE
 from roguelike_project.utils.debug_overlay import render_debug_overlay
