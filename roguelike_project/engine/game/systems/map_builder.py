@@ -2,11 +2,11 @@
 
 from roguelike_project.config import DUNGEON_WIDTH, DUNGEON_HEIGHT, LOBBY_OFFSET_X, LOBBY_OFFSET_Y, LOBBY_WIDTH, LOBBY_HEIGHT
 
-from roguelike_project.map.dungeon_generator import generate_dungeon_map
-from roguelike_project.map.map_merger import merge_handmade_with_generated
-from roguelike_project.map.handmade_maps.lobby_map import LOBBY_MAP
-from roguelike_project.map.tile_loader import load_map_from_text
-from roguelike_project.map.map_exporter import save_map_with_autoname
+from roguelike_project.engine.game.systems.map.dungeon_generator import generate_dungeon_map
+from roguelike_project.engine.game.systems.map.map_merger import merge_handmade_with_generated
+from roguelike_project.engine.game.systems.map.handmade_maps.lobby_map import LOBBY_MAP
+from roguelike_project.engine.game.systems.map.tile_loader import load_map_from_text
+from roguelike_project.engine.game.systems.map.map_exporter import save_map_with_autoname
 
 
 def build_map(

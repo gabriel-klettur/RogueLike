@@ -2,7 +2,7 @@
 
 import random
 from roguelike_project.config import DUNGEON_WIDTH, DUNGEON_HEIGHT
-from roguelike_project.map.geometry import intersect, center_of
+from roguelike_project.engine.game.systems.map.geometry import intersect, center_of
 
 def generate_dungeon_map(
     width=DUNGEON_WIDTH,

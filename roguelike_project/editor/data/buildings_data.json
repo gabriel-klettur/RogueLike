@@ -80,8 +80,8 @@
         ]
     },
     {
-        "x": 1074,
-        "y": 566,
+        "x": 485,
+        "y": 867,
         "image_path": "assets/buildings/others/fuente.png",
         "solid": true,
         "scale": [

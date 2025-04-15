@@ -2,8 +2,8 @@
 
 import random
 
-from roguelike_project.map.geometry import find_closest_room_center
-from roguelike_project.map.dungeon_generator import create_horizontal_tunnel, create_vertical_tunnel
+from roguelike_project.engine.game.systems.map.geometry import find_closest_room_center
+from roguelike_project.engine.game.systems.map.dungeon_generator import create_horizontal_tunnel, create_vertical_tunnel
 
 def merge_handmade_with_generated(handmade_map, generated_map, offset_x=0, offset_y=0, merge_mode="center_to_center", dungeon_rooms=None):
     print("🔀 Iniciando merge del lobby con dungeon...")

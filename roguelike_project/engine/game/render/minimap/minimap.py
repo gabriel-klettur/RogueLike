@@ -1,7 +1,7 @@
 # core/game/render/minimap.py
 
 import pygame
-from roguelike_project.map import tile_loader
+from roguelike_project.engine.game.systems.map import tile_loader
 
 def render_minimap(state):
     minimap_width = 200
