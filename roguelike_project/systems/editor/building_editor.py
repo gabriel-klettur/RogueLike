@@ -11,8 +11,10 @@ class BuildingEditor:
             world_x = mx / self.state.camera.zoom + self.state.camera.offset_x
             world_y = my / self.state.camera.zoom + self.state.camera.offset_y
 
-            self.editor.selected_building.x = world_x - self.editor.offset_x
-            self.editor.selected_building.y = world_y - self.editor.offset_y
+            b = self.editor.selected_building
+            b.x = world_x - self.editor.offset_x
+            b.y = world_y - self.editor.offset_y
+            b.rect.topleft = (b.x, b.y)  
 
     def handle_mouse_down(self, pos):
         mx, my = pos
@@ -37,4 +39,17 @@ class BuildingEditor:
             building = self.editor.selected_building
             x, y = self.state.camera.apply((building.x, building.y))
             w, h = self.state.camera.scale((building.image.get_width(), building.image.get_height()))
-            pygame.draw.rect(screen, (255, 255, 255), pygame.Rect(x, y, w, h), 2)
+
+            rect = pygame.Rect(x, y, w, h)
+
+            if self.editor.dragging:
+                # 🟩 Fondo verde con transparencia
+                overlay = pygame.Surface((w, h), pygame.SRCALPHA)
+                overlay.fill((0, 255, 0, 80))  # RGBA → verde transparente
+                screen.blit(overlay, (x, y))
+
+                # 🟢 Borde verde grueso
+                pygame.draw.rect(screen, (0, 255, 0), rect, 4)
+            else:
+                # ⚪ Borde blanco fino
+                pygame.draw.rect(screen, (255, 255, 255), rect, 2)
