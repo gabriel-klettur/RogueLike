@@ -1,10 +1,13 @@
 import pygame
 
+from roguelike_project.systems.editor.tools.resize_tool import ResizeTool
+from roguelike_project.systems.editor.tools.default_tool import DefaultTool
 class BuildingEditor:
     def __init__(self, state, editor_state):
         self.state = state
         self.editor = editor_state
-        self.resize_handle_size = 50  # px reales, sin escalar
+        self.resize_tool = ResizeTool(state, editor_state)
+        self.default_tool = DefaultTool(state, editor_state)
 
     def update(self):
         if self.editor.dragging and self.editor.selected_building:
@@ -18,25 +21,28 @@ class BuildingEditor:
             b.rect.topleft = (b.x, b.y)
 
         elif self.editor.resizing and self.editor.selected_building:
-            self.update_resizing(pygame.mouse.get_pos())
+            self.resize_tool.update_resizing(pygame.mouse.get_pos())
 
     def handle_mouse_down(self, pos):
         mx, my = pos
         world_x = mx / self.state.camera.zoom + self.state.camera.offset_x
         world_y = my / self.state.camera.zoom + self.state.camera.offset_y
 
-        # Verificar si se está clickeando sobre el handle de *cualquier* building
         for building in reversed(self.state.buildings):
-            if self.editor.active:
-                if self.check_resize_handle_click(mx, my, building):
-                    self.editor.selected_building = building
-                    self.editor.resizing = True
-                    self.editor.resize_origin = (mx, my)
-                    self.editor.initial_size = building.image.get_size()
-                    print(f"🔧 Iniciando resize de {building.image_path} desde {self.editor.initial_size}")
-                    return
+            # 🟦 Resize handle
+            if self.resize_tool.check_resize_handle_click(mx, my, building):
+                self.editor.selected_building = building
+                self.editor.resizing = True
+                self.editor.resize_origin = (mx, my)
+                self.editor.initial_size = building.image.get_size()
+                print(f"🔧 Iniciando resize de {building.image_path} desde {self.editor.initial_size}")
+                return
 
-        # Si no, intentar seleccionar
+            # ⬜ Reset handle
+            if self.default_tool.check_reset_handle_click(mx, my, building):
+                self.default_tool.apply_reset(building)
+                return
+
         for building in reversed(self.state.buildings):
             if building.rect.collidepoint(world_x, world_y):
                 self.editor.selected_building = building
@@ -53,6 +59,7 @@ class BuildingEditor:
 
         self.editor.dragging = False
         self.editor.selected_building = None
+
 
     def check_resize_handle_click(self, mx, my, building):
         """Verifica si el clic fue sobre el handle de resize de un building específico"""
@@ -81,14 +88,14 @@ class BuildingEditor:
 
     def render_selection_outline(self, screen):
         if self.editor.active:
-            # Render rect y handle de todos los edificios visibles
             for building in self.state.buildings:
                 x, y = self.state.camera.apply((building.x, building.y))
                 w, h = self.state.camera.scale(building.image.get_size())
                 rect = pygame.Rect(x, y, w, h)
 
                 pygame.draw.rect(screen, (255, 255, 255), rect, 1)
-                self.render_resize_handle(screen, rect)
+                self.default_tool.render_reset_handle(screen, building)
+                self.resize_tool.render_resize_handle(screen, building)
 
     def render_resize_handle(self, screen, building_rect):
         """Dibuja el handle en la esquina superior derecha"""

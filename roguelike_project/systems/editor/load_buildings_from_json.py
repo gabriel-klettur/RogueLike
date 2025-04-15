@@ -23,6 +23,9 @@ def load_buildings_from_json(filepath, building_class):
                 solid=entry.get("solid", True),
                 scale=tuple(entry["scale"]) if "scale" in entry else None
             )
+            # 🆕 Asignar escala original si existe
+            if "original_scale" in entry and entry["original_scale"]:
+                b.original_scale = tuple(entry["original_scale"])
             buildings.append(b)
         except Exception as e:
             print(f"⚠️ Error al crear edificio desde entrada JSON: {e}")

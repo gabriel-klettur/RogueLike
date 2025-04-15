@@ -7,16 +7,24 @@
         "scale": [
             2048,
             2048
+        ],
+        "original_scale": [
+            2048,
+            2048
         ]
     },
     {
-        "x": 1722,
-        "y": -1121,
+        "x": 2136,
+        "y": -922,
         "image_path": "assets/buildings/temples/catholic.png",
         "solid": true,
         "scale": [
-            1012,
-            1012
+            980,
+            1470
+        ],
+        "original_scale": [
+            1024,
+            1536
         ]
     },
     {
@@ -25,6 +33,10 @@
         "image_path": "assets/buildings/castles/castle_2.png",
         "solid": true,
         "scale": [
+            3072,
+            2048
+        ],
+        "original_scale": [
             3072,
             2048
         ]
@@ -37,26 +49,52 @@
         "scale": [
             1024,
             1024
+        ],
+        "original_scale": [
+            1024,
+            1024
         ]
     },
     {
-        "x": 1575,
-        "y": -239,
+        "x": 1731,
+        "y": 166,
         "image_path": "assets/buildings/others/portal.png",
         "solid": true,
         "scale": [
-            512,
-            824
+            253,
+            404
+        ],
+        "original_scale": [
+            253,
+            404
         ]
     },
     {
-        "x": 1262,
-        "y": 350,
+        "x": 519,
+        "y": 499,
+        "image_path": "assets/buildings/others/portal_2.png",
+        "solid": true,
+        "scale": [
+            279,
+            416
+        ],
+        "original_scale": [
+            1024,
+            1536
+        ]
+    },
+    {
+        "x": 1360,
+        "y": 551,
         "image_path": "assets/buildings/shops/alchemy_tower.png",
         "solid": true,
         "scale": [
-            550,
-            845
+            471,
+            723
+        ],
+        "original_scale": [
+            471,
+            723
         ]
     },
     {
@@ -65,6 +103,10 @@
         "image_path": "assets/buildings/shops/healer_1.png",
         "solid": true,
         "scale": [
+            397,
+            397
+        ],
+        "original_scale": [
             397,
             397
         ]
@@ -77,14 +119,22 @@
         "scale": [
             441,
             441
+        ],
+        "original_scale": [
+            441,
+            441
         ]
     },
     {
-        "x": 753,
-        "y": 797,
+        "x": 927,
+        "y": 529,
         "image_path": "assets/buildings/others/fuente.png",
         "solid": true,
         "scale": [
+            416,
+            416
+        ],
+        "original_scale": [
             521,
             521
         ]
@@ -97,16 +147,24 @@
         "scale": [
             1200,
             1200
+        ],
+        "original_scale": [
+            1200,
+            1200
         ]
     },
     {
         "x": 1922,
         "y": 876,
-        "image_path": "assets/buildings/houses/orden_house.png",
+        "image_path": "assets/buildings/houses/orden_house_2.png",
         "solid": true,
         "scale": [
-            901,
-            901
+            832,
+            832
+        ],
+        "original_scale": [
+            832,
+            832
         ]
     },
     {
@@ -117,6 +175,10 @@
         "scale": [
             595,
             595
+        ],
+        "original_scale": [
+            595,
+            595
         ]
     },
     {
@@ -125,6 +187,10 @@
         "image_path": "assets/buildings/others/guillotina.png",
         "solid": true,
         "scale": [
+            400,
+            400
+        ],
+        "original_scale": [
             400,
             400
         ]

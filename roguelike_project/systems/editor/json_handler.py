@@ -11,7 +11,8 @@ def save_buildings_to_json(buildings, filepath):
                 "y": int(b.y),
                 "image_path": b.image_path,
                 "solid": b.solid,
-                "scale": [b.image.get_width(), b.image.get_height()]
+                "scale": [b.image.get_width(), b.image.get_height()],
+                "original_scale": list(b.original_scale) if b.original_scale else None
             }
             data.append(building_data)
         except Exception as e:
