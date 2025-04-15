@@ -3,6 +3,7 @@ import time
 from roguelike_project.network.client import WebSocketClient
 
 from roguelike_project.systems.effects.particles.explosions.fire import FireExplosion
+import roguelike_project.config as config
 
 def handle_events(state):
     for event in pygame.event.get():
@@ -65,6 +66,10 @@ def handle_events(state):
                 if hasattr(state, "editor"):
                     state.editor.active = not state.editor.active
                     print("🛠️ Modo editor activado" if state.editor.active else "🛑 Modo editor desactivado")
+            
+            elif event.key == pygame.K_F9:            
+                config.DEBUG = not config.DEBUG
+                print(f"🧪 DEBUG {'activado' if config.DEBUG else 'desactivado'}")
 
         elif event.type == pygame.MOUSEWHEEL:
             if event.y > 0:

@@ -1,5 +1,6 @@
 import pygame
 from roguelike_project.systems.editor.json_handler import save_buildings_to_json
+from roguelike_project import config
 
 def handle_editor_events(state, editor_state, building_editor):
     for event in pygame.event.get():

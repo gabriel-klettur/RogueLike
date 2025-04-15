@@ -1,6 +1,6 @@
 import pygame
 
-from roguelike_project.config import DEBUG
+import roguelike_project.config as config
 from roguelike_project.config import TILE_SIZE
 
 class Tile:
@@ -33,7 +33,7 @@ class Tile:
         scaled_sprite = self.scaled_cache[zoom]
         screen.blit(scaled_sprite, camera.apply((self.x, self.y)))
 
-        if self.solid and DEBUG:
+        if self.solid and config.DEBUG:
             scaled_rect = pygame.Rect(
                 camera.apply(self.rect.topleft),
                 camera.scale(self.rect.size)

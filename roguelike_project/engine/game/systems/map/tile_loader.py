@@ -1,7 +1,6 @@
 # roguelike_project/map/map_loader.py
 
 from roguelike_project.utils.loader import load_image
-from roguelike_project.config import DEBUG
 import random
 from roguelike_project.config import TILE_SIZE
 from roguelike_project.engine.game.systems.map.tile import Tile

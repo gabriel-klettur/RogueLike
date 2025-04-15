@@ -1,6 +1,6 @@
 import pygame
 from roguelike_project.utils.loader import load_image
-from roguelike_project.config import DEBUG
+import roguelike_project.config as config
 
 class Building:
     def __init__(self, x, y, image_path, solid=True, scale=None):
@@ -29,7 +29,7 @@ class Building:
             scaled_image = self.scaled_cache[zoom]
             screen.blit(scaled_image, camera.apply((self.x, self.y)))
 
-            if self.solid and DEBUG:
+            if self.solid and config.DEBUG:
                 scaled_rect = pygame.Rect(
                     camera.apply(self.rect.topleft),
                     camera.scale(self.rect.size)

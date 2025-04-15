@@ -3,7 +3,8 @@ import pygame
 from roguelike_project.engine.game.systems.multiplayer.multiplayer import render_remote_players
 from roguelike_project.engine.game.render.minimap.minimap import render_minimap
 from roguelike_project.utils.mouse import draw_mouse_crosshair
-from roguelike_project.config import DEBUG, TILE_SIZE
+from roguelike_project.config import TILE_SIZE
+import roguelike_project.config as config
 from roguelike_project.utils.debug_overlay import render_debug_overlay
 
 
@@ -53,7 +54,7 @@ class Renderer:
         benchmark("--3.11. minimap", lambda: self._render_minimap(state))
         benchmark("--3.12. all_systems", lambda: state.systems.render(screen, cam))
         
-        if DEBUG and perf_log is not None:
+        if config.DEBUG and perf_log is not None:
             extra_lines = [state] + self._get_custom_debug_lines(state)
             render_debug_overlay(screen, perf_log, extra_lines=extra_lines, position=(8, 8))
 

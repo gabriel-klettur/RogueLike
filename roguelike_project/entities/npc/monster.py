@@ -1,6 +1,6 @@
 import pygame
 from roguelike_project.utils.loader import load_image
-from roguelike_project.config import DEBUG
+import roguelike_project.config as config
 
 class Monster:
     def __init__(self, x, y, name="Monster"):
@@ -80,7 +80,7 @@ class Monster:
 
         self.render_health_bar(screen, camera)
 
-        if DEBUG:
+        if config.DEBUG:
             outline = self.mask.outline()
             scaled_outline = [camera.apply((self.x + x, self.y + y)) for x, y in outline]
             if len(scaled_outline) >= 3:
