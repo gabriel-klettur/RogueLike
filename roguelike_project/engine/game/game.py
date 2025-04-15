@@ -15,10 +15,10 @@ from roguelike_project.systems.systems_manager import SystemsManager
 
 # 🛠️ Módulos del editor
 from roguelike_project.systems.editor.editor_state import EditorState
-from roguelike_project.systems.editor.building_editor import BuildingEditor
-from roguelike_project.systems.editor.editor_events import handle_editor_events
-from roguelike_project.systems.editor.tools.placer_tool import PlacerTool
-from roguelike_project.systems.editor.tools.delete_tool import DeleteTool
+from roguelike_project.systems.editor.buildings.building_editor import BuildingEditor
+from roguelike_project.systems.editor.buildings.editor_events import handle_editor_events
+from roguelike_project.systems.editor.buildings.tools.placer_tool import PlacerTool
+from roguelike_project.systems.editor.buildings.tools.delete_tool import DeleteTool
 from roguelike_project.systems.editor.json_handler import save_buildings_to_json
 
 class Game:

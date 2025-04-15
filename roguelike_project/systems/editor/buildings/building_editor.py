@@ -1,7 +1,7 @@
 import pygame
 
-from roguelike_project.systems.editor.tools.resize_tool import ResizeTool
-from roguelike_project.systems.editor.tools.default_tool import DefaultTool
+from roguelike_project.systems.editor.buildings.tools.resize_tool import ResizeTool
+from roguelike_project.systems.editor.buildings.tools.default_tool import DefaultTool
 class BuildingEditor:
     def __init__(self, state, editor_state):
         self.state = state
