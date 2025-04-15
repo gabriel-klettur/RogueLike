@@ -2,7 +2,8 @@
 
 import os
 from roguelike_project.entities.buildings.building import Building
-from roguelike_project.systems.editor.json_handler import load_buildings_from_json, save_buildings_to_json
+from roguelike_project.systems.editor.json_handler import  save_buildings_to_json
+from roguelike_project.systems.editor.load_buildings_from_json import load_buildings_from_json
 
 BUILDINGS_JSON_PATH = "roguelike_project/editor/data/buildings_data.json"
 

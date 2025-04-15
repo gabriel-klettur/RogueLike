@@ -1,6 +1,5 @@
-# roguelike_project/editor/editor_events.py
-
 import pygame
+from roguelike_project.systems.editor.json_handler import save_buildings_to_json
 
 def handle_editor_events(state, editor_state, building_editor):
     for event in pygame.event.get():
@@ -24,4 +23,10 @@ def handle_editor_events(state, editor_state, building_editor):
 
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 3:
+                # ⚠️ Hacemos esto ANTES de soltar la referencia
+                if editor_state.selected_building and editor_state.dragging:
+                    b = editor_state.selected_building
+                    print(f"💾 Guardando edificio: {b.image_path} en ({int(b.x)}, {int(b.y)})")
+                    save_buildings_to_json(state.buildings, "roguelike_project/editor/data/buildings_data.json")
+
                 building_editor.handle_mouse_up()
