@@ -30,8 +30,8 @@
         ]
     },
     {
-        "x": 488,
-        "y": -389,
+        "x": 465,
+        "y": -495,
         "image_path": "assets/buildings/temples/satanist.png",
         "solid": true,
         "scale": [
@@ -40,8 +40,8 @@
         ]
     },
     {
-        "x": 1605,
-        "y": -22,
+        "x": 1599,
+        "y": -163,
         "image_path": "assets/buildings/others/portal.png",
         "solid": true,
         "scale": [
@@ -80,13 +80,13 @@
         ]
     },
     {
-        "x": 934,
-        "y": 540,
+        "x": 1074,
+        "y": 566,
         "image_path": "assets/buildings/others/fuente.png",
         "solid": true,
         "scale": [
-            600,
-            600
+            300,
+            300
         ]
     },
     {

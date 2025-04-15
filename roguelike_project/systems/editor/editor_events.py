@@ -11,6 +11,7 @@ def handle_editor_events(state, editor_state, building_editor):
                 editor_state.active = False
                 editor_state.selected_building = None
                 editor_state.dragging = False
+                editor_state.resizing = False
                 print("🔚 Modo editor desactivado")
 
             elif event.key == pygame.K_F10:
@@ -18,15 +19,20 @@ def handle_editor_events(state, editor_state, building_editor):
                 print("🛠️ Modo editor activado" if editor_state.active else "🛑 Modo editor desactivado")
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 3:  # Mouse derecho
+            if event.button == 3:  # Botón derecho
                 building_editor.handle_mouse_down(pygame.mouse.get_pos())
 
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 3:
-                # ⚠️ Hacemos esto ANTES de soltar la referencia
-                if editor_state.selected_building and editor_state.dragging:
-                    b = editor_state.selected_building
-                    print(f"💾 Guardando edificio: {b.image_path} en ({int(b.x)}, {int(b.y)})")
-                    save_buildings_to_json(state.buildings, "roguelike_project/editor/data/buildings_data.json")
+                if editor_state.selected_building:
+                    # Guardar solo si se estaba redimensionando o arrastrando
+                    if editor_state.dragging or editor_state.resizing:
+                        b = editor_state.selected_building
+                        print(f"💾 Guardando edificio: {b.image_path} en ({int(b.x)}, {int(b.y)})")
+                        save_buildings_to_json(state.buildings, "roguelike_project/editor/data/buildings_data.json")
 
                 building_editor.handle_mouse_up()
+
+        elif event.type == pygame.MOUSEMOTION:
+            if editor_state.resizing:
+                building_editor.update_resizing(event.pos)
