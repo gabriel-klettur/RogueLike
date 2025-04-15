@@ -2,9 +2,9 @@ import pygame
 
 from roguelike_project.engine.game.input.events import handle_events
 from roguelike_project.engine.game.systems.state import GameState
-from roguelike_project.engine.game.systems.map_builder import build_map
+from roguelike_project.engine.game.systems.map_manager import build_map
 from roguelike_project.engine.game.systems.entity import load_entities
-from roguelike_project.engine.game.systems.network_manager import NetworkManager
+from roguelike_project.engine.game.systems.multiplayer_manager import NetworkManager
 from roguelike_project.ui.menus.menu import Menu
 from roguelike_project.engine.camera import Camera
 from roguelike_project.engine.game.render.render import Renderer
