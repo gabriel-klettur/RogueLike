@@ -1,6 +1,6 @@
 import pygame
 from roguelike_project.utils.loader import load_image
-from roguelike_project.config import DEBUG
+import roguelike_project.config as config
 
 class Obstacle:
     def __init__(self, x, y, sprite_path="assets/objects/rock.png", size=(64, 64)):
@@ -14,7 +14,7 @@ class Obstacle:
         scaled = pygame.transform.scale(self.sprite, camera.scale(self.size))
         screen.blit(scaled, camera.apply((self.x, self.y)))
 
-        if DEBUG:
+        if config.DEBUG:
             scaled_rect = pygame.Rect(
                 camera.apply(self.rect.topleft),
                 camera.scale(self.rect.size)

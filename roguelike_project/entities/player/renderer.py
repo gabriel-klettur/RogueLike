@@ -1,6 +1,6 @@
 import pygame
 import time
-from roguelike_project.config import DEBUG
+import roguelike_project.config as config
 from roguelike_project.utils.loader import load_image
 from roguelike_project.utils.mouse import get_direction_from_angle, draw_mouse_crosshair
 from roguelike_project.utils.debug import draw_player_aim_line
@@ -137,7 +137,7 @@ class PlayerRenderer:
         self.render_hud(screen, camera)
         draw_mouse_crosshair(screen, camera)
 
-        if DEBUG:
+        if config.DEBUG:
             scaled_hitbox = pygame.Rect(
                 camera.apply(self.player.hitbox.topleft),
                 camera.scale(self.player.hitbox.size)

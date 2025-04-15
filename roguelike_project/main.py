@@ -8,7 +8,9 @@ from collections import defaultdict
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from roguelike_project.engine.game.game import Game
-from roguelike_project.config import DEBUG, FPS, SCREEN_WIDTH, SCREEN_HEIGHT
+from roguelike_project.config import FPS, SCREEN_WIDTH, SCREEN_HEIGHT
+import roguelike_project.config as config
+
 from roguelike_project.utils.debug_overlay import render_debug_overlay
 from roguelike_project.utils.benchmark import benchmark  # ✅ Decorador profesional
 
@@ -23,14 +25,14 @@ def main():
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.HWSURFACE | pygame.DOUBLEBUF)
     pygame.display.set_caption("Roguelike")
 
-    performance_log = init_debug() if DEBUG else None
+    performance_log = init_debug() if config.DEBUG else None
 
     game = Game(screen, perf_log=performance_log)
 
     if not hasattr(game, 'state'):
         raise RuntimeError("Game state not initialized properly!")
 
-    if DEBUG:
+    if config.DEBUG:
         game.handle_events = benchmark(performance_log, '1. handle_events')(game.handle_events)
         game.update = benchmark(performance_log, '2. update')(game.update)
         game.render = benchmark(performance_log, '3. **TOTAL: RENDER')(game.render)
