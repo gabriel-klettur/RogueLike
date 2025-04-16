@@ -30,8 +30,8 @@
         "z": 3
     },
     {
-        "x": 2896,
-        "y": -1157,
+        "x": 2850,
+        "y": -1171,
         "image_path": "assets/buildings/castles/castle_2.png",
         "solid": true,
         "scale": [
@@ -180,8 +180,8 @@
         "z": 3
     },
     {
-        "x": 2376,
-        "y": 172,
+        "x": 3570,
+        "y": 100,
         "image_path": "assets/buildings/shops/jewlery_shop.png",
         "solid": true,
         "scale": [
