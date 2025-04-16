@@ -18,6 +18,9 @@ TILE_SIZE = 64
 # WebSocket URL
 WEBSOCKET_URL = "ws://localhost:8000/ws"
 
+# Z-Layer
+DEFAULT_Z = 3
+
 
 #!--------------------- DUDGEONS CONFIG --------------------------
 # Tamaño del mapa procedural

@@ -35,13 +35,16 @@ def handle_editor_events(state, editor_state, building_editor):
                     )
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 3:  # Botón derecho
-                building_editor.handle_mouse_down(pygame.mouse.get_pos())
+            mx, my = pygame.mouse.get_pos()
+            if event.button == 1:  # 👈 Botón izquierdo: para los botones + y -
+                building_editor.z_tool.handle_mouse_click((mx, my))
+
+            if event.button == 3:  # Botón derecho: para seleccionar edificio
+                building_editor.handle_mouse_down((mx, my))
 
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 3:
                 if editor_state.selected_building:
-                    # Guardar solo si se estaba redimensionando o arrastrando
                     if editor_state.dragging or editor_state.resizing:
                         b = editor_state.selected_building
                         print(f"💾 Guardando edificio: {b.image_path} en ({int(b.x)}, {int(b.y)})")
@@ -50,7 +53,6 @@ def handle_editor_events(state, editor_state, building_editor):
                             "roguelike_project/editor/data/buildings_data.json",
                             z_state=state.z_state
                         )
-
                 building_editor.handle_mouse_up()
 
         elif event.type == pygame.MOUSEMOTION:

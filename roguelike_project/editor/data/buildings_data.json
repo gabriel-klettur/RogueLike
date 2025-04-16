@@ -45,8 +45,8 @@
         "z": 3
     },
     {
-        "x": 361,
-        "y": -451,
+        "x": 369,
+        "y": -502,
         "image_path": "assets/buildings/temples/satanist.png",
         "solid": true,
         "scale": [
@@ -75,8 +75,8 @@
         "z": 3
     },
     {
-        "x": 425,
-        "y": 598,
+        "x": 433,
+        "y": 590,
         "image_path": "assets/buildings/others/portal_2.png",
         "solid": true,
         "scale": [
@@ -135,8 +135,8 @@
         "z": 3
     },
     {
-        "x": 1041,
-        "y": 582,
+        "x": 1065,
+        "y": 654,
         "image_path": "assets/buildings/others/fuente.png",
         "solid": true,
         "scale": [

@@ -1,6 +1,7 @@
 import pygame
 from roguelike_project.utils.loader import load_image
 import roguelike_project.config as config
+from roguelike_project.systems.z_layer.config import DEFAULT_Z
 
 class Building:
     def __init__(self, x, y, image_path, solid=True, scale=None):
@@ -9,6 +10,7 @@ class Building:
         self.solid = solid
         self.image_path = image_path
         self.scaled_cache = {}  # zoom: surface escalada
+        self.z = DEFAULT_Z  #
 
         self.image = load_image(image_path)
 
