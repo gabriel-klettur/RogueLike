@@ -11,11 +11,12 @@
         "original_scale": [
             2048,
             2048
-        ]
+        ],
+        "z": 3
     },
     {
-        "x": 2078,
-        "y": 791,
+        "x": 2208,
+        "y": 779,
         "image_path": "assets/buildings/temples/catholic.png",
         "solid": true,
         "scale": [
@@ -25,11 +26,12 @@
         "original_scale": [
             1024,
             1536
-        ]
+        ],
+        "z": 3
     },
     {
-        "x": 3042,
-        "y": -1024,
+        "x": 2896,
+        "y": -1157,
         "image_path": "assets/buildings/castles/castle_2.png",
         "solid": true,
         "scale": [
@@ -39,7 +41,8 @@
         "original_scale": [
             3072,
             2048
-        ]
+        ],
+        "z": 3
     },
     {
         "x": 361,
@@ -53,11 +56,12 @@
         "original_scale": [
             1024,
             1024
-        ]
+        ],
+        "z": 3
     },
     {
-        "x": 2053,
-        "y": 78,
+        "x": 2093,
+        "y": 128,
         "image_path": "assets/buildings/others/portal.png",
         "solid": true,
         "scale": [
@@ -67,11 +71,12 @@
         "original_scale": [
             253,
             404
-        ]
+        ],
+        "z": 3
     },
     {
-        "x": 474,
-        "y": 523,
+        "x": 425,
+        "y": 598,
         "image_path": "assets/buildings/others/portal_2.png",
         "solid": true,
         "scale": [
@@ -81,7 +86,8 @@
         "original_scale": [
             1024,
             1536
-        ]
+        ],
+        "z": 3
     },
     {
         "x": 1526,
@@ -95,7 +101,8 @@
         "original_scale": [
             471,
             723
-        ]
+        ],
+        "z": 3
     },
     {
         "x": 2741,
@@ -109,7 +116,8 @@
         "original_scale": [
             397,
             397
-        ]
+        ],
+        "z": 3
     },
     {
         "x": 1461,
@@ -123,11 +131,12 @@
         "original_scale": [
             441,
             441
-        ]
+        ],
+        "z": 3
     },
     {
-        "x": 923,
-        "y": 585,
+        "x": 1041,
+        "y": 582,
         "image_path": "assets/buildings/others/fuente.png",
         "solid": true,
         "scale": [
@@ -137,7 +146,8 @@
         "original_scale": [
             521,
             521
-        ]
+        ],
+        "z": 3
     },
     {
         "x": 482,
@@ -151,7 +161,8 @@
         "original_scale": [
             1200,
             1200
-        ]
+        ],
+        "z": 3
     },
     {
         "x": 4522,
@@ -165,11 +176,12 @@
         "original_scale": [
             832,
             832
-        ]
+        ],
+        "z": 3
     },
     {
-        "x": 2568,
-        "y": 22,
+        "x": 2376,
+        "y": 172,
         "image_path": "assets/buildings/shops/jewlery_shop.png",
         "solid": true,
         "scale": [
@@ -179,7 +191,8 @@
         "original_scale": [
             595,
             595
-        ]
+        ],
+        "z": 3
     },
     {
         "x": 3090,
@@ -193,7 +206,8 @@
         "original_scale": [
             1024,
             1024
-        ]
+        ],
+        "z": 3
     },
     {
         "x": 3090,
@@ -207,7 +221,8 @@
         "original_scale": [
             1024,
             1024
-        ]
+        ],
+        "z": 3
     },
     {
         "x": 4862,
@@ -221,6 +236,7 @@
         "original_scale": [
             400,
             400
-        ]
+        ],
+        "z": 3
     }
 ]

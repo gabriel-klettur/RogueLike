@@ -1,7 +1,15 @@
+# roguelike_project/systems/editor/buildings/load_buildings_from_json.py
+
 import json
 import os
 
-def load_buildings_from_json(filepath, building_class):
+from roguelike_project.systems.z_layer.persistence import extract_z_from_json
+
+def load_buildings_from_json(filepath, building_class, z_state=None):
+    """
+    Carga edificios desde un archivo JSON.
+    Si se proporciona `z_state`, también asigna la capa Z.
+    """
     if not os.path.exists(filepath):
         print(f"⚠️ Archivo no encontrado: {filepath}")
         return []
@@ -14,6 +22,7 @@ def load_buildings_from_json(filepath, building_class):
             return []
 
     buildings = []
+
     for entry in data:
         try:
             b = building_class(
@@ -23,10 +32,17 @@ def load_buildings_from_json(filepath, building_class):
                 solid=entry.get("solid", True),
                 scale=tuple(entry["scale"]) if "scale" in entry else None
             )
-            # 🆕 Asignar escala original si existe
+
+            # 🆕 Asignar capa Z si corresponde
+            if z_state:
+                extract_z_from_json(entry, z_state, b)
+
+            # 🆕 Restaurar escala original si se guardó
             if "original_scale" in entry and entry["original_scale"]:
                 b.original_scale = tuple(entry["original_scale"])
+
             buildings.append(b)
+
         except Exception as e:
             print(f"⚠️ Error al crear edificio desde entrada JSON: {e}")
 

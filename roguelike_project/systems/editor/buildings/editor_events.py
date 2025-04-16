@@ -15,9 +15,24 @@ def handle_editor_events(state, editor_state, building_editor):
                 editor_state.resizing = False
                 print("🔚 Modo editor desactivado")
 
+                # 💾 Guardar automáticamente al salir
+                save_buildings_to_json(
+                    state.buildings,
+                    "roguelike_project/editor/data/buildings_data.json",
+                    z_state=state.z_state
+                )
+
             elif event.key == pygame.K_F10:
                 editor_state.active = not editor_state.active
                 print("🛠️ Modo editor activado" if editor_state.active else "🛑 Modo editor desactivado")
+
+                # 💾 Guardar si se desactiva el editor
+                if not editor_state.active:
+                    save_buildings_to_json(
+                        state.buildings,
+                        "roguelike_project/editor/data/buildings_data.json",
+                        z_state=state.z_state
+                    )
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 3:  # Botón derecho
@@ -30,7 +45,11 @@ def handle_editor_events(state, editor_state, building_editor):
                     if editor_state.dragging or editor_state.resizing:
                         b = editor_state.selected_building
                         print(f"💾 Guardando edificio: {b.image_path} en ({int(b.x)}, {int(b.y)})")
-                        save_buildings_to_json(state.buildings, "roguelike_project/editor/data/buildings_data.json")
+                        save_buildings_to_json(
+                            state.buildings,
+                            "roguelike_project/editor/data/buildings_data.json",
+                            z_state=state.z_state
+                        )
 
                 building_editor.handle_mouse_up()
 
