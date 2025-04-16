@@ -14,13 +14,13 @@
         ]
     },
     {
-        "x": 1998,
-        "y": 1328,
+        "x": 2078,
+        "y": 791,
         "image_path": "assets/buildings/temples/catholic.png",
         "solid": true,
         "scale": [
-            635,
-            951
+            578,
+            867
         ],
         "original_scale": [
             1024,
@@ -56,8 +56,8 @@
         ]
     },
     {
-        "x": 2193,
-        "y": 166,
+        "x": 2053,
+        "y": 78,
         "image_path": "assets/buildings/others/portal.png",
         "solid": true,
         "scale": [
@@ -70,8 +70,8 @@
         ]
     },
     {
-        "x": 519,
-        "y": 499,
+        "x": 474,
+        "y": 523,
         "image_path": "assets/buildings/others/portal_2.png",
         "solid": true,
         "scale": [
@@ -112,13 +112,13 @@
         ]
     },
     {
-        "x": 1530,
-        "y": 588,
+        "x": 1461,
+        "y": 548,
         "image_path": "assets/buildings/shops/healer.png",
         "solid": true,
         "scale": [
-            441,
-            441
+            569,
+            569
         ],
         "original_scale": [
             441,
@@ -168,8 +168,8 @@
         ]
     },
     {
-        "x": 2682,
-        "y": 156,
+        "x": 2568,
+        "y": 22,
         "image_path": "assets/buildings/shops/jewlery_shop.png",
         "solid": true,
         "scale": [

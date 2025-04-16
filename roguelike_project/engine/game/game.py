@@ -1,3 +1,5 @@
+# roguelike_project/engine/game/game.py
+
 import pygame
 
 from roguelike_project.engine.game.input.events import handle_events
@@ -10,16 +12,19 @@ from roguelike_project.engine.camera import Camera
 from roguelike_project.engine.game.render.render import Renderer
 from roguelike_project.engine.game.update_manager import update_game
 from roguelike_project.config import SCREEN_WIDTH, SCREEN_HEIGHT, FONT_NAME, FONT_SIZE
-
 from roguelike_project.systems.systems_manager import SystemsManager
 
-# 🛠️ Módulos del editor
+# 🛠️ Editor
 from roguelike_project.systems.editor.editor_state import EditorState
 from roguelike_project.systems.editor.buildings.building_editor import BuildingEditor
-from roguelike_project.systems.editor.buildings.editor_events import handle_editor_events
 from roguelike_project.systems.editor.buildings.tools.placer_tool import PlacerTool
 from roguelike_project.systems.editor.buildings.tools.delete_tool import DeleteTool
 from roguelike_project.systems.editor.json_handler import save_buildings_to_json
+
+# 🆕 Z-Layer System
+from roguelike_project.systems.z_layer.state import ZState
+from roguelike_project.systems.z_layer.config import Z_LAYERS
+
 
 class Game:
     def __init__(self, screen, perf_log=None):
@@ -31,6 +36,7 @@ class Game:
         self._init_state(perf_log)
         self._init_map()
         self._init_entities()
+        self._init_z_layer()   # 🆕
         self._init_systems()
         self._init_editor()
 
@@ -61,6 +67,19 @@ class Game:
         self.state.obstacles = obstacles
         self.state.buildings = buildings
         self.state.enemies = enemies
+
+    def _init_z_layer(self):  # 🆕 NUEVO MÉTODO
+        self.z_state = ZState()
+        self.state.z_state = self.z_state
+
+        # Asignar capas Z
+        self.z_state.set(self.state.player, Z_LAYERS["player"])
+        for e in self.state.enemies:
+            self.z_state.set(e, Z_LAYERS["player"])
+        for o in self.state.obstacles:
+            self.z_state.set(o, Z_LAYERS["low_object"])
+        for b in self.state.buildings:
+            self.z_state.set(b, Z_LAYERS["high_object"])
 
     def _init_systems(self):
         self.renderer = Renderer()
@@ -98,6 +117,7 @@ class Game:
 
     def handle_events(self):
         if self.state.editor.active:
+            from roguelike_project.systems.editor.buildings.editor_events import handle_editor_events
             handle_editor_events(self.state, self.editor_state, self.building_editor)
 
             keys = pygame.key.get_pressed()

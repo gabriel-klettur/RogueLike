@@ -1,5 +1,8 @@
+# roguelike_project/engine/game/render/render.py
+
 import time
 import pygame
+
 from roguelike_project.engine.game.systems.multiplayer.multiplayer import render_remote_players
 from roguelike_project.engine.game.render.minimap.minimap import render_minimap
 from roguelike_project.utils.mouse import draw_mouse_crosshair
@@ -7,19 +10,17 @@ from roguelike_project.config import TILE_SIZE
 import roguelike_project.config as config
 from roguelike_project.utils.debug_overlay import render_debug_overlay
 
+# 🆕 Sistema Z
+from roguelike_project.systems.z_layer.render import render_z_ordered
+from roguelike_project.systems.z_layer.visual_effects import apply_z_visual_effect
+
 
 class Renderer:
     """
-        Sistema de renderizado principal del juego.
+    Sistema de renderizado principal del juego.
 
-        Utiliza una lista de 'dirty rects' (_dirty_rects) para rastrear las regiones de la pantalla
-        que han cambiado y necesitan ser redibujadas. Esta técnica permite optimizar el rendimiento 
-        al evitar el redibujado completo de la pantalla en cada frame, especialmente útil en juegos 
-        con muchos elementos estáticos y solo algunos en movimiento.
-
-        Cada método de renderizado (como _render_tiles, _render_enemies, etc.) devuelve rectángulos 
-        sucios que se almacenan en self._dirty_rects si corresponde. Luego, estos rectángulos pueden 
-        ser utilizados por futuras optimizaciones con pygame.display.update(dirty_rects).
+    Utiliza benchmark opcional por secciones y un sistema de dirty rects.
+    Ahora incluye renderizado ordenado por capa Z.
     """
 
     def __init__(self):
@@ -27,10 +28,9 @@ class Renderer:
 
     def render_game(self, state, perf_log=None):
         screen = state.screen
+        cam = state.camera
         self._dirty_rects = []
         screen.fill((0, 0, 0))
-
-        cam = state.camera
 
         def benchmark(section, func):
             if perf_log is not None:
@@ -41,19 +41,15 @@ class Renderer:
                 func()
 
         benchmark("--3.1. tiles", lambda: self._render_tiles(state, cam, screen))
-        benchmark("--3.2. obstacles", lambda: self._render_obstacles(state, cam, screen))
-        benchmark("--3.3. buildings", lambda: self._render_buildings(state, cam, screen))        
-        benchmark("--3.4. enemies", lambda: self._render_enemies(state, cam, screen))
-        benchmark("--3.5. player", lambda: self._render_player(state, cam, screen))
-        benchmark("--3.6. **TOTAL: combat_effects", lambda: self._render_combat(state, cam, screen))
-        benchmark("--999. effects", lambda: self._render_effects(state, cam, screen))
-        benchmark("--3.7. hud", lambda: state.player.render_hud(screen, cam))
-        benchmark("--3.8. crosshair", lambda: draw_mouse_crosshair(screen, cam))
-        benchmark("--3.9. remote_players", lambda: render_remote_players(state))
-        benchmark("--3.10. menu", lambda: self._render_menu(state, screen))
-        benchmark("--3.11. minimap", lambda: self._render_minimap(state))
-        benchmark("--3.12. all_systems", lambda: state.systems.render(screen, cam))
-        
+        benchmark("--3.2. z_entities", lambda: self._render_z_entities(state, cam, screen))
+        benchmark("--3.3. effects", lambda: self._render_effects(state, cam, screen))
+        benchmark("--3.4. hud", lambda: state.player.render_hud(screen, cam))
+        benchmark("--3.5. crosshair", lambda: draw_mouse_crosshair(screen, cam))
+        benchmark("--3.6. remote_players", lambda: render_remote_players(state))
+        benchmark("--3.7. menu", lambda: self._render_menu(state, screen))
+        benchmark("--3.8. minimap", lambda: self._render_minimap(state))
+        benchmark("--3.9. systems", lambda: state.systems.render(screen, cam))
+
         if config.DEBUG and perf_log is not None:
             extra_lines = [state] + self._get_custom_debug_lines(state)
             render_debug_overlay(screen, perf_log, extra_lines=extra_lines, position=(8, 8))
@@ -61,7 +57,6 @@ class Renderer:
         pygame.display.flip()
 
     def _render_effects(self, state, cam, screen):
-        """ Render combat-related effects (lasers, auras, projectiles) """
         dirty_rects = state.systems.effects.render(screen, cam)
         self._dirty_rects.extend(dirty_rects)
 
@@ -70,7 +65,6 @@ class Renderer:
 
         start_col = int(cam.offset_x // TILE_SIZE)
         end_col = int((cam.offset_x + cam.screen_width / cam.zoom) // TILE_SIZE) + 1
-
         start_row = int(cam.offset_y // TILE_SIZE)
         end_row = int((cam.offset_y + cam.screen_height / cam.zoom) // TILE_SIZE) + 1
 
@@ -86,39 +80,35 @@ class Renderer:
                 if dirty:
                     self._dirty_rects.append(dirty)
 
-    def _render_obstacles(self, state, cam, screen):
-        for obstacle in state.obstacles:
-            if getattr(obstacle, 'is_static', True):
-                if cam.is_in_view(obstacle.x, obstacle.y, obstacle.size):
-                    dirty = obstacle.render(screen, cam)
-                    if dirty:
-                        self._dirty_rects.append(dirty)
-    
-    def _render_combat(self, state, cam, screen):
-        dirty_rects = state.combat.render(screen, cam)
-        self._dirty_rects.extend(dirty_rects)
+    def _render_z_entities(self, state, cam, screen):
+        """
+        Renderiza entidades (obstacles, buildings, enemies, player) ordenadas por Z y Y.
+        También aplica efectos visuales basados en Z.
+        """
+        all_entities = []
 
-    def _render_buildings(self, state, cam, screen):
-        for building in getattr(state, "buildings", []):
-            if not getattr(building, 'is_static', False):
-                size = (building.image.get_width(), building.image.get_height())
-                if cam.is_in_view(building.x, building.y, size):
-                    dirty = building.render(screen, cam)
-                    if dirty:
-                        self._dirty_rects.append(dirty)
-
-    def _render_enemies(self, state, cam, screen):
-        for enemy in state.enemies:
-            if cam.is_in_view(enemy.x, enemy.y, enemy.sprite_size):
-                dirty = enemy.render(screen, cam)
-                if dirty:
-                    self._dirty_rects.append(dirty)
-
-    def _render_player(self, state, cam, screen):
+        # Agregamos solo los que están en pantalla
+        all_entities.extend([
+            e for e in state.obstacles if cam.is_in_view(e.x, e.y, getattr(e, "sprite_size", (64, 64)))
+        ])
+        all_entities.extend([
+            b for b in state.buildings if cam.is_in_view(b.x, b.y, b.image.get_size())
+        ])
+        all_entities.extend([
+            e for e in state.enemies if cam.is_in_view(e.x, e.y, e.sprite_size)
+        ])
+        all_entities.extend([
+            e for e in state.remote_entities.values() if cam.is_in_view(e.x, e.y, e.sprite_size)
+        ])
         if cam.is_in_view(state.player.x, state.player.y, state.player.sprite_size):
-            dirty = state.player.render(screen, cam)
-            if dirty:
-                self._dirty_rects.append(dirty)
+            all_entities.append(state.player)
+
+        # Render ordenado por Z
+        render_z_ordered(all_entities, screen, cam, state.z_state)
+
+        # Efectos visuales por Z (sombras, bordes, etc)
+        for entity in all_entities:
+            apply_z_visual_effect(entity, state.player, screen, cam, state.z_state)
 
     def _render_menu(self, state, screen):
         if state.show_menu:
@@ -133,7 +123,6 @@ class Renderer:
         lines = []
 
         lines.append(f"Modo: {state.mode}")
-
         px, py = round(state.player.x), round(state.player.y)
         lines.append(f"Pos: ({px}, {py})")
 
