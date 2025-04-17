@@ -1,4 +1,6 @@
 import pygame
+import os
+
 from roguelike_project.utils.loader import load_image
 import roguelike_project.config as config
 from roguelike_project.systems.z_layer.config import DEFAULT_Z
@@ -56,3 +58,10 @@ class Building:
             print(f"↩️ Tamaño reseteado a original: {self.original_scale}")
         else:
             print("⚠️ No se encontró escala original para este edificio.")
+    
+    def __repr__(self) -> str:
+        """Representación legible para depuración."""
+        name = os.path.basename(self.image_path)
+        w, h = self.image.get_size()
+        return (f"<Building '{name}' pos=({self.x:.0f},{self.y:.0f}) "
+                f"size=({w}x{h}) solid={self.solid} z={self.z}>")

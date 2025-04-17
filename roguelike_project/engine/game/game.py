@@ -30,11 +30,12 @@ from roguelike_project.systems.z_layer.config import Z_LAYERS
 
 class Game:
     def __init__(self, screen, perf_log=None):
+
+        self.z_state = ZState()
         self.screen = screen
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont(FONT_NAME, FONT_SIZE)
-        self.camera = Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
-        self.z_state = None 
+        self.camera = Camera(SCREEN_WIDTH, SCREEN_HEIGHT)        
 
         self._init_state(perf_log)        
 
@@ -80,10 +81,14 @@ class Game:
         self.state.player = player
         self.state.obstacles = obstacles
         self.state.buildings = buildings
-        self.state.enemies = enemies
+
+        print("🛠️ Cargando edificios desde JSON.")
+        print("📋 LISTA DE EDIFICIOS CARGADOS:")
+        for i, b in enumerate(self.state.buildings, 1):
+            print(f"{i:02d} | ({b.x:>6.0f},{b.y:>6.0f}) | "
+                f"Z={b.z:<2} | solid={b.solid} | img={b.image_path}")
 
     def _init_z_layer(self):  # 🆕 NUEVO MÉTODO
-        self.z_state = ZState()
         self.state.z_state = self.z_state
 
         # Asignar capas Z

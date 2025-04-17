@@ -6,6 +6,6 @@ from roguelike_project.loaders.load_buildings import load_buildings
 def load_entities(z_state=None):
     player = Player(600, 600)
     obstacles = load_obstacles()
-    buildings = load_buildings(z_state)  # ✅ PASARLO
+    buildings = load_buildings(z_state)
     enemies = load_enemies()
     return player, obstacles, buildings, enemies

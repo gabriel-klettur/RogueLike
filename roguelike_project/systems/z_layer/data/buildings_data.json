@@ -75,8 +75,8 @@
         "z": 3
     },
     {
-        "x": 437,
-        "y": 567,
+        "x": 439,
+        "y": 605,
         "image_path": "assets/buildings/others/portal_2.png",
         "solid": true,
         "scale": [
@@ -120,8 +120,8 @@
         "z": 3
     },
     {
-        "x": 1713,
-        "y": 800,
+        "x": 1601,
+        "y": 692,
         "image_path": "assets/buildings/shops/healer.png",
         "solid": true,
         "scale": [
