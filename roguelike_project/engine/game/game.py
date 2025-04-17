@@ -23,7 +23,6 @@ from roguelike_project.systems.editor.buildings.building_editor       import Bui
 from roguelike_project.systems.editor.buildings.tools.placer_tool     import PlacerTool
 from roguelike_project.systems.editor.buildings.tools.delete_tool     import DeleteTool
 from roguelike_project.systems.editor.buildings.editor_events         import handle_editor_events
-from roguelike_project.systems.editor.json_handler                    import save_buildings_to_json
 
 # ---------- Tile‑editor ----------
 from roguelike_project.systems.editor.tiles.tile_editor_state   import TileEditorState
@@ -83,13 +82,16 @@ class Game:
         player, obstacles, buildings, enemies = load_entities(self.z_state)
         self.state.player     = player
         self.state.obstacles  = obstacles
+        
         self.state.buildings  = buildings
-        self.state.enemies    = enemies
-
         # listado de debug
         print("🛠️ Buildings cargados:")
         for i, b in enumerate(self.state.buildings, 1):
             print(f"{i:02d} | ({b.x:>6.0f},{b.y:>6.0f}) | Z=({b.z_bottom},{b.z_top}) | img={b.image_path}")
+
+        self.state.enemies    = enemies
+
+
 
     # ================================================= #
     def _init_z_layer(self):
@@ -129,21 +131,6 @@ class Game:
     def _init_building_editor(self):
         self.editor_state   = EditorState()
         self.building_editor = BuildingEditor(self.state, self.editor_state)
-
-        # herramientas
-        self.placer_tool = PlacerTool(
-            self.state, self.editor_state,
-            building_class=type(self.state.buildings[0]),
-            default_image="assets/buildings/others/portal.png",
-            default_scale=(512, 824),
-            default_solid=True
-        )
-        self.delete_tool = DeleteTool(self.state, self.editor_state)
-
-        # acceso desde editor_events
-        self.state.placer_tool = self.placer_tool
-        self.state.delete_tool = self.delete_tool
-
         self.state.editor = self.editor_state
 
     # ------------------ Tile‑Editor ------------------ #

@@ -43,11 +43,11 @@ def handle_editor_events(state, editor_state, building_editor):
 
             elif event.key == pygame.K_n:
                 if hasattr(state, "placer_tool"):
-                    state.placer_tool.place_building_at_mouse()
+                    building_editor.placer_tool.place_building_at_mouse()
 
             elif event.key == pygame.K_DELETE:
                 if hasattr(state, "delete_tool"):
-                    state.delete_tool.delete_building_at_mouse()
+                    building_editor.delete_tool.delete_building_at_mouse()
 
         # ---------- ratón ----------
         elif event.type == pygame.MOUSEBUTTONDOWN:

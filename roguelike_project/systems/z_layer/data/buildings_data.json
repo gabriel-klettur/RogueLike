@@ -90,8 +90,8 @@
         "z": 3
     },
     {
-        "x": 431,
-        "y": 251,
+        "x": 359,
+        "y": 471,
         "image_path": "assets/buildings/others/portal_2.png",
         "solid": true,
         "scale": [
@@ -162,19 +162,19 @@
         "z": 3
     },
     {
-        "x": 759,
-        "y": 524,
+        "x": 1083,
+        "y": 629,
         "image_path": "assets/buildings/others/fuente.png",
         "solid": true,
         "scale": [
-            654,
-            654
+            441,
+            441
         ],
         "original_scale": [
             521,
             521
         ],
-        "split_ratio": 0.488,
+        "split_ratio": 0.664,
         "z_bottom": 2,
         "z_top": 7,
         "z": 2

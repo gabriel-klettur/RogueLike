@@ -4,6 +4,8 @@ from roguelike_project.systems.editor.buildings.tools.resize_tool import ResizeT
 from roguelike_project.systems.editor.buildings.tools.default_tool import DefaultTool
 from roguelike_project.systems.editor.buildings.tools.z_tool      import ZTool
 from roguelike_project.systems.editor.buildings.tools.split_tool  import SplitTool
+from roguelike_project.systems.editor.buildings.tools.placer_tool  import PlacerTool
+from roguelike_project.systems.editor.buildings.tools.delete_tool  import DeleteTool
 
 
 class BuildingEditor:
@@ -12,13 +14,20 @@ class BuildingEditor:
     def __init__(self, state, editor_state):
         self.state = state
         self.editor = editor_state
-
-        # Herramientas
+        
         self.resize_tool = ResizeTool(state, editor_state)
         self.default_tool = DefaultTool(state, editor_state)
         self.split_tool = SplitTool(state, editor_state)
         self.z_tool_bottom = ZTool(state, editor_state, target="bottom")
-        self.z_tool_top    = ZTool(state, editor_state, target="top")
+        self.z_tool_top    = ZTool(state, editor_state, target="top")        
+        self.placer_tool = PlacerTool(
+            state, editor_state,
+            building_class=type(state.buildings[0]),
+            default_image="assets/buildings/others/portal.png",
+            default_scale=(512, 824),
+            default_solid=True,
+        )
+        self.delete_tool = DeleteTool(state, editor_state)
 
     # =========================== EVENTOS ============================ #
     def on_mouse_down(self, pos, button):
