@@ -31,7 +31,10 @@ def load_buildings_from_json(filepath, building_class, z_state=None):
                 y=entry["y"],
                 image_path=entry["image_path"],
                 solid=entry.get("solid", True),
-                scale=tuple(entry["scale"]) if "scale" in entry else None
+                scale=tuple(entry["scale"]) if "scale" in entry else None,                                
+                split_ratio=entry.get("split_ratio", 0.5),
+                z_bottom=entry.get("z_bottom"),
+                z_top=entry.get("z_top"),
             )
 
             # 🆕 Asignar capa Z si corresponde

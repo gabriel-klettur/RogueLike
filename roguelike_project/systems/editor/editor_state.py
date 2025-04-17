@@ -14,3 +14,6 @@ class EditorState:
         self.resizing = False
         self.resize_origin = (0, 0)       # posición del mouse al comenzar el resize
         self.initial_size = (0, 0)        # tamaño inicial de la imagens
+
+        # barra slit
+        self.split_dragging = False

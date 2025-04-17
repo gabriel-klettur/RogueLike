@@ -20,10 +20,12 @@ def save_buildings_to_json(buildings, filepath, z_state=None):
                 "image_path": b.image_path,
                 "solid": b.solid,
                 "scale": [b.image.get_width(), b.image.get_height()],
-                "original_scale": list(b.original_scale) if b.original_scale else None
+                "original_scale": list(b.original_scale) if b.original_scale else None,                
+                "split_ratio": round(b.split_ratio, 3),
+                "z_bottom": b.z_bottom,
+                "z_top": b.z_top,
             }
-
-            # 🆕 Agregar Z si se pasa `z_state`
+            
             if z_state:
                 building_data["z"] = inject_z_into_json(b, z_state)
 

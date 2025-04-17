@@ -54,7 +54,11 @@ def handle_editor_events(state, editor_state, building_editor):
                             z_state=state.z_state
                         )
                 building_editor.handle_mouse_up()
+            elif event.button == 1:
+                building_editor.handle_mouse_up() 
 
         elif event.type == pygame.MOUSEMOTION:
             if editor_state.resizing:
                 building_editor.update_resizing(event.pos)
+            elif editor_state.split_dragging:
+                building_editor.split_tool.update_drag(event.pos)

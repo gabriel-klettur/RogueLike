@@ -12,6 +12,9 @@
             2048,
             2048
         ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
         "z": 3
     },
     {
@@ -27,6 +30,9 @@
             1024,
             1536
         ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
         "z": 3
     },
     {
@@ -42,6 +48,9 @@
             3072,
             2048
         ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
         "z": 3
     },
     {
@@ -57,6 +66,9 @@
             1024,
             1024
         ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
         "z": 3
     },
     {
@@ -72,6 +84,9 @@
             253,
             404
         ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
         "z": 3
     },
     {
@@ -87,11 +102,14 @@
             1024,
             1536
         ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
         "z": 3
     },
     {
-        "x": 1384,
-        "y": -110,
+        "x": 1482,
+        "y": -104,
         "image_path": "assets/buildings/shops/alchemy_tower.png",
         "solid": true,
         "scale": [
@@ -102,6 +120,9 @@
             471,
             723
         ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
         "z": 3
     },
     {
@@ -117,11 +138,14 @@
             397,
             397
         ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
         "z": 3
     },
     {
-        "x": 1681,
-        "y": 928,
+        "x": 1525,
+        "y": 804,
         "image_path": "assets/buildings/shops/healer.png",
         "solid": true,
         "scale": [
@@ -132,21 +156,27 @@
             441,
             441
         ],
+        "split_ratio": 0.596,
+        "z_bottom": 3,
+        "z_top": 5,
         "z": 3
     },
     {
-        "x": 1023,
-        "y": 701,
+        "x": 850,
+        "y": 508,
         "image_path": "assets/buildings/others/fuente.png",
         "solid": true,
         "scale": [
-            416,
-            416
+            521,
+            521
         ],
         "original_scale": [
             521,
             521
         ],
+        "split_ratio": 0.466,
+        "z_bottom": 3,
+        "z_top": 5,
         "z": 3
     },
     {
@@ -162,6 +192,9 @@
             1200,
             1200
         ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
         "z": 3
     },
     {
@@ -177,6 +210,9 @@
             832,
             832
         ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
         "z": 3
     },
     {
@@ -192,6 +228,9 @@
             595,
             595
         ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
         "z": 3
     },
     {
@@ -207,6 +246,9 @@
             1024,
             1024
         ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
         "z": 3
     },
     {
@@ -222,6 +264,9 @@
             1024,
             1024
         ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
         "z": 3
     },
     {
@@ -237,6 +282,9 @@
             400,
             400
         ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
         "z": 3
     }
 ]

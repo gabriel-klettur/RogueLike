@@ -1,0 +1,68 @@
+# roguelike_project/systems/editor/buildings/tools/split_tool.py
+import pygame
+
+HANDLE_W = HANDLE_H = 18
+BAR_COLOR = (0, 200, 255, 160)
+
+class SplitTool:
+    """Barra horizontal que separa bottom / top en un building."""
+    def __init__(self, state, editor_state):
+        self.state = state
+        self.editor = editor_state
+
+    # ---------- Interacción ----------
+    def check_handle_click(self, mouse_pos, building):
+        cam = self.state.camera
+        bx, by = cam.apply((building.x, building.y))
+        _, h_scaled = cam.scale(building.image.get_size())
+        y_split = by + int(h_scaled * building.split_ratio)
+
+        handle_rect = pygame.Rect(
+            bx + self._handle_offset_x(building),
+            y_split - HANDLE_H // 2,
+            HANDLE_W, HANDLE_H
+        )
+        return handle_rect.collidepoint(mouse_pos)
+
+    def start_drag(self, building):
+        self.editor.split_dragging = True
+        self.editor.selected_building = building
+
+    def update_drag(self, mouse_pos):
+        if not self.editor.split_dragging or not self.editor.selected_building:
+            return
+
+        b = self.editor.selected_building
+        cam = self.state.camera
+        mx, my = mouse_pos
+        bx, by = cam.apply((b.x, b.y))
+        _, h_scaled = cam.scale(b.image.get_size())
+        # Ratio en coordenadas de pantalla ⇒ mundo
+        rel = (my - by) / max(h_scaled, 1)
+        b.split_ratio = max(0.05, min(rel, 0.95))
+
+    def stop_drag(self):
+        self.editor.split_dragging = False
+
+    # ---------- Render ----------
+    def render(self, screen, building):
+        cam = self.state.camera
+        bx, by = cam.apply((building.x, building.y))
+        w_scaled, h_scaled = cam.scale(building.image.get_size())
+        y_split = by + int(h_scaled * building.split_ratio)
+
+        # barra semitransparente
+        bar = pygame.Surface((w_scaled, 3), pygame.SRCALPHA)
+        bar.fill(BAR_COLOR)
+        screen.blit(bar, (bx, y_split - 1))
+
+        # handle
+        handle = pygame.Surface((HANDLE_W, HANDLE_H), pygame.SRCALPHA)
+        handle.fill(BAR_COLOR)
+        pygame.draw.rect(handle, (255, 255, 255), handle.get_rect(), 1)
+        screen.blit(handle, (bx + self._handle_offset_x(building), y_split - HANDLE_H // 2))
+
+    # ---------- helpers ----------
+    def _handle_offset_x(self, building):
+        # coloca el handle en el centro del edificio en pantalla
+        return (self.state.camera.scale(building.image.get_size())[0] - HANDLE_W) // 2
