@@ -1,50 +1,61 @@
 # roguelike_project/engine/game/game.py
+import sys
+import os
+import time
 import pygame
+from collections import defaultdict
+
+# Agregar el path del proyecto
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..")))
 
 from roguelike_project.config import (
-    SCREEN_WIDTH, SCREEN_HEIGHT, FONT_NAME, FONT_SIZE, BUILDINGS_DATA_PATH
+    SCREEN_WIDTH, SCREEN_HEIGHT, FONT_NAME, FONT_SIZE, BUILDINGS_DATA_PATH, FPS
 )
 
-# ---------- core input / update ----------
-from roguelike_project.engine.game.input.events     import handle_events
-from roguelike_project.engine.game.systems.state    import GameState
+# ---------- core input / update ----------
+from roguelike_project.engine.game.input.events import handle_events
+from roguelike_project.engine.game.systems.state import GameState
 from roguelike_project.engine.game.systems.map_manager import build_map
-from roguelike_project.engine.game.systems.entity   import load_entities
+from roguelike_project.engine.game.systems.entity import load_entities
 from roguelike_project.engine.game.systems.multiplayer_manager import NetworkManager
-from roguelike_project.ui.menus.menu               import Menu
-from roguelike_project.engine.camera               import Camera
-from roguelike_project.engine.game.render.render   import Renderer
-from roguelike_project.engine.game.update_manager  import update_game
-from roguelike_project.systems.systems_manager     import SystemsManager
+from roguelike_project.ui.menus.menu import Menu
+from roguelike_project.engine.camera import Camera
+from roguelike_project.engine.game.render.render import Renderer
+from roguelike_project.engine.game.update_manager import update_game
+from roguelike_project.systems.systems_manager import SystemsManager
 
 # ---------- Building‑editor ----------
-from roguelike_project.systems.editor.editor_state                     import EditorState
-from roguelike_project.systems.editor.buildings.building_editor       import BuildingEditor
-from roguelike_project.systems.editor.buildings.tools.placer_tool     import PlacerTool
-from roguelike_project.systems.editor.buildings.tools.delete_tool     import DeleteTool
-from roguelike_project.systems.editor.buildings.editor_events         import handle_editor_events
+from roguelike_project.systems.editor.editor_state import EditorState
+from roguelike_project.systems.editor.buildings.building_editor import BuildingEditor
+from roguelike_project.systems.editor.buildings.tools.placer_tool import PlacerTool
+from roguelike_project.systems.editor.buildings.tools.delete_tool import DeleteTool
+from roguelike_project.systems.editor.buildings.editor_events import handle_editor_events
 
 # ---------- Tile‑editor ----------
-from roguelike_project.systems.editor.tiles.tile_editor_state   import TileEditorState
-from roguelike_project.systems.editor.tiles.tile_editor         import TileEditor
-from roguelike_project.systems.editor.tiles.tile_editor_events  import handle_tile_editor_events
+from roguelike_project.systems.editor.tiles.tile_editor_state import TileEditorState
+from roguelike_project.systems.editor.tiles.tile_editor import TileEditor
+from roguelike_project.systems.editor.tiles.tile_editor_events import handle_tile_editor_events
 
 # ---------- Z‑Layer ----------
-from roguelike_project.systems.z_layer.state   import ZState
-from roguelike_project.systems.z_layer.config  import Z_LAYERS
+from roguelike_project.systems.z_layer.state import ZState
+from roguelike_project.systems.z_layer.config import Z_LAYERS
 
 
 class Game:
-    def __init__(self, screen, perf_log=None):
+    def __init__(self, screen, perf_log=None, map_name: str = None):
+        # Parámetro opcional para overlay
+        self.map_name = map_name
+
         # ------------- infraestructura -----------------
         self.screen = screen
-        self.clock  = pygame.time.Clock()
-        self.font   = pygame.font.SysFont(FONT_NAME, FONT_SIZE)
+        self.clock = pygame.time.Clock()
+        self.font = pygame.font.SysFont(FONT_NAME, FONT_SIZE)
         self.camera = Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
         self.z_state = ZState()
+        self.perf_log = perf_log
 
         # ------------- core state ----------------------
-        self._init_state(perf_log)
+        self._init_state()
         self._init_map()
         self._init_entities()
         self._init_z_layer()
@@ -56,7 +67,7 @@ class Game:
 
     # ================================================= #
     # --------------------- STATE ---------------------- #
-    def _init_state(self, perf_log):
+    def _init_state(self):
         self.state = GameState(
             screen=self.screen,
             background=None,
@@ -71,33 +82,35 @@ class Game:
             enemies=None
         )
         self.state.running = True
-        self.state.perf_log = perf_log
+        self.state.perf_log = self.perf_log
 
     # ================================================= #
     def _init_map(self):
-        self.map_data, self.state.tile_map = build_map()
+        # Construir mapa y cargar overlay
+        self.map_data, self.state.tile_map, self.state.overlay_map = build_map(
+            map_name=self.map_name
+        )
+        # Guardar nombre de mapa en el state para persistencia
+        self.state.map_name = self.map_name
+        # Aplana la lista de tiles
         self.state.tiles = [t for row in self.state.tile_map for t in row]
 
+    # ================================================= #
     def _init_entities(self):
         player, obstacles, buildings, enemies = load_entities(self.z_state)
-        self.state.player     = player
-        self.state.obstacles  = obstacles
-        
-        self.state.buildings  = buildings
+        self.state.player = player
+        self.state.obstacles = obstacles
+        self.state.buildings = buildings
         # listado de debug
         print("🛠️ Buildings cargados:")
         for i, b in enumerate(self.state.buildings, 1):
             print(f"{i:02d} | ({b.x:>6.0f},{b.y:>6.0f}) | Z=({b.z_bottom},{b.z_top}) | img={b.image_path}")
-
-        self.state.enemies    = enemies
-
-
+        self.state.enemies = enemies
 
     # ================================================= #
     def _init_z_layer(self):
         zs = self.z_state
         self.state.z_state = zs
-
         zs.set(self.state.player, Z_LAYERS["player"])
         for e in self.state.enemies:
             zs.set(e, Z_LAYERS["player"])
@@ -109,19 +122,15 @@ class Game:
     # ================================================= #
     def _init_systems(self):
         self.renderer = Renderer()
-
         self.state.player.renderer.state = self.state
-        self.state.player.state          = self.state
-
-        self.state.menu  = Menu(self.state)
+        self.state.player.state = self.state
+        self.state.menu = Menu(self.state)
         self.state.show_menu = False
-        self.state.mode      = "local"
-
+        self.state.mode = "local"
         self.systems = SystemsManager(self.state)
         self.state.systems = self.systems
-        self.state.combat  = self.systems.combat
+        self.state.combat = self.systems.combat
         self.state.effects = self.systems.effects
-
         self.network = NetworkManager(self.state)
         if self.state.mode == "online":
             self.network.connect()
@@ -129,16 +138,15 @@ class Game:
     # ================================================= #
     # ---------------- Building‑Editor ---------------- #
     def _init_building_editor(self):
-        self.editor_state   = EditorState()
+        self.editor_state = EditorState()
         self.building_editor = BuildingEditor(self.state, self.editor_state)
         self.state.editor = self.editor_state
 
     # ------------------ Tile‑Editor ------------------ #
     def _init_tile_editor(self):
         self.tile_editor_state = TileEditorState()
-        self.tile_editor       = TileEditor(self.state, self.tile_editor_state)
-
-        self.state.tile_editor       = self.tile_editor
+        self.tile_editor = TileEditor(self.state, self.tile_editor_state)
+        self.state.tile_editor = self.tile_editor
         self.state.tile_editor_state = self.tile_editor_state
         self.state.tile_editor_active = False
 
@@ -151,14 +159,12 @@ class Game:
                 self.state, self.tile_editor_state, self.tile_editor
             )
             return
-
         # ---- Building‑Editor (F10) --------------------
         if self.state.editor.active:
             handle_editor_events(
                 self.state, self.editor_state, self.building_editor
             )
             return
-
         # ---- Loop de juego normal ---------------------
         handle_events(self.state)
 
@@ -167,7 +173,6 @@ class Game:
         if self.tile_editor_state.active:
             # no lógica de juego en modo tile
             return
-
         if self.state.editor.active:
             self.building_editor.update()
         else:
@@ -184,7 +189,7 @@ class Game:
             self.handle_events()
             self.update()
             self.render(self.state.perf_log)
-            self.state.clock.tick(60)
+            self.state.clock.tick(FPS)
 
     def quit(self):
         if hasattr(self, 'network'):

@@ -1,12 +1,11 @@
-# roguelike_project/engine/game/systems/map_builder.py
-
+# roguelike_project/engine/game/systems/map_manager.py
 from roguelike_project.config import DUNGEON_WIDTH, DUNGEON_HEIGHT, LOBBY_OFFSET_X, LOBBY_OFFSET_Y, LOBBY_WIDTH, LOBBY_HEIGHT
-
 from roguelike_project.engine.game.systems.map.dungeon_generator import generate_dungeon_map
 from roguelike_project.engine.game.systems.map.map_merger import merge_handmade_with_generated
 from roguelike_project.engine.game.systems.map.handmade_maps.lobby_map import LOBBY_MAP
 from roguelike_project.engine.game.systems.map.tile_loader import load_map_from_text
 from roguelike_project.engine.game.systems.map.map_exporter import save_map_with_autoname
+from roguelike_project.engine.game.systems.map.overlay_manager import load_overlay, save_overlay
 
 
 def build_map(
@@ -15,14 +14,28 @@ def build_map(
     offset_x=LOBBY_OFFSET_X,
     offset_y=LOBBY_OFFSET_Y,
     map_mode="combined",
-    merge_mode="center_to_center"
+    merge_mode="center_to_center",
+    map_name: str = None
 ):
+    """
+    Devuelve:
+    - merged_map: lista de strings
+    - tiles: lista de instancias Tile
+    - overlay_map: matriz 2D de códigos (str) o None
+    """
+    if map_name is None:
+        # Nombre por defecto según modo
+        map_name = "lobby_map" if map_mode == "lobby" else "combined_map"
+
+    # 1) Mapa base
     if map_mode == "lobby":
         merged_map = LOBBY_MAP
+        saved_filename = None
 
     elif map_mode == "dungeon":
         dungeon_map = generate_dungeon_map(width, height)
         merged_map = ["".join(row) for row in dungeon_map]
+        saved_filename = None
 
     elif map_mode == "combined":
         # Zona reservada para evitar generar salas debajo del lobby
@@ -33,7 +46,9 @@ def build_map(
             offset_y + LOBBY_HEIGHT + 3
         )
 
-        dungeon_map, dungeon_rooms = generate_dungeon_map(width, height, return_rooms=True, avoid_zone=avoid_zone)
+        dungeon_map, dungeon_rooms = generate_dungeon_map(
+            width, height, return_rooms=True, avoid_zone=avoid_zone
+        )
 
         if offset_x + LOBBY_WIDTH > width or offset_y + LOBBY_HEIGHT > height:
             raise ValueError("❌ El lobby no cabe en el mapa generado. Ajusta el offset o el tamaño del dungeon.")
@@ -46,12 +61,15 @@ def build_map(
             merge_mode=merge_mode,
             dungeon_rooms=dungeon_rooms
         )
-        save_map_with_autoname(merged_map)
-
+        # Guardamos el mapa combinado y recogemos el nombre
+        saved_filename = save_map_with_autoname(merged_map)
     else:
         raise ValueError(f"❌ Modo de mapa no reconocido: {map_mode}")
 
-    tiles = load_map_from_text(merged_map)
-    return merged_map, tiles
+    # 2) Carga overlay si existe
+    overlay_map = load_overlay(map_name) if saved_filename is None else \
+                  load_overlay(saved_filename.rstrip('.txt'))
 
-
+    # 3) Crea Tiles
+    tiles = load_map_from_text(merged_map, overlay_map)
+    return merged_map, tiles, overlay_map
