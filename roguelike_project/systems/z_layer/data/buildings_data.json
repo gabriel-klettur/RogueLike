@@ -156,28 +156,28 @@
             441,
             441
         ],
-        "split_ratio": 0.596,
+        "split_ratio": 0.546,
         "z_bottom": 3,
         "z_top": 5,
         "z": 3
     },
     {
-        "x": 833,
-        "y": 394,
+        "x": 788,
+        "y": 494,
         "image_path": "assets/buildings/others/fuente.png",
         "solid": true,
         "scale": [
-            521,
-            521
+            587,
+            587
         ],
         "original_scale": [
             521,
             521
         ],
-        "split_ratio": 0.628,
-        "z_bottom": 0,
-        "z_top": 5,
-        "z": 0
+        "split_ratio": 0.635,
+        "z_bottom": 5,
+        "z_top": 7,
+        "z": 5
     },
     {
         "x": 514,
@@ -228,7 +228,7 @@
             595,
             595
         ],
-        "split_ratio": 0.5,
+        "split_ratio": 0.616,
         "z_bottom": 3,
         "z_top": 5,
         "z": 3
@@ -252,8 +252,8 @@
         "z": 3
     },
     {
-        "x": 5276,
-        "y": 1294,
+        "x": 6562,
+        "y": 1078,
         "image_path": "assets/buildings/others/coliseo_2.png",
         "solid": true,
         "scale": [
@@ -270,8 +270,8 @@
         "z": 3
     },
     {
-        "x": 3284,
-        "y": 994,
+        "x": 4824,
+        "y": 1572,
         "image_path": "assets/buildings/others/guillotina.png",
         "solid": true,
         "scale": [
