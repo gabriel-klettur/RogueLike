@@ -2,21 +2,60 @@ import pygame
 from roguelike_project.config import TILE_SIZE
 from .tile_picker import TilePicker
 
+OUTLINE_SEL   = (0, 255, 0)     # seleccionado (verde)
+OUTLINE_HOVER = (0, 220, 255)   # hover (cian)
+
 class TileEditor:
     """
-    Lógica principal: selección de tile y delegación al TilePicker.
+    • Contorno verde  → tile seleccionado
+    • Contorno cian   → tile bajo el cursor
+    Se muestran **solo** cuando editor_state.active es True.
     """
-    OUTLINE_CLR = (0, 255, 0)
-
     def __init__(self, state, editor_state):
         self.state  = state
-        self.editor = editor_state
+        self.editor = editor_state     # instancia de TileEditorState
         self.picker = TilePicker(state, editor_state)
 
-    # ---------------------------------------------------- #
-    # API pública llamada desde eventos
+    # -------------------- API pública ------------------- #
     def select_tile_at(self, mouse_pos):
-        mx, my = mouse_pos
+        tile = self._tile_under_mouse(mouse_pos)
+        if tile:
+            self.editor.selected_tile = tile
+            self.editor.picker_open   = True
+            self.editor.scroll_offset = 0
+
+    # -------------------- RENDER ------------------------ #
+    def render_selection_outline(self, screen):
+        # 🔒  Dibujar solo si el modo está activo
+        if not self.editor.active:
+            return
+
+        cam = self.state.camera
+
+        # ----------- HOVER (cian) -----------
+        hover = self._tile_under_mouse(pygame.mouse.get_pos())
+        if hover:
+            rect = pygame.Rect(
+                cam.apply((hover.x, hover.y)),
+                cam.scale((TILE_SIZE, TILE_SIZE))
+            )
+            pygame.draw.rect(screen, OUTLINE_HOVER, rect, 3)
+
+        # -------- Selección (verde) --------
+        sel = self.editor.selected_tile
+        if sel:
+            rect = pygame.Rect(
+                cam.apply((sel.x, sel.y)),
+                cam.scale((TILE_SIZE, TILE_SIZE))
+            )
+            pygame.draw.rect(screen, OUTLINE_SEL, rect, 3)
+
+    def render_picker(self, screen):
+        self.picker.render(screen)
+
+    # ------------------ helpers ------------------------- #
+    def _tile_under_mouse(self, mouse_pos):
+        mx, my  = mouse_pos
         world_x = mx / self.state.camera.zoom + self.state.camera.offset_x
         world_y = my / self.state.camera.zoom + self.state.camera.offset_y
 
@@ -24,21 +63,5 @@ class TileEditor:
         row = int(world_y // TILE_SIZE)
 
         if 0 <= row < len(self.state.tile_map) and 0 <= col < len(self.state.tile_map[0]):
-            tile = self.state.tile_map[row][col]
-            self.editor.selected_tile = tile
-            self.editor.picker_open   = True
-            self.editor.scroll_offset = 0
-
-    # ---------------------------------------------------- #
-    # Render helpers
-    def render_selection_outline(self, screen):
-        if not self.editor.selected_tile:
-            return
-        tile = self.editor.selected_tile
-        cam = self.state.camera
-        rect = pygame.Rect(tile.x, tile.y, TILE_SIZE, TILE_SIZE)
-        rect_screen = pygame.Rect(cam.apply(rect.topleft), cam.scale(rect.size))
-        pygame.draw.rect(screen, self.OUTLINE_CLR, rect_screen, 3)
-
-    def render_picker(self, screen):
-        self.picker.render(screen)
+            return self.state.tile_map[row][col]
+        return None

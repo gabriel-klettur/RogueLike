@@ -1,7 +1,6 @@
 import pygame
 import time
 from roguelike_project.network.client import WebSocketClient
-
 from roguelike_project.systems.effects.particles.explosions.fire import FireExplosion
 import roguelike_project.config as config
 
@@ -10,17 +9,22 @@ def handle_events(state):
         if event.type == pygame.QUIT:
             state.running = False
 
+        # ------------------------------------------------------------- #
+        #                      TECLADO PRINCIPAL                        #
+        # ------------------------------------------------------------- #
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 state.show_menu = not state.show_menu
 
             elif event.key == pygame.K_q:
-                state.player.stats.restore_all(state)            
+                state.player.stats.restore_all(state)
+
             elif state.show_menu:
                 result = state.menu.handle_input(event)
                 if result:
                     execute_menu_option(result, state)
 
+            # ---------- HABILIDADES DEL JUGADOR ---------- #
             elif event.key == pygame.K_1:
                 if state.player.stats.activate_shield():
                     state.systems.effects.spawn_magic_shield()
@@ -51,25 +55,40 @@ def handle_events(state):
 
             elif event.key == pygame.K_e:
                 state.player.attack.perform_basic_attack()
-            
+
+            # ---------- TEST / DEBUG ---------- #
             elif event.key == pygame.K_t:
                 print("🧪 Test de explosión manual con tecla T")
                 state.systems.explosions.add_explosion(FireExplosion(state.player.x, state.player.y))
+
             elif event.key == pygame.K_F10:
                 if hasattr(state, "editor"):
                     state.editor.active = not state.editor.active
                     print("🛠️ Modo editor activado" if state.editor.active else "🛑 Modo editor desactivado")
-            
-            elif event.key == pygame.K_F9:            
+
+            elif event.key == pygame.K_F9:
                 config.DEBUG = not config.DEBUG
                 print(f"🧪 DEBUG {'activado' if config.DEBUG else 'desactivado'}")
 
+            # ---------- TILE‑EDITOR (F8) --------- #
             elif event.key == pygame.K_F8:
-                # ⇄ Activar / desactivar el editor de tiles
-                state.tile_editor_active = not getattr(state, "tile_editor_active", False)
-                print("🟩 Tile‑Editor ON" if state.tile_editor_active else "🟥 Tile‑Editor OFF")
+                # ⇄ Activar / desactivar el editor de tiles
+                new_val = not getattr(state, "tile_editor_active", False)
+                state.tile_editor_active = new_val
+                if hasattr(state, "tile_editor_state"):
+                    tes = state.tile_editor_state
+                    tes.active = new_val
+                    if not new_val:
+                        # ⏹️ Cerramos paleta y limpiamos selección
+                        tes.picker_open    = False
+                        tes.selected_tile  = None
+                        tes.current_choice = None
+                print("🟩 Tile‑Editor ON" if new_val else "🟥 Tile‑Editor OFF")
                 return                              # evitamos procesar más atajos ese frame
 
+        # ------------------------------------------------------------- #
+        #                       WHEEL / MOUSE                           #
+        # ------------------------------------------------------------- #
         elif event.type == pygame.MOUSEWHEEL:
             if event.y > 0:
                 state.camera.zoom = min(state.camera.zoom + 0.1, 2.0)
@@ -87,14 +106,13 @@ def handle_events(state):
 
                 dx = world_mouse_x - player_center_x
                 dy = world_mouse_y - player_center_y
-
                 angle = -pygame.math.Vector2(dx, dy).angle_to((1, 0))
                 state.combat.projectiles.spawn_fireball(angle)
 
             elif event.button == 2:
                 state.systems.effects.shooting_laser = True
                 state.systems.effects.last_laser_time = 0
-            
+
             elif event.button == 3:
                 mx, my = pygame.mouse.get_pos()
                 world_x = mx / state.camera.zoom + state.camera.offset_x
@@ -107,35 +125,33 @@ def handle_events(state):
                 state.systems.effects.shooting_laser = False
                 state.systems.effects.lasers.clear()
 
+    # ---------------------- MOVIMIENTO CONTINUO ---------------------- #
     if not state.show_menu:
         keys = pygame.key.get_pressed()
         dx = dy = 0
-        if keys[pygame.K_UP]: dy = -1
-        if keys[pygame.K_DOWN]: dy = 1
-        if keys[pygame.K_LEFT]: dx = -1
-        if keys[pygame.K_RIGHT]: dx = 1
-        if keys[pygame.K_w]: dy = -1
-        if keys[pygame.K_s]: dy = 1
-        if keys[pygame.K_a]: dx = -1
-        if keys[pygame.K_d]: dx = 1
+        if keys[pygame.K_UP] or keys[pygame.K_w]:    dy = -1
+        if keys[pygame.K_DOWN] or keys[pygame.K_s]:  dy = 1
+        if keys[pygame.K_LEFT] or keys[pygame.K_a]:  dx = -1
+        if keys[pygame.K_RIGHT] or keys[pygame.K_d]: dx = 1
 
         state.player.is_walking = dx != 0 or dy != 0
         solid_tiles = [tile for tile in state.tiles if tile.solid]
         state.player.move(dx, dy, state.obstacles, solid_tiles)
 
-    # 🔁 Fuego continuo de láser
+    # 🔁 Fuego continuo de láser
     if state.systems.effects.shooting_laser:
         now = time.time()
         if now - state.systems.effects.last_laser_time >= 0.01:
             mouse_x, mouse_y = pygame.mouse.get_pos()
             world_mouse_x = mouse_x / state.camera.zoom + state.camera.offset_x
             world_mouse_y = mouse_y / state.camera.zoom + state.camera.offset_y
-
             enemies = state.enemies + list(state.remote_entities.values())
             state.systems.effects.spawn_laser(world_mouse_x, world_mouse_y, enemies)
-
             state.systems.effects.last_laser_time = now
 
+# -------------------------------------------------------------------- #
+#                      MENÚ PAUSA / OPCIONES                           #
+# -------------------------------------------------------------------- #
 def execute_menu_option(selected, state):
     if selected == "Cambiar personaje":
         new_name = "valkyria" if state.player.character_name == "first_hero" else "first_hero"

@@ -44,6 +44,7 @@ class Renderer:
         benchmark("--3.2. z_entities", lambda: self._render_z_entities(state, cam, screen))
         benchmark("--3.3. effects", lambda: self._render_effects(state, cam, screen))
         benchmark("--3.4. hud", lambda: state.player.render_hud(screen, cam))
+        benchmark("--3.4b tile_editor",     lambda: self._render_tile_editor_layer(state, screen))
         benchmark("--3.5. crosshair", lambda: draw_mouse_crosshair(screen, cam))
         benchmark("--3.6. remote_players", lambda: render_remote_players(state))
         benchmark("--3.7. menu", lambda: self._render_menu(state, screen))
@@ -137,7 +138,6 @@ class Renderer:
 
     def _get_custom_debug_lines(self, state):
         lines = []
-
         lines.append(f"Modo: {state.mode}")
         px, py = round(state.player.x), round(state.player.y)
         lines.append(f"Pos: ({px}, {py})")
@@ -154,5 +154,4 @@ class Renderer:
                 tile_text = tile.tile_type
                 break
         lines.append(f"Tile: ({tile_col}, {tile_row}) Tipo: '{tile_text}'")
-
         return lines
