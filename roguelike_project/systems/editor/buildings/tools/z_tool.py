@@ -4,103 +4,118 @@ import pygame
 
 class ZTool:
     """
-    Pequeño panel semitransparente con botones «– / +» para modificar la capa Z
-    de un edificio.  Se instancia dos veces: una para la parte *bottom* y otra
-    para la parte *top* del building.
-
-    Parameters
-    ----------
-    target : str
-        "bottom" o "top"  →  indica a qué mitad del edificio afecta.
+    Panel flotante para editar la capa Z de un edificio.
+    — target  : "bottom" | "top"
+    — evita parpadeo cacheando la superficie base por factor de zoom
     """
+
+    BTN_W, BTN_H = 30, 30
+    PANEL_W, PANEL_H = 120, 40
 
     def __init__(self, state, editor_state, *, target: str = "bottom"):
         self.state = state
         self.editor_state = editor_state
+        self.target = target          # bottom | top
 
-        self.target = target        # "bottom" | "top"
-        self.button_size = (30, 30)
         self.font = pygame.font.SysFont("Arial", 16)
 
+        # Caches -------------------------------------------------------
+        self._panel_cache: dict[float, pygame.Surface] = {}   # {zoom: Surface}
+        self._text_cache: dict[tuple[str, float], pygame.Surface] = {}  # {(char,zoom):Surf}
+
     # ------------------------------------------------------------------ #
-    # Render                                                             #
+    # RENDER                                                             #
     # ------------------------------------------------------------------ #
     def render(self, screen: pygame.Surface, building):
         cam = self.state.camera
-        x, y = cam.apply((building.x, building.y))
-        w, h = cam.scale(building.image.get_size())
+        x_world, y_world = building.x, building.y
+        w_scaled, h_scaled = cam.scale(building.image.get_size())
+        x, y = cam.apply((x_world, y_world))
 
-        panel_width, panel_height = 120, 40
-        if self.target == "bottom":
-            panel_y = y + h - 50            # parte inferior del sprite
-        else:
-            panel_y = y + 10                # parte superior
-        panel_x = x + (w - panel_width) // 2
+        # posición del panel
+        panel_x = x + (w_scaled - self.PANEL_W) // 2
+        panel_y = y + (h_scaled - 50 if self.target == "bottom" else 10)
 
-        # --- dibujar panel ---
-        panel = pygame.Surface((panel_width, panel_height), pygame.SRCALPHA)
-        panel.fill((0, 0, 0, 190))
-        pygame.draw.rect(panel, (255, 255, 255), panel.get_rect(), 2, border_radius=6)
+        # superficie base cacheada por zoom
+        zoom = round(cam.zoom, 2)
+        base = self._get_cached_panel_base(zoom)
 
-        # botón «–»
-        minus_rect = pygame.Rect(5, 5, *self.button_size)
-        pygame.draw.rect(panel, (50, 50, 50), minus_rect, border_radius=4)
-        panel.blit(self.font.render("-", True, (255, 255, 255)),
-                   (minus_rect.x + 10, minus_rect.y + 5))
-
-        # valor Z
-        z_value = building.z_bottom if self.target == "bottom" else building.z_top
-        txt = self.font.render(f"Z: {z_value}", True, (255, 255, 255))
-        panel.blit(txt, txt.get_rect(center=(panel_width // 2, panel_height // 2)))
-
-        # botón «+»
-        plus_rect = pygame.Rect(panel_width - 5 - self.button_size[0], 5, *self.button_size)
-        pygame.draw.rect(panel, (50, 50, 50), plus_rect, border_radius=4)
-        panel.blit(self.font.render("+", True, (255, 255, 255)),
-                   (plus_rect.x + 10, plus_rect.y + 5))
+        # copiar y añadir el valor Z
+        panel = base.copy()
+        z_val = building.z_bottom if self.target == "bottom" else building.z_top
+        txt = self._get_text(f"Z: {z_val}", zoom)
+        panel.blit(txt, txt.get_rect(center=(self.PANEL_W // 2,
+                                             self.PANEL_H // 2)))
 
         # blit final
         screen.blit(panel, (panel_x, panel_y))
 
-        # guardar bounds clicables
-        if not hasattr(building, "_ztool_bounds"):
-            building._ztool_bounds = {}
-        building._ztool_bounds[self.target] = {
+        # ===== guardar bounds para detección de clic =====
+        minus_rect = pygame.Rect(5, 5, self.BTN_W, self.BTN_H)
+        plus_rect = pygame.Rect(self.PANEL_W - 5 - self.BTN_W, 5,
+                                self.BTN_W, self.BTN_H)
+        bounds = {
             "panel_pos": (panel_x, panel_y),
             "minus_rect": minus_rect,
             "plus_rect": plus_rect,
         }
+        if not hasattr(building, "_ztool_bounds"):
+            building._ztool_bounds = {}
+        building._ztool_bounds[self.target] = bounds
 
     # ------------------------------------------------------------------ #
-    # Eventos de mouse                                                   #
+    # MOUSE CLICK                                                        #
     # ------------------------------------------------------------------ #
     def handle_mouse_click(self, mouse_pos):
-        for building in self.state.buildings:
-            bounds_all = getattr(building, "_ztool_bounds", None)
-            if not bounds_all or self.target not in bounds_all:
+        for b in self.state.buildings:
+            bnd = getattr(b, "_ztool_bounds", {}).get(self.target)
+            if not bnd:
                 continue
-
-            bounds = bounds_all[self.target]
-            panel_x, panel_y = bounds["panel_pos"]
-            minus_rect = bounds["minus_rect"].move(panel_x, panel_y)
-            plus_rect = bounds["plus_rect"].move(panel_x, panel_y)
-
-            if minus_rect.collidepoint(mouse_pos):
-                self._update_building_z(building, delta=-1)
+            px, py = bnd["panel_pos"]
+            if bnd["minus_rect"].move(px, py).collidepoint(mouse_pos):
+                self._update_z(b, -1)
                 return
-            if plus_rect.collidepoint(mouse_pos):
-                self._update_building_z(building, delta=+1)
+            if bnd["plus_rect"].move(px, py).collidepoint(mouse_pos):
+                self._update_z(b, +1)
                 return
 
     # ------------------------------------------------------------------ #
-    # Interno                                                            #
+    # helpers                                                            #
     # ------------------------------------------------------------------ #
-    def _update_building_z(self, building, *, delta: int):
+    def _update_z(self, building, delta):
         if self.target == "bottom":
             building.z_bottom = max(0, building.z_bottom + delta)
-            # mantener sincronizado el z_state global (parte baja)
             self.state.z_state.set(building, building.z_bottom)
             print(f"⬇️  Z‑bottom nuevo: {building.z_bottom}")
         else:
             building.z_top = max(0, building.z_top + delta)
             print(f"⬆️  Z‑top nuevo: {building.z_top}")
+
+    # ---------- caché de superficies ---------------------------------- #
+    def _get_cached_panel_base(self, zoom: float) -> pygame.Surface:
+        if zoom in self._panel_cache:
+            return self._panel_cache[zoom]
+
+        surf = pygame.Surface((self.PANEL_W, self.PANEL_H), pygame.SRCALPHA, 32)
+        surf = surf.convert_alpha()
+        surf.fill((0, 0, 0, 190))
+        pygame.draw.rect(surf, (255, 255, 255), surf.get_rect(), 2, border_radius=6)
+
+        # botones
+        minus_rect = pygame.Rect(5, 5, self.BTN_W, self.BTN_H)
+        plus_rect = pygame.Rect(self.PANEL_W - 5 - self.BTN_W, 5,
+                                self.BTN_W, self.BTN_H)
+        pygame.draw.rect(surf, (50, 50, 50), minus_rect, border_radius=4)
+        pygame.draw.rect(surf, (50, 50, 50), plus_rect,  border_radius=4)
+
+        surf.blit(self._get_text("-", zoom), (minus_rect.x + 10, minus_rect.y + 5))
+        surf.blit(self._get_text("+", zoom), (plus_rect.x + 10, plus_rect.y + 5))
+
+        self._panel_cache[zoom] = surf
+        return surf
+
+    def _get_text(self, txt: str, zoom: float) -> pygame.Surface:
+        key = (txt, zoom)
+        if key not in self._text_cache:
+            self._text_cache[key] = self.font.render(txt, True, (255, 255, 255))
+        return self._text_cache[key]

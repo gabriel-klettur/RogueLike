@@ -32,6 +32,11 @@ class BuildingEditor:
         self.z_tool_bottom = ZTool(state, editor_state, target="bottom")
         self.z_tool_top = ZTool(state, editor_state, target="top")
 
+        # ---- Alias para código legado (editor_events.py) -------------
+        self.z_tool = self.z_tool_bottom
+
+
+
     # ------------------------------------------------------------------ #
     # UPDATE                                                             #
     # ------------------------------------------------------------------ #
