@@ -5,8 +5,7 @@ class ExplosionSystem:
         self.state = state
         self.explosions = []
 
-    def add_explosion(self, explosion_obj):
-        print("✅ Añadida explosión:", explosion_obj)  # Debug opcional
+    def add_explosion(self, explosion_obj):        
         self.explosions.append(explosion_obj)
     
     def update(self):

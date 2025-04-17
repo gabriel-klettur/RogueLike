@@ -12,8 +12,7 @@ class Fireball(Projectile):
         self.damage = 10
         self.explosions_list = explosions_list
 
-        def explode(x, y):
-            print("🔥 Ejecutando explosión en:", x, y)
+        def explode(x, y):            
             if self.explosions_list and hasattr(self.explosions_list, "add_explosion"):
                 self.explosions_list.add_explosion(FireExplosion(x, y))
 

@@ -37,12 +37,10 @@ class Projectile:
                     continue
 
                 offset = (int(enemy.x - self.x), int(enemy.y - self.y))
-                if self.mask.overlap(enemy.mask, offset):
-                    print("💥 ¡Colisión con enemigo!")
+                if self.mask.overlap(enemy.mask, offset):                    
                     if hasattr(enemy, 'take_damage'):
                         enemy.take_damage(self.damage)
-                    if self.on_explode:
-                        print("🔥 Ejecutando explosión...")
+                    if self.on_explode:                        
                         self.on_explode(self.x, self.y)
                     self.alive = False
                     return
