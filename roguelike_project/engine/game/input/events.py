@@ -46,13 +46,6 @@ def handle_events(state):
                 state.systems.effects.spawn_pixel_fire(x, y)
                 state.player.stats.last_pixel_fire_time = time.time()
 
-            elif event.key == pygame.K_c:
-                mx, my = pygame.mouse.get_pos()
-                world_x = mx / state.camera.zoom + state.camera.offset_x
-                world_y = my / state.camera.zoom + state.camera.offset_y
-                state.player.movement.teleport(world_x, world_y)
-                state.systems.effects.spawn_teleport_beam(state.player.x, state.player.y)
-
             elif event.key == pygame.K_v:
                 state.player.movement.start_dash_towards_mouse()
 
@@ -92,12 +85,19 @@ def handle_events(state):
                 angle = -pygame.math.Vector2(dx, dy).angle_to((1, 0))
                 state.combat.projectiles.spawn_fireball(angle)
 
-            elif event.button == 3:
+            elif event.button == 2:
                 state.systems.effects.shooting_laser = True
                 state.systems.effects.last_laser_time = 0
+            
+            elif event.button == 3:
+                mx, my = pygame.mouse.get_pos()
+                world_x = mx / state.camera.zoom + state.camera.offset_x
+                world_y = my / state.camera.zoom + state.camera.offset_y
+                state.player.movement.teleport(world_x, world_y)
+                state.systems.effects.spawn_teleport_beam(state.player.x, state.player.y)
 
         elif event.type == pygame.MOUSEBUTTONUP:
-            if event.button == 3:
+            if event.button == 2:
                 state.systems.effects.shooting_laser = False
                 state.systems.effects.lasers.clear()
 
