@@ -12,17 +12,23 @@ FPS = 60
 FONT_NAME = "Arial"
 FONT_SIZE = 18
 
-# Tamaño de tile
-TILE_SIZE = 64
 
 # WebSocket URL
 WEBSOCKET_URL = "ws://localhost:8000/ws"
 
+#!------------------------ Z-LAYER CONFIG --------------------------
+
 # Z-Layer
-DEFAULT_Z = 3
+DEFAULT_Z = 1
 
+# Z-Layer buildings data
+BUILDINGS_DATA_PATH = "roguelike_project/systems/z_layer/data/buildings_data.json"
 
-#!--------------------- DUDGEONS CONFIG --------------------------
+#!--------------------- MAP CONFIG --------------------------
+
+# Tamaño de tile
+TILE_SIZE = 64
+
 # Tamaño del mapa procedural
 DUNGEON_WIDTH = 120
 DUNGEON_HEIGHT = 120

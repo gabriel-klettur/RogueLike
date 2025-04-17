@@ -2,6 +2,8 @@
 
 import pygame
 
+from roguelike_project.config import SCREEN_WIDTH, SCREEN_HEIGHT, FONT_NAME, FONT_SIZE, BUILDINGS_DATA_PATH
+
 from roguelike_project.engine.game.input.events import handle_events
 from roguelike_project.engine.game.systems.state import GameState
 from roguelike_project.engine.game.systems.map_manager import build_map
@@ -11,7 +13,6 @@ from roguelike_project.ui.menus.menu import Menu
 from roguelike_project.engine.camera import Camera
 from roguelike_project.engine.game.render.render import Renderer
 from roguelike_project.engine.game.update_manager import update_game
-from roguelike_project.config import SCREEN_WIDTH, SCREEN_HEIGHT, FONT_NAME, FONT_SIZE
 from roguelike_project.systems.systems_manager import SystemsManager
 
 # 🛠️ Editor
@@ -20,6 +21,7 @@ from roguelike_project.systems.editor.buildings.building_editor import BuildingE
 from roguelike_project.systems.editor.buildings.tools.placer_tool import PlacerTool
 from roguelike_project.systems.editor.buildings.tools.delete_tool import DeleteTool
 from roguelike_project.systems.editor.json_handler import save_buildings_to_json
+
 
 # 🆕 Z-Layer System
 from roguelike_project.systems.z_layer.state import ZState
@@ -32,13 +34,25 @@ class Game:
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont(FONT_NAME, FONT_SIZE)
         self.camera = Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
+        self.z_state = None 
 
-        self._init_state(perf_log)
+        self._init_state(perf_log)        
+
+        
         self._init_map()
-        self._init_entities()
-        self._init_z_layer()   # 🆕
+
+        
+        self._init_entities()  
+        
+        
+        self._init_z_layer()  # 🆕 NUEVO MÉTODO
+        
+
         self._init_systems()
         self._init_editor()
+
+
+        
 
     def _init_state(self, perf_log):
         self.state = GameState(
@@ -62,7 +76,7 @@ class Game:
         self.state.tiles = [tile for row in self.state.tile_map for tile in row]
 
     def _init_entities(self):
-        player, obstacles, buildings, enemies = load_entities()
+        player, obstacles, buildings, enemies = load_entities(self.z_state)  # ✅ PASARLO
         self.state.player = player
         self.state.obstacles = obstacles
         self.state.buildings = buildings
@@ -122,7 +136,7 @@ class Game:
 
             keys = pygame.key.get_pressed()
             if keys[pygame.K_LCTRL] and keys[pygame.K_s]:
-                save_buildings_to_json(self.state.buildings, "roguelike_project/editor/data/buildings_data.json")
+                save_buildings_to_json(self.state.buildings, BUILDINGS_DATA_PATH)
             elif keys[pygame.K_n]:
                 self.placer_tool.place_building_at_mouse()
             elif keys[pygame.K_DELETE]:
