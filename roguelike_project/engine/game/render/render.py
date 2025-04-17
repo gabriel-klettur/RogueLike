@@ -82,17 +82,14 @@ class Renderer:
 
     def _render_z_entities(self, state, cam, screen):
         """
-        Renderiza entidades (obstacles, buildings, enemies, player) ordenadas por Z y Y.
-        También aplica efectos visuales basados en Z.
+        Renderiza entidades ordenadas por Z y Y.
+        Los edificios se dividen en dos mitades.
         """
         all_entities = []
 
-        # Agregamos solo los que están en pantalla
+        # Obstáculos, enemigos, etc.
         all_entities.extend([
             e for e in state.obstacles if cam.is_in_view(e.x, e.y, getattr(e, "sprite_size", (64, 64)))
-        ])
-        all_entities.extend([
-            b for b in state.buildings if cam.is_in_view(b.x, b.y, b.image.get_size())
         ])
         all_entities.extend([
             e for e in state.enemies if cam.is_in_view(e.x, e.y, e.sprite_size)
@@ -103,10 +100,20 @@ class Renderer:
         if cam.is_in_view(state.player.x, state.player.y, state.player.sprite_size):
             all_entities.append(state.player)
 
-        # Render ordenado por Z
+        # --- Buildings bipartitos ------------------------------------
+        for b in state.buildings:
+            if not cam.is_in_view(b.x, b.y, b.image.get_size()):
+                continue
+
+            for part in b.get_parts():
+                # Registramos la Z de cada wrapper individual
+                state.z_state.set(part, part.z)
+                all_entities.append(part)
+
+        # Orden y render
         render_z_ordered(all_entities, screen, cam, state.z_state)
 
-        # Efectos visuales por Z (sombras, bordes, etc)
+        # Efectos de depuración
         for entity in all_entities:
             apply_z_visual_effect(entity, state.player, screen, cam, state.z_state)
 

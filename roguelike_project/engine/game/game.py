@@ -88,17 +88,23 @@ class Game:
             print(f"{i:02d} | ({b.x:>6.0f},{b.y:>6.0f}) | "
                 f"Z={b.z:<2} | solid={b.solid} | img={b.image_path}")
 
-    def _init_z_layer(self):  # 🆕 NUEVO MÉTODO
+    def _init_z_layer(self):
+        """Inicializa el ZState con las capas correctas."""
         self.state.z_state = self.z_state
+        zs = self.z_state   # alias corto
 
-        # Asignar capas Z
-        self.z_state.set(self.state.player, Z_LAYERS["player"])
+        # Jugador y enemigos comparten capa
+        zs.set(self.state.player, Z_LAYERS["player"])
         for e in self.state.enemies:
-            self.z_state.set(e, Z_LAYERS["player"])
+            zs.set(e, Z_LAYERS["player"])
+
+        # Obstáculos bajos
         for o in self.state.obstacles:
-            self.z_state.set(o, Z_LAYERS["low_object"])
+            zs.set(o, Z_LAYERS["low_object"])
+
+        # Edificios: registra su parte baja (la alta se añadirá al render)
         for b in self.state.buildings:
-            self.z_state.set(b, Z_LAYERS["high_object"])
+            zs.set(b, b.z_bottom)          # ó  Z_LAYERS["building_low"]
 
     def _init_systems(self):
         self.renderer = Renderer()
