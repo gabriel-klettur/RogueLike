@@ -25,6 +25,7 @@ def load_buildings_from_json(filepath, building_class, z_state=None):
 
     for entry in data:
         try:
+            print(f"📥 Entrada cruda desde JSON: {entry}")
             b = building_class(
                 x=entry["x"],
                 y=entry["y"],

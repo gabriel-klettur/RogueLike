@@ -1,6 +1,6 @@
 import pygame
 from roguelike_project.systems.editor.json_handler import save_buildings_to_json
-from roguelike_project import config
+from roguelike_project.config import BUILDINGS_DATA_PATH
 
 def handle_editor_events(state, editor_state, building_editor):
     for event in pygame.event.get():
@@ -18,7 +18,7 @@ def handle_editor_events(state, editor_state, building_editor):
                 # 💾 Guardar automáticamente al salir
                 save_buildings_to_json(
                     state.buildings,
-                    "roguelike_project/editor/data/buildings_data.json",
+                    BUILDINGS_DATA_PATH,
                     z_state=state.z_state
                 )
 
@@ -30,7 +30,7 @@ def handle_editor_events(state, editor_state, building_editor):
                 if not editor_state.active:
                     save_buildings_to_json(
                         state.buildings,
-                        "roguelike_project/editor/data/buildings_data.json",
+                        BUILDINGS_DATA_PATH,
                         z_state=state.z_state
                     )
 
@@ -50,7 +50,7 @@ def handle_editor_events(state, editor_state, building_editor):
                         print(f"💾 Guardando edificio: {b.image_path} en ({int(b.x)}, {int(b.y)})")
                         save_buildings_to_json(
                             state.buildings,
-                            "roguelike_project/editor/data/buildings_data.json",
+                            BUILDINGS_DATA_PATH,
                             z_state=state.z_state
                         )
                 building_editor.handle_mouse_up()

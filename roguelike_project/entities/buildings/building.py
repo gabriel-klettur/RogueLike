@@ -7,11 +7,11 @@ class Building:
     def __init__(self, x, y, image_path, solid=True, scale=None):
         self.x = x
         self.y = y
+        self.z = DEFAULT_Z  #
         self.solid = solid
         self.image_path = image_path
         self.scaled_cache = {}  # zoom: surface escalada
-        self.z = DEFAULT_Z  #
-
+        
         self.image = load_image(image_path)
 
         # Escalado inicial y guardado del tamaño original

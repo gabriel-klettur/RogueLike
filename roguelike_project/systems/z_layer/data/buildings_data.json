@@ -15,8 +15,8 @@
         "z": 3
     },
     {
-        "x": 2208,
-        "y": 779,
+        "x": 2534,
+        "y": -293,
         "image_path": "assets/buildings/temples/catholic.png",
         "solid": true,
         "scale": [
@@ -42,7 +42,7 @@
             3072,
             2048
         ],
-        "z": 0
+        "z": 3
     },
     {
         "x": 369,
@@ -60,8 +60,8 @@
         "z": 3
     },
     {
-        "x": 2285,
-        "y": 292,
+        "x": 2105,
+        "y": 146,
         "image_path": "assets/buildings/others/portal.png",
         "solid": true,
         "scale": [
@@ -87,11 +87,11 @@
             1024,
             1536
         ],
-        "z": 6
+        "z": 3
     },
     {
-        "x": 1526,
-        "y": -186,
+        "x": 1470,
+        "y": -134,
         "image_path": "assets/buildings/shops/alchemy_tower.png",
         "solid": true,
         "scale": [
@@ -102,11 +102,11 @@
             471,
             723
         ],
-        "z": 1
+        "z": 3
     },
     {
-        "x": 2741,
-        "y": 1299,
+        "x": 2441,
+        "y": 901,
         "image_path": "assets/buildings/shops/healer_1.png",
         "solid": true,
         "scale": [
@@ -120,13 +120,13 @@
         "z": 3
     },
     {
-        "x": 1461,
-        "y": 548,
+        "x": 1713,
+        "y": 800,
         "image_path": "assets/buildings/shops/healer.png",
         "solid": true,
         "scale": [
-            569,
-            569
+            436,
+            436
         ],
         "original_scale": [
             441,
@@ -165,8 +165,8 @@
         "z": 3
     },
     {
-        "x": 4522,
-        "y": 1444,
+        "x": 2834,
+        "y": 1098,
         "image_path": "assets/buildings/houses/orden_house_2.png",
         "solid": true,
         "scale": [
@@ -180,8 +180,8 @@
         "z": 3
     },
     {
-        "x": 3648,
-        "y": 672,
+        "x": 1984,
+        "y": 952,
         "image_path": "assets/buildings/shops/jewlery_shop.png",
         "solid": true,
         "scale": [
@@ -192,11 +192,11 @@
             595,
             595
         ],
-        "z": 2
+        "z": 3
     },
     {
-        "x": 3030,
-        "y": 1232,
+        "x": 3330,
+        "y": 1618,
         "image_path": "assets/buildings/others/coliseo_2.png",
         "solid": true,
         "scale": [
@@ -207,7 +207,7 @@
             1024,
             1024
         ],
-        "z": 6
+        "z": 3
     },
     {
         "x": 5006,
@@ -225,8 +225,8 @@
         "z": 3
     },
     {
-        "x": 4862,
-        "y": 892,
+        "x": 5022,
+        "y": 702,
         "image_path": "assets/buildings/others/guillotina.png",
         "solid": true,
         "scale": [
