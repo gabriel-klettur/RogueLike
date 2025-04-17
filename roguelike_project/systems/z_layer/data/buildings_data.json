@@ -72,8 +72,8 @@
         "z": 3
     },
     {
-        "x": 1977,
-        "y": 504,
+        "x": 2007,
+        "y": 474,
         "image_path": "assets/buildings/others/portal.png",
         "solid": true,
         "scale": [
@@ -90,8 +90,8 @@
         "z": 3
     },
     {
-        "x": 405,
-        "y": 173,
+        "x": 431,
+        "y": 251,
         "image_path": "assets/buildings/others/portal_2.png",
         "solid": true,
         "scale": [
@@ -144,8 +144,8 @@
         "z": 3
     },
     {
-        "x": 1525,
-        "y": 804,
+        "x": 1631,
+        "y": 862,
         "image_path": "assets/buildings/shops/healer.png",
         "solid": true,
         "scale": [
@@ -162,22 +162,22 @@
         "z": 3
     },
     {
-        "x": 788,
-        "y": 494,
+        "x": 759,
+        "y": 524,
         "image_path": "assets/buildings/others/fuente.png",
         "solid": true,
         "scale": [
-            587,
-            587
+            654,
+            654
         ],
         "original_scale": [
             521,
             521
         ],
-        "split_ratio": 0.635,
-        "z_bottom": 5,
+        "split_ratio": 0.488,
+        "z_bottom": 2,
         "z_top": 7,
-        "z": 5
+        "z": 2
     },
     {
         "x": 514,

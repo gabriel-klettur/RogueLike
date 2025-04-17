@@ -64,6 +64,12 @@ def handle_events(state):
                 config.DEBUG = not config.DEBUG
                 print(f"🧪 DEBUG {'activado' if config.DEBUG else 'desactivado'}")
 
+            elif event.key == pygame.K_F8:
+                # ⇄ Activar / desactivar el editor de tiles
+                state.tile_editor_active = not getattr(state, "tile_editor_active", False)
+                print("🟩 Tile‑Editor ON" if state.tile_editor_active else "🟥 Tile‑Editor OFF")
+                return                              # evitamos procesar más atajos ese frame
+
         elif event.type == pygame.MOUSEWHEEL:
             if event.y > 0:
                 state.camera.zoom = min(state.camera.zoom + 0.1, 2.0)

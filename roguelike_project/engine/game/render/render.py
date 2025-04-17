@@ -79,6 +79,15 @@ class Renderer:
                 dirty = tile.render(screen, cam)
                 if dirty:
                     self._dirty_rects.append(dirty)
+    
+    def _render_tile_editor_layer(self, state, screen):
+        """
+        Pintamos un borde sobre el tile seleccionado y
+        delegamos al TileEditor para picker y UI.
+        """
+        if hasattr(state, "tile_editor") and state.tile_editor:
+            state.tile_editor.render_selection_outline(screen)
+            state.tile_editor.render_picker(screen)
 
     def _render_z_entities(self, state, cam, screen):
         """
