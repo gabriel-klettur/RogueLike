@@ -55,11 +55,15 @@ class TileToolbar:
 
     def handle_click(self, mouse_pos) -> bool:
         for tool, rect in self.icon_rects.items():
-            if rect.collidepoint(mouse_pos):
+            if rect.collidepoint(mouse_pos):                
                 if tool == "view":
                     # Toggle view panel
                     self.editor.view_active = not self.editor.view_active
                 else:
                     self.editor.current_tool = tool
+                    # Al seleccionar la brocha, abrimos la paleta
+                    if tool == "brush":
+                        self.editor.picker_open = True
+                        self.editor.scroll_offset = 0
                 return True
         return False

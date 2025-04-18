@@ -52,9 +52,14 @@ def handle_tile_editor_events(state, editor_state, tile_editor):
                         tile_editor.select_tile_at(ev.pos)
                 else:
                     tile_editor.select_tile_at(ev.pos)
-
-            # 3) Brush (pintar)
+            # 3) Brush (pintar), pero si click sobre paleta, delegamos ahí
             elif tool == "brush" and ev.button == 1:
+                # Si la paleta está abierta y el click es sobre ella, que la paleta lo maneje
+                if editor_state.picker_open and tile_editor.picker.is_over(ev.pos):
+                    handled = tile_editor.picker.handle_click(ev.pos, button=1)
+                    if handled:
+                        continue
+                # Si no, pintamos normalmente
                 editor_state.brush_dragging = True
                 tile_editor.apply_brush(ev.pos)
 
@@ -69,9 +74,10 @@ def handle_tile_editor_events(state, editor_state, tile_editor):
                     continue
 
         elif ev.type == pygame.MOUSEMOTION:
-            # Brush → pintar al arrastrar
+            # Brush → pintar al arrastrar (salvo que el ratón esté sobre la paleta)
             if editor_state.current_tool == "brush" and editor_state.brush_dragging:
-                tile_editor.apply_brush(ev.pos)
+                if not (editor_state.picker_open and tile_editor.picker.is_over(ev.pos)):
+                    tile_editor.apply_brush(ev.pos)            
 
             # Paleta → scroll/drag
             elif editor_state.picker_open and tile_editor.picker.dragging:
