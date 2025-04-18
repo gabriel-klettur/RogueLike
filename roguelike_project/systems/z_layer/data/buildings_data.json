@@ -234,8 +234,8 @@
         "z": 3
     },
     {
-        "x": 3716,
-        "y": 764,
+        "x": 4364,
+        "y": 66,
         "image_path": "assets/buildings/others/coliseo_2.png",
         "solid": true,
         "scale": [
@@ -252,8 +252,8 @@
         "z": 3
     },
     {
-        "x": 6562,
-        "y": 1078,
+        "x": 7749,
+        "y": 698,
         "image_path": "assets/buildings/others/coliseo_2.png",
         "solid": true,
         "scale": [

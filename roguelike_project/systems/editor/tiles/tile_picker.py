@@ -43,10 +43,16 @@ class TilePicker:
 
     def _load_assets(self):
         root = Path(__file__).resolve().parents[3] / "assets" / "tiles"
+        # Recogemos todos los ficheros en un set para evitar duplicados de case
         patterns = ["*.png", "*.PNG", "*.webp", "*.WEBP"]
-        files = []
+        seen = {}
         for pat in patterns:
-            files.extend(sorted(root.glob(pat)))
+            for path in root.glob(pat):
+                key = path.name.lower()
+                # mantengo solo la primera ocurrencia
+                if key not in seen:
+                    seen[key] = path
+        files = sorted(seen.values())
 
         thumbs = []
         for p in files:
