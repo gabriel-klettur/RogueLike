@@ -1,7 +1,7 @@
 # roguelike_project/engine/game/game.py
+
 import sys
 import os
-import time
 import pygame
 from collections import defaultdict
 
@@ -9,10 +9,8 @@ from collections import defaultdict
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..")))
 
 from roguelike_project.config import (
-    SCREEN_WIDTH, SCREEN_HEIGHT, FONT_NAME, FONT_SIZE, BUILDINGS_DATA_PATH, FPS
+    SCREEN_WIDTH, SCREEN_HEIGHT, FONT_NAME, FONT_SIZE, FPS
 )
-
-# ---------- core input / update ----------
 from roguelike_project.engine.game.input.events import handle_events
 from roguelike_project.engine.game.systems.state import GameState
 from roguelike_project.engine.game.systems.map_manager import build_map
@@ -24,29 +22,26 @@ from roguelike_project.engine.game.render.render import Renderer
 from roguelike_project.engine.game.update_manager import update_game
 from roguelike_project.systems.systems_manager import SystemsManager
 
-# ---------- Building‑editor ----------
+# Building‑editor
 from roguelike_project.systems.editor.editor_state import EditorState
 from roguelike_project.systems.editor.buildings.building_editor import BuildingEditor
-from roguelike_project.systems.editor.buildings.tools.placer_tool import PlacerTool
-from roguelike_project.systems.editor.buildings.tools.delete_tool import DeleteTool
 from roguelike_project.systems.editor.buildings.editor_events import handle_editor_events
 
-# ---------- Tile‑editor ----------
+# Tile‑editor
 from roguelike_project.systems.editor.tiles.tile_editor_state import TileEditorState
 from roguelike_project.systems.editor.tiles.tile_editor import TileEditor
 from roguelike_project.systems.editor.tiles.tile_editor_events import handle_tile_editor_events
 
-# ---------- Z‑Layer ----------
+# Z‑Layer
 from roguelike_project.systems.z_layer.state import ZState
 from roguelike_project.systems.z_layer.config import Z_LAYERS
 
-
 class Game:
     def __init__(self, screen, perf_log=None, map_name: str = None):
-        # Parámetro opcional para overlay
+        # Permitimos pasar un map_name explícito
         self.map_name = map_name
 
-        # ------------- infraestructura -----------------
+        # ------------- infraestructura -----------------
         self.screen = screen
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont(FONT_NAME, FONT_SIZE)
@@ -54,19 +49,17 @@ class Game:
         self.z_state = ZState()
         self.perf_log = perf_log
 
-        # ------------- core state ----------------------
+        # ------------- core state ----------------------
         self._init_state()
         self._init_map()
         self._init_entities()
         self._init_z_layer()
         self._init_systems()
 
-        # ------------- editores ------------------------
+        # ------------- editores ------------------------
         self._init_building_editor()
         self._init_tile_editor()
 
-    # ================================================= #
-    # --------------------- STATE ---------------------- #
     def _init_state(self):
         self.state = GameState(
             screen=self.screen,
@@ -84,30 +77,31 @@ class Game:
         self.state.running = True
         self.state.perf_log = self.perf_log
 
-    # ================================================= #
     def _init_map(self):
-        # Construir mapa y cargar overlay
-        self.map_data, self.state.tile_map, self.state.overlay_map = build_map(
+        """
+        Construye el mapa y carga el overlay.
+        build_map ahora devuelve también la clave estática map_name.
+        """
+        # 1) Generar mapa y recibir clave
+        self.map_data, self.state.tile_map, self.state.overlay_map, key = build_map(
             map_name=self.map_name
         )
-        # Guardar nombre de mapa en el state para persistencia
-        self.state.map_name = self.map_name
-        # Aplana la lista de tiles
+        # 2) Guardar esa clave en el state
+        self.state.map_name = key
+
+        # 3) Aplanar la lista de tiles
         self.state.tiles = [t for row in self.state.tile_map for t in row]
 
-    # ================================================= #
     def _init_entities(self):
         player, obstacles, buildings, enemies = load_entities(self.z_state)
         self.state.player = player
         self.state.obstacles = obstacles
         self.state.buildings = buildings
-        # listado de debug
-        print("🛠️ Buildings cargados:")
+        print("🛠️ Buildings cargados:")
         for i, b in enumerate(self.state.buildings, 1):
-            print(f"{i:02d} | ({b.x:>6.0f},{b.y:>6.0f}) | Z=({b.z_bottom},{b.z_top}) | img={b.image_path}")
+            print(f"{i:02d} | ({b.x:.0f},{b.y:.0f}) | Z=({b.z_bottom},{b.z_top}) | img={b.image_path}")
         self.state.enemies = enemies
 
-    # ================================================= #
     def _init_z_layer(self):
         zs = self.z_state
         self.state.z_state = zs
@@ -119,7 +113,6 @@ class Game:
         for b in self.state.buildings:
             zs.set(b, b.z_bottom)
 
-    # ================================================= #
     def _init_systems(self):
         self.renderer = Renderer()
         self.state.player.renderer.state = self.state
@@ -135,14 +128,11 @@ class Game:
         if self.state.mode == "online":
             self.network.connect()
 
-    # ================================================= #
-    # ---------------- Building‑Editor ---------------- #
     def _init_building_editor(self):
         self.editor_state = EditorState()
         self.building_editor = BuildingEditor(self.state, self.editor_state)
         self.state.editor = self.editor_state
 
-    # ------------------ Tile‑Editor ------------------ #
     def _init_tile_editor(self):
         self.tile_editor_state = TileEditorState()
         self.tile_editor = TileEditor(self.state, self.tile_editor_state)
@@ -150,28 +140,17 @@ class Game:
         self.state.tile_editor_state = self.tile_editor_state
         self.state.tile_editor_active = False
 
-    # ================================================= #
-    # ---------------- HANDLER DE EVENTOS -------------- #
     def handle_events(self):
-        # ---- Tile‑Editor (F8) -------------------------
         if self.tile_editor_state.active:
-            handle_tile_editor_events(
-                self.state, self.tile_editor_state, self.tile_editor
-            )
+            handle_tile_editor_events(self.state, self.tile_editor_state, self.tile_editor)
             return
-        # ---- Building‑Editor (F10) --------------------
         if self.state.editor.active:
-            handle_editor_events(
-                self.state, self.editor_state, self.building_editor
-            )
+            handle_editor_events(self.state, self.editor_state, self.building_editor)
             return
-        # ---- Loop de juego normal ---------------------
         handle_events(self.state)
 
-    # ================================================= #
     def update(self):
         if self.tile_editor_state.active:
-            # no lógica de juego en modo tile
             return
         if self.state.editor.active:
             self.building_editor.update()
@@ -183,7 +162,6 @@ class Game:
         if self.state.editor.active:
             self.building_editor.render_selection_outline(self.screen)
 
-    # ================================================= #
     def run(self):
         while self.state.running:
             self.handle_events()

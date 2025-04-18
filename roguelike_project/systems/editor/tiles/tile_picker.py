@@ -2,6 +2,8 @@ import glob, pygame
 from pathlib import Path
 from roguelike_project.utils.loader import load_image
 from roguelike_project.config import TILE_SIZE
+from roguelike_project.engine.game.systems.map.overlay_manager import save_overlay
+from roguelike_project.config_tiles import INVERSE_OVERLAY_MAP
 
 THUMB = 56
 COLS  = 6
@@ -17,6 +19,7 @@ class TilePicker:
     – Mover con clic‑derecho y arrastre
     – Hover con borde amarillo
     – Selección actual con borde naranja
+    Ahora, cada cambio se guarda automáticamente en <map_name>.overlay.json
     """
     BTN_W = 100
     BTN_H = 28
@@ -122,7 +125,7 @@ class TilePicker:
 
         # ----- botones/minis -----
         if self.btn_delete_rect .collidepoint((lx, ly)): self._delete_tile();  return True
-        if self.btn_default_rect.collidepoint((lx, ly)): self._set_default();  return True
+        if self.btn_default_rect.collidepoint((lx, ly)): self._set_default(); return True
         if self.btn_accept_rect .collidepoint((lx, ly)): self._accept_choice();return True
 
         col = int((lx - PAD) // (THUMB + PAD))
@@ -142,30 +145,47 @@ class TilePicker:
         self.dragging = False
 
     # ------------- acciones botones ------------- #
+    # ------------- acciones botones ------------- #
     def _delete_tile(self):
+        """Borra el sprite y marca overlay vacío."""
         tile = self.editor.selected_tile
         if tile:
             tile.sprite = pygame.Surface((TILE_SIZE, TILE_SIZE), pygame.SRCALPHA)
             tile.scaled_cache.clear()
+            self._persistir_overlay(tile, "")
+
         self._close()
 
     def _set_default(self):
+        """Restaura el sprite por defecto y marca overlay vacío."""
         from roguelike_project.engine.game.systems.map.tile_loader import load_tile_images
+
         tile = self.editor.selected_tile
         if tile:
             sprite_set = load_tile_images().get(tile.tile_type)
             sprite = sprite_set[0] if isinstance(sprite_set, list) else sprite_set
             tile.sprite = sprite
             tile.scaled_cache.clear()
+            self._persistir_overlay(tile, "")
+
         self._close()
 
     def _accept_choice(self):
-        if self.editor.current_choice and self.editor.selected_tile:
-            from roguelike_project.utils.loader import load_image
-            self.editor.selected_tile.sprite = load_image(
-                self.editor.current_choice, (TILE_SIZE, TILE_SIZE)
-            )
-            self.editor.selected_tile.scaled_cache.clear()
+        """Asigna el nuevo sprite elegido y guarda su código en overlay."""
+        choice = self.editor.current_choice
+        tile   = self.editor.selected_tile
+        if choice and tile:
+            # cargar la imagen
+            tile.sprite = load_image(choice, (TILE_SIZE, TILE_SIZE))
+            tile.scaled_cache.clear()
+
+            # inferir el código a partir del nombre de archivo
+            name = Path(choice).stem             # e.g. "wall"
+            codes = INVERSE_OVERLAY_MAP.get(name, [])
+            code = codes[0] if codes else ""     # toma el primer código o vacío
+
+            self._persistir_overlay(tile, code)
+
         self._close()
 
     def scroll(self, dy):
@@ -175,3 +195,25 @@ class TilePicker:
         self.editor.picker_open = False
         self.editor.current_choice = None
         self.dragging = False
+
+    # ------------------ persistencia ------------------ #
+    def _persistir_overlay(self, tile, code: str):
+        """
+        Actualiza overlay_map (solo códigos) y persiste en JSON.
+        """
+        row = tile.y // TILE_SIZE
+        col = tile.x // TILE_SIZE
+
+        # asegurar overlay_map inicializado
+        if self.state.overlay_map is None:
+            h = len(self.state.tile_map)
+            w = len(self.state.tile_map[0]) if h else 0
+            self.state.overlay_map = [["" for _ in range(w)] for _ in range(h)]
+
+        # guardar el código ("" borra el overlay)
+        self.state.overlay_map[row][col] = code
+        tile.overlay_code = code
+
+        # escribir en disk
+        save_overlay(self.state.map_name, self.state.overlay_map)
+        print(f"📝 Overlay guardado en: {self.state.map_name}.overlay.json")
