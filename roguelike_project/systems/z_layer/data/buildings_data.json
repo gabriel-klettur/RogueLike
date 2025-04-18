@@ -108,6 +108,60 @@
         "z": 3
     },
     {
+        "x": 26,
+        "y": 395,
+        "image_path": "assets/buildings/others/portal_dudgeon_1.png",
+        "solid": true,
+        "scale": [
+            201,
+            299
+        ],
+        "original_scale": [
+            1024,
+            1536
+        ],
+        "split_ratio": 0.567,
+        "z_bottom": 3,
+        "z_top": 5,
+        "z": 3
+    },
+    {
+        "x": 1801,
+        "y": 1415,
+        "image_path": "assets/buildings/gardens/garden_1.png",
+        "solid": true,
+        "scale": [
+            1024,
+            1024
+        ],
+        "original_scale": [
+            1024,
+            1024
+        ],
+        "split_ratio": 0.125,
+        "z_bottom": 3,
+        "z_top": 5,
+        "z": 3
+    },
+    {
+        "x": 2840,
+        "y": 1203,
+        "image_path": "assets/buildings/gardens/garden_2.png",
+        "solid": true,
+        "scale": [
+            1180,
+            1180
+        ],
+        "original_scale": [
+            1024,
+            1024
+        ],
+        "split_ratio": 0.193,
+        "z_bottom": 3,
+        "z_top": 5,
+        "z": 3
+    },
+    {
         "x": 1482,
         "y": -104,
         "image_path": "assets/buildings/shops/alchemy_tower.png",
@@ -162,8 +216,8 @@
         "z": 3
     },
     {
-        "x": 1083,
-        "y": 629,
+        "x": 949,
+        "y": 573,
         "image_path": "assets/buildings/others/fuente.png",
         "solid": true,
         "scale": [
@@ -198,8 +252,8 @@
         "z": 3
     },
     {
-        "x": 2834,
-        "y": 1098,
+        "x": 3020,
+        "y": 572,
         "image_path": "assets/buildings/houses/orden_house_2.png",
         "solid": true,
         "scale": [
