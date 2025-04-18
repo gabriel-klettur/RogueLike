@@ -9,12 +9,14 @@ class TileToolbar:
       - select
       - brush
       - eyedropper
+      - view
     """
-    TOOLS = ["select", "brush", "eyedropper"]
+    TOOLS = ["select", "brush", "eyedropper", "view"]
     ICON_PATHS = {
-        "select":        "assets/ui/select_tool.png",
-        "brush":         "assets/ui/brush_tool.png",
-        "eyedropper":    "assets/ui/eyedropper_tool.png",
+        "select":     "assets/ui/select_tool.png",
+        "brush":      "assets/ui/brush_tool.png",
+        "eyedropper": "assets/ui/eyedropper_tool.png",
+        "view":       "assets/ui/view_tool.png",
     }
 
     def __init__(self, state, editor_state):
@@ -52,12 +54,12 @@ class TileToolbar:
             pygame.draw.rect(screen, color, rect, 2)
 
     def handle_click(self, mouse_pos) -> bool:
-        """
-        Si el click cae sobre un icono, cambia la herramienta
-        y devuelve True para consumir el evento.
-        """
         for tool, rect in self.icon_rects.items():
             if rect.collidepoint(mouse_pos):
-                self.editor.current_tool = tool
+                if tool == "view":
+                    # Toggle view panel
+                    self.editor.view_active = not self.editor.view_active
+                else:
+                    self.editor.current_tool = tool
                 return True
         return False

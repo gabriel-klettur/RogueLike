@@ -12,5 +12,8 @@ class TileEditorState:
         self.scroll_offset = 0         # desplazamiento de scroll en la paleta
 
         # NUEVO: herramientas
-        self.current_tool = "select"   # "select" | "brush" | "eyedropper"
+        self.current_tool = "select"   # "select" | "brush" | "eyedropper" | "view"
         self.brush_dragging = False    # para arrastrar el brush
+        self.view_active = True        # para ver los tiles.
+        
+        

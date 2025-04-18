@@ -9,8 +9,9 @@ from roguelike_project.config_tiles import OVERLAY_CODE_MAP, INVERSE_OVERLAY_MAP
 from roguelike_project.engine.game.systems.map.overlay_manager import save_overlay
 from roguelike_project.utils.loader import load_image
 
-OUTLINE_SEL   = (0, 255, 0)     # seleccionado (verde)
-OUTLINE_HOVER = (0, 220, 255)   # hover (cian)
+OUTLINE_SEL    = (0, 255, 0)     # seleccionado (verde)
+OUTLINE_HOVER  = (0, 220, 255)   # hover (cian)
+OUTLINE_CHOICE = (255, 255, 0)   # elección actual (amarillo)
 
 class TileEditor:
     """
@@ -84,44 +85,69 @@ class TileEditor:
         self.editor.current_tool = "brush"
 
     def render_selection_outline(self, screen):
-        # sólo si editor activo
         if not self.editor.active:
             return
 
-        # dibujar toolbar encima de todo
+        # 1) Toolbar y toggle view
         self.toolbar.render(screen)
 
-        cam = self.state.camera
+        # 2) Panel de ViewTile si está activo
+        if self.editor.view_active:
+            self.render_view_panel(screen)
 
-        # HOVER (cian)
+        # 3) Contornos en el mundo (hover y seleccion)
+        cam = self.state.camera
         hover = self._tile_under_mouse(pygame.mouse.get_pos())
         if hover:
-            rect = pygame.Rect(
-                cam.apply((hover.x, hover.y)),
-                cam.scale((TILE_SIZE, TILE_SIZE))
-            )
+            rect = pygame.Rect(cam.apply((hover.x, hover.y)), cam.scale((TILE_SIZE, TILE_SIZE)))
             pygame.draw.rect(screen, OUTLINE_HOVER, rect, 3)
-
-        # SELECCIÓN (verde)
         sel = self.editor.selected_tile
         if sel:
-            rect = pygame.Rect(
-                cam.apply((sel.x, sel.y)),
-                cam.scale((TILE_SIZE, TILE_SIZE))
-            )
+            rect = pygame.Rect(cam.apply((sel.x, sel.y)), cam.scale((TILE_SIZE, TILE_SIZE)))
             pygame.draw.rect(screen, OUTLINE_SEL, rect, 3)
 
     def render_picker(self, screen):
         self.picker.render(screen)
 
+    def render_view_panel(self, screen):
+        panel_w = TILE_SIZE + 40
+        panel_h = 3 * (TILE_SIZE + 30)
+        x0 = self.toolbar.x + self.toolbar.size + 20
+        y0 = self.toolbar.y
+
+        panel = pygame.Surface((panel_w, panel_h), pygame.SRCALPHA)
+        panel.fill((20, 20, 20, 200))
+        font = pygame.font.SysFont("Arial", 14)
+        mouse_pos = pygame.mouse.get_pos()
+
+        items = [
+            ("Hovered",  self._tile_under_mouse(mouse_pos), OUTLINE_HOVER),
+            ("Selected", self.editor.selected_tile,           OUTLINE_SEL),
+            ("Choice",   None,                                 OUTLINE_CHOICE),
+        ]
+        for idx, (label, tile, color) in enumerate(items):
+            ty = idx * (TILE_SIZE + 30) + 10
+            if label == "Choice" and self.editor.current_choice:
+                sprite = load_image(self.editor.current_choice, (TILE_SIZE, TILE_SIZE))
+            else:
+                sprite = tile.sprite if tile else None
+
+            if sprite:
+                panel.blit(sprite, ((panel_w - TILE_SIZE)//2, ty))
+            rect = pygame.Rect((panel_w - TILE_SIZE)//2, ty, TILE_SIZE, TILE_SIZE)
+            pygame.draw.rect(panel, color, rect, 3)
+
+            text = font.render(label, True, (255, 255, 255))
+            panel.blit(text, (5, ty + TILE_SIZE + 2))
+
+        screen.blit(panel, (x0, y0))
+
     def _tile_under_mouse(self, mouse_pos):
-        mx, my  = mouse_pos
+        mx, my = mouse_pos
         world_x = mx / self.state.camera.zoom + self.state.camera.offset_x
         world_y = my / self.state.camera.zoom + self.state.camera.offset_y
-
         col = int(world_x // TILE_SIZE)
         row = int(world_y // TILE_SIZE)
-
         if 0 <= row < len(self.state.tile_map) and 0 <= col < len(self.state.tile_map[0]):
             return self.state.tile_map[row][col]
         return None
