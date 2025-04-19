@@ -51,7 +51,7 @@ class TileToolbar:
 
             # borde: resaltado si está activa
             color = (255, 200, 0) if self.editor.current_tool == tool else (255, 255, 255)
-            pygame.draw.rect(screen, color, rect, 2)
+            pygame.draw.rect(screen, color, rect, 4)
 
     def handle_click(self, mouse_pos) -> bool:
         for tool, rect in self.icon_rects.items():
