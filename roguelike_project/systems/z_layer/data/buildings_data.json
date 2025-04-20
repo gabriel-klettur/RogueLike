@@ -90,8 +90,8 @@
         "z": 3
     },
     {
-        "x": 382,
-        "y": 613,
+        "x": 448,
+        "y": 591,
         "image_path": "assets/buildings/others/portal_2.png",
         "solid": true,
         "scale": [
@@ -108,8 +108,8 @@
         "z": 3
     },
     {
-        "x": 26,
-        "y": 395,
+        "x": -406,
+        "y": -823,
         "image_path": "assets/buildings/others/portal_dudgeon_1.png",
         "solid": true,
         "scale": [
@@ -126,8 +126,8 @@
         "z": 3
     },
     {
-        "x": 1801,
-        "y": 1415,
+        "x": 1829,
+        "y": 1419,
         "image_path": "assets/buildings/gardens/garden_1.png",
         "solid": true,
         "scale": [
