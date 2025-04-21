@@ -83,11 +83,10 @@ class Renderer:
     
     def _render_tile_editor_layer(self, state, screen):
         """
-        Pintamos un borde sobre el tile seleccionado y
-        delegamos al TileEditor para picker y UI.
+        Pintamos la UI del TileEditorController delegando a la Vista.
         """
-        if hasattr(state, "tile_editor") and state.tile_editor:
-            state.tile_editor.render(screen)            
+        if getattr(state, "tile_editor_state", None) and state.tile_editor_state.active:
+            state.tile_editor_view.render(screen)          
 
     def _render_z_entities(self, state, cam, screen):
         """

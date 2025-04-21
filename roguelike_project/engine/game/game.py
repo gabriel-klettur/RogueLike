@@ -1,3 +1,5 @@
+# File: roguelike_project/engine/game/game.py
+
 import sys
 import os
 import pygame
@@ -24,10 +26,12 @@ from roguelike_project.systems.systems_manager import SystemsManager
 from roguelike_project.systems.editor.buildings.model.building_editor_state import BuildingsEditorState
 from roguelike_project.systems.editor.buildings.controller.building_editor_controller import BuildingEditorController
 from roguelike_project.systems.editor.buildings.view.building_editor_view import BuildingEditorView
+from roguelike_project.systems.editor.buildings.controller.building_editor_events import handle_building_editor_events
 
-# Tile‑editor
-from roguelike_project.systems.editor.tiles.model.tile_editor_state import TileEditorState
-from roguelike_project.systems.editor.tiles.controller.tile_editor_controller import TileEditor
+# Tile‑editor: controlador, eventos y vista
+from roguelike_project.systems.editor.tiles.model.tile_editor_state import TileEditorControllerState
+from roguelike_project.systems.editor.tiles.controller.tile_editor_controller import TileEditorController
+from roguelike_project.systems.editor.tiles.view.tile_editor_view import TileEditorControllerView
 from roguelike_project.systems.editor.tiles.controller.tile_editor_events import handle_tile_editor_events
 
 # Z‑Layer
@@ -134,19 +138,27 @@ class Game:
         self.state.editor = self.editor_state
 
     def _init_tile_editor(self):
-        self.tile_editor_state = TileEditorState()
-        self.tile_editor = TileEditor(self.state, self.tile_editor_state)
-        self.state.tile_editor = self.tile_editor
+        # 1) Creamos estado y controlador
+        self.tile_editor_state = TileEditorControllerState()
+        self.tile_editor       = TileEditorController(self.state, self.tile_editor_state)
+
+        # 2) Inyectamos en GameState **antes** de crear la vista
+        self.state.tile_editor       = self.tile_editor
         self.state.tile_editor_state = self.tile_editor_state
+
+        # 3) Creamos la Vista pasándole el controlador explícitamente
+        self.tile_editor_view  = TileEditorControllerView(self.tile_editor, self.state, self.tile_editor_state)
+        self.state.tile_editor_view = self.tile_editor_view
+
         self.state.tile_editor_active = False
+
 
     def handle_events(self):
         if self.tile_editor_state.active:
             handle_tile_editor_events(self.state, self.tile_editor_state, self.tile_editor)
             return
-        if self.state.editor.active:
-            from roguelike_project.systems.editor.buildings.controller.building_editor_events import handle_editor_events
-            handle_editor_events(self.state, self.editor_state, self.building_editor)
+        if self.state.editor.active:            
+            handle_building_editor_events(self.state, self.editor_state, self.building_editor)
             return
         handle_events(self.state)
 
@@ -160,9 +172,12 @@ class Game:
 
     def render(self, perf_log=None):
         self.renderer.render_game(self.state, perf_log)
-        # Usamos ahora la vista para dibujar el editor de buildings
+        # Building‑editor
         if self.state.editor.active:
             self.building_editor_view.render(self.screen)
+        # Tile‑editor (solo la Vista)
+        if self.state.tile_editor_state.active:
+            self.tile_editor_view.render(self.screen)
 
     def run(self):
         while self.state.running:

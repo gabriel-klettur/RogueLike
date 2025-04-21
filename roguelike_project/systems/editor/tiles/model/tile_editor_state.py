@@ -1,6 +1,6 @@
 # roguelike_project/systems/editor/tiles/tile_editor_state.py
 
-class TileEditorState:
+class TileEditorControllerState:
     """
     Estructura mínima para el modo de edición de tiles.
     """

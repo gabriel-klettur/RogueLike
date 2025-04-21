@@ -2,7 +2,7 @@ import pygame
 from roguelike_project.systems.editor.buildings.model.persistence.json_handler import save_buildings_to_json
 from roguelike_project.config import BUILDINGS_DATA_PATH
 
-def handle_editor_events(state, editor_state, editor_controller):
+def handle_building_editor_events(state, editor_state, editor_controller):
     """
     Consume todo el input cuando el Building‑Editor está activo.
     """
