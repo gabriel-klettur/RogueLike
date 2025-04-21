@@ -1,5 +1,4 @@
 # roguelike_project/systems/editor/tiles/tile_picker.py
-
 import pygame
 from pathlib import Path
 from roguelike_project.utils.loader import load_image
@@ -29,6 +28,7 @@ class TilePicker:
     def __init__(self, state, editor_state):
         self.state   = state
         self.editor  = editor_state
+        # Carga los assets con debug para verificar ruta y patrones
         self.assets  = self._load_assets()  # list of (path, Surface)
         self.font    = pygame.font.SysFont("Arial", 16)
         self.surface = None
@@ -42,32 +42,44 @@ class TilePicker:
         self.btn_accept_rect  = None
 
     def _load_assets(self):
-        root = Path(__file__).resolve().parents[3] / "assets" / "tiles"
-        # Recogemos todos los ficheros en un set para evitar duplicados de case
+        # Intentamos alcanzar la carpeta roguelike_project/assets/tiles
+        # Ajustar parents según la profundidad real
+        pkg_root = Path(__file__).resolve().parents[5]
+        root = pkg_root / "assets" / "tiles"
+        print(f"[TilePicker] pkg_root = {pkg_root!r}")
+        print(f"[TilePicker] root = {root!r}")
+        if not root.exists():
+            print(f"[TilePicker] ⚠️ Carpeta no encontrada en: {root}")
+
         patterns = ["*.png", "*.PNG", "*.webp", "*.WEBP"]
         seen = {}
         for pat in patterns:
-            for path in root.glob(pat):
+            found = list(root.glob(pat))
+            print(f"[TilePicker] patrón {pat!r} → {len(found)} archivos")
+            for path in found:
                 key = path.name.lower()
-                # mantengo solo la primera ocurrencia
                 if key not in seen:
                     seen[key] = path
+
         files = sorted(seen.values())
+        print(f"[TilePicker] archivos únicos encontrados: {len(files)} -> {[p.name for p in files]}")
 
         thumbs = []
         for p in files:
             rel = str(Path("assets") / "tiles" / p.name)
-            thumbs.append((rel, load_image(rel, (THUMB, THUMB))))
+            try:
+                surf = load_image(rel, (THUMB, THUMB))
+            except Exception as e:
+                print(f"[TilePicker] ERROR cargando {rel!r}: {e}")
+                continue
+            thumbs.append((rel, surf))
+
+        print(f"[TilePicker] miniaturas cargadas: {len(thumbs)}")
         return thumbs
 
     def open_with_selection(self, choice_path):
-        """
-        Abre la paleta, fija current_choice y ajusta scroll
-        para que el tile elegido quede visible.
-        """
         self.editor.picker_open = True
         self.editor.current_choice = choice_path
-        # calcular scroll
         for idx, (path, _) in enumerate(self.assets):
             if path == choice_path:
                 row = idx // COLS
@@ -75,9 +87,6 @@ class TilePicker:
                 break
 
     def is_over(self, mouse_pos) -> bool:
-        """
-        Devuelve True si mouse_pos está sobre la ventana de la paleta.
-        """
         if not self.surface or not self.pos:
             return False
         x0, y0 = self.pos
@@ -89,18 +98,15 @@ class TilePicker:
         if not self.editor.picker_open:
             return
 
-        # dimensiones
         w = COLS * (THUMB + PAD) + PAD
         rows = (len(self.assets) + COLS - 1) // COLS
         h_grid = rows * (THUMB + PAD) + PAD
         h = h_grid + PAD + self.BTN_H + PAD
 
-        # crear/limpiar surface
         if self.surface is None or self.surface.get_size() != (w, h):
             self.surface = pygame.Surface((w, h), pygame.SRCALPHA)
         self.surface.fill((20, 20, 20, 235))
 
-        # grid de miniaturas
         y0 = PAD - self.editor.scroll_offset
         mx, my = pygame.mouse.get_pos()
         lx = mx - (self.pos[0] if self.pos else 0)
@@ -115,13 +121,11 @@ class TilePicker:
                 continue
 
             self.surface.blit(thumb, rect)
-            # hover / selección
             if rect.collidepoint((lx, ly)):
                 pygame.draw.rect(self.surface, CLR_HOVER, rect, 3)
             elif self.editor.current_choice == path:
                 pygame.draw.rect(self.surface, CLR_SELECTION, rect, 3)
 
-        # botones
         y_btn = h_grid + PAD
         self.btn_delete_rect  = pygame.Rect(PAD, PAD + h_grid, self.BTN_W, self.BTN_H)
         self.btn_default_rect = pygame.Rect(PAD*2 + self.BTN_W, PAD + h_grid, self.BTN_W, self.BTN_H)
@@ -130,7 +134,6 @@ class TilePicker:
         self._draw_button(self.btn_default_rect, "Default")
         self._draw_button(self.btn_accept_rect,  "Aceptar")
 
-        # posicionar
         if self.pos is None:
             sw, sh = screen.get_size()
             self.pos = ((sw - w) // 2, (sh - h) // 2)
@@ -151,13 +154,11 @@ class TilePicker:
         if lx < 0 or ly < 0 or lx > self.surface.get_width() or ly > self.surface.get_height():
             return False
 
-        # drag inicio
         if button == 3:
             self.dragging = True
             self.drag_offset = (lx, ly)
             return True
 
-        # botones
         if self.btn_delete_rect.collidepoint((lx, ly)):
             self._delete_tile()
             return True
@@ -168,7 +169,6 @@ class TilePicker:
             self._accept_choice()
             return True
 
-        # seleccionar miniatura
         col = (lx - PAD) // (THUMB + PAD)
         row = (ly - PAD + self.editor.scroll_offset) // (THUMB + PAD)
         idx = row * COLS + col
@@ -186,7 +186,6 @@ class TilePicker:
     def stop_drag(self):
         self.dragging = False
 
-    # acciones botones
     def _delete_tile(self):
         tile = self.editor.selected_tile
         if tile:
