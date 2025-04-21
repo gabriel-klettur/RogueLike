@@ -26,9 +26,9 @@ from roguelike_project.systems.editor.buildings.controller.building_editor_contr
 from roguelike_project.systems.editor.buildings.view.building_editor_view import BuildingEditorView
 
 # Tile‑editor
-from roguelike_project.systems.editor.tiles.tile_editor_state import TileEditorState
-from roguelike_project.systems.editor.tiles.tile_editor import TileEditor
-from roguelike_project.systems.editor.tiles.tile_editor_events import handle_tile_editor_events
+from roguelike_project.systems.editor.tiles.model.tile_editor_state import TileEditorState
+from roguelike_project.systems.editor.tiles.controller.tile_editor_controller import TileEditor
+from roguelike_project.systems.editor.tiles.controller.tile_editor_events import handle_tile_editor_events
 
 # Z‑Layer
 from roguelike_project.systems.z_layer.state import ZState
