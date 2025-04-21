@@ -84,18 +84,21 @@ class TileEditor:
         # cambiar al brush para empezar a pintar
         self.editor.current_tool = "brush"
 
-    def render_selection_outline(self, screen):
+    def render(self, screen):
         if not self.editor.active:
             return
 
         # 1) Toolbar y toggle view
         self.toolbar.render(screen)
 
-        # 2) Panel de ViewTile si está activo
+        # 2) Picker de tiles
+        self.picker.render(screen)
+
+        # 3) Panel de ViewTile si está activo
         if self.editor.view_active:
             self.render_view_panel(screen)
 
-        # 3) Contornos en el mundo (hover y seleccion)
+        # 4) Contornos en el mundo (hover y seleccion)
         cam = self.state.camera
         hover = self._tile_under_mouse(pygame.mouse.get_pos())
         if hover:
@@ -104,10 +107,8 @@ class TileEditor:
         sel = self.editor.selected_tile
         if sel:
             rect = pygame.Rect(cam.apply((sel.x, sel.y)), cam.scale((TILE_SIZE, TILE_SIZE)))
-            pygame.draw.rect(screen, OUTLINE_SEL, rect, 3)
-
-    def render_picker(self, screen):
-        self.picker.render(screen)
+            pygame.draw.rect(screen, OUTLINE_SEL, rect, 3)    
+        
 
     def render_view_panel(self, screen):
         panel_w = TILE_SIZE + 40

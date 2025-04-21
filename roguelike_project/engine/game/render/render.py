@@ -87,8 +87,7 @@ class Renderer:
         delegamos al TileEditor para picker y UI.
         """
         if hasattr(state, "tile_editor") and state.tile_editor:
-            state.tile_editor.render_selection_outline(screen)
-            state.tile_editor.render_picker(screen)
+            state.tile_editor.render(screen)            
 
     def _render_z_entities(self, state, cam, screen):
         """
