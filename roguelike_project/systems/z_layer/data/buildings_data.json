@@ -90,22 +90,22 @@
         "z": 3
     },
     {
-        "x": 448,
-        "y": 591,
+        "x": 539,
+        "y": 687,
         "image_path": "assets/buildings/others/portal_2.png",
         "solid": true,
         "scale": [
-            279,
-            416
+            258,
+            386
         ],
         "original_scale": [
             1024,
             1536
         ],
         "split_ratio": 0.5,
-        "z_bottom": 3,
-        "z_top": 5,
-        "z": 3
+        "z_bottom": 1,
+        "z_top": 1,
+        "z": 1
     },
     {
         "x": -406,
@@ -216,22 +216,22 @@
         "z": 3
     },
     {
-        "x": 949,
-        "y": 573,
+        "x": 1179,
+        "y": 595,
         "image_path": "assets/buildings/others/fuente.png",
         "solid": true,
         "scale": [
-            441,
-            441
+            521,
+            521
         ],
         "original_scale": [
             521,
             521
         ],
         "split_ratio": 0.664,
-        "z_bottom": 2,
-        "z_top": 7,
-        "z": 2
+        "z_bottom": 1,
+        "z_top": 1,
+        "z": 1
     },
     {
         "x": 514,

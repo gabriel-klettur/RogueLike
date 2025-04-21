@@ -1,4 +1,4 @@
-# roguelike_project/systems/editor/buildings/load_buildings_from_json.py
+
 
 import json
 import os

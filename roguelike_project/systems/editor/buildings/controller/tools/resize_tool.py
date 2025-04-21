@@ -1,4 +1,3 @@
-# roguelike_project/systems/editor/tools/resize_tool.py
 
 import pygame
 
@@ -39,15 +38,3 @@ class ResizeTool:
 
         b.resize(new_width, new_height)
 
-    def render_resize_handle(self, screen, building):
-        x, y = self.state.camera.apply((building.x, building.y))
-        w, h = self.state.camera.scale(building.image.get_size())
-
-        handle_rect = pygame.Rect(
-            x + w - self.handle_size,
-            y,
-            self.handle_size,
-            self.handle_size
-        )
-        pygame.draw.rect(screen, (0, 150, 255), handle_rect)
-        pygame.draw.rect(screen, (255, 255, 255), handle_rect, 2)

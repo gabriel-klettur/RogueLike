@@ -1,4 +1,3 @@
-# roguelike_project/editor/tools/placer_tool.py
 
 import pygame
 

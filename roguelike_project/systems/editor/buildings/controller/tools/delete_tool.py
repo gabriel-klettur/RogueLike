@@ -1,4 +1,3 @@
-# roguelike_project/editor/tools/delete_tool.py
 
 import pygame
 

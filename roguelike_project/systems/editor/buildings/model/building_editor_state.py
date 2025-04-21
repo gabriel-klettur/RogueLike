@@ -1,4 +1,3 @@
-# roguelike_project/editor/editor_state.py
 
 class BuildingsEditorState:
     def __init__(self):

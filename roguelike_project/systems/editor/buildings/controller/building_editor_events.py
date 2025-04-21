@@ -1,28 +1,17 @@
-# roguelike_project/systems/editor/buildings/editor_events.py
 import pygame
-from roguelike_project.systems.editor.buildings.json_handler import save_buildings_to_json
+from roguelike_project.systems.editor.buildings.model.persistence.json_handler import save_buildings_to_json
 from roguelike_project.config import BUILDINGS_DATA_PATH
 
-
-def handle_editor_events(state, editor_state, building_editor):
+def handle_editor_events(state, editor_state, editor_controller):
     """
     Consume todo el input cuando el Building‑Editor está activo.
-    Atajos:
-        •   Esc         → sale del editor
-        •   F10         → toggle del modo
-        •   Ctrl + S    → guarda buildings.json
-        •   N           → coloca un edificio por defecto en el mouse
-        •   Supr        → borra edificio bajo el mouse
     """
     for event in pygame.event.get():
-        # ---------- cerrar juego ----------
         if event.type == pygame.QUIT:
             state.running = False
 
-        # ---------- teclado ----------
         elif event.type == pygame.KEYDOWN:
-
-            # --- control de modo ---
+            # Esc
             if event.key == pygame.K_ESCAPE:
                 editor_state.active = False
                 editor_state.selected_building = None
@@ -30,32 +19,32 @@ def handle_editor_events(state, editor_state, building_editor):
                 print("🔚 Building‑Editor OFF")
                 save_buildings_to_json(state.buildings, BUILDINGS_DATA_PATH, z_state=state.z_state)
 
+            # F10
             elif event.key == pygame.K_F10:
                 editor_state.active = not editor_state.active
                 print("🛠️ Building‑Editor ON" if editor_state.active else "🛑 Building‑Editor OFF")
                 if not editor_state.active:
                     save_buildings_to_json(state.buildings, BUILDINGS_DATA_PATH, z_state=state.z_state)
 
-            # --- atajos rápidos ---
+            # Ctrl+S
             elif event.key == pygame.K_s and (event.mod & pygame.KMOD_CTRL):
                 save_buildings_to_json(state.buildings, BUILDINGS_DATA_PATH, z_state=state.z_state)
                 print("💾 Buildings guardados (Ctrl+S)")
 
+            # N: colocar
             elif event.key == pygame.K_n:
-                if hasattr(state, "placer_tool"):
-                    building_editor.placer_tool.place_building_at_mouse()
+                editor_controller.placer_tool.place_building_at_mouse()
 
+            # Supr: borrar
             elif event.key == pygame.K_DELETE:
-                if hasattr(state, "delete_tool"):
-                    building_editor.delete_tool.delete_building_at_mouse()
+                editor_controller.delete_tool.delete_building_at_mouse()
 
-        # ---------- ratón ----------
         elif event.type == pygame.MOUSEBUTTONDOWN:
             mx, my = pygame.mouse.get_pos()
-            building_editor.on_mouse_down((mx, my), event.button)
+            editor_controller.on_mouse_down((mx, my), event.button)
 
         elif event.type == pygame.MOUSEBUTTONUP:
-            building_editor.on_mouse_up(event.button)
+            editor_controller.on_mouse_up(event.button)
 
         elif event.type == pygame.MOUSEMOTION:
-            building_editor.on_mouse_motion(event.pos)
+            editor_controller.on_mouse_motion(event.pos)

@@ -1,14 +1,13 @@
-# roguelike_project/systems/editor/buildings/building_editor.py
 import pygame
-from roguelike_project.systems.editor.buildings.tools.resize_tool import ResizeTool
-from roguelike_project.systems.editor.buildings.tools.default_tool import DefaultTool
-from roguelike_project.systems.editor.buildings.tools.z_tool      import ZTool
-from roguelike_project.systems.editor.buildings.tools.split_tool  import SplitTool
-from roguelike_project.systems.editor.buildings.tools.placer_tool  import PlacerTool
-from roguelike_project.systems.editor.buildings.tools.delete_tool  import DeleteTool
+from roguelike_project.systems.editor.buildings.controller.tools.resize_tool import ResizeTool
+from roguelike_project.systems.editor.buildings.controller.tools.default_tool import DefaultTool
+from roguelike_project.systems.editor.buildings.controller.tools.z_tool      import ZTool
+from roguelike_project.systems.editor.buildings.controller.tools.split_tool  import SplitTool
+from roguelike_project.systems.editor.buildings.controller.tools.placer_tool  import PlacerTool
+from roguelike_project.systems.editor.buildings.controller.tools.delete_tool  import DeleteTool
 
 
-class BuildingEditor:
+class BuildingEditorController:
     """Agrupa todas las herramientas y ofrece una API de eventos de mouse."""
 
     def __init__(self, state, editor_state):
@@ -112,18 +111,3 @@ class BuildingEditor:
 
         elif self.editor.split_dragging:
             self.split_tool.update_drag(pygame.mouse.get_pos())
-
-    # ========================== RENDER ============================== #
-    def render_selection_outline(self, screen):
-        if not self.editor.active:
-            return
-        cam = self.state.camera
-        for b in self.state.buildings:
-            x, y = cam.apply((b.x, b.y))
-            w, h = cam.scale(b.image.get_size())
-            pygame.draw.rect(screen, (255, 255, 255), pygame.Rect(x, y, w, h), 1)
-            self.default_tool.render_reset_handle(screen, b)
-            self.resize_tool.render_resize_handle(screen, b)
-            self.split_tool.render(screen, b)
-            self.z_tool_bottom.render(screen, b)
-            self.z_tool_top.render(screen, b)

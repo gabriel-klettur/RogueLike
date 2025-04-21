@@ -1,5 +1,8 @@
-# roguelike_project/systems/editor/buildings/tools/z_tool.py
+
 import pygame
+
+BTN_W, BTN_H = 30, 30           #! MOVER A CONSTANTES
+PANEL_W, PANEL_H = 120, 40      #! MOVER A CONSTANTES
 
 
 class ZTool:
@@ -7,10 +10,7 @@ class ZTool:
     Panel flotante para editar la capa Z de un edificio.
     — target  : "bottom" | "top"
     — evita parpadeo cacheando la superficie base por factor de zoom
-    """
-
-    BTN_W, BTN_H = 30, 30
-    PANEL_W, PANEL_H = 120, 40
+    """    
 
     def __init__(self, state, editor_state, *, target: str = "bottom"):
         self.state = state
@@ -23,46 +23,7 @@ class ZTool:
         self._panel_cache: dict[float, pygame.Surface] = {}   # {zoom: Surface}
         self._text_cache: dict[tuple[str, float], pygame.Surface] = {}  # {(char,zoom):Surf}
 
-    # ------------------------------------------------------------------ #
-    # RENDER                                                             #
-    # ------------------------------------------------------------------ #
-    def render(self, screen: pygame.Surface, building):
-        cam = self.state.camera
-        x_world, y_world = building.x, building.y
-        w_scaled, h_scaled = cam.scale(building.image.get_size())
-        x, y = cam.apply((x_world, y_world))
-
-        # posición del panel
-        panel_x = x + (w_scaled - self.PANEL_W) // 2
-        panel_y = y + (h_scaled - 50 if self.target == "bottom" else 10)
-
-        # superficie base cacheada por zoom
-        zoom = round(cam.zoom, 2)
-        base = self._get_cached_panel_base(zoom)
-
-        # copiar y añadir el valor Z
-        panel = base.copy()
-        z_val = building.z_bottom if self.target == "bottom" else building.z_top
-        txt = self._get_text(f"Z: {z_val}", zoom)
-        panel.blit(txt, txt.get_rect(center=(self.PANEL_W // 2,
-                                             self.PANEL_H // 2)))
-
-        # blit final
-        screen.blit(panel, (panel_x, panel_y))
-
-        # ===== guardar bounds para detección de clic =====
-        minus_rect = pygame.Rect(5, 5, self.BTN_W, self.BTN_H)
-        plus_rect = pygame.Rect(self.PANEL_W - 5 - self.BTN_W, 5,
-                                self.BTN_W, self.BTN_H)
-        bounds = {
-            "panel_pos": (panel_x, panel_y),
-            "minus_rect": minus_rect,
-            "plus_rect": plus_rect,
-        }
-        if not hasattr(building, "_ztool_bounds"):
-            building._ztool_bounds = {}
-        building._ztool_bounds[self.target] = bounds
-
+    
     # ------------------------------------------------------------------ #
     # MOUSE CLICK                                                        #
     # ------------------------------------------------------------------ #
@@ -79,9 +40,10 @@ class ZTool:
                 self._update_z(b, +1)
                 return
 
-    # ------------------------------------------------------------------ #
-    # helpers                                                            #
-    # ------------------------------------------------------------------ #
+    #! DONDE VA ESTO???????????????
+    #! ------------------------------------------------------------------ #
+    #! helpers                                                            #
+    #! ------------------------------------------------------------------ #
     def _update_z(self, building, delta):
         if self.target == "bottom":
             building.z_bottom = max(0, building.z_bottom + delta)
@@ -90,7 +52,7 @@ class ZTool:
         else:
             building.z_top = max(0, building.z_top + delta)
             print(f"⬆️  Z‑top nuevo: {building.z_top}")
-
+    
     # ---------- caché de superficies ---------------------------------- #
     def _get_cached_panel_base(self, zoom: float) -> pygame.Surface:
         if zoom in self._panel_cache:
@@ -113,7 +75,7 @@ class ZTool:
 
         self._panel_cache[zoom] = surf
         return surf
-
+    
     def _get_text(self, txt: str, zoom: float) -> pygame.Surface:
         key = (txt, zoom)
         if key not in self._text_cache:

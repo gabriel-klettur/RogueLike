@@ -1,8 +1,8 @@
-# roguelike_project/systems/editor/buildings/tools/split_tool.py
+
 import pygame
 
-HANDLE_W = HANDLE_H = 18
-BAR_COLOR = (0, 200, 255, 160)
+HANDLE_W = HANDLE_H = 18        #!MOVER A UN ARCHIVO DE CONSTANTES
+BAR_COLOR = (0, 200, 255, 160)  #!MOVER A UN ARCHIVO DE CONSTANTES
 
 class SplitTool:
     """Barra horizontal que separa bottom / top en un building."""
@@ -44,24 +44,8 @@ class SplitTool:
     def stop_drag(self):
         self.editor.split_dragging = False
 
-    # ---------- Render ----------
-    def render(self, screen, building):
-        cam = self.state.camera
-        bx, by = cam.apply((building.x, building.y))
-        w_scaled, h_scaled = cam.scale(building.image.get_size())
-        y_split = by + int(h_scaled * building.split_ratio)
 
-        # barra semitransparente
-        bar = pygame.Surface((w_scaled, 3), pygame.SRCALPHA)
-        bar.fill(BAR_COLOR)
-        screen.blit(bar, (bx, y_split - 1))
-
-        # handle
-        handle = pygame.Surface((HANDLE_W, HANDLE_H), pygame.SRCALPHA)
-        handle.fill(BAR_COLOR)
-        pygame.draw.rect(handle, (255, 255, 255), handle.get_rect(), 1)
-        screen.blit(handle, (bx + self._handle_offset_x(building), y_split - HANDLE_H // 2))
-
+    #! REMOVER A OTRO LUGAR--- DONDE VA ESTE????
     # ---------- helpers ----------
     def _handle_offset_x(self, building):
         # coloca el handle en el centro del edificio en pantalla

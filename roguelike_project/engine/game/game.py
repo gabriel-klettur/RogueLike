@@ -1,5 +1,3 @@
-# roguelike_project/engine/game/game.py
-
 import sys
 import os
 import pygame
@@ -22,10 +20,10 @@ from roguelike_project.engine.game.render.render import Renderer
 from roguelike_project.engine.game.update_manager import update_game
 from roguelike_project.systems.systems_manager import SystemsManager
 
-# Building‑editor
-from roguelike_project.systems.editor.buildings.building_editor_state import BuildingsEditorState
-from roguelike_project.systems.editor.buildings.building_editor import BuildingEditor
-from roguelike_project.systems.editor.buildings.building_editor_events import handle_editor_events
+# Building‑editor: controlador y vista
+from roguelike_project.systems.editor.buildings.model.building_editor_state import BuildingsEditorState
+from roguelike_project.systems.editor.buildings.controller.building_editor_controller import BuildingEditorController
+from roguelike_project.systems.editor.buildings.view.building_editor_view import BuildingEditorView
 
 # Tile‑editor
 from roguelike_project.systems.editor.tiles.tile_editor_state import TileEditorState
@@ -130,7 +128,9 @@ class Game:
 
     def _init_building_editor(self):
         self.editor_state = BuildingsEditorState()
-        self.building_editor = BuildingEditor(self.state, self.editor_state)
+        self.building_editor = BuildingEditorController(self.state, self.editor_state)
+        # Creamos la vista del editor para el renderizado
+        self.building_editor_view = BuildingEditorView(self.state, self.editor_state)
         self.state.editor = self.editor_state
 
     def _init_tile_editor(self):
@@ -145,6 +145,7 @@ class Game:
             handle_tile_editor_events(self.state, self.tile_editor_state, self.tile_editor)
             return
         if self.state.editor.active:
+            from roguelike_project.systems.editor.buildings.controller.building_editor_events import handle_editor_events
             handle_editor_events(self.state, self.editor_state, self.building_editor)
             return
         handle_events(self.state)
@@ -159,8 +160,9 @@ class Game:
 
     def render(self, perf_log=None):
         self.renderer.render_game(self.state, perf_log)
+        # Usamos ahora la vista para dibujar el editor de buildings
         if self.state.editor.active:
-            self.building_editor.render_selection_outline(self.screen)
+            self.building_editor_view.render(self.screen)
 
     def run(self):
         while self.state.running:
