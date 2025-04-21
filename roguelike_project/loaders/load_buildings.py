@@ -2,7 +2,7 @@
 
 import os
 from roguelike_project.entities.buildings.building import Building
-from roguelike_project.systems.editor.json_handler import save_buildings_to_json
+from roguelike_project.systems.editor.buildings.json_handler import save_buildings_to_json
 from roguelike_project.systems.editor.buildings.load_buildings_from_json import load_buildings_from_json
 
 from roguelike_project.config import BUILDINGS_DATA_PATH

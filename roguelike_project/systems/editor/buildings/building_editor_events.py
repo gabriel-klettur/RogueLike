@@ -1,6 +1,6 @@
 # roguelike_project/systems/editor/buildings/editor_events.py
 import pygame
-from roguelike_project.systems.editor.json_handler import save_buildings_to_json
+from roguelike_project.systems.editor.buildings.json_handler import save_buildings_to_json
 from roguelike_project.config import BUILDINGS_DATA_PATH
 
 

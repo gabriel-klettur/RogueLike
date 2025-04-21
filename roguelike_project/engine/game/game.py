@@ -23,9 +23,9 @@ from roguelike_project.engine.game.update_manager import update_game
 from roguelike_project.systems.systems_manager import SystemsManager
 
 # Building‑editor
-from roguelike_project.systems.editor.editor_state import EditorState
+from roguelike_project.systems.editor.buildings.building_editor_state import BuildingsEditorState
 from roguelike_project.systems.editor.buildings.building_editor import BuildingEditor
-from roguelike_project.systems.editor.buildings.editor_events import handle_editor_events
+from roguelike_project.systems.editor.buildings.building_editor_events import handle_editor_events
 
 # Tile‑editor
 from roguelike_project.systems.editor.tiles.tile_editor_state import TileEditorState
@@ -129,7 +129,7 @@ class Game:
             self.network.connect()
 
     def _init_building_editor(self):
-        self.editor_state = EditorState()
+        self.editor_state = BuildingsEditorState()
         self.building_editor = BuildingEditor(self.state, self.editor_state)
         self.state.editor = self.editor_state
 

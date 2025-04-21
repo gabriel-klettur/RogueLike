@@ -1,6 +1,6 @@
 # roguelike_project/editor/editor_state.py
 
-class EditorState:
+class BuildingsEditorState:
     def __init__(self):
         self.active = False
         self.mode = None  # 🔄 "builder", "entities", etc.
