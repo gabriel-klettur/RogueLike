@@ -1,8 +1,7 @@
 
 import pygame
 
-HANDLE_W = HANDLE_H = 18        #!MOVER A UN ARCHIVO DE CONSTANTES
-BAR_COLOR = (0, 200, 255, 160)  #!MOVER A UN ARCHIVO DE CONSTANTES
+from roguelike_project.systems.editor.buildings.config import SPLIT_HANDLE_SIZE
 
 class SplitTool:
     """Barra horizontal que separa bottom / top en un building."""
@@ -19,8 +18,8 @@ class SplitTool:
 
         handle_rect = pygame.Rect(
             bx + self._handle_offset_x(building),
-            y_split - HANDLE_H // 2,
-            HANDLE_W, HANDLE_H
+            y_split - SPLIT_HANDLE_SIZE // 2,
+            SPLIT_HANDLE_SIZE, SPLIT_HANDLE_SIZE
         )
         return handle_rect.collidepoint(mouse_pos)
 
@@ -43,10 +42,8 @@ class SplitTool:
 
     def stop_drag(self):
         self.editor.split_dragging = False
-
-
-    #! REMOVER A OTRO LUGAR--- DONDE VA ESTE????
+    
     # ---------- helpers ----------
     def _handle_offset_x(self, building):
         # coloca el handle en el centro del edificio en pantalla
-        return (self.state.camera.scale(building.image.get_size())[0] - HANDLE_W) // 2
+        return (self.state.camera.scale(building.image.get_size())[0] - SPLIT_HANDLE_SIZE) // 2
