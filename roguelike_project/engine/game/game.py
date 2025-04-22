@@ -22,17 +22,17 @@ from roguelike_project.engine.game.render.render import Renderer
 from roguelike_project.engine.game.update_manager import update_game
 from roguelike_project.systems.systems_manager import SystemsManager
 
-# Building‑editor: controlador y vista
+# Building‑editor: controlador, vista y handler de eventos
 from roguelike_project.systems.editor.buildings.model.building_editor_state import BuildingsEditorState
 from roguelike_project.systems.editor.buildings.controller.building_editor_controller import BuildingEditorController
 from roguelike_project.systems.editor.buildings.view.building_editor_view import BuildingEditorView
-from roguelike_project.systems.editor.buildings.controller.building_editor_events import handle_building_editor_events
+from roguelike_project.systems.editor.buildings.controller.building_editor_events import BuildingEditorEventHandler
 
-# Tile‑editor: controlador, eventos y vista
+# Tile‑editor: controlador, vista y handler de eventos
 from roguelike_project.systems.editor.tiles.model.tile_editor_state import TileEditorControllerState
 from roguelike_project.systems.editor.tiles.controller.tile_editor_controller import TileEditorController
 from roguelike_project.systems.editor.tiles.view.tile_editor_view import TileEditorControllerView
-from roguelike_project.systems.editor.tiles.controller.tile_editor_events import handle_tile_editor_events
+from roguelike_project.systems.editor.tiles.controller.tile_editor_events import TileEditorEventHandler
 
 # Z‑Layer
 from roguelike_project.systems.z_layer.state import ZState
@@ -131,35 +131,52 @@ class Game:
             self.network.connect()
 
     def _init_building_editor(self):
+        # Estado, controlador y vista
         self.editor_state = BuildingsEditorState()
         self.building_editor = BuildingEditorController(self.state, self.editor_state)
-        # Creamos la vista del editor para el renderizado
         self.building_editor_view = BuildingEditorView(self.state, self.editor_state)
         self.state.editor = self.editor_state
 
+        # Handler de eventos
+        self.building_event_handler = BuildingEditorEventHandler(
+            self.state,
+            self.editor_state,
+            self.building_editor
+        )
+
     def _init_tile_editor(self):
-        # 1) Creamos estado y controlador
+        # Estado, controlador y vista
         self.tile_editor_state = TileEditorControllerState()
-        self.tile_editor       = TileEditorController(self.state, self.tile_editor_state)
-
-        # 2) Inyectamos en GameState **antes** de crear la vista
-        self.state.tile_editor       = self.tile_editor
+        self.tile_editor = TileEditorController(self.state, self.tile_editor_state)
+        self.state.tile_editor = self.tile_editor
         self.state.tile_editor_state = self.tile_editor_state
-
-        # 3) Creamos la Vista pasándole el controlador explícitamente
-        self.tile_editor_view  = TileEditorControllerView(self.tile_editor, self.state, self.tile_editor_state)
+        self.tile_editor_view = TileEditorControllerView(
+            self.tile_editor,
+            self.state,
+            self.tile_editor_state
+        )
         self.state.tile_editor_view = self.tile_editor_view
-
         self.state.tile_editor_active = False
 
+        # Handler de eventos
+        self.tile_event_handler = TileEditorEventHandler(
+            self.state,
+            self.tile_editor_state,
+            self.tile_editor
+        )
 
     def handle_events(self):
+        # Prioriza el Tile Editor
         if self.tile_editor_state.active:
-            handle_tile_editor_events(self.state, self.tile_editor_state, self.tile_editor)
+            self.tile_event_handler.handle()
             return
-        if self.state.editor.active:            
-            handle_building_editor_events(self.state, self.editor_state, self.building_editor)
+
+        # Luego el Building Editor
+        if self.state.editor.active:
+            self.building_event_handler.handle()
             return
+
+        # Finalmente, el loop de eventos del juego normal
         handle_events(self.state)
 
     def update(self):
@@ -176,7 +193,7 @@ class Game:
         if self.state.editor.active:
             self.building_editor_view.render(self.screen)
         # Tile‑editor (solo la Vista)
-        if self.state.tile_editor_state.active:
+        if self.tile_editor_state.active:
             self.tile_editor_view.render(self.screen)
 
     def run(self):
