@@ -1,14 +1,11 @@
 import pygame
 from roguelike_project.config import TILE_SIZE
+from roguelike_project.systems.editor.tiles.tiles_editor_config import OUTLINE_CHOICE, OUTLINE_SEL, OUTLINE_HOVER
 from roguelike_project.utils.loader import load_image
 
 # Importamos los render de toolbar y picker directamente del paquete tiles
 from roguelike_project.systems.editor.tiles.view.tools.tile_toolbar_view import render as render_toolbar
 from roguelike_project.systems.editor.tiles.view.tools.tile_picker_view import render as render_picker
-
-OUTLINE_SEL    = (0, 255, 0)     # seleccionado (verde)
-OUTLINE_HOVER  = (0, 220, 255)   # hover (cian)
-OUTLINE_CHOICE = (255, 255, 0)   # elección actual (amarillo)
 
 
 class TileEditorControllerView:

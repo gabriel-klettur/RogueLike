@@ -3,6 +3,8 @@
 import pygame
 from roguelike_project.utils.loader import load_image
 
+from roguelike_project.systems.editor.tiles.tiles_editor_config import ICON_PATHS_TILE_TOOLBAR
+
 class TileToolbar:
     """
     Barra de herramientas para el TileEditorController:
@@ -11,13 +13,6 @@ class TileToolbar:
       - eyedropper
       - view
     """
-    TOOLS = ["select", "brush", "eyedropper", "view"]
-    ICON_PATHS = {
-        "select":     "assets/ui/select_tool.png",
-        "brush":      "assets/ui/brush_tool.png",
-        "eyedropper": "assets/ui/eyedropper_tool.png",
-        "view":       "assets/ui/view_tool.png",
-    }
 
     def __init__(self, state, editor_state):
         self.state = state
@@ -26,7 +21,7 @@ class TileToolbar:
         # Cargar iconos (64×64)
         self.icons = {
             tool: load_image(path, (64, 64))
-            for tool, path in self.ICON_PATHS.items()
+            for tool, path in ICON_PATHS_TILE_TOOLBAR.items()
         }
 
         # Layout

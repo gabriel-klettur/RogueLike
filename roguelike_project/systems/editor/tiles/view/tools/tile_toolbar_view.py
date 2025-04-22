@@ -1,8 +1,10 @@
 import pygame
 
+from roguelike_project.systems.editor.tiles.tiles_editor_config import TOOLS
+
 def render(self, screen):
     """Dibuja la toolbar en pantalla."""
-    for idx, tool in enumerate(self.TOOLS):
+    for idx, tool in enumerate(TOOLS):
         px = self.x
         py = self.y + idx * (self.size + self.padding)
         rect = pygame.Rect(px, py, self.size, self.size)

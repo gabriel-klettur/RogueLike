@@ -1,12 +1,6 @@
 import pygame
 
-THUMB = 56
-COLS  = 6
-PAD   = 6
-
-CLR_BORDER     = (255, 255, 255)
-CLR_HOVER      = (255, 230, 0)
-CLR_SELECTION  = (255, 200, 0)
+from roguelike_project.systems.editor.tiles.tiles_editor_config import CLR_HOVER, CLR_SELECTION, THUMB, COLS, PAD
 
 def render(self, screen):
     if not self.editor.picker_open:

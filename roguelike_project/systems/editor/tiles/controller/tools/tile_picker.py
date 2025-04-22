@@ -6,13 +6,7 @@ from roguelike_project.config import TILE_SIZE
 from roguelike_project.engine.game.systems.map.overlay_manager import save_overlay
 from roguelike_project.config_tiles import INVERSE_OVERLAY_MAP
 
-THUMB = 56
-COLS  = 6
-PAD   = 6
-
-CLR_BORDER     = (255, 255, 255)
-CLR_HOVER      = (255, 230, 0)
-CLR_SELECTION  = (255, 200, 0)
+from roguelike_project.systems.editor.tiles.tiles_editor_config import PAD, THUMB, COLS, CLR_BORDER
 
 class TilePicker:
     """

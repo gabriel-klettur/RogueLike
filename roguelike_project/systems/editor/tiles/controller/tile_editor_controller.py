@@ -3,15 +3,15 @@
 import pygame
 from pathlib import Path
 from roguelike_project.config import TILE_SIZE
+from roguelike_project.config_tiles import OVERLAY_CODE_MAP, INVERSE_OVERLAY_MAP, DEFAULT_TILE_MAP
+
 from roguelike_project.systems.editor.tiles.controller.tools.tile_picker import TilePicker
 from roguelike_project.systems.editor.tiles.controller.tools.tile_toolbar import TileToolbar
-from roguelike_project.config_tiles import OVERLAY_CODE_MAP, INVERSE_OVERLAY_MAP, DEFAULT_TILE_MAP
+
 from roguelike_project.engine.game.systems.map.overlay_manager import save_overlay
 from roguelike_project.utils.loader import load_image
 
-OUTLINE_SEL    = (0, 255, 0)     # seleccionado (verde)
-OUTLINE_HOVER  = (0, 220, 255)   # hover (cian)
-OUTLINE_CHOICE = (255, 255, 0)   # elección actual (amarillo)
+
 
 class TileEditorController:
     """
