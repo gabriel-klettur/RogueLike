@@ -1,7 +1,7 @@
 
 import pygame
 
-from roguelike_project.systems.editor.buildings.config import SPLIT_HANDLE_SIZE
+from roguelike_project.systems.editor.buildings.buildings_editor_config import SPLIT_HANDLE_SIZE
 
 class SplitTool:
     """Barra horizontal que separa bottom / top en un building."""

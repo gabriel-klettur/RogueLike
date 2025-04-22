@@ -1,5 +1,5 @@
 import pygame
-from roguelike_project.systems.editor.buildings.config import Z_PANEL_W, Z_PANEL_H, Z_BTN_W, Z_BTN_H
+from roguelike_project.systems.editor.buildings.buildings_editor_config import Z_PANEL_W, Z_PANEL_H, Z_BTN_W, Z_BTN_H
 
 class ZToolView:
     def __init__(self, state, editor_state, target="bottom"):
