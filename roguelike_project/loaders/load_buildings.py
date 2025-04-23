@@ -2,10 +2,10 @@
 
 import os
 from roguelike_project.entities.buildings.building import Building
-from roguelike_project.systems.editor.json_handler import  save_buildings_to_json
-from roguelike_project.systems.editor.load_buildings_from_json import load_buildings_from_json
+from roguelike_project.systems.editor.buildings.model.persistence.json_handler import save_buildings_to_json
+from roguelike_project.systems.editor.buildings.model.persistence.load_buildings_from_json import load_buildings_from_json
 
-BUILDINGS_JSON_PATH = "roguelike_project/editor/data/buildings_data.json"
+from roguelike_project.config import BUILDINGS_DATA_PATH
 
 def get_hardcoded_buildings():
     return [
@@ -24,11 +24,20 @@ def get_hardcoded_buildings():
         Building(5000, 1766, "assets/buildings/others/guillotina.png", solid=True, scale=(400, 400))
     ]
 
-def load_buildings():
-    if os.path.exists(BUILDINGS_JSON_PATH):
-        return load_buildings_from_json(BUILDINGS_JSON_PATH, Building)
+def load_buildings(z_state=None):
+    """
+    Carga edificios desde JSON o fallback a los hardcodeados.
+    Si se pasa `z_state`, se asignan las capas Z al cargarlos.
+    """
+    if os.path.exists(BUILDINGS_DATA_PATH):
+        print("📦 Usando edificios desde JSON.")
+        return load_buildings_from_json(BUILDINGS_DATA_PATH, Building, z_state)
     else:
         print("📦 Usando edificios hardcodeados (primera carga).")
         hardcoded = get_hardcoded_buildings()
-        save_buildings_to_json(hardcoded, BUILDINGS_JSON_PATH)
+        if z_state:
+            from roguelike_project.systems.z_layer.config import Z_LAYERS
+            for b in hardcoded:
+                z_state.set(b, Z_LAYERS["high_object"])
+        save_buildings_to_json(hardcoded, BUILDINGS_DATA_PATH, z_state)
         return hardcoded

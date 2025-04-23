@@ -1,3 +1,4 @@
+# roguelike_project/engine/game/systems/map/map_exporter.py
 import os
 import re
 
@@ -29,3 +30,4 @@ def save_map_with_autoname(map_data, directory="debug_maps"):
                 f.write(row + "\n")
 
     print(f"📝 Mapa guardado como: {filepath}")
+    return filename  # Devolvemos el nombre para overlay

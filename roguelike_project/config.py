@@ -12,21 +12,30 @@ FPS = 60
 FONT_NAME = "Arial"
 FONT_SIZE = 18
 
-# Tamaño de tile
-TILE_SIZE = 64
 
 # WebSocket URL
 WEBSOCKET_URL = "ws://localhost:8000/ws"
 
+#!------------------------ Z-LAYER CONFIG --------------------------
 
-#!--------------------- DUDGEONS CONFIG --------------------------
+# Z-Layer
+DEFAULT_Z = 1
+
+# Z-Layer buildings data
+BUILDINGS_DATA_PATH = "roguelike_project/systems/z_layer/data/buildings_data.json"
+
+#!--------------------- MAP CONFIG --------------------------
+
+# Tamaño de tile
+TILE_SIZE = 64
+
 # Tamaño del mapa procedural
 DUNGEON_WIDTH = 120
 DUNGEON_HEIGHT = 120
 
 # Tamaño lógico del lobby insertado
-LOBBY_WIDTH = 80   # (basado en la cantidad de caracteres por línea)
-LOBBY_HEIGHT = 32  # (número de líneas)
+LOBBY_WIDTH = 100   # (basado en la cantidad de caracteres por línea)
+LOBBY_HEIGHT = 100  # (número de líneas)
 
 # Offset visual recomendado
 LOBBY_OFFSET_X = 5

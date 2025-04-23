@@ -9,8 +9,9 @@ class GameState:
         self.camera = camera
         self.clock = clock
         self.font = font
-        self.menu = menu        
-        self.tiles = tiles  # ✅ Aquí se guarda
+        self.menu = menu                
+
+        self.tiles = tiles
         self.remote_entities = {}
         self.enemies = enemies or []
         self.buildings = buildings
@@ -18,3 +19,6 @@ class GameState:
         self.running = True
         self.show_menu = False
         self.mode = "local"
+
+        #!------------ Deberia ir en otro lugar ------------
+        self.tile_editor_active = False
