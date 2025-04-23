@@ -2,16 +2,16 @@ import pygame
 from pygame.math import Vector2
 
 # Visual-only effects
-from roguelike_project.systems.effects.particles.spells.laser_beam import LaserBeam
-from roguelike_project.systems.effects.particles.spells.lightning import Lightning
-from roguelike_project.systems.effects.particles.spells.healing_aura import HealingAura
-from roguelike_project.systems.effects.particles.spells.smoke_emitter import SmokeEmitter
-from roguelike_project.systems.effects.particles.spells.sphere_magic_shield import SphereMagicShield
-from roguelike_project.systems.effects.particles.spells.pixel_fire import PixelFireEffect
-from roguelike_project.systems.effects.particles.spells.teleport_beam import TeleportBeamEffect
-from roguelike_project.systems.effects.particles.spells.dash_trail import DashTrail
-from roguelike_project.systems.effects.particles.spells.dash_bounce import DashBounce
-from roguelike_project.systems.effects.particles.spells.slash_effect import SlashEffect
+from roguelike_project.systems.combat.view.effects.particles.spells.laser_beam import LaserBeam
+from roguelike_project.systems.combat.view.effects.particles.spells.lightning import Lightning
+from roguelike_project.systems.combat.view.effects.particles.spells.healing_aura import HealingAura
+from roguelike_project.systems.combat.view.effects.particles.spells.smoke_emitter import SmokeEmitter
+from roguelike_project.systems.combat.view.effects.particles.spells.sphere_magic_shield import SphereMagicShield
+from roguelike_project.systems.combat.view.effects.particles.spells.pixel_fire import PixelFireEffect
+from roguelike_project.systems.combat.view.effects.particles.spells.teleport_beam import TeleportBeamEffect
+from roguelike_project.systems.combat.view.effects.particles.spells.dash_trail import DashTrail
+from roguelike_project.systems.combat.view.effects.particles.spells.dash_bounce import DashBounce
+from roguelike_project.systems.combat.view.effects.particles.spells.slash_effect import SlashEffect
 
 from roguelike_project.utils.benchmark import benchmark
 

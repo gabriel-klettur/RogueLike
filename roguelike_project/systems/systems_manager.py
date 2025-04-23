@@ -1,9 +1,9 @@
 # roguelike_project/systems/systems_manager.py
 
 from roguelike_project.systems.combat.combat_system import CombatSystem
-from roguelike_project.systems.effects.particles.spells_system import SpellsSystem
+from roguelike_project.systems.combat.view.effects.particles.spells_system import SpellsSystem
 
-from roguelike_project.systems.effects.particles.explosions_system import ExplosionSystem
+from roguelike_project.systems.combat.view.effects.particles.explosions_system import ExplosionSystem
 
 class SystemsManager:
     def __init__(self, state):

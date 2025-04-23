@@ -1,8 +1,8 @@
 import pygame
 import math
 import random
-from roguelike_project.systems.effects.particles.particle import Particle
-from roguelike_project.systems.effects.particles.explosions.electric import ElectricExplosion  # ⚡ Explosión visual
+from roguelike_project.systems.combat.view.effects.particles.particle import Particle
+from roguelike_project.systems.combat.view.effects.particles.explosions.electric import ElectricExplosion  # ⚡ Explosión visual
 
 class LaserBeam:
     def __init__(self, x1, y1, x2, y2, particle_count=60, enemies=None, damage=0.25):

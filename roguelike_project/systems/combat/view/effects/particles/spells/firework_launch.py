@@ -2,7 +2,7 @@
 
 import random
 import math
-from roguelike_project.systems.effects.particles.particle import Particle
+from roguelike_project.systems.combat.view.effects.particles.particle import Particle
 
 class FireworkLaunch:
     def __init__(self, x, y, target_x, target_y):

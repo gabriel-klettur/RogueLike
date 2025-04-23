@@ -1,7 +1,7 @@
 import pygame
-from roguelike_project.systems.effects.animations.projectiles import Projectile
+from roguelike_project.systems.combat.view.effects.animations.projectiles import Projectile
 from roguelike_project.utils.loader import load_image
-from roguelike_project.systems.effects.particles.explosions.fire import FireExplosion
+from roguelike_project.systems.combat.view.effects.particles.explosions.fire import FireExplosion
 
 class Fireball(Projectile):
     def __init__(self, x, y, angle, explosions_list=None):
