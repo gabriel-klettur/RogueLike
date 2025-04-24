@@ -50,9 +50,10 @@ def handle_events(state):
                 state.player.stats.last_lightning_time = time.time()
 
             elif event.key == pygame.K_x:
-                x, y = state.systems.effects._mouse_world()
-                state.systems.effects.spawn_pixel_fire(x, y)
-                state.player.stats.last_pixel_fire_time = time.time()
+                mx, my = pygame.mouse.get_pos()
+                wx = mx / state.camera.zoom + state.camera.offset_x
+                wy = my / state.camera.zoom + state.camera.offset_y
+                state.systems.effects.spawn_arcane_flame(wx, wy)
 
             elif event.key == pygame.K_v:
                 state.player.movement.start_dash_towards_mouse()
