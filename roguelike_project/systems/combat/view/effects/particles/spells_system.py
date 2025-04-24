@@ -32,8 +32,12 @@ from roguelike_project.systems.combat.spells.fireball.model      import Fireball
 from roguelike_project.systems.combat.spells.fireball.controller import FireballController
 from roguelike_project.systems.combat.spells.fireball.view       import FireballView
 
+# MVC: Lightning 
+from roguelike_project.systems.combat.spells.lightning.model      import LightningModel
+from roguelike_project.systems.combat.spells.lightning.controller import LightningController
+from roguelike_project.systems.combat.spells.lightning.view       import LightningView
+
 # Legacy effects
-from roguelike_project.systems.combat.view.effects.particles.spells.lightning       import Lightning
 from roguelike_project.systems.combat.view.effects.particles.spells.sphere_magic_shield import SphereMagicShield
 from roguelike_project.systems.combat.view.effects.particles.spells.pixel_fire      import PixelFireEffect
 from roguelike_project.systems.combat.view.effects.particles.spells.teleport_beam   import TeleportBeamEffect
@@ -67,8 +71,10 @@ class SpellsSystem:
         self.fireball_controllers:      list[FireballController]       = []
         self.fireball_views:            list[FireballView]             = []
 
-        # Legacy lists
-        self.lightnings    = []
+        self.lightning_controllers:     list[LightningController]      = []
+        self.lightning_views:           list[LightningView]            = []
+
+        # Legacy lists        
         self.magic_shields = []
         self.pixel_fires   = []
         self.teleport_beams= []
@@ -142,7 +148,12 @@ class SpellsSystem:
 
     def spawn_lightning(self, target_pos):
         px, py = self._player_center()
-        self.lightnings.append(Lightning((px, py), target_pos))
+        model   = LightningModel((px, py), target_pos)
+        enemies = self.state.enemies + list(self.state.remote_entities.values())
+        ctrl    = LightningController(model, enemies)
+        view    = LightningView(model)
+        self.lightning_controllers.append(ctrl)
+        self.lightning_views.append(view)
 
     def spawn_healing_aura(self):
         model = HealingAuraModel(self.state.player)
@@ -236,10 +247,13 @@ class SpellsSystem:
             v for v in self.fireball_views if v.m.alive
         ]
 
-        # Legacy: Lightning
-        for l in self.lightnings:
-            l.update()
-        self.lightnings = [l for l in self.lightnings if l.lifetime > 0]
+        # Lightning MVC
+        for c in self.lightning_controllers:
+            c.update()
+        # Filtrar terminados
+        self.lightning_controllers = [c for c in self.lightning_controllers if not c.finished]
+        self.lightning_views       = [v for v in self.lightning_views       if not v.m.is_finished]
+
 
         # Legacy: Magic Shields
         for s in self.magic_shields:
@@ -296,6 +310,10 @@ class SpellsSystem:
         # MVC: HealingAura
         for v in self.healing_views:
             v.render(screen, camera)
+        # MVC: Lightning
+        for v in self.lightning_views:
+            if (d := v.render(screen, camera)):
+                dirty_rects.append(d)
 
         # Legacy effects
         for e in self.slash_effects:
@@ -315,10 +333,7 @@ class SpellsSystem:
                 dirty_rects.append(d)
         for s in self.magic_shields:
             if (d := s.render(screen, camera)):
-                dirty_rects.append(d)
-        for l in self.lightnings:
-            if (d := l.render(screen, camera)):
-                dirty_rects.append(d)
+                dirty_rects.append(d)    
 
         return dirty_rects
 
