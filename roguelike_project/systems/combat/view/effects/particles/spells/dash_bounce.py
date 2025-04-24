@@ -33,7 +33,6 @@ class DashBounce:
             p.update()
         self.particles = [p for p in self.particles if p.age < p.lifespan]
         self.finished = len(self.particles) == 0
-
     def render(self, screen, camera):
         for p in self.particles:
             p.render(screen, camera)

@@ -4,7 +4,6 @@ from pygame.math import Vector2
 # Visual-only effects
 from roguelike_project.systems.combat.view.effects.particles.spells.laser_beam import LaserBeam
 from roguelike_project.systems.combat.view.effects.particles.spells.lightning import Lightning
-from roguelike_project.systems.combat.view.effects.particles.spells.healing_aura import HealingAura
 from roguelike_project.systems.combat.view.effects.particles.spells.smoke_emitter import SmokeEmitter
 from roguelike_project.systems.combat.view.effects.particles.spells.sphere_magic_shield import SphereMagicShield
 from roguelike_project.systems.combat.view.effects.particles.spells.pixel_fire import PixelFireEffect
@@ -13,6 +12,15 @@ from roguelike_project.systems.combat.view.effects.particles.spells.dash_trail i
 from roguelike_project.systems.combat.view.effects.particles.spells.dash_bounce import DashBounce
 from roguelike_project.systems.combat.view.effects.particles.spells.slash_effect import SlashEffect
 
+
+#from roguelike_project.systems.combat.view.effects.particles.spells.healing_aura import HealingAura
+from roguelike_project.systems.combat.spells.healing_aura.model import HealingAuraModel
+from roguelike_project.systems.combat.spells.healing_aura.controller import HealingAuraController
+from roguelike_project.systems.combat.spells.healing_aura.view import HealingAuraView
+
+
+
+
 from roguelike_project.utils.benchmark import benchmark
 
 class SpellsSystem:
@@ -20,8 +28,7 @@ class SpellsSystem:
         self.state = state
         self.lasers = []        
         self.smoke_emitters = []
-        self.lightnings = []
-        self.healing_auras = []
+        self.lightnings = []        
         self.magic_shields = []
         self.pixel_fires = []
         self.teleport_beams = []
@@ -31,6 +38,12 @@ class SpellsSystem:
 
         self.shooting_laser = False
         self.last_laser_time = 0
+
+
+        #self.healing_auras = []
+        self.healing_controllers: list[HealingAuraController] = []
+        self.healing_views:       list[HealingAuraView]       = []
+
 
     def spawn_slash_effect(self, player, direction):
         self.slash_effects.append(SlashEffect(player, direction))
@@ -68,9 +81,19 @@ class SpellsSystem:
         px = self._player_center()
         self.lightnings.append(Lightning(px, target_pos))
 
+
+
+
+
     def spawn_healing_aura(self):
-        px = self._player_center()
-        self.healing_auras.append(HealingAura(self.state.player))
+        model = HealingAuraModel(self.state.player)
+        ctrl  = HealingAuraController(model, self.state.clock)
+        view  = HealingAuraView(model)
+        self.healing_controllers.append(ctrl)
+        self.healing_views.append(view)
+
+
+
 
     def update(self):
         # 🔁 Lasers
@@ -90,10 +113,13 @@ class SpellsSystem:
         for lightning in self.lightnings:
             lightning.update()
 
-        # 💖 Healing Auras                
-        for aura in self.healing_auras:
-            aura.update()
-        self.healing_auras = [a for a in self.healing_auras if not a.is_empty()]
+        #!----------------------------------- 💖 Healing Auras ---------------------------------------               
+        for ctrl in self.healing_controllers:
+            ctrl.update()
+        # eliminar los que terminaron
+        self.healing_controllers = [
+            c for c in self.healing_controllers if not c.model.is_empty()
+        ]
 
         for shield in self.magic_shields:
             shield.update()
@@ -131,14 +157,21 @@ class SpellsSystem:
             self.dash_bounces,
             self.teleport_beams,
             self.pixel_fires,
-            self.magic_shields,
-            self.healing_auras,
+            self.magic_shields,            
             self.smoke_emitters,
             self.lightnings
         ]:
             for effect in group:
                 if (d := effect.render(screen, camera)):
                     dirty_rects.append(d)
+
+
+        for vw in self.healing_views:
+            vw.render(screen, camera)        
+        self.healing_views = [
+            v for v in self.healing_views if not v.model.is_empty()
+        ]
+
 
         return dirty_rects
 
