@@ -42,9 +42,13 @@ from roguelike_project.systems.combat.spells.arcane_flame.model      import Arca
 from roguelike_project.systems.combat.spells.arcane_flame.controller import ArcaneFlameController
 from roguelike_project.systems.combat.spells.arcane_flame.view       import ArcaneFlameView
 
+# MVC: SphereMagicShield
+from roguelike_project.systems.combat.spells.sphere_magic_shield.model      import SphereMagicShieldModel
+from roguelike_project.systems.combat.spells.sphere_magic_shield.controller import SphereMagicShieldController
+from roguelike_project.systems.combat.spells.sphere_magic_shield.view       import SphereMagicShieldView
+
 
 # Legacy effects
-from roguelike_project.systems.combat.view.effects.particles.spells.sphere_magic_shield import SphereMagicShield
 from roguelike_project.systems.combat.view.effects.particles.spells.teleport_beam   import TeleportBeamEffect
 from roguelike_project.systems.combat.view.effects.particles.spells.dash_trail      import DashTrail
 from roguelike_project.systems.combat.view.effects.particles.spells.dash_bounce     import DashBounce
@@ -79,11 +83,13 @@ class SpellsSystem:
         self.lightning_controllers:     list[LightningController]      = []
         self.lightning_views:           list[LightningView]            = []
 
-        self.arcane_controllers: list[ArcaneFlameController] = []
-        self.arcane_views:       list[ArcaneFlameView]       = []
+        self.arcane_controllers:        list[ArcaneFlameController]    = []
+        self.arcane_views:              list[ArcaneFlameView]          = []
 
-        # Legacy lists        
-        self.magic_shields = []        
+        self.shield_controllers:        list[SphereMagicShieldController] = []
+        self.shield_views:              list[SphereMagicShieldView]       = []
+
+        # Legacy lists                
         self.teleport_beams= []
         self.dash_trails   = []
         self.dash_bounces  = []
@@ -177,7 +183,11 @@ class SpellsSystem:
         self.arcane_views.append(view)
 
     def spawn_magic_shield(self):
-        self.magic_shields.append(SphereMagicShield(self.state.player))    
+        model = SphereMagicShieldModel(self.state.player)
+        ctrl  = SphereMagicShieldController(model)
+        view  = SphereMagicShieldView(model)
+        self.shield_controllers.append(ctrl)
+        self.shield_views.append(view)
 
     def spawn_teleport_beam(self, x, y):
         self.teleport_beams.append(TeleportBeamEffect(x, y))
@@ -265,18 +275,17 @@ class SpellsSystem:
         self.lightning_controllers = [c for c in self.lightning_controllers if not c.finished]
         self.lightning_views       = [v for v in self.lightning_views       if not v.m.is_finished]
 
-
         # ArcaneFlame MVC
         for c in self.arcane_controllers:
             c.update()
         self.arcane_controllers = [c for c in self.arcane_controllers if not c.is_finished()]
         self.arcane_views       = [v for v in self.arcane_views       if not v.m.is_finished()]
 
-
-        # Legacy: Magic Shields
-        for s in self.magic_shields:
-            s.update()
-        self.magic_shields = [s for s in self.magic_shields if not s.is_finished()]
+        # SphereMagicShield MVC
+        for c in self.shield_controllers:
+            c.update()
+        self.shield_controllers = [c for c in self.shield_controllers if not c.is_finished()]
+        self.shield_views       = [v for v in self.shield_views       if not v.m.is_finished()]
 
         # Legacy: Teleport Beams
         for b in self.teleport_beams:
@@ -327,9 +336,13 @@ class SpellsSystem:
         for v in self.lightning_views:
             if (d := v.render(screen, camera)):
                 dirty_rects.append(d)
-        # ArcaneFlame MVC
+        # MVC: ArcaneFlame
         for v in self.arcane_views:
             v.render(screen, camera)
+        # MVC: SphereMagicShield
+        for v in self.shield_views:
+            if d := v.render(screen, camera):
+                dirty_rects.append(d)
 
         # Legacy effects
         for e in self.slash_effects:
@@ -344,10 +357,7 @@ class SpellsSystem:
         for b in self.teleport_beams:
             if (d := b.render(screen, camera)):
                 dirty_rects.append(d)        
-                dirty_rects.append(d)
-        for s in self.magic_shields:
-            if (d := s.render(screen, camera)):
-                dirty_rects.append(d)    
+                dirty_rects.append(d)        
 
         return dirty_rects
 
