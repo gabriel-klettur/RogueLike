@@ -17,8 +17,12 @@ from roguelike_project.systems.combat.spells.smoke.model import SmokeModel
 from roguelike_project.systems.combat.spells.smoke.controller import SmokeController
 from roguelike_project.systems.combat.spells.smoke.view import SmokeView
 
+# MVC: Smoke (SmokeEmitter)
+from roguelike_project.systems.combat.spells.smoke_emitter.model import SmokeEmitterModel
+from roguelike_project.systems.combat.spells.smoke_emitter.controller import SmokeEmitterController
+from roguelike_project.systems.combat.spells.smoke_emitter.view import SmokeEmitterView
+
 # Legacy effects
-from roguelike_project.systems.combat.view.effects.particles.spells.smoke_emitter import SmokeEmitter
 from roguelike_project.systems.combat.view.effects.particles.spells.lightning import Lightning
 from roguelike_project.systems.combat.view.effects.particles.spells.sphere_magic_shield import SphereMagicShield
 from roguelike_project.systems.combat.view.effects.particles.spells.pixel_fire import PixelFireEffect
@@ -39,6 +43,9 @@ class SpellsSystem:
         self.smoke_views:       list[SmokeView]           = []
         self.healing_controllers: list[HealingAuraController] = []
         self.healing_views:       list[HealingAuraView]       = []
+        self.smoke_emitter_controller: list[SmokeEmitterController] = []
+        self.smoke_emitter_view: list[SmokeEmitterView]       = []
+
         # Legacy lists
         self.smoke_emitters = []
         self.lightnings    = []
@@ -92,7 +99,11 @@ class SpellsSystem:
 
     def spawn_smoke_emitter(self):
         px, py = self._player_center()
-        self.smoke_emitters.append(SmokeEmitter(px, py))
+        model = SmokeEmitterModel(px, py)
+        ctrl  = SmokeEmitterController(model)
+        view  = SmokeEmitterView(model)
+        self.smoke_emitter_controller.append(ctrl)
+        self.smoke_emitter_view.append(view)
 
     def spawn_lightning(self, target_pos):
         px, py = self._player_center()
@@ -128,6 +139,13 @@ class SpellsSystem:
     #                     Update                       #
     # ------------------------------------------------ #
     def update(self):
+
+        # Healing MVC
+        for ctrl in self.healing_controllers:
+            ctrl.update()
+        self.healing_controllers = [c for c in self.healing_controllers if not c.model.is_empty()]
+        self.healing_views       = [v for v in self.healing_views       if not v.model.is_empty()]
+
         # Laser MVC
         for ctrl in self.laser_controllers:
             ctrl.update()
@@ -140,23 +158,23 @@ class SpellsSystem:
         self.smoke_controllers = [c for c in self.smoke_controllers if not c.model.is_finished()]
         self.smoke_views       = [v for v in self.smoke_views       if not v.model.is_finished()]
 
-        # Legacy Smoke Emitters
-        for emitter in self.smoke_emitters:
+        # MVC SmokeEmitter
+        for ctrl in self.smoke_emitter_controller:
             wind_x = (pygame.mouse.get_pos()[0] - self.state.screen.get_width() // 2) / 1000
-            emitter.apply_force(Vector2(wind_x, 0))
-            emitter.update()
-        self.smoke_emitters = [e for e in self.smoke_emitters if e.particles]
+            ctrl.apply_force(Vector2(wind_x, 0))
+            ctrl.update()        
+        alive = [c for c in self.smoke_emitter_controller if not c.model.is_empty()]
+        self.smoke_emitter_controller = alive
+        self.smoke_emitter_view       = [v for v in self.smoke_emitter_view if not v.model.is_empty()]
+
+
+        #!-------------------------- Legacy ----------------------------------------
 
         # Lightning
         for lightning in self.lightnings:
             lightning.update()
         self.lightnings = [l for l in self.lightnings if l.lifetime > 0]
 
-        # Healing MVC
-        for ctrl in self.healing_controllers:
-            ctrl.update()
-        self.healing_controllers = [c for c in self.healing_controllers if not c.model.is_empty()]
-        self.healing_views       = [v for v in self.healing_views       if not v.model.is_empty()]
 
         # Magic Shields
         for shield in self.magic_shields:
@@ -201,6 +219,14 @@ class SpellsSystem:
         # Smoke MVC
         for vw in self.smoke_views:
             vw.render(screen, camera)
+        # MVC SmokeEmitter
+        for vw in self.smoke_emitter_view:
+            vw.render(screen, camera)
+        # Healing MVC
+        for vw in self.healing_views:
+            vw.render(screen, camera)
+
+        #!---------------------------------- Legacy effects -------------------------------------
         # Slash Effects
         for effect in self.slash_effects:
             if (d := effect.render(screen, camera)):
@@ -224,13 +250,6 @@ class SpellsSystem:
         # Magic Shields
         for shield in self.magic_shields:
             if (d := shield.render(screen, camera)):
-                dirty_rects.append(d)
-        # Healing MVC
-        for vw in self.healing_views:
-            vw.render(screen, camera)
-        # Legacy Smoke Emitters
-        for emitter in self.smoke_emitters:
-            if (d := emitter.render(screen, camera)):
                 dirty_rects.append(d)
         # Lightning
         for lightning in self.lightnings:
