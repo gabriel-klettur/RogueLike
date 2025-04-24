@@ -61,10 +61,6 @@ def handle_events(state):
                 state.player.attack.perform_basic_attack()
 
             # ---------- TEST / DEBUG ---------- #
-            elif event.key == pygame.K_t:
-                print("🧪 Test de explosión manual con tecla T")
-                state.systems.explosions.add_explosion(FireExplosion(state.player.x, state.player.y))
-
             elif event.key == pygame.K_F10:
                 if hasattr(state, "editor"):
                     state.editor.active = not state.editor.active
@@ -74,21 +70,19 @@ def handle_events(state):
                 config.DEBUG = not config.DEBUG
                 print(f"🧪 DEBUG {'activado' if config.DEBUG else 'desactivado'}")
 
-            # ---------- TILE‑EDITOR (F8) --------- #
+            # ---------- TILE-EDITOR (F8) --------- #
             elif event.key == pygame.K_F8:
-                # ⇄ Activar / desactivar el editor de tiles
                 new_val = not getattr(state, "tile_editor_active", False)
                 state.tile_editor_active = new_val
                 if hasattr(state, "tile_editor_state"):
                     tes = state.tile_editor_state
                     tes.active = new_val
                     if not new_val:
-                        # ⏹️ Cerramos paleta y limpiamos selección
                         tes.picker_open    = False
                         tes.selected_tile  = None
                         tes.current_choice = None
-                print("🟩 Tile‑Editor ON" if new_val else "🟥 Tile‑Editor OFF")
-                return                              # evitamos procesar más atajos ese frame
+                print("🟩 Tile-Editor ON" if new_val else "🟥 Tile-Editor OFF")
+                return  # evitamos más atajos este frame
 
         # ------------------------------------------------------------- #
         #                       WHEEL / MOUSE                           #
@@ -111,7 +105,7 @@ def handle_events(state):
                 dx = world_mouse_x - player_center_x
                 dy = world_mouse_y - player_center_y
                 angle = -pygame.math.Vector2(dx, dy).angle_to((1, 0))
-                state.combat.projectiles.spawn_fireball(angle)
+                state.systems.effects.spawn_fireball(angle)
 
             elif event.button == 2:
                 state.systems.effects.shooting_laser = True
@@ -126,7 +120,7 @@ def handle_events(state):
 
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 2:
-                state.systems.effects.shooting_laser = False                
+                state.systems.effects.shooting_laser = False
 
     # ---------------------- MOVIMIENTO CONTINUO ---------------------- #
     if not state.show_menu:
@@ -141,7 +135,7 @@ def handle_events(state):
         solid_tiles = [tile for tile in state.tiles if tile.solid]
         state.player.move(dx, dy, state.obstacles, solid_tiles)
 
-    # 🔁 Fuego continuo de láser
+    # 🔁 Fuego continuo de láser
     if state.systems.effects.shooting_laser:
         now = time.time()
         if now - state.systems.effects.last_laser_time >= 0.01:
