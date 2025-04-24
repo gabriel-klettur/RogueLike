@@ -47,9 +47,12 @@ from roguelike_project.systems.combat.spells.sphere_magic_shield.model      impo
 from roguelike_project.systems.combat.spells.sphere_magic_shield.controller import SphereMagicShieldController
 from roguelike_project.systems.combat.spells.sphere_magic_shield.view       import SphereMagicShieldView
 
+# MVC: Teleport
+from roguelike_project.systems.combat.spells.teleport.model      import TeleportModel
+from roguelike_project.systems.combat.spells.teleport.controller import TeleportController
+from roguelike_project.systems.combat.spells.teleport.view       import TeleportView
 
 # Legacy effects
-from roguelike_project.systems.combat.view.effects.particles.spells.teleport_beam   import TeleportBeamEffect
 from roguelike_project.systems.combat.view.effects.particles.spells.dash_trail      import DashTrail
 from roguelike_project.systems.combat.view.effects.particles.spells.dash_bounce     import DashBounce
 from roguelike_project.systems.combat.view.effects.particles.spells.slash_effect    import SlashEffect
@@ -89,8 +92,10 @@ class SpellsSystem:
         self.shield_controllers:        list[SphereMagicShieldController] = []
         self.shield_views:              list[SphereMagicShieldView]       = []
 
-        # Legacy lists                
-        self.teleport_beams= []
+        self.teleport_controllers:      list[TeleportController]        = []
+        self.teleport_views:            list[TeleportView]              = []
+
+        # Legacy lists                        
         self.dash_trails   = []
         self.dash_bounces  = []
         self.slash_effects = []
@@ -189,8 +194,13 @@ class SpellsSystem:
         self.shield_controllers.append(ctrl)
         self.shield_views.append(view)
 
-    def spawn_teleport_beam(self, x, y):
-        self.teleport_beams.append(TeleportBeamEffect(x, y))
+    def spawn_teleport(self, x, y):
+        px, py = self._player_center()
+        model = TeleportModel((px,py), (x,y))
+        ctrl  = TeleportController(model)
+        view  = TeleportView(model)
+        self.teleport_controllers.append(ctrl)
+        self.teleport_views.append(view)
 
     def spawn_dash_trail(self, player, direction):
         self.dash_trails.append(DashTrail(player, direction))
@@ -287,10 +297,15 @@ class SpellsSystem:
         self.shield_controllers = [c for c in self.shield_controllers if not c.is_finished()]
         self.shield_views       = [v for v in self.shield_views       if not v.m.is_finished()]
 
-        # Legacy: Teleport Beams
-        for b in self.teleport_beams:
-            b.update()
-        self.teleport_beams = [b for b in self.teleport_beams if not b.is_finished()]
+        # Teleport MVC
+        for c in self.teleport_controllers:
+            c.update()
+        self.teleport_controllers = [
+            c for c in self.teleport_controllers if not c.is_finished()
+        ]
+        self.teleport_views = [
+            v for v in self.teleport_views if not v.m.is_finished()
+        ]
 
         # Legacy: Dash Trails
         for t in self.dash_trails:
@@ -342,7 +357,10 @@ class SpellsSystem:
         # MVC: SphereMagicShield
         for v in self.shield_views:
             if d := v.render(screen, camera):
-                dirty_rects.append(d)
+                dirty_rects.append(d)    
+        # MVC: Teleport
+        for v in self.teleport_views:
+            v.render(screen, camera)      
 
         # Legacy effects
         for e in self.slash_effects:
@@ -354,10 +372,6 @@ class SpellsSystem:
         for b in self.dash_bounces:
             if (d := b.render(screen, camera)):
                 dirty_rects.append(d)
-        for b in self.teleport_beams:
-            if (d := b.render(screen, camera)):
-                dirty_rects.append(d)        
-                dirty_rects.append(d)        
 
         return dirty_rects
 

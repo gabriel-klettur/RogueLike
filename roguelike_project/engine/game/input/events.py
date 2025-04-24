@@ -116,8 +116,8 @@ def handle_events(state):
                 mx, my = pygame.mouse.get_pos()
                 world_x = mx / state.camera.zoom + state.camera.offset_x
                 world_y = my / state.camera.zoom + state.camera.offset_y
-                state.player.movement.teleport(world_x, world_y)
-                state.systems.effects.spawn_teleport_beam(state.player.x, state.player.y)
+                state.player.movement.teleport(world_x, world_y)            
+                state.systems.effects.spawn_teleport(world_x, world_y)
 
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 2:
