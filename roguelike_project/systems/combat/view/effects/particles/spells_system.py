@@ -2,53 +2,59 @@
 import pygame
 from pygame.math import Vector2
 
-# MVC imports for LaserBeam
-from roguelike_project.systems.combat.spells.laser_beam.model      import LaserBeamModel
+# MVC: LaserBeam
+from roguelike_project.systems.combat.spells.laser_beam.model import LaserBeamModel
 from roguelike_project.systems.combat.spells.laser_beam.controller import LaserBeamController
-from roguelike_project.systems.combat.spells.laser_beam.view       import LaserBeamView
+from roguelike_project.systems.combat.spells.laser_beam.view import LaserBeamView
 
-# MVC imports for HealingAura
-from roguelike_project.systems.combat.spells.healing_aura.model      import HealingAuraModel
+# MVC: HealingAura
+from roguelike_project.systems.combat.spells.healing_aura.model import HealingAuraModel
 from roguelike_project.systems.combat.spells.healing_aura.controller import HealingAuraController
-from roguelike_project.systems.combat.spells.healing_aura.view       import HealingAuraView
+from roguelike_project.systems.combat.spells.healing_aura.view import HealingAuraView
 
-# Other effect imports (views remain)
-from roguelike_project.systems.combat.view.effects.particles.spells.lightning      import Lightning
+# MVC: Smoke (Smoke)
+from roguelike_project.systems.combat.spells.smoke.model import SmokeModel
+from roguelike_project.systems.combat.spells.smoke.controller import SmokeController
+from roguelike_project.systems.combat.spells.smoke.view import SmokeView
+
+# Legacy effects
 from roguelike_project.systems.combat.view.effects.particles.spells.smoke_emitter import SmokeEmitter
+from roguelike_project.systems.combat.view.effects.particles.spells.lightning import Lightning
 from roguelike_project.systems.combat.view.effects.particles.spells.sphere_magic_shield import SphereMagicShield
-from roguelike_project.systems.combat.view.effects.particles.spells.pixel_fire     import PixelFireEffect
-from roguelike_project.systems.combat.view.effects.particles.spells.teleport_beam  import TeleportBeamEffect
-from roguelike_project.systems.combat.view.effects.particles.spells.dash_trail     import DashTrail
-from roguelike_project.systems.combat.view.effects.particles.spells.dash_bounce   import DashBounce
-from roguelike_project.systems.combat.view.effects.particles.spells.slash_effect  import SlashEffect
+from roguelike_project.systems.combat.view.effects.particles.spells.pixel_fire import PixelFireEffect
+from roguelike_project.systems.combat.view.effects.particles.spells.teleport_beam import TeleportBeamEffect
+from roguelike_project.systems.combat.view.effects.particles.spells.dash_trail import DashTrail
+from roguelike_project.systems.combat.view.effects.particles.spells.dash_bounce import DashBounce
+from roguelike_project.systems.combat.view.effects.particles.spells.slash_effect import SlashEffect
 
 from roguelike_project.utils.benchmark import benchmark
 
 class SpellsSystem:
     def __init__(self, state):
         self.state = state
-        # Laser MVC
+        # MVC lists
         self.laser_controllers: list[LaserBeamController] = []
         self.laser_views:       list[LaserBeamView]       = []
-        # Legacy lists for other effects
-        self.smoke_emitters = []
-        self.lightnings    = []
-        # Healing MVC
+        self.smoke_controllers: list[SmokeController]     = []
+        self.smoke_views:       list[SmokeView]           = []
         self.healing_controllers: list[HealingAuraController] = []
         self.healing_views:       list[HealingAuraView]       = []
+        # Legacy lists
+        self.smoke_emitters = []
+        self.lightnings    = []
         self.magic_shields = []
         self.pixel_fires   = []
         self.teleport_beams = []
         self.dash_trails   = []
         self.dash_bounces  = []
         self.slash_effects = []
-        # Continuous laser state
+        # Laser fire control
         self.shooting_laser = False
         self.last_laser_time = 0
 
-    # ------------------------------------------- #
-    #  Métodos para instanciar nuevos efectos    #
-    # ------------------------------------------- #
+    # ------------------------------------------------ #
+    #                   Spawn methods                  #
+    # ------------------------------------------------ #
     def spawn_slash_effect(self, player, direction):
         self.slash_effects.append(SlashEffect(player, direction))
 
@@ -59,10 +65,30 @@ class SpellsSystem:
         view  = LaserBeamView(model)
         self.laser_controllers.append(ctrl)
         self.laser_views.append(view)
-        # Limitar a últimos 3 rayos
         if len(self.laser_controllers) > 3:
             self.laser_controllers.pop(0)
             self.laser_views.pop(0)
+
+    def spawn_smoke(self):
+        # ── Calcular posición y dirección desde el ratón ──
+        mx, my = pygame.mouse.get_pos()
+        world_x = mx / self.state.camera.zoom + self.state.camera.offset_x
+        world_y = my / self.state.camera.zoom + self.state.camera.offset_y
+
+        # Centro del jugador
+        px, py = self._player_center()
+
+        # Vector normalizado hacia el ratón
+        dir_vec = pygame.math.Vector2(world_x - px, world_y - py)
+        if dir_vec.length() != 0:
+            dir_vec = dir_vec.normalize()
+
+        # ── Instanciar MVC de humo ──
+        model = SmokeModel(px, py, dir_vec)
+        ctrl  = SmokeController(model)
+        view  = SmokeView(model)
+        self.smoke_controllers.append(ctrl)
+        self.smoke_views.append(view)
 
     def spawn_smoke_emitter(self):
         px, py = self._player_center()
@@ -98,30 +124,35 @@ class SpellsSystem:
     def spawn_dash_bounce(self, x, y):
         self.dash_bounces.append(DashBounce(x, y))
 
-    # ------------------------------------------- #
-    #               Actualizar todos             #
-    # ------------------------------------------- #
+    # ------------------------------------------------ #
+    #                     Update                       #
+    # ------------------------------------------------ #
     def update(self):
-        # MVC: LaserBeam
+        # Laser MVC
         for ctrl in self.laser_controllers:
             ctrl.update()
-        # Limpiar finalizados
-        self.laser_controllers = [c for c in self.laser_controllers if not c.model.is_finished()]
-        self.laser_views       = [v for v in self.laser_views       if not v.model.is_finished()]
+        self.laser_controllers = [c for c in self.laser_controllers if not c.model.finished]
+        self.laser_views       = [v for v in self.laser_views       if not v.model.finished]
 
-        # Smoke Emitters
+        # Smoke MVC
+        for ctrl in self.smoke_controllers:
+            ctrl.update()
+        self.smoke_controllers = [c for c in self.smoke_controllers if not c.model.is_finished()]
+        self.smoke_views       = [v for v in self.smoke_views       if not v.model.is_finished()]
+
+        # Legacy Smoke Emitters
         for emitter in self.smoke_emitters:
             wind_x = (pygame.mouse.get_pos()[0] - self.state.screen.get_width() // 2) / 1000
             emitter.apply_force(Vector2(wind_x, 0))
             emitter.update()
-        self.smoke_emitters = [e for e in self.smoke_emitters if len(e.particles) > 0]
+        self.smoke_emitters = [e for e in self.smoke_emitters if e.particles]
 
-        # Lightnings
+        # Lightning
         for lightning in self.lightnings:
             lightning.update()
         self.lightnings = [l for l in self.lightnings if l.lifetime > 0]
 
-        # MVC: HealingAura
+        # Healing MVC
         for ctrl in self.healing_controllers:
             ctrl.update()
         self.healing_controllers = [c for c in self.healing_controllers if not c.model.is_empty()]
@@ -157,61 +188,54 @@ class SpellsSystem:
             slash.update()
         self.slash_effects = [s for s in self.slash_effects if not s.is_finished()]
 
-    # ------------------------------------------- #
-    #               Renderizar todos             #
-    # ------------------------------------------- #
+    # ------------------------------------------------ #
+    #                     Render                       #
+    # ------------------------------------------------ #
     @benchmark(lambda self: self.state.perf_log, "----3.6.2 effects_render")
     def render(self, screen, camera):
         dirty_rects = []
 
-        # MVC: LaserBeam (no dirty rects)
+        # Laser MVC
         for vw in self.laser_views:
             vw.render(screen, camera)
-
+        # Smoke MVC
+        for vw in self.smoke_views:
+            vw.render(screen, camera)
         # Slash Effects
         for effect in self.slash_effects:
             if (d := effect.render(screen, camera)):
                 dirty_rects.append(d)
-
         # Dash Trails
         for trail in self.dash_trails:
             if (d := trail.render(screen, camera)):
                 dirty_rects.append(d)
-
         # Dash Bounces
         for bounce in self.dash_bounces:
             if (d := bounce.render(screen, camera)):
                 dirty_rects.append(d)
-
         # Teleport Beams
         for beam in self.teleport_beams:
             if (d := beam.render(screen, camera)):
                 dirty_rects.append(d)
-
         # Pixel Fires
         for fire in self.pixel_fires:
             if (d := fire.render(screen, camera)):
                 dirty_rects.append(d)
-
         # Magic Shields
         for shield in self.magic_shields:
             if (d := shield.render(screen, camera)):
                 dirty_rects.append(d)
-
-        # MVC: HealingAura (no dirty rects)
+        # Healing MVC
         for vw in self.healing_views:
             vw.render(screen, camera)
-
-        # Smoke Emitters
+        # Legacy Smoke Emitters
         for emitter in self.smoke_emitters:
             if (d := emitter.render(screen, camera)):
                 dirty_rects.append(d)
-
-        # Lightnings
+        # Lightning
         for lightning in self.lightnings:
             if (d := lightning.render(screen, camera)):
                 dirty_rects.append(d)
-
         return dirty_rects
 
     def _player_center(self):

@@ -38,6 +38,10 @@ def handle_events(state):
                 state.systems.effects.spawn_smoke_emitter()
                 state.player.stats.last_smoke_time = time.time()
 
+            elif event.key == pygame.K_t:
+                state.systems.effects.spawn_smoke()
+                state.player.stats.last_smoke_time = time.time()
+
             elif event.key == pygame.K_z:
                 mx, my = pygame.mouse.get_pos()
                 world_x = mx / state.camera.zoom + state.camera.offset_x
