@@ -8,13 +8,13 @@ class SphereMagicShieldController:
     y desaparece al acabarse el tiempo.
     """
     def __init__(self, model: SphereMagicShieldModel):
-        self.m = model
+        self.model = model
 
     def update(self):
         # pulso suave: oscila ±10% del radio base
-        t = self.m.elapsed()
+        t = self.model.elapsed()
         pulse = math.sin(t * 4) * 0.1  # frecuencia 4Hz
-        self.m.radius = int(self.m.base_radius * (1 + pulse))
+        self.model.radius = int(self.model.base_radius * (1 + pulse))
 
     def is_finished(self) -> bool:
-        return self.m.is_finished()
+        return self.model.is_finished()

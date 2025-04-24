@@ -6,13 +6,13 @@ class ArcaneFlameView:
     Vista del fuego arcano: delega en FirePixel.render().
     """
     def __init__(self, model: ArcaneFlameModel):
-        self.m = model
+        self.model = model
 
     def render(self, screen: pygame.Surface, camera):
-        if self.m.is_finished():
+        if self.model.is_finished():
             return
         # Cada FirePixel sabe cómo dibujarse
-        for row in self.m.pixels:
+        for row in self.model.pixels:
             for p in row:
                 if p:
                     p.render(screen, camera)

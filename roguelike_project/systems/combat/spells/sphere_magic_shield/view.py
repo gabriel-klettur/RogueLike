@@ -10,25 +10,25 @@ class SphereMagicShieldView:
     cuyo radio varía según el controlador.
     """
     def __init__(self, model: SphereMagicShieldModel):
-        self.m = model
+        self.model = model
 
     def render(self, screen, camera):
         # Si ya acabó, no dibujamos nada
-        if self.m.is_finished():
+        if self.model.is_finished():
             return None
 
         # Centro del jugador en mundo
-        px = self.m.player.x + self.m.player.sprite_size[0] // 2
-        py = self.m.player.y + self.m.player.sprite_size[1] // 2
-        radius = self.m.radius
+        px = self.model.player.x + self.model.player.sprite_size[0] // 2
+        py = self.model.player.y + self.model.player.sprite_size[1] // 2
+        radius = self.model.radius
 
         # Creamos una superficie con canal alfa
         surf = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
         # El escudo va desvaneciéndose al final
-        alpha = int(150 * (1 - self.m.elapsed() / self.m.duration))
+        alpha = int(150 * (1 - self.model.elapsed() / self.model.duration))
         pygame.draw.circle(
             surf,
-            (*self.m.color, alpha),
+            (*self.model.color, alpha),
             (radius, radius),
             radius,
             width=4

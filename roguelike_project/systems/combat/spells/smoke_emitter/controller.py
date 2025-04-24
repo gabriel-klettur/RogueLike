@@ -14,12 +14,12 @@ class SmokeEmitterController:
             p.apply_force(force)
 
     def update(self):
-        m = self.model
+        model = self.model
         # Generar nuevas partículas
-        for _ in range(m.emit_rate):
-            p = SmokeParticle(m.origin.x, m.origin.y, m.color)
-            m.particles.append(p)
+        for _ in range(model.emit_rate):
+            p = SmokeParticle(model.origin.x, model.origin.y, model.color)
+            model.particles.append(p)
         # Actualizar y filtrar
-        for p in m.particles:
+        for p in model.particles:
             p.update()
-        m.particles = [p for p in m.particles if not p.is_dead()]
+        model.particles = [p for p in model.particles if not p.is_dead()]

@@ -10,9 +10,9 @@ class SmokeController:
         self.model = model
 
     def update(self):
-        m = self.model
+        model = self.model
         # Actualizar cada partícula
-        for p in m.particles:
+        for p in model.particles:
             p.update()
         # Filtrar las que siguen vivas
-        m.particles = [p for p in m.particles if p.age < p.lifespan]
+        model.particles = [p for p in model.particles if p.age < p.lifespan]

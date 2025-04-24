@@ -12,19 +12,19 @@ class HealingAuraController:
         self.clock = clock
 
     def update(self):
-        m = self.model
+        model = self.model
         # Incrementa contador de frames
-        m.timer += 1
+        model.timer += 1
         # Genera nuevas partículas si aún está dentro de la duración
-        if m.timer <= m.duration:
+        if model.timer <= model.duration:
             for _ in range(3):
                 # Generación distribuida radial
                 angle = random.uniform(0, 2 * math.pi)
                 radius = random.uniform(0, 1) ** 0.5
-                half_w = m.player.sprite_size[0] / 2
+                half_w = model.player.sprite_size[0] / 2
                 offset_x = math.cos(angle) * radius * half_w
-                m.particles.append(HealingParticle(m.player, offset_x))
+                model.particles.append(HealingParticle(model.player, offset_x))
         # Actualiza y limpia partículas muertas
-        for p in m.particles:
+        for p in model.particles:
             p.update()
-        m.particles = [p for p in m.particles if not p.is_dead()]
+        model.particles = [p for p in model.particles if not p.is_dead()]

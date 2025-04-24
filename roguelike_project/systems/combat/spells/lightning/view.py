@@ -7,21 +7,22 @@ class LightningView:
     Renderiza la línea poligonal del rayo con alpha dinámico.
     """
     def __init__(self, model):
-        self.m = model
+        self.model = model
 
     def render(self, surface, camera):
-        if self.m.is_finished:
+        if self.model.is_finished():
             return None
+        print("⚡ Rendering Lightning")
 
         # Crea superficie temporal transparente
         temp = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
-        alpha = int(255 * (self.m.lifetime / self.m.max_lifetime))
+        alpha = int(255 * (self.model.lifetime / self.model.max_lifetime))
 
         # Color del rayo
         color = (random.randint(80,120), random.randint(180,230), 255, alpha)
 
         # Proyecta cada punto usando camera.apply
-        pts = [camera.apply(pt) for pt in self.m.points]
+        pts = [camera.apply(pt) for pt in self.model.points]
 
         # Dibuja segmentos
         for a, b in zip(pts, pts[1:]):

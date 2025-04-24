@@ -7,10 +7,10 @@ class LaserBeamView:
         self.model = model
 
     def render(self, screen, camera):
-        m = self.model
+        model = self.model
         # Renderizar cada partícula
-        for p in m.particles:
+        for p in model.particles:
             p.render(screen, camera)
         # Renderizar explosión en destino
-        if m.explosion:
-            m.explosion.render(screen, camera)
+        if model.explosion:
+            model.explosion.render(screen, camera)

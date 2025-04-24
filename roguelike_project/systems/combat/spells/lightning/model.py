@@ -34,7 +34,7 @@ class LightningModel:
     def update(self):
         # Decrece vida
         self.lifetime -= 1
+    
 
-    @property
     def is_finished(self) -> bool:
         return self.lifetime <= 0

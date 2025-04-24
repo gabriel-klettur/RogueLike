@@ -5,10 +5,10 @@ class ArcaneFlameController:
     Controlador del fuego arcano.
     """
     def __init__(self, model: ArcaneFlameModel):
-        self.m = model
+        self.model = model
 
     def update(self):
-        self.m.update()
+        self.model.update()
 
     def is_finished(self) -> bool:
-        return self.m.is_finished()
+        return self.model.is_finished()

@@ -6,15 +6,15 @@ class FireballView:
     Dibuja el sprite del fireball si sigue vivo.
     """
     def __init__(self, model):
-        self.m = model
+        self.model = model
 
     def render(self, screen, camera):
-        m = self.m
-        if not m.alive:
+        model = self.model
+        if not model.alive:
             return
         # Escalado según cámara
         scaled_sprite = pygame.transform.scale(
-            m.sprite,
-            camera.scale(m.size)
+            model.sprite,
+            camera.scale(model.size)
         )
-        screen.blit(scaled_sprite, camera.apply((m.x, m.y)))
+        screen.blit(scaled_sprite, camera.apply((model.x, model.y)))

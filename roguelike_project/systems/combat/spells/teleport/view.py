@@ -6,15 +6,15 @@ from roguelike_project.systems.combat.spells.teleport.model import TeleportModel
 
 class TeleportView:
     def __init__(self, model: TeleportModel):
-        self.m = model
+        self.model = model
 
     def render(self, screen, camera):
         # si ya acabó, nada que hacer
-        if self.m.is_finished():
+        if self.model.is_finished():
             return
 
-        elapsed = time.time() - self.m.start_time
-        total = self.m.lifespan
+        elapsed = time.time() - self.model.start_time
+        total = self.model.lifespan
         # factor 0→1 en cada fase
         t = min(1.0, elapsed / total)
 
@@ -30,7 +30,7 @@ class TeleportView:
         col  = (0, 200, 255, alpha)
 
         # definimos centro según fase
-        center_world = (self.m.start_pos if self.m.phase == "out" else self.m.end_pos)
+        center_world = (self.model.start_pos if self.model.phase == "out" else self.model.end_pos)
         center_px = camera.apply(center_world)
 
         # dibujamos anillo (grosor 4px)

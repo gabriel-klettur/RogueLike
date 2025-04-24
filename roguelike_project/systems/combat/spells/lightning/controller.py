@@ -9,14 +9,13 @@ class LightningController:
     comprobando colisión con enemigos si se desea.
     """
     def __init__(self, model: LightningModel, enemies: list):
-        self.m = model
+        self.model = model
         self.enemies = enemies
 
     def update(self):
         # Vida y colisiones opcionales
-        self.m.update()
+        self.model.update()
         # (Aquí podrías insertar lógica de daño continuo si quieres)
-
-    @property
-    def finished(self):
-        return self.m.is_finished
+    
+    def is_finished(self):
+        return self.model.is_finished()
