@@ -122,8 +122,7 @@ def handle_events(state):
 
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 2:
-                state.systems.effects.shooting_laser = False
-                state.systems.effects.lasers.clear()
+                state.systems.effects.shooting_laser = False                
 
     # ---------------------- MOVIMIENTO CONTINUO ---------------------- #
     if not state.show_menu:
