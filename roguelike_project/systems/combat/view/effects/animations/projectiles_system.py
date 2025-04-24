@@ -1,5 +1,3 @@
-from roguelike_project.systems.combat.view.effects.particles.spells.firework_launch import FireworkLaunch
-from roguelike_project.systems.combat.view.effects.particles.explosions.firework_explosion import FireworkExplosion
 from roguelike_project.utils.benchmark import benchmark
 from roguelike_project.systems.combat.view.effects.animations.fireball import Fireball
 import pygame
@@ -15,11 +13,6 @@ class ProjectilesManager:
         fireball = Fireball(*px, angle, self.state.systems.explosions)
         self.projectiles.append(fireball)
 
-    def spawn_firework(self):
-        px = self._player_center()
-        mouse = self._mouse_world()
-        self.fireworks.append(FireworkLaunch(px[0], px[1], *mouse))
-
     def update(self):
         tiles = [t for t in self.state.tiles if t.solid]
         enemies = self.state.enemies + list(self.state.remote_entities.values())
@@ -27,12 +20,6 @@ class ProjectilesManager:
         self.projectiles = [p for p in self.projectiles if p.alive]
         for p in self.projectiles:
             p.update(tiles, enemies)
-
-        for fw in self.fireworks[:]:
-            fw.update()
-            if fw.finished:
-                self.fireworks.remove(fw)
-                self.state.systems.explosions.add_explosion(FireworkExplosion(fw.x, fw.y))
 
     @benchmark(lambda self: self.state.perf_log, "----3.6.3 projectiles")
     def render(self, screen, camera):

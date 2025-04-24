@@ -31,7 +31,7 @@ def handle_events(state):
                     state.player.stats.last_shield_time = time.time()
 
             elif event.key == pygame.K_f:
-                state.combat.projectiles.spawn_firework()
+                state.systems.effects.spawn_firework()
                 state.player.stats.last_firework_time = time.time()
 
             elif event.key == pygame.K_r:
