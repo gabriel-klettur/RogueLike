@@ -54,7 +54,10 @@ from roguelike_project.systems.combat.spells.teleport.controller import Teleport
 from roguelike_project.systems.combat.spells.teleport.view       import TeleportView
 
 # MVC: SlashEffect (legacy)
-from roguelike_project.systems.combat.view.effects.particles.spells.slash_effect import SlashEffect
+from roguelike_project.systems.combat.spells.slash.model      import SlashModel
+from roguelike_project.systems.combat.spells.slash.controller import SlashController
+from roguelike_project.systems.combat.spells.slash.view       import SlashView
+
 
 # Legacy: DashTrail, DashBounce
 from roguelike_project.systems.combat.view.effects.particles.spells.dash_trail  import DashTrail
@@ -98,10 +101,12 @@ class SpellsSystem:
         self.teleport_controllers:      list[TeleportController]        = []
         self.teleport_views:            list[TeleportView]              = []
 
+        self.slash_controllers:         list[SlashController]           = []
+        self.slash_views:               list[SlashView]                 = []
+
         # Legacy lists
         self.dash_trails   = []
-        self.dash_bounces  = []
-        self.slash_effects = []
+        self.dash_bounces  = []        
 
         # Laser continuous
         self.shooting_laser = False
@@ -110,8 +115,15 @@ class SpellsSystem:
     # ------------------------------------------------ #
     #                   Spawn methods                  #
     # ------------------------------------------------ #
-    def spawn_slash_effect(self, player, direction):
-        self.slash_effects.append(SlashEffect(player, direction))
+    def spawn_slash(self, direction: Vector2):
+        px, py = self._player_center()
+        enemies = self.state.enemies + list(self.state.remote_entities.values())
+        model = SlashModel(px, py, direction)
+        ctrl = SlashController(model)
+        view = SlashView(model)
+        self.slash_controllers.append(ctrl)
+        self.slash_views.append(view)
+
 
     def spawn_laser(self, x, y, enemies):
         px, py = self._player_center()
@@ -270,15 +282,17 @@ class SpellsSystem:
         self.teleport_controllers = [c for c in self.teleport_controllers if not c.model.is_finished()]
         self.teleport_views       = [v for v in self.teleport_views       if not v.model.is_finished()]
 
+        # Slash
+        for c in self.slash_controllers: c.update()
+        self.slash_controllers = [c for c in self.slash_controllers if not c.model.is_finished()]
+        self.slash_views = [v for v in self.slash_views if not v.model.is_finished()]
+
         # Legacy: DashTrail, DashBounce
         for t in self.dash_trails: t.update()
         self.dash_trails   = [t for t in self.dash_trails   if not t.is_finished()]
         for b in self.dash_bounces: b.update()
         self.dash_bounces  = [b for b in self.dash_bounces  if not b.is_finished()]
-
-        # Legacy: SlashEffect
-        for e in self.slash_effects: e.update()
-        self.slash_effects = [e for e in self.slash_effects if not e.is_finished()]
+        
 
     # ------------------------------------------------ #
     #                     Render                       #
@@ -300,12 +314,11 @@ class SpellsSystem:
         for v in self.shield_views:
             if (d := v.render(screen, camera)): dirty_rects.append(d)
         for v in self.teleport_views:       v.render(screen, camera)
+        for v in self.slash_views:
+            if (d := v.render(screen, camera)):
+                dirty_rects.append(d)
+        
 
-        # Legacy: slash effect
-        for e in self.slash_effects:
-            if (d := e.render(screen, camera)): dirty_rects.append(d)
-
-        # Legacy: dash
         for t in self.dash_trails:
             if (d := t.render(screen, camera)): dirty_rects.append(d)
         for b in self.dash_bounces:

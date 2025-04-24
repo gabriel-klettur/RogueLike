@@ -11,8 +11,7 @@ class LightningView:
 
     def render(self, surface, camera):
         if self.model.is_finished():
-            return None
-        print("⚡ Rendering Lightning")
+            return None        
 
         # Crea superficie temporal transparente
         temp = pygame.Surface(surface.get_size(), pygame.SRCALPHA)

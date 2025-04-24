@@ -59,7 +59,15 @@ def handle_events(state):
                 state.player.movement.start_dash_towards_mouse()
 
             elif event.key == pygame.K_e:
-                state.player.attack.perform_basic_attack()
+                mx, my = pygame.mouse.get_pos()
+                world_x = mx / state.camera.zoom + state.camera.offset_x
+                world_y = my / state.camera.zoom + state.camera.offset_y
+                px, py = state.systems.effects._player_center()
+                dir_vec = pygame.math.Vector2(world_x - px, world_y - py)
+                if dir_vec.length():
+                    dir_vec.normalize_ip()
+                state.systems.effects.spawn_slash(dir_vec)
+                state.player.stats.last_slash_time = time.time()
 
             # ---------- TEST / DEBUG ---------- #
             elif event.key == pygame.K_F10:
