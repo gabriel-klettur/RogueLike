@@ -5,7 +5,7 @@ import os
 from src.roguelike_engine.utils.loader import load_image
 from src.roguelike_engine.config import TILE_SIZE
 from src.roguelike_engine.map.tile import Tile
-from src.roguelike_engine.config_tiles import OVERLAY_CODE_MAP, DEFAULT_TILE_MAP
+from roguelike_game.config_tiles import OVERLAY_CODE_MAP, DEFAULT_TILE_MAP
 
 
 def load_tile_images(theme="default"):
