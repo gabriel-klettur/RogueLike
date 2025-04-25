@@ -1,8 +1,8 @@
 # File: roguelike_project/systems/combat/spells/laser_beam/model.py
 import math
 import random
-from roguelike_project.systems.combat.view.effects.particles.particle import Particle
-from roguelike_project.systems.combat.view.effects.particles.explosions.electric import ElectricExplosion
+from roguelike_project.systems.particles.particle import Particle
+from roguelike_project.systems.combat.explosions.electric import ElectricExplosion
 
 class LaserBeamModel:
     """

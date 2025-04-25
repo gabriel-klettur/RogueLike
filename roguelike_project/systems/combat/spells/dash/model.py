@@ -4,7 +4,7 @@ import time
 import math
 import random
 
-from roguelike_project.systems.combat.view.effects.particles.particle import Particle
+from roguelike_project.systems.particles.particle import Particle
 
 class DashModel:
     """

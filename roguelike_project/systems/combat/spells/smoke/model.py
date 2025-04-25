@@ -1,7 +1,7 @@
 # File: roguelike_project/systems/combat/spells/smoke/model.py
 import math
 import random
-from roguelike_project.systems.combat.view.effects.particles.particle import Particle
+from roguelike_project.systems.particles.particle import Particle
 
 class SmokeModel:
     """

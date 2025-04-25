@@ -1,7 +1,7 @@
 # roguelike_project/systems/combat/spells/fireball/controller.py
 from pygame import Rect
 from roguelike_project.systems.combat.spells.fireball.model import FireballModel
-from roguelike_project.systems.combat.view.effects.particles.explosions.fire import FireExplosion
+from roguelike_project.systems.combat.explosions.fire import FireExplosion
 
 class FireballController:
     """

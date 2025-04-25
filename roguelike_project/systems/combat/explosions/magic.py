@@ -2,7 +2,7 @@
 
 import random
 import math
-from roguelike_project.systems.effects.particles.particle import Particle
+from roguelike_project.systems.particles.particle import Particle
 
 class MagicExplosion:
     def __init__(self, x, y, particle_count=30):

@@ -2,7 +2,6 @@
 import math
 import pygame
 from roguelike_project.utils.loader import load_image
-from roguelike_project.systems.combat.view.effects.particles.explosions.fire import FireExplosion
 
 class FireballModel:
     """
