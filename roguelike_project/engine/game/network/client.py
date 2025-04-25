@@ -4,7 +4,6 @@ import websocket
 import json
 import time
 import uuid
-import socket
 
 class WebSocketClient:
     def __init__(self, url, player):

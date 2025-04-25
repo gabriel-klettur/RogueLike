@@ -16,7 +16,7 @@ from roguelike_project.engine.game.systems.state import GameState
 from roguelike_project.engine.game.systems.map_manager import build_map
 from roguelike_project.engine.game.systems.entity import load_entities
 from roguelike_project.engine.game.systems.multiplayer_manager import NetworkManager
-from roguelike_project.ui.menus.menu import Menu
+from roguelike_project.engine.game.ui.menus.menu import Menu
 from roguelike_project.engine.camera import Camera
 from roguelike_project.engine.game.render.render import Renderer
 from roguelike_project.engine.game.update_manager import update_game
