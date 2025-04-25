@@ -1,6 +1,6 @@
 import pygame
 import time
-import src.roguelike_project.config as config
+import src.roguelike_engine.config as config
 from src.roguelike_engine.utils.loader import load_image
 from src.roguelike_engine.utils.mouse import get_direction_from_angle, draw_mouse_crosshair
 from src.roguelike_engine.utils.debug import draw_player_aim_line

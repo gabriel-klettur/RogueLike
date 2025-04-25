@@ -6,7 +6,7 @@ Se aplican solo si el modo DEBUG está activo.
 """
 
 import pygame
-import src.roguelike_project.config as config
+import src.roguelike_engine.config as config
 from .logic import is_above, is_below
 
 def apply_z_visual_effect(entity, player, screen, camera, z_state):

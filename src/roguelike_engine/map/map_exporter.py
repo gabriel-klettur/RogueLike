@@ -1,7 +1,7 @@
 # src/roguelike_project/engine/game/systems/map/map_exporter.py
 import os
 import re
-from roguelike_project.config import MAP_DEBUG_DIR
+from roguelike_engine.config import MAP_DEBUG_DIR
 
 def save_map_with_autoname(map_data):
     # Asegurar que exista la carpeta

@@ -1,7 +1,7 @@
 # src.roguelike_project/map/dungeon_generator.py
 
 import random
-from src.roguelike_project.config import DUNGEON_WIDTH, DUNGEON_HEIGHT
+from src.roguelike_engine.config import DUNGEON_WIDTH, DUNGEON_HEIGHT
 from src.roguelike_engine.map.geometry import intersect, center_of
 
 def generate_dungeon_map(

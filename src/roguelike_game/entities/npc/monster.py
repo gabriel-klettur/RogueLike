@@ -1,6 +1,6 @@
 import pygame
 from src.roguelike_engine.utils.loader import load_image
-import src.roguelike_project.config as config
+import src.roguelike_engine.config as config
 
 class Monster:
     def __init__(self, x, y, name="Monster"):

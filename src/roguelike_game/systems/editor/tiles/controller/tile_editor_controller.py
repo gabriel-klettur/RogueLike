@@ -2,8 +2,8 @@
 
 import pygame
 from pathlib import Path
-from src.roguelike_project.config import TILE_SIZE
-from src.roguelike_project.config_tiles import OVERLAY_CODE_MAP, INVERSE_OVERLAY_MAP, DEFAULT_TILE_MAP
+from src.roguelike_engine.config import TILE_SIZE
+from src.roguelike_engine.config_tiles import OVERLAY_CODE_MAP, INVERSE_OVERLAY_MAP, DEFAULT_TILE_MAP
 
 from src.roguelike_game.systems.editor.tiles.controller.tools.tile_picker import TilePicker
 from src.roguelike_game.systems.editor.tiles.controller.tools.tile_toolbar import TileToolbar

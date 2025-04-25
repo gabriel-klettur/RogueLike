@@ -1,7 +1,7 @@
 # src/roguelike_project/engine/game/systems/map/overlay_manager.py
 import os
 import json
-from src.roguelike_project.config import TILES_DATA_PATH
+from src.roguelike_engine.config import TILES_DATA_PATH
 
 """
 Funciones para cargar y guardar la capa overlay de un mapa.

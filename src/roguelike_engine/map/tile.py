@@ -1,7 +1,7 @@
 import pygame
 
-import src.roguelike_project.config as config
-from src.roguelike_project.config import TILE_SIZE
+import src.roguelike_engine.config as config
+from src.roguelike_engine.config import TILE_SIZE
 
 class Tile:
     def __init__(self, x, y, tile_type, sprite):

@@ -7,19 +7,19 @@ import pygame
 # Agregar el path del proyecto
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..")))
 
-from src.roguelike_project.config import (
+from src.roguelike_engine.config import (
     SCREEN_WIDTH, SCREEN_HEIGHT, FONT_NAME, FONT_SIZE, FPS
 )
 from src.roguelike_engine.input.events import handle_events
 
-from src.roguelike_project.engine.game.systems.state import GameState
+from roguelike_game.state import GameState
 from roguelike_engine.map_manager import build_map
-from src.roguelike_project.engine.game.systems.entity import load_entities
-from src.roguelike_project.engine.game.systems.multiplayer_manager import NetworkManager
+from roguelike_game.load_entities import load_entities
+from roguelike_game.multiplayer_manager import NetworkManager
 from src.roguelike_game.ui.menus.menu import Menu
-from src.roguelike_project.engine.camera import Camera
+from roguelike_engine.camera import Camera
 from src.roguelike_project.engine.game.render.render import Renderer
-from src.roguelike_project.engine.game.update_manager import update_game
+from src.roguelike_game.update_manager import update_game
 from src.roguelike_game.systems.systems_manager import SystemsManager
 
 # Building‑editor: controlador, vista y handler de eventos

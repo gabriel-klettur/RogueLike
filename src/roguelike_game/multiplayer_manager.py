@@ -1,5 +1,5 @@
 from src.roguelike_game.network.client import WebSocketClient
-from src.roguelike_project.config import WEBSOCKET_URL
+from src.roguelike_engine.config import WEBSOCKET_URL
 
 
 class NetworkManager:

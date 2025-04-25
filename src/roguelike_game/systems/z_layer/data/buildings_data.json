@@ -90,8 +90,8 @@
         "z": 3
     },
     {
-        "x": 115,
-        "y": 282,
+        "x": -21,
+        "y": 436,
         "image_path": "assets/buildings/others/portal_2.png",
         "solid": true,
         "scale": [

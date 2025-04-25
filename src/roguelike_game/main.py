@@ -1,17 +1,15 @@
 import sys
 import os
-import time
 import pygame
 from collections import defaultdict
 
-# Agregar el path del proyecto
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from src.roguelike_project.engine.game.game import Game
-from src.roguelike_project.config import FPS, SCREEN_WIDTH, SCREEN_HEIGHT
-import src.roguelike_project.config as config
+from src.roguelike_game.game import Game
+from src.roguelike_engine.config import FPS, SCREEN_WIDTH, SCREEN_HEIGHT
+import src.roguelike_engine.config as config
 
-from src.roguelike_engine.utils.benchmark import benchmark  # ✅ Decorador profesional
+from src.roguelike_engine.utils.benchmark import benchmark 
 
 # --- Debug Tools ---
 def init_debug():
