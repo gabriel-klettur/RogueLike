@@ -3,10 +3,11 @@ import pygame
 from pathlib import Path
 from src.roguelike_engine.utils.loader import load_image
 from src.roguelike_project.config import TILE_SIZE
-from src.roguelike_project.engine.game.systems.map.overlay_manager import save_overlay
+from src.roguelike_engine.map.overlay_manager import save_overlay
 from src.roguelike_project.config_tiles import INVERSE_OVERLAY_MAP
 
 from src.roguelike_game.systems.editor.tiles.tiles_editor_config import PAD, THUMB, COLS, CLR_BORDER
+from src.roguelike_engine.map.tile_loader import load_tile_images
 
 class TilePicker:
     """
@@ -144,8 +145,7 @@ class TilePicker:
             self._persistir_overlay(tile, "")
         self._close()
 
-    def _set_default(self):
-        from src.roguelike_project.engine.game.systems.map.tile_loader import load_tile_images
+    def _set_default(self):        
         tile = self.editor.selected_tile
         if tile:
             imgs = load_tile_images().get(tile.tile_type)
