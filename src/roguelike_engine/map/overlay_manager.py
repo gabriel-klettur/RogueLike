@@ -1,7 +1,8 @@
-# src/roguelike_project/engine/game/systems/map/overlay_manager.py
+# src/roguelike_engine/map/overlay_manager.py
+
 import os
 import json
-from src.roguelike_engine.config import TILES_DATA_PATH
+from roguelike_engine.config import TILES_DATA_PATH
 
 """
 Funciones para cargar y guardar la capa overlay de un mapa.
@@ -13,7 +14,6 @@ def load_overlay(map_name: str) -> list[list[str]] | None:
     Carga la capa overlay para un mapa dado desde TILES_DATA_PATH.
     Retorna None si no existe.
     """
-    # Ruta absoluta al archivo overlay
     path = os.path.join(TILES_DATA_PATH, f"{map_name}.overlay.json")
     if not os.path.isfile(path):
         return None
@@ -25,7 +25,6 @@ def save_overlay(map_name: str, overlay: list[list[str]]) -> None:
     """
     Guarda la capa overlay en TILES_DATA_PATH.
     """
-    # Asegurar que exista la carpeta
     os.makedirs(TILES_DATA_PATH, exist_ok=True)
     path = os.path.join(TILES_DATA_PATH, f"{map_name}.overlay.json")
     with open(path, "w", encoding="utf-8") as f:
