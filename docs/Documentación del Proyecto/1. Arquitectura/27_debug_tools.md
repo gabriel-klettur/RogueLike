@@ -127,7 +127,7 @@ Una consola interna en el cliente puede facilitar pruebas, administración e ins
 Propuesta para separar herramientas:
 
 ```
-roguelike_project/
+src.roguelike_project/
 ├── core/
 │   └── game/
 │       ├── logic/
