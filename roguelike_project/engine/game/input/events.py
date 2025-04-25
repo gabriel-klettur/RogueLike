@@ -1,7 +1,6 @@
 import pygame
 import time
-from roguelike_project.network.client import WebSocketClient
-from roguelike_project.systems.combat.view.effects.particles.explosions.fire import FireExplosion
+from roguelike_project.engine.game.network.client import WebSocketClient
 import roguelike_project.config as config
 
 def handle_events(state):
@@ -31,11 +30,15 @@ def handle_events(state):
                     state.player.stats.last_shield_time = time.time()
 
             elif event.key == pygame.K_f:
-                state.combat.projectiles.spawn_firework()
+                state.systems.effects.spawn_firework()
                 state.player.stats.last_firework_time = time.time()
 
             elif event.key == pygame.K_r:
                 state.systems.effects.spawn_smoke_emitter()
+                state.player.stats.last_smoke_time = time.time()
+
+            elif event.key == pygame.K_t:
+                state.systems.effects.spawn_smoke()
                 state.player.stats.last_smoke_time = time.time()
 
             elif event.key == pygame.K_z:
@@ -46,21 +49,34 @@ def handle_events(state):
                 state.player.stats.last_lightning_time = time.time()
 
             elif event.key == pygame.K_x:
-                x, y = state.systems.effects._mouse_world()
-                state.systems.effects.spawn_pixel_fire(x, y)
-                state.player.stats.last_pixel_fire_time = time.time()
+                mx, my = pygame.mouse.get_pos()
+                wx = mx / state.camera.zoom + state.camera.offset_x
+                wy = my / state.camera.zoom + state.camera.offset_y
+                state.systems.effects.spawn_arcane_flame(wx, wy)
 
             elif event.key == pygame.K_v:
-                state.player.movement.start_dash_towards_mouse()
+                mx, my = pygame.mouse.get_pos()
+                wx = mx / state.camera.zoom + state.camera.offset_x
+                wy = my / state.camera.zoom + state.camera.offset_y
+                px, py = state.systems.effects._player_center()
+                dir_vec = pygame.math.Vector2(wx - px, wy - py)
+                if dir_vec.length():
+                    dir_vec.normalize_ip()
+                state.systems.effects.spawn_dash(state.player, dir_vec)
+                state.player.stats.last_dash_time = time.time()
 
             elif event.key == pygame.K_e:
-                state.player.attack.perform_basic_attack()
+                mx, my = pygame.mouse.get_pos()
+                world_x = mx / state.camera.zoom + state.camera.offset_x
+                world_y = my / state.camera.zoom + state.camera.offset_y
+                px, py = state.systems.effects._player_center()
+                dir_vec = pygame.math.Vector2(world_x - px, world_y - py)
+                if dir_vec.length():
+                    dir_vec.normalize_ip()
+                state.systems.effects.spawn_slash(dir_vec)
+                state.player.stats.last_slash_time = time.time()
 
             # ---------- TEST / DEBUG ---------- #
-            elif event.key == pygame.K_t:
-                print("🧪 Test de explosión manual con tecla T")
-                state.systems.explosions.add_explosion(FireExplosion(state.player.x, state.player.y))
-
             elif event.key == pygame.K_F10:
                 if hasattr(state, "editor"):
                     state.editor.active = not state.editor.active
@@ -70,21 +86,19 @@ def handle_events(state):
                 config.DEBUG = not config.DEBUG
                 print(f"🧪 DEBUG {'activado' if config.DEBUG else 'desactivado'}")
 
-            # ---------- TILE‑EDITOR (F8) --------- #
+            # ---------- TILE-EDITOR (F8) --------- #
             elif event.key == pygame.K_F8:
-                # ⇄ Activar / desactivar el editor de tiles
                 new_val = not getattr(state, "tile_editor_active", False)
                 state.tile_editor_active = new_val
                 if hasattr(state, "tile_editor_state"):
                     tes = state.tile_editor_state
                     tes.active = new_val
                     if not new_val:
-                        # ⏹️ Cerramos paleta y limpiamos selección
                         tes.picker_open    = False
                         tes.selected_tile  = None
                         tes.current_choice = None
-                print("🟩 Tile‑Editor ON" if new_val else "🟥 Tile‑Editor OFF")
-                return                              # evitamos procesar más atajos ese frame
+                print("🟩 Tile-Editor ON" if new_val else "🟥 Tile-Editor OFF")
+                return  # evitamos más atajos este frame
 
         # ------------------------------------------------------------- #
         #                       WHEEL / MOUSE                           #
@@ -107,7 +121,7 @@ def handle_events(state):
                 dx = world_mouse_x - player_center_x
                 dy = world_mouse_y - player_center_y
                 angle = -pygame.math.Vector2(dx, dy).angle_to((1, 0))
-                state.combat.projectiles.spawn_fireball(angle)
+                state.systems.effects.spawn_fireball(angle)
 
             elif event.button == 2:
                 state.systems.effects.shooting_laser = True
@@ -117,13 +131,12 @@ def handle_events(state):
                 mx, my = pygame.mouse.get_pos()
                 world_x = mx / state.camera.zoom + state.camera.offset_x
                 world_y = my / state.camera.zoom + state.camera.offset_y
-                state.player.movement.teleport(world_x, world_y)
-                state.systems.effects.spawn_teleport_beam(state.player.x, state.player.y)
+                state.player.movement.teleport(world_x, world_y)            
+                state.systems.effects.spawn_teleport(world_x, world_y)
 
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 2:
                 state.systems.effects.shooting_laser = False
-                state.systems.effects.lasers.clear()
 
     # ---------------------- MOVIMIENTO CONTINUO ---------------------- #
     if not state.show_menu:
@@ -138,7 +151,7 @@ def handle_events(state):
         solid_tiles = [tile for tile in state.tiles if tile.solid]
         state.player.move(dx, dy, state.obstacles, solid_tiles)
 
-    # 🔁 Fuego continuo de láser
+    # 🔁 Fuego continuo de láser
     if state.systems.effects.shooting_laser:
         now = time.time()
         if now - state.systems.effects.last_laser_time >= 0.01:

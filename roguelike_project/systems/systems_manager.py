@@ -1,31 +1,25 @@
 # roguelike_project/systems/systems_manager.py
 
-from roguelike_project.systems.combat.combat_system import CombatSystem
-from roguelike_project.systems.combat.view.effects.particles.spells_system import SpellsSystem
+from roguelike_project.systems.combat.spells.spells_system import SpellsSystem
 
-from roguelike_project.systems.combat.view.effects.particles.explosions_system import ExplosionSystem
+from roguelike_project.systems.combat.explosions.explosions_system import ExplosionSystem
 
 class SystemsManager:
-    def __init__(self, state):
-        self.combat = CombatSystem(state)
+    def __init__(self, state):        
         self.effects = SpellsSystem(state)
         self.explosions = ExplosionSystem(state)
         
 
-    def update(self):
-        self.combat.update()
+    def update(self):        
         self.effects.update()        
         self.explosions.update()
 
     def render(self, screen, camera):
-        return (
-            self._render_combat(screen, camera) +
+        return (        
             self._render_effects(screen, camera) +            
             self._render_explosions(screen, camera)
         )
-    
-    def _render_combat(self, screen, camera):
-        return self.combat.render(screen, camera)
+        
     
     def _render_effects(self, screen, camera):
         return self.effects.render(screen, camera)

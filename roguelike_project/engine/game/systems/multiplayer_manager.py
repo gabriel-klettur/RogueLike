@@ -1,4 +1,4 @@
-from roguelike_project.network.client import WebSocketClient
+from roguelike_project.engine.game.network.client import WebSocketClient
 from roguelike_project.config import WEBSOCKET_URL
 
 
