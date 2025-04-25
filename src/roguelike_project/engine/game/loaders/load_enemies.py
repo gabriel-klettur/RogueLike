@@ -1,4 +1,4 @@
-from src.roguelike_project.engine.game.entities.npc.monster import Monster
+from src.roguelike_game.entities.npc.monster import Monster
 
 def load_enemies():
     return [

@@ -11,8 +11,8 @@ import src.roguelike_project.config as config
 from src.roguelike_project.utils.debug_overlay import render_debug_overlay
 
 # 🆕 Sistema Z
-from src.roguelike_project.systems.z_layer.render import render_z_ordered
-from src.roguelike_project.systems.z_layer.visual_effects import apply_z_visual_effect
+from src.roguelike_game.systems.z_layer.render import render_z_ordered
+from src.roguelike_game.systems.z_layer.visual_effects import apply_z_visual_effect
 
 
 class Renderer:

@@ -20,23 +20,23 @@ from src.roguelike_project.engine.game.ui.menus.menu import Menu
 from src.roguelike_project.engine.camera import Camera
 from src.roguelike_project.engine.game.render.render import Renderer
 from src.roguelike_project.engine.game.update_manager import update_game
-from src.roguelike_project.systems.systems_manager import SystemsManager
+from src.roguelike_game.systems.systems_manager import SystemsManager
 
 # Building‑editor: controlador, vista y handler de eventos
-from src.roguelike_project.systems.editor.buildings.model.building_editor_state import BuildingsEditorState
-from src.roguelike_project.systems.editor.buildings.controller.building_editor_controller import BuildingEditorController
-from src.roguelike_project.systems.editor.buildings.view.building_editor_view import BuildingEditorView
-from src.roguelike_project.systems.editor.buildings.controller.building_editor_events import BuildingEditorEventHandler
+from src.roguelike_game.systems.editor.buildings.model.building_editor_state import BuildingsEditorState
+from src.roguelike_game.systems.editor.buildings.controller.building_editor_controller import BuildingEditorController
+from src.roguelike_game.systems.editor.buildings.view.building_editor_view import BuildingEditorView
+from src.roguelike_game.systems.editor.buildings.controller.building_editor_events import BuildingEditorEventHandler
 
 # Tile‑editor: controlador, vista y handler de eventos
-from src.roguelike_project.systems.editor.tiles.model.tile_editor_state import TileEditorControllerState
-from src.roguelike_project.systems.editor.tiles.controller.tile_editor_controller import TileEditorController
-from src.roguelike_project.systems.editor.tiles.view.tile_editor_view import TileEditorControllerView
-from src.roguelike_project.systems.editor.tiles.controller.tile_editor_events import TileEditorEventHandler
+from src.roguelike_game.systems.editor.tiles.model.tile_editor_state import TileEditorControllerState
+from src.roguelike_game.systems.editor.tiles.controller.tile_editor_controller import TileEditorController
+from src.roguelike_game.systems.editor.tiles.view.tile_editor_view import TileEditorControllerView
+from src.roguelike_game.systems.editor.tiles.controller.tile_editor_events import TileEditorEventHandler
 
 # Z‑Layer
-from src.roguelike_project.systems.z_layer.state import ZState
-from src.roguelike_project.systems.z_layer.config import Z_LAYERS
+from src.roguelike_game.systems.z_layer.state import ZState
+from src.roguelike_game.systems.z_layer.config import Z_LAYERS
 
 class Game:
     def __init__(self, screen, perf_log=None, map_name: str = None):

@@ -63,4 +63,4 @@ TILES_DATA_PATH = os.path.join(
     "engine", "game", "systems", "map", "overlay"
 )
 
-BUILDINGS_DATA_PATH = "src/roguelike_project/systems/z_layer/data/buildings_data.json"
+BUILDINGS_DATA_PATH = "src/roguelike_game/systems/z_layer/data/buildings_data.json"

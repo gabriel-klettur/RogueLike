@@ -1,4 +1,4 @@
-from src.roguelike_project.engine.game.entities.obstacles.obstacle import Obstacle
+from src.roguelike_game.entities.obstacles.obstacle import Obstacle
 
 def load_obstacles():
     return [
