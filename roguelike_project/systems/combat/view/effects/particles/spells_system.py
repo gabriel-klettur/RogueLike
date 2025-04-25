@@ -58,11 +58,12 @@ from roguelike_project.systems.combat.spells.slash.model      import SlashModel
 from roguelike_project.systems.combat.spells.slash.controller import SlashController
 from roguelike_project.systems.combat.spells.slash.view       import SlashView
 
-
 # Legacy: DashTrail, DashBounce
-from roguelike_project.systems.combat.view.effects.particles.spells.dash_trail  import DashTrail
-from roguelike_project.systems.combat.view.effects.particles.spells.dash_bounce import DashBounce
+from roguelike_project.systems.combat.spells.dash.model      import DashModel
+from roguelike_project.systems.combat.spells.dash.controller import DashController
+from roguelike_project.systems.combat.spells.dash.view       import DashView
 
+# Benchmarking
 from roguelike_project.utils.benchmark import benchmark
 
 
@@ -103,10 +104,9 @@ class SpellsSystem:
 
         self.slash_controllers:         list[SlashController]           = []
         self.slash_views:               list[SlashView]                 = []
-
-        # Legacy lists
-        self.dash_trails   = []
-        self.dash_bounces  = []        
+        
+        self.dash_controllers:          list[DashController]            = []
+        self.dash_views:                list[DashView]                  = []
 
         # Laser continuous
         self.shooting_laser = False
@@ -115,9 +115,17 @@ class SpellsSystem:
     # ------------------------------------------------ #
     #                   Spawn methods                  #
     # ------------------------------------------------ #
+
+    def spawn_dash(self, player, direction: pygame.Vector2):
+        model = DashModel(player, direction)
+        ctrl  = DashController(model)
+        view  = DashView(model)
+        self.dash_controllers.append(ctrl)
+        self.dash_views.append(view)
+
     def spawn_slash(self, direction: Vector2):
         px, py = self._player_center()
-        enemies = self.state.enemies + list(self.state.remote_entities.values())
+        #enemies = self.state.enemies + list(self.state.remote_entities.values())   #!Futura implementación
         model = SlashModel(px, py, direction)
         ctrl = SlashController(model)
         view = SlashView(model)
@@ -217,15 +225,6 @@ class SpellsSystem:
         self.teleport_controllers.append(ctrl)
         self.teleport_views.append(view)
 
-    def spawn_dash_trail(self, player, direction):
-        self.dash_trails.append(DashTrail(player, direction))
-
-    def stop_dash_trails(self):
-        for t in self.dash_trails: t.stop()
-
-    def spawn_dash_bounce(self, x, y):
-        self.dash_bounces.append(DashBounce(x, y))
-
     # ------------------------------------------------ #
     #                     Update                       #
     # ------------------------------------------------ #
@@ -287,11 +286,10 @@ class SpellsSystem:
         self.slash_controllers = [c for c in self.slash_controllers if not c.model.is_finished()]
         self.slash_views = [v for v in self.slash_views if not v.model.is_finished()]
 
-        # Legacy: DashTrail, DashBounce
-        for t in self.dash_trails: t.update()
-        self.dash_trails   = [t for t in self.dash_trails   if not t.is_finished()]
-        for b in self.dash_bounces: b.update()
-        self.dash_bounces  = [b for b in self.dash_bounces  if not b.is_finished()]
+        #Dash
+        for c in self.dash_controllers: c.update()
+        self.dash_controllers = [c for c in self.dash_controllers if not c.is_finished()]
+        self.dash_views       = [v for v in self.dash_views       if not v.model.is_finished()]
         
 
     # ------------------------------------------------ #
@@ -316,13 +314,10 @@ class SpellsSystem:
         for v in self.teleport_views:       v.render(screen, camera)
         for v in self.slash_views:
             if (d := v.render(screen, camera)):
+                dirty_rects.append(d)        
+        for v in self.dash_views:
+            if (d := v.render(screen, camera)):
                 dirty_rects.append(d)
-        
-
-        for t in self.dash_trails:
-            if (d := t.render(screen, camera)): dirty_rects.append(d)
-        for b in self.dash_bounces:
-            if (d := b.render(screen, camera)): dirty_rects.append(d)
 
         return dirty_rects
 

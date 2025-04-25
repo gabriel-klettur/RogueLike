@@ -55,7 +55,15 @@ def handle_events(state):
                 state.systems.effects.spawn_arcane_flame(wx, wy)
 
             elif event.key == pygame.K_v:
-                state.player.movement.start_dash_towards_mouse()
+                mx, my = pygame.mouse.get_pos()
+                wx = mx / state.camera.zoom + state.camera.offset_x
+                wy = my / state.camera.zoom + state.camera.offset_y
+                px, py = state.systems.effects._player_center()
+                dir_vec = pygame.math.Vector2(wx - px, wy - py)
+                if dir_vec.length():
+                    dir_vec.normalize_ip()
+                state.systems.effects.spawn_dash(state.player, dir_vec)
+                state.player.stats.last_dash_time = time.time()
 
             elif event.key == pygame.K_e:
                 mx, my = pygame.mouse.get_pos()
