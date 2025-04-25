@@ -1,6 +1,6 @@
 import pygame
 import time
-from src.roguelike_project.engine.game.network.client import WebSocketClient
+from src.roguelike_game.network.client import WebSocketClient
 import src.roguelike_project.config as config
 
 def handle_events(state):
