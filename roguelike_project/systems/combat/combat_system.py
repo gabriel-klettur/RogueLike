@@ -2,7 +2,7 @@
 import math
 import pygame
 
-from roguelike_project.systems.effects.animations.projectiles_system import ProjectilesManager
+from roguelike_project.systems.combat.view.effects.animations.projectiles_system import ProjectilesManager
 
 class CombatSystem:
     def __init__(self, state):
