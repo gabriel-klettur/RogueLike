@@ -5,7 +5,7 @@ from collections import defaultdict
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from src.roguelike_game.game import Game
+from src.roguelike_game.game.game import Game
 from src.roguelike_engine.config import FPS, SCREEN_WIDTH, SCREEN_HEIGHT
 import src.roguelike_engine.config as config
 

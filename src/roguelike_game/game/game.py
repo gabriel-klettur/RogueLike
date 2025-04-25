@@ -12,14 +12,14 @@ from src.roguelike_engine.config import (
 )
 from src.roguelike_engine.input.events import handle_events
 
-from roguelike_game.state import GameState
+from roguelike_game.game.state import GameState
 from roguelike_engine.map_manager import build_map
 from roguelike_game.load_entities import load_entities
 from roguelike_game.multiplayer_manager import NetworkManager
 from src.roguelike_game.ui.menus.menu import Menu
 from roguelike_engine.camera import Camera
-from roguelike_game.render_manager import Renderer
-from src.roguelike_game.update_manager import update_game
+from roguelike_game.game.render_manager import Renderer
+from src.roguelike_game.game.update_manager import update_game
 from src.roguelike_game.systems.systems_manager import SystemsManager
 
 # Building‑editor: controlador, vista y handler de eventos
