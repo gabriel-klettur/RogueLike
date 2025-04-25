@@ -85,6 +85,21 @@ def handle_events(state):
                         tes.current_choice = None
                 print("🟩 Tile‑Editor ON" if new_val else "🟥 Tile‑Editor OFF")
                 return                              # evitamos procesar más atajos ese frame
+            
+            # ---------- Monster Spawner (F7) --------- #
+            elif event.key == pygame.K_F7:
+                print("Monster positions:")
+
+                for entity in state.enemies:
+                    print(f"- {entity.name} at ({entity.x}, {entity.y})")
+
+                from roguelike_project.entities.npc.monster import Monster
+
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+                world_x = round(mouse_x / state.camera.zoom + state.camera.offset_x)
+                world_y = round(mouse_y / state.camera.zoom + state.camera.offset_y)
+                print(f"Spawning enemy at {world_x}, {world_y}")
+                state.enemies.append(Monster(world_x, world_y)) 
 
         # ------------------------------------------------------------- #
         #                       WHEEL / MOUSE                           #
