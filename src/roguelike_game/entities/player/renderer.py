@@ -1,9 +1,9 @@
 import pygame
 import time
 import src.roguelike_project.config as config
-from src.roguelike_project.utils.loader import load_image
-from src.roguelike_project.utils.mouse import get_direction_from_angle, draw_mouse_crosshair
-from src.roguelike_project.utils.debug import draw_player_aim_line
+from src.roguelike_engine.utils.loader import load_image
+from src.roguelike_engine.utils.mouse import get_direction_from_angle, draw_mouse_crosshair
+from src.roguelike_engine.utils.debug import draw_player_aim_line
 
 
 class PlayerRenderer:

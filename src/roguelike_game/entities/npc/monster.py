@@ -1,5 +1,5 @@
 import pygame
-from src.roguelike_project.utils.loader import load_image
+from src.roguelike_engine.utils.loader import load_image
 import src.roguelike_project.config as config
 
 class Monster:

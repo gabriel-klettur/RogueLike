@@ -3,12 +3,12 @@
 import time
 import pygame
 
-from src.roguelike_project.engine.game.systems.multiplayer.multiplayer import render_remote_players
+from roguelike_game.network.render_multiplayer import render_remote_players
 from src.roguelike_project.engine.game.render.minimap.minimap import render_minimap
-from src.roguelike_project.utils.mouse import draw_mouse_crosshair
+from src.roguelike_engine.utils.mouse import draw_mouse_crosshair
 from src.roguelike_project.config import TILE_SIZE
 import src.roguelike_project.config as config
-from src.roguelike_project.utils.debug_overlay import render_debug_overlay
+from src.roguelike_engine.utils.debug_overlay import render_debug_overlay
 
 # 🆕 Sistema Z
 from src.roguelike_game.systems.z_layer.render import render_z_ordered

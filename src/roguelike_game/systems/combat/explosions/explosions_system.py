@@ -1,4 +1,4 @@
-from src.roguelike_project.utils.benchmark import benchmark
+from src.roguelike_engine.utils.benchmark import benchmark
 
 class ExplosionSystem:
     def __init__(self, state):

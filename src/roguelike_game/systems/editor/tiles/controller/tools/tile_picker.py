@@ -1,7 +1,7 @@
 # src.roguelike_project/systems/editor/tiles/tile_picker.py
 import pygame
 from pathlib import Path
-from src.roguelike_project.utils.loader import load_image
+from src.roguelike_engine.utils.loader import load_image
 from src.roguelike_project.config import TILE_SIZE
 from src.roguelike_project.engine.game.systems.map.overlay_manager import save_overlay
 from src.roguelike_project.config_tiles import INVERSE_OVERLAY_MAP

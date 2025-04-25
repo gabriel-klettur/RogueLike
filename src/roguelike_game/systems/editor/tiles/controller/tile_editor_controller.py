@@ -9,7 +9,7 @@ from src.roguelike_game.systems.editor.tiles.controller.tools.tile_picker import
 from src.roguelike_game.systems.editor.tiles.controller.tools.tile_toolbar import TileToolbar
 
 from src.roguelike_project.engine.game.systems.map.overlay_manager import save_overlay
-from src.roguelike_project.utils.loader import load_image
+from src.roguelike_engine.utils.loader import load_image
 
 
 

@@ -1,7 +1,7 @@
 # src.roguelike_project/entities/buildings/building.py
 import os
 import pygame
-from src.roguelike_project.utils.loader import load_image
+from src.roguelike_engine.utils.loader import load_image
 import src.roguelike_project.config as config
 from src.roguelike_game.systems.z_layer.config import Z_LAYERS
 

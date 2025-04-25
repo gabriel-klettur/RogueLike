@@ -1,7 +1,7 @@
 # src.roguelike_project/systems/editor/tiles/toolbar.py
 
 import pygame
-from src.roguelike_project.utils.loader import load_image
+from src.roguelike_engine.utils.loader import load_image
 
 from src.roguelike_game.systems.editor.tiles.tiles_editor_config import ICON_PATHS_TILE_TOOLBAR
 

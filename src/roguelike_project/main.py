@@ -11,7 +11,7 @@ from src.roguelike_project.engine.game.game import Game
 from src.roguelike_project.config import FPS, SCREEN_WIDTH, SCREEN_HEIGHT
 import src.roguelike_project.config as config
 
-from src.roguelike_project.utils.benchmark import benchmark  # ✅ Decorador profesional
+from src.roguelike_engine.utils.benchmark import benchmark  # ✅ Decorador profesional
 
 # --- Debug Tools ---
 def init_debug():

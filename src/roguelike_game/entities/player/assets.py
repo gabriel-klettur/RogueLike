@@ -1,6 +1,6 @@
 # src/roguelike_project/engine/game/entities/player/assets.py
 import os
-from roguelike_project.utils.loader import load_image, load_sprite_sheet
+from roguelike_engine.utils.loader import load_image, load_sprite_sheet
 from roguelike_project.config import ASSETS_DIR
 
 def load_character_assets(character_name: str):

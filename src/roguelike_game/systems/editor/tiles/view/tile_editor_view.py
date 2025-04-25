@@ -3,7 +3,7 @@
 import pygame
 from src.roguelike_project.config import TILE_SIZE
 from src.roguelike_game.systems.editor.tiles.tiles_editor_config import OUTLINE_CHOICE, OUTLINE_HOVER, OUTLINE_SEL
-from src.roguelike_project.utils.loader import load_image
+from src.roguelike_engine.utils.loader import load_image
 
 from src.roguelike_game.systems.editor.tiles.view.tools.tile_toolbar_view import TileToolbarView
 from src.roguelike_game.systems.editor.tiles.view.tools.tile_picker_view import TilePickerView

@@ -64,7 +64,7 @@ from src.roguelike_game.systems.combat.spells.dash.controller import DashControl
 from src.roguelike_game.systems.combat.spells.dash.view       import DashView
 
 # Benchmarking
-from src.roguelike_project.utils.benchmark import benchmark
+from src.roguelike_engine.utils.benchmark import benchmark
 
 
 class SpellsSystem:

@@ -1,7 +1,7 @@
 # src.roguelike_project/systems/combat/spells/fireball/model.py
 import math
 import pygame
-from src.roguelike_project.utils.loader import load_image
+from src.roguelike_engine.utils.loader import load_image
 
 class FireballModel:
     """
