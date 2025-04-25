@@ -1,7 +1,7 @@
 # roguelike_project/loaders/load_buildings.py
 
 import os
-from roguelike_project.entities.buildings.building import Building
+from roguelike_project.engine.game.entities.buildings.building import Building
 from roguelike_project.systems.editor.buildings.model.persistence.json_handler import save_buildings_to_json
 from roguelike_project.systems.editor.buildings.model.persistence.load_buildings_from_json import load_buildings_from_json
 
