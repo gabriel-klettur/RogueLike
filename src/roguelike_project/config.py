@@ -30,9 +30,6 @@ ASSETS_DIR = os.path.join(PACKAGE_ROOT, "assets")
 # Z-Layer
 DEFAULT_Z = 1
 
-# Z-Layer buildings data
-BUILDINGS_DATA_PATH = "src/roguelike_project/systems/z_layer/data/buildings_data.json"
-
 #!--------------------- TILE CONFIG --------------------------
 
 # Tamaño de tile
@@ -57,3 +54,10 @@ MAP_DEBUG_DIR = os.path.join(
     PACKAGE_ROOT,
     "engine", "game", "systems", "map", "debug_maps"
 )
+
+TILES_DATA_PATH = os.path.join(
+    PACKAGE_ROOT,
+    "engine", "game", "systems", "map", "overlay"
+)
+
+BUILDINGS_DATA_PATH = "src/roguelike_project/systems/z_layer/data/buildings_data.json"
