@@ -1,7 +1,6 @@
 import pygame
 import time
 from roguelike_project.network.client import WebSocketClient
-from roguelike_project.systems.combat.view.effects.particles.explosions.fire import FireExplosion
 import roguelike_project.config as config
 
 def handle_events(state):

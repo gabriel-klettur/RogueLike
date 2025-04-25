@@ -123,8 +123,7 @@ class Game:
         self.state.show_menu = False
         self.state.mode = "local"
         self.systems = SystemsManager(self.state)
-        self.state.systems = self.systems
-        self.state.combat = self.systems.combat
+        self.state.systems = self.systems        
         self.state.effects = self.systems.effects
         self.network = NetworkManager(self.state)
         if self.state.mode == "online":
