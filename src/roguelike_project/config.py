@@ -20,10 +20,13 @@ WEBSOCKET_URL = "ws://localhost:8000/ws"
 #!------------------------ PATH CONFIG --------------------------
 
 # Ruta al paquete roguelike_project (el que contiene /assets, /engine, /utils, etc.)
-PACKAGE_ROOT = os.path.dirname(__file__)
+
+PACKAGE_DIR = os.path.dirname(__file__)
+
+PROJECT_ROOT = os.path.abspath(os.path.join(PACKAGE_DIR, os.pardir, os.pardir))
 
 # Carpeta de recursos
-ASSETS_DIR = os.path.join(PACKAGE_ROOT, "assets")
+ASSETS_DIR = os.path.join(PROJECT_ROOT, "assets")
 
 #!------------------------ Z-LAYER CONFIG --------------------------
 
@@ -51,12 +54,12 @@ DUNGEON_HEIGHT = 120
 
 # Carpeta donde guardar los mapas de debug
 MAP_DEBUG_DIR = os.path.join(
-    PACKAGE_ROOT,
+    PACKAGE_DIR,
     "engine", "game", "systems", "map", "debug_maps"
 )
 
 TILES_DATA_PATH = os.path.join(
-    PACKAGE_ROOT,
+    PACKAGE_DIR,
     "engine", "game", "systems", "map", "overlay"
 )
 
