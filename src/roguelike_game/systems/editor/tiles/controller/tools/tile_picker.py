@@ -1,18 +1,23 @@
-# src.roguelike_project/systems/editor/tiles/tile_picker.py
+# src/roguelike_game/systems/editor/tiles/tile_picker.py
+
+import os
+import glob
 import pygame
 from pathlib import Path
-from src.roguelike_engine.utils.loader import load_image
-from src.roguelike_engine.config import TILE_SIZE
-from src.roguelike_engine.map.overlay_manager import save_overlay
-from src.roguelike_engine.config_tiles import INVERSE_OVERLAY_MAP
 
-from src.roguelike_game.systems.editor.tiles.tiles_editor_config import PAD, THUMB, COLS, CLR_BORDER
-from src.roguelike_engine.map.tile_loader import load_tile_images
+from roguelike_engine.utils.loader import load_image
+from roguelike_engine.config import TILE_SIZE, ASSETS_DIR
+from roguelike_engine.map.overlay_manager import save_overlay
+from roguelike_engine.config_tiles import INVERSE_OVERLAY_MAP
+from roguelike_engine.map.tile_loader import load_tile_images
+
+from roguelike_game.systems.editor.tiles.tiles_editor_config import PAD, THUMB, COLS, CLR_BORDER
+
 
 class TilePicker:
     """
     Ventana flotante de selección de tiles.
-    – Mover con clic‑derecho y arrastre
+    – Mover con clic-derecho y arrastre
     – Hover con borde amarillo
     – Selección actual con borde naranja
     Cada cambio se guarda automáticamente en <map_name>.overlay.json
@@ -23,8 +28,9 @@ class TilePicker:
     def __init__(self, state, editor_state):
         self.state   = state
         self.editor  = editor_state
-        # Carga los assets con debug para verificar ruta y patrones
-        self.assets  = self._load_assets()  # list of (path, Surface)
+
+        # Carga los assets desde la carpeta global de assets/tiles
+        self.assets  = self._load_assets()  # list of (rel_path, Surface)
         self.font    = pygame.font.SysFont("Arial", 16)
         self.surface = None
         self.pos     = None
@@ -37,31 +43,30 @@ class TilePicker:
         self.btn_accept_rect  = None
 
     def _load_assets(self):
-        # Intentamos alcanzar la carpeta src.roguelike_project/assets/tiles
-        # Ajustar parents según la profundidad real
-        pkg_root = Path(__file__).resolve().parents[5]
-        root = pkg_root / "assets" / "tiles"
-        print(f"[TilePicker] pkg_root = {pkg_root!r}")
-        print(f"[TilePicker] root = {root!r}")
-        if not root.exists():
-            print(f"[TilePicker] ⚠️ Carpeta no encontrada en: {root}")
+        # Base folder: <PROYECT_ROOT>/assets/tiles
+        tiles_root = Path(ASSETS_DIR) / "tiles"
+        print(f"[TilePicker] tiles_root = {tiles_root!r}")
+        if not tiles_root.is_dir():
+            print(f"[TilePicker] ⚠️ Carpeta no encontrada en: {tiles_root}")
+            return []
 
+        # Buscar archivos
         patterns = ["*.png", "*.PNG", "*.webp", "*.WEBP"]
         seen = {}
         for pat in patterns:
-            found = list(root.glob(pat))
-            print(f"[TilePicker] patrón {pat!r} → {len(found)} archivos")
-            for path in found:
+            for path in tiles_root.glob(pat):
                 key = path.name.lower()
                 if key not in seen:
                     seen[key] = path
+            print(f"[TilePicker] patrón {pat!r} → {len(seen)} archivos únicos hasta ahora")
 
         files = sorted(seen.values())
         print(f"[TilePicker] archivos únicos encontrados: {len(files)} -> {[p.name for p in files]}")
 
+        # Cargar miniaturas con load_image, usando rutas relativas bajo ASSETS_DIR
         thumbs = []
         for p in files:
-            rel = str(Path("assets") / "tiles" / p.name)
+            rel = str(Path("tiles") / p.name)  # load_image buscará ASSETS_DIR / rel
             try:
                 surf = load_image(rel, (THUMB, THUMB))
             except Exception as e:
@@ -89,7 +94,6 @@ class TilePicker:
         mx, my = mouse_pos
         return x0 <= mx <= x0 + w and y0 <= my <= y0 + h
 
-
     def _draw_button(self, rect, text):
         pygame.draw.rect(self.surface, (60, 60, 60), rect)
         pygame.draw.rect(self.surface, CLR_BORDER, rect, 1)
@@ -105,11 +109,13 @@ class TilePicker:
         if lx < 0 or ly < 0 or lx > self.surface.get_width() or ly > self.surface.get_height():
             return False
 
+        # Mover ventana
         if button == 3:
             self.dragging = True
             self.drag_offset = (lx, ly)
             return True
 
+        # Botones
         if self.btn_delete_rect.collidepoint((lx, ly)):
             self._delete_tile()
             return True
@@ -120,12 +126,15 @@ class TilePicker:
             self._accept_choice()
             return True
 
+        # Selección de miniatura
         col = (lx - PAD) // (THUMB + PAD)
         row = (ly - PAD + self.editor.scroll_offset) // (THUMB + PAD)
         idx = row * COLS + col
-        if 0 <= col < COLS and 0 <= row and idx < len(self.assets):
+        if 0 <= col < COLS and row >= 0 and idx < len(self.assets):
             self.editor.current_choice = self.assets[idx][0]
-        return True
+            return True
+
+        return False
 
     def drag(self, mouse_pos):
         if self.dragging:
@@ -145,7 +154,7 @@ class TilePicker:
             self._persistir_overlay(tile, "")
         self._close()
 
-    def _set_default(self):        
+    def _set_default(self):
         tile = self.editor.selected_tile
         if tile:
             imgs = load_tile_images().get(tile.tile_type)
@@ -170,9 +179,9 @@ class TilePicker:
         self.editor.scroll_offset = max(0, self.editor.scroll_offset - dy * 30)
 
     def _close(self):
-        self.editor.picker_open   = False
+        self.editor.picker_open    = False
         self.editor.current_choice = None
-        self.dragging = False
+        self.dragging              = False
 
     def _persistir_overlay(self, tile, code: str):
         row = tile.y // TILE_SIZE
