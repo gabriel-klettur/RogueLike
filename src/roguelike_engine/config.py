@@ -55,12 +55,12 @@ DUNGEON_HEIGHT = 120
 # Carpeta donde guardar los mapas de debug
 MAP_DEBUG_DIR = os.path.join(
     PACKAGE_DIR,
-    "engine", "game", "systems", "map", "debug_maps"
+   "map", "debug_maps"
 )
 
 TILES_DATA_PATH = os.path.join(
     PACKAGE_DIR,
-    "engine", "game", "systems", "map", "overlay"
+    "map", "overlay"
 )
 
 BUILDINGS_DATA_PATH = "src/roguelike_game/systems/z_layer/data/buildings_data.json"
