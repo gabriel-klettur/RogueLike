@@ -3,7 +3,6 @@
 import sys
 import os
 import pygame
-from collections import defaultdict
 
 # Agregar el path del proyecto
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..")))
@@ -11,7 +10,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".
 from src.roguelike_project.config import (
     SCREEN_WIDTH, SCREEN_HEIGHT, FONT_NAME, FONT_SIZE, FPS
 )
-from src.roguelike_project.engine.game.input.events import handle_events
+from src.roguelike_engine.input.events import handle_events
+
 from src.roguelike_project.engine.game.systems.state import GameState
 from src.roguelike_project.engine.game.systems.map_manager import build_map
 from src.roguelike_project.engine.game.systems.entity import load_entities

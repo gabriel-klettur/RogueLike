@@ -95,8 +95,8 @@
         "image_path": "assets/buildings/others/portal_2.png",
         "solid": true,
         "scale": [
-            583,
-            868
+            256,
+            381
         ],
         "original_scale": [
             1024,
