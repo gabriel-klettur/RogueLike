@@ -1,4 +1,4 @@
-from src.roguelike_game.entities.player.player import Player
+from roguelike_game.entities.player.model.player_model import Player
 from src.roguelike_game.entities.load_obstacles import load_obstacles
 from src.roguelike_game.entities.load_enemies import load_enemies
 from src.roguelike_game.entities.load_buildings import load_buildings

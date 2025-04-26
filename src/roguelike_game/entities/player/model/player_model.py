@@ -1,10 +1,10 @@
 # src.roguelike_project/entities/player/player.py
 
-from .stats import PlayerStats
-from .movement import PlayerMovement
-from .renderer import PlayerRenderer
-from .attack import PlayerAttack
-from .assets import load_character_assets
+from .stats_model import PlayerStats
+from .movement_model import PlayerMovement
+from ..view.renderer import PlayerRenderer
+from .attack_model import PlayerAttack
+from ..view.assets import load_character_assets
 
 class Player:
     def __init__(self, x, y, character_name="first_hero"):
