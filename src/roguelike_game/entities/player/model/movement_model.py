@@ -1,5 +1,3 @@
-# src/roguelike_game/entities/player/model/movement_model.py
-
 import pygame
 import math
 import time
@@ -11,6 +9,7 @@ class PlayerMovement:
     def __init__(self, player):
         self.player = player
         self.speed = 10
+
         # Dash
         self.is_dashing = False
         self.dash_speed = 2000
@@ -18,7 +17,8 @@ class PlayerMovement:
         self.last_dash_time = -math.inf
         self.dash_cooldown = 2.0
         self.dash_time_left = 0.0
-        self.dash_direction = pygame.Vector2(0,0)
+        self.dash_direction = pygame.Vector2(0, 0)
+
         # Teleport
         self.teleport_cooldown = 0.5
         self.last_teleport_time = -math.inf
@@ -26,34 +26,43 @@ class PlayerMovement:
 
     def hitbox(self, x=None, y=None):
         """
-        Caja de colisión completa basada en sprite_size.
+        Foot-only hitbox para colisiones: rectángulo centrado en la parte inferior.
         """
         px = x if x is not None else self.player.x
         py = y if y is not None else self.player.y
         w, h = self.player.sprite_size
-        return pygame.Rect(px, py, w, h)
+        # Pie: 25% de la altura, 50% del ancho, centrado
+        foot_h = int(h * 0.25)
+        foot_w = int(w * 0.5)
+        foot_x = px + (w - foot_w) // 2
+        foot_y = py + h - foot_h
+        return pygame.Rect(foot_x, foot_y, foot_w, foot_h)
 
     def move(self, dx, dy, collision_tiles, obstacles):
         """
-        Movimiento básico con detección de colisión contra tiles y obstáculos.
+        Movimiento básico con detección de colisión contra `collision_tiles` y `obstacles`.
         """
         # Normalizar diagonal
         if dx != 0 and dy != 0:
             norm = math.hypot(dx, dy)
             dx, dy = dx / norm, dy / norm
-        # Calcular hitbox futura
+
+        # Posición tentativa
         new_x = self.player.x + dx * self.speed
         new_y = self.player.y + dy * self.speed
         future = self.hitbox(new_x, new_y)
-        # Verificar colisión con tiles sólidos
+
+        # Chequeo tiles sólidos
         for tile in collision_tiles:
-            if hasattr(tile, 'rect') and future.colliderect(tile.rect):
-                return  # Abortamos movimiento
-        # Verificar colisión con obstáculos
+            if hasattr(tile, "rect") and future.colliderect(tile.rect):
+                return  # aborta
+
+        # Chequeo obstáculos
         for ob in obstacles:
             if future.colliderect(ob.rect):
                 return
-        # Si no colisiona, aplicamos el movimiento
+
+        # Si ok, aplicar movimiento
         self.player.x = new_x
         self.player.y = new_y
         self.player.is_walking = (dx != 0 or dy != 0)
@@ -64,10 +73,7 @@ class PlayerMovement:
             return False
         self.is_dashing = True
         self.dash_time_left = self.dash_duration
-        if direction_vec.length():
-            self.dash_direction = direction_vec.normalize()
-        else:
-            self.dash_direction = pygame.Vector2(0,0)
+        self.dash_direction = direction_vec.normalize() if direction_vec.length() else pygame.Vector2(0, 0)
         self.last_dash_time = now
         return True
 
@@ -75,11 +81,11 @@ class PlayerMovement:
         if not self.is_dashing:
             return
         delta = pygame.time.get_ticks() / 1000.0
-        dist = self.dash_speed * delta
+        dist = self.dash_speed * delta / self.speed
         dx = self.dash_direction.x * dist
         dy = self.dash_direction.y * dist
-        # Intentar movimiento de dash con las mismas colisiones
-        self.move(dx / self.speed, dy / self.speed, collision_tiles, obstacles)
+        # Reutilizar move() para colisiones
+        self.move(dx, dy, collision_tiles, obstacles)
         self.dash_time_left -= delta
         if self.dash_time_left <= 0:
             self.is_dashing = False
