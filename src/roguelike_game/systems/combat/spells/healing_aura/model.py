@@ -1,6 +1,7 @@
 # File: src.roguelike_project/systems/combat/spells/healing_aura/model.py
 import pygame
 import random
+from pygame.math import Vector2
 
 class HealingParticle:
     """
@@ -19,10 +20,12 @@ class HealingParticle:
             (0, 200, 100)
         ])
         # Velocidad extra inversa al movimiento del jugador
+
         if player.is_walking:
-            self.extra_velocity = -0.5 * player.movement.last_move_dir
+            last_dir = getattr(player.movement, 'last_move_dir', Vector2(0,0))
+            self.extra_velocity = -0.5 * last_dir
         else:
-            self.extra_velocity = pygame.Vector2(0, 0)
+            self.extra_velocity = Vector2(0, 0)
 
     def update(self):
         """Incrementa la vida de la partícula."""

@@ -1,41 +1,56 @@
-# src/roguelike_project/engine/game/entities/player/assets.py
+"""
+Carga de sprites y assets para el jugador.
+"""
 import os
-from roguelike_engine.utils.loader import load_image, load_sprite_sheet
-from roguelike_engine.config import ASSETS_DIR
+from roguelike_engine.utils.loader import load_sprite_sheet
 
-def load_character_assets(character_name: str):
+"""
+Carga de sprites y assets para el jugador.
+"""
+import os
+from roguelike_engine.utils.loader import load_sprite_sheet
+
+class PlayerAssets:
     """
-    Carga las animaciones 'idle' y 'walk' de un sprite sheet para cada dirección.
-    Busca el archivo en ASSETS_DIR/characters/{character_name}/{character_name}{ext}
+    Encapsula la carga de sprites desde un sprite sheet único.
     """
-    directions = ["down", "right", "up", "left"]
-    sprite_size = (128, 128)
+    def __init__(self, character_name: str, sprite_size: tuple[int,int]):
+        self.character_name = character_name
+        self.sprite_size = sprite_size
+        # Ruta relativa dentro de ASSETS_DIR
+        self.sheet_path = f"characters/{character_name}/{character_name}.png"
 
-    # Ruta relativa dentro de assets
-    rel_dir = os.path.join('characters', character_name)
-
-    # Buscar con load_image para asegurar que use ASSETS_DIR
-    valid_extensions = ['.png', '.PNG', '.webp', '.WEBP']
-    found_file = None
-    for ext in valid_extensions:
-        candidate = os.path.join(rel_dir, f"{character_name}{ext}")
-        try:
-            # Intentamos cargar sin transformar, para verificar existencia
-            load_image(candidate)
-            found_file = candidate
-            break
-        except FileNotFoundError:
-            continue
-
-    if not found_file:
-        raise FileNotFoundError(f"No se encontró sprite sheet para {character_name} en {rel_dir}")
-
-    # Ahora usamos load_sprite_sheet para obtener frames
-    sprites = {}
-    for i, direction in enumerate(directions):
-        sprites[direction] = {
-            'idle': load_sprite_sheet(found_file, sprite_size, row=i, columns=1, start_col=0),
-            'walk': load_sprite_sheet(found_file, sprite_size, row=i, columns=4, start_col=1)
-        }
-
-    return sprites, sprite_size
+    def get_sprites(self) -> tuple[dict[str,dict[str,list]], tuple[int,int]]:
+        """
+        Devuelve un dict:
+            {
+              'up':    {'idle': [...], 'walk': [...]},
+              'down':  {...},
+              ...
+            }
+        junto con el tamaño de cada sprite.
+        """
+        directions = ['down', 'right', 'up', 'left']
+        sprites = {}
+        for row_idx, direction in enumerate(directions):
+            # Idle: 1 frame en la columna 0
+            idle_frames = load_sprite_sheet(
+                self.sheet_path,
+                self.sprite_size,
+                row=row_idx,
+                columns=1,
+                start_col=0
+            )
+            # Walk: 4 frames comenzando en columna 1
+            walk_frames = load_sprite_sheet(
+                self.sheet_path,
+                self.sprite_size,
+                row=row_idx,
+                columns=4,
+                start_col=1
+            )
+            sprites[direction] = {
+                'idle': idle_frames,
+                'walk': walk_frames
+            }
+        return sprites, self.sprite_size

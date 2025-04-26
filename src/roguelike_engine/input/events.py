@@ -16,7 +16,9 @@ def handle_events(state):
                 state.show_menu = not state.show_menu
 
             elif event.key == pygame.K_q:
-                state.player.stats.restore_all(state)
+                state.player.restore_all()
+                state.systems.effects.spawn_healing_aura()
+                state.player.stats.last_restore_time = time.time()
 
             elif state.show_menu:
                 result = state.menu.handle_input(event)

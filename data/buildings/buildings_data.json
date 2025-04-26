@@ -54,8 +54,8 @@
         "z": 3
     },
     {
-        "x": 500,
-        "y": -300,
+        "x": 431,
+        "y": -401,
         "image_path": "assets/buildings/temples/satanist.png",
         "solid": true,
         "scale": [
@@ -72,13 +72,13 @@
         "z": 3
     },
     {
-        "x": 1600,
-        "y": -100,
+        "x": 1780,
+        "y": 165,
         "image_path": "assets/buildings/others/portal.png",
         "solid": true,
         "scale": [
-            512,
-            824
+            258,
+            414
         ],
         "original_scale": [
             512,
@@ -90,8 +90,8 @@
         "z": 3
     },
     {
-        "x": 1950,
-        "y": 400,
+        "x": 1905,
+        "y": 529,
         "image_path": "assets/buildings/shops/alchemy_tower.png",
         "solid": true,
         "scale": [
@@ -144,13 +144,13 @@
         "z": 3
     },
     {
-        "x": 106,
-        "y": 731,
+        "x": 1237,
+        "y": 536,
         "image_path": "assets/buildings/others/fuente.png",
         "solid": true,
         "scale": [
-            429,
-            429
+            329,
+            329
         ],
         "original_scale": [
             600,

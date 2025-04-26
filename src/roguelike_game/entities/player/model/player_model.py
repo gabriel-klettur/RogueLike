@@ -1,45 +1,39 @@
-# src.roguelike_project/entities/player/player.py
-
+import pygame
 from .stats_model import PlayerStats
 from .movement_model import PlayerMovement
-from ..view.renderer import PlayerRenderer
 from .attack_model import PlayerAttack
-from ..view.assets import load_character_assets
 
-class Player:
-    def __init__(self, x, y, character_name="first_hero"):
+class PlayerModel:
+    """
+    Modelo puro de jugador: posición, estado y componentes.
+    """
+    def __init__(self, x: float, y: float, character_name: str = "first_hero"):
         self.x = x
         self.y = y
         self.character_name = character_name
-        self.is_walking = False
-        self.state = None
-        
-        self.sprites, self.sprite_size = load_character_assets(character_name)
+        # La vista se encargará de cargar el sprite_size real
+        self.sprite_size = (128, 128)
         self.direction = "down"
-        self.sprite = self.sprites[self.direction]
+        self.is_walking = False
 
         self.rect = None
-        self.hitbox = None
+        self.hitbox_obj = None
 
-        self.stats = PlayerStats(character_name)
+        # Componentes MVC internos
+        self.stats    = PlayerStats(character_name)
         self.movement = PlayerMovement(self)
-        self.renderer = PlayerRenderer(self)
-        self.attack = PlayerAttack(self)
+        self.attack   = PlayerAttack(self)
 
-    def change_character(self, new_character_name):
-        self.__init__(self.x, self.y, new_character_name)
+    def center(self) -> tuple[float, float]:
+        """Centro del sprite (para apuntado)."""
+        return (self.x + self.sprite_size[0]/2,
+                self.y + self.sprite_size[1]/2)
 
-    def move(self, dx, dy, collision_mask, obstacles):
-        self.movement.move(dx, dy, collision_mask, obstacles)
-
-    def take_damage(self):
-        self.stats.take_damage()
-
-    def restore_all(self):
-        self.stats.restore_all()
-
-    def render(self, screen, camera):        
-        self.renderer.render(screen, camera)
-
-    def render_hud(self, screen, camera):
-        self.renderer.render_hud(screen, camera)
+    def hitbox(self) -> pygame.Rect:
+        """Rectángulo de colisión (hitbox)."""
+        return pygame.Rect(
+            self.x + 20,
+            self.y + 96,
+            56,
+            28
+        )

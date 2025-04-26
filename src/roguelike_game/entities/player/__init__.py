@@ -1,1 +1,1 @@
-from .model.player_model import Player
+from .model.player_model import PlayerModel

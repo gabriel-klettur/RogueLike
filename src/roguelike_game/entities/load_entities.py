@@ -1,11 +1,11 @@
-from roguelike_game.entities.player.model.player_model import Player
+from src.roguelike_game.entities.player.controller.player_controller import PlayerController
 from src.roguelike_game.entities.load_obstacles import load_obstacles
-from src.roguelike_game.entities.load_enemies import load_enemies
+from src.roguelike_game.entities.load_enemies   import load_enemies
 from src.roguelike_game.entities.load_buildings import load_buildings
 
 def load_entities(z_state=None):
-    player = Player(600, 600)
     obstacles = load_obstacles()
-    buildings = load_buildings(z_state)
-    enemies = load_enemies()
-    return player, obstacles, buildings, enemies
+    player_ctrl = PlayerController(600, 600, z_state, obstacles=obstacles)
+    buildings   = load_buildings(z_state)
+    enemies     = load_enemies()
+    return player_ctrl, obstacles, buildings, enemies
