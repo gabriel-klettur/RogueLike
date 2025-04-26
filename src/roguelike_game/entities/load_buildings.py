@@ -32,7 +32,8 @@ def load_buildings(z_state=None):
     """
     if os.path.exists(BUILDINGS_DATA_PATH):
         print("📦 Usando edificios desde JSON.")
-        return load_buildings_from_json(BUILDINGS_DATA_PATH, Building, z_state)
+        buildings = load_buildings_from_json(BUILDINGS_DATA_PATH, Building, z_state)        
+        return buildings
     else:
         print("📦 Usando edificios hardcodeados (primera carga).")
         hardcoded = get_hardcoded_buildings()
