@@ -144,13 +144,13 @@
         "z": 3
     },
     {
-        "x": 1100,
-        "y": 466,
+        "x": 106,
+        "y": 731,
         "image_path": "assets/buildings/others/fuente.png",
         "solid": true,
         "scale": [
-            600,
-            600
+            429,
+            429
         ],
         "original_scale": [
             600,

@@ -2,7 +2,7 @@
 
 import random
 import math
-from src.roguelike_project.systems.particles.particle import Particle
+from src.roguelike_game.systems.particles.particle import Particle
 
 class FireworkExplosion:
     def __init__(self, x, y, particle_count=60):
