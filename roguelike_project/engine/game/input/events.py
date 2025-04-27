@@ -93,13 +93,13 @@ def handle_events(state):
                 for entity in state.enemies:
                     print(f"- {entity.name} at ({entity.x}, {entity.y})")
 
-                from roguelike_project.entities.npc.monster import Monster
+                from roguelike_project.entities.npc.elite_monster import Elite
 
                 mouse_x, mouse_y = pygame.mouse.get_pos()
                 world_x = round(mouse_x / state.camera.zoom + state.camera.offset_x)
                 world_y = round(mouse_y / state.camera.zoom + state.camera.offset_y)
                 print(f"Spawning enemy at {world_x}, {world_y}")
-                state.enemies.append(Monster(world_x, world_y)) 
+                state.enemies.append(Elite(world_x, world_y)) 
 
         # ------------------------------------------------------------- #
         #                       WHEEL / MOUSE                           #
