@@ -1,4 +1,5 @@
 import pygame
+import math
 from roguelike_project.utils.loader import load_image
 import roguelike_project.config as config
 
@@ -40,10 +41,42 @@ class Monster:
         if self.health <= 0:
             self.alive = False            
 
-    def update(self):
+    def update(self, state):
         if not self.alive:
             return
 
+        player = state.player
+        distance = self.calculate_distance(player)
+        
+        if distance <= 500:
+            self.follow_player(player)
+        else:
+            self.continue_patrol()
+
+        self.mask = pygame.mask.from_surface(self.sprite)
+        self.hitbox.topleft = (self.x + 20, self.y + 96)
+
+    def calculate_distance(self, player):
+        dx = player.x - self.x
+        dy = player.y - self.y
+        return math.sqrt(dx**2 + dy**2)
+
+    def follow_player(self, player):
+        dx = player.x - self.x
+        dy = player.y - self.y
+        distance = self.calculate_distance(player)
+        
+        if distance < 250:  # Minimum distance threshold
+            # Move away from player
+            self.update_sprite_direction((dx, dy))
+        else:
+            # Move towards player but keep distance
+            direction = (dx/distance, dy/distance)
+            self.x += direction[0] * self.speed
+            self.y += direction[1] * self.speed
+            self.update_sprite_direction(direction)
+
+    def continue_patrol(self):
         dx, dy, distance = self.path[self.current_step]
 
         if dx == 1:
@@ -55,9 +88,6 @@ class Monster:
         elif dy == 1:
             self.sprite = self.sprites["down"]
 
-        # ✅ Actualizar máscara
-        self.mask = pygame.mask.from_surface(self.sprite)
-
         self.x += dx * self.speed
         self.y += dy * self.speed
         self.step_progress += self.speed
@@ -66,7 +96,11 @@ class Monster:
             self.current_step = (self.current_step + 1) % len(self.path)
             self.step_progress = 0
 
-        self.hitbox.topleft = (self.x + 20, self.y + 96)
+    def update_sprite_direction(self, direction):
+        if abs(direction[0]) > abs(direction[1]):
+            self.sprite = self.sprites["right"] if direction[0] > 0 else self.sprites["left"]
+        else:
+            self.sprite = self.sprites["down"] if direction[1] > 0 else self.sprites["up"]
 
     def render(self, screen, camera):
         if not self.alive:
