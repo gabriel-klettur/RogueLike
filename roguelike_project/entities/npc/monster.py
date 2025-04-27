@@ -88,9 +88,28 @@ class Monster:
 
     def render_health_bar(self, screen, camera):
         x, y = camera.apply((self.x + 18, self.y - 20))
-        bar_width = int(60 * camera.zoom)
-        bar_height = int(10 * camera.zoom)
+
+        #0.9 es un valor un poco arbitrario porque el 100% de la barra no concordaba visualmente con el cuadrado del render
+        bar_width = int(self.sprite_size[0] * camera.zoom * 0.9)
+        bar_height = int(20 * camera.zoom)
+
+        #Dibujar barra de salud
         pygame.draw.rect(screen, (40, 40, 40), (x, y, bar_width, bar_height))
         fill = int(bar_width * (self.health / self.max_health))
         pygame.draw.rect(screen, (0, 255, 0), (x, y, fill, bar_height))
         pygame.draw.rect(screen, (0, 0, 0), (x, y, bar_width, bar_height), 1)
+
+        #Insertar valor numero de vida
+        health_text = f"{self.health}/{self.max_health}"
+        font = pygame.font.SysFont('Arial', int(18 * camera.zoom))  # Adjust font size with zoom
+        text_surface = font.render(health_text, True, (255, 0, 0))
+        # Center the text in the health bar
+        text_rect = text_surface.get_rect(center=(x + bar_width // 2, y + bar_height // 2))
+            # Only draw the text if it fits in the filled portion of the health bar
+
+        if fill > text_rect.width * 0.8:  # 80% of text width as a safety margin
+            screen.blit(text_surface, text_rect)
+        else:
+            # Draw the text to the right of the health bar if it doesn't fit inside
+            text_rect.left = x + bar_width + 2  # Small offset from the bar
+            screen.blit(text_surface, text_rect)
