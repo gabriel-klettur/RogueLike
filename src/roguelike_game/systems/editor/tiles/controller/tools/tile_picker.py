@@ -7,9 +7,9 @@ from pathlib import Path
 
 from roguelike_engine.utils.loader import load_image
 from roguelike_engine.config import TILE_SIZE, ASSETS_DIR
-from roguelike_engine.map.overlay_manager import save_overlay
+from roguelike_engine.map.overlay.overlay_manager import save_overlay
 from roguelike_game.config_tiles import INVERSE_OVERLAY_MAP
-from roguelike_engine.map.tile_loader import load_tile_images
+from roguelike_engine.map.loader.tile_loader import load_tile_images
 
 from roguelike_game.systems.editor.tiles.tiles_editor_config import PAD, THUMB, COLS, CLR_BORDER
 

@@ -8,7 +8,7 @@ from roguelike_game.config_tiles import OVERLAY_CODE_MAP, INVERSE_OVERLAY_MAP, D
 from src.roguelike_game.systems.editor.tiles.controller.tools.tile_picker import TilePicker
 from src.roguelike_game.systems.editor.tiles.controller.tools.tile_toolbar import TileToolbar
 
-from src.roguelike_engine.map.overlay_manager import save_overlay
+from roguelike_engine.map.overlay.overlay_manager import save_overlay
 from src.roguelike_engine.utils.loader import load_image
 
 

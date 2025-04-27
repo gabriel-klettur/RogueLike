@@ -13,7 +13,7 @@ from src.roguelike_engine.config import (
 from src.roguelike_engine.input.events import handle_events
 
 from roguelike_game.game.state import GameState
-from roguelike_engine.map.map_manager import build_map
+from roguelike_engine.map.manager import build_map
 from roguelike_game.entities.load_entities import load_entities
 from roguelike_game.network.multiplayer_manager import NetworkManager
 from src.roguelike_game.ui.menus.menu import Menu

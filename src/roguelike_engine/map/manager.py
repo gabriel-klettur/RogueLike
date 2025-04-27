@@ -8,12 +8,12 @@ from src.roguelike_engine.config import (
     LOBBY_WIDTH,
     LOBBY_HEIGHT
 )
-from src.roguelike_engine.map.dungeon_generator import generate_dungeon_map
-from src.roguelike_engine.map.map_merger import merge_handmade_with_generated
+from roguelike_engine.map.generator.dungeon_generator import generate_dungeon_map
+from roguelike_engine.map.merger.merger import merge_handmade_with_generated
 from data.maps.handmade_maps.lobby_map import LOBBY_MAP
-from src.roguelike_engine.map.tile_loader import load_map_from_text
-from src.roguelike_engine.map.map_exporter import save_map_with_autoname
-from src.roguelike_engine.map.overlay_manager import load_overlay
+from src.roguelike_engine.map.loader.tile_loader import load_map_from_text
+from roguelike_engine.map.exporter.map_exporter import save_map_with_autoname
+from roguelike_engine.map.overlay.overlay_manager import load_overlay
 
 def build_map(
     width=DUNGEON_WIDTH,
