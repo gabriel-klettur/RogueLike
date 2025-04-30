@@ -1,12 +1,11 @@
 # src/roguelike_game/systems/editor/tiles/tile_picker.py
 
-import os
-import glob
 import pygame
 from pathlib import Path
 
 from roguelike_engine.utils.loader import load_image
-from roguelike_engine.config import TILE_SIZE, ASSETS_DIR
+from roguelike_engine.config_tiles import TILE_SIZE
+from roguelike_engine.config import ASSETS_DIR
 from roguelike_engine.map.overlay.overlay_manager import save_overlay
 from roguelike_engine.config_tiles import INVERSE_OVERLAY_MAP
 from roguelike_engine.map.loader.tile_loader import load_tile_images

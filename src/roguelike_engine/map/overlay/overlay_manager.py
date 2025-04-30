@@ -2,7 +2,7 @@
 
 import os
 import json
-from roguelike_engine.config import TILES_DATA_PATH
+from roguelike_engine.config_tiles import TILES_DATA_PATH
 
 """
 Funciones para cargar y guardar la capa overlay de un mapa.

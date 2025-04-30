@@ -1,6 +1,6 @@
 # src.roguelike_project/engine/game/systems/map_manager.py
 
-from src.roguelike_engine.config import (
+from src.roguelike_engine.config_map import (
     DUNGEON_WIDTH,
     DUNGEON_HEIGHT,
     LOBBY_OFFSET_X,

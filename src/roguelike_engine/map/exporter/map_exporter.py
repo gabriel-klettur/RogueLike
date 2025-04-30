@@ -2,7 +2,7 @@
 
 import os
 import re
-from roguelike_engine.config import DEBUG_MAPS_DIR
+from roguelike_engine.config_map import DEBUG_MAPS_DIR
 
 def save_map_with_autoname(map_data):
     """

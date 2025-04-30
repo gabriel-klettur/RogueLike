@@ -72,8 +72,8 @@
         "z": 3
     },
     {
-        "x": 1780,
-        "y": 165,
+        "x": 1566,
+        "y": 139,
         "image_path": "assets/buildings/others/portal.png",
         "solid": true,
         "scale": [
@@ -144,8 +144,8 @@
         "z": 3
     },
     {
-        "x": 1386,
-        "y": 582,
+        "x": 1240,
+        "y": 550,
         "image_path": "assets/buildings/others/fuente.png",
         "solid": true,
         "scale": [

@@ -1,8 +1,18 @@
 # src.roguelike_project/config_tiles.py
+from roguelike_engine.config_map import MAP_OVERLAYS_DIR
+
+#!------------------------ TILES CONFIG -------------------------
+# Tamaño de cada tile en píxeles
+TILE_SIZE = 64
+
+# Alias para compatibilidad con módulos de overlay (tile loader, overlay_manager)
+TILES_DATA_PATH = MAP_OVERLAYS_DIR
+
+#!------------------------ TILES MAPPING --------------------------
 
 """
-Mapeo de códigos de overlay de 3 caracteres a nombres de archivos de tiles.
-Cada código → nombre base de asset (sin extensión).
+!Mapeo de códigos de overlay de 3 caracteres a nombres de archivos de tiles.
+!Cada código → nombre base de asset (sin extensión).
 """
 
 OVERLAY_CODE_MAP: dict[str, str] = {
