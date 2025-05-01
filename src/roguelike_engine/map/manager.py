@@ -13,9 +13,8 @@ from src.roguelike_engine.config_map import (
 )
 from roguelike_engine.map.generator.factory import get_generator
 from roguelike_engine.map.merger.factory import get_merger
+from roguelike_engine.map.loader.factory import get_map_loader
 from data.maps.handmade_maps.lobby_map import LOBBY_MAP
-from src.roguelike_engine.map.loader.tile_loader import load_map_from_text
-from roguelike_engine.map.overlay.overlay_manager import load_overlay
 from roguelike_engine.map.exporter.factory import get_exporter, MapExporter
 
 logger = logging.getLogger(__name__)
@@ -30,10 +29,12 @@ class MapManager:
         self,
         generator_name: str = "dungeon",
         merger_name: str = "center_to_center",
+        loader_name: str = "text",
         exporter: Optional[MapExporter] = None,
     ):
         self.generator = get_generator(generator_name)
         self.merger = get_merger(merger_name)
+        self.loader = get_map_loader(loader_name)
         self.exporter: MapExporter = exporter or get_exporter("debug_txt")
 
     def build_map(
@@ -65,50 +66,42 @@ class MapManager:
         if map_mode == "lobby":
             merged_map = LOBBY_MAP
             metadata = {}
-
         else:
-            # Dungeon o Combined
             if map_mode in ("dungeon", "combined"):
-                # Generar con metadata
                 raw_map, metadata = self.generator.generate(
                     width=width,
                     height=height,
                     return_rooms=(map_mode == "combined"),
-                    avoid_zone=(offset_x,
-                                offset_y + LOBBY_HEIGHT,
-                                offset_x + LOBBY_WIDTH,
-                                offset_y + LOBBY_HEIGHT + 3) if map_mode == "combined" else None,
+                    avoid_zone=(
+                        offset_x,
+                        offset_y + LOBBY_HEIGHT,
+                        offset_x + LOBBY_WIDTH,
+                        offset_y + LOBBY_HEIGHT + 3,
+                    ) if map_mode == "combined" else None,
                 )
-                # Si solo dungeon, convertir matrix a strings
                 if map_mode == "dungeon":
                     merged_map = ["".join(row) for row in raw_map]
                 else:
-                    # Fusionar handmade + generated
-                    dungeon_rooms = metadata.get("rooms", [])
+                    rooms = metadata.get("rooms", [])
                     merged_matrix = self.merger.merge(
                         handmade_map=LOBBY_MAP,
                         generated_map=raw_map,
                         offset_x=offset_x,
                         offset_y=offset_y,
-                        dungeon_rooms=dungeon_rooms,
+                        dungeon_rooms=rooms,
                     )
-                    merged_map = ["".join(row) for row in merged_matrix]
-
-                    # Exportar debug si necesario
+                    merged_map = ["".join(r) for r in merged_matrix]
                     if export_debug:
                         try:
-                            filename = self.exporter.export(merged_map)
-                            logger.debug("Mapa de debug exportado como %s", filename)
+                            fn = self.exporter.export(merged_map)
+                            logger.debug("Mapa de debug exportado como %s", fn)
                         except Exception as e:
-                            logger.warning("No se pudo exportar mapa de debug: %s", e)
+                            logger.warning("Error exportando debug: %s", e)
             else:
                 raise ValueError(f"Modo de mapa no reconocido: {map_mode!r}")
 
-        # Carga de overlay
-        overlay_map = load_overlay(key)
-
-        # Creación de tiles
-        tiles = load_map_from_text(merged_map, overlay_map)
+        # Cargar y crear tiles usando el loader configurado
+        _, tiles, overlay_map = self.loader.load(merged_map, key)
 
         return merged_map, tiles, overlay_map, key
 

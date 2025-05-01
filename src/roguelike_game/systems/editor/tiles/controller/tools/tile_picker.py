@@ -1,14 +1,13 @@
-
 # Path: src/roguelike_game/systems/editor/tiles/controller/tools/tile_picker.py
+
 import pygame
 from pathlib import Path
 
 from roguelike_engine.utils.loader import load_image
-from roguelike_engine.config_tiles import TILE_SIZE
+from roguelike_engine.config_tiles import TILE_SIZE, INVERSE_OVERLAY_MAP
 from roguelike_engine.config import ASSETS_DIR
 from roguelike_engine.map.overlay.overlay_manager import save_overlay
-from roguelike_engine.config_tiles import INVERSE_OVERLAY_MAP
-from roguelike_engine.map.loader.tile_loader import load_tile_images
+from roguelike_engine.tiles.assets import load_base_tile_images
 
 from roguelike_game.systems.editor.tiles.tiles_editor_config import PAD, THUMB, COLS, CLR_BORDER
 
@@ -42,14 +41,14 @@ class TilePicker:
         self.btn_accept_rect  = None
 
     def _load_assets(self):
-        # Base folder: <PROYECT_ROOT>/assets/tiles
+        """
+        Escanea la carpeta assets/tiles para cargar miniaturas.
+        """
         tiles_root = Path(ASSETS_DIR) / "tiles"
-        print(f"[TilePicker] tiles_root = {tiles_root!r}")
         if not tiles_root.is_dir():
-            print(f"[TilePicker] ⚠️ Carpeta no encontrada en: {tiles_root}")
+            print(f"[TilePicker] Carpeta no encontrada: {tiles_root}")
             return []
 
-        # Buscar archivos
         patterns = ["*.png", "*.PNG", "*.webp", "*.WEBP"]
         seen = {}
         for pat in patterns:
@@ -57,15 +56,11 @@ class TilePicker:
                 key = path.name.lower()
                 if key not in seen:
                     seen[key] = path
-            print(f"[TilePicker] patrón {pat!r} → {len(seen)} archivos únicos hasta ahora")
-
         files = sorted(seen.values())
-        print(f"[TilePicker] archivos únicos encontrados: {len(files)} -> {[p.name for p in files]}")
 
-        # Cargar miniaturas con load_image, usando rutas relativas bajo ASSETS_DIR
         thumbs = []
         for p in files:
-            rel = str(Path("tiles") / p.name)  # load_image buscará ASSETS_DIR / rel
+            rel = str(Path("tiles") / p.name)
             try:
                 surf = load_image(rel, (THUMB, THUMB))
             except Exception as e:
@@ -73,7 +68,6 @@ class TilePicker:
                 continue
             thumbs.append((rel, surf))
 
-        print(f"[TilePicker] miniaturas cargadas: {len(thumbs)}")
         return thumbs
 
     def open_with_selection(self, choice_path):
@@ -115,13 +109,13 @@ class TilePicker:
             return True
 
         # Botones
-        if self.btn_delete_rect.collidepoint((lx, ly)):
+        if self.btn_delete_rect and self.btn_delete_rect.collidepoint((lx, ly)):
             self._delete_tile()
             return True
-        if self.btn_default_rect.collidepoint((lx, ly)):
+        if self.btn_default_rect and self.btn_default_rect.collidepoint((lx, ly)):
             self._set_default()
             return True
-        if self.btn_accept_rect.collidepoint((lx, ly)):
+        if self.btn_accept_rect and self.btn_accept_rect.collidepoint((lx, ly)):
             self._accept_choice()
             return True
 
@@ -150,17 +144,18 @@ class TilePicker:
         if tile:
             tile.sprite = pygame.Surface((TILE_SIZE, TILE_SIZE), pygame.SRCALPHA)
             tile.scaled_cache.clear()
-            self._persistir_overlay(tile, "")
+            self._persist_overlay(tile, "")
         self._close()
 
     def _set_default(self):
         tile = self.editor.selected_tile
         if tile:
-            imgs = load_tile_images().get(tile.tile_type)
+            base_map = load_base_tile_images()
+            imgs = base_map.get(tile.tile_type)
             sprite = imgs[0] if isinstance(imgs, list) else imgs
             tile.sprite = sprite
             tile.scaled_cache.clear()
-            self._persistir_overlay(tile, "")
+            self._persist_overlay(tile, "")
         self._close()
 
     def _accept_choice(self):
@@ -170,8 +165,9 @@ class TilePicker:
             tile.sprite = load_image(choice, (TILE_SIZE, TILE_SIZE))
             tile.scaled_cache.clear()
             name = Path(choice).stem
-            code = (INVERSE_OVERLAY_MAP.get(name) or [""])[0]
-            self._persistir_overlay(tile, code)
+            code = INVERSE_OVERLAY_MAP.get(name, [""])[0]
+            tile.overlay_code = code
+            self._persist_overlay(tile, code)
         self._close()
 
     def scroll(self, dy):
@@ -182,7 +178,7 @@ class TilePicker:
         self.editor.current_choice = None
         self.dragging              = False
 
-    def _persistir_overlay(self, tile, code: str):
+    def _persist_overlay(self, tile, code: str):
         row = tile.y // TILE_SIZE
         col = tile.x // TILE_SIZE
         if self.state.overlay_map is None:
