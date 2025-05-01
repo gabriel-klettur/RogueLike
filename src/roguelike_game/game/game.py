@@ -12,7 +12,7 @@ from src.roguelike_engine.config import (
 from src.roguelike_engine.input.events import handle_events
 
 from roguelike_game.game.state import GameState
-from roguelike_engine.map.manager import build_map
+from roguelike_engine.map.core.manager import build_map
 from roguelike_game.entities.load_entities import load_entities
 from roguelike_game.network.multiplayer_manager import NetworkManager
 from src.roguelike_game.ui.menus.menu import Menu
@@ -83,12 +83,14 @@ class Game:
         Construye el mapa y carga el overlay.
         build_map ahora devuelve también la clave estática map_name.
         """
-        # 1) Generar mapa y recibir clave
-        self.map_data, self.state.tile_map, self.state.overlay_map, key = build_map(
-            map_name=self.map_name
-        )
-        # 2) Guardar esa clave en el state
-        self.state.map_name = key
+        # 1) Generar mapa
+        result = build_map(map_name=self.map_name)
+
+        # 2) Asignar a state
+        self.map_data         = result.matrix        # lista de strings
+        self.state.tile_map   = result.tiles         # lista de listas de Tile
+        self.state.overlay_map= result.overlay       # capa overlay (o None)
+        self.state.map_name   = result.name          # clave para persistir overlay
 
         # 3) Aplanar la lista de tiles
         self.state.tiles = [t for row in self.state.tile_map for t in row]
