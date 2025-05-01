@@ -1,82 +1,129 @@
 # Path: src/roguelike_engine/map/merger/merger.py
+
 import random
+import logging
+from typing import List, Tuple, Optional, Sequence
 
 from roguelike_engine.map.utils import find_closest_room_center
-from roguelike_engine.map.generator.dungeon_generator import create_horizontal_tunnel, create_vertical_tunnel
+# Importamos túneles desde el generador si fuera necesario
+from roguelike_engine.map.generator.dungeon import DungeonGenerator
+from roguelike_engine.map.generator.interfaces import MapGenerator
 
-def merge_handmade_with_generated(handmade_map, generated_map, offset_x=0, offset_y=0, merge_mode="center_to_center", dungeon_rooms=None):
-    print("🔀 Iniciando merge del lobby con dungeon...")
-    new_map = [list(row) for row in generated_map]
+logger = logging.getLogger(__name__)
 
-    print(f"📍 Offset aplicado al lobby: ({offset_x}, {offset_y})")
-    print(f"📐 Tamaño lobby: {len(handmade_map[0])}x{len(handmade_map)}")
+
+def merge_handmade_with_generated(
+    handmade_map: Sequence[Sequence[str]],
+    generated_map: Sequence[Sequence[str]],
+    offset_x: int = 0,
+    offset_y: int = 0,
+    merge_mode: str = "center_to_center",
+    dungeon_rooms: Optional[List[Tuple[int, int, int, int]]] = None,
+) -> List[str]:
+    """
+    Fusiona un mapa "handmade" con uno "procedural".
+
+    :param handmade_map: matriz del mapa manual.
+    :param generated_map: matriz del mapa generado.
+    :param offset_x: desplazamiento X para el handmade.
+    :param offset_y: desplazamiento Y para el handmade.
+    :param merge_mode: estrategia de conexión ('center_to_center').
+    :param dungeon_rooms: lista de habitaciones (para conectar).
+    :returns: lista de filas como strings.
+    """
+    logger.debug("Iniciando fusión del lobby con dungeon (modo=%s)...", merge_mode)
+    # Clonamos mapa generado como lista de listas
+    new_map: List[List[str]] = [list(row) for row in generated_map]
+
+    # Superponer handmade_map en new_map
+    height = len(new_map)
+    width = len(new_map[0]) if height else 0
 
     for y, row in enumerate(handmade_map):
         for x, char in enumerate(row):
-            map_x = x + offset_x
-            map_y = y + offset_y
-            if 0 <= map_y < len(new_map) and 0 <= map_x < len(new_map[0]):
-                new_map[map_y][map_x] = char
+            tx = x + offset_x
+            ty = y + offset_y
+            if 0 <= ty < height and 0 <= tx < width:
+                new_map[ty][tx] = char
 
+    # Conexión automática
     if merge_mode == "center_to_center" and dungeon_rooms:
-        print("🔧 Aplicando modo de conexión: center_to_center")
-        connect_from_lobby_exit(
-            new_map, handmade_map, offset_x, offset_y, dungeon_rooms
-        )
+        logger.debug("Aplicando conexión center_to_center...")
+        _connect_center_to_center(new_map, handmade_map, offset_x, offset_y, dungeon_rooms)
     else:
-        print("ℹ️ No se aplicó ninguna conexión automática (merge_mode o rooms vacíos).")
+        logger.debug("No se aplicó conexión automática (modo=%s o sin habitaciones).", merge_mode)
 
+    # Convertir a lista de strings
     return ["".join(row) for row in new_map]
 
-def connect_from_lobby_exit(map_, lobby_map, offset_x, offset_y, dungeon_rooms):
-    print("📡 Buscando punto de salida del lobby...")
-    exit_pos = find_exit_from_lobby(lobby_map, offset_x, offset_y)
 
+def _connect_center_to_center(
+    map_grid: List[List[str]],
+    handmade_map: Sequence[Sequence[str]],
+    offset_x: int,
+    offset_y: int,
+    dungeon_rooms: List[Tuple[int, int, int, int]],
+) -> None:
+    # Buscamos salida del lobby
+    exit_pos = _find_exit_from_lobby(handmade_map, offset_x, offset_y)
     if not exit_pos:
-        print("⚠️ Forzando salida central en borde inferior del lobby.")
-        mid_x = len(lobby_map[0]) // 2
-        ensure_lobby_exit_at(lobby_map, mid_x, len(lobby_map) - 1)
-        exit_pos = (offset_x + mid_x, offset_y + len(lobby_map) - 1)
+        logger.warning("No se encontró una salida válida en el lobby; forzando salida central.")
+        mid_x = len(handmade_map[0]) // 2
+        _ensure_lobby_exit_at(handmade_map, mid_x, len(handmade_map) - 1)
+        exit_pos = (offset_x + mid_x, offset_y + len(handmade_map) - 1)
 
     exit_x, exit_y = exit_pos
-    print(f"🚪 Punto de salida del lobby: ({exit_x}, {exit_y})")
+    logger.debug("Punto de salida del lobby: (%d, %d)", exit_x, exit_y)
 
+    # Sala destino más cercana
     target_x, target_y = find_closest_room_center(exit_x, exit_y, dungeon_rooms)
-    print(f"🎯 Sala destino más cercana: ({target_x}, {target_y})")
+    logger.debug("Sala destino más cercana: (%d, %d)", target_x, target_y)
 
+    # Elegir trayectoria
     if random.random() < 0.5:
-        print("📏 Trayectoria: Horizontal ➝ Vertical")
-        create_horizontal_tunnel(map_, exit_x, target_x, exit_y)
-        create_vertical_tunnel(map_, exit_y, target_y, target_x)
+        logger.debug("Conexión: horizontal➝vertical")
+        DungeonGenerator._horiz_tunnel(map_grid, exit_x, target_x, exit_y)
+        DungeonGenerator._vert_tunnel(map_grid, exit_y, target_y, target_x)
     else:
-        print("📏 Trayectoria: Vertical ➝ Horizontal")
-        create_vertical_tunnel(map_, exit_y, target_y, exit_x)
-        create_horizontal_tunnel(map_, exit_x, target_x, target_y)
+        logger.debug("Conexión: vertical➝horizontal")
+        DungeonGenerator._vert_tunnel(map_grid, exit_y, target_y, exit_x)
+        DungeonGenerator._horiz_tunnel(map_grid, exit_x, target_x, target_y)
 
-def find_exit_from_lobby(lobby_map, offset_x, offset_y):
-    print("🔍 Buscando un '.' en el borde inferior del lobby...")
+
+def _find_exit_from_lobby(
+    lobby_map: Sequence[Sequence[str]],
+    offset_x: int,
+    offset_y: int,
+) -> Optional[Tuple[int, int]]:
     height = len(lobby_map)
-    width = len(lobby_map[0])
-    
+    width = len(lobby_map[0]) if height else 0
+
+    # Borde inferior
     for x in range(width):
         if lobby_map[height - 1][x] == ".":
-            print(f"✅ Salida encontrada en borde inferior: ({x}, {height - 1})")
-            return offset_x + x, offset_y + height - 1
+            return (offset_x + x, offset_y + height - 1)
 
-    print("🔍 Buscando un '.' en los bordes laterales del lobby...")
+    # Bordes laterales
     for y in range(height):
         if lobby_map[y][0] == ".":
-            print(f"✅ Salida izquierda: (0, {y})")
-            return offset_x + 0, offset_y + y
+            return (offset_x, offset_y + y)
         if lobby_map[y][width - 1] == ".":
-            print(f"✅ Salida derecha: ({width - 1}, {y})")
-            return offset_x + width - 1, offset_y + y
+            return (offset_x + width - 1, offset_y + y)
 
-    print("⚠️ No se encontró una salida válida en el lobby.")
     return None
 
-def ensure_lobby_exit_at(lobby_map, x, y):
-    print(f"🧱 Forzando salida en lobby en coordenada relativa ({x}, {y})")
+
+def _ensure_lobby_exit_at(
+    lobby_map: Sequence[Sequence[str]],
+    x: int,
+    y: int,
+) -> None:
+    # Forzamos '.' en la salida
     row = list(lobby_map[y])
     row[x] = "."
-    lobby_map[y] = "".join(row)
+    # La estructura lobby_map puede ser de tuplas; si es lista mutamos en sitio
+    try:
+        if isinstance(lobby_map, list):
+            lobby_map[y] = type(lobby_map[y])("".join(row))
+    except Exception:
+        pass
