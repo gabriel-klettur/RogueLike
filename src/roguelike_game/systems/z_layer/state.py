@@ -6,7 +6,7 @@ Asocia cada entidad (por id) con su valor de altura/capa lógica (Z).
 """
 
 
-from .config_z_layer import DEFAULT_Z
+from ..config_z_layer import DEFAULT_Z
 
 class ZState:
     def __init__(self):

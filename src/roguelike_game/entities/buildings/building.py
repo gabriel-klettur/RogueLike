@@ -3,7 +3,7 @@ import os
 import pygame
 from src.roguelike_engine.utils.loader import load_image
 import src.roguelike_engine.config as config
-from roguelike_game.systems.z_layer.config_z_layer import Z_LAYERS
+from roguelike_game.systems.config_z_layer import Z_LAYERS
 
 class Building:
     """

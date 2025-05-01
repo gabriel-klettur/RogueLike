@@ -41,7 +41,7 @@ class PlayerController:
 
         # Registrar capa Z
         if z_state:
-            from roguelike_game.systems.z_layer.config_z_layer import Z_LAYERS
+            from roguelike_game.systems.config_z_layer import Z_LAYERS
             z_state.set(self.model, Z_LAYERS["player"])
 
     # Delegación de atributos para compatibilidad con Game

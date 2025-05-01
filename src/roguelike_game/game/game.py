@@ -35,7 +35,7 @@ from src.roguelike_game.systems.editor.tiles.controller.tile_editor_events impor
 
 # Z‑Layer
 from src.roguelike_game.systems.z_layer.state import ZState
-from roguelike_game.systems.z_layer.config_z_layer import Z_LAYERS
+from roguelike_game.systems.config_z_layer import Z_LAYERS
 
 class Game:
     def __init__(self, screen, perf_log=None, map_name: str = None):
