@@ -120,9 +120,6 @@ class Renderer:
         # Orden y render
         render_z_ordered(all_entities, screen, cam, state.z_state)
 
-        # Efectos de depuración
-        for entity in all_entities:
-            apply_z_visual_effect(entity, state.player, screen, cam, state.z_state)
 
     def _render_menu(self, state, screen):
         if state.show_menu:
