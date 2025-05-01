@@ -4,5 +4,5 @@ Estamos desarrollando Roguelike con vista top-down, particularmente estamos enfo
 - Implementar una arquitectura de software o varias arquitecturas segun el componente del juego.
 - Separar la logica del juego de la interfaz grafica.
 - Crear una arquitectura clases que permita la escalabilidad, reutilizacion de componentes y la extensibilidad del juego.
-
+- Seleccionar correctamente los nombres de archivos, carpetas y clases.
 
