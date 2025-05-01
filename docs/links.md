@@ -18,3 +18,7 @@ https://app.runwayml.com/
 
 ### asset pack for platforms
 https://zegley.itch.io/2d-platformermetroidvania-asset-pack
+
+
+### sprite editor (Para generar mapas con tiles)
+https://www.spritefusion.com/editor
