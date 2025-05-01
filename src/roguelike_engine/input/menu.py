@@ -1,3 +1,4 @@
+# Path: src/roguelike_engine/input/menu.py
 
 def execute_menu_option(selected, state):
     if selected == "Cambiar personaje":

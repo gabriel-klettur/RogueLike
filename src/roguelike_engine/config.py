@@ -1,3 +1,4 @@
+# Path: src/roguelike_engine/config.py
 from pathlib import Path
 
 #! ------------------------ MAIN GAME SETTINGS ------------------------
@@ -43,4 +44,3 @@ DEFAULT_Z = 1
 #! ------------------------ SERVER CONFIG ------------------------
 # WebSocket URL
 WEBSOCKET_URL = "ws://localhost:8000/ws"
-

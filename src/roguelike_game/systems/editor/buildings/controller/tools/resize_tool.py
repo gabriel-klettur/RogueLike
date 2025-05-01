@@ -1,4 +1,5 @@
 
+# Path: src/roguelike_game/systems/editor/buildings/controller/tools/resize_tool.py
 import pygame
 
 class ResizeTool:
@@ -37,4 +38,3 @@ class ResizeTool:
         new_height = max(50, int(new_width / aspect_ratio))
 
         b.resize(new_width, new_height)
-

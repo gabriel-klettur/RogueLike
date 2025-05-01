@@ -1,4 +1,4 @@
-# core/game/state.py
+# Path: src/roguelike_game/game/state.py
 
 class GameState:
     def __init__(self, screen, background, player, obstacles, buildings, camera, clock, font, menu, tiles, enemies=None):

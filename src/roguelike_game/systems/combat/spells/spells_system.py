@@ -1,5 +1,5 @@
 
-# File: src.roguelike_game/systems/combat/view/effects/particles/spells_system.py
+# Path: src/roguelike_game/systems/combat/spells/spells_system.py
 import pygame
 from pygame.math import Vector2
 
@@ -324,4 +324,3 @@ class SpellsSystem:
     def _player_center(self):
         p = self.state.player
         return (p.x + p.sprite_size[0]//2, p.y + p.sprite_size[1]//2)
-

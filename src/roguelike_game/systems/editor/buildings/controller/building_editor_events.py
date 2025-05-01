@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/systems/editor/buildings/controller/building_editor_events.py
 import pygame
 import logging
 

@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/network/render_multiplayer.py
 from src.roguelike_game.entities.remote_player.base import RemotePlayer
 
 def render_remote_players(state):

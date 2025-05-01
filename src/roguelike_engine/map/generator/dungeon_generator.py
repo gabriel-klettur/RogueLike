@@ -1,5 +1,4 @@
-# src.roguelike_project/map/dungeon_generator.py
-
+# Path: src/roguelike_engine/map/generator/dungeon_generator.py
 import random
 from src.roguelike_engine.config_map import DUNGEON_WIDTH, DUNGEON_HEIGHT
 from roguelike_engine.map.utils import intersect, center_of

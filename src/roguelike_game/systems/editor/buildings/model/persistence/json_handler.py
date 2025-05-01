@@ -1,5 +1,5 @@
-# src/roguelike_game/systems/editor/buildings/model/persistence/json_handler.py
 
+# Path: src/roguelike_game/systems/editor/buildings/model/persistence/json_handler.py
 import os
 import json
 

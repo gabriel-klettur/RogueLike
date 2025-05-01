@@ -1,5 +1,6 @@
 # src.roguelike_project/systems/editor/tiles/tile_editor_view.py
 
+# Path: src/roguelike_game/systems/editor/tiles/view/tile_editor_view.py
 import pygame
 from src.roguelike_engine.config_tiles import TILE_SIZE
 from src.roguelike_game.systems.editor.tiles.tiles_editor_config import OUTLINE_CHOICE, OUTLINE_HOVER, OUTLINE_SEL

@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/systems/combat/spells/slash/controller.py
 class SlashController:
     def __init__(self, model):
         self.model = model

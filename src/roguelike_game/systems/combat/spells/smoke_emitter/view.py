@@ -1,4 +1,4 @@
-# File: src.roguelike_project/systems/combat/spells/smoke_emitter/view.py
+# Path: src/roguelike_game/systems/combat/spells/smoke_emitter/view.py
 class SmokeEmitterView:
     """
     Vista: renderiza las partículas del emisor.

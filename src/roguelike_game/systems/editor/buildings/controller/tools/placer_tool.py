@@ -1,4 +1,5 @@
 
+# Path: src/roguelike_game/systems/editor/buildings/controller/tools/placer_tool.py
 import pygame
 
 class PlacerTool:

@@ -1,4 +1,4 @@
-# File: src.roguelike_project/systems/combat/spells/smoke_emitter/model.py
+# Path: src/roguelike_game/systems/combat/spells/smoke_emitter/model.py
 import pygame
 import random
 

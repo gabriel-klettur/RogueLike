@@ -1,4 +1,4 @@
-# src.roguelike_game/systems/combat/spells/fireball/controller.py
+# Path: src/roguelike_game/systems/combat/spells/fireball/controller.py
 from pygame import Rect
 from src.roguelike_game.systems.combat.spells.fireball.model import FireballModel
 from src.roguelike_game.systems.combat.explosions.fire import FireExplosion

@@ -1,5 +1,4 @@
-# src/roguelike_engine/map/map_exporter.py
-
+# Path: src/roguelike_engine/map/exporter/map_exporter.py
 import os
 import re
 from roguelike_engine.config_map import DEBUG_MAPS_DIR

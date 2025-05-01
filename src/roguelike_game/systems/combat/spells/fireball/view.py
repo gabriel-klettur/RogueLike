@@ -1,4 +1,4 @@
-# src.roguelike_project/systems/combat/spells/fireball/view.py
+# Path: src/roguelike_game/systems/combat/spells/fireball/view.py
 import pygame
 
 class FireballView:

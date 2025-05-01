@@ -1,4 +1,5 @@
 
+# Path: src/roguelike_game/systems/editor/buildings/controller/tools/split_tool.py
 import pygame
 
 from src.roguelike_game.systems.editor.buildings.buildings_editor_config import SPLIT_HANDLE_SIZE

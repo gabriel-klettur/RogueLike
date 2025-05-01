@@ -1,4 +1,4 @@
-# network/client.py
+# Path: src/roguelike_game/network/client.py
 import threading
 import websocket
 import json

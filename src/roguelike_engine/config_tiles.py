@@ -1,4 +1,4 @@
-# src.roguelike_project/config_tiles.py
+# Path: src/roguelike_engine/config_tiles.py
 from roguelike_engine.config_map import MAP_OVERLAYS_DIR
 
 #!------------------------ TILES CONFIG -------------------------

@@ -1,5 +1,5 @@
-# src.roguelike_project/systems/editor/tiles/tile_editor.py
 
+# Path: src/roguelike_game/systems/editor/tiles/controller/tile_editor_controller.py
 from pathlib import Path
 from src.roguelike_engine.config_tiles import TILE_SIZE
 from roguelike_engine.config_tiles import OVERLAY_CODE_MAP, INVERSE_OVERLAY_MAP, DEFAULT_TILE_MAP

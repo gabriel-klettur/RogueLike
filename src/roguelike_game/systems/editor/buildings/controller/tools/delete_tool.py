@@ -1,4 +1,5 @@
 
+# Path: src/roguelike_game/systems/editor/buildings/controller/tools/delete_tool.py
 import pygame
 
 class DeleteTool:

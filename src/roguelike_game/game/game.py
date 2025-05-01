@@ -1,5 +1,4 @@
-# File: src.roguelike_project/engine/game/game.py
-
+# Path: src/roguelike_game/game/game.py
 import sys
 import os
 import pygame

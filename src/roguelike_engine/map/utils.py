@@ -1,3 +1,4 @@
+# Path: src/roguelike_engine/map/utils.py
 def intersect(room1, room2):
     x1a, y1a, x2a, y2a = room1
     x1b, y1b, x2b, y2b = room2

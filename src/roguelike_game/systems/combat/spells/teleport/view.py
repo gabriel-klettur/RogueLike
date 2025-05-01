@@ -1,4 +1,4 @@
-# src.roguelike_game/systems/combat/spells/teleport/view.py
+# Path: src/roguelike_game/systems/combat/spells/teleport/view.py
 import pygame
 import time
 from pygame import Surface

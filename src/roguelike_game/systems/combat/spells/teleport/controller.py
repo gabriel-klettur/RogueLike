@@ -1,4 +1,4 @@
-# src.roguelike_game/systems/combat/spells/teleport/controller.py
+# Path: src/roguelike_game/systems/combat/spells/teleport/controller.py
 import time
 from src.roguelike_game.systems.combat.spells.teleport.model import TeleportModel
 

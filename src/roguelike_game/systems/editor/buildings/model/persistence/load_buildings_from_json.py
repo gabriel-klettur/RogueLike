@@ -1,5 +1,6 @@
 
 
+# Path: src/roguelike_game/systems/editor/buildings/model/persistence/load_buildings_from_json.py
 import json
 import os
 

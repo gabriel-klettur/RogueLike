@@ -1,4 +1,4 @@
-# File: src.roguelike_project/systems/combat/spells/laser_beam/controller.py
+# Path: src/roguelike_game/systems/combat/spells/laser_beam/controller.py
 import math
 from .model import LaserBeamModel
 

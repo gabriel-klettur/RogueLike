@@ -1,4 +1,5 @@
 
+# Path: src/roguelike_game/network/multiplayer_manager.py
 from src.roguelike_game.network.client import WebSocketClient
 from src.roguelike_engine.config import WEBSOCKET_URL
 

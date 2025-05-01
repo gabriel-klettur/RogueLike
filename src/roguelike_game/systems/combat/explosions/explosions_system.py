@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/systems/combat/explosions/explosions_system.py
 from src.roguelike_engine.utils.benchmark import benchmark
 
 class ExplosionSystem:

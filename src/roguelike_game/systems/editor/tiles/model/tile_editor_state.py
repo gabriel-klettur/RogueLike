@@ -1,4 +1,4 @@
-# src.roguelike_project/systems/editor/tiles/tile_editor_state.py
+# Path: src/roguelike_game/systems/editor/tiles/model/tile_editor_state.py
 
 class TileEditorControllerState:
     """

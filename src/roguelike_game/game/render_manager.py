@@ -1,5 +1,4 @@
-# src.roguelike_project/engine/game/render/render.py
-
+# Path: src/roguelike_game/game/render_manager.py
 import time
 import pygame
 

@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/systems/combat/spells/firework_launch/model.py
 import math
 from pygame.math import Vector2
 

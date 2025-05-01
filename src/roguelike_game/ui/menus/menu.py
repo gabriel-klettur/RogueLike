@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/ui/menus/menu.py
 import pygame
 
 class Menu:

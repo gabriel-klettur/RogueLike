@@ -1,3 +1,4 @@
+# Path: src/roguelike_engine/utils/debug.py
 import pygame
 
 def draw_player_aim_line(screen, camera, player):    

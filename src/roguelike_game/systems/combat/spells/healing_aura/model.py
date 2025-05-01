@@ -1,4 +1,4 @@
-# File: src.roguelike_project/systems/combat/spells/healing_aura/model.py
+# Path: src/roguelike_game/systems/combat/spells/healing_aura/model.py
 import pygame
 import random
 from pygame.math import Vector2

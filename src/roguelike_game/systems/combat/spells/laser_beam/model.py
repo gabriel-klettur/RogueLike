@@ -1,4 +1,4 @@
-# File: src.roguelike_game/systems/combat/spells/laser_beam/model.py
+# Path: src/roguelike_game/systems/combat/spells/laser_beam/model.py
 import math
 import random
 from src.roguelike_game.systems.particles.particle import Particle

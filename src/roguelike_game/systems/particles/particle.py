@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/systems/particles/particle.py
 import pygame
 import random
 import math

@@ -1,3 +1,5 @@
+# Path: src/roguelike_game/systems/editor/tiles/tiles_editor_config.py
+
 OUTLINE_SEL    = (0, 255, 0)     # seleccionado (verde)
 OUTLINE_HOVER  = (0, 220, 255)   # hover (cian)
 OUTLINE_CHOICE = (255, 255, 0)   # elección actual (amarillo)

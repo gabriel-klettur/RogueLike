@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/systems/combat/spells/arcane_flame/palette.py
 """
 Paleta y constantes para el efecto ArcaneFlame (pixel fire).
 """

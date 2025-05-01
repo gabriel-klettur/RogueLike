@@ -1,4 +1,4 @@
-# src.roguelike_project/systems/combat/spells/teleport/model.py
+# Path: src/roguelike_game/systems/combat/spells/teleport/model.py
 import time
 
 class TeleportModel:

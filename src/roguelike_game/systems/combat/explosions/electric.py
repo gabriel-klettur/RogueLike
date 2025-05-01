@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/systems/combat/explosions/electric.py
 import random
 import math
 from src.roguelike_game.systems.particles.particle import Particle

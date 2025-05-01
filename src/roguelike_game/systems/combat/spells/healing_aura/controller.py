@@ -1,4 +1,4 @@
-# File: src.roguelike_project/systems/combat/spells/healing_aura/controller.py
+# Path: src/roguelike_game/systems/combat/spells/healing_aura/controller.py
 import random
 import math
 from .model import HealingAuraModel, HealingParticle

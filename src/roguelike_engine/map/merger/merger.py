@@ -1,5 +1,4 @@
-# src.roguelike_project/map/map_merger.py
-
+# Path: src/roguelike_engine/map/merger/merger.py
 import random
 
 from roguelike_engine.map.utils import find_closest_room_center

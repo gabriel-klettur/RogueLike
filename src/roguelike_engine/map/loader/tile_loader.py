@@ -1,5 +1,4 @@
-# src.roguelike_project/engine/game/systems/map/tile_loader.py
-
+# Path: src/roguelike_engine/map/loader/tile_loader.py
 import random
 import os
 from src.roguelike_engine.utils.loader import load_image

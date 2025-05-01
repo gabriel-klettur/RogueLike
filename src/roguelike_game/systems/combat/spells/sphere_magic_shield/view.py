@@ -1,4 +1,4 @@
-# src.roguelike_game/systems/combat/spells/sphere_magic_shield/view.py
+# Path: src/roguelike_game/systems/combat/spells/sphere_magic_shield/view.py
 import pygame
 from pygame import Rect
 

@@ -1,5 +1,4 @@
-# src.roguelike_project/engine/game/systems/map_manager.py
-
+# Path: src/roguelike_engine/map/manager.py
 from src.roguelike_engine.config_map import (
     DUNGEON_WIDTH,
     DUNGEON_HEIGHT,

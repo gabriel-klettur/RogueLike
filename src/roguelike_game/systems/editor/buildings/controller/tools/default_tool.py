@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/systems/editor/buildings/controller/tools/default_tool.py
 import pygame
 
 class DefaultTool:
@@ -24,4 +25,3 @@ class DefaultTool:
 
     def apply_reset(self, building):
         building.reset_to_original_size()
-

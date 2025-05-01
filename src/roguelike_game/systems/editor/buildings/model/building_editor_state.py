@@ -1,4 +1,5 @@
 
+# Path: src/roguelike_game/systems/editor/buildings/model/building_editor_state.py
 class BuildingsEditorState:
     def __init__(self):
         self.active = False

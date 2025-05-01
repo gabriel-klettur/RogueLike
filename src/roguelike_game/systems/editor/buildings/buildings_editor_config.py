@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/systems/editor/buildings/buildings_editor_config.py
 
 # Tamaño genérico para handles de resize y reset
 DEFAULT_HANDLE_SIZE = 50

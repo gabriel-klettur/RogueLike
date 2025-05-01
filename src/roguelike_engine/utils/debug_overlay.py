@@ -1,3 +1,4 @@
+# Path: src/roguelike_engine/utils/debug_overlay.py
 import pygame
 
 def render_debug_overlay(screen, perf_log, extra_lines=None, position=(8, 8), font_size=18):

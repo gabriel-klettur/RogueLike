@@ -1,3 +1,4 @@
+# Path: src/roguelike_engine/config_map.py
 from pathlib import Path
 from roguelike_engine.config import DATA_DIR
 
@@ -25,7 +26,6 @@ DUNGEON_HEIGHT = 120
 
 # Debug maps (mapas de debug generados por map_exporter)
 DEBUG_MAPS_DIR = Path(DATA_DIR) / "debug_maps"
-
 
 
 

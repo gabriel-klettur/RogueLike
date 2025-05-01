@@ -1,4 +1,4 @@
-# src.roguelike_project/systems/combat/spells/fireball/model.py
+# Path: src/roguelike_game/systems/combat/spells/fireball/model.py
 import math
 import pygame
 from src.roguelike_engine.utils.loader import load_image

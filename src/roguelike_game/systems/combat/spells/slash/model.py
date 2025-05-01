@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/systems/combat/spells/slash/model.py
 import math
 import pygame
 

@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/systems/editor/tiles/controller/tile_editor_events.py
 import pygame
 
 class TileEditorEventHandler:
@@ -97,4 +98,3 @@ class TileEditorEventHandler:
     def _on_mouse_wheel(self, ev):
         if self.editor.picker_open:
             self.controller.picker.scroll(ev.y)
-

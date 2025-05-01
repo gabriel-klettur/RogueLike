@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/main.py
 import sys
 import os
 import pygame

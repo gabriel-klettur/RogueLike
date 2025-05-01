@@ -1,4 +1,4 @@
-# File: src.roguelike_project/systems/combat/spells/healing_aura/view.py
+# Path: src/roguelike_game/systems/combat/spells/healing_aura/view.py
 import pygame
 from .model import HealingAuraModel
 

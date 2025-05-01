@@ -1,5 +1,4 @@
-# src.roguelike_project/entities/projectiles/magic_explosion.py
-
+# Path: src/roguelike_game/systems/combat/explosions/magic.py
 import random
 import math
 from src.roguelike_game.systems.particles.particle import Particle

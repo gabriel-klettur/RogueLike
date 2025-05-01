@@ -1,3 +1,4 @@
+# Path: src/roguelike_engine/map/loader/tile.py
 import pygame
 
 import src.roguelike_engine.config as config

@@ -1,4 +1,4 @@
-# File: src.roguelike_game/systems/combat/spells/dash/model.py
+# Path: src/roguelike_game/systems/combat/spells/dash/model.py
 import pygame
 import time
 import math

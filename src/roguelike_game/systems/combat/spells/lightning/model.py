@@ -1,4 +1,4 @@
-# src.roguelike_project/systems/combat/spells/lightning/model.py
+# Path: src/roguelike_game/systems/combat/spells/lightning/model.py
 import math
 import random
 
