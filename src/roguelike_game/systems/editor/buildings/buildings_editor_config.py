@@ -1,3 +1,4 @@
+
 # Path: src/roguelike_game/systems/editor/buildings/buildings_editor_config.py
 
 # Tamaño genérico para handles de resize y reset
@@ -10,5 +11,3 @@ SPLIT_BAR_COLOR   = (0, 200, 255, 160)
 # Constantes para ZTool
 Z_BTN_W, Z_BTN_H       = 30, 30
 Z_PANEL_W, Z_PANEL_H   = 120, 40
-
-

@@ -1,4 +1,4 @@
-# src.roguelike_project/systems/z_layer/render.py
+# Path: src/roguelike_game/systems/z_layer/render.py
 
 """
 Renderizado ordenado por capas Z y eje Y.

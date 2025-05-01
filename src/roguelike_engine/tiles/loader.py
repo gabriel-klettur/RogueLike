@@ -1,5 +1,5 @@
-# Path: src/roguelike_engine/tiles/loader.py
 
+# Path: src/roguelike_engine/tiles/loader.py
 from typing import List, Optional
 from roguelike_engine.config_tiles import TILE_SIZE
 from roguelike_engine.map.overlay.overlay_manager import load_overlay

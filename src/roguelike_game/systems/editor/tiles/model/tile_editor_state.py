@@ -1,5 +1,4 @@
 # Path: src/roguelike_game/systems/editor/tiles/model/tile_editor_state.py
-
 class TileEditorControllerState:
     """
     Estructura mínima para el modo de edición de tiles.

@@ -1,5 +1,5 @@
-# Path: src/roguelike_engine/tiles/model.py
 
+# Path: src/roguelike_engine/tiles/model.py
 import pygame
 from roguelike_engine.config_tiles import TILE_SIZE
 from roguelike_engine.config import DEBUG

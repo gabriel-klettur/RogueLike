@@ -1,9 +1,10 @@
-# src.roguelike_project/systems/z_layer/state.py
+# Path: src/roguelike_game/systems/z_layer/state.py
 
 """
 Sistema central de almacenamiento para capas Z.
 Asocia cada entidad (por id) con su valor de altura/capa lógica (Z).
 """
+
 
 from .config_z_layer import DEFAULT_Z
 

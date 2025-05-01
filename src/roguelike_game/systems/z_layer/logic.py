@@ -1,4 +1,4 @@
-# src.roguelike_project/systems/z_layer/logic.py
+# Path: src/roguelike_game/systems/z_layer/logic.py
 
 """
 Funciones de lógica relacionadas con las capas Z.

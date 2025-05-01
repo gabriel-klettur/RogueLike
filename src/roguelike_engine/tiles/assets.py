@@ -1,5 +1,5 @@
-# Path: src/roguelike_engine/tiles/assets.py
 
+# Path: src/roguelike_engine/tiles/assets.py
 import os
 import random
 import pygame

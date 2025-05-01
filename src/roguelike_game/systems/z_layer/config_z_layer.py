@@ -1,4 +1,4 @@
-# src.roguelike_project/systems/z_layer/config.py
+# Path: src/roguelike_game/systems/z_layer/config_z_layer.py
 
 """
 Configuración central de capas Z para renderizado y lógica.

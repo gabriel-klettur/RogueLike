@@ -28,4 +28,3 @@ DUNGEON_HEIGHT = 120
 DEBUG_MAPS_DIR = Path(DATA_DIR) / "debug_maps"
 
 
-

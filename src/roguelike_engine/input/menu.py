@@ -1,4 +1,3 @@
-# Path: src/roguelike_engine/input/menu.py
 
 def execute_menu_option(selected, state):
     if selected == "Cambiar personaje":
@@ -25,3 +24,4 @@ def _toggle_mode(state):
         state.mode = "local"
         print("🔌 Cambiando a modo local...")
         state.network.disconnect()
+# Path: src/roguelike_engine/input/menu.py

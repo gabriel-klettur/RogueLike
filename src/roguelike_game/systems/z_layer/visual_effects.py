@@ -1,4 +1,4 @@
-# src.roguelike_project/systems/z_layer/visual_effects.py
+# Path: src/roguelike_game/systems/z_layer/visual_effects.py
 
 """
 Efectos visuales basados en capas Z.

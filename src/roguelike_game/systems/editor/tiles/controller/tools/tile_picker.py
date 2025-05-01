@@ -1,5 +1,5 @@
-# Path: src/roguelike_game/systems/editor/tiles/controller/tools/tile_picker.py
 
+# Path: src/roguelike_game/systems/editor/tiles/controller/tools/tile_picker.py
 import pygame
 from pathlib import Path
 
