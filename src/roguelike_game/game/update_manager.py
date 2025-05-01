@@ -11,7 +11,7 @@ def update_game(state):
     #!------------------ ESTO DEBERIAMOS MEJORARLO ------------------
     enemies = state.enemies + list(state.remote_entities.values())    
     for enemy in enemies:
-        enemy.update()
+        enemy.update(state)
 
     state.player.movement.update_dash(
         [t for t in state.tiles if t.solid],

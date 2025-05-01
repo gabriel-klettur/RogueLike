@@ -4,6 +4,9 @@ import src.roguelike_engine.config as config
 from .menu import execute_menu_option
 
 
+#!MOVER DE AQUI!
+from roguelike_game.entities.npc.elite_monster import Elite
+
 
 def handle_keyboard(event, state):
     if event.type == pygame.KEYDOWN:
@@ -82,6 +85,19 @@ def handle_keyboard(event, state):
         elif event.key == pygame.K_F9:
             config.DEBUG = not config.DEBUG
             print(f"🧪 DEBUG {'activado' if config.DEBUG else 'desactivado'}")
+
+        # ---------- Monster Spawner (F7) --------- #
+        elif event.key == pygame.K_F7:
+            print("Monster positions:")
+
+            for entity in state.enemies:
+                print(f"- {entity.name} at ({entity.x}, {entity.y})")            
+
+            mouse_x, mouse_y = pygame.mouse.get_pos()
+            world_x = round(mouse_x / state.camera.zoom + state.camera.offset_x)
+            world_y = round(mouse_y / state.camera.zoom + state.camera.offset_y)
+            print(f"Spawning enemy at {world_x}, {world_y}")
+            state.enemies.append(Elite(world_x, world_y)) 
 
         # ---------- TILE-EDITOR (F8) --------- #
         elif event.key == pygame.K_F8:
