@@ -1,30 +1,19 @@
 # Path: src/roguelike_engine/map/overlay/overlay_manager.py
-import os
-import json
-from roguelike_engine.config_tiles import TILES_DATA_PATH
 
-"""
-Funciones para cargar y guardar la capa overlay de un mapa.
-Cada overlay es un array 2D de cadenas de 3 caracteres (o vacías) serializado en JSON.
-"""
+from typing import Optional, List
+from .factory import get_overlay_store
 
-def load_overlay(map_name: str) -> list[list[str]] | None:
-    """
-    Carga la capa overlay para un mapa dado desde TILES_DATA_PATH.
-    Retorna None si no existe.
-    """
-    path = os.path.join(TILES_DATA_PATH, f"{map_name}.overlay.json")
-    if not os.path.isfile(path):
-        return None
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
+# Instanciamos por defecto el store JSON
+_default_store = get_overlay_store("json")
 
+def load_overlay(map_name: str) -> Optional[List[List[str]]]:
+    """
+    Carga la capa overlay para un mapa dado usando la estrategia configurada.
+    """
+    return _default_store.load(map_name)
 
-def save_overlay(map_name: str, overlay: list[list[str]]) -> None:
+def save_overlay(map_name: str, overlay: List[List[str]]) -> None:
     """
-    Guarda la capa overlay en TILES_DATA_PATH.
+    Guarda la capa overlay para un mapa dado usando la estrategia configurada.
     """
-    os.makedirs(TILES_DATA_PATH, exist_ok=True)
-    path = os.path.join(TILES_DATA_PATH, f"{map_name}.overlay.json")
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(overlay, f, ensure_ascii=False, indent=2)
+    _default_store.save(map_name, overlay)
