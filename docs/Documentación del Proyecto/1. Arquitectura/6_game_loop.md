@@ -8,7 +8,7 @@ Este documento explica el **ciclo principal del juego** implementado en `main.py
 
 ```python
 import pygame
-from roguelike_project.core.game.logic.base import Game
+from src.roguelike_project.core.game.logic.base import Game
 
 def main():
     pygame.init()

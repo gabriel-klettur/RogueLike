@@ -18,7 +18,7 @@ Este documento describe cómo debe diseñarse e implementarse el sistema de guar
 ## 🗂️ Estructura de Carpetas Propuesta
 
 ```bash
-roguelike_project/
+src.roguelike_project/
 └── save_system/
     ├── local/
     │   ├── local_saver.py         # Guardar/cargar datos en .json
