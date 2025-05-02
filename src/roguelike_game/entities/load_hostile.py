@@ -1,9 +1,9 @@
 # Path: src/roguelike_game/entities/load_hostile.py
-from src.roguelike_game.entities.npc.models.monster import Monster
-from src.roguelike_game.entities.npc.models.elite_monster import Elite
+from src.roguelike_game.entities.npc.factory import NPCFactory
+
 def load_hostile():
     return [
-        Monster(800, 600),
-        Monster(800, 800),
-        Elite(800, 1000),
+        NPCFactory.create("monster", x=800, y=600),
+        NPCFactory.create("monster", x=800, y=800),
+        NPCFactory.create("elite",   x=800, y=1000),
     ]

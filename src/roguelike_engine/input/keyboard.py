@@ -4,9 +4,7 @@ import src.roguelike_engine.config as config
 from .menu import execute_menu_option
 
 
-#!MOVER DE AQUI!
-from roguelike_game.entities.npc.models.elite_monster import Elite
-
+from src.roguelike_game.entities.npc.factory import NPCFactory
 
 def handle_keyboard(event, state):
     if event.type == pygame.KEYDOWN:
@@ -97,7 +95,8 @@ def handle_keyboard(event, state):
             world_x = round(mouse_x / state.camera.zoom + state.camera.offset_x)
             world_y = round(mouse_y / state.camera.zoom + state.camera.offset_y)
             print(f"Spawning enemy at {world_x}, {world_y}")
-            state.enemies.append(Elite(world_x, world_y)) 
+            state.enemies.append( NPCFactory.create("elite", world_x, world_y)) 
+            
 
         # ---------- TILE-EDITOR (F8) --------- #
         elif event.key == pygame.K_F8:
