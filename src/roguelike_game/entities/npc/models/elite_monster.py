@@ -1,7 +1,7 @@
 # Path: src/roguelike_game/entities/npc/hostile/elite_monster.py
 import pygame
 from src.roguelike_engine.utils.loader import load_image
-from src.roguelike_game.entities.npc.hostile.monster import Monster
+from src.roguelike_game.entities.npc.models.monster import Monster
 
 class Elite(Monster):
     def __init__(self, x, y, name="Elite"):
