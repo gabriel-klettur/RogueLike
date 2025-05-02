@@ -5,7 +5,7 @@ from .menu import execute_menu_option
 
 
 #!MOVER DE AQUI!
-from roguelike_game.entities.npc.elite_monster import Elite
+from roguelike_game.entities.npc.hostile.elite_monster import Elite
 
 
 def handle_keyboard(event, state):
