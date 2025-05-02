@@ -28,5 +28,3 @@ class MonsterModel(IModel):
         if self.health <= 0:
             self.alive = False
 
-    def calculate_distance(self, px: float, py: float) -> float:
-        return math.hypot(px - self.x, py - self.y)
