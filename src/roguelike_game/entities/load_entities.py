@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/entities/load_entities.py
 from src.roguelike_game.entities.player.controller.player_controller import PlayerController
 from src.roguelike_game.entities.load_obstacles import load_obstacles
 from src.roguelike_game.entities.load_hostile   import load_hostile

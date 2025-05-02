@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/entities/player/model/attack_model.py
 import time
 
 class PlayerAttack:

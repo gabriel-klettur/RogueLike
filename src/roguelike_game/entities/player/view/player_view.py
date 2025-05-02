@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/entities/player/view/player_view.py
 import pygame
 import src.roguelike_engine.config as config
 from src.roguelike_engine.utils.mouse import get_direction_from_angle, draw_mouse_crosshair
@@ -59,4 +60,3 @@ class PlayerView:
 
         # Dibujar crosshair
         draw_mouse_crosshair(screen, camera)
-

@@ -1,6 +1,7 @@
 """
 Renderiza la mira de ratón.
 """
+# Path: src/roguelike_game/entities/player/view/ui/crosshair_view.py
 import pygame
 
 class CrosshairView:

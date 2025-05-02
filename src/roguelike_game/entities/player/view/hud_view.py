@@ -3,6 +3,7 @@
 """
 HUD: barras de vida/mana/energía y cooldowns con iconos.
 """
+# Path: src/roguelike_game/entities/player/view/hud_view.py
 import time
 import pygame
 

@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/systems/combat/spells/arcane_flame/palette.py
 """
 Paleta y constantes para el efecto ArcaneFlame (pixel fire).
 """
@@ -18,3 +17,4 @@ FLAME_COLOR_PALETTE = [
 
 # Direcciones de propagación, con mayor peso hacia abajo
 SPREAD_FROM = ['bottom'] * 10 + ['left'] * 2 + ['right'] * 2 + ['top']
+# Path: src/roguelike_game/systems/combat/spells/arcane_flame/palette.py

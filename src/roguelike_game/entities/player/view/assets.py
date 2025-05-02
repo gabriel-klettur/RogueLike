@@ -1,6 +1,7 @@
 """
 Carga de sprites y assets para el jugador.
 """
+# Path: src/roguelike_game/entities/player/view/assets.py
 import os
 from roguelike_engine.utils.loader import load_sprite_sheet
 

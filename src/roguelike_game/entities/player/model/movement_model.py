@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/entities/player/model/movement_model.py
 import pygame
 import math
 import time

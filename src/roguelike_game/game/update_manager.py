@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/game/update_manager.py
 
 def update_game(state):
     if not state.running:
@@ -21,3 +20,4 @@ def update_game(state):
     #!---------------------------------------------------------------
 
     
+# Path: src/roguelike_game/game/update_manager.py

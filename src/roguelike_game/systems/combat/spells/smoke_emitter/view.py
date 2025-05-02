@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/systems/combat/spells/smoke_emitter/view.py
 class SmokeEmitterView:
     """
     Vista: renderiza las partículas del emisor.
@@ -9,3 +8,4 @@ class SmokeEmitterView:
     def render(self, screen, camera):
         for p in self.model.particles:
             p.render(screen, camera)
+# Path: src/roguelike_game/systems/combat/spells/smoke_emitter/view.py

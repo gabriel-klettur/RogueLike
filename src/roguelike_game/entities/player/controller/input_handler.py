@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/entities/player/controller/input_handler.py
 import pygame
 
 def handle_player_input(event, player_ctrl):

@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/entities/player/model/player_model.py
 import pygame
 from .stats_model import PlayerStats
 from .movement_model import PlayerMovement

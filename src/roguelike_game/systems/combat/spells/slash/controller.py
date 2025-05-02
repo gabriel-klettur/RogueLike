@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/systems/combat/spells/slash/controller.py
 class SlashController:
     def __init__(self, model):
         self.model = model
@@ -8,3 +7,4 @@ class SlashController:
 
     def is_finished(self):
         return self.model.is_finished()
+# Path: src/roguelike_game/systems/combat/spells/slash/controller.py

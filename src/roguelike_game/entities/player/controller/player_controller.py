@@ -1,5 +1,6 @@
 # src/roguelike_game/entities/player/controller/player_controller.py
 
+# Path: src/roguelike_game/entities/player/controller/player_controller.py
 import pygame
 from src.roguelike_game.entities.player.model.player_model import PlayerModel
 from src.roguelike_game.entities.player.view.assets import PlayerAssets

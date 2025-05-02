@@ -1,6 +1,7 @@
 """
 Dibuja hitbox y línea de puntería en modo DEBUG.
 """
+# Path: src/roguelike_game/entities/player/view/ui/debug_overlay_view.py
 import pygame
 from src.roguelike_engine.utils.debug import draw_player_aim_line
 

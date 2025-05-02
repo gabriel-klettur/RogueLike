@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/entities/player/model/stats_model.py
 import time
 
 class PlayerStats:

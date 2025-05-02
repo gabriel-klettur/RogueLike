@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/systems/z_layer/config_z_layer.py
 
 """
 Configuración central de capas Z para renderizado y lógica.
@@ -17,3 +16,4 @@ Z_LAYERS = {
 }
 
 DEFAULT_Z = Z_LAYERS["ground"]
+# Path: src/roguelike_game/systems/config_z_layer.py

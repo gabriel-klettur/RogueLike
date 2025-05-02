@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/entities/npc/hostile/monster.py
 import pygame
 import math
 from src.roguelike_engine.utils.loader import load_image

@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/game/state.py
 
 class GameState:
     def __init__(self, screen, background, player, obstacles, buildings, camera, clock, font, menu, tiles, enemies=None):
@@ -22,3 +21,4 @@ class GameState:
 
         #!------------ Deberia ir en otro lugar ------------
         self.tile_editor_active = False
+# Path: src/roguelike_game/game/state.py
