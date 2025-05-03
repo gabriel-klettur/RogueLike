@@ -1,48 +1,5 @@
-# Path: src/roguelike_game/entities/npc/controllers/monster_controller.py
+#Path: src/roguelike_game/entities/npc/controllers/monster_controller.py
 
-from src.roguelike_game.entities.npc.interfaces import IController
-from src.roguelike_game.entities.npc.utils.geometry import calculate_distance
+from ..types.monster.controller import MonsterController
 
-class MonsterController(IController):
-    def __init__(self, model):
-        self.model = model
-
-    def update(self, state):
-        m = self.model
-        if not m.alive:
-            return
-
-        px, py = state.player.x, state.player.y
-        # Usamos calculate_distance pasando posición del monstruo y del jugador
-        dist = calculate_distance(m.x, m.y, px, py)
-
-        if dist <= 500:
-            self._follow_player(px, py, dist)
-        else:
-            self._patrol()
-
-    def _follow_player(self, px: float, py: float, dist: float):
-        m = self.model
-        dx = px - m.x
-        dy = py - m.y
-        # Si está muy cerca, solo cambiamos dirección sin movernos
-        if dist < 250:
-            m.direction = (-dx, -dy)
-        else:
-            nx, ny = dx / dist, dy / dist
-            m.x += nx * m.speed
-            m.y += ny * m.speed
-            m.direction = (nx, ny)
-
-    def _patrol(self):
-        m = self.model
-        dx, dy, step_length = m.path[m.current_step]
-        # Movemos y actualizamos progreso
-        m.x += dx * m.speed
-        m.y += dy * m.speed
-        m.step_progress += m.speed
-        m.direction = (dx, dy)
-        # Si alcanzamos el tramo, pasamos al siguiente
-        if m.step_progress >= step_length:
-            m.current_step = (m.current_step + 1) % len(m.path)
-            m.step_progress = 0.0
+__all__ = ["MonsterController"]

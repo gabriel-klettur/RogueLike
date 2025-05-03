@@ -1,8 +1,21 @@
-#Path: src/roguelike_game/entities/npc/types/elite/config.yaml
+# Path: src/roguelike_game/entities/npc/types/elite/config.yaml
 
-type:       elite
+type: elite
+
+# Stats de élite
 health:     100
 max_health: 100
 speed:      6.0
 
-sprite_path: "npc/elite/elite_spritesheet.png"
+sprite_size: [256, 256]
+
+sprite_paths:
+  up:    "npc/monsters/barbol_elite/elite_barbol_1_top.png"
+  down:  "npc/monsters/barbol_elite/elite_barbol_1_down.png"
+  left:  "npc/monsters/barbol_elite/elite_barbol_1_left.png"
+  right: "npc/monsters/barbol_elite/elite_barbol_1_right.png"
+  
+
+model_class:      EliteModel
+controller_class: EliteController
+view_class:       EliteView

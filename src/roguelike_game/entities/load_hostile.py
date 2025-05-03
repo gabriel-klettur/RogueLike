@@ -1,5 +1,5 @@
 # Path: src/roguelike_game/entities/load_hostile.py
-from roguelike_game.entities.npc.factory_old import NPCFactory
+from roguelike_game.entities.npc.factory import NPCFactory
 
 def load_hostile():
     return [

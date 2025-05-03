@@ -1,31 +1,36 @@
 #Path: src/roguelike_game/entities/npc/base/view.py
 
 import pygame
-from ..base.interfaces import IView
+from src.roguelike_game.entities.npc.interfaces import IView
+from src.roguelike_engine.utils.loader import load_image
 
 class BaseNPCView(IView):
     """
-    Vista base que dibuja una barra de salud simple encima del sprite.
-    Subclases deben cargar `self.sprite` y definir `self.model`.
+    Renderiza un NPC a partir de un dict de rutas de sprite.
     """
-    BAR_HEIGHT = 4
-
-    def __init__(self, model, sprite: pygame.Surface):
+    def __init__(self, model, sprite_paths: dict[str,str], size: tuple[int,int]):
         self.model = model
-        self.sprite = sprite
-        # asumimos que model tiene sprite_size
-        self.size = getattr(model, "sprite_size", self.sprite.get_size())
+        # load_image ya busca en ASSETS_DIR
+        self.sprites = {
+            name: load_image(path, size)
+            for name, path in sprite_paths.items()
+        }
+        self.mask = None
 
     def render(self, screen, camera):
-        # 1) dibujar sprite
-        scaled = pygame.transform.scale(self.sprite, camera.scale(self.size))
-        screen.blit(scaled, camera.apply((self.model.x, self.model.y)))
-
-        # 2) dibujar barra de salud
-        if hasattr(self.model, "health") and hasattr(self.model, "max_health"):
-            ratio = max(0, self.model.health) / self.model.max_health
-            w, h = camera.scale(self.size)
-            bar_w = int(w * ratio)
-            x, y = camera.apply((self.model.x, self.model.y - 10))
-            pygame.draw.rect(screen, (255,0,0),   (x, y, w,   self.BAR_HEIGHT))
-            pygame.draw.rect(screen, (0,255,0),   (x, y, bar_w, self.BAR_HEIGHT))
+        m = self.model
+        if hasattr(m, "alive") and not m.alive:
+            return
+        # determina key de sprite: 'all' o según m.direction
+        key = "all"
+        if hasattr(m, "direction") and m.direction in self.sprites:
+            dir_x, dir_y = m.direction
+            if abs(dir_x) > abs(dir_y):
+                key = "right" if dir_x > 0 else "left"
+            else:
+                key = "down" if dir_y > 0 else "up"
+        sprite = self.sprites.get(key) or next(iter(self.sprites.values()))
+        self.mask = pygame.mask.from_surface(sprite)
+        scaled = pygame.transform.scale(sprite, camera.scale(sprite.get_size()))
+        screen.blit(scaled, camera.apply((m.x, m.y)))
+        # (añade aquí health-bar genérica si quieres)
