@@ -1,4 +1,4 @@
-# src/roguelike_game/entities/npc/base/model.py
+#Path: src/roguelike_game/entities/npc/base/model.py
 
 from .interfaces import IModel
 

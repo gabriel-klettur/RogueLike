@@ -1,4 +1,4 @@
-# src/roguelike_game/entities/npc/base/__init__.py
+#Path: src/roguelike_game/entities/npc/base/__init__.py
 
 """
 Paquete de clases base para NPC:
