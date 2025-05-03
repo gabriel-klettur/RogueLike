@@ -3,3 +3,4 @@ tcod
 pyinstaller
 websockets
 websocket-client
+pyyaml
