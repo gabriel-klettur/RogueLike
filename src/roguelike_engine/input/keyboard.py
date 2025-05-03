@@ -4,7 +4,7 @@ import src.roguelike_engine.config as config
 from .menu import execute_menu_option
 
 
-from src.roguelike_game.entities.npc.factory import NPCFactory
+from roguelike_game.entities.npc.factory_old import NPCFactory
 
 def handle_keyboard(event, state):
     if event.type == pygame.KEYDOWN:
