@@ -1,3 +1,5 @@
+# Path: src/roguelike_engine/camera/camera.py
+
 class Camera:
     def __init__(self, screen_width, screen_height):
         self.screen_width = screen_width
@@ -20,8 +22,13 @@ class Camera:
         return int(w * self.zoom), int(h * self.zoom)
 
     def is_in_view(self, x, y, size):
-        """Verifica si un objeto en (x, y) con tamaño (w, h) está dentro del área visible"""
+        """
+        Verifica si un objeto en (x, y) con tamaño (w, h) está dentro
+        del área visible. Si size es None, asumimos que debe dibujarse.
+        """
+        if size is None:
+            return True
+
         screen_x, screen_y = self.apply((x, y))
         w, h = self.scale(size)
         return -w < screen_x < self.screen_width and -h < screen_y < self.screen_height
-# Path: src/roguelike_engine/camera/camera.py

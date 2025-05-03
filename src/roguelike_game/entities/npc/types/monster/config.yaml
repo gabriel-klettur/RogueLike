@@ -1,0 +1,24 @@
+# Path: src/roguelike_game/entities/npc/types/monster/config.yaml
+
+type: monster
+
+# Stats básicos
+health:     60
+max_health: 60
+speed:      5.0
+
+# Tamaño del sprite (ancho, alto)
+sprite_size: [256, 256]
+
+# Rutas relativas dentro de assets/
+sprite_paths:
+  up:    "npc/monsters/barbol/barbol_1_top.png"
+  down:  "npc/monsters/barbol/barbol_1_down.png"
+  left:  "npc/monsters/barbol/barbol_1_left.png"
+  right: "npc/monsters/barbol/barbol_1_right.png"
+  
+
+# Clases (opcional: si cambian de nombre)
+model_class:      MonsterModel
+controller_class: MonsterController
+view_class:       MonsterView
