@@ -1,0 +1,13 @@
+#Path: src/roguelike_game/entities/npc/types/monster/config.yaml
+
+# Nombre del tipo (coincide con la clave que usará NPCFactory.create)
+type: monster
+
+# Stats básicos
+health:     60
+max_health: 60
+speed:      5.0
+
+# Ruta (relativa a assets/) de la hoja de sprites o de la imagen principal
+# (más adelante la vista la cargará según esta ruta)
+sprite_path: "npc/monster/monster_spritesheet.png"

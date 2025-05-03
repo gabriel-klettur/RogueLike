@@ -1,0 +1,8 @@
+#Path: src/roguelike_game/entities/npc/types/elite/config.yaml
+
+type:       elite
+health:     100
+max_health: 100
+speed:      6.0
+
+sprite_path: "npc/elite/elite_spritesheet.png"
