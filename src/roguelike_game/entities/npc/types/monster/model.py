@@ -1,17 +1,17 @@
 # Path: src/roguelike_game/entities/npc/types/monster/model.py
 
-from src.roguelike_game.entities.npc.interfaces import IModel
+import math
+from src.roguelike_game.entities.npc.base.model import BaseNPCModel
+from src.roguelike_game.entities.npc.utils.geometry import calculate_distance
 
-class MonsterModel(IModel):
+class MonsterModel(BaseNPCModel):
     def __init__(self, x: float, y: float, name: str = "Monster"):
-        self.x = x
-        self.y = y
-        self.name = name
+        super().__init__(x, y, name)
+        # Stats por defecto (se pueden sobrescribir desde config.yaml)
         self.health = 60
         self.max_health = 60
         self.speed = 5.0
-
-        # Patrulla: [(dx,dy,dist), …]
+        # Patrulla: lista de tuplas (dx, dy, distancia)
         self.path = [
             (0, -1, 200),
             (1,  0,  50),
@@ -20,12 +20,8 @@ class MonsterModel(IModel):
         ]
         self.current_step = 0
         self.step_progress = 0.0
-
-        # IA
         self.direction = (0, 1)
         self.alive = True
 
     def take_damage(self, amount: float):
-        self.health -= amount
-        if self.health <= 0:
-            self.alive = False
+        super().take_damage(amount)

@@ -1,11 +1,12 @@
 # Path: src/roguelike_game/entities/npc/types/monster/controller.py
 
-from src.roguelike_game.entities.npc.interfaces import IController
+from src.roguelike_game.entities.npc.base.controller import BaseNPCController
+from src.roguelike_game.entities.npc.types.monster.model import MonsterModel
 from src.roguelike_game.entities.npc.utils.geometry import calculate_distance
 
-class MonsterController(IController):
-    def __init__(self, model):
-        self.model = model
+class MonsterController(BaseNPCController):
+    def __init__(self, model: MonsterModel):
+        super().__init__(model)
 
     def update(self, state):
         m = self.model
@@ -22,8 +23,7 @@ class MonsterController(IController):
 
     def _follow_player(self, px, py, dist):
         m = self.model
-        dx = px - m.x
-        dy = py - m.y
+        dx, dy = px - m.x, py - m.y
         if dist < 250:
             m.direction = (-dx, -dy)
         else:
@@ -34,11 +34,11 @@ class MonsterController(IController):
 
     def _patrol(self):
         m = self.model
-        dx, dy, step_length = m.path[m.current_step]
+        dx, dy, length = m.path[m.current_step]
         m.x += dx * m.speed
         m.y += dy * m.speed
         m.step_progress += m.speed
         m.direction = (dx, dy)
-        if m.step_progress >= step_length:
+        if m.step_progress >= length:
             m.current_step = (m.current_step + 1) % len(m.path)
             m.step_progress = 0.0
