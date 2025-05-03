@@ -1,5 +1,5 @@
-#Path: src/roguelike_engine/map/merger/interfaces.py
 
+# Path: src/roguelike_engine/map/merger/interfaces.py
 from abc import ABC, abstractmethod
 from typing import List, Tuple, Sequence, Optional
 

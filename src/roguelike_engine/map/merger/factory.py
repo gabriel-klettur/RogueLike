@@ -1,5 +1,5 @@
-#Path: src/roguelike_engine/map/merger/factory.py
 
+# Path: src/roguelike_engine/map/merger/factory.py
 from typing import Dict
 from .interfaces import MergerStrategy
 from .center_to_center import CenterToCenterMerger

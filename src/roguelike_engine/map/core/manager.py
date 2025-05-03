@@ -1,5 +1,5 @@
-# Path: src/roguelike_engine/map/core/manager.py
 
+# Path: src/roguelike_engine/map/core/manager.py
 from typing import Optional
 
 from src.roguelike_engine.config_map import (

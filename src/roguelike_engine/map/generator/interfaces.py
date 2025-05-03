@@ -1,4 +1,5 @@
 # src/roguelike_engine/map/generator/interfaces.py
+# Path: src/roguelike_engine/map/generator/interfaces.py
 from abc import ABC, abstractmethod
 from typing import List, Tuple, Optional, Dict
 

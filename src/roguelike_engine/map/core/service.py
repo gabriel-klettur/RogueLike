@@ -1,3 +1,4 @@
+# Path: src/roguelike_engine/map/core/service.py
 import logging
 from typing import Optional, Tuple, List, Dict
 

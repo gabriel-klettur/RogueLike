@@ -1,4 +1,3 @@
-# Path: src/roguelike_engine/map/utils.py
 def intersect(room1, room2):
     x1a, y1a, x2a, y2a = room1
     x1b, y1b, x2b, y2b = room2
@@ -23,3 +22,4 @@ def find_closest_room_center(source_x, source_y, dungeon_rooms):
             min_dist = dist
             closest_center = (cx, cy)
     return closest_center
+# Path: src/roguelike_engine/map/utils.py

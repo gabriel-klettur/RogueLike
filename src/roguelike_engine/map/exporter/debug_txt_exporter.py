@@ -1,5 +1,5 @@
-#Path: src/roguelike_engine/map/exporter/debug_txt_exporter.py
 
+# Path: src/roguelike_engine/map/exporter/debug_txt_exporter.py
 import os
 import re
 import logging

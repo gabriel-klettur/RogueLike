@@ -1,0 +1,1 @@
+# Path: src/roguelike_engine/map/overlay/__init__.py

@@ -1,5 +1,5 @@
-#Path: src/roguelike_engine/map/merger/center_to_center.py
 
+# Path: src/roguelike_engine/map/merger/center_to_center.py
 import random
 from typing import List, Tuple, Sequence, Optional
 import logging
