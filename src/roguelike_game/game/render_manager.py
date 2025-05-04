@@ -16,11 +16,14 @@ from src.roguelike_engine.config_map import (
     LOBBY_OFFSET_Y,
     LOBBY_WIDTH,
     LOBBY_HEIGHT,
+    DUNGEON_OFFSET_X,
+    DUNGEON_OFFSET_Y,
+    DUNGEON_WIDTH,
+    DUNGEON_HEIGHT,
 )
 
 # 🆕 Sistema Z
 from src.roguelike_game.systems.z_layer.render import render_z_ordered
-
 
 class Renderer:
     """
@@ -82,8 +85,9 @@ class Renderer:
         if config.DEBUG and perf_log is not None:
             extra_lines = [state] + self._get_custom_debug_lines(state)
             
-            benchmark("--99.0 debug overlay", lambda: render_debug_overlay(screen, perf_log, extra_lines=extra_lines, position=(8, 8)))
+            benchmark("--99.0 debug overlay", lambda: render_debug_overlay(screen, perf_log, extra_lines=extra_lines, position=(0, 0)))
             benchmark("--99.1 border lobby", lambda: self._render_lobby_border(screen, cam))
+            benchmark("--99.2 border dungeon", lambda: self._render_dungeon_border(screen, cam))
 
         pygame.display.flip()
 
@@ -103,7 +107,23 @@ class Renderer:
         size = cam.scale((w_px, h_px))
 
         rect = pygame.Rect(top_left, size)
-        pygame.draw.rect(screen, (255, 255, 255), rect, 4)
+        pygame.draw.rect(screen, (255, 255, 255), rect, 5)
+
+    def _render_dungeon_border(self, screen: pygame.Surface, cam):
+        """
+        Dibuja un rectángulo verde alrededor del área de la dungeon procedural.
+        """
+        x_px = DUNGEON_OFFSET_X * TILE_SIZE
+        y_px = DUNGEON_OFFSET_Y * TILE_SIZE
+        w_px = DUNGEON_WIDTH  * TILE_SIZE
+        h_px = DUNGEON_HEIGHT * TILE_SIZE
+
+        top_left = cam.apply((x_px, y_px))
+        size = cam.scale((w_px, h_px))
+
+        rect = pygame.Rect(top_left, size)
+        pygame.draw.rect(screen, (0, 255, 0), rect, 5)
+
 
     def _render_effects(self, state, cam, screen):
         dirty_rects = state.systems.effects.render(screen, cam)
