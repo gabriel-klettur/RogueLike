@@ -10,10 +10,8 @@ from src.roguelike_engine.config_tiles import TILE_SIZE
 import src.roguelike_engine.config as config
 from src.roguelike_engine.utils.debug_overlay import render_debug_overlay
 
-# 🆕 Import para el trazado del lobby
+# Para dibujar bordes de lobby y dungeon
 from src.roguelike_engine.config_map import (
-    LOBBY_OFFSET_X,
-    LOBBY_OFFSET_Y,
     LOBBY_WIDTH,
     LOBBY_HEIGHT,
     DUNGEON_OFFSET_X,
@@ -22,16 +20,20 @@ from src.roguelike_engine.config_map import (
     DUNGEON_HEIGHT,
 )
 
-# 🆕 Sistema Z
+# Sistema de orden Z
 from src.roguelike_game.systems.z_layer.render import render_z_ordered
+
 
 class Renderer:
     """
     Sistema de renderizado principal del juego.
 
     Utiliza benchmark opcional por secciones y un sistema de dirty rects.
-    Ahora incluye renderizado ordenado por capa Z y, opcionalmente, 
-    el trazado de un marco blanco alrededor del lobby.
+    Incluye:
+      - Renderizado de tiles, entidades, efectos, HUD, crosshair, minimap...
+      - Trazado de un marco blanco alrededor del lobby (en modo debug)
+      - Trazado de un marco verde alrededor de la dungeon (en modo debug)
+      - Debug overlay cuando DEBUG=True
     """
 
     def __init__(self):
@@ -54,7 +56,7 @@ class Renderer:
         # 1) Tiles
         benchmark("--3.1. tiles", lambda: self._render_tiles(state, cam, screen))
 
-        # 2) Entidades Z
+        # 2) Entidades orden Z
         benchmark("--3.2. z_entities", lambda: self._render_z_entities(state, cam, screen))
 
         # 3) Efectos
@@ -63,8 +65,8 @@ class Renderer:
         # 4) HUD
         benchmark("--3.4. hud", lambda: state.player.render_hud(screen, cam))
 
-        # 4.b) Tile editor overlay
-        benchmark("--3.4b tile_editor",     lambda: self._render_tile_editor_layer(state, screen))
+        # 4.b) Capa del Tile Editor
+        benchmark("--3.4b. tile_editor", lambda: self._render_tile_editor_layer(state, screen))
 
         # 5) Crosshair
         benchmark("--3.5. crosshair", lambda: draw_mouse_crosshair(screen, cam))
@@ -78,52 +80,49 @@ class Renderer:
         # 8) Minimap
         benchmark("--3.8. minimap", lambda: self._render_minimap(state))
 
-        # 9) Sistemas
+        # 9) Otros sistemas
         benchmark("--3.9. systems", lambda: state.systems.render(screen, cam))
 
-        # Debug overlay cuando DEBUG=True
+        # Debug: overlay y bordes
         if config.DEBUG and perf_log is not None:
             extra_lines = [state] + self._get_custom_debug_lines(state)
-            
-            benchmark("--99.0 debug overlay", lambda: render_debug_overlay(screen, perf_log, extra_lines=extra_lines, position=(0, 0)))
-            benchmark("--99.1 border lobby", lambda: self._render_lobby_border(screen, cam))
-            benchmark("--99.2 border dungeon", lambda: self._render_dungeon_border(screen, cam))
+            benchmark("--99.0. debug overlay", lambda: render_debug_overlay(screen, perf_log, extra_lines=extra_lines, position=(0, 0)))
+            benchmark("--99.1. border lobby", lambda: self._render_lobby_border(state, screen, cam))
+            benchmark("--99.2. border dungeon", lambda: self._render_dungeon_border(screen, cam))
 
         pygame.display.flip()
 
-    def _render_lobby_border(self, screen: pygame.Surface, cam):
+    def _render_lobby_border(self, state, screen: pygame.Surface, cam):
         """
-        Dibuja un rectángulo blanco alrededor del área del lobby,
-        usando las constantes de offset y tamaño en tiles.
+        Dibuja un rectángulo blanco alrededor del lobby en la posición
+        almacenada en state.lobby_offset.
         """
-        # Coordenadas en píxeles del lobby
-        x_px = LOBBY_OFFSET_X * TILE_SIZE
-        y_px = LOBBY_OFFSET_Y * TILE_SIZE
-        w_px = LOBBY_WIDTH   * TILE_SIZE
-        h_px = LOBBY_HEIGHT  * TILE_SIZE
+        # lobby_offset in tiles
+        off_x, off_y = getattr(state, "lobby_offset", (0, 0))
+        x_px = off_x * TILE_SIZE
+        y_px = off_y * TILE_SIZE
+        w_px = LOBBY_WIDTH * TILE_SIZE
+        h_px = LOBBY_HEIGHT * TILE_SIZE
 
-        # Transformar según cámara
         top_left = cam.apply((x_px, y_px))
         size = cam.scale((w_px, h_px))
-
         rect = pygame.Rect(top_left, size)
         pygame.draw.rect(screen, (255, 255, 255), rect, 5)
 
     def _render_dungeon_border(self, screen: pygame.Surface, cam):
         """
-        Dibuja un rectángulo verde alrededor del área de la dungeon procedural.
+        Dibuja un rectángulo verde alrededor del área de la dungeon procedural,
+        usando los offsets y dimensiones fijos de config_map.
         """
         x_px = DUNGEON_OFFSET_X * TILE_SIZE
         y_px = DUNGEON_OFFSET_Y * TILE_SIZE
-        w_px = DUNGEON_WIDTH  * TILE_SIZE
+        w_px = DUNGEON_WIDTH * TILE_SIZE
         h_px = DUNGEON_HEIGHT * TILE_SIZE
 
         top_left = cam.apply((x_px, y_px))
         size = cam.scale((w_px, h_px))
-
         rect = pygame.Rect(top_left, size)
         pygame.draw.rect(screen, (0, 255, 0), rect, 5)
-
 
     def _render_effects(self, state, cam, screen):
         dirty_rects = state.systems.effects.render(screen, cam)
@@ -150,9 +149,6 @@ class Renderer:
                     self._dirty_rects.append(dirty)
 
     def _render_tile_editor_layer(self, state, screen):
-        """
-        Pintamos la UI del TileEditorController delegando a la Vista.
-        """
         if getattr(state, "tile_editor_state", None) and state.tile_editor_state.active:
             state.tile_editor_view.render(screen)
 
@@ -160,13 +156,16 @@ class Renderer:
         all_entities = []
 
         all_entities.extend([
-            e for e in state.obstacles if cam.is_in_view(e.x, e.y, getattr(e, "sprite_size", (64, 64)))
+            e for e in state.obstacles
+            if cam.is_in_view(e.x, e.y, getattr(e, "sprite_size", (64, 64)))
         ])
         all_entities.extend([
-            e for e in state.enemies if cam.is_in_view(e.x, e.y, e.sprite_size)
+            e for e in state.enemies
+            if cam.is_in_view(e.x, e.y, e.sprite_size)
         ])
         all_entities.extend([
-            e for e in state.remote_entities.values() if cam.is_in_view(e.x, e.y, e.sprite_size)
+            e for e in state.remote_entities.values()
+            if cam.is_in_view(e.x, e.y, e.sprite_size)
         ])
         if cam.is_in_view(state.player.x, state.player.y, state.player.sprite_size):
             all_entities.append(state.player)
@@ -190,17 +189,16 @@ class Renderer:
         self._dirty_rects.append(minimap_rect)
 
     def _get_custom_debug_lines(self, state):
-        lines = []
-        lines.append(f"Modo: {state.mode}")
-        px, py = round(state.player.x), round(state.player.y)
-        lines.append(f"Pos: ({px}, {py})")
-
+        lines = [
+            f"Modo: {state.mode}",
+            f"Pos: ({round(state.player.x)}, {round(state.player.y)})"
+        ]
         mouse_x, mouse_y = pygame.mouse.get_pos()
         world_x = round(mouse_x / state.camera.zoom + state.camera.offset_x)
         world_y = round(mouse_y / state.camera.zoom + state.camera.offset_y)
         lines.append(f"Mouse: ({world_x}, {world_y})")
 
-        tile_col, tile_row = int(world_x // TILE_SIZE), int(world_y // TILE_SIZE)
+        tile_col, tile_row = world_x // TILE_SIZE, world_y // TILE_SIZE
         tile_text = "?"
         for tile in state.tiles:
             if tile.rect.collidepoint(world_x, world_y):

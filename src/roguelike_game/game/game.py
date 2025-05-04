@@ -92,12 +92,14 @@ class Game:
         )
 
         # Asignar a state
-        self.map_data          = result.matrix        # lista de strings
-        self.state.tile_map    = result.tiles         # lista de listas de Tile
-        self.state.overlay_map = result.overlay       # capa overlay (o None)
-        self.state.map_name    = result.name          # clave para persistir overlay
+        self.map_data          = result.matrix
+        self.state.tile_map    = result.tiles
+        self.state.overlay_map = result.overlay
+        self.state.map_name    = result.name
 
-        # Aplanar la lista de tiles
+        # Guardar offset dinámico del lobby para el renderer
+        self.state.lobby_offset = result.metadata.get("lobby_offset", (0, 0))
+
         self.state.tiles = [t for row in self.state.tile_map for t in row]
 
     def _init_entities(self):
