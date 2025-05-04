@@ -14,11 +14,14 @@ from src.roguelike_engine.utils.debug_overlay import render_debug_overlay
 from src.roguelike_engine.config_map import (
     LOBBY_WIDTH,
     LOBBY_HEIGHT,
-    DUNGEON_OFFSET_X,
-    DUNGEON_OFFSET_Y,
     DUNGEON_WIDTH,
     DUNGEON_HEIGHT,
+    DUNGEON_OFFSET_X,
+    DUNGEON_OFFSET_Y,
+    DUNGEON_CONNECT_SIDE
 )
+
+from src.roguelike_engine.map.core.service import _calculate_dungeon_offset
 
 # Sistema de orden Z
 from src.roguelike_game.systems.z_layer.render import render_z_ordered
@@ -88,7 +91,7 @@ class Renderer:
             extra_lines = [state] + self._get_custom_debug_lines(state)
             benchmark("--99.0. debug overlay", lambda: render_debug_overlay(screen, perf_log, extra_lines=extra_lines, position=(0, 0)))
             benchmark("--99.1. border lobby", lambda: self._render_lobby_border(state, screen, cam))
-            benchmark("--99.2. border dungeon", lambda: self._render_dungeon_border(screen, cam))
+            benchmark("--99.2. border dungeon", lambda: self._render_dungeon_border(state, screen, cam))
 
         pygame.display.flip()
 
@@ -97,7 +100,6 @@ class Renderer:
         Dibuja un rectángulo blanco alrededor del lobby en la posición
         almacenada en state.lobby_offset.
         """
-        # lobby_offset in tiles
         off_x, off_y = getattr(state, "lobby_offset", (0, 0))
         x_px = off_x * TILE_SIZE
         y_px = off_y * TILE_SIZE
@@ -109,16 +111,27 @@ class Renderer:
         rect = pygame.Rect(top_left, size)
         pygame.draw.rect(screen, (255, 255, 255), rect, 5)
 
-    def _render_dungeon_border(self, screen: pygame.Surface, cam):
+    def _render_dungeon_border(self, state, screen, cam):
         """
-        Dibuja un rectángulo verde alrededor del área de la dungeon procedural,
-        usando los offsets y dimensiones fijos de config_map.
+        Dibuja un rectángulo verde alrededor de la dungeon procedural,
+        calculando dinámicamente su posición según el lobby y el side.
         """
-        x_px = DUNGEON_OFFSET_X * TILE_SIZE
-        y_px = DUNGEON_OFFSET_Y * TILE_SIZE
+        # 1️⃣ Recuperar offset del lobby (en celdas) que guardamos al inicializar el mapa
+        lobby_off_x, lobby_off_y = state.lobby_offset
+
+        # 2️⃣ Calcular offset de la dungeon en celdas, según el side
+        dungeon_off_x, dungeon_off_y = _calculate_dungeon_offset(
+            (lobby_off_x, lobby_off_y),
+            DUNGEON_CONNECT_SIDE
+        )
+
+        # 3️⃣ Pasar de celdas a píxeles
+        x_px = dungeon_off_x * TILE_SIZE
+        y_px = dungeon_off_y * TILE_SIZE
         w_px = DUNGEON_WIDTH * TILE_SIZE
         h_px = DUNGEON_HEIGHT * TILE_SIZE
 
+        # 4️⃣ Dibujar el rectángulo
         top_left = cam.apply((x_px, y_px))
         size = cam.scale((w_px, h_px))
         rect = pygame.Rect(top_left, size)

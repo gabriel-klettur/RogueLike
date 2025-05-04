@@ -23,7 +23,7 @@ LOBBY_WIDTH = 50
 LOBBY_HEIGHT = 50
 
 #!------------------------ DUNGEON CONFIG ---------------------------
-DUNGEON_CONNECT_SIDE = "right"  # nuevo: "top" | "bottom" | "left" | "right"
+DUNGEON_CONNECT_SIDE = "bottom"  # nuevo: "top" | "bottom" | "left" | "right"
 
 # Ancho de los túneles (en tiles)
 DUNGEON_TUNNEL_THICKNESS = 3
