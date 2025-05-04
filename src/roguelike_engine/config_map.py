@@ -23,10 +23,10 @@ LOBBY_WIDTH = 50
 LOBBY_HEIGHT = 50
 
 #!------------------------ DUNGEON CONFIG ---------------------------
-DUNGEON_CONNECT_SIDE = "bottom"  # nuevo: "top" | "bottom" | "left" | "right"
+DUNGEON_CONNECT_SIDE = "right"  # nuevo: "top" | "bottom" | "left" | "right"
 
 # Ancho de los túneles (en tiles)
-DUNGEON_TUNNEL_THICKNESS = 2
+DUNGEON_TUNNEL_THICKNESS = 3
 
 # Dónde situar la dungeon dentro del mundo
 DUNGEON_OFFSET_X = 0
@@ -35,6 +35,12 @@ DUNGEON_OFFSET_Y = 50
 # Dimensiones del dungeon procedural
 DUNGEON_WIDTH = 50
 DUNGEON_HEIGHT = 50
+
+# Límite de habitaciones:
+#  - None → usar valor dinámico aleatorio (max_rooms pasado al generate)
+#  - int  → máximo fijo
+#  - 'MAX'→ calcular el máximo teórico según room_min_size
+DUNGEON_MAX_ROOMS = '10'
 
 #!----------------------- DEBUG MAP CONFIG --------------------------
 
