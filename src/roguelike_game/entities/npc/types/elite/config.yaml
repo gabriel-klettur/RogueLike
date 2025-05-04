@@ -5,9 +5,9 @@ type: elite
 # Stats de élite
 health:     100
 max_health: 100
-speed:      6.0
+speed:      9.0
 
-sprite_size: [256, 256]
+sprite_size: [512, 512]
 
 sprite_paths:
   up:    "npc/monsters/barbol_elite/elite_barbol_1_top.png"
