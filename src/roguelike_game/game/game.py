@@ -10,6 +10,14 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".
 from src.roguelike_engine.config import (
     SCREEN_WIDTH, SCREEN_HEIGHT, FONT_NAME, FONT_SIZE, FPS
 )
+from src.roguelike_engine.map.core.manager import build_map
+from src.roguelike_engine.map.core.service import _calculate_dungeon_offset
+from src.roguelike_engine.config_map import (
+    LOBBY_WIDTH, LOBBY_HEIGHT,
+    DUNGEON_WIDTH, DUNGEON_HEIGHT,
+    DUNGEON_CONNECT_SIDE
+)
+from src.roguelike_engine.config_tiles import TILE_SIZE
 from src.roguelike_engine.input.events import handle_events
 
 from roguelike_game.game.state import GameState
@@ -82,25 +90,48 @@ class Game:
     def _init_map(self):
         """
         Construye el mapa global y carga el overlay.
-        Ahora usa map_mode="global" para crear un lienzo mayor
-        que contiene tanto el lobby como la dungeon.
+        En modo 'global' filtramos los tiles para quedarnos
+        solo con los del lobby y la mazmorra.
         """
-        # Generar mapa global en lugar del combinado por defecto
+        # 1️⃣ Generar mapa global (incluye lobby + dungeon)
         result = build_map(
             map_mode="global",
             map_name=self.map_name
         )
 
-        # Asignar a state
-        self.map_data          = result.matrix
-        self.state.tile_map    = result.tiles
+        # 2️⃣ Datos de texto y metadata
+        self.map_data        = result.matrix
         self.state.overlay_map = result.overlay
-        self.state.map_name    = result.name
-
-        # Guardar offset dinámico del lobby para el renderer
+        self.state.map_name  = result.name
+        # Offset dinámico del lobby para usar en render y lógica
         self.state.lobby_offset = result.metadata.get("lobby_offset", (0, 0))
 
-        self.state.tiles = [t for row in self.state.tile_map for t in row]
+        # 3️⃣ Guardar grid completo (por si lo necesitas)
+        self.state.tile_map = result.tiles
+
+        # 4️⃣ Cálculo de regiones en celdas
+        lob_x, lob_y = self.state.lobby_offset
+        dun_x, dun_y = _calculate_dungeon_offset(
+            (lob_x, lob_y),
+            DUNGEON_CONNECT_SIDE
+        )
+
+        def in_region(tile):
+            """Devuelve True si el tile está en el lobby o en la dungeon."""
+            col = tile.x // TILE_SIZE
+            row = tile.y // TILE_SIZE
+
+            # Lobby
+            if lob_x <= col < lob_x + LOBBY_WIDTH and lob_y <= row < lob_y + LOBBY_HEIGHT:
+                return True
+            # Dungeon
+            if dun_x <= col < dun_x + DUNGEON_WIDTH and dun_y <= row < dun_y + DUNGEON_HEIGHT:
+                return True
+            return False
+
+        # 5️⃣ Filtrar y mantener solo esos tiles
+        all_tiles = [t for row in result.tiles for t in row]
+        self.state.tiles = [t for t in all_tiles if in_region(t)]
 
     def _init_entities(self):
         player, obstacles, buildings, enemies = load_entities(self.z_state)

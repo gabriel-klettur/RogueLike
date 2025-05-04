@@ -39,11 +39,4 @@ class Tile:
         scaled_sprite = self.scaled_cache[zoom]
         screen.blit(scaled_sprite, camera.apply((self.x, self.y)))
 
-        if DEBUG and self.solid:
-            scaled_rect = pygame.Rect(
-                camera.apply(self.rect.topleft),
-                camera.scale(self.rect.size)
-            )
-            pygame.draw.rect(screen, (255, 255, 0), scaled_rect, 1)
-
         return self.rect

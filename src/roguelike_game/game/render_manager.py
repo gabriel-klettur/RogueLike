@@ -16,8 +16,8 @@ from src.roguelike_engine.config_map import (
     LOBBY_HEIGHT,
     DUNGEON_WIDTH,
     DUNGEON_HEIGHT,
-    DUNGEON_OFFSET_X,
-    DUNGEON_OFFSET_Y,
+    GLOBAL_HEIGHT,
+    GLOBAL_WIDTH,
     DUNGEON_CONNECT_SIDE
 )
 
@@ -92,8 +92,25 @@ class Renderer:
             benchmark("--99.0. debug overlay", lambda: render_debug_overlay(screen, perf_log, extra_lines=extra_lines, position=(0, 0)))
             benchmark("--99.1. border lobby", lambda: self._render_lobby_border(state, screen, cam))
             benchmark("--99.2. border dungeon", lambda: self._render_dungeon_border(state, screen, cam))
+            benchmark("--99.3. border global", lambda: self._render_global_border(state, screen, cam))
 
         pygame.display.flip()
+
+    def _render_global_border(self, state, screen, cam):
+        """
+        Dibuja un rectángulo púrpura alrededor de todo el lienzo global.
+        """
+        # Dimensiones en píxeles
+        w_px = GLOBAL_WIDTH * TILE_SIZE
+        h_px = GLOBAL_HEIGHT * TILE_SIZE
+
+        # La esquina superior izquierda del global siempre es (0,0) en celdas
+        top_left = cam.apply((0, 0))
+        size = cam.scale((w_px, h_px))
+
+        rect = pygame.Rect(top_left, size)
+        purple = (128, 0, 128)
+        pygame.draw.rect(screen, purple, rect, 5)
 
     def _render_lobby_border(self, state, screen: pygame.Surface, cam):
         """
@@ -142,24 +159,20 @@ class Renderer:
         self._dirty_rects.extend(dirty_rects)
 
     def _render_tiles(self, state, cam, screen):
-        tile_map = state.tile_map
+        """
+        Dibuja únicamente los tiles cargados en self.state.tiles
+        (por ejemplo, lobby y dungeon en modo global).
+        """
+        # Iterar solo sobre los tiles que filtramos en Game._init_map
+        for tile in state.tiles:
+            # Saltar los que no están en la vista de cámara
+            if not cam.is_in_view(tile.x, tile.y, tile.sprite_size):
+                continue
 
-        start_col = int(cam.offset_x // TILE_SIZE)
-        end_col = int((cam.offset_x + cam.screen_width / cam.zoom) // TILE_SIZE) + 1
-        start_row = int(cam.offset_y // TILE_SIZE)
-        end_row = int((cam.offset_y + cam.screen_height / cam.zoom) // TILE_SIZE) + 1
-
-        start_row = max(0, start_row)
-        end_row = min(len(tile_map), end_row)
-        start_col = max(0, start_col)
-        end_col = min(len(tile_map[0]), end_col)
-
-        for row in range(start_row, end_row):
-            for col in range(start_col, end_col):
-                tile = tile_map[row][col]
-                dirty = tile.render(screen, cam)
-                if dirty:
-                    self._dirty_rects.append(dirty)
+            # Renderizar el tile; devuelve un rect si dibujó algo
+            dirty = tile.render(screen, cam)
+            if dirty:
+                self._dirty_rects.append(dirty)
 
     def _render_tile_editor_layer(self, state, screen):
         if getattr(state, "tile_editor_state", None) and state.tile_editor_state.active:
