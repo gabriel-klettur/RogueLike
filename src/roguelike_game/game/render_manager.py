@@ -1,4 +1,5 @@
 # Path: src/roguelike_game/game/render_manager.py
+
 import time
 import pygame
 
@@ -9,9 +10,16 @@ from src.roguelike_engine.config_tiles import TILE_SIZE
 import src.roguelike_engine.config as config
 from src.roguelike_engine.utils.debug_overlay import render_debug_overlay
 
+# 🆕 Import para el trazado del lobby
+from src.roguelike_engine.config_map import (
+    LOBBY_OFFSET_X,
+    LOBBY_OFFSET_Y,
+    LOBBY_WIDTH,
+    LOBBY_HEIGHT,
+)
+
 # 🆕 Sistema Z
 from src.roguelike_game.systems.z_layer.render import render_z_ordered
-
 
 
 class Renderer:
@@ -19,7 +27,8 @@ class Renderer:
     Sistema de renderizado principal del juego.
 
     Utiliza benchmark opcional por secciones y un sistema de dirty rects.
-    Ahora incluye renderizado ordenado por capa Z.
+    Ahora incluye renderizado ordenado por capa Z y, opcionalmente, 
+    el trazado de un marco blanco alrededor del lobby.
     """
 
     def __init__(self):
@@ -39,22 +48,62 @@ class Renderer:
             else:
                 func()
 
+        # 1) Tiles
         benchmark("--3.1. tiles", lambda: self._render_tiles(state, cam, screen))
+
+        # 2) Entidades Z
         benchmark("--3.2. z_entities", lambda: self._render_z_entities(state, cam, screen))
+
+        # 3) Efectos
         benchmark("--3.3. effects", lambda: self._render_effects(state, cam, screen))
+
+        # 4) HUD
         benchmark("--3.4. hud", lambda: state.player.render_hud(screen, cam))
+
+        # 4.b) Tile editor overlay
         benchmark("--3.4b tile_editor",     lambda: self._render_tile_editor_layer(state, screen))
+
+        # 5) Crosshair
         benchmark("--3.5. crosshair", lambda: draw_mouse_crosshair(screen, cam))
+
+        # 6) Jugadores remotos
         benchmark("--3.6. remote_players", lambda: render_remote_players(state))
+
+        # 7) Menú
         benchmark("--3.7. menu", lambda: self._render_menu(state, screen))
+
+        # 8) Minimap
         benchmark("--3.8. minimap", lambda: self._render_minimap(state))
+
+        # 9) Sistemas
         benchmark("--3.9. systems", lambda: state.systems.render(screen, cam))
 
+        # Debug overlay cuando DEBUG=True
         if config.DEBUG and perf_log is not None:
             extra_lines = [state] + self._get_custom_debug_lines(state)
-            render_debug_overlay(screen, perf_log, extra_lines=extra_lines, position=(8, 8))
+            
+            benchmark("--99.0 debug overlay", lambda: render_debug_overlay(screen, perf_log, extra_lines=extra_lines, position=(8, 8)))
+            benchmark("--99.1 border lobby", lambda: self._render_lobby_border(screen, cam))
 
         pygame.display.flip()
+
+    def _render_lobby_border(self, screen: pygame.Surface, cam):
+        """
+        Dibuja un rectángulo blanco alrededor del área del lobby,
+        usando las constantes de offset y tamaño en tiles.
+        """
+        # Coordenadas en píxeles del lobby
+        x_px = LOBBY_OFFSET_X * TILE_SIZE
+        y_px = LOBBY_OFFSET_Y * TILE_SIZE
+        w_px = LOBBY_WIDTH   * TILE_SIZE
+        h_px = LOBBY_HEIGHT  * TILE_SIZE
+
+        # Transformar según cámara
+        top_left = cam.apply((x_px, y_px))
+        size = cam.scale((w_px, h_px))
+
+        rect = pygame.Rect(top_left, size)
+        pygame.draw.rect(screen, (255, 255, 255), rect, 4)
 
     def _render_effects(self, state, cam, screen):
         dirty_rects = state.systems.effects.render(screen, cam)
@@ -79,22 +128,17 @@ class Renderer:
                 dirty = tile.render(screen, cam)
                 if dirty:
                     self._dirty_rects.append(dirty)
-    
+
     def _render_tile_editor_layer(self, state, screen):
         """
         Pintamos la UI del TileEditorController delegando a la Vista.
         """
         if getattr(state, "tile_editor_state", None) and state.tile_editor_state.active:
-            state.tile_editor_view.render(screen)          
+            state.tile_editor_view.render(screen)
 
     def _render_z_entities(self, state, cam, screen):
-        """
-        Renderiza entidades ordenadas por Z y Y.
-        Los edificios se dividen en dos mitades.
-        """
         all_entities = []
 
-        # Obstáculos, enemigos, etc.
         all_entities.extend([
             e for e in state.obstacles if cam.is_in_view(e.x, e.y, getattr(e, "sprite_size", (64, 64)))
         ])
@@ -107,19 +151,14 @@ class Renderer:
         if cam.is_in_view(state.player.x, state.player.y, state.player.sprite_size):
             all_entities.append(state.player)
 
-        # --- Buildings bipartitos ------------------------------------
         for b in state.buildings:
             if not cam.is_in_view(b.x, b.y, b.image.get_size()):
                 continue
-
             for part in b.get_parts():
-                # Registramos la Z de cada wrapper individual
                 state.z_state.set(part, part.z)
                 all_entities.append(part)
 
-        # Orden y render
         render_z_ordered(all_entities, screen, cam, state.z_state)
-
 
     def _render_menu(self, state, screen):
         if state.show_menu:

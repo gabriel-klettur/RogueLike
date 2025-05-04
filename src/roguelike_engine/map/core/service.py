@@ -1,34 +1,50 @@
 # Path: src/roguelike_engine/map/core/service.py
+
 import logging
 from typing import Optional, Tuple, List, Dict
 
 from src.roguelike_engine.config_map import (
+    DUNGEON_WIDTH,
+    DUNGEON_HEIGHT,
     GLOBAL_WIDTH,
     GLOBAL_HEIGHT,
     DUNGEON_OFFSET_X,
     DUNGEON_OFFSET_Y,
-    DUNGEON_WIDTH,
-    DUNGEON_HEIGHT,
     LOBBY_OFFSET_X,
-    LOBBY_OFFSET_Y,    
-    LOBBY_WIDTH,
-    LOBBY_HEIGHT,    
+    LOBBY_OFFSET_Y,
+    # ya no importamos LOBBY_WIDTH ni LOBBY_HEIGHT directamente aquí
 )
 from roguelike_engine.map.generator.factory import get_generator
 from roguelike_engine.map.merger.factory import get_merger
 from roguelike_engine.map.loader.factory import get_map_loader
 from roguelike_engine.map.exporter.factory import get_exporter, MapExporter
-from data.maps.handmade_maps.lobby_map import LOBBY_MAP
 
 from .model import MapData
 
 logger = logging.getLogger(__name__)
 
+def _generate_lobby_matrix() -> List[str]:
+    """
+    Genera dinámicamente el mapa del lobby en base a config_map:
+    - Borde de muros '#'
+    - Interior de suelo '.'
+    """
+    from src.roguelike_engine.config_map import LOBBY_WIDTH, LOBBY_HEIGHT
+
+    matrix: List[str] = []
+    for y in range(LOBBY_HEIGHT):
+        if y == 0 or y == LOBBY_HEIGHT - 1:
+            row = "#" * LOBBY_WIDTH
+        else:
+            row = "#" + "." * (LOBBY_WIDTH - 2) + "#"
+        matrix.append(row)
+    return matrix
+
 class MapService:
     """
-    Encapsula toda la lógica para generar, fusionar y cargar mapas.
-    Ahora incluye un modo 'global' que construye un lienzo mayor
-    donde se insertan dungeon y lobby en posiciones fijas.
+    Encapsula toda la lógica de negocio para generar, fusionar,
+    exportar debug y cargar un mapa completo. Ahora sin dependencia
+    de un archivo estático de lobby.
     """
 
     def __init__(
@@ -53,12 +69,12 @@ class MapService:
         map_name: Optional[str] = None,
         export_debug: bool = True,
     ) -> MapData:
-        # ————— Modo GLOBAL —————
+
+        # ————— MODO GLOBAL —————
         if map_mode == "global":
             key = map_name or "global_map"
-
-            # 1️⃣ Crear lienzo global lleno de paredes
-            global_matrix: List[List[str]] = [
+            # 1️⃣ Canvas global
+            global_map: List[List[str]] = [
                 ["#" for _ in range(GLOBAL_WIDTH)]
                 for _ in range(GLOBAL_HEIGHT)
             ]
@@ -70,60 +86,57 @@ class MapService:
                 return_rooms=True
             )
 
-            # 3️⃣ Pe gar dungeon sobre global
+            # 3️⃣ Pegar dungeon
             for y, row in enumerate(raw_map):
                 for x, ch in enumerate(row):
                     gx = DUNGEON_OFFSET_X + x
                     gy = DUNGEON_OFFSET_Y + y
                     if 0 <= gx < GLOBAL_WIDTH and 0 <= gy < GLOBAL_HEIGHT:
-                        global_matrix[gy][gx] = ch
+                        global_map[gy][gx] = ch
 
-            # 4️⃣ Pe gar lobby sobre global
-            for y, row in enumerate(LOBBY_MAP):
+            # 4️⃣ Generar y pegar lobby
+            lobby = _generate_lobby_matrix()
+            for y, row in enumerate(lobby):
                 for x, ch in enumerate(row):
                     gx = LOBBY_OFFSET_X + x
                     gy = LOBBY_OFFSET_Y + y
                     if 0 <= gx < GLOBAL_WIDTH and 0 <= gy < GLOBAL_HEIGHT:
-                        global_matrix[gy][gx] = ch
+                        global_map[gy][gx] = ch
 
-            # 5️⃣ Cargar tiles y overlay
-            merged_matrix = ["".join(r) for r in global_matrix]
+            merged_matrix = ["".join(r) for r in global_map]
             _, tiles, overlay = self.loader.load(merged_matrix, key)
+            return MapData(matrix=merged_matrix, tiles=tiles, overlay=overlay,
+                           metadata=metadata, name=key)
 
-            return MapData(
-                matrix=merged_matrix,
-                tiles=tiles,
-                overlay=overlay,
-                metadata=metadata,
-                name=key,
-            )
-
-        # ——— Modo LOBBY / DUNGEON / COMBINED existentes ———
-        # 1️⃣ Determinar clave
+        # ————— MODOS EXISTENTES: lobby, dungeon, combined —————
         key = map_name or ("lobby_map" if map_mode == "lobby" else "combined_map")
 
-        # 2️⃣ Generar la matriz y metadata
+        # Lobby puro
         if map_mode == "lobby":
-            merged_matrix = LOBBY_MAP
+            merged_matrix = _generate_lobby_matrix()
             metadata: Dict = {}
+
         else:
+            # Generar dungeon (simple o combinado)
             raw_map, metadata = self.generator.generate(
                 width=width,
                 height=height,
                 return_rooms=(map_mode == "combined"),
                 avoid_zone=(
                     offset_x,
-                    offset_y + LOBBY_HEIGHT,
-                    offset_x + LOBBY_WIDTH,
-                    offset_y + LOBBY_HEIGHT + 3,
+                    offset_y + _generate_lobby_matrix().__len__(),  # evita zona del lobby
+                    offset_x + len(_generate_lobby_matrix()[0]),
+                    offset_y + _generate_lobby_matrix().__len__() + 3,
                 ) if map_mode == "combined" else None,
             )
             if map_mode == "dungeon":
                 merged_matrix = ["".join(row) for row in raw_map]
-            else:  # combined
+            else:
+                # combined: fusionar dungeon + lobby
+                lobby = _generate_lobby_matrix()
                 rooms = metadata.get("rooms", [])
                 fused = self.merger.merge(
-                    handmade_map=LOBBY_MAP,
+                    handmade_map=[list(r) for r in lobby],
                     generated_map=raw_map,
                     offset_x=offset_x,
                     offset_y=offset_y,
@@ -137,14 +150,7 @@ class MapService:
                     except Exception as e:
                         logger.warning("Error exportando debug: %s", e)
 
-        # 3️⃣ Cargar tiles y overlay definitivo
+        # Carga final de tiles y overlay
         _, tiles, overlay = self.loader.load(merged_matrix, key)
-
-        # 4️⃣ Empaquetar y devolver
-        return MapData(
-            matrix=merged_matrix,
-            tiles=tiles,
-            overlay=overlay,
-            metadata=metadata,
-            name=key,
-        )
+        return MapData(matrix=merged_matrix, tiles=tiles,
+                       overlay=overlay, metadata=metadata, name=key)

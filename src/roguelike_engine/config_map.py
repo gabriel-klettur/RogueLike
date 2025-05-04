@@ -19,8 +19,8 @@ LOBBY_OFFSET_X = 1
 LOBBY_OFFSET_Y = 1
 
 # Dimensiones lógicas del lobby
-LOBBY_WIDTH = 120
-LOBBY_HEIGHT = 120
+LOBBY_WIDTH = 50
+LOBBY_HEIGHT = 50
 
 #!------------------------ DUNGEON CONFIG ---------------------------
 # Dónde situar la dungeon dentro del mundo
