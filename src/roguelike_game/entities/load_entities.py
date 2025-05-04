@@ -8,5 +8,5 @@ def load_entities(z_state=None):
     obstacles = load_obstacles()
     player_ctrl = PlayerController(4747, 3800, z_state, obstacles=obstacles)
     buildings   = load_buildings(z_state)
-    enemies     = load_hostile()
-    return player_ctrl, obstacles, buildings, enemies
+    
+    return player_ctrl, obstacles, buildings

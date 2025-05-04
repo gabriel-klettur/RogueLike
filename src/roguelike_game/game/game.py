@@ -1,5 +1,3 @@
-# Path: src/roguelike_game/game/game.py
-
 import sys
 import os
 import pygame
@@ -21,7 +19,7 @@ from src.roguelike_engine.config_tiles import TILE_SIZE
 from src.roguelike_engine.input.events import handle_events
 
 from roguelike_game.game.state import GameState
-from roguelike_engine.map.core.manager import build_map
+from roguelike_engine.map.core.manager import build_map  # duplicado intencional
 from roguelike_game.entities.load_entities import load_entities
 from roguelike_game.network.multiplayer_manager import NetworkManager
 from src.roguelike_game.ui.menus.menu import Menu
@@ -30,13 +28,13 @@ from roguelike_game.game.render_manager import Renderer
 from src.roguelike_game.game.update_manager import update_game
 from src.roguelike_game.systems.systems_manager import SystemsManager
 
-# Building-editor: controlador, vista y handler de eventos
+# Building-editor imports
 from src.roguelike_game.systems.editor.buildings.model.building_editor_state import BuildingsEditorState
 from src.roguelike_game.systems.editor.buildings.controller.building_editor_controller import BuildingEditorController
 from src.roguelike_game.systems.editor.buildings.view.building_editor_view import BuildingEditorView
 from src.roguelike_game.systems.editor.buildings.controller.building_editor_events import BuildingEditorEventHandler
 
-# Tile-editor: controlador, vista y handler de eventos
+# Tile-editor imports
 from src.roguelike_game.systems.editor.tiles.model.tile_editor_state import TileEditorControllerState
 from src.roguelike_game.systems.editor.tiles.controller.tile_editor_controller import TileEditorController
 from src.roguelike_game.systems.editor.tiles.view.tile_editor_view import TileEditorControllerView
@@ -45,6 +43,10 @@ from src.roguelike_game.systems.editor.tiles.controller.tile_editor_events impor
 # Z-Layer
 from src.roguelike_game.systems.z_layer.state import ZState
 from roguelike_game.systems.config_z_layer import Z_LAYERS
+
+# Spawn procedural de enemigos
+from src.roguelike_game.entities.load_hostile import load_hostile
+
 
 class Game:
     def __init__(self, screen, perf_log=None, map_name: str = None):
@@ -62,7 +64,7 @@ class Game:
         # ------------- core state ----------------------
         self._init_state()
         self._init_map()
-        self._init_entities()
+        self._init_entities()   # ahora pasa dungeon_offset
         self._init_z_layer()
         self._init_systems()
 
@@ -90,8 +92,6 @@ class Game:
     def _init_map(self):
         """
         Construye el mapa global y carga el overlay.
-        En modo 'global' filtramos los tiles para quedarnos
-        solo con los del lobby y la mazmorra.
         """
         # 1️⃣ Generar mapa global (incluye lobby + dungeon)
         result = build_map(
@@ -99,17 +99,19 @@ class Game:
             map_name=self.map_name
         )
 
+        # Guardamos todo el objeto para acceder a metadata luego
+        self.map_result = result
+
         # 2️⃣ Datos de texto y metadata
-        self.map_data        = result.matrix
+        self.map_data = result.matrix
         self.state.overlay_map = result.overlay
-        self.state.map_name  = result.name
-        # Offset dinámico del lobby para usar en render y lógica
+        self.state.map_name = result.name
         self.state.lobby_offset = result.metadata.get("lobby_offset", (0, 0))
 
-        # 3️⃣ Guardar grid completo (por si lo necesitas)
+        # 3️⃣ Guardar grid completo
         self.state.tile_map = result.tiles
 
-        # 4️⃣ Cálculo de regiones en celdas
+        # 4️⃣ Filtrar tiles para lobby + dungeon
         lob_x, lob_y = self.state.lobby_offset
         dun_x, dun_y = _calculate_dungeon_offset(
             (lob_x, lob_y),
@@ -117,10 +119,8 @@ class Game:
         )
 
         def in_region(tile):
-            """Devuelve True si el tile está en el lobby o en la dungeon."""
             col = tile.x // TILE_SIZE
             row = tile.y // TILE_SIZE
-
             # Lobby
             if lob_x <= col < lob_x + LOBBY_WIDTH and lob_y <= row < lob_y + LOBBY_HEIGHT:
                 return True
@@ -129,19 +129,33 @@ class Game:
                 return True
             return False
 
-        # 5️⃣ Filtrar y mantener solo esos tiles
         all_tiles = [t for row in result.tiles for t in row]
         self.state.tiles = [t for t in all_tiles if in_region(t)]
 
     def _init_entities(self):
-        player, obstacles, buildings, enemies = load_entities(self.z_state)
-        self.state.player    = player
+        # 1️⃣ Cargar jugador, obstáculos y edificios
+        player, obstacles, buildings = load_entities(self.z_state)
+        self.state.player = player
         self.state.obstacles = obstacles
         self.state.buildings = buildings
+
         print("🛠️ Buildings cargados:")
         for i, b in enumerate(self.state.buildings, 1):
             print(f"{i:02d} | ({b.x:.0f},{b.y:.0f}) | Z=({b.z_bottom},{b.z_top}) | img={b.image_path}")
-        self.state.enemies = enemies
+
+        # 2️⃣ Calcular offset en tiles de la dungeon
+        lob_x, lob_y = self.state.lobby_offset
+        dungeon_offset = _calculate_dungeon_offset((lob_x, lob_y), DUNGEON_CONNECT_SIDE)
+
+        # 3️⃣ Posición inicial del jugador en tiles
+        player_tile = (
+            int(self.state.player.x) // TILE_SIZE,
+            int(self.state.player.y) // TILE_SIZE
+        )
+
+        # 4️⃣ Spawn procedural de enemigos con offset
+        rooms = self.map_result.metadata.get("rooms", [])
+        self.state.enemies = load_hostile(rooms, player_tile, dungeon_offset)
 
     def _init_z_layer(self):
         zs = self.z_state
@@ -162,20 +176,17 @@ class Game:
         self.state.show_menu = False
         self.state.mode = "local"
         self.systems = SystemsManager(self.state)
-        self.state.systems = self.systems        
+        self.state.systems = self.systems
         self.state.effects = self.systems.effects
         self.network = NetworkManager(self.state)
         if self.state.mode == "online":
             self.network.connect()
 
     def _init_building_editor(self):
-        # Estado, controlador y vista
         self.editor_state = BuildingsEditorState()
         self.building_editor = BuildingEditorController(self.state, self.editor_state)
         self.building_editor_view = BuildingEditorView(self.state, self.editor_state)
         self.state.editor = self.editor_state
-
-        # Handler de eventos
         self.building_event_handler = BuildingEditorEventHandler(
             self.state,
             self.editor_state,
@@ -183,7 +194,6 @@ class Game:
         )
 
     def _init_tile_editor(self):
-        # Estado, controlador y vista
         self.tile_editor_state = TileEditorControllerState()
         self.tile_editor = TileEditorController(self.state, self.tile_editor_state)
         self.state.tile_editor = self.tile_editor
@@ -195,8 +205,6 @@ class Game:
         )
         self.state.tile_editor_view = self.tile_editor_view
         self.state.tile_editor_active = False
-
-        # Handler de eventos
         self.tile_event_handler = TileEditorEventHandler(
             self.state,
             self.tile_editor_state,
@@ -204,17 +212,12 @@ class Game:
         )
 
     def handle_events(self):
-        # Prioriza el Tile Editor
         if self.tile_editor_state.active:
             self.tile_event_handler.handle()
             return
-
-        # Luego el Building Editor
         if self.state.editor.active:
             self.building_event_handler.handle()
             return
-
-        # Finalmente, el loop de eventos normal
         handle_events(self.state)
 
     def update(self):
@@ -227,10 +230,8 @@ class Game:
 
     def render(self, perf_log=None):
         self.renderer.render_game(self.state, perf_log)
-        # Building-editor
         if self.state.editor.active:
             self.building_editor_view.render(self.screen)
-        # Tile-editor
         if self.tile_editor_state.active:
             self.tile_editor_view.render(self.screen)
 
