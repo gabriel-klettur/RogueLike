@@ -23,7 +23,7 @@ LOBBY_WIDTH = 50
 LOBBY_HEIGHT = 50
 
 #!------------------------ DUNGEON CONFIG ---------------------------
-DUNGEON_CONNECT_SIDE = "left"  # nuevo: "top" | "bottom" | "left" | "right"
+DUNGEON_CONNECT_SIDE = "bottom"  # nuevo: "top" | "bottom" | "left" | "right"
 
 # Dónde situar la dungeon dentro del mundo
 DUNGEON_OFFSET_X = 0

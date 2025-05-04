@@ -9,12 +9,8 @@ from src.roguelike_engine.config_map import (
     GLOBAL_HEIGHT,
     DUNGEON_WIDTH,
     DUNGEON_HEIGHT,
-    DUNGEON_OFFSET_X,
-    DUNGEON_OFFSET_Y,
     LOBBY_WIDTH,
     LOBBY_HEIGHT,
-    LOBBY_OFFSET_X,
-    LOBBY_OFFSET_Y,
     DUNGEON_CONNECT_SIDE,
 )
 from roguelike_engine.map.generator.factory import get_generator
@@ -28,6 +24,11 @@ logger = logging.getLogger(__name__)
 
 
 def _generate_lobby_matrix() -> List[str]:
+    """
+    Genera dinámicamente el mapa del lobby de tamaño LOBBY_WIDTH×LOBBY_HEIGHT:
+    - Borde de muros '#'
+    - Interior de suelo '.'
+    """
     matrix: List[str] = []
     for y in range(LOBBY_HEIGHT):
         if y == 0 or y == LOBBY_HEIGHT - 1:
@@ -38,61 +39,72 @@ def _generate_lobby_matrix() -> List[str]:
 
 
 def _find_lobby_exit(lobby: List[str], side: str) -> Tuple[int, int]:
+    """
+    Encuentra un punto de salida en el lobby según el lado indicado:
+      - 'bottom', 'top', 'left', 'right'
+    """
     h = len(lobby)
     w = len(lobby[0])
     if side == "bottom":
         for x in range(w):
-            if lobby[h - 1][x] == ".":
-                return x, h - 1
-        return w // 2, h - 1
+            if lobby[h-1][x] == '.':
+                return x, h-1
+        return w//2, h-1
     if side == "top":
         for x in range(w):
-            if lobby[0][x] == ".":
+            if lobby[0][x] == '.':
                 return x, 0
-        return w // 2, 0
+        return w//2, 0
     if side == "left":
         for y in range(h):
-            if lobby[y][0] == ".":
+            if lobby[y][0] == '.':
                 return 0, y
-        return 0, h // 2
-    if side == "right":
-        for y in range(h):
-            if lobby[y][w - 1] == ".":
-                return w - 1, y
-        return w - 1, h // 2
-    # fallback
-    return w // 2, h - 1
+        return 0, h//2
+    # 'right'
+    for y in range(h):
+        if lobby[y][w-1] == '.':
+            return w-1, y
+    return w-1, h//2
 
 
 def _calculate_lobby_offset() -> Tuple[int, int]:
+    """
+    Determina el offset (x,y) para centrar el lobby en la celda central de un grid.
+    """
     n_cols = GLOBAL_WIDTH // LOBBY_WIDTH
     n_rows = GLOBAL_HEIGHT // LOBBY_HEIGHT
-
     if n_cols < 1 or n_rows < 1:
-        return (
-            (GLOBAL_WIDTH - LOBBY_WIDTH) // 2,
-            (GLOBAL_HEIGHT - LOBBY_HEIGHT) // 2,
-        )
-
+        return ((GLOBAL_WIDTH - LOBBY_WIDTH)//2,
+                (GLOBAL_HEIGHT - LOBBY_HEIGHT)//2)
     center_col = n_cols // 2
     center_row = n_rows // 2
-
     rem_x = GLOBAL_WIDTH - n_cols * LOBBY_WIDTH
     rem_y = GLOBAL_HEIGHT - n_rows * LOBBY_HEIGHT
-
     start_x = rem_x // 2
     start_y = rem_y // 2
+    return (start_x + center_col * LOBBY_WIDTH,
+            start_y + center_row * LOBBY_HEIGHT)
 
-    return (
-        start_x + center_col * LOBBY_WIDTH,
-        start_y + center_row * LOBBY_HEIGHT,
-    )
+
+def _calculate_dungeon_offset(lobby_off: Tuple[int,int], side: str) -> Tuple[int,int]:
+    """
+    Calcula el offset (x,y) para colocar la dungeon adyacente al lobby
+    según DUNGEON_CONNECT_SIDE: arriba, abajo, izquierda, derecha.
+    """
+    off_x, off_y = lobby_off
+    if side == "bottom":
+        return off_x, off_y + LOBBY_HEIGHT
+    if side == "top":
+        return off_x, off_y - DUNGEON_HEIGHT
+    if side == "left":
+        return off_x - DUNGEON_WIDTH, off_y
+    # 'right'
+    return off_x + LOBBY_WIDTH, off_y
 
 
 class MapService:
     """
-    Encapsula la lógica para generar, fusionar, conectar y cargar mapas.
-    Soporta modos: 'lobby', 'dungeon', 'combined' y 'global'.
+    Genera y carga mapas en modos: 'lobby', 'dungeon', 'combined', 'global'.
     """
 
     def __init__(
@@ -112,129 +124,89 @@ class MapService:
         *,
         width: int = DUNGEON_WIDTH,
         height: int = DUNGEON_HEIGHT,
-        offset_x: int = LOBBY_OFFSET_X,
-        offset_y: int = LOBBY_OFFSET_Y,
+        offset_x: int = 0,
+        offset_y: int = 0,
         map_mode: str = "combined",
         map_name: Optional[str] = None,
         export_debug: bool = True,
     ) -> MapData:
 
-        # ————— MODO GLOBAL —————
         if map_mode == "global":
             key = map_name or "global_map"
 
-            # 1) Canvas global
-            global_map: List[List[str]] = [
-                ["#" for _ in range(GLOBAL_WIDTH)]
-                for _ in range(GLOBAL_HEIGHT)
-            ]
+            # canvas global inicial
+            canvas = [["#" for _ in range(GLOBAL_WIDTH)] for __ in range(GLOBAL_HEIGHT)]
 
-            # 2) Generar dungeon
+            # 1️⃣ lobby dinámico
+            lobby = _generate_lobby_matrix()
+            lobby_off = _calculate_lobby_offset()
+            lx, ly = lobby_off
+            for y, row in enumerate(lobby):
+                for x, ch in enumerate(row):
+                    canvas[ly+y][lx+x] = ch
+
+            # 2️⃣ dungeon procedural
             raw_map, metadata = self.generator.generate(
                 width=DUNGEON_WIDTH,
                 height=DUNGEON_HEIGHT,
                 return_rooms=True,
             )
-
-            # 3) Pegar dungeon
+            dx, dy = _calculate_dungeon_offset(lobby_off, DUNGEON_CONNECT_SIDE)
             for y, row in enumerate(raw_map):
                 for x, ch in enumerate(row):
-                    gx = DUNGEON_OFFSET_X + x
-                    gy = DUNGEON_OFFSET_Y + y
+                    gx = dx + x
+                    gy = dy + y
                     if 0 <= gx < GLOBAL_WIDTH and 0 <= gy < GLOBAL_HEIGHT:
-                        global_map[gy][gx] = ch
+                        canvas[gy][gx] = ch
 
-            # 4) Generar y pegar lobby
-            lobby = _generate_lobby_matrix()
-            lobby_off_x, lobby_off_y = _calculate_lobby_offset()
-            for y, row in enumerate(lobby):
-                for x, ch in enumerate(row):
-                    gx = lobby_off_x + x
-                    gy = lobby_off_y + y
-                    if 0 <= gx < GLOBAL_WIDTH and 0 <= gy < GLOBAL_HEIGHT:
-                        global_map[gy][gx] = ch
-
-            # 5) Conectar según lado
+            # 3️⃣ conectar pasillos
             exit_local = _find_lobby_exit(lobby, DUNGEON_CONNECT_SIDE)
-            ex = exit_local[0] + lobby_off_x
-            ey = exit_local[1] + lobby_off_y
-
+            ex, ey = lx + exit_local[0], ly + exit_local[1]
             rooms = metadata.get("rooms", [])
-            centers = [
-                (((r[0] + r[2]) // 2) + DUNGEON_OFFSET_X,
-                 ((r[1] + r[3]) // 2) + DUNGEON_OFFSET_Y)
-                for r in rooms
-            ]
+            centers = [(((r[0]+r[2])//2)+dx, ((r[1]+r[3])//2)+dy) for r in rooms]
             if centers:
-                bx, by = min(
-                    centers,
-                    key=lambda c: abs(c[0] - ex) + abs(c[1] - ey),
-                )
+                bx, by = min(centers, key=lambda c: abs(c[0]-ex)+abs(c[1]-ey))
                 if random.random() < 0.5:
-                    DungeonGenerator._horiz_tunnel(global_map, ex, bx, ey)
-                    DungeonGenerator._vert_tunnel(global_map, ey, by, bx)
+                    DungeonGenerator._horiz_tunnel(canvas, ex, bx, ey)
+                    DungeonGenerator._vert_tunnel (canvas, ey, by, bx)
                 else:
-                    DungeonGenerator._vert_tunnel(global_map, ey, by, ex)
-                    DungeonGenerator._horiz_tunnel(global_map, ex, bx, by)
+                    DungeonGenerator._vert_tunnel (canvas, ey, by, ex)
+                    DungeonGenerator._horiz_tunnel(canvas, ex, bx, by)
 
-            # 6) Serializar y cargar
-            merged = ["".join(r) for r in global_map]
+            # 4️⃣ serializar + cargar
+            merged = ["".join(r) for r in canvas]
             _, tiles, overlay = self.loader.load(merged, key)
+            metadata["lobby_offset"] = lobby_off
+            return MapData(merged, tiles, overlay, metadata, key)
 
-            # 7) Inyectar offset para el renderer
-            metadata["lobby_offset"] = (lobby_off_x, lobby_off_y)
-
-            return MapData(
-                matrix=merged,
-                tiles=tiles,
-                overlay=overlay,
-                metadata=metadata,
-                name=key,
-            )
-
-        # ——— MODOS EXISTENTES ———
-        key = map_name or ("lobby_map" if map_mode == "lobby" else "combined_map")
-
-        if map_mode == "lobby":
+        # modos 'lobby', 'dungeon', 'combined' sin cambios:
+        key = map_name or ("lobby_map" if map_mode=="lobby" else "combined_map")
+        if map_mode=="lobby":
             merged = _generate_lobby_matrix()
-            metadata: Dict = {}
+            metadata={}
         else:
             raw_map, metadata = self.generator.generate(
-                width=width,
-                height=height,
-                return_rooms=(map_mode == "combined"),
-                avoid_zone=(
-                    offset_x,
-                    offset_y + LOBBY_HEIGHT,
-                    offset_x + LOBBY_WIDTH,
-                    offset_y + LOBBY_HEIGHT + 3,
-                ) if map_mode == "combined" else None,
+                width=width, height=height,
+                return_rooms=(map_mode=="combined"),
+                avoid_zone=None
             )
-
-            if map_mode == "dungeon":
-                merged = ["".join(row) for row in raw_map]
+            if map_mode=="dungeon":
+                merged=["".join(r) for r in raw_map]
             else:
-                lobby = _generate_lobby_matrix()
-                fused = self.merger.merge(
+                lobby=_generate_lobby_matrix()
+                fused=self.merger.merge(
                     handmade_map=[list(r) for r in lobby],
                     generated_map=raw_map,
                     offset_x=offset_x,
                     offset_y=offset_y,
-                    dungeon_rooms=metadata.get("rooms", []),
+                    dungeon_rooms=metadata.get("rooms",[]),
                 )
-                merged = ["".join(r) for r in fused]
+                merged=["".join(r) for r in fused]
                 if export_debug:
                     try:
-                        fn = self.exporter.export(merged)
-                        logger.debug("Mapa de debug exportado como %s", fn)
+                        fn=self.exporter.export(merged)
+                        logger.debug("Mapa debug exportado: %s",fn)
                     except Exception as e:
-                        logger.warning("Error exportando debug: %s", e)
-
-        _, tiles, overlay = self.loader.load(merged, key)
-        return MapData(
-            matrix=merged,
-            tiles=tiles,
-            overlay=overlay,
-            metadata=metadata,
-            name=key,
-        )
+                        logger.warning("Error export debug: %s",e)
+        _, tiles, overlay=self.loader.load(merged, key)
+        return MapData(merged, tiles, overlay, metadata, key)
