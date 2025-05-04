@@ -48,11 +48,10 @@ class FireballController:
                 model.alive = False
                 return
 
-        # Colisión con enemigos por máscara
         for e in self.enemies:
-            if not hasattr(e, 'mask') or not e.alive:
+            # Solo colisionar si ambas máscaras existen y el enemigo está vivo
+            if not e.alive or model.mask is None or getattr(e, 'mask', None) is None:
                 continue
-            # Offset de máscara: posición relativa
             offset = (int(e.x - model.x), int(e.y - model.y))
             if model.mask.overlap(e.mask, offset):
                 e.take_damage(model.damage)
