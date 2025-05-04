@@ -25,6 +25,9 @@ LOBBY_HEIGHT = 50
 #!------------------------ DUNGEON CONFIG ---------------------------
 DUNGEON_CONNECT_SIDE = "bottom"  # nuevo: "top" | "bottom" | "left" | "right"
 
+# Ancho de los túneles (en tiles)
+DUNGEON_TUNNEL_THICKNESS = 2
+
 # Dónde situar la dungeon dentro del mundo
 DUNGEON_OFFSET_X = 0
 DUNGEON_OFFSET_Y = 50

@@ -30,7 +30,7 @@
             1024,
             1536
         ],
-        "split_ratio": 0.5,
+        "split_ratio": 0.801,
         "z_bottom": 3,
         "z_top": 6,
         "z": 3
@@ -66,14 +66,14 @@
             1024,
             1024
         ],
-        "split_ratio": 0.5,
+        "split_ratio": 0.683,
         "z_bottom": 3,
         "z_top": 5,
         "z": 3
     },
     {
-        "x": 4339,
-        "y": 3365,
+        "x": 4167,
+        "y": 3369,
         "image_path": "assets/buildings/others/portal.png",
         "solid": true,
         "scale": [
@@ -84,7 +84,7 @@
             512,
             824
         ],
-        "split_ratio": 0.5,
+        "split_ratio": 0.222,
         "z_bottom": 3,
         "z_top": 5,
         "z": 3
@@ -120,7 +120,7 @@
             600,
             600
         ],
-        "split_ratio": 0.5,
+        "split_ratio": 0.668,
         "z_bottom": 2,
         "z_top": 4,
         "z": 2
@@ -138,7 +138,7 @@
             768,
             768
         ],
-        "split_ratio": 0.5,
+        "split_ratio": 0.56,
         "z_bottom": 2,
         "z_top": 6,
         "z": 2
@@ -174,7 +174,7 @@
             1200,
             1200
         ],
-        "split_ratio": 0.5,
+        "split_ratio": 0.618,
         "z_bottom": 3,
         "z_top": 5,
         "z": 3
@@ -192,7 +192,7 @@
             1200,
             1200
         ],
-        "split_ratio": 0.5,
+        "split_ratio": 0.776,
         "z_bottom": 3,
         "z_top": 5,
         "z": 3
@@ -210,7 +210,7 @@
             1000,
             1000
         ],
-        "split_ratio": 0.5,
+        "split_ratio": 0.632,
         "z_bottom": 3,
         "z_top": 5,
         "z": 3
@@ -228,7 +228,7 @@
             400,
             400
         ],
-        "split_ratio": 0.5,
+        "split_ratio": 0.43,
         "z_bottom": 3,
         "z_top": 5,
         "z": 3

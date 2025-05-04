@@ -1,13 +1,16 @@
 # Path: src/roguelike_engine/map/generator/dungeon.py
+
 import random
 from typing import List, Tuple, Dict, Optional
+
 from .interfaces import MapGenerator
-from src.roguelike_engine.config_map import DUNGEON_WIDTH, DUNGEON_HEIGHT
+from src.roguelike_engine.config_map import DUNGEON_WIDTH, DUNGEON_HEIGHT, DUNGEON_TUNNEL_THICKNESS
 from roguelike_engine.map.utils import intersect, center_of
 
 class DungeonGenerator(MapGenerator):
     """
     Generador de dungeon procedural basado en habitaciones y túneles.
+    Soporta tuneles con grosor configurado mediante DUNGEON_TUNNEL_THICKNESS.
     """
     def generate(
         self,
@@ -29,11 +32,9 @@ class DungeonGenerator(MapGenerator):
             y = random.randint(1, height - h - 1)
             new_room = (x, y, x + w, y + h)
 
-            # Colisión con otras habitaciones
             if any(intersect(r, new_room) for r in rooms):
                 continue
 
-            # Zona protegida
             if avoid_zone and not (
                 new_room[2] < avoid_zone[0] or
                 new_room[0] > avoid_zone[2] or
@@ -42,12 +43,10 @@ class DungeonGenerator(MapGenerator):
             ):
                 continue
 
-            # Pintar habitación
             for yy in range(y, y + h):
                 for xx in range(x, x + w):
                     map_[yy][xx] = "O"
 
-            # Conectar con la anterior
             if rooms:
                 prev_center = center_of(rooms[-1])
                 new_center = center_of(new_room)
@@ -65,10 +64,26 @@ class DungeonGenerator(MapGenerator):
 
     @staticmethod
     def _horiz_tunnel(map_: List[List[str]], x1: int, x2: int, y: int) -> None:
+        """
+        Dibuja un túnel horizontal de grosor DUNGEON_TUNNEL_THICKNESS
+        en la fila y, desde x1 hasta x2.
+        """
+        half = DUNGEON_TUNNEL_THICKNESS // 2
         for x in range(min(x1, x2), max(x1, x2) + 1):
-            map_[y][x] = "="
+            for t in range(DUNGEON_TUNNEL_THICKNESS):
+                yy = y + t - half
+                if 0 <= yy < len(map_):
+                    map_[yy][x] = "="
 
     @staticmethod
     def _vert_tunnel(map_: List[List[str]], y1: int, y2: int, x: int) -> None:
+        """
+        Dibuja un túnel vertical de grosor DUNGEON_TUNNEL_THICKNESS
+        en la columna x, desde y1 hasta y2.
+        """
+        half = DUNGEON_TUNNEL_THICKNESS // 2
         for y in range(min(y1, y2), max(y1, y2) + 1):
-            map_[y][x] = "="
+            for t in range(DUNGEON_TUNNEL_THICKNESS):
+                xx = x + t - half
+                if 0 <= xx < len(map_[0]):
+                    map_[y][xx] = "="
