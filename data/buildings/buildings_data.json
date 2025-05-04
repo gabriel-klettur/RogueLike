@@ -18,8 +18,8 @@
         "z": 3
     },
     {
-        "x": 142,
-        "y": -514,
+        "x": 5358,
+        "y": 3145,
         "image_path": "assets/buildings/temples/catholic.png",
         "solid": true,
         "scale": [
@@ -36,8 +36,8 @@
         "z": 3
     },
     {
-        "x": 133,
-        "y": -1756,
+        "x": 3257,
+        "y": 1536,
         "image_path": "assets/buildings/castles/castle_2.png",
         "solid": true,
         "scale": [
@@ -54,8 +54,8 @@
         "z": 3
     },
     {
-        "x": 2473,
-        "y": -88,
+        "x": 5551,
+        "y": 5170,
         "image_path": "assets/buildings/temples/satanist.png",
         "solid": true,
         "scale": [
@@ -72,8 +72,8 @@
         "z": 3
     },
     {
-        "x": 1525,
-        "y": 957,
+        "x": 4339,
+        "y": 3365,
         "image_path": "assets/buildings/others/portal.png",
         "solid": true,
         "scale": [
@@ -90,8 +90,8 @@
         "z": 3
     },
     {
-        "x": 1931,
-        "y": -223,
+        "x": 3443,
+        "y": 3534,
         "image_path": "assets/buildings/shops/alchemy_tower.png",
         "solid": true,
         "scale": [
@@ -108,8 +108,8 @@
         "z": 3
     },
     {
-        "x": 1998,
-        "y": 596,
+        "x": 4132,
+        "y": 3760,
         "image_path": "assets/buildings/shops/healer_1.png",
         "solid": true,
         "scale": [
@@ -126,8 +126,8 @@
         "z": 2
     },
     {
-        "x": 886,
-        "y": 40,
+        "x": 3468,
+        "y": 4800,
         "image_path": "assets/buildings/shops/healer.png",
         "solid": true,
         "scale": [
@@ -140,12 +140,12 @@
         ],
         "split_ratio": 0.5,
         "z_bottom": 2,
-        "z_top": 3,
+        "z_top": 6,
         "z": 2
     },
     {
-        "x": 1476,
-        "y": 526,
+        "x": 5004,
+        "y": 3562,
         "image_path": "assets/buildings/others/fuente.png",
         "solid": true,
         "scale": [
@@ -162,8 +162,8 @@
         "z": 3
     },
     {
-        "x": 104,
-        "y": 902,
+        "x": 4072,
+        "y": 4252,
         "image_path": "assets/buildings/shops/blacksmith.png",
         "solid": true,
         "scale": [
@@ -180,8 +180,8 @@
         "z": 3
     },
     {
-        "x": 2320,
-        "y": 715,
+        "x": 5480,
+        "y": 4309,
         "image_path": "assets/buildings/houses/orden_house_2.png",
         "solid": true,
         "scale": [
@@ -198,8 +198,8 @@
         "z": 3
     },
     {
-        "x": 2019,
-        "y": 1414,
+        "x": 4929,
+        "y": 5592,
         "image_path": "assets/buildings/shops/jewlery_shop.png",
         "solid": true,
         "scale": [
@@ -216,8 +216,8 @@
         "z": 3
     },
     {
-        "x": 1466,
-        "y": 1554,
+        "x": 3340,
+        "y": 4428,
         "image_path": "assets/buildings/others/guillotina.png",
         "solid": true,
         "scale": [

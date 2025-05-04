@@ -4,8 +4,8 @@ from roguelike_engine.config import DATA_DIR
 
 #!--------------------- GLOBAL MAP CONFIG --------------------------
 # Size total del mapa (en tiles)
-GLOBAL_WIDTH  = 200
-GLOBAL_HEIGHT = 200
+GLOBAL_WIDTH  = 150
+GLOBAL_HEIGHT = 150
 
 #!------------------------ OVERLAY CONFIG --------------------------
 # Persistencia de overlays de mapas (tiles)
