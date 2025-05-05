@@ -1,26 +1,34 @@
-# Path: src/roguelike_game/entities/npc/utils/movement.py
+#Path: src/roguelike_game/entities/npc/utils/movement.py
 
 import math
 import pygame
 
 class NPCMovement:
     """
-    Movimiento para NPCs con colisión y 'sliding' a lo largo de paredes.
+    Movimiento para NPCs con detección de colisión AABB
+    usando un 'hitbox' de pies personalizable.
     """
     def __init__(self, npc_model):
         self.npc = npc_model
 
     def hitbox(self, x=None, y=None) -> pygame.Rect:
+        """
+        Rectángulo que cubre sólo la parte de los pies del sprite,
+        con tamaño y offset personalizables desde el modelo.
+        """
         px = x if x is not None else self.npc.x
         py = y if y is not None else self.npc.y
         w, h = self.npc.sprite_size
 
-        foot_h = int(h * 0.25)
-        foot_w = int(w * 0.5)
-        foot_x = px + (w - foot_w) // 2
-        foot_y = py + h - foot_h
+        # Tamaño de la hitbox (anchura/altura)
+        bw = getattr(self.npc, "hitbox_width", int(w * 0.5))
+        bh = getattr(self.npc, "hitbox_height", int(h * 0.25))
 
-        return pygame.Rect(foot_x, foot_y, foot_w, foot_h)
+        # Offset relativo desde la esquina superior izquierda del sprite
+        ox = getattr(self.npc, "hitbox_offset_x", (w - bw) // 2)
+        oy = getattr(self.npc, "hitbox_offset_y", h - bh)
+
+        return pygame.Rect(px + ox, py + oy, bw, bh)
 
     def _collides(self, future: pygame.Rect, collision_tiles: list, obstacles: list) -> bool:
         for tile in collision_tiles:
@@ -48,20 +56,20 @@ class NPCMovement:
             self.npc.direction = (dx, dy)
             return
 
-        # Intento 2: solo X
+        # Intento 2: sólo X
         nx, ny = x0 + dx * speed, y0
-        future_x = self.hitbox(nx, ny)
-        if not self._collides(future_x, collision_tiles, obstacles):
+        future = self.hitbox(nx, ny)
+        if not self._collides(future, collision_tiles, obstacles):
             self.npc.x = nx
             self.npc.direction = (dx, 0)
             return
 
-        # Intento 3: solo Y
+        # Intento 3: sólo Y
         nx, ny = x0, y0 + dy * speed
-        future_y = self.hitbox(nx, ny)
-        if not self._collides(future_y, collision_tiles, obstacles):
+        future = self.hitbox(nx, ny)
+        if not self._collides(future, collision_tiles, obstacles):
             self.npc.y = ny
             self.npc.direction = (0, dy)
             return
 
-        # Si colisiona en todos los casos, se queda quieto
+        # Si colisiona en las tres direcciones, no se mueve
