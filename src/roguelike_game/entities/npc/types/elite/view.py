@@ -6,7 +6,7 @@ from src.roguelike_game.entities.npc.base.view import NPCView
 import src.roguelike_engine.config as config
 
 class EliteView(NPCView):
-    SPRITE_SIZE = (256, 256)
+    SPRITE_SIZE = (512, 512)
 
     def __init__(self, model, sprite_paths: dict[str,str], sprite_size: tuple[int,int]):
         super().__init__(model, sprite_paths, sprite_size)

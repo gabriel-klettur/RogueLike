@@ -1,7 +1,7 @@
 # Path: src/roguelike_game/entities/player/model/movement_model.py
-import pygame
+
 import math
-import time
+import pygame
 
 from src.roguelike_game.entities.player.config_player import (
     PLAYER_SPEED,
@@ -12,10 +12,10 @@ from src.roguelike_game.entities.player.config_player import (
     PLAYER_TELEPORT_DISTANCE,
 )
 
-
 class PlayerMovement:
     """
     Modelo de movimiento: walking, dash y teleport con colisión.
+    Con wall-sliding para evitar quedarse atascado en esquinas.
     """
     def __init__(self, player):
         self.player = player
@@ -35,14 +35,13 @@ class PlayerMovement:
         self.last_teleport_time = -math.inf
         self.teleport_distance = PLAYER_TELEPORT_DISTANCE
 
-    def hitbox(self, x=None, y=None):
+    def hitbox(self, x=None, y=None) -> pygame.Rect:
         """
         Foot-only hitbox para colisiones: rectángulo centrado en la parte inferior.
         """
         px = x if x is not None else self.player.x
         py = y if y is not None else self.player.y
         w, h = self.player.sprite_size
-        # Pie: 25% de la altura, 50% del ancho, centrado
         foot_h = int(h * 0.25)
         foot_w = int(w * 0.5)
         foot_x = px + (w - foot_w) // 2
@@ -51,35 +50,57 @@ class PlayerMovement:
 
     def move(self, dx, dy, collision_tiles, obstacles):
         """
-        Movimiento básico con detección de colisión contra `collision_tiles` y `obstacles`.
+        Movimiento con colisión y wall sliding:
+        - Primero intenta movimiento diagonal completo.
+        - Si choca, prueba solo horizontal.
+        - Luego solo vertical.
         """
         # Normalizar diagonal
         if dx != 0 and dy != 0:
             norm = math.hypot(dx, dy)
             dx, dy = dx / norm, dy / norm
 
-        # Posición tentativa
-        new_x = self.player.x + dx * self.speed
-        new_y = self.player.y + dy * self.speed
-        future = self.hitbox(new_x, new_y)
+        speed = self.speed  # usar atributo de PlayerMovement, no de PlayerModel
+        x0, y0 = self.player.x, self.player.y
 
-        # Chequeo tiles sólidos
+        # Intento 1: movimiento completo
+        nx, ny = x0 + dx * speed, y0 + dy * speed
+        future = self.hitbox(nx, ny)
+        if not self._collides(future, collision_tiles, obstacles):
+            self.player.x, self.player.y = nx, ny
+            self.player.is_walking = (dx != 0 or dy != 0)
+            return
+
+        # Intento 2: solo X
+        nx, ny = x0 + dx * speed, y0
+        future = self.hitbox(nx, ny)
+        if not self._collides(future, collision_tiles, obstacles):
+            self.player.x = nx
+            self.player.is_walking = (dx != 0)
+            return
+
+        # Intento 3: solo Y
+        nx, ny = x0, y0 + dy * speed
+        future = self.hitbox(nx, ny)
+        if not self._collides(future, collision_tiles, obstacles):
+            self.player.y = ny
+            self.player.is_walking = (dy != 0)
+            return
+
+        # Si colisiona en las tres direcciones, no camina
+        self.player.is_walking = False
+
+    def _collides(self, future: pygame.Rect, collision_tiles, obstacles) -> bool:
         for tile in collision_tiles:
-            if hasattr(tile, "rect") and future.colliderect(tile.rect):
-                return  # aborta
-
-        # Chequeo obstáculos
+            if getattr(tile, "solid", False) and future.colliderect(tile.rect):
+                return True
         for ob in obstacles:
             if future.colliderect(ob.rect):
-                return
-
-        # Si ok, aplicar movimiento
-        self.player.x = new_x
-        self.player.y = new_y
-        self.player.is_walking = (dx != 0 or dy != 0)
+                return True
+        return False
 
     def start_dash(self, direction_vec):
-        now = time.time()
+        now = pygame.time.get_ticks() / 1000.0
         if now - self.last_dash_time < self.dash_cooldown:
             return False
         self.is_dashing = True
@@ -95,21 +116,23 @@ class PlayerMovement:
         dist = self.dash_speed * delta / self.speed
         dx = self.dash_direction.x * dist
         dy = self.dash_direction.y * dist
-        # Reutilizar move() para colisiones
+        # Reutiliza move() con wall sliding
         self.move(dx, dy, collision_tiles, obstacles)
         self.dash_time_left -= delta
         if self.dash_time_left <= 0:
             self.is_dashing = False
 
     def teleport(self, tx, ty):
-        now = time.time()
+        now = pygame.time.get_ticks() / 1000.0
         if now - self.last_teleport_time < self.teleport_cooldown:
             return False
+        # Centro actual del jugador
         px = self.player.x + self.player.sprite_size[0] / 2
         py = self.player.y + self.player.sprite_size[1] / 2
         vec = pygame.Vector2(tx - px, ty - py)
         if vec.length():
             vec.normalize_ip()
+        # Teletransportar
         self.player.x += vec.x * self.teleport_distance
         self.player.y += vec.y * self.teleport_distance
         self.last_teleport_time = now
