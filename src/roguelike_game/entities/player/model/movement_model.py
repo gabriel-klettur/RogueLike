@@ -3,27 +3,37 @@ import pygame
 import math
 import time
 
+from src.roguelike_game.entities.player.config_player import (
+    PLAYER_SPEED,
+    PLAYER_DASH_SPEED,
+    PLAYER_DASH_COOLDOWN,
+    PLAYER_DASH_DURATION,
+    PLAYER_TELEPORT_COOLDOWN,
+    PLAYER_TELEPORT_DISTANCE,
+)
+
+
 class PlayerMovement:
     """
     Modelo de movimiento: walking, dash y teleport con colisión.
     """
     def __init__(self, player):
         self.player = player
-        self.speed = 10
+        self.speed = PLAYER_SPEED
 
         # Dash
         self.is_dashing = False
-        self.dash_speed = 2000
-        self.dash_duration = 0.2
+        self.dash_speed = PLAYER_DASH_SPEED
+        self.dash_duration = PLAYER_DASH_DURATION
         self.last_dash_time = -math.inf
-        self.dash_cooldown = 2.0
+        self.dash_cooldown = PLAYER_DASH_COOLDOWN
         self.dash_time_left = 0.0
         self.dash_direction = pygame.Vector2(0, 0)
 
         # Teleport
-        self.teleport_cooldown = 0.5
+        self.teleport_cooldown = PLAYER_TELEPORT_COOLDOWN
         self.last_teleport_time = -math.inf
-        self.teleport_distance = 1000
+        self.teleport_distance = PLAYER_TELEPORT_DISTANCE
 
     def hitbox(self, x=None, y=None):
         """

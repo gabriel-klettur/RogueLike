@@ -1,4 +1,3 @@
-
 # Path: src/roguelike_engine/tiles/assets.py
 import os
 import random

@@ -1,5 +1,3 @@
-# src/roguelike_game/entities/player/controller/player_controller.py
-
 # Path: src/roguelike_game/entities/player/controller/player_controller.py
 import pygame
 from src.roguelike_game.entities.player.model.player_model import PlayerModel
@@ -7,6 +5,7 @@ from src.roguelike_game.entities.player.view.assets import PlayerAssets
 from src.roguelike_game.entities.player.view.player_view import PlayerView
 from src.roguelike_game.entities.player.view.hud_view import HUDView
 from roguelike_engine.utils.loader import load_image
+from src.roguelike_game.entities.player.config_player import ORIGINAL_SPRITE_SIZE, HUD_RESTORE, HUD_DASH, HUD_SLASH, HUD_SHIELD, HUD_FIREWORK, HUD_SMOKE, HUD_LIGHTNING, HUD_ARCANE_FIRE, HUD_TELEPORT
 
 class PlayerController:
     def __init__(self, x, y, z_state=None, obstacles=None):
@@ -20,22 +19,22 @@ class PlayerController:
         self.attack    = self.model.attack
         self.obstacles = obstacles or []
 
-        # Vista del sprite
-        sprites, size      = PlayerAssets(self.model.character_name, self.model.sprite_size).get_sprites()
+        # Vista del sprite: usamos siempre el tamaño original para recorte
+        sprites, _      = PlayerAssets(self.model.character_name, ORIGINAL_SPRITE_SIZE).get_sprites()
         self.player_view   = PlayerView(sprites)
         self.renderer      = self.player_view  # alias para Game._init_systems
 
         # Vista del HUD
         icon_paths = {
-            "Restore":    "assets/ui/restore_icon.png",
-            "Dash":       "assets/ui/dash_icon.png",
-            "Slash":      "assets/ui/slash_icon.png",
-            "Shield":     "assets/ui/shield_icon.png",
-            "Firework":   "assets/ui/firework_icon.png",
-            "Smoke":      "assets/ui/smoke_icon.png",
-            "Lightning":  "assets/ui/lightning_icon.png",
-            "Pixel Fire": "assets/ui/pixel_fire_icon.png",
-            "Teleport":   "assets/ui/teleport_icon.png",
+            "Restore":    HUD_RESTORE,
+            "Dash":       HUD_DASH,
+            "Slash":      HUD_SLASH,
+            "Shield":     HUD_SHIELD,
+            "Firework":   HUD_FIREWORK,
+            "Smoke":      HUD_SMOKE,
+            "Lightning":  HUD_LIGHTNING,
+            "Pixel Fire": HUD_ARCANE_FIRE,
+            "Teleport":   HUD_TELEPORT,
         }
         icons = {n: load_image(p, (48,48)) for n,p in icon_paths.items()}
         self.hud_view = HUDView(icons)
@@ -76,7 +75,7 @@ class PlayerController:
     def change_character(self, new_name):
         # Re-inicializar modelo y vistas
         self.model.change_character(new_name)
-        sprites, size = PlayerAssets(self.model.character_name, self.model.sprite_size).get_sprites()
+        sprites, _ = PlayerAssets(self.model.character_name, ORIGINAL_SPRITE_SIZE).get_sprites()
         self.player_view = PlayerView(sprites)
         self.renderer    = self.player_view
 
