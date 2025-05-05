@@ -1,48 +1,264 @@
 [
     {
-        "x": -1000,
-        "y": -2500,
-        "image_path": "assets/views/horizonte_1.png",
-        "solid": true,
-        "scale": [
-            2048,
-            2048
-        ],
-        "original_scale": [
-            2048,
-            2048
-        ],
-        "split_ratio": 0.5,
-        "z_bottom": 3,
-        "z_top": 5,
-        "z": 3
-    },
-    {
-        "x": 2200,
-        "y": -800,
+        "x": 2800,
+        "y": 1882,
         "image_path": "assets/buildings/temples/catholic.png",
         "solid": true,
         "scale": [
-            1024,
-            1536
+            353,
+            528
         ],
         "original_scale": [
             1024,
             1536
         ],
-        "split_ratio": 0.5,
-        "z_bottom": 3,
-        "z_top": 5,
-        "z": 3
+        "split_ratio": 0.801,
+        "z_bottom": 1,
+        "z_top": 9,
+        "z": 1
     },
     {
-        "x": 3000,
-        "y": -900,
+        "x": 2631,
+        "y": 2651,
+        "image_path": "assets/buildings/gardens/garden_1.png",
+        "solid": true,
+        "scale": [
+            512,
+            512
+        ],
+        "original_scale": [
+            1024,
+            1024
+        ],
+        "split_ratio": 0.801,
+        "z_bottom": 1,
+        "z_top": 1,
+        "z": 1
+    },
+    {
+        "x": 1639,
+        "y": 2310,
+        "image_path": "assets/buildings/vegetation/tree_1.png",
+        "solid": true,
+        "scale": [
+            147,
+            201
+        ],
+        "original_scale": [
+            456,
+            626
+        ],
+        "split_ratio": 0.801,
+        "z_bottom": 1,
+        "z_top": 1,
+        "z": 1
+    },
+    {
+        "x": 1965,
+        "y": 2323,
+        "image_path": "assets/buildings/vegetation/tree_2.png",
+        "solid": true,
+        "scale": [
+            131,
+            179
+        ],
+        "original_scale": [
+            456,
+            626
+        ],
+        "split_ratio": 0.801,
+        "z_bottom": 4,
+        "z_top": 5,
+        "z": 4
+    },
+    {
+        "x": 2003,
+        "y": 1809,
+        "image_path": "assets/buildings/vegetation/tree_3.png",
+        "solid": true,
+        "scale": [
+            140,
+            178
+        ],
+        "original_scale": [
+            490,
+            627
+        ],
+        "split_ratio": 0.801,
+        "z_bottom": 4,
+        "z_top": 6,
+        "z": 4
+    },
+    {
+        "x": 1666,
+        "y": 2939,
+        "image_path": "assets/buildings/vegetation/tree_4.png",
+        "solid": true,
+        "scale": [
+            96,
+            192
+        ],
+        "original_scale": [
+            96,
+            192
+        ],
+        "split_ratio": 0.801,
+        "z_bottom": 1,
+        "z_top": 1,
+        "z": 1
+    },
+    {
+        "x": 2973,
+        "y": 2408,
+        "image_path": "assets/buildings/vegetation/tree_5.png",
+        "solid": true,
+        "scale": [
+            231,
+            231
+        ],
+        "original_scale": [
+            256,
+            256
+        ],
+        "split_ratio": 0.801,
+        "z_bottom": 1,
+        "z_top": 1,
+        "z": 1
+    },
+    {
+        "x": 2383,
+        "y": 1501,
+        "image_path": "assets/buildings/vegetation/tree_6.png",
+        "solid": true,
+        "scale": [
+            305,
+            305
+        ],
+        "original_scale": [
+            540,
+            540
+        ],
+        "split_ratio": 0.801,
+        "z_bottom": 1,
+        "z_top": 5,
+        "z": 1
+    },
+    {
+        "x": 1858,
+        "y": 1478,
+        "image_path": "assets/buildings/vegetation/tree_7.png",
+        "solid": true,
+        "scale": [
+            227,
+            309
+        ],
+        "original_scale": [
+            227,
+            309
+        ],
+        "split_ratio": 0.801,
+        "z_bottom": 1,
+        "z_top": 5,
+        "z": 1
+    },
+    {
+        "x": 2956,
+        "y": 2957,
+        "image_path": "assets/buildings/vegetation/tree_8.png",
+        "solid": true,
+        "scale": [
+            167,
+            204
+        ],
+        "original_scale": [
+            251,
+            308
+        ],
+        "split_ratio": 0.801,
+        "z_bottom": 1,
+        "z_top": 1,
+        "z": 1
+    },
+    {
+        "x": 1589,
+        "y": 1450,
+        "image_path": "assets/buildings/vegetation/tree_9.png",
+        "solid": true,
+        "scale": [
+            172,
+            222
+        ],
+        "original_scale": [
+            241,
+            324
+        ],
+        "split_ratio": 0.801,
+        "z_bottom": 1,
+        "z_top": 1,
+        "z": 1
+    },
+    {
+        "x": 2660,
+        "y": 2954,
+        "image_path": "assets/buildings/vegetation/tree_10.png",
+        "solid": true,
+        "scale": [
+            168,
+            216
+        ],
+        "original_scale": [
+            251,
+            324
+        ],
+        "split_ratio": 0.801,
+        "z_bottom": 4,
+        "z_top": 4,
+        "z": 4
+    },
+    {
+        "x": 2209,
+        "y": 1571,
+        "image_path": "assets/buildings/vegetation/tree_11.png",
+        "solid": true,
+        "scale": [
+            216,
+            216
+        ],
+        "original_scale": [
+            233,
+            233
+        ],
+        "split_ratio": 0.801,
+        "z_bottom": 1,
+        "z_top": 4,
+        "z": 1
+    },
+    {
+        "x": 1618,
+        "y": 1959,
+        "image_path": "assets/buildings/gardens/garden_5.png",
+        "solid": true,
+        "scale": [
+            512,
+            512
+        ],
+        "original_scale": [
+            1024,
+            1024
+        ],
+        "split_ratio": 0.801,
+        "z_bottom": 1,
+        "z_top": 1,
+        "z": 1
+    },
+    {
+        "x": 1759,
+        "y": 864,
         "image_path": "assets/buildings/castles/castle_2.png",
         "solid": true,
         "scale": [
-            3072,
-            2048
+            1322,
+            879
         ],
         "original_scale": [
             3072,
@@ -54,49 +270,49 @@
         "z": 3
     },
     {
-        "x": 431,
-        "y": -401,
+        "x": 2539,
+        "y": 1621,
         "image_path": "assets/buildings/temples/satanist.png",
         "solid": true,
         "scale": [
-            1024,
-            1024
+            414,
+            414
         ],
         "original_scale": [
             1024,
             1024
         ],
-        "split_ratio": 0.5,
+        "split_ratio": 0.683,
         "z_bottom": 3,
         "z_top": 5,
         "z": 3
     },
     {
-        "x": 1628,
-        "y": 191,
+        "x": 2110,
+        "y": 1664,
         "image_path": "assets/buildings/others/portal.png",
         "solid": true,
         "scale": [
-            258,
-            414
+            117,
+            186
         ],
         "original_scale": [
             512,
             824
         ],
-        "split_ratio": 0.5,
+        "split_ratio": 0.222,
         "z_bottom": 3,
         "z_top": 5,
         "z": 3
     },
     {
-        "x": 1905,
-        "y": 529,
+        "x": 2929,
+        "y": 1544,
         "image_path": "assets/buildings/shops/alchemy_tower.png",
         "solid": true,
         "scale": [
-            550,
-            845
+            227,
+            346
         ],
         "original_scale": [
             550,
@@ -108,127 +324,127 @@
         "z": 3
     },
     {
-        "x": 3200,
-        "y": 900,
+        "x": 2590,
+        "y": 2032,
         "image_path": "assets/buildings/shops/healer_1.png",
         "solid": true,
         "scale": [
-            600,
-            600
+            234,
+            234
         ],
         "original_scale": [
             600,
             600
         ],
-        "split_ratio": 0.5,
-        "z_bottom": 3,
-        "z_top": 5,
-        "z": 3
+        "split_ratio": 0.668,
+        "z_bottom": 2,
+        "z_top": 3,
+        "z": 2
     },
     {
-        "x": 4300,
-        "y": 966,
+        "x": 2346,
+        "y": 2438,
         "image_path": "assets/buildings/shops/healer.png",
         "solid": true,
         "scale": [
-            768,
-            768
+            222,
+            222
         ],
         "original_scale": [
             768,
             768
         ],
-        "split_ratio": 0.5,
-        "z_bottom": 3,
-        "z_top": 5,
-        "z": 3
+        "split_ratio": 0.56,
+        "z_bottom": 2,
+        "z_top": 4,
+        "z": 2
     },
     {
-        "x": 1468,
-        "y": 646,
+        "x": 2347,
+        "y": 1750,
         "image_path": "assets/buildings/others/fuente.png",
         "solid": true,
         "scale": [
-            329,
-            329
+            183,
+            183
         ],
         "original_scale": [
             600,
             600
         ],
-        "split_ratio": 0.5,
+        "split_ratio": 0.05,
         "z_bottom": 3,
         "z_top": 5,
         "z": 3
     },
     {
-        "x": 600,
-        "y": 966,
+        "x": 1610,
+        "y": 1546,
         "image_path": "assets/buildings/shops/blacksmith.png",
         "solid": true,
         "scale": [
-            1200,
-            1200
+            505,
+            505
         ],
         "original_scale": [
             1200,
             1200
         ],
-        "split_ratio": 0.5,
+        "split_ratio": 0.618,
         "z_bottom": 3,
         "z_top": 5,
         "z": 3
     },
     {
-        "x": 2100,
-        "y": 1066,
+        "x": 2193,
+        "y": 1875,
         "image_path": "assets/buildings/houses/orden_house_2.png",
         "solid": true,
         "scale": [
-            1200,
-            1200
+            489,
+            489
         ],
         "original_scale": [
             1200,
             1200
         ],
-        "split_ratio": 0.5,
+        "split_ratio": 0.776,
         "z_bottom": 3,
         "z_top": 5,
         "z": 3
     },
     {
-        "x": 3600,
-        "y": 1266,
+        "x": 2524,
+        "y": 2375,
         "image_path": "assets/buildings/shops/jewlery_shop.png",
         "solid": true,
         "scale": [
-            1000,
-            1000
+            302,
+            302
         ],
         "original_scale": [
             1000,
             1000
         ],
-        "split_ratio": 0.5,
+        "split_ratio": 0.632,
         "z_bottom": 3,
         "z_top": 5,
         "z": 3
     },
     {
-        "x": 5000,
-        "y": 1766,
+        "x": 2866,
+        "y": 2422,
         "image_path": "assets/buildings/others/guillotina.png",
         "solid": true,
         "scale": [
-            400,
-            400
+            160,
+            160
         ],
         "original_scale": [
             400,
             400
         ],
-        "split_ratio": 0.5,
+        "split_ratio": 0.43,
         "z_bottom": 3,
         "z_top": 5,
         "z": 3

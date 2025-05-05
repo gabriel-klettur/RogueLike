@@ -1,4 +1,4 @@
-# src/roguelike_engine/map/generator/factory.py
+
 # Path: src/roguelike_engine/map/generator/factory.py
 from typing import Dict
 from .interfaces import MapGenerator

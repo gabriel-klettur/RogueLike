@@ -1,17 +1,34 @@
 # Path: src/roguelike_game/entities/npc/types/monster/model.py
 
-import math
 from src.roguelike_game.entities.npc.base.model import BaseNPCModel
-from src.roguelike_game.entities.npc.utils.geometry import calculate_distance
+from src.roguelike_game.entities.npc.utils.movement import NPCMovement
+from src.roguelike_game.entities.npc.types.monster.view import MonsterView
 
 class MonsterModel(BaseNPCModel):
     def __init__(self, x: float, y: float, name: str = "Monster"):
         super().__init__(x, y, name)
-        # Stats por defecto (se pueden sobrescribir desde config.yaml)
+
+        # Stats por defecto
         self.health = 60
         self.max_health = 60
         self.speed = 5.0
-        # Patrulla: lista de tuplas (dx, dy, distancia)
+
+        # Componente de movimiento con colisión
+        self.movement = NPCMovement(self)
+
+        # Tamaño del sprite (usado para calcular la hitbox)
+        self.sprite_size = MonsterView.SPRITE_SIZE
+
+        # --- Parámetros de hitbox personalizables ---
+        # anchura y altura de la caja de colisión de pies:
+        self.hitbox_width  = int(self.sprite_size[0] * 0.5)
+        self.hitbox_height = int(self.sprite_size[1] * 0.25)
+        # offset desde la esquina superior izquierda:
+        #   (hacia la derecha, hacia abajo)
+        self.hitbox_offset_x = (self.sprite_size[0] - self.hitbox_width) // 2
+        self.hitbox_offset_y = self.sprite_size[1] - self.hitbox_height
+
+        # Patrulla
         self.path = [
             (0, -1, 200),
             (1,  0,  50),

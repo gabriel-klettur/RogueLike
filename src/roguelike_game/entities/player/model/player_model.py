@@ -4,6 +4,10 @@ from .stats_model import PlayerStats
 from .movement_model import PlayerMovement
 from .attack_model import PlayerAttack
 
+from src.roguelike_game.entities.player.config_player import ORIGINAL_SPRITE_SIZE, RENDERED_SPRITE_SIZE
+
+
+
 class PlayerModel:
     """
     Modelo puro de jugador: posición, estado y componentes.
@@ -12,8 +16,10 @@ class PlayerModel:
         self.x = x
         self.y = y
         self.character_name = character_name
-        # La vista se encargará de cargar el sprite_size real
-        self.sprite_size = (128, 128)
+        # Tamaño original de cada frame en el sprite-sheet (se usa para recorte)
+        self.sprite_sheet_size = (ORIGINAL_SPRITE_SIZE)
+        # Tamaño de renderizado deseado del jugador (se usa para dibujar y colisiones)
+        self.sprite_size = (RENDERED_SPRITE_SIZE)
         self.direction = "down"
         self.is_walking = False
 
@@ -27,8 +33,8 @@ class PlayerModel:
 
     def center(self) -> tuple[float, float]:
         """Centro del sprite (para apuntado)."""
-        return (self.x + self.sprite_size[0]/2,
-                self.y + self.sprite_size[1]/2)
+        return (self.x + self.sprite_size[0] / 2,
+                self.y + self.sprite_size[1] / 2)
 
     def hitbox(self) -> pygame.Rect:
         """Rectángulo de colisión (hitbox)."""

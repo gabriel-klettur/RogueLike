@@ -1,4 +1,3 @@
-# src/roguelike_engine/map/loader/factory.py
 
 # Path: src/roguelike_engine/map/loader/factory.py
 from typing import Dict
