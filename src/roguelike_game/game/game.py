@@ -1,3 +1,5 @@
+#Path: roguelike_game/game/game.py
+
 import sys
 import os
 import pygame
@@ -21,6 +23,7 @@ from src.roguelike_engine.input.events import handle_events
 from roguelike_game.game.state import GameState
 from roguelike_engine.map.core.manager import build_map  # duplicado intencional
 from roguelike_game.entities.load_entities import load_entities
+from src.roguelike_game.entities.load_hostile import load_hostile
 from roguelike_game.network.multiplayer_manager import NetworkManager
 from src.roguelike_game.ui.menus.menu import Menu
 from roguelike_engine.camera.camera import Camera
@@ -64,7 +67,7 @@ class Game:
         # ------------- core state ----------------------
         self._init_state()
         self._init_map()
-        self._init_entities()   # ahora pasa dungeon_offset
+        self._init_entities()   # ahora pasa dungeon_offset y tile_map
         self._init_z_layer()
         self._init_systems()
 
@@ -153,9 +156,14 @@ class Game:
             int(self.state.player.y) // TILE_SIZE
         )
 
-        # 4️⃣ Spawn procedural de enemigos con offset
+        # 4️⃣ Spawn procedural de enemigos en tiles transitables
         rooms = self.map_result.metadata.get("rooms", [])
-        self.state.enemies = load_hostile(rooms, player_tile, dungeon_offset)
+        self.state.enemies = load_hostile(
+            rooms,
+            player_tile,
+            dungeon_offset,
+            self.state.tile_map
+        )
 
     def _init_z_layer(self):
         zs = self.z_state
