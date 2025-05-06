@@ -1,6 +1,8 @@
 pygame
 tcod
 pyinstaller
-websockets
-websocket-client
 pyyaml
+miniupnpc>=2.2
+websocket-client>=1.5
+websockets>=10.4
+aiortc>=1.9.0
