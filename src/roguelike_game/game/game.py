@@ -17,8 +17,7 @@ from roguelike_game.game.state import GameState
 from roguelike_game.game.render_manager import Renderer
 from roguelike_game.game.update_manager import update_game
 
-#? NUEVOS!!!!!!!!!!!!!!!!!
-from roguelike_game.game.map import GameMap
+from roguelike_game.game.map_manager import MapManager
 
 #!----------------------- Paquetes locales: entidades y sistemas ------------------------------
 from roguelike_game.entities.load_entities import load_entities             #? DEBERIAMOS METERLOS EN UN MANAGER DE ENTIDADES
@@ -97,11 +96,11 @@ class Game:
         """
         Construye el mapa global y carga todos sus datos en el estado.
         """        
-        self.map = GameMap(map_name)                                
-        self.map.tiles_in_region = self.map.get_tiles_in_region()                
+        self.map = MapManager(map_name)                                        
 
 
     def _init_entities(self):
+
         # 1️⃣ Cargar jugador, obstáculos y edificios
         player, obstacles, buildings = load_entities(self.z_state)
         self.state.player = player
