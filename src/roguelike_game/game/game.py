@@ -107,10 +107,6 @@ class Game:
         self.state.obstacles = obstacles
         self.state.buildings = buildings
 
-        print("🛠️ Buildings cargados:")
-        for i, b in enumerate(self.state.buildings, 1):
-            print(f"{i:02d} | ({b.x:.0f},{b.y:.0f}) | Z=({b.z_bottom},{b.z_top}) | img={b.image_path}")
-
         # 2️⃣ Calcular offset en tiles de la dungeon
         lob_x, lob_y = self.map.lobby_offset
         dungeon_offset = _calculate_dungeon_offset((lob_x, lob_y), config_map.DUNGEON_CONNECT_SIDE)
@@ -128,6 +124,12 @@ class Game:
             dungeon_offset,
             self.map.tiles
         )
+
+        if config.DEBUG:
+            print("🛠️ Buildings cargados:")
+            for i, b in enumerate(self.state.buildings, 1):
+                print(f"{i:02d} | ({b.x:.0f},{b.y:.0f}) | Z=({b.z_bottom},{b.z_top}) | img={b.image_path}")
+            
 
     def _init_z_layer(self):
         zs = self.z_state
