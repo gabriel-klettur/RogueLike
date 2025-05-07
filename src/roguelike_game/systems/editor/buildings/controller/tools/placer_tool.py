@@ -11,7 +11,7 @@ class PlacerTool:
         self.default_scale = default_scale
         self.default_solid = default_solid
 
-    def place_building_at_mouse(self):
+    def place_building_at_mouse(self, buildings):
         mx, my = pygame.mouse.get_pos()
         world_x = mx / self.camera.zoom + self.camera.offset_x
         world_y = my / self.camera.zoom + self.camera.offset_y
@@ -24,5 +24,5 @@ class PlacerTool:
             scale=self.default_scale
         )
 
-        self.state.buildings.append(new_building)
+        buildings.append(new_building)
         print(f"➕ Edificio agregado en ({int(world_x)}, {int(world_y)})")

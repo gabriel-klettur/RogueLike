@@ -1,8 +1,8 @@
 
-def execute_menu_option(selected, state):
+def execute_menu_option(selected, state, entities):
     if selected == "Cambiar personaje":
-        new = "valkyria" if state.player.character_name=="first_hero" else "first_hero"
-        state.player.change_character(new)
+        new = "valkyria" if entities.player.character_name=="first_hero" else "first_hero"
+        entities.player.change_character(new)
         print(f"✅ Cambiado a personaje: {new}")
         state.show_menu = False
 

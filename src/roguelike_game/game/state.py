@@ -1,18 +1,10 @@
 
 class GameState:
-    def __init__(self, player, obstacles, buildings, tiles, enemies=None):
+    def __init__(self, tiles):
         
         
-        #!------------ Entidades ------------
-        self.player = player
-        self.obstacles = obstacles        
-        self.remote_entities = {}
-        self.enemies = enemies or []
-        self.buildings = buildings
-
-        #!-------------- MAPA ---------------
-    
-        self.tiles = tiles        
+        #!------------ Entidades ------------      
+        self.remote_entities = {}        
                                         
         #!------------ UI/ FLAGS ------------
         

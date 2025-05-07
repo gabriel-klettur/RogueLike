@@ -22,8 +22,8 @@ class ZTool:
     # ------------------------------------------------------------------ #
     # MOUSE CLICK                                                        #
     # ------------------------------------------------------------------ #
-    def handle_mouse_click(self, mouse_pos):
-        for b in self.state.buildings:
+    def handle_mouse_click(self, mouse_pos, buildings):
+        for b in buildings:
             bnd = getattr(b, "_ztool_bounds", {}).get(self.target)
             if not bnd:
                 continue

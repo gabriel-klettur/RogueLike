@@ -84,7 +84,7 @@ class Renderer:
 
         # Debug: overlay y bordes
         if config.DEBUG and perf_log is not None:
-            extra_lines = [state] + self._get_custom_debug_lines(state, camera, map)
+            extra_lines = [state] + self._get_custom_debug_lines(state, camera, map, entities)
             benchmark("--99.0. debug overlay", lambda: render_debug_overlay(screen, perf_log, extra_lines=extra_lines, position=(0, 0)))
             benchmark("--99.1. border lobby", lambda: self._render_lobby_border(state, screen, camera))
             benchmark("--99.2. border dungeon", lambda: self._render_dungeon_border(map, screen, camera))
@@ -176,7 +176,7 @@ class Renderer:
 
         # ——— DEBUG: foot-hitbox de monstruos y colisión con paredes ———
         if config.DEBUG:
-            for e in state.enemies:
+            for e in entities.enemies:
                 sw, sh = e.sprite_size
                 foot_h = int(sh * 0.25)
                 foot_w = int(sw * 0.5)
@@ -207,10 +207,10 @@ class Renderer:
         minimap_rect = render_minimap(state, screen, map, entities)
         self._dirty_rects.append(minimap_rect)
 
-    def _get_custom_debug_lines(self, state, camera, map):
+    def _get_custom_debug_lines(self, state, camera, map, entities):
         lines = [
             f"Modo: {state.mode}",
-            f"Pos: ({round(state.player.x)}, {round(state.player.y)})"
+            f"Pos: ({round(entities.player.x)}, {round(entities.player.y)})"
         ]
         mx, my = pygame.mouse.get_pos()
         wx = round(mx / camera.zoom + camera.offset_x)

@@ -4,8 +4,6 @@ import pygame
 
 #!---------------------- Paquetes locales: configuración --------------------------------
 import roguelike_engine.config as config
-import roguelike_engine.config_map as config_map
-import roguelike_engine.config_tiles as config_tiles
 
 #!------------------------ Paquetes locales: motor (engine) -----------------------------------
 from roguelike_engine.camera.camera import Camera
@@ -17,11 +15,12 @@ from roguelike_game.game.state import GameState
 from roguelike_game.game.render_manager import Renderer
 from roguelike_game.game.update_manager import update_game
 
+#!----------------------------- Paquetes locales: managers ------------------------------------
 from roguelike_game.game.map_manager import MapManager
 from roguelike_game.game.entities_manager import EntitiesManager
+from roguelike_game.game.z_layer_manager import ZLayerManager
 
 #!----------------------- Paquetes locales: entidades y sistemas ------------------------------
-
 from roguelike_game.network.multiplayer_manager import NetworkManager
 from roguelike_game.systems.systems_manager import SystemsManager
 
@@ -58,7 +57,6 @@ from roguelike_game.systems.editor.tiles.view.tile_editor_view import (
 
 #! -------------------------- Paquetes locales: z-layer ----------------------------------------
 from roguelike_game.systems.z_layer.state import ZState
-from roguelike_game.systems.config_z_layer import Z_LAYERS
 
 class Game:
     def __init__(self, screen, perf_log=None, map_name: str = None):        
@@ -74,7 +72,7 @@ class Game:
         self._init_state()
         self._init_map(map_name)
         self._init_entities() 
-        self._init_z_layer()
+        self._init_z_layer(self.entities)
         self._init_systems()
 
         #! ------------- editores ------------------------
@@ -82,13 +80,7 @@ class Game:
         self._init_tile_editor()
 
     def _init_state(self):
-        self.state = GameState(            
-            player=None,
-            obstacles=None,
-            buildings=None,                                            
-            tiles=None,
-            enemies=None
-        )
+        self.state = GameState(tiles=None)
         self.state.running = True
         self.state.perf_log = self.perf_log
 
@@ -105,21 +97,13 @@ class Game:
         """
         self.entities = EntitiesManager(self.z_state, self.map)
         
-        #self.state.player = self.entities.player
-        #self.state.obstacles = self.entities.obstacles
-        #self.state.buildings = self.entities.buildings
-        #self.state.enemies = self.entities.enemies
 
-    def _init_z_layer(self):
-        zs = self.z_state
-        self.state.z_state = zs
-        zs.set(self.entities.player, Z_LAYERS["player"])
-        for e in self.entities.enemies:
-            zs.set(e, Z_LAYERS["player"])
-        for o in self.entities.obstacles:
-            zs.set(o, Z_LAYERS["low_object"])
-        for b in self.entities.buildings:
-            zs.set(b, b.z_bottom)
+    def _init_z_layer(self, entities):
+        """
+        Inicializa el gestor de capas Z y asigna las capas a las entidades.
+        """
+        self.zlayer = ZLayerManager(self.z_state)
+        self.zlayer.initialize(self.state, entities)
 
     def _init_systems(self):
         self.renderer = Renderer()
@@ -138,34 +122,26 @@ class Game:
     def _init_building_editor(self):
         self.editor_state = BuildingsEditorState()
         self.building_editor = BuildingEditorController(self.state, self.editor_state, self.entities.buildings)
-        self.building_editor_view = BuildingEditorView(self.state, self.editor_state)
-        self.state.editor = self.editor_state
+        self.building_editor_view = BuildingEditorView(self.state, self.editor_state)        
         self.building_event_handler = BuildingEditorEventHandler(self.state, self.editor_state, self.building_editor)
+        self.state.editor = self.editor_state
 
     def _init_tile_editor(self):
         self.tile_editor_state = TileEditorControllerState()
         self.tile_editor = TileEditorController(self.state, self.tile_editor_state)
+        self.tile_editor_view = TileEditorControllerView(self.tile_editor, self.state, self.tile_editor_state)        
+        self.tile_event_handler = TileEditorEventHandler(self.state, self.tile_editor_state, self.tile_editor)
+        self.state.tile_editor_active = False
         self.state.tile_editor = self.tile_editor
         self.state.tile_editor_state = self.tile_editor_state
-        self.tile_editor_view = TileEditorControllerView(
-            self.tile_editor,
-            self.state,
-            self.tile_editor_state
-        )
         self.state.tile_editor_view = self.tile_editor_view
-        self.state.tile_editor_active = False
-        self.tile_event_handler = TileEditorEventHandler(
-            self.state,
-            self.tile_editor_state,
-            self.tile_editor
-        )
 
     def handle_events(self):
         if self.tile_editor_state.active:
             self.tile_event_handler.handle(self.camera, self.map)
             return
         if self.state.editor.active:
-            self.building_event_handler.handle(self.camera)
+            self.building_event_handler.handle(self.camera, self.entities)
             return
         handle_events(self.state, self.camera, self.clock, self.menu, self.map, self.entities)
 

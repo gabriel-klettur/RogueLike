@@ -88,14 +88,14 @@ def handle_keyboard(event, state, camera, clock, menu, entities):
         elif event.key == pygame.K_F7:
             print("Monster positions:")
 
-            for entity in state.enemies:
+            for entity in entities.enemies:
                 print(f"- {entity.name} at ({entity.x}, {entity.y})")            
 
             mouse_x, mouse_y = pygame.mouse.get_pos()
             world_x = round(mouse_x / camera.zoom + camera.offset_x)
             world_y = round(mouse_y / camera.zoom + camera.offset_y)
             print(f"Spawning enemy at {world_x}, {world_y}")
-            state.enemies.append( NPCFactory.create("elite", world_x, world_y)) 
+            entities.enemies.append( NPCFactory.create("elite", world_x, world_y)) 
             
 
         # ---------- TILE-EDITOR (F8) --------- #

@@ -8,9 +8,9 @@ class NetworkManager:
         self.state = state
         self.websocket = None
 
-    def connect(self):
+    def connect(self, entities):
         try:
-            self.websocket = WebSocketClient(WEBSOCKET_URL, self.state.player)
+            self.websocket = WebSocketClient(WEBSOCKET_URL, entities.player)
             self.websocket.start()
             self.state.websocket_connected = True
             self.state.websocket = self.websocket

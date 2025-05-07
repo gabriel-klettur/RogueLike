@@ -19,6 +19,6 @@ def handle_continuous(state, camera, map, entities):
             mx,my = pygame.mouse.get_pos()
             wx = mx/camera.zoom + camera.offset_x
             wy = my/camera.zoom + camera.offset_y
-            enemies = state.enemies + list(state.remote_entities.values())
+            enemies = entities.enemies + list(state.remote_entities.values())
             effects.spawn_laser(wx, wy, enemies, entities)
             effects.last_laser_time = now

@@ -16,15 +16,15 @@ class BuildingEditorEventHandler:
         self.editor = editor_state
         self.controller = controller
 
-    def handle(self, camera):
+    def handle(self, camera, entities):
         """Procesa todos los eventos de Pygame"""
         for ev in pygame.event.get():
             if ev.type == pygame.QUIT:
                 self._on_quit(ev)
             elif ev.type == pygame.KEYDOWN:
-                self._on_keydown(ev)
+                self._on_keydown(ev, entities)
             elif ev.type == pygame.MOUSEBUTTONDOWN:
-                self._on_mouse_down(ev, camera)
+                self._on_mouse_down(ev, camera, entities.buildings)
             elif ev.type == pygame.MOUSEBUTTONUP:
                 self._on_mouse_up(ev)
             elif ev.type == pygame.MOUSEMOTION:
@@ -34,7 +34,7 @@ class BuildingEditorEventHandler:
         logger.info("Quit event received in Building Editor")
         self.state.running = False
 
-    def _on_keydown(self, ev):
+    def _on_keydown(self, ev, entities):
         # ESC: salir del editor y guardar
         if ev.key == pygame.K_ESCAPE:
             logger.info("Escape: closing Building Editor and saving")
@@ -43,31 +43,31 @@ class BuildingEditorEventHandler:
             self.editor.dragging = False
             self.editor.resizing = False
             self.editor.split_dragging = False
-            save_buildings_to_json(self.state.buildings, BUILDINGS_DATA_PATH, z_state=self.state.z_state)
+            save_buildings_to_json(entities.buildings, BUILDINGS_DATA_PATH, z_state=self.state.z_state)
 
         # F10: toggle editor
         elif ev.key == pygame.K_F10:
             self.editor.active = not self.editor.active
             logger.info(f"Building Editor {'ON' if self.editor.active else 'OFF'} via F10")
             if not self.editor.active:
-                save_buildings_to_json(self.state.buildings, BUILDINGS_DATA_PATH, z_state=self.state.z_state)
+                save_buildings_to_json(entities.buildings, BUILDINGS_DATA_PATH, z_state=self.state.z_state)
 
         # Ctrl+S: guardar sin salir
         elif ev.key == pygame.K_s and (ev.mod & pygame.KMOD_CTRL):
             logger.info("Ctrl+S: saving buildings")
-            save_buildings_to_json(self.state.buildings, BUILDINGS_DATA_PATH, z_state=self.state.z_state)
+            save_buildings_to_json(entities.buildings, BUILDINGS_DATA_PATH, z_state=self.state.z_state)
 
         # N: colocar edificio
         elif ev.key == pygame.K_n:
-            self.controller.placer_tool.place_building_at_mouse()
+            self.controller.placer_tool.place_building_at_mouse(entities.buildings)
 
         # Supr: borrar edificio
         elif ev.key == pygame.K_DELETE:
-            self.controller.delete_tool.delete_building_at_mouse()
+            self.controller.delete_tool.delete_building_at_mouse(entities)
 
-    def _on_mouse_down(self, ev, camera):
+    def _on_mouse_down(self, ev, camera, buildings):
         mx, my = pygame.mouse.get_pos()
-        self.controller.on_mouse_down((mx, my), ev.button, camera)
+        self.controller.on_mouse_down((mx, my), ev.button, camera, buildings)
 
     def _on_mouse_up(self, ev):
         self.controller.on_mouse_up(ev.button)
