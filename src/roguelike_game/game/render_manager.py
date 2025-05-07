@@ -40,7 +40,7 @@ class Renderer:
     def __init__(self):
         self._dirty_rects = []
 
-    def render_game(self, state, screen, camera, perf_log=None, menu=None, map=None):                
+    def render_game(self, state, screen, camera, perf_log=None, menu=None, map=None, entities=None):                
         self._dirty_rects = []
         screen.fill((0, 0, 0))
 
@@ -56,13 +56,13 @@ class Renderer:
         benchmark("--3.1. tiles", lambda: self._render_tiles(state, camera, screen, map))
 
         # 2) Entidades orden Z
-        benchmark("--3.2. z_entities", lambda: self._render_z_entities(state, camera, screen, map))
+        benchmark("--3.2. z_entities", lambda: self._render_z_entities(state, camera, screen, map, entities))
 
         # 3) Efectos
         benchmark("--3.3. effects", lambda: self._render_effects(state, camera, screen))
 
         # 4) HUD
-        benchmark("--3.4. hud", lambda: state.player.render_hud(screen, camera))
+        benchmark("--3.4. hud", lambda: entities.player.render_hud(screen, camera))
 
         # 4.b) Capa del Tile Editor
         benchmark("--3.4b. tile_editor", lambda: self._render_tile_editor_layer(state, screen, camera, map))
@@ -77,7 +77,7 @@ class Renderer:
         benchmark("--3.7. menu", lambda: self._render_menu(state, screen, menu))
 
         # 8) Minimap
-        benchmark("--3.8. minimap", lambda: self._render_minimap(state, screen, map))
+        benchmark("--3.8. minimap", lambda: self._render_minimap(state, screen, map, entities))
 
         # 9) Otros sistemas
         benchmark("--3.9. systems", lambda: state.systems.render(screen, camera))
@@ -149,23 +149,23 @@ class Renderer:
         if getattr(state, "tile_editor_state", None) and state.tile_editor_state.active:
             state.tile_editor_view.render(screen, camera, map)
 
-    def _render_z_entities(self, state, camera, screen, map):
+    def _render_z_entities(self, state, camera, screen, map, entities):
         all_entities = []
         all_entities.extend([
-            e for e in state.obstacles
+            e for e in entities.obstacles
             if camera.is_in_view(e.x, e.y, getattr(e, "sprite_size", (64, 64)))
         ])
         all_entities.extend([
-            e for e in state.enemies
+            e for e in entities.enemies
             if camera.is_in_view(e.x, e.y, e.sprite_size)
         ])
         all_entities.extend([
             e for e in state.remote_entities.values()
             if camera.is_in_view(e.x, e.y, e.sprite_size)
         ])
-        if camera.is_in_view(state.player.x, state.player.y, state.player.sprite_size):
-            all_entities.append(state.player)
-        for b in state.buildings:
+        if camera.is_in_view(entities.player.x, entities.player.y, entities.player.sprite_size):
+            all_entities.append(entities.player)
+        for b in entities.buildings:
             if not camera.is_in_view(b.x, b.y, b.image.get_size()):
                 continue
             for part in b.get_parts():
@@ -203,8 +203,8 @@ class Renderer:
             menu_rect = menu.draw(screen)
             self._dirty_rects.append(menu_rect)
 
-    def _render_minimap(self, state, screen, map):
-        minimap_rect = render_minimap(state, screen, map)
+    def _render_minimap(self, state, screen, map, entities):
+        minimap_rect = render_minimap(state, screen, map, entities)
         self._dirty_rects.append(minimap_rect)
 
     def _get_custom_debug_lines(self, state, camera, map):

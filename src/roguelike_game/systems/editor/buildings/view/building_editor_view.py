@@ -15,12 +15,12 @@ class BuildingEditorView:
         self.z_bottom_view = ZToolView(state, editor_state, target="bottom")
         self.z_top_view    = ZToolView(state, editor_state, target="top")
 
-    def render(self, screen, camera):
+    def render(self, screen, camera, buildings):
         if not self.editor.active:
             return
         
         # Renderizado de cada edificio
-        for b in self.state.buildings:
+        for b in buildings:
             x, y = camera.apply((b.x, b.y))
             w, h = camera.scale(b.image.get_size())
             # contorno general del edificio

@@ -6,15 +6,15 @@ from .menu import execute_menu_option
 
 from roguelike_game.entities.npc.factory import NPCFactory
 
-def handle_keyboard(event, state, camera, clock, menu):
+def handle_keyboard(event, state, camera, clock, menu, entities):
     if event.type == pygame.KEYDOWN:
         if event.key == pygame.K_ESCAPE:
             state.show_menu = not state.show_menu
 
         elif event.key == pygame.K_q:
-            state.player.restore_all()
-            state.systems.effects.spawn_healing_aura(clock)
-            state.player.stats.last_restore_time = time.time()
+            entities.player.restore_all()
+            state.systems.effects.spawn_healing_aura(clock, entities)
+            entities.player.stats.last_restore_time = time.time()
 
         elif state.show_menu:
             result = menu.handle_input(event)
@@ -23,28 +23,28 @@ def handle_keyboard(event, state, camera, clock, menu):
 
         # ---------- HABILIDADES DEL JUGADOR ---------- #
         elif event.key == pygame.K_1:
-            if state.player.stats.activate_shield():
-                state.systems.effects.spawn_magic_shield()
-                state.player.stats.last_shield_time = time.time()
+            if entities.player.stats.activate_shield():
+                state.systems.effects.spawn_magic_shield(entities)
+                entities.player.stats.last_shield_time = time.time()
 
         elif event.key == pygame.K_f:
-            state.systems.effects.spawn_firework(camera)
-            state.player.stats.last_firework_time = time.time()
+            state.systems.effects.spawn_firework(camera, entities)
+            entities.player.stats.last_firework_time = time.time()
 
         elif event.key == pygame.K_r:
-            state.systems.effects.spawn_smoke_emitter()
-            state.player.stats.last_smoke_time = time.time()
+            state.systems.effects.spawn_smoke_emitter(entities)
+            entities.player.stats.last_smoke_time = time.time()
 
         elif event.key == pygame.K_t:
-            state.systems.effects.spawn_smoke(camera)
-            state.player.stats.last_smoke_time = time.time()
+            state.systems.effects.spawn_smoke(camera, entities)
+            entities.player.stats.last_smoke_time = time.time()
 
         elif event.key == pygame.K_z:
             mx, my = pygame.mouse.get_pos()
             world_x = mx / camera.zoom + camera.offset_x
             world_y = my / camera.zoom + camera.offset_y
-            state.systems.effects.spawn_lightning((world_x, world_y))
-            state.player.stats.last_lightning_time = time.time()
+            state.systems.effects.spawn_lightning((world_x, world_y), entities)
+            entities.player.stats.last_lightning_time = time.time()
 
         elif event.key == pygame.K_x:
             mx, my = pygame.mouse.get_pos()
@@ -56,23 +56,23 @@ def handle_keyboard(event, state, camera, clock, menu):
             mx, my = pygame.mouse.get_pos()
             wx = mx / camera.zoom + camera.offset_x
             wy = my / camera.zoom + camera.offset_y
-            px, py = state.systems.effects._player_center()
+            px, py = state.systems.effects._player_center(entities.player)
             dir_vec = pygame.math.Vector2(wx - px, wy - py)
             if dir_vec.length():
                 dir_vec.normalize_ip()
-            state.systems.effects.spawn_dash(state.player, dir_vec)
-            state.player.stats.last_dash_time = time.time()
+            state.systems.effects.spawn_dash(entities.player, dir_vec)
+            entities.player.stats.last_dash_time = time.time()
 
         elif event.key == pygame.K_e:
             mx, my = pygame.mouse.get_pos()
             world_x = mx / camera.zoom + camera.offset_x
             world_y = my / camera.zoom + camera.offset_y
-            px, py = state.systems.effects._player_center()
+            px, py = state.systems.effects._player_center(entities.player)
             dir_vec = pygame.math.Vector2(world_x - px, world_y - py)
             if dir_vec.length():
                 dir_vec.normalize_ip()
-            state.systems.effects.spawn_slash(dir_vec)
-            state.player.stats.last_slash_time = time.time()
+            state.systems.effects.spawn_slash(dir_vec, entities)
+            entities.player.stats.last_slash_time = time.time()
 
         # ---------- TEST / DEBUG ---------- #
         elif event.key == pygame.K_F10:

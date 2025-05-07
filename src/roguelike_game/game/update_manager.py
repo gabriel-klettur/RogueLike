@@ -1,20 +1,20 @@
 
-def update_game(state, systems, camera, clock, screen, map):
+def update_game(state, systems, camera, clock, screen, map, entities):
     if not state.running:
         return
 
-    camera.update(state.player)
+    camera.update(entities.player)
 
     systems.update(clock, screen)
 
     #!------------------ ESTO DEBERIAMOS MEJORARLO ------------------
-    enemies = state.enemies + list(state.remote_entities.values())    
+    enemies = entities.enemies + list(state.remote_entities.values())    
     for enemy in enemies:
-        enemy.update(state, map)
+        enemy.update(state, map, entities)
 
-    state.player.movement.update_dash(
+    entities.player.movement.update_dash(
         [t for t in map.tiles_in_region if t.solid],
-        state.obstacles
+        entities.obstacles
     )
 
     #!---------------------------------------------------------------

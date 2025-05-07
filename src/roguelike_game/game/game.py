@@ -10,7 +10,7 @@ import roguelike_engine.config_tiles as config_tiles
 #!------------------------ Paquetes locales: motor (engine) -----------------------------------
 from roguelike_engine.camera.camera import Camera
 from roguelike_engine.input.events import handle_events
-from roguelike_engine.map.core.service import _calculate_dungeon_offset
+
 
 #!-------------------- Paquetes locales: lógica de juego principal ----------------------------
 from roguelike_game.game.state import GameState
@@ -18,10 +18,10 @@ from roguelike_game.game.render_manager import Renderer
 from roguelike_game.game.update_manager import update_game
 
 from roguelike_game.game.map_manager import MapManager
+from roguelike_game.game.entities_manager import EntitiesManager
 
 #!----------------------- Paquetes locales: entidades y sistemas ------------------------------
-from roguelike_game.entities.load_entities import load_entities             #? DEBERIAMOS METERLOS EN UN MANAGER DE ENTIDADES
-from roguelike_game.entities.load_hostile import load_hostile               #? DEBERIAMOS METERLOS EN UN MANAGER DE ENTIDADES
+
 from roguelike_game.network.multiplayer_manager import NetworkManager
 from roguelike_game.systems.systems_manager import SystemsManager
 
@@ -100,52 +100,31 @@ class Game:
 
 
     def _init_entities(self):
-
-        # 1️⃣ Cargar jugador, obstáculos y edificios
-        player, obstacles, buildings = load_entities(self.z_state)
-        self.state.player = player
-        self.state.obstacles = obstacles
-        self.state.buildings = buildings
-
-        # 2️⃣ Calcular offset en tiles de la dungeon
-        lob_x, lob_y = self.map.lobby_offset
-        dungeon_offset = _calculate_dungeon_offset((lob_x, lob_y), config_map.DUNGEON_CONNECT_SIDE)
-
-        # 3️⃣ Posición inicial del jugador en tiles
-        player_tile = (
-            int(self.state.player.x) // config_tiles.TILE_SIZE,
-            int(self.state.player.y) // config_tiles.TILE_SIZE
-        )
-
-        # 4️⃣ Spawn procedural de enemigos en tiles transitables        
-        self.state.enemies = load_hostile(
-            self.map.rooms,
-            player_tile,
-            dungeon_offset,
-            self.map.tiles
-        )
-
-        if config.DEBUG:
-            print("🛠️ Buildings cargados:")
-            for i, b in enumerate(self.state.buildings, 1):
-                print(f"{i:02d} | ({b.x:.0f},{b.y:.0f}) | Z=({b.z_bottom},{b.z_top}) | img={b.image_path}")
-            
+        """
+        Inicializa el gestor de entidades (player, enemies, obstacles y buildings) y carga los datos en el estado.
+        """
+        self.entities = EntitiesManager(self.z_state, self.map)
+        
+        #self.state.player = self.entities.player
+        #self.state.obstacles = self.entities.obstacles
+        #self.state.buildings = self.entities.buildings
+        #self.state.enemies = self.entities.enemies
 
     def _init_z_layer(self):
         zs = self.z_state
         self.state.z_state = zs
-        zs.set(self.state.player, Z_LAYERS["player"])
-        for e in self.state.enemies:
+        zs.set(self.entities.player, Z_LAYERS["player"])
+        for e in self.entities.enemies:
             zs.set(e, Z_LAYERS["player"])
-        for o in self.state.obstacles:
+        for o in self.entities.obstacles:
             zs.set(o, Z_LAYERS["low_object"])
-        for b in self.state.buildings:
+        for b in self.entities.buildings:
             zs.set(b, b.z_bottom)
 
     def _init_systems(self):
         self.renderer = Renderer()
-        self.state.player.renderer.state = self.state
-        self.state.player.state = self.state
+        self.entities.player.renderer.state = self.state
+        self.entities.player.state = self.state
         self.menu = Menu(self.state)
         self.state.show_menu = False
         self.state.mode = "local"
@@ -158,14 +137,10 @@ class Game:
 
     def _init_building_editor(self):
         self.editor_state = BuildingsEditorState()
-        self.building_editor = BuildingEditorController(self.state, self.editor_state)
+        self.building_editor = BuildingEditorController(self.state, self.editor_state, self.entities.buildings)
         self.building_editor_view = BuildingEditorView(self.state, self.editor_state)
         self.state.editor = self.editor_state
-        self.building_event_handler = BuildingEditorEventHandler(
-            self.state,
-            self.editor_state,
-            self.building_editor
-        )
+        self.building_event_handler = BuildingEditorEventHandler(self.state, self.editor_state, self.building_editor)
 
     def _init_tile_editor(self):
         self.tile_editor_state = TileEditorControllerState()
@@ -192,7 +167,7 @@ class Game:
         if self.state.editor.active:
             self.building_event_handler.handle(self.camera)
             return
-        handle_events(self.state, self.camera, self.clock, self.menu, self.map)
+        handle_events(self.state, self.camera, self.clock, self.menu, self.map, self.entities)
 
     def update(self):
         if self.tile_editor_state.active:
@@ -200,12 +175,12 @@ class Game:
         if self.state.editor.active:
             self.building_editor.update(self.camera)
         else:
-            update_game(self.state, self.systems, self.camera, self.clock, self.screen, self.map)
+            update_game(self.state, self.systems, self.camera, self.clock, self.screen, self.map, self.entities)
 
     def render(self, perf_log=None):
-        self.renderer.render_game(self.state, self.screen, self.camera, perf_log, self.menu, self.map)
+        self.renderer.render_game(self.state, self.screen, self.camera, perf_log, self.menu, self.map, self.entities)
         if self.state.editor.active:
-            self.building_editor_view.render(self.screen, self.camera)
+            self.building_editor_view.render(self.screen, self.camera, self.entities.buildings)
         if self.tile_editor_state.active:
             self.tile_editor_view.render(self.screen, self.camera, self.map)
 

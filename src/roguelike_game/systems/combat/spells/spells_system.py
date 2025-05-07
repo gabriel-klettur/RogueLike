@@ -123,9 +123,9 @@ class SpellsSystem:
         self.dash_controllers.append(ctrl)
         self.dash_views.append(view)
 
-    def spawn_slash(self, direction: Vector2):
-        px, py = self._player_center()
-        #enemies = self.state.enemies + list(self.state.remote_entities.values())   #!Futura implementación
+    def spawn_slash(self, direction: Vector2, entities):
+        px, py = self._player_center(entities.player)
+        #enemies = entities.enemies + list(self.state.remote_entities.values()) 
         model = SlashModel(px, py, direction)
         ctrl = SlashController(model)
         view = SlashView(model)
@@ -133,8 +133,8 @@ class SpellsSystem:
         self.slash_views.append(view)
 
 
-    def spawn_laser(self, x, y, enemies):
-        px, py = self._player_center()
+    def spawn_laser(self, x, y, enemies, entities):
+        px, py = self._player_center(entities.player)
         model  = LaserBeamModel(px, py, x, y, enemies=enemies)
         ctrl   = LaserBeamController(model)
         view   = LaserBeamView(model)
@@ -145,11 +145,11 @@ class SpellsSystem:
             self.laser_controllers.pop(0)
             self.laser_views.pop(0)
 
-    def spawn_smoke(self, camera):
+    def spawn_smoke(self, camera, entities):
         mx, my  = pygame.mouse.get_pos()
         wx       = mx / camera.zoom + camera.offset_x
         wy       = my / camera.zoom + camera.offset_y
-        px, py   = self._player_center()
+        px, py   = self._player_center(entities.player)
         dir_vec  = Vector2(wx - px, wy - py)
         if dir_vec.length(): dir_vec.normalize_ip()
         model  = SmokeModel(px, py, dir_vec)
@@ -158,16 +158,16 @@ class SpellsSystem:
         self.smoke_controllers.append(ctrl)
         self.smoke_views.append(view)
 
-    def spawn_smoke_emitter(self):
-        px, py = self._player_center()
+    def spawn_smoke_emitter(self, entities):
+        px, py = self._player_center(entities.player)
         model   = SmokeEmitterModel(px, py)
         ctrl    = SmokeEmitterController(model)
         view    = SmokeEmitterView(model)
         self.smoke_emitter_controllers.append(ctrl)
         self.smoke_emitter_views.append(view)
 
-    def spawn_firework(self, camera):
-        px, py = self._player_center()
+    def spawn_firework(self, camera, entities):
+        px, py = self._player_center(entities.player)
         mx, my = pygame.mouse.get_pos()
         wx      = mx / camera.zoom + camera.offset_x
         wy      = my / camera.zoom + camera.offset_y
@@ -177,27 +177,27 @@ class SpellsSystem:
         self.firework_controllers.append(ctrl)
         self.firework_views.append(view)
 
-    def spawn_fireball(self, angle, map):
-        px, py   = self._player_center()
+    def spawn_fireball(self, angle, map, entities):
+        px, py   = self._player_center(entities.player)
         tiles    = [t for t in map.tiles_in_region if t.solid]
-        enemies  = self.state.enemies + list(self.state.remote_entities.values())
+        enemies  = entities.enemies + list(self.state.remote_entities.values())
         model   = FireballModel(px, py, angle)
         ctrl    = FireballController(model, tiles, enemies, self.state.systems.explosions)
         view    = FireballView(model)
         self.fireball_controllers.append(ctrl)
         self.fireball_views.append(view)
 
-    def spawn_lightning(self, target_pos):
-        px, py   = self._player_center()
+    def spawn_lightning(self, target_pos, entities):
+        px, py   = self._player_center(entities.player)
         model    = LightningModel((px, py), target_pos)
-        enemies  = self.state.enemies + list(self.state.remote_entities.values())
+        enemies  = entities.enemies + list(self.state.remote_entities.values())
         ctrl     = LightningController(model, enemies)
         view     = LightningView(model)
         self.lightning_controllers.append(ctrl)
         self.lightning_views.append(view)
 
-    def spawn_healing_aura(self, clock):
-        model  = HealingAuraModel(self.state.player)
+    def spawn_healing_aura(self, clock, entities):
+        model  = HealingAuraModel(entities.player)
         ctrl   = HealingAuraController(model, clock)
         view   = HealingAuraView(model)
         self.healing_controllers.append(ctrl)
@@ -210,15 +210,15 @@ class SpellsSystem:
         self.arcane_controllers.append(ctrl)
         self.arcane_views.append(view)
 
-    def spawn_magic_shield(self):
-        model  = SphereMagicShieldModel(self.state.player)
+    def spawn_magic_shield(self, entities):
+        model  = SphereMagicShieldModel(entities.player)
         ctrl   = SphereMagicShieldController(model)
         view   = SphereMagicShieldView(model)
         self.shield_controllers.append(ctrl)
         self.shield_views.append(view)
 
-    def spawn_teleport(self, x, y):
-        px, py  = self._player_center()
+    def spawn_teleport(self, x, y, entities):
+        px, py  = self._player_center(entities.player)
         model   = TeleportModel((px, py), (x, y))
         ctrl    = TeleportController(model)
         view    = TeleportView(model)
@@ -321,6 +321,5 @@ class SpellsSystem:
 
         return dirty_rects
 
-    def _player_center(self):
-        p = self.state.player
-        return (p.x + p.sprite_size[0]//2, p.y + p.sprite_size[1]//2)
+    def _player_center(self, player):        
+        return (player.x + player.sprite_size[0]//2, player.y + player.sprite_size[1]//2)

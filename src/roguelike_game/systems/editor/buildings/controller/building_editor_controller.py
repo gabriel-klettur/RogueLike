@@ -11,7 +11,7 @@ from roguelike_game.systems.editor.buildings.controller.tools.delete_tool  impor
 class BuildingEditorController:
     """Agrupa todas las herramientas y ofrece una API de eventos de mouse."""
 
-    def __init__(self, state, editor_state):
+    def __init__(self, state, editor_state, buildings):
         self.state = state
         self.editor = editor_state
         
@@ -22,7 +22,7 @@ class BuildingEditorController:
         self.z_tool_top    = ZTool(state, editor_state, target="top")        
         self.placer_tool = PlacerTool(
             state, editor_state,
-            building_class=type(state.buildings[0]),
+            building_class=type(buildings[0]),
             default_image="assets/buildings/others/portal.png",
             default_scale=(512, 824),
             default_solid=True,
@@ -30,21 +30,21 @@ class BuildingEditorController:
         self.delete_tool = DeleteTool(state, editor_state)
 
     # =========================== EVENTOS ============================ #
-    def on_mouse_down(self, pos, button, camera):
+    def on_mouse_down(self, pos, button, camera, buildings):
         """button: 1 = izq, 3 = der"""
         mx, my = pos
         world_x = mx / camera.zoom + camera.offset_x
         world_y = my / camera.zoom + camera.offset_y
 
         # 1) Barra split (clic izq o der indistinto)
-        for b in reversed(self.state.buildings):
+        for b in reversed(buildings):
             if self.split_tool.check_handle_click((mx, my), b, camera):
                 self.split_tool.start_drag(b)
                 return
 
         # 2) Resize handle (clic der)
         if button == 3:
-            for b in reversed(self.state.buildings):
+            for b in reversed(buildings):
                 if self.resize_tool.check_resize_handle_click(mx, my, b, camera):
                     self._start_resize(b, (mx, my))
                     return
@@ -54,7 +54,7 @@ class BuildingEditorController:
 
         # 3) Selección / drag de edificio (clic der)
         if button == 3:
-            for b in reversed(self.state.buildings):
+            for b in reversed(buildings):
                 if b.rect.collidepoint(world_x, world_y):
                     self._start_drag(b, world_x, world_y)
                     return

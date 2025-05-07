@@ -14,22 +14,22 @@ class MonsterController(BaseNPCController):
         # Reutilizamos el componente de movimiento del modelo
         self.movement = model.movement
 
-    def update(self, state, map):
+    def update(self, state, map, entities):
         m = self.model
         if not m.alive:
             return
 
         # Posición del jugador
-        px, py = state.player.x, state.player.y
+        px, py = entities.player.x, entities.player.y
         dist = calculate_distance(m.x, m.y, px, py)
 
         # Si está lo bastante cerca, perseguir; si no, patrullar
         if dist <= 500:
-            self._follow_player(px, py, state, map)
+            self._follow_player(px, py, state, map, entities)
         else:
-            self._patrol(state, map)
+            self._patrol(state, map, entities)
 
-    def _follow_player(self, px, py, state, map):
+    def _follow_player(self, px, py, state, map, entities):
         """
         Persigue al jugador, pero se detiene justo en el momento
         en que la hitbox de pies del NPC va a colisionar con la del jugador.
@@ -48,23 +48,23 @@ class MonsterController(BaseNPCController):
         future_hitbox = self.movement.hitbox(nx, ny)
 
         # Hitbox actual del jugador
-        player_hitbox = state.player.hitbox()
+        player_hitbox = entities.player.hitbox()
 
         # Si se solaparían, no avanzamos más
         if future_hitbox.colliderect(player_hitbox):
             return
 
         # En otro caso, movemos normalmente (respeta muros y obstáculos)
-        self.movement.move(dx, dy, map.tiles_in_region, state.obstacles)
+        self.movement.move(dx, dy, map.tiles_in_region, entities.obstacles)
 
-    def _patrol(self, state, map):
+    def _patrol(self, state, map, entities):
         """
         Patrulla siguiendo un camino predefinido en el modelo.
         """
         m = self.model
         dx, dy, length = m.path[m.current_step]
         # Mover con colisión
-        self.movement.move(dx, dy, map.tiles_in_region, state.obstacles)
+        self.movement.move(dx, dy, map.tiles_in_region, entities.obstacles)
         # Actualizar progreso del paso
         m.step_progress += m.speed
         m.direction = (dx, dy)
