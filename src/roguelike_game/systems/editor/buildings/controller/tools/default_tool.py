@@ -12,8 +12,8 @@ class DefaultTool:
         Verifica si el clic fue sobre el handle de reset (blanco),
         que se ubica a la izquierda del handle azul de resize.
         """
-        bx, by = self.state.camera.apply((building.x, building.y))
-        bw, bh = self.state.camera.scale(building.image.get_size())
+        bx, by = self.camera.apply((building.x, building.y))
+        bw, bh = self.camera.scale(building.image.get_size())
 
         reset_rect = pygame.Rect(
             bx + bw - 2 * self.handle_size,

@@ -5,13 +5,15 @@ from roguelike_game.systems.combat.spells.spells_system import SpellsSystem
 from roguelike_game.systems.combat.explosions.explosions_system import ExplosionSystem
 
 class SystemsManager:
+
     def __init__(self, state):        
         self.effects = SpellsSystem(state)
         self.explosions = ExplosionSystem(state)
-        
+        self.state = state
 
-    def update(self):        
-        self.effects.update()        
+        
+    def update(self, clock, screen):        
+        self.effects.update(clock, screen)        
         self.explosions.update()
 
     def render(self, screen, camera):

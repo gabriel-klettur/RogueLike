@@ -84,16 +84,10 @@ class Game:
         self._init_tile_editor()
 
     def _init_state(self):
-        self.state = GameState(
-            screen=self.screen,
-            background=None,
+        self.state = GameState(            
             player=None,
             obstacles=None,
-            buildings=None,
-            camera=self.camera,
-            clock=self.clock,
-            font=self.font,
-            menu=None,
+            buildings=None,                                            
             tiles=None,
             enemies=None
         )
@@ -188,7 +182,7 @@ class Game:
         self.renderer = Renderer()
         self.state.player.renderer.state = self.state
         self.state.player.state = self.state
-        self.state.menu = Menu(self.state)
+        self.menu = Menu(self.state)
         self.state.show_menu = False
         self.state.mode = "local"
         self.systems = SystemsManager(self.state)
@@ -234,7 +228,7 @@ class Game:
         if self.state.editor.active:
             self.building_event_handler.handle()
             return
-        handle_events(self.state)
+        handle_events(self.state, self.camera, self.clock, self.menu)
 
     def update(self):
         if self.tile_editor_state.active:
@@ -242,10 +236,10 @@ class Game:
         if self.state.editor.active:
             self.building_editor.update()
         else:
-            update_game(self.state)
+            update_game(self.state, self.systems, self.camera, self.clock, self.screen)
 
     def render(self, perf_log=None):
-        self.renderer.render_game(self.state, perf_log)
+        self.renderer.render_game(self.state, self.screen, self.camera, perf_log, self.menu)
         if self.state.editor.active:
             self.building_editor_view.render(self.screen)
         if self.tile_editor_state.active:

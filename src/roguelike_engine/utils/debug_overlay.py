@@ -44,8 +44,8 @@ def render_debug_overlay(screen, perf_log, extra_lines=None, position=(8, 8), fo
     spacing = 4
 
     for left, right in lines:
-        left_surf = font.render(left, True, (255, 255, 255))
-        right_surf = pygame.font.Font(None, font_size).render(right, True, (200, 255, 200)) if right else None
+        left_surf = font.render(str(left), True, (255, 255, 255))
+        right_surf = pygame.font.Font(None, font_size).render(str(right), True, (200, 255, 200)) if right else None
 
         height = max(left_surf.get_height(), right_surf.get_height() if right_surf else 0)
         width = label_width + value_width + padding_x * 2

@@ -33,8 +33,8 @@ class BuildingEditorController:
     def on_mouse_down(self, pos, button):
         """button: 1 = izq, 3 = der"""
         mx, my = pos
-        world_x = mx / self.state.camera.zoom + self.state.camera.offset_x
-        world_y = my / self.state.camera.zoom + self.state.camera.offset_y
+        world_x = mx / self.camera.zoom + self.camera.offset_x
+        world_y = my / self.camera.zoom + self.camera.offset_y
 
         # 1) Barra split (clic izq o der indistinto)
         for b in reversed(self.state.buildings):
@@ -99,8 +99,8 @@ class BuildingEditorController:
     def update(self):
         if self.editor.dragging and self.editor.selected_building:
             mx, my = pygame.mouse.get_pos()
-            wx = mx / self.state.camera.zoom + self.state.camera.offset_x
-            wy = my / self.state.camera.zoom + self.state.camera.offset_y
+            wx = mx / self.camera.zoom + self.camera.offset_x
+            wy = my / self.camera.zoom + self.camera.offset_y
 
             b = self.editor.selected_building
             b.x = wx - self.editor.offset_x

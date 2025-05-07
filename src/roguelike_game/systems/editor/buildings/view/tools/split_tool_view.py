@@ -10,7 +10,7 @@ class SplitToolView:
         self.bar_color   = SPLIT_BAR_COLOR
 
     def render(self, screen, building):
-        cam = self.state.camera
+        cam = self.camera
         bx, by       = cam.apply((building.x, building.y))
         w_scaled, h_scaled = cam.scale(building.image.get_size())
         y_split      = by + int(h_scaled * building.split_ratio)

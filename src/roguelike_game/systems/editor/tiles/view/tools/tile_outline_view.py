@@ -12,7 +12,7 @@ class TileOutlineView:
         self.editor = editor_state
 
     def render(self, screen):
-        cam = self.state.camera
+        cam = self.camera
 
         # Hover
         hover = self.controller._tile_under_mouse(pygame.mouse.get_pos())

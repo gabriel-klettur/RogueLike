@@ -19,7 +19,7 @@ class BuildingEditorView:
         if not self.editor.active:
             return
 
-        cam = self.state.camera
+        cam = self.camera
         # Renderizado de cada edificio
         for b in self.state.buildings:
             x, y = cam.apply((b.x, b.y))

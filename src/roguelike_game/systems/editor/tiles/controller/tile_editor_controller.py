@@ -86,8 +86,8 @@ class TileEditorController:
 
     def _tile_under_mouse(self, mouse_pos):
         mx, my = mouse_pos
-        world_x = mx / self.state.camera.zoom + self.state.camera.offset_x
-        world_y = my / self.state.camera.zoom + self.state.camera.offset_y
+        world_x = mx / self.camera.zoom + self.camera.offset_x
+        world_y = my / self.camera.zoom + self.camera.offset_y
         col = int(world_x // TILE_SIZE)
         row = int(world_y // TILE_SIZE)
         if 0 <= row < len(self.state.tile_map) and 0 <= col < len(self.state.tile_map[0]):

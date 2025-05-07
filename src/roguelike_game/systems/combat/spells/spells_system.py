@@ -69,7 +69,7 @@ from roguelike_engine.utils.benchmark import benchmark
 
 class SpellsSystem:
     def __init__(self, state):
-        self.state = state
+        self.state = state        
 
         # MVC lists
         self.laser_controllers:         list[LaserBeamController]      = []
@@ -145,10 +145,10 @@ class SpellsSystem:
             self.laser_controllers.pop(0)
             self.laser_views.pop(0)
 
-    def spawn_smoke(self):
+    def spawn_smoke(self, camera):
         mx, my  = pygame.mouse.get_pos()
-        wx       = mx / self.state.camera.zoom + self.state.camera.offset_x
-        wy       = my / self.state.camera.zoom + self.state.camera.offset_y
+        wx       = mx / camera.zoom + camera.offset_x
+        wy       = my / camera.zoom + camera.offset_y
         px, py   = self._player_center()
         dir_vec  = Vector2(wx - px, wy - py)
         if dir_vec.length(): dir_vec.normalize_ip()
@@ -166,11 +166,11 @@ class SpellsSystem:
         self.smoke_emitter_controllers.append(ctrl)
         self.smoke_emitter_views.append(view)
 
-    def spawn_firework(self):
+    def spawn_firework(self, camera):
         px, py = self._player_center()
         mx, my = pygame.mouse.get_pos()
-        wx      = mx / self.state.camera.zoom + self.state.camera.offset_x
-        wy      = my / self.state.camera.zoom + self.state.camera.offset_y
+        wx      = mx / camera.zoom + camera.offset_x
+        wy      = my / camera.zoom + camera.offset_y
         model  = FireworkLaunchModel(px, py, wx, wy)
         ctrl   = FireworkLaunchController(model)
         view   = FireworkLaunchView(model)
@@ -196,9 +196,9 @@ class SpellsSystem:
         self.lightning_controllers.append(ctrl)
         self.lightning_views.append(view)
 
-    def spawn_healing_aura(self):
+    def spawn_healing_aura(self, clock):
         model  = HealingAuraModel(self.state.player)
-        ctrl   = HealingAuraController(model, self.state.clock)
+        ctrl   = HealingAuraController(model, clock)
         view   = HealingAuraView(model)
         self.healing_controllers.append(ctrl)
         self.healing_views.append(view)
@@ -228,7 +228,7 @@ class SpellsSystem:
     # ------------------------------------------------ #
     #                     Update                       #
     # ------------------------------------------------ #
-    def update(self):
+    def update(self, clock, screen):
         # HealingAura
         for c in self.healing_controllers: c.update()
         self.healing_controllers = [c for c in self.healing_controllers if not c.model.is_empty()]
@@ -246,7 +246,7 @@ class SpellsSystem:
 
         # SmokeEmitter
         for c in self.smoke_emitter_controllers:
-            wind = (pygame.mouse.get_pos()[0] - self.state.screen.get_width()//2)/1000
+            wind = (pygame.mouse.get_pos()[0] - screen.get_width()//2)/1000
             c.apply_force(Vector2(wind,0)); c.update()
         self.smoke_emitter_controllers = [c for c in self.smoke_emitter_controllers if not c.model.is_empty()]
         self.smoke_emitter_views       = [v for v in self.smoke_emitter_views       if not v.model.is_empty()]
@@ -287,7 +287,7 @@ class SpellsSystem:
         self.slash_views = [v for v in self.slash_views if not v.model.is_finished()]
 
         #Dash
-        for c in self.dash_controllers: c.update()
+        for c in self.dash_controllers: c.update(clock)
         self.dash_controllers = [c for c in self.dash_controllers if not c.is_finished()]
         self.dash_views       = [v for v in self.dash_views       if not v.model.is_finished()]
         

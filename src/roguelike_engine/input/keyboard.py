@@ -6,18 +6,18 @@ from .menu import execute_menu_option
 
 from roguelike_game.entities.npc.factory import NPCFactory
 
-def handle_keyboard(event, state):
+def handle_keyboard(event, state, camera, clock, menu):
     if event.type == pygame.KEYDOWN:
         if event.key == pygame.K_ESCAPE:
             state.show_menu = not state.show_menu
 
         elif event.key == pygame.K_q:
             state.player.restore_all()
-            state.systems.effects.spawn_healing_aura()
+            state.systems.effects.spawn_healing_aura(clock)
             state.player.stats.last_restore_time = time.time()
 
         elif state.show_menu:
-            result = state.menu.handle_input(event)
+            result = menu.handle_input(event)
             if result:
                 execute_menu_option(result, state)
 
@@ -28,7 +28,7 @@ def handle_keyboard(event, state):
                 state.player.stats.last_shield_time = time.time()
 
         elif event.key == pygame.K_f:
-            state.systems.effects.spawn_firework()
+            state.systems.effects.spawn_firework(camera)
             state.player.stats.last_firework_time = time.time()
 
         elif event.key == pygame.K_r:
@@ -36,26 +36,26 @@ def handle_keyboard(event, state):
             state.player.stats.last_smoke_time = time.time()
 
         elif event.key == pygame.K_t:
-            state.systems.effects.spawn_smoke()
+            state.systems.effects.spawn_smoke(camera)
             state.player.stats.last_smoke_time = time.time()
 
         elif event.key == pygame.K_z:
             mx, my = pygame.mouse.get_pos()
-            world_x = mx / state.camera.zoom + state.camera.offset_x
-            world_y = my / state.camera.zoom + state.camera.offset_y
+            world_x = mx / camera.zoom + camera.offset_x
+            world_y = my / camera.zoom + camera.offset_y
             state.systems.effects.spawn_lightning((world_x, world_y))
             state.player.stats.last_lightning_time = time.time()
 
         elif event.key == pygame.K_x:
             mx, my = pygame.mouse.get_pos()
-            wx = mx / state.camera.zoom + state.camera.offset_x
-            wy = my / state.camera.zoom + state.camera.offset_y
+            wx = mx / camera.zoom + camera.offset_x
+            wy = my / camera.zoom + camera.offset_y
             state.systems.effects.spawn_arcane_flame(wx, wy)
 
         elif event.key == pygame.K_v:
             mx, my = pygame.mouse.get_pos()
-            wx = mx / state.camera.zoom + state.camera.offset_x
-            wy = my / state.camera.zoom + state.camera.offset_y
+            wx = mx / camera.zoom + camera.offset_x
+            wy = my / camera.zoom + camera.offset_y
             px, py = state.systems.effects._player_center()
             dir_vec = pygame.math.Vector2(wx - px, wy - py)
             if dir_vec.length():
@@ -65,8 +65,8 @@ def handle_keyboard(event, state):
 
         elif event.key == pygame.K_e:
             mx, my = pygame.mouse.get_pos()
-            world_x = mx / state.camera.zoom + state.camera.offset_x
-            world_y = my / state.camera.zoom + state.camera.offset_y
+            world_x = mx / camera.zoom + camera.offset_x
+            world_y = my / camera.zoom + camera.offset_y
             px, py = state.systems.effects._player_center()
             dir_vec = pygame.math.Vector2(world_x - px, world_y - py)
             if dir_vec.length():
@@ -92,8 +92,8 @@ def handle_keyboard(event, state):
                 print(f"- {entity.name} at ({entity.x}, {entity.y})")            
 
             mouse_x, mouse_y = pygame.mouse.get_pos()
-            world_x = round(mouse_x / state.camera.zoom + state.camera.offset_x)
-            world_y = round(mouse_y / state.camera.zoom + state.camera.offset_y)
+            world_x = round(mouse_x / camera.zoom + camera.offset_x)
+            world_y = round(mouse_y / camera.zoom + camera.offset_y)
             print(f"Spawning enemy at {world_x}, {world_y}")
             state.enemies.append( NPCFactory.create("elite", world_x, world_y)) 
             

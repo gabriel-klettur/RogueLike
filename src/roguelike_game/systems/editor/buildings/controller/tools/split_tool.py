@@ -12,7 +12,7 @@ class SplitTool:
 
     # ---------- Interacción ----------
     def check_handle_click(self, mouse_pos, building):
-        cam = self.state.camera
+        cam = self.camera
         bx, by = cam.apply((building.x, building.y))
         _, h_scaled = cam.scale(building.image.get_size())
         y_split = by + int(h_scaled * building.split_ratio)
@@ -33,7 +33,7 @@ class SplitTool:
             return
 
         b = self.editor.selected_building
-        cam = self.state.camera
+        cam = self.camera
         mx, my = mouse_pos
         bx, by = cam.apply((b.x, b.y))
         _, h_scaled = cam.scale(b.image.get_size())
@@ -47,4 +47,4 @@ class SplitTool:
     # ---------- helpers ----------
     def _handle_offset_x(self, building):
         # coloca el handle en el centro del edificio en pantalla
-        return (self.state.camera.scale(building.image.get_size())[0] - SPLIT_HANDLE_SIZE) // 2
+        return (self.camera.scale(building.image.get_size())[0] - SPLIT_HANDLE_SIZE) // 2

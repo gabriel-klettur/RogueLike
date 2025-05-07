@@ -12,7 +12,7 @@ class ZToolView:
         self._text_cache  = {}   # (char, zoom) -> Surface
 
     def render(self, screen, building):
-        cam         = self.state.camera
+        cam         = self.camera
         w_scaled, h_scaled = cam.scale(building.image.get_size())
         x, y        = cam.apply((building.x, building.y))
         panel_x     = x + (w_scaled - Z_PANEL_W) // 2

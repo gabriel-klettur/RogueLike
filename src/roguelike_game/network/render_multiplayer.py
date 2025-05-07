@@ -20,5 +20,5 @@ def render_remote_players(state):
             rp.sprite = rp.sprites.get(rp.direction, rp.sprite)
 
             # ✅ Solo renderizar si está visible en cámara
-            if state.camera.is_in_view(rp.x, rp.y, rp.sprite_size):
-                rp.render(state.screen, state.camera)
+            if camera.is_in_view(rp.x, rp.y, rp.sprite_size):
+                rp.render(state.screen, camera)

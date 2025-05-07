@@ -9,8 +9,8 @@ class DeleteTool:
 
     def delete_building_at_mouse(self):
         mx, my = pygame.mouse.get_pos()
-        world_x = mx / self.state.camera.zoom + self.state.camera.offset_x
-        world_y = my / self.state.camera.zoom + self.state.camera.offset_y
+        world_x = mx / self.camera.zoom + self.camera.offset_x
+        world_y = my / self.camera.zoom + self.camera.offset_y
 
         for building in reversed(self.state.buildings):
             if building.rect.collidepoint(world_x, world_y):

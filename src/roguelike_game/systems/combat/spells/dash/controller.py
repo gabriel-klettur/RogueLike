@@ -8,8 +8,8 @@ class DashController:
     def __init__(self, model: DashModel):
         self.model = model
 
-    def update(self):
-        self.model.update()
+    def update(self, clock):
+        self.model.update(clock)
 
     def is_finished(self) -> bool:
         return self.model.is_finished()

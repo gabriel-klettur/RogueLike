@@ -1,7 +1,7 @@
 # Path: src/roguelike_engine/input/continuous.py
 import pygame, time
 
-def handle_continuous(state):
+def handle_continuous(state, camera):
     # Movimiento continuo
     if not state.show_menu:
         keys = pygame.key.get_pressed()
@@ -17,8 +17,8 @@ def handle_continuous(state):
         now = time.time()
         if now - effects.last_laser_time >= 0.01:
             mx,my = pygame.mouse.get_pos()
-            wx = mx/state.camera.zoom + state.camera.offset_x
-            wy = my/state.camera.zoom + state.camera.offset_y
+            wx = mx/camera.zoom + camera.offset_x
+            wy = my/camera.zoom + camera.offset_y
             enemies = state.enemies + list(state.remote_entities.values())
             effects.spawn_laser(wx, wy, enemies)
             effects.last_laser_time = now

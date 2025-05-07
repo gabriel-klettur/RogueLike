@@ -9,8 +9,8 @@ class ResizeTool:
         self.handle_size = handle_size
 
     def check_resize_handle_click(self, mx, my, building):
-        bx, by = self.state.camera.apply((building.x, building.y))
-        bw, bh = self.state.camera.scale(building.image.get_size())
+        bx, by = self.camera.apply((building.x, building.y))
+        bw, bh = self.camera.scale(building.image.get_size())
 
         handle_rect = pygame.Rect(
             bx + bw - self.handle_size,

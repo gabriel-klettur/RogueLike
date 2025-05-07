@@ -38,7 +38,7 @@ def main():
         game.render(performance_log)
 
         pygame.display.flip()
-        game.state.clock.tick(FPS)
+        game.clock.tick(FPS)
 
     pygame.quit()
 

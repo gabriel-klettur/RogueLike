@@ -1,11 +1,11 @@
 
-def update_game(state):
+def update_game(state, systems, camera, clock, screen):
     if not state.running:
         return
 
-    state.camera.update(state.player)
+    camera.update(state.player)
 
-    state.systems.update()
+    systems.update(clock, screen)
 
     #!------------------ ESTO DEBERIAMOS MEJORARLO ------------------
     enemies = state.enemies + list(state.remote_entities.values())    
