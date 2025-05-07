@@ -177,9 +177,9 @@ class SpellsSystem:
         self.firework_controllers.append(ctrl)
         self.firework_views.append(view)
 
-    def spawn_fireball(self, angle):
+    def spawn_fireball(self, angle, map):
         px, py   = self._player_center()
-        tiles    = [t for t in self.state.tiles if t.solid]
+        tiles    = [t for t in map.tiles_in_region if t.solid]
         enemies  = self.state.enemies + list(self.state.remote_entities.values())
         model   = FireballModel(px, py, angle)
         ctrl    = FireballController(model, tiles, enemies, self.state.systems.explosions)

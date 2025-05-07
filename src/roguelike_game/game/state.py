@@ -12,8 +12,7 @@ class GameState:
 
         #!-------------- MAPA ---------------
     
-        self.tiles = tiles
-        
+        self.tiles = tiles        
                                         
         #!------------ UI/ FLAGS ------------
         

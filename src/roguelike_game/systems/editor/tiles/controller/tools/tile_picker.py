@@ -93,7 +93,7 @@ class TilePicker:
         txt = self.font.render(text, True, CLR_BORDER)
         self.surface.blit(txt, txt.get_rect(center=rect.center))
 
-    def handle_click(self, mouse_pos, button):
+    def handle_click(self, mouse_pos, button, map):
         if not self.editor.picker_open or self.surface is None:
             return False
 
@@ -110,13 +110,13 @@ class TilePicker:
 
         # Botones
         if self.btn_delete_rect and self.btn_delete_rect.collidepoint((lx, ly)):
-            self._delete_tile()
+            self._delete_tile(map)
             return True
         if self.btn_default_rect and self.btn_default_rect.collidepoint((lx, ly)):
-            self._set_default()
+            self._set_default(map)
             return True
         if self.btn_accept_rect and self.btn_accept_rect.collidepoint((lx, ly)):
-            self._accept_choice()
+            self._accept_choice(map)
             return True
 
         # Selección de miniatura
@@ -139,15 +139,15 @@ class TilePicker:
     def stop_drag(self):
         self.dragging = False
 
-    def _delete_tile(self):
+    def _delete_tile(self, map):
         tile = self.editor.selected_tile
         if tile:
             tile.sprite = pygame.Surface((TILE_SIZE, TILE_SIZE), pygame.SRCALPHA)
             tile.scaled_cache.clear()
-            self._persist_overlay(tile, "")
+            self._persist_overlay(tile, "", map)
         self._close()
 
-    def _set_default(self):
+    def _set_default(self, map):
         tile = self.editor.selected_tile
         if tile:
             base_map = load_base_tile_images()
@@ -155,10 +155,10 @@ class TilePicker:
             sprite = imgs[0] if isinstance(imgs, list) else imgs
             tile.sprite = sprite
             tile.scaled_cache.clear()
-            self._persist_overlay(tile, "")
+            self._persist_overlay(tile, "", map)
         self._close()
 
-    def _accept_choice(self):
+    def _accept_choice(self, map):
         choice = self.editor.current_choice
         tile   = self.editor.selected_tile
         if choice and tile:
@@ -167,7 +167,7 @@ class TilePicker:
             name = Path(choice).stem
             code = INVERSE_OVERLAY_MAP.get(name, [""])[0]
             tile.overlay_code = code
-            self._persist_overlay(tile, code)
+            self._persist_overlay(tile, code, map)
         self._close()
 
     def scroll(self, dy):
@@ -178,13 +178,13 @@ class TilePicker:
         self.editor.current_choice = None
         self.dragging              = False
 
-    def _persist_overlay(self, tile, code: str):
+    def _persist_overlay(self, tile, code: str, map):
         row = tile.y // TILE_SIZE
         col = tile.x // TILE_SIZE
-        if self.state.overlay_map is None:
-            h = len(self.state.tile_map)
-            w = len(self.state.tile_map[0]) if h else 0
+        if map.overlay is None:
+            h = len(map.tiles)
+            w = len(map.tiles[0]) if h else 0
             self.state.overlay_map = [["" for _ in range(w)] for _ in range(h)]
-        self.state.overlay_map[row][col] = code
-        save_overlay(self.state.map_name, self.state.overlay_map)
-        print(f"📝 Overlay guardado en: {self.state.map_name}.overlay.json")
+        map.overlay[row][col] = code
+        save_overlay(map.name, map.overlay)
+        print(f"📝 Overlay guardado en: {map.name}.overlay.json")

@@ -7,9 +7,9 @@ class ResizeToolView:
         self.editor = editor_state
         self.handle_size = handle_size
 
-    def render_resize_handle(self, screen, building):
-        x, y = self.camera.apply((building.x, building.y))
-        w, h = self.camera.scale(building.image.get_size())
+    def render_resize_handle(self, screen, building, camera):
+        x, y = camera.apply((building.x, building.y))
+        w, h = camera.scale(building.image.get_size())
 
         handle_rect = pygame.Rect(
             x + w - self.handle_size,

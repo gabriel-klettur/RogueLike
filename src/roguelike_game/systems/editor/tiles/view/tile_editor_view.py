@@ -20,7 +20,7 @@ class TileEditorControllerView:
         self.picker_view  = TilePickerView(controller.picker)
         self.outline_view = TileOutlineView(controller, state, editor_state)
 
-    def render(self, screen):
+    def render(self, screen, camera, map):
         if not self.editor.active:
             return
 
@@ -28,11 +28,11 @@ class TileEditorControllerView:
         self.picker_view.render(screen)
 
         if self.editor.view_active:
-            self._render_view_panel(screen)
+            self._render_view_panel(screen, camera, map)
 
-        self.outline_view.render(screen)
+        self.outline_view.render(screen, camera, map)
 
-    def _render_view_panel(self, screen):
+    def _render_view_panel(self, screen, camera, map):
         panel_w = TILE_SIZE + 40
         panel_h = 3 * (TILE_SIZE + 30)
         x0 = self.controller.toolbar.x + self.controller.toolbar.size + 20
@@ -44,7 +44,7 @@ class TileEditorControllerView:
         mouse_pos = pygame.mouse.get_pos()
 
         items = [
-            ("Hovered",  self.controller._tile_under_mouse(mouse_pos), OUTLINE_HOVER),
+            ("Hovered",  self.controller._tile_under_mouse(mouse_pos, camera, map), OUTLINE_HOVER),
             ("Selected", self.editor.selected_tile,                     OUTLINE_SEL),
             ("Choice",   None,                                         OUTLINE_CHOICE),
         ]

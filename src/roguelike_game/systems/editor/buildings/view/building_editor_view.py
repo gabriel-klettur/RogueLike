@@ -15,21 +15,20 @@ class BuildingEditorView:
         self.z_bottom_view = ZToolView(state, editor_state, target="bottom")
         self.z_top_view    = ZToolView(state, editor_state, target="top")
 
-    def render(self, screen):
+    def render(self, screen, camera):
         if not self.editor.active:
             return
-
-        cam = self.camera
+        
         # Renderizado de cada edificio
         for b in self.state.buildings:
-            x, y = cam.apply((b.x, b.y))
-            w, h = cam.scale(b.image.get_size())
+            x, y = camera.apply((b.x, b.y))
+            w, h = camera.scale(b.image.get_size())
             # contorno general del edificio
             pygame.draw.rect(screen, (255, 255, 255), pygame.Rect(x, y, w, h), 1)
 
             # Render de cada handle/herramienta
-            self.default_view.render_reset_handle(screen, b)
-            self.resize_view.render_resize_handle(screen, b)
-            self.split_view.render(screen, b)
-            self.z_bottom_view.render(screen, b)
-            self.z_top_view.render(screen, b)
+            self.default_view.render_reset_handle(screen, b, camera)
+            self.resize_view.render_resize_handle(screen, b, camera)
+            self.split_view.render(screen, b, camera)
+            self.z_bottom_view.render(screen, b, camera)
+            self.z_top_view.render(screen, b, camera)

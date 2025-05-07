@@ -10,7 +10,7 @@ class TileEditorEventHandler:
         self.editor = editor_state
         self.controller = controller
 
-    def handle(self):
+    def handle(self, camera, map):
         """Reenvía cada evento al manejador correspondiente."""
         for ev in pygame.event.get():
             if ev.type == pygame.QUIT:
@@ -18,9 +18,9 @@ class TileEditorEventHandler:
             elif ev.type == pygame.KEYDOWN:
                 self._on_keydown(ev)
             elif ev.type == pygame.MOUSEBUTTONDOWN:
-                self._on_mouse_down(ev)
+                self._on_mouse_down(ev,camera, map)
             elif ev.type == pygame.MOUSEMOTION:
-                self._on_mouse_motion(ev)
+                self._on_mouse_motion(ev, camera, map)
             elif ev.type == pygame.MOUSEBUTTONUP:
                 self._on_mouse_up(ev)
             elif ev.type == pygame.MOUSEWHEEL:
@@ -45,7 +45,7 @@ class TileEditorEventHandler:
                 self.editor.selected_tile = None
                 self.editor.brush_dragging = False            
 
-    def _on_mouse_down(self, ev):
+    def _on_mouse_down(self, ev, camera, map):
         pos = ev.pos
         # 1) Toolbar click
         if ev.button == 1 and self.controller.toolbar.handle_click(pos):
@@ -55,34 +55,34 @@ class TileEditorEventHandler:
         # 2) Select
         if tool == "select" and ev.button == 1:
             if self.editor.picker_open:
-                if not self.controller.picker.handle_click(pos, button=1):
-                    self.controller.select_tile_at(pos)
+                if not self.controller.picker.handle_click(pos, button=1, map=map):
+                    self.controller.select_tile_at(pos, camera, map)
             else:
-                self.controller.select_tile_at(pos)
+                self.controller.select_tile_at(pos, camera, map)
 
         # 3) Brush
         elif tool == "brush" and ev.button == 1:
             if self.editor.picker_open and self.controller.picker.is_over(pos):
-                if self.controller.picker.handle_click(pos, button=1):
+                if self.controller.picker.handle_click(pos, button=1, map=map):
                     return
             self.editor.brush_dragging = True
-            self.controller.apply_brush(pos)
+            self.controller.apply_brush(pos, camera, map)
 
         # 4) Eyedropper
         elif tool == "eyedropper" and ev.button == 1:
-            self.controller.apply_eyedropper(pos)
+            self.controller.apply_eyedropper(pos, camera, map)
 
         # 5) Palette drag
         elif ev.button == 3 and self.editor.picker_open:
-            if self.controller.picker.handle_click(pos, button=3):
+            if self.controller.picker.handle_click(pos, button=3, map=map):
                 return
 
-    def _on_mouse_motion(self, ev):
+    def _on_mouse_motion(self, ev, camera, map):
         pos = ev.pos
         # Brush drag
         if self.editor.current_tool == "brush" and self.editor.brush_dragging:
             if not (self.editor.picker_open and self.controller.picker.is_over(pos)):
-                self.controller.apply_brush(pos)
+                self.controller.apply_brush(pos, camera, map)
         # Palette drag
         elif self.editor.picker_open and self.controller.picker.dragging:
             self.controller.picker.drag(pos)

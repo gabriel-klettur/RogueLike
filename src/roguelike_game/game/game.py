@@ -10,13 +10,15 @@ import roguelike_engine.config_tiles as config_tiles
 #!------------------------ Paquetes locales: motor (engine) -----------------------------------
 from roguelike_engine.camera.camera import Camera
 from roguelike_engine.input.events import handle_events
-from roguelike_engine.map.core.manager import build_map
 from roguelike_engine.map.core.service import _calculate_dungeon_offset
 
 #!-------------------- Paquetes locales: lógica de juego principal ----------------------------
 from roguelike_game.game.state import GameState
 from roguelike_game.game.render_manager import Renderer
 from roguelike_game.game.update_manager import update_game
+
+#? NUEVOS!!!!!!!!!!!!!!!!!
+from roguelike_game.game.map import GameMap
 
 #!----------------------- Paquetes locales: entidades y sistemas ------------------------------
 from roguelike_game.entities.load_entities import load_entities             #? DEBERIAMOS METERLOS EN UN MANAGER DE ENTIDADES
@@ -60,11 +62,8 @@ from roguelike_game.systems.z_layer.state import ZState
 from roguelike_game.systems.config_z_layer import Z_LAYERS
 
 class Game:
-    def __init__(self, screen, perf_log=None, map_name: str = None):
-        # Permitimos pasar un map_name explícito
-        self.map_name = map_name
-
-        # ------------- infraestructura -----------------
+    def __init__(self, screen, perf_log=None, map_name: str = None):        
+        #! ------------- infraestructura -----------------
         self.screen = screen
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont(config.FONT_NAME, config.FONT_SIZE)
@@ -72,14 +71,14 @@ class Game:
         self.z_state = ZState()
         self.perf_log = perf_log
 
-        # ------------- core state ----------------------
+        #! ------------- core state ----------------------
         self._init_state()
-        self._init_map()
+        self._init_map(map_name)
         self._init_entities() 
         self._init_z_layer()
         self._init_systems()
 
-        # ------------- editores ------------------------
+        #! ------------- editores ------------------------
         self._init_building_editor()
         self._init_tile_editor()
 
@@ -94,48 +93,13 @@ class Game:
         self.state.running = True
         self.state.perf_log = self.perf_log
 
-    def _init_map(self):
+    def _init_map(self, map_name: str | None):
         """
-        Construye el mapa global y carga el overlay.
-        """
-        # 1️⃣ Generar mapa global (incluye lobby + dungeon)
-        result = build_map(
-            map_mode="global",
-            map_name=self.map_name
-        )
+        Construye el mapa global y carga todos sus datos en el estado.
+        """        
+        self.map = GameMap(map_name)                                
+        self.map.tiles_in_region = self.map.get_tiles_in_region()                
 
-        # Guardamos todo el objeto para acceder a metadata luego
-        self.map_result = result
-
-        # 2️⃣ Datos de texto y metadata
-        self.map_data = result.matrix
-        self.state.overlay_map = result.overlay
-        self.state.map_name = result.name
-        self.state.lobby_offset = result.metadata.get("lobby_offset", (0, 0))
-
-        # 3️⃣ Guardar grid completo
-        self.state.tile_map = result.tiles
-
-        # 4️⃣ Filtrar tiles para lobby + dungeon
-        lob_x, lob_y = self.state.lobby_offset
-        dun_x, dun_y = _calculate_dungeon_offset(
-            (lob_x, lob_y),
-            config_map.DUNGEON_CONNECT_SIDE
-        )
-
-        def in_region(tile):
-            col = tile.x // config_tiles.TILE_SIZE
-            row = tile.y // config_tiles.TILE_SIZE
-            # Lobby
-            if lob_x <= col < lob_x + config_map.LOBBY_WIDTH and lob_y <= row < lob_y + config_map.LOBBY_HEIGHT:
-                return True
-            # Dungeon
-            if dun_x <= col < dun_x + config_map.DUNGEON_WIDTH and dun_y <= row < dun_y + config_map.DUNGEON_HEIGHT:
-                return True
-            return False
-
-        all_tiles = [t for row in result.tiles for t in row]
-        self.state.tiles = [t for t in all_tiles if in_region(t)]
 
     def _init_entities(self):
         # 1️⃣ Cargar jugador, obstáculos y edificios
@@ -149,7 +113,7 @@ class Game:
             print(f"{i:02d} | ({b.x:.0f},{b.y:.0f}) | Z=({b.z_bottom},{b.z_top}) | img={b.image_path}")
 
         # 2️⃣ Calcular offset en tiles de la dungeon
-        lob_x, lob_y = self.state.lobby_offset
+        lob_x, lob_y = self.map.lobby_offset
         dungeon_offset = _calculate_dungeon_offset((lob_x, lob_y), config_map.DUNGEON_CONNECT_SIDE)
 
         # 3️⃣ Posición inicial del jugador en tiles
@@ -158,13 +122,12 @@ class Game:
             int(self.state.player.y) // config_tiles.TILE_SIZE
         )
 
-        # 4️⃣ Spawn procedural de enemigos en tiles transitables
-        rooms = self.map_result.metadata.get("rooms", [])
+        # 4️⃣ Spawn procedural de enemigos en tiles transitables        
         self.state.enemies = load_hostile(
-            rooms,
+            self.map.rooms,
             player_tile,
             dungeon_offset,
-            self.state.tile_map
+            self.map.tiles
         )
 
     def _init_z_layer(self):
@@ -223,27 +186,27 @@ class Game:
 
     def handle_events(self):
         if self.tile_editor_state.active:
-            self.tile_event_handler.handle()
+            self.tile_event_handler.handle(self.camera, self.map)
             return
         if self.state.editor.active:
-            self.building_event_handler.handle()
+            self.building_event_handler.handle(self.camera)
             return
-        handle_events(self.state, self.camera, self.clock, self.menu)
+        handle_events(self.state, self.camera, self.clock, self.menu, self.map)
 
     def update(self):
         if self.tile_editor_state.active:
             return
         if self.state.editor.active:
-            self.building_editor.update()
+            self.building_editor.update(self.camera)
         else:
-            update_game(self.state, self.systems, self.camera, self.clock, self.screen)
+            update_game(self.state, self.systems, self.camera, self.clock, self.screen, self.map)
 
     def render(self, perf_log=None):
-        self.renderer.render_game(self.state, self.screen, self.camera, perf_log, self.menu)
+        self.renderer.render_game(self.state, self.screen, self.camera, perf_log, self.menu, self.map)
         if self.state.editor.active:
-            self.building_editor_view.render(self.screen)
+            self.building_editor_view.render(self.screen, self.camera)
         if self.tile_editor_state.active:
-            self.tile_editor_view.render(self.screen)
+            self.tile_editor_view.render(self.screen, self.camera, self.map)
 
     def quit(self):
         if hasattr(self, 'network'):

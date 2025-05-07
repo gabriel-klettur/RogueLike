@@ -5,7 +5,7 @@ from .keyboard     import handle_keyboard
 from .mouse        import handle_mouse
 from .continuous   import handle_continuous
 
-def handle_events(state, camera, clock, menu):
+def handle_events(state, camera, clock, menu, map):
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             state.running = False
@@ -14,7 +14,7 @@ def handle_events(state, camera, clock, menu):
             handle_keyboard(event, state, camera, clock, menu)
 
         elif event.type in (pygame.MOUSEWHEEL, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP):
-            handle_mouse(event, state, camera, clock)
+            handle_mouse(event, state, camera, clock, map)
 
     # Movimiento y laser continuo fuera del loop de eventos
-    handle_continuous(state, camera)
+    handle_continuous(state, camera, map)

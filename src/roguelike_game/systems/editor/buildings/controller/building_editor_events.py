@@ -16,7 +16,7 @@ class BuildingEditorEventHandler:
         self.editor = editor_state
         self.controller = controller
 
-    def handle(self):
+    def handle(self, camera):
         """Procesa todos los eventos de Pygame"""
         for ev in pygame.event.get():
             if ev.type == pygame.QUIT:
@@ -24,11 +24,11 @@ class BuildingEditorEventHandler:
             elif ev.type == pygame.KEYDOWN:
                 self._on_keydown(ev)
             elif ev.type == pygame.MOUSEBUTTONDOWN:
-                self._on_mouse_down(ev)
+                self._on_mouse_down(ev, camera)
             elif ev.type == pygame.MOUSEBUTTONUP:
                 self._on_mouse_up(ev)
             elif ev.type == pygame.MOUSEMOTION:
-                self._on_mouse_motion(ev)
+                self._on_mouse_motion(ev, camera)
 
     def _on_quit(self, ev):
         logger.info("Quit event received in Building Editor")
@@ -65,12 +65,12 @@ class BuildingEditorEventHandler:
         elif ev.key == pygame.K_DELETE:
             self.controller.delete_tool.delete_building_at_mouse()
 
-    def _on_mouse_down(self, ev):
+    def _on_mouse_down(self, ev, camera):
         mx, my = pygame.mouse.get_pos()
-        self.controller.on_mouse_down((mx, my), ev.button)
+        self.controller.on_mouse_down((mx, my), ev.button, camera)
 
     def _on_mouse_up(self, ev):
         self.controller.on_mouse_up(ev.button)
 
-    def _on_mouse_motion(self, ev):
-        self.controller.on_mouse_motion(ev.pos)
+    def _on_mouse_motion(self, ev, camera):
+        self.controller.on_mouse_motion(ev.pos, camera)

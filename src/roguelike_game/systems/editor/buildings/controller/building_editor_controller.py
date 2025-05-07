@@ -30,25 +30,25 @@ class BuildingEditorController:
         self.delete_tool = DeleteTool(state, editor_state)
 
     # =========================== EVENTOS ============================ #
-    def on_mouse_down(self, pos, button):
+    def on_mouse_down(self, pos, button, camera):
         """button: 1 = izq, 3 = der"""
         mx, my = pos
-        world_x = mx / self.camera.zoom + self.camera.offset_x
-        world_y = my / self.camera.zoom + self.camera.offset_y
+        world_x = mx / camera.zoom + camera.offset_x
+        world_y = my / camera.zoom + camera.offset_y
 
         # 1) Barra split (clic izq o der indistinto)
         for b in reversed(self.state.buildings):
-            if self.split_tool.check_handle_click((mx, my), b):
+            if self.split_tool.check_handle_click((mx, my), b, camera):
                 self.split_tool.start_drag(b)
                 return
 
         # 2) Resize handle (clic der)
         if button == 3:
             for b in reversed(self.state.buildings):
-                if self.resize_tool.check_resize_handle_click(mx, my, b):
+                if self.resize_tool.check_resize_handle_click(mx, my, b, camera):
                     self._start_resize(b, (mx, my))
                     return
-                if self.default_tool.check_reset_handle_click(mx, my, b):
+                if self.default_tool.check_reset_handle_click(mx, my, b, camera):
                     self.default_tool.apply_reset(b)
                     return
 
@@ -76,9 +76,9 @@ class BuildingEditorController:
         self.editor.split_dragging = False
         self.editor.selected_building = None
 
-    def on_mouse_motion(self, pos):
+    def on_mouse_motion(self, pos, camera):
         if self.editor.dragging or self.editor.resizing or self.editor.split_dragging:
-            self.update()                       # reaprovecha la lógica existente
+            self.update(camera)                       # reaprovecha la lógica existente
 
     # ======================== LÓGICA PRIVADA ======================== #
     def _start_resize(self, building, mouse_start):
@@ -96,11 +96,11 @@ class BuildingEditorController:
         print(f"🏗️ Arrastre de {building.image_path} iniciado")
 
     # ======================== ACTUALIZACIÓN ========================= #
-    def update(self):
+    def update(self, camera):
         if self.editor.dragging and self.editor.selected_building:
             mx, my = pygame.mouse.get_pos()
-            wx = mx / self.camera.zoom + self.camera.offset_x
-            wy = my / self.camera.zoom + self.camera.offset_y
+            wx = mx / camera.zoom + camera.offset_x
+            wy = my / camera.zoom + camera.offset_y
 
             b = self.editor.selected_building
             b.x = wx - self.editor.offset_x
@@ -111,4 +111,4 @@ class BuildingEditorController:
             self.resize_tool.update_resizing(pygame.mouse.get_pos())
 
         elif self.editor.split_dragging:
-            self.split_tool.update_drag(pygame.mouse.get_pos())
+            self.split_tool.update_drag(pygame.mouse.get_pos(), camera)

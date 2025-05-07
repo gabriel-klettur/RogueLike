@@ -24,15 +24,15 @@ class TileEditorController:
         self.picker = TilePicker(state, editor_state)
         self.toolbar = TileToolbar(state, editor_state)
 
-    def select_tile_at(self, mouse_pos):
-        tile = self._tile_under_mouse(mouse_pos)
+    def select_tile_at(self, mouse_pos, camera, map):
+        tile = self._tile_under_mouse(mouse_pos, camera, map)
         if tile:
             self.editor.selected_tile = tile
             self.editor.picker_open   = True
             self.editor.scroll_offset = 0
 
-    def apply_brush(self, mouse_pos):
-        tile = self._tile_under_mouse(mouse_pos)
+    def apply_brush(self, mouse_pos, camera, map):
+        tile = self._tile_under_mouse(mouse_pos, camera, map)
         if not tile or not self.editor.current_choice:
             return
 
@@ -52,16 +52,16 @@ class TileEditorController:
         row = tile.y // TILE_SIZE
         col = tile.x // TILE_SIZE
 
-        if self.state.overlay_map is None:
-            h = len(self.state.tile_map)
-            w = len(self.state.tile_map[0]) if h else 0
-            self.state.overlay_map = [["" for _ in range(w)] for _ in range(h)]
+        if map.overlay is None:
+            h = len(map.tiles)
+            w = len(map.tiles[0]) if h else 0
+            self.map.overlay = [["" for _ in range(w)] for _ in range(h)]
 
-        self.state.overlay_map[row][col] = code
-        save_overlay(self.state.map_name, self.state.overlay_map)
+        map.overlay[row][col] = code
+        save_overlay(map.name, map.overlay)
 
-    def apply_eyedropper(self, mouse_pos):
-        tile = self._tile_under_mouse(mouse_pos)
+    def apply_eyedropper(self, mouse_pos, camera, map):
+        tile = self._tile_under_mouse(mouse_pos, camera, map)
         if not tile:
             return
 
@@ -84,12 +84,12 @@ class TileEditorController:
         self.editor.current_tool = "brush"
 
 
-    def _tile_under_mouse(self, mouse_pos):
+    def _tile_under_mouse(self, mouse_pos, camera, map):
         mx, my = mouse_pos
-        world_x = mx / self.camera.zoom + self.camera.offset_x
-        world_y = my / self.camera.zoom + self.camera.offset_y
+        world_x = mx / camera.zoom + camera.offset_x
+        world_y = my / camera.zoom + camera.offset_y
         col = int(world_x // TILE_SIZE)
         row = int(world_y // TILE_SIZE)
-        if 0 <= row < len(self.state.tile_map) and 0 <= col < len(self.state.tile_map[0]):
-            return self.state.tile_map[row][col]
+        if 0 <= row < len(map.tiles) and 0 <= col < len(map.tiles[0]):
+            return map.tiles[row][col]
         return None

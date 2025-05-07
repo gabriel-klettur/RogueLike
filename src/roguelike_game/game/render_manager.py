@@ -40,7 +40,7 @@ class Renderer:
     def __init__(self):
         self._dirty_rects = []
 
-    def render_game(self, state, screen, camera, perf_log=None, menu=None):                
+    def render_game(self, state, screen, camera, perf_log=None, menu=None, map=None):                
         self._dirty_rects = []
         screen.fill((0, 0, 0))
 
@@ -53,10 +53,10 @@ class Renderer:
                 func()
 
         # 1) Tiles
-        benchmark("--3.1. tiles", lambda: self._render_tiles(state, camera, screen))
+        benchmark("--3.1. tiles", lambda: self._render_tiles(state, camera, screen, map))
 
         # 2) Entidades orden Z
-        benchmark("--3.2. z_entities", lambda: self._render_z_entities(state, camera, screen))
+        benchmark("--3.2. z_entities", lambda: self._render_z_entities(state, camera, screen, map))
 
         # 3) Efectos
         benchmark("--3.3. effects", lambda: self._render_effects(state, camera, screen))
@@ -65,7 +65,7 @@ class Renderer:
         benchmark("--3.4. hud", lambda: state.player.render_hud(screen, camera))
 
         # 4.b) Capa del Tile Editor
-        benchmark("--3.4b. tile_editor", lambda: self._render_tile_editor_layer(state, screen))
+        benchmark("--3.4b. tile_editor", lambda: self._render_tile_editor_layer(state, screen, camera, map))
 
         # 5) Crosshair
         benchmark("--3.5. crosshair", lambda: draw_mouse_crosshair(screen, camera))
@@ -77,17 +77,17 @@ class Renderer:
         benchmark("--3.7. menu", lambda: self._render_menu(state, screen, menu))
 
         # 8) Minimap
-        benchmark("--3.8. minimap", lambda: self._render_minimap(state, screen))
+        benchmark("--3.8. minimap", lambda: self._render_minimap(state, screen, map))
 
         # 9) Otros sistemas
         benchmark("--3.9. systems", lambda: state.systems.render(screen, camera))
 
         # Debug: overlay y bordes
         if config.DEBUG and perf_log is not None:
-            extra_lines = [state] + self._get_custom_debug_lines(state, camera)
+            extra_lines = [state] + self._get_custom_debug_lines(state, camera, map)
             benchmark("--99.0. debug overlay", lambda: render_debug_overlay(screen, perf_log, extra_lines=extra_lines, position=(0, 0)))
             benchmark("--99.1. border lobby", lambda: self._render_lobby_border(state, screen, camera))
-            benchmark("--99.2. border dungeon", lambda: self._render_dungeon_border(state, screen, camera))
+            benchmark("--99.2. border dungeon", lambda: self._render_dungeon_border(map, screen, camera))
             benchmark("--99.3. border global", lambda: self._render_global_border(state, screen, camera))
 
         pygame.display.flip()
@@ -118,11 +118,11 @@ class Renderer:
         rect = pygame.Rect(top_left, size)
         pygame.draw.rect(screen, (255, 255, 255), rect, 5)
 
-    def _render_dungeon_border(self, state, screen, camera):
+    def _render_dungeon_border(self, map, screen, camera):
         """
         Dibuja un rectángulo verde alrededor de la dungeon procedural.
         """
-        lobby_off_x, lobby_off_y = state.lobby_offset
+        lobby_off_x, lobby_off_y = map.lobby_offset
         dungeon_off_x, dungeon_off_y = _calculate_dungeon_offset((lobby_off_x, lobby_off_y), DUNGEON_CONNECT_SIDE)
         x_px = dungeon_off_x * TILE_SIZE
         y_px = dungeon_off_y * TILE_SIZE
@@ -137,19 +137,19 @@ class Renderer:
         dirty_rects = state.systems.effects.render(screen, camera)
         self._dirty_rects.extend(dirty_rects)
 
-    def _render_tiles(self, state, camera, screen):
-        for tile in state.tiles:
+    def _render_tiles(self, state, camera, screen, map):
+        for tile in map.tiles_in_region:
             if not camera.is_in_view(tile.x, tile.y, tile.sprite_size):
                 continue
             dirty = tile.render(screen, camera)
             if dirty:
                 self._dirty_rects.append(dirty)
 
-    def _render_tile_editor_layer(self, state, screen):
+    def _render_tile_editor_layer(self, state, screen, camera, map):
         if getattr(state, "tile_editor_state", None) and state.tile_editor_state.active:
-            state.tile_editor_view.render(screen)
+            state.tile_editor_view.render(screen, camera, map)
 
-    def _render_z_entities(self, state, camera, screen):
+    def _render_z_entities(self, state, camera, screen, map):
         all_entities = []
         all_entities.extend([
             e for e in state.obstacles
@@ -190,7 +190,7 @@ class Renderer:
                 pygame.draw.rect(screen, (0, 255, 0), pygame.Rect(tl, sz), 1)
 
                 # dibujar colisión con tiles sólidos (magenta)
-                for t in state.tiles:
+                for t in map.tiles_in_region:
                     if getattr(t, "solid", False):
                         tile_box = pygame.Rect(t.x, t.y, *t.sprite_size)
                         if foot_box.colliderect(tile_box):
@@ -203,11 +203,11 @@ class Renderer:
             menu_rect = menu.draw(screen)
             self._dirty_rects.append(menu_rect)
 
-    def _render_minimap(self, state, screen):
-        minimap_rect = render_minimap(state, screen)
+    def _render_minimap(self, state, screen, map):
+        minimap_rect = render_minimap(state, screen, map)
         self._dirty_rects.append(minimap_rect)
 
-    def _get_custom_debug_lines(self, state, camera):
+    def _get_custom_debug_lines(self, state, camera, map):
         lines = [
             f"Modo: {state.mode}",
             f"Pos: ({round(state.player.x)}, {round(state.player.y)})"
@@ -219,7 +219,7 @@ class Renderer:
 
         tile_col, tile_row = wx // TILE_SIZE, wy // TILE_SIZE
         tile_text = "?"
-        for tile in state.tiles:
+        for tile in map.tiles_in_region:
             if tile.rect.collidepoint(wx, wy):
                 tile_text = tile.tile_type
                 break

@@ -66,8 +66,8 @@ class NPC(IEntity):
         # Máscara para colisiones
         return getattr(self.view, 'mask', None)
 
-    def update(self, state):
-        self.controller.update(state)
+    def update(self, state, map):
+        self.controller.update(state, map)
 
     def render(self, screen, camera):
         self.view.render(screen, camera)

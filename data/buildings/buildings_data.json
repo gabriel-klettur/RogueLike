@@ -1,7 +1,7 @@
 [
     {
-        "x": 2800,
-        "y": 1882,
+        "x": 2810,
+        "y": 1875,
         "image_path": "assets/buildings/temples/catholic.png",
         "solid": true,
         "scale": [
@@ -252,19 +252,19 @@
         "z": 3
     },
     {
-        "x": 2312,
-        "y": 1807,
+        "x": 2323,
+        "y": 1840,
         "image_path": "assets/buildings/others/portal.png",
         "solid": true,
         "scale": [
-            166,
+            164,
             263
         ],
         "original_scale": [
             512,
             824
         ],
-        "split_ratio": 0.222,
+        "split_ratio": 0.209,
         "z_bottom": 2,
         "z_top": 7,
         "z": 2

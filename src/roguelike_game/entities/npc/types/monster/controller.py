@@ -14,7 +14,7 @@ class MonsterController(BaseNPCController):
         # Reutilizamos el componente de movimiento del modelo
         self.movement = model.movement
 
-    def update(self, state):
+    def update(self, state, map):
         m = self.model
         if not m.alive:
             return
@@ -25,11 +25,11 @@ class MonsterController(BaseNPCController):
 
         # Si está lo bastante cerca, perseguir; si no, patrullar
         if dist <= 500:
-            self._follow_player(px, py, state)
+            self._follow_player(px, py, state, map)
         else:
-            self._patrol(state)
+            self._patrol(state, map)
 
-    def _follow_player(self, px, py, state):
+    def _follow_player(self, px, py, state, map):
         """
         Persigue al jugador, pero se detiene justo en el momento
         en que la hitbox de pies del NPC va a colisionar con la del jugador.
@@ -55,16 +55,16 @@ class MonsterController(BaseNPCController):
             return
 
         # En otro caso, movemos normalmente (respeta muros y obstáculos)
-        self.movement.move(dx, dy, state.tiles, state.obstacles)
+        self.movement.move(dx, dy, map.tiles_in_region, state.obstacles)
 
-    def _patrol(self, state):
+    def _patrol(self, state, map):
         """
         Patrulla siguiendo un camino predefinido en el modelo.
         """
         m = self.model
         dx, dy, length = m.path[m.current_step]
         # Mover con colisión
-        self.movement.move(dx, dy, state.tiles, state.obstacles)
+        self.movement.move(dx, dy, map.tiles_in_region, state.obstacles)
         # Actualizar progreso del paso
         m.step_progress += m.speed
         m.direction = (dx, dy)
