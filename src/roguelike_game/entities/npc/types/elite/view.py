@@ -1,9 +1,9 @@
 # Path: src/roguelike_game/entities/npc/types/elite/view.py
 
 import pygame
-from src.roguelike_engine.utils.loader import load_image
-from src.roguelike_game.entities.npc.base.view import NPCView
-import src.roguelike_engine.config as config
+from roguelike_engine.utils.loader import load_image
+from roguelike_game.entities.npc.base.view import NPCView
+import roguelike_engine.config as config
 
 class EliteView(NPCView):
     SPRITE_SIZE = (512, 512)

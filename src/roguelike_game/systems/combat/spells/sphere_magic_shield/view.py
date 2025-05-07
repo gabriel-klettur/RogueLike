@@ -2,7 +2,7 @@
 import pygame
 from pygame import Rect
 
-from src.roguelike_game.systems.combat.spells.sphere_magic_shield.model import SphereMagicShieldModel
+from roguelike_game.systems.combat.spells.sphere_magic_shield.model import SphereMagicShieldModel
 
 class SphereMagicShieldView:
     """

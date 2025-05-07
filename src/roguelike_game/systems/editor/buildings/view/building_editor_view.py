@@ -1,9 +1,9 @@
 # Path: src/roguelike_game/systems/editor/buildings/view/building_editor_view.py
 import pygame
-from src.roguelike_game.systems.editor.buildings.view.tools.default_tool_view import DefaultToolView
-from src.roguelike_game.systems.editor.buildings.view.tools.resize_tool_view  import ResizeToolView
-from src.roguelike_game.systems.editor.buildings.view.tools.split_tool_view   import SplitToolView
-from src.roguelike_game.systems.editor.buildings.view.tools.z_tool_view       import ZToolView
+from roguelike_game.systems.editor.buildings.view.tools.default_tool_view import DefaultToolView
+from roguelike_game.systems.editor.buildings.view.tools.resize_tool_view  import ResizeToolView
+from roguelike_game.systems.editor.buildings.view.tools.split_tool_view   import SplitToolView
+from roguelike_game.systems.editor.buildings.view.tools.z_tool_view       import ZToolView
 
 class BuildingEditorView:
     def __init__(self, state, editor_state):

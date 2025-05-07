@@ -1,6 +1,6 @@
 # Path: src/roguelike_game/systems/editor/buildings/view/tools/split_tool_view.py
 import pygame
-from src.roguelike_game.systems.editor.buildings.buildings_editor_config import SPLIT_HANDLE_SIZE, SPLIT_BAR_COLOR
+from roguelike_game.systems.editor.buildings.buildings_editor_config import SPLIT_HANDLE_SIZE, SPLIT_BAR_COLOR
 
 class SplitToolView:
     def __init__(self, state, editor_state):

@@ -211,7 +211,7 @@ Cada carpeta debe tener:
 ### 📁 Propuesta Profesional y Escalable
 
 ```
-src.roguelike_project/
+roguelike_project/
 │
 ├── assets/              # Todos los recursos gráficos/audio
 │   ├── characters/

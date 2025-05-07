@@ -4,67 +4,67 @@ import pygame
 from pygame.math import Vector2
 
 # MVC: LaserBeam
-from src.roguelike_game.systems.combat.spells.laser_beam.model      import LaserBeamModel
-from src.roguelike_game.systems.combat.spells.laser_beam.controller import LaserBeamController
-from src.roguelike_game.systems.combat.spells.laser_beam.view       import LaserBeamView
+from roguelike_game.systems.combat.spells.laser_beam.model      import LaserBeamModel
+from roguelike_game.systems.combat.spells.laser_beam.controller import LaserBeamController
+from roguelike_game.systems.combat.spells.laser_beam.view       import LaserBeamView
 
 # MVC: HealingAura
-from src.roguelike_game.systems.combat.spells.healing_aura.model      import HealingAuraModel
-from src.roguelike_game.systems.combat.spells.healing_aura.controller import HealingAuraController
-from src.roguelike_game.systems.combat.spells.healing_aura.view       import HealingAuraView
+from roguelike_game.systems.combat.spells.healing_aura.model      import HealingAuraModel
+from roguelike_game.systems.combat.spells.healing_aura.controller import HealingAuraController
+from roguelike_game.systems.combat.spells.healing_aura.view       import HealingAuraView
 
 # MVC: Smoke
-from src.roguelike_game.systems.combat.spells.smoke.model      import SmokeModel
-from src.roguelike_game.systems.combat.spells.smoke.controller import SmokeController
-from src.roguelike_game.systems.combat.spells.smoke.view       import SmokeView
+from roguelike_game.systems.combat.spells.smoke.model      import SmokeModel
+from roguelike_game.systems.combat.spells.smoke.controller import SmokeController
+from roguelike_game.systems.combat.spells.smoke.view       import SmokeView
 
 # MVC: SmokeEmitter
-from src.roguelike_game.systems.combat.spells.smoke_emitter.model      import SmokeEmitterModel
-from src.roguelike_game.systems.combat.spells.smoke_emitter.controller import SmokeEmitterController
-from src.roguelike_game.systems.combat.spells.smoke_emitter.view       import SmokeEmitterView
+from roguelike_game.systems.combat.spells.smoke_emitter.model      import SmokeEmitterModel
+from roguelike_game.systems.combat.spells.smoke_emitter.controller import SmokeEmitterController
+from roguelike_game.systems.combat.spells.smoke_emitter.view       import SmokeEmitterView
 
 # MVC: FireworkLaunch
-from src.roguelike_game.systems.combat.spells.firework_launch.model      import FireworkLaunchModel
-from src.roguelike_game.systems.combat.spells.firework_launch.controller import FireworkLaunchController
-from src.roguelike_game.systems.combat.spells.firework_launch.view       import FireworkLaunchView
+from roguelike_game.systems.combat.spells.firework_launch.model      import FireworkLaunchModel
+from roguelike_game.systems.combat.spells.firework_launch.controller import FireworkLaunchController
+from roguelike_game.systems.combat.spells.firework_launch.view       import FireworkLaunchView
 
 # MVC: Fireball
-from src.roguelike_game.systems.combat.spells.fireball.model      import FireballModel
-from src.roguelike_game.systems.combat.spells.fireball.controller import FireballController
-from src.roguelike_game.systems.combat.spells.fireball.view       import FireballView
+from roguelike_game.systems.combat.spells.fireball.model      import FireballModel
+from roguelike_game.systems.combat.spells.fireball.controller import FireballController
+from roguelike_game.systems.combat.spells.fireball.view       import FireballView
 
 # MVC: Lightning
-from src.roguelike_game.systems.combat.spells.lightning.model      import LightningModel
-from src.roguelike_game.systems.combat.spells.lightning.controller import LightningController
-from src.roguelike_game.systems.combat.spells.lightning.view       import LightningView
+from roguelike_game.systems.combat.spells.lightning.model      import LightningModel
+from roguelike_game.systems.combat.spells.lightning.controller import LightningController
+from roguelike_game.systems.combat.spells.lightning.view       import LightningView
 
 # MVC: ArcaneFlame
-from src.roguelike_game.systems.combat.spells.arcane_flame.model      import ArcaneFlameModel
-from src.roguelike_game.systems.combat.spells.arcane_flame.controller import ArcaneFlameController
-from src.roguelike_game.systems.combat.spells.arcane_flame.view       import ArcaneFlameView
+from roguelike_game.systems.combat.spells.arcane_flame.model      import ArcaneFlameModel
+from roguelike_game.systems.combat.spells.arcane_flame.controller import ArcaneFlameController
+from roguelike_game.systems.combat.spells.arcane_flame.view       import ArcaneFlameView
 
 # MVC: SphereMagicShield
-from src.roguelike_game.systems.combat.spells.sphere_magic_shield.model      import SphereMagicShieldModel
-from src.roguelike_game.systems.combat.spells.sphere_magic_shield.controller import SphereMagicShieldController
-from src.roguelike_game.systems.combat.spells.sphere_magic_shield.view       import SphereMagicShieldView
+from roguelike_game.systems.combat.spells.sphere_magic_shield.model      import SphereMagicShieldModel
+from roguelike_game.systems.combat.spells.sphere_magic_shield.controller import SphereMagicShieldController
+from roguelike_game.systems.combat.spells.sphere_magic_shield.view       import SphereMagicShieldView
 
 # MVC: Teleport
-from src.roguelike_game.systems.combat.spells.teleport.model      import TeleportModel
-from src.roguelike_game.systems.combat.spells.teleport.controller import TeleportController
-from src.roguelike_game.systems.combat.spells.teleport.view       import TeleportView
+from roguelike_game.systems.combat.spells.teleport.model      import TeleportModel
+from roguelike_game.systems.combat.spells.teleport.controller import TeleportController
+from roguelike_game.systems.combat.spells.teleport.view       import TeleportView
 
 # MVC: SlashEffect (legacy)
-from src.roguelike_game.systems.combat.spells.slash.model      import SlashModel
-from src.roguelike_game.systems.combat.spells.slash.controller import SlashController
-from src.roguelike_game.systems.combat.spells.slash.view       import SlashView
+from roguelike_game.systems.combat.spells.slash.model      import SlashModel
+from roguelike_game.systems.combat.spells.slash.controller import SlashController
+from roguelike_game.systems.combat.spells.slash.view       import SlashView
 
 # Legacy: DashTrail, DashBounce
-from src.roguelike_game.systems.combat.spells.dash.model      import DashModel
-from src.roguelike_game.systems.combat.spells.dash.controller import DashController
-from src.roguelike_game.systems.combat.spells.dash.view       import DashView
+from roguelike_game.systems.combat.spells.dash.model      import DashModel
+from roguelike_game.systems.combat.spells.dash.controller import DashController
+from roguelike_game.systems.combat.spells.dash.view       import DashView
 
 # Benchmarking
-from src.roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark import benchmark
 
 
 class SpellsSystem:

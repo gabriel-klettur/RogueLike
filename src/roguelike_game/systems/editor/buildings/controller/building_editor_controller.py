@@ -1,11 +1,11 @@
 # Path: src/roguelike_game/systems/editor/buildings/controller/building_editor_controller.py
 import pygame
-from src.roguelike_game.systems.editor.buildings.controller.tools.resize_tool import ResizeTool
-from src.roguelike_game.systems.editor.buildings.controller.tools.default_tool import DefaultTool
-from src.roguelike_game.systems.editor.buildings.controller.tools.z_tool      import ZTool
-from src.roguelike_game.systems.editor.buildings.controller.tools.split_tool  import SplitTool
-from src.roguelike_game.systems.editor.buildings.controller.tools.placer_tool  import PlacerTool
-from src.roguelike_game.systems.editor.buildings.controller.tools.delete_tool  import DeleteTool
+from roguelike_game.systems.editor.buildings.controller.tools.resize_tool import ResizeTool
+from roguelike_game.systems.editor.buildings.controller.tools.default_tool import DefaultTool
+from roguelike_game.systems.editor.buildings.controller.tools.z_tool      import ZTool
+from roguelike_game.systems.editor.buildings.controller.tools.split_tool  import SplitTool
+from roguelike_game.systems.editor.buildings.controller.tools.placer_tool  import PlacerTool
+from roguelike_game.systems.editor.buildings.controller.tools.delete_tool  import DeleteTool
 
 
 class BuildingEditorController:

@@ -2,14 +2,14 @@ import time
 import pygame
 
 from roguelike_game.network.render_multiplayer import render_remote_players
-from src.roguelike_engine.minimap.minimap import render_minimap
-from src.roguelike_engine.utils.mouse import draw_mouse_crosshair
-from src.roguelike_engine.config_tiles import TILE_SIZE
-import src.roguelike_engine.config as config
-from src.roguelike_engine.utils.debug_overlay import render_debug_overlay
+from roguelike_engine.minimap.minimap import render_minimap
+from roguelike_engine.utils.mouse import draw_mouse_crosshair
+from roguelike_engine.config_tiles import TILE_SIZE
+import roguelike_engine.config as config
+from roguelike_engine.utils.debug_overlay import render_debug_overlay
 
 # Para dibujar bordes de lobby y dungeon
-from src.roguelike_engine.config_map import (
+from roguelike_engine.config_map import (
     LOBBY_WIDTH,
     LOBBY_HEIGHT,
     DUNGEON_WIDTH,
@@ -19,10 +19,10 @@ from src.roguelike_engine.config_map import (
     DUNGEON_CONNECT_SIDE
 )
 
-from src.roguelike_engine.map.core.service import _calculate_dungeon_offset
+from roguelike_engine.map.core.service import _calculate_dungeon_offset
 
 # Sistema de orden Z
-from src.roguelike_game.systems.z_layer.render import render_z_ordered
+from roguelike_game.systems.z_layer.render import render_z_ordered
 
 
 class Renderer:

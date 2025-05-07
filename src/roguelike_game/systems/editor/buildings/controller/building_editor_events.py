@@ -2,8 +2,8 @@
 import pygame
 import logging
 
-from src.roguelike_game.systems.editor.buildings.model.persistence.json_handler import save_buildings_to_json
-from src.roguelike_engine.config import BUILDINGS_DATA_PATH
+from roguelike_game.systems.editor.buildings.model.persistence.json_handler import save_buildings_to_json
+from roguelike_engine.config import BUILDINGS_DATA_PATH
 
 logger = logging.getLogger("building_editor.events")
 

@@ -1,10 +1,10 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="roguelike",
+    name="Roguelike powa",
     version="0.1.0",
-    description="Un roguelike en Python con Pygame",
-    author="Tu Nombre",
+    description="La matrix de los Roguelikes",
+    author="Beelzebot",
     package_dir={"": "src"},
     packages=find_packages(where="src"),
     install_requires=[
@@ -19,7 +19,7 @@ setup(
     entry_points={
         "console_scripts": [
             # Lanza tu juego con el comando `roguelike`
-            "roguelike=roguelike_game.main:main",
+            "roguelike=launcher:main",
         ],
     },
 )

@@ -4,7 +4,7 @@ import time
 import math
 import random
 
-from src.roguelike_game.systems.particles.particle import Particle
+from roguelike_game.systems.particles.particle import Particle
 
 class DashModel:
     """

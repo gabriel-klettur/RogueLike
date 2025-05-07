@@ -1,6 +1,6 @@
 # Path: src/roguelike_game/systems/combat/spells/teleport/controller.py
 import time
-from src.roguelike_game.systems.combat.spells.teleport.model import TeleportModel
+from roguelike_game.systems.combat.spells.teleport.model import TeleportModel
 
 class TeleportController:
     def __init__(self, model: TeleportModel):

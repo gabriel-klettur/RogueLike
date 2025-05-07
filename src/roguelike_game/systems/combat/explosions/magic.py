@@ -1,7 +1,7 @@
 # Path: src/roguelike_game/systems/combat/explosions/magic.py
 import random
 import math
-from src.roguelike_game.systems.particles.particle import Particle
+from roguelike_game.systems.particles.particle import Particle
 
 class MagicExplosion:
     def __init__(self, x, y, particle_count=30):

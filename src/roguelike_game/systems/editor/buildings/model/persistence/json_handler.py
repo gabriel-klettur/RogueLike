@@ -4,7 +4,7 @@ import os
 import json
 
 from roguelike_engine.config import BUILDINGS_DATA_PATH
-from src.roguelike_game.systems.z_layer.persistence import inject_z_into_json
+from roguelike_game.systems.z_layer.persistence import inject_z_into_json
 
 def save_buildings_to_json(buildings, filepath: str = None, z_state=None):
     """

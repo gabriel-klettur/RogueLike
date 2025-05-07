@@ -8,52 +8,52 @@ import pygame
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..")))
 
 #!------------------------- CONSTANTS  --------------------------!
-from src.roguelike_engine.config import (
+from roguelike_engine.config import (
     SCREEN_WIDTH, SCREEN_HEIGHT, FONT_NAME, FONT_SIZE, FPS
 )
 
-from src.roguelike_engine.config_map import (
+from roguelike_engine.config_map import (
     LOBBY_WIDTH, LOBBY_HEIGHT,
     DUNGEON_WIDTH, DUNGEON_HEIGHT,
     DUNGEON_CONNECT_SIDE
 )
-from src.roguelike_engine.config_tiles import TILE_SIZE
+from roguelike_engine.config_tiles import TILE_SIZE
 
 #!---------------------------------------------------------------!
-from src.roguelike_engine.map.core.manager import build_map
-from src.roguelike_engine.map.core.service import _calculate_dungeon_offset
-from src.roguelike_engine.input.events import handle_events
+from roguelike_engine.map.core.manager import build_map
+from roguelike_engine.map.core.service import _calculate_dungeon_offset
+from roguelike_engine.input.events import handle_events
 
 from roguelike_game.game.state import GameState
 from roguelike_game.entities.load_entities import load_entities
-from src.roguelike_game.entities.load_hostile import load_hostile
+from roguelike_game.entities.load_hostile import load_hostile
 from roguelike_game.network.multiplayer_manager import NetworkManager
-from src.roguelike_game.ui.menus.menu import Menu
+from roguelike_game.ui.menus.menu import Menu
 from roguelike_engine.camera.camera import Camera
 from roguelike_game.game.render_manager import Renderer
-from src.roguelike_game.game.update_manager import update_game
-from src.roguelike_game.systems.systems_manager import SystemsManager
+from roguelike_game.game.update_manager import update_game
+from roguelike_game.systems.systems_manager import SystemsManager
 
 #!------------------------- BUILDING EDITOR --------------------------!
 
-from src.roguelike_game.systems.editor.buildings.model.building_editor_state import BuildingsEditorState
-from src.roguelike_game.systems.editor.buildings.controller.building_editor_controller import BuildingEditorController
-from src.roguelike_game.systems.editor.buildings.view.building_editor_view import BuildingEditorView
-from src.roguelike_game.systems.editor.buildings.controller.building_editor_events import BuildingEditorEventHandler
+from roguelike_game.systems.editor.buildings.model.building_editor_state import BuildingsEditorState
+from roguelike_game.systems.editor.buildings.controller.building_editor_controller import BuildingEditorController
+from roguelike_game.systems.editor.buildings.view.building_editor_view import BuildingEditorView
+from roguelike_game.systems.editor.buildings.controller.building_editor_events import BuildingEditorEventHandler
 
 #!--------------------------- TILE EDITOR ----------------------------!
-from src.roguelike_game.systems.editor.tiles.model.tile_editor_state import TileEditorControllerState
-from src.roguelike_game.systems.editor.tiles.controller.tile_editor_controller import TileEditorController
-from src.roguelike_game.systems.editor.tiles.view.tile_editor_view import TileEditorControllerView
-from src.roguelike_game.systems.editor.tiles.controller.tile_editor_events import TileEditorEventHandler
+from roguelike_game.systems.editor.tiles.model.tile_editor_state import TileEditorControllerState
+from roguelike_game.systems.editor.tiles.controller.tile_editor_controller import TileEditorController
+from roguelike_game.systems.editor.tiles.view.tile_editor_view import TileEditorControllerView
+from roguelike_game.systems.editor.tiles.controller.tile_editor_events import TileEditorEventHandler
 
 #!----------------------------- SYSTEMS ------------------------------!
 # Z-Layer
-from src.roguelike_game.systems.z_layer.state import ZState
+from roguelike_game.systems.z_layer.state import ZState
 from roguelike_game.systems.config_z_layer import Z_LAYERS
 
 # Spawn procedural de enemigos
-from src.roguelike_game.entities.load_hostile import load_hostile
+from roguelike_game.entities.load_hostile import load_hostile
 
 
 class Game:

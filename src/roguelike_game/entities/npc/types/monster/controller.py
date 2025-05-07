@@ -1,8 +1,8 @@
 # Path: src/roguelike_game/entities/npc/types/monster/controller.py
 import math
-from src.roguelike_game.entities.npc.base.controller import BaseNPCController
-from src.roguelike_game.entities.npc.types.monster.model import MonsterModel
-from src.roguelike_game.entities.npc.utils.geometry import calculate_distance
+from roguelike_game.entities.npc.base.controller import BaseNPCController
+from roguelike_game.entities.npc.types.monster.model import MonsterModel
+from roguelike_game.entities.npc.utils.geometry import calculate_distance
 
 class MonsterController(BaseNPCController):
     """

@@ -7,7 +7,7 @@ Este documento describe la **estructura de carpetas y archivos** del proyecto Ro
 ## 🌳 Árbol de Carpetas
 
 ```bash
-src.roguelike_project/
+roguelike_project/
 │
 ├── assets/              # Recursos audiovisuales
 │   ├── characters/      # Sprites de personajes

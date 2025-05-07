@@ -1,7 +1,7 @@
 # Path: src/roguelike_game/entities/player/model/stats_model.py
 import time
 
-from src.roguelike_game.entities.player.config_player import (
+from roguelike_game.entities.player.config_player import (
     PLAYER_STATS,
     PLAYER_SKILLS
 )

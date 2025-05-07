@@ -2,7 +2,7 @@
 import pygame
 import time
 from pygame import Surface
-from src.roguelike_game.systems.combat.spells.teleport.model import TeleportModel
+from roguelike_game.systems.combat.spells.teleport.model import TeleportModel
 
 class TeleportView:
     def __init__(self, model: TeleportModel):

@@ -1,5 +1,5 @@
 # Path: src/roguelike_game/network/render_multiplayer.py
-from src.roguelike_game.entities.remote_player.base import RemotePlayer
+from roguelike_game.entities.remote_player.base import RemotePlayer
 
 def render_remote_players(state):
     if hasattr(state, "websocket") and state.websocket and state.websocket_connected:

@@ -1,8 +1,8 @@
 
 # Path: src/roguelike_game/systems/systems_manager.py
-from src.roguelike_game.systems.combat.spells.spells_system import SpellsSystem
+from roguelike_game.systems.combat.spells.spells_system import SpellsSystem
 
-from src.roguelike_game.systems.combat.explosions.explosions_system import ExplosionSystem
+from roguelike_game.systems.combat.explosions.explosions_system import ExplosionSystem
 
 class SystemsManager:
     def __init__(self, state):        

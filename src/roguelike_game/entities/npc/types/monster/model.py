@@ -1,8 +1,8 @@
 # Path: src/roguelike_game/entities/npc/types/monster/model.py
 
-from src.roguelike_game.entities.npc.base.model import BaseNPCModel
-from src.roguelike_game.entities.npc.utils.movement import NPCMovement
-from src.roguelike_game.entities.npc.types.monster.view import MonsterView
+from roguelike_game.entities.npc.base.model import BaseNPCModel
+from roguelike_game.entities.npc.utils.movement import NPCMovement
+from roguelike_game.entities.npc.types.monster.view import MonsterView
 
 class MonsterModel(BaseNPCModel):
     def __init__(self, x: float, y: float, name: str = "Monster"):

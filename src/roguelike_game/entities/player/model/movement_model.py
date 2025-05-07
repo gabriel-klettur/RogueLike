@@ -3,7 +3,7 @@
 import math
 import pygame
 
-from src.roguelike_game.entities.player.config_player import (
+from roguelike_game.entities.player.config_player import (
     PLAYER_SPEED,
     PLAYER_DASH_SPEED,
     PLAYER_DASH_COOLDOWN,

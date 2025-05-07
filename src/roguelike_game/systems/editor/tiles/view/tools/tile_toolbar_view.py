@@ -1,8 +1,8 @@
-# src.roguelike_game/systems/editor/tiles/view/tools/tile_toolbar_view.py
+# roguelike_game/systems/editor/tiles/view/tools/tile_toolbar_view.py
 
 # Path: src/roguelike_game/systems/editor/tiles/view/tools/tile_toolbar_view.py
 import pygame
-from src.roguelike_game.systems.editor.tiles.tiles_editor_config import TOOLS
+from roguelike_game.systems.editor.tiles.tiles_editor_config import TOOLS
 
 class TileToolbarView:
     def __init__(self, toolbar):

@@ -4,7 +4,7 @@ import math
 import time
 import pygame
 
-from src.roguelike_game.systems.combat.spells.arcane_flame.palette import (
+from roguelike_game.systems.combat.spells.arcane_flame.palette import (
     FLAME_COLOR_PALETTE, FLAME_COLOR_DEPTH, CELL_SIZE, SPREAD_FROM
 )
 

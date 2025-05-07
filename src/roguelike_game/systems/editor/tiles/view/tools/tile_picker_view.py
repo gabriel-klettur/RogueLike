@@ -1,8 +1,8 @@
-# src.roguelike_game/systems/editor/tiles/view/tools/tile_picker_view.py
+# roguelike_game/systems/editor/tiles/view/tools/tile_picker_view.py
 
 # Path: src/roguelike_game/systems/editor/tiles/view/tools/tile_picker_view.py
 import pygame
-from src.roguelike_game.systems.editor.tiles.tiles_editor_config import CLR_HOVER, CLR_SELECTION, THUMB, COLS, PAD
+from roguelike_game.systems.editor.tiles.tiles_editor_config import CLR_HOVER, CLR_SELECTION, THUMB, COLS, PAD
 
 class TilePickerView:
     def __init__(self, picker):
