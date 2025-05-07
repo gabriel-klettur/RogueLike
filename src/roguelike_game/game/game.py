@@ -3,15 +3,9 @@
 import pygame
 
 #!---------------------- Paquetes locales: configuración --------------------------------
-from roguelike_engine.config import SCREEN_WIDTH, SCREEN_HEIGHT, FONT_NAME, FONT_SIZE
-from roguelike_engine.config_map import (
-    LOBBY_WIDTH,
-    LOBBY_HEIGHT,
-    DUNGEON_WIDTH,
-    DUNGEON_HEIGHT,
-    DUNGEON_CONNECT_SIDE,
-)
-from roguelike_engine.config_tiles import TILE_SIZE
+import roguelike_engine.config as config
+import roguelike_engine.config_map as config_map
+import roguelike_engine.config_tiles as config_tiles
 
 #!------------------------ Paquetes locales: motor (engine) -----------------------------------
 from roguelike_engine.camera.camera import Camera
@@ -73,15 +67,15 @@ class Game:
         # ------------- infraestructura -----------------
         self.screen = screen
         self.clock = pygame.time.Clock()
-        self.font = pygame.font.SysFont(FONT_NAME, FONT_SIZE)
-        self.camera = Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
+        self.font = pygame.font.SysFont(config.FONT_NAME, config.FONT_SIZE)
+        self.camera = Camera(config.SCREEN_WIDTH, config.SCREEN_HEIGHT)
         self.z_state = ZState()
         self.perf_log = perf_log
 
         # ------------- core state ----------------------
         self._init_state()
         self._init_map()
-        self._init_entities()   # ahora pasa dungeon_offset y tile_map
+        self._init_entities() 
         self._init_z_layer()
         self._init_systems()
 
@@ -132,17 +126,17 @@ class Game:
         lob_x, lob_y = self.state.lobby_offset
         dun_x, dun_y = _calculate_dungeon_offset(
             (lob_x, lob_y),
-            DUNGEON_CONNECT_SIDE
+            config_map.DUNGEON_CONNECT_SIDE
         )
 
         def in_region(tile):
-            col = tile.x // TILE_SIZE
-            row = tile.y // TILE_SIZE
+            col = tile.x // config_tiles.TILE_SIZE
+            row = tile.y // config_tiles.TILE_SIZE
             # Lobby
-            if lob_x <= col < lob_x + LOBBY_WIDTH and lob_y <= row < lob_y + LOBBY_HEIGHT:
+            if lob_x <= col < lob_x + config_map.LOBBY_WIDTH and lob_y <= row < lob_y + config_map.LOBBY_HEIGHT:
                 return True
             # Dungeon
-            if dun_x <= col < dun_x + DUNGEON_WIDTH and dun_y <= row < dun_y + DUNGEON_HEIGHT:
+            if dun_x <= col < dun_x + config_map.DUNGEON_WIDTH and dun_y <= row < dun_y + config_map.DUNGEON_HEIGHT:
                 return True
             return False
 
@@ -162,12 +156,12 @@ class Game:
 
         # 2️⃣ Calcular offset en tiles de la dungeon
         lob_x, lob_y = self.state.lobby_offset
-        dungeon_offset = _calculate_dungeon_offset((lob_x, lob_y), DUNGEON_CONNECT_SIDE)
+        dungeon_offset = _calculate_dungeon_offset((lob_x, lob_y), config_map.DUNGEON_CONNECT_SIDE)
 
         # 3️⃣ Posición inicial del jugador en tiles
         player_tile = (
-            int(self.state.player.x) // TILE_SIZE,
-            int(self.state.player.y) // TILE_SIZE
+            int(self.state.player.x) // config_tiles.TILE_SIZE,
+            int(self.state.player.y) // config_tiles.TILE_SIZE
         )
 
         # 4️⃣ Spawn procedural de enemigos en tiles transitables
