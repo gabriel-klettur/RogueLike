@@ -1,6 +1,6 @@
 [
     {
-        "x": 2547,
+        "x": 2551,
         "y": 1976,
         "image_path": "assets/buildings/temples/catholic.png",
         "solid": true,
@@ -282,14 +282,14 @@
             1024,
             1536
         ],
-        "split_ratio": 0.214,
-        "z_bottom": 4,
+        "split_ratio": 0.422,
+        "z_bottom": 5,
         "z_top": 5,
-        "z": 4
+        "z": 5
     },
     {
-        "x": 2987,
-        "y": 2422,
+        "x": 2986,
+        "y": 2426,
         "image_path": "assets/buildings/others/portal_2.png",
         "solid": true,
         "scale": [
@@ -301,9 +301,9 @@
             1536
         ],
         "split_ratio": 0.422,
-        "z_bottom": 6,
+        "z_bottom": 5,
         "z_top": 5,
-        "z": 6
+        "z": 5
     },
     {
         "x": 2281,

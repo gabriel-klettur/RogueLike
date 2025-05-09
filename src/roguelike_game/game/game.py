@@ -9,6 +9,7 @@ import roguelike_engine.config as config
 from roguelike_engine.camera.camera import Camera
 from roguelike_engine.input.events import handle_events
 
+
 #!-------------------- Paquetes locales: lógica de juego principal ----------------------------
 from roguelike_game.game.state import GameState
 from roguelike_game.game.render_manager import Renderer
@@ -73,26 +74,22 @@ class Game:
         self._init_entities() 
         self._init_z_layer(self.entities)
         self._init_systems()
-        self._init_renderer()
-        self._init_menu()
-        self._init_networks()
-        self._init_editors()
 
-    #! -----------------------------------------------------------------------------------------
-    #! --------------------------------- INICIALIZADORES ---------------------------------------
-    #! -----------------------------------------------------------------------------------------
+        #! ------------- editores ------------------------
+        self._init_building_editor()
+        self._init_tile_editor()
 
     def _init_state(self):
-        """
-        Inicializa el estado del juego y sus atributos.
-        """
-        self.state = GameState()
-              
+        self.state = GameState(tiles=None)
+        self.state.running = True
+        self.state.perf_log = self.perf_log
+
     def _init_map(self, map_name: str | None):
         """
         Construye el mapa global y carga todos sus datos en el estado.
         """        
         self.map = MapManager(map_name)                                        
+
 
     def _init_entities(self):
         """
@@ -100,6 +97,7 @@ class Game:
         """
         self.entities = EntitiesManager(self.z_state, self.map)
         
+
     def _init_z_layer(self, entities):
         """
         Inicializa el gestor de capas Z y asigna las capas a las entidades.
@@ -107,28 +105,19 @@ class Game:
         self.zlayer = ZLayerManager(self.z_state)
         self.zlayer.initialize(self.state, entities)
 
-    def _init_menu(self):
+    def _init_systems(self):
+        self.renderer = Renderer()
+        self.entities.player.renderer.state = self.state
+        self.entities.player.state = self.state
         self.menu = Menu(self.state)
         self.state.show_menu = False
         self.state.mode = "local"
-
-    def _init_systems(self):        
-        self.systems = SystemsManager(self.state, self.perf_log)    
+        self.systems = SystemsManager(self.state)
         self.state.systems = self.systems
         self.state.effects = self.systems.effects
-
-    def _init_networks(self):
-        self.network = NetworkManager(self.state)        
+        self.network = NetworkManager(self.state)
         if self.state.mode == "online":
             self.network.connect()
-
-    def _init_renderer(self):
-        self.renderer = Renderer()
-        self.state.renderer = self.renderer
-
-    def _init_editors(self):
-        self._init_building_editor()
-        self._init_tile_editor()
 
     def _init_building_editor(self):
         self.editor_state = BuildingsEditorState()
@@ -147,15 +136,11 @@ class Game:
         self.state.tile_editor_state = self.tile_editor_state
         self.state.tile_editor_view = self.tile_editor_view
 
-    #! -----------------------------------------------------------------------------------------
-    #! ------------------------------------ METODOS --------------------------------------------
-    #! -----------------------------------------------------------------------------------------
-
     def handle_events(self):
         if self.tile_editor_state.active:
             self.tile_event_handler.handle(self.camera, self.map)
             return
-        if self.tile_editor_state.active:
+        if self.state.editor.active:
             self.building_event_handler.handle(self.camera, self.entities)
             return
         handle_events(self.state, self.camera, self.clock, self.menu, self.map, self.entities)

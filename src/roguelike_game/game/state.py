@@ -1,13 +1,15 @@
-# Path: src/roguelike_game/game/state.py
-class GameState:
-    def __init__(self):
-        
-        #!------------ Core State ------------
-        self.running = True  
 
+class GameState:
+    def __init__(self, tiles):
+        
+        
         #!------------ Entidades ------------      
         self.remote_entities = {}        
-                                                
-        #!------------- Editors -------------
+                                        
+        #!------------ UI/ FLAGS ------------
+        
+        self.show_menu = False
+        self.mode = "local"
         self.tile_editor_active = False
 
+# Path: src/roguelike_game/game/state.py

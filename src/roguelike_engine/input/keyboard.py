@@ -19,7 +19,7 @@ def handle_keyboard(event, state, camera, clock, menu, entities):
         elif state.show_menu:
             result = menu.handle_input(event)
             if result:
-                execute_menu_option(result, state, entities.player)
+                execute_menu_option(result, state)
 
         # ---------- HABILIDADES DEL JUGADOR ---------- #
         elif event.key == pygame.K_1:

@@ -68,9 +68,8 @@ from roguelike_engine.utils.benchmark import benchmark
 
 
 class SpellsSystem:
-    def __init__(self, state, perf_log):
-        self.state = state
-        self.perf_log = perf_log
+    def __init__(self, state):
+        self.state = state        
 
         # MVC lists
         self.laser_controllers:         list[LaserBeamController]      = []
@@ -296,7 +295,7 @@ class SpellsSystem:
     # ------------------------------------------------ #
     #                     Render                       #
     # ------------------------------------------------ #
-    @benchmark(lambda self: self.perf_log, "----3.6.2 effects_render")
+    @benchmark(lambda self: self.state.perf_log, "----3.6.2 effects_render")
     def render(self, screen, camera):
         dirty_rects = []
 

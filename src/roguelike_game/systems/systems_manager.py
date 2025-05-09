@@ -6,9 +6,9 @@ from roguelike_game.systems.combat.explosions.explosions_system import Explosion
 
 class SystemsManager:
 
-    def __init__(self, state, perf_log):        
-        self.effects = SpellsSystem(state, perf_log)
-        self.explosions = ExplosionSystem(state, perf_log)
+    def __init__(self, state):        
+        self.effects = SpellsSystem(state)
+        self.explosions = ExplosionSystem(state)
         self.state = state
 
         
