@@ -164,8 +164,3 @@ class Game:
             network=self.network,
             systems=self.systems
         )
-
-    def quit(self):
-        if hasattr(self, 'network'):
-            self.network.disconnect()
-        pygame.quit()
