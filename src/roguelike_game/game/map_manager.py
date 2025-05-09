@@ -1,4 +1,4 @@
-# Path: src/roguelike_game/game/map.py
+# Path: src/roguelike_game/game/map_manager.py
 
 from roguelike_engine.map.core.manager import build_map
 from roguelike_engine.map.core.service import _calculate_dungeon_offset

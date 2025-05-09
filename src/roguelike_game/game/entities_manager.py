@@ -1,3 +1,5 @@
+#Path: src/roguelike_game/game/entities_manager.py
+
 from typing import Tuple, List
 
 from roguelike_game.entities.load_entities import load_entities

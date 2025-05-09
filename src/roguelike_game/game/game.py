@@ -1,3 +1,5 @@
+#Path: src/roguelike_game/game/game.py
+
 import pygame
 
 #!---------------------- Paquetes locales: configuración --------------------------------
