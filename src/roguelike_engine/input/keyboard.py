@@ -8,7 +8,7 @@ from roguelike_game.entities.npc.factory import NPCFactory
 def handle_keyboard(event, state, camera, clock, menu, entities, effects, tiles_editor):
     if event.type == pygame.KEYDOWN:
         if event.key == pygame.K_ESCAPE:
-            state.show_menu = not state.show_menu
+            menu.show_menu = not menu.show_menu
 
         elif event.key == pygame.K_q:
             entities.player.restore_all()

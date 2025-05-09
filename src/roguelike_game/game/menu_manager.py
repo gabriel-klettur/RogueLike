@@ -1,4 +1,4 @@
-# Path: src/roguelike_game/ui/menus/menu.py
+#Path: src/roguelike_game/game/menu_manager.py
 import pygame
 
 class MenuManager:
@@ -52,9 +52,9 @@ class MenuManager:
         if state.mode == "local":
             state.mode = "online"
             print("🌐 Conectando al servidor...")
-            state.network.connect()
+            #state.network.connect()
         else:
             state.mode = "local"
             print("🔌 Cambiando a modo local...")
-            state.network.disconnect()
-    # Path: src/roguelike_engine/input/menu.py
+            #state.network.disconnect()
+    
