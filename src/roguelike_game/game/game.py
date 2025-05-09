@@ -146,13 +146,6 @@ class Game:
         )
 
     def update(self):
-        # Actualización de editores
-        if self.tiles_editor.editor_state.active:
-            return
-        if self.buildings_editor.editor_state.active:
-            self.buildings_editor.update(self.camera)
-            return
-        # Flujo normal de juego
         update_game(
             self.state,
             self.systems,
@@ -161,7 +154,9 @@ class Game:
             self.screen,
             self.map,
             self.entities,
-            self.network
+            self.network,
+            self.tiles_editor,
+            self.buildings_editor
         )
 
     def render(self, perf_log=None):
