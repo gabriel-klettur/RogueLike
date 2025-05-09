@@ -25,7 +25,7 @@ from roguelike_game.network.multiplayer_manager import NetworkManager
 from roguelike_game.systems.systems_manager import SystemsManager
 
 #!-------------------------- Paquetes locales: menús e interfaz -------------------------------
-from roguelike_game.ui.menus.menu import Menu
+from roguelike_game.game.menu_manager import MenuManager
 
 #! --------------------- Paquetes locales: editores (building) --------------------------------
 from roguelike_game.systems.editor.buildings.model.building_editor_state import (
@@ -70,15 +70,15 @@ class Game:
 
         #! ---------------- core state -------------------
         self._init_state()
-
         
         #! ------------------ systems --------------------
         self._init_map(map_name)
         self._init_entities() 
-        self._init_z_layer(self.entities)
-        
-
-        self._init_systems(self.perf_log)
+        self._init_z_layer(self.entities)        
+        self._init_renderer()
+        self._init_menu()
+        self._init_systems(perf_log)
+        self._init_network()
 
         #! ------------- editores ------------------------
         self._init_building_editor()
@@ -88,9 +88,7 @@ class Game:
         """
         Inicializa el estado del juego
         """
-        self.state = GameState()
-
-        
+        self.state = GameState()        
 
     def _init_map(self, map_name: str | None):
         """
@@ -113,19 +111,38 @@ class Game:
         self.zlayer = ZLayerManager(self.z_state)
         self.zlayer.initialize(self.state, entities)
 
-    def _init_systems(self, perf_log):
+    def _init_renderer(self):
+        """
+        Inicializa el renderizador.
+        """        
         self.renderer = Renderer()
-        self.entities.player.renderer.state = self.state
-        self.entities.player.state = self.state
-        self.menu = Menu(self.state)
+
+    def _init_menu(self):
+        """
+        Inicializa el menú principal del juego.
+        """
+        self.menu = MenuManager(self.state)
         self.state.show_menu = False
-        self.state.mode = "local"
+
+    def _init_systems(self, perf_log):
+        """
+        Inicializa los sistemas del juego (combat, effects, explosions, etc.).
+        """
+
         self.systems = SystemsManager(self.state, perf_log)
         self.state.systems = self.systems
         self.state.effects = self.systems.effects
+
+
+    def _init_network(self):
+        """
+        Inicializa el gestor de red.
+        """
+        self.state.mode = "local"
         self.network = NetworkManager(self.state)
         if self.state.mode == "online":
             self.network.connect()
+
 
     def _init_building_editor(self):
         self.editor_state = BuildingsEditorState()
@@ -162,7 +179,9 @@ class Game:
             update_game(self.state, self.systems, self.camera, self.clock, self.screen, self.map, self.entities)
 
     def render(self, perf_log=None):
+
         self.renderer.render_game(self.state, self.screen, self.camera, perf_log, self.menu, self.map, self.entities)
+
         if self.state.editor.active:
             self.building_editor_view.render(self.screen, self.camera, self.entities.buildings)
         if self.tile_editor_state.active:

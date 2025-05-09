@@ -1,7 +1,6 @@
 # Path: src/roguelike_engine/input/keyboard.py
 import pygame, time
 import roguelike_engine.config as config
-from .menu import execute_menu_option
 
 
 from roguelike_game.entities.npc.factory import NPCFactory
@@ -19,7 +18,7 @@ def handle_keyboard(event, state, camera, clock, menu, entities):
         elif state.show_menu:
             result = menu.handle_input(event)
             if result:
-                execute_menu_option(result, state)
+                menu.execute_menu_option(result, state)
 
         # ---------- HABILIDADES DEL JUGADOR ---------- #
         elif event.key == pygame.K_1:

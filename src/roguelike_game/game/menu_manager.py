@@ -1,7 +1,7 @@
 # Path: src/roguelike_game/ui/menus/menu.py
 import pygame
 
-class Menu:
+class MenuManager:
     def __init__(self, state, font_size=36):
         self.state = state
         self.selected = 0
@@ -15,7 +15,7 @@ class Menu:
     def get_options(self):
         # Cambia el texto según el modo actual
         mode_option = "Modo local" if self.state.mode == "online" else "Modo multijugador"
-        return ["Cambiar personaje", mode_option, "Salir"]
+        return [ mode_option, "Salir"]
 
     def handle_input(self, event):
         options = self.get_options()
@@ -36,3 +36,24 @@ class Menu:
             text = self.font.render(option, True, color)
             self.surface.blit(text, (50, 40 + i * 50))
         screen.blit(self.surface, (400, 300))
+
+    def execute_menu_option(self, selected, state):   
+        if selected == "Salir":
+            state.running = False
+
+        elif selected in ("Modo multijugador","Modo local"):
+            self.toggle_mode(state)
+
+    def toggle_mode(self, state):
+        """
+        Cambia entre local y online usando NetworkManager.
+        """
+        if state.mode == "local":
+            state.mode = "online"
+            print("🌐 Conectando al servidor...")
+            state.network.connect()
+        else:
+            state.mode = "local"
+            print("🔌 Cambiando a modo local...")
+            state.network.disconnect()
+    # Path: src/roguelike_engine/input/menu.py
