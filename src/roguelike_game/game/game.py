@@ -1,5 +1,3 @@
-#Path: roguelike_game/game/game.py
-
 import pygame
 
 #!---------------------- Paquetes locales: configuración --------------------------------
@@ -9,10 +7,9 @@ import roguelike_engine.config as config
 from roguelike_engine.camera.camera import Camera
 from roguelike_engine.input.events import handle_events
 
-
 #!-------------------- Paquetes locales: lógica de juego principal ----------------------------
 from roguelike_game.game.state import GameState
-from roguelike_game.game.render_manager import Renderer
+from roguelike_game.game.render_manager import RendererManager
 from roguelike_game.game.update_manager import update_game
 
 #!----------------------------- Paquetes locales: managers ------------------------------------
@@ -27,26 +24,13 @@ from roguelike_game.systems.systems_manager import SystemsManager
 #!-------------------------- Paquetes locales: menús e interfaz -------------------------------
 from roguelike_game.game.menu_manager import MenuManager
 
-
 #! --------------------- Paquetes locales: editores (tile) -------------------------------------
-
 from roguelike_game.game.buildings_editor_manager import BuildingEditorManager
-
-from roguelike_game.systems.editor.tiles.model.tile_editor_state import (
-    TileEditorControllerState,
-)
-from roguelike_game.systems.editor.tiles.controller.tile_editor_controller import (
-    TileEditorController,
-)
-from roguelike_game.systems.editor.tiles.controller.tile_editor_events import (
-    TileEditorEventHandler,
-)
-from roguelike_game.systems.editor.tiles.view.tile_editor_view import (
-    TileEditorControllerView,
-)
+from roguelike_game.game.tiles_editor_manager import TilesEditorManager
 
 #! -------------------------- Paquetes locales: z-layer ----------------------------------------
 from roguelike_game.systems.z_layer.state import ZState
+
 
 class Game:
     def __init__(self, screen, perf_log=None, map_name: str = None):        
@@ -64,15 +48,13 @@ class Game:
         #! ------------------ systems --------------------
         self._init_map(map_name)
         self._init_entities() 
-        self._init_z_layer(self.entities)        
+        self._init_z_layer(self.entities)
+        self._init_buildings_editor()
+        self._init_tile_editor()
         self._init_renderer()
         self._init_menu()
         self._init_systems(perf_log)
         self._init_network()
-
-        #! ------------- editores ------------------------
-        self._init_buildings_editor()
-        self._init_tile_editor()
 
     def _init_state(self):
         """
@@ -99,11 +81,30 @@ class Game:
         self.zlayer = ZLayerManager(self.z_state)
         self.zlayer.initialize(self.state, entities)
 
+    def _init_buildings_editor(self):
+        """
+        Inicializa el editor de edificios.
+        """
+        self.buildings_editor = BuildingEditorManager(self)
+
+    def _init_tile_editor(self):
+        """
+        Inicializa el editor de tiles.
+        """
+        self.tiles_editor = TilesEditorManager(self)
+
     def _init_renderer(self):
         """
-        Inicializa el renderizador.
-        """        
-        self.renderer = Renderer()
+        Inicializa el renderizador con todas sus dependencias.
+        """
+        self.renderer = RendererManager(
+            self.screen,
+            self.camera,
+            self.map,
+            self.entities,
+            self.buildings_editor,
+            self.tiles_editor
+        )
 
     def _init_menu(self):
         """
@@ -123,47 +124,58 @@ class Game:
         """        
         self.network = NetworkManager()
 
-    def _init_buildings_editor(self):
-        """
-        Inicializa el editor de edificios.
-        """
-        self.buildings_editor = BuildingEditorManager(self)
-
-    def _init_tile_editor(self):
-        self.tile_editor_state = TileEditorControllerState()
-        self.tile_editor = TileEditorController(self.state, self.tile_editor_state)
-        self.tile_editor_view = TileEditorControllerView(self.tile_editor, self.state, self.tile_editor_state)        
-        self.tile_event_handler = TileEditorEventHandler(self.state, self.tile_editor_state, self.tile_editor)
-        self.state.tile_editor_active = False
-        self.state.tile_editor = self.tile_editor
-        self.state.tile_editor_state = self.tile_editor_state
-        self.state.tile_editor_view = self.tile_editor_view
-
     def handle_events(self):
-        if self.tile_editor_state.active:
-            self.tile_event_handler.handle(self.camera, self.map)
+        # Dar prioridad a editores
+        if self.tiles_editor.editor_state.active:
+            self.tiles_editor.handler.handle(self.camera, self.map)
             return
         if self.buildings_editor.editor_state.active:
             self.buildings_editor.handler.handle(self.camera, self.entities)
             return
-        handle_events(self.state, self.camera, self.clock, self.menu, self.map, self.entities, self.systems.effects, self.systems.explosions)
+        # Eventos de juego
+        handle_events(
+            self.state,
+            self.camera,
+            self.clock,
+            self.menu,
+            self.map,
+            self.entities,
+            self.systems.effects,
+            self.systems.explosions,
+            self.tiles_editor
+        )
 
     def update(self):
-        if self.tile_editor_state.active:
+        # Actualización de editores
+        if self.tiles_editor.editor_state.active:
             return
         if self.buildings_editor.editor_state.active:
             self.buildings_editor.update(self.camera)
-        else:
-            update_game(self.state, self.systems, self.camera, self.clock, self.screen, self.map, self.entities, self.network)
+            return
+        # Flujo normal de juego
+        update_game(
+            self.state,
+            self.systems,
+            self.camera,
+            self.clock,
+            self.screen,
+            self.map,
+            self.entities,
+            self.network
+        )
 
     def render(self, perf_log=None):
-
-        self.renderer.render_game(self.state, self.screen, self.camera, perf_log, self.menu, self.map, self.entities, self.network, self.systems)
-
-        if self.buildings_editor.editor_state.active:
-            self.buildings_editor.view.render(self.screen, self.camera, self.entities.buildings)
-        if self.tile_editor_state.active:
-            self.tile_editor_view.render(self.screen, self.camera, self.map)
+        self.renderer.render_game(
+            self.state,
+            self.screen,
+            self.camera,
+            perf_log,
+            menu=self.menu,
+            map=self.map,
+            entities=self.entities,
+            network=self.network,
+            systems=self.systems
+        )
 
     def quit(self):
         if hasattr(self, 'network'):

@@ -31,15 +31,13 @@ class TileEditorEventHandler:
 
     def _on_keydown(self, ev):
         if ev.key == pygame.K_ESCAPE:            
-            self.editor.active = False
-            self.state.tile_editor_active = False
+            self.editor.active = False            
             self.editor.selected_tile = None
             self.editor.picker_open = False
             self.editor.brush_dragging = False
         elif ev.key == pygame.K_F8:
-            new_val = not self.state.tile_editor_active
-            self.state.tile_editor_active = new_val
-            self.editor.active = new_val
+            new_val = not self.editor.active
+            self.editor.active = new_val            
             if not new_val:
                 self.editor.picker_open = False
                 self.editor.selected_tile = None

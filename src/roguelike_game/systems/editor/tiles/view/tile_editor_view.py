@@ -1,5 +1,3 @@
-# roguelike_project/systems/editor/tiles/tile_editor_view.py
-
 # Path: src/roguelike_game/systems/editor/tiles/view/tile_editor_view.py
 import pygame
 from roguelike_engine.config_tiles import TILE_SIZE
@@ -10,7 +8,7 @@ from roguelike_game.systems.editor.tiles.view.tools.tile_toolbar_view import Til
 from roguelike_game.systems.editor.tiles.view.tools.tile_picker_view import TilePickerView
 from roguelike_game.systems.editor.tiles.view.tools.tile_outline_view import TileOutlineView
 
-class TileEditorControllerView:
+class TileEditorView:
     def __init__(self, controller, state, editor_state):
         self.controller = controller
         self.state      = state

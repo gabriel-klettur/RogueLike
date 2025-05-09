@@ -5,7 +5,7 @@ import roguelike_engine.config as config
 
 from roguelike_game.entities.npc.factory import NPCFactory
 
-def handle_keyboard(event, state, camera, clock, menu, entities, effects):
+def handle_keyboard(event, state, camera, clock, menu, entities, effects, tiles_editor):
     if event.type == pygame.KEYDOWN:
         if event.key == pygame.K_ESCAPE:
             state.show_menu = not state.show_menu
@@ -99,14 +99,18 @@ def handle_keyboard(event, state, camera, clock, menu, entities, effects):
 
         # ---------- TILE-EDITOR (F8) --------- #
         elif event.key == pygame.K_F8:
-            new_val = not getattr(state, "tile_editor_active", False)
-            state.tile_editor_active = new_val
-            if hasattr(state, "tile_editor_state"):
-                tes = state.tile_editor_state
-                tes.active = new_val
-                if not new_val:
-                    tes.picker_open    = False
-                    tes.selected_tile  = None
-                    tes.current_choice = None
+            # Alternamos el flag global (ya existe en state)
+            new_val = not tiles_editor.editor_state.active
+            tiles_editor.editor_state.active = new_val
+
+            # Sincronizamos el estado interno del editor
+            tiles_editor.editor_state.active = new_val            
+
+            # Al cerrar, limpiamos sub-estado
+            if not new_val:
+                state.tile_editor_state.picker_open    = False
+                state.tile_editor_state.selected_tile  = None
+                state.tile_editor_state.current_choice = None
+
             print("🟩 Tile-Editor ON" if new_val else "🟥 Tile-Editor OFF")
             return  # evitamos más atajos este frame
