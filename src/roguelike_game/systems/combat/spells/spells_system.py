@@ -178,12 +178,12 @@ class SpellsSystem:
         self.firework_controllers.append(ctrl)
         self.firework_views.append(view)
 
-    def spawn_fireball(self, angle, map, entities):
+    def spawn_fireball(self, angle, map, entities, explosions):
         px, py   = self._player_center(entities.player)
         tiles    = [t for t in map.tiles_in_region if t.solid]
-        enemies  = entities.enemies + list(self.state.remote_entities.values())
+        enemies  = entities.enemies
         model   = FireballModel(px, py, angle)
-        ctrl    = FireballController(model, tiles, enemies, self.state.systems.explosions)
+        ctrl    = FireballController(model, tiles, enemies, explosions)
         view    = FireballView(model)
         self.fireball_controllers.append(ctrl)
         self.fireball_views.append(view)
@@ -191,7 +191,7 @@ class SpellsSystem:
     def spawn_lightning(self, target_pos, entities):
         px, py   = self._player_center(entities.player)
         model    = LightningModel((px, py), target_pos)
-        enemies  = entities.enemies + list(self.state.remote_entities.values())
+        enemies  = entities.enemies
         ctrl     = LightningController(model, enemies)
         view     = LightningView(model)
         self.lightning_controllers.append(ctrl)

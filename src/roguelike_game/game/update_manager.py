@@ -1,5 +1,5 @@
 
-def update_game(state, systems, camera, clock, screen, map, entities):
+def update_game(state, systems, camera, clock, screen, map, entities, network):
     if not state.running:
         return
 
@@ -8,7 +8,7 @@ def update_game(state, systems, camera, clock, screen, map, entities):
     systems.update(clock, screen)
 
     #!------------------ ESTO DEBERIAMOS MEJORARLO ------------------
-    enemies = entities.enemies + list(state.remote_entities.values())    
+    enemies = entities.enemies + list(network.remote_entities.values())    
     for enemy in enemies:
         enemy.update(state, map, entities)
 

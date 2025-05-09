@@ -11,6 +11,7 @@ class MenuManager:
         self.bg_color = (30, 30, 30)
         self.default_color = (255, 255, 255)
         self.selected_color = (255, 200, 0)
+        self.show_menu = False
 
     def get_options(self):
         # Cambia el texto según el modo actual

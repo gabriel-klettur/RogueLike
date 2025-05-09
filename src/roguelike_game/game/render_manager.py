@@ -40,7 +40,7 @@ class Renderer:
     def __init__(self):
         self._dirty_rects = []
 
-    def render_game(self, state, screen, camera, perf_log=None, menu=None, map=None, entities=None):                
+    def render_game(self, state, screen, camera, perf_log=None, menu=None, map=None, entities=None, network=None, systems=None):                
         self._dirty_rects = []
         screen.fill((0, 0, 0))
 
@@ -56,10 +56,10 @@ class Renderer:
         benchmark("--3.1. tiles", lambda: self._render_tiles(state, camera, screen, map))
 
         # 2) Entidades orden Z
-        benchmark("--3.2. z_entities", lambda: self._render_z_entities(state, camera, screen, map, entities))
+        benchmark("--3.2. z_entities", lambda: self._render_z_entities(state, camera, screen, map, entities, network))
 
         # 3) Efectos
-        benchmark("--3.3. effects", lambda: self._render_effects(state, camera, screen))
+        benchmark("--3.3. effects", lambda: self._render_effects(state, camera, screen, systems.effects))
 
         # 4) HUD
         benchmark("--3.4. hud", lambda: entities.player.render_hud(screen, camera))
@@ -80,7 +80,7 @@ class Renderer:
         benchmark("--3.8. minimap", lambda: self._render_minimap(state, screen, map, entities))
 
         # 9) Otros sistemas
-        benchmark("--3.9. systems", lambda: state.systems.render(screen, camera))
+        benchmark("--3.9. systems", lambda: systems.render(screen, camera))
 
         # Debug: overlay y bordes
         if config.DEBUG and perf_log is not None:
@@ -133,8 +133,8 @@ class Renderer:
         rect = pygame.Rect(top_left, size)
         pygame.draw.rect(screen, (0, 255, 0), rect, 5)
 
-    def _render_effects(self, state, camera, screen):
-        dirty_rects = state.systems.effects.render(screen, camera)
+    def _render_effects(self, state, camera, screen, effects):
+        dirty_rects = effects.render(screen, camera)
         self._dirty_rects.extend(dirty_rects)
 
     def _render_tiles(self, state, camera, screen, map):
@@ -149,7 +149,7 @@ class Renderer:
         if getattr(state, "tile_editor_state", None) and state.tile_editor_state.active:
             state.tile_editor_view.render(screen, camera, map)
 
-    def _render_z_entities(self, state, camera, screen, map, entities):
+    def _render_z_entities(self, state, camera, screen, map, entities, network):
         all_entities = []
         all_entities.extend([
             e for e in entities.obstacles
@@ -160,7 +160,7 @@ class Renderer:
             if camera.is_in_view(e.x, e.y, e.sprite_size)
         ])
         all_entities.extend([
-            e for e in state.remote_entities.values()
+            e for e in network.remote_entities.values()
             if camera.is_in_view(e.x, e.y, e.sprite_size)
         ])
         if camera.is_in_view(entities.player.x, entities.player.y, entities.player.sprite_size):
@@ -199,7 +199,7 @@ class Renderer:
                             pygame.draw.rect(screen, (255, 0, 255), pygame.Rect(tl2, sz2), 2)
 
     def _render_menu(self, state, screen, menu):
-        if state.show_menu:
+        if menu.show_menu:
             menu_rect = menu.draw(screen)
             self._dirty_rects.append(menu_rect)
 

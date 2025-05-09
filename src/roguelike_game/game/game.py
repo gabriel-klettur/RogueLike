@@ -121,27 +121,20 @@ class Game:
         """
         Inicializa el menú principal del juego.
         """
-        self.menu = MenuManager(self.state)
-        self.state.show_menu = False
+        self.menu = MenuManager(self.state)        
 
     def _init_systems(self, perf_log):
         """
         Inicializa los sistemas del juego (combat, effects, explosions, etc.).
         """
-
         self.systems = SystemsManager(self.state, perf_log)
-        self.state.systems = self.systems
-        self.state.effects = self.systems.effects
-
 
     def _init_network(self):
         """
         Inicializa el gestor de red.
-        """
-        self.state.mode = "local"
-        self.network = NetworkManager(self.state)
-        if self.state.mode == "online":
-            self.network.connect()
+        """        
+        self.network = NetworkManager()
+
 
 
     def _init_building_editor(self):
@@ -168,7 +161,7 @@ class Game:
         if self.state.editor.active:
             self.building_event_handler.handle(self.camera, self.entities)
             return
-        handle_events(self.state, self.camera, self.clock, self.menu, self.map, self.entities)
+        handle_events(self.state, self.camera, self.clock, self.menu, self.map, self.entities, self.systems.effects, self.systems.explosions)
 
     def update(self):
         if self.tile_editor_state.active:
@@ -176,11 +169,11 @@ class Game:
         if self.state.editor.active:
             self.building_editor.update(self.camera)
         else:
-            update_game(self.state, self.systems, self.camera, self.clock, self.screen, self.map, self.entities)
+            update_game(self.state, self.systems, self.camera, self.clock, self.screen, self.map, self.entities, self.network)
 
     def render(self, perf_log=None):
 
-        self.renderer.render_game(self.state, self.screen, self.camera, perf_log, self.menu, self.map, self.entities)
+        self.renderer.render_game(self.state, self.screen, self.camera, perf_log, self.menu, self.map, self.entities, self.network, self.systems)
 
         if self.state.editor.active:
             self.building_editor_view.render(self.screen, self.camera, self.entities.buildings)

@@ -108,8 +108,8 @@
         "z": 4
     },
     {
-        "x": 2490,
-        "y": 1730,
+        "x": 2481,
+        "y": 1736,
         "image_path": "assets/buildings/vegetation/tree_5.png",
         "solid": true,
         "scale": [
@@ -120,9 +120,9 @@
             256,
             256
         ],
-        "split_ratio": 0.801,
+        "split_ratio": 0.823,
         "z_bottom": 1,
-        "z_top": 4,
+        "z_top": 6,
         "z": 1
     },
     {
@@ -306,22 +306,22 @@
         "z": 5
     },
     {
-        "x": 2275,
-        "y": 1812,
+        "x": 2325,
+        "y": 1804,
         "image_path": "assets/buildings/statues/statue_olim_01.png",
         "solid": true,
         "scale": [
-            223,
-            223
+            148,
+            148
         ],
         "original_scale": [
             1024,
             1024
         ],
         "split_ratio": 0.614,
-        "z_bottom": 2,
+        "z_bottom": 1,
         "z_top": 5,
-        "z": 2
+        "z": 1
     },
     {
         "x": 1650,
