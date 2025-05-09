@@ -1,5 +1,4 @@
 # Path: roguelike_game/game/render_manager.py
-
 import time
 import pygame
 
@@ -24,6 +23,9 @@ from roguelike_engine.map.core.service import _calculate_dungeon_offset
 
 # Sistema de orden Z
 from roguelike_game.systems.z_layer.render import render_z_ordered
+
+# Importar el decorador centralizado de benchmark
+from roguelike_engine.utils.benchmark import benchmark
 
 
 class RendererManager:
@@ -70,69 +72,95 @@ class RendererManager:
         self._dirty_rects = []
         screen.fill((0, 0, 0))
 
-        def benchmark(section, func):
-            if perf_log is not None:
-                start = time.perf_counter()
-                func()
-                perf_log[section].append(time.perf_counter() - start)
-            else:
-                func()
-
         # 1) Tiles
-        benchmark("--3.1. tiles", lambda: self._render_tiles(state, camera, screen, self.map))
+        @benchmark(perf_log, "--3.1. tiles")
+        def _bench_tiles():
+            self._render_tiles(state, camera, screen, self.map)
+        _bench_tiles()
 
         # 2) Entidades orden Z
-        benchmark(
-            "--3.2. z_entities",
-            lambda: self._render_z_entities(state, camera, screen, self.map, self.entities, network)
-        )
+        @benchmark(perf_log, "--3.2. z_entities")
+        def _bench_z_entities():
+            self._render_z_entities(state, camera, screen, self.map, self.entities, network)
+        _bench_z_entities()
 
         # 3) Efectos
-        benchmark(
-            "--3.3. effects",
-            lambda: self._render_effects(state, camera, screen, systems.effects)
-        )
+        @benchmark(perf_log, "--3.3. effects")
+        def _bench_effects():
+            self._render_effects(state, camera, screen, systems.effects)
+        _bench_effects()
 
         # 4) HUD
-        benchmark("--3.4. hud", lambda: self.entities.player.render_hud(screen, camera))
+        @benchmark(perf_log, "--3.4. hud")
+        def _bench_hud():
+            self.entities.player.render_hud(screen, camera)
+        _bench_hud()
 
         # 4.b) Capa del Tile Editor
-        benchmark(
-            "--3.4b. tile_editor",
-            lambda: self._render_tile_editor_layer(state, screen, camera, self.map)
-        )
+        @benchmark(perf_log, "--3.4b. tile_editor")
+        def _bench_tile_editor():
+            self._render_tile_editor_layer(state, screen, camera, self.map)
+        _bench_tile_editor()
 
         # 5) Crosshair
-        benchmark("--3.5. crosshair", lambda: draw_mouse_crosshair(screen, camera))
+        @benchmark(perf_log, "--3.5. crosshair")
+        def _bench_crosshair():
+            draw_mouse_crosshair(screen, camera)
+        _bench_crosshair()
 
         # 6) Jugadores remotos
-        benchmark("--3.6. remote_players", lambda: render_remote_players(state))
+        @benchmark(perf_log, "--3.6. remote_players")
+        def _bench_remote():
+            render_remote_players(state)
+        _bench_remote()
 
         # 7) Menú
-        benchmark("--3.7. menu", lambda: self._render_menu(state, screen, menu))
+        @benchmark(perf_log, "--3.7. menu")
+        def _bench_menu():
+            self._render_menu(state, screen, menu)
+        _bench_menu()
 
         # 8) Minimap
-        benchmark(
-            "--3.8. minimap",
-            lambda: self._render_minimap(state, screen, self.map, self.entities)
-        )
+        @benchmark(perf_log, "--3.8. minimap")
+        def _bench_minimap():
+            self._render_minimap(state, screen, self.map, self.entities)
+        _bench_minimap()
 
         # 9) Otros sistemas
-        benchmark("--3.9. systems", lambda: systems.render(screen, camera))
+        @benchmark(perf_log, "--3.9. systems")
+        def _bench_systems():
+            systems.render(screen, camera)
+        _bench_systems()
 
         # 10) Editores
-        benchmark("--3.10. editors", lambda: self._render_editors())
+        @benchmark(perf_log, "--3.10. editors")
+        def _bench_editors():
+            self._render_editors()
+        _bench_editors()
 
         # Debug: overlay y bordes
         if config.DEBUG and perf_log is not None:
             extra_lines = [state] + self._get_custom_debug_lines(state, camera, self.map, self.entities)
-            benchmark(
-                "--99.0. debug overlay",
-                lambda: render_debug_overlay(screen, perf_log, extra_lines=extra_lines, position=(0, 0))
-            )
-            benchmark("--99.1. border lobby", lambda: self._render_lobby_border(screen, camera))
-            benchmark("--99.2. border dungeon", lambda: self._render_dungeon_border(screen, camera))
-            benchmark("--99.3. border global", lambda: self._render_global_border(screen, camera))
+
+            @benchmark(perf_log, "--99.0. debug overlay")
+            def _bench_debug_overlay():
+                render_debug_overlay(screen, perf_log, extra_lines=extra_lines, position=(0, 0))
+            _bench_debug_overlay()
+
+            @benchmark(perf_log, "--99.1. border lobby")
+            def _bench_border_lobby():
+                self._render_lobby_border(screen, camera)
+            _bench_border_lobby()
+
+            @benchmark(perf_log, "--99.2. border dungeon")
+            def _bench_border_dungeon():
+                self._render_dungeon_border(screen, camera)
+            _bench_border_dungeon()
+
+            @benchmark(perf_log, "--99.3. border global")
+            def _bench_border_global():
+                self._render_global_border(screen, camera)
+            _bench_border_global()
 
         pygame.display.flip()
         return self._dirty_rects
