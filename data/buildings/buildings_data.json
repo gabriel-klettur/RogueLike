@@ -18,8 +18,8 @@
         "z": 5
     },
     {
-        "x": 2631,
-        "y": 2651,
+        "x": 2633,
+        "y": 2618,
         "image_path": "assets/buildings/gardens/garden_1.png",
         "solid": true,
         "scale": [
@@ -144,8 +144,8 @@
         "z": 1
     },
     {
-        "x": 2956,
-        "y": 2957,
+        "x": 2997,
+        "y": 2936,
         "image_path": "assets/buildings/vegetation/tree_8.png",
         "solid": true,
         "scale": [
@@ -180,8 +180,8 @@
         "z": 1
     },
     {
-        "x": 2660,
-        "y": 2954,
+        "x": 2596,
+        "y": 2692,
         "image_path": "assets/buildings/vegetation/tree_10.png",
         "solid": true,
         "scale": [
@@ -270,31 +270,31 @@
         "z": 3
     },
     {
-        "x": 1956,
-        "y": 2302,
+        "x": 1987,
+        "y": 2318,
         "image_path": "assets/buildings/others/portal.png",
         "solid": true,
         "scale": [
-            170,
-            252
+            122,
+            180
         ],
         "original_scale": [
             1024,
             1536
         ],
-        "split_ratio": 0.422,
-        "z_bottom": 5,
+        "split_ratio": 0.25,
+        "z_bottom": 2,
         "z_top": 5,
-        "z": 5
+        "z": 2
     },
     {
-        "x": 2986,
-        "y": 2426,
+        "x": 3039,
+        "y": 2461,
         "image_path": "assets/buildings/others/portal_2.png",
         "solid": true,
         "scale": [
-            171,
-            254
+            109,
+            161
         ],
         "original_scale": [
             1024,
@@ -306,8 +306,8 @@
         "z": 5
     },
     {
-        "x": 2281,
-        "y": 1799,
+        "x": 2275,
+        "y": 1783,
         "image_path": "assets/buildings/statues/statue_olim_01.png",
         "solid": true,
         "scale": [
@@ -318,10 +318,10 @@
             1024,
             1024
         ],
-        "split_ratio": 0.422,
-        "z_bottom": 5,
+        "split_ratio": 0.574,
+        "z_bottom": 3,
         "z_top": 5,
-        "z": 5
+        "z": 3
     },
     {
         "x": 1650,
@@ -414,8 +414,8 @@
         "z": 3
     },
     {
-        "x": 1676,
-        "y": 2655,
+        "x": 1675,
+        "y": 2619,
         "image_path": "assets/buildings/houses/orden_house_2.png",
         "solid": true,
         "scale": [

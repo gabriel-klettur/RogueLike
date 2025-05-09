@@ -68,21 +68,29 @@ class Game:
         self.z_state = ZState()
         self.perf_log = perf_log
 
-        #! ------------- core state ----------------------
+        #! ---------------- core state -------------------
         self._init_state()
+
+        
+        #! ------------------ systems --------------------
         self._init_map(map_name)
         self._init_entities() 
         self._init_z_layer(self.entities)
-        self._init_systems()
+        
+
+        self._init_systems(self.perf_log)
 
         #! ------------- editores ------------------------
         self._init_building_editor()
         self._init_tile_editor()
 
     def _init_state(self):
-        self.state = GameState(tiles=None)
-        self.state.running = True
-        self.state.perf_log = self.perf_log
+        """
+        Inicializa el estado del juego
+        """
+        self.state = GameState()
+
+        
 
     def _init_map(self, map_name: str | None):
         """
@@ -105,14 +113,14 @@ class Game:
         self.zlayer = ZLayerManager(self.z_state)
         self.zlayer.initialize(self.state, entities)
 
-    def _init_systems(self):
+    def _init_systems(self, perf_log):
         self.renderer = Renderer()
         self.entities.player.renderer.state = self.state
         self.entities.player.state = self.state
         self.menu = Menu(self.state)
         self.state.show_menu = False
         self.state.mode = "local"
-        self.systems = SystemsManager(self.state)
+        self.systems = SystemsManager(self.state, perf_log)
         self.state.systems = self.systems
         self.state.effects = self.systems.effects
         self.network = NetworkManager(self.state)

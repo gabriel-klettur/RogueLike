@@ -1,8 +1,10 @@
 
 class GameState:
-    def __init__(self, tiles):
+    def __init__(self):
         
         
+        self.running = True
+
         #!------------ Entidades ------------      
         self.remote_entities = {}        
                                         

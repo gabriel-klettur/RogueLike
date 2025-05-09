@@ -6,11 +6,10 @@ from roguelike_game.systems.combat.explosions.explosions_system import Explosion
 
 class SystemsManager:
 
-    def __init__(self, state):        
-        self.effects = SpellsSystem(state)
-        self.explosions = ExplosionSystem(state)
+    def __init__(self, state, perf_log):     
+        self.effects = SpellsSystem(state, perf_log)
+        self.explosions = ExplosionSystem(state, perf_log)
         self.state = state
-
         
     def update(self, clock, screen):        
         self.effects.update(clock, screen)        
@@ -20,8 +19,7 @@ class SystemsManager:
         return (        
             self._render_effects(screen, camera) +            
             self._render_explosions(screen, camera)
-        )
-        
+        )        
     
     def _render_effects(self, screen, camera):
         return self.effects.render(screen, camera)
