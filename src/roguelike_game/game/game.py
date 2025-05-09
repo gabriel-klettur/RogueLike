@@ -124,15 +124,7 @@ class Game:
         """        
         self.network = NetworkManager()
 
-    def handle_events(self):
-        # Dar prioridad a editores
-        if self.tiles_editor.editor_state.active:
-            self.tiles_editor.handler.handle(self.camera, self.map)
-            return
-        if self.buildings_editor.editor_state.active:
-            self.buildings_editor.handler.handle(self.camera, self.entities)
-            return
-        # Eventos de juego
+    def handle_events(self):        
         handle_events(
             self.state,
             self.camera,
@@ -142,7 +134,8 @@ class Game:
             self.entities,
             self.systems.effects,
             self.systems.explosions,
-            self.tiles_editor
+            self.tiles_editor,
+            self.buildings_editor
         )
 
     def update(self):
