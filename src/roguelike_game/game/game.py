@@ -27,21 +27,11 @@ from roguelike_game.systems.systems_manager import SystemsManager
 #!-------------------------- Paquetes locales: menús e interfaz -------------------------------
 from roguelike_game.game.menu_manager import MenuManager
 
-#! --------------------- Paquetes locales: editores (building) --------------------------------
-from roguelike_game.systems.editor.buildings.model.building_editor_state import (
-    BuildingsEditorState,
-)
-from roguelike_game.systems.editor.buildings.controller.building_editor_controller import (
-    BuildingEditorController,
-)
-from roguelike_game.systems.editor.buildings.controller.building_editor_events import (
-    BuildingEditorEventHandler,
-)
-from roguelike_game.systems.editor.buildings.view.building_editor_view import (
-    BuildingEditorView,
-)
 
 #! --------------------- Paquetes locales: editores (tile) -------------------------------------
+
+from roguelike_game.game.buildings_editor_manager import BuildingEditorManager
+
 from roguelike_game.systems.editor.tiles.model.tile_editor_state import (
     TileEditorControllerState,
 )
@@ -81,7 +71,7 @@ class Game:
         self._init_network()
 
         #! ------------- editores ------------------------
-        self._init_building_editor()
+        self._init_buildings_editor()
         self._init_tile_editor()
 
     def _init_state(self):
@@ -96,13 +86,11 @@ class Game:
         """        
         self.map = MapManager(map_name)                                        
 
-
     def _init_entities(self):
         """
         Inicializa el gestor de entidades (player, enemies, obstacles y buildings) y carga los datos en el estado.
         """
-        self.entities = EntitiesManager(self.z_state, self.map)
-        
+        self.entities = EntitiesManager(self.z_state, self.map)        
 
     def _init_z_layer(self, entities):
         """
@@ -135,14 +123,11 @@ class Game:
         """        
         self.network = NetworkManager()
 
-
-
-    def _init_building_editor(self):
-        self.editor_state = BuildingsEditorState()
-        self.building_editor = BuildingEditorController(self.state, self.editor_state, self.entities.buildings)
-        self.building_editor_view = BuildingEditorView(self.state, self.editor_state)        
-        self.building_event_handler = BuildingEditorEventHandler(self.state, self.editor_state, self.building_editor)
-        self.state.editor = self.editor_state
+    def _init_buildings_editor(self):
+        """
+        Inicializa el editor de edificios.
+        """
+        self.buildings_editor = BuildingEditorManager(self)
 
     def _init_tile_editor(self):
         self.tile_editor_state = TileEditorControllerState()
@@ -158,16 +143,16 @@ class Game:
         if self.tile_editor_state.active:
             self.tile_event_handler.handle(self.camera, self.map)
             return
-        if self.state.editor.active:
-            self.building_event_handler.handle(self.camera, self.entities)
+        if self.buildings_editor.editor_state.active:
+            self.buildings_editor.handler.handle(self.camera, self.entities)
             return
         handle_events(self.state, self.camera, self.clock, self.menu, self.map, self.entities, self.systems.effects, self.systems.explosions)
 
     def update(self):
         if self.tile_editor_state.active:
             return
-        if self.state.editor.active:
-            self.building_editor.update(self.camera)
+        if self.buildings_editor.editor_state.active:
+            self.buildings_editor.update(self.camera)
         else:
             update_game(self.state, self.systems, self.camera, self.clock, self.screen, self.map, self.entities, self.network)
 
@@ -175,8 +160,8 @@ class Game:
 
         self.renderer.render_game(self.state, self.screen, self.camera, perf_log, self.menu, self.map, self.entities, self.network, self.systems)
 
-        if self.state.editor.active:
-            self.building_editor_view.render(self.screen, self.camera, self.entities.buildings)
+        if self.buildings_editor.editor_state.active:
+            self.buildings_editor.view.render(self.screen, self.camera, self.entities.buildings)
         if self.tile_editor_state.active:
             self.tile_editor_view.render(self.screen, self.camera, self.map)
 
