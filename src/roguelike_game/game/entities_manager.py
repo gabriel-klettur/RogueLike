@@ -13,6 +13,7 @@ class EntitiesManager:
     """
     Carga y mantiene entidades del juego: jugador, obstáculos, edificios y enemigos.
     """
+    
     def __init__(self, z_state, game_map: MapManager):
         self.z_state = z_state
         self.map = game_map
@@ -23,19 +24,15 @@ class EntitiesManager:
         self.enemies = []        
 
         self.init_statics()
-        self.init_enemies()
-        
+        self.init_enemies()        
 
     def init_statics(self):
-        self.player, self.obstacles, self.buildings = self.load_static()
-
-    def load_static(self) -> Tuple:
         """
         Carga jugador, obstáculos y edificios.
         Devuelve (player, obstacles, buildings).
-        """
+        """        
         self.player, self.obstacles, self.buildings = load_entities(self.z_state)
-        return self.player, self.obstacles, self.buildings
+        return self.player, self.obstacles, self.buildings    
 
     def init_enemies(self):
         """
@@ -49,9 +46,6 @@ class EntitiesManager:
         )
         # 4️⃣ Spawn procedural de enemigos
         self.enemies = self.spawn_enemies(dungeon_offset)
-
-
-
 
     def spawn_enemies(self, dungeon_offset: Tuple[int, int]) -> List:
         """

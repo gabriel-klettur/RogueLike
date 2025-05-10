@@ -72,4 +72,3 @@ A continuación se listan varias propuestas para mejorar y profesionalizar la ge
 
 ---
 
-**Próximo paso**: elige uno de estos puntos y empecemos a esbozar el código o la estructura necesaria.
