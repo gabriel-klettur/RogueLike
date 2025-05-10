@@ -29,7 +29,18 @@ class EntitiesManager:
     def init_statics(self):
         self.player, self.obstacles, self.buildings = self.load_static()
 
+    def load_static(self) -> Tuple:
+        """
+        Carga jugador, obstáculos y edificios.
+        Devuelve (player, obstacles, buildings).
+        """
+        self.player, self.obstacles, self.buildings = load_entities(self.z_state)
+        return self.player, self.obstacles, self.buildings
+
     def init_enemies(self):
+        """
+        Carga enemigos en la dungeon.
+        """
         # 2️⃣ Calcular offset en tiles de la dungeon
         lob_x, lob_y = self.map.lobby_offset
         dungeon_offset = _calculate_dungeon_offset(
@@ -40,13 +51,7 @@ class EntitiesManager:
         self.enemies = self.spawn_enemies(dungeon_offset)
 
 
-    def load_static(self) -> Tuple:
-        """
-        Carga jugador, obstáculos y edificios.
-        Devuelve (player, obstacles, buildings).
-        """
-        self.player, self.obstacles, self.buildings = load_entities(self.z_state)
-        return self.player, self.obstacles, self.buildings
+
 
     def spawn_enemies(self, dungeon_offset: Tuple[int, int]) -> List:
         """
