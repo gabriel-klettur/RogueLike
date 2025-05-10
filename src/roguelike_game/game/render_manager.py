@@ -1,5 +1,4 @@
 # Path: roguelike_game/game/render_manager.py
-import time
 import pygame
 
 from roguelike_game.network.render_multiplayer import render_remote_players
@@ -141,26 +140,10 @@ class RendererManager:
         # Debug: overlay y bordes
         if config.DEBUG and perf_log is not None:
             extra_lines = [state] + self._get_custom_debug_lines(state, camera, self.map, self.entities)
-
-            @benchmark(perf_log, "--99.0. debug overlay")
-            def _bench_debug_overlay():
-                render_debug_overlay(screen, perf_log, extra_lines=extra_lines, position=(0, 0))
-            _bench_debug_overlay()
-
-            @benchmark(perf_log, "--99.1. border lobby")
-            def _bench_border_lobby():
-                self._render_lobby_border(screen, camera)
-            _bench_border_lobby()
-
-            @benchmark(perf_log, "--99.2. border dungeon")
-            def _bench_border_dungeon():
-                self._render_dungeon_border(screen, camera)
-            _bench_border_dungeon()
-
-            @benchmark(perf_log, "--99.3. border global")
-            def _bench_border_global():
-                self._render_global_border(screen, camera)
-            _bench_border_global()
+            render_debug_overlay(screen, perf_log, extra_lines=extra_lines, position=(0, 0))            
+            self._render_lobby_border(screen, camera)        
+            self._render_dungeon_border(screen, camera)            
+            self._render_global_border(screen, camera)
 
         pygame.display.flip()
         return self._dirty_rects

@@ -33,9 +33,16 @@ from roguelike_game.game.tiles_editor_manager import TilesEditorManager
 #! -------------------------- Paquetes locales: z-layer ----------------------------------------
 from roguelike_game.systems.z_layer.state import ZState
 
+#! -------------------------- Paquetes locales: utilidades --------------------------------------
+from roguelike_engine.utils.benchmark import benchmark
 
 class Game:
-    def __init__(self, screen, perf_log=None, map_name: str = None):        
+    def __init__(
+            self, 
+            screen, 
+            perf_log=None,             
+            map_name: str = None
+    ):        
         #! ------------- infraestructura -----------------
         self.screen = screen
         self.clock = pygame.time.Clock()
@@ -126,6 +133,7 @@ class Game:
         """        
         self.network = NetworkManager()
 
+    @benchmark(lambda self: self.perf_log, "1.handle_events")
     def handle_events(self):        
         handle_events(
             self.state,
@@ -140,6 +148,7 @@ class Game:
             self.buildings_editor
         )
 
+    @benchmark(lambda self: self.perf_log, "2.update")
     def update(self):
         update_game(
             self.state,
@@ -154,6 +163,7 @@ class Game:
             self.buildings_editor
         )
 
+    @benchmark(lambda self: self.perf_log, "3.total_render")
     def render(self, perf_log=None):
         self.renderer.render_game(
             self.state,

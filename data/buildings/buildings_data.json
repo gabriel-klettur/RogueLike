@@ -306,8 +306,8 @@
         "z": 5
     },
     {
-        "x": 2304,
-        "y": 1820,
+        "x": 2294,
+        "y": 1814,
         "image_path": "assets/buildings/statues/statue_olim_01.png",
         "solid": true,
         "scale": [
