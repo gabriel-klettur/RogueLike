@@ -112,7 +112,8 @@ class Game:
             self.map,
             self.entities,
             self.buildings_editor,
-            self.tiles_editor
+            self.tiles_editor,
+            self.perf_log
         )
 
     def _init_menu(self):

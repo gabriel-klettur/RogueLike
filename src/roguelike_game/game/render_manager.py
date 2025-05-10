@@ -34,7 +34,8 @@ class RendererManager:
         game_map,
         entities,
         buildings_editor,
-        tiles_editor
+        tiles_editor,
+        perf_log
     ):
         self.screen = screen
         self.camera = camera
@@ -42,8 +43,8 @@ class RendererManager:
         self.entities = entities
         self.buildings_editor = buildings_editor
         self.tiles_editor = tiles_editor
-        self._dirty_rects = []
-        self.debug_overlay = DebugOverlay()
+        self._dirty_rects = []        
+        self.debug_overlay = DebugOverlay(perf_log=perf_log)
 
     def render_game(
         self,
@@ -63,19 +64,19 @@ class RendererManager:
         # 1) Tiles
         @benchmark(perf_log, "--3.1. tiles")
         def _bench_tiles():
-            self._render_tiles(state, camera, screen, self.map)
+            self._render_tiles(camera, screen, map)
         _bench_tiles()
 
         # 2) Entidades orden Z
         @benchmark(perf_log, "--3.2. z_entities")
         def _bench_z_entities():
-            self._render_z_entities(state, camera, screen, self.map, self.entities, network)
+            self._render_z_entities(state, camera, screen, entities, network)
         _bench_z_entities()
 
         # 3) Efectos
         @benchmark(perf_log, "--3.3. effects")
         def _bench_effects():
-            self._render_effects(state, camera, screen, systems.effects)
+            self._render_effects(camera, screen, systems.effects)
         _bench_effects()
 
         # 4) HUD
@@ -87,7 +88,7 @@ class RendererManager:
         # 4.b) Capa del Tile Editor
         @benchmark(perf_log, "--3.4b. tile_editor")
         def _bench_tile_editor():
-            self._render_tile_editor_layer(state, screen, camera, self.map)
+            self._render_tile_editor_layer(state, screen, camera, map)
         _bench_tile_editor()
 
         # 5) Crosshair
@@ -111,7 +112,7 @@ class RendererManager:
         # 8) Minimap
         @benchmark(perf_log, "--3.8. minimap")
         def _bench_minimap():
-            self._render_minimap(state, screen, self.map, self.entities)
+            self._render_minimap(state, screen, map, entities)
         _bench_minimap()
 
         # 9) Otros sistemas
@@ -128,15 +129,16 @@ class RendererManager:
 
         # Debug: overlay y bordes
         if config.DEBUG and perf_log is not None:
-            extra_lines = [state] + self._get_custom_debug_lines(state, camera, self.map, self.entities)
+            extra_lines = [state] + self._get_custom_debug_lines(state, camera, map, entities)
             self.debug_overlay.render(
-                screen,
-                perf_log,
+                screen,                
                 extra_lines=extra_lines,
                 position=(0, 0),
                 show_borders=True,
                 map_manager=self.map,
-                camera=self.camera
+                camera=camera,
+                entities=entities
+
             )
         pygame.display.flip()
         return self._dirty_rects
@@ -158,11 +160,11 @@ class RendererManager:
                 self.map
             )
 
-    def _render_effects(self, state, camera, screen, effects):
+    def _render_effects(self, camera, screen, effects):
         dirty_rects = effects.render(screen, camera)
         self._dirty_rects.extend(dirty_rects)
 
-    def _render_tiles(self, state, camera, screen, map):
+    def _render_tiles(self, camera, screen, map):
         for tile in map.tiles_in_region:
             if not camera.is_in_view(tile.x, tile.y, tile.sprite_size):
                 continue
@@ -174,7 +176,7 @@ class RendererManager:
         if getattr(state, "tile_editor_state", None) and state.tile_editor_state.active:
             state.tile_editor_view.render(screen, camera, map)
 
-    def _render_z_entities(self, state, camera, screen, map, entities, network):
+    def _render_z_entities(self, state, camera, screen, entities, network):
         all_entities = []
         all_entities.extend([
             e for e in entities.obstacles

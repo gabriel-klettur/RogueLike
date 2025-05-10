@@ -1,9 +1,10 @@
 """
 Path: src/roguelike_engine/utils/debug_overlay.py
 
-Clase para renderizar el panel de depuración (métricas y bordes de mapa).
+Clase para renderizar el panel de depuración (métricas y bordes de mapa), con benchmarking integrado.
 """
 import pygame
+from functools import wraps
 from roguelike_engine.config_map import (
     LOBBY_WIDTH, LOBBY_HEIGHT,
     DUNGEON_WIDTH, DUNGEON_HEIGHT,
@@ -12,6 +13,7 @@ from roguelike_engine.config_map import (
 )
 from roguelike_engine.config_tiles import TILE_SIZE
 from roguelike_engine.map.core.service import _calculate_dungeon_offset
+from roguelike_engine.utils.benchmark import benchmark
 
 
 class DebugOverlay:
@@ -21,9 +23,13 @@ class DebugOverlay:
       - FPS real y frame time promedio
       - Líneas de estado adicionales
       - Bordes de lobby, dungeon y canvas global
+
+    La función `render` está decorada para registrar automáticamente
+    su tiempo de ejecución bajo la clave 'debug_overlay.render'.
     """
     def __init__(
         self,
+        perf_log: dict[str, list[float]],
         font_name: str = "Consolas",
         font_size: int = 18,
         bg_color: tuple[int,int,int,int] = (0, 0, 0, 180),
@@ -35,6 +41,9 @@ class DebugOverlay:
         border_colors: dict[str, tuple[int,int,int]] | None = None,
         border_width: int = 5,
     ):
+        # Registro de métricas
+        self.perf_log = perf_log
+        
         # Parámetros de texto
         self.font_name = font_name
         self.font_size = font_size
@@ -61,15 +70,16 @@ class DebugOverlay:
             self._fonts[size] = pygame.font.SysFont(self.font_name, size)
         return self._fonts[size]
 
+    @benchmark(lambda self: self.perf_log, "debug_overlay.render")
     def render(
         self,
-        screen: pygame.Surface,
-        perf_log: dict[str, list[float]],
+        screen: pygame.Surface,        
         extra_lines: list | None = None,
         position: tuple[int,int] = (8, 8),
         show_borders: bool = False,
         map_manager = None,
         camera = None,
+        entities = None,
     ) -> None:
         """
         Renderiza todo el overlay de debug:
@@ -84,7 +94,7 @@ class DebugOverlay:
         value_width = 0
 
         # Extraemos métricas del perf_log
-        for key, samples in perf_log.items():
+        for key, samples in self.perf_log.items():
             recent = samples[-60:]
             if not recent:
                 continue
@@ -143,7 +153,9 @@ class DebugOverlay:
                 raise ValueError("Para dibujar bordes debe proporcionar map_manager y camera")
             self._draw_lobby_border(screen, camera, map_manager.lobby_offset)
             self._draw_dungeon_border(screen, camera, map_manager.lobby_offset)
-            self._draw_global_border(screen, camera)
+            self._draw_global_border(screen, camera)                
+        if entities is not None and camera is not None and map_manager is not None:
+            self._draw_enemy_hitboxes(screen, camera, entities, map_manager.tiles_in_region)
 
     def _draw_lobby_border(self, screen: pygame.Surface, camera, lobby_offset: tuple[int,int]) -> None:
         x0, y0 = lobby_offset
@@ -164,3 +176,25 @@ class DebugOverlay:
         size = camera.scale((GLOBAL_WIDTH * TILE_SIZE, GLOBAL_HEIGHT * TILE_SIZE))
         rect = pygame.Rect(topleft, size)
         pygame.draw.rect(screen, self.border_colors['global'], rect, self.border_width)
+    
+
+    def _draw_enemy_hitboxes(self, screen, camera, entities, tiles) -> None:
+        """Dibuja hitbox de pies y colisiones con tiles sólidos"""
+        for e in entities.enemies:
+            sw,sh = e.sprite_size
+            foot_h = int(sh*0.25)
+            foot_w = int(sw*0.5)
+            foot_x = e.x + (sw-foot_w)//2
+            foot_y = e.y + sh - foot_h
+            foot_box = pygame.Rect(foot_x, foot_y, foot_w, foot_h)
+            # hitbox en verde
+            tl = camera.apply((foot_box.x, foot_box.y))
+            sz = camera.scale((foot_box.width, foot_box.height))
+            pygame.draw.rect(screen, (0,255,0), pygame.Rect(tl, sz), 1)
+            # colisión con tiles sólidos
+            for t in tiles:
+                if getattr(t, 'solid', False) and foot_box.colliderect(t.rect):
+                    tl2 = camera.apply((t.x, t.y))
+                    sz2 = camera.scale((t.sprite_size[0], t.sprite_size[1]))
+                    pygame.draw.rect(screen, (255,0,255), pygame.Rect(tl2, sz2), 2)
+
