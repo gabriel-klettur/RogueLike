@@ -6,25 +6,13 @@ from roguelike_engine.minimap.minimap import render_minimap
 from roguelike_engine.utils.mouse import draw_mouse_crosshair
 from roguelike_engine.config_tiles import TILE_SIZE
 import roguelike_engine.config as config
-from roguelike_engine.utils.debug_overlay import render_debug_overlay
-
-# Para dibujar bordes de lobby y dungeon
-from roguelike_engine.config_map import (
-    LOBBY_WIDTH,
-    LOBBY_HEIGHT,
-    DUNGEON_WIDTH,
-    DUNGEON_HEIGHT,
-    GLOBAL_HEIGHT,
-    GLOBAL_WIDTH,
-    DUNGEON_CONNECT_SIDE
-)
-from roguelike_engine.map.core.service import _calculate_dungeon_offset
 
 # Sistema de orden Z
 from roguelike_game.systems.z_layer.render import render_z_ordered
 
 # Importar el decorador centralizado de benchmark
 from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.debug_overlay import DebugOverlay
 
 
 class RendererManager:
@@ -55,6 +43,7 @@ class RendererManager:
         self.buildings_editor = buildings_editor
         self.tiles_editor = tiles_editor
         self._dirty_rects = []
+        self.debug_overlay = DebugOverlay()
 
     def render_game(
         self,
@@ -116,7 +105,7 @@ class RendererManager:
         # 7) Menú
         @benchmark(perf_log, "--3.7. menu")
         def _bench_menu():
-            self._render_menu(state, screen, menu)
+            self._render_menu(screen, menu)
         _bench_menu()
 
         # 8) Minimap
@@ -140,11 +129,15 @@ class RendererManager:
         # Debug: overlay y bordes
         if config.DEBUG and perf_log is not None:
             extra_lines = [state] + self._get_custom_debug_lines(state, camera, self.map, self.entities)
-            render_debug_overlay(screen, perf_log, extra_lines=extra_lines, position=(0, 0))            
-            self._render_lobby_border(screen, camera)        
-            self._render_dungeon_border(screen, camera)            
-            self._render_global_border(screen, camera)
-
+            self.debug_overlay.render(
+                screen,
+                perf_log,
+                extra_lines=extra_lines,
+                position=(0, 0),
+                show_borders=True,
+                map_manager=self.map,
+                camera=self.camera
+            )
         pygame.display.flip()
         return self._dirty_rects
 
@@ -164,49 +157,6 @@ class RendererManager:
                 self.camera,
                 self.map
             )
-
-    def _render_global_border(self, screen, camera):
-        """
-        Dibuja un rectángulo púrpura alrededor de todo el lienzo global.
-        """
-        w_px = GLOBAL_WIDTH * TILE_SIZE
-        h_px = GLOBAL_HEIGHT * TILE_SIZE
-        top_left = camera.apply((0, 0))
-        size = camera.scale((w_px, h_px))
-        rect = pygame.Rect(top_left, size)
-        pygame.draw.rect(screen, (128, 0, 128), rect, 5)
-
-    def _render_lobby_border(self, screen, camera):
-        """
-        Dibuja un rectángulo blanco alrededor del lobby.
-        """
-        off_x, off_y = self.map.lobby_offset
-        x_px = off_x * TILE_SIZE
-        y_px = off_y * TILE_SIZE
-        w_px = LOBBY_WIDTH * TILE_SIZE
-        h_px = LOBBY_HEIGHT * TILE_SIZE
-        top_left = camera.apply((x_px, y_px))
-        size = camera.scale((w_px, h_px))
-        rect = pygame.Rect(top_left, size)
-        pygame.draw.rect(screen, (255, 255, 255), rect, 5)
-
-    def _render_dungeon_border(self, screen, camera):
-        """
-        Dibuja un rectángulo verde alrededor de la dungeon procedural.
-        """
-        lobby_off_x, lobby_off_y = self.map.lobby_offset
-        dungeon_off_x, dungeon_off_y = _calculate_dungeon_offset(
-            (lobby_off_x, lobby_off_y),
-            DUNGEON_CONNECT_SIDE
-        )
-        x_px = dungeon_off_x * TILE_SIZE
-        y_px = dungeon_off_y * TILE_SIZE
-        w_px = DUNGEON_WIDTH * TILE_SIZE
-        h_px = DUNGEON_HEIGHT * TILE_SIZE
-        top_left = camera.apply((x_px, y_px))
-        size = camera.scale((w_px, h_px))
-        rect = pygame.Rect(top_left, size)
-        pygame.draw.rect(screen, (0, 255, 0), rect, 5)
 
     def _render_effects(self, state, camera, screen, effects):
         dirty_rects = effects.render(screen, camera)
@@ -273,7 +223,7 @@ class RendererManager:
                             sz2 = camera.scale((tile_box.width, tile_box.height))
                             pygame.draw.rect(screen, (255, 0, 255), pygame.Rect(tl2, sz2), 2)
 
-    def _render_menu(self, state, screen, menu):
+    def _render_menu(self, screen, menu):
         if menu.show_menu:
             menu_rect = menu.draw(screen)
             self._dirty_rects.append(menu_rect)
