@@ -22,11 +22,11 @@ class EntitiesManager:
         self.buildings = []
         self.enemies = []        
 
-        self.init__statics()
+        self.init_statics()
         self.init_enemies()
         
 
-    def init__statics(self):
+    def init_statics(self):
         self.player, self.obstacles, self.buildings = self.load_static()
 
     def init_enemies(self):
