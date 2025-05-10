@@ -1,7 +1,6 @@
 # Path: src/roguelike_game/entities/load_entities.py
 from roguelike_game.entities.player.controller.player_controller import PlayerController
 from roguelike_game.entities.load_obstacles import load_obstacles
-from roguelike_game.entities.load_hostile   import load_hostile
 from roguelike_game.entities.load_buildings import load_buildings
 
 def load_entities(z_state=None):
