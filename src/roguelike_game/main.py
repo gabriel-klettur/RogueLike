@@ -44,11 +44,13 @@ def main():
         # 👉 Actualizamos el título de la ventana con los FPS reales
         fps = game.clock.get_fps()
         pygame.display.set_caption(f"Roguelike - FPS: {fps:0.1f}")
-
-        pygame.display.flip()
+        
         game.clock.tick(FPS)
 
     pygame.quit()
+
+def run(self):
+    return None
 
 if __name__ == "__main__":
     main()
