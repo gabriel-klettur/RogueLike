@@ -129,16 +129,13 @@ class RendererManager:
 
         # Debug: overlay y bordes
         if config.DEBUG and perf_log is not None:
-            extra_lines = [state] + self._get_custom_debug_lines(state, camera, map, entities)
             self.debug_overlay.render(
-                screen,                
-                extra_lines=extra_lines,
-                position=(0, 0),
-                show_borders=True,
-                map_manager=self.map,
+                screen,
+                state=state,
                 camera=camera,
-                entities=entities
-
+                map_manager=self.map,
+                entities=entities,
+                show_borders=True
             )
         pygame.display.flip()
         return self._dirty_rects
@@ -201,30 +198,6 @@ class RendererManager:
 
         render_z_ordered(all_entities, screen, camera, state.z_state)
 
-        # ——— DEBUG: foot-hitbox de monstruos y colisión con paredes ———
-        if config.DEBUG:
-            for e in entities.enemies:
-                sw, sh = e.sprite_size
-                foot_h = int(sh * 0.25)
-                foot_w = int(sw * 0.5)
-                foot_x = e.x + (sw - foot_w) // 2
-                foot_y = e.y + sh - foot_h
-                foot_box = pygame.Rect(foot_x, foot_y, foot_w, foot_h)
-
-                # dibujar el hitbox de pies (verde)
-                tl = camera.apply((foot_box.x, foot_box.y))
-                sz = camera.scale((foot_box.width, foot_box.height))
-                pygame.draw.rect(screen, (0, 255, 0), pygame.Rect(tl, sz), 1)
-
-                # dibujar colisión con tiles sólidos (magenta)
-                for t in self.map.tiles_in_region:
-                    if getattr(t, "solid", False):
-                        tile_box = pygame.Rect(t.x, t.y, *t.sprite_size)
-                        if foot_box.colliderect(tile_box):
-                            tl2 = camera.apply((tile_box.x, tile_box.y))
-                            sz2 = camera.scale((tile_box.width, tile_box.height))
-                            pygame.draw.rect(screen, (255, 0, 255), pygame.Rect(tl2, sz2), 2)
-
     def _render_menu(self, screen, menu):
         if menu.show_menu:
             menu_rect = menu.draw(screen)
@@ -234,21 +207,3 @@ class RendererManager:
         minimap_rect = render_minimap(state, screen, map, entities)
         self._dirty_rects.append(minimap_rect)
 
-    def _get_custom_debug_lines(self, state, camera, map, entities):
-        lines = [
-            f"Modo: {state.mode}",
-            f"Pos: ({round(entities.player.x)}, {round(entities.player.y)})"
-        ]
-        mx, my = pygame.mouse.get_pos()
-        wx = round(mx / camera.zoom + camera.offset_x)
-        wy = round(my / camera.zoom + camera.offset_y)
-        lines.append(f"Mouse: ({wx}, {wy})")
-
-        tile_col, tile_row = wx // TILE_SIZE, wy // TILE_SIZE
-        tile_text = "?"
-        for tile in map.tiles_in_region:
-            if tile.rect.collidepoint(wx, wy):
-                tile_text = tile.tile_type
-                break
-        lines.append(f"Tile: ({tile_col}, {tile_row}) Tipo: '{tile_text}'")
-        return lines
