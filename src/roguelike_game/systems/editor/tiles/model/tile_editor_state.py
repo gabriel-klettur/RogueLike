@@ -14,5 +14,8 @@ class TileEditorState:
         self.current_tool = "select"   # "select" | "brush" | "eyedropper" | "view"
         self.brush_dragging = False    # para arrastrar el brush
         self.view_active = True        # para ver los tiles.
+
+
+        
         
         

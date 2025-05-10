@@ -2,7 +2,7 @@
 
 from roguelike_game.systems.editor.tiles.model.tile_editor_state import TileEditorState
 from roguelike_game.systems.editor.tiles.controller.tile_editor_controller import TileEditorController
-from roguelike_game.systems.editor.tiles.controller.tile_editor_events import TileEditorEventHandler
+from roguelike_game.systems.editor.tiles.events.tile_editor_events import TileEditorEventHandler
 from roguelike_game.systems.editor.tiles.view.tile_editor_view import TileEditorView
 
 class TilesEditorManager:

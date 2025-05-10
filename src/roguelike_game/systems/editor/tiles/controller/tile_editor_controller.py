@@ -4,8 +4,8 @@ from pathlib import Path
 from roguelike_engine.config_tiles import TILE_SIZE
 from roguelike_engine.config_tiles import OVERLAY_CODE_MAP, INVERSE_OVERLAY_MAP, DEFAULT_TILE_MAP
 
-from roguelike_game.systems.editor.tiles.controller.tools.tile_picker import TilePicker
-from roguelike_game.systems.editor.tiles.controller.tools.tile_toolbar import TileToolbar
+from roguelike_game.systems.editor.tiles.controller.tools.tile_picker_controller import TilePicker
+from roguelike_game.systems.editor.tiles.controller.tools.tile_toolbar_controller import TileToolbar
 
 from roguelike_engine.map.overlay.overlay_manager import save_overlay
 from roguelike_engine.utils.loader import load_image
