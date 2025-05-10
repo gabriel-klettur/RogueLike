@@ -4,8 +4,8 @@ from pathlib import Path
 from roguelike_engine.config_tiles import TILE_SIZE
 from roguelike_engine.config_tiles import OVERLAY_CODE_MAP, INVERSE_OVERLAY_MAP, DEFAULT_TILE_MAP
 
-from roguelike_game.systems.editor.tiles.controller.tools.tile_picker_controller import TilePicker
-from roguelike_game.systems.editor.tiles.controller.tools.tile_toolbar_controller import TileToolbar
+from roguelike_game.systems.editor.tiles.controller.tools.tile_picker_controller import TilePickerController
+from roguelike_game.systems.editor.tiles.controller.tools.tile_toolbar_controller import TileToolbarController
 
 from roguelike_engine.map.overlay.overlay_manager import save_overlay
 from roguelike_engine.utils.loader import load_image
@@ -21,8 +21,8 @@ class TileEditorController:
     def __init__(self, state, editor_state):
         self.state   = state
         self.editor  = editor_state     # instancia de TileEditorControllerState
-        self.picker = TilePicker(state, editor_state)
-        self.toolbar = TileToolbar(state, editor_state)
+        self.picker = TilePickerController(state, editor_state)
+        self.toolbar = TileToolbarController(state, editor_state)
 
     def select_tile_at(self, mouse_pos, camera, map):
         tile = self._tile_under_mouse(mouse_pos, camera, map)

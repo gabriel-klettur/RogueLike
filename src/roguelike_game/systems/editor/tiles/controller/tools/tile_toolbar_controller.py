@@ -5,7 +5,7 @@ from roguelike_engine.utils.loader import load_image
 
 from roguelike_game.systems.editor.tiles.tiles_editor_config import ICON_PATHS_TILE_TOOLBAR
 
-class TileToolbar:
+class TileToolbarController:
     """
     Barra de herramientas para el TileEditorController:
       - select
@@ -33,7 +33,6 @@ class TileToolbar:
         # Rects para detectar clicks
         self.icon_rects: dict[str, pygame.Rect] = {}
 
- 
 
     def handle_click(self, mouse_pos) -> bool:
         for tool, rect in self.icon_rects.items():

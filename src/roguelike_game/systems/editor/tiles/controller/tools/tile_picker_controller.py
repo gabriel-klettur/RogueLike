@@ -12,7 +12,7 @@ from roguelike_engine.tiles.assets import load_base_tile_images
 from roguelike_game.systems.editor.tiles.tiles_editor_config import PAD, THUMB, COLS, CLR_BORDER
 
 
-class TilePicker:
+class TilePickerController:
     """
     Ventana flotante de selección de tiles.
     – Mover con clic-derecho y arrastre
