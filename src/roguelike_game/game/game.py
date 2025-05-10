@@ -166,3 +166,24 @@ class Game:
             network=self.network,
             systems=self.systems
         )
+
+    def run(self):
+        """
+        Bucle principal del juego: maneja eventos, actualiza lógica y renderiza cada frame.
+        """
+        while self.state.running:
+            # 1) Procesar entrada
+            self.handle_events()
+
+            # 2) Actualizar juego
+            self.update()
+
+            # 3) Renderizar todo (incluye pygame.display.flip() dentro de render_game)
+            self.render(self.perf_log)
+
+            # 4) Actualizar título con FPS actuales
+            fps = self.clock.get_fps()
+            pygame.display.set_caption(f"Roguelike - FPS: {fps:0.1f}")
+
+            # 5) Limitar velocidad de fotogramas
+            self.clock.tick(config.FPS)

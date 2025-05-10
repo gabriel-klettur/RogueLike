@@ -33,24 +33,10 @@ def main():
     game.update        = benchmark(performance_log, "2.update")(game.update)
     game.render        = benchmark(performance_log, "3.total_render")(game.render)
 
-    # Bucle principal
-    while game.state.running:
-        game.handle_events()
-        game.update()
-
-        # Renderizamos todo (tilemap, HUD, debug overlay, etc.)
-        game.render(performance_log)
-
-        # 👉 Actualizamos el título de la ventana con los FPS reales
-        fps = game.clock.get_fps()
-        pygame.display.set_caption(f"Roguelike - FPS: {fps:0.1f}")
-        
-        game.clock.tick(FPS)
+    game.run()  
 
     pygame.quit()
 
-def run(self):
-    return None
 
 if __name__ == "__main__":
     main()
