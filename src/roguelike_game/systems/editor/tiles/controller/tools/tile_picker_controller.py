@@ -26,19 +26,8 @@ class TilePickerController:
         self.state   = state
         self.editor_state  = editor_state
         self.picker_state = picker_state
-
-        # Carga los assets desde la carpeta global de assets/tiles
-        self.assets  = self._load_assets()  # list of (rel_path, Surface)
-        #self.font    = pygame.font.SysFont("Arial", 16)
-                
-        #self.dragging    = False
-        #self.drag_offset = (0, 0)
-
-        #self.surface = None
         
-        #self.picker_state.btn_delete_rect  = None
-        #self.picker_state.btn_default_rect = None
-        #self.picker_state.btn_accept_rect  = None
+        self.assets  = self._load_assets() 
 
     def _load_assets(self):
         """
@@ -114,8 +103,11 @@ class TilePickerController:
         col = (lx - PAD) // (THUMB + PAD)
         row = (ly - PAD + self.editor_state.scroll_offset) // (THUMB + PAD)
         idx = row * COLS + col
-        if 0 <= col < COLS and row >= 0 and idx < len(self.assets):
-            self.editor_state.current_choice = self.assets[idx][0]
+        if 0 <= col < COLS and row >= 0 and idx < len(self.assets):            
+            # guardamos la ruta en el estado del picker (para que la vista la pinte)
+            choice = self.assets[idx][0]
+            self.editor_state.current_choice = choice       # para el brush
+            self.picker_state.current_choice = choice       # para la UI del picker
             return True
 
         return False
