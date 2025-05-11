@@ -1,5 +1,3 @@
-# Path: src/roguelike_game/systems/editor/tiles/controller/tools/tile_picker_controller.py
-
 import pygame
 from pathlib import Path
 
@@ -99,15 +97,26 @@ class TilePickerController:
         if not self.picker_state.open or self.picker_state.surface is None:
             return False
 
+        # Coordenadas locales en la superficie del picker
         lx = mouse_pos[0] - self.picker_state.pos[0]
         ly = mouse_pos[1] - self.picker_state.pos[1]
-        if lx < 0 or ly < 0 or lx > self.picker_state.surface.get_width() or ly > self.picker_state.surface.get_height():
+        sw, sh = self.picker_state.surface.get_size()
+        if lx < 0 or ly < 0 or lx > sw or ly > sh:
             return False
 
-        # Coordenadas de la rejilla
+        # Botones de borrado y default (prioritario)
+        if self.picker_state.btn_delete_rect and self.picker_state.btn_delete_rect.collidepoint((lx, ly)):
+            self._delete_tile(map)
+            return True
+        if self.picker_state.btn_default_rect and self.picker_state.btn_default_rect.collidepoint((lx, ly)):
+            self._set_default(map)
+            return True
+
+        # Navegación de directorios y selección de assets
         col = (lx - PAD) // (THUMB + PAD)
         row = (ly - PAD + self.editor_state.scroll_offset) // (THUMB + PAD)
         idx = row * COLS + col
+        # Si clic fuera de la rejilla de assets
         if not (0 <= col < COLS and row >= 0 and idx < len(self.assets)):
             return False
 
@@ -115,10 +124,8 @@ class TilePickerController:
         # Navegación de directorios
         if is_dir:
             if value == "..":
-                # Subir
                 self.current_dir = self.current_dir.parent
             else:
-                # Entrar en subcarpeta
                 self.current_dir = self.current_dir / value
             self._load_assets()
             return True
@@ -132,19 +139,8 @@ class TilePickerController:
             self.picker_state.dragging = True
             self.picker_state.drag_offset = (lx, ly)
             return True
-        
-        # Delete tile
-        if self.picker_state.btn_delete_rect and self.picker_state.btn_delete_rect.collidepoint((lx, ly)):
-            self._delete_tile(map)
-            return True
-
-        # Set default tile
-        if self.picker_state.btn_default_rect and self.picker_state.btn_default_rect.collidepoint((lx, ly)):
-            self._set_default(map)
-            return True
 
         return True
-    
 
     def drag(self, mouse_pos):
         if self.picker_state.dragging:
@@ -162,6 +158,7 @@ class TilePickerController:
     def _delete_tile(self, map):
         tile = self.editor_state.selected_tile
         if tile:
+            # Eliminar sprite y limpiar overlay
             tile.sprite = pygame.Surface((TILE_SIZE, TILE_SIZE), pygame.SRCALPHA)
             tile.scaled_cache.clear()
             self._persist_overlay(tile, "", map)
@@ -170,6 +167,7 @@ class TilePickerController:
     def _set_default(self, map):
         tile = self.editor_state.selected_tile
         if tile:
+            # Restaurar sprite base según tipo de tile
             base_map = load_base_tile_images()
             imgs = base_map.get(tile.tile_type)
             sprite = imgs[0] if isinstance(imgs, list) else imgs
