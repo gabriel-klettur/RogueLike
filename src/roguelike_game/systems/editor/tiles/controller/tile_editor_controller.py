@@ -35,32 +35,42 @@ class TileEditorController:
             self.editor.scroll_offset = 0
 
     def apply_brush(self, mouse_pos, camera, map):
+        """
+        Pinta el sprite seleccionado sobre el tile bajo el ratón
+        y persiste el código de overlay (quitando el prefijo "tiles/").
+        """
+        # 1) Encuentra el tile bajo el cursor
         tile = self._tile_under_mouse(mouse_pos, camera, map)
         if not tile or not self.editor.current_choice:
             return
 
-        # cargar nuevo sprite
+        # 2) Carga el nuevo sprite
         sprite = load_image(self.editor.current_choice, (TILE_SIZE, TILE_SIZE))
         tile.sprite = sprite
         tile.scaled_cache.clear()
 
-        # ruta POSIX sin extensión como código
-        code = Path(self.editor.current_choice).with_suffix('').as_posix()
+        # 3) Calcula el código de overlay sin el prefijo "tiles/"
+        full = Path(self.editor.current_choice).with_suffix('')  # ej. "tiles/dungeon/dungeon_1"
+        try:
+            code = full.relative_to("tiles").as_posix()            # "dungeon/dungeon_1"
+        except ValueError:
+            code = full.as_posix()                                 # si no empieza por "tiles/"
+
         tile.overlay_code = code
 
-        # calcular fila/columna
+        # 4) Persiste el overlay en la matriz
         row = tile.y // TILE_SIZE
         col = tile.x // TILE_SIZE
 
-        # inicializar overlay si no existe
+        # Si aún no hay overlay, inicialízalo
         if map.overlay is None:
             h = len(map.tiles)
             w = len(map.tiles[0]) if h else 0
             map.overlay = [["" for _ in range(w)] for _ in range(h)]
 
-        # asignar código y persistir
         map.overlay[row][col] = code
         save_overlay(map.name, map.overlay)
+        print(f"📝 Overlay actualizado: ({row}, {col}) = '{code}'")
 
     def apply_eyedropper(self, mouse_pos, camera, map):
         tile = self._tile_under_mouse(mouse_pos, camera, map)

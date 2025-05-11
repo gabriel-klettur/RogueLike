@@ -1,7 +1,7 @@
 [
     {
-        "x": 2551,
-        "y": 1976,
+        "x": 2565,
+        "y": 1990,
         "image_path": "assets/buildings/temples/catholic.png",
         "solid": true,
         "scale": [
@@ -14,7 +14,7 @@
         ],
         "split_ratio": 0.611,
         "z_bottom": 5,
-        "z_top": 6,
+        "z_top": 9,
         "z": 5
     },
     {
@@ -90,8 +90,8 @@
         "z": 2
     },
     {
-        "x": 2071,
-        "y": 1611,
+        "x": 2060,
+        "y": 1580,
         "image_path": "assets/buildings/vegetation/tree_3.png",
         "solid": true,
         "scale": [
@@ -108,13 +108,13 @@
         "z": 4
     },
     {
-        "x": 2165,
-        "y": 1969,
+        "x": 2164,
+        "y": 2133,
         "image_path": "assets/buildings/vegetation/tree_5.png",
         "solid": true,
         "scale": [
-            231,
-            231
+            176,
+            176
         ],
         "original_scale": [
             256,
@@ -126,8 +126,8 @@
         "z": 1
     },
     {
-        "x": 2456,
-        "y": 1554,
+        "x": 2477,
+        "y": 1560,
         "image_path": "assets/buildings/vegetation/tree_7.png",
         "solid": true,
         "scale": [
@@ -234,8 +234,8 @@
         "z": 1
     },
     {
-        "x": 1761,
-        "y": 858,
+        "x": 1750,
+        "y": 864,
         "image_path": "assets/buildings/castles/castle_2.png",
         "solid": true,
         "scale": [
@@ -306,8 +306,8 @@
         "z": 5
     },
     {
-        "x": 2317,
-        "y": 1775,
+        "x": 2259,
+        "y": 1715,
         "image_path": "assets/buildings/statues/statue_olim_01.png",
         "solid": true,
         "scale": [
@@ -396,8 +396,8 @@
         "z": 2
     },
     {
-        "x": 1700,
-        "y": 1413,
+        "x": 1694,
+        "y": 1368,
         "image_path": "assets/buildings/shops/blacksmith.png",
         "solid": true,
         "scale": [
