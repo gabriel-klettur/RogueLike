@@ -1,6 +1,7 @@
 
 # Path: src/roguelike_game/systems/editor/tiles/controller/tile_editor_controller.py
 from pathlib import Path
+
 from roguelike_engine.config_tiles import TILE_SIZE
 from roguelike_engine.config_tiles import OVERLAY_CODE_MAP, INVERSE_OVERLAY_MAP, DEFAULT_TILE_MAP
 
@@ -43,22 +44,21 @@ class TileEditorController:
         tile.sprite = sprite
         tile.scaled_cache.clear()
 
-        # inferir código de overlay
-        name = Path(self.editor.current_choice).stem
-        codes = INVERSE_OVERLAY_MAP.get(name, [])
-        code = codes[0] if codes else ""
-
+        # ruta POSIX sin extensión como código
+        code = Path(self.editor.current_choice).with_suffix('').as_posix()
         tile.overlay_code = code
 
-        # actualizar overlay_map y persistir
+        # calcular fila/columna
         row = tile.y // TILE_SIZE
         col = tile.x // TILE_SIZE
 
+        # inicializar overlay si no existe
         if map.overlay is None:
             h = len(map.tiles)
             w = len(map.tiles[0]) if h else 0
-            self.map.overlay = [["" for _ in range(w)] for _ in range(h)]
+            map.overlay = [["" for _ in range(w)] for _ in range(h)]
 
+        # asignar código y persistir
         map.overlay[row][col] = code
         save_overlay(map.name, map.overlay)
 
