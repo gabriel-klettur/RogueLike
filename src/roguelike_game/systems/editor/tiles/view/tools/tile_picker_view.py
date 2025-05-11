@@ -1,13 +1,29 @@
-# roguelike_game/systems/editor/tiles/view/tools/tile_picker_view.py
-
 # Path: src/roguelike_game/systems/editor/tiles/view/tools/tile_picker_view.py
+
 import pygame
-from roguelike_game.systems.editor.tiles.tiles_editor_config import CLR_HOVER, CLR_SELECTION, THUMB, COLS, PAD, CLR_BORDER, BTN_H, BTN_W
+from roguelike_game.systems.editor.tiles.tiles_editor_config import (
+    CLR_HOVER,
+    CLR_SELECTION,
+    THUMB,
+    COLS,
+    PAD,
+    BTN_H,
+    BTN_W,
+    CLR_BORDER
+)
 
 class TilePickerView:
-    def __init__(self, picker_state, assets):        
-        self.picker_state       = picker_state
-        self.assets             = assets
+    """
+    Vista del explorador de tiles:
+    - Muestra miniaturas (archivos y carpetas) en una rejilla.
+    - Destaca con borde cian al pasar el ratón.
+    - Borde amarillo indica selección actual.
+    - Botones Borrar y Default para funcionalidad de overlay.
+    - Muestra el nombre de la carpeta sobre cada icono de directorio.
+    """
+    def __init__(self, picker_state, assets):
+        self.picker_state = picker_state
+        self.assets = assets
         self.font = pygame.font.SysFont("Arial", 16)
 
     def render(self, screen):
@@ -28,7 +44,7 @@ class TilePickerView:
         lx = mx - (self.picker_state.pos[0] if self.picker_state.pos else 0)
         ly = my - (self.picker_state.pos[1] if self.picker_state.pos else 0)
 
-        for idx, (path, thumb) in enumerate(self.assets):
+        for idx, (value, thumb, is_dir) in enumerate(self.assets):
             row, col = divmod(idx, COLS)
             x = PAD + col * (THUMB + PAD)
             y = y0 + row * (THUMB + PAD)
@@ -39,15 +55,19 @@ class TilePickerView:
             self.picker_state.surface.blit(thumb, rect)
             if rect.collidepoint((lx, ly)):
                 pygame.draw.rect(self.picker_state.surface, CLR_HOVER, rect, 3)
-            elif self.picker_state.current_choice == path:
+            elif self.picker_state.current_choice == value:
                 pygame.draw.rect(self.picker_state.surface, CLR_SELECTION, rect, 3)
 
-        self.picker_state.btn_delete_rect  = pygame.Rect(PAD, PAD + h_grid, BTN_W, BTN_H)
+            # Si es carpeta y no la flecha "..", dibujamos el nombre encima
+            if is_dir and value != "..":
+                label = self.font.render(value, True, (0, 0, 0))
+                label_rect = label.get_rect(center=(x + THUMB // 2, y + THUMB // 2))
+                self.picker_state.surface.blit(label, label_rect)
+
+        self.picker_state.btn_delete_rect = pygame.Rect(PAD, PAD + h_grid, BTN_W, BTN_H)
         self.picker_state.btn_default_rect = pygame.Rect(PAD*2 + BTN_W, PAD + h_grid, BTN_W, BTN_H)
-        self.picker_state.btn_accept_rect  = pygame.Rect(PAD*3 + BTN_W*2, PAD + h_grid, BTN_W, BTN_H)
         self._draw_button(self.picker_state.btn_delete_rect,  "Borrar")
         self._draw_button(self.picker_state.btn_default_rect, "Default")
-        
 
         if self.picker_state.pos is None:
             sw, sh = screen.get_size()
