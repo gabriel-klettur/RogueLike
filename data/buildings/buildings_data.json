@@ -108,8 +108,8 @@
         "z": 4
     },
     {
-        "x": 2481,
-        "y": 1736,
+        "x": 2165,
+        "y": 1969,
         "image_path": "assets/buildings/vegetation/tree_5.png",
         "solid": true,
         "scale": [
@@ -234,8 +234,8 @@
         "z": 1
     },
     {
-        "x": 1739,
-        "y": 866,
+        "x": 1761,
+        "y": 858,
         "image_path": "assets/buildings/castles/castle_2.png",
         "solid": true,
         "scale": [
@@ -306,8 +306,8 @@
         "z": 5
     },
     {
-        "x": 2312,
-        "y": 1832,
+        "x": 2317,
+        "y": 1775,
         "image_path": "assets/buildings/statues/statue_olim_01.png",
         "solid": true,
         "scale": [
@@ -342,8 +342,8 @@
         "z": 4
     },
     {
-        "x": 2929,
-        "y": 1544,
+        "x": 2930,
+        "y": 1564,
         "image_path": "assets/buildings/shops/alchemy_tower.png",
         "solid": true,
         "scale": [
@@ -361,7 +361,7 @@
     },
     {
         "x": 2071,
-        "y": 2464,
+        "y": 2383,
         "image_path": "assets/buildings/shops/healer_1.png",
         "solid": true,
         "scale": [
@@ -432,8 +432,8 @@
         "z": 3
     },
     {
-        "x": 2001,
-        "y": 2665,
+        "x": 1968,
+        "y": 2653,
         "image_path": "assets/buildings/shops/jewlery_shop.png",
         "solid": true,
         "scale": [
