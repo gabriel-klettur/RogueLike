@@ -13,7 +13,7 @@ class TilesEditorManager:
         
         # Inicialización del editor de tiles
         self.editor_state = TileEditorState()
-        self.controller   = TileEditorController(state, self.editor_state)
+        self.controller   = TileEditorController(state, self.editor_state, self.editor_state.picker_state)
         self.view         = TileEditorView(self.controller, state, self.editor_state)
         self.handler      = TileEditorEventHandler(state, self.editor_state, self.controller)
 
@@ -28,7 +28,7 @@ class TilesEditorManager:
             self.editor_state.selected_tile = None
             self.editor_state.current_choice = None
 
-        print("🟩 Tile-Editor ON" if active else "🟥 Tile-Editor OFF")
+        print("🟩 Tile-Editor ON REAL!" if active else "🟥 Tile-Editor OFF")
 
     def handle(self, camera, game_map):
         """

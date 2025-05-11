@@ -7,7 +7,7 @@ class TileEditorEventHandler:
     """
     def __init__(self, state, editor_state, controller):
         self.state = state
-        self.editor = editor_state
+        self.editor_state = editor_state
         self.controller = controller
 
     def handle(self, camera, map):
@@ -31,17 +31,17 @@ class TileEditorEventHandler:
 
     def _on_keydown(self, ev):
         if ev.key == pygame.K_ESCAPE:            
-            self.editor.active = False            
-            self.editor.selected_tile = None
-            self.editor.picker_open = False
-            self.editor.brush_dragging = False
+            self.editor_state.active = False            
+            self.editor_state.selected_tile = None
+            self.editor_state.picker_state.open = False
+            self.editor_state.brush_dragging = False
         elif ev.key == pygame.K_F8:
-            new_val = not self.editor.active
-            self.editor.active = new_val            
+            new_val = not self.editor_state.active
+            self.editor_state.active = new_val            
             if not new_val:
-                self.editor.picker_open = False
-                self.editor.selected_tile = None
-                self.editor.brush_dragging = False            
+                self.editor_state.picker_state.open = False
+                self.editor_state.selected_tile = None
+                self.editor_state.brush_dragging = False            
 
     def _on_mouse_down(self, ev, camera, map):
         pos = ev.pos
@@ -49,10 +49,10 @@ class TileEditorEventHandler:
         if ev.button == 1 and self.controller.toolbar.handle_click(pos):
             return
 
-        tool = self.editor.current_tool
+        tool = self.editor_state.current_tool
         # 2) Select
         if tool == "select" and ev.button == 1:
-            if self.editor.picker_open:
+            if self.editor_state.picker_state.open:
                 if not self.controller.picker.handle_click(pos, button=1, map=map):
                     self.controller.select_tile_at(pos, camera, map)
             else:
@@ -60,10 +60,10 @@ class TileEditorEventHandler:
 
         # 3) Brush
         elif tool == "brush" and ev.button == 1:
-            if self.editor.picker_open and self.controller.picker.is_over(pos):
+            if self.editor_state.picker_state.open and self.controller.picker.is_over(pos):
                 if self.controller.picker.handle_click(pos, button=1, map=map):
                     return
-            self.editor.brush_dragging = True
+            self.editor_state.brush_dragging = True
             self.controller.apply_brush(pos, camera, map)
 
         # 4) Eyedropper
@@ -71,28 +71,28 @@ class TileEditorEventHandler:
             self.controller.apply_eyedropper(pos, camera, map)
 
         # 5) Palette drag
-        elif ev.button == 3 and self.editor.picker_open:
+        elif ev.button == 3 and self.editor_state.picker_state.open:
             if self.controller.picker.handle_click(pos, button=3, map=map):
                 return
 
     def _on_mouse_motion(self, ev, camera, map):
         pos = ev.pos
         # Brush drag
-        if self.editor.current_tool == "brush" and self.editor.brush_dragging:
-            if not (self.editor.picker_open and self.controller.picker.is_over(pos)):
+        if self.editor_state.current_tool == "brush" and self.editor_state.brush_dragging:
+            if not (self.editor_state.picker_state.open and self.controller.picker.is_over(pos)):
                 self.controller.apply_brush(pos, camera, map)
         # Palette drag
-        elif self.editor.picker_open and self.controller.picker.dragging:
+        elif self.editor_state.picker_state.open and self.editor_state.picker_state.dragging:
             self.controller.picker.drag(pos)
 
     def _on_mouse_up(self, ev):
         # Release brush
-        if ev.button == 1 and self.editor.current_tool == "brush":
-            self.editor.brush_dragging = False
+        if ev.button == 1 and self.editor_state.current_tool == "brush":
+            self.editor_state.brush_dragging = False
         # Stop palette drag
-        if ev.button == 3 and self.editor.picker_open:
+        if ev.button == 3 and self.editor_state.picker_state.open:
             self.controller.picker.stop_drag()
 
     def _on_mouse_wheel(self, ev):
-        if self.editor.picker_open:
+        if self.editor_state.picker_state.open:
             self.controller.picker.scroll(ev.y)

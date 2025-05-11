@@ -9,7 +9,7 @@ from roguelike_engine.config import ASSETS_DIR
 from roguelike_engine.map.overlay.overlay_manager import save_overlay
 from roguelike_engine.tiles.assets import load_base_tile_images
 
-from roguelike_game.systems.editor.tiles.tiles_editor_config import PAD, THUMB, COLS, CLR_BORDER
+from roguelike_game.systems.editor.tiles.tiles_editor_config import PAD, THUMB, COLS
 
 
 class TilePickerController:
@@ -20,25 +20,25 @@ class TilePickerController:
     – Selección actual con borde naranja
     Cada cambio se guarda automáticamente en <map_name>.overlay.json
     """
-    BTN_W = 100
-    BTN_H = 28
 
-    def __init__(self, state, editor_state):
+
+    def __init__(self, state, editor_state, picker_state):
         self.state   = state
-        self.editor  = editor_state
+        self.editor_state  = editor_state
+        self.picker_state = picker_state
 
         # Carga los assets desde la carpeta global de assets/tiles
         self.assets  = self._load_assets()  # list of (rel_path, Surface)
-        self.font    = pygame.font.SysFont("Arial", 16)
-        self.surface = None
-        self.pos     = None
-        self.dragging    = False
-        self.drag_offset = (0, 0)
+        #self.font    = pygame.font.SysFont("Arial", 16)
+                
+        #self.dragging    = False
+        #self.drag_offset = (0, 0)
 
-        # rects for buttons
-        self.btn_delete_rect  = None
-        self.btn_default_rect = None
-        self.btn_accept_rect  = None
+        #self.surface = None
+        
+        #self.picker_state.btn_delete_rect  = None
+        #self.picker_state.btn_default_rect = None
+        #self.picker_state.btn_accept_rect  = None
 
     def _load_assets(self):
         """
@@ -71,76 +71,67 @@ class TilePickerController:
         return thumbs
 
     def open_with_selection(self, choice_path):
-        self.editor.picker_open = True
-        self.editor.current_choice = choice_path
+        self.picker_state.open = True
+        self.picker_state.current_choice = choice_path
         for idx, (path, _) in enumerate(self.assets):
             if path == choice_path:
                 row = idx // COLS
-                self.editor.scroll_offset = row * (THUMB + PAD)
+                self.editor_state.scroll_offset = row * (THUMB + PAD)
                 break
 
     def is_over(self, mouse_pos) -> bool:
-        if not self.surface or not self.pos:
+        if not self.picker_state.surface or not self.picker_state.pos:
             return False
-        x0, y0 = self.pos
-        w, h = self.surface.get_size()
+        x0, y0 = self.picker_state.pos
+        w, h = self.picker_state.surface.get_size()
         mx, my = mouse_pos
         return x0 <= mx <= x0 + w and y0 <= my <= y0 + h
 
-    def _draw_button(self, rect, text):
-        pygame.draw.rect(self.surface, (60, 60, 60), rect)
-        pygame.draw.rect(self.surface, CLR_BORDER, rect, 1)
-        txt = self.font.render(text, True, CLR_BORDER)
-        self.surface.blit(txt, txt.get_rect(center=rect.center))
 
     def handle_click(self, mouse_pos, button, map):
-        if not self.editor.picker_open or self.surface is None:
+        if not self.picker_state.open or self.picker_state.surface is None:
             return False
-
-        lx = mouse_pos[0] - self.pos[0]
-        ly = mouse_pos[1] - self.pos[1]
-        if lx < 0 or ly < 0 or lx > self.surface.get_width() or ly > self.surface.get_height():
+        lx = mouse_pos[0] - self.picker_state.pos[0]
+        ly = mouse_pos[1] - self.picker_state.pos[1]
+        if lx < 0 or ly < 0 or lx > self.picker_state.surface.get_width() or ly > self.picker_state.surface.get_height():
             return False
 
         # Mover ventana
         if button == 3:
-            self.dragging = True
-            self.drag_offset = (lx, ly)
+            self.picker_state.dragging = True
+            self.picker_state.drag_offset = (lx, ly)
             return True
 
         # Botones
-        if self.btn_delete_rect and self.btn_delete_rect.collidepoint((lx, ly)):
+        if self.picker_state.btn_delete_rect and self.picker_state.btn_delete_rect.collidepoint((lx, ly)):
             self._delete_tile(map)
             return True
-        if self.btn_default_rect and self.btn_default_rect.collidepoint((lx, ly)):
+        if self.picker_state.btn_default_rect and self.picker_state.btn_default_rect.collidepoint((lx, ly)):
             self._set_default(map)
-            return True
-        if self.btn_accept_rect and self.btn_accept_rect.collidepoint((lx, ly)):
-            self._accept_choice(map)
             return True
 
         # Selección de miniatura
         col = (lx - PAD) // (THUMB + PAD)
-        row = (ly - PAD + self.editor.scroll_offset) // (THUMB + PAD)
+        row = (ly - PAD + self.editor_state.scroll_offset) // (THUMB + PAD)
         idx = row * COLS + col
         if 0 <= col < COLS and row >= 0 and idx < len(self.assets):
-            self.editor.current_choice = self.assets[idx][0]
+            self.editor_state.current_choice = self.assets[idx][0]
             return True
 
         return False
 
     def drag(self, mouse_pos):
-        if self.dragging:
-            self.pos = (
-                mouse_pos[0] - self.drag_offset[0],
-                mouse_pos[1] - self.drag_offset[1]
+        if self.picker_state.dragging:
+            self.picker_state.pos = (
+                mouse_pos[0] - self.picker_state.drag_offset[0],
+                mouse_pos[1] - self.picker_state.drag_offset[1]
             )
 
     def stop_drag(self):
-        self.dragging = False
+        self.picker_state.dragging = False
 
     def _delete_tile(self, map):
-        tile = self.editor.selected_tile
+        tile = self.editor_state.selected_tile
         if tile:
             tile.sprite = pygame.Surface((TILE_SIZE, TILE_SIZE), pygame.SRCALPHA)
             tile.scaled_cache.clear()
@@ -148,7 +139,7 @@ class TilePickerController:
         self._close()
 
     def _set_default(self, map):
-        tile = self.editor.selected_tile
+        tile = self.editor_state.selected_tile
         if tile:
             base_map = load_base_tile_images()
             imgs = base_map.get(tile.tile_type)
@@ -158,25 +149,14 @@ class TilePickerController:
             self._persist_overlay(tile, "", map)
         self._close()
 
-    def _accept_choice(self, map):
-        choice = self.editor.current_choice
-        tile   = self.editor.selected_tile
-        if choice and tile:
-            tile.sprite = load_image(choice, (TILE_SIZE, TILE_SIZE))
-            tile.scaled_cache.clear()
-            name = Path(choice).stem
-            code = INVERSE_OVERLAY_MAP.get(name, [""])[0]
-            tile.overlay_code = code
-            self._persist_overlay(tile, code, map)
-        self._close()
 
     def scroll(self, dy):
-        self.editor.scroll_offset = max(0, self.editor.scroll_offset - dy * 30)
+        self.editor_state.scroll_offset = max(0, self.editor_state.scroll_offset - dy * 30)
 
     def _close(self):
-        self.editor.picker_open    = False
-        self.editor.current_choice = None
-        self.dragging              = False
+        self.editor_state.picker_open    = False
+        self.editor_state.current_choice = None
+        self.picker_state.dragging       = False
 
     def _persist_overlay(self, tile, code: str, map):
         row = tile.y // TILE_SIZE

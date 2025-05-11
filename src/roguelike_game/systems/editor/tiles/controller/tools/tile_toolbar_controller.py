@@ -43,8 +43,8 @@ class TileToolbarController:
                 else:
                     self.editor.current_tool = tool
                     # Al seleccionar la brocha, abrimos la paleta
-                    if tool == "brush":
-                        self.editor.picker_open = True
-                        self.editor.scroll_offset = 0
+                if tool == "brush":
+                    self.editor.picker_state.open = True
+                    self.editor.scroll_offset    = 0
                 return True
         return False

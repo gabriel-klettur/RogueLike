@@ -19,3 +19,6 @@ ICON_PATHS_TILE_TOOLBAR = {
     "eyedropper": "assets/ui/eyedropper_tool.png",
     "view":       "assets/ui/view_tool.png",
 }
+
+BTN_W = 100
+BTN_H = 28

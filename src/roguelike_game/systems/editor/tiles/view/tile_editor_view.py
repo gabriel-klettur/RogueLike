@@ -15,7 +15,7 @@ class TileEditorView:
         self.editor     = editor_state
 
         self.toolbar_view = TileToolbarView(controller.toolbar)
-        self.picker_view  = TilePickerView(controller.picker)
+        self.picker_view  = TilePickerView(editor_state.picker_state, controller.picker.assets)
         self.outline_view = TileOutlineView(controller, state, editor_state)
 
     def render(self, screen, camera, map):
