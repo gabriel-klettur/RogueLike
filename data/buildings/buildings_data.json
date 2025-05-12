@@ -66,9 +66,9 @@
             456,
             626
         ],
-        "split_ratio": 0.492,
+        "split_ratio": 0.632,
         "z_bottom": 2,
-        "z_top": 4,
+        "z_top": 8,
         "z": 2
     },
     {
@@ -90,8 +90,8 @@
         "z": 2
     },
     {
-        "x": 2157,
-        "y": 1848,
+        "x": 2152,
+        "y": 1833,
         "image_path": "assets/buildings/vegetation/tree_3.png",
         "solid": true,
         "scale": [
@@ -144,8 +144,8 @@
         "z": 1
     },
     {
-        "x": 2439,
-        "y": 1803,
+        "x": 2438,
+        "y": 1854,
         "image_path": "assets/buildings/vegetation/tree_8.png",
         "solid": true,
         "scale": [
@@ -396,8 +396,8 @@
         "z": 2
     },
     {
-        "x": 1786,
-        "y": 1398,
+        "x": 1796,
+        "y": 1394,
         "image_path": "assets/buildings/shops/blacksmith.png",
         "solid": true,
         "scale": [

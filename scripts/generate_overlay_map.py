@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+
+#Path: scripts/generate_overlay_map.py
+
 import os
 from pathlib import Path
 
