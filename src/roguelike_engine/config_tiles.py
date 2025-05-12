@@ -1,5 +1,5 @@
 from roguelike_engine.config_map import MAP_OVERLAYS_DIR
-from roguelike_engine.overlay_map import OVERLAY_CODE_MAP
+from data.map_overlays.overlay_map import OVERLAY_CODE_MAP
 
 #!------------------------ TILES CONFIG -------------------------
 # Tamaño de cada tile en píxeles
