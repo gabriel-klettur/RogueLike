@@ -7,15 +7,12 @@ from roguelike_game.systems.editor.tiles.view.tile_editor_view import TileEditor
 
 class TilesEditorManager:
     def __init__(self, game):
-        # guardamos referencia al juego completo
-        self.game = game
-        state = game.state
         
         # Inicialización del editor de tiles
         self.editor_state = TileEditorState()
-        self.controller   = TileEditorController(state, self.editor_state, self.editor_state.picker_state)
-        self.view         = TileEditorView(self.controller, state, self.editor_state)
-        self.handler      = TileEditorEventHandler(state, self.editor_state, self.controller)
+        self.controller   = TileEditorController(self.editor_state, self.editor_state.picker_state)
+        self.view         = TileEditorView(self.controller, self.editor_state)
+        self.handler      = TileEditorEventHandler(game.state, self.editor_state, self.controller)
 
     def toggle(self):
         """Activa/desactiva el editor de tiles y limpia sub-estado al cerrarlo."""
@@ -24,9 +21,9 @@ class TilesEditorManager:
 
         if not active:
             # reset de selección
-            self.editor_state.picker_open   = False
-            self.editor_state.selected_tile = None
-            self.editor_state.current_choice = None
+            self.editor_state.picker_open       = False
+            self.editor_state.selected_tile     = None
+            self.editor_state.current_choice    = None
 
         print("🟩 Tile-Editor ON REAL!" if active else "🟥 Tile-Editor OFF")
 

@@ -14,8 +14,7 @@ class TileToolbarController:
       - view
     """
 
-    def __init__(self, state, editor_state):
-        self.state = state
+    def __init__(self, editor_state):        
         self.editor = editor_state
 
         # Cargar iconos (64×64)

@@ -24,8 +24,7 @@ class TilePickerController:
     Ventana flotante de selección de tiles y explorador de directorios.
     """
 
-    def __init__(self, state, editor_state, picker_state):
-        self.state = state
+    def __init__(self, editor_state, picker_state):        
         self.editor_state = editor_state
         self.picker_state = picker_state
 

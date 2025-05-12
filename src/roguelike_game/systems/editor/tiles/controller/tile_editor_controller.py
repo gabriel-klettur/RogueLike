@@ -19,11 +19,10 @@ class TileEditorController:
     • Contorno cian   → tile bajo el cursor
     • Toolbar de herramientas
     """
-    def __init__(self, state, editor_state, picker_state):
-        self.state   = state
+    def __init__(self, editor_state, picker_state):        
         self.editor  = editor_state     # instancia de TileEditorControllerState
-        self.picker = TilePickerController(state, editor_state, picker_state)
-        self.toolbar = TileToolbarController(state, editor_state)
+        self.picker = TilePickerController(editor_state, picker_state)
+        self.toolbar = TileToolbarController(editor_state)
 
     def select_tile_at(self, mouse_pos, camera, map):
         tile = self._tile_under_mouse(mouse_pos, camera, map)

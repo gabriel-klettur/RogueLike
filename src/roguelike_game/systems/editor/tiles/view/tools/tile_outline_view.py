@@ -6,9 +6,8 @@ from roguelike_engine.config_tiles import TILE_SIZE
 from roguelike_game.systems.editor.tiles.tiles_editor_config import OUTLINE_HOVER, OUTLINE_SEL
 
 class TileOutlineView:
-    def __init__(self, controller, state, editor_state):
-        self.controller = controller
-        self.state = state
+    def __init__(self, controller, editor_state):
+        self.controller = controller        
         self.editor = editor_state
 
     def render(self, screen, camera, map):
