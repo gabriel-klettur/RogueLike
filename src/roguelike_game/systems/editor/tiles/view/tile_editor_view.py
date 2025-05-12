@@ -1,26 +1,24 @@
-# src.roguelike_project/systems/editor/tiles/tile_editor_view.py
-
 # Path: src/roguelike_game/systems/editor/tiles/view/tile_editor_view.py
+
 import pygame
-from src.roguelike_engine.config_tiles import TILE_SIZE
-from src.roguelike_game.systems.editor.tiles.tiles_editor_config import OUTLINE_CHOICE, OUTLINE_HOVER, OUTLINE_SEL
-from src.roguelike_engine.utils.loader import load_image
+from roguelike_engine.config_tiles import TILE_SIZE
+from roguelike_game.systems.editor.tiles.tiles_editor_config import OUTLINE_CHOICE, OUTLINE_HOVER, OUTLINE_SEL
+from roguelike_engine.utils.loader import load_image
 
-from src.roguelike_game.systems.editor.tiles.view.tools.tile_toolbar_view import TileToolbarView
-from src.roguelike_game.systems.editor.tiles.view.tools.tile_picker_view import TilePickerView
-from src.roguelike_game.systems.editor.tiles.view.tools.tile_outline_view import TileOutlineView
+from roguelike_game.systems.editor.tiles.view.tools.tile_toolbar_view import TileToolbarView
+from roguelike_game.systems.editor.tiles.view.tools.tile_picker_view import TilePickerView
+from roguelike_game.systems.editor.tiles.view.tools.tile_outline_view import TileOutlineView
 
-class TileEditorControllerView:
-    def __init__(self, controller, state, editor_state):
-        self.controller = controller
-        self.state      = state
+class TileEditorView:
+    def __init__(self, controller, editor_state):
+        self.controller = controller        
         self.editor     = editor_state
 
         self.toolbar_view = TileToolbarView(controller.toolbar)
-        self.picker_view  = TilePickerView(controller.picker)
-        self.outline_view = TileOutlineView(controller, state, editor_state)
+        self.picker_view  = TilePickerView(editor_state.picker_state, controller.picker.assets)
+        self.outline_view = TileOutlineView(controller, editor_state)
 
-    def render(self, screen):
+    def render(self, screen, camera, map):
         if not self.editor.active:
             return
 
@@ -28,11 +26,11 @@ class TileEditorControllerView:
         self.picker_view.render(screen)
 
         if self.editor.view_active:
-            self._render_view_panel(screen)
+            self._render_view_panel(screen, camera, map)
 
-        self.outline_view.render(screen)
+        self.outline_view.render(screen, camera, map)
 
-    def _render_view_panel(self, screen):
+    def _render_view_panel(self, screen, camera, map):
         panel_w = TILE_SIZE + 40
         panel_h = 3 * (TILE_SIZE + 30)
         x0 = self.controller.toolbar.x + self.controller.toolbar.size + 20
@@ -44,7 +42,7 @@ class TileEditorControllerView:
         mouse_pos = pygame.mouse.get_pos()
 
         items = [
-            ("Hovered",  self.controller._tile_under_mouse(mouse_pos), OUTLINE_HOVER),
+            ("Hovered",  self.controller._tile_under_mouse(mouse_pos, camera, map), OUTLINE_HOVER),
             ("Selected", self.editor.selected_tile,                     OUTLINE_SEL),
             ("Choice",   None,                                         OUTLINE_CHOICE),
         ]

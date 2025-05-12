@@ -4,7 +4,7 @@ from pathlib import Path
 #! ------------------------ MAIN GAME SETTINGS ------------------------
 
 # Debug Mode
-DEBUG = True
+DEBUG = False
 
 # Pantalla
 SCREEN_WIDTH = 1600

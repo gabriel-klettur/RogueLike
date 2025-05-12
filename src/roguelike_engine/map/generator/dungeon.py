@@ -4,7 +4,7 @@ import random
 from typing import List, Tuple, Dict, Optional
 
 from .interfaces import MapGenerator
-from src.roguelike_engine.config_map import (
+from roguelike_engine.config_map import (
     DUNGEON_WIDTH,
     DUNGEON_HEIGHT,
     DUNGEON_TUNNEL_THICKNESS,

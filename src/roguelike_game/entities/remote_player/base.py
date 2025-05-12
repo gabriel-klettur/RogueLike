@@ -1,7 +1,7 @@
-#Path: src.roguelike_project/entities/remote_player/base.py
+#Path: roguelike_project/entities/remote_player/base.py
 
 import pygame
-from src.roguelike_engine.utils.loader import load_image
+from roguelike_engine.utils.loader import load_image
 
 class RemotePlayer:
     def __init__(self, x, y, pid, character="first_hero", direction="down", health=100, mana=50, energy=100):

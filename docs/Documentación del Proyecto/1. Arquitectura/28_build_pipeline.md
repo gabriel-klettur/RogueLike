@@ -34,7 +34,7 @@ Permitir a cualquier usuario ejecutar el juego sin instalar Python ni dependenci
 ## 📦 Estructura Recomendada del Proyecto
 
 ```
-src.roguelike_project/
+roguelike_project/
 ├── assets/                # Sprites, sonidos, mapas
 ├── core/                 # Lógica del juego
 ├── entities/             # Jugador, NPCs, obstáculos

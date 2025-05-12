@@ -4,7 +4,7 @@ from .stats_model import PlayerStats
 from .movement_model import PlayerMovement
 from .attack_model import PlayerAttack
 
-from src.roguelike_game.entities.player.config_player import ORIGINAL_SPRITE_SIZE, RENDERED_SPRITE_SIZE
+from roguelike_game.entities.player.config_player import ORIGINAL_SPRITE_SIZE, RENDERED_SPRITE_SIZE
 
 
 

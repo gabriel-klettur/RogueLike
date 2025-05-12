@@ -1,12 +1,13 @@
 # Path: src/roguelike_game/systems/editor/tiles/model/tile_editor_state.py
-class TileEditorControllerState:
+
+from src.roguelike_game.systems.editor.tiles.model.tools.tile_picker_state import TilePickerState
+class TileEditorState:
     """
     Estructura mínima para el modo de edición de tiles.
     """
     def __init__(self):
         self.active = False            # bandera global (F8)
-        self.selected_tile = None      # instancia de Tile bajo el cursor
-        self.picker_open = False       # ¿paleta abierta?
+        self.selected_tile = None      # instancia de Tile bajo el cursor        
         self.current_choice = None     # ruta elegida en la paleta
         self.scroll_offset = 0         # desplazamiento de scroll en la paleta
 
@@ -14,5 +15,10 @@ class TileEditorControllerState:
         self.current_tool = "select"   # "select" | "brush" | "eyedropper" | "view"
         self.brush_dragging = False    # para arrastrar el brush
         self.view_active = True        # para ver los tiles.
+        
+        self.picker_state = TilePickerState()
+
+
+
         
         

@@ -1,40 +1,40 @@
 # Path: src/roguelike_engine/input/mouse.py
 import pygame
 
-def handle_mouse(event, state):
-    cam = state.camera
+def handle_mouse(event, state, camera, clock, map, entities, effects, explosions):
+    
     if event.type == pygame.MOUSEWHEEL:
-        if event.y > 0: cam.zoom = min(cam.zoom + 0.1, 2.0)
-        else:          cam.zoom = max(cam.zoom - 0.1, 0.5)
+        if event.y > 0: camera.zoom = min(camera.zoom + 0.1, 2.0)
+        else:          camera.zoom = max(camera.zoom - 0.1, 0.5)
 
     elif event.type == pygame.MOUSEBUTTONDOWN:
         if event.button == 1:
-            _click_left(state)
+            _click_left(state, camera, map, entities, effects, explosions)
         elif event.button == 2:
-            state.systems.effects.shooting_laser = True
-            state.systems.effects.last_laser_time = 0
+            effects.shooting_laser = True
+            effects.last_laser_time = 0
         elif event.button == 3:
-            _click_right(state)
+            _click_right(state, camera, entities, effects)
 
     elif event.type == pygame.MOUSEBUTTONUP and event.button == 2:
-        state.systems.effects.shooting_laser = False
+        effects.shooting_laser = False
 
-def _click_left(state):
+def _click_left(state, camera, map, entities, effects, explosions):
     mx,my = pygame.mouse.get_pos()
-    wx = mx/state.camera.zoom + state.camera.offset_x
-    wy = my/state.camera.zoom + state.camera.offset_y
+    wx = mx/camera.zoom + camera.offset_x
+    wy = my/camera.zoom + camera.offset_y
 
-    px = state.player.x + state.player.sprite_size[0]/2
-    py = state.player.y + state.player.sprite_size[1]/2
+    px = entities.player.x + entities.player.sprite_size[0]/2
+    py = entities.player.y + entities.player.sprite_size[1]/2
 
     dx,dy = wx-px, wy-py
     angle = -pygame.math.Vector2(dx, dy).angle_to((1,0))
-    state.systems.effects.spawn_fireball(angle)
+    effects.spawn_fireball(angle, map, entities, explosions)
 
-def _click_right(state):
+def _click_right(state, camera, entities, effects):
     mx,my = pygame.mouse.get_pos()
-    wx = mx/state.camera.zoom + state.camera.offset_x
-    wy = my/state.camera.zoom + state.camera.offset_y
+    wx = mx/camera.zoom + camera.offset_x
+    wy = my/camera.zoom + camera.offset_y
 
-    state.player.movement.teleport(wx, wy)
-    state.systems.effects.spawn_teleport(wx, wy)
+    entities.player.movement.teleport(wx, wy)
+    effects.spawn_teleport(wx, wy, entities)

@@ -2,7 +2,7 @@
 # Path: src/roguelike_engine/map/core/manager.py
 from typing import Optional
 
-from src.roguelike_engine.config_map import (
+from roguelike_engine.config_map import (
     DUNGEON_WIDTH,
     DUNGEON_HEIGHT,
     LOBBY_OFFSET_X,

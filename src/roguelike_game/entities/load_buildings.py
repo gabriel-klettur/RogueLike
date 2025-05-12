@@ -1,13 +1,13 @@
-# src.roguelike_project/loaders/load_buildings.py
+# roguelike_project/loaders/load_buildings.py
 
 # Path: src/roguelike_game/entities/load_buildings.py
 import os
-from src.roguelike_game.entities.buildings.building import Building
+from roguelike_game.entities.buildings.building import Building
 
-from src.roguelike_game.systems.editor.buildings.model.persistence.json_handler import save_buildings_to_json
-from src.roguelike_game.systems.editor.buildings.model.persistence.load_buildings_from_json import load_buildings_from_json
+from roguelike_game.systems.editor.buildings.model.persistence.json_handler import save_buildings_to_json
+from roguelike_game.systems.editor.buildings.model.persistence.load_buildings_from_json import load_buildings_from_json
 from roguelike_game.systems.config_z_layer import Z_LAYERS
-from src.roguelike_engine.config import BUILDINGS_DATA_PATH
+from roguelike_engine.config import BUILDINGS_DATA_PATH
 
 def get_hardcoded_buildings():
     return [

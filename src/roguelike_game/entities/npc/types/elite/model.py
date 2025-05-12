@@ -1,6 +1,6 @@
 # Al principio del archivo:
-from src.roguelike_game.entities.npc.types.elite.view import EliteView
-from src.roguelike_game.entities.npc.types.monster.model import MonsterModel
+from roguelike_game.entities.npc.types.elite.view import EliteView
+from roguelike_game.entities.npc.types.monster.model import MonsterModel
 
 class EliteModel(MonsterModel):
     def __init__(self, x: float, y: float, name: str = "Elite"):

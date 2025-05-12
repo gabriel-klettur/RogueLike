@@ -19,3 +19,16 @@ ICON_PATHS_TILE_TOOLBAR = {
     "eyedropper": "assets/ui/eyedropper_tool.png",
     "view":       "assets/ui/view_tool.png",
 }
+
+BTN_W = 100
+BTN_H = 28
+
+# Path base donde buscar
+BASE_TILE_DIR = "tiles"
+
+# Iconos especiales
+ARROW_UP_ICON = "assets/objects/arrow_left.png"
+FOLDER_ICON   = "assets/objects/folder_win.png"
+
+# Patrones de ficheros que nos interesan
+FILE_PATTERNS = ["*.png", "*.PNG", "*.webp", "*.WEBP"]

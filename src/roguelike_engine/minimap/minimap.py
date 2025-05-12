@@ -4,7 +4,7 @@ import pygame
 from roguelike_engine.config_tiles import TILE_SIZE
 
 
-def render_minimap(state):
+def render_minimap(state, screen, map, entities):
     """
     Dibuja un minimapa en la esquina superior derecha mostrando los tiles cercanos al jugador.
     """
@@ -22,8 +22,8 @@ def render_minimap(state):
     center_y = minimap_height // 2
 
     # Convertir posición del jugador a coordenadas de tile
-    player_tile_x = int(state.player.x) // TILE_SIZE
-    player_tile_y = int(state.player.y) // TILE_SIZE
+    player_tile_x = int(entities.player.x) // TILE_SIZE
+    player_tile_y = int(entities.player.y) // TILE_SIZE
 
     # Colores por tipo de tile
     tile_colors = {
@@ -35,7 +35,7 @@ def render_minimap(state):
     }
 
     # Dibujar cada tile
-    for tile in state.tiles:
+    for tile in map.tiles_in_region:
         # Cada tile.x, tile.y están en píxeles
         tile_x = int(tile.x) // TILE_SIZE
         tile_y = int(tile.y) // TILE_SIZE
@@ -62,8 +62,8 @@ def render_minimap(state):
     )
 
     # Mostrar en pantalla
-    screen_width = state.screen.get_width()
-    state.screen.blit(
+    screen_width = screen.get_width()
+    screen.blit(
         minimap_surface,
         (screen_width - minimap_width - 20, 20)
     )

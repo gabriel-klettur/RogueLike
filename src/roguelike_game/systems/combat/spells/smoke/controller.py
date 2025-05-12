@@ -1,5 +1,5 @@
 # Path: src/roguelike_game/systems/combat/spells/smoke/controller.py
-from src.roguelike_game.systems.combat.spells.smoke.model import SmokeModel
+from roguelike_game.systems.combat.spells.smoke.model import SmokeModel
 
 class SmokeController:
     """

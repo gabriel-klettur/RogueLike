@@ -1,11 +1,11 @@
 # Path: src/roguelike_game/entities/player/controller/player_controller.py
 import pygame
-from src.roguelike_game.entities.player.model.player_model import PlayerModel
-from src.roguelike_game.entities.player.view.assets import PlayerAssets
-from src.roguelike_game.entities.player.view.player_view import PlayerView
-from src.roguelike_game.entities.player.view.hud_view import HUDView
+from roguelike_game.entities.player.model.player_model import PlayerModel
+from roguelike_game.entities.player.view.assets import PlayerAssets
+from roguelike_game.entities.player.view.player_view import PlayerView
+from roguelike_game.entities.player.view.hud_view import HUDView
 from roguelike_engine.utils.loader import load_image
-from src.roguelike_game.entities.player.config_player import ORIGINAL_SPRITE_SIZE, HUD_RESTORE, HUD_DASH, HUD_SLASH, HUD_SHIELD, HUD_FIREWORK, HUD_SMOKE, HUD_LIGHTNING, HUD_ARCANE_FIRE, HUD_TELEPORT
+from roguelike_game.entities.player.config_player import ORIGINAL_SPRITE_SIZE, HUD_RESTORE, HUD_DASH, HUD_SLASH, HUD_SHIELD, HUD_FIREWORK, HUD_SMOKE, HUD_LIGHTNING, HUD_ARCANE_FIRE, HUD_TELEPORT
 
 class PlayerController:
     def __init__(self, x, y, z_state=None, obstacles=None):
@@ -89,9 +89,9 @@ class PlayerController:
         self.hud_view.render_cooldowns(self.model, screen)
 
     # Update frame (dash, teletransport)
-    def update(self, dt):
+    def update(self, dt, map):
         self.movement.update_dash(
-            [t for t in self.state.tiles if t.solid],
+            [t for t in map.tiles_in_region if t.solid],
             self.obstacles
         )
 

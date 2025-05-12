@@ -1,5 +1,5 @@
 # Path: src/roguelike_game/network/render_multiplayer.py
-from src.roguelike_game.entities.remote_player.base import RemotePlayer
+from roguelike_game.entities.remote_player.base import RemotePlayer
 
 def render_remote_players(state):
     if hasattr(state, "websocket") and state.websocket and state.websocket_connected:
@@ -20,5 +20,5 @@ def render_remote_players(state):
             rp.sprite = rp.sprites.get(rp.direction, rp.sprite)
 
             # ✅ Solo renderizar si está visible en cámara
-            if state.camera.is_in_view(rp.x, rp.y, rp.sprite_size):
-                rp.render(state.screen, state.camera)
+            if camera.is_in_view(rp.x, rp.y, rp.sprite_size):
+                rp.render(state.screen, camera)

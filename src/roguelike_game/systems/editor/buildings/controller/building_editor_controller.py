@@ -1,17 +1,17 @@
 # Path: src/roguelike_game/systems/editor/buildings/controller/building_editor_controller.py
 import pygame
-from src.roguelike_game.systems.editor.buildings.controller.tools.resize_tool import ResizeTool
-from src.roguelike_game.systems.editor.buildings.controller.tools.default_tool import DefaultTool
-from src.roguelike_game.systems.editor.buildings.controller.tools.z_tool      import ZTool
-from src.roguelike_game.systems.editor.buildings.controller.tools.split_tool  import SplitTool
-from src.roguelike_game.systems.editor.buildings.controller.tools.placer_tool  import PlacerTool
-from src.roguelike_game.systems.editor.buildings.controller.tools.delete_tool  import DeleteTool
+from roguelike_game.systems.editor.buildings.controller.tools.resize_tool import ResizeTool
+from roguelike_game.systems.editor.buildings.controller.tools.default_tool import DefaultTool
+from roguelike_game.systems.editor.buildings.controller.tools.z_tool      import ZTool
+from roguelike_game.systems.editor.buildings.controller.tools.split_tool  import SplitTool
+from roguelike_game.systems.editor.buildings.controller.tools.placer_tool  import PlacerTool
+from roguelike_game.systems.editor.buildings.controller.tools.delete_tool  import DeleteTool
 
 
 class BuildingEditorController:
     """Agrupa todas las herramientas y ofrece una API de eventos de mouse."""
 
-    def __init__(self, state, editor_state):
+    def __init__(self, state, editor_state, buildings):
         self.state = state
         self.editor = editor_state
         
@@ -22,7 +22,7 @@ class BuildingEditorController:
         self.z_tool_top    = ZTool(state, editor_state, target="top")        
         self.placer_tool = PlacerTool(
             state, editor_state,
-            building_class=type(state.buildings[0]),
+            building_class=type(buildings[0]),
             default_image="assets/buildings/others/portal.png",
             default_scale=(512, 824),
             default_solid=True,
@@ -30,39 +30,39 @@ class BuildingEditorController:
         self.delete_tool = DeleteTool(state, editor_state)
 
     # =========================== EVENTOS ============================ #
-    def on_mouse_down(self, pos, button):
+    def on_mouse_down(self, pos, button, camera, buildings):
         """button: 1 = izq, 3 = der"""
         mx, my = pos
-        world_x = mx / self.state.camera.zoom + self.state.camera.offset_x
-        world_y = my / self.state.camera.zoom + self.state.camera.offset_y
+        world_x = mx / camera.zoom + camera.offset_x
+        world_y = my / camera.zoom + camera.offset_y
 
         # 1) Barra split (clic izq o der indistinto)
-        for b in reversed(self.state.buildings):
-            if self.split_tool.check_handle_click((mx, my), b):
+        for b in reversed(buildings):
+            if self.split_tool.check_handle_click((mx, my), b, camera):
                 self.split_tool.start_drag(b)
                 return
 
         # 2) Resize handle (clic der)
         if button == 3:
-            for b in reversed(self.state.buildings):
-                if self.resize_tool.check_resize_handle_click(mx, my, b):
+            for b in reversed(buildings):
+                if self.resize_tool.check_resize_handle_click(mx, my, b, camera):
                     self._start_resize(b, (mx, my))
                     return
-                if self.default_tool.check_reset_handle_click(mx, my, b):
+                if self.default_tool.check_reset_handle_click(mx, my, b, camera):
                     self.default_tool.apply_reset(b)
                     return
 
         # 3) Selección / drag de edificio (clic der)
         if button == 3:
-            for b in reversed(self.state.buildings):
+            for b in reversed(buildings):
                 if b.rect.collidepoint(world_x, world_y):
                     self._start_drag(b, world_x, world_y)
                     return
 
         # 4) Paneles Z (+ / –) (clic izq)
         if button == 1:
-            self.z_tool_bottom.handle_mouse_click((mx, my))
-            self.z_tool_top.handle_mouse_click((mx, my))
+            self.z_tool_bottom.handle_mouse_click((mx, my), buildings)
+            self.z_tool_top.handle_mouse_click((mx, my), buildings)
 
     def on_mouse_up(self, button):
         if self.editor.resizing:
@@ -76,9 +76,9 @@ class BuildingEditorController:
         self.editor.split_dragging = False
         self.editor.selected_building = None
 
-    def on_mouse_motion(self, pos):
+    def on_mouse_motion(self, pos, camera):
         if self.editor.dragging or self.editor.resizing or self.editor.split_dragging:
-            self.update()                       # reaprovecha la lógica existente
+            self.update(camera)                       # reaprovecha la lógica existente
 
     # ======================== LÓGICA PRIVADA ======================== #
     def _start_resize(self, building, mouse_start):
@@ -96,11 +96,11 @@ class BuildingEditorController:
         print(f"🏗️ Arrastre de {building.image_path} iniciado")
 
     # ======================== ACTUALIZACIÓN ========================= #
-    def update(self):
+    def update(self, camera):
         if self.editor.dragging and self.editor.selected_building:
             mx, my = pygame.mouse.get_pos()
-            wx = mx / self.state.camera.zoom + self.state.camera.offset_x
-            wy = my / self.state.camera.zoom + self.state.camera.offset_y
+            wx = mx / camera.zoom + camera.offset_x
+            wy = my / camera.zoom + camera.offset_y
 
             b = self.editor.selected_building
             b.x = wx - self.editor.offset_x
@@ -111,4 +111,4 @@ class BuildingEditorController:
             self.resize_tool.update_resizing(pygame.mouse.get_pos())
 
         elif self.editor.split_dragging:
-            self.split_tool.update_drag(pygame.mouse.get_pos())
+            self.split_tool.update_drag(pygame.mouse.get_pos(), camera)

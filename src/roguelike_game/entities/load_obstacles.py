@@ -1,5 +1,5 @@
 # Path: src/roguelike_game/entities/load_obstacles.py
-from src.roguelike_game.entities.obstacles.obstacle import Obstacle
+from roguelike_game.entities.obstacles.obstacle import Obstacle
 
 def load_obstacles():
     return [

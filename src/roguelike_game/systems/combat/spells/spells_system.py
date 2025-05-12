@@ -4,72 +4,73 @@ import pygame
 from pygame.math import Vector2
 
 # MVC: LaserBeam
-from src.roguelike_game.systems.combat.spells.laser_beam.model      import LaserBeamModel
-from src.roguelike_game.systems.combat.spells.laser_beam.controller import LaserBeamController
-from src.roguelike_game.systems.combat.spells.laser_beam.view       import LaserBeamView
+from roguelike_game.systems.combat.spells.laser_beam.model      import LaserBeamModel
+from roguelike_game.systems.combat.spells.laser_beam.controller import LaserBeamController
+from roguelike_game.systems.combat.spells.laser_beam.view       import LaserBeamView
 
 # MVC: HealingAura
-from src.roguelike_game.systems.combat.spells.healing_aura.model      import HealingAuraModel
-from src.roguelike_game.systems.combat.spells.healing_aura.controller import HealingAuraController
-from src.roguelike_game.systems.combat.spells.healing_aura.view       import HealingAuraView
+from roguelike_game.systems.combat.spells.healing_aura.model      import HealingAuraModel
+from roguelike_game.systems.combat.spells.healing_aura.controller import HealingAuraController
+from roguelike_game.systems.combat.spells.healing_aura.view       import HealingAuraView
 
 # MVC: Smoke
-from src.roguelike_game.systems.combat.spells.smoke.model      import SmokeModel
-from src.roguelike_game.systems.combat.spells.smoke.controller import SmokeController
-from src.roguelike_game.systems.combat.spells.smoke.view       import SmokeView
+from roguelike_game.systems.combat.spells.smoke.model      import SmokeModel
+from roguelike_game.systems.combat.spells.smoke.controller import SmokeController
+from roguelike_game.systems.combat.spells.smoke.view       import SmokeView
 
 # MVC: SmokeEmitter
-from src.roguelike_game.systems.combat.spells.smoke_emitter.model      import SmokeEmitterModel
-from src.roguelike_game.systems.combat.spells.smoke_emitter.controller import SmokeEmitterController
-from src.roguelike_game.systems.combat.spells.smoke_emitter.view       import SmokeEmitterView
+from roguelike_game.systems.combat.spells.smoke_emitter.model      import SmokeEmitterModel
+from roguelike_game.systems.combat.spells.smoke_emitter.controller import SmokeEmitterController
+from roguelike_game.systems.combat.spells.smoke_emitter.view       import SmokeEmitterView
 
 # MVC: FireworkLaunch
-from src.roguelike_game.systems.combat.spells.firework_launch.model      import FireworkLaunchModel
-from src.roguelike_game.systems.combat.spells.firework_launch.controller import FireworkLaunchController
-from src.roguelike_game.systems.combat.spells.firework_launch.view       import FireworkLaunchView
+from roguelike_game.systems.combat.spells.firework_launch.model      import FireworkLaunchModel
+from roguelike_game.systems.combat.spells.firework_launch.controller import FireworkLaunchController
+from roguelike_game.systems.combat.spells.firework_launch.view       import FireworkLaunchView
 
 # MVC: Fireball
-from src.roguelike_game.systems.combat.spells.fireball.model      import FireballModel
-from src.roguelike_game.systems.combat.spells.fireball.controller import FireballController
-from src.roguelike_game.systems.combat.spells.fireball.view       import FireballView
+from roguelike_game.systems.combat.spells.fireball.model      import FireballModel
+from roguelike_game.systems.combat.spells.fireball.controller import FireballController
+from roguelike_game.systems.combat.spells.fireball.view       import FireballView
 
 # MVC: Lightning
-from src.roguelike_game.systems.combat.spells.lightning.model      import LightningModel
-from src.roguelike_game.systems.combat.spells.lightning.controller import LightningController
-from src.roguelike_game.systems.combat.spells.lightning.view       import LightningView
+from roguelike_game.systems.combat.spells.lightning.model      import LightningModel
+from roguelike_game.systems.combat.spells.lightning.controller import LightningController
+from roguelike_game.systems.combat.spells.lightning.view       import LightningView
 
 # MVC: ArcaneFlame
-from src.roguelike_game.systems.combat.spells.arcane_flame.model      import ArcaneFlameModel
-from src.roguelike_game.systems.combat.spells.arcane_flame.controller import ArcaneFlameController
-from src.roguelike_game.systems.combat.spells.arcane_flame.view       import ArcaneFlameView
+from roguelike_game.systems.combat.spells.arcane_flame.model      import ArcaneFlameModel
+from roguelike_game.systems.combat.spells.arcane_flame.controller import ArcaneFlameController
+from roguelike_game.systems.combat.spells.arcane_flame.view       import ArcaneFlameView
 
 # MVC: SphereMagicShield
-from src.roguelike_game.systems.combat.spells.sphere_magic_shield.model      import SphereMagicShieldModel
-from src.roguelike_game.systems.combat.spells.sphere_magic_shield.controller import SphereMagicShieldController
-from src.roguelike_game.systems.combat.spells.sphere_magic_shield.view       import SphereMagicShieldView
+from roguelike_game.systems.combat.spells.sphere_magic_shield.model      import SphereMagicShieldModel
+from roguelike_game.systems.combat.spells.sphere_magic_shield.controller import SphereMagicShieldController
+from roguelike_game.systems.combat.spells.sphere_magic_shield.view       import SphereMagicShieldView
 
 # MVC: Teleport
-from src.roguelike_game.systems.combat.spells.teleport.model      import TeleportModel
-from src.roguelike_game.systems.combat.spells.teleport.controller import TeleportController
-from src.roguelike_game.systems.combat.spells.teleport.view       import TeleportView
+from roguelike_game.systems.combat.spells.teleport.model      import TeleportModel
+from roguelike_game.systems.combat.spells.teleport.controller import TeleportController
+from roguelike_game.systems.combat.spells.teleport.view       import TeleportView
 
 # MVC: SlashEffect (legacy)
-from src.roguelike_game.systems.combat.spells.slash.model      import SlashModel
-from src.roguelike_game.systems.combat.spells.slash.controller import SlashController
-from src.roguelike_game.systems.combat.spells.slash.view       import SlashView
+from roguelike_game.systems.combat.spells.slash.model      import SlashModel
+from roguelike_game.systems.combat.spells.slash.controller import SlashController
+from roguelike_game.systems.combat.spells.slash.view       import SlashView
 
 # Legacy: DashTrail, DashBounce
-from src.roguelike_game.systems.combat.spells.dash.model      import DashModel
-from src.roguelike_game.systems.combat.spells.dash.controller import DashController
-from src.roguelike_game.systems.combat.spells.dash.view       import DashView
+from roguelike_game.systems.combat.spells.dash.model      import DashModel
+from roguelike_game.systems.combat.spells.dash.controller import DashController
+from roguelike_game.systems.combat.spells.dash.view       import DashView
 
 # Benchmarking
-from src.roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark import benchmark
 
 
 class SpellsSystem:
-    def __init__(self, state):
-        self.state = state
+    def __init__(self, state, perf_log):
+        self.state = state 
+        self.perf_log = perf_log       
 
         # MVC lists
         self.laser_controllers:         list[LaserBeamController]      = []
@@ -123,9 +124,9 @@ class SpellsSystem:
         self.dash_controllers.append(ctrl)
         self.dash_views.append(view)
 
-    def spawn_slash(self, direction: Vector2):
-        px, py = self._player_center()
-        #enemies = self.state.enemies + list(self.state.remote_entities.values())   #!Futura implementación
+    def spawn_slash(self, direction: Vector2, entities):
+        px, py = self._player_center(entities.player)
+        #enemies = entities.enemies + list(self.state.remote_entities.values()) 
         model = SlashModel(px, py, direction)
         ctrl = SlashController(model)
         view = SlashView(model)
@@ -133,8 +134,8 @@ class SpellsSystem:
         self.slash_views.append(view)
 
 
-    def spawn_laser(self, x, y, enemies):
-        px, py = self._player_center()
+    def spawn_laser(self, x, y, enemies, entities):
+        px, py = self._player_center(entities.player)
         model  = LaserBeamModel(px, py, x, y, enemies=enemies)
         ctrl   = LaserBeamController(model)
         view   = LaserBeamView(model)
@@ -145,11 +146,11 @@ class SpellsSystem:
             self.laser_controllers.pop(0)
             self.laser_views.pop(0)
 
-    def spawn_smoke(self):
+    def spawn_smoke(self, camera, entities):
         mx, my  = pygame.mouse.get_pos()
-        wx       = mx / self.state.camera.zoom + self.state.camera.offset_x
-        wy       = my / self.state.camera.zoom + self.state.camera.offset_y
-        px, py   = self._player_center()
+        wx       = mx / camera.zoom + camera.offset_x
+        wy       = my / camera.zoom + camera.offset_y
+        px, py   = self._player_center(entities.player)
         dir_vec  = Vector2(wx - px, wy - py)
         if dir_vec.length(): dir_vec.normalize_ip()
         model  = SmokeModel(px, py, dir_vec)
@@ -158,47 +159,47 @@ class SpellsSystem:
         self.smoke_controllers.append(ctrl)
         self.smoke_views.append(view)
 
-    def spawn_smoke_emitter(self):
-        px, py = self._player_center()
+    def spawn_smoke_emitter(self, entities):
+        px, py = self._player_center(entities.player)
         model   = SmokeEmitterModel(px, py)
         ctrl    = SmokeEmitterController(model)
         view    = SmokeEmitterView(model)
         self.smoke_emitter_controllers.append(ctrl)
         self.smoke_emitter_views.append(view)
 
-    def spawn_firework(self):
-        px, py = self._player_center()
+    def spawn_firework(self, camera, entities):
+        px, py = self._player_center(entities.player)
         mx, my = pygame.mouse.get_pos()
-        wx      = mx / self.state.camera.zoom + self.state.camera.offset_x
-        wy      = my / self.state.camera.zoom + self.state.camera.offset_y
+        wx      = mx / camera.zoom + camera.offset_x
+        wy      = my / camera.zoom + camera.offset_y
         model  = FireworkLaunchModel(px, py, wx, wy)
         ctrl   = FireworkLaunchController(model)
         view   = FireworkLaunchView(model)
         self.firework_controllers.append(ctrl)
         self.firework_views.append(view)
 
-    def spawn_fireball(self, angle):
-        px, py   = self._player_center()
-        tiles    = [t for t in self.state.tiles if t.solid]
-        enemies  = self.state.enemies + list(self.state.remote_entities.values())
+    def spawn_fireball(self, angle, map, entities, explosions):
+        px, py   = self._player_center(entities.player)
+        tiles    = [t for t in map.tiles_in_region if t.solid]
+        enemies  = entities.enemies
         model   = FireballModel(px, py, angle)
-        ctrl    = FireballController(model, tiles, enemies, self.state.systems.explosions)
+        ctrl    = FireballController(model, tiles, enemies, explosions)
         view    = FireballView(model)
         self.fireball_controllers.append(ctrl)
         self.fireball_views.append(view)
 
-    def spawn_lightning(self, target_pos):
-        px, py   = self._player_center()
+    def spawn_lightning(self, target_pos, entities):
+        px, py   = self._player_center(entities.player)
         model    = LightningModel((px, py), target_pos)
-        enemies  = self.state.enemies + list(self.state.remote_entities.values())
+        enemies  = entities.enemies
         ctrl     = LightningController(model, enemies)
         view     = LightningView(model)
         self.lightning_controllers.append(ctrl)
         self.lightning_views.append(view)
 
-    def spawn_healing_aura(self):
-        model  = HealingAuraModel(self.state.player)
-        ctrl   = HealingAuraController(model, self.state.clock)
+    def spawn_healing_aura(self, clock, entities):
+        model  = HealingAuraModel(entities.player)
+        ctrl   = HealingAuraController(model, clock)
         view   = HealingAuraView(model)
         self.healing_controllers.append(ctrl)
         self.healing_views.append(view)
@@ -210,15 +211,15 @@ class SpellsSystem:
         self.arcane_controllers.append(ctrl)
         self.arcane_views.append(view)
 
-    def spawn_magic_shield(self):
-        model  = SphereMagicShieldModel(self.state.player)
+    def spawn_magic_shield(self, entities):
+        model  = SphereMagicShieldModel(entities.player)
         ctrl   = SphereMagicShieldController(model)
         view   = SphereMagicShieldView(model)
         self.shield_controllers.append(ctrl)
         self.shield_views.append(view)
 
-    def spawn_teleport(self, x, y):
-        px, py  = self._player_center()
+    def spawn_teleport(self, x, y, entities):
+        px, py  = self._player_center(entities.player)
         model   = TeleportModel((px, py), (x, y))
         ctrl    = TeleportController(model)
         view    = TeleportView(model)
@@ -228,7 +229,7 @@ class SpellsSystem:
     # ------------------------------------------------ #
     #                     Update                       #
     # ------------------------------------------------ #
-    def update(self):
+    def update(self, clock, screen):
         # HealingAura
         for c in self.healing_controllers: c.update()
         self.healing_controllers = [c for c in self.healing_controllers if not c.model.is_empty()]
@@ -246,7 +247,7 @@ class SpellsSystem:
 
         # SmokeEmitter
         for c in self.smoke_emitter_controllers:
-            wind = (pygame.mouse.get_pos()[0] - self.state.screen.get_width()//2)/1000
+            wind = (pygame.mouse.get_pos()[0] - screen.get_width()//2)/1000
             c.apply_force(Vector2(wind,0)); c.update()
         self.smoke_emitter_controllers = [c for c in self.smoke_emitter_controllers if not c.model.is_empty()]
         self.smoke_emitter_views       = [v for v in self.smoke_emitter_views       if not v.model.is_empty()]
@@ -287,7 +288,7 @@ class SpellsSystem:
         self.slash_views = [v for v in self.slash_views if not v.model.is_finished()]
 
         #Dash
-        for c in self.dash_controllers: c.update()
+        for c in self.dash_controllers: c.update(clock)
         self.dash_controllers = [c for c in self.dash_controllers if not c.is_finished()]
         self.dash_views       = [v for v in self.dash_views       if not v.model.is_finished()]
         
@@ -295,7 +296,7 @@ class SpellsSystem:
     # ------------------------------------------------ #
     #                     Render                       #
     # ------------------------------------------------ #
-    @benchmark(lambda self: self.state.perf_log, "----3.6.2 effects_render")
+    @benchmark(lambda self: self.perf_log, "----3.6.2 effects_render")
     def render(self, screen, camera):
         dirty_rects = []
 
@@ -321,6 +322,5 @@ class SpellsSystem:
 
         return dirty_rects
 
-    def _player_center(self):
-        p = self.state.player
-        return (p.x + p.sprite_size[0]//2, p.y + p.sprite_size[1]//2)
+    def _player_center(self, player):        
+        return (player.x + player.sprite_size[0]//2, player.y + player.sprite_size[1]//2)

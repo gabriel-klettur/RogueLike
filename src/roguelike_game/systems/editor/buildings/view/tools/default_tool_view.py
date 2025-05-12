@@ -8,9 +8,9 @@ class DefaultToolView:
         self.editor = editor_state
         self.handle_size = handle_size
 
-    def render_reset_handle(self, screen, building):
-        x, y = self.state.camera.apply((building.x, building.y))
-        w, h = self.state.camera.scale(building.image.get_size())
+    def render_reset_handle(self, screen, building, camera):
+        x, y = camera.apply((building.x, building.y))
+        w, h = camera.scale(building.image.get_size())
 
         reset_rect = pygame.Rect(
             x + w - 2 * self.handle_size,

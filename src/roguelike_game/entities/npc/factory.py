@@ -12,7 +12,7 @@ except ImportError:
         "❌ PyYAML no está instalado. Ejecuta: pip install pyyaml"
     )
 
-from src.roguelike_game.entities.npc.interfaces import IEntity
+from roguelike_game.entities.npc.interfaces import IEntity
 
 # ---------------------------------------------------------------------
 # 1) Cargamos dinámicamente todos los config.yaml bajo npc/types/*
@@ -66,8 +66,8 @@ class NPC(IEntity):
         # Máscara para colisiones
         return getattr(self.view, 'mask', None)
 
-    def update(self, state):
-        self.controller.update(state)
+    def update(self, state, map, entities):
+        self.controller.update(state, map, entities)
 
     def render(self, screen, camera):
         self.view.render(screen, camera)
@@ -86,7 +86,7 @@ class NPCFactory:
         cfg = _CONFIGS.get(npc_type, {})
 
         # paquetes dinámicos
-        pkg = f"src.roguelike_game.entities.npc.types.{npc_type}"
+        pkg = f"roguelike_game.entities.npc.types.{npc_type}"
         m_mod = importlib.import_module(pkg + ".model")
         c_mod = importlib.import_module(pkg + ".controller")
         v_mod = importlib.import_module(pkg + ".view")

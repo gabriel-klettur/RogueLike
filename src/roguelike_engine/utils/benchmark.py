@@ -1,4 +1,4 @@
-# src.roguelike_project/utils/benchmark.py
+# roguelike_project/utils/benchmark.py
 
 # Path: src/roguelike_engine/utils/benchmark.py
 import time

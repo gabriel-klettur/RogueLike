@@ -4,7 +4,7 @@
 import json
 import os
 
-from src.roguelike_game.systems.z_layer.persistence import extract_z_from_json
+from roguelike_game.systems.z_layer.persistence import extract_z_from_json
 
 def load_buildings_from_json(filepath, building_class, z_state=None):
     """

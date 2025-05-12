@@ -4,7 +4,7 @@ import time
 import math
 import random
 
-from src.roguelike_game.systems.particles.particle import Particle
+from roguelike_game.systems.particles.particle import Particle
 
 class DashModel:
     """
@@ -28,9 +28,9 @@ class DashModel:
         # Concluye cuando ha pasado la duración y no quedan partículas vivas
         return self.elapsed() >= self.duration and not self.particles
 
-    def update(self):
+    def update(self, clock):
         now = self.elapsed()
-        delta_time = self.player.state.clock.get_time() / 1000
+        delta_time = clock.get_time() / 1000
         # Movimiento de dash mientras está activo
         if now < self.duration:
             move_dist = self.dash_speed * delta_time
