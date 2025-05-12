@@ -1,3 +1,5 @@
+#Path: src/roguelike_game/systems/editor/tiles/controller/tools/tile_picker_controller.py
+
 import pygame
 from pathlib import Path
 
@@ -92,55 +94,6 @@ class TilePickerController:
         w, h = self.picker_state.surface.get_size()
         mx, my = mouse_pos
         return x0 <= mx <= x0 + w and y0 <= my <= y0 + h
-
-    def handle_click(self, mouse_pos, button, map):
-        if not self.picker_state.open or self.picker_state.surface is None:
-            return False
-
-        # Coordenadas locales en la superficie del picker
-        lx = mouse_pos[0] - self.picker_state.pos[0]
-        ly = mouse_pos[1] - self.picker_state.pos[1]
-        sw, sh = self.picker_state.surface.get_size()
-        if lx < 0 or ly < 0 or lx > sw or ly > sh:
-            return False
-
-        # Botones de borrado y default (prioritario)
-        if self.picker_state.btn_delete_rect and self.picker_state.btn_delete_rect.collidepoint((lx, ly)):
-            self._delete_tile(map)
-            return True
-        if self.picker_state.btn_default_rect and self.picker_state.btn_default_rect.collidepoint((lx, ly)):
-            self._set_default(map)
-            return True
-
-        # Navegación de directorios y selección de assets
-        col = (lx - PAD) // (THUMB + PAD)
-        row = (ly - PAD + self.editor_state.scroll_offset) // (THUMB + PAD)
-        idx = row * COLS + col
-        # Si clic fuera de la rejilla de assets
-        if not (0 <= col < COLS and row >= 0 and idx < len(self.assets)):
-            return False
-
-        value, _, is_dir = self.assets[idx]
-        # Navegación de directorios
-        if is_dir:
-            if value == "..":
-                self.current_dir = self.current_dir.parent
-            else:
-                self.current_dir = self.current_dir / value
-            self._load_assets()
-            return True
-
-        # Selección de fichero
-        self.editor_state.current_choice = value
-        self.picker_state.current_choice = value
-
-        # Arrastrar el 'tile picker'
-        if button == 3:
-            self.picker_state.dragging = True
-            self.picker_state.drag_offset = (lx, ly)
-            return True
-
-        return True
 
     def drag(self, mouse_pos):
         if self.picker_state.dragging:

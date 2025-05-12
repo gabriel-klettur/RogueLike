@@ -1,6 +1,8 @@
 # Path: src/roguelike_game/systems/editor/tiles/controller/tile_editor_events.py
 import pygame
 
+from roguelike_game.systems.editor.tiles.events.tools.tile_picker_events import TilePickerEventHandler
+
 class TileEditorEventHandler:
     """
     Maneja eventos para el Tile Editor en modo MVC.
@@ -9,6 +11,12 @@ class TileEditorEventHandler:
         self.state = state
         self.editor_state = editor_state
         self.controller = controller
+
+        self.picker_tool = TilePickerEventHandler(
+            picker_controller = controller.picker,
+            editor_state      = editor_state,
+            picker_state      = controller.picker.picker_state
+        )
 
     def handle(self, camera, map):
         """Reenvía cada evento al manejador correspondiente."""
@@ -53,7 +61,7 @@ class TileEditorEventHandler:
         # 2) Select
         if tool == "select" and ev.button == 1:
             if self.editor_state.picker_state.open:
-                if not self.controller.picker.handle_click(pos, button=1, map=map):
+                if not self.picker_tool.handle_click(pos, button=1, map=map):
                     self.controller.select_tile_at(pos, camera, map)
             else:
                 self.controller.select_tile_at(pos, camera, map)
@@ -61,7 +69,7 @@ class TileEditorEventHandler:
         # 3) Brush
         elif tool == "brush" and ev.button == 1:
             if self.editor_state.picker_state.open and self.controller.picker.is_over(pos):
-                if self.controller.picker.handle_click(pos, button=1, map=map):
+                if self.picker_tool.handle_click(pos, button=1, map=map):
                     return
             self.editor_state.brush_dragging = True
             self.controller.apply_brush(pos, camera, map)
@@ -72,7 +80,7 @@ class TileEditorEventHandler:
 
         # 5) Palette drag
         elif ev.button == 3 and self.editor_state.picker_state.open:
-            if self.controller.picker.handle_click(pos, button=3, map=map):
+            if self.picker_tool.handle_click(pos, button=3, map=map):
                 return
 
     def _on_mouse_motion(self, ev, camera, map):
