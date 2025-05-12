@@ -144,8 +144,8 @@
         "z": 1
     },
     {
-        "x": 2420,
-        "y": 1808,
+        "x": 2439,
+        "y": 1803,
         "image_path": "assets/buildings/vegetation/tree_8.png",
         "solid": true,
         "scale": [
