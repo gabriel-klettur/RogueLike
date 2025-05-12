@@ -73,27 +73,49 @@ class TileEditorController:
         print(f"📝 Overlay actualizado: ({row}, {col}) = '{code}'")
 
     def apply_eyedropper(self, mouse_pos, camera, map):
+        """
+        Selecciona el sprite bajo el cursor, lo aplica al tile y guarda el overlay igual que el brush.
+        """
+        # 1) Encuentra el tile bajo el cursor
         tile = self._tile_under_mouse(mouse_pos, camera, map)
         if not tile:
             return
 
-        # obtener código o tipo base
+        # 2) Determinar código de overlay o tipo base
         code = tile.overlay_code or tile.tile_type
 
-        # mapear a nombre de archivo
+        # 3) Mapear código a nombre de asset en OVERLAY_CODE_MAP o DEFAULT_TILE_MAP
         if code in OVERLAY_CODE_MAP:
-            name = OVERLAY_CODE_MAP[code]
+            asset_name = OVERLAY_CODE_MAP[code]
         else:
-            name = DEFAULT_TILE_MAP.get(code)
-
-        if not name:
+            asset_name = DEFAULT_TILE_MAP.get(code)
+        if not asset_name:
             return
 
-        choice = f"assets/tiles/{name}.png"
-        self.editor.current_choice = choice
-
-        # cambiar al brush para empezar a pintar
+        # 4) Ruta relativa para el picker y brush (sin prefijo 'assets/')
+        choice_path = f"tiles/{asset_name}.png"
+        self.editor.current_choice = choice_path
         self.editor.current_tool = "brush"
+
+        # 5) Cargar y asignar sprite al tile
+        sprite = load_image(choice_path, (TILE_SIZE, TILE_SIZE))
+        tile.sprite = sprite
+        tile.scaled_cache.clear()
+
+        # 6) Fijar overlay_code al código original
+        tile.overlay_code = code
+
+        # 7) Persistir overlay en la matriz y archivo
+        row = tile.y // TILE_SIZE
+        col = tile.x // TILE_SIZE
+        if map.overlay is None:
+            h = len(map.tiles)
+            w = len(map.tiles[0]) if h else 0
+            map.overlay = [["" for _ in range(w)] for _ in range(h)]
+        map.overlay[row][col] = code
+        save_overlay(map.name, map.overlay)
+        print(f"📝 Overlay actualizado: ({row}, {col}) = '{code}'")
+
 
 
     def _tile_under_mouse(self, mouse_pos, camera, map):
