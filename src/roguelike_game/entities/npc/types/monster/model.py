@@ -5,7 +5,7 @@ from roguelike_game.entities.npc.utils.movement import NPCMovement
 from roguelike_game.entities.npc.types.monster.view import MonsterView
 
 class MonsterModel(BaseNPCModel):
-    def __init__(self, x: float, y: float, name: str = "Monster"):
+    def __init__(self, x: float, y: float, name: str = "Monster", sprite_size=None):
         super().__init__(x, y, name)
 
         # Stats por defecto
@@ -17,16 +17,21 @@ class MonsterModel(BaseNPCModel):
         self.movement = NPCMovement(self)
 
         # Tamaño del sprite (usado para calcular la hitbox)
-        self.sprite_size = MonsterView.SPRITE_SIZE
+        if sprite_size is not None:
+            self.sprite_size = sprite_size
+        else:
+            self.sprite_size = MonsterView.SPRITE_SIZE
 
-        # --- Parámetros de hitbox personalizables ---
-        # anchura y altura de la caja de colisión de pies:
-        self.hitbox_width  = int(self.sprite_size[0] * 0.5)
-        self.hitbox_height = int(self.sprite_size[1] * 0.25)
-        # offset desde la esquina superior izquierda:
-        #   (hacia la derecha, hacia abajo)
-        self.hitbox_offset_x = (self.sprite_size[0] - self.hitbox_width) // 2
-        self.hitbox_offset_y = self.sprite_size[1] - self.hitbox_height
+        # --- Parámetros de hitbox personalizables (proporcionales a sprite_size) ---
+        # Permite definir proporciones desde el YAML (por ejemplo, 0.5 equivale a la mitad del ancho)
+        width_prop = getattr(self, 'hitbox_width_prop', 0.5)
+        height_prop = getattr(self, 'hitbox_height_prop', 0.25)
+        offset_x_prop = getattr(self, 'hitbox_offset_x_prop', (1.0 - width_prop) / 2)
+        offset_y_prop = getattr(self, 'hitbox_offset_y_prop', 1.0 - height_prop)
+        self.hitbox_width  = int(self.sprite_size[0] * width_prop)
+        self.hitbox_height = int(self.sprite_size[1] * height_prop)
+        self.hitbox_offset_x = int(self.sprite_size[0] * offset_x_prop)
+        self.hitbox_offset_y = int(self.sprite_size[1] * offset_y_prop)
 
         # Patrulla
         self.path = [

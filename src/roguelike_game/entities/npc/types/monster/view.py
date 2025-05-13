@@ -32,8 +32,16 @@ class MonsterView(NPCView):
         self._render_health_bar(screen, camera)
         # debug outline
         if config.DEBUG:
+            # Dibuja la máscara del sprite (rojo)
             self.mask = pygame.mask.from_surface(spr)
             outline = self.mask.outline()
             pts = [camera.apply((m.x + x, m.y + y)) for x,y in outline]
             if len(pts) >= 3:
                 pygame.draw.polygon(screen, (255,0,0), pts, 1)
+            # Dibuja el hitbox de pies (verde)
+            # Usar el hitbox real de pies (igual que colisión)
+            rect = m.movement.hitbox()
+            topleft = camera.apply(rect.topleft)
+            size = camera.scale((rect.width, rect.height))
+            scaled_rect = pygame.Rect(topleft, size)
+            pygame.draw.rect(screen, (0,255,0), scaled_rect, 2)
