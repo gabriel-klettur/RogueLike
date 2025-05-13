@@ -113,8 +113,8 @@
         "image_path": "assets/buildings/vegetation/tree_9.png",
         "solid": true,
         "scale": [
-            180,
-            230
+            189,
+            241
         ],
         "original_scale": [
             241,
@@ -167,8 +167,8 @@
         "image_path": "assets/buildings/gardens/garden_5.png",
         "solid": true,
         "scale": [
-            512,
-            512
+            509,
+            509
         ],
         "original_scale": [
             1024,

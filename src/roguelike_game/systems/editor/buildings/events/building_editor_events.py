@@ -24,6 +24,12 @@ class BuildingEditorEventHandler:
 
     def handle(self, camera, entities):
         for ev in pygame.event.get():
+            # --- Finaliza resize al soltar R ---
+            if ev.type == pygame.KEYUP and ev.key == pygame.K_r:
+                if self.editor.resizing:
+                    self.editor.resizing = False
+                    print("✅ Resize finalizado al soltar R")
+                    # Opcional: podrías llamar aquí a una función para fijar el tamaño
             # --- F10: SOLO toggle editor (handles) ---
             if ev.type == pygame.KEYDOWN and ev.key == pygame.K_F10:
                 # Encendemos/apagamos los handles
@@ -57,6 +63,19 @@ class BuildingEditorEventHandler:
                     self.editor.resizing = False
                     self.editor.split_dragging = False
                     save_buildings_to_json(entities.buildings, BUILDINGS_DATA_PATH, z_state=self.state.z_state)
+                    return
+
+                # D → reset (default) sobre hovered_building
+                if ev.key == pygame.K_d and self.editor.hovered_building:
+                    self.controller.default_tool.apply_reset(self.editor.hovered_building)
+                    print("🔄 Reset (default) aplicado con D sobre hovered_building")
+                    return
+
+                # R → iniciar resize sobre hovered_building (al presionar)
+                if ev.key == pygame.K_r and self.editor.hovered_building:
+                    mx, my = pygame.mouse.get_pos()
+                    self.controller._start_resize(self.editor.hovered_building, (mx, my))
+                    print("🔧 Resize iniciado con R sobre hovered_building")
                     return
 
                 # Ctrl+Z → undo eliminación de edificio
