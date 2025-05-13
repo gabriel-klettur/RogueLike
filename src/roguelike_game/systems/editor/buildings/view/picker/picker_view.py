@@ -14,8 +14,13 @@ from ...controller.picker.picker_controller import DirEntry
 class PickerView:
     def __init__(self, editor_state):
         self.editor = editor_state
-        # Carga icono de “atrás”
+        # Icono de “atrás”
         self.back_icon = load_image(ICON_BACK, (NAV_HEIGHT, NAV_HEIGHT))
+        # Icono de carpeta
+        self.folder_icon = load_image("assets/ui/folder_win.png")
+        self.folder_icon = pygame.transform.scale(self.folder_icon, (THUMB_SIZE, THUMB_SIZE))
+        # Fuente para el label de las carpetas
+        self._label_font = pygame.font.SysFont(None, THUMB_SIZE // 4)
         # Cache de miniaturas
         self.thumb_cache: dict[str, pygame.Surface] = {}
 
@@ -45,13 +50,19 @@ class PickerView:
         pygame.draw.rect(screen, COLOR_BORDER, nav_rect)
         # Icono de “atrás”
         screen.blit(self.back_icon, (0, 0))
-        # Breadcrumbs
-        parts = self.editor.current_dir.replace('\\','/').split('/')
-        x = NAV_HEIGHT + 10
+        # Etiqueta fija
         font = pygame.font.SysFont(None, NAV_HEIGHT - 4)
+        label = "Carpeta actual:"
+        lbl_surf = font.render(label, True, (0,0,0))
+        x = NAV_HEIGHT + 10
+        screen.blit(lbl_surf, (x, (NAV_HEIGHT - lbl_surf.get_height()) // 2))
+        x += lbl_surf.get_width() + 20  # un poco de espacio tras la etiqueta
+
+        # Ahora los elementos del path
+        parts = self.editor.current_dir.replace('\\','/').split('/')
         for part in parts:
-            txt = font.render(part, True, COLOR_HIGHLIGHT)
-            screen.blit(txt, (x, (NAV_HEIGHT - txt.get_height())//2))
+            txt = font.render(part, True, (0, 0, 0))
+            screen.blit(txt, (x, (NAV_HEIGHT - txt.get_height()) // 2))
             x += txt.get_width() + 10
 
     def _draw_thumbnails(self, screen):
@@ -65,16 +76,20 @@ class PickerView:
             y = NAV_HEIGHT + row * (THUMB_SIZE + THUMB_PADDING) + THUMB_PADDING//2
             rect = pygame.Rect(x, y, THUMB_SIZE, THUMB_SIZE)
 
-            # Fondo y borde
+            # Borde
             color = COLOR_HIGHLIGHT if entry == self.editor.selected_entry else COLOR_BORDER
             pygame.draw.rect(screen, color, rect, 1)
 
-            # Si es directorio, dibujar un icono de carpeta
             if entry.is_dir:
-                # Puedes usar un icono de carpeta o un rectángulo relleno
-                pygame.draw.rect(screen, COLOR_BORDER, rect.inflate(-10,-10))
+                # Icono de carpeta
+                screen.blit(self.folder_icon, (x, y))
+                # Label centrado en negro
+                label_color = (0, 0, 0)
+                label_surf = self._label_font.render(entry.name, True, label_color)
+                label_rect = label_surf.get_rect(center=rect.center)
+                screen.blit(label_surf, label_rect)
             else:
-                # Cargar miniatura de la imagen
+                # Imagen normal
                 thumb = self.thumb_cache.get(entry.path)
                 if not thumb:
                     img = load_image(entry.path)
