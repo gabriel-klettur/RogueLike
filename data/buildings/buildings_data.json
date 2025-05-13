@@ -1,7 +1,7 @@
 [
     {
-        "x": 2559,
-        "y": 1990,
+        "x": 2552,
+        "y": 1992,
         "image_path": "assets/buildings/temples/catholic.png",
         "solid": true,
         "scale": [
@@ -12,10 +12,10 @@
             1024,
             1536
         ],
-        "split_ratio": 0.611,
-        "z_bottom": 5,
+        "split_ratio": 0.802,
+        "z_bottom": 3,
         "z_top": 9,
-        "z": 5
+        "z": 3
     },
     {
         "x": 2540,
@@ -192,10 +192,10 @@
             251,
             324
         ],
-        "split_ratio": 0.801,
-        "z_bottom": 4,
-        "z_top": 4,
-        "z": 4
+        "split_ratio": 0.695,
+        "z_bottom": 3,
+        "z_top": 7,
+        "z": 3
     },
     {
         "x": 2627,

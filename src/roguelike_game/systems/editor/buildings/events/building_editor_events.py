@@ -4,29 +4,40 @@ import logging
 
 from roguelike_game.systems.editor.buildings.model.persistence.json_handler import save_buildings_to_json
 from roguelike_engine.config import BUILDINGS_DATA_PATH
+from roguelike_game.systems.editor.buildings.controller.picker.picker_events import PickerEventHandler
+
 
 logger = logging.getLogger("building_editor.events")
+
 
 class BuildingEditorEventHandler:
     """
     Manejador de eventos para el Building Editor en modo MVC.
     """
-    def __init__(self, state, editor_state, controller):
+    def __init__(self, state, editor_state, controller, buildings):
         self.state = state
         self.editor = editor_state
         self.controller = controller
+        self.buildings = buildings
+        self.picker_events = PickerEventHandler(editor_state, controller.picker, buildings)
 
     def handle(self, camera, entities):
         """Procesa todos los eventos de Pygame"""
         for ev in pygame.event.get():
-            if ev.type == pygame.QUIT:
+            if ev.type == pygame.KEYDOWN and ev.key == pygame.K_F10:
+                self.controller.toggle_editor()
+                return
+            elif self.editor.picker_active:
+                self.picker_events.handle(ev, camera)
+                continue
+            elif ev.type == pygame.QUIT:
                 self._on_quit(ev)
             elif ev.type == pygame.KEYDOWN:
                 self._on_keydown(ev, entities)
             elif ev.type == pygame.MOUSEBUTTONDOWN:
                 self._on_mouse_down(ev, camera, entities.buildings)
             elif ev.type == pygame.MOUSEBUTTONUP:
-                self._on_mouse_up(ev)
+                self._on_mouse_up(ev, camera, entities.buildings)
             elif ev.type == pygame.MOUSEMOTION:
                 self._on_mouse_motion(ev, camera)
 
@@ -69,8 +80,8 @@ class BuildingEditorEventHandler:
         mx, my = pygame.mouse.get_pos()
         self.controller.on_mouse_down((mx, my), ev.button, camera, buildings)
 
-    def _on_mouse_up(self, ev):
-        self.controller.on_mouse_up(ev.button)
+    def _on_mouse_up(self, ev, camera, buildings):
+        self.controller.on_mouse_up(ev.button, camera, buildings)
 
     def _on_mouse_motion(self, ev, camera):
         self.controller.on_mouse_motion(ev.pos, camera)

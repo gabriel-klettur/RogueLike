@@ -5,6 +5,9 @@ from roguelike_game.systems.editor.buildings.view.tools.resize_tool_view  import
 from roguelike_game.systems.editor.buildings.view.tools.split_tool_view   import SplitToolView
 from roguelike_game.systems.editor.buildings.view.tools.z_tool_view       import ZToolView
 
+#! Picker
+from roguelike_game.systems.editor.buildings.view.picker.picker_view      import PickerView
+
 class BuildingEditorView:
     def __init__(self, state, editor_state):
         self.state = state
@@ -14,9 +17,17 @@ class BuildingEditorView:
         self.split_view    = SplitToolView(state, editor_state)
         self.z_bottom_view = ZToolView(state, editor_state, target="bottom")
         self.z_top_view    = ZToolView(state, editor_state, target="top")
+        
+        #! Picker
+        self.picker_view = PickerView(editor_state)
 
     def render(self, screen, camera, buildings):
         if not self.editor.active:
+            return
+        
+        # Si estamos en modo picker, pintamos el selector completo
+        if self.editor.picker_active:
+            self.picker_view.render(screen, camera)
             return
         
         # Renderizado de cada edificio

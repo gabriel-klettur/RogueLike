@@ -76,8 +76,12 @@ def handle_keyboard(event, state, camera, clock, menu, entities, effects, tiles_
         # ---------- TEST / DEBUG ---------- #
         elif event.key == pygame.K_F10:
             if hasattr(state, "editor"):
-                state.editor.active = not state.editor.active
-                print("🛠️ Modo editor activado" if state.editor.active else "🛑 Modo editor desactivado")
+                # alternamos el editor y también arrancamos el picker
+                new_val = not state.editor.active
+                state.editor.active        = new_val
+                state.editor.picker_active = new_val
+                print("🛠️ Building Editor ON (picker abierto)"  if new_val else
+                      "🛑 Building Editor OFF (picker cerrado)")
 
         elif event.key == pygame.K_F9:
             config.DEBUG = not config.DEBUG

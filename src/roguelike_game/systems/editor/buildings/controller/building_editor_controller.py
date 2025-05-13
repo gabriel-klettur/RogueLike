@@ -7,6 +7,8 @@ from roguelike_game.systems.editor.buildings.controller.tools.split_tool  import
 from roguelike_game.systems.editor.buildings.controller.tools.placer_tool  import PlacerTool
 from roguelike_game.systems.editor.buildings.controller.tools.delete_tool  import DeleteTool
 
+#! Picker
+from roguelike_game.systems.editor.buildings.controller.picker.picker_controller import BuildingPickerController
 
 class BuildingEditorController:
     """Agrupa todas las herramientas y ofrece una API de eventos de mouse."""
@@ -29,12 +31,22 @@ class BuildingEditorController:
         )
         self.delete_tool = DeleteTool(state, editor_state)
 
+        self.picker = BuildingPickerController(editor_state, self.placer_tool)
+
     # =========================== EVENTOS ============================ #
     def on_mouse_down(self, pos, button, camera, buildings):
         """button: 1 = izq, 3 = der"""
         mx, my = pos
+
+        #! Building picker
+        if self.editor.picker_active:
+            # delegar al picker
+            self.picker.handle_mouse_down(pos, button, camera, buildings)
+            return
+        
         world_x = mx / camera.zoom + camera.offset_x
         world_y = my / camera.zoom + camera.offset_y
+
 
         # 1) Barra split (clic izq o der indistinto)
         for b in reversed(buildings):
@@ -64,21 +76,46 @@ class BuildingEditorController:
             self.z_tool_bottom.handle_mouse_click((mx, my), buildings)
             self.z_tool_top.handle_mouse_click((mx, my), buildings)
 
-    def on_mouse_up(self, button):
+    def on_mouse_up(self, button, camera, buildings):
+        """button: 1 = izq, 3 = der"""
+        # 1) Delegate to picker if open
+        if self.editor.picker_active:
+            self.picker.handle_mouse_up(button, camera, buildings)
+            return
+
+        # 2) Finalizar resize / split
         if self.editor.resizing:
             print("✅ Resize terminado.")
         if self.editor.split_dragging:
-            print("✅ Split ratio fijado:",
-                  round(self.editor.selected_building.split_ratio, 2))
+            print("✅ Split ratio fijado:", round(self.editor.selected_building.split_ratio, 2))
 
+        # 3) Reset de flags de arrastre
         self.editor.dragging = False
         self.editor.resizing = False
         self.editor.split_dragging = False
         self.editor.selected_building = None
 
     def on_mouse_motion(self, pos, camera):
+
+        #! Building picker
+        if self.editor.picker_active:
+            self.picker.handle_mouse_motion(pos, camera)
+            return
+        
         if self.editor.dragging or self.editor.resizing or self.editor.split_dragging:
             self.update(camera)                       # reaprovecha la lógica existente
+
+    #! Building picker
+    # método de arranque: al pulsar F10
+    def toggle_editor(self):
+        new_val = not self.editor.active
+        self.editor.active = new_val
+        self.editor.picker_active = new_val
+        if not new_val:
+            # al cerrar, limpiar cualquier drag del picker
+            self.picker.stop_drag()
+        print("🟩 Building Editor ON" if new_val else "🟥 Building Editor OFF")
+
 
     # ======================== LÓGICA PRIVADA ======================== #
     def _start_resize(self, building, mouse_start):
