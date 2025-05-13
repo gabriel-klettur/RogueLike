@@ -81,7 +81,7 @@ class BuildingEditorEventHandler:
             elif ev.type == pygame.MOUSEBUTTONUP:
                 self.controller.on_mouse_up(ev.button, camera, entities.buildings)
             elif ev.type == pygame.MOUSEMOTION:
-                self.controller.on_mouse_motion(ev.pos, camera)
+                self.controller.on_mouse_motion(ev.pos, camera, entities.buildings)
 
     def _on_quit(self, ev):
         logger.info("Quit event received in Building Editor")

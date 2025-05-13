@@ -84,11 +84,48 @@ class BuildingEditorController:
         self.editor.split_dragging = False
         self.editor.selected_building = None
 
-    def on_mouse_motion(self, pos, camera):
-
-        
+    def on_mouse_motion(self, pos, camera, buildings):
+        # Si estamos arrastrando/redimensionando, solo actualiza
         if self.editor.dragging or self.editor.resizing or self.editor.split_dragging:
-            self.update(camera)                       # reaprovecha la lógica existente
+            self.update(camera)
+            return
+        # Detectar todos los edificios bajo el mouse (orden arriba-abajo)
+        hovered_list = self._buildings_under_mouse(pos, camera, buildings)
+        self.editor.hovered_buildings = hovered_list
+        # Si el índice está fuera de rango, lo reiniciamos
+        if self.editor.hovered_building_index >= len(hovered_list):
+            self.editor.hovered_building_index = 0
+        # hovered_building es el seleccionado por el índice
+        if hovered_list:
+            self.editor.hovered_building = hovered_list[self.editor.hovered_building_index]
+        else:
+            self.editor.hovered_building = None
+
+    def _buildings_under_mouse(self, mouse_pos, camera, buildings):
+        mx, my = mouse_pos
+        wx = mx / camera.zoom + camera.offset_x
+        wy = my / camera.zoom + camera.offset_y
+        result = []
+        for b in reversed(buildings):  # Reversed para priorizar el más arriba
+            x, y = b.x, b.y
+            w, h = b.image.get_size()
+            rect = pygame.Rect(x, y, w, h)
+            if rect.collidepoint(wx, wy):
+                result.append(b)
+        return result
+
+    def _building_under_mouse(self, mouse_pos, camera, buildings):
+        mx, my = mouse_pos
+        wx = mx / camera.zoom + camera.offset_x
+        wy = my / camera.zoom + camera.offset_y
+        # buildings puede estar en self.state.entities.buildings o inyectarse, aquí usamos self.state.entities.buildings
+        for b in reversed(buildings):  # Reversed para priorizar el más arriba (por si se solapan)
+            x, y = b.x, b.y
+            w, h = b.image.get_size()
+            rect = pygame.Rect(x, y, w, h)
+            if rect.collidepoint(wx, wy):
+                return b
+        return None
 
     def toggle_editor(self):
         """Activa/desactiva los handles del Building Editor, sin tocar el picker."""

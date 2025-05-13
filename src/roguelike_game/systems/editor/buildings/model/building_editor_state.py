@@ -10,6 +10,9 @@ class BuildingsEditorState:
 
         # Estado normal de edición
         self.selected_building = None
+        self.hovered_building = None  # Edificio bajo el cursor
+        self.hovered_buildings = []   # Lista de edificios bajo el cursor
+        self.hovered_building_index = 0  # Índice en la lista
         self.dragging = False
         self.offset_x = 0
         self.offset_y = 0

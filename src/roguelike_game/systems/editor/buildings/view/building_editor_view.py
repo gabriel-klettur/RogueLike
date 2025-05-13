@@ -33,8 +33,12 @@ class BuildingEditorView:
         for b in buildings:
             x, y = camera.apply((b.x, b.y))
             w, h = camera.scale(b.image.get_size())
+            rect = pygame.Rect(x, y, w, h)
+            # Si es el hovered_building, dibuja contorno cian grueso
+            if hasattr(self.editor, 'hovered_building') and b == self.editor.hovered_building:
+                pygame.draw.rect(screen, (0, 255, 255), rect, 4)
             # contorno general del edificio
-            pygame.draw.rect(screen, (255, 255, 255), pygame.Rect(x, y, w, h), 1)
+            pygame.draw.rect(screen, (255, 255, 255), rect, 1)
 
             # Render de cada handle/herramienta
             self.default_view.render_reset_handle(screen, b, camera)
