@@ -21,8 +21,13 @@ class PickerView:
 
     def render(self, screen, camera):
         sw, sh = screen.get_size()
-        # 1) Fondo
-        screen.fill(COLOR_BG)
+
+        # 1) Panel semitransparente de fondo (no sobre toda la pantalla)
+        #    Por ejemplo, un rectángulo negro al 60% de opacidad en la parte superior:
+        panel_h = NAV_HEIGHT + ((len(self.editor.entries)-1)//(sw//(THUMB_SIZE+THUMB_PADDING)) + 1) * (THUMB_SIZE+THUMB_PADDING)
+        overlay = pygame.Surface((sw, panel_h), pygame.SRCALPHA)
+        overlay.fill((30, 30, 30, 180))  # (R, G, B, A)
+        screen.blit(overlay, (0, 0))
 
         # 2) Barra de navegación
         self._draw_nav_bar(screen)
