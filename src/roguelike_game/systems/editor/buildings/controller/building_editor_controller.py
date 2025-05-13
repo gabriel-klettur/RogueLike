@@ -60,6 +60,11 @@ class BuildingEditorController:
 
         # 3) Selección / drag de edificio (clic der)
         if button == 3:
+            hovered = self.editor.hovered_building
+            if hovered and hovered.rect.collidepoint(world_x, world_y):
+                self._start_drag(hovered, world_x, world_y)
+                return
+            # Si no hay hovered_building, comportamiento clásico
             for b in reversed(buildings):
                 if b.rect.collidepoint(world_x, world_y):
                     self._start_drag(b, world_x, world_y)

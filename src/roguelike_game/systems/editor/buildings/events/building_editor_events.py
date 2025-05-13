@@ -82,6 +82,18 @@ class BuildingEditorEventHandler:
                 self.controller.on_mouse_up(ev.button, camera, entities.buildings)
             elif ev.type == pygame.MOUSEMOTION:
                 self.controller.on_mouse_motion(ev.pos, camera, entities.buildings)
+            elif ev.type == pygame.MOUSEWHEEL:
+                self._handle_mouse_wheel(ev, entities.buildings)
+
+    def _handle_mouse_wheel(self, ev, buildings):
+        # Solo si hay varios edificios bajo el cursor
+        hovered_list = self.editor.hovered_buildings
+        if len(hovered_list) > 1:
+            # Scroll up: y > 0, Scroll down: y < 0
+            idx = self.editor.hovered_building_index
+            idx = (idx + (-1 if ev.y < 0 else 1)) % len(hovered_list)
+            self.editor.hovered_building_index = idx
+            self.editor.hovered_building = hovered_list[idx]
 
     def _on_quit(self, ev):
         logger.info("Quit event received in Building Editor")
