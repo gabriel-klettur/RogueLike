@@ -13,7 +13,7 @@ from roguelike_game.systems.editor.buildings.controller.picker.picker_controller
 class BuildingEditorController:
     """Agrupa todas las herramientas y ofrece una API de eventos de mouse."""
 
-    def __init__(self, state, editor_state, buildings):
+    def __init__(self, state, editor_state, buildings, camera):
         self.state = state
         self.editor = editor_state
         
@@ -29,7 +29,7 @@ class BuildingEditorController:
             default_scale=(512, 824),
             default_solid=True,
         )
-        self.delete_tool = DeleteTool(state, editor_state)
+        self.delete_tool = DeleteTool(state, editor_state, camera)
 
         self.picker = BuildingPickerController(editor_state, self.placer_tool)
 

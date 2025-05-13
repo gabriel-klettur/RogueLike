@@ -3,9 +3,10 @@
 import pygame
 
 class DeleteTool:
-    def __init__(self, state, editor_state):
+    def __init__(self, state, editor_state, camera):
         self.state = state
         self.editor = editor_state
+        self.camera = camera
 
     def delete_building_at_mouse(self, entities):
         mx, my = pygame.mouse.get_pos()

@@ -26,7 +26,15 @@ class BuildingEditorEventHandler:
         for ev in pygame.event.get():
             # --- F10: SOLO toggle editor (handles) ---
             if ev.type == pygame.KEYDOWN and ev.key == pygame.K_F10:
+                # Encendemos/apagamos los handles
                 self.controller.toggle_editor()
+                # Si acabamos de cerrar el editor, guardamos todo
+                if not self.editor.active:
+                    save_buildings_to_json(
+                        entities.buildings,
+                        BUILDINGS_DATA_PATH,
+                        z_state=self.state.z_state
+                    )
                 return
 
             # --- Si el picker está activo, delego ahí ---

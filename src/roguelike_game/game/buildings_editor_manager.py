@@ -15,7 +15,7 @@ class BuildingEditorManager:
 
         # Inicialización del editor de edificios
         self.editor_state = BuildingsEditorState()
-        self.controller   = BuildingEditorController(state, self.editor_state, buildings)
+        self.controller   = BuildingEditorController(state, self.editor_state, buildings, game.camera)
         self.view         = BuildingEditorView(state, self.editor_state)
         
         # Ahora el event handler recibe también la lista de buildings
