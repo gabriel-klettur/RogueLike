@@ -59,6 +59,11 @@ class BuildingPickerController:
         self.editor.selected_entry = None
         self.editor.dragging_building = False
 
+    def close_picker(self):
+        """Cerrar solo el panel de selección, sin desactivar el editor."""
+        self.editor.picker_active = False
+        print("📂 Building Picker CLOSED")
+
     def place_building(self, mouse_pos, camera, buildings):
         """
         Suelta el building en la posición del ratón,

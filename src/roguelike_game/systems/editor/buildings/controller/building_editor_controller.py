@@ -38,12 +38,6 @@ class BuildingEditorController:
         """button: 1 = izq, 3 = der"""
         mx, my = pos
 
-        #! Building picker
-        if self.editor.picker_active:
-            # delegar al picker
-            self.picker.handle_mouse_down(pos, button, camera, buildings)
-            return
-        
         world_x = mx / camera.zoom + camera.offset_x
         world_y = my / camera.zoom + camera.offset_y
 
@@ -77,11 +71,6 @@ class BuildingEditorController:
             self.z_tool_top.handle_mouse_click((mx, my), buildings)
 
     def on_mouse_up(self, button, camera, buildings):
-        """button: 1 = izq, 3 = der"""
-        # 1) Delegate to picker if open
-        if self.editor.picker_active:
-            self.picker.handle_mouse_up(button, camera, buildings)
-            return
 
         # 2) Finalizar resize / split
         if self.editor.resizing:
@@ -97,24 +86,21 @@ class BuildingEditorController:
 
     def on_mouse_motion(self, pos, camera):
 
-        #! Building picker
-        if self.editor.picker_active:
-            self.picker.handle_mouse_motion(pos, camera)
-            return
         
         if self.editor.dragging or self.editor.resizing or self.editor.split_dragging:
             self.update(camera)                       # reaprovecha la lógica existente
 
-    #! Building picker
-    # método de arranque: al pulsar F10
     def toggle_editor(self):
+        """Activa/desactiva los handles del Building Editor, sin tocar el picker."""
         new_val = not self.editor.active
         self.editor.active = new_val
-        self.editor.picker_active = new_val
-        if not new_val:
-            # al cerrar, limpiar cualquier drag del picker
-            self.picker.stop_drag()
         print("🟩 Building Editor ON" if new_val else "🟥 Building Editor OFF")
+
+    def toggle_picker(self):
+        """Activa/desactiva solo el picker (listado de assets)."""
+        new_val = not self.editor.picker_active
+        self.editor.picker_active = new_val
+        print("📂 Building Picker ON" if new_val else "📂 Building Picker OFF")
 
 
     # ======================== LÓGICA PRIVADA ======================== #

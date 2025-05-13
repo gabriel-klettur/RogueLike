@@ -27,8 +27,7 @@ class BuildingEditorView:
         
         # Si estamos en modo picker, pintamos el selector completo
         if self.editor.picker_active:
-            self.picker_view.render(screen, camera)
-            return
+            self.picker_view.render(screen, camera)            
         
         # Renderizado de cada edificio
         for b in buildings:

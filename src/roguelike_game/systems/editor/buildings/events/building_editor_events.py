@@ -21,25 +21,59 @@ class BuildingEditorEventHandler:
         self.buildings = buildings
         self.picker_events = PickerEventHandler(editor_state, controller.picker, buildings)
 
+
     def handle(self, camera, entities):
-        """Procesa todos los eventos de Pygame"""
         for ev in pygame.event.get():
+            # --- F10: SOLO toggle editor (handles) ---
             if ev.type == pygame.KEYDOWN and ev.key == pygame.K_F10:
                 self.controller.toggle_editor()
                 return
-            elif self.editor.picker_active:
-                self.picker_events.handle(ev, camera)
-                continue
-            elif ev.type == pygame.QUIT:
-                self._on_quit(ev)
-            elif ev.type == pygame.KEYDOWN:
-                self._on_keydown(ev, entities)
-            elif ev.type == pygame.MOUSEBUTTONDOWN:
-                self._on_mouse_down(ev, camera, entities.buildings)
+
+            # --- Si el picker está activo, delego ahí ---
+            if self.editor.picker_active:
+                self.picker_events.handle(ev, camera)                
+
+            # --- Teclas cuando estoy en modo “editor” sin picker ---
+            if ev.type == pygame.KEYDOWN:
+                # Ctrl+P (o simplemente P) → toggle picker
+                if ev.key == pygame.K_p:
+                    self.controller.toggle_picker()
+                    return
+
+                # ESC → Cerrar editor completo
+                if ev.key == pygame.K_ESCAPE:
+                    logger.info("Escape: closing Building Editor and saving")
+                    self.editor.active = False
+                    self.editor.selected_building = None
+                    self.editor.dragging = False
+                    self.editor.resizing = False
+                    self.editor.split_dragging = False
+                    save_buildings_to_json(entities.buildings, BUILDINGS_DATA_PATH, z_state=self.state.z_state)
+                    return
+
+                # Ctrl+S → guardar sin salir
+                if ev.key == pygame.K_s and (ev.mod & pygame.KMOD_CTRL):
+                    logger.info("Ctrl+S: saving buildings")
+                    save_buildings_to_json(entities.buildings, BUILDINGS_DATA_PATH, z_state=self.state.z_state)
+                    return
+
+                # N → colocar edificio aleatorio sin picker
+                if ev.key == pygame.K_n:
+                    self.controller.placer_tool.place_building_at_mouse(entities.buildings)
+                    return
+
+                # Supr → borrar edificio bajo el ratón
+                if ev.key == pygame.K_DELETE:
+                    self.controller.delete_tool.delete_building_at_mouse(entities)
+
+            # --- Mouse en modo editor (handles y split) ---
+            if ev.type == pygame.MOUSEBUTTONDOWN:
+                mx, my = pygame.mouse.get_pos()
+                self.controller.on_mouse_down((mx, my), ev.button, camera, entities.buildings)
             elif ev.type == pygame.MOUSEBUTTONUP:
-                self._on_mouse_up(ev, camera, entities.buildings)
+                self.controller.on_mouse_up(ev.button, camera, entities.buildings)
             elif ev.type == pygame.MOUSEMOTION:
-                self._on_mouse_motion(ev, camera)
+                self.controller.on_mouse_motion(ev.pos, camera)
 
     def _on_quit(self, ev):
         logger.info("Quit event received in Building Editor")
