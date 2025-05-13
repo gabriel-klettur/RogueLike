@@ -167,8 +167,8 @@
         "image_path": "assets/buildings/gardens/garden_5.png",
         "solid": true,
         "scale": [
-            509,
-            509
+            512,
+            512
         ],
         "original_scale": [
             1024,

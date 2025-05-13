@@ -15,6 +15,9 @@ class DefaultToolView:
         handle_size = max(15, min(65, int(w * 0.10)))
         font = pygame.font.SysFont("arial", int(handle_size * 0.6), bold=True)
 
+        # Obtener posición del mouse
+        mouse_pos = pygame.mouse.get_pos()
+
         # Botón rojo de eliminar
         delete_rect = pygame.Rect(
             x + w - 3 * handle_size,
@@ -22,8 +25,11 @@ class DefaultToolView:
             handle_size,
             handle_size
         )
+        is_hover_delete = delete_rect.collidepoint(mouse_pos)
         pygame.draw.rect(screen, (220, 40, 40), delete_rect)  # rojo
         pygame.draw.rect(screen, (0, 0, 0), delete_rect, 2)   # borde negro
+        if is_hover_delete:
+            pygame.draw.rect(screen, (255, 255, 0), delete_rect, 4)  # borde amarillo grueso
         # Dibuja una X blanca
         pygame.draw.line(screen, (255,255,255), delete_rect.topleft, delete_rect.bottomright, 3)
         pygame.draw.line(screen, (255,255,255), delete_rect.topright, delete_rect.bottomleft, 3)
@@ -39,8 +45,11 @@ class DefaultToolView:
             handle_size,
             handle_size
         )
+        is_hover_reset = reset_rect.collidepoint(mouse_pos)
         pygame.draw.rect(screen, (255, 255, 255), reset_rect)  # blanco
         pygame.draw.rect(screen, (0, 0, 0), reset_rect, 2)      # borde negro
+        if is_hover_reset:
+            pygame.draw.rect(screen, (0, 255, 255), reset_rect, 4)  # borde cian grueso
         # Letra 'D' centrada
         d_text = font.render('D', True, (0,0,0))
         d_rect = d_text.get_rect(center=reset_rect.center)
@@ -53,8 +62,11 @@ class DefaultToolView:
             handle_size,
             handle_size
         )
+        is_hover_resize = resize_rect.collidepoint(mouse_pos)
         pygame.draw.rect(screen, (80, 120, 255), resize_rect)  # azul
         pygame.draw.rect(screen, (0, 0, 0), resize_rect, 2)    # borde negro
+        if is_hover_resize:
+            pygame.draw.rect(screen, (255, 0, 255), resize_rect, 4)  # borde magenta grueso
         # Debug visual: círculo amarillo grueso
         pygame.draw.ellipse(screen, (255,255,0), resize_rect, 5)        
         # Letra 'R' centrada y grande, en amarillo neón
