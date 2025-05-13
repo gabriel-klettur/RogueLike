@@ -108,24 +108,6 @@
         "z": 4
     },
     {
-        "x": 3472,
-        "y": 2447,
-        "image_path": "assets/buildings/vegetation/tree_5.png",
-        "solid": true,
-        "scale": [
-            271,
-            271
-        ],
-        "original_scale": [
-            256,
-            256
-        ],
-        "split_ratio": 0.823,
-        "z_bottom": 1,
-        "z_top": 6,
-        "z": 1
-    },
-    {
         "x": 3054,
         "y": 2267,
         "image_path": "assets/buildings/vegetation/tree_7.png",
@@ -162,8 +144,8 @@
         "z": 1
     },
     {
-        "x": 1624,
-        "y": 1607,
+        "x": 1620,
+        "y": 1612,
         "image_path": "assets/buildings/vegetation/tree_9.png",
         "solid": true,
         "scale": [
@@ -286,24 +268,6 @@
         "z_bottom": 2,
         "z_top": 5,
         "z": 2
-    },
-    {
-        "x": 3537,
-        "y": 2610,
-        "image_path": "assets/buildings/others/portal_2.png",
-        "solid": true,
-        "scale": [
-            117,
-            172
-        ],
-        "original_scale": [
-            1024,
-            1536
-        ],
-        "split_ratio": 0.422,
-        "z_bottom": 5,
-        "z_top": 5,
-        "z": 5
     },
     {
         "x": 2299,
@@ -450,21 +414,21 @@
         "z": 2
     },
     {
-        "x": 3373,
-        "y": 2533,
-        "image_path": "assets/buildings/others/guillotina.png",
+        "x": 2305,
+        "y": 2449,
+        "image_path": "assets/buildings\\others\\fuente.png",
         "solid": true,
         "scale": [
-            160,
-            160
+            181,
+            181
         ],
         "original_scale": [
-            400,
-            400
+            1024,
+            1024
         ],
-        "split_ratio": 0.43,
+        "split_ratio": 0.5,
         "z_bottom": 3,
         "z_top": 5,
-        "z": 3
+        "z": 1
     }
 ]

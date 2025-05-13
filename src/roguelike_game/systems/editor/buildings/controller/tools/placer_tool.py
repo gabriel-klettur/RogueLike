@@ -21,7 +21,7 @@ class PlacerTool:
             y=world_y,
             image_path=self.default_image,
             solid=self.default_solid,
-            scale=self.default_scale
+            scale=None
         )
 
         buildings.append(new_building)
@@ -34,7 +34,7 @@ class PlacerTool:
             y=world_y,
             image_path=image_path,
             solid=self.default_solid,
-            scale=self.default_scale
+            scale=None
         )
         buildings.append(new_building)
         print(f"➕ Edificio '{image_path}' colocado en ({int(world_x)}, {int(world_y)})")
