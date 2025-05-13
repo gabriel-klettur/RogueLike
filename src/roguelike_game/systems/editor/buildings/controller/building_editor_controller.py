@@ -19,6 +19,8 @@ class BuildingEditorController:
         
         self.resize_tool = ResizeTool(state, editor_state)
         self.default_tool = DefaultTool(state, editor_state)
+        from roguelike_game.systems.editor.buildings.view.tools.default_tool_view import DefaultToolView
+        self.default_view = DefaultToolView(state, editor_state)
         self.split_tool = SplitTool(state, editor_state)
         self.z_tool_bottom = ZTool(state, editor_state, target="bottom")
         self.z_tool_top    = ZTool(state, editor_state, target="top")        
@@ -48,7 +50,21 @@ class BuildingEditorController:
                 self.split_tool.start_drag(b)
                 return
 
-        # 2) Resize handle (clic der)
+        # 2) Botón eliminar (clic izq)
+        if button == 1:
+            # Usar la vista para el botón rojo
+            if hasattr(self, 'default_view'):
+                get_rect = self.default_view.get_delete_handle_rect
+            else:
+                # fallback por si acaso
+                get_rect = lambda b, c: None
+            for b in reversed(buildings):
+                delete_rect = get_rect(b, camera)
+                if delete_rect and delete_rect.collidepoint(mx, my):
+                    self._delete_building(b, buildings)
+                    return
+
+        # 2b) Resize handle (clic der)
         if button == 3:
             for b in reversed(buildings):
                 if self.resize_tool.check_resize_handle_click(mx, my, b, camera):
@@ -57,6 +73,7 @@ class BuildingEditorController:
                 if self.default_tool.check_reset_handle_click(mx, my, b, camera):
                     self.default_tool.apply_reset(b)
                     return
+
 
         # 3) Selección / drag de edificio (clic der)
         if button == 3:
@@ -146,6 +163,20 @@ class BuildingEditorController:
 
 
     # ======================== LÓGICA PRIVADA ======================== #
+    def _delete_building(self, building, buildings):
+        print(f"❌ Eliminando edificio: {building} en index {buildings.index(building)}")
+        # Elimina el edificio y lo guarda para undo
+        if not hasattr(self.editor, 'undo_stack'):
+            self.editor.undo_stack = []
+        idx = buildings.index(building)
+        self.editor.undo_stack.append((building, idx))
+        buildings.remove(building)
+        # Limpia selección/hover si corresponde
+        if self.editor.selected_building == building:
+            self.editor.selected_building = None
+        if self.editor.hovered_building == building:
+            self.editor.hovered_building = None
+
     def _start_resize(self, building, mouse_start):
         self.editor.selected_building = building
         self.editor.resizing = True

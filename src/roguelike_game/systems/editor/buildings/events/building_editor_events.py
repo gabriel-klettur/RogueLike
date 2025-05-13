@@ -59,6 +59,11 @@ class BuildingEditorEventHandler:
                     save_buildings_to_json(entities.buildings, BUILDINGS_DATA_PATH, z_state=self.state.z_state)
                     return
 
+                # Ctrl+Z → undo eliminación de edificio
+                if ev.key == pygame.K_z and (ev.mod & pygame.KMOD_CTRL):
+                    self._undo_delete(entities.buildings)
+                    return
+
                 # Ctrl+S → guardar sin salir
                 if ev.key == pygame.K_s and (ev.mod & pygame.KMOD_CTRL):
                     logger.info("Ctrl+S: saving buildings")
@@ -84,6 +89,14 @@ class BuildingEditorEventHandler:
                 self.controller.on_mouse_motion(ev.pos, camera, entities.buildings)
             elif ev.type == pygame.MOUSEWHEEL:
                 self._handle_mouse_wheel(ev, entities.buildings)
+
+    def _undo_delete(self, buildings):
+        if hasattr(self.editor, 'undo_stack') and self.editor.undo_stack:
+            building, idx = self.editor.undo_stack.pop()
+            buildings.insert(idx, building)
+            # Opcional: selecciona el edificio restaurado
+            self.editor.hovered_building = building
+            self.editor.selected_building = building
 
     def _handle_mouse_wheel(self, ev, buildings):
         # Solo si hay varios edificios bajo el cursor
