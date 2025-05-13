@@ -38,8 +38,14 @@ def update_game(
 
     # ————— IA de enemigos (incluye remotos) —————
     enemies = entities.enemies + list(network.remote_entities.values())
+    from roguelike_game.entities.npc.types.elite.controller import EliteController
     for enemy in enemies:
-        enemy.update(state, map, entities)
+        # Si enemy es un NPC (tiene .controller), usamos .controller, si no, es el controller mismo
+        ctrl = getattr(enemy, 'controller', enemy)
+        if isinstance(ctrl, EliteController):
+            ctrl.update(state, map, entities, systems.effects, systems.explosions)
+        else:
+            enemy.update(state, map, entities)
 
     # ————— Movimiento especial del jugador —————
     # (por ejemplo, dash con colisiones)

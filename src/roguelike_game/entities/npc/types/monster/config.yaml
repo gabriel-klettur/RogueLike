@@ -8,7 +8,7 @@ max_health: 60
 speed:      5.0
 
 # Tamaño del sprite (ancho, alto)
-sprite_size: [256, 256]
+sprite_size: [128, 128]
 
 # Rutas relativas dentro de assets/
 sprite_paths:

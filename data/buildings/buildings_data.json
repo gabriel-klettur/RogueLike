@@ -1,7 +1,7 @@
 [
     {
-        "x": 2559,
-        "y": 1990,
+        "x": 2552,
+        "y": 2008,
         "image_path": "assets/buildings/temples/catholic.png",
         "solid": true,
         "scale": [
@@ -12,55 +12,19 @@
             1024,
             1536
         ],
-        "split_ratio": 0.611,
-        "z_bottom": 5,
+        "split_ratio": 0.802,
+        "z_bottom": 3,
         "z_top": 9,
-        "z": 5
+        "z": 3
     },
     {
-        "x": 2540,
-        "y": 2633,
-        "image_path": "assets/buildings/gardens/garden_1.png",
-        "solid": true,
-        "scale": [
-            546,
-            546
-        ],
-        "original_scale": [
-            1024,
-            1024
-        ],
-        "split_ratio": 0.801,
-        "z_bottom": 1,
-        "z_top": 1,
-        "z": 1
-    },
-    {
-        "x": 2803,
-        "y": 1839,
-        "image_path": "assets/buildings/others/banco.png",
-        "solid": true,
-        "scale": [
-            367,
-            546
-        ],
-        "original_scale": [
-            1024,
-            1536
-        ],
-        "split_ratio": 0.571,
-        "z_bottom": 4,
-        "z_top": 8,
-        "z": 4
-    },
-    {
-        "x": 2172,
-        "y": 2132,
+        "x": 3044,
+        "y": 2389,
         "image_path": "assets/buildings/vegetation/tree_1.png",
         "solid": true,
         "scale": [
-            188,
-            257
+            148,
+            201
         ],
         "original_scale": [
             456,
@@ -68,7 +32,7 @@
         ],
         "split_ratio": 0.632,
         "z_bottom": 2,
-        "z_top": 8,
+        "z_top": 7,
         "z": 2
     },
     {
@@ -108,24 +72,6 @@
         "z": 4
     },
     {
-        "x": 3472,
-        "y": 2447,
-        "image_path": "assets/buildings/vegetation/tree_5.png",
-        "solid": true,
-        "scale": [
-            271,
-            271
-        ],
-        "original_scale": [
-            256,
-            256
-        ],
-        "split_ratio": 0.823,
-        "z_bottom": 1,
-        "z_top": 6,
-        "z": 1
-    },
-    {
         "x": 3054,
         "y": 2267,
         "image_path": "assets/buildings/vegetation/tree_7.png",
@@ -144,8 +90,8 @@
         "z": 1
     },
     {
-        "x": 2438,
-        "y": 1854,
+        "x": 2431,
+        "y": 1816,
         "image_path": "assets/buildings/vegetation/tree_8.png",
         "solid": true,
         "scale": [
@@ -162,13 +108,13 @@
         "z": 1
     },
     {
-        "x": 1604,
-        "y": 1563,
+        "x": 1620,
+        "y": 1612,
         "image_path": "assets/buildings/vegetation/tree_9.png",
         "solid": true,
         "scale": [
-            219,
-            282
+            189,
+            241
         ],
         "original_scale": [
             241,
@@ -192,14 +138,14 @@
             251,
             324
         ],
-        "split_ratio": 0.801,
-        "z_bottom": 4,
-        "z_top": 4,
-        "z": 4
+        "split_ratio": 0.695,
+        "z_bottom": 3,
+        "z_top": 7,
+        "z": 3
     },
     {
-        "x": 2627,
-        "y": 1822,
+        "x": 2630,
+        "y": 1847,
         "image_path": "assets/buildings/vegetation/tree_11.png",
         "solid": true,
         "scale": [
@@ -212,7 +158,7 @@
         ],
         "split_ratio": 0.801,
         "z_bottom": 1,
-        "z_top": 8,
+        "z_top": 4,
         "z": 1
     },
     {
@@ -268,42 +214,6 @@
         "z_bottom": 3,
         "z_top": 5,
         "z": 3
-    },
-    {
-        "x": 1972,
-        "y": 2328,
-        "image_path": "assets/buildings/others/portal.png",
-        "solid": true,
-        "scale": [
-            122,
-            180
-        ],
-        "original_scale": [
-            1024,
-            1536
-        ],
-        "split_ratio": 0.25,
-        "z_bottom": 2,
-        "z_top": 5,
-        "z": 2
-    },
-    {
-        "x": 3537,
-        "y": 2610,
-        "image_path": "assets/buildings/others/portal_2.png",
-        "solid": true,
-        "scale": [
-            117,
-            172
-        ],
-        "original_scale": [
-            1024,
-            1536
-        ],
-        "split_ratio": 0.422,
-        "z_bottom": 5,
-        "z_top": 5,
-        "z": 5
     },
     {
         "x": 2299,
@@ -379,7 +289,7 @@
     },
     {
         "x": 1647,
-        "y": 2565,
+        "y": 2561,
         "image_path": "assets/buildings/shops/healer.png",
         "solid": true,
         "scale": [
@@ -450,19 +360,253 @@
         "z": 2
     },
     {
-        "x": 3373,
-        "y": 2533,
-        "image_path": "assets/buildings/others/guillotina.png",
+        "x": 2167,
+        "y": 2210,
+        "image_path": "assets/buildings\\vegetation\\tree_10.PNG",
         "solid": true,
         "scale": [
-            160,
-            160
+            203,
+            262
         ],
         "original_scale": [
-            400,
-            400
+            251,
+            324
         ],
-        "split_ratio": 0.43,
+        "split_ratio": 0.5,
+        "z_bottom": 4,
+        "z_top": 8,
+        "z": 4
+    },
+    {
+        "x": 2328,
+        "y": 2431,
+        "image_path": "assets/buildings\\portals\\portal.png",
+        "solid": true,
+        "scale": [
+            149,
+            222
+        ],
+        "original_scale": [
+            1024,
+            1536
+        ],
+        "split_ratio": 0.236,
+        "z_bottom": 3,
+        "z_top": 5,
+        "z": 3
+    },
+    {
+        "x": 2784,
+        "y": 1817,
+        "image_path": "assets/buildings\\shops\\banco.png",
+        "solid": true,
+        "scale": [
+            389,
+            579
+        ],
+        "original_scale": [
+            1024,
+            1536
+        ],
+        "split_ratio": 0.572,
+        "z_bottom": 3,
+        "z_top": 5,
+        "z": 3
+    },
+    {
+        "x": 2212,
+        "y": 2098,
+        "image_path": "assets/buildings\\gardens\\flowers_9.PNG",
+        "solid": true,
+        "scale": [
+            73,
+            177
+        ],
+        "original_scale": [
+            169,
+            412
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "z": 3
+    },
+    {
+        "x": 2500,
+        "y": 2094,
+        "image_path": "assets/buildings\\gardens\\flowers_9.PNG",
+        "solid": true,
+        "scale": [
+            75,
+            182
+        ],
+        "original_scale": [
+            169,
+            412
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "z": 3
+    },
+    {
+        "x": 2505,
+        "y": 2607,
+        "image_path": "assets/buildings\\gardens\\garden_4.png",
+        "solid": true,
+        "scale": [
+            584,
+            584
+        ],
+        "original_scale": [
+            1024,
+            1024
+        ],
+        "split_ratio": 0.05,
+        "z_bottom": 3,
+        "z_top": 5,
+        "z": 3
+    },
+    {
+        "x": 2477,
+        "y": 2635,
+        "image_path": "assets/buildings\\gardens\\flowers_9.PNG",
+        "solid": true,
+        "scale": [
+            50,
+            121
+        ],
+        "original_scale": [
+            169,
+            412
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "z": 3
+    },
+    {
+        "x": 2477,
+        "y": 3043,
+        "image_path": "assets/buildings\\gardens\\flowers_9.PNG",
+        "solid": true,
+        "scale": [
+            50,
+            121
+        ],
+        "original_scale": [
+            169,
+            412
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "z": 3
+    },
+    {
+        "x": 2476,
+        "y": 2755,
+        "image_path": "assets/buildings\\gardens\\flowers_9.PNG",
+        "solid": true,
+        "scale": [
+            50,
+            121
+        ],
+        "original_scale": [
+            169,
+            412
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "z": 3
+    },
+    {
+        "x": 3070,
+        "y": 2652,
+        "image_path": "assets/buildings\\gardens\\flowers_9.PNG",
+        "solid": true,
+        "scale": [
+            50,
+            121
+        ],
+        "original_scale": [
+            169,
+            412
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "z": 3
+    },
+    {
+        "x": 2476,
+        "y": 2918,
+        "image_path": "assets/buildings\\gardens\\flowers_9.PNG",
+        "solid": true,
+        "scale": [
+            50,
+            120
+        ],
+        "original_scale": [
+            169,
+            412
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "z": 3
+    },
+    {
+        "x": 3069,
+        "y": 3037,
+        "image_path": "assets/buildings\\gardens\\flowers_9.PNG",
+        "solid": true,
+        "scale": [
+            50,
+            121
+        ],
+        "original_scale": [
+            169,
+            412
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "z": 3
+    },
+    {
+        "x": 3070,
+        "y": 2767,
+        "image_path": "assets/buildings\\gardens\\flowers_9.PNG",
+        "solid": true,
+        "scale": [
+            50,
+            121
+        ],
+        "original_scale": [
+            169,
+            412
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "z": 3
+    },
+    {
+        "x": 3072,
+        "y": 2915,
+        "image_path": "assets/buildings\\gardens\\flowers_9.PNG",
+        "solid": true,
+        "scale": [
+            50,
+            121
+        ],
+        "original_scale": [
+            169,
+            412
+        ],
+        "split_ratio": 0.5,
         "z_bottom": 3,
         "z_top": 5,
         "z": 3

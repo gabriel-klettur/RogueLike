@@ -97,7 +97,11 @@ class NPCFactory:
         ViewCls       = getattr(v_mod,       cfg.get("view_class",       npc_type.capitalize() + "View"))
 
         # 1) Instanciar modelo y aplicar stats de YAML
-        model = ModelCls(x, y, **kwargs)
+        sprite_size  = tuple(cfg["sprite_size"]) if "sprite_size" in cfg else None
+        if sprite_size is not None:
+            model = ModelCls(x, y, sprite_size=sprite_size, **kwargs)
+        else:
+            model = ModelCls(x, y, **kwargs)
         for stat in ("health", "max_health", "speed"):
             if stat in cfg:
                 setattr(model, stat, cfg[stat])
@@ -107,8 +111,6 @@ class NPCFactory:
 
         # 3) Instanciar vista pasando rutas y tamaño de sprite
         sprite_paths = cfg.get("sprite_paths", {})
-        sprite_size  = tuple(cfg["sprite_size"]) if "sprite_size" in cfg else None
-
         if sprite_size is not None:
             view = ViewCls(model, sprite_paths, sprite_size)
         else:
