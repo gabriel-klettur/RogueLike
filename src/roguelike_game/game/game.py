@@ -168,6 +168,7 @@ class Game:
             systems=self.systems
         )
 
+    
     def run(self):
         """
         Bucle principal del juego: maneja eventos, actualiza lógica y renderiza cada frame.

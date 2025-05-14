@@ -17,7 +17,7 @@ from roguelike_engine.map.generator.factory import get_generator
 from roguelike_engine.map.merger.factory import get_merger
 from roguelike_engine.map.loader.factory import get_map_loader
 from roguelike_engine.map.exporter.factory import get_exporter, MapExporter
-from roguelike_engine.map.core.model import MapData
+from roguelike_engine.map.core.model import Map
 from roguelike_engine.map.generator.dungeon import DungeonGenerator
 
 logger = logging.getLogger(__name__)
@@ -129,7 +129,7 @@ class MapService:
         map_mode: str = "combined",
         map_name: Optional[str] = None,
         export_debug: bool = True,
-    ) -> MapData:
+    ) -> Map:
 
         if map_mode == "global":
             key = map_name or "global_map"
@@ -177,7 +177,7 @@ class MapService:
             merged = ["".join(r) for r in canvas]
             _, tiles, overlay = self.loader.load(merged, key)
             metadata["lobby_offset"] = lobby_off
-            return MapData(merged, tiles, overlay, metadata, key)
+            return Map(merged, tiles, overlay, metadata, key)
 
         # modos 'lobby', 'dungeon', 'combined' sin cambios:
         key = map_name or ("lobby_map" if map_mode=="lobby" else "combined_map")
@@ -209,4 +209,4 @@ class MapService:
                     except Exception as e:
                         logger.warning("Error export debug: %s",e)
         _, tiles, overlay=self.loader.load(merged, key)
-        return MapData(merged, tiles, overlay, metadata, key)
+        return Map(merged, tiles, overlay, metadata, key)

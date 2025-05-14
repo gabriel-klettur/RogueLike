@@ -8,6 +8,7 @@ import roguelike_engine.config_tiles as config_tiles
 class MapManager:
     def __init__(self, map_name: str | None):
         self.result = build_map(map_mode="global", map_name=map_name)
+        
         self.name               = self.result.name
         self.matrix             = self.result.matrix
         self.overlay            = self.result.overlay
@@ -15,8 +16,8 @@ class MapManager:
         self.lobby_offset       = self.result.metadata.get("lobby_offset", (0, 0))
         self.rooms              = self.result.metadata.get("rooms", [])        
         
-        lob_x, lob_y = self.lobby_offset
-        self.dungeon_offset = _calculate_dungeon_offset((lob_x, lob_y),config_map.DUNGEON_CONNECT_SIDE)
+        lob_x, lob_y            = self.lobby_offset
+        self.dungeon_offset     = _calculate_dungeon_offset((lob_x, lob_y),config_map.DUNGEON_CONNECT_SIDE)
         self.tiles_in_region    = self.get_tiles_in_region()                
 
     def get_tiles_in_region(self) -> list:

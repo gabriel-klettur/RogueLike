@@ -24,7 +24,7 @@ class Tile:
         self.rect = pygame.Rect(x, y, TILE_SIZE, TILE_SIZE)
         self.scaled_cache: dict[float, pygame.Surface] = {}
 
-    def render(self, screen: pygame.Surface, camera) -> pygame.Rect | None:
+    def render_tiles(self, screen: pygame.Surface, camera) -> pygame.Rect | None:
         """
         Dibuja el sprite escalado según la cámara y retorna el rect de colisión.
         """

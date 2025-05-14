@@ -9,7 +9,7 @@ from roguelike_engine.config_map import (
     LOBBY_OFFSET_Y,
 )
 from .service import MapService
-from .model import MapData
+from .model import Map
 
 # Instancia singleton de nuestro servicio
 _default_service = MapService()
@@ -23,10 +23,10 @@ def build_map(
     map_mode: str = "combined",
     map_name: Optional[str] = None,
     export_debug: bool = True,
-) -> MapData:
+) -> Map:
     """
     API de conveniencia para construir mapas sin instanciar MapService manualmente.
-    Devuelve un MapData con matrix, tiles, overlay, metadata y name.
+    Devuelve un Map con matrix, tiles, overlay, metadata y name.
     """
     return _default_service.build_map(
         width=width,

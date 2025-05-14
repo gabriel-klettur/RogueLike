@@ -63,7 +63,7 @@ class RendererManager:
         # 1) Tiles
         @benchmark(perf_log, "--3.1. tiles")
         def _bench_tiles():
-            self._render_tiles(camera, screen, map)
+            self._render_map(camera, screen, map)
         _bench_tiles()
 
         # 2) Entidades orden Z
@@ -154,11 +154,11 @@ class RendererManager:
         dirty_rects = effects.render(screen, camera)
         self._dirty_rects.extend(dirty_rects)
 
-    def _render_tiles(self, camera, screen, map):
+    def _render_map(self, camera, screen, map):
         for tile in map.tiles_in_region:
             if not camera.is_in_view(tile.x, tile.y, tile.sprite_size):
                 continue
-            dirty = tile.render(screen, camera)
+            dirty = tile.render_tiles(screen, camera)
             if dirty:
                 self._dirty_rects.append(dirty)
 
