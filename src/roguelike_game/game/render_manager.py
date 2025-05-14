@@ -105,7 +105,7 @@ class RendererManager:
         # 7) Minimap
         @benchmark(perf_log, "--3.7. minimap")
         def _bench_minimap():
-            self._render_minimap(state, screen, map, entities)
+            self._render_minimap(screen, map, entities)
         _bench_minimap()
 
         # 8) Otros sistemas
@@ -192,7 +192,7 @@ class RendererManager:
             menu_rect = menu.draw(screen)
             self._dirty_rects.append(menu_rect)
 
-    def _render_minimap(self, state, screen, map, entities):
-        minimap_rect = render_minimap(state, screen, map, entities)
+    def _render_minimap(self, screen, map, entities):
+        minimap_rect = render_minimap(screen, map, entities)
         self._dirty_rects.append(minimap_rect)
 
