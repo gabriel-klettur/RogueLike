@@ -1,7 +1,7 @@
 # Path: roguelike_game/game/render_manager.py
 import pygame
 
-from roguelike_game.network.render_multiplayer import render_remote_players
+
 from roguelike_engine.minimap.minimap import render_minimap
 from roguelike_engine.utils.mouse import draw_mouse_crosshair
 from roguelike_engine.config_tiles import TILE_SIZE
@@ -54,8 +54,7 @@ class RendererManager:
         perf_log=None,
         menu=None,
         map=None,
-        entities=None,
-        network=None,
+        entities=None,        
         systems=None
     ):
         self._dirty_rects = []
@@ -70,7 +69,7 @@ class RendererManager:
         # 2) Entidades orden Z
         @benchmark(perf_log, "--3.2. z_entities")
         def _bench_z_entities():
-            self._render_z_entities(state, camera, screen, entities, network)
+            self._render_z_entities(state, camera, screen, entities)
         _bench_z_entities()
 
         # 3) Efectos
@@ -97,32 +96,26 @@ class RendererManager:
             draw_mouse_crosshair(screen, camera)
         _bench_crosshair()
 
-        # 6) Jugadores remotos
-        @benchmark(perf_log, "--3.6. remote_players")
-        def _bench_remote():
-            render_remote_players(state)
-        _bench_remote()
-
-        # 7) Menú
-        @benchmark(perf_log, "--3.7. menu")
+        # 6) Menú
+        @benchmark(perf_log, "--3.6. menu")
         def _bench_menu():
             self._render_menu(screen, menu)
         _bench_menu()
 
-        # 8) Minimap
-        @benchmark(perf_log, "--3.8. minimap")
+        # 7) Minimap
+        @benchmark(perf_log, "--3.7. minimap")
         def _bench_minimap():
             self._render_minimap(state, screen, map, entities)
         _bench_minimap()
 
-        # 9) Otros sistemas
-        @benchmark(perf_log, "--3.9. systems")
+        # 8) Otros sistemas
+        @benchmark(perf_log, "--3.8. systems")
         def _bench_systems():
             systems.render(screen, camera)
         _bench_systems()
 
-        # 10) Editores
-        @benchmark(perf_log, "--3.10. editors")
+        # 9) Editores
+        @benchmark(perf_log, "--3.9. editors")
         def _bench_editors():
             self._render_editors()
         _bench_editors()
@@ -173,7 +166,7 @@ class RendererManager:
         if getattr(state, "tile_editor_state", None) and state.tile_editor_state.active:
             state.tile_editor_view.render(screen, camera, map)
 
-    def _render_z_entities(self, state, camera, screen, entities, network):
+    def _render_z_entities(self, state, camera, screen, entities):
         all_entities = []
         all_entities.extend([
             e for e in entities.obstacles
@@ -181,10 +174,6 @@ class RendererManager:
         ])
         all_entities.extend([
             e for e in entities.enemies
-            if camera.is_in_view(e.x, e.y, e.sprite_size)
-        ])
-        all_entities.extend([
-            e for e in network.remote_entities.values()
             if camera.is_in_view(e.x, e.y, e.sprite_size)
         ])
         if camera.is_in_view(entities.player.x, entities.player.y, entities.player.sprite_size):

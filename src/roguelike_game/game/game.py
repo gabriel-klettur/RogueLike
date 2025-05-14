@@ -19,8 +19,7 @@ from roguelike_game.game.map_manager import MapManager
 from roguelike_game.game.entities_manager import EntitiesManager
 from roguelike_game.game.z_layer_manager import ZLayerManager
 
-#!----------------------- Paquetes locales: entidades y sistemas ------------------------------
-from roguelike_game.network.multiplayer_manager import NetworkManager
+#!----------------------- Paquetes locales: sistemas ------------------------------
 from roguelike_game.systems.systems_manager import SystemsManager
 
 #!-------------------------- Paquetes locales: menús e interfaz -------------------------------
@@ -62,8 +61,7 @@ class Game:
         self._init_tile_editor()
         self._init_renderer()
         self._init_menu()
-        self._init_systems(perf_log)
-        self._init_network()
+        self._init_systems(perf_log)        
 
     def _init_state(self):
         """
@@ -128,12 +126,6 @@ class Game:
         """
         self.systems = SystemsManager(self.state, perf_log)
 
-    def _init_network(self):
-        """
-        Inicializa el gestor de red.
-        """        
-        self.network = NetworkManager()
-
     @benchmark(lambda self: self.perf_log, "1.handle_events")
     def handle_events(self):        
         handle_events(
@@ -158,8 +150,7 @@ class Game:
             self.clock,
             self.screen,
             self.map,
-            self.entities,
-            self.network,
+            self.entities,            
             self.tiles_editor,
             self.buildings_editor
         )
@@ -174,7 +165,6 @@ class Game:
             menu=self.menu,
             map=self.map,
             entities=self.entities,
-            network=self.network,
             systems=self.systems
         )
 

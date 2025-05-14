@@ -7,8 +7,7 @@ def update_game(
     clock,
     screen,
     map,
-    entities,
-    network,    
+    entities,      
     tiles_editor,
     buildings_editor
 ):
@@ -37,7 +36,7 @@ def update_game(
     systems.update(clock, screen)
 
     # ————— IA de enemigos (incluye remotos) —————
-    enemies = entities.enemies + list(network.remote_entities.values())
+    enemies = entities.enemies
     from roguelike_game.entities.npc.types.elite.controller import EliteController
     for enemy in enemies:
         # Si enemy es un NPC (tiene .controller), usamos .controller, si no, es el controller mismo
