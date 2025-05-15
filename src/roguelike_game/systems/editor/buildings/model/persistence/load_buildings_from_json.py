@@ -1,5 +1,5 @@
-# Path: src/roguelike_game/systems/editor/buildings/model/persistence/load_buildings_from_json.py
 
+# Path: src/roguelike_game/systems/editor/buildings/model/persistence/load_buildings_from_json.py
 import os
 import json
 from typing import Dict, Tuple, Optional, List

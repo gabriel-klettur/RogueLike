@@ -1,4 +1,4 @@
-# roguelike_project/entities/buildings/building.py
+
 # Path: src/roguelike_game/entities/buildings/building.py
 import os
 import pygame

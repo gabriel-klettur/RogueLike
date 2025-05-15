@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/systems/editor/buildings/controller/tools/placer_tool.py
 import pygame
 
 from roguelike_game.systems.editor.buildings.utils.zone_helpers import assign_zone_and_relatives

@@ -1,3 +1,4 @@
+# Path: src/roguelike_engine/map/utils.py
 from src.roguelike_engine.config_map import ZONE_OFFSETS, ZONE_SIZE
 
 def intersect(room1, room2):
@@ -36,5 +37,3 @@ def get_zone_for_tile(tile_x: int, tile_y: int) -> str:
         if ox <= tile_x < ox + w and oy <= tile_y < oy + h:
             return zone
     return "no zone"
-
-# Path: src/roguelike_engine/map/utils.py
