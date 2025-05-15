@@ -1,5 +1,5 @@
-# Path: src/roguelike_game/systems/editor/tiles/events/tools/tile_picker_events.py
 
+# Path: src/roguelike_game/systems/editor/tiles/events/tools/tile_picker_events.py
 from roguelike_game.systems.editor.tiles.tiles_editor_config import PAD, THUMB, COLS
 
 class TilePickerEventHandler:

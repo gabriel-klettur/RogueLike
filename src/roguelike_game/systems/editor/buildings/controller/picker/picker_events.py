@@ -1,5 +1,6 @@
 # src/roguelike_game/systems/editor/buildings/controller/picker/picker_events.py
 
+# Path: src/roguelike_game/systems/editor/buildings/controller/picker/picker_events.py
 import pygame
 from roguelike_engine.utils.loader import load_image
 from roguelike_game.systems.editor.buildings.buildings_editor_config import (

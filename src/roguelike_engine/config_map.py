@@ -6,6 +6,7 @@ from roguelike_engine.config import DATA_DIR
 # Size total del mapa (en tiles)
 GLOBAL_WIDTH  = 150
 GLOBAL_HEIGHT = 150
+ZONE_SIZE = (50, 50)
 
 #!------------------------ OVERLAY CONFIG --------------------------
 # Persistencia de overlays de mapas (tiles)
@@ -46,3 +47,10 @@ DUNGEON_MAX_ROOMS = '10'
 
 # Debug maps (mapas de debug generados por map_exporter)
 DEBUG_MAPS_DIR = Path(DATA_DIR) / "debug_maps"
+
+#!----------------------- ZONE OFFSETS -----------------------------
+ZONE_OFFSETS = {
+    "lobby": (LOBBY_OFFSET_X, LOBBY_OFFSET_Y),
+    "dungeon": (DUNGEON_OFFSET_X, DUNGEON_OFFSET_Y),
+    # "city": (ciudad_offset_x, ciudad_offset_y),  → futuras zonas
+}

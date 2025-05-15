@@ -1,5 +1,5 @@
-# Path: src/roguelike_game/systems/editor/tiles/model/tile_editor_state.py
 
+# Path: src/roguelike_game/systems/editor/tiles/model/tile_editor_state.py
 from src.roguelike_game.systems.editor.tiles.model.tools.tile_picker_state import TilePickerState
 class TileEditorState:
     """

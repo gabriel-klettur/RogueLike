@@ -1,5 +1,5 @@
-# Path: src/roguelike_game/systems/editor/buildings/controller/picker/picker_controller.py
 
+# Path: src/roguelike_game/systems/editor/buildings/controller/picker/picker_controller.py
 import os
 from dataclasses import dataclass
 from typing import List

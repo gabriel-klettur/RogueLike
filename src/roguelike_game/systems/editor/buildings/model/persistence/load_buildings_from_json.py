@@ -5,8 +5,14 @@ import json
 import os
 
 from roguelike_game.systems.z_layer.persistence import extract_z_from_json
+from roguelike_engine.config_tiles import TILE_SIZE
 
-def load_buildings_from_json(filepath, building_class, z_state=None):
+def load_buildings_from_json(
+    filepath,
+    building_class,
+    z_state=None,
+    zone_offsets: dict[str, tuple[int,int]] = None,
+):
     """
     Carga edificios desde un archivo JSON.
     Si se proporciona `z_state`, también asigna la capa Z.
@@ -27,7 +33,7 @@ def load_buildings_from_json(filepath, building_class, z_state=None):
     for entry in data:
         try:
             print(f"📥 Entrada cruda desde JSON: {entry}")
-            b = building_class(
+            b = building_class(                
                 x=entry["x"],
                 y=entry["y"],
                 image_path=entry["image_path"],
@@ -41,6 +47,15 @@ def load_buildings_from_json(filepath, building_class, z_state=None):
             # 🆕 Asignar capa Z si corresponde
             if z_state:
                 extract_z_from_json(entry, z_state, b)
+
+            # 🆕 Recalcular posición según zona
+            zone = entry.get("zone")
+            if zone and zone_offsets and "rel_tile_x" in entry:
+                ox, oy = zone_offsets[zone]
+                tx = ox + entry["rel_tile_x"]
+                ty = oy + entry["rel_tile_y"]
+                b.x = tx * TILE_SIZE
+                b.y = ty * TILE_SIZE        
 
             # 🆕 Restaurar escala original si se guardó
             if "original_scale" in entry and entry["original_scale"]:

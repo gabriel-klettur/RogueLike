@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/systems/editor/buildings/buildings_editor_config.py
 
 # Tamaño genérico para handles de resize y reset
 DEFAULT_HANDLE_SIZE = 50
@@ -21,3 +20,4 @@ COLOR_BORDER    = (200, 200, 200)
 COLOR_HIGHLIGHT = (255, 200, 0)
 
 ICON_BACK       = "assets/ui/arrow_left.png"
+# Path: src/roguelike_game/systems/editor/buildings/buildings_editor_config.py

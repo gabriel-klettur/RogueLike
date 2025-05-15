@@ -1,5 +1,4 @@
 
-# Path: src/roguelike_game/systems/editor/buildings/model/building_editor_state.py
 class BuildingsEditorState:
     def __init__(self):
 
@@ -30,3 +29,4 @@ class BuildingsEditorState:
         self.entries: list = []             # populado por picker_controller
         self.selected_entry = None          # elemento actual (para drag)
         self.dragging_building: bool = False
+# Path: src/roguelike_game/systems/editor/buildings/model/building_editor_state.py

@@ -1,4 +1,4 @@
-# Path: src/roguelike_game/systems/editor/tiles/controller/tile_editor_events.py
+# Path: src/roguelike_game/systems/editor/tiles/events/tile_editor_events.py
 import pygame
 
 from roguelike_game.systems.editor.tiles.events.tools.tile_picker_events import TilePickerEventHandler

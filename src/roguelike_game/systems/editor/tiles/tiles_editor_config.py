@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/systems/editor/tiles/tiles_editor_config.py
 
 OUTLINE_SEL    = (0, 255, 0)     # seleccionado (verde)
 OUTLINE_HOVER  = (0, 220, 255)   # hover (cian)
@@ -32,3 +31,4 @@ FOLDER_ICON   = "assets/objects/folder_win.png"
 
 # Patrones de ficheros que nos interesan
 FILE_PATTERNS = ["*.png", "*.PNG", "*.webp", "*.WEBP"]
+# Path: src/roguelike_game/systems/editor/tiles/tiles_editor_config.py

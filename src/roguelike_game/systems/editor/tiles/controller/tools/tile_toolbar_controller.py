@@ -1,5 +1,5 @@
 
-# Path: src/roguelike_game/systems/editor/tiles/controller/tools/tile_toolbar.py
+# Path: src/roguelike_game/systems/editor/tiles/controller/tools/tile_toolbar_controller.py
 import pygame
 from roguelike_engine.utils.loader import load_image
 

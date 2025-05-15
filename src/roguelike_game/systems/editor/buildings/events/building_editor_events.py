@@ -1,4 +1,4 @@
-# Path: src/roguelike_game/systems/editor/buildings/controller/building_editor_events.py
+# Path: src/roguelike_game/systems/editor/buildings/events/building_editor_events.py
 import pygame
 import logging
 
@@ -14,12 +14,13 @@ class BuildingEditorEventHandler:
     """
     Manejador de eventos para el Building Editor en modo MVC.
     """
-    def __init__(self, state, editor_state, controller, buildings):
+    def __init__(self, state, editor_state, controller, buildings, zone_offsets: dict[str,tuple[int,int]]):
         self.state = state
         self.editor = editor_state
         self.controller = controller
         self.buildings = buildings
         self.picker_events = PickerEventHandler(editor_state, controller.picker, buildings)
+        self.zone_offsets = zone_offsets
 
 
     def handle(self, camera, entities):
@@ -36,10 +37,15 @@ class BuildingEditorEventHandler:
                 self.controller.toggle_editor()
                 # Si acabamos de cerrar el editor, guardamos todo
                 if not self.editor.active:
+                    # TODO: detectar automáticamente la zona actual de edición
+                    zone = "lobby"
+                    zone_off = self.zone_offsets.get(zone)
                     save_buildings_to_json(
                         entities.buildings,
                         BUILDINGS_DATA_PATH,
-                        z_state=self.state.z_state
+                        z_state=self.state.z_state,
+                        zone=zone,
+                        zone_offset=zone_off,
                     )
                 return
 
@@ -62,7 +68,17 @@ class BuildingEditorEventHandler:
                     self.editor.dragging = False
                     self.editor.resizing = False
                     self.editor.split_dragging = False
-                    save_buildings_to_json(entities.buildings, BUILDINGS_DATA_PATH, z_state=self.state.z_state)
+                    
+                    # TODO: detectar automáticamente la zona actual de edición
+                    zone = "lobby"
+                    zone_off = self.zone_offsets.get(zone)
+                    save_buildings_to_json(
+                        entities.buildings,
+                        BUILDINGS_DATA_PATH,
+                        z_state=self.state.z_state,
+                        zone=zone,
+                        zone_offset=zone_off,
+                    )
                     return
 
                 # D → reset (default) sobre hovered_building
@@ -86,7 +102,18 @@ class BuildingEditorEventHandler:
                 # Ctrl+S → guardar sin salir
                 if ev.key == pygame.K_s and (ev.mod & pygame.KMOD_CTRL):
                     logger.info("Ctrl+S: saving buildings")
-                    save_buildings_to_json(entities.buildings, BUILDINGS_DATA_PATH, z_state=self.state.z_state)
+
+                    # TODO: detectar automáticamente la zona actual de guardado
+                    zone = "lobby"
+                    zone_off = self.zone_offsets.get(zone)
+                    save_buildings_to_json(
+                        entities.buildings,
+                        BUILDINGS_DATA_PATH,
+                        z_state=self.state.z_state,
+                        zone=zone,
+                        zone_offset=zone_off,
+                    )
+
                     return
 
                 # N → colocar edificio aleatorio sin picker
@@ -140,19 +167,46 @@ class BuildingEditorEventHandler:
             self.editor.dragging = False
             self.editor.resizing = False
             self.editor.split_dragging = False
-            save_buildings_to_json(entities.buildings, BUILDINGS_DATA_PATH, z_state=self.state.z_state)
+            # TODO: detectar automáticamente la zona actual de edición
+            zone = "lobby"
+            zone_off = self.zone_offsets.get(zone)
+            save_buildings_to_json(
+                entities.buildings,
+                BUILDINGS_DATA_PATH,
+                z_state=self.state.z_state,
+                zone=zone,
+                zone_offset=zone_off,
+            )
 
         # F10: toggle editor
         elif ev.key == pygame.K_F10:
             self.editor.active = not self.editor.active
             logger.info(f"Building Editor {'ON' if self.editor.active else 'OFF'} via F10")
             if not self.editor.active:
-                save_buildings_to_json(entities.buildings, BUILDINGS_DATA_PATH, z_state=self.state.z_state)
+                # TODO: detectar automáticamente la zona actual de guardado
+                zone = "lobby"
+                zone_off = self.zone_offsets.get(zone)
+                save_buildings_to_json(
+                    entities.buildings,
+                    BUILDINGS_DATA_PATH,
+                    z_state=self.state.z_state,
+                    zone=zone,
+                    zone_offset=zone_off,
+                )
 
         # Ctrl+S: guardar sin salir
         elif ev.key == pygame.K_s and (ev.mod & pygame.KMOD_CTRL):
             logger.info("Ctrl+S: saving buildings")
-            save_buildings_to_json(entities.buildings, BUILDINGS_DATA_PATH, z_state=self.state.z_state)
+            # TODO: detectar automáticamente la zona actual de guardado
+            zone = "lobby"
+            zone_off = self.zone_offsets.get(zone)
+            save_buildings_to_json(
+                entities.buildings,
+                BUILDINGS_DATA_PATH,
+                z_state=self.state.z_state,
+                zone=zone,
+                zone_offset=zone_off,
+            )
 
         # N: colocar edificio
         elif ev.key == pygame.K_n:

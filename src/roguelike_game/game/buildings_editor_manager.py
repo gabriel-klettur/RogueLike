@@ -4,6 +4,7 @@ from roguelike_game.systems.editor.buildings.model.building_editor_state import 
 from roguelike_game.systems.editor.buildings.controller.building_editor_controller import BuildingEditorController
 from roguelike_game.systems.editor.buildings.events.building_editor_events import BuildingEditorEventHandler
 from roguelike_game.systems.editor.buildings.view.building_editor_view import BuildingEditorView
+from roguelike_engine.config_map import ZONE_OFFSETS
 
 class BuildingEditorManager:
     def __init__(self, game):
@@ -19,7 +20,15 @@ class BuildingEditorManager:
         self.view         = BuildingEditorView(state, self.editor_state)
         
         # Ahora el event handler recibe también la lista de buildings
-        self.handler      = BuildingEditorEventHandler(state, self.editor_state, self.controller, buildings)
+
+        # pasamos también los offsets de cada zona        
+        self.handler      = BuildingEditorEventHandler(
+            state,
+            self.editor_state,
+            self.controller,
+            buildings,
+            zone_offsets=ZONE_OFFSETS
+        )
 
         # exponemos el state para que el Game lo use
         state.editor = self.editor_state

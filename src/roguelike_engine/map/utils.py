@@ -1,3 +1,5 @@
+from src.roguelike_engine.config_map import ZONE_OFFSETS, ZONE_SIZE
+
 def intersect(room1, room2):
     x1a, y1a, x2a, y2a = room1
     x1b, y1b, x2b, y2b = room2
@@ -22,4 +24,17 @@ def find_closest_room_center(source_x, source_y, dungeon_rooms):
             min_dist = dist
             closest_center = (cx, cy)
     return closest_center
+
+
+def get_zone_for_tile(tile_x: int, tile_y: int) -> str:
+    """
+    Devuelve el nombre de zona en la que cae la tile (tile_x,tile_y),
+    comparando contra ZONE_OFFSETS y ZONE_SIZE.
+    """
+    w, h = ZONE_SIZE
+    for zone, (ox, oy) in ZONE_OFFSETS.items():
+        if ox <= tile_x < ox + w and oy <= tile_y < oy + h:
+            return zone
+    raise ValueError(f"No zone matches tile ({tile_x},{tile_y})")
+
 # Path: src/roguelike_engine/map/utils.py
