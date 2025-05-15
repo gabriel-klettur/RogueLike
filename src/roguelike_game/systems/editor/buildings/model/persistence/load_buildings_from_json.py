@@ -1,21 +1,22 @@
-
-
 # Path: src/roguelike_game/systems/editor/buildings/model/persistence/load_buildings_from_json.py
-import json
-import os
 
+import os
+import json
+from typing import Dict, Tuple, Optional, List
 from roguelike_game.systems.z_layer.persistence import extract_z_from_json
 from roguelike_engine.config_tiles import TILE_SIZE
 
 def load_buildings_from_json(
-    filepath,
+    filepath: str,
     building_class,
     z_state=None,
-    zone_offsets: dict[str, tuple[int,int]] = None,
-):
+    zone_offsets: Optional[Dict[str, Tuple[int, int]]] = None
+) -> List:
     """
     Carga edificios desde un archivo JSON.
-    Si se proporciona `z_state`, también asigna la capa Z.
+    - Si `z_state` se proporciona, asigna la capa Z.
+    - Si `zone_offsets` se proporciona y la entrada JSON tiene `zone` + `rel_tile_*`,
+      recalibra las posiciones absolutas de cada edificio.
     """
     if not os.path.exists(filepath):
         print(f"⚠️ Archivo no encontrado: {filepath}")
@@ -33,42 +34,42 @@ def load_buildings_from_json(
     for entry in data:
         try:
             print(f"📥 Entrada cruda desde JSON: {entry}")
-            b = building_class(                
-                x=entry["x"],
-                y=entry["y"],
+
+            # Creación base usando coordenadas absolutas (legacy)
+            b = building_class(
+                x=entry.get("x", 0),
+                y=entry.get("y", 0),
                 image_path=entry["image_path"],
                 solid=entry.get("solid", True),
-                scale=tuple(entry["scale"]) if "scale" in entry else None,                                
+                scale=tuple(entry["scale"]) if "scale" in entry else None,
                 split_ratio=entry.get("split_ratio", 0.5),
                 z_bottom=entry.get("z_bottom"),
                 z_top=entry.get("z_top"),
             )
 
-            # 🆕 Asignar capa Z si corresponde
+            # Aplicar capa Z
             if z_state:
                 extract_z_from_json(entry, z_state, b)
 
-            # 🆕 Recalcular posición según zona
+            # Recalibrar posición si hay datos relativos
             zone = entry.get("zone")
-            if zone and zone_offsets and "rel_tile_x" in entry:
-                # recalculamos posición absoluta…
-                ox, oy = zone_offsets[zone]
+            if zone and zone_offsets and "rel_tile_x" in entry and "rel_tile_y" in entry:
+                ox, oy = zone_offsets.get(zone, (0, 0))
                 tx = ox + entry["rel_tile_x"]
                 ty = oy + entry["rel_tile_y"]
                 b.x = tx * TILE_SIZE
                 b.y = ty * TILE_SIZE
-                # …y guardamos metadata para futuras recalibraciones
-                b.zone         = zone
-                b.rel_tile_x   = entry["rel_tile_x"]
-                b.rel_tile_y   = entry["rel_tile_y"]
+                b.zone       = zone
+                b.rel_tile_x = entry["rel_tile_x"]
+                b.rel_tile_y = entry["rel_tile_y"]
             else:
-                # legacy: no metadata
-                b.zone         = None
-                b.rel_tile_x   = None
-                b.rel_tile_y   = None
+                # Legacy: sin metadata de zona
+                b.zone       = None
+                b.rel_tile_x = None
+                b.rel_tile_y = None
 
-            # 🆕 Restaurar escala original si se guardó
-            if "original_scale" in entry and entry["original_scale"]:
+            # Restaurar escala original si estaba en JSON
+            if entry.get("original_scale"):
                 b.original_scale = tuple(entry["original_scale"])
 
             buildings.append(b)

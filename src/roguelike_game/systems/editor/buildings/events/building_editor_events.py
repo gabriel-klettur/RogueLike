@@ -40,13 +40,11 @@ class BuildingEditorEventHandler:
                 self.controller.toggle_editor()
                 # Si acabamos de cerrar el editor, guardamos todo
                 if not self.editor.active:                    
-                    zone, zone_off = self._current_zone_and_offset(camera)
                     save_buildings_to_json(
                         entities.buildings,
                         BUILDINGS_DATA_PATH,
                         z_state=self.state.z_state,
-                        zone=zone,
-                        zone_offset=zone_off,
+                        zone_offsets=self.zone_offsets
                     )
                 return
 
@@ -70,14 +68,12 @@ class BuildingEditorEventHandler:
                     self.editor.resizing = False
                     self.editor.split_dragging = False
                     
-                    # TODO: detectar automáticamente la zona actual de edición
-                    zone, zone_off = self._current_zone_and_offset(camera)                    
+                                        
                     save_buildings_to_json(
                         entities.buildings,
                         BUILDINGS_DATA_PATH,
                         z_state=self.state.z_state,
-                        zone=zone,
-                        zone_offset=zone_off,
+                        zone_offsets=self.zone_offsets
                     )
                     return
 
@@ -103,14 +99,11 @@ class BuildingEditorEventHandler:
                 if ev.key == pygame.K_s and (ev.mod & pygame.KMOD_CTRL):
                     logger.info("Ctrl+S: saving buildings")
 
-                    # TODO: detectar automáticamente la zona actual de guardado
-                    zone, zone_off = self._current_zone_and_offset(camera)
                     save_buildings_to_json(
                         entities.buildings,
                         BUILDINGS_DATA_PATH,
                         z_state=self.state.z_state,
-                        zone=zone,
-                        zone_offset=zone_off,
+                        zone_offsets=self.zone_offsets
                     )
 
                     return
@@ -167,13 +160,11 @@ class BuildingEditorEventHandler:
             self.editor.resizing = False
             self.editor.split_dragging = False
             
-            zone, zone_off = self._current_zone_and_offset(camera)
             save_buildings_to_json(
                 entities.buildings,
                 BUILDINGS_DATA_PATH,
                 z_state=self.state.z_state,
-                zone=zone,
-                zone_offset=zone_off,
+                zone_offsets=self.zone_offsets
             )
 
         # F10: toggle editor
@@ -182,26 +173,22 @@ class BuildingEditorEventHandler:
             logger.info(f"Building Editor {'ON' if self.editor.active else 'OFF'} via F10")
             if not self.editor.active:
                 
-                zone, zone_off = self._current_zone_and_offset(camera)
                 save_buildings_to_json(
                     entities.buildings,
                     BUILDINGS_DATA_PATH,
                     z_state=self.state.z_state,
-                    zone=zone,
-                    zone_offset=zone_off,
+                    zone_offsets=self.zone_offsets
                 )
 
         # Ctrl+S: guardar sin salir
         elif ev.key == pygame.K_s and (ev.mod & pygame.KMOD_CTRL):
             logger.info("Ctrl+S: saving buildings")
             
-            zone, zone_off = self._current_zone_and_offset(camera)
             save_buildings_to_json(
                 entities.buildings,
                 BUILDINGS_DATA_PATH,
                 z_state=self.state.z_state,
-                zone=zone,
-                zone_offset=zone_off,
+                zone_offsets=self.zone_offsets
             )
 
         # N: colocar edificio
@@ -215,7 +202,7 @@ class BuildingEditorEventHandler:
     def _current_zone_and_offset(self, camera) -> tuple[str, tuple[int,int]]:
         # centro de la pantalla en píxeles de mundo
         cx_px = camera.offset_x + (SCREEN_WIDTH  / 2) / camera.zoom
-        cy_px = camera.offset_y + (SCREEN_HEIGHT / 2) / camera.zoom
+        cy_px = camera.offset_y + (SCREEN_HEIGHT / 2) / camera.zoom    
         return detect_zone_from_px(cx_px, cy_px)
 
     def _on_mouse_down(self, ev, camera, buildings):
