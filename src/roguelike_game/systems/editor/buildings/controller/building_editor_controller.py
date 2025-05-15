@@ -11,7 +11,6 @@ from roguelike_game.systems.editor.buildings.view.tools.default_tool_view import
 from roguelike_game.systems.editor.buildings.utils.zone_helpers import assign_zone_and_relatives
 
 
-#! Picker
 from roguelike_game.systems.editor.buildings.controller.picker.picker_controller import BuildingPickerController
 
 class BuildingEditorController:
@@ -202,7 +201,6 @@ class BuildingEditorController:
         self.editor.offset_y = world_y - building.y
         print(f"🏗️ Arrastre de {building.image_path} iniciado")
         assign_zone_and_relatives(self.editor.selected_building)
-
 
     # ======================== ACTUALIZACIÓN ========================= #
     def update(self, camera):

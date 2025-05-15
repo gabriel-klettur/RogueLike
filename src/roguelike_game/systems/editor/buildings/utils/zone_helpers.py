@@ -42,3 +42,17 @@ def assign_zone_and_relatives(building) -> None:
     building.zone = zone
     building.rel_tile_x = rel_x
     building.rel_tile_y = rel_y
+
+def detect_zone_from_px(x_px: float, y_px: float) -> tuple[str, tuple[int,int]]:
+    """
+    Dado un punto en píxeles, devuelve (zone_name, (ox,oy)).
+    Si no cae en ninguna zona, devuelve ("no zone", (0,0)).
+    """
+    tile_x = int(x_px) // TILE_SIZE
+    tile_y = int(y_px) // TILE_SIZE
+    try:
+        zone = get_zone_for_tile(tile_x, tile_y)
+    except ValueError:
+        zone = "no zone"
+    offset = ZONE_OFFSETS.get(zone, (0, 0))
+    return zone, offset

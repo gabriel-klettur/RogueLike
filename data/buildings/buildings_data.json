@@ -63,11 +63,11 @@
         "z": 2
     },
     {
-        "x": 2179,
-        "y": 1791,
+        "x": 2164,
+        "y": 1796,
         "zone": "lobby",
-        "rel_tile_x": 18,
-        "rel_tile_y": 5,
+        "rel_tile_x": 17,
+        "rel_tile_y": 6,
         "image_path": "assets/buildings/vegetation/tree_3.png",
         "solid": true,
         "scale": [
@@ -126,10 +126,10 @@
         "z": 1
     },
     {
-        "x": 1636,
-        "y": 1581,
+        "x": 1626,
+        "y": 1596,
         "zone": "lobby",
-        "rel_tile_x": 1,
+        "rel_tile_x": 0,
         "rel_tile_y": -1,
         "image_path": "assets/buildings/vegetation/tree_9.png",
         "solid": true,

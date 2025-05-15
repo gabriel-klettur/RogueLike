@@ -5,6 +5,9 @@ import logging
 from roguelike_game.systems.editor.buildings.model.persistence.save_buildings_to_json import save_buildings_to_json
 from roguelike_engine.config import BUILDINGS_DATA_PATH
 from roguelike_game.systems.editor.buildings.controller.picker.picker_events import PickerEventHandler
+from roguelike_engine.config import SCREEN_WIDTH, SCREEN_HEIGHT
+
+from roguelike_game.systems.editor.buildings.utils.zone_helpers import detect_zone_from_px
 
 
 logger = logging.getLogger("building_editor.events")
@@ -36,10 +39,8 @@ class BuildingEditorEventHandler:
                 # Encendemos/apagamos los handles
                 self.controller.toggle_editor()
                 # Si acabamos de cerrar el editor, guardamos todo
-                if not self.editor.active:
-                    # TODO: detectar automáticamente la zona actual de edición
-                    zone = "lobby"
-                    zone_off = self.zone_offsets.get(zone)
+                if not self.editor.active:                    
+                    zone, zone_off = self._current_zone_and_offset(camera)
                     save_buildings_to_json(
                         entities.buildings,
                         BUILDINGS_DATA_PATH,
@@ -70,8 +71,7 @@ class BuildingEditorEventHandler:
                     self.editor.split_dragging = False
                     
                     # TODO: detectar automáticamente la zona actual de edición
-                    zone = "lobby"
-                    zone_off = self.zone_offsets.get(zone)
+                    zone, zone_off = self._current_zone_and_offset(camera)                    
                     save_buildings_to_json(
                         entities.buildings,
                         BUILDINGS_DATA_PATH,
@@ -104,8 +104,7 @@ class BuildingEditorEventHandler:
                     logger.info("Ctrl+S: saving buildings")
 
                     # TODO: detectar automáticamente la zona actual de guardado
-                    zone = "lobby"
-                    zone_off = self.zone_offsets.get(zone)
+                    zone, zone_off = self._current_zone_and_offset(camera)
                     save_buildings_to_json(
                         entities.buildings,
                         BUILDINGS_DATA_PATH,
@@ -158,7 +157,7 @@ class BuildingEditorEventHandler:
         logger.info("Quit event received in Building Editor")
         self.state.running = False
 
-    def _on_keydown(self, ev, entities):
+    def _on_keydown(self, ev, entities, camera):
         # ESC: salir del editor y guardar
         if ev.key == pygame.K_ESCAPE:
             logger.info("Escape: closing Building Editor and saving")
@@ -167,9 +166,8 @@ class BuildingEditorEventHandler:
             self.editor.dragging = False
             self.editor.resizing = False
             self.editor.split_dragging = False
-            # TODO: detectar automáticamente la zona actual de edición
-            zone = "lobby"
-            zone_off = self.zone_offsets.get(zone)
+            
+            zone, zone_off = self._current_zone_and_offset(camera)
             save_buildings_to_json(
                 entities.buildings,
                 BUILDINGS_DATA_PATH,
@@ -183,9 +181,8 @@ class BuildingEditorEventHandler:
             self.editor.active = not self.editor.active
             logger.info(f"Building Editor {'ON' if self.editor.active else 'OFF'} via F10")
             if not self.editor.active:
-                # TODO: detectar automáticamente la zona actual de guardado
-                zone = "lobby"
-                zone_off = self.zone_offsets.get(zone)
+                
+                zone, zone_off = self._current_zone_and_offset(camera)
                 save_buildings_to_json(
                     entities.buildings,
                     BUILDINGS_DATA_PATH,
@@ -197,9 +194,8 @@ class BuildingEditorEventHandler:
         # Ctrl+S: guardar sin salir
         elif ev.key == pygame.K_s and (ev.mod & pygame.KMOD_CTRL):
             logger.info("Ctrl+S: saving buildings")
-            # TODO: detectar automáticamente la zona actual de guardado
-            zone = "lobby"
-            zone_off = self.zone_offsets.get(zone)
+            
+            zone, zone_off = self._current_zone_and_offset(camera)
             save_buildings_to_json(
                 entities.buildings,
                 BUILDINGS_DATA_PATH,
@@ -215,6 +211,12 @@ class BuildingEditorEventHandler:
         # Supr: borrar edificio
         elif ev.key == pygame.K_DELETE:
             self.controller.delete_tool.delete_building_at_mouse(entities)
+
+    def _current_zone_and_offset(self, camera) -> tuple[str, tuple[int,int]]:
+        # centro de la pantalla en píxeles de mundo
+        cx_px = camera.offset_x + (SCREEN_WIDTH  / 2) / camera.zoom
+        cy_px = camera.offset_y + (SCREEN_HEIGHT / 2) / camera.zoom
+        return detect_zone_from_px(cx_px, cy_px)
 
     def _on_mouse_down(self, ev, camera, buildings):
         mx, my = pygame.mouse.get_pos()
