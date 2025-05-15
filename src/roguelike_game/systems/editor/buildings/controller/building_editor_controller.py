@@ -6,6 +6,10 @@ from roguelike_game.systems.editor.buildings.controller.tools.z_tool      import
 from roguelike_game.systems.editor.buildings.controller.tools.split_tool  import SplitTool
 from roguelike_game.systems.editor.buildings.controller.tools.placer_tool  import PlacerTool
 from roguelike_game.systems.editor.buildings.controller.tools.delete_tool  import DeleteTool
+from roguelike_game.systems.editor.buildings.view.tools.default_tool_view import DefaultToolView
+
+from roguelike_game.systems.editor.buildings.utils.zone_helpers import assign_zone_and_relatives
+
 
 #! Picker
 from roguelike_game.systems.editor.buildings.controller.picker.picker_controller import BuildingPickerController
@@ -18,8 +22,7 @@ class BuildingEditorController:
         self.editor = editor_state
         
         self.resize_tool = ResizeTool(state, editor_state)
-        self.default_tool = DefaultTool(state, editor_state)
-        from roguelike_game.systems.editor.buildings.view.tools.default_tool_view import DefaultToolView
+        self.default_tool = DefaultTool(state, editor_state)        
         self.default_view = DefaultToolView(state, editor_state)
         self.split_tool = SplitTool(state, editor_state)
         self.z_tool_bottom = ZTool(state, editor_state, target="bottom")
@@ -93,17 +96,25 @@ class BuildingEditorController:
             self.z_tool_top.handle_mouse_click((mx, my), buildings)
 
     def on_mouse_up(self, button, camera, buildings):
-
-        # 2) Finalizar resize / split
+        # 1) Finalizar resize / split (igual que antes)
         if self.editor.resizing:
             print("✅ Resize terminado.")
         if self.editor.split_dragging:
             print("✅ Split ratio fijado:", round(self.editor.selected_building.split_ratio, 2))
 
-        # 3) Reset de flags de arrastre
+        # Guarda el building para recalcularlo
+        building = self.editor.selected_building
+
+        # 2) Reset de flags de arrastre
         self.editor.dragging = False
         self.editor.resizing = False
         self.editor.split_dragging = False
+
+        # 3) Si había un building arrastrado, le asignamos zona/relativos
+        if building is not None:            
+            assign_zone_and_relatives(building)
+
+        # 4) Ya podemos limpiar la selección
         self.editor.selected_building = None
 
     def on_mouse_motion(self, pos, camera, buildings):
@@ -190,6 +201,8 @@ class BuildingEditorController:
         self.editor.offset_x = world_x - building.x
         self.editor.offset_y = world_y - building.y
         print(f"🏗️ Arrastre de {building.image_path} iniciado")
+        assign_zone_and_relatives(self.editor.selected_building)
+
 
     # ======================== ACTUALIZACIÓN ========================= #
     def update(self, camera):
@@ -208,3 +221,7 @@ class BuildingEditorController:
 
         elif self.editor.split_dragging:
             self.split_tool.update_drag(pygame.mouse.get_pos(), camera)
+
+
+
+

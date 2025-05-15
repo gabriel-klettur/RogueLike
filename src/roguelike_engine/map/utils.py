@@ -35,6 +35,6 @@ def get_zone_for_tile(tile_x: int, tile_y: int) -> str:
     for zone, (ox, oy) in ZONE_OFFSETS.items():
         if ox <= tile_x < ox + w and oy <= tile_y < oy + h:
             return zone
-    raise ValueError(f"No zone matches tile ({tile_x},{tile_y})")
+    return "no zone"
 
 # Path: src/roguelike_engine/map/utils.py

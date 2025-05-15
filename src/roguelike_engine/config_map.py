@@ -50,7 +50,7 @@ DEBUG_MAPS_DIR = Path(DATA_DIR) / "debug_maps"
 
 #!----------------------- ZONE OFFSETS -----------------------------
 ZONE_OFFSETS = {
-    "lobby": (LOBBY_OFFSET_X, LOBBY_OFFSET_Y),
-    "dungeon": (DUNGEON_OFFSET_X, DUNGEON_OFFSET_Y),
+    "lobby": (LOBBY_OFFSET_X+LOBBY_WIDTH, LOBBY_OFFSET_Y+LOBBY_HEIGHT),
+    "dungeon": (DUNGEON_OFFSET_X+LOBBY_WIDTH, DUNGEON_OFFSET_Y+LOBBY_HEIGHT),
     # "city": (ciudad_offset_x, ciudad_offset_y),  → futuras zonas
 }
