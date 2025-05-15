@@ -1,7 +1,7 @@
 
 # Path: src/roguelike_game/systems/editor/buildings/controller/tools/delete_tool.py
 import pygame
-from roguelike_game.systems.editor.buildings.model.persistence.json_handler import save_buildings_to_json
+from roguelike_game.systems.editor.buildings.model.persistence.save_buildings_to_json import save_buildings_to_json
 from roguelike_engine.config import BUILDINGS_DATA_PATH
 
 class DeleteTool:

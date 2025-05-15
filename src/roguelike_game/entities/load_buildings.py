@@ -4,7 +4,7 @@
 import os
 from roguelike_game.entities.buildings.building import Building
 
-from roguelike_game.systems.editor.buildings.model.persistence.json_handler import save_buildings_to_json
+from roguelike_game.systems.editor.buildings.model.persistence.save_buildings_to_json import save_buildings_to_json
 from roguelike_game.systems.editor.buildings.model.persistence.load_buildings_from_json import load_buildings_from_json
 from roguelike_game.systems.config_z_layer import Z_LAYERS
 from roguelike_engine.config import BUILDINGS_DATA_PATH

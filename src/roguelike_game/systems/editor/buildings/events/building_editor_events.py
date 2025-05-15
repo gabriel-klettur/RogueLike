@@ -2,7 +2,7 @@
 import pygame
 import logging
 
-from roguelike_game.systems.editor.buildings.model.persistence.json_handler import save_buildings_to_json
+from roguelike_game.systems.editor.buildings.model.persistence.save_buildings_to_json import save_buildings_to_json
 from roguelike_engine.config import BUILDINGS_DATA_PATH
 from roguelike_game.systems.editor.buildings.controller.picker.picker_events import PickerEventHandler
 
