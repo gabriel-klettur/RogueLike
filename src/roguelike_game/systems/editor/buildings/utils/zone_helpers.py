@@ -20,7 +20,7 @@ def assign_zone_and_relatives(building) -> None:
     # 1) Centro del sprite en píxeles
     w_px, h_px = building.image.get_size()
     cx_px = building.x + w_px / 2
-    cy_px = building.y + h_px / 2
+    cy_px = building.y + h_px
 
     # 2) A coordenadas de tile
     tile_x = int(cx_px) // TILE_SIZE
