@@ -362,4 +362,3 @@ OVERLAY_CODE_MAP = {
     'wall': 'wall',
     'wallsere': 'wallsere',
 }
-# Path: data/map_overlays/overlay_map.py

@@ -31,7 +31,7 @@ class RendererManager:
         self,
         screen,
         camera,
-        game_map,
+        map,
         entities,
         buildings_editor,
         tiles_editor,
@@ -39,12 +39,13 @@ class RendererManager:
     ):
         self.screen = screen
         self.camera = camera
-        self.map = game_map
+        self.map = map
         self.entities = entities
         self.buildings_editor = buildings_editor
         self.tiles_editor = tiles_editor
         self._dirty_rects = []        
         self.debug_overlay = DebugOverlay(perf_log=perf_log)
+
 
     def render_game(
         self,
@@ -155,12 +156,8 @@ class RendererManager:
         self._dirty_rects.extend(dirty_rects)
 
     def _render_map(self, camera, screen, map):
-        for tile in map.tiles_in_region:
-            if not camera.is_in_view(tile.x, tile.y, tile.sprite_size):
-                continue
-            dirty = tile.render_tiles(screen, camera)
-            if dirty:
-                self._dirty_rects.append(dirty)
+        dirty_rects = self.map.view.render(screen, camera, map)
+        self._dirty_rects.extend(dirty_rects)
 
     def _render_tile_editor_layer(self, state, screen, camera, map):
         if getattr(state, "tile_editor_state", None) and state.tile_editor_state.active:

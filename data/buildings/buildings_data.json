@@ -246,7 +246,7 @@
             1024,
             1536
         ],
-        "split_ratio": 0.68,
+        "split_ratio": 0.706,
         "z_bottom": 4,
         "z_top": 5,
         "z": 4
@@ -609,6 +609,6 @@
         "split_ratio": 0.5,
         "z_bottom": 3,
         "z_top": 5,
-        "z": 1
+        "z": 3
     }
 ]

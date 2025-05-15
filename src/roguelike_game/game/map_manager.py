@@ -4,6 +4,7 @@ from roguelike_engine.map.controller.map_controller import build_map
 from roguelike_engine.map.controller.map_service import _calculate_dungeon_offset
 import roguelike_engine.config_map as config_map
 import roguelike_engine.config_tiles as config_tiles
+from roguelike_engine.map.view.map_view import MapView
 
 class MapManager:
     def __init__(self, map_name: str | None):
@@ -18,7 +19,9 @@ class MapManager:
         
         lob_x, lob_y            = self.lobby_offset
         self.dungeon_offset     = _calculate_dungeon_offset((lob_x, lob_y),config_map.DUNGEON_CONNECT_SIDE)
-        self.tiles_in_region    = self.get_tiles_in_region()                
+        self.tiles_in_region    = self.get_tiles_in_region() 
+
+        self.view           = MapView()            # Vista para renderizar el mapa 
 
     
     def get_tiles_in_region(self) -> list:
