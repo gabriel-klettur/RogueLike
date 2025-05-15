@@ -1,5 +1,5 @@
-# Path: src/roguelike_engine/map/generator/dungeon.py
 
+# Path: src/roguelike_engine/map/model/generator/dungeon.py
 import random
 from typing import List, Tuple, Dict, Optional
 

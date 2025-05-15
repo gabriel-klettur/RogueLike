@@ -1,5 +1,5 @@
 
-# Path: src/roguelike_engine/map/loader/factory.py
+# Path: src/roguelike_engine/map/model/loader/factory.py
 from typing import Dict
 from .interfaces import MapLoader
 from .text_loader_strategy import TextMapLoader

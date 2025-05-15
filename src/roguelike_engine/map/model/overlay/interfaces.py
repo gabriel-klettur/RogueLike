@@ -1,5 +1,5 @@
 
-# Path: src/roguelike_engine/map/overlay/interfaces.py
+# Path: src/roguelike_engine/map/model/overlay/interfaces.py
 from abc import ABC, abstractmethod
 from typing import Optional, List
 

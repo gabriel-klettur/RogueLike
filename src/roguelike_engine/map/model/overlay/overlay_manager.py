@@ -1,5 +1,5 @@
 
-# Path: src/roguelike_engine/map/overlay/overlay_manager.py
+# Path: src/roguelike_engine/map/model/overlay/overlay_manager.py
 from typing import Optional, List
 from .factory import get_overlay_store
 

@@ -1,4 +1,4 @@
-# Path: roguelike_game/game/render_manager.py
+# Path: src/roguelike_game/game/render_manager.py
 import pygame
 
 
@@ -195,4 +195,3 @@ class RendererManager:
     def _render_minimap(self, screen, map, entities):
         minimap_rect = render_minimap(screen, map, entities)
         self._dirty_rects.append(minimap_rect)
-

@@ -1,5 +1,5 @@
-# Path: src/roguelike_game/entities/npc/types/elite/controller.py
 
+# Path: src/roguelike_game/entities/npc/types/elite/controller.py
 from roguelike_game.entities.npc.types.monster.controller import MonsterController
 from .model import EliteModel
 

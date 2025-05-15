@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/entities/obstacles/obstacle.py
 import pygame
 from roguelike_engine.utils.loader import load_image
 import roguelike_engine.config as config

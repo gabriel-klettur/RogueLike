@@ -1,5 +1,5 @@
 
-# Path: src/roguelike_engine/map/merger/edge_to_edge.py
+# Path: src/roguelike_engine/map/model/merger/edge_to_edge.py
 from typing import List, Tuple, Sequence, Optional
 from .interfaces import MergerStrategy
 

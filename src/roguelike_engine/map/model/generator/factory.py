@@ -1,5 +1,5 @@
 
-# Path: src/roguelike_engine/map/generator/factory.py
+# Path: src/roguelike_engine/map/model/generator/factory.py
 from typing import Dict
 from .interfaces import MapGenerator
 from .dungeon import DungeonGenerator

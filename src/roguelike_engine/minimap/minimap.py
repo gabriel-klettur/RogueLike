@@ -1,5 +1,5 @@
-# Path: src/roguelike_engine/minimap/minimap.py
 
+# Path: src/roguelike_engine/minimap/minimap.py
 import pygame
 from roguelike_engine.config_tiles import TILE_SIZE
 

@@ -1,5 +1,5 @@
 
-# Path: src/roguelike_engine/map/exporter/interfaces.py
+# Path: src/roguelike_engine/map/model/exporter/interfaces.py
 from abc import ABC, abstractmethod
 
 class MapExporter(ABC):

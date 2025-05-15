@@ -1,5 +1,5 @@
-# Path: src/roguelike_engine/map/core/service.py
 
+# Path: src/roguelike_engine/map/controller/service.py
 import logging
 import random
 from typing import Optional, Tuple, List, Dict
@@ -13,12 +13,12 @@ from roguelike_engine.config_map import (
     LOBBY_HEIGHT,
     DUNGEON_CONNECT_SIDE,
 )
-from roguelike_engine.map.generator.factory import get_generator
-from roguelike_engine.map.merger.factory import get_merger
-from roguelike_engine.map.loader.factory import get_map_loader
-from roguelike_engine.map.exporter.factory import get_exporter, MapExporter
-from roguelike_engine.map.core.model import Map
-from roguelike_engine.map.generator.dungeon import DungeonGenerator
+from roguelike_engine.map.model.generator.factory import get_generator
+from roguelike_engine.map.model.merger.factory import get_merger
+from roguelike_engine.map.model.loader.factory import get_map_loader
+from roguelike_engine.map.model.exporter.factory import get_exporter, MapExporter
+from roguelike_engine.map.model.model import Map
+from roguelike_engine.map.model.generator.dungeon import DungeonGenerator
 
 logger = logging.getLogger(__name__)
 

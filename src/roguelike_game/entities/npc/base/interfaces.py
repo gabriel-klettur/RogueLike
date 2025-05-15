@@ -1,5 +1,5 @@
-#Path: src/roguelike_game/entities/npc/base/interfaces.py
 
+# Path: src/roguelike_game/entities/npc/base/interfaces.py
 from abc import ABC, abstractmethod
 
 class IModel(ABC):

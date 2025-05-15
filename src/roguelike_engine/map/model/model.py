@@ -1,6 +1,7 @@
-# Path: src/roguelike_engine/map/core/model.py
+# Path: src/roguelike_engine/map/model/model.py
 from dataclasses import dataclass
 from typing import List, Optional, Dict
+
 from roguelike_engine.tiles.model import Tile
 
 @dataclass

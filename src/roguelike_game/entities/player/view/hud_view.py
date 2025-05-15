@@ -1,5 +1,5 @@
-# Path: src/roguelike_game/entities/player/view/hud_view.py
 
+# Path: src/roguelike_game/entities/player/view/hud_view.py
 import time
 import pygame
 

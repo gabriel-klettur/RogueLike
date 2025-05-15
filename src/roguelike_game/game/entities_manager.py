@@ -1,5 +1,5 @@
-#Path: src/roguelike_game/game/entities_manager.py
 
+# Path: src/roguelike_game/game/entities_manager.py
 from typing import Tuple, List
 
 from roguelike_game.entities.load_entities import load_entities
@@ -7,7 +7,7 @@ from roguelike_game.entities.load_hostile import load_hostile
 from roguelike_game.game.map_manager import MapManager
 from roguelike_engine.config_tiles import TILE_SIZE
 from roguelike_engine.config_map import DUNGEON_CONNECT_SIDE
-from roguelike_engine.map.core.service import _calculate_dungeon_offset
+from roguelike_engine.map.controller.service import _calculate_dungeon_offset
 
 class EntitiesManager:
     """

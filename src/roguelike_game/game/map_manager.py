@@ -1,13 +1,13 @@
-# Path: src/roguelike_game/game/map_manager.py
 
-from roguelike_engine.map.core.manager import build_map
-from roguelike_engine.map.core.service import _calculate_dungeon_offset
+# Path: src/roguelike_game/game/map_manager.py
+from roguelike_engine.map.controller.manager import build_map
+from roguelike_engine.map.controller.service import _calculate_dungeon_offset
 import roguelike_engine.config_map as config_map
 import roguelike_engine.config_tiles as config_tiles
 
 class MapManager:
     def __init__(self, map_name: str | None):
-        self.result = build_map(map_mode="global", map_name=map_name)
+        self.result             = build_map(map_mode="global", map_name=map_name)
         
         self.name               = self.result.name
         self.matrix             = self.result.matrix
@@ -20,6 +20,7 @@ class MapManager:
         self.dungeon_offset     = _calculate_dungeon_offset((lob_x, lob_y),config_map.DUNGEON_CONNECT_SIDE)
         self.tiles_in_region    = self.get_tiles_in_region()                
 
+    
     def get_tiles_in_region(self) -> list:
         """Devuelve sólo los tiles del lobby y de la dungeon."""
         lob_x, lob_y = self.lobby_offset

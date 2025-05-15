@@ -1,11 +1,11 @@
 
-# Path: src/roguelike_engine/map/merger/center_to_center.py
+# Path: src/roguelike_engine/map/model/merger/center_to_center.py
 import random
 from typing import List, Tuple, Sequence, Optional
 import logging
 from .interfaces import MergerStrategy
 from roguelike_engine.map.utils import find_closest_room_center
-from roguelike_engine.map.generator.dungeon import DungeonGenerator
+from roguelike_engine.map.model.generator.dungeon import DungeonGenerator
 
 logger = logging.getLogger(__name__)
 

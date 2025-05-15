@@ -8,7 +8,7 @@ from roguelike_engine.config_tiles import OVERLAY_CODE_MAP, DEFAULT_TILE_MAP
 from roguelike_game.systems.editor.tiles.controller.tools.tile_picker_controller import TilePickerController
 from roguelike_game.systems.editor.tiles.controller.tools.tile_toolbar_controller import TileToolbarController
 
-from roguelike_engine.map.overlay.overlay_manager import save_overlay
+from roguelike_engine.map.model.overlay.overlay_manager import save_overlay
 from roguelike_engine.utils.loader import load_image
 
 

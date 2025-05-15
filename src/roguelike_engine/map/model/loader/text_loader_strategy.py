@@ -1,9 +1,9 @@
-# Path: src/roguelike_engine/map/loader/text_loader_strategy.py
+# Path: src/roguelike_engine/map/model/loader/text_loader_strategy.py
 from typing   import List, Optional, Tuple
 from .interfaces            import MapLoader
 from .text_loader           import parse_map_text
 from roguelike_engine.tiles.loader       import load_tiles_from_text
-from roguelike_engine.map.overlay.overlay_manager import load_overlay
+from roguelike_engine.map.model.overlay.overlay_manager import load_overlay
 from roguelike_engine.tiles.model       import Tile
 
 # Importar el generador de overlay

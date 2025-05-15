@@ -1,5 +1,5 @@
-# Path: src/roguelike_game/entities/player/model/movement_model.py
 
+# Path: src/roguelike_game/entities/player/model/movement_model.py
 import math
 import pygame
 

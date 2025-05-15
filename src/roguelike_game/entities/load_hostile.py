@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/entities/load_hostile.py
 import random
 from roguelike_game.entities.npc.factory import NPCFactory
 from roguelike_engine.config_tiles import TILE_SIZE

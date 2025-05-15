@@ -1,5 +1,5 @@
-# Path: src/roguelike_game/entities/npc/types/monster/model.py
 
+# Path: src/roguelike_game/entities/npc/types/monster/model.py
 from roguelike_game.entities.npc.base.model import BaseNPCModel
 from roguelike_game.entities.npc.utils.movement import NPCMovement
 from roguelike_game.entities.npc.types.monster.view import MonsterView

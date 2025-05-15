@@ -3,6 +3,7 @@ Path: src/roguelike_engine/utils/debug_overlay.py
 
 Clase para renderizar el panel de depuración (métricas, bordes, hitboxes y líneas de estado), con benchmarking integrado.
 """
+# Path: src/roguelike_engine/utils/debug_overlay.py
 import pygame
 from roguelike_engine.config_map import (
     LOBBY_WIDTH, LOBBY_HEIGHT,
@@ -11,7 +12,7 @@ from roguelike_engine.config_map import (
     DUNGEON_CONNECT_SIDE
 )
 from roguelike_engine.config_tiles import TILE_SIZE
-from roguelike_engine.map.core.service import _calculate_dungeon_offset
+from roguelike_engine.map.controller.service import _calculate_dungeon_offset
 from roguelike_engine.utils.benchmark import benchmark
 
 

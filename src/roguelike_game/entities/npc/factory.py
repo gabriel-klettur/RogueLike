@@ -1,5 +1,5 @@
-# Path: src/roguelike_game/entities/npc/factory.py
 
+# Path: src/roguelike_game/entities/npc/factory.py
 import glob
 import importlib
 import sys

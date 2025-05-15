@@ -1,5 +1,6 @@
 # src/roguelike_game/entities/npc/utils/stats_loader.py
 
+# Path: src/roguelike_game/entities/npc/utils/stats_loader.py
 import yaml
 from pathlib import Path
 from typing import Dict

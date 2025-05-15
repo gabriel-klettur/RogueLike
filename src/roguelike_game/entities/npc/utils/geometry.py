@@ -1,5 +1,5 @@
-#Path: src/roguelike_game/entities/npc/utils/geometry.py
 
+# Path: src/roguelike_game/entities/npc/utils/geometry.py
 import math
 
 

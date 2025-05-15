@@ -1,5 +1,5 @@
-#Path: src/roguelike_game/game/building_editor_manager.py
 
+# Path: src/roguelike_game/game/buildings_editor_manager.py
 from roguelike_game.systems.editor.buildings.model.building_editor_state import BuildingsEditorState
 from roguelike_game.systems.editor.buildings.controller.building_editor_controller import BuildingEditorController
 from roguelike_game.systems.editor.buildings.events.building_editor_events import BuildingEditorEventHandler

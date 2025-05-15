@@ -1,3 +1,4 @@
+# Path: src/roguelike_engine/config_tiles.py
 from roguelike_engine.config_map import MAP_OVERLAYS_DIR
 from data.map_overlays.overlay_map import OVERLAY_CODE_MAP
 

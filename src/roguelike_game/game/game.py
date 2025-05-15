@@ -1,5 +1,5 @@
-#Path: src/roguelike_game/game/game.py
 
+# Path: src/roguelike_game/game/game.py
 import pygame
 
 #!---------------------- Paquetes locales: configuración --------------------------------
@@ -189,3 +189,19 @@ class Game:
 
             # 5) Limitar velocidad de fotogramas
             self.clock.tick(config.FPS)
+
+if __name__ == "__main__":
+    # Inicializa pygame
+    pygame.init()
+
+    # Crea la pantalla del juego
+    screen = pygame.display.set_mode((config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
+
+    # Crea una instancia del juego
+    game = Game(screen)
+
+    # Ejecuta el bucle principal del juego
+    game.run()
+
+    # Finaliza pygame
+    pygame.quit()

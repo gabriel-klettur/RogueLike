@@ -5,7 +5,7 @@ from pathlib import Path
 
 from roguelike_engine.utils.loader import load_image
 from roguelike_engine.config import ASSETS_DIR
-from roguelike_engine.map.overlay.overlay_manager import save_overlay
+from roguelike_engine.map.model.overlay.overlay_manager import save_overlay
 from roguelike_engine.config_tiles import TILE_SIZE
 from roguelike_engine.tiles.assets import load_base_tile_images
 

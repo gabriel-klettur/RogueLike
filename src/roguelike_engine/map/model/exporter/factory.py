@@ -1,5 +1,5 @@
 
-# Path: src/roguelike_engine/map/exporter/factory.py
+# Path: src/roguelike_engine/map/model/exporter/factory.py
 from .debug_txt_exporter import DebugTxtExporter
 from .interfaces import MapExporter
 

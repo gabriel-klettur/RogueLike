@@ -1,5 +1,5 @@
-# Path: src/roguelike_game/main.py
 
+# Path: src/roguelike_game/main.py
 import pygame
 from collections import defaultdict
 

@@ -1,5 +1,5 @@
-# Path: src/roguelike_game/entities/npc/base/view.py
 
+# Path: src/roguelike_game/entities/npc/base/view.py
 import pygame
 from roguelike_game.entities.npc.interfaces import IView
 

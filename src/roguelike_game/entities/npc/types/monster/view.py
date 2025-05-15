@@ -1,5 +1,5 @@
-# Path: src/roguelike_game/entities/npc/types/monster/view.py
 
+# Path: src/roguelike_game/entities/npc/types/monster/view.py
 import pygame
 from roguelike_engine.utils.loader import load_image
 from roguelike_game.entities.npc.base.view import NPCView

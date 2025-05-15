@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/game/update_manager.py
 
 def update_game(
     state,
@@ -53,3 +52,4 @@ def update_game(
         solid_tiles,
         entities.obstacles
     )
+# Path: src/roguelike_game/game/update_manager.py

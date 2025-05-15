@@ -1,5 +1,5 @@
-#Path: src/roguelike_game/entities/npc/base/controller.py
 
+# Path: src/roguelike_game/entities/npc/base/controller.py
 from .interfaces import IController
 
 class BaseNPCController(IController):

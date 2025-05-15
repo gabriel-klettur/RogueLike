@@ -1,5 +1,5 @@
 
-# Path: src/roguelike_engine/map/core/manager.py
+# Path: src/roguelike_engine/map/controller/manager.py
 from typing import Optional
 
 from roguelike_engine.config_map import (
@@ -8,8 +8,8 @@ from roguelike_engine.config_map import (
     LOBBY_OFFSET_X,
     LOBBY_OFFSET_Y,
 )
-from .service import MapService
-from .model import Map
+from roguelike_engine.map.controller.service import MapService
+from src.roguelike_engine.map.model.model import Map
 
 # Instancia singleton de nuestro servicio
 _default_service = MapService()

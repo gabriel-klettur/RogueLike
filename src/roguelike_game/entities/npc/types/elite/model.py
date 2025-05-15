@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/entities/npc/types/elite/model.py
 from roguelike_game.entities.npc.types.elite.view import EliteView
 from roguelike_game.entities.npc.types.monster.model import MonsterModel
 

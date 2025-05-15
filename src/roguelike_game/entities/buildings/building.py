@@ -1,4 +1,5 @@
 # roguelike_project/entities/buildings/building.py
+# Path: src/roguelike_game/entities/buildings/building.py
 import os
 import pygame
 from roguelike_engine.utils.loader import load_image
