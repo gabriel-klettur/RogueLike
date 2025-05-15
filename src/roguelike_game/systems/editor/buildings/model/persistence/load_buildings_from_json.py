@@ -51,11 +51,21 @@ def load_buildings_from_json(
             # 🆕 Recalcular posición según zona
             zone = entry.get("zone")
             if zone and zone_offsets and "rel_tile_x" in entry:
+                # recalculamos posición absoluta…
                 ox, oy = zone_offsets[zone]
                 tx = ox + entry["rel_tile_x"]
                 ty = oy + entry["rel_tile_y"]
                 b.x = tx * TILE_SIZE
-                b.y = ty * TILE_SIZE        
+                b.y = ty * TILE_SIZE
+                # …y guardamos metadata para futuras recalibraciones
+                b.zone         = zone
+                b.rel_tile_x   = entry["rel_tile_x"]
+                b.rel_tile_y   = entry["rel_tile_y"]
+            else:
+                # legacy: no metadata
+                b.zone         = None
+                b.rel_tile_x   = None
+                b.rel_tile_y   = None
 
             # 🆕 Restaurar escala original si se guardó
             if "original_scale" in entry and entry["original_scale"]:

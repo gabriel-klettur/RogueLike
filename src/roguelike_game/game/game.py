@@ -80,6 +80,7 @@ class Game:
         Inicializa el gestor de entidades (player, enemies, obstacles y buildings) y carga los datos en el estado.
         """
         self.entities = EntitiesManager(self.z_state, self.map)        
+        
 
     def _init_z_layer(self, entities):
         """

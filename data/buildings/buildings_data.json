@@ -63,11 +63,11 @@
         "z": 2
     },
     {
-        "x": 2160,
-        "y": 1940,
+        "x": 2161,
+        "y": 1798,
         "zone": "lobby",
         "rel_tile_x": 67,
-        "rel_tile_y": 60,
+        "rel_tile_y": 56,
         "image_path": "assets/buildings/vegetation/tree_3.png",
         "solid": true,
         "scale": [
@@ -252,10 +252,10 @@
         "z": 3
     },
     {
-        "x": 2299,
-        "y": 1719,
+        "x": 2306,
+        "y": 1715,
         "zone": "lobby",
-        "rel_tile_x": 71,
+        "rel_tile_x": 72,
         "rel_tile_y": 53,
         "image_path": "assets/buildings/statues/statue_olim_01.png",
         "solid": true,
@@ -273,11 +273,11 @@
         "z": 3
     },
     {
-        "x": 1664,
-        "y": 2072,
+        "x": 1739,
+        "y": 2037,
         "zone": "lobby",
-        "rel_tile_x": 52,
-        "rel_tile_y": 64,
+        "rel_tile_x": 54,
+        "rel_tile_y": 63,
         "image_path": "assets/buildings/shops/magic_tower.png",
         "solid": true,
         "scale": [

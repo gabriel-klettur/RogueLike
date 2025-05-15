@@ -6,6 +6,7 @@ from roguelike_game.entities.load_entities import load_entities
 from roguelike_game.entities.load_hostile import load_hostile
 from roguelike_game.game.map_manager import MapManager
 from roguelike_engine.config_tiles import TILE_SIZE
+from roguelike_engine.config_map import ZONE_OFFSETS
 from roguelike_engine.config_map import DUNGEON_CONNECT_SIDE
 from roguelike_engine.map.controller.map_service import _calculate_dungeon_offset
 
@@ -32,6 +33,8 @@ class EntitiesManager:
         Devuelve (player, obstacles, buildings).
         """        
         self.player, self.obstacles, self.buildings = load_entities(self.z_state)
+        self.recalibrate_buildings()
+        
         return self.player, self.obstacles, self.buildings    
 
     def init_enemies(self):
@@ -64,3 +67,23 @@ class EntitiesManager:
             self.map.tiles
         )
         return self.enemies
+
+    def recalibrate_buildings(self, zone_offsets: dict[str, tuple[int,int]] = None):
+        """
+        Vuelve a computar b.x, b.y de todos los edificios a partir de
+        (zone, rel_tile_x, rel_tile_y) usando los zone_offsets.
+        Si un edificio no tiene metadata, se deja tal cual.
+        """
+        zo = zone_offsets or ZONE_OFFSETS
+        for b in self.buildings:
+            if getattr(b, "zone", None) and getattr(b, "rel_tile_x", None) is not None:
+                ox, oy = zo[b.zone]
+                # tile coordinates absolutas
+                tx = ox + b.rel_tile_x
+                ty = oy + b.rel_tile_y
+                # pixel coordinates
+                b.x = tx * TILE_SIZE
+                b.y = ty * TILE_SIZE
+                # actualizar rect de colisión/renderer
+                if hasattr(b, "rect"):
+                    b.rect.topleft = (b.x, b.y)
