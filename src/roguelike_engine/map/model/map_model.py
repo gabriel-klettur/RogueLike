@@ -1,4 +1,4 @@
-# Path: src/roguelike_engine/map/model/model.py
+# Path: src/roguelike_engine/map/model/map_model.py
 from dataclasses import dataclass
 from typing import List, Optional, Dict
 

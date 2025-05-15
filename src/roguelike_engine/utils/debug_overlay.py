@@ -12,7 +12,7 @@ from roguelike_engine.config_map import (
     DUNGEON_CONNECT_SIDE
 )
 from roguelike_engine.config_tiles import TILE_SIZE
-from roguelike_engine.map.controller.service import _calculate_dungeon_offset
+from roguelike_engine.map.controller.map_service import _calculate_dungeon_offset
 from roguelike_engine.utils.benchmark import benchmark
 
 
