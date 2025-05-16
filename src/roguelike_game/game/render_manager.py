@@ -131,8 +131,16 @@ class RendererManager:
                 entities=entities,
                 show_borders=True
             )
-        pygame.display.flip()
+
+        # Actualizar solo regiones sucias, o todo si hay demasiadas
+        MAX_DIRTY = 50
+        if len(self._dirty_rects) > MAX_DIRTY:
+            # demasiados rects, repintamos todo para evitar overhead
+            pygame.display.flip()
+        else:
+            pygame.display.update(self._dirty_rects)
         return self._dirty_rects
+        
 
     def _render_editors(self):
         """
