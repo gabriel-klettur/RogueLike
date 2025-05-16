@@ -360,8 +360,8 @@
         "z": 4
     },
     {
-        "x": 2316,
-        "y": 2437,
+        "x": 2329,
+        "y": 2420,
         "image_path": "assets/buildings\\portals\\portal.png",
         "solid": true,
         "scale": [
@@ -375,7 +375,10 @@
         "split_ratio": 0.236,
         "z_bottom": 3,
         "z_top": 5,
-        "z": 3
+        "z": 3,
+        "zone": "lobby",
+        "rel_tile_x": 22,
+        "rel_tile_y": 25
     },
     {
         "x": 2792,

@@ -8,7 +8,7 @@ from roguelike_engine.map.view.map_view import MapView
 
 class MapManager:
     def __init__(self, map_name: str | None):
-        self.result             = build_map(map_mode="global", map_name=map_name)
+        self.result             = build_map(map_name)
         
         self.name               = self.result.name
         self.matrix             = self.result.matrix

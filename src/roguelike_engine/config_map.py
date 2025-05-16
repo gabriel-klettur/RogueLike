@@ -15,8 +15,6 @@ ZONE_HEIGHT = ZONE_SIZE[1]
 MAP_OVERLAYS_DIR = Path(DATA_DIR) / "map_overlays"
 MAP_OVERLAYS_DIR = str(MAP_OVERLAYS_DIR)
 
-
-
 #!------------------------ DUNGEON CONFIG ---------------------------
 DUNGEON_CONNECT_SIDE = "bottom"  # nuevo: "top" | "bottom" | "left" | "right"
 
