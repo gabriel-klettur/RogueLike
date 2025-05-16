@@ -7,10 +7,10 @@ from typing import Optional, Tuple, List, Dict
 from roguelike_engine.config_map import (
     GLOBAL_WIDTH,
     GLOBAL_HEIGHT,
-    DUNGEON_WIDTH,
-    DUNGEON_HEIGHT,
-    LOBBY_WIDTH,
-    LOBBY_HEIGHT,
+    ZONE_WIDTH,
+    ZONE_HEIGHT,
+    ZONE_WIDTH,
+    ZONE_HEIGHT,
     DUNGEON_CONNECT_SIDE,
 )
 from roguelike_engine.map.model.generator.factory import get_generator
@@ -25,16 +25,16 @@ logger = logging.getLogger(__name__)
 
 def _generate_lobby_matrix() -> List[str]:
     """
-    Genera dinámicamente el mapa del lobby de tamaño LOBBY_WIDTH×LOBBY_HEIGHT:
+    Genera dinámicamente el mapa del lobby de tamaño ZONE_WIDTH×ZONE_HEIGHT:
     - Borde de muros '#'
     - Interior de suelo '.'
     """
     matrix: List[str] = []
-    for y in range(LOBBY_HEIGHT):
-        if y == 0 or y == LOBBY_HEIGHT - 1:
-            matrix.append("#" * LOBBY_WIDTH)
+    for y in range(ZONE_HEIGHT):
+        if y == 0 or y == ZONE_HEIGHT - 1:
+            matrix.append("#" * ZONE_WIDTH)
         else:
-            matrix.append("#" + "." * (LOBBY_WIDTH - 2) + "#")
+            matrix.append("#" + "." * (ZONE_WIDTH - 2) + "#")
     return matrix
 
 
@@ -71,19 +71,19 @@ def _calculate_lobby_offset() -> Tuple[int, int]:
     """
     Determina el offset (x,y) para centrar el lobby en la celda central de un grid.
     """
-    n_cols = GLOBAL_WIDTH // LOBBY_WIDTH
-    n_rows = GLOBAL_HEIGHT // LOBBY_HEIGHT
+    n_cols = GLOBAL_WIDTH // ZONE_WIDTH
+    n_rows = GLOBAL_HEIGHT // ZONE_HEIGHT
     if n_cols < 1 or n_rows < 1:
-        return ((GLOBAL_WIDTH - LOBBY_WIDTH)//2,
-                (GLOBAL_HEIGHT - LOBBY_HEIGHT)//2)
+        return ((GLOBAL_WIDTH - ZONE_WIDTH)//2,
+                (GLOBAL_HEIGHT - ZONE_HEIGHT)//2)
     center_col = n_cols // 2
     center_row = n_rows // 2
-    rem_x = GLOBAL_WIDTH - n_cols * LOBBY_WIDTH
-    rem_y = GLOBAL_HEIGHT - n_rows * LOBBY_HEIGHT
+    rem_x = GLOBAL_WIDTH - n_cols * ZONE_WIDTH
+    rem_y = GLOBAL_HEIGHT - n_rows * ZONE_HEIGHT
     start_x = rem_x // 2
     start_y = rem_y // 2
-    return (start_x + center_col * LOBBY_WIDTH,
-            start_y + center_row * LOBBY_HEIGHT)
+    return (start_x + center_col * ZONE_WIDTH,
+            start_y + center_row * ZONE_HEIGHT)
 
 
 def _calculate_dungeon_offset(lobby_off: Tuple[int,int], side: str) -> Tuple[int,int]:
@@ -93,13 +93,13 @@ def _calculate_dungeon_offset(lobby_off: Tuple[int,int], side: str) -> Tuple[int
     """
     off_x, off_y = lobby_off
     if side == "bottom":
-        return off_x, off_y + LOBBY_HEIGHT
+        return off_x, off_y + ZONE_HEIGHT
     if side == "top":
-        return off_x, off_y - DUNGEON_HEIGHT
+        return off_x, off_y - ZONE_HEIGHT
     if side == "left":
-        return off_x - DUNGEON_WIDTH, off_y
+        return off_x - ZONE_WIDTH, off_y
     # 'right'
-    return off_x + LOBBY_WIDTH, off_y
+    return off_x + ZONE_WIDTH, off_y
 
 
 class MapService:
@@ -122,8 +122,8 @@ class MapService:
     def build_map(
         self,
         *,
-        width: int = DUNGEON_WIDTH,
-        height: int = DUNGEON_HEIGHT,
+        width: int = ZONE_WIDTH,
+        height: int = ZONE_HEIGHT,
         offset_x: int = 0,
         offset_y: int = 0,
         map_mode: str = "combined",
@@ -147,8 +147,8 @@ class MapService:
 
             # 2️⃣ dungeon procedural
             raw_map, metadata = self.generator.generate(
-                width=DUNGEON_WIDTH,
-                height=DUNGEON_HEIGHT,
+                width=ZONE_WIDTH,
+                height=ZONE_HEIGHT,
                 return_rooms=True,
             )
             dx, dy = _calculate_dungeon_offset(lobby_off, DUNGEON_CONNECT_SIDE)

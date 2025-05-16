@@ -7,17 +7,15 @@ from roguelike_engine.config import DATA_DIR
 GLOBAL_WIDTH  = 150
 GLOBAL_HEIGHT = 150
 ZONE_SIZE = (50, 50)
+ZONE_WIDTH = ZONE_SIZE[0]
+ZONE_HEIGHT = ZONE_SIZE[1]
 
 #!------------------------ OVERLAY CONFIG --------------------------
 # Persistencia de overlays de mapas (tiles)
 MAP_OVERLAYS_DIR = Path(DATA_DIR) / "map_overlays"
 MAP_OVERLAYS_DIR = str(MAP_OVERLAYS_DIR)
 
-#! --------------------- LOBBY CONFIG ------------------------------
 
-# Dimensiones lógicas del lobby
-LOBBY_WIDTH = 50
-LOBBY_HEIGHT = 50
 
 #!------------------------ DUNGEON CONFIG ---------------------------
 DUNGEON_CONNECT_SIDE = "bottom"  # nuevo: "top" | "bottom" | "left" | "right"
@@ -25,9 +23,6 @@ DUNGEON_CONNECT_SIDE = "bottom"  # nuevo: "top" | "bottom" | "left" | "right"
 # Ancho de los túneles (en tiles)
 DUNGEON_TUNNEL_THICKNESS = 3
 
-# Dimensiones del dungeon procedural
-DUNGEON_WIDTH = 50
-DUNGEON_HEIGHT = 50
 
 # Límite de habitaciones:
 #  - None → usar valor dinámico aleatorio (max_rooms pasado al generate)

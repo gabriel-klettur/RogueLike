@@ -3,8 +3,8 @@
 from typing import Optional
 
 from roguelike_engine.config_map import (
-    DUNGEON_WIDTH,
-    DUNGEON_HEIGHT
+    ZONE_WIDTH,
+    ZONE_HEIGHT
 )
 from roguelike_engine.map.controller.map_service import MapService
 from roguelike_engine.map.model.map_model import Map
@@ -14,8 +14,8 @@ _default_service = MapService()
 
 def build_map(
     *,
-    width: int = DUNGEON_WIDTH,
-    height: int = DUNGEON_HEIGHT,
+    width: int = ZONE_WIDTH,
+    height: int = ZONE_HEIGHT,
     offset_x: int = 0,
     offset_y: int = 0,
     map_mode: str = "combined",

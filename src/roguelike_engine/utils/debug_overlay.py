@@ -6,8 +6,8 @@ Clase para renderizar el panel de depuración (métricas, bordes, hitboxes y lí
 # Path: src/roguelike_engine/utils/debug_overlay.py
 import pygame
 from roguelike_engine.config_map import (
-    LOBBY_WIDTH, LOBBY_HEIGHT,
-    DUNGEON_WIDTH, DUNGEON_HEIGHT,
+    ZONE_WIDTH, ZONE_HEIGHT,
+    ZONE_WIDTH, ZONE_HEIGHT,
     GLOBAL_WIDTH, GLOBAL_HEIGHT,
     DUNGEON_CONNECT_SIDE
 )
@@ -180,13 +180,13 @@ class DebugOverlay:
     def _draw_lobby_border(self, screen, camera, lobby_offset: tuple[int,int]) -> None:
         x0,y0 = lobby_offset
         tl = camera.apply((x0*TILE_SIZE, y0*TILE_SIZE))
-        sz = camera.scale((LOBBY_WIDTH*TILE_SIZE, LOBBY_HEIGHT*TILE_SIZE))
+        sz = camera.scale((ZONE_WIDTH*TILE_SIZE, ZONE_HEIGHT*TILE_SIZE))
         pygame.draw.rect(screen, self.border_colors['lobby'], pygame.Rect(tl, sz), self.border_width)
 
     def _draw_dungeon_border(self, screen, camera, lobby_offset: tuple[int,int]) -> None:
         dx,dy = _calculate_dungeon_offset(lobby_offset, DUNGEON_CONNECT_SIDE)
         tl = camera.apply((dx*TILE_SIZE, dy*TILE_SIZE))
-        sz = camera.scale((DUNGEON_WIDTH*TILE_SIZE, DUNGEON_HEIGHT*TILE_SIZE))
+        sz = camera.scale((ZONE_WIDTH*TILE_SIZE, ZONE_HEIGHT*TILE_SIZE))
         pygame.draw.rect(screen, self.border_colors['dungeon'], pygame.Rect(tl, sz), self.border_width)
 
     def _draw_global_border(self, screen, camera) -> None:

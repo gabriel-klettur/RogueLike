@@ -5,8 +5,8 @@ from typing import List, Tuple, Dict, Optional
 
 from .interfaces import MapGenerator
 from roguelike_engine.config_map import (
-    DUNGEON_WIDTH,
-    DUNGEON_HEIGHT,
+    ZONE_WIDTH,
+    ZONE_HEIGHT,
     DUNGEON_TUNNEL_THICKNESS,
     DUNGEON_MAX_ROOMS,
 )
@@ -21,8 +21,8 @@ class DungeonGenerator(MapGenerator):
     """
     def generate(
         self,
-        width: int = DUNGEON_WIDTH,
-        height: int = DUNGEON_HEIGHT,
+        width: int = ZONE_WIDTH,
+        height: int = ZONE_HEIGHT,
         max_rooms: int = 10,
         room_min_size: int = 10,
         room_max_size: int = 20,

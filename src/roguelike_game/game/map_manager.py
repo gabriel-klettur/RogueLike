@@ -35,10 +35,10 @@ class MapManager:
                 tx = tile.x // config_tiles.TILE_SIZE
                 ty = tile.y // config_tiles.TILE_SIZE
 
-                in_lobby = (lob_x <= tx < lob_x + config_map.LOBBY_WIDTH
-                         and lob_y <= ty < lob_y + config_map.LOBBY_HEIGHT)
-                in_dungeon = (dun_x <= tx < dun_x + config_map.DUNGEON_WIDTH
-                           and dun_y <= ty < dun_y + config_map.DUNGEON_HEIGHT)
+                in_lobby = (lob_x <= tx < lob_x + config_map.ZONE_WIDTH
+                         and lob_y <= ty < lob_y + config_map.ZONE_HEIGHT)
+                in_dungeon = (dun_x <= tx < dun_x + config_map.ZONE_WIDTH
+                           and dun_y <= ty < dun_y + config_map.ZONE_HEIGHT)
 
                 if in_lobby or in_dungeon:
                     out.append(tile)
