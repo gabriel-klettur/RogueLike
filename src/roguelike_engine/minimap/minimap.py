@@ -4,19 +4,27 @@ from typing import Tuple, Iterable
 from roguelike_engine.config_tiles import TILE_SIZE, TILE_COLORS
 from roguelike_engine.tiles.model import Tile
 
+
+from roguelike_engine.config_minimap import (
+    MINIMAP_WIDTH,
+    MINIMAP_HEIGHT,
+    MINIMAP_ZOOM,
+    MINIMAP_PADDING
+)
+
 class Minimap:
-    def __init__(self, width=200, height=150, zoom=1, padding: Tuple[int,int]=(20,20)):
-        self.width = width
-        self.height = height
-        self.zoom = zoom
-        self.pad_x, self.pad_y = padding
+    def __init__(self):
+        self.width = MINIMAP_WIDTH
+        self.height = MINIMAP_HEIGHT
+        self.zoom = MINIMAP_ZOOM
+        self.pad_x, self.pad_y = MINIMAP_PADDING
 
         # Superficie final donde dibujamos:
-        self.surface = pygame.Surface((width, height), pygame.SRCALPHA)
-        self.surface.set_alpha(180)
+        self.surface = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
+        self.surface.set_alpha(180)         # transparencia
 
         # Superficie cacheada de background (sólo tiles):
-        self.bg_surface = pygame.Surface((width, height), pygame.SRCALPHA)
+        self.bg_surface = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
         self._last_center = None  # para detectar cambios
         self.visible_tiles = []
 

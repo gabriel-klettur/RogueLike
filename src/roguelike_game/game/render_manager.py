@@ -2,7 +2,6 @@
 import pygame
 
 from roguelike_engine.utils.mouse import draw_mouse_crosshair
-from roguelike_engine.config_tiles import TILE_SIZE
 import roguelike_engine.config as config
 
 # Sistema de orden Z
@@ -132,9 +131,8 @@ class RendererManager:
                 show_borders=True
             )
 
-        # Actualizar solo regiones sucias, o todo si hay demasiadas
-        MAX_DIRTY = 50
-        if len(self._dirty_rects) > MAX_DIRTY:
+        # Actualizar solo regiones sucias, o todo si hay demasiadas        
+        if len(self._dirty_rects) > config.MAX_DIRTY:
             # demasiados rects, repintamos todo para evitar overhead
             pygame.display.flip()
         else:

@@ -3,6 +3,9 @@ from pathlib import Path
 
 #! ------------------------ MAIN GAME SETTINGS ------------------------
 
+# Número máximo de rectángulos "sucios" (dirty rects) permitidos antes de forzar un repintado completo.
+MAX_DIRTY = 50
+
 # Debug Mode
 DEBUG = False
 

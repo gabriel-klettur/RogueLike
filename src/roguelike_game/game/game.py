@@ -135,7 +135,7 @@ class Game:
         """
         Inicializa el minimapa del juego.
         """
-        self.minimap = Minimap(width=200, height=150, zoom=1, padding=(20,20))      #! MOVER A CONSTANTES CONFIG
+        self.minimap = Minimap()
 
     @benchmark(lambda self: self.perf_log, "1.handle_events")
     def handle_events(self):        
