@@ -28,6 +28,7 @@ from roguelike_game.game.menu_manager import MenuManager
 #! --------------------- Paquetes locales: editores (tile) -------------------------------------
 from roguelike_game.game.buildings_editor_manager import BuildingEditorManager
 from roguelike_game.game.tiles_editor_manager import TilesEditorManager
+from roguelike_engine.minimap.minimap import Minimap
 
 #! -------------------------- Paquetes locales: z-layer ----------------------------------------
 from roguelike_game.systems.z_layer.state import ZState
@@ -59,9 +60,11 @@ class Game:
         self._init_z_layer(self.entities)
         self._init_buildings_editor()
         self._init_tile_editor()
+        self._init_minimap()
         self._init_renderer()
         self._init_menu()
         self._init_systems(perf_log)        
+        
 
     def _init_state(self):
         """
@@ -112,7 +115,8 @@ class Game:
             self.entities,
             self.buildings_editor,
             self.tiles_editor,
-            self.perf_log
+            self.perf_log,
+            self.minimap
         )
 
     def _init_menu(self):
@@ -126,6 +130,12 @@ class Game:
         Inicializa los sistemas del juego (combat, effects, explosions, etc.).
         """
         self.systems = SystemsManager(self.state, perf_log)
+
+    def _init_minimap(self):
+        """
+        Inicializa el minimapa del juego.
+        """
+        self.minimap = Minimap(width=200, height=150, zoom=1, padding=(20,20))      #! MOVER A CONSTANTES CONFIG
 
     @benchmark(lambda self: self.perf_log, "1.handle_events")
     def handle_events(self):        
@@ -153,7 +163,8 @@ class Game:
             self.map,
             self.entities,            
             self.tiles_editor,
-            self.buildings_editor
+            self.buildings_editor,
+            self.minimap
         )
 
     @benchmark(lambda self: self.perf_log, "3.total_render")
@@ -166,7 +177,7 @@ class Game:
             menu=self.menu,
             map=self.map,
             entities=self.entities,
-            systems=self.systems
+            systems=self.systems,            
         )
 
     

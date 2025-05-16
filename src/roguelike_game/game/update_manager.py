@@ -8,7 +8,8 @@ def update_game(
     map,
     entities,      
     tiles_editor,
-    buildings_editor
+    buildings_editor,
+    minimap
 ):
     """
     Actualiza el juego en cada frame, incluyendo:
@@ -51,5 +52,12 @@ def update_game(
     entities.player.movement.update_dash(
         solid_tiles,
         entities.obstacles
+    )
+
+
+    # ————— Actualizar minimapa —————
+    minimap.update(
+        player_pos=(entities.player.x, entities.player.y),
+        tiles=map.tiles_in_region
     )
 # Path: src/roguelike_game/game/update_manager.py

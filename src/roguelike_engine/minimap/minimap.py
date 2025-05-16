@@ -1,69 +1,64 @@
-
 # Path: src/roguelike_engine/minimap/minimap.py
 import pygame
-from roguelike_engine.config_tiles import TILE_SIZE
+from typing import Tuple, Iterable
+from roguelike_engine.config_tiles import TILE_SIZE, TILE_COLORS
+from roguelike_engine.tiles.model import Tile
 
+class Minimap:
+    def __init__(
+        self,
+        width: int = 200,
+        height: int = 150,
+        zoom: int = 1,
+        padding: Tuple[int, int] = (20, 20),
+    ):
+        self.width = width
+        self.height = height
+        self.zoom = zoom
+        self.pad_x, self.pad_y = padding
 
-def render_minimap(screen, map, entities):
-    """
-    Dibuja un minimapa en la esquina superior derecha mostrando los tiles cercanos al jugador.
-    """
-    minimap_width = 200
-    minimap_height = 150
-    minimap_surface = pygame.Surface((minimap_width, minimap_height))
-    minimap_surface.set_alpha(180)
-    minimap_surface.fill((10, 10, 10))
+        self.surface = pygame.Surface((width, height), pygame.SRCALPHA)
+        self.surface.set_alpha(180)
 
-    # Zoom del minimapa (en unidades de tiles)
-    minimap_zoom = 1  # Ajustar para cambiar nivel de detalle
+    def update(
+        self,
+        player_pos: Tuple[float, float],
+        tiles: Iterable[Tile],
+    ):
+        px = int(player_pos[0]) // TILE_SIZE
+        py = int(player_pos[1]) // TILE_SIZE
+        self.center_tile = (px, py)
 
-    # Centro en coordenadas de píxel (jugador)
-    center_x = minimap_width // 2
-    center_y = minimap_height // 2
+        # calcular mitad en tiles
+        half_x = (self.width // self.zoom) // 2
+        half_y = (self.height // self.zoom) // 2
 
-    # Convertir posición del jugador a coordenadas de tile
-    player_tile_x = int(entities.player.x) // TILE_SIZE
-    player_tile_y = int(entities.player.y) // TILE_SIZE
+        self.visible_tiles = [
+            t for t in tiles
+            if abs((t.x // TILE_SIZE) - px) <= half_x
+            and abs((t.y // TILE_SIZE) - py) <= half_y
+        ]
 
-    # Colores por tipo de tile
-    tile_colors = {
-        ".": (80, 80, 80),    # piso
-        "O": (130, 130, 130), # habitación
-        "=": (100, 100, 100), # túnel
-        "#": (30, 30, 30),    # pared
-        "D": (90, 90, 90),    # dungeon genérico
-    }
+    def render(self, screen: pygame.Surface) -> pygame.Rect:
+        self.surface.fill((10, 10, 10))
+        cx, cy = self.center_tile
 
-    # Dibujar cada tile
-    for tile in map.tiles_in_region:
-        # Cada tile.x, tile.y están en píxeles
-        tile_x = int(tile.x) // TILE_SIZE
-        tile_y = int(tile.y) // TILE_SIZE
+        for t in self.visible_tiles:
+            tx = (t.x // TILE_SIZE) - cx
+            ty = (t.y // TILE_SIZE) - cy
+            x = self.width // 2 + tx * self.zoom
+            y = self.height // 2 + ty * self.zoom
+            color = TILE_COLORS.get(t.tile_type, (255, 0, 255))
+            pygame.draw.rect(self.surface, color, (x, y, self.zoom, self.zoom))
 
-        dx = (tile_x - player_tile_x) * minimap_zoom
-        dy = (tile_y - player_tile_y) * minimap_zoom
+        # jugador
+        pygame.draw.rect(
+            self.surface,
+            (0, 255, 0),
+            (self.width // 2, self.height // 2, self.zoom, self.zoom)
+        )
 
-        draw_x = center_x + dx
-        draw_y = center_y + dy
-
-        if 0 <= draw_x < minimap_width and 0 <= draw_y < minimap_height:
-            color = tile_colors.get(tile.tile_type, (255, 0, 255))
-            pygame.draw.rect(
-                minimap_surface,
-                color,
-                (draw_x, draw_y, minimap_zoom, minimap_zoom)
-            )
-
-    # Dibujar jugador en el centro
-    pygame.draw.rect(
-        minimap_surface,
-        (0, 255, 0),
-        (center_x, center_y, minimap_zoom, minimap_zoom)
-    )
-
-    # Mostrar en pantalla
-    screen_width = screen.get_width()
-    screen.blit(
-        minimap_surface,
-        (screen_width - minimap_width - 20, 20)
-    )
+        # blit + retorno del área sucia
+        dest = (screen.get_width() - self.width - self.pad_x, self.pad_y)
+        screen.blit(self.surface, dest)
+        return pygame.Rect(dest, (self.width, self.height))

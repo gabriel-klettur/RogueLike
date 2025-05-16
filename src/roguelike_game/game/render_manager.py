@@ -1,8 +1,6 @@
 # Path: src/roguelike_game/game/render_manager.py
 import pygame
 
-
-from roguelike_engine.minimap.minimap import render_minimap
 from roguelike_engine.utils.mouse import draw_mouse_crosshair
 from roguelike_engine.config_tiles import TILE_SIZE
 import roguelike_engine.config as config
@@ -35,7 +33,8 @@ class RendererManager:
         entities,
         buildings_editor,
         tiles_editor,
-        perf_log
+        perf_log,
+        minimap
     ):
         self.screen = screen
         self.camera = camera
@@ -45,6 +44,7 @@ class RendererManager:
         self.tiles_editor = tiles_editor
         self._dirty_rects = []        
         self.debug_overlay = DebugOverlay(perf_log=perf_log)
+        self.minimap = minimap
 
 
     def render_game(
@@ -56,7 +56,7 @@ class RendererManager:
         menu=None,
         map=None,
         entities=None,        
-        systems=None
+        systems=None,        
     ):
         self._dirty_rects = []
         screen.fill((0, 0, 0))
@@ -106,7 +106,7 @@ class RendererManager:
         # 7) Minimap
         @benchmark(perf_log, "--3.7. minimap")
         def _bench_minimap():
-            self._render_minimap(screen, map, entities)
+            self._render_minimap(screen)
         _bench_minimap()
 
         # 8) Otros sistemas
@@ -197,6 +197,6 @@ class RendererManager:
             menu_rect = menu.draw(screen)
             self._dirty_rects.append(menu_rect)
 
-    def _render_minimap(self, screen, map, entities):
-        minimap_rect = render_minimap(screen, map, entities)
-        self._dirty_rects.append(minimap_rect)
+    def _render_minimap(self, screen):
+            rect = self.minimap.render(screen)
+            self._dirty_rects.append(rect)

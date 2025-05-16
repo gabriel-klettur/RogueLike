@@ -23,3 +23,11 @@ DEFAULT_TILE_MAP: dict[str, str] = {
     "=": "dungeon_c_1",  # fallback razonable para túneles
     "O": "dungeon_1",    # fallback para habitaciones
 }
+
+TILE_COLORS: dict[str, tuple[int,int,int]] = {
+    ".": (80, 80, 80),    # piso
+    "O": (130, 130, 130), # sala
+    "=": (100, 100, 100), # túnel
+    "#": (30, 30, 30),    # muro
+    "D": (90, 90, 90),    # dungeon genérico
+}
