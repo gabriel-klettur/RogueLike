@@ -19,33 +19,11 @@ class MapManager:
         
         lob_x, lob_y            = self.lobby_offset
         self.dungeon_offset     = calculate_dungeon_offset((lob_x, lob_y))
-        self.tiles_in_region    = self.get_tiles_in_region() 
+        self.tiles_in_region    = self.all_tiles
 
         self.view               = MapView()            # Vista para renderizar el mapa 
 
-    
-    def get_tiles_in_region(self) -> list:
-        """Devuelve sólo los tiles del lobby y de la dungeon."""
-
-
+    @property
+    def all_tiles(self):
+        """Devuelve todos los tiles en una lista plana."""
         return [tile for row in self.tiles for tile in row]
-
-
-        lob_x, lob_y = self.lobby_offset
-        dun_x, dun_y = self.dungeon_offset
-        out = []
-
-        for row in self.tiles:
-            for tile in row:
-                tx = tile.x // config_tiles.TILE_SIZE
-                ty = tile.y // config_tiles.TILE_SIZE
-
-                in_lobby = (lob_x <= tx < lob_x + config_map.ZONE_WIDTH
-                         and lob_y <= ty < lob_y + config_map.ZONE_HEIGHT)
-                in_dungeon = (dun_x <= tx < dun_x + config_map.ZONE_WIDTH
-                           and dun_y <= ty < dun_y + config_map.ZONE_HEIGHT)
-
-                if in_lobby or in_dungeon:
-                    out.append(tile)
-
-        return out
