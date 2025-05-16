@@ -4,9 +4,7 @@ from typing import Optional
 
 from roguelike_engine.config_map import (
     DUNGEON_WIDTH,
-    DUNGEON_HEIGHT,
-    LOBBY_OFFSET_X,
-    LOBBY_OFFSET_Y,
+    DUNGEON_HEIGHT
 )
 from roguelike_engine.map.controller.map_service import MapService
 from roguelike_engine.map.model.map_model import Map
@@ -18,8 +16,8 @@ def build_map(
     *,
     width: int = DUNGEON_WIDTH,
     height: int = DUNGEON_HEIGHT,
-    offset_x: int = LOBBY_OFFSET_X,
-    offset_y: int = LOBBY_OFFSET_Y,
+    offset_x: int = 0,
+    offset_y: int = 0,
     map_mode: str = "combined",
     map_name: Optional[str] = None,
     export_debug: bool = True,

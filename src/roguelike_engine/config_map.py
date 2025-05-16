@@ -15,10 +15,6 @@ MAP_OVERLAYS_DIR = str(MAP_OVERLAYS_DIR)
 
 #! --------------------- LOBBY CONFIG ------------------------------
 
-# Offset recomendado para el lobby
-LOBBY_OFFSET_X = 0
-LOBBY_OFFSET_Y = 0
-
 # Dimensiones lógicas del lobby
 LOBBY_WIDTH = 50
 LOBBY_HEIGHT = 50
@@ -28,10 +24,6 @@ DUNGEON_CONNECT_SIDE = "bottom"  # nuevo: "top" | "bottom" | "left" | "right"
 
 # Ancho de los túneles (en tiles)
 DUNGEON_TUNNEL_THICKNESS = 3
-
-# Dónde situar la dungeon dentro del mundo
-DUNGEON_OFFSET_X = 0
-DUNGEON_OFFSET_Y = 50
 
 # Dimensiones del dungeon procedural
 DUNGEON_WIDTH = 50
@@ -50,7 +42,7 @@ DEBUG_MAPS_DIR = Path(DATA_DIR) / "debug_maps"
 
 #!----------------------- ZONE OFFSETS -----------------------------
 ZONE_OFFSETS = {
-    "lobby": (LOBBY_OFFSET_X+LOBBY_WIDTH, LOBBY_OFFSET_Y+LOBBY_HEIGHT),
-    "dungeon": (DUNGEON_OFFSET_X+LOBBY_WIDTH, DUNGEON_OFFSET_Y+LOBBY_HEIGHT),
+    "lobby": (50, 50),
+    "dungeon": (50, 100),
     # "city": (ciudad_offset_x, ciudad_offset_y),  → futuras zonas
 }
