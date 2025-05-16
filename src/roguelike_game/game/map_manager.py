@@ -26,6 +26,11 @@ class MapManager:
     
     def get_tiles_in_region(self) -> list:
         """Devuelve sólo los tiles del lobby y de la dungeon."""
+
+
+        return [tile for row in self.tiles for tile in row]
+
+
         lob_x, lob_y = self.lobby_offset
         dun_x, dun_y = self.dungeon_offset
         out = []

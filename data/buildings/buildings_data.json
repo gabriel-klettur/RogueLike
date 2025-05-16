@@ -123,10 +123,7 @@
         "split_ratio": 0.801,
         "z_bottom": 1,
         "z_top": 5,
-        "z": 1,
-        "zone": "lobby",
-        "rel_tile_x": 1,
-        "rel_tile_y": -1
+        "z": 1
     },
     {
         "x": 2436,
@@ -273,8 +270,8 @@
         "z": 3
     },
     {
-        "x": 2095,
-        "y": 2782,
+        "x": 2105,
+        "y": 2784,
         "image_path": "assets/buildings/shops/healer_1.png",
         "solid": true,
         "scale": [
@@ -288,7 +285,10 @@
         "split_ratio": 0.668,
         "z_bottom": 2,
         "z_top": 7,
-        "z": 2
+        "z": 2,
+        "zone": "lobby",
+        "rel_tile_x": 15,
+        "rel_tile_y": 37
     },
     {
         "x": 1635,
@@ -378,10 +378,7 @@
         "split_ratio": 0.236,
         "z_bottom": 3,
         "z_top": 5,
-        "z": 3,
-        "zone": "lobby",
-        "rel_tile_x": 22,
-        "rel_tile_y": 25
+        "z": 3
     },
     {
         "x": 2786,
