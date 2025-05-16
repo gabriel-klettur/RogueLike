@@ -285,10 +285,7 @@
         "split_ratio": 0.668,
         "z_bottom": 2,
         "z_top": 7,
-        "z": 2,
-        "zone": "lobby",
-        "rel_tile_x": 15,
-        "rel_tile_y": 37
+        "z": 2
     },
     {
         "x": 1635,
@@ -304,9 +301,9 @@
             768
         ],
         "split_ratio": 0.56,
-        "z_bottom": 2,
+        "z_bottom": 3,
         "z_top": 4,
-        "z": 2
+        "z": 3
     },
     {
         "x": 1803,
@@ -327,8 +324,8 @@
         "z": 3
     },
     {
-        "x": 2018,
-        "y": 2557,
+        "x": 2017,
+        "y": 2537,
         "image_path": "assets/buildings/shops/jewlery_shop.png",
         "solid": true,
         "scale": [
@@ -341,7 +338,7 @@
         ],
         "split_ratio": 0.632,
         "z_bottom": 2,
-        "z_top": 4,
+        "z_top": 6,
         "z": 2
     },
     {

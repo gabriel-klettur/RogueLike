@@ -152,7 +152,7 @@ class Game:
             self.buildings_editor
         )
 
-    @benchmark(lambda self: self.perf_log, "2.update")
+    @benchmark(lambda self: self.perf_log, "2.TOTAL UPDATE")
     def update(self):
         update_game(
             self.state,
@@ -164,20 +164,21 @@ class Game:
             self.entities,            
             self.tiles_editor,
             self.buildings_editor,
-            self.minimap
+            self.minimap,
+            self.perf_log
         )
 
-    @benchmark(lambda self: self.perf_log, "3.total_render")
-    def render(self, perf_log=None):
+    @benchmark(lambda self: self.perf_log, "3.TOTAL RENDER")
+    def render(self):
         self.renderer.render_game(
             self.state,
             self.screen,
             self.camera,
-            perf_log,
-            menu=self.menu,
-            map=self.map,
-            entities=self.entities,
-            systems=self.systems,            
+            self.perf_log,
+            self.menu,
+            self.map,
+            self.entities,
+            self.systems,            
         )
 
     
@@ -193,7 +194,7 @@ class Game:
             self.update()
 
             # 3) Renderizar todo (incluye pygame.display.flip() dentro de render_game)
-            self.render(self.perf_log)
+            self.render()
 
             # 4) Actualizar título con FPS actuales
             fps = self.clock.get_fps()

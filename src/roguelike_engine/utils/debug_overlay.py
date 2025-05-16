@@ -8,8 +8,7 @@ import pygame
 from roguelike_engine.config_map import (
     ZONE_WIDTH, ZONE_HEIGHT,
     ZONE_WIDTH, ZONE_HEIGHT,
-    GLOBAL_WIDTH, GLOBAL_HEIGHT,
-    DUNGEON_CONNECT_SIDE
+    GLOBAL_WIDTH, GLOBAL_HEIGHT,    
 )
 from roguelike_engine.config_tiles import TILE_SIZE
 from roguelike_engine.map.utils import calculate_dungeon_offset
@@ -64,7 +63,7 @@ class DebugOverlay:
             self._fonts[size] = pygame.font.SysFont(self.font_name, size)
         return self._fonts[size]
 
-    @benchmark(lambda self: self.perf_log, "debug_overlay.render")
+    @benchmark(lambda self: self.perf_log, "3.10. debug_overlay.render")
     def render(
         self,
         screen: pygame.Surface,

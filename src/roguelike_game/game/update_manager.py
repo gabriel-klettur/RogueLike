@@ -1,3 +1,4 @@
+from roguelike_engine.utils.benchmark import benchmark
 
 def update_game(
     state,
@@ -9,7 +10,8 @@ def update_game(
     entities,      
     tiles_editor,
     buildings_editor,
-    minimap
+    minimap,
+    perf_log
 ):
     """
     Actualiza el juego en cada frame, incluyendo:
@@ -25,39 +27,49 @@ def update_game(
 
     # 2) Si el Buildings-Editor está activo, solo actualizamos él
     if buildings_editor.editor_state.active:
-        buildings_editor.update(camera)
+        @benchmark(perf_log, "2.0.buildings_editor.update")
+        def _update_buildings_editor():
+            buildings_editor.update(camera)
+        _update_buildings_editor()
         return
 
-    # 3) Flujo normal de juego
-    # ————— Cámara sigue al jugador —————
-    camera.update(entities.player)
+    # 3.1) Cámara sigue al jugador
+    @benchmark(perf_log, "2.1.camera.update")
+    def _update_camera():
+        camera.update(entities.player)
+    _update_camera()
 
-    # ————— Sistemas (combat, efectos, explosiones...) —————
-    systems.update(clock, screen)
+    # 3.2) Sistemas principales
+    @benchmark(perf_log, "2.2.systems.update")
+    def _update_systems():
+        systems.update(clock, screen)
+    _update_systems()
 
-    # ————— IA de enemigos (incluye remotos) —————
-    enemies = entities.enemies
-    from roguelike_game.entities.npc.types.elite.controller import EliteController
-    for enemy in enemies:
-        # Si enemy es un NPC (tiene .controller), usamos .controller, si no, es el controller mismo
-        ctrl = getattr(enemy, 'controller', enemy)
-        if isinstance(ctrl, EliteController):
-            ctrl.update(state, map, entities, systems.effects, systems.explosions)
-        else:
-            enemy.update(state, map, entities)
+    # 3.3) IA enemigos
+    @benchmark(perf_log, "2.3.enemies.update")
+    def _update_enemies():
+        enemies = entities.enemies
+        from roguelike_game.entities.npc.types.elite.controller import EliteController
+        for enemy in enemies:
+            ctrl = getattr(enemy, 'controller', enemy)
+            if isinstance(ctrl, EliteController):
+                ctrl.update(state, map, entities, systems.effects, systems.explosions)
+            else:
+                enemy.update(state, map, entities)
+    _update_enemies()
 
-    # ————— Movimiento especial del jugador —————
-    # (por ejemplo, dash con colisiones)
-    solid_tiles = [t for t in map.tiles_in_region if t.solid]
-    entities.player.movement.update_dash(
-        solid_tiles,
-        entities.obstacles
-    )
+    # 3.4) Movimiento especial del jugador
+    @benchmark(perf_log, "2.4.player.update_dash")
+    def _update_dash():
+        solid_tiles = [t for t in map.tiles_in_region if t.solid]
+        entities.player.movement.update_dash(solid_tiles, entities.obstacles)
+    _update_dash()
 
-
-    # ————— Actualizar minimapa —————
-    minimap.update(
-        player_pos=(entities.player.x, entities.player.y),
-        tiles=map.tiles_in_region
-    )
-# Path: src/roguelike_game/game/update_manager.py
+    # 3.5) Minimap update
+    @benchmark(perf_log, "2.5.minimap.update")
+    def _update_minimap():
+        minimap.update(
+            player_pos=(entities.player.x, entities.player.y),
+            tiles=map.tiles_in_region
+        )
+    _update_minimap()
