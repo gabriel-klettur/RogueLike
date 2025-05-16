@@ -1,6 +1,5 @@
 # Path: src/roguelike_engine/map/view/map_view.py
 import pygame
-from roguelike_engine.config_tiles import TILE_SIZE
 from roguelike_engine.map.model.map_model import Map as MapModel
 
 class MapView:

@@ -43,10 +43,7 @@ class EntitiesManager:
         """
         # 2️⃣ Calcular offset en tiles de la dungeon
         lob_x, lob_y = self.map.lobby_offset
-        dungeon_offset = calculate_dungeon_offset(
-            (lob_x, lob_y),
-            DUNGEON_CONNECT_SIDE
-        )
+        dungeon_offset = calculate_dungeon_offset((lob_x, lob_y))
         # 4️⃣ Spawn procedural de enemigos
         self.enemies = self.spawn_enemies(dungeon_offset)
 

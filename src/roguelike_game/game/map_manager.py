@@ -18,10 +18,10 @@ class MapManager:
         self.rooms              = self.result.metadata.get("rooms", [])        
         
         lob_x, lob_y            = self.lobby_offset
-        self.dungeon_offset     = calculate_dungeon_offset((lob_x, lob_y),config_map.DUNGEON_CONNECT_SIDE)
+        self.dungeon_offset     = calculate_dungeon_offset((lob_x, lob_y))
         self.tiles_in_region    = self.get_tiles_in_region() 
 
-        self.view           = MapView()            # Vista para renderizar el mapa 
+        self.view               = MapView()            # Vista para renderizar el mapa 
 
     
     def get_tiles_in_region(self) -> list:

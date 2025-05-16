@@ -93,7 +93,7 @@ class MapService:
             height=ZONE_HEIGHT,
             return_rooms=True,
         )
-        dx, dy = calculate_dungeon_offset(lobby_offset, DUNGEON_CONNECT_SIDE)
+        dx, dy = calculate_dungeon_offset(lobby_offset)
         for y, row in enumerate(raw_map):
             for x, ch in enumerate(row):
                 gx, gy = dx + x, dy + y

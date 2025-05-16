@@ -6,7 +6,8 @@ from roguelike_engine.config_map import (
     ZONE_WIDTH,
     ZONE_HEIGHT,
     ZONE_SIZE,
-    ZONE_OFFSETS
+    ZONE_OFFSETS,
+    DUNGEON_CONNECT_SIDE,
 )
 
 def intersect(room1, room2):
@@ -109,17 +110,17 @@ def calculate_lobby_offset() -> Tuple[int, int]:
             start_y + center_row * ZONE_HEIGHT)
 
 
-def calculate_dungeon_offset(lobby_off: Tuple[int,int], side: str) -> Tuple[int,int]:
+def calculate_dungeon_offset(lobby_off: Tuple[int,int]):
     """
     Calcula el offset (x,y) para colocar la dungeon adyacente al lobby
     según DUNGEON_CONNECT_SIDE: arriba, abajo, izquierda, derecha.
     """
     off_x, off_y = lobby_off
-    if side == "bottom":
+    if DUNGEON_CONNECT_SIDE == "bottom":
         return off_x, off_y + ZONE_HEIGHT
-    if side == "top":
+    if DUNGEON_CONNECT_SIDE == "top":
         return off_x, off_y - ZONE_HEIGHT
-    if side == "left":
+    if DUNGEON_CONNECT_SIDE == "left":
         return off_x - ZONE_WIDTH, off_y
     # 'right'
     return off_x + ZONE_WIDTH, off_y
