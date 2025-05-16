@@ -12,7 +12,7 @@ from roguelike_engine.config_map import (
     DUNGEON_CONNECT_SIDE
 )
 from roguelike_engine.config_tiles import TILE_SIZE
-from roguelike_engine.map.controller.map_service import _calculate_dungeon_offset
+from roguelike_engine.map.utils import calculate_dungeon_offset
 from roguelike_engine.utils.benchmark import benchmark
 
 
@@ -184,7 +184,7 @@ class DebugOverlay:
         pygame.draw.rect(screen, self.border_colors['lobby'], pygame.Rect(tl, sz), self.border_width)
 
     def _draw_dungeon_border(self, screen, camera, lobby_offset: tuple[int,int]) -> None:
-        dx,dy = _calculate_dungeon_offset(lobby_offset, DUNGEON_CONNECT_SIDE)
+        dx,dy = calculate_dungeon_offset(lobby_offset, DUNGEON_CONNECT_SIDE)
         tl = camera.apply((dx*TILE_SIZE, dy*TILE_SIZE))
         sz = camera.scale((ZONE_WIDTH*TILE_SIZE, ZONE_HEIGHT*TILE_SIZE))
         pygame.draw.rect(screen, self.border_colors['dungeon'], pygame.Rect(tl, sz), self.border_width)

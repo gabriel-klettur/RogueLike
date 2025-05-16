@@ -8,7 +8,7 @@ from roguelike_game.game.map_manager import MapManager
 from roguelike_engine.config_tiles import TILE_SIZE
 from roguelike_engine.config_map import ZONE_OFFSETS
 from roguelike_engine.config_map import DUNGEON_CONNECT_SIDE
-from roguelike_engine.map.controller.map_service import _calculate_dungeon_offset
+from roguelike_engine.map.controller.map_service import calculate_dungeon_offset
 
 class EntitiesManager:
     """
@@ -43,7 +43,7 @@ class EntitiesManager:
         """
         # 2️⃣ Calcular offset en tiles de la dungeon
         lob_x, lob_y = self.map.lobby_offset
-        dungeon_offset = _calculate_dungeon_offset(
+        dungeon_offset = calculate_dungeon_offset(
             (lob_x, lob_y),
             DUNGEON_CONNECT_SIDE
         )

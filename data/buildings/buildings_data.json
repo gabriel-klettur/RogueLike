@@ -108,8 +108,8 @@
         "z": 1
     },
     {
-        "x": 1625,
-        "y": 1594,
+        "x": 1638,
+        "y": 1591,
         "image_path": "assets/buildings/vegetation/tree_9.png",
         "solid": true,
         "scale": [
@@ -123,7 +123,10 @@
         "split_ratio": 0.801,
         "z_bottom": 1,
         "z_top": 5,
-        "z": 1
+        "z": 1,
+        "zone": "lobby",
+        "rel_tile_x": 1,
+        "rel_tile_y": -1
     },
     {
         "x": 2436,
@@ -360,8 +363,8 @@
         "z": 4
     },
     {
-        "x": 2329,
-        "y": 2420,
+        "x": 2332,
+        "y": 2421,
         "image_path": "assets/buildings\\portals\\portal.png",
         "solid": true,
         "scale": [
@@ -381,8 +384,8 @@
         "rel_tile_y": 25
     },
     {
-        "x": 2792,
-        "y": 1804,
+        "x": 2786,
+        "y": 1812,
         "image_path": "assets/buildings\\shops\\banco.png",
         "solid": true,
         "scale": [
