@@ -1,4 +1,6 @@
 from roguelike_engine.utils.benchmark import benchmark
+from roguelike_game.entities.npc.types.elite.controller import EliteController
+from roguelike_game.config_entities import ENEMY_MAX_UPDATE_DISTANCE
 
 def update_game(
     state,
@@ -45,18 +47,41 @@ def update_game(
         systems.update(clock, screen)
     _update_systems()
 
-    # 3.3) IA enemigos
+    # 3.3) IA enemigos (throttle y agrupación)
     @benchmark(perf_log, "2.3.enemies.update")
     def _update_enemies():
-        enemies = entities.enemies
-        from roguelike_game.entities.npc.types.elite.controller import EliteController
-        for enemy in enemies:
-            ctrl = getattr(enemy, 'controller', enemy)
+        # Throttle: actualizar IA cada 2 frames (opcional)
+        tick = getattr(state, "_enemy_tick", 0) + 1
+        state._enemy_tick = tick
+        if tick % 2 != 0:
+            return
+
+        px, py = entities.player.x, entities.player.y        
+        max_dist_sq = ENEMY_MAX_UPDATE_DISTANCE * ENEMY_MAX_UPDATE_DISTANCE
+
+        normals = []
+        elites = []
+        for enemy in entities.enemies:
+            # calcular vector relativo y su longitud al cuadrado
+            dx = enemy.x - px
+            dy = enemy.y - py
+            if dx*dx + dy*dy > max_dist_sq:
+                # está demasiado lejos: no actualizamos IA
+                continue
+
+            ctrl = getattr(enemy, "controller", None)
             if isinstance(ctrl, EliteController):
-                ctrl.update(state, map, entities, systems.effects, systems.explosions)
+                elites.append(ctrl)
             else:
-                enemy.update(state, map, entities)
+                normals.append(enemy)
+
+        # Ahora sí, actualizamos solo los cercanos
+        for e in normals:
+            e.update(state, map, entities)
+        for ctrl in elites:
+            ctrl.update(state, map, entities, systems.effects, systems.explosions)
     _update_enemies()
+
 
     # 3.4) Movimiento especial del jugador
     @benchmark(perf_log, "2.4.player.update_dash")
