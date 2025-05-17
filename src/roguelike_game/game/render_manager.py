@@ -57,8 +57,12 @@ class RendererManager:
         entities=None,        
         systems=None,        
     ):
-        self._dirty_rects = []
-        screen.fill((0, 0, 0))
+
+        @benchmark(perf_log, "--3.0. init_and_cleaning")
+        def _init_and_cleaning():
+            screen.fill((0, 0, 0))
+            self._dirty_rects = []
+        _init_and_cleaning()
 
         # 1) Tiles
         @benchmark(perf_log, "--3.1. map/tiles")
@@ -131,12 +135,17 @@ class RendererManager:
                 show_borders=True
             )
 
-        # Actualizar solo regiones sucias, o todo si hay demasiadas        
-        if len(self._dirty_rects) > config.MAX_DIRTY:
-            # demasiados rects, repintamos todo para evitar overhead
-            pygame.display.flip()
-        else:
-            pygame.display.update(self._dirty_rects)
+        @benchmark(perf_log, "--3.10. update dirth rects")        
+        def _update_dirty_rects():
+            # Actualizar solo regiones sucias, o todo si hay demasiadas        
+            if len(self._dirty_rects) > config.MAX_DIRTY:
+                # demasiados rects, repintamos todo para evitar overhead
+                pygame.display.flip()
+            else:
+                pygame.display.update(self._dirty_rects)
+
+        _update_dirty_rects()
+
         return self._dirty_rects
         
 
