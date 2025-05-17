@@ -1,6 +1,6 @@
 # Path: src/roguelike_engine/config_tiles.py
 from roguelike_engine.config_map import MAP_OVERLAYS_DIR
-from data.map_overlays.overlay_map import OVERLAY_CODE_MAP
+import os, json
 
 #!------------------------ TILES CONFIG -------------------------
 # Tamaño de cada tile en píxeles
@@ -12,6 +12,15 @@ TILES_DATA_PATH = MAP_OVERLAYS_DIR
 #!------------------------ TILES MAPPING --------------------------
 # Mapeo dinámico: código de overlay → nombre base de asset
 # Generado automáticamente por scripts/generate_overlay_map.py
+
+# Cargar mapeo de overlay desde JSON
+overlay_map_path = os.path.join(MAP_OVERLAYS_DIR, "overlay_map.json")
+if os.path.isfile(overlay_map_path):
+    with open(overlay_map_path, "r", encoding="utf-8") as f:
+        OVERLAY_CODE_MAP = json.load(f)
+else:
+    OVERLAY_CODE_MAP = {}
+
 INVERSE_OVERLAY_MAP: dict[str, list[str]] = {}
 for code, name in OVERLAY_CODE_MAP.items():
     INVERSE_OVERLAY_MAP.setdefault(name, []).append(code)
