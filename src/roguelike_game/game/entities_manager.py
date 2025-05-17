@@ -7,8 +7,9 @@ from roguelike_game.entities.load_hostile import load_hostile
 from roguelike_game.game.map_manager import MapManager
 from roguelike_engine.config_tiles import TILE_SIZE
 from roguelike_engine.config_map import ZONE_OFFSETS
-from roguelike_engine.config_map import DUNGEON_CONNECT_SIDE
 from roguelike_engine.map.controller.map_service import calculate_dungeon_offset
+from roguelike_game.config_entities import ENEMY_MAX_UPDATE_DISTANCE
+from roguelike_game.entities.npc.types.elite.controller import EliteController
 
 class EntitiesManager:
     """
@@ -84,3 +85,49 @@ class EntitiesManager:
                 # actualizar rect de colisión/renderer
                 if hasattr(b, "rect"):
                     b.rect.topleft = (b.x, b.y)
+
+    def update(self, state, game_map, systems):
+        """
+        Actualiza todas las entidades de la partida:
+          - Edificios (si tuvieran lógica de update)
+          - Obstáculos
+          - Jugador
+          - Enemigos (normales y élites)
+        """
+        # 1) Lógica de edición (si aplica)
+        # … si tiles_editor o buildings_editor, lo sacas aquí …
+
+        # 2) Cámara y sistemas ya los maneja update_game
+
+        # 3) Actualizar jugador
+        self.player.update(state, game_map)
+
+        # 4) Actualizar obstáculos (si tuvieran update)
+        for ob in self.obstacles:
+            if hasattr(ob, "update"):
+                ob.update(state, game_map)
+
+        # 5) Actualizar edificios (por si los migras a ECS luego)
+        for b in self.buildings:
+            if hasattr(b, "update"):
+                b.update(state, game_map)
+
+        # 6) Actualizar enemigos
+        # Aprovechamos el throttle y la separación Elite vs normales:
+        normals, elites = [], []
+        px, py = self.player.x, self.player.y
+        max_d2 = ENEMY_MAX_UPDATE_DISTANCE ** 2
+        for e in self.enemies:
+            dx, dy = e.x - px, e.y - py
+            if dx*dx + dy*dy > max_d2:
+                continue
+            ctrl = getattr(e, "controller", None)
+            if isinstance(ctrl, EliteController):
+                elites.append(ctrl)
+            else:
+                normals.append(e)
+
+        for e in normals:
+            e.update(state, game_map, self)
+        for ctrl in elites:
+            ctrl.update(state, game_map, self, systems.effects, systems.explosions)

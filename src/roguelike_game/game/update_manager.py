@@ -47,40 +47,11 @@ def update_game(
         systems.update(clock, screen)
     _update_systems()
 
-    # 3.3) IA enemigos (throttle y agrupación)
-    @benchmark(perf_log, "2.3.enemies.update")
-    def _update_enemies():
-        # Throttle: actualizar IA cada 2 frames (opcional)
-        tick = getattr(state, "_enemy_tick", 0) + 1
-        state._enemy_tick = tick
-        if tick % 2 != 0:
-            return
-
-        px, py = entities.player.x, entities.player.y        
-        max_dist_sq = ENEMY_MAX_UPDATE_DISTANCE * ENEMY_MAX_UPDATE_DISTANCE
-
-        normals = []
-        elites = []
-        for enemy in entities.enemies:
-            # calcular vector relativo y su longitud al cuadrado
-            dx = enemy.x - px
-            dy = enemy.y - py
-            if dx*dx + dy*dy > max_dist_sq:
-                # está demasiado lejos: no actualizamos IA
-                continue
-
-            ctrl = getattr(enemy, "controller", None)
-            if isinstance(ctrl, EliteController):
-                elites.append(ctrl)
-            else:
-                normals.append(enemy)
-
-        # Ahora sí, actualizamos solo los cercanos
-        for e in normals:
-            e.update(state, map, entities)
-        for ctrl in elites:
-            ctrl.update(state, map, entities, systems.effects, systems.explosions)
-    _update_enemies()
+    # 3.3) Todas las entidades
+    @benchmark(perf_log, "2.3.entities.update")
+    def _update_entities():
+        entities.update(state, map, systems)
+    _update_entities()
 
 
     # 3.4) Movimiento especial del jugador
