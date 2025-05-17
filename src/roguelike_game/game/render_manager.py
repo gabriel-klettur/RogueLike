@@ -61,7 +61,7 @@ class RendererManager:
         screen.fill((0, 0, 0))
 
         # 1) Tiles
-        @benchmark(perf_log, "--3.1. tiles")
+        @benchmark(perf_log, "--3.1. map/tiles")
         def _bench_tiles():
             self._render_map(camera, screen, map)
         _bench_tiles()
