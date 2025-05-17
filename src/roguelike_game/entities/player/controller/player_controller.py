@@ -89,7 +89,7 @@ class PlayerController:
         self.hud_view.render_cooldowns(self.model, screen)
 
     # Update frame (dash, teletransport)
-    def update(self, dt, map):
+    def update(self, map):
         self.movement.update_dash(
             [t for t in map.tiles_in_region if t.solid],
             self.obstacles

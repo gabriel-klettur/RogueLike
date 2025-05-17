@@ -100,7 +100,7 @@ class EntitiesManager:
         # 2) Cámara y sistemas ya los maneja update_game
 
         # 3) Actualizar jugador
-        self.player.update(state, game_map)
+        self.player.update(game_map)
 
         # 4) Actualizar obstáculos (si tuvieran update)
         for ob in self.obstacles:

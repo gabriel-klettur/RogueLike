@@ -50,6 +50,10 @@ class MapView:
                         surf.blit(sprite, (x, y))
                 chunk_dict[(cx, cy)] = surf
         self.chunks_by_zoom[zoom] = chunk_dict
+    
+    def invalidate_cache(self):
+        """Forzar reconstrucción de todos los chunks."""
+        self.chunks_by_zoom.clear()
 
     def render(self, screen: pygame.Surface, camera, map_model: MapModel) -> list[pygame.Rect]:
         """

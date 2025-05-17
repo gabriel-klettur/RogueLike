@@ -34,12 +34,12 @@ class TilesEditorManager:
         if self.editor_state.active:
             self.handler.handle(camera, game_map)
 
-    def update(self, camera):
+    def update(self, camera, game_map):
         """
         Actualiza el controlador si está activo.
         """
         if self.editor_state.active:
-            self.controller.update(camera)
+            self.controller.update(camera, game_map)
 
     def render(self, screen, camera, game_map):
         """

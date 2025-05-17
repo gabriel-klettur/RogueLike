@@ -25,11 +25,15 @@ def update_game(
 
     # 1) Prioridad: si el Tile-Editor está activo, nada más se hace
     if tiles_editor.editor_state.active:
+        @benchmark(perf_log, "2.0.1.tiles_editor.update")
+        def _update_tiles_editor():
+            tiles_editor.update(camera, map)
+        _update_tiles_editor()
         return
 
     # 2) Si el Buildings-Editor está activo, solo actualizamos él
     if buildings_editor.editor_state.active:
-        @benchmark(perf_log, "2.0.buildings_editor.update")
+        @benchmark(perf_log, "2.0.2.buildings_editor.update")
         def _update_buildings_editor():
             buildings_editor.update(camera)
         _update_buildings_editor()
