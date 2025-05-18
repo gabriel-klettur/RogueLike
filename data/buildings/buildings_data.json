@@ -38,12 +38,12 @@
         "z_top": 7,
         "z": 2,
         "zone": "lobby",
-        "rel_tile_x": 44,
-        "rel_tile_y": 25
+        "rel_tile_x": 46,
+        "rel_tile_y": 31
     },
     {
-        "x": 3005,
-        "y": 1420,
+        "x": 3010,
+        "y": 1428,
         "image_path": "assets/buildings/vegetation/tree_2.png",
         "solid": true,
         "scale": [
@@ -59,8 +59,8 @@
         "z_top": 2,
         "z": 2,
         "zone": "lobby",
-        "rel_tile_x": 46,
-        "rel_tile_y": 2
+        "rel_tile_x": 44,
+        "rel_tile_y": -6
     },
     {
         "x": 2159,
@@ -168,8 +168,8 @@
         "rel_tile_y": 26
     },
     {
-        "x": 2622,
-        "y": 1824,
+        "x": 2665,
+        "y": 1856,
         "image_path": "assets/buildings/vegetation/tree_11.png",
         "solid": true,
         "scale": [
@@ -185,12 +185,12 @@
         "z_top": 4,
         "z": 1,
         "zone": "lobby",
-        "rel_tile_x": 35,
-        "rel_tile_y": 14
+        "rel_tile_x": 33,
+        "rel_tile_y": 8
     },
     {
-        "x": 1633,
-        "y": 1936,
+        "x": 1634,
+        "y": 1970,
         "image_path": "assets/buildings/gardens/garden_5.png",
         "solid": true,
         "scale": [
@@ -206,8 +206,8 @@
         "z_top": 1,
         "z": 1,
         "zone": "lobby",
-        "rel_tile_x": 9,
-        "rel_tile_y": 26
+        "rel_tile_x": 1,
+        "rel_tile_y": 11
     },
     {
         "x": 1743,
@@ -227,12 +227,12 @@
         "z_top": 5,
         "z": 3,
         "zone": "lobby",
-        "rel_tile_x": 25,
-        "rel_tile_y": 2
+        "rel_tile_x": 4,
+        "rel_tile_y": -25
     },
     {
-        "x": 2537,
-        "y": 1432,
+        "x": 2533,
+        "y": 1431,
         "image_path": "assets/buildings/temples/satanist.png",
         "solid": true,
         "scale": [
@@ -248,8 +248,8 @@
         "z_top": 5,
         "z": 3,
         "zone": "lobby",
-        "rel_tile_x": 35,
-        "rel_tile_y": 7
+        "rel_tile_x": 29,
+        "rel_tile_y": -6
     },
     {
         "x": 2325,
@@ -274,7 +274,7 @@
     },
     {
         "x": 1739,
-        "y": 2037,
+        "y": 2053,
         "image_path": "assets/buildings/shops/magic_tower.png",
         "solid": true,
         "scale": [
@@ -290,8 +290,8 @@
         "z_top": 5,
         "z": 4,
         "zone": "lobby",
-        "rel_tile_x": 9,
-        "rel_tile_y": 28
+        "rel_tile_x": 4,
+        "rel_tile_y": 14
     },
     {
         "x": 2943,
@@ -316,7 +316,7 @@
     },
     {
         "x": 2105,
-        "y": 2784,
+        "y": 2750,
         "image_path": "assets/buildings/shops/healer_1.png",
         "solid": true,
         "scale": [
@@ -332,8 +332,8 @@
         "z_top": 7,
         "z": 2,
         "zone": "lobby",
-        "rel_tile_x": 19,
-        "rel_tile_y": 44
+        "rel_tile_x": 15,
+        "rel_tile_y": 35
     },
     {
         "x": 1635,
@@ -357,8 +357,8 @@
         "rel_tile_y": 37
     },
     {
-        "x": 1803,
-        "y": 1385,
+        "x": 1809,
+        "y": 1389,
         "image_path": "assets/buildings/shops/blacksmith.png",
         "solid": true,
         "scale": [
@@ -374,8 +374,8 @@
         "z_top": 5,
         "z": 3,
         "zone": "lobby",
-        "rel_tile_x": 14,
-        "rel_tile_y": 9
+        "rel_tile_x": 6,
+        "rel_tile_y": -7
     },
     {
         "x": 2017,
@@ -420,7 +420,7 @@
         "rel_tile_y": 27
     },
     {
-        "x": 2332,
+        "x": 2325,
         "y": 2421,
         "image_path": "assets/buildings\\portals\\portal.png",
         "solid": true,
@@ -437,8 +437,8 @@
         "z_top": 5,
         "z": 3,
         "zone": "lobby",
-        "rel_tile_x": 25,
-        "rel_tile_y": 32
+        "rel_tile_x": 22,
+        "rel_tile_y": 25
     },
     {
         "x": 2786,
@@ -693,8 +693,8 @@
         "rel_tile_y": 44
     },
     {
-        "x": 1687,
-        "y": 2579,
+        "x": 1708,
+        "y": 2534,
         "image_path": "assets/buildings\\houses\\orden_house_2.png",
         "solid": true,
         "scale": [
@@ -710,7 +710,196 @@
         "z_top": 5,
         "z": 3,
         "zone": "lobby",
+        "rel_tile_x": 3,
+        "rel_tile_y": 29
+    },
+    {
+        "x": 1656,
+        "y": 3113,
+        "image_path": "assets/buildings\\gardens\\flowers_1.PNG",
+        "solid": true,
+        "scale": [
+            109,
+            51
+        ],
+        "original_scale": [
+            412,
+            169
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "z": 1,
+        "zone": "lobby",
+        "rel_tile_x": 1,
+        "rel_tile_y": 47
+    },
+    {
+        "x": 1828,
+        "y": 3112,
+        "image_path": "assets/buildings\\gardens\\flowers_1.PNG",
+        "solid": true,
+        "scale": [
+            133,
+            54
+        ],
+        "original_scale": [
+            412,
+            169
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "z": 1,
+        "zone": "lobby",
+        "rel_tile_x": 7,
+        "rel_tile_y": 47
+    },
+    {
+        "x": 2022,
+        "y": 3113,
+        "image_path": "assets/buildings\\gardens\\flowers_1.PNG",
+        "solid": true,
+        "scale": [
+            122,
+            50
+        ],
+        "original_scale": [
+            412,
+            169
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "z": 1,
+        "zone": "lobby",
+        "rel_tile_x": 13,
+        "rel_tile_y": 47
+    },
+    {
+        "x": 2184,
+        "y": 3108,
+        "image_path": "assets/buildings\\gardens\\flowers_1.PNG",
+        "solid": true,
+        "scale": [
+            137,
+            56
+        ],
+        "original_scale": [
+            412,
+            169
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 2,
+        "z_top": 2,
+        "z": 2,
+        "zone": "lobby",
+        "rel_tile_x": 18,
+        "rel_tile_y": 47
+    },
+    {
+        "x": 1703,
+        "y": 2973,
+        "image_path": "assets/buildings\\vegetation\\tree_6.png",
+        "solid": true,
+        "scale": [
+            190,
+            190
+        ],
+        "original_scale": [
+            540,
+            540
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "z": 1,
+        "zone": "lobby",
+        "rel_tile_x": 3,
+        "rel_tile_y": 42
+    },
+    {
+        "x": 1896,
+        "y": 2979,
+        "image_path": "assets/buildings\\vegetation\\tree_6.png",
+        "solid": true,
+        "scale": [
+            188,
+            188
+        ],
+        "original_scale": [
+            540,
+            540
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "z": 1,
+        "zone": "lobby",
         "rel_tile_x": 9,
-        "rel_tile_y": 44
+        "rel_tile_y": 43
+    },
+    {
+        "x": 2067,
+        "y": 2967,
+        "image_path": "assets/buildings\\vegetation\\tree_6.png",
+        "solid": true,
+        "scale": [
+            206,
+            206
+        ],
+        "original_scale": [
+            540,
+            540
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "z": 1,
+        "zone": "lobby",
+        "rel_tile_x": 14,
+        "rel_tile_y": 42
+    },
+    {
+        "x": 1609,
+        "y": 2297,
+        "image_path": "assets/buildings\\vegetation\\tree_3.PNG",
+        "solid": true,
+        "scale": [
+            172,
+            218
+        ],
+        "original_scale": [
+            490,
+            627
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "z": 1,
+        "zone": "lobby",
+        "rel_tile_x": 0,
+        "rel_tile_y": 21
+    },
+    {
+        "x": 1600,
+        "y": 2789,
+        "image_path": "assets/buildings\\vegetation\\tree_9.PNG",
+        "solid": true,
+        "scale": [
+            170,
+            219
+        ],
+        "original_scale": [
+            251,
+            324
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "z": 1,
+        "zone": "lobby",
+        "rel_tile_x": 0,
+        "rel_tile_y": 37
     }
 ]
