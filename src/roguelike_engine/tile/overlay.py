@@ -1,5 +1,5 @@
 
-# Path: src/roguelike_engine/tiles/overlay.py
+# Path: src/roguelike_engine/tile/overlay.py
 import os
 import json
 from roguelike_engine.config.config_tiles import TILES_DATA_PATH

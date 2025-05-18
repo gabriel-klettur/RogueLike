@@ -2,10 +2,10 @@
 from typing   import List, Optional, Tuple
 from .interfaces            import MapLoader
 from .text_loader           import parse_map_text
-from roguelike_engine.tiles.loader       import load_tiles_from_text
+from roguelike_engine.tile.loader       import load_tiles_from_text
 from roguelike_engine.map.model.overlay.overlay_manager import load_overlay
 from roguelike_engine.map.model.overlay.overlay_manager import save_overlay
-from roguelike_engine.tiles.model       import Tile
+from roguelike_engine.tile.model       import Tile
 
 # Importar el generador de overlay
 from scripts.generate_overlay_map import main as generate_overlay_map
