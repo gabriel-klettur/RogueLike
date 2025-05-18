@@ -53,15 +53,15 @@ def load_buildings_from_json(
 
             # Recalibrar posición si hay datos relativos
             zone = entry.get("zone")
-            if zone and zone_offsets and "rel_tile_x" in entry and "rel_tile_y" in entry:
+            if zone and zone_offsets and "rel_x" in entry and "rel_y" in entry:
                 ox, oy = zone_offsets.get(zone, (0, 0))
-                tx = ox + entry["rel_tile_x"]
-                ty = oy + entry["rel_tile_y"]
-                b.x = tx * TILE_SIZE
-                b.y = ty * TILE_SIZE
-                b.zone       = zone
-                b.rel_tile_x = entry["rel_tile_x"]
-                b.rel_tile_y = entry["rel_tile_y"]
+                origin_px_x = ox * TILE_SIZE
+                origin_px_y = oy * TILE_SIZE
+                b.x = origin_px_x + entry["rel_x"]
+                b.y = origin_px_y + entry["rel_y"]
+                b.zone  = zone
+                b.rel_x = entry["rel_x"]
+                b.rel_y = entry["rel_y"]
             else:
                 # Legacy: sin metadata de zona
                 b.zone       = None

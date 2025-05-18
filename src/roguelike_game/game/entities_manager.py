@@ -74,14 +74,13 @@ class EntitiesManager:
         """
         zo = zone_offsets or ZONE_OFFSETS
         for b in self.buildings:
-            if getattr(b, "zone", None) and getattr(b, "rel_tile_x", None) is not None:
+            if getattr(b, "zone", None) and getattr(b, "rel_x", None) is not None:
                 ox, oy = zo[b.zone]
-                # tile coordinates absolutas
-                tx = ox + b.rel_tile_x
-                ty = oy + b.rel_tile_y
-                # pixel coordinates
-                b.x = tx * TILE_SIZE
-                b.y = ty * TILE_SIZE
+                origin_px_x = ox * TILE_SIZE
+                origin_px_y = oy * TILE_SIZE
+                # pixel coordinates absolutos
+                b.x = origin_px_x + b.rel_x
+                b.y = origin_px_y + b.rel_y
                 # actualizar rect de colisión/renderer
                 if hasattr(b, "rect"):
                     b.rect.topleft = (b.x, b.y)

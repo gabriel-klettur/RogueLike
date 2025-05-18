@@ -42,15 +42,15 @@ def save_buildings_to_json(
             if z_state:
                 building_data["z"] = inject_z_into_json(b, z_state)
 
-            # Relativos por zona
+            # Relativos por zona en píxeles
             if getattr(b, "zone", None) and zone_offsets and b.zone in zone_offsets:
                 ox, oy = zone_offsets[b.zone]
-                tile_x = int(b.x // TILE_SIZE)
-                tile_y = int(b.y // TILE_SIZE)
+                origin_px_x = ox * TILE_SIZE
+                origin_px_y = oy * TILE_SIZE
                 building_data.update({
                     "zone": b.zone,
-                    "rel_tile_x": tile_x - ox,
-                    "rel_tile_y": tile_y - oy,
+                    "rel_x": int(b.x - origin_px_x),
+                    "rel_y": int(b.y - origin_px_y),
                 })
 
             data.append(building_data)
