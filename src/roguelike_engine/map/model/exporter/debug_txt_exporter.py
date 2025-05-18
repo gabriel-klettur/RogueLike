@@ -3,7 +3,7 @@
 import os
 import re
 import logging
-from roguelike_engine.config.map_config import DEBUG_MAPS_DIR
+from roguelike_engine.config.map_config import global_map_settings
 from .interfaces import MapExporter
 
 logger = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ class DebugTxtExporter(MapExporter):
         extension: str = ".txt",
         zero_pad: int = 3
     ):
-        self.directory = directory or DEBUG_MAPS_DIR
+        self.directory = directory or global_map_settings.debug_maps_dir
         self.prefix    = prefix
         self.extension = extension
         self.zero_pad  = zero_pad

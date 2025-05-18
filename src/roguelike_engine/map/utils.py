@@ -1,15 +1,6 @@
 # Path: src/roguelike_engine/map/utils.py
 from typing import Tuple, List
-from roguelike_engine.config.map_config import (
-    GLOBAL_WIDTH,
-    GLOBAL_HEIGHT,
-    ZONE_WIDTH,
-    ZONE_HEIGHT,
-    ZONE_SIZE,
-    ZONE_OFFSETS,
-    DUNGEON_CONNECT_SIDE,
-)
-
+from roguelike_engine.config.map_config import global_map_settings
 def intersect(room1, room2):
     x1a, y1a, x2a, y2a = room1
     x1b, y1b, x2b, y2b = room2
@@ -41,8 +32,8 @@ def get_zone_for_tile(tile_x: int, tile_y: int) -> str:
     Devuelve el nombre de zona en la que cae la tile (tile_x,tile_y),
     comparando contra ZONE_OFFSETS y ZONE_SIZE.
     """
-    w, h = ZONE_SIZE
-    for zone, (ox, oy) in ZONE_OFFSETS.items():
+    w, h = global_map_settings.zone_size
+    for zone, (ox, oy) in global_map_settings.zone_offsets.items():
         if ox <= tile_x < ox + w and oy <= tile_y < oy + h:
             return zone
     return "no zone"
@@ -54,11 +45,11 @@ def generate_lobby_matrix() -> List[str]:
     - Interior de suelo '.'
     """
     matrix: List[str] = []
-    for y in range(ZONE_HEIGHT):
-        if y == 0 or y == ZONE_HEIGHT - 1:
-            matrix.append("#" * ZONE_WIDTH)
+    for y in range(global_map_settings.zone_height):
+        if y == 0 or y == global_map_settings.zone_height - 1:
+            matrix.append("#" * global_map_settings.zone_width)
         else:
-            matrix.append("#" + "." * (ZONE_WIDTH - 2) + "#")
+            matrix.append("#" + "." * (global_map_settings.zone_width - 2) + "#")
     return matrix
 
 
@@ -95,19 +86,19 @@ def calculate_lobby_offset() -> Tuple[int, int]:
     """
     Determina el offset (x,y) para centrar el lobby en la celda central de un grid.
     """
-    n_cols = GLOBAL_WIDTH // ZONE_WIDTH
-    n_rows = GLOBAL_HEIGHT // ZONE_HEIGHT
+    n_cols = global_map_settings.global_width // global_map_settings.zone_width
+    n_rows = global_map_settings.global_height // global_map_settings.zone_height
     if n_cols < 1 or n_rows < 1:
-        return ((GLOBAL_WIDTH - ZONE_WIDTH)//2,
-                (GLOBAL_HEIGHT - ZONE_HEIGHT)//2)
+        return ((global_map_settings.global_width - global_map_settings.zone_width)//2,
+                (global_map_settings.global_height - global_map_settings.zone_height)//2)
     center_col = n_cols // 2
     center_row = n_rows // 2
-    rem_x = GLOBAL_WIDTH - n_cols * ZONE_WIDTH
-    rem_y = GLOBAL_HEIGHT - n_rows * ZONE_HEIGHT
+    rem_x = global_map_settings.global_width - n_cols * global_map_settings.zone_width
+    rem_y = global_map_settings.global_height - n_rows * global_map_settings.zone_height
     start_x = rem_x // 2
     start_y = rem_y // 2
-    return (start_x + center_col * ZONE_WIDTH,
-            start_y + center_row * ZONE_HEIGHT)
+    return (start_x + center_col * global_map_settings.zone_width,
+            start_y + center_row * global_map_settings.zone_height)
 
 
 
@@ -117,11 +108,11 @@ def calculate_dungeon_offset(lobby_off: Tuple[int,int]):
     según DUNGEON_CONNECT_SIDE: arriba, abajo, izquierda, derecha.
     """
     off_x, off_y = lobby_off
-    if DUNGEON_CONNECT_SIDE == "bottom":
-        return off_x, off_y + ZONE_HEIGHT
-    if DUNGEON_CONNECT_SIDE == "top":
-        return off_x, off_y - ZONE_HEIGHT
-    if DUNGEON_CONNECT_SIDE == "left":
-        return off_x - ZONE_WIDTH, off_y
+    if global_map_settings.dungeon_connect_side == "bottom":
+        return off_x, off_y + global_map_settings.zone_height
+    if global_map_settings.dungeon_connect_side == "top":
+        return off_x, off_y - global_map_settings.zone_height
+    if global_map_settings.dungeon_connect_side == "left":
+        return off_x - global_map_settings.zone_width, off_y
     # 'right'
-    return off_x + ZONE_WIDTH, off_y
+    return off_x + global_map_settings.zone_width, off_y

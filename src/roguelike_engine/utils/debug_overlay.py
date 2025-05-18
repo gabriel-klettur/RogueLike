@@ -1,6 +1,6 @@
 import time
 import pygame
-from roguelike_engine.config.map_config import ZONE_WIDTH, ZONE_HEIGHT, GLOBAL_WIDTH, GLOBAL_HEIGHT
+from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.map.utils import calculate_dungeon_offset
 from roguelike_engine.utils.benchmark import benchmark
@@ -195,16 +195,16 @@ class DebugOverlay:
     def _draw_lobby_border(self, screen, camera, lobby_offset: tuple[int, int]) -> None:
         x0, y0 = lobby_offset
         tl = camera.apply((x0 * TILE_SIZE, y0 * TILE_SIZE))
-        sz = camera.scale((ZONE_WIDTH * TILE_SIZE, ZONE_HEIGHT * TILE_SIZE))
+        sz = camera.scale((global_map_settings.zone_width * TILE_SIZE, global_map_settings.zone_height * TILE_SIZE))
         pygame.draw.rect(screen, self.border_colors['lobby'], pygame.Rect(tl, sz), self.border_width)
 
     def _draw_dungeon_border(self, screen, camera, lobby_offset: tuple[int, int]) -> None:
         dx, dy = calculate_dungeon_offset(lobby_offset)
         tl = camera.apply((dx * TILE_SIZE, dy * TILE_SIZE))
-        sz = camera.scale((ZONE_WIDTH * TILE_SIZE, ZONE_HEIGHT * TILE_SIZE))
+        sz = camera.scale((global_map_settings.zone_width * TILE_SIZE, global_map_settings.zone_height * TILE_SIZE))
         pygame.draw.rect(screen, self.border_colors['dungeon'], pygame.Rect(tl, sz), self.border_width)
 
     def _draw_global_border(self, screen, camera) -> None:
         tl = camera.apply((0, 0))
-        sz = camera.scale((GLOBAL_WIDTH * TILE_SIZE, GLOBAL_HEIGHT * TILE_SIZE))
+        sz = camera.scale((global_map_settings.zone_width * TILE_SIZE, global_map_settings.zone_height * TILE_SIZE))
         pygame.draw.rect(screen, self.border_colors['global'], pygame.Rect(tl, sz), self.border_width)

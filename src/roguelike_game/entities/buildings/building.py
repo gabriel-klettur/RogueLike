@@ -5,6 +5,8 @@ import pygame
 from roguelike_engine.utils.loader import load_image
 import roguelike_engine.config.config as config
 from roguelike_game.systems.config_z_layer import Z_LAYERS
+from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_engine.config.map_config import global_map_settings
 
 class Building:
     """
@@ -61,17 +63,13 @@ class Building:
                 f"Zs=({self.z_bottom},{self.z_top}) solid={self.solid}>")
 
     @property
-    def x(self):
-        from roguelike_engine.config.config_tiles import TILE_SIZE
-        from roguelike_engine.config.map_config import ZONE_OFFSETS
-        ox, oy = ZONE_OFFSETS.get(self.zone, (0, 0))
+    def x(self):        
+        ox, oy = global_map_settings.zone_offsets.get(self.zone, (0, 0))
         return ox * TILE_SIZE + self.rel_x
 
     @property
-    def y(self):
-        from roguelike_engine.config.config_tiles import TILE_SIZE
-        from roguelike_engine.config.map_config import ZONE_OFFSETS
-        ox, oy = ZONE_OFFSETS.get(self.zone, (0, 0))
+    def y(self):        
+        ox, oy = global_map_settings.zone_offsets.get(self.zone, (0, 0))
         return oy * TILE_SIZE + self.rel_y
 
     def _get_scaled_image(self, camera):

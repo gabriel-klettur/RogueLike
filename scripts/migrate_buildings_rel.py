@@ -3,7 +3,7 @@ import json
 import os
 from roguelike_engine.config.config import BUILDINGS_DATA_PATH
 from roguelike_engine.config.config_tiles import TILE_SIZE
-from roguelike_engine.config.map_config import ZONE_OFFSETS
+from roguelike_engine.config.map_config import global_map_settings
 
 def migrate():
     # 1) Leer datos actuales
@@ -15,7 +15,7 @@ def migrate():
         zone = entry.get("zone")
         if zone:
             # Offset de la zona en tiles
-            ox, oy = ZONE_OFFSETS.get(zone, (0, 0))
+            ox, oy = global_map_settings.zone_offsets.get(zone, (0, 0))
             # Origen de la zona en píxeles
             origin_px_x = ox * TILE_SIZE
             origin_px_y = oy * TILE_SIZE

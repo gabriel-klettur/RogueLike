@@ -4,12 +4,7 @@ import random
 from typing import List, Tuple, Dict, Optional
 
 from .interfaces import MapGenerator
-from roguelike_engine.config.map_config import (
-    ZONE_WIDTH,
-    ZONE_HEIGHT,
-    DUNGEON_TUNNEL_THICKNESS,
-    DUNGEON_MAX_ROOMS,
-)
+from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.map.utils import intersect, center_of
 
 class DungeonGenerator(MapGenerator):
@@ -21,8 +16,8 @@ class DungeonGenerator(MapGenerator):
     """
     def generate(
         self,
-        width: int = ZONE_WIDTH,
-        height: int = ZONE_HEIGHT,
+        width: int = global_map_settings.zone_width,
+        height: int = global_map_settings.zone_height,
         max_rooms: int = 10,
         room_min_size: int = 10,
         room_max_size: int = 20,
@@ -30,10 +25,10 @@ class DungeonGenerator(MapGenerator):
         **kwargs
     ) -> Tuple[List[List[str]], Dict]:
         # Determinar número máximo de habitaciones
-        if DUNGEON_MAX_ROOMS == 'MAX':
+        if global_map_settings.dungeon_max_rooms == 'MAX':
             max_allowed = (width // room_min_size) * (height // room_min_size)
-        elif isinstance(DUNGEON_MAX_ROOMS, int):
-            max_allowed = DUNGEON_MAX_ROOMS
+        elif isinstance(global_map_settings.dungeon_max_rooms, int):
+            max_allowed = global_map_settings.dungeon_max_rooms
         else:
             max_allowed = max_rooms
 
@@ -91,18 +86,18 @@ class DungeonGenerator(MapGenerator):
 
     @staticmethod
     def _horiz_tunnel(map_: List[List[str]], x1: int, x2: int, y: int) -> None:
-        half = DUNGEON_TUNNEL_THICKNESS // 2
+        half = global_map_settings.dungeon_tunnel_thickness // 2
         for x in range(min(x1, x2), max(x1, x2) + 1):
-            for t in range(DUNGEON_TUNNEL_THICKNESS):
+            for t in range(global_map_settings.dungeon_tunnel_thickness):
                 yy = y + t - half
                 if 0 <= yy < len(map_):
                     map_[yy][x] = "="
 
     @staticmethod
     def _vert_tunnel(map_: List[List[str]], y1: int, y2: int, x: int) -> None:
-        half = DUNGEON_TUNNEL_THICKNESS // 2
+        half = global_map_settings.dungeon_tunnel_thickness // 2
         for yy in range(min(y1, y2), max(y1, y2) + 1):
-            for t in range(DUNGEON_TUNNEL_THICKNESS):
+            for t in range(global_map_settings.dungeon_tunnel_thickness):
                 xx = x + t - half
                 if 0 <= xx < len(map_[0]):
                     map_[yy][xx] = "="

@@ -1,21 +1,28 @@
-# Path: src/roguelike_engine/config_tiles.py
-from roguelike_engine.config.map_config import MAP_OVERLAYS_DIR
-import os, json
+# Path: src/roguelike_engine/config/config_tiles.py
+
+import os
+import json
+from pathlib import Path
+
+from roguelike_engine.config.config import ASSETS_DIR, DATA_DIR
 
 #!------------------------ TILES CONFIG -------------------------
 # Tamaño de cada tile en píxeles
 TILE_SIZE = 32
 
-# Carpeta donde se almacenan datos de overlay
-TILES_DATA_PATH = MAP_OVERLAYS_DIR
+# Carpeta donde se almacenan sprites y datos de tiles personalizados
+TILES_DATA_PATH = Path(ASSETS_DIR) / "tiles"
+
+# Carpeta donde se almacenan los overlays generados (JSON)
+MAP_OVERLAYS_DIR = Path(DATA_DIR) / "map_overlays"
+os.makedirs(MAP_OVERLAYS_DIR, exist_ok=True)
 
 #!------------------------ TILES MAPPING --------------------------
 # Mapeo dinámico: código de overlay → nombre base de asset
 # Generado automáticamente por scripts/generate_overlay_map.py
 
-# Cargar mapeo de overlay desde JSON
-overlay_map_path = os.path.join(MAP_OVERLAYS_DIR, "overlay_map.json")
-if os.path.isfile(overlay_map_path):
+overlay_map_path = MAP_OVERLAYS_DIR / "overlay_map.json"
+if overlay_map_path.is_file():
     with open(overlay_map_path, "r", encoding="utf-8") as f:
         OVERLAY_CODE_MAP = json.load(f)
 else:
@@ -29,14 +36,14 @@ for code, name in OVERLAY_CODE_MAP.items():
 DEFAULT_TILE_MAP: dict[str, str] = {
     "#": "wall",
     ".": "floor",
-    "=": "dungeon_c_1",  # fallback razonable para túneles
-    "O": "dungeon_1",    # fallback para habitaciones
+    "=": "dungeon_c_1",
+    "O": "dungeon_1",
 }
 
 TILE_COLORS: dict[str, tuple[int,int,int]] = {
-    ".": (80, 80, 80),    # piso
-    "O": (130, 130, 130), # sala
-    "=": (100, 100, 100), # túnel
-    "#": (30, 30, 30),    # muro
-    "D": (90, 90, 90),    # dungeon genérico
+    ".": (80, 80, 80),
+    "O": (130, 130, 130),
+    "=": (100, 100, 100),
+    "#": (30, 30, 30),
+    "D": (90, 90, 90),
 }

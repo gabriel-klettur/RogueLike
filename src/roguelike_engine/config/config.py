@@ -21,13 +21,14 @@ FONT_SIZE = 18
 #! ------------------------ PATH CONFIG --------------------------
 
 # 1) Directorio de este paquete (…/src/roguelike_engine)
-PACKAGE_DIR = Path(__file__).parent
+ENGINE_DIR = Path(__file__).parent
 # 2) Raíz del proyecto (…/RogueLike)
-PROJECT_ROOT = PACKAGE_DIR.parent.parent.parent
+PROJECT_ROOT = ENGINE_DIR.parent.parent.parent
 
 # 3) Carpeta global de assets (…/RogueLike/assets)
 ASSETS_DIR = PROJECT_ROOT / "assets"
 ASSETS_DIR = str(ASSETS_DIR)
+print(f"[DEBUG] ASSETS_DIR = {ASSETS_DIR!r}")
 
 # Carpeta donde se almacenan datos persistentes 
 DATA_DIR = PROJECT_ROOT / "data"

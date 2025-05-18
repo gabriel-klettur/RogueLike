@@ -1,6 +1,6 @@
 from roguelike_engine.config.config_tiles import TILE_SIZE
-from roguelike_engine.config.map_config import ZONE_OFFSETS
 from roguelike_engine.map.utils import get_zone_for_tile
+from roguelike_engine.config.map_config import global_map_settings
 
 def assign_zone_and_relatives(building) -> None:
     # 1) Detectar zona basándonos en el centro inferior del sprite
@@ -14,7 +14,7 @@ def assign_zone_and_relatives(building) -> None:
     zone = get_zone_for_tile(tile_x, tile_y)
 
     # 2) Offset de la zona en tiles
-    ox, oy = ZONE_OFFSETS.get(zone, (0, 0))
+    ox, oy = global_map_settings.zone_offsets.get(zone, (0, 0))
 
     # 3) Convertir ese offset a píxeles
     origin_px_x = ox * TILE_SIZE
@@ -40,5 +40,5 @@ def detect_zone_from_px(x_px: float, y_px: float) -> tuple[str, tuple[int,int]]:
         zone = get_zone_for_tile(tile_x, tile_y)
     except ValueError:
         zone = "no zone"
-    offset = ZONE_OFFSETS.get(zone, (0, 0))
+    offset = global_map_settings.zone_offsets.get(zone, (0, 0))
     return zone, offset

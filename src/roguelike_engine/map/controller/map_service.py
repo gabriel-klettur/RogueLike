@@ -2,13 +2,8 @@ import logging
 import random
 from typing import Optional, List, Tuple, Dict
 
-from roguelike_engine.config.map_config import (
-    GLOBAL_WIDTH,
-    GLOBAL_HEIGHT,
-    ZONE_WIDTH,
-    ZONE_HEIGHT,
-    DUNGEON_CONNECT_SIDE,
-)
+from roguelike_engine.config.map_config import global_map_settings
+
 from roguelike_engine.map.model.generator.factory import get_generator
 from roguelike_engine.map.model.loader.factory import get_map_loader
 from roguelike_engine.map.model.exporter.factory import get_exporter, MapExporter
@@ -65,7 +60,7 @@ class MapService:
         """
         Crea un canvas global lleno de muros ('#').
         """
-        return [["#" for _ in range(GLOBAL_WIDTH)] for __ in range(GLOBAL_HEIGHT)]
+        return [["#" for _ in range(global_map_settings.global_width)] for __ in range(global_map_settings.global_height)]
 
     def _place_lobby(self, canvas: List[List[str]]) -> Tuple[int, int]:
         """
@@ -89,15 +84,15 @@ class MapService:
         Retorna un dict con 'offset' y 'metadata'.
         """
         raw_map, metadata = self.generator.generate(
-            width=ZONE_WIDTH,
-            height=ZONE_HEIGHT,
+            width=global_map_settings.zone_width,
+            height=global_map_settings.zone_height,
             return_rooms=True,
         )
         dx, dy = calculate_dungeon_offset(lobby_offset)
         for y, row in enumerate(raw_map):
             for x, ch in enumerate(row):
                 gx, gy = dx + x, dy + y
-                if 0 <= gx < GLOBAL_WIDTH and 0 <= gy < GLOBAL_HEIGHT:
+                if 0 <= gx < global_map_settings.global_width and 0 <= gy < global_map_settings.global_height:
                     canvas[gy][gx] = ch
         return {"offset": (dx, dy), "metadata": metadata}
 
@@ -116,7 +111,7 @@ class MapService:
 
         dx, dy = dungeon_info["offset"]
         # Punto de salida en el lobby
-        exit_local = find_lobby_exit(generate_lobby_matrix(), DUNGEON_CONNECT_SIDE)
+        exit_local = find_lobby_exit(generate_lobby_matrix(), global_map_settings.dungeon_connect_side)
         ex = lobby_offset[0] + exit_local[0]
         ey = lobby_offset[1] + exit_local[1]
 
