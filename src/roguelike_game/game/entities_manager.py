@@ -5,8 +5,8 @@ from typing import Tuple, List
 from roguelike_game.entities.load_entities import load_entities
 from roguelike_game.entities.load_hostile import load_hostile
 from roguelike_game.game.map_manager import MapManager
-from roguelike_engine.config_tiles import TILE_SIZE
-from roguelike_engine.config_map import ZONE_OFFSETS
+from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_engine.config.map_config import ZONE_OFFSETS
 from roguelike_engine.map.controller.map_service import calculate_dungeon_offset
 from roguelike_game.config_entities import ENEMY_MAX_UPDATE_DISTANCE
 from roguelike_game.entities.npc.types.elite.controller import EliteController

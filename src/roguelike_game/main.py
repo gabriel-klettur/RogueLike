@@ -4,7 +4,7 @@ import pygame
 from collections import defaultdict
 
 from roguelike_game.game.game import Game
-from roguelike_engine.config import FPS, SCREEN_WIDTH, SCREEN_HEIGHT
+from roguelike_engine.config.config import FPS, SCREEN_WIDTH, SCREEN_HEIGHT
 from roguelike_engine.utils.benchmark import benchmark
 
 def init_debug():

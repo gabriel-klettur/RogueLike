@@ -1,6 +1,6 @@
 # Path: src/roguelike_engine/map/utils.py
 from typing import Tuple, List
-from roguelike_engine.config_map import (
+from roguelike_engine.config.map_config import (
     GLOBAL_WIDTH,
     GLOBAL_HEIGHT,
     ZONE_WIDTH,

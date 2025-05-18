@@ -3,7 +3,7 @@
 import os
 import re
 import logging
-from roguelike_engine.config_map import DEBUG_MAPS_DIR
+from roguelike_engine.config.map_config import DEBUG_MAPS_DIR
 from .interfaces import MapExporter
 
 logger = logging.getLogger(__name__)

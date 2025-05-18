@@ -3,7 +3,7 @@ import os
 import json
 import pygame
 
-from roguelike_engine.config import BUILDINGS_DATA_PATH
+from roguelike_engine.config.config import BUILDINGS_DATA_PATH
 from roguelike_game.entities.buildings.building import Building
 from roguelike_game.systems.editor.buildings.utils.zone_helpers import assign_zone_and_relatives
 

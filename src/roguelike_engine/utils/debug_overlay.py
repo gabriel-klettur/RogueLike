@@ -1,7 +1,7 @@
 import time
 import pygame
-from roguelike_engine.config_map import ZONE_WIDTH, ZONE_HEIGHT, GLOBAL_WIDTH, GLOBAL_HEIGHT
-from roguelike_engine.config_tiles import TILE_SIZE
+from roguelike_engine.config.map_config import ZONE_WIDTH, ZONE_HEIGHT, GLOBAL_WIDTH, GLOBAL_HEIGHT
+from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.map.utils import calculate_dungeon_offset
 from roguelike_engine.utils.benchmark import benchmark
 

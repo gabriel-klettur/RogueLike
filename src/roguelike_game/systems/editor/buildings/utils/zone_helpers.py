@@ -1,5 +1,5 @@
-from roguelike_engine.config_tiles import TILE_SIZE
-from roguelike_engine.config_map import ZONE_OFFSETS
+from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_engine.config.map_config import ZONE_OFFSETS
 from roguelike_engine.map.utils import get_zone_for_tile
 
 def assign_zone_and_relatives(building) -> None:

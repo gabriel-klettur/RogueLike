@@ -1,7 +1,7 @@
 
 # Path: src/roguelike_engine/tiles/loader.py
 from typing import List, Optional
-from roguelike_engine.config_tiles import TILE_SIZE
+from roguelike_engine.config.config_tiles import TILE_SIZE
 from .model import Tile
 from .assets import get_sprite_for_tile
 

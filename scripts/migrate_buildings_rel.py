@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import json
 import os
-from roguelike_engine.config import BUILDINGS_DATA_PATH
-from roguelike_engine.config_tiles import TILE_SIZE
-from roguelike_engine.config_map import ZONE_OFFSETS
+from roguelike_engine.config.config import BUILDINGS_DATA_PATH
+from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_engine.config.map_config import ZONE_OFFSETS
 
 def migrate():
     # 1) Leer datos actuales

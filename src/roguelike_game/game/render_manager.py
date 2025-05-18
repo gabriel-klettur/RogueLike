@@ -2,7 +2,7 @@
 import pygame
 
 from roguelike_engine.utils.mouse import draw_mouse_crosshair
-import roguelike_engine.config as config
+import roguelike_engine.config.config as config
 
 # Sistema de orden Z
 from roguelike_game.systems.z_layer.render import render_z_ordered

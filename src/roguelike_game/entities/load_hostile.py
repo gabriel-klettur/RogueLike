@@ -1,7 +1,7 @@
 # Path: src/roguelike_game/entities/load_hostile.py
 import random
 from roguelike_game.entities.npc.factory import NPCFactory
-from roguelike_engine.config_tiles import TILE_SIZE
+from roguelike_engine.config.config_tiles import TILE_SIZE
 
 def load_hostile(rooms, player_start_tile, dungeon_offset, tile_map):
     """

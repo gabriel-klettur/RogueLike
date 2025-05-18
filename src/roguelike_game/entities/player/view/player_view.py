@@ -1,6 +1,6 @@
 # Path: src/roguelike_game/entities/player/view/player_view.py
 import pygame
-import roguelike_engine.config as config
+import roguelike_engine.config.config as config
 from roguelike_engine.utils.mouse import get_direction_from_angle, draw_mouse_crosshair
 
 class PlayerView:

@@ -3,8 +3,8 @@ import os
 import random
 import pygame
 
-from roguelike_engine.config import ASSETS_DIR
-from roguelike_engine.config_tiles import TILE_SIZE, OVERLAY_CODE_MAP, DEFAULT_TILE_MAP
+from roguelike_engine.config.config import ASSETS_DIR
+from roguelike_engine.config.config_tiles import TILE_SIZE, OVERLAY_CODE_MAP, DEFAULT_TILE_MAP
 from roguelike_engine.utils.loader import load_image
 
 # Caché de imágenes para evitar recargas constantes desde disco

@@ -1,7 +1,7 @@
 import pygame
 import math
 from roguelike_engine.map.model.map_model import Map as MapModel
-from roguelike_engine.config_tiles import TILE_SIZE
+from roguelike_engine.config.config_tiles import TILE_SIZE
 
 class MapView:
     """

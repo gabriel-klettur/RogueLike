@@ -1,6 +1,6 @@
-# Path: src/roguelike_engine/config_map.py
+# Path: src/roguelike_engine/map_config.py
 from pathlib import Path
-from roguelike_engine.config import DATA_DIR
+from roguelike_engine.config.config import DATA_DIR
 
 #!--------------------- GLOBAL MAP CONFIG --------------------------
 # Size total del mapa (en tiles)

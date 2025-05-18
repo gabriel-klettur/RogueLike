@@ -1,7 +1,7 @@
 # Path: src/roguelike_game/entities/obstacles/obstacle.py
 import pygame
 from roguelike_engine.utils.loader import load_image
-import roguelike_engine.config as config
+import roguelike_engine.config.config as config
 
 class Obstacle:
     def __init__(self, x, y, sprite_path="assets/objects/rock.png", size=(64, 64)):

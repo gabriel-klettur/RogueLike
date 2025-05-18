@@ -1,6 +1,6 @@
 # Path: src/roguelike_engine/input/keyboard.py
 import pygame, time
-import roguelike_engine.config as config
+import roguelike_engine.config.config as config
 
 
 from roguelike_game.entities.npc.factory import NPCFactory

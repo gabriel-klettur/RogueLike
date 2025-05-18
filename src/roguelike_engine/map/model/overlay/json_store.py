@@ -4,7 +4,7 @@ import os
 import json
 from typing import Optional, List
 from .interfaces import OverlayStore
-from roguelike_engine.config_tiles import TILES_DATA_PATH
+from roguelike_engine.config.config_tiles import TILES_DATA_PATH
 
 class JsonOverlayStore(OverlayStore):
     """

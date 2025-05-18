@@ -3,9 +3,9 @@ import pygame
 import logging
 
 from roguelike_game.systems.editor.buildings.model.persistence.save_buildings_to_json import save_buildings_to_json
-from roguelike_engine.config import BUILDINGS_DATA_PATH
+from roguelike_engine.config.config import BUILDINGS_DATA_PATH
 from roguelike_game.systems.editor.buildings.controller.picker.picker_events import PickerEventHandler
-from roguelike_engine.config import SCREEN_WIDTH, SCREEN_HEIGHT
+from roguelike_engine.config.config import SCREEN_WIDTH, SCREEN_HEIGHT
 
 from roguelike_game.systems.editor.buildings.utils.zone_helpers import detect_zone_from_px
 

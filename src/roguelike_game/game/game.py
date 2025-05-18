@@ -3,7 +3,7 @@
 import pygame
 
 #!---------------------- Paquetes locales: configuración --------------------------------
-import roguelike_engine.config as config
+import roguelike_engine.config.config as config
 
 #!------------------------ Paquetes locales: motor (engine) -----------------------------------
 from roguelike_engine.camera.camera import Camera

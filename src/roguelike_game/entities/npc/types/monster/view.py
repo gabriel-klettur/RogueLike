@@ -3,7 +3,7 @@
 import pygame
 from roguelike_engine.utils.loader import load_image
 from roguelike_game.entities.npc.base.view import NPCView
-import roguelike_engine.config as config
+import roguelike_engine.config.config as config
 
 class MonsterView(NPCView):
     SPRITE_SIZE = (256, 256)

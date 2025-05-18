@@ -2,8 +2,6 @@
 # Path: src/roguelike_game/game/map_manager.py
 from roguelike_engine.map.controller.map_controller import build_map
 from roguelike_engine.map.controller.map_service import calculate_dungeon_offset
-import roguelike_engine.config_map as config_map
-import roguelike_engine.config_tiles as config_tiles
 from roguelike_engine.map.view.map_view import MapView
 
 class MapManager:

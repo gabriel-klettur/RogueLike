@@ -2,7 +2,7 @@
 # Path: src/roguelike_engine/tiles/overlay.py
 import os
 import json
-from roguelike_engine.config_tiles import TILES_DATA_PATH
+from roguelike_engine.config.config_tiles import TILES_DATA_PATH
 
 
 def load_overlay_map(map_name: str) -> list[list[str]] | None:

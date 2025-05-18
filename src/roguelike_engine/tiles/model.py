@@ -1,8 +1,8 @@
 
 # Path: src/roguelike_engine/tiles/model.py
 import pygame
-from roguelike_engine.config_tiles import TILE_SIZE
-from roguelike_engine.config import DEBUG
+from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_engine.config.config import DEBUG
 
 class Tile:
     """

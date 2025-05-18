@@ -3,7 +3,7 @@
 import os
 import pygame
 from roguelike_engine.utils.loader import load_image
-import roguelike_engine.config as config
+import roguelike_engine.config.config as config
 from roguelike_game.systems.config_z_layer import Z_LAYERS
 
 class Building:
@@ -62,15 +62,15 @@ class Building:
 
     @property
     def x(self):
-        from roguelike_engine.config_tiles import TILE_SIZE
-        from roguelike_engine.config_map import ZONE_OFFSETS
+        from roguelike_engine.config.config_tiles import TILE_SIZE
+        from roguelike_engine.config.map_config import ZONE_OFFSETS
         ox, oy = ZONE_OFFSETS.get(self.zone, (0, 0))
         return ox * TILE_SIZE + self.rel_x
 
     @property
     def y(self):
-        from roguelike_engine.config_tiles import TILE_SIZE
-        from roguelike_engine.config_map import ZONE_OFFSETS
+        from roguelike_engine.config.config_tiles import TILE_SIZE
+        from roguelike_engine.config.map_config import ZONE_OFFSETS
         ox, oy = ZONE_OFFSETS.get(self.zone, (0, 0))
         return oy * TILE_SIZE + self.rel_y
 

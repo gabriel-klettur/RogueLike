@@ -4,7 +4,7 @@ from roguelike_game.systems.editor.buildings.model.building_editor_state import 
 from roguelike_game.systems.editor.buildings.controller.building_editor_controller import BuildingEditorController
 from roguelike_game.systems.editor.buildings.events.building_editor_events import BuildingEditorEventHandler
 from roguelike_game.systems.editor.buildings.view.building_editor_view import BuildingEditorView
-from roguelike_engine.config_map import ZONE_OFFSETS
+from roguelike_engine.config.map_config import ZONE_OFFSETS
 
 class BuildingEditorManager:
     def __init__(self, game):

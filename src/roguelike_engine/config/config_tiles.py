@@ -1,5 +1,5 @@
 # Path: src/roguelike_engine/config_tiles.py
-from roguelike_engine.config_map import MAP_OVERLAYS_DIR
+from roguelike_engine.config.map_config import MAP_OVERLAYS_DIR
 import os, json
 
 #!------------------------ TILES CONFIG -------------------------

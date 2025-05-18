@@ -2,7 +2,7 @@ import logging
 import random
 from typing import Optional, List, Tuple, Dict
 
-from roguelike_engine.config_map import (
+from roguelike_engine.config.map_config import (
     GLOBAL_WIDTH,
     GLOBAL_HEIGHT,
     ZONE_WIDTH,

@@ -3,7 +3,7 @@
 import os
 import json
 from typing import Dict, Tuple, Optional
-from roguelike_engine.config import BUILDINGS_DATA_PATH
+from roguelike_engine.config.config import BUILDINGS_DATA_PATH
 from roguelike_game.systems.z_layer.persistence import inject_z_into_json
 
 def save_buildings_to_json(

@@ -1,7 +1,7 @@
 # Path: src/roguelike_engine/utils/loader.py
 import pygame
 import os
-from roguelike_engine.config import ASSETS_DIR
+from roguelike_engine.config.config import ASSETS_DIR
 
 def load_image(path: str, scale=None) -> pygame.Surface:
     """
