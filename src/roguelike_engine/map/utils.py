@@ -110,6 +110,7 @@ def calculate_lobby_offset() -> Tuple[int, int]:
             start_y + center_row * ZONE_HEIGHT)
 
 
+
 def calculate_dungeon_offset(lobby_off: Tuple[int,int]):
     """
     Calcula el offset (x,y) para colocar la dungeon adyacente al lobby

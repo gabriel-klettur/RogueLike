@@ -9,8 +9,7 @@ from roguelike_game.systems.z_layer.persistence import inject_z_into_json
 def save_buildings_to_json(
     buildings,
     filepath: Optional[str] = None,
-    z_state=None,
-    zone_offsets: Optional[Dict[str, Tuple[int, int]]] = None
+    z_state=None,    
 ):
     """
     Guarda la lista de buildings en un JSON usando coordenadas relativas.

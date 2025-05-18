@@ -34,8 +34,32 @@ DUNGEON_MAX_ROOMS = '10'
 DEBUG_MAPS_DIR = Path(DATA_DIR) / "debug_maps"
 
 #!----------------------- ZONE OFFSETS -----------------------------
+#!--------------------- ZONE OFFSETS (DINÁMICOS) -------------------
+
+def _compute_lobby_offset():
+    # ¿Cuántas zonas caben horizontal/verticalmente?
+    n_cols = GLOBAL_WIDTH  // ZONE_WIDTH
+    n_rows = GLOBAL_HEIGHT // ZONE_HEIGHT
+    if n_cols < 1 or n_rows < 1:
+        # Si el mapa es más pequeño que una zona
+        return ((GLOBAL_WIDTH - ZONE_WIDTH) // 2,
+                (GLOBAL_HEIGHT - ZONE_HEIGHT) // 2)
+    # Centro de la cuadrícula de zonas
+    center_col = n_cols // 2
+    center_row = n_rows // 2
+    # Espacios remanentes
+    rem_x = GLOBAL_WIDTH  - n_cols * ZONE_WIDTH
+    rem_y = GLOBAL_HEIGHT - n_rows * ZONE_HEIGHT
+    start_x = rem_x // 2
+    start_y = rem_y // 2
+    return (
+        start_x + center_col * ZONE_WIDTH,
+        start_y + center_row * ZONE_HEIGHT
+    )
+
+_LOBBY_OFFSET = _compute_lobby_offset()
+
+
 ZONE_OFFSETS = {
-    "lobby": (50, 50),
-    "dungeon": (50, 100),
-    # "city": (ciudad_offset_x, ciudad_offset_y),  → futuras zonas
+    "lobby":   _LOBBY_OFFSET    
 }
