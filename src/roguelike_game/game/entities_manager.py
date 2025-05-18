@@ -66,24 +66,18 @@ class EntitiesManager:
         )
         return self.enemies
 
-    def recalibrate_buildings(self, zone_offsets: dict[str, tuple[int,int]] = None):
+
+    def recalibrate_buildings(self):
         """
-        Vuelve a computar b.x, b.y de todos los edificios a partir de
-        (zone, rel_tile_x, rel_tile_y) usando los zone_offsets.
-        Si un edificio no tiene metadata, se deja tal cual.
+        Actualiza el rect de colisión/render de cada edificio,
+        usando las propiedades x,y derivadas de rel_x/rel_y y zone.
         """
-        zo = zone_offsets or ZONE_OFFSETS
         for b in self.buildings:
-            if getattr(b, "zone", None) and getattr(b, "rel_x", None) is not None:
-                ox, oy = zo[b.zone]
-                origin_px_x = ox * TILE_SIZE
-                origin_px_y = oy * TILE_SIZE
-                # pixel coordinates absolutos
-                b.x = origin_px_x + b.rel_x
-                b.y = origin_px_y + b.rel_y
-                # actualizar rect de colisión/renderer
+            if getattr(b, "zone", None) is not None and getattr(b, "rel_x", None) is not None:
+                # b.x y b.y son propiedades que devuelven la posición absoluta
+                abs_x, abs_y = b.x, b.y
                 if hasattr(b, "rect"):
-                    b.rect.topleft = (b.x, b.y)
+                    b.rect.topleft = (abs_x, abs_y)
 
     def update(self, state, game_map, systems):
         """

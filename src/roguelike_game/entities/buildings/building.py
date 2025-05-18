@@ -1,5 +1,5 @@
+# src/roguelike_game/entities/buildings/building.py
 
-# Path: src/roguelike_game/entities/buildings/building.py
 import os
 import pygame
 from roguelike_engine.utils.loader import load_image
@@ -8,13 +8,14 @@ from roguelike_game.systems.config_z_layer import Z_LAYERS
 
 class Building:
     """
-    Un edificio ahora se divide en dos mitades (bottom / top) separadas
-    por `split_ratio` (0‑1). Cada mitad puede pertenecer a capas Z distintas.
+    Un edificio ahora se almacena con coordenadas relativas (rel_x, rel_y) dentro de su zona,
+    y calcula sus posiciones absolutas (x, y) al vuelo.
     """
+
     def __init__(
         self,
-        x,
-        y,
+        rel_x: int,
+        rel_y: int,
         image_path,
         solid=True,
         scale=None,
@@ -23,12 +24,17 @@ class Building:
         z_bottom: int | None = None,
         z_top: int | None = None
     ):
-        self.x = x
-        self.y = y
+        # Coordenadas relativas dentro de la zona
+        self.rel_x = rel_x
+        self.rel_y = rel_y
+        # Zona (se asigna con assign_zone_and_relatives o al cargar desde JSON)
+        self.zone = None
+
         self.solid = solid
         self.image_path = image_path
         self.scaled_cache: dict[float, pygame.Surface] = {}
 
+        # Carga y escala de la imagen
         self.image = load_image(image_path)
         if scale:
             self.image = pygame.transform.scale(self.image, scale)
@@ -36,29 +42,38 @@ class Building:
         else:
             self.original_scale = self.image.get_size()
 
-        # --- Nueva info de división ---
+        # División en dos mitades según split_ratio
         self.split_ratio = max(0.0, min(split_ratio, 1.0))
         self.z_bottom = z_bottom if z_bottom is not None else Z_LAYERS["building_low"]
         self.z_top    = z_top    if z_top    is not None else Z_LAYERS["building_high"]
 
-        # compatibilidad (algunos sistemas aún miran `z`)
+        # Compatibilidad: algunos sistemas aún consultan `z`
         self.z = self.z_bottom
 
+        # Rectángulo de colisión/renderizado (usa propiedades x,y)
         self.rect = pygame.Rect(self.x, self.y, *self.image.get_size())
 
-    # ------------------------------------------------------------------ #
-    # Representación legible                                              #
-    # ------------------------------------------------------------------ #
     def __repr__(self) -> str:
         name = os.path.basename(self.image_path)
         w, h = self.image.get_size()
-        return (f"<Building '{name}' pos=({self.x:.0f},{self.y:.0f}) "
+        return (f"<Building '{name}' rel=({self.rel_x},{self.rel_y}) zone={self.zone!r} "
                 f"size=({w}x{h}) split={self.split_ratio:.2f} "
                 f"Zs=({self.z_bottom},{self.z_top}) solid={self.solid}>")
 
-    # ------------------------------------------------------------------ #
-    # Utilidades internas                                                #
-    # ------------------------------------------------------------------ #
+    @property
+    def x(self):
+        from roguelike_engine.config_tiles import TILE_SIZE
+        from roguelike_engine.config_map import ZONE_OFFSETS
+        ox, oy = ZONE_OFFSETS.get(self.zone, (0, 0))
+        return ox * TILE_SIZE + self.rel_x
+
+    @property
+    def y(self):
+        from roguelike_engine.config_tiles import TILE_SIZE
+        from roguelike_engine.config_map import ZONE_OFFSETS
+        ox, oy = ZONE_OFFSETS.get(self.zone, (0, 0))
+        return oy * TILE_SIZE + self.rel_y
+
     def _get_scaled_image(self, camera):
         zoom = round(camera.zoom, 2)
         if zoom not in self.scaled_cache:
@@ -67,9 +82,6 @@ class Building:
             )
         return self.scaled_cache[zoom]
 
-    # ------------------------------------------------------------------ #
-    # Render de cada mitad                                               #
-    # ------------------------------------------------------------------ #
     def _render_part(self, screen, camera, *, top: bool):
         full_scaled = self._get_scaled_image(camera)
         full_w, full_h = full_scaled.get_size()
@@ -91,50 +103,39 @@ class Building:
         )
 
         if self.solid and config.DEBUG and not top:
-            # Dibujar hitbox visual solo en la parte baja
             scaled_rect = pygame.Rect(
                 camera.apply(self.rect.topleft),
                 camera.scale(self.rect.size)
             )
             pygame.draw.rect(screen, (255, 255, 255), scaled_rect, 1)
 
-    # ------------------------------------------------------------------ #
-    # Interfaz pública para el renderer                                  #
-    # ------------------------------------------------------------------ #
     class _BuildingPart:
         """Wrapper ligero que representa una de las mitades."""
         __slots__ = ("_parent", "_top")
+
         def __init__(self, parent: "Building", top: bool):
             self._parent = parent
             self._top = top
-            # Se asignará la Z en el loop de render
 
-        # Propiedades que el renderer usa -------------------------------
         @property
         def x(self): return self._parent.x
         @property
         def y(self): return self._parent.y
         @property
-        def z(self):  # para lectura rápida
+        def z(self):
             return self._parent.z_top if self._top else self._parent.z_bottom
         @property
         def sprite_size(self):
             return self._parent.image.get_size()
-
-        # Método que llama el renderer
         def render(self, screen, camera):
             self._parent._render_part(screen, camera, top=self._top)
 
     def get_parts(self):
-        """Devuelve [parte_inferior, parte_superior] (orden importante)."""
         return [
             Building._BuildingPart(self, top=False),
             Building._BuildingPart(self, top=True)
         ]
 
-    # ------------------------------------------------------------------ #
-    # Métodos existentes (resize / reset) permanecen sin cambios         #
-    # ------------------------------------------------------------------ #
     def resize(self, new_width, new_height):
         self.image = pygame.transform.scale(load_image(self.image_path), (new_width, new_height))
         self.rect = pygame.Rect(self.x, self.y, new_width, new_height)
