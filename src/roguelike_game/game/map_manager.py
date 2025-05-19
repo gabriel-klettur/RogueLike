@@ -1,8 +1,10 @@
 # Path: src/roguelike_game/game/map_manager.py
 from roguelike_engine.map.controller.map_controller import build_map
 from roguelike_engine.map.utils import calculate_dungeon_offset
-
+from roguelike_engine.map.utils import get_zone_for_tile
 from roguelike_engine.map.view.chunked_map_view import ChunkedMapView
+
+from roguelike_engine.config.config_tiles import TILE_SIZE
 
 class MapManager:
     def __init__(self, map_name: str | None):
@@ -24,6 +26,21 @@ class MapManager:
         self.dungeon_offset = calculate_dungeon_offset((lob_x, lob_y))
         # Todas las tiles en lista plana
         self.tiles_in_region = self.all_tiles
+
+        #!-------------------------------------------------------------------------------------        
+        # 1) Para cada tile, calcular su zona
+        for row in self.tiles:
+            for tile in row:
+                tx = tile.x // TILE_SIZE
+                ty = tile.y // TILE_SIZE
+                tile.zone = get_zone_for_tile(tx, ty)
+
+        # 2) Construir un dict zonas → lista de tiles (opcional, para acelerar el view)
+        self.tiles_by_zone: dict[str, list] = {}
+        for row in self.tiles:
+            for tile in row:
+                self.tiles_by_zone.setdefault(tile.zone, []).append(tile)
+        #!-------------------------------------------------------------------------------------                
 
         # Vista optimizada de chunked map
         self.view = ChunkedMapView()

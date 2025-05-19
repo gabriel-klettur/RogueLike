@@ -11,6 +11,8 @@ from roguelike_game.systems.z_layer.render import render_z_ordered
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_engine.utils.debug_overlay import DebugOverlay
 
+from roguelike_engine.map.view.zone_view import ZoneView
+
 
 class RendererManager:
     """
@@ -43,6 +45,7 @@ class RendererManager:
         self.tiles_editor = tiles_editor
         self._dirty_rects = []        
         self.debug_overlay = DebugOverlay(perf_log=perf_log)
+        self.zone_view = ZoneView()
         self.minimap = minimap
 
 
@@ -64,17 +67,22 @@ class RendererManager:
             self._dirty_rects = []
         _init_and_cleaning()
 
-        # 1) Tiles
-        @benchmark(perf_log, "--3.1. map/tiles")
-        def _bench_tiles():
+        # 1) Map
+        @benchmark(perf_log, "--3.1. map")
+        def _bench_map():
             self._render_map(camera, screen, map)
-        _bench_tiles()
+        _bench_map()
 
         # 2) Entidades orden Z
         @benchmark(perf_log, "--3.2. z_entities")
         def _bench_z_entities():
             self._render_z_entities(state, camera, screen, entities)
         _bench_z_entities()
+
+        @benchmark(perf_log, "--3.1b. zones")
+        def _bench_zones():
+            self.zone_view.render(screen, camera, map.tiles_by_zone)
+        _bench_zones()
 
         # 3) Efectos
         @benchmark(perf_log, "--3.3. effects")
