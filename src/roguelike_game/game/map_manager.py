@@ -8,43 +8,36 @@ from roguelike_engine.config.config_tiles import TILE_SIZE
 
 class MapManager:
     def __init__(self, map_name: str | None):
-        # Construir mapa usando MapService
+        # 1) Construir datos con MapService
         self.result = build_map(map_name)
 
-        # Propiedades básicas
+        # 2) Propiedades básicas
         self.name = self.result.name
         self.matrix = self.result.matrix
         self.overlay = self.result.overlay
         self.tiles = self.result.tiles
-        # Offset del lobby, extraído de metadata
+
+        # 3) Offset y rooms
         self.lobby_offset = self.result.metadata.get("lobby_offset", (0, 0))
-        # Lista de habitaciones de la dungeon
         self.rooms = self.result.metadata.get("rooms", [])
 
-        # Calcular offset de la dungeon en tiles
+        # 4) Offset de la dungeon (en tiles)
         lob_x, lob_y = self.lobby_offset
         self.dungeon_offset = calculate_dungeon_offset((lob_x, lob_y))
-        # Todas las tiles en lista plana
-        self.tiles_in_region = self.all_tiles
 
-        #!-------------------------------------------------------------------------------------        
-        # 1) Para cada tile, calcular su zona
+        # 5) Flat list y vista chunked (se usa si necesitas seguir con chunked)
+        self.tiles_in_region = self.all_tiles
+        self.view = ChunkedMapView()
+
+        # 6) Etiquetado de zona por tile
+        self.tiles_by_zone: dict[str, list] = {}
         for row in self.tiles:
             for tile in row:
                 tx = tile.x // TILE_SIZE
                 ty = tile.y // TILE_SIZE
-                tile.zone = get_zone_for_tile(tx, ty)
-
-        # 2) Construir un dict zonas → lista de tiles (opcional, para acelerar el view)
-        self.tiles_by_zone: dict[str, list] = {}
-        for row in self.tiles:
-            for tile in row:
-                self.tiles_by_zone.setdefault(tile.zone, []).append(tile)
-        #!-------------------------------------------------------------------------------------                
-
-        # Vista optimizada de chunked map
-        self.view = ChunkedMapView()
-
+                zone = get_zone_for_tile(tx, ty)
+                tile.zone = zone
+                self.tiles_by_zone.setdefault(zone, []).append(tile)
     @property
     def all_tiles(self):
         """

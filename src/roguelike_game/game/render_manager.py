@@ -79,11 +79,6 @@ class RendererManager:
             self._render_z_entities(state, camera, screen, entities)
         _bench_z_entities()
 
-        @benchmark(perf_log, "--3.1b. zones")
-        def _bench_zones():
-            self.zone_view.render(screen, camera, map.tiles_by_zone)
-        _bench_zones()
-
         # 3) Efectos
         @benchmark(perf_log, "--3.3. effects")
         def _bench_effects():
