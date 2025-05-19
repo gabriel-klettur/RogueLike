@@ -1,14 +1,19 @@
-# Path: src/roguelike_engine/config/map_config.py
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, Tuple, Union, Literal
 import json
+from functools import cached_property
+
+from roguelike_engine.config.config import DATA_DIR
 
 @dataclass(frozen=True)
 class MapSettings:
     """
     Configuración central para generación y carga de mapas.
     """
+    # Flag para decidir tipo de carga de offsets: JSON o dinámico
+    use_zones_json: bool = False
+
     # Tamaño total del mapa (en tiles)
     global_width: int = 150
     global_height: int = 150
@@ -27,36 +32,45 @@ class MapSettings:
         Path(__file__).resolve().parent.parent.parent / 'data' / 'debug_maps'
     )
 
-    # Ruta al índice de zonas dinámico
+    # Ruta al índice de zonas dinámico (data/zones/zones.json)
     ZONES_INDEX: Path = field(default_factory=lambda:
-        Path(__file__).resolve().parent.parent.parent / 'data' / 'zones' / 'zones.json'
-    )
+        Path(DATA_DIR) / 'zones' / 'zones.json'
+    )    
 
     @property
     def zone_size(self) -> Tuple[int, int]:
         """Dimensiones de cada zona en tiles."""
         return (self.zone_width, self.zone_height)
 
-    @property
+    @cached_property
     def zone_offsets(self) -> Dict[str, Tuple[int, int]]:
         """
         Offsets de cada zona en tiles.
-        Lee data/zones/zones.json si existe, o usa valores por defecto.
+        Si use_zones_json es True, lee data/zones/zones.json;
+        de lo contrario, calcula dinámicamente lobby y dungeon.
         """
-        # Intentar cargar índice de zonas dinámico
-        try:
-            if self.ZONES_INDEX.is_file():
-                data = json.loads(self.ZONES_INDEX.read_text(encoding='utf-8'))
-                return {zone: tuple(offset) for zone, offset in data.items()}
-        except Exception:
-            # En caso de error de lectura/parsing, caer a defaults
-            pass
+        # Si no usamos JSON, fallback inmediato
+        if not self.use_zones_json:
+            return self._dynamic_offsets()
 
-        # Fallback: zonas por defecto (lobby y dungeon)
+        # Intentar cargar offsets desde JSON
+        try:
+            content = self.ZONES_INDEX.read_text(encoding='utf-8')
+            data = json.loads(content)
+            # Validar formato: cada offset es una secuencia de dos ints
+            return {zone: (int(offset[0]), int(offset[1])) for zone, offset in data.items()}
+        except Exception:
+            # En caso de fallo, usar dinámico
+            return self._dynamic_offsets()
+
+    def _dynamic_offsets(self) -> Dict[str, Tuple[int, int]]:
+        """
+        Calcula offsets por defecto: lobby centrado y dungeon adyacente.
+        """
         lobby_off = self.lobby_offset
         dungeon_off = self.calculate_dungeon_offset(lobby_off)
         return {
-            'lobby':  lobby_off,
+            'lobby': lobby_off,
             'dungeon': dungeon_off,
         }
 
@@ -89,7 +103,7 @@ class MapSettings:
     ) -> Tuple[int, int]:
         """
         Offset (x, y) para colocar la mazmorra adyacente a la zona "lobby"
-        según dungeon_connect_side: 'bottom', 'top', 'left', 'right'.
+        según dungeon_connect_side.
         """
         off_x, off_y = lobby_off
         side = self.dungeon_connect_side
@@ -99,7 +113,6 @@ class MapSettings:
             return off_x, off_y - self.zone_height
         if side == 'left':
             return off_x - self.zone_width, off_y
-        # 'right'
         return off_x + self.zone_width, off_y
 
 # Instancia global para uso en toda la aplicación

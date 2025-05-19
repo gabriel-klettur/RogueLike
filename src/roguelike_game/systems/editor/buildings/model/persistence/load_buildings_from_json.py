@@ -30,7 +30,7 @@ def load_buildings_from_json(
 
     for entry in data:
         try:
-            print(f"📥 Entrada cruda desde JSON: {entry}")
+            #print(f"📥 Entrada cruda desde JSON: {entry}")
 
             b = Building(
                 rel_x=entry.get("rel_x", 0),

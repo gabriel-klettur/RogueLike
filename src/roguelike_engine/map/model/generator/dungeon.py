@@ -47,7 +47,7 @@ class DungeonGenerator(MapGenerator):
             new_room = (x, y, x + w, y + h)
 
             if any(intersect(r, new_room) for r in rooms):
-                print(f"  ▸ Intento {attempts}: habitación colisiona, descartada.")
+                #print(f"  ▸ Intento {attempts}: habitación colisiona, descartada.")
                 continue
 
             if avoid_zone and not (
@@ -56,7 +56,7 @@ class DungeonGenerator(MapGenerator):
                 new_room[3] < avoid_zone[1] or
                 new_room[1] > avoid_zone[3]
             ):
-                print(f"  ▸ Intento {attempts}: dentro de zona evitada, descartada.")
+                #print(f"  ▸ Intento {attempts}: dentro de zona evitada, descartada.")
                 continue
 
             # Pintar habitación
@@ -64,7 +64,7 @@ class DungeonGenerator(MapGenerator):
                 for xx in range(x, x + w):
                     map_[yy][xx] = "O"
 
-            print(f"  ✅ Intento {attempts}: habitación creada en {(x,y)} tamaño {(w,h)} (Total habitaciones: {len(rooms)+1}).")
+            #print(f"  ✅ Intento {attempts}: habitación creada en {(x,y)} tamaño {(w,h)} (Total habitaciones: {len(rooms)+1}).")
 
             # Conectar con la anterior si existe
             if rooms:
@@ -79,7 +79,7 @@ class DungeonGenerator(MapGenerator):
 
             rooms.append(new_room)
 
-        print(f"[Dungeon] Generación finalizada: {len(rooms)} habitaciones creadas en {attempts} intentos.\n")
+        print(f"[Dungeon] Generación finalizada: {len(rooms)} habitaciones creadas en {attempts} intentos.")
 
         metadata = {"rooms": rooms}
         return map_, metadata
