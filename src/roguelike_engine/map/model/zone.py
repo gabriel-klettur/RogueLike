@@ -47,21 +47,6 @@ class Zone:
         gy = self.offset_y + y
         return gx, gy
 
-    def load_tiles_and_overlay(
-        self,
-        loader: MapModel,
-        map_name: str,
-    ) -> None:
-        """
-        Carga la representación Tile y overlay usando MapLoader existente.
-        """
-        # loader.load espera rows y map_name; devuelve (matrix, tiles, overlay)
-        _, tiles, overlay = loader.load([
-            ''.join(row) for row in self.matrix
-        ], f"{map_name}_{self.name}")
-        self.tiles = tiles
-        self.overlay = overlay
-
     def __repr__(self):
         return (
             f"<Zone '{self.name}' size={self.width}x{self.height} "
