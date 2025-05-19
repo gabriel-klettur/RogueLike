@@ -1,7 +1,7 @@
 # Path: src/roguelike_engine/map/model/loader/interfaces.py
 from abc import ABC, abstractmethod
 from typing import List, Optional, Tuple
-from roguelike_engine.tile.model import Tile
+from roguelike_engine.tile.model.tile import Tile
 
 class MapLoader(ABC):
     @abstractmethod

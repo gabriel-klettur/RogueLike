@@ -2,7 +2,8 @@
 # Path: src/roguelike_game/game/map_manager.py
 from roguelike_engine.map.controller.map_controller import build_map
 from roguelike_engine.map.controller.map_service import calculate_dungeon_offset
-from roguelike_engine.map.view.map_view import MapView
+
+from roguelike_engine.map.view.chunked_map_view import ChunkedMapView
 
 class MapManager:
     def __init__(self, map_name: str | None):
@@ -19,7 +20,7 @@ class MapManager:
         self.dungeon_offset     = calculate_dungeon_offset((lob_x, lob_y))
         self.tiles_in_region    = self.all_tiles
 
-        self.view               = MapView()            # Vista para renderizar el mapa 
+        self.view               = ChunkedMapView()
 
     @property
     def all_tiles(self):
