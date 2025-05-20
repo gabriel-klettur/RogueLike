@@ -52,7 +52,7 @@ class Game:
             map_name: str = None,
             loading_bg: str | None = None
     ):        
-        # sistemas states se inicializan en etapas        
+                
         # loading stages
         stages = [
             ("Inicializando estados de sistemas",  lambda: self._init_systems_states(screen, perf_log, loading_bg)),

@@ -25,7 +25,8 @@ def main():
     game = Game(
         screen,
         perf_log        = performance_log,        
-        map_name        = None
+        map_name        = None,
+        loading_bg      = "ui/background_ini.png"
     )
     if not hasattr(game, 'state'):
         raise RuntimeError("Game state not initialized properly!")
