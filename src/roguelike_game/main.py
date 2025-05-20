@@ -1,4 +1,3 @@
-
 # Path: src/roguelike_game/main.py
 import pygame
 from collections import defaultdict
@@ -15,7 +14,7 @@ def main():
     pygame.init()
     screen = pygame.display.set_mode(
         (SCREEN_WIDTH, SCREEN_HEIGHT),
-        pygame.HWSURFACE | pygame.DOUBLEBUF
+        pygame.HWSURFACE | pygame.DOUBLEBUF | pygame.RESIZABLE
     )
     pygame.display.set_caption("Roguelike")
 

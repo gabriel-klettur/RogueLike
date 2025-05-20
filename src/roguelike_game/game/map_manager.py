@@ -40,9 +40,49 @@ class MapManager:
                 zone = get_zone_for_tile(tx, ty)
                 tile.zone = zone
                 self.tiles_by_zone.setdefault(zone, []).append(tile)
+
+        
+        # Estado local del nivel (se usa para persistencia)
+        self._local_state: dict = {
+            "player_pos": None,    # Tuple[int,int] de posición de jugador en tiles
+            "npc_states": {},      # dict[npc_id, estado serializado]
+            # Aquí puedes añadir más claves: cofres, puertas, triggers…
+        }    
+        
     @property
     def all_tiles(self):
         """
         Devuelve todas las tiles del mapa en una lista plana.
         """
         return [tile for row in self.tiles for tile in row]
+
+    # ─── Funciones de serialización / restauración ─────────────────────
+
+    def spawn_player(self, tile_pos: tuple[int, int]):
+        """
+        Registra la nueva posición de jugador en coordenadas de tile.
+        La posición real debe ajustarse en EntitiesManager o desde quien controle al jugador.
+        """
+        self._local_state["player_pos"] = tile_pos
+
+    def restore_npc_states(self, npc_memory: dict):
+        """
+        Actualiza _local_state['npc_states'] con el diccionario global `npc_memory`.
+        La aplicación real de estado a cada NPC se haría en EntitiesManager.
+        """
+        self._local_state["npc_states"].update(npc_memory)
+
+    def serialize_state(self) -> dict:
+        """
+        Extrae el estado serializable de este nivel: posición de jugador y NPCs.
+        """
+        # Opcional: antes de serializar, podrías actualizar player_pos
+        # desde las coordenadas reales de EntitiesManager.
+        return self._local_state.copy()
+
+    def deserialize_state(self, data: dict):
+        """
+        Aplica un estado restaurado al nivel: actualiza player_pos y npc_states.
+        """
+        self._local_state.update(data)
+        # Opcional: disparar spawn_player / restore_npc_states para efectos inmediatos.

@@ -1,5 +1,6 @@
 # Path: src/roguelike_game/game/game.py
 import pygame
+import time
 
 #!---------------------- Paquetes locales: configuración --------------------------------
 import roguelike_engine.config.config as config
@@ -38,6 +39,11 @@ from roguelike_engine.utils.benchmark import benchmark
 #! -------------------------- Paquetes locales: loading screen ---------------------------------
 from roguelike_engine.utils.loading_screen import LoadingScreen
 
+#! -------------------------- Paquetes locales: world ---------------------------------
+from roguelike_engine.world.world import WorldManager
+from roguelike_engine.world.world_config import WORLD_CONFIG
+from roguelike_game.game.player_data import PlayerData
+
 class Game:
     def __init__(
             self, 
@@ -53,22 +59,27 @@ class Game:
         self.camera = Camera(config.SCREEN_WIDTH, config.SCREEN_HEIGHT)
         self.z_state = ZState()
         self.perf_log = perf_log
+    
+        # — Mundo y persistencia global —
+        # Usamos la clase real PlayerData para guardar posiciones entre niveles
+        self.world = WorldManager(PlayerData(), WORLD_CONFIG)
+        self._last_autosave_time = time.time()
 
         # initialize loading screen
         self.loader = LoadingScreen(self.screen, loading_bg)
 
         # loading stages
         stages = [
-            ("Inicializando estado", self._init_state),
-            ("Cargando mapa", lambda: self._init_map(map_name)),
-            ("Cargando entidades", lambda: self._init_entities()),
-            ("Cargando Z-layer", lambda: self._init_z_layer(self.entities)),
-            ("Cargando editor de edificios", lambda: self._init_buildings_editor()),
-            ("Cargando editor de tiles", lambda: self._init_tile_editor()),
-            ("Cargando minimapa", lambda: self._init_minimap()),
-            ("Inicializando renderizador", lambda: self._init_renderer()),
-            ("Inicializando menú", lambda: self._init_menu()),
-            ("Inicializando sistemas", lambda: self._init_systems(perf_log)),
+            ("Inicializando estado",            lambda: self._init_state()),
+            ("Cargando mapa",                   lambda: self._init_map(map_name)),
+            ("Cargando entidades",              lambda: self._init_entities()),
+            ("Cargando Z-layer",                lambda: self._init_z_layer(self.entities)),
+            ("Cargando editor de edificios",    lambda: self._init_buildings_editor()),
+            ("Cargando editor de tiles",        lambda: self._init_tile_editor()),
+            ("Cargando minimapa",               lambda: self._init_minimap()),
+            ("Inicializando renderizador",      lambda: self._init_renderer()),
+            ("Inicializando menú",              lambda: self._init_menu()),
+            ("Inicializando sistemas",          lambda: self._init_systems(perf_log)),
         ]
         total = len(stages)
         for i, (msg, func) in enumerate(stages):
@@ -211,7 +222,13 @@ class Game:
             fps = self.clock.get_fps()
             pygame.display.set_caption(f"Roguelike - FPS: {fps:0.1f}")
 
-            # 5) Limitar velocidad de fotogramas
+            # 5) Autosave periódico según configuración de WorldConfig            
+            if self.world.config.autosave_enabled and time.time() - self._last_autosave_time >= self.world.config.autosave_interval:
+                # Guarda en el path por defecto (WORLD_CONFIG.save_path)
+                self.world.save_world()
+                self._last_autosave_time = time.time()
+
+            # 6) Limitar velocidad de fotogramas
             self.clock.tick(config.FPS)
 
 if __name__ == "__main__":
