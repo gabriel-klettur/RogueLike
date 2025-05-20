@@ -15,8 +15,8 @@ class MapSettings:
     use_zones_json: bool = False         #! Mas adelante deberiamos trabajar sobre el offset no dinamico.
 
     # Tamaño total del mapa (en tiles)
-    global_width: int = 550
-    global_height: int = 550
+    global_width: int = 150
+    global_height: int = 150
 
     # Tamaño de cada zona (en tiles)
     zone_width: int = 50

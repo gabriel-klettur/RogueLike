@@ -61,68 +61,68 @@ class RendererManager:
         systems=None,        
     ):
 
-        @benchmark(perf_log, "--3.0. init_and_cleaning")
+        @benchmark(perf_log, "3.0. init_and_cleaning")
         def _init_and_cleaning():
             screen.fill((0, 0, 0))
             self._dirty_rects = []
         _init_and_cleaning()
 
         # 1) Map
-        @benchmark(perf_log, "--3.1. map")
+        @benchmark(perf_log, "3.1. map")
         def _bench_map():
             self._render_map(camera, screen, map)
         _bench_map()
 
         # 2) Entidades orden Z
-        @benchmark(perf_log, "--3.2. z_entities")
+        @benchmark(perf_log, "3.2. z_entities")
         def _bench_z_entities():
             self._render_z_entities(state, camera, screen, entities)
         _bench_z_entities()
 
         # 3) Efectos
-        @benchmark(perf_log, "--3.3. effects")
+        @benchmark(perf_log, "3.3. effects")
         def _bench_effects():
             self._render_effects(camera, screen, systems.effects)
         _bench_effects()
 
         # 4) HUD
-        @benchmark(perf_log, "--3.4. hud")
+        @benchmark(perf_log, "3.4. hud")
         def _bench_hud():
             self.entities.player.render_hud(screen, camera)
         _bench_hud()
 
         # 4.b) Capa del Tile Editor
-        @benchmark(perf_log, "--3.4b. tile_editor")
+        @benchmark(perf_log, "3.4b. tile_editor")
         def _bench_tile_editor():
             self._render_tile_editor_layer(state, screen, camera, map)
         _bench_tile_editor()
 
         # 5) Crosshair
-        @benchmark(perf_log, "--3.5. crosshair")
+        @benchmark(perf_log, "3.5. crosshair")
         def _bench_crosshair():
             draw_mouse_crosshair(screen, camera)
         _bench_crosshair()
 
         # 6) Menú
-        @benchmark(perf_log, "--3.6. menu")
+        @benchmark(perf_log, "3.6. menu")
         def _bench_menu():
             self._render_menu(screen, menu)
         _bench_menu()
 
         # 7) Minimap
-        @benchmark(perf_log, "--3.7. minimap")
+        @benchmark(perf_log, "3.7. minimap")
         def _bench_minimap():
             self._render_minimap(screen)
         _bench_minimap()
 
         # 8) Otros sistemas
-        @benchmark(perf_log, "--3.8. systems")
+        @benchmark(perf_log, "3.8. systems")
         def _bench_systems():
             systems.render(screen, camera)
         _bench_systems()
 
         # 9) Editores
-        @benchmark(perf_log, "--3.9. editors")
+        @benchmark(perf_log, "3.9. editors")
         def _bench_editors():
             self._render_editors()
         _bench_editors()
@@ -138,7 +138,7 @@ class RendererManager:
                 show_borders=True
             )
 
-        @benchmark(perf_log, "--3.10. update dirth rects")        
+        @benchmark(perf_log, "3.10. update dirth rects")        
         def _update_dirty_rects():
             # Actualizar solo regiones sucias, o todo si hay demasiadas        
             if len(self._dirty_rects) > config.MAX_DIRTY:

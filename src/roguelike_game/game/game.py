@@ -1,4 +1,3 @@
-
 # Path: src/roguelike_game/game/game.py
 import pygame
 
@@ -137,7 +136,7 @@ class Game:
         """
         self.minimap = Minimap()
 
-    @benchmark(lambda self: self.perf_log, "1.handle_events")
+    @benchmark(lambda self: self.perf_log, "1.TOTAL: handle_events")
     def handle_events(self):        
         handle_events(
             self.state,
@@ -149,7 +148,8 @@ class Game:
             self.systems.effects,
             self.systems.explosions,
             self.tiles_editor,
-            self.buildings_editor
+            self.buildings_editor,
+            self.renderer.debug_overlay
         )
 
     @benchmark(lambda self: self.perf_log, "2.TOTAL UPDATE")
