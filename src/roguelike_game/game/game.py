@@ -35,12 +35,16 @@ from roguelike_game.systems.z_layer.state import ZState
 #! -------------------------- Paquetes locales: utilidades --------------------------------------
 from roguelike_engine.utils.benchmark import benchmark
 
+#! -------------------------- Paquetes locales: loading screen ---------------------------------
+from roguelike_engine.utils.loading_screen import LoadingScreen
+
 class Game:
     def __init__(
             self, 
             screen, 
             perf_log=None,             
-            map_name: str = None
+            map_name: str = None,
+            loading_bg: str | None = None
     ):        
         #! ------------- infraestructura -----------------
         self.screen = screen
@@ -50,20 +54,27 @@ class Game:
         self.z_state = ZState()
         self.perf_log = perf_log
 
-        #! ---------------- core state -------------------
-        self._init_state()
-        
-        #! ------------------ systems --------------------
-        self._init_map(map_name)
-        self._init_entities() 
-        self._init_z_layer(self.entities)
-        self._init_buildings_editor()
-        self._init_tile_editor()
-        self._init_minimap()
-        self._init_renderer()
-        self._init_menu()
-        self._init_systems(perf_log)        
-        
+        # initialize loading screen
+        self.loader = LoadingScreen(self.screen, loading_bg)
+
+        # loading stages
+        stages = [
+            ("Inicializando estado", self._init_state),
+            ("Cargando mapa", lambda: self._init_map(map_name)),
+            ("Cargando entidades", lambda: self._init_entities()),
+            ("Cargando Z-layer", lambda: self._init_z_layer(self.entities)),
+            ("Cargando editor de edificios", lambda: self._init_buildings_editor()),
+            ("Cargando editor de tiles", lambda: self._init_tile_editor()),
+            ("Cargando minimapa", lambda: self._init_minimap()),
+            ("Inicializando renderizador", lambda: self._init_renderer()),
+            ("Inicializando menú", lambda: self._init_menu()),
+            ("Inicializando sistemas", lambda: self._init_systems(perf_log)),
+        ]
+        total = len(stages)
+        for i, (msg, func) in enumerate(stages):
+            self.loader.draw((i+1)/total, msg)
+            func()
+                   
 
     def _init_state(self):
         """
