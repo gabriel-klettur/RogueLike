@@ -42,7 +42,7 @@ from roguelike_engine.utils.loading_screen import LoadingScreen
 #! -------------------------- Paquetes locales: world ---------------------------------
 from roguelike_engine.world.world import WorldManager
 from roguelike_engine.world.world_config import WORLD_CONFIG
-from roguelike_game.game.player_data import PlayerData
+from roguelike_game.entities.player.model.player_data import PlayerData
 
 class Game:
     def __init__(
@@ -52,40 +52,44 @@ class Game:
             map_name: str = None,
             loading_bg: str | None = None
     ):        
-        #! ------------- infraestructura -----------------
+        # sistemas states se inicializan en etapas        
+        # loading stages
+        stages = [
+            ("Inicializando estados de sistemas",  lambda: self._init_systems_states(screen, perf_log, loading_bg)),
+            ("Inicializando estado Principal",     lambda: self._init_state()),
+            ("Cargando mapa",                      lambda: self._init_map(map_name)),
+            ("Cargando entidades",                 lambda: self._init_entities()),
+            ("Cargando Z-layer",                   lambda: self._init_z_layer(self.entities)),
+            ("Cargando editor de edificios",       lambda: self._init_buildings_editor()),
+            ("Cargando editor de tiles",           lambda: self._init_tile_editor()),
+            ("Cargando minimapa",                  lambda: self._init_minimap()),
+            ("Inicializando renderizador",         lambda: self._init_renderer()),
+            ("Inicializando menú",                 lambda: self._init_menu()),            
+            ("Inicializando sistemas",             lambda: self._init_systems(perf_log)),
+        ]
+        total = len(stages)
+        for i, (msg, func) in enumerate(stages):
+            func()
+            self.loader.draw((i+1)/total, msg)
+                   
+    def _init_systems_states(self, screen, perf_log, loading_bg):
+        """
+        Inicializa el estado de los sistemas
+        """
+        # — Sistema principal —
         self.screen = screen
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont(config.FONT_NAME, config.FONT_SIZE)
         self.camera = Camera(config.SCREEN_WIDTH, config.SCREEN_HEIGHT)
         self.z_state = ZState()
         self.perf_log = perf_log
-    
+
         # — Mundo y persistencia global —
-        # Usamos la clase real PlayerData para guardar posiciones entre niveles
         self.world = WorldManager(PlayerData(), WORLD_CONFIG)
         self._last_autosave_time = time.time()
 
         # initialize loading screen
         self.loader = LoadingScreen(self.screen, loading_bg)
-
-        # loading stages
-        stages = [
-            ("Inicializando estado",            lambda: self._init_state()),
-            ("Cargando mapa",                   lambda: self._init_map(map_name)),
-            ("Cargando entidades",              lambda: self._init_entities()),
-            ("Cargando Z-layer",                lambda: self._init_z_layer(self.entities)),
-            ("Cargando editor de edificios",    lambda: self._init_buildings_editor()),
-            ("Cargando editor de tiles",        lambda: self._init_tile_editor()),
-            ("Cargando minimapa",               lambda: self._init_minimap()),
-            ("Inicializando renderizador",      lambda: self._init_renderer()),
-            ("Inicializando menú",              lambda: self._init_menu()),
-            ("Inicializando sistemas",          lambda: self._init_systems(perf_log)),
-        ]
-        total = len(stages)
-        for i, (msg, func) in enumerate(stages):
-            self.loader.draw((i+1)/total, msg)
-            func()
-                   
 
     def _init_state(self):
         """
