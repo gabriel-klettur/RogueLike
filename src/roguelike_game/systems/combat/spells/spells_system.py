@@ -1,4 +1,3 @@
-
 # Path: src/roguelike_game/systems/combat/spells/spells_system.py
 import pygame
 from pygame.math import Vector2
@@ -180,7 +179,7 @@ class SpellsSystem:
 
     def spawn_fireball(self, angle, map, entities, explosions):
         px, py   = self._player_center(entities.player)
-        tiles    = [t for t in map.tiles_in_region if t.solid]
+        tiles    = map.solid_tiles
         enemies  = entities.enemies
         model   = FireballModel(px, py, angle)
         ctrl    = FireballController(model, tiles, enemies, explosions)
