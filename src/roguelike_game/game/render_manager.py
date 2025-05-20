@@ -9,7 +9,7 @@ from roguelike_game.systems.z_layer.render import render_z_ordered
 
 # Importar el decorador centralizado de benchmark
 from roguelike_engine.utils.benchmark import benchmark
-from roguelike_engine.utils.debug_overlay import DebugOverlay
+from roguelike_engine.utils.debug import DebugOverlay
 
 from roguelike_engine.map.view.zone_view import ZoneView
 
