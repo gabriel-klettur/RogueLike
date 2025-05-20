@@ -4,7 +4,7 @@ import random
 from typing import Optional, List, Tuple, Dict
 
 from roguelike_engine.config.map_config import global_map_settings
-from roguelike_engine.map.model.zone import Zone
+from roguelike_engine.zone.model.zone_model import Zone
 from roguelike_engine.map.model.generator.factory import get_generator
 from roguelike_engine.map.model.loader.factory import get_map_loader
 from roguelike_engine.map.model.map_model import Map
