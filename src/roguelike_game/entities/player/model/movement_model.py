@@ -112,13 +112,17 @@ class PlayerMovement:
     def update_dash(self, collision_tiles, obstacles):
         if not self.is_dashing:
             return
-        delta = pygame.time.get_ticks() / 1000.0
-        dist = self.dash_speed * delta / self.speed
+        # Use the game's clock to get the time elapsed since the last frame
+        # rather than the time since pygame was initialised. Using
+        # ``pygame.time.get_ticks`` caused the dash distance to grow
+        # continuously over time.
+        delta_time = self.player.state.clock.get_time() / 1000.0
+        dist = self.dash_speed * delta_time / self.speed
         dx = self.dash_direction.x * dist
         dy = self.dash_direction.y * dist
         # Reutiliza move() con wall sliding
         self.move(dx, dy, collision_tiles, obstacles)
-        self.dash_time_left -= delta
+        self.dash_time_left -= delta_time
         if self.dash_time_left <= 0:
             self.is_dashing = False
 
