@@ -12,11 +12,11 @@ class MapSettings:
     Configuración central para generación y carga de mapas.
     """
     # Flag para decidir tipo de carga de offsets: JSON o dinámico
-    use_zones_json: bool = False
+    use_zones_json: bool = False         #! Mas adelante deberiamos trabajar sobre el offset no dinamico.
 
     # Tamaño total del mapa (en tiles)
-    global_width: int = 150
-    global_height: int = 150
+    global_width: int = 550
+    global_height: int = 550
 
     # Tamaño de cada zona (en tiles)
     zone_width: int = 50

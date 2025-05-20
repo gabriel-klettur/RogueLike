@@ -21,7 +21,7 @@ class DebugOverlay:
         self,
         perf_log: dict[str, list[float]],
         font_name: str = "Consolas",
-        font_size: int = 18,
+        font_size: int = 12,
         bg_color: tuple[int, int, int, int] = (0, 0, 0, 180),
         text_color: tuple[int, int, int] = (255, 255, 255),
         value_color: tuple[int, int, int] = (200, 255, 200),

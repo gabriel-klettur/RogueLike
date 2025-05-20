@@ -54,7 +54,7 @@ def update_game(
     # 3.3) Todas las entidades
     @benchmark(perf_log, "2.3.entities.update")
     def _update_entities():
-        entities.update(state, map, systems)
+        entities.update(state, map, systems, perf_log)
     _update_entities()
 
 
