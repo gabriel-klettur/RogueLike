@@ -108,10 +108,9 @@ class EntitiesManager:
                     b.update(state, game_map)
         _update_buildings()
 
-        # 4) Filtrado de enemigos por distancia y tipo
-        @benchmark(perf_log, "2.4.filter_enemies")
-        def _filter_enemies():
-            normals, elites = [], []
+        # 4) Enemigos update: filtrar por distancia y actualizar en un solo bucle
+        @benchmark(perf_log, "2.4.enemies_update")
+        def _update_enemies():
             px, py = self.player.x, self.player.y
             max_d2 = ENEMY_MAX_UPDATE_DISTANCE ** 2
             for e in self.enemies:
@@ -120,22 +119,7 @@ class EntitiesManager:
                     continue
                 ctrl = getattr(e, "controller", None)
                 if isinstance(ctrl, EliteController):
-                    elites.append(ctrl)
+                    ctrl.update(state, game_map, self, systems.effects, systems.explosions)
                 else:
-                    normals.append(e)
-            return normals, elites
-        normals, elites = _filter_enemies()
-
-        # 5) Enemigos normales
-        @benchmark(perf_log, "2.5.normals_update")
-        def _update_normals():
-            for e in normals:
-                e.update(state, game_map, self)
-        _update_normals()
-
-        # 6) Enemigos élite
-        @benchmark(perf_log, "2.6.elites_update")
-        def _update_elites():
-            for ctrl in elites:
-                ctrl.update(state, game_map, self, systems.effects, systems.explosions)
-        _update_elites()
+                    e.update(state, game_map, self)
+        _update_enemies()
