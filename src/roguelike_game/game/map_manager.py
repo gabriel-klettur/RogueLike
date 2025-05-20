@@ -16,6 +16,8 @@ class MapManager:
         self.matrix = self.result.matrix
         self.overlay = self.result.overlay
         self.tiles = self.result.tiles
+        # Precomputar tiles sólidos para colisiones
+        self.solid_tiles = [tile for row in self.tiles for tile in row if getattr(tile, "solid", False)]
 
         # 3) Offset y rooms
         self.lobby_offset = self.result.metadata.get("lobby_offset", (0, 0))

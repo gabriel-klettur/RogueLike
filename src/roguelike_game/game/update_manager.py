@@ -61,8 +61,7 @@ def update_game(
     # 3.4) Movimiento especial del jugador
     @benchmark(perf_log, "2.4.player.update_dash")
     def _update_dash():
-        solid_tiles = [t for t in map.tiles_in_region if t.solid]
-        entities.player.movement.update_dash(solid_tiles, entities.obstacles)
+        entities.player.movement.update_dash(map.solid_tiles, entities.obstacles)
     _update_dash()
 
     # 3.5) Minimap update
