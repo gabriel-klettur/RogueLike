@@ -136,7 +136,7 @@ class Game:
         """
         self.minimap = Minimap()
 
-    @benchmark(lambda self: self.perf_log, "1.TOTAL: handle_events")
+    @benchmark(lambda self: self.perf_log, "1.TOTAL: HANDLE EVENTS")
     def handle_events(self):        
         handle_events(
             self.state,

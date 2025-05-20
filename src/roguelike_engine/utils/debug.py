@@ -4,6 +4,7 @@ from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.map.utils import calculate_dungeon_offset
 from roguelike_engine.utils.benchmark import benchmark
+import roguelike_engine.config.config as config
 
 
 class DebugOverlay:
@@ -126,7 +127,7 @@ class DebugOverlay:
         self._panel_surf = surf
         self._panel_rect = surf.get_rect(topleft=position)
 
-    @benchmark(lambda self: self.perf_log, "debug_overlay.render")
+    @benchmark(lambda self: self.perf_log, "3.12. debug.render")
     def render(self, screen, state=None, camera=None, map_manager=None, entities=None, extra_lines=None, position=(8, 8), show_borders=False):
         now = time.perf_counter()
         rebuild = (now - self._last_update_time) >= self._update_interval
@@ -268,5 +269,61 @@ class DebugOverlay:
 
     def _draw_global_border(self, screen, camera):
         tl = camera.apply((0, 0))
-        sz = camera.scale((global_map_settings.zone_width * TILE_SIZE, global_map_settings.zone_height * TILE_SIZE))
+        sz = camera.scale((global_map_settings.global_width * TILE_SIZE, global_map_settings.global_height * TILE_SIZE))
         pygame.draw.rect(screen, self.border_colors['global'], pygame.Rect(tl, sz), self.border_width)
+
+
+# Debug helpers
+def draw_debug_rect(screen, camera, rect, color=(255,255,255), width=1):
+    if not config.DEBUG:
+        return
+    scaled_rect = pygame.Rect(camera.apply(rect.topleft), camera.scale(rect.size))
+    pygame.draw.rect(screen, color, scaled_rect, width)
+
+def draw_debug_mask_outline(screen, camera, surface, origin, color=(255,0,0), width=1):
+    if not config.DEBUG:
+        return
+    mask = pygame.mask.from_surface(surface)
+    outline = mask.outline()
+    pts = [camera.apply((origin[0]+x, origin[1]+y)) for x,y in outline]
+    if len(pts) >= 3:
+        pygame.draw.polygon(screen, color, pts, width)
+
+def draw_zone_border(screen, camera, tiles, zone_name, colors, border_width):
+    if not config.DEBUG or not tiles:
+        return
+    xs = [t.x for t in tiles]
+    ys = [t.y for t in tiles]
+    min_x, max_x = min(xs), max(xs) + TILE_SIZE
+    min_y, max_y = min(ys), max(ys) + TILE_SIZE
+    top_left = camera.apply((min_x, min_y))
+    bottom_right = camera.apply((max_x, max_y))
+    w = bottom_right[0] - top_left[0]
+    h = bottom_right[1] - top_left[1]
+    rect = pygame.Rect(top_left, (w, h))
+    color = colors.get(zone_name, (200,200,200))
+    pygame.draw.rect(screen, color, rect, border_width)
+
+def process_debug_event(event, debug_overlay):
+    if not config.DEBUG or not debug_overlay:
+        return False
+    if event.type == pygame.MOUSEWHEEL:
+        mx, my = pygame.mouse.get_pos()
+    else:
+        mx, my = event.pos
+    if debug_overlay._panel_rect and debug_overlay._panel_rect.collidepoint((mx, my)):
+        debug_overlay.handle_event(event)
+        return True
+    return False
+
+def render_debug_overlay(debug_overlay, screen, state, camera, map_manager, entities, show_borders=False):
+    if not config.DEBUG or debug_overlay.perf_log is None:
+        return
+    debug_overlay.render(
+        screen,
+        state=state,
+        camera=camera,
+        map_manager=map_manager,
+        entities=entities,
+        show_borders=show_borders
+    )
