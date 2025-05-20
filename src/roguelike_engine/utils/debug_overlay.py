@@ -73,7 +73,11 @@ class DebugOverlay:
                     if index < len(self._line_keys):
                         key = self._line_keys[index]
                         if key:
-                            group = key[:-1].strip() if key.endswith(':') else key.split('.')[0]
+                            if key.endswith(':'):
+                                root = key[:-1].strip()
+                                group = root.split('.')[0]
+                            else:
+                                group = key.split('.')[0]
                             if group in self._collapsed_groups:
                                 self._collapsed_groups.remove(group)
                             else:
@@ -92,17 +96,28 @@ class DebugOverlay:
         self._line_keys = []
         y = 0
         for left, right in lines:
-            key_l = f"L:{left}"
-            if key_l not in self._text_cache:
-                self._text_cache[key_l] = font.render(left, True, self.text_color)
-            surf_l = self._text_cache[key_l]
+            is_header = left.strip().endswith(':')
+            # Render label
+            cache_label = f"{('HL' if is_header else 'L')}:{left}"
+            if cache_label not in self._text_cache:
+                if is_header:
+                    bold_font = pygame.font.SysFont(self.font_name, self.font_size, bold=True)
+                    self._text_cache[cache_label] = bold_font.render(left, True, (255, 255, 0))
+                else:
+                    self._text_cache[cache_label] = font.render(left, True, self.text_color)
+            surf_l = self._text_cache[cache_label]
             surf.blit(surf_l, (self.padding_x, y + self.padding_y))
             self._line_keys.append(left.strip())
+            # Render value
             if right:
-                key_r = f"R:{right}"
-                if key_r not in self._text_cache:
-                    self._text_cache[key_r] = font.render(right, True, self.value_color)
-                surf_r = self._text_cache[key_r]
+                cache_val = f"{('HV' if is_header else 'R')}:{right}"
+                if cache_val not in self._text_cache:
+                    if is_header:
+                        bold_font = pygame.font.SysFont(self.font_name, self.font_size, bold=True)
+                        self._text_cache[cache_val] = bold_font.render(right, True, (255, 255, 0))
+                    else:
+                        self._text_cache[cache_val] = font.render(right, True, self.value_color)
+                surf_r = self._text_cache[cache_val]
                 surf.blit(surf_r, (self.padding_x + label_w + 8, y + self.padding_y))
             y += line_h
 
@@ -127,9 +142,20 @@ class DebugOverlay:
                 groups.setdefault(group, []).append((key, avg_ms))
 
             for group, entries in sorted(groups.items()):
-                lines.append((f"{group}:", ""))
+                # Mostrar siempre el elemento TOTAL en el encabezado
+                total_item = next(((full_key, avg) for full_key, avg in entries if 'TOTAL' in full_key.upper()), None)
+                if total_item:
+                    total_key, total_val = total_item
+                    header_lbl = f'{total_key}:'
+                    header_val = f'{total_val:>6.2f} ms'
+                else:
+                    header_lbl, header_val = f'{group}:', ''
+                lines.append((header_lbl, header_val))
                 if group not in self._collapsed_groups:
                     for full_key, avg_ms in sorted(entries):
+                        # Omit total entry from detail list (already shown in header)
+                        if total_item and full_key == total_key:
+                            continue
                         lbl = f"  {full_key:<20}"
                         val = f"{avg_ms:>6.2f} ms"
                         lines.append((lbl, val))
