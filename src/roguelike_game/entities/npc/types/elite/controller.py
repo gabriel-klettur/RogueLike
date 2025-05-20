@@ -1,4 +1,3 @@
-
 # Path: src/roguelike_game/entities/npc/types/elite/controller.py
 from roguelike_game.entities.npc.types.monster.controller import MonsterController
 from .model import EliteModel
@@ -66,7 +65,7 @@ class EliteController(MonsterController):
                 if spells_system is not None and explosions_system is not None:
                     angle = np.degrees(np.arctan2(player.y - m.y, player.x - m.x))
                     # Usar tiles sólidos para colisión
-                    tiles = [t for t in map.tiles_in_region if t.solid]
+                    tiles = map.solid_tiles
                     # Excluir al Elite de la lista de enemigos para que no se dañe a sí mismo
                     enemies = [e for e in entities.enemies if e is not self.model]
                     from roguelike_game.systems.combat.spells.fireball.model import FireballModel
@@ -102,28 +101,28 @@ class EliteController(MonsterController):
                 dx = nearest_proj.x - m.x
                 dy = nearest_proj.y - m.y
                 perp = (-np.sign(dy), np.sign(dx))
-                self.movement.move(perp[0], perp[1], map.tiles_in_region, entities.obstacles)
+                self.movement.move(perp[0], perp[1], map.solid_tiles, entities.obstacles)
                 reward = 0.2
             else:
                 # Default dodge (como antes)
                 dx = player.x - m.x
                 dy = player.y - m.y
                 perp = (-np.sign(dy), np.sign(dx))
-                self.movement.move(perp[0], perp[1], map.tiles_in_region, entities.obstacles)
+                self.movement.move(perp[0], perp[1], map.solid_tiles, entities.obstacles)
                 reward = 0.05
         elif action == 'approach':
             dx = player.x - m.x
             dy = player.y - m.y
             norm = np.hypot(dx, dy)
             if norm > 0:
-                self.movement.move(dx / norm, dy / norm, map.tiles_in_region, entities.obstacles)
+                self.movement.move(dx / norm, dy / norm, map.solid_tiles, entities.obstacles)
             reward = 0.05
         elif action == 'retreat':
             dx = m.x - player.x
             dy = m.y - player.y
             norm = np.hypot(dx, dy)
             if norm > 0:
-                self.movement.move(dx / norm, dy / norm, map.tiles_in_region, entities.obstacles)
+                self.movement.move(dx / norm, dy / norm, map.solid_tiles, entities.obstacles)
             reward = 0.05
         # 4. Actualizar Q
         if self.last_state is not None and self.last_action is not None:

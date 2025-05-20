@@ -2,7 +2,6 @@
 import math
 from roguelike_game.entities.npc.base.controller import BaseNPCController
 from roguelike_game.entities.npc.types.monster.model import MonsterModel
-from roguelike_game.entities.npc.utils.geometry import calculate_distance
 
 class MonsterController(BaseNPCController):
     """
@@ -19,12 +18,10 @@ class MonsterController(BaseNPCController):
         if not m.alive:
             return
 
-        # Posición del jugador
+        # Posición del jugador y distancia al cuadrado
         px, py = entities.player.x, entities.player.y
-        dist = calculate_distance(m.x, m.y, px, py)
-
-        # Si está lo bastante cerca, perseguir; si no, patrullar
-        if dist <= 500:
+        dx, dy = px - m.x, py - m.y
+        if dx*dx + dy*dy <= 500*500:
             self._follow_player(px, py, state, map, entities)
         else:
             self._patrol(state, map, entities)
@@ -55,7 +52,7 @@ class MonsterController(BaseNPCController):
             return
 
         # En otro caso, movemos normalmente (respeta muros y obstáculos)
-        self.movement.move(dx, dy, map.tiles_in_region, entities.obstacles)
+        self.movement.move(dx, dy, map.solid_tiles, entities.obstacles)
 
     def _patrol(self, state, map, entities):
         """
@@ -64,7 +61,7 @@ class MonsterController(BaseNPCController):
         m = self.model
         dx, dy, length = m.path[m.current_step]
         # Mover con colisión
-        self.movement.move(dx, dy, map.tiles_in_region, entities.obstacles)
+        self.movement.move(dx, dy, map.solid_tiles, entities.obstacles)
         # Actualizar progreso del paso
         m.step_progress += m.speed
         m.direction = (dx, dy)
