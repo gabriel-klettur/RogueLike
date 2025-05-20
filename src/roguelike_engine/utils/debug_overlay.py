@@ -47,6 +47,8 @@ class DebugOverlay:
         self._scroll_offset = 0
         self._scroll_speed = scroll_speed
         self._collapsed_groups: set[str] = set()
+        # Flag para colapsar todos los grupos en la primera renderización
+        self._initially_collapsed: bool = True
 
     def _get_font(self, size: int) -> pygame.font.Font:
         if size not in self._fonts:
@@ -140,16 +142,22 @@ class DebugOverlay:
                 avg_ms = sum(recent) / len(recent) * 1000
                 group = key.split(".")[0]
                 groups.setdefault(group, []).append((key, avg_ms))
+            # Colapsar todos los grupos en la primera generación del panel
+            if self._initially_collapsed:
+                self._collapsed_groups = set(groups.keys())
+                self._initially_collapsed = False
 
             for group, entries in sorted(groups.items()):
-                # Mostrar siempre el elemento TOTAL en el encabezado
+                # Mostrar número total de elementos y usar TOTAL en el encabezado
+                count = len(entries)
                 total_item = next(((full_key, avg) for full_key, avg in entries if 'TOTAL' in full_key.upper()), None)
                 if total_item:
                     total_key, total_val = total_item
-                    header_lbl = f'{total_key}:'
+                    header_lbl = f'{total_key} ({count}):'
                     header_val = f'{total_val:>6.2f} ms'
                 else:
-                    header_lbl, header_val = f'{group}:', ''
+                    header_lbl = f'{group} ({count}):'
+                    header_val = ''
                 lines.append((header_lbl, header_val))
                 if group not in self._collapsed_groups:
                     for full_key, avg_ms in sorted(entries):
@@ -175,6 +183,13 @@ class DebugOverlay:
             if extra_lines:
                 lines.append(("", ""))
                 lines.extend((text, "") for text in extra_lines)
+
+            # Ajustar ancho al contenido completo
+            for left, right in lines:
+                lw, _ = font.size(left)
+                vw, _ = font.size(right)
+                label_w = max(label_w, lw)
+                value_w = max(value_w, vw)
 
             self._rebuild_panel(position, lines, label_w, value_w)
             self._last_update_time = now
