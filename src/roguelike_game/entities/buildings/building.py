@@ -3,10 +3,10 @@
 import os
 import pygame
 from roguelike_engine.utils.loader import load_image
-import roguelike_engine.config.config as config
 from roguelike_game.systems.config_z_layer import Z_LAYERS
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.config.map_config import global_map_settings
+from roguelike_engine.utils.debug import draw_debug_rect
 
 class Building:
     """
@@ -100,12 +100,8 @@ class Building:
             camera.apply((self.x, self.y + offset_y_world))
         )
 
-        if self.solid and config.DEBUG and not top:
-            scaled_rect = pygame.Rect(
-                camera.apply(self.rect.topleft),
-                camera.scale(self.rect.size)
-            )
-            pygame.draw.rect(screen, (255, 255, 255), scaled_rect, 1)
+        if self.solid and not top:
+            draw_debug_rect(screen, camera, self.rect, color=(255,255,255), width=1)
 
     class _BuildingPart:
         """Wrapper ligero que representa una de las mitades."""

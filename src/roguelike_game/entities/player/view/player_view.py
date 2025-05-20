@@ -1,7 +1,7 @@
 # Path: src/roguelike_game/entities/player/view/player_view.py
 import pygame
-import roguelike_engine.config.config as config
 from roguelike_engine.utils.mouse import get_direction_from_angle, draw_mouse_crosshair
+from roguelike_engine.utils.debug import draw_debug_rect
 
 class PlayerView:
     """
@@ -50,13 +50,8 @@ class PlayerView:
         foot_hitbox = model.movement.hitbox(model.x, model.y)
         model.hitbox_obj = foot_hitbox
 
-        # DEBUG: dibujar hitbox en verde usando camera.apply y camera.scale
-        if config.DEBUG:
-            debug_rect = pygame.Rect(
-                camera.apply((foot_hitbox.x, foot_hitbox.y)),
-                camera.scale((foot_hitbox.width, foot_hitbox.height))
-            )
-            pygame.draw.rect(screen, (0, 255, 0), debug_rect, 1)
+        # DEBUG: dibujar hitbox en verde usando helper centralizado
+        draw_debug_rect(screen, camera, foot_hitbox, color=(0,255,0), width=1)
 
         # Dibujar crosshair
         draw_mouse_crosshair(screen, camera)

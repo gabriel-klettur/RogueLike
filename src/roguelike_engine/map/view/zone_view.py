@@ -4,7 +4,7 @@ import pygame
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.tile.model.tile import Tile
-from roguelike_engine.config.config import DEBUG
+from roguelike_engine.utils.debug import draw_zone_border
 
 
 class ZoneView:
@@ -40,20 +40,5 @@ class ZoneView:
                 sprite = tile.sprite
             screen.blit(sprite, camera.apply((tile.x, tile.y)))
 
-        # 2) Dibujar contorno de la zona (bounding box)
-        if not tiles or not DEBUG:
-            return
-
-        xs = [t.x for t in tiles]
-        ys = [t.y for t in tiles]
-        min_x, max_x = min(xs), max(xs) + TILE_SIZE
-        min_y, max_y = min(ys), max(ys) + TILE_SIZE
-
-        top_left     = camera.apply((min_x, min_y))
-        bottom_right = camera.apply((max_x, max_y))
-        w = bottom_right[0] - top_left[0]
-        h = bottom_right[1] - top_left[1]
-
-        rect = pygame.Rect(top_left, (w, h))
-        color = self.colors.get(zone_name, (200, 200, 200))
-        pygame.draw.rect(screen, color, rect, self.border_width)
+        # 2) Dibujar contorno de la zona (usar helper centralizado)
+        draw_zone_border(screen, camera, tiles, zone_name, self.colors, self.border_width)

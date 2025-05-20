@@ -2,15 +2,13 @@
 import pygame
 
 from roguelike_engine.utils.mouse import draw_mouse_crosshair
-import roguelike_engine.config.config as config
+from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.debug import DebugOverlay, render_debug_overlay
 
 # Sistema de orden Z
 from roguelike_game.systems.z_layer.render import render_z_ordered
 
 # Importar el decorador centralizado de benchmark
-from roguelike_engine.utils.benchmark import benchmark
-from roguelike_engine.utils.debug import DebugOverlay
-
 from roguelike_engine.map.view.zone_view import ZoneView
 
 
@@ -128,20 +126,12 @@ class RendererManager:
         _bench_editors()
 
         # Debug: overlay y bordes
-        if config.DEBUG and perf_log is not None:
-            self.debug_overlay.render(
-                screen,
-                state=state,
-                camera=camera,
-                map_manager=self.map,
-                entities=entities,
-                show_borders=True
-            )
+        render_debug_overlay(self.debug_overlay, screen, state, camera, self.map, entities, show_borders=True)
 
         @benchmark(perf_log, "3.10. update dirth rects")        
         def _update_dirty_rects():
             # Actualizar solo regiones sucias, o todo si hay demasiadas        
-            if len(self._dirty_rects) > config.MAX_DIRTY:
+            if len(self._dirty_rects) > 100:
                 # demasiados rects, repintamos todo para evitar overhead
                 pygame.display.flip()
             else:
