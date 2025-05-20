@@ -8,7 +8,7 @@ def handle_continuous(state, camera, map, entities, menu, effects):
         dx = (keys[pygame.K_RIGHT] or keys[pygame.K_d]) - (keys[pygame.K_LEFT] or keys[pygame.K_a])
         dy = (keys[pygame.K_DOWN]  or keys[pygame.K_s]) - (keys[pygame.K_UP]   or keys[pygame.K_w])
         entities.player.is_walking = bool(dx or dy)
-        solid = [t for t in map.tiles_in_region if t.solid]
+        solid = map.solid_tiles
         entities.player.move(dx, dy, entities.obstacles, solid)
     
     if effects.shooting_laser:
