@@ -28,12 +28,10 @@ def handle_events(
     # 1) Prioridad a Tile Editor
     if tiles_editor.editor_state.active:
         tiles_editor.handler.handle(camera, map)
-        return
 
     # 2) Prioridad a Buildings Editor
     if buildings_editor.editor_state.active:
         buildings_editor.handler.handle(camera, entities)
-        return
 
     # 3) Procesar eventos de juego
     for event in pygame.event.get():

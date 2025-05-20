@@ -29,6 +29,8 @@ def update_game(
         def _update_tiles_editor():
             tiles_editor.update(camera, map)
         _update_tiles_editor()
+        # Centrar cámara en el jugador incluso con editor activo
+        camera.update(entities.player)
         return
 
     # 2) Si el Buildings-Editor está activo, solo actualizamos él
@@ -37,6 +39,8 @@ def update_game(
         def _update_buildings_editor():
             buildings_editor.update(camera)
         _update_buildings_editor()
+        # Centrar cámara en el jugador incluso con editor activo
+        camera.update(entities.player)
         return
 
     # 3.1) Cámara sigue al jugador
