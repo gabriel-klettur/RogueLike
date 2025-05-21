@@ -15,8 +15,8 @@ class MapSettings:
     use_zones_json: bool = False         #! Mas adelante deberiamos trabajar sobre el offset no dinamico.
 
     # Tamaño total del mapa (en tiles)
-    global_width: int = 150
-    global_height: int = 150
+    global_width: int = 250
+    global_height: int = 250
 
     # Tamaño de cada zona (en tiles)
     zone_width: int = 50
@@ -28,7 +28,10 @@ class MapSettings:
     dungeon_max_rooms: Union[int, Literal['MAX'], None] = 10
 
     # Zonas dinámicas: nombre -> (zona padre, lado de conexión)
-    additional_zones: Dict[str, Tuple[str, Literal['bottom', 'top', 'left', 'right']]] = field(default_factory=dict)
+    additional_zones: Dict[str, Tuple[str, Literal['bottom', 'top', 'left', 'right']]] = field(default_factory=lambda: {
+        "extra_dungeon":    ("lobby", "left"),
+        "extra_dungeon2":   ("extra_dungeon", "left"),
+    })
 
     # Directorio para mapas de debug generados automáticamente
     debug_maps_dir: Path = field(default_factory=lambda:
