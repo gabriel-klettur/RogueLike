@@ -27,7 +27,7 @@ def handle_expand_dungeon(event, map_manager, entities):
 
     if new_idx == 1:
         new_key = base
-        parent_key = 'lobby'
+        parent_key = 'dungeon'
     else:
         new_key = f"{base}{new_idx}"
         parent_key = base if new_idx == 2 else f"{base}{new_idx-1}"

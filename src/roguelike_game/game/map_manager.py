@@ -24,6 +24,9 @@ class MapManager:
         # 3) Offset y rooms
         self.lobby_offset = self.result.metadata.get("lobby_offset", (0, 0))
         self.rooms = self.result.metadata.get("rooms", [])
+        # rooms de cada zona (usado para conectar túneles)
+        self.zone_rooms: dict[str, list] = {}
+        self.zone_rooms["dungeon"] = self.rooms
 
         # 4) Offset de la dungeon (en tiles)
         lob_x, lob_y = self.lobby_offset
@@ -145,7 +148,38 @@ class MapManager:
             for rx, ch in enumerate(row):
                 grid[off_y + ry][off_x + rx] = ch
 
-        # Actualizar matriz de strings
+        # Registrar rooms de la nueva zona
+        self.zone_rooms[zone_key] = metadata_zone.get("rooms", [])
+
+        # Conectar zona con su padre: túnel entre rooms más cercanas
+        from roguelike_engine.map.model.generator.dungeon import DungeonGenerator
+        import random
+        parent_rooms = self.zone_rooms.get(parent_key, [])
+        new_rooms = self.zone_rooms.get(zone_key, [])
+        if parent_rooms and new_rooms:
+            # Calcular centros absolutos de cada room usando offsets nuevos
+            parent_centers = [((r[0]+r[2])//2 + new_offsets[parent_key][0], (r[1]+r[3])//2 + new_offsets[parent_key][1]) for r in parent_rooms]
+            new_centers = [((r[0]+r[2])//2 + new_offsets[zone_key][0], (r[1]+r[3])//2 + new_offsets[zone_key][1]) for r in new_rooms]
+            # Encontrar par de centros más cercano
+            min_pair = None
+            min_dist = float('inf')
+            for pc in parent_centers:
+                for nc in new_centers:
+                    d = abs(pc[0]-nc[0]) + abs(pc[1]-nc[1])
+                    if d < min_dist:
+                        min_dist = d
+                        min_pair = (pc, nc)
+            if min_pair:
+                (px, py), (nx, ny) = min_pair
+                # Dibujar túneles en grid
+                if random.random() < 0.5:
+                    DungeonGenerator._horiz_tunnel(grid, px, nx, py)
+                    DungeonGenerator._vert_tunnel(grid, py, ny, nx)
+                else:
+                    DungeonGenerator._vert_tunnel(grid, py, ny, px)
+                    DungeonGenerator._horiz_tunnel(grid, px, nx, ny)
+
+        # Actualizar matriz de strings con túneles
         self.matrix = [''.join(r) for r in grid]
 
         # Regenerar tiles y overlay
