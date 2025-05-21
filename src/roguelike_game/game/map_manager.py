@@ -95,3 +95,77 @@ class MapManager:
         """
         # Vuelve a inicializar el MapManager con el mismo map_name
         self.__init__(self.map_name)
+
+    def expand_zone(self, side: str, zone_key: str, parent_key: str) -> None:
+        """
+        Agrega una zona nueva al mapa existente de forma incremental.
+        side: 'bottom','top','left','right'
+        """
+        from roguelike_engine.map.model.generator.factory import get_generator
+        from roguelike_engine.config.map_config import global_map_settings
+        from roguelike_engine.map.model.loader.text_loader_strategy import TextMapLoader
+
+        # Guardar offsets viejos
+        old_offsets = global_map_settings.zone_offsets.copy()
+        # Limpiar cache de offsets y recalcular
+        global_map_settings.__dict__.pop('zone_offsets', None)
+        new_offsets = global_map_settings.zone_offsets
+
+        # Generar nueva zona
+        gen = get_generator()
+        raw_map, metadata_zone = gen.generate(
+            width=global_map_settings.zone_width,
+            height=global_map_settings.zone_height,
+            return_rooms=True
+        )
+        zone_matrix = [''.join(row) for row in raw_map]
+
+        # Construir nueva matriz global de caracteres
+        old_matrix = self.matrix
+        old_h = len(old_matrix)
+        old_w = len(old_matrix[0]) if old_h else 0
+        new_h = global_map_settings.global_height
+        new_w = global_map_settings.global_width
+
+        # Iniciar grid con muros
+        grid = [['#' for _ in range(new_w)] for _ in range(new_h)]
+
+        # Calcular desplazamiento en tiles
+        dx = new_offsets[parent_key][0] - old_offsets[parent_key][0]
+        dy = new_offsets[parent_key][1] - old_offsets[parent_key][1]
+
+        # Insertar antigua matriz
+        for y in range(old_h):
+            for x in range(old_w):
+                grid[y + dy][x + dx] = old_matrix[y][x]
+
+        # Pegar nueva zona
+        off_x, off_y = new_offsets[zone_key]
+        for ry, row in enumerate(zone_matrix):
+            for rx, ch in enumerate(row):
+                grid[off_y + ry][off_x + rx] = ch
+
+        # Actualizar matriz de strings
+        self.matrix = [''.join(r) for r in grid]
+
+        # Regenerar tiles y overlay
+        loader = TextMapLoader()
+        _, self.tiles, self.overlay = loader.load(self.matrix, self.name)
+
+        # Recalcular tiles sólidos
+        self.solid_tiles = [t for row in self.tiles for t in row if getattr(t, "solid", False)]
+
+        # Reetiquetar tiles por zona
+        from roguelike_engine.map.utils import get_zone_for_tile
+        self.tiles_by_zone.clear()
+        for row in self.tiles:
+            for tile in row:
+                tx = tile.x // TILE_SIZE
+                ty = tile.y // TILE_SIZE
+                zone = get_zone_for_tile(tx, ty)
+                tile.zone = zone
+                self.tiles_by_zone.setdefault(zone, []).append(tile)
+
+        # Reset region y cache de vista
+        self.tiles_in_region = self.all_tiles
+        self.view.invalidate_cache()

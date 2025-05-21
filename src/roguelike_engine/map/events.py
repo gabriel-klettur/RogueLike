@@ -47,9 +47,8 @@ def handle_expand_dungeon(event, map_manager, entities):
     sub_y = py - ty * TILE_SIZE
 
     global_map_settings.additional_zones[new_key] = (parent_key, 'left')
-    # limpiar cache y recargar mapa
-    global_map_settings.__dict__.pop('zone_offsets', None)
-    map_manager.reload_map()
+    # expansión incremental de la nueva zona
+    map_manager.expand_zone('left', new_key, parent_key)
 
     # ajustar posición del jugador en coords de mundo
     if current_zone:
