@@ -9,7 +9,7 @@ from pathlib import Path
 # 1) Definimos la raíz del proyecto y rutas
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 ASSETS_TILES = PROJECT_ROOT / 'assets' / 'tiles'
-OUTPUT = PROJECT_ROOT / 'data' / 'map_overlays' / 'overlay_map.json'
+OUTPUT = PROJECT_ROOT / 'data' / 'tiles' / 'tiles.json'
 
 # 2) Extensiones que buscamos (recursivo)
 EXTS = ('*.png', '*.PNG', '*.webp', '*.WEBP')

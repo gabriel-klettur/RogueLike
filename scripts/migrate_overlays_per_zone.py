@@ -7,9 +7,9 @@ from roguelike_engine.config.map_config import global_map_settings
 
 def main():
     # Ruta al overlay global actual
-    global_path = Path(DATA_DIR) / "map_overlays" / "global_map.overlay.json"
+    global_path = Path(DATA_DIR) / "tiles" / "tiles.json"
     if not global_path.is_file():
-        print(f"⚠️ No se encontró overlay global: {global_path}")
+        print(f"⚠️ No se encontró tiles.json: {global_path}")
         return
 
     # Cargar matriz completa

@@ -13,15 +13,14 @@ TILE_SIZE = 32
 # Carpeta donde se almacenan sprites y datos de tiles personalizados
 TILES_DATA_PATH = Path(ASSETS_DIR) / "tiles"
 
-# Carpeta donde se almacenan los overlays generados (JSON)
-MAP_OVERLAYS_DIR = Path(DATA_DIR) / "map_overlays"
-os.makedirs(MAP_OVERLAYS_DIR, exist_ok=True)
+# Archivo de mapeo dinámico de tiles (JSON)
+TILES_MAP_PATH = Path(DATA_DIR) / "tiles" / "tiles.json"
 
 #!------------------------ TILES MAPPING --------------------------
 # Mapeo dinámico: código de overlay → nombre base de asset
 # Generado automáticamente por scripts/generate_overlay_map.py
 
-overlay_map_path = MAP_OVERLAYS_DIR / "overlay_map.json"
+overlay_map_path = TILES_MAP_PATH
 if overlay_map_path.is_file():
     with open(overlay_map_path, "r", encoding="utf-8") as f:
         OVERLAY_CODE_MAP = json.load(f)

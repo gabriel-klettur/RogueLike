@@ -14,12 +14,9 @@ class JsonOverlayStore(OverlayStore):
     con soporte para overlays globales y por-zona.
     """
     def __init__(self, directory: str = None):
-        # Directorio global de overlays (por defecto: DATA_DIR/map_overlays)
-        self.global_dir = Path(directory) if directory else Path(DATA_DIR) / "map_overlays"
         # Directorio de overlays individuales por zona
         self.zones_dir  = Path(DATA_DIR) / "zones" / "overlays"
 
-        os.makedirs(self.global_dir, exist_ok=True)
         os.makedirs(self.zones_dir,  exist_ok=True)
 
     def load(self, map_name: str) -> Optional[List[List[str]]]:
