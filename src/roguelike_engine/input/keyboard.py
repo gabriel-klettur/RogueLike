@@ -2,6 +2,7 @@
 import pygame, time
 import roguelike_engine.config.config as config
 from roguelike_engine.config.map_config import global_map_settings
+from roguelike_engine.config.config_tiles import TILE_SIZE
 
 from roguelike_game.entities.npc.factory import NPCFactory
 
@@ -28,10 +29,31 @@ def handle_keyboard(event, state, camera, clock, menu, entities, effects, tiles_
             else:
                 new_key = f"{base}{new_idx}"
                 parent_key = base if new_idx == 2 else f"{base}{new_idx-1}"
+            # guardar posición del jugador antes de recarga
+            px, py = entities.player.x, entities.player.y
+            tx, ty = int(px)//TILE_SIZE, int(py)//TILE_SIZE
+            old_off = global_map_settings.zone_offsets
+            current_zone = None
+            for z,(ox,oy) in old_off.items():
+                if ox <= tx < ox + global_map_settings.zone_width and oy <= ty < oy + global_map_settings.zone_height:
+                    current_zone = z
+                    break
+            rel_x = tx - old_off.get(current_zone,(0,0))[0]
+            rel_y = ty - old_off.get(current_zone,(0,0))[1]
+            sub_x = px - tx * TILE_SIZE
+            sub_y = py - ty * TILE_SIZE
             global_map_settings.additional_zones[new_key] = (parent_key, 'left')
-            # limpiar cache de offsets y recargar mapa
+            # limpiar cache y recargar mapa
             global_map_settings.__dict__.pop('zone_offsets', None)
             map_manager.reload_map()
+            # ajustar posición del jugador en coords de mundo
+            if current_zone:
+                new_off = global_map_settings.zone_offsets[current_zone]
+                off_x, off_y = new_off
+                new_tx = off_x + rel_x
+                new_ty = off_y + rel_y
+                entities.player.x = new_tx * TILE_SIZE + sub_x
+                entities.player.y = new_ty * TILE_SIZE + sub_y
             print(f"🗺️ Añadida zona '{new_key}' conectada a '{parent_key}' y recargando mapa...")
             return
 
