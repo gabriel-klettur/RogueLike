@@ -28,7 +28,6 @@ PROJECT_ROOT = ENGINE_DIR.parent.parent.parent
 # 3) Carpeta global de assets (…/RogueLike/assets)
 ASSETS_DIR = PROJECT_ROOT / "assets"
 ASSETS_DIR = str(ASSETS_DIR)
-print(f"[DEBUG] ASSETS_DIR = {ASSETS_DIR!r}")
 
 # Carpeta donde se almacenan datos persistentes 
 DATA_DIR = PROJECT_ROOT / "data"

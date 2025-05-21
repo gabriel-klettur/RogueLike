@@ -26,11 +26,11 @@ def main():
             key = rel.as_posix()
             mapping[key] = rel.as_posix()
 
-    # Escribir archivo JSON de overlay_map
+    # Escribir archivo JSON de tiles dictionary
     os.makedirs(OUTPUT.parent, exist_ok=True)
     with open(OUTPUT, 'w', encoding='utf-8') as out:
         json.dump(mapping, out, ensure_ascii=False, indent=2)
-    print(f'[generate_overlay_map] Wrote overlay code map to {OUTPUT}')
+    print(f'[Tiles][Generate Tiles Dictionary] Wrote tiles dictionary to {OUTPUT}')
 
 if __name__ == '__main__':
     main()
