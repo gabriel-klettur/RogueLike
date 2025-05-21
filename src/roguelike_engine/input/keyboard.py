@@ -1,12 +1,40 @@
 # Path: src/roguelike_engine/input/keyboard.py
 import pygame, time
 import roguelike_engine.config.config as config
-
+from roguelike_engine.config.map_config import global_map_settings
 
 from roguelike_game.entities.npc.factory import NPCFactory
 
-def handle_keyboard(event, state, camera, clock, menu, entities, effects, tiles_editor):
+def handle_keyboard(event, state, camera, clock, menu, entities, effects, tiles_editor, map_manager):
     if event.type == pygame.KEYDOWN:
+        # F3: añadir mazmorra a la izquierda y recargar mapa
+        if event.key == pygame.K_F3:
+            base = 'extra_dungeon'
+            # determinar índice más alto usado
+            max_idx = 0
+            for k in global_map_settings.additional_zones:
+                if k == base:
+                    idx = 1
+                elif k.startswith(base) and k[len(base):].isdigit():
+                    idx = int(k[len(base):])
+                else:
+                    continue
+                max_idx = max(max_idx, idx)
+            new_idx = max_idx + 1
+            # nombre y padre según índice
+            if new_idx == 1:
+                new_key = base
+                parent_key = 'lobby'
+            else:
+                new_key = f"{base}{new_idx}"
+                parent_key = base if new_idx == 2 else f"{base}{new_idx-1}"
+            global_map_settings.additional_zones[new_key] = (parent_key, 'left')
+            # limpiar cache de offsets y recargar mapa
+            global_map_settings.__dict__.pop('zone_offsets', None)
+            map_manager.reload_map()
+            print(f"🗺️ Añadida zona '{new_key}' conectada a '{parent_key}' y recargando mapa...")
+            return
+
         if event.key == pygame.K_ESCAPE:
             menu.show_menu = not menu.show_menu
 

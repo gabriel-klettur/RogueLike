@@ -1,6 +1,7 @@
 # Path: src/roguelike_engine/input/events.py
 import pygame
 import roguelike_engine.config.config as config
+from roguelike_engine.config.map_config import global_map_settings
 
 from .keyboard     import handle_keyboard
 from .mouse        import handle_mouse
@@ -39,7 +40,7 @@ def handle_events(
             state.running = False
         
         elif event.type in (pygame.KEYDOWN, pygame.KEYUP):
-            handle_keyboard(event, state, camera, clock, menu, entities, effects, tiles_editor)
+            handle_keyboard(event, state, camera, clock, menu, entities, effects, tiles_editor, map)
 
         elif event.type in (pygame.MOUSEWHEEL, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP):
             # Intercept overlay scroll/click when hovering debug panel

@@ -8,6 +8,8 @@ from roguelike_engine.config.config_tiles import TILE_SIZE
 
 class MapManager:
     def __init__(self, map_name: str | None):
+        # Guardar nombre para recargas dinámicas
+        self.map_name = map_name
         # 1) Construir datos con MapService
         self.result = build_map(map_name)
 
@@ -86,3 +88,10 @@ class MapManager:
         """
         self._local_state.update(data)
         # Opcional: disparar spawn_player / restore_npc_states para efectos inmediatos.
+
+    def reload_map(self):
+        """
+        Reconstruye el mapa usando la configuración actual (additional_zones, auto_expand).
+        """
+        # Vuelve a inicializar el MapManager con el mismo map_name
+        self.__init__(self.map_name)

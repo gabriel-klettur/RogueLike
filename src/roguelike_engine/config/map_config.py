@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Dict, Tuple, Union, Literal
 import json
 from functools import cached_property
+from collections import deque
 
 from roguelike_engine.config.config import DATA_DIR
 
@@ -31,9 +32,7 @@ class MapSettings:
     dungeon_max_rooms: Union[int, Literal['MAX'], None] = 10
 
     # Zonas dinámicas: nombre -> (zona padre, lado de conexión)
-    additional_zones: Dict[str, Tuple[str, Literal['bottom', 'top', 'left', 'right']]] = field(default_factory=lambda: {
-        "extra_dungeon":    ("lobby", "left"),
-        "extra_dungeon2":   ("extra_dungeon", "left"),
+    additional_zones: Dict[str, Tuple[str, Literal['bottom', 'top', 'left', 'right']]] = field(default_factory=lambda: {              
     })
 
 
@@ -84,12 +83,23 @@ class MapSettings:
         offsets['lobby'] = lobby_off
         # Dungeon por defecto
         offsets['dungeon'] = self.calculate_dungeon_offset(lobby_off)
-        # Zonas dinámicas definidas en additional_zones (parent_zone, side)
+        # Resolver offsets de zonas dinámicas usando BFS basado en parent->children
+        # Construir mapa de dependencias
+        children: Dict[str, list[Tuple[str, Literal['bottom','top','left','right']]]] = {}
         for zone, (parent, side) in self.additional_zones.items():
-            parent_off = offsets.get(parent)
-            if parent_off is None:
-                raise KeyError(f"Zona padre '{parent}' no definida para zona '{zone}'")
-            offsets[zone] = self.calculate_offset(parent_off, side)
+            children.setdefault(parent, []).append((zone, side))
+        # Inicializar cola con padres que existen en offsets
+        queue = deque([p for p in children if p in offsets])
+        # Recorrer árbol de zonas
+        while queue:
+            parent = queue.popleft()
+            for (zone, side) in children.get(parent, []):
+                offsets[zone] = self.calculate_offset(offsets[parent], side)
+                queue.append(zone)
+        # Verificar que todas las zonas fueron procesadas
+        missing = [z for z in self.additional_zones if z not in offsets]
+        if missing:
+            raise KeyError(f"Dependencias no satisfechas para zonas: {missing}")
         if self.auto_expand:
             self.global_width, self.global_height, offsets = self.expand_limits(offsets)
         else:
