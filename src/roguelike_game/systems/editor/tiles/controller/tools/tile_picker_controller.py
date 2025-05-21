@@ -1,13 +1,13 @@
-
 # Path: src/roguelike_game/systems/editor/tiles/controller/tools/tile_picker_controller.py
 import pygame
 from pathlib import Path
 
 from roguelike_engine.utils.loader import load_image
 from roguelike_engine.config.config import ASSETS_DIR
-from roguelike_engine.map.model.overlay.overlay_manager import save_overlay
+from roguelike_engine.map.model.overlay.overlay_manager import load_overlay, save_overlay
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.tile.assets import load_base_tile_images
+from roguelike_engine.config.map_config import global_map_settings
 
 from roguelike_game.systems.editor.tiles.tiles_editor_config import (
     BASE_TILE_DIR,
@@ -122,12 +122,40 @@ class TilePickerController:
         self.picker_state.dragging = False
 
     def _persist_overlay(self, tile, code: str, map):
+        # Calcular posición global del tile
         row = tile.y // TILE_SIZE
         col = tile.x // TILE_SIZE
-        if map.overlay is None:
-            h = len(map.tiles)
-            w = len(map.tiles[0]) if h else 0
-            map.overlay = [["" for _ in range(w)] for _ in range(h)]
-        map.overlay[row][col] = code
-        save_overlay(map.name, map.overlay)
-        print(f"📝 Overlay guardado en: {map.name}.overlay.json")
+
+        # Determinar zona según configuración
+        zone_name = None
+        zone_offset_x = zone_offset_y = 0
+        for zn, (ox, oy) in global_map_settings.zone_offsets.items():
+            if ox <= col < ox + global_map_settings.zone_width and oy <= row < oy + global_map_settings.zone_height:
+                zone_name = zn
+                zone_offset_x, zone_offset_y = ox, oy
+                break
+        if zone_name is None:
+            zone_name = "no_zone"
+
+        # Cargar o inicializar overlay de la zona
+        zone_overlay = load_overlay(zone_name)
+        if zone_overlay is None:
+            if zone_name in global_map_settings.zone_offsets:
+                h = global_map_settings.zone_height
+                w = global_map_settings.zone_width
+            else:
+                h = len(map.tiles)
+                w = len(map.tiles[0]) if map.tiles else 0
+            zone_overlay = [["" for _ in range(w)] for _ in range(h)]
+
+        # Calcular posición local dentro de la overlay de la zona
+        if zone_name in global_map_settings.zone_offsets:
+            local_row = row - zone_offset_y
+            local_col = col - zone_offset_x
+        else:
+            local_row, local_col = row, col
+
+        zone_overlay[local_row][local_col] = code
+
+        save_overlay(zone_name, zone_overlay)
+        print(f"📝 Overlay guardado en: {zone_name}.overlay.json")

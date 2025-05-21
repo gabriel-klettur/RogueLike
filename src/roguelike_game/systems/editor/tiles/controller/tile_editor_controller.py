@@ -1,15 +1,15 @@
-
 # Path: src/roguelike_game/systems/editor/tiles/controller/tile_editor_controller.py
 from pathlib import Path
 import pygame
 
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.config.config_tiles import OVERLAY_CODE_MAP, DEFAULT_TILE_MAP
+from roguelike_engine.config.map_config import global_map_settings
 
 from roguelike_game.systems.editor.tiles.controller.tools.tile_picker_controller import TilePickerController
 from roguelike_game.systems.editor.tiles.controller.tools.tile_toolbar_controller import TileToolbarController
 
-from roguelike_engine.map.model.overlay.overlay_manager import save_overlay
+from roguelike_engine.map.model.overlay.overlay_manager import load_overlay, save_overlay
 from roguelike_engine.utils.loader import load_image
 
 
@@ -58,19 +58,26 @@ class TileEditorController:
 
         tile.overlay_code = code
 
-        # 4) Persiste el overlay en la matriz
-        row = tile.y // TILE_SIZE
-        col = tile.x // TILE_SIZE
-
-        # Si aún no hay overlay, inicialízalo
-        if map.overlay is None:
-            h = len(map.tiles)
-            w = len(map.tiles[0]) if h else 0
-            map.overlay = [["" for _ in range(w)] for _ in range(h)]
-
-        map.overlay[row][col] = code
-        save_overlay(map.name, map.overlay)
-        print(f"📝 Overlay actualizado: ({row}, {col}) = '{code}'")
+        # 4) Persistir en overlay de zona
+        row = tile.y // TILE_SIZE; col = tile.x // TILE_SIZE
+        # determinar zona y offsets
+        for zn,(ox,oy) in global_map_settings.zone_offsets.items():
+            if ox <= col < ox + global_map_settings.zone_width and oy <= row < oy + global_map_settings.zone_height:
+                zone_name, offx, offy = zn, ox, oy
+                break
+        else:
+            zone_name, offx, offy = 'no_zone', 0, 0
+        # cargar/inicializar overlay de la zona
+        if zone_name != 'no_zone':
+            h,w = global_map_settings.zone_height, global_map_settings.zone_width
+        else:
+            h,w = len(map.tiles), len(map.tiles[0]) if map.tiles else 0
+        zone_overlay = load_overlay(zone_name) or [['' for _ in range(w)] for _ in range(h)]
+        # actualizar coords locales
+        local_r, local_c = row-offy, col-offx
+        zone_overlay[local_r][local_c] = code
+        save_overlay(zone_name, zone_overlay)
+        print(f"📝 Overlay actualizado: global ({row},{col}), local ({local_r},{local_c}) en zona '{zone_name}'")
         map.view.invalidate_cache()
 
 
@@ -107,17 +114,21 @@ class TileEditorController:
         # 6) Fijar overlay_code al código original
         tile.overlay_code = code
 
-        # 7) Persistir overlay en la matriz y archivo
-        row = tile.y // TILE_SIZE
-        col = tile.x // TILE_SIZE
-        if map.overlay is None:
-            h = len(map.tiles)
-            w = len(map.tiles[0]) if h else 0
-            map.overlay = [["" for _ in range(w)] for _ in range(h)]
-        map.overlay[row][col] = code
-        save_overlay(map.name, map.overlay)
-        print(f"📝 Overlay actualizado: ({row}, {col}) = '{code}'")
-
+        # 7) Persistir igual que brush
+        row = tile.y // TILE_SIZE; col = tile.x // TILE_SIZE
+        for zn,(ox,oy) in global_map_settings.zone_offsets.items():
+            if ox <= col < ox + global_map_settings.zone_width and oy <= row < oy + global_map_settings.zone_height:
+                zone_name, offx, offy = zn, ox, oy
+                break
+        else:
+            zone_name, offx, offy = 'no_zone', 0, 0
+        if zone_name!='no_zone': h,w = global_map_settings.zone_height, global_map_settings.zone_width
+        else: h,w = len(map.tiles), len(map.tiles[0]) if map.tiles else 0
+        zone_overlay = load_overlay(zone_name) or [['' for _ in range(w)] for _ in range(h)]
+        local_r, local_c = row-offy, col-offx
+        zone_overlay[local_r][local_c] = code
+        save_overlay(zone_name, zone_overlay)
+        print(f"📝 Overlay actualizado: global ({row},{col}), local ({local_r},{local_c}) en zona '{zone_name}'")
 
 
     def _tile_under_mouse(self, mouse_pos, camera, map):

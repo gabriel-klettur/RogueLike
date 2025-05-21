@@ -7,6 +7,7 @@ from pathlib import Path
 
 from .interfaces import OverlayStore
 from roguelike_engine.config.config import DATA_DIR
+from roguelike_engine.config.map_config import global_map_settings
 
 class JsonOverlayStore(OverlayStore):
     """
@@ -21,20 +22,22 @@ class JsonOverlayStore(OverlayStore):
 
     def load(self, map_name: str) -> Optional[List[List[str]]]:
         """
-        Carga la capa overlay para `map_name`, buscando sólo en zones/overlays.
+        Carga la capa overlay para `map_name`, usando configuración de zonas.
         """
-        # Intentar zona individual
-        zone_path = self.zones_dir / f"{map_name}.overlay.json"
+        # Determinar zona según configuración
+        zone_name = map_name if map_name in global_map_settings.zone_offsets.keys() else "no_zone"
+        zone_path = self.zones_dir / f"{zone_name}.overlay.json"
         if zone_path.is_file():
             with open(zone_path, "r", encoding="utf-8") as f:
                 return json.load(f)
-        # Devolvemos None si no hay overlay de zona
         return None
 
     def save(self, map_name: str, overlay: List[List[str]]) -> None:
         """
-        Guarda el overlay en el directorio de zonas.
+        Guarda el overlay usando configuración de zonas.
         """
-        out_path = self.zones_dir / f"{map_name}.overlay.json"
+        # Determinar zona según configuración
+        zone_name = map_name if map_name in global_map_settings.zone_offsets.keys() else "no_zone"
+        out_path = self.zones_dir / f"{zone_name}.overlay.json"
         with open(out_path, "w", encoding="utf-8") as f:
             json.dump(overlay, f, ensure_ascii=False, indent=2)
