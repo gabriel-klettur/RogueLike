@@ -60,5 +60,5 @@ def load_buildings_from_json(
         except Exception as e:
             print(f"⚠️ Error al crear edificio desde entrada JSON: {e}")
 
-    print(f"✅ {len(buildings)} edificios cargados desde: {BUILDINGS_DATA_PATH}")
+    print(f"[Buildings][Cargando Edificios] {len(buildings)} edificios cargados desde: [{BUILDINGS_DATA_PATH}]")
     return buildings
