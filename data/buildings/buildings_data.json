@@ -192,7 +192,7 @@
     {
         "zone": "lobby",
         "rel_x": 143,
-        "rel_y": -795,
+        "rel_y": -794,
         "image_path": "assets/buildings/castles/castle_2.png",
         "solid": true,
         "scale": [
@@ -815,24 +815,5 @@
         "z_bottom": 3,
         "z_top": 5,
         "z": 3
-    },
-    {
-        "zone": "no zone",
-        "rel_x": 1086,
-        "rel_y": 1704,
-        "image_path": "assets/buildings\\vegetation\\tree_6.png",
-        "solid": true,
-        "scale": [
-            471,
-            471
-        ],
-        "original_scale": [
-            540,
-            540
-        ],
-        "split_ratio": 0.5,
-        "z_bottom": 3,
-        "z_top": 5,
-        "z": 1
     }
 ]

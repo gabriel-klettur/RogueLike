@@ -35,30 +35,46 @@ class MapService:
 
     def build_map(self, map_name: Optional[str] = None) -> Map:
         key = map_name or "global_map"
-
-        # 1) Crear zona 'world' que representa todo el mapa global
-        world = Zone(key, (0, 0),
-                     global_map_settings.global_width,
-                     global_map_settings.global_height)
-
-        # 2) Generar y colocar el lobby
-        lobby_offset = self._place_lobby_zone(world)
-
-        # 3) Generar y colocar la dungeon
-        dungeon_info = self._place_dungeon_zone(world, lobby_offset)
-        # 3.1) Generar y colocar zonas adicionales (dungeons adicionales)
+        # 1) Calcular offsets (auto-ajuste si corresponde)
+        offsets = global_map_settings.zone_offsets
+        # 2) Crear zona 'world' con dimensiones actualizadas
+        world = Zone(
+            key,
+            (0, 0),
+            global_map_settings.global_width,
+            global_map_settings.global_height
+        )
+        # 3) Generar y colocar 'lobby'
+        lobby_rows = generate_lobby_matrix()
+        lobby = Zone("lobby", offsets["lobby"])
+        lobby.set_matrix_from_rows(lobby_rows)
+        self._merge_zone_into_world(world, lobby)
+        # 4) Generar y colocar 'dungeon'
+        raw_map, dungeon_meta = self.generator.generate(
+            width=global_map_settings.zone_width,
+            height=global_map_settings.zone_height,
+            return_rooms=True,
+        )
+        dungeon = Zone("dungeon", offsets["dungeon"])
+        dungeon_rows = ["".join(r) for r in raw_map]
+        dungeon.set_matrix_from_rows(dungeon_rows)
+        self._merge_zone_into_world(world, dungeon)
+        # Conectar túneles entre lobby y dungeon
+        self._connect_tunnels_in_world(
+            world,
+            offsets["lobby"],
+            dungeon,
+            dungeon_meta.get("rooms", [])
+        )
+        # 5) Generar y colocar zonas adicionales
         self._place_additional_zones(world)
-        
-        # 4) Serializar matriz global a filas de texto
+        # 6) Serializar matriz global a filas de texto
         rows = ["".join(row) for row in world.matrix]
-
-        # 5) Cargar tiles y overlay para el mapa completo
+        # 7) Cargar tiles y overlay
         _, tiles, overlay = self.loader.load(rows, key)
-
-        metadata = dungeon_info["metadata"]
-        metadata["lobby_offset"] = lobby_offset
-
-        return Map(rows, tiles, overlay, metadata, key)
+        # 8) Preparar metadata final
+        result_meta = {"lobby_offset": offsets["lobby"], **dungeon_meta}
+        return Map(rows, tiles, overlay, result_meta, key)
 
     def _place_lobby_zone(self, world: Zone) -> Tuple[int, int]:
         rows = generate_lobby_matrix()

@@ -6,7 +6,7 @@ from functools import cached_property
 
 from roguelike_engine.config.config import DATA_DIR
 
-@dataclass(frozen=True)
+@dataclass
 class MapSettings:
     """
     Configuración central para generación y carga de mapas.
@@ -14,9 +14,12 @@ class MapSettings:
     # Flag para decidir tipo de carga de offsets: JSON o dinámico
     use_zones_json: bool = False         #! Mas adelante deberiamos trabajar sobre el offset no dinamico.
 
+    # Auto-ajuste de límites: expande global_width/global_height si es necesario
+    auto_expand: bool = True
+
     # Tamaño total del mapa (en tiles)
-    global_width: int = 250
-    global_height: int = 250
+    global_width: int = 150
+    global_height: int = 150
 
     # Tamaño de cada zona (en tiles)
     zone_width: int = 50
@@ -32,6 +35,8 @@ class MapSettings:
         "extra_dungeon":    ("lobby", "left"),
         "extra_dungeon2":   ("extra_dungeon", "left"),
     })
+
+
 
     # Directorio para mapas de debug generados automáticamente
     debug_maps_dir: Path = field(default_factory=lambda:
@@ -85,6 +90,10 @@ class MapSettings:
             if parent_off is None:
                 raise KeyError(f"Zona padre '{parent}' no definida para zona '{zone}'")
             offsets[zone] = self.calculate_offset(parent_off, side)
+        if self.auto_expand:
+            self.global_width, self.global_height, offsets = self.expand_limits(offsets)
+        else:
+            self.validate_limits(offsets)
         return offsets
 
     @property
@@ -142,6 +151,30 @@ class MapSettings:
         if side == 'right':
             return off_x + self.zone_width, off_y
         raise ValueError(f"Lado desconocido: {side}")
+
+    # Validación y auto-expansión de límites del mapa
+    def validate_limits(self, offsets: Dict[str, Tuple[int, int]]) -> None:
+        """Lanza ValueError si alguna zona excede los límites globales."""
+        for name, (ox, oy) in offsets.items():
+            if ox < 0 or oy < 0 or ox + self.zone_width > self.global_width or oy + self.zone_height > self.global_height:
+                raise ValueError(
+                    f"Zona '{name}' fuera de límites: offset=({ox},{oy}), "
+                    f"mapa=({self.global_width},{self.global_height}), "
+                    f"zona=({self.zone_width},{self.zone_height})"
+                )
+
+    def expand_limits(self, offsets: Dict[str, Tuple[int, int]]) -> Tuple[int, int, Dict[str, Tuple[int, int]]]:
+        """Ajusta dimensiones y corrige offsets para incluir todas las zonas."""
+        xs = [ox for ox, _ in offsets.values()] + [ox + self.zone_width for ox, _ in offsets.values()]
+        ys = [oy for _, oy in offsets.values()] + [oy + self.zone_height for _, oy in offsets.values()]
+        min_x, max_x = min(xs), max(xs)
+        min_y, max_y = min(ys), max(ys)
+        dx = -min(min_x, 0)
+        dy = -min(min_y, 0)
+        new_w = max(self.global_width, max_x) + dx
+        new_h = max(self.global_height, max_y) + dy
+        new_offsets = {n: (ox + dx, oy + dy) for n, (ox, oy) in offsets.items()}
+        return new_w, new_h, new_offsets
 
 # Instancia global para uso en toda la aplicación
 global_map_settings = MapSettings()
