@@ -304,18 +304,6 @@ def draw_zone_border(screen, camera, tiles, zone_name, colors, border_width):
     color = colors.get(zone_name, (200,200,200))
     pygame.draw.rect(screen, color, rect, border_width)
 
-def process_debug_event(event, debug_overlay):
-    if not config.DEBUG or not debug_overlay:
-        return False
-    if event.type == pygame.MOUSEWHEEL:
-        mx, my = pygame.mouse.get_pos()
-    else:
-        mx, my = event.pos
-    if debug_overlay._panel_rect and debug_overlay._panel_rect.collidepoint((mx, my)):
-        debug_overlay.handle_event(event)
-        return True
-    return False
-
 def render_debug_overlay(debug_overlay, screen, state, camera, map_manager, entities, show_borders=False):
     if not config.DEBUG or debug_overlay.perf_log is None:
         return

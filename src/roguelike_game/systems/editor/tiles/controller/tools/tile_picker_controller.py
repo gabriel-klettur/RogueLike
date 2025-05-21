@@ -74,18 +74,6 @@ class TilePickerController:
             except Exception as e:
                 print(f"[TilePicker] ERROR cargando {rel_path}: {e}")
 
-    def open_with_selection(self, choice_path):
-        """
-        Abre el picker y hace scroll hasta la miniatura cuyo valor coincide con choice_path.
-        """
-        self.picker_state.open = True
-        self.picker_state.current_choice = choice_path
-        for idx, entry in enumerate(self.assets):
-            if entry[0] == choice_path:
-                row = idx // COLS
-                self.editor_state.scroll_offset = row * (THUMB + PAD)
-                break
-
     def is_over(self, mouse_pos) -> bool:
         if not self.picker_state.surface or not self.picker_state.pos:
             return False
