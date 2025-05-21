@@ -66,11 +66,25 @@ class Building:
     def x(self):        
         ox, oy = global_map_settings.zone_offsets.get(self.zone, (0, 0))
         return ox * TILE_SIZE + self.rel_x
+    @x.setter
+    def x(self, value):
+        ox, oy = global_map_settings.zone_offsets.get(self.zone, (0, 0))
+        px = int(value)
+        self.rel_x = px - ox * TILE_SIZE
+        if hasattr(self, 'rect'):
+            self.rect.x = px
 
     @property
     def y(self):        
         ox, oy = global_map_settings.zone_offsets.get(self.zone, (0, 0))
         return oy * TILE_SIZE + self.rel_y
+    @y.setter
+    def y(self, value):
+        ox, oy = global_map_settings.zone_offsets.get(self.zone, (0, 0))
+        py = int(value)
+        self.rel_y = py - oy * TILE_SIZE
+        if hasattr(self, 'rect'):
+            self.rect.y = py
 
     def _get_scaled_image(self, camera):
         zoom = round(camera.zoom, 2)
