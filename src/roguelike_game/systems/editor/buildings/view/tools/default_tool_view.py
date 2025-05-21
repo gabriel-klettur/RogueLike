@@ -6,13 +6,20 @@ class DefaultToolView:
         self.state = state
         self.editor = editor_state
         self.handle_size = handle_size
+        # Cache fonts by handle size to avoid expensive SysFont calls every frame
+        self.font_cache: dict[int, tuple[pygame.font.Font, pygame.font.Font]] = {}
 
     def render_reset_handle(self, screen, building, camera):
         x, y = camera.apply((building.x, building.y))
         w, h = camera.scale(building.image.get_size())
         # Botón proporcional al ancho (mín 15, máx 65)
         handle_size = max(15, min(65, int(w * 0.10)))
-        font = pygame.font.SysFont("arial", int(handle_size * 0.6), bold=True)
+        # Obtain cached fonts or create if not present
+        if handle_size not in self.font_cache:
+            small_font = pygame.font.SysFont("arial", int(handle_size * 0.6), bold=True)
+            big_font = pygame.font.SysFont("arial", int(handle_size * 0.8), bold=True)
+            self.font_cache[handle_size] = (small_font, big_font)
+        font, font_r = self.font_cache[handle_size]
 
         # Obtener posición del mouse
         mouse_pos = pygame.mouse.get_pos()
@@ -69,7 +76,6 @@ class DefaultToolView:
         # Debug visual: círculo amarillo grueso
         pygame.draw.ellipse(screen, (255,255,0), resize_rect, 5)        
         # Letra 'R' centrada y grande, en amarillo neón
-        font_r = pygame.font.SysFont("arial", int(handle_size * 0.8), bold=True)
         r_text = font_r.render('R', True, (255,255,0))
         r_rect = r_text.get_rect(center=resize_rect.center)
         screen.blit(r_text, r_rect)
