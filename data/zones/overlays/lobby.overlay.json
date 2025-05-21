@@ -676,8 +676,8 @@
     ""
   ],
   [
-    "dungeon_c_1",
-    "dungeon_c_1",
+    "wall",
+    "tileset_1/rock_grass/rock_grass_32_8",
     "floor/floor",
     "floor/floor",
     "floor/floor",
@@ -780,7 +780,7 @@
     ""
   ],
   [
-    "dungeon_c_2",
+    "wall",
     "tileset_1/rock_grass/rock_grass_32_8",
     "floor/floor",
     "",

@@ -18,8 +18,8 @@ class PlacerTool:
         world_y = my / self.editor.camera.zoom + self.editor.camera.offset_y
 
         new_building = self.building_class(
-            x=world_x,
-            y=world_y,
+            rel_x=int(world_x),
+            rel_y=int(world_y),
             image_path=self.default_image,
             solid=self.default_solid,
             scale=None
@@ -28,13 +28,13 @@ class PlacerTool:
         assign_zone_and_relatives(new_building)
 
         buildings.append(new_building)
-        print(f"➕ Edificio agregado en ({int(world_x)}, {int(world_y)}) [zona={new_building.zone}, rel=({new_building.rel_tile_x},{new_building.rel_tile_y})]")
+        print(f"➕ Edificio agregado en ({int(world_x)}, {int(world_y)}) [zona={new_building.zone}, rel=({new_building.rel_x},{new_building.rel_y})]")
 
     def place_building_at_path(self, buildings, world_x, world_y, image_path):
         """Nuevo: crea y coloca un building usando la ruta de asset indicada."""
         new_building = self.building_class(
-            x=world_x,
-            y=world_y,
+            rel_x=int(world_x),
+            rel_y=int(world_y),
             image_path=image_path,
             solid=self.default_solid,
             scale=None
@@ -43,4 +43,4 @@ class PlacerTool:
         assign_zone_and_relatives(new_building)
 
         buildings.append(new_building)
-        print(f"➕ Edificio '{image_path}' colocado en ({int(world_x)}, {int(world_y)}) [zona={new_building.zone}, rel=({new_building.rel_tile_x},{new_building.rel_tile_y})]")
+        print(f"➕ Edificio '{image_path}' colocado en ({int(world_x)}, {int(world_y)}) [zona={new_building.zone}, rel=({new_building.rel_x},{new_building.rel_y})]")

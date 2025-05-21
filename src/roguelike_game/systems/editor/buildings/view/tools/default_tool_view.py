@@ -1,4 +1,3 @@
-
 # Path: src/roguelike_game/systems/editor/buildings/view/tools/default_tool_view.py
 import pygame
 
@@ -78,9 +77,22 @@ class DefaultToolView:
     def get_delete_handle_rect(self, building, camera):
         x, y = camera.apply((building.x, building.y))
         w, h = camera.scale(building.image.get_size())
+        # Dynamic handle size matching render_reset_handle
+        dyn_size = max(15, min(65, int(w * 0.10)))
         return pygame.Rect(
-            x + w - 3 * self.handle_size,
+            x + w - 3 * dyn_size,
             y,
-            self.handle_size,
-            self.handle_size
+            dyn_size,
+            dyn_size
+        )
+
+    def get_reset_handle_rect(self, building, camera):
+        x, y = camera.apply((building.x, building.y))
+        w, h = camera.scale(building.image.get_size())
+        dyn_size = max(15, min(65, int(w * 0.10)))
+        return pygame.Rect(
+            x + w - 2 * dyn_size,
+            y,
+            dyn_size,
+            dyn_size
         )

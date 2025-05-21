@@ -65,6 +65,11 @@ class BuildingEditorController:
                 if delete_rect and delete_rect.collidepoint(mx, my):
                     self._delete_building(b, buildings)
                     return
+                # Detect reset handle (click izquierdo)
+                reset_rect = self.default_view.get_reset_handle_rect(b, camera)
+                if reset_rect.collidepoint(mx, my):
+                    self.default_tool.apply_reset(b)
+                    return
 
         # 2b) Resize handle (clic der)
         if button == 3:
@@ -72,7 +77,9 @@ class BuildingEditorController:
                 if self.resize_tool.check_resize_handle_click(mx, my, b, camera):
                     self._start_resize(b, (mx, my))
                     return
-                if self.default_tool.check_reset_handle_click(mx, my, b, camera):
+                # Click en el handle de reset (usar view para hitbox consistente)
+                reset_rect = self.default_view.get_reset_handle_rect(b, camera)
+                if reset_rect.collidepoint(mx, my):
                     self.default_tool.apply_reset(b)
                     return
 
@@ -219,6 +226,3 @@ class BuildingEditorController:
 
         elif self.editor.split_dragging:
             self.split_tool.update_drag(pygame.mouse.get_pos(), camera)
-
-
-

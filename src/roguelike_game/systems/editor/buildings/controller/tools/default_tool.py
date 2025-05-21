@@ -14,12 +14,13 @@ class DefaultTool:
         """
         bx, by = camera.apply((building.x, building.y))
         bw, bh = camera.scale(building.image.get_size())
-
+        # Dynamic handle size matching view
+        dyn_size = max(15, min(65, int(bw * 0.10)))
         reset_rect = pygame.Rect(
-            bx + bw - 2 * self.handle_size,
+            bx + bw - 2 * dyn_size,
             by,
-            self.handle_size,
-            self.handle_size
+            dyn_size,
+            dyn_size
         )
         return reset_rect.collidepoint(mx, my)
 
