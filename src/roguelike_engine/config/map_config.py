@@ -27,6 +27,9 @@ class MapSettings:
     dungeon_tunnel_thickness: int = 3
     dungeon_max_rooms: Union[int, Literal['MAX'], None] = 10
 
+    # Zonas dinámicas: nombre -> (zona padre, lado de conexión)
+    additional_zones: Dict[str, Tuple[str, Literal['bottom', 'top', 'left', 'right']]] = field(default_factory=dict)
+
     # Directorio para mapas de debug generados automáticamente
     debug_maps_dir: Path = field(default_factory=lambda:
         Path(__file__).resolve().parent.parent.parent / 'data' / 'debug_maps'
@@ -65,14 +68,21 @@ class MapSettings:
 
     def _dynamic_offsets(self) -> Dict[str, Tuple[int, int]]:
         """
-        Calcula offsets por defecto: lobby centrado y dungeon adyacente.
+        Calcula offsets por defecto: lobby centrado, dungeon adyacente y zonas dinámicas adicionales.
         """
         lobby_off = self.lobby_offset
-        dungeon_off = self.calculate_dungeon_offset(lobby_off)
-        return {
-            'lobby': lobby_off,
-            'dungeon': dungeon_off,
-        }
+        offsets: Dict[str, Tuple[int, int]] = {}
+        # Lobby siempre al centro
+        offsets['lobby'] = lobby_off
+        # Dungeon por defecto
+        offsets['dungeon'] = self.calculate_dungeon_offset(lobby_off)
+        # Zonas dinámicas definidas en additional_zones (parent_zone, side)
+        for zone, (parent, side) in self.additional_zones.items():
+            parent_off = offsets.get(parent)
+            if parent_off is None:
+                raise KeyError(f"Zona padre '{parent}' no definida para zona '{zone}'")
+            offsets[zone] = self.calculate_offset(parent_off, side)
+        return offsets
 
     @property
     def lobby_offset(self) -> Tuple[int, int]:
@@ -114,6 +124,21 @@ class MapSettings:
         if side == 'left':
             return off_x - self.zone_width, off_y
         return off_x + self.zone_width, off_y
+
+    def calculate_offset(self, base_off: Tuple[int, int], side: Literal['bottom', 'top', 'left', 'right']) -> Tuple[int, int]:
+        """
+        Calcula offset desde base_off según el lado especificado.
+        """
+        off_x, off_y = base_off
+        if side == 'bottom':
+            return off_x, off_y + self.zone_height
+        if side == 'top':
+            return off_x, off_y - self.zone_height
+        if side == 'left':
+            return off_x - self.zone_width, off_y
+        if side == 'right':
+            return off_x + self.zone_width, off_y
+        raise ValueError(f"Lado desconocido: {side}")
 
 # Instancia global para uso en toda la aplicación
 global_map_settings = MapSettings()
