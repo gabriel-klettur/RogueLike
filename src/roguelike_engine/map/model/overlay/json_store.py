@@ -24,32 +24,20 @@ class JsonOverlayStore(OverlayStore):
 
     def load(self, map_name: str) -> Optional[List[List[str]]]:
         """
-        Carga la capa overlay para `map_name`, buscando primero un archivo
-        específico de zona en zones/overlays/, y si no existe, el global.
+        Carga la capa overlay para `map_name`, buscando sólo en zones/overlays.
         """
-        # 1) Intentar zona individual
+        # Intentar zona individual
         zone_path = self.zones_dir / f"{map_name}.overlay.json"
         if zone_path.is_file():
             with open(zone_path, "r", encoding="utf-8") as f:
                 return json.load(f)
-
-        # 2) Fallback al overlay global
-        global_path = self.global_dir / f"{map_name}.overlay.json"
-        if global_path.is_file():
-            with open(global_path, "r", encoding="utf-8") as f:
-                return json.load(f)
-
-        # 3) No existe
+        # Devolvemos None si no hay overlay de zona
         return None
 
     def save(self, map_name: str, overlay: List[List[str]]) -> None:
         """
-        Guarda el overlay en el directorio global. Más adelante
-        se podrá guardar en zones/overlays/ según convenga.
+        Guarda el overlay en el directorio de zonas.
         """
-        out_path = self.global_dir / f"{map_name}.overlay.json"
+        out_path = self.zones_dir / f"{map_name}.overlay.json"
         with open(out_path, "w", encoding="utf-8") as f:
             json.dump(overlay, f, ensure_ascii=False, indent=2)
-        # (Opcional) podríamos en el futuro permitir save por zona:
-        # zone_out = self.zones_dir / f"{map_name}.overlay.json"
-        # ...
