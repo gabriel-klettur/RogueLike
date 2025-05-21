@@ -101,7 +101,23 @@ class TilePickerController:
             # Eliminar sprite y limpiar overlay
             tile.sprite = pygame.Surface((TILE_SIZE, TILE_SIZE), pygame.SRCALPHA)
             tile.scaled_cache.clear()
+            tile.overlay_code = ""
             self._persist_overlay(tile, "", map)
+            map.view.invalidate_cache()
+            # Debug output for Borrar tool
+            row = tile.y // TILE_SIZE; col = tile.x // TILE_SIZE
+            for zn,(ox,oy) in global_map_settings.zone_offsets.items():
+                if ox <= col < ox + global_map_settings.zone_width and oy <= row < oy + global_map_settings.zone_height:
+                    zone_name, offx, offy = zn, ox, oy
+                    break
+            else:
+                zone_name, offx, offy = 'no_zone', 0, 0
+            if zone_name != 'no_zone':
+                h, w = global_map_settings.zone_height, global_map_settings.zone_width
+            else:
+                h, w = len(map.tiles), len(map.tiles[0]) if map.tiles else 0
+            local_r, local_c = row-offy, col-offx
+            print(f"[Tile][Borrar] 📝 Overlay actualizado: global ({row},{col}), local ({local_r},{local_c}) en zona '{zone_name}'")
         self._close()
 
     def _set_default(self, map):
@@ -113,7 +129,23 @@ class TilePickerController:
             sprite = imgs[0] if isinstance(imgs, list) else imgs
             tile.sprite = sprite
             tile.scaled_cache.clear()
+            tile.overlay_code = ""
             self._persist_overlay(tile, "", map)
+            map.view.invalidate_cache()
+            # Debug output for Default tool
+            row = tile.y // TILE_SIZE; col = tile.x // TILE_SIZE
+            for zn,(ox,oy) in global_map_settings.zone_offsets.items():
+                if ox <= col < ox + global_map_settings.zone_width and oy <= row < oy + global_map_settings.zone_height:
+                    zone_name, offx, offy = zn, ox, oy
+                    break
+            else:
+                zone_name, offx, offy = 'no_zone', 0, 0
+            if zone_name != 'no_zone':
+                h, w = global_map_settings.zone_height, global_map_settings.zone_width
+            else:
+                h, w = len(map.tiles), len(map.tiles[0]) if map.tiles else 0
+            local_r, local_c = row-offy, col-offx
+            print(f"[Tile][Default] 📝 Overlay actualizado: global ({row},{col}), local ({local_r},{local_c}) en zona '{zone_name}'")
         self._close()
 
     def _close(self):

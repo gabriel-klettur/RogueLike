@@ -77,7 +77,7 @@ class TileEditorController:
         local_r, local_c = row-offy, col-offx
         zone_overlay[local_r][local_c] = code
         save_overlay(zone_name, zone_overlay)
-        print(f"📝 Overlay actualizado: global ({row},{col}), local ({local_r},{local_c}) en zona '{zone_name}'")
+        print(f"[Tile][Brush] 📝 Overlay actualizado: global ({row},{col}), local ({local_r},{local_c}) en zona '{zone_name}'")
         map.view.invalidate_cache()
 
 
@@ -128,7 +128,8 @@ class TileEditorController:
         local_r, local_c = row-offy, col-offx
         zone_overlay[local_r][local_c] = code
         save_overlay(zone_name, zone_overlay)
-        print(f"📝 Overlay actualizado: global ({row},{col}), local ({local_r},{local_c}) en zona '{zone_name}'")
+        print(f"[Tile][Eyedropper] 📝 Overlay actualizado: global ({row},{col}), local ({local_r},{local_c}) en zona '{zone_name}'")
+        map.view.invalidate_cache()
 
 
     def _tile_under_mouse(self, mouse_pos, camera, map):
