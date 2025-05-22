@@ -31,17 +31,9 @@ class TileEditorView:
         self.outline_view.render(screen, camera, map)
 
     def _render_view_panel(self, screen, camera, map):
-        panel_w = TILE_SIZE + 40
-        panel_h = 4 * (TILE_SIZE + 30)
-        x0 = self.controller.toolbar.x + self.controller.toolbar.size + 20
-        y0 = self.controller.toolbar.y
-
-        panel = pygame.Surface((panel_w, panel_h), pygame.SRCALPHA)
-        panel.fill((20, 20, 20, 200))
+        # Gather panel items
         font = pygame.font.SysFont("Arial", 14)
         mouse_pos = pygame.mouse.get_pos()
-
-        # Determinar capa bajo cursor (de arriba abajo)
         wx = mouse_pos[0] / camera.zoom + camera.offset_x
         wy = mouse_pos[1] / camera.zoom + camera.offset_y
         col = int(wx) // TILE_SIZE
@@ -56,32 +48,52 @@ class TileEditorView:
                     break
 
         items = [
-            ("Hovered",  self.controller._tile_under_mouse(mouse_pos, camera, map), OUTLINE_HOVER),
-            ("Selected", self.editor.selected_tile,                     OUTLINE_SEL),
-            ("Choice",   None,                                         OUTLINE_CHOICE),
-            ("Layer",    hovered_layer,                                None),
+            ("Hovered",        self.controller._tile_under_mouse(mouse_pos, camera, map), OUTLINE_HOVER),
+            ("Selected",       self.editor.selected_tile,                     OUTLINE_SEL),
+            ("Choice",         None,                                         OUTLINE_CHOICE),
+            ("Layer Hovered",  hovered_layer,                                None),
+            ("Layer Selected", self.editor.current_layer,                   None),
         ]
 
+        # Compute dynamic panel size
+        max_text_width = 0
+        for label, tile, color in items:
+            if label.startswith("Layer"):
+                text_str = f"{label}: {tile.name}"
+            else:
+                text_str = label
+            tw, _ = font.size(text_str)
+            max_text_width = max(max_text_width, tw)
+        margin_x = 10
+        panel_w = max(TILE_SIZE, max_text_width) + margin_x * 2
+        panel_h = len(items) * (TILE_SIZE + 30)
+
+        # Render panel background
+        x0 = self.controller.toolbar.x + self.controller.toolbar.size + 20
+        y0 = self.controller.toolbar.y
+        panel = pygame.Surface((panel_w, panel_h), pygame.SRCALPHA)
+        panel.fill((20, 20, 20, 200))
+
+        # Draw items
         for idx, (label, tile, color) in enumerate(items):
             ty = idx * (TILE_SIZE + 30) + 10
-            # Si es capa, mostrar solo texto
-            if label == "Layer":
+            # Layer labels only text
+            if label.startswith("Layer"):
                 layer = tile
                 text = font.render(f"{label}: {layer.name}", True, (255, 255, 255))
-                panel.blit(text, (5, ty + TILE_SIZE + 2))
+                panel.blit(text, (margin_x, ty + TILE_SIZE + 2))
                 continue
             sprite = None
             if label == "Choice" and self.editor.current_choice:
                 sprite = load_image(self.editor.current_choice, (TILE_SIZE, TILE_SIZE))
             elif tile:
                 sprite = tile.sprite
-
             if sprite:
                 panel.blit(sprite, ((panel_w - TILE_SIZE)//2, ty))
             rect = pygame.Rect((panel_w - TILE_SIZE)//2, ty, TILE_SIZE, TILE_SIZE)
             if color:
                 pygame.draw.rect(panel, color, rect, 3)
             text = font.render(label, True, (255, 255, 255))
-            panel.blit(text, (5, ty + TILE_SIZE + 2))
+            panel.blit(text, (margin_x, ty + TILE_SIZE + 2))
 
         screen.blit(panel, (x0, y0))
