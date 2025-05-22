@@ -11,6 +11,7 @@ from roguelike_game.systems.editor.tiles.controller.tools.tile_toolbar_controlle
 
 from roguelike_engine.map.model.overlay.overlay_manager import load_overlay, save_overlay
 from roguelike_engine.utils.loader import load_image
+from roguelike_engine.map.model.layer import Layer
 
 
 
@@ -77,7 +78,30 @@ class TileEditorController:
         local_r, local_c = row-offy, col-offx
         zone_overlay[local_r][local_c] = code
         save_overlay(zone_name, zone_overlay)
-        print(f"[Tile][Brush] 📝 Overlay actualizado: global ({row},{col}), local ({local_r},{local_c}) en zona '{zone_name}'")
+        print(f"[Tile][Brush] 📝 Overlay actualizado: global ({row},{col}), local ({local_r},{local_c}) en zona '{zone_name}', capa: {self.editor.current_layer.name}")
+        # --- Actualizar in-memory para multi-layer ---
+        layer = self.editor.current_layer
+        # 1) actualizar matriz de códigos
+        if layer in map.layers:
+            try:
+                map.layers[layer][row][col] = code
+            except Exception:
+                pass
+        # 2) actualizar tile sprite en el grid de la capa
+        grid = map.tiles_by_layer.get(layer)
+        if grid and 0 <= row < len(grid) and 0 <= col < len(grid[0]):
+            t = grid[row][col]
+            if t:
+                t.sprite = sprite
+                t.scaled_cache.clear()
+        # 3) si es Ground, actualizar legacy grid combinado
+        if layer == Layer.Ground:
+            try:
+                ltile = map.tiles[row][col]
+                ltile.sprite = sprite
+                ltile.scaled_cache.clear()
+            except Exception:
+                pass
         map.view.invalidate_cache()
 
 

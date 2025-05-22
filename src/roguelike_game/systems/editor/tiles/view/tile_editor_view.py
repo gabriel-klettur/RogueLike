@@ -1,4 +1,3 @@
-
 # Path: src/roguelike_game/systems/editor/tiles/view/tile_editor_view.py
 import pygame
 from roguelike_engine.config.config_tiles import TILE_SIZE
@@ -32,7 +31,7 @@ class TileEditorView:
 
     def _render_view_panel(self, screen, camera, map):
         panel_w = TILE_SIZE + 40
-        panel_h = 3 * (TILE_SIZE + 30)
+        panel_h = 4 * (TILE_SIZE + 30)
         x0 = self.controller.toolbar.x + self.controller.toolbar.size + 20
         y0 = self.controller.toolbar.y
 
@@ -45,10 +44,16 @@ class TileEditorView:
             ("Hovered",  self.controller._tile_under_mouse(mouse_pos, camera, map), OUTLINE_HOVER),
             ("Selected", self.editor.selected_tile,                     OUTLINE_SEL),
             ("Choice",   None,                                         OUTLINE_CHOICE),
+            ("Layer",    self.editor.current_layer.name,              None),
         ]
 
         for idx, (label, tile, color) in enumerate(items):
             ty = idx * (TILE_SIZE + 30) + 10
+            # Si es capa, mostrar solo texto
+            if label == "Layer":
+                text = font.render(f"{label}: {self.editor.current_layer.name}", True, (255, 255, 255))
+                panel.blit(text, (5, ty + TILE_SIZE + 2))
+                continue
             sprite = None
             if label == "Choice" and self.editor.current_choice:
                 sprite = load_image(self.editor.current_choice, (TILE_SIZE, TILE_SIZE))
@@ -58,7 +63,8 @@ class TileEditorView:
             if sprite:
                 panel.blit(sprite, ((panel_w - TILE_SIZE)//2, ty))
             rect = pygame.Rect((panel_w - TILE_SIZE)//2, ty, TILE_SIZE, TILE_SIZE)
-            pygame.draw.rect(panel, color, rect, 3)
+            if color:
+                pygame.draw.rect(panel, color, rect, 3)
             text = font.render(label, True, (255, 255, 255))
             panel.blit(text, (5, ty + TILE_SIZE + 2))
 

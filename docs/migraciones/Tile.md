@@ -93,13 +93,18 @@
 - Cache de sprites escalados en `tile.scaled_cache` por nivel de zoom.
 - Tamaño de chunk configurable (`chunk_size`) permite balancear memoria vs. rendimiento.
 
-### Fase 4 – Herramientas y editor de mapas
-Editor
-• Añadir selector de capa en UI.
-• Permitir pintar/seleccionar tiles en capa activa.
-Validaciones
-• Inhabilitar dibujo en capas no permitidas (por ejemplo, Collision sólo cierto brush).
-• Previsualizar orden real de pintado.
+### Fase 4 – Herramientas y editor de mapas  (✅ Completada)
+
+**Editor**
+- Selector de capa con rueda del ratón.
+- Pintado en la capa activa seleccionada.
+- Visualización de la capa actual en el panel de vista.
+- Indicador de capa sobre el jugador en modo "brush".
+
+**Validaciones y UX**
+- Scroll cicla paleta cuando está abierta.
+- Rueda cicla capas solo en modo "brush".
+- Actualización inmediata del render (mapa y entidades) al pintar con brush.
 
 ### Fase 5 – Script de migración de datos
 Conversión automática

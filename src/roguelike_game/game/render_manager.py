@@ -45,6 +45,7 @@ class RendererManager:
         self.debug_overlay = DebugOverlay(perf_log=perf_log)
         self.zone_view = ZoneView()
         self.minimap = minimap
+        self._last_state = None  # almacenar último estado para editor
 
 
     def render_game(
@@ -58,6 +59,9 @@ class RendererManager:
         entities=None,        
         systems=None,        
     ):
+
+        # guardar state para _render_editors
+        self._last_state = state
 
         @benchmark(perf_log, "3.0. init_and_cleaning")
         def _init_and_cleaning():
@@ -146,18 +150,34 @@ class RendererManager:
         """
         Renderiza los editores de edificios y tiles si están activos.
         """
-        if self.buildings_editor.editor_state.active:
-            self.buildings_editor.view.render(
-                self.screen,
-                self.camera,
-                self.entities.buildings
-            )
         if self.tiles_editor.editor_state.active:
+            # Si estamos en modo brush, re-renderizar mapa y entidades para ver el cambio inmediato
+            if self.tiles_editor.editor_state.current_tool == "brush":
+                self._render_map(self.camera, self.screen, self.map)
+                # re-dibujar entidades (edificios, enemigos, jugador)
+                self._render_z_entities(
+                    self._last_state, self.camera, self.screen, self.entities
+                )
+            # Render tile editor UI
             self.tiles_editor.view.render(
                 self.screen,
                 self.camera,
                 self.map
             )
+            # Mostrar indicador de capa encima del jugador si estamos en modo brush
+            if self.tiles_editor.editor_state.current_tool == "brush":
+                player = self.entities.player
+                # Convertir coords de mundo a pantalla
+                sx = (player.x - self.camera.offset_x) * self.camera.zoom
+                sy = (player.y - self.camera.offset_y) * self.camera.zoom
+                font = pygame.font.SysFont("Arial", 14)
+                layer_name = self.tiles_editor.editor_state.current_layer.name
+                text_surf = font.render(layer_name, True, (255, 255, 255))
+                text_rect = text_surf.get_rect(center=(sx, sy - 20))
+                bg_rect = text_rect.inflate(8, 8)
+                pygame.draw.rect(self.screen, (0, 0, 0), bg_rect)
+                self.screen.blit(text_surf, text_rect)
+                self._dirty_rects.extend([bg_rect, text_rect])
 
     def _render_effects(self, camera, screen, effects):
         dirty_rects = effects.render(screen, camera)
