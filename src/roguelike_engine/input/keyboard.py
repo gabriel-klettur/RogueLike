@@ -1,16 +1,15 @@
 # Path: src/roguelike_engine/input/keyboard.py
 import pygame, time
 import roguelike_engine.config.config as config
-from roguelike_engine.map.events import handle_expand_dungeon
+from roguelike_engine.map.events.events import handle_expand_dungeon
 
 from roguelike_game.entities.npc.factory import NPCFactory
 
 def handle_keyboard(event, state, camera, clock, menu, entities, effects, tiles_editor, map_manager):
     if event.type == pygame.KEYDOWN:
         
-        # F3: añadir mazmorra a la izquierda y recargar mapa
-        if handle_expand_dungeon(event, map_manager, entities):
-            return
+        if event.key == pygame.K_F3:
+            handle_expand_dungeon(map_manager, entities)
 
         if event.key == pygame.K_ESCAPE:
             menu.show_menu = not menu.show_menu

@@ -1,16 +1,15 @@
-import pygame, time
-from collections import deque
+# Path: src/roguelike_engine/map/events/events.py
+
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
+import random
 
 
-def handle_expand_dungeon(event, map_manager, entities):
+def handle_expand_dungeon(map_manager, entities):
     """
     Maneja F3 para añadir nueva dungeon a la izquierda, recargar mapa y ajustar la posición del jugador.
     Retorna True si procesó el evento.
     """
-    if event.type != pygame.KEYDOWN or event.key != pygame.K_F3:
-        return False
 
     base = 'extra_dungeon'
     # determinar índice más alto usado
@@ -46,9 +45,13 @@ def handle_expand_dungeon(event, map_manager, entities):
     sub_x = px - tx * TILE_SIZE
     sub_y = py - ty * TILE_SIZE
 
-    global_map_settings.additional_zones[new_key] = (parent_key, 'left')
-    # expansión incremental de la nueva zona
-    map_manager.expand_zone('left', new_key, parent_key)
+    # elegir lado al azar sin solapar zonas existentes
+    parent_off = old_off[parent_key]
+    all_sides = ['bottom', 'top', 'left', 'right']
+    valid_sides = [s for s in all_sides if global_map_settings.calculate_offset(parent_off, s) not in old_off.values()]
+    side = random.choice(valid_sides) if valid_sides else 'bottom'
+    global_map_settings.additional_zones[new_key] = (parent_key, side)
+    map_manager.expand_zone(side, new_key, parent_key)
 
     # ajustar posición del jugador en coords de mundo
     if current_zone:
