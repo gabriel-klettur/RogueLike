@@ -179,6 +179,13 @@ class RendererManager:
                 pygame.draw.rect(self.screen, (0, 0, 0), bg_rect)
                 self.screen.blit(text_surf, text_rect)
                 self._dirty_rects.extend([bg_rect, text_rect])
+        # Render Building Editor UI
+        if self.buildings_editor.editor_state.active:
+            self.buildings_editor.view.render(
+                self.screen,
+                self.camera,
+                self.entities.buildings
+            )
 
     def _render_effects(self, camera, screen, effects):
         dirty_rects = effects.render(screen, camera)

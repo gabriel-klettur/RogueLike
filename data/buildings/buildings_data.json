@@ -362,8 +362,8 @@
     },
     {
         "zone": "lobby",
-        "rel_x": 572,
-        "rel_y": 607,
+        "rel_x": 565,
+        "rel_y": 577,
         "image_path": "assets/buildings\\vegetation\\tree_10.PNG",
         "solid": true,
         "scale": [
