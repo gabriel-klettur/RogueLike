@@ -99,6 +99,10 @@ class TileEditorController:
             zone_layers[l] = sub
         save_layers(zone_name, zone_layers)
         print(f"[Tile][Persist] Zona '{zone_name}' actualizada: capa {layer.name}, pos ({row},{col})")
+        # Debug for brush
+        local_r = row - offy
+        local_c = col - offx
+        print(f"[Tile][Brush] 📝 Overlay aplicado: global ({row},{col}), local ({local_r},{local_c}) en zona '{zone_name}', capa: {layer.name}")
         map.view.invalidate_cache()
 
 
@@ -135,43 +139,16 @@ class TileEditorController:
         # 6) Fijar overlay_code al código original
         tile.overlay_code = code
 
-        # 7) Actualizar en memoria y persistir zona
+        # 7) Debug only: EyeDropper, no persistence
         layer = self.editor.current_layer
         row = tile.y // TILE_SIZE; col = tile.x // TILE_SIZE
-        # determinar zona y offsets
-        for zn,(ox,oy) in global_map_settings.zone_offsets.items():
+        # Determine zone for debug
+        zone_name = 'no_zone'
+        for zn, (ox, oy) in global_map_settings.zone_offsets.items():
             if ox <= col < ox + global_map_settings.zone_width and oy <= row < oy + global_map_settings.zone_height:
-                zone_name, offx, offy = zn, ox, oy
+                zone_name = zn
                 break
-        else:
-            zone_name, offx, offy = 'no_zone', 0, 0
-        # actualizar map.layers y map.tiles_by_layer
-        try:
-            map.layers[layer][row][col] = code
-        except Exception:
-            pass
-        grid = map.tiles_by_layer.get(layer)
-        if grid and 0 <= row < len(grid) and 0 <= col < len(grid[0]):
-            t = grid[row][col]
-            if t:
-                t.overlay_code = code
-        # extraer subgrids de map.layers para la zona
-        zone_layers: dict[Layer, list[list[str]]] = {}
-        if zone_name != 'no_zone':
-            zh, zw = global_map_settings.zone_height, global_map_settings.zone_width
-        else:
-            zh, zw = len(map.tiles), len(map.tiles[0]) if map.tiles else 0
-        for l, full in map.layers.items():
-            sub = []
-            for ry in range(zh):
-                y = offy + ry
-                if 0 <= y < len(full):
-                    sub.append(full[y][offx:offx+zw])
-                else:
-                    sub.append([''] * zw)
-            zone_layers[l] = sub
-        save_layers(zone_name, zone_layers)
-        print(f"[Tile][Persist] Zona '{zone_name}' actualizada: capa {layer.name}, pos ({row},{col})")
+        print(f"[Tile][EyeDroper] Zona '{zone_name}', capa '{layer.name}', pos ({row},{col})")
         map.view.invalidate_cache()
 
 
