@@ -70,11 +70,11 @@ class MapService:
         self._place_additional_zones(world)
         # 6) Serializar matriz global a filas de texto
         rows = ["".join(row) for row in world.matrix]
-        # 7) Cargar tiles y overlay
-        _, tiles, overlay = self.loader.load(rows, key)
+        # 7) Cargar capas y tiles
+        _, tiles_by_layer, layers = self.loader.load(rows, key)
         # 8) Preparar metadata final
         result_meta = {"lobby_offset": offsets["lobby"], **dungeon_meta}
-        return Map(rows, tiles, overlay, result_meta, key)
+        return Map(rows, layers, tiles_by_layer, result_meta, key)
 
     def _place_lobby_zone(self, world: Zone) -> Tuple[int, int]:
         rows = generate_lobby_matrix()

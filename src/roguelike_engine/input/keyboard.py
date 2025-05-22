@@ -9,7 +9,7 @@ def handle_keyboard(event, state, camera, clock, menu, entities, effects, tiles_
     if event.type == pygame.KEYDOWN:
         
         if event.key == pygame.K_F3:
-            handle_expand_dungeon(map_manager, entities)
+            handle_expand_dungeon(event, map_manager, entities)
 
         if event.key == pygame.K_ESCAPE:
             menu.show_menu = not menu.show_menu

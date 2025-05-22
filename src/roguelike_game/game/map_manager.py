@@ -1,5 +1,6 @@
 # Path: src/roguelike_game/game/map_manager.py
 from roguelike_engine.map.controller.map_controller import build_map
+from roguelike_engine.map.model.layer import Layer
 from roguelike_engine.map.utils import calculate_dungeon_offset
 from roguelike_engine.map.utils import get_zone_for_tile
 from roguelike_engine.map.view.chunked_map_view import ChunkedMapView
@@ -13,10 +14,14 @@ class MapManager:
         # 1) Construir datos con MapService
         self.result = build_map(map_name)
 
-        # 2) Propiedades básicas
+        # 2) Propiedades básicas y multi-capa
         self.name = self.result.name
         self.matrix = self.result.matrix
-        self.overlay = self.result.overlay
+        # layers y tiles por capa
+        self.layers = self.result.layers
+        self.tiles_by_layer = self.result.tiles_by_layer
+        # legacy overlay y grid de tiles
+        self.overlay = self.layers.get(Layer.Ground)
         self.tiles = self.result.tiles
         # Precomputar tiles sólidos para colisiones
         self.solid_tiles = [tile for row in self.tiles for tile in row if getattr(tile, "solid", False)]
@@ -107,6 +112,7 @@ class MapManager:
         from roguelike_engine.map.model.generator.factory import get_generator
         from roguelike_engine.config.map_config import global_map_settings
         from roguelike_engine.map.model.loader.text_loader_strategy import TextMapLoader
+        from roguelike_engine.tile.loader import load_tiles_from_text
 
         # Guardar offsets viejos
         old_offsets = global_map_settings.zone_offsets.copy()
@@ -182,15 +188,21 @@ class MapManager:
         # Actualizar matriz de strings con túneles
         self.matrix = [''.join(r) for r in grid]
 
-        # Regenerar tiles y overlay
+        # Regenerar tiles y overlay multi-capa
         loader = TextMapLoader()
-        _, self.tiles, self.overlay = loader.load(self.matrix, self.name)
+        _, new_tiles_by_layer, new_raw_layers = loader.load(self.matrix, self.name)
+        # Actualizar capas y tiles por capa
+        self.layers = new_raw_layers
+        self.tiles_by_layer = new_tiles_by_layer
+        # Legacy: overlay solo Ground
+        self.overlay = new_raw_layers.get(Layer.Ground)
+        # Reconstruir grid combinado de Tiles desde overlay Ground
+        self.tiles = load_tiles_from_text(self.matrix, self.overlay)
 
         # Recalcular tiles sólidos
         self.solid_tiles = [t for row in self.tiles for t in row if getattr(t, "solid", False)]
 
         # Reetiquetar tiles por zona
-        from roguelike_engine.map.utils import get_zone_for_tile
         self.tiles_by_zone.clear()
         for row in self.tiles:
             for tile in row:
