@@ -25,3 +25,33 @@ class Map:
         self.overlay = ground
         # Generar tiles combinados usando overlay Ground
         self.tiles = load_tiles_from_text(self.matrix, self.overlay)
+
+    def get_tile(self, layer: Layer, x: int, y: int) -> Optional[Tile]:
+        """Devuelve el Tile en la capa y coordenadas dadas, o None si está fuera de rango."""
+        grid = self.tiles_by_layer.get(layer)
+        if not grid:
+            return None
+        if 0 <= y < len(grid) and 0 <= x < len(grid[0]):
+            return grid[y][x]
+        return None
+
+    def get_tiles_for_layer(self, layer: Layer) -> List[List[Tile]]:
+        """Devuelve la matriz de Tiles para la capa indicada."""
+        return self.tiles_by_layer.get(layer, [])
+
+    def get_layer(self, layer: Layer) -> List[List[str]]:
+        """Devuelve la matriz de códigos (strings) para la capa indicada."""
+        return self.layers.get(layer, [])
+
+    def set_tile(self, layer: Layer, x: int, y: int, code: str) -> None:
+        """Actualiza el código en la capa dada y reconstruye el Tile correspondiente."""
+        codes = self.layers.get(layer)
+        if codes and 0 <= y < len(codes) and 0 <= x < len(codes[0]):
+            codes[y][x] = code
+            # Reconstruir tiles para la capa
+            new_grid = load_tiles_from_text(self.matrix, codes)
+            self.tiles_by_layer[layer] = new_grid
+            # Si modificamos Ground, actualizar legacy overlay y tiles
+            if layer == Layer.Ground:
+                self.overlay = codes
+                self.tiles = load_tiles_from_text(self.matrix, self.overlay)

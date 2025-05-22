@@ -68,12 +68,18 @@
 - `save_overlay` queda deprecado como compatibilidad con el formato antiguo.  
 
 ### Fase 2 – Deserialización y API interna
-Parser de JSON
-• Modificar loader para leer el nuevo bloque layers.
-• Validar tamaño y valores por capa.
-Interfaz de mapa
-• Exponer métodos como getTile(layer, x,y) y setTile(…).
-• Adaptar lógica de colisión a layers["Collision"].
+- **Parser de JSON**  
+  - Leer el bloque `layers` del JSON, manteniendo compatibilidad con el formato legacy (`overlay`).  
+  - Validar que todas las matrices de `layers` tengan dimensiones `width x height`.  
+  - Inicializar `layers[Ground]` con strings vacíos si faltan datos.  
+- **API de Map**  
+  - Constructor recibe `matrix`, `layers`, `tiles_by_layer`, `metadata`, `name` y calcula legacy `overlay` y `tiles` en `__post_init__`.  
+  - Métodos públicos:  
+    - `get_tile(layer: Layer, x: int, y: int) -> Optional[Tile]`  
+    - `set_tile(layer: Layer, x: int, y: int, code: str) -> None`  
+    - `get_layer(layer: Layer) -> List[List[str]]`  
+    - `get_tiles_for_layer(layer: Layer) -> List[List[Tile]]`  
+  - Adaptar lógica de colisión, pathfinding y eventos para usar `Layer.Collision` en lugar de overlay único.
 
 ### Fase 3 – Renderizado por capas
 Pipeline de dibujado

@@ -286,8 +286,8 @@
     },
     {
         "zone": "lobby",
-        "rel_x": 505,
-        "rel_y": 1150,
+        "rel_x": 515,
+        "rel_y": 1149,
         "image_path": "assets/buildings/shops/healer_1.png",
         "solid": true,
         "scale": [
@@ -799,8 +799,8 @@
     },
     {
         "zone": "lobby",
-        "rel_x": 733,
-        "rel_y": 825,
+        "rel_x": 848,
+        "rel_y": 806,
         "image_path": "assets/buildings\\portals\\portal.png",
         "solid": true,
         "scale": [
