@@ -65,7 +65,10 @@ class TextMapLoader(MapLoader):
                         tx = off_x + x0
                         if 0 <= ty < height and 0 <= tx < width and code:
                             base[ty][tx] = code
-        # 4) Generar tiles por capa
+        # 4) Asegurar todas las capas (incluso vacías) antes de generar tiles por capa
+        for layer in Layer:
+            raw_layers.setdefault(layer, [["" for _ in range(width)] for _ in range(height)])
+        # Generar tiles por capa
         tiles_by_layer: Dict[Layer, List[List[Tile]]] = {}
         for layer, grid in raw_layers.items():
             tiles_by_layer[layer] = load_tiles_from_text(map_data, grid)

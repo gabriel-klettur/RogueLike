@@ -12,6 +12,7 @@ from roguelike_game.systems.editor.tiles.controller.tools.tile_toolbar_controlle
 from roguelike_engine.map.model.overlay.overlay_manager import load_layers, save_layers
 from roguelike_engine.utils.loader import load_image
 from roguelike_engine.map.model.layer import Layer
+from typing import Dict, List
 
 
 
@@ -59,7 +60,7 @@ class TileEditorController:
 
         tile.overlay_code = code
 
-        # 4) Persistir en JSON de capas
+        # 4) Actualizar en memoria y persistir solo la zona
         layer = self.editor.current_layer
         row = tile.y // TILE_SIZE; col = tile.x // TILE_SIZE
         # determinar zona y offsets
@@ -69,44 +70,35 @@ class TileEditorController:
                 break
         else:
             zone_name, offx, offy = 'no_zone', 0, 0
-        # Cargar capas existentes o usar estado actual del map
-        layers_dict = load_layers(zone_name) or map.layers
-        # Índices locales
-        if zone_name in global_map_settings.zone_offsets:
-            local_r, local_c = row-offy, col-offx
-        else:
-            local_r, local_c = row, col
-        # Actualizar código en la capa seleccionada
+        # 4.1) actualizar map.layers y map.tiles_by_layer
         try:
-            grid = layers_dict.get(layer)
-            if grid and 0 <= local_r < len(grid) and 0 <= local_c < len(grid[0]):
-                grid[local_r][local_c] = code
+            map.layers[layer][row][col] = code
         except Exception:
             pass
-        save_layers(zone_name, layers_dict)
-        print(f"[Tile][Persist] Capas guardadas: zona '{zone_name}', capa: {layer.name}, global ({row},{col})")
-        # --- Actualizar in-memory para multi-layer ---
-        # 1) actualizar matriz de códigos
-        if layer in map.layers:
-            try:
-                map.layers[layer][row][col] = code
-            except Exception:
-                pass
-        # 2) actualizar tile sprite en el grid de la capa
         grid = map.tiles_by_layer.get(layer)
         if grid and 0 <= row < len(grid) and 0 <= col < len(grid[0]):
             t = grid[row][col]
             if t:
                 t.sprite = sprite
                 t.scaled_cache.clear()
-        # 3) si es Ground, actualizar legacy grid combinado
-        if layer == Layer.Ground:
-            try:
-                ltile = map.tiles[row][col]
-                ltile.sprite = sprite
-                ltile.scaled_cache.clear()
-            except Exception:
-                pass
+                t.overlay_code = code
+        # 4.2) extraer subgrids de map.layers para la zona
+        zone_layers: dict[Layer, list[list[str]]] = {}
+        if zone_name != 'no_zone':
+            zh, zw = global_map_settings.zone_height, global_map_settings.zone_width
+        else:
+            zh, zw = len(map.tiles), len(map.tiles[0]) if map.tiles else 0
+        for l, full in map.layers.items():
+            sub = []
+            for ry in range(zh):
+                y = offy + ry
+                if 0 <= y < len(full):
+                    sub.append(full[y][offx:offx+zw])
+                else:
+                    sub.append([''] * zw)
+            zone_layers[l] = sub
+        save_layers(zone_name, zone_layers)
+        print(f"[Tile][Persist] Zona '{zone_name}' actualizada: capa {layer.name}, pos ({row},{col})")
         map.view.invalidate_cache()
 
 
@@ -143,28 +135,43 @@ class TileEditorController:
         # 6) Fijar overlay_code al código original
         tile.overlay_code = code
 
-        # 7) Persistir en JSON de capas
+        # 7) Actualizar en memoria y persistir zona
         layer = self.editor.current_layer
         row = tile.y // TILE_SIZE; col = tile.x // TILE_SIZE
+        # determinar zona y offsets
         for zn,(ox,oy) in global_map_settings.zone_offsets.items():
             if ox <= col < ox + global_map_settings.zone_width and oy <= row < oy + global_map_settings.zone_height:
                 zone_name, offx, offy = zn, ox, oy
                 break
         else:
             zone_name, offx, offy = 'no_zone', 0, 0
-        layers_dict = load_layers(zone_name) or map.layers
-        if zone_name in global_map_settings.zone_offsets:
-            local_r, local_c = row-offy, col-offx
-        else:
-            local_r, local_c = row, col
+        # actualizar map.layers y map.tiles_by_layer
         try:
-            grid = layers_dict.get(layer)
-            if grid and 0 <= local_r < len(grid) and 0 <= local_c < len(grid[0]):
-                grid[local_r][local_c] = code
+            map.layers[layer][row][col] = code
         except Exception:
             pass
-        save_layers(zone_name, layers_dict)
-        print(f"[Tile][Persist] Capas guardadas: zona '{zone_name}', capa: {layer.name}, global ({row},{col})")
+        grid = map.tiles_by_layer.get(layer)
+        if grid and 0 <= row < len(grid) and 0 <= col < len(grid[0]):
+            t = grid[row][col]
+            if t:
+                t.overlay_code = code
+        # extraer subgrids de map.layers para la zona
+        zone_layers: dict[Layer, list[list[str]]] = {}
+        if zone_name != 'no_zone':
+            zh, zw = global_map_settings.zone_height, global_map_settings.zone_width
+        else:
+            zh, zw = len(map.tiles), len(map.tiles[0]) if map.tiles else 0
+        for l, full in map.layers.items():
+            sub = []
+            for ry in range(zh):
+                y = offy + ry
+                if 0 <= y < len(full):
+                    sub.append(full[y][offx:offx+zw])
+                else:
+                    sub.append([''] * zw)
+            zone_layers[l] = sub
+        save_layers(zone_name, zone_layers)
+        print(f"[Tile][Persist] Zona '{zone_name}' actualizada: capa {layer.name}, pos ({row},{col})")
         map.view.invalidate_cache()
 
 

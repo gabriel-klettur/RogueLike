@@ -108,8 +108,7 @@ class TileEditorEventHandler:
             layers = list(Layer)
             idx = layers.index(self.editor_state.current_layer)
             new_idx = (idx + (1 if ev.y > 0 else -1)) % len(layers)
-            self.editor_state.current_layer = layers[new_idx]
-            print(f"🗂️ Capa actual: {self.editor_state.current_layer.name}")
+            self.editor_state.current_layer = layers[new_idx]            
             return
         # Scroll en picker si está abierto
         if self.editor_state.picker_state.open:

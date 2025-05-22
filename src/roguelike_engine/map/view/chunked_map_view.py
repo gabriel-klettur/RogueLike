@@ -54,6 +54,9 @@ class ChunkedMapView:
                             tile = grid[ty][tx]
                             if not tile:
                                 continue
+                            # Skip non-ground layers when no overlay code
+                            if layer != Layer.Ground and not getattr(tile, "overlay_code", None):
+                                continue
                             # sprite cacheado por zoom
                             sprite = tile.scaled_cache.get(zkey)
                             if sprite is None:
