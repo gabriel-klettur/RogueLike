@@ -3,7 +3,7 @@ from .interfaces import MapLoader
 from .text_loader import parse_map_text
 from roguelike_engine.tile.loader import load_tiles_from_text
 from roguelike_engine.tile.model.tile import Tile
-from roguelike_engine.map.model.overlay.overlay_manager import load_layers, save_layers, load_overlay
+from roguelike_engine.map.model.overlay.overlay_manager import load_layers, save_layers
 from roguelike_engine.map.model.layer import Layer
 from roguelike_engine.config.map_config import global_map_settings
 
@@ -50,20 +50,21 @@ class TextMapLoader(MapLoader):
         if adapted:
             print(f"[TextMapLoader] Adaptando capas para '{map_name}' a {width}x{height}")
             save_layers(map_name, raw_layers)
-        # Merge overlay de zonas en Ground
-        ground = raw_layers.get(Layer.Ground)
-        if ground is None:
-            ground = [["" for _ in range(width)] for _ in range(height)]
-            raw_layers[Layer.Ground] = ground
+        # Merge overlays por zona en cada capa existente o nueva
         for zone_name, (off_x, off_y) in global_map_settings.zone_offsets.items():
-            zone_overlay = load_overlay(zone_name)
-            if zone_overlay:
-                for y0, row in enumerate(zone_overlay):
-                    for x0, code in enumerate(row):
+            zone_layers = load_layers(zone_name)
+            if not zone_layers:
+                continue
+            for layer, zgrid in zone_layers.items():
+                # asegurar capa en raw_layers
+                base = raw_layers.setdefault(layer, [["" for _ in range(width)] for _ in range(height)])
+                # superponer códigos
+                for y0, zrow in enumerate(zgrid):
+                    for x0, code in enumerate(zrow):
                         ty = off_y + y0
                         tx = off_x + x0
-                        if 0 <= ty < height and 0 <= tx < width:
-                            ground[ty][tx] = code
+                        if 0 <= ty < height and 0 <= tx < width and code:
+                            base[ty][tx] = code
         # 4) Generar tiles por capa
         tiles_by_layer: Dict[Layer, List[List[Tile]]] = {}
         for layer, grid in raw_layers.items():

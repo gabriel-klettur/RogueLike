@@ -4,7 +4,7 @@ from pathlib import Path
 
 from roguelike_engine.utils.loader import load_image
 from roguelike_engine.config.config import ASSETS_DIR
-from roguelike_engine.map.model.overlay.overlay_manager import load_overlay, save_overlay
+from roguelike_engine.map.model.overlay.overlay_manager import load_layers, save_layers
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.tile.assets import load_base_tile_images
 from roguelike_engine.config.map_config import global_map_settings
@@ -169,25 +169,23 @@ class TilePickerController:
         if zone_name is None:
             zone_name = "no_zone"
 
-        # Cargar o inicializar overlay de la zona
-        zone_overlay = load_overlay(zone_name)
-        if zone_overlay is None:
-            if zone_name in global_map_settings.zone_offsets:
-                h = global_map_settings.zone_height
-                w = global_map_settings.zone_width
-            else:
-                h = len(map.tiles)
-                w = len(map.tiles[0]) if map.tiles else 0
-            zone_overlay = [["" for _ in range(w)] for _ in range(h)]
-
-        # Calcular posición local dentro de la overlay de la zona
+        # Persistir JSON de capas
+        layer = self.editor_state.current_layer
+        # Cargar capas existentes o usar estado actual
+        layers = load_layers(zone_name) or map.layers
+        # Índices locales
         if zone_name in global_map_settings.zone_offsets:
             local_row = row - zone_offset_y
             local_col = col - zone_offset_x
         else:
             local_row, local_col = row, col
-
-        zone_overlay[local_row][local_col] = code
-
-        save_overlay(zone_name, zone_overlay)
-        print(f"📝 Overlay guardado en: {zone_name}.overlay.json")
+        # Actualizar código en la capa seleccionada
+        try:
+            grid = layers.get(layer)
+            if grid and 0 <= local_row < len(grid) and 0 <= local_col < len(grid[0]):
+                grid[local_row][local_col] = code
+        except Exception:
+            pass
+        # Guardar todas las capas
+        save_layers(zone_name, layers)
+        print(f"[Tile][Persist] Capas guardadas: zona '{zone_name}', capa: {layer.name}, global ({row},{col})")

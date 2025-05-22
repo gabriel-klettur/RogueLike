@@ -9,7 +9,7 @@ from roguelike_engine.config.map_config import global_map_settings
 from roguelike_game.systems.editor.tiles.controller.tools.tile_picker_controller import TilePickerController
 from roguelike_game.systems.editor.tiles.controller.tools.tile_toolbar_controller import TileToolbarController
 
-from roguelike_engine.map.model.overlay.overlay_manager import load_overlay, save_overlay
+from roguelike_engine.map.model.overlay.overlay_manager import load_layers, save_layers
 from roguelike_engine.utils.loader import load_image
 from roguelike_engine.map.model.layer import Layer
 
@@ -59,7 +59,8 @@ class TileEditorController:
 
         tile.overlay_code = code
 
-        # 4) Persistir en overlay de zona
+        # 4) Persistir en JSON de capas
+        layer = self.editor.current_layer
         row = tile.y // TILE_SIZE; col = tile.x // TILE_SIZE
         # determinar zona y offsets
         for zn,(ox,oy) in global_map_settings.zone_offsets.items():
@@ -68,19 +69,23 @@ class TileEditorController:
                 break
         else:
             zone_name, offx, offy = 'no_zone', 0, 0
-        # cargar/inicializar overlay de la zona
-        if zone_name != 'no_zone':
-            h,w = global_map_settings.zone_height, global_map_settings.zone_width
+        # Cargar capas existentes o usar estado actual del map
+        layers_dict = load_layers(zone_name) or map.layers
+        # Índices locales
+        if zone_name in global_map_settings.zone_offsets:
+            local_r, local_c = row-offy, col-offx
         else:
-            h,w = len(map.tiles), len(map.tiles[0]) if map.tiles else 0
-        zone_overlay = load_overlay(zone_name) or [['' for _ in range(w)] for _ in range(h)]
-        # actualizar coords locales
-        local_r, local_c = row-offy, col-offx
-        zone_overlay[local_r][local_c] = code
-        save_overlay(zone_name, zone_overlay)
-        print(f"[Tile][Brush] 📝 Overlay actualizado: global ({row},{col}), local ({local_r},{local_c}) en zona '{zone_name}', capa: {self.editor.current_layer.name}")
+            local_r, local_c = row, col
+        # Actualizar código en la capa seleccionada
+        try:
+            grid = layers_dict.get(layer)
+            if grid and 0 <= local_r < len(grid) and 0 <= local_c < len(grid[0]):
+                grid[local_r][local_c] = code
+        except Exception:
+            pass
+        save_layers(zone_name, layers_dict)
+        print(f"[Tile][Persist] Capas guardadas: zona '{zone_name}', capa: {layer.name}, global ({row},{col})")
         # --- Actualizar in-memory para multi-layer ---
-        layer = self.editor.current_layer
         # 1) actualizar matriz de códigos
         if layer in map.layers:
             try:
@@ -138,7 +143,8 @@ class TileEditorController:
         # 6) Fijar overlay_code al código original
         tile.overlay_code = code
 
-        # 7) Persistir igual que brush
+        # 7) Persistir en JSON de capas
+        layer = self.editor.current_layer
         row = tile.y // TILE_SIZE; col = tile.x // TILE_SIZE
         for zn,(ox,oy) in global_map_settings.zone_offsets.items():
             if ox <= col < ox + global_map_settings.zone_width and oy <= row < oy + global_map_settings.zone_height:
@@ -146,13 +152,19 @@ class TileEditorController:
                 break
         else:
             zone_name, offx, offy = 'no_zone', 0, 0
-        if zone_name!='no_zone': h,w = global_map_settings.zone_height, global_map_settings.zone_width
-        else: h,w = len(map.tiles), len(map.tiles[0]) if map.tiles else 0
-        zone_overlay = load_overlay(zone_name) or [['' for _ in range(w)] for _ in range(h)]
-        local_r, local_c = row-offy, col-offx
-        zone_overlay[local_r][local_c] = code
-        save_overlay(zone_name, zone_overlay)
-        print(f"[Tile][Eyedropper] 📝 Overlay actualizado: global ({row},{col}), local ({local_r},{local_c}) en zona '{zone_name}'")
+        layers_dict = load_layers(zone_name) or map.layers
+        if zone_name in global_map_settings.zone_offsets:
+            local_r, local_c = row-offy, col-offx
+        else:
+            local_r, local_c = row, col
+        try:
+            grid = layers_dict.get(layer)
+            if grid and 0 <= local_r < len(grid) and 0 <= local_c < len(grid[0]):
+                grid[local_r][local_c] = code
+        except Exception:
+            pass
+        save_layers(zone_name, layers_dict)
+        print(f"[Tile][Persist] Capas guardadas: zona '{zone_name}', capa: {layer.name}, global ({row},{col})")
         map.view.invalidate_cache()
 
 
