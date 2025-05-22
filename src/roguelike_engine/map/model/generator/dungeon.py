@@ -1,4 +1,3 @@
-
 # Path: src/roguelike_engine/map/model/generator/dungeon.py
 import random
 from typing import List, Tuple, Dict, Optional
@@ -59,10 +58,9 @@ class DungeonGenerator(MapGenerator):
                 #print(f"  ▸ Intento {attempts}: dentro de zona evitada, descartada.")
                 continue
 
-            # Pintar habitación
+            # Pintar habitación (slice optimized)
             for yy in range(y, y + h):
-                for xx in range(x, x + w):
-                    map_[yy][xx] = "O"
+                map_[yy][x:x + w] = ["O"] * w
 
             #print(f"  ✅ Intento {attempts}: habitación creada en {(x,y)} tamaño {(w,h)} (Total habitaciones: {len(rooms)+1}).")
 
@@ -87,11 +85,13 @@ class DungeonGenerator(MapGenerator):
     @staticmethod
     def _horiz_tunnel(map_: List[List[str]], x1: int, x2: int, y: int) -> None:
         half = global_map_settings.dungeon_tunnel_thickness // 2
-        for x in range(min(x1, x2), max(x1, x2) + 1):
-            for t in range(global_map_settings.dungeon_tunnel_thickness):
-                yy = y + t - half
-                if 0 <= yy < len(map_):
-                    map_[yy][x] = "="
+        x_start = min(x1, x2)
+        x_end = max(x1, x2)
+        length = x_end - x_start + 1
+        for t in range(global_map_settings.dungeon_tunnel_thickness):
+            yy = y + t - half
+            if 0 <= yy < len(map_):
+                map_[yy][x_start:x_end+1] = ["="] * length
 
     @staticmethod
     def _vert_tunnel(map_: List[List[str]], y1: int, y2: int, x: int) -> None:
