@@ -1,4 +1,3 @@
-
 OUTLINE_SEL    = (0, 255, 0)     # seleccionado (verde)
 OUTLINE_HOVER  = (0, 220, 255)   # hover (cian)
 OUTLINE_CHOICE = (255, 255, 0)   # elección actual (amarillo)
@@ -11,12 +10,13 @@ CLR_BORDER     = (255, 255, 255)
 CLR_HOVER      = (255, 230, 0)
 CLR_SELECTION  = (255, 200, 0)
 
-TOOLS = ["select", "brush", "eyedropper", "view"]
+TOOLS = ["select", "brush", "eyedropper", "view", "view_layers"]
 ICON_PATHS_TILE_TOOLBAR = {
     "select":     "assets/ui/select_tool.png",
     "brush":      "assets/ui/brush_tool.png",
     "eyedropper": "assets/ui/eyedropper_tool.png",
     "view":       "assets/ui/view_tool.png",
+    "view_layers": "assets/ui/layers_view_tool.png",
 }
 
 BTN_W = 100

@@ -184,7 +184,21 @@ class RendererManager:
         self._dirty_rects.extend(dirty_rects)
 
     def _render_map(self, camera, screen, map):
-        dirty_rects = self.map.view.render(screen, camera, map)
+        # Apply layer visibility filter when tile editor is active
+        editor_state = getattr(self.tiles_editor, 'editor_state', None)
+        if editor_state and editor_state.active and hasattr(editor_state, 'visible_layers'):
+            visible = editor_state.visible_layers
+            orig_layers = map.tiles_by_layer
+            # filter only visible layers
+            filtered = {layer: orig_layers[layer] for layer in orig_layers if visible.get(layer, True)}
+            # Invalidate cache so chunks rebuild with filtered layers
+            self.map.view.invalidate_cache()
+            map.tiles_by_layer = filtered
+            dirty_rects = self.map.view.render(screen, camera, map)
+            # restore original layers
+            map.tiles_by_layer = orig_layers
+        else:
+            dirty_rects = self.map.view.render(screen, camera, map)
         self._dirty_rects.extend(dirty_rects)
 
     def _render_tile_editor_layer(self, state, screen, camera, map):

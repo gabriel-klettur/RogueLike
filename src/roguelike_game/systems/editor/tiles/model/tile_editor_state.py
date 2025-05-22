@@ -17,9 +17,9 @@ class TileEditorState:
         self.view_active = True        # para ver los tiles.
         self.current_layer = Layer.Ground   # capa activa del editor
         
+        # Layers view tool state
+        self.layers_view_open = False      # toggle layer visibility dropdown
+        # Visibility state for each layer
+        self.visible_layers = {layer: True for layer in Layer}
+
         self.picker_state = TilePickerState()
-
-
-
-        
-        
