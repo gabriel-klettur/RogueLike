@@ -46,7 +46,8 @@ class RendererManager:
         self.zone_view = ZoneView()
         self.minimap = minimap
         self._last_state = None  # almacenar último estado para editor
-
+        # Cache last visible layers to minimize cache invalidations
+        self._last_visible_layers = None
 
     def render_game(
         self,
@@ -184,19 +185,20 @@ class RendererManager:
         self._dirty_rects.extend(dirty_rects)
 
     def _render_map(self, camera, screen, map):
-        # Apply layer visibility filter when tile editor is active
+        # Layer visibility filter when tile editor is active
         editor_state = getattr(self.tiles_editor, 'editor_state', None)
         if editor_state and editor_state.active and hasattr(editor_state, 'visible_layers'):
             visible = editor_state.visible_layers
-            orig_layers = map.tiles_by_layer
-            # filter only visible layers
-            filtered = {layer: orig_layers[layer] for layer in orig_layers if visible.get(layer, True)}
-            # Invalidate cache so chunks rebuild with filtered layers
-            self.map.view.invalidate_cache()
+            # Only invalidate cache on visibility change
+            if visible != self._last_visible_layers:
+                self.map.view.invalidate_cache()
+                self._last_visible_layers = visible.copy()
+            orig = map.tiles_by_layer
+            # apply filter without modifying original
+            filtered = {layer: orig[layer] for layer in orig if visible.get(layer, True)}
             map.tiles_by_layer = filtered
             dirty_rects = self.map.view.render(screen, camera, map)
-            # restore original layers
-            map.tiles_by_layer = orig_layers
+            map.tiles_by_layer = orig
         else:
             dirty_rects = self.map.view.render(screen, camera, map)
         self._dirty_rects.extend(dirty_rects)
