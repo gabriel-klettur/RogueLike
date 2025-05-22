@@ -4,6 +4,7 @@ import pygame
 import math
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.map.model.map_model import Map as MapModel
+from roguelike_engine.map.model.layer import Layer
 
 class ChunkedMapView:
     """
@@ -42,25 +43,31 @@ class ChunkedMapView:
                 surf = pygame.Surface((pix_w, pix_h), pygame.SRCALPHA)
                 zkey = round(zoom * 10) / 10.0
 
-                # dibujar cada tile del chunk en la surface
+                # dibujar cada tile por capa en orden
+                layers_ordered = sorted(map_model.tiles_by_layer.keys(), key=lambda l: l.value)
                 for ty in range(cy*cs, cy*cs + tile_h):
                     for tx in range(cx*cs, cx*cs + tile_w):
-                        tile = map_model.tiles[ty][tx]
+                        for layer in layers_ordered:
+                            grid = map_model.tiles_by_layer.get(layer, [])
+                            if ty < 0 or ty >= len(grid) or tx < 0 or tx >= len(grid[0]):
+                                continue
+                            tile = grid[ty][tx]
+                            if not tile:
+                                continue
+                            # sprite cacheado por zoom
+                            sprite = tile.scaled_cache.get(zkey)
+                            if sprite is None:
+                                sw, sh = tile.sprite.get_size()
+                                sprite = pygame.transform.scale(
+                                    tile.sprite,
+                                    (int(sw * zoom), int(sh * zoom))
+                                )
+                                tile.scaled_cache[zkey] = sprite
 
-                        # sprite cacheado por zoom
-                        sprite = tile.scaled_cache.get(zkey)
-                        if sprite is None:
-                            sw, sh = tile.sprite.get_size()
-                            sprite = pygame.transform.scale(
-                                tile.sprite,
-                                (int(sw * zoom), int(sh * zoom))
-                            )
-                            tile.scaled_cache[zkey] = sprite
-
-                        # posición dentro del chunk
-                        x = int((tx - cx*cs) * TILE_SIZE * zoom)
-                        y = int((ty - cy*cs) * TILE_SIZE * zoom)
-                        surf.blit(sprite, (x, y))
+                            # posición dentro del chunk
+                            x = int((tx - cx*cs) * TILE_SIZE * zoom)
+                            y = int((ty - cy*cs) * TILE_SIZE * zoom)
+                            surf.blit(sprite, (x, y))
 
                 chunk_dict[(cx, cy)] = surf
 

@@ -82,15 +82,16 @@
   - Adaptar lógica de colisión, pathfinding y eventos para usar `Layer.Collision` en lugar de overlay único.
 
 ### Fase 3 – Renderizado por capas
-Pipeline de dibujado
-• Reemplazar render loop único por:
-python
-CopyInsert
-for layer in [Ground, FloorDecals, ObjectsLow, …, OverheadDetails]:
-    drawLayer(layer)
-• Ajustar Z-ordering, blending y opacidades especiales (decals/overhead).
-Optimización
-• Agrupar sprites por tileset/layer para minimizar draw calls.
+
+#### Pipeline de dibujado
+- `RendererManager` invoca `map.view.render`, que utiliza `ChunkedMapView.render` para dibujar solo los chunks visibles.
+- En `_build_chunk_surfaces` de `src/roguelike_engine/map/view/chunked_map_view.py`, iterar por capas ordenadas (`sorted(map_model.tiles_by_layer.keys(), key=lambda l: l.value)`) y luego por cada tile en el chunk, pintando cada sprite en orden Z.
+- Para la vista no por chunks, `MapView` delega en `ZoneView.render_zone` para cada zona en `tiles_by_zone`.
+
+#### Optimización
+- Cache de surfaces por chunk y zoom en `ChunkedMapView.chunks_by_zoom` para evitar redibujos completos.
+- Cache de sprites escalados en `tile.scaled_cache` por nivel de zoom.
+- Tamaño de chunk configurable (`chunk_size`) permite balancear memoria vs. rendimiento.
 
 ### Fase 4 – Herramientas y editor de mapas
 Editor
