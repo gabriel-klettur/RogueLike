@@ -6,7 +6,7 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class WorldConfig:
     # Directorio donde se guardan los archivos de estado del mundo
-    save_dir: Path = Path.cwd() / "saves"
+    save_dir: Path = Path.cwd() / "data" / "saves"
     # Nombre por defecto del archivo de guardado global
     save_file: str = "world_state.json"
     # Número máximo de niveles cargados simultáneamente en memoria
