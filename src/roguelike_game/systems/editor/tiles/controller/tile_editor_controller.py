@@ -65,6 +65,14 @@ class TileEditorController:
                         map.solid_tiles.remove(tile)
                 # Debug print for collision brush
                 print(f"[DEBUG][Collision brush] at ({row},{col}): solid={solid}")
+                # Persist collision in collision_layers and save JSON
+                # Centralizamos lógica de zona
+                zone_name, offx, offy = map.get_zone_for(row, col)
+                local_r, local_c = row - offy, col - offx
+                if zone_name in map.collision_layers:
+                    # Actualizar submatriz y guardar
+                    map.collision_layers[zone_name][local_r][local_c] = self.editor.collision_choice
+                    map.save_collision_layers(zone_name)
             return
 
         # 1) Encuentra el tile bajo el cursor

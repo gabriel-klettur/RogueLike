@@ -4,6 +4,7 @@ from roguelike_engine.map.model.layer import Layer
 from roguelike_engine.map.utils import calculate_dungeon_offset
 from roguelike_engine.map.utils import get_zone_for_tile
 from roguelike_engine.map.view.chunked_map_view import ChunkedMapView
+from roguelike_engine.config.map_config import global_map_settings
 
 from roguelike_engine.config.config_tiles import TILE_SIZE
 
@@ -51,7 +52,11 @@ class MapManager:
                 tile.zone = zone
                 self.tiles_by_zone.setdefault(zone, []).append(tile)
 
-        
+        # 7) Collision layers per zone (data model)
+        self.collision_layers: dict[str, list[list[str]]] = {}
+        # Load collision layers per zone
+        self._load_collision_layers()
+         
         # Estado local del nivel (se usa para persistencia)
         self._local_state: dict = {
             "player_pos": None,    # Tuple[int,int] de posición de jugador en tiles
@@ -199,7 +204,7 @@ class MapManager:
         # Reconstruir grid combinado de Tiles desde overlay Ground
         self.tiles = load_tiles_from_text(self.matrix, self.overlay)
 
-        # Recalcular tiles sólidos
+        # Recalcular tiles sólidas
         self.solid_tiles = [t for row in self.tiles for t in row if getattr(t, "solid", False)]
 
         # Reetiquetar tiles por zona
@@ -215,3 +220,72 @@ class MapManager:
         # Reset region y cache de vista
         self.tiles_in_region = self.all_tiles
         self.view.invalidate_cache()
+
+    def _load_collision_layers(self):
+        """Carga las colisiones por zona desde JSON o desde map.matrix"""
+        from pathlib import Path
+        import json
+        from roguelike_engine.config.config import DATA_DIR
+
+        collisions_dir = Path(DATA_DIR) / "collisions"
+        collisions_dir.mkdir(parents=True, exist_ok=True)
+
+        for zone in self.tiles_by_zone:
+            file_path = collisions_dir / f"{zone}.json"
+            data = None
+            if file_path.exists():
+                try:
+                    data = json.loads(file_path.read_text(encoding='utf-8'))
+                except Exception as e:
+                    print(f"[Warning] No se pudo leer colisiones para zona {zone}: {e}")
+            if data is None:
+                # Inicializar desde matriz global
+                offx, offy = self.get_zone_offset(zone)
+                width, height = global_map_settings.zone_width, global_map_settings.zone_height
+                data = [
+                    list(self.matrix[offy + y][offx:offx + width])
+                    for y in range(height)
+                ]
+                try:
+                    file_path.write_text(json.dumps(data), encoding='utf-8')
+                except Exception as e:
+                    print(f"[Warning] No se pudo escribir archivo de colisiones para zona {zone}: {e}")
+            self.collision_layers[zone] = data
+            # Aplicar estado a cada tile
+            offx, offy = self.get_zone_offset(zone)
+            for y, row in enumerate(data):
+                for x, code in enumerate(row):
+                    gr, gc = offy + y, offx + x
+                    try:
+                        tile = self.tiles[gr][gc]
+                        tile.solid = (code == "#")
+                    except IndexError:
+                        continue
+        # Reconstruir lista de tiles sólidas
+        self.solid_tiles = [t for r in self.tiles for t in r if getattr(t, "solid", False)]
+
+    def save_collision_layers(self, zone_name: str):
+        """Guarda la capa de colisiones de la zona en JSON"""
+        from pathlib import Path
+        import json
+        from roguelike_engine.config.config import DATA_DIR
+        collisions_dir = Path(DATA_DIR) / "collisions"
+        collisions_dir.mkdir(parents=True, exist_ok=True)
+        data = self.collision_layers.get(zone_name)
+        if data is None:
+            return
+        file_path = collisions_dir / f"{zone_name}.json"
+        try:
+            file_path.write_text(json.dumps(data), encoding='utf-8')
+        except Exception as e:
+            print(f"[Warning] No se pudo guardar colisiones para zona {zone_name}: {e}")
+
+    def get_zone_for(self, row: int, col: int) -> tuple[str, int, int]:
+        """Devuelve nombre de zona y offsets (col, row) para coordenadas globales"""
+        zone = self.tiles[row][col].zone
+        offx, offy = global_map_settings.zone_offsets.get(zone, (0, 0))
+        return zone, offx, offy
+
+    def get_zone_offset(self, zone_name: str) -> tuple[int, int]:
+        """Devuelve offsets (col, row) para la zona dada"""
+        return global_map_settings.zone_offsets.get(zone_name, (0, 0))
