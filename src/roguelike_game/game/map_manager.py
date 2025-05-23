@@ -274,6 +274,9 @@ class MapManager:
         data = self.collision_layers.get(zone_name)
         if data is None:
             return
+        # Skip persistent save for dynamically generated dungeon
+        if zone_name == 'dungeon':
+            return
         file_path = collisions_dir / f"{zone_name}.json"
         try:
             file_path.write_text(json.dumps(data), encoding='utf-8')
