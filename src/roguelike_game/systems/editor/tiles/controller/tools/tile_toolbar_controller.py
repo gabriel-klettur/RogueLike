@@ -66,6 +66,10 @@ class TileToolbarController:
                     else:
                         self.editor.show_collisions = False
                         self.editor.show_collisions_overlay = False
+                    # Close collision picker when collision view is off
+                    if not self.editor.show_collisions and not self.editor.show_collisions_overlay:
+                        self.editor.collision_picker_open = False
+                        self.editor.collision_choice = None
                     # close layers dropdown
                     self.editor.layers_view_open = False
                     # Debug print collision view mode
@@ -81,7 +85,9 @@ class TileToolbarController:
                         self.editor.collision_picker_open = True
                         self.editor.picker_state.open = False
                     else:
-                        # Open normal tile picker
+                        # Close collision picker and open normal tile picker
+                        self.editor.collision_picker_open = False
+                        self.editor.collision_choice = None
                         self.editor.picker_state.open = True
                         self.editor.scroll_offset = 0
                 return True
