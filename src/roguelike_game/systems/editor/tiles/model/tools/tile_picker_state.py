@@ -1,4 +1,3 @@
-
 # Path: src/roguelike_game/systems/editor/tiles/model/tools/tile_picker_state.py
 from typing import Optional, Tuple
 import pygame
@@ -28,4 +27,6 @@ class TilePickerState:
         # Surface y botones (la View las rellena)
         self.surface: Optional[pygame.Surface] = None
         self.btn_delete_rect: Optional[pygame.Rect]  = None
-        self.btn_default_rect: Optional[pygame.Rect] = None        
+        self.btn_default_rect: Optional[pygame.Rect] = None
+        # Close button rectangle
+        self.btn_close_rect: Optional[pygame.Rect] = None

@@ -66,6 +66,22 @@ class TileEditorEventHandler:
         if ev.button == 1 and self.controller.toolbar.handle_click(pos):
             return
 
+        # Collision picker click before brush to avoid unwanted painting
+        if self.editor_state.collision_picker_open:
+            x0, y0 = self.editor_state.collision_picker_pos
+            w, h = self.editor_state.collision_picker_panel_size
+            if x0 <= pos[0] <= x0 + w and y0 <= pos[1] <= y0 + h:
+                if ev.button == 1:
+                    for ch, rect in self.editor_state.collision_picker_rects.items():
+                        if rect.collidepoint(pos):
+                            self.editor_state.collision_choice = ch
+                            return
+                elif ev.button == 3:
+                    self.editor_state.collision_picker_dragging = True
+                    dx = pos[0] - x0; dy = pos[1] - y0
+                    self.editor_state.collision_picker_drag_offset = (dx, dy)
+                    return
+
         tool = self.editor_state.current_tool
         # 2) Select
         if tool == "select" and ev.button == 1:
@@ -91,24 +107,6 @@ class TileEditorEventHandler:
         elif ev.button == 3 and self.editor_state.picker_state.open:
             if self.picker_tool.handle_click(pos, button=3, map=map):
                 return
-
-        # Collision picker click/drag handling
-        if self.editor_state.collision_picker_open:
-            x0, y0 = self.editor_state.collision_picker_pos
-            w, h = self.editor_state.collision_picker_panel_size
-            if x0 <= pos[0] <= x0 + w and y0 <= pos[1] <= y0 + h:
-                if ev.button == 1:
-                    # icon click: select collision choice
-                    for ch, rect in self.editor_state.collision_picker_rects.items():
-                        if rect.collidepoint(pos):
-                            self.editor_state.collision_choice = ch
-                            return True
-                elif ev.button == 3:
-                    # start dragging panel
-                    self.editor_state.collision_picker_dragging = True
-                    dx = pos[0] - x0; dy = pos[1] - y0
-                    self.editor_state.collision_picker_drag_offset = (dx, dy)
-                    return True
 
     def _on_mouse_motion(self, ev, camera, map):
         pos = ev.pos
