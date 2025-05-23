@@ -68,9 +68,15 @@ class TileToolbarController:
                     return True
                 else:
                     self.editor.current_tool = tool
-                    # Al seleccionar la brocha, abrimos la paleta
+                # Handle brush picker: collision vs normal
                 if tool == "brush":
-                    self.editor.picker_state.open = True
-                    self.editor.scroll_offset    = 0
+                    if self.editor.show_collisions or self.editor.show_collisions_overlay:
+                        # Open collision picker
+                        self.editor.collision_picker_open = True
+                        self.editor.picker_state.open = False
+                    else:
+                        # Open normal tile picker
+                        self.editor.picker_state.open = True
+                        self.editor.scroll_offset = 0
                 return True
         return False

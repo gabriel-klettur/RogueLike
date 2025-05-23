@@ -86,6 +86,24 @@ class TileEditorEventHandler:
             if self.picker_tool.handle_click(pos, button=3, map=map):
                 return
 
+        # Collision picker click/drag handling
+        if self.editor_state.collision_picker_open:
+            x0, y0 = self.editor_state.collision_picker_pos
+            w, h = self.editor_state.collision_picker_panel_size
+            if x0 <= pos[0] <= x0 + w and y0 <= pos[1] <= y0 + h:
+                if ev.button == 1:
+                    # icon click: select collision choice
+                    for ch, rect in self.editor_state.collision_picker_rects.items():
+                        if rect.collidepoint(pos):
+                            self.editor_state.collision_choice = ch
+                            return True
+                elif ev.button == 3:
+                    # start dragging panel
+                    self.editor_state.collision_picker_dragging = True
+                    dx = pos[0] - x0; dy = pos[1] - y0
+                    self.editor_state.collision_picker_drag_offset = (dx, dy)
+                    return True
+
     def _on_mouse_motion(self, ev, camera, map):
         pos = ev.pos
         # Brush drag
@@ -95,11 +113,21 @@ class TileEditorEventHandler:
         # Palette drag
         elif self.editor_state.picker_state.open and self.editor_state.picker_state.dragging:
             self.controller.picker.drag(pos)
+        # Drag collision picker panel
+        if self.editor_state.collision_picker_dragging:
+            mx, my = pos
+            dx, dy = self.editor_state.collision_picker_drag_offset
+            self.editor_state.collision_picker_pos = (mx - dx, my - dy)
+            return
 
     def _on_mouse_up(self, ev):
         # Release brush
         if ev.button == 1 and self.editor_state.current_tool == "brush":
             self.editor_state.brush_dragging = False
+        # Stop dragging collision picker
+        if ev.button == 3 and self.editor_state.collision_picker_dragging:
+            self.editor_state.collision_picker_dragging = False
+            return
         # Stop palette drag
         if ev.button == 3 and self.editor_state.picker_state.open:
             self.controller.picker.stop_drag()

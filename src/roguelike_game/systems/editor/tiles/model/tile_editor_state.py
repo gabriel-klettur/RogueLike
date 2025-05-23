@@ -27,5 +27,14 @@ class TileEditorState:
         self.show_collisions = False
         # Flag to overlay collision grid on top of all layers
         self.show_collisions_overlay = False
+        # Collision picker UI state when selecting solid/walk
+        self.collision_picker_open = False
+        self.collision_choice = None
+        self.collision_picker_rects = {}
+        # Collision picker position and dragging state
+        self.collision_picker_pos = None
+        self.collision_picker_dragging = False
+        self.collision_picker_drag_offset = (0, 0)
+        self.collision_picker_panel_size = (0, 0)
         
         self.picker_state = TilePickerState()

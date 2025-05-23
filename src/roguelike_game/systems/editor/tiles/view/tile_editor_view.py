@@ -1,7 +1,7 @@
 # Path: src/roguelike_game/systems/editor/tiles/view/tile_editor_view.py
 import pygame
 from roguelike_engine.config.config_tiles import TILE_SIZE
-from roguelike_game.systems.editor.tiles.tiles_editor_config import OUTLINE_CHOICE, OUTLINE_HOVER, OUTLINE_SEL
+from roguelike_game.systems.editor.tiles.tiles_editor_config import OUTLINE_CHOICE, OUTLINE_HOVER, OUTLINE_SEL, THUMB, PAD, CLR_SELECTION
 from roguelike_engine.utils.loader import load_image
 from roguelike_engine.map.model.layer import Layer
 
@@ -23,7 +23,12 @@ class TileEditorView:
             return
 
         self.toolbar_view.render(screen)
-        self.picker_view.render(screen)
+        # Collision brush picker has priority
+        if self.editor.collision_picker_open:
+            self._render_collision_picker(screen)
+        # Normal tile picker
+        elif self.editor.picker_state.open:
+            self.picker_view.render(screen)
 
         if self.editor.view_active:
             self._render_view_panel(screen, camera, map)
@@ -97,3 +102,43 @@ class TileEditorView:
             panel.blit(text, (margin_x, ty + TILE_SIZE + 2))
 
         screen.blit(panel, (x0, y0))
+
+    def _render_collision_picker(self, screen):
+        """Render collision brush picker (# collision, . walk)"""
+        options = [("#", "Collision"), (".", "Walk")]
+        w = len(options) * (THUMB + PAD) + PAD
+        label_font = pygame.font.SysFont("Arial", 14)
+        char_font = pygame.font.SysFont("Arial", THUMB)
+        h = THUMB + PAD + label_font.get_height() + PAD
+        surf = pygame.Surface((w, h), pygame.SRCALPHA)
+        surf.fill((20, 20, 20, 235))
+        # Determine panel position (drag support)
+        sw, sh = screen.get_size()
+        if self.editor.collision_picker_pos is None:
+            pos_x = (sw - w) // 2
+            pos_y = (sh - h) // 2
+            self.editor.collision_picker_pos = (pos_x, pos_y)
+        else:
+            pos_x, pos_y = self.editor.collision_picker_pos
+        # Store panel size for event handling
+        self.editor.collision_picker_panel_size = (w, h)
+        # Prepare rects
+        self.editor.collision_picker_rects.clear()
+        for i, (ch, label) in enumerate(options):
+            x = PAD + i * (THUMB + PAD)
+            y = PAD
+            # Draw character icon
+            color = (255, 0, 0) if ch == "#" else (200, 200, 200)
+            text_surf = char_font.render(ch, True, color)
+            surf.blit(text_surf, (x + (THUMB - text_surf.get_width()) // 2,
+                                  y + (THUMB - text_surf.get_height()) // 2))
+            # Border for selected choice
+            if self.editor.collision_choice == ch:
+                pygame.draw.rect(surf, CLR_SELECTION, (x, y, THUMB, THUMB), 3)
+            # Store absolute rect
+            self.editor.collision_picker_rects[ch] = pygame.Rect(pos_x + x, pos_y + y, THUMB, THUMB)
+            # Label below icon
+            lbl_surf = label_font.render(label, True, (255, 255, 255))
+            surf.blit(lbl_surf, (x + (THUMB - lbl_surf.get_width()) // 2,
+                                 y + THUMB + PAD))
+        screen.blit(surf, (pos_x, pos_y))

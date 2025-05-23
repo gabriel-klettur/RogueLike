@@ -41,6 +41,23 @@ class TileEditorController:
         Pinta el sprite seleccionado sobre el tile bajo el ratón
         y persiste el código de overlay (quitando el prefijo "tiles/").
         """
+        # Collision editing when in collision mode
+        if (self.editor.show_collisions or self.editor.show_collisions_overlay) and self.editor.collision_choice:
+            tile = self._tile_under_mouse(mouse_pos, camera, map)
+            if tile:
+                # Set collision state
+                solid = True if self.editor.collision_choice == '#' else False
+                tile.solid = solid
+                # Update matrix and invalidate view
+                row = tile.y // TILE_SIZE
+                col = tile.x // TILE_SIZE
+                try:
+                    map.matrix[row][col] = self.editor.collision_choice
+                except Exception:
+                    pass
+                map.view.invalidate_cache()
+            return
+
         # 1) Encuentra el tile bajo el cursor
         tile = self._tile_under_mouse(mouse_pos, camera, map)
         if not tile or not self.editor.current_choice:
