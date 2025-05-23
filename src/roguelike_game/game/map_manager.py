@@ -233,7 +233,8 @@ class MapManager:
         for zone in self.tiles_by_zone:
             file_path = collisions_dir / f"{zone}.json"
             data = None
-            if file_path.exists():
+            # Skip file I/O for dynamic dungeon
+            if zone != "dungeon" and file_path.exists():
                 try:
                     data = json.loads(file_path.read_text(encoding='utf-8'))
                 except Exception as e:
@@ -246,10 +247,12 @@ class MapManager:
                     list(self.matrix[offy + y][offx:offx + width])
                     for y in range(height)
                 ]
-                try:
-                    file_path.write_text(json.dumps(data), encoding='utf-8')
-                except Exception as e:
-                    print(f"[Warning] No se pudo escribir archivo de colisiones para zona {zone}: {e}")
+                # Save only non-dungeon zones
+                if zone != "dungeon":
+                    try:
+                        file_path.write_text(json.dumps(data), encoding='utf-8')
+                    except Exception as e:
+                        print(f"[Warning] No se pudo escribir archivo de colisiones para zona {zone}: {e}")
             self.collision_layers[zone] = data
             # Aplicar estado a cada tile
             offx, offy = self.get_zone_offset(zone)
