@@ -1,7 +1,7 @@
 # Path: src/roguelike_game/systems/editor/tiles/view/tile_editor_view.py
 import pygame
 from roguelike_engine.config.config_tiles import TILE_SIZE
-from roguelike_game.systems.editor.tiles.tiles_editor_config import OUTLINE_CHOICE, OUTLINE_HOVER, OUTLINE_SEL, THUMB, PAD, CLR_SELECTION
+from roguelike_game.systems.editor.tiles.tiles_editor_config import OUTLINE_CHOICE, OUTLINE_HOVER, OUTLINE_SEL, THUMB, PAD, CLR_SELECTION, CLR_HOVER
 from roguelike_engine.utils.loader import load_image
 from roguelike_engine.map.model.layer import Layer
 
@@ -110,6 +110,8 @@ class TileEditorView:
         label_font = pygame.font.SysFont("Arial", 14)
         char_font = pygame.font.SysFont("Arial", THUMB)
         h = THUMB + PAD + label_font.get_height() + PAD
+        # Mouse pos for hover detection
+        mouse_pos = pygame.mouse.get_pos()
         surf = pygame.Surface((w, h), pygame.SRCALPHA)
         surf.fill((20, 20, 20, 235))
         # Determine panel position (drag support)
@@ -132,11 +134,13 @@ class TileEditorView:
             text_surf = char_font.render(ch, True, color)
             surf.blit(text_surf, (x + (THUMB - text_surf.get_width()) // 2,
                                   y + (THUMB - text_surf.get_height()) // 2))
-            # Border for selected choice
-            if self.editor.collision_choice == ch:
+            # Hover and selection border
+            abs_rect = pygame.Rect(pos_x + x, pos_y + y, THUMB, THUMB)
+            self.editor.collision_picker_rects[ch] = abs_rect
+            if abs_rect.collidepoint(mouse_pos):
+                pygame.draw.rect(surf, CLR_HOVER, (x, y, THUMB, THUMB), 3)
+            elif self.editor.collision_choice == ch:
                 pygame.draw.rect(surf, CLR_SELECTION, (x, y, THUMB, THUMB), 3)
-            # Store absolute rect
-            self.editor.collision_picker_rects[ch] = pygame.Rect(pos_x + x, pos_y + y, THUMB, THUMB)
             # Label below icon
             lbl_surf = label_font.render(label, True, (255, 255, 255))
             surf.blit(lbl_surf, (x + (THUMB - lbl_surf.get_width()) // 2,

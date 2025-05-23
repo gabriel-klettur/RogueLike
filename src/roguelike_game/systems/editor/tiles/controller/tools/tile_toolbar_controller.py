@@ -66,8 +66,14 @@ class TileToolbarController:
                     else:
                         self.editor.show_collisions = False
                         self.editor.show_collisions_overlay = False
-                    # Close collision picker when collision view is off
-                    if not self.editor.show_collisions and not self.editor.show_collisions_overlay:
+                    # Open/close collision picker and switch to collision brush
+                    if self.editor.show_collisions or self.editor.show_collisions_overlay:
+                        # Activate collision brush
+                        self.editor.current_tool = "brush"
+                        self.editor.collision_picker_open = True
+                        self.editor.picker_state.open = False
+                    else:
+                        # Close collision picker when collision view is off
                         self.editor.collision_picker_open = False
                         self.editor.collision_choice = None
                     # close layers dropdown
@@ -78,17 +84,23 @@ class TileToolbarController:
                     return True
                 else:
                     self.editor.current_tool = tool
-                # Handle brush picker: collision vs normal
+                # Handle brush picker: collision vs normal and toggle tile picker
                 if tool == "brush":
                     if self.editor.show_collisions or self.editor.show_collisions_overlay:
-                        # Open collision picker
-                        self.editor.collision_picker_open = True
-                        self.editor.picker_state.open = False
+                        # Toggle collision picker
+                        if self.editor.collision_picker_open:
+                            self.editor.collision_picker_open = False
+                        else:
+                            self.editor.collision_picker_open = True
+                            self.editor.picker_state.open = False
                     else:
-                        # Close collision picker and open normal tile picker
-                        self.editor.collision_picker_open = False
-                        self.editor.collision_choice = None
-                        self.editor.picker_state.open = True
-                        self.editor.scroll_offset = 0
+                        # Toggle normal tile picker
+                        if self.editor.picker_state.open:
+                            self.editor.picker_state.open = False
+                        else:
+                            self.editor.collision_picker_open = False
+                            self.editor.collision_choice = None
+                            self.editor.picker_state.open = True
+                            self.editor.scroll_offset = 0
                 return True
         return False

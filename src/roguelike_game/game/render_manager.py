@@ -244,8 +244,10 @@ class RendererManager:
         ])
         if camera.is_in_view(entities.player.x, entities.player.y, entities.player.sprite_size):
             all_entities.append(entities.player)
-        # Only render buildings if tile editor not active hiding mode
-        if not (self.tiles_editor.editor_state.active and not self.tiles_editor.editor_state.show_buildings):
+        # Only render buildings if not hidden by editor or collision-only mode
+        editor_state = self.tiles_editor.editor_state
+        if not ((editor_state.active and not editor_state.show_buildings)
+                or (editor_state.active and editor_state.show_collisions and not editor_state.show_collisions_overlay)):
             for b in entities.buildings:
                 if not camera.is_in_view(b.x, b.y, b.image.get_size()):
                     continue
