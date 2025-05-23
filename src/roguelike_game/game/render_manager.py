@@ -1,9 +1,9 @@
 # Path: src/roguelike_game/game/render_manager.py
 import pygame
-
 from roguelike_engine.utils.mouse import draw_mouse_crosshair
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_engine.utils.debug import DebugOverlay, render_debug_overlay
+from roguelike_engine.config.config_tiles import TILE_SIZE
 
 # Sistema de orden Z
 from roguelike_game.systems.z_layer.render import render_z_ordered
@@ -79,7 +79,9 @@ class RendererManager:
         # 2) Entidades orden Z
         @benchmark(perf_log, "3.2. z_entities")
         def _bench_z_entities():
-            self._render_z_entities(state, camera, screen, entities)
+            # Skip entity rendering in collision view
+            if not (self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.show_collisions):
+                self._render_z_entities(state, camera, screen, entities)
         _bench_z_entities()
 
         # 3) Efectos
@@ -97,7 +99,9 @@ class RendererManager:
         # 4.b) Capa del Tile Editor
         @benchmark(perf_log, "3.4b. tile_editor")
         def _bench_tile_editor():
-            self._render_tile_editor_layer(state, screen, camera, map)
+            # Skip tile editor UI in collision view
+            if not (self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.show_collisions):
+                self._render_tile_editor_layer(state, screen, camera, map)
         _bench_tile_editor()
 
         # 5) Crosshair
@@ -192,6 +196,11 @@ class RendererManager:
         self._dirty_rects.extend(dirty_rects)
 
     def _render_map(self, camera, screen, map):
+        # Collision mode overlay
+        if self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.show_collisions:
+            dirty = self._render_collisions(screen, camera, map)
+            self._dirty_rects.extend(dirty)
+            return
         # Layer visibility filter when tile editor is active
         editor_state = getattr(self.tiles_editor, 'editor_state', None)
         if editor_state and editor_state.active and hasattr(editor_state, 'visible_layers'):
@@ -245,3 +254,19 @@ class RendererManager:
     def _render_minimap(self, screen):
             rect = self.minimap.render(screen)
             self._dirty_rects.append(rect)
+
+    def _render_collisions(self, screen, camera, map):
+        """Render collision grid (# solid, . walkable)"""
+        dirty = []
+        font = pygame.font.SysFont("Arial", int(14 * camera.zoom))
+        for row_idx, row in enumerate(map.matrix):
+            for col_idx, tile in enumerate(map.tiles[row_idx]):
+                char = '#' if getattr(tile, 'solid', False) else '.'
+                color = (255, 0, 0) if char == '#' else (200, 200, 200)
+                sx = int((col_idx * TILE_SIZE - camera.offset_x) * camera.zoom)
+                sy = int((row_idx * TILE_SIZE - camera.offset_y) * camera.zoom)
+                text_surf = font.render(char, True, color)
+                rect = text_surf.get_rect(topleft=(sx, sy))
+                screen.blit(text_surf, (sx, sy))
+                dirty.append(rect)
+        return dirty

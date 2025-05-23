@@ -23,5 +23,7 @@ class TileEditorState:
         self.visible_layers = {layer: True for layer in Layer}
         # Flag to show/hide buildings in tile editor
         self.show_buildings = True
+        # Flag to show collisions grid
+        self.show_collisions = False
         
         self.picker_state = TilePickerState()

@@ -53,6 +53,12 @@ class TileToolbarController:
                 elif tool == "view_layers":
                     # Toggle layers visibility dropdown
                     self.editor.layers_view_open = not self.editor.layers_view_open
+                elif tool == "view_collisions":
+                    # Toggle collisions editing view
+                    self.editor.show_collisions = not self.editor.show_collisions
+                    # close layers dropdown
+                    self.editor.layers_view_open = False
+                    return True
                 else:
                     self.editor.current_tool = tool
                     # Al seleccionar la brocha, abrimos la paleta
