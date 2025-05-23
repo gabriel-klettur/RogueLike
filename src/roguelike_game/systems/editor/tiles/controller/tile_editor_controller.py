@@ -56,6 +56,15 @@ class TileEditorController:
                 except Exception:
                     pass
                 map.view.invalidate_cache()
+                # Update MapManager.solid_tiles for collision
+                if solid:
+                    if tile not in map.solid_tiles:
+                        map.solid_tiles.append(tile)
+                else:
+                    if tile in map.solid_tiles:
+                        map.solid_tiles.remove(tile)
+                # Debug print for collision brush
+                print(f"[DEBUG][Collision brush] at ({row},{col}): solid={solid}")
             return
 
         # 1) Encuentra el tile bajo el cursor

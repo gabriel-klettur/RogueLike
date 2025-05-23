@@ -42,8 +42,10 @@ class TileToolbarController:
                     # Toggle visibility for layers or buildings
                     if key == "buildings":
                         self.editor.show_buildings = not self.editor.show_buildings
+                        print(f"[DEBUG][Layer View] buildings: {'visible' if self.editor.show_buildings else 'hidden'}")
                     else:
                         self.editor.visible_layers[key] = not self.editor.visible_layers[key]
+                        print(f"[DEBUG][Layer View] {key}: {'visible' if self.editor.visible_layers[key] else 'hidden'}")
                     return True
         for tool, rect in self.icon_rects.items():
             if rect.collidepoint(mouse_pos):                
@@ -53,6 +55,7 @@ class TileToolbarController:
                 elif tool == "view_layers":
                     # Toggle layers visibility dropdown
                     self.editor.layers_view_open = not self.editor.layers_view_open
+                    print(f"[DEBUG][View layers]: {'open' if self.editor.layers_view_open else 'closed'}")
                 elif tool == "view_collisions":
                     # Cycle collision modes: off -> only -> overlay -> off
                     if not self.editor.show_collisions and not self.editor.show_collisions_overlay:
@@ -65,6 +68,9 @@ class TileToolbarController:
                         self.editor.show_collisions_overlay = False
                     # close layers dropdown
                     self.editor.layers_view_open = False
+                    # Debug print collision view mode
+                    mode = 'overlay' if self.editor.show_collisions_overlay else ('only' if self.editor.show_collisions else 'off')
+                    print(f"[DEBUG][Collision view mode]: {mode}")
                     return True
                 else:
                     self.editor.current_tool = tool
