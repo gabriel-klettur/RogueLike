@@ -61,9 +61,10 @@ class BuildingEditorView:
                                   y + (THUMB - text_surf.get_height()) // 2))
             abs_rect = pygame.Rect(px + x, py + y, THUMB, THUMB)
             self.editor.collision_picker_rects[ch] = abs_rect
+            # Mostrar selección solo mientras se está arrastrando el brush
             if abs_rect.collidepoint(mouse_pos):
                 pygame.draw.rect(surf, CLR_HOVER, (x, y, THUMB, THUMB), 3)
-            elif self.editor.collision_choice == ch:
+            elif self.editor.collision_choice == ch and self.editor.collision_brush_dragging:
                 pygame.draw.rect(surf, CLR_SELECTION, (x, y, THUMB, THUMB), 3)
             lbl_surf = label_font.render(label, True, (255, 255, 255))
             surf.blit(lbl_surf, (x + (THUMB - lbl_surf.get_width()) // 2,

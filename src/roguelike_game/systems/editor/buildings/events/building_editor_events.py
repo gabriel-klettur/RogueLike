@@ -36,18 +36,31 @@ class BuildingEditorEventHandler:
                     self.editor.resizing = False
                     print("✅ Resize finalizado al soltar R")
                     # Opcional: podrías llamar aquí a una función para fijar el tamaño
-            # --- F10: SOLO toggle editor (handles) ---
+            # --- F10: Cycle building editor and collision brush ---
             if ev.type == pygame.KEYDOWN and ev.key == pygame.K_F10:
-                # Encendemos/apagamos los handles
-                self.controller.toggle_editor()
-                # Si acabamos de cerrar el editor, guardamos todo
-                if not self.editor.active:                    
-                    save_buildings_to_json(
-                        entities.buildings,
-                        BUILDINGS_DATA_PATH,
-                        z_state=self.state.z_state,
-                        zone_offsets=self.zone_offsets
-                    )
+                if not self.editor.active:
+                    # Enter building editor in select mode
+                    self.controller.toggle_editor()
+                    self.editor.current_tool = 'select'
+                    self.editor.collision_picker_open = False
+                else:
+                    # Already in editor: cycle to collision brush or exit
+                    if self.editor.current_tool == 'select':
+                        # Enter collision brush mode
+                        self.editor.current_tool = 'collision_brush'
+                        self.editor.collision_picker_open = True
+                    else:
+                        # Exit editor
+                        self.controller.toggle_editor()
+                        self.editor.current_tool = 'select'
+                        self.editor.collision_picker_open = False
+                        # Save buildings data
+                        save_buildings_to_json(
+                            entities.buildings,
+                            BUILDINGS_DATA_PATH,
+                            z_state=self.state.z_state,
+                            zone_offsets=self.zone_offsets
+                        )
                 return
 
             # --- Si el picker está activo, delego ahí ---
@@ -56,12 +69,6 @@ class BuildingEditorEventHandler:
 
             # --- Teclas cuando estoy en modo “editor” sin picker ---
             if ev.type == pygame.KEYDOWN:
-                # Toggle collision brush picker
-                if ev.key == pygame.K_c:
-                    new_val = not self.editor.collision_picker_open
-                    self.editor.collision_picker_open = new_val
-                    self.editor.current_tool = 'collision_brush' if new_val else 'select'
-                    return
                 # Ctrl+P (o simplemente P) → toggle picker
                 if ev.key == pygame.K_p:
                     self.controller.toggle_picker()
@@ -248,16 +255,29 @@ class BuildingEditorEventHandler:
 
         # F10: toggle editor
         elif ev.key == pygame.K_F10:
-            self.editor.active = not self.editor.active
-            logger.info(f"Building Editor {'ON' if self.editor.active else 'OFF'} via F10")
             if not self.editor.active:
-                
-                save_buildings_to_json(
-                    entities.buildings,
-                    BUILDINGS_DATA_PATH,
-                    z_state=self.state.z_state,
-                    zone_offsets=self.zone_offsets
-                )
+                # Enter building editor in select mode
+                self.controller.toggle_editor()
+                self.editor.current_tool = 'select'
+                self.editor.collision_picker_open = False
+            else:
+                # Already in editor: cycle to collision brush or exit
+                if self.editor.current_tool == 'select':
+                    # Enter collision brush mode
+                    self.editor.current_tool = 'collision_brush'
+                    self.editor.collision_picker_open = True
+                else:
+                    # Exit editor
+                    self.controller.toggle_editor()
+                    self.editor.current_tool = 'select'
+                    self.editor.collision_picker_open = False
+                    # Save buildings data
+                    save_buildings_to_json(
+                        entities.buildings,
+                        BUILDINGS_DATA_PATH,
+                        z_state=self.state.z_state,
+                        zone_offsets=self.zone_offsets
+                    )
 
         # Ctrl+S: guardar sin salir
         elif ev.key == pygame.K_s and (ev.mod & pygame.KMOD_CTRL):
