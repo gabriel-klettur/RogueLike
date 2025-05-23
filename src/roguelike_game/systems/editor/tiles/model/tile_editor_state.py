@@ -1,5 +1,5 @@
 # Path: src/roguelike_game/systems/editor/tiles/model/tile_editor_state.py
-from src.roguelike_game.systems.editor.tiles.model.tools.tile_picker_state import TilePickerState
+from roguelike_game.systems.editor.tiles.model.tools.tile_picker_state import TilePickerState
 from roguelike_engine.map.model.layer import Layer
 class TileEditorState:
     """
@@ -21,5 +21,7 @@ class TileEditorState:
         self.layers_view_open = False      # toggle layer visibility dropdown
         # Visibility state for each layer
         self.visible_layers = {layer: True for layer in Layer}
-
+        # Flag to show/hide buildings in tile editor
+        self.show_buildings = True
+        
         self.picker_state = TilePickerState()

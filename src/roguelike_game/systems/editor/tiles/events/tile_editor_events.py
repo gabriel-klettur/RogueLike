@@ -50,7 +50,9 @@ class TileEditorEventHandler:
             if not new_val:
                 self.editor_state.picker_state.open = False
                 self.editor_state.selected_tile = None
-                self.editor_state.brush_dragging = False            
+                self.editor_state.brush_dragging = False
+        elif ev.key == pygame.K_b:
+            self.editor_state.show_buildings = not self.editor_state.show_buildings
 
     def _on_mouse_down(self, ev, camera, map):
         pos = ev.pos

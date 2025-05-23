@@ -1,8 +1,8 @@
 [
     {
         "zone": "lobby",
-        "rel_x": 963,
-        "rel_y": 404,
+        "rel_x": 948,
+        "rel_y": 408,
         "image_path": "assets/buildings/temples/catholic.png",
         "solid": true,
         "scale": [
@@ -135,7 +135,7 @@
     {
         "zone": "lobby",
         "rel_x": 836,
-        "rel_y": 574,
+        "rel_y": 573,
         "image_path": "assets/buildings/vegetation/tree_10.png",
         "solid": true,
         "scale": [

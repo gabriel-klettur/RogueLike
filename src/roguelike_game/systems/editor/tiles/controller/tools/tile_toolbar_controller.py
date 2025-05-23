@@ -37,10 +37,13 @@ class TileToolbarController:
     def handle_click(self, mouse_pos) -> bool:
         # Handle layer visibility dropdown clicks
         if self.editor.layers_view_open:
-            for layer, rect in self.layer_option_rects.items():
+            for key, rect in self.layer_option_rects.items():
                 if rect.collidepoint(mouse_pos):
-                    # Toggle layer visibility
-                    self.editor.visible_layers[layer] = not self.editor.visible_layers[layer]
+                    # Toggle visibility for layers or buildings
+                    if key == "buildings":
+                        self.editor.show_buildings = not self.editor.show_buildings
+                    else:
+                        self.editor.visible_layers[key] = not self.editor.visible_layers[key]
                     return True
         for tool, rect in self.icon_rects.items():
             if rect.collidepoint(mouse_pos):                

@@ -39,3 +39,13 @@ class TileToolbarView:
                 ty = ry + (BTN_H - text.get_height()) // 2
                 screen.blit(text, (drop_x + 5, ty))
                 self.toolbar.layer_option_rects[layer] = rect
+            # Buildings toggle option
+            ry = drop_y + len(Layer) * BTN_H
+            rect = pygame.Rect(drop_x, ry, BTN_W, BTN_H)
+            pygame.draw.rect(screen, (20, 20, 20), rect)
+            border = (0, 255, 0) if self.toolbar.editor.show_buildings else (255, 0, 0)
+            pygame.draw.rect(screen, border, rect, 2)
+            text = font.render("Buildings", True, (255, 255, 255))
+            ty = ry + (BTN_H - text.get_height()) // 2
+            screen.blit(text, (drop_x + 5, ty))
+            self.toolbar.layer_option_rects["buildings"] = rect

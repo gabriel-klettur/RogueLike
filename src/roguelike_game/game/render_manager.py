@@ -226,12 +226,14 @@ class RendererManager:
         ])
         if camera.is_in_view(entities.player.x, entities.player.y, entities.player.sprite_size):
             all_entities.append(entities.player)
-        for b in entities.buildings:
-            if not camera.is_in_view(b.x, b.y, b.image.get_size()):
-                continue
-            for part in b.get_parts():
-                state.z_state.set(part, part.z)
-                all_entities.append(part)
+        # Only render buildings if tile editor not active hiding mode
+        if not (self.tiles_editor.editor_state.active and not self.tiles_editor.editor_state.show_buildings):
+            for b in entities.buildings:
+                if not camera.is_in_view(b.x, b.y, b.image.get_size()):
+                    continue
+                for part in b.get_parts():
+                    state.z_state.set(part, part.z)
+                    all_entities.append(part)
 
         render_z_ordered(all_entities, screen, camera, state.z_state)
 
