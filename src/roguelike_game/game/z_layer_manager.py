@@ -22,10 +22,8 @@ class ZLayerManager:
         zs = self.z_state
         state.z_state = zs
 
-        # Jugador y enemigos a capa 'player'
+        # Jugador a capa 'player'
         zs.set(entities.player, Z_LAYERS["player"])
-        for e in entities.enemies:
-            zs.set(e, Z_LAYERS["player"])
 
         # Obstáculos a capa 'low_object'
         for o in entities.obstacles:

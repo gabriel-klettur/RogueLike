@@ -1,6 +1,4 @@
 from roguelike_engine.utils.benchmark import benchmark
-from roguelike_game.entities.npc.types.elite.controller import EliteController
-from roguelike_game.config_entities import ENEMY_MAX_UPDATE_DISTANCE
 import pygame
 import types
 from roguelike_engine.config.config_tiles import TILE_SIZE

@@ -2,17 +2,12 @@
 from typing import Tuple, List
 
 from roguelike_game.entities.load_entities import load_entities
-from roguelike_game.entities.load_hostile import load_hostile
 from roguelike_game.game.map_manager import MapManager
-from roguelike_engine.config.config_tiles import TILE_SIZE
-from roguelike_engine.map.controller.map_service import calculate_dungeon_offset
-from roguelike_game.config_entities import ENEMY_MAX_UPDATE_DISTANCE
-from roguelike_game.entities.npc.types.elite.controller import EliteController
 from roguelike_engine.utils.benchmark import benchmark
 
 class EntitiesManager:
     """
-    Carga y mantiene entidades del juego: jugador, obstáculos, edificios y enemigos.
+    Carga y mantiene entidades del juego: jugador, obstáculos y edificios.
     """
     
     def __init__(self, z_state, game_map: MapManager):
@@ -21,11 +16,9 @@ class EntitiesManager:
         
         self.player = None
         self.obstacles = []
-        self.buildings = []
-        self.enemies = []        
+        self.buildings = []        
 
-        self.init_statics()
-        self.init_enemies()
+        self.init_statics()    
 
     def init_statics(self):
         """
@@ -36,34 +29,6 @@ class EntitiesManager:
         self.recalibrate_buildings()
         
         return self.player, self.obstacles, self.buildings    
-
-    def init_enemies(self):
-        """
-        Carga enemigos en la dungeon.
-        """
-        # Calcular offset en tiles de la dungeon
-        lob_x, lob_y = self.map.lobby_offset
-        dungeon_offset = calculate_dungeon_offset((lob_x, lob_y))
-        # Spawn procedural de enemigos
-        self.enemies = self.spawn_enemies(dungeon_offset)
-
-    def spawn_enemies(self, dungeon_offset: Tuple[int, int]) -> List:
-        """
-        Genera y devuelve la lista de enemigos usando metadata del mapa.
-        """
-        # Coordenada inicial del jugador en tiles
-        px = int(self.player.x) // TILE_SIZE
-        py = int(self.player.y) // TILE_SIZE
-        player_tile = (px, py)
-
-        rooms = self.map.rooms
-        self.enemies = load_hostile(
-            rooms,
-            player_tile,
-            dungeon_offset,
-            self.map.tiles
-        )
-        return self.enemies
 
     def recalibrate_buildings(self):
         """
@@ -82,7 +47,7 @@ class EntitiesManager:
           - Jugador
           - Obstáculos
           - Edificios
-          - Enemigos (normales y élites)
+          # NPCs gestionados por ECS; eliminados de este método
         Cada sección está medida para perfilado.
         """
 
@@ -107,19 +72,3 @@ class EntitiesManager:
                 if hasattr(b, "update"):
                     b.update(state, game_map)
         _update_buildings()
-
-        # 4) Enemigos update: filtrar por distancia y actualizar en un solo bucle
-        @benchmark(perf_log, "2.4.enemies_update")
-        def _update_enemies():
-            px, py = self.player.x, self.player.y
-            max_d2 = ENEMY_MAX_UPDATE_DISTANCE ** 2
-            for e in self.enemies:
-                dx, dy = e.x - px, e.y - py
-                if dx*dx + dy*dy > max_d2:
-                    continue
-                ctrl = getattr(e, "controller", None)
-                if isinstance(ctrl, EliteController):
-                    ctrl.update(state, game_map, self, systems.effects, systems.explosions)
-                else:
-                    e.update(state, game_map, self)
-        _update_enemies()
