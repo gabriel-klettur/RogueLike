@@ -48,6 +48,11 @@ class RendererManager:
         self._last_state = None  # almacenar último estado para editor
         # Cache last visible layers to minimize cache invalidations
         self._last_visible_layers = None
+        # Collision view cache: regenerate surfaces only when zoom changes
+        self._collision_last_zoom = None
+        self._collision_font = None
+        self._collision_surf_solid = None
+        self._collision_surf_walkable = None
 
     def render_game(
         self,
@@ -256,17 +261,33 @@ class RendererManager:
             self._dirty_rects.append(rect)
 
     def _render_collisions(self, screen, camera, map):
-        """Render collision grid (# solid, . walkable)"""
+        """Render collision grid (# solid, . walkable) efficiently"""
         dirty = []
-        font = pygame.font.SysFont("Arial", int(14 * camera.zoom))
-        for row_idx, row in enumerate(map.matrix):
-            for col_idx, tile in enumerate(map.tiles[row_idx]):
-                char = '#' if getattr(tile, 'solid', False) else '.'
-                color = (255, 0, 0) if char == '#' else (200, 200, 200)
-                sx = int((col_idx * TILE_SIZE - camera.offset_x) * camera.zoom)
-                sy = int((row_idx * TILE_SIZE - camera.offset_y) * camera.zoom)
-                text_surf = font.render(char, True, color)
-                rect = text_surf.get_rect(topleft=(sx, sy))
-                screen.blit(text_surf, (sx, sy))
+        sw, sh = screen.get_size()
+        tile_sz = TILE_SIZE
+        zoom = camera.zoom
+        x_off = camera.offset_x
+        y_off = camera.offset_y
+        # Determine visible tile range
+        col_start = max(0, int(x_off / tile_sz))
+        row_start = max(0, int(y_off / tile_sz))
+        col_end = min(len(map.tiles[0]), int((x_off + sw / zoom) / tile_sz) + 1)
+        row_end = min(len(map.tiles), int((y_off + sh / zoom) / tile_sz) + 1)
+        # Regenerate text surfaces only on zoom change
+        if zoom != self._collision_last_zoom:
+            size = max(1, int(14 * zoom))
+            self._collision_font = pygame.font.SysFont("Arial", size)
+            self._collision_surf_solid = self._collision_font.render('#', True, (255, 0, 0))
+            self._collision_surf_walkable = self._collision_font.render('.', True, (200, 200, 200))
+            self._collision_last_zoom = zoom
+        # Draw only visible tiles
+        for r in range(row_start, row_end):
+            for c in range(col_start, col_end):
+                tile = map.tiles[r][c]
+                surf = self._collision_surf_solid if getattr(tile, 'solid', False) else self._collision_surf_walkable
+                sx = int((c * tile_sz - x_off) * zoom)
+                sy = int((r * tile_sz - y_off) * zoom)
+                rect = surf.get_rect(topleft=(sx, sy))
+                screen.blit(surf, (sx, sy))
                 dirty.append(rect)
         return dirty
