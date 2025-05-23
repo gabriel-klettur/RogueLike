@@ -27,11 +27,17 @@ class TileEditorEventHandler:
             elif ev.type == pygame.KEYDOWN:
                 self._on_keydown(ev)
             elif ev.type == pygame.MOUSEBUTTONDOWN:
-                self._on_mouse_down(ev,camera, map)
+                # Batch brush start
+                if ev.button == 1 and self.editor_state.current_tool == "brush":
+                    self.controller.start_brush()
+                self._on_mouse_down(ev, camera, map)
             elif ev.type == pygame.MOUSEMOTION:
                 self._on_mouse_motion(ev, camera, map)
             elif ev.type == pygame.MOUSEBUTTONUP:
                 self._on_mouse_up(ev)
+                # Batch brush flush
+                if ev.button == 1 and self.editor_state.current_tool == "brush":
+                    self.controller.flush_brush(map)
             elif ev.type == pygame.MOUSEWHEEL:
                 self._on_mouse_wheel(ev)
 

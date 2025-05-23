@@ -26,6 +26,12 @@ class TileEditorController:
         self.editor  = editor_state     # instancia de TileEditorControllerState
         self.picker = TilePickerController(editor_state, picker_state)
         self.toolbar = TileToolbarController(editor_state)
+        # Cache for brush sprites to avoid reload on each paint
+        self.brush_cache: dict[str, pygame.Surface] = {}
+        # Track last painted cell to skip redundant operations
+        self._last_brush_cell: tuple[int,int] | None = None
+        self._pending_collision_zones = set()
+        self._pending_tile_zones = set()
 
     def select_tile_at(self, mouse_pos, camera, map):
         tile = self._tile_under_mouse(mouse_pos, camera, map)
@@ -48,14 +54,17 @@ class TileEditorController:
                 # Set collision state
                 solid = True if self.editor.collision_choice == '#' else False
                 tile.solid = solid
-                # Update matrix and invalidate view
+                # Update matrix
                 row = tile.y // TILE_SIZE
                 col = tile.x // TILE_SIZE
+                # Skip if same cell as last to reduce churn
+                if self._last_brush_cell == (row, col):
+                    return
+                self._last_brush_cell = (row, col)
                 try:
                     map.matrix[row][col] = self.editor.collision_choice
                 except Exception:
                     pass
-                map.view.invalidate_cache()
                 # Update MapManager.solid_tiles for collision
                 if solid:
                     if tile not in map.solid_tiles:
@@ -65,14 +74,17 @@ class TileEditorController:
                         map.solid_tiles.remove(tile)
                 # Debug print for collision brush
                 print(f"[DEBUG][Collision brush] at ({row},{col}): solid={solid}")
-                # Persist collision in collision_layers and save JSON
-                # Centralizamos lógica de zona
+                # Batch collision change for later persistence
                 zone_name, offx, offy = map.get_zone_for(row, col)
                 local_r, local_c = row - offy, col - offx
                 if zone_name in map.collision_layers:
-                    # Actualizar submatriz y guardar
-                    map.collision_layers[zone_name][local_r][local_c] = self.editor.collision_choice
-                    map.save_collision_layers(zone_name)
+                    grid = map.collision_layers[zone_name]
+                    # Bounds check before updating
+                    if 0 <= local_r < len(grid) and 0 <= local_c < len(grid[local_r]):
+                        grid[local_r][local_c] = self.editor.collision_choice
+                        self._pending_collision_zones.add(zone_name)
+                    else:
+                        print(f"[Warning] Colisión fuera de rango en zona '{zone_name}': local=({local_r},{local_c}), tamaño=({len(grid)},{len(grid[local_r]) if grid else 0})")
             return
 
         # 1) Encuentra el tile bajo el cursor
@@ -81,7 +93,11 @@ class TileEditorController:
             return
 
         # 2) Carga el nuevo sprite
-        sprite = load_image(self.editor.current_choice, (TILE_SIZE, TILE_SIZE))
+        choice = self.editor.current_choice
+        # Cache sprite surfaces per choice
+        if choice not in self.brush_cache:
+            self.brush_cache[choice] = load_image(choice, (TILE_SIZE, TILE_SIZE))
+        sprite = self.brush_cache[choice]
         tile.sprite = sprite
         tile.scaled_cache.clear()
 
@@ -117,21 +133,8 @@ class TileEditorController:
                 t.scaled_cache.clear()
                 t.overlay_code = code
         # 4.2) extraer subgrids de map.layers para la zona
-        zone_layers: dict[Layer, list[list[str]]] = {}
-        if zone_name != 'no_zone':
-            zh, zw = global_map_settings.zone_height, global_map_settings.zone_width
-        else:
-            zh, zw = len(map.tiles), len(map.tiles[0]) if map.tiles else 0
-        for l, full in map.layers.items():
-            sub = []
-            for ry in range(zh):
-                y = offy + ry
-                if 0 <= y < len(full):
-                    sub.append(full[y][offx:offx+zw])
-                else:
-                    sub.append([''] * zw)
-            zone_layers[l] = sub
-        save_layers(zone_name, zone_layers)
+        # Batch overlay change for later persistence
+        self._pending_tile_zones.add(zone_name)
         print(f"[Tile][Persist] Zona '{zone_name}' actualizada: capa {layer.name}, pos ({row},{col})")
         # Debug for brush
         local_r = row - offy
@@ -294,3 +297,36 @@ class TileEditorController:
                 (r, c + 1),
                 (r, c - 1),
             ])
+
+    def start_brush(self):
+        """Initialize pending brush changes."""
+        self._pending_collision_zones = set()
+        self._pending_tile_zones = set()
+        self._last_brush_cell = None
+
+    def flush_brush(self, map):
+        """Persist pending changes after brush stroke ends."""
+        # Flush collision layer saves
+        for zone in getattr(self, '_pending_collision_zones', []):
+            map.save_collision_layers(zone)
+        # Flush tile overlay saves
+        from roguelike_engine.config.map_config import global_map_settings
+        from roguelike_engine.map.model.overlay.overlay_manager import save_layers
+        for zone in getattr(self, '_pending_tile_zones', []):
+            offx, offy = map.get_zone_offset(zone)
+            if zone != 'no_zone':
+                zh, zw = global_map_settings.zone_height, global_map_settings.zone_width
+            else:
+                zh, zw = len(map.tiles), len(map.tiles[0]) if map.tiles else 0
+            zone_layers = {}
+            for l, full in map.layers.items():
+                sub = []
+                for ry in range(zh):
+                    y = offy + ry
+                    sub.append(full[y][offx:offx+zw] if 0 <= y < len(full) else [''] * zw)
+                zone_layers[l] = sub
+            save_layers(zone, zone_layers)
+        # Reset pending
+        self._pending_collision_zones.clear()
+        self._pending_tile_zones.clear()
+        self._last_brush_cell = None

@@ -291,7 +291,9 @@ class RendererManager:
                 surf = self._collision_surf_solid if getattr(tile, 'solid', False) else self._collision_surf_walkable
                 sx = int((c * tile_sz - x_off) * zoom)
                 sy = int((r * tile_sz - y_off) * zoom)
-                rect = surf.get_rect(topleft=(sx, sy))
-                screen.blit(surf, (sx, sy))
-                dirty.append(rect)
+                # Center collision symbol in tile
+                text_rect = surf.get_rect()
+                text_rect.center = (sx + tile_sz * zoom / 2, sy + tile_sz * zoom / 2)
+                screen.blit(surf, text_rect.topleft)
+                dirty.append(text_rect)
         return dirty
