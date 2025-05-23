@@ -1,6 +1,9 @@
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.entities.npc.types.elite.controller import EliteController
 from roguelike_game.config_entities import ENEMY_MAX_UPDATE_DISTANCE
+import pygame
+import types
+from roguelike_engine.config.config_tiles import TILE_SIZE
 
 def update_game(
     state,
@@ -65,7 +68,17 @@ def update_game(
     # 3.4) Movimiento especial del jugador
     @benchmark(perf_log, "2.4.player.update_dash")
     def _update_dash():
-        entities.player.movement.update_dash(map.solid_tiles, entities.obstacles)
+        # Incluir colisiones de buildings
+        solid = map.solid_tiles
+        bt_tiles = []
+        for b in entities.buildings:
+            for ry, row in enumerate(b.collision_map):
+                for cx, ch in enumerate(row):
+                    if ch == '#':
+                        rect = pygame.Rect(b.x + cx * TILE_SIZE, b.y + ry * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+                        bt_tiles.append(types.SimpleNamespace(solid=True, rect=rect))
+        collision_tiles = list(solid) + bt_tiles
+        entities.player.movement.update_dash(collision_tiles, entities.obstacles)
     _update_dash()
 
     # 3.5) Minimap update

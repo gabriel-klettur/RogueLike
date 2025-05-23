@@ -39,6 +39,14 @@ DATA_DIR = str(DATA_DIR)
 BUILDINGS_DATA_PATH = Path(DATA_DIR) / "buildings" / "buildings_data.json"
 BUILDINGS_DATA_PATH = str(BUILDINGS_DATA_PATH)
 
+# Persistencia de colisiones de edificios
+BUILDINGS_COLLISIONS_DATA_PATH = Path(DATA_DIR) / "buildings" / "buildings_collisions_data.json"
+BUILDINGS_COLLISIONS_DATA_PATH = str(BUILDINGS_COLLISIONS_DATA_PATH)
+
+# Persistencia de colisiones de edificios
+BUILDINGS_COLLISIONS_DATA_PATH = Path(DATA_DIR) / "buildings" / "buildings_collisions_data.json"
+BUILDINGS_COLLISIONS_DATA_PATH = str(BUILDINGS_COLLISIONS_DATA_PATH)
+
 
 #! ------------------------ Z-LAYER CONFIG -----------------------
 DEFAULT_Z = 1

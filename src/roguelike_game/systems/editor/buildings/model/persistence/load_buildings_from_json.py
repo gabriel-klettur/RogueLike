@@ -3,9 +3,9 @@
 import os
 import json
 from typing import List
+from roguelike_engine.config.config import BUILDINGS_DATA_PATH, BUILDINGS_COLLISIONS_DATA_PATH
 from roguelike_game.systems.z_layer.persistence import extract_z_from_json
 
-from roguelike_engine.config.config import BUILDINGS_DATA_PATH
 from roguelike_game.entities.buildings.building import Building
 
 def load_buildings_from_json(
@@ -18,6 +18,13 @@ def load_buildings_from_json(
     if not os.path.exists(BUILDINGS_DATA_PATH):
         print(f"⚠️ Archivo no encontrado: {BUILDINGS_DATA_PATH}")
         return []
+
+    # Cargar colisiones de buildings
+    try:
+        with open(BUILDINGS_COLLISIONS_DATA_PATH, 'r', encoding='utf-8') as cf:
+            collisions_data = json.load(cf)
+    except Exception:
+        collisions_data = {}
 
     with open(BUILDINGS_DATA_PATH, "r", encoding="utf-8") as f:
         try:
@@ -42,6 +49,16 @@ def load_buildings_from_json(
                 z_bottom=entry.get("z_bottom"),
                 z_top=entry.get("z_top"),
             )
+
+            # Inicializar collision_map
+            coll_entry = collisions_data.get(entry.get("image_path"))
+            if coll_entry and "collision" in coll_entry:
+                b.collision_map = coll_entry["collision"]
+            else:
+                from roguelike_engine.config.config_tiles import TILE_SIZE
+                w = b.image.get_width() // TILE_SIZE
+                h = b.image.get_height() // TILE_SIZE
+                b.collision_map = [["." for _ in range(w)] for _ in range(h)]
 
             # Aplicar capa Z
             if z_state:

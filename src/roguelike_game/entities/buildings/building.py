@@ -54,6 +54,8 @@ class Building:
 
         # Rectángulo de colisión/renderizado (usa propiedades x,y)
         self.rect = pygame.Rect(self.x, self.y, *self.image.get_size())
+        # Collision map por tile (# = sólido, . = transitable)
+        self.collision_map: list[list[str]] = []
 
     def __repr__(self) -> str:
         name = os.path.basename(self.image_path)
