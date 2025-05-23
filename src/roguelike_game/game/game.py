@@ -105,7 +105,7 @@ class Game:
 
     def _init_entities(self):
         """
-        Inicializa el gestor de entidades (player, enemies, obstacles y buildings) y carga los datos en el estado.
+        Inicializa el gestor de entidades (player, obstacles y buildings) y carga los datos en el estado.
         """
         self.entities = EntitiesManager(self.z_state, self.map)        
         

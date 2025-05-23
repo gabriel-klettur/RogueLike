@@ -27,7 +27,6 @@ def handle_continuous(state, camera, map, entities, menu, effects):
         if now - effects.last_laser_time >= 0.01:
             mx,my = pygame.mouse.get_pos()
             wx = mx/camera.zoom + camera.offset_x
-            wy = my/camera.zoom + camera.offset_y
-            enemies = entities.enemies
-            effects.spawn_laser(wx, wy, enemies, entities)
+            wy = my/camera.zoom + camera.offset_y            
+            effects.spawn_laser(wx, wy, entities)
             effects.last_laser_time = now

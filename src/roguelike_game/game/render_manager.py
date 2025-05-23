@@ -143,6 +143,8 @@ class RendererManager:
 
         # Debug: overlay y bordes
         render_debug_overlay(self.debug_overlay, screen, state, camera, self.map, entities, show_borders=True)
+        # Mostrar ayuda de controles según el modo
+        self._render_help_overlay(state)
 
         @benchmark(perf_log, "3.10. update dirth rects")        
         def _update_dirty_rects():
@@ -297,3 +299,66 @@ class RendererManager:
                 screen.blit(surf, text_rect.topleft)
                 dirty.append(text_rect)
         return dirty
+
+    def _render_help_overlay(self, state):
+        # Dibuja un recuadro con los controles disponibles en la esquina inferior derecha
+        import pygame
+        screen = self.screen
+        width, height = screen.get_size()
+        if self.buildings_editor.editor_state.active:
+            lines = [
+                "Modo Edición Edificios:",
+                "F10: alternar editor/cambiar modo",
+                "P: alternar selector edificio",
+                "ESC: salir editor",
+                "D: reset edificio",
+                "R: redimensionar",
+                "Ctrl+S: guardar",
+                "Ctrl+Z: deshacer",
+                "N: edificio aleatorio",
+                "Supr: borrar edificio"
+            ]
+        elif self.tiles_editor.editor_state.active:
+            lines = [
+                "Modo Edición Tiles:",
+                "F8: alternar editor tiles",
+                "ESC: salir editor",
+                "B: alternar edificios",
+                "Click Izq: seleccionar/pintar",
+                "Rueda: cambiar capa",
+                "Click Der: arrastrar paleta"
+            ]
+        else:
+            lines = [
+                "Modo Normal:",
+                "F8: editor tiles",
+                "F10: editor edificios",
+                "F9: activar debug",
+                "ESC: menú",
+                "Q: restaurar vida",
+                "1: escudo",
+                "F: fuegos artificiales",
+                "R: emisor humo",
+                "T: humo persistente",
+                "Z: rayo",
+                "X: llama arcana",
+                "V: dash",
+                "E: slash",
+                "F3: expandir dungeon"
+            ]
+        font = pygame.font.SysFont("Arial", 14)
+        pad = 5
+        texts = [font.render(l, True, (255,255,255)) for l in lines]
+        lh = texts[0].get_height() if texts else 0
+        bw = max((t.get_width() for t in texts), default=0) + pad*2
+        bh = lh*len(texts) + pad*2
+        x0 = width - bw - 10
+        y0 = height - bh - 10
+        box = pygame.Rect(x0, y0, bw, bh)
+        pygame.draw.rect(screen, (0,0,0), box)
+        pygame.draw.rect(screen, (255,255,255), box, 1)
+        y = y0 + pad
+        for t in texts:
+            screen.blit(t, (x0+pad, y))
+            y += lh
+        self._dirty_rects.append(box)

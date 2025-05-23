@@ -8,9 +8,8 @@ class LightningController:
     Controlador que actualiza el modelo de lightning,
     comprobando colisión con enemigos si se desea.
     """
-    def __init__(self, model: LightningModel, enemies: list):
-        self.model = model
-        self.enemies = enemies
+    def __init__(self, model: LightningModel):
+        self.model = model        
 
     def update(self):
         # Vida y colisiones opcionales

@@ -14,8 +14,7 @@ class ZLayerManager:
         """
         state: GameState
         entities: objeto con atributos
-          - player
-          - enemies (iterable)
+          - player          
           - obstacles (iterable)
           - buildings (iterable, cada uno con .z_bottom)
         """

@@ -227,19 +227,6 @@ class DebugOverlay:
             self._draw_dungeon_border(screen, camera, map_manager.lobby_offset)
             self._draw_global_border(screen, camera)
 
-        if entities and camera:
-            for e in entities.enemies:
-                if not e.alive:
-                    continue
-                hit = getattr(e.movement, 'hitbox', None)
-                if not hit:
-                    continue
-                foot = hit()
-                if not camera.is_in_view(foot.x, foot.y, (foot.width, foot.height)):
-                    continue
-                tl = camera.apply((foot.x, foot.y))
-                sz = camera.scale((foot.width, foot.height))
-                pygame.draw.rect(screen, (0, 255, 0), pygame.Rect(tl, sz), 1)
 
     def _get_custom_debug_lines(self, state, camera, map_manager, entities):
         lines = [
