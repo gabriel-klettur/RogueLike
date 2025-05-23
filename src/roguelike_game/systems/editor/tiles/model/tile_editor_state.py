@@ -25,5 +25,7 @@ class TileEditorState:
         self.show_buildings = True
         # Flag to show collisions grid
         self.show_collisions = False
+        # Flag to overlay collision grid on top of all layers
+        self.show_collisions_overlay = False
         
         self.picker_state = TilePickerState()

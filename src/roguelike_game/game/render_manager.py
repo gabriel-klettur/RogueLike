@@ -84,8 +84,8 @@ class RendererManager:
         # 2) Entidades orden Z
         @benchmark(perf_log, "3.2. z_entities")
         def _bench_z_entities():
-            # Skip entity rendering in collision view
-            if not (self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.show_collisions):
+            # Skip entity rendering in collision-only mode
+            if not (self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.show_collisions and not self.tiles_editor.editor_state.show_collisions_overlay):
                 self._render_z_entities(state, camera, screen, entities)
         _bench_z_entities()
 
@@ -104,8 +104,8 @@ class RendererManager:
         # 4.b) Capa del Tile Editor
         @benchmark(perf_log, "3.4b. tile_editor")
         def _bench_tile_editor():
-            # Skip tile editor UI in collision view
-            if not (self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.show_collisions):
+            # Skip tile editor UI in collision-only mode
+            if not (self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.show_collisions and not self.tiles_editor.editor_state.show_collisions_overlay):
                 self._render_tile_editor_layer(state, screen, camera, map)
         _bench_tile_editor()
 
@@ -201,8 +201,8 @@ class RendererManager:
         self._dirty_rects.extend(dirty_rects)
 
     def _render_map(self, camera, screen, map):
-        # Collision mode overlay
-        if self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.show_collisions:
+        # Collision-only mode: render only collision grid
+        if self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.show_collisions and not self.tiles_editor.editor_state.show_collisions_overlay:
             dirty = self._render_collisions(screen, camera, map)
             self._dirty_rects.extend(dirty)
             return
@@ -223,6 +223,10 @@ class RendererManager:
         else:
             dirty_rects = self.map.view.render(screen, camera, map)
         self._dirty_rects.extend(dirty_rects)
+        # Overlay collision grid in overlay mode
+        if self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.show_collisions_overlay:
+            dirty2 = self._render_collisions(screen, camera, map)
+            self._dirty_rects.extend(dirty2)
 
     def _render_tile_editor_layer(self, state, screen, camera, map):
         if getattr(state, "tile_editor_state", None) and state.tile_editor_state.active:

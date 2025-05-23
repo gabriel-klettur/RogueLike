@@ -16,7 +16,12 @@ class TileToolbarView:
             rect = pygame.Rect(px, py, self.toolbar.size, self.toolbar.size)
             self.toolbar.icon_rects[tool] = rect
             screen.blit(self.toolbar.icons[tool], (px, py))
-            color = (255, 200, 0) if self.toolbar.editor.current_tool == tool else (255, 255, 255)
+            # Yellow border for active tool or collisions mode
+            if tool == "view_collisions":
+                # Yellow border when collision mode (only or overlay) is active
+                color = (255, 200, 0) if (self.toolbar.editor.show_collisions or self.toolbar.editor.show_collisions_overlay) else (255, 255, 255)
+            else:
+                color = (255, 200, 0) if self.toolbar.editor.current_tool == tool else (255, 255, 255)
             pygame.draw.rect(screen, color, rect, 4)
         # Render layers dropdown if open
         if self.toolbar.editor.layers_view_open:

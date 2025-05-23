@@ -54,8 +54,15 @@ class TileToolbarController:
                     # Toggle layers visibility dropdown
                     self.editor.layers_view_open = not self.editor.layers_view_open
                 elif tool == "view_collisions":
-                    # Toggle collisions editing view
-                    self.editor.show_collisions = not self.editor.show_collisions
+                    # Cycle collision modes: off -> only -> overlay -> off
+                    if not self.editor.show_collisions and not self.editor.show_collisions_overlay:
+                        self.editor.show_collisions = True
+                        self.editor.show_collisions_overlay = False
+                    elif self.editor.show_collisions and not self.editor.show_collisions_overlay:
+                        self.editor.show_collisions_overlay = True
+                    else:
+                        self.editor.show_collisions = False
+                        self.editor.show_collisions_overlay = False
                     # close layers dropdown
                     self.editor.layers_view_open = False
                     return True
