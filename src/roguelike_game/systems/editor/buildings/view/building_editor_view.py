@@ -73,32 +73,44 @@ class BuildingEditorView:
     def render(self, screen, camera, buildings):
         if not self.editor.active:
             return
-        
-        # Si estamos en modo picker, pintamos el selector completo
+
+        # Collision brush mode: sólo overlay y borde del building bajo el cursor
+        if self.editor.current_tool == 'collision_brush':
+            mx, my = pygame.mouse.get_pos()
+            world_x = mx / camera.zoom + camera.offset_x
+            world_y = my / camera.zoom + camera.offset_y
+            target = None
+            for b in reversed(buildings):
+                bx, by = b.x, b.y
+                w_img, h_img = b.image.get_size()
+                if pygame.Rect(bx, by, w_img, h_img).collidepoint(world_x, world_y):
+                    target = b
+                    break
+            if target and getattr(target, 'collision_map', None):
+                self._render_building_collision_overlay(screen, camera, target)
+                # borde del edificio activo
+                x, y = camera.apply((target.x, target.y))
+                w, h = camera.scale(target.image.get_size())
+                pygame.draw.rect(screen, (0, 255, 255), (x, y, w, h), 4)
+            if self.editor.collision_picker_open:
+                self._render_collision_picker(screen)
+            return
+
+        # (Modo normal: renderizado completo con bordes y z-layer)
         if self.editor.picker_active:
-            self.picker_view.render(screen, camera)            
-        
-        # Renderizado de cada edificio
+            self.picker_view.render(screen, camera)
         for b in buildings:
             x, y = camera.apply((b.x, b.y))
             w, h = camera.scale(b.image.get_size())
             rect = pygame.Rect(x, y, w, h)
-            # Si es el hovered_building, dibuja contorno cian grueso
             if hasattr(self.editor, 'hovered_building') and b == self.editor.hovered_building:
                 pygame.draw.rect(screen, (0, 255, 255), rect, 4)
-            # contorno general del edificio
             pygame.draw.rect(screen, (255, 255, 255), rect, 1)
-
-            # Colisiones overlay
             if self.editor.collision_picker_open and getattr(b, 'collision_map', None):
                 self._render_building_collision_overlay(screen, camera, b)
-            # Render de cada handle/herramienta
             self.default_view.render_reset_handle(screen, b, camera)
-
             self.split_view.render(screen, b, camera)
             self.z_bottom_view.render(screen, b, camera)
             self.z_top_view.render(screen, b, camera)
-
-        # Collision picker UI sobre todo
         if self.editor.collision_picker_open:
             self._render_collision_picker(screen)

@@ -98,7 +98,9 @@ class RendererManager:
         # 4) HUD
         @benchmark(perf_log, "3.4. hud")
         def _bench_hud():
-            self.entities.player.render_hud(screen, camera)
+            # Ocultar HUD de jugador en modo collision brush
+            if not (self.buildings_editor.editor_state.active and self.buildings_editor.editor_state.current_tool == "collision_brush"):
+                self.entities.player.render_hud(screen, camera)
         _bench_hud()
 
         # 4.b) Capa del Tile Editor
