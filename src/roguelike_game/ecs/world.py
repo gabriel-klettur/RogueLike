@@ -4,19 +4,25 @@ from .components.patrol import Patrol
 from .components.movement_speed import MovementSpeed
 from .components.animator import Animator
 from .components.scale import Scale
+from .components.velocity import Velocity
+from .components.collider import Collider
 from .components.identity import Identity, Faction
 from .components.health import Health
 from .systems.render_system import RenderSystem
 from .systems.patrol_system import PatrolSystem
+from .systems.collision_system import CollisionSystem
 from .systems.animation_system import AnimationSystem
 from .systems.health_bar_system import HealthBarSystem
 from .systems.nameplate_system import NamePlateSystem
+from .systems.collision_debug_system import CollisionDebugSystem
 from roguelike_engine.map.utils import calculate_lobby_offset
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
 
 class NPCWorld:
-    def __init__(self, screen):
+    def __init__(self, screen, map_manager):
+        # Referencia al mapa para colisiones
+        self.map_manager = map_manager
         self.screen = screen
         self.entities = []
         # Components include position, sprite, patrol, movement speed, animator, health, scale and identity
@@ -28,11 +34,13 @@ class NPCWorld:
             'Animator': {},
             'Health': {},
             'Scale': {},
-            'Identity': {}
+            'Identity': {},
+            'Velocity': {},
+            'Collider': {}
         }
         # Systems: patrol and animation updates, then rendering
-        self.update_systems = [PatrolSystem(), AnimationSystem()]
-        self.render_systems = [RenderSystem(screen), HealthBarSystem(), NamePlateSystem()]
+        self.update_systems = [PatrolSystem(), CollisionSystem(), AnimationSystem()]
+        self.render_systems = [RenderSystem(screen), HealthBarSystem(), NamePlateSystem(), CollisionDebugSystem()]
 
         # Calculate lobby center
         lobby_x, lobby_y = calculate_lobby_offset()
@@ -93,6 +101,16 @@ class NPCWorld:
         self.components['Animator'][eid] = animator
         # Scale component: factor de escalado para el sprite (1.0 = tamaño original)
         self.components['Scale'][eid] = Scale(scale=0.25)
+        # Velocity componente: intención de movimiento
+        self.components['Velocity'][eid] = Velocity(0, 0)
+        # Collider componente: volumen basado en sprite y escala
+        scale_comp = self.components['Scale'][eid]
+        w = sprite.image.get_width()
+        h = sprite.image.get_height()
+        if scale_comp.scale != 1.0:
+            w = int(w * scale_comp.scale)
+            h = int(h * scale_comp.scale)
+        self.components['Collider'][eid] = Collider(w, h)
         # Health component: puntos de vida actuales y máximos
         self.components['Health'][eid] = Health(current_hp=100, max_hp=100)
         # Identity component: nombre, título y facción

@@ -3,6 +3,8 @@ from ..components.position import Position
 from ..components.sprite import Sprite
 from ..components.movement_speed import MovementSpeed
 from ..components.animator import Animator
+from ..components.scale import Scale
+import pygame
 
 class PatrolSystem:
     """
@@ -30,16 +32,36 @@ class PatrolSystem:
                 pos.x, pos.y = target
                 patrol.current_index = (patrol.current_index + 1) % len(patrol.waypoints)
                 continue
-            # Mover solo en un eje para trazar un cuadrado
+            # Mover solo en un eje para trazar un cuadrado con colisiones
             direction = None
+            # Lista de tiles sólidos para colisiones
+            solid_tiles = getattr(world, 'map_manager', None).solid_tiles if hasattr(world, 'map_manager') else []
             if dx != 0:
                 move = speed if dx > 0 else -speed
-                pos.x += move
-                direction = 'right' if move > 0 else 'left'
+                sprite_comp = world.components['Sprite'][eid]
+                scale_comp = world.components['Scale'].get(eid)
+                w = sprite_comp.image.get_width()
+                h = sprite_comp.image.get_height()
+                if scale_comp and scale_comp.scale != 1.0:
+                    w = int(w * scale_comp.scale)
+                    h = int(h * scale_comp.scale)
+                new_rect = pygame.Rect(pos.x + move, pos.y, w, h)
+                if not any(new_rect.colliderect(tile.rect) for tile in solid_tiles):
+                    pos.x += move
+                    direction = 'right' if move > 0 else 'left'
             else:
                 move = speed if dy > 0 else -speed
-                pos.y += move
-                direction = 'down' if move > 0 else 'up'
+                sprite_comp = world.components['Sprite'][eid]
+                scale_comp = world.components['Scale'].get(eid)
+                w = sprite_comp.image.get_width()
+                h = sprite_comp.image.get_height()
+                if scale_comp and scale_comp.scale != 1.0:
+                    w = int(w * scale_comp.scale)
+                    h = int(h * scale_comp.scale)
+                new_rect = pygame.Rect(pos.x, pos.y + move, w, h)
+                if not any(new_rect.colliderect(tile.rect) for tile in solid_tiles):
+                    pos.y += move
+                    direction = 'down' if move > 0 else 'up'
             # Update animator state if available
             if eid in world.components['Animator']:
                 animator: Animator = world.components['Animator'][eid]
