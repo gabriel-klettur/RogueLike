@@ -20,7 +20,7 @@ from roguelike_game.game.entities_manager import EntitiesManager
 from roguelike_game.game.z_layer_manager import ZLayerManager
 
 #!----------------------- Paquetes locales: sistemas ------------------------------
-from roguelike_game.systems.systems_manager import SystemsManager
+from roguelike_game.systems.effects_manager import EffectsManager
 
 #!-------------------------- Paquetes locales: menús e interfaz -------------------------------
 from roguelike_game.game.menu_manager import MenuManager
@@ -65,7 +65,7 @@ class Game:
             ("Cargando minimapa",                  lambda: self._init_minimap()),
             ("Inicializando renderizador",         lambda: self._init_renderer()),
             ("Inicializando menú",                 lambda: self._init_menu()),            
-            ("Inicializando sistemas",             lambda: self._init_systems(perf_log)),
+            ("Inicializando efectos",             lambda: self._init_effects(perf_log)),
         ]
         total = len(stages)
         for i, (msg, func) in enumerate(stages):
@@ -150,11 +150,11 @@ class Game:
         """
         self.menu = MenuManager(self.state)        
 
-    def _init_systems(self, perf_log):
+    def _init_effects(self, perf_log):
         """
         Inicializa los sistemas del juego (combat, effects, explosions, etc.).
         """
-        self.systems = SystemsManager(self.state, perf_log)
+        self.effects = EffectsManager(self.state, perf_log)
 
     def _init_minimap(self):
         """
@@ -171,8 +171,8 @@ class Game:
             self.menu,
             self.map,
             self.entities,
-            self.systems.effects,
-            self.systems.explosions,
+            self.effects.effects,
+            self.effects.explosions,
             self.tiles_editor,
             self.buildings_editor,
             self.renderer.debug_overlay
@@ -182,7 +182,7 @@ class Game:
     def update(self):
         update_game(
             self.state,
-            self.systems,
+            self.effects,
             self.camera,
             self.clock,
             self.screen,
@@ -204,7 +204,7 @@ class Game:
             self.menu,
             self.map,
             self.entities,
-            self.systems,            
+            self.effects,            
         )
 
     

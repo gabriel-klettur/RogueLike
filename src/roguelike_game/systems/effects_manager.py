@@ -4,7 +4,7 @@ from roguelike_game.systems.combat.spells.spells_system import SpellsSystem
 
 from roguelike_game.systems.combat.explosions.explosions_system import ExplosionSystem
 
-class SystemsManager:
+class EffectsManager:
 
     def __init__(self, state, perf_log):     
         self.effects = SpellsSystem(state, perf_log)

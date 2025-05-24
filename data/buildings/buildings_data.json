@@ -229,8 +229,8 @@
     },
     {
         "zone": "lobby",
-        "rel_x": 725,
-        "rel_y": 136,
+        "rel_x": 732,
+        "rel_y": 140,
         "image_path": "assets/buildings/statues/statue_olim_01.png",
         "solid": true,
         "scale": [
@@ -241,7 +241,7 @@
             1024,
             1024
         ],
-        "split_ratio": 0.62,
+        "split_ratio": 0.487,
         "z_bottom": 3,
         "z_top": 5,
         "z": 3
@@ -640,7 +640,7 @@
             412,
             169
         ],
-        "split_ratio": 0.5,
+        "split_ratio": 0.05,
         "z_bottom": 1,
         "z_top": 3,
         "z": 1
