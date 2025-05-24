@@ -166,7 +166,7 @@ class Game:
         """
         Inicializa los sistemas del juego (combat, effects, explosions, etc.).
         """
-        self.effects = EffectsManager(self.state, perf_log)
+        self.effects = EffectsManager(self.state, perf_log, self.ecs.npc_world)
 
     def _init_minimap(self):
         """

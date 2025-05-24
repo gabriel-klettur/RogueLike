@@ -18,6 +18,7 @@ from .systems.animation_system import AnimationSystem
 from .systems.health_bar_system import HealthBarSystem
 from .systems.nameplate_system import NamePlateSystem
 from .systems.collision_debug_system import CollisionDebugSystem
+from .systems.death_system import DeathSystem
 from roguelike_engine.map.utils import calculate_lobby_offset
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
@@ -44,8 +45,8 @@ class NPCWorld:
             'MultiCollider': {},
             'ZLayer': {}
         }
-        # Systems: patrol and animation updates, then rendering
-        self.update_systems = [PatrolSystem(), MovementCollisionSystem(), AnimationSystem()]
+        # Systems: patrol, movimiento, animación, muerte y luego rendering
+        self.update_systems = [PatrolSystem(), MovementCollisionSystem(), AnimationSystem(), DeathSystem()]
         self.render_systems = [HealthBarSystem(), NamePlateSystem(), CollisionDebugSystem()]
 
         # Calculate lobby center
@@ -203,3 +204,12 @@ class NPCWorld:
         # Run render systems to draw entities
         for system in self.render_systems:
             system.update(self, screen, camera)
+
+    def remove_entity(self, eid):
+        """
+        Elimina la entidad y sus componentes.
+        """
+        if eid in self.entities:
+            self.entities.remove(eid)
+        for comp_dict in self.components.values():
+            comp_dict.pop(eid, None)

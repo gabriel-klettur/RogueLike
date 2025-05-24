@@ -12,11 +12,12 @@ class FireballController:
         self,
         model: FireballModel,
         tiles: list,
-        
-        explosions_list
+        explosions_list,
+        npc_world
     ):
         self.model = model
-        self.tiles = tiles        
+        self.tiles = tiles
+        self.npc_world = npc_world
         # override del callback para agregar la explosion
         def _explode_callback(ex, ey):
             # Crear explosión en la posición de impacto
@@ -38,6 +39,27 @@ class FireballController:
         if model.age >= model.lifespan:
             model.alive = False
             return
+
+        # Colisión con NPCs
+        rect = Rect(model.x, model.y, *model.size)
+        for eid in self.npc_world.get_entities_with('Position','MultiCollider','Health'):
+            multi = self.npc_world.components['MultiCollider'][eid]
+            body = multi.colliders.get('body')
+            if body:
+                pos = self.npc_world.components['Position'][eid]
+                # Si es MaskCollider, usar mask.get_size(), si no, usar width/height
+                if hasattr(body, 'mask'):
+                    w, h = body.mask.get_size()
+                else:
+                    w, h = body.width, body.height
+                br = Rect(pos.x + body.offset_x, pos.y + body.offset_y, w, h)
+                if rect.colliderect(br):
+                    hp = self.npc_world.components['Health'][eid]
+                    hp.current_hp -= model.damage
+                    if hp.current_hp < 0: hp.current_hp = 0
+                    model.on_explode(model.x, model.y)
+                    model.alive = False
+                    return
 
         # Colisión con tiles sólidos
         rect = Rect(model.x, model.y, *model.size)
