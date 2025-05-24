@@ -76,6 +76,8 @@ class NPCWorld:
         eid = self.create_entity()
         # Instantiate sprite and center on tile
         sprite = Sprite("assets/npc/monsters/barbol/barbol_1_down.png")
+        # Ajustar spawn para que pies no colisionen
+        cx, cy = self.find_valid_spawn(cx, cy, sprite, scale=0.25, max_radius=5, margin_tiles=1)
         # Calculate pixel position centered on tile center
         px = cx * TILE_SIZE - sprite.image.get_width() // 2
         py = cy * TILE_SIZE - sprite.image.get_height() // 2
@@ -134,6 +136,51 @@ class NPCWorld:
             title=title,
             faction=faction
         )
+
+    def find_valid_spawn(self, cx, cy, sprite, scale: float = 0.25, max_radius: int = 5, margin_tiles: int = 1):
+        """
+        Busca la celda más cercana a (cx,cy) donde el feet-collider cabe sin colisionar.
+        Intenta primero con margen de tiles, si no encuentra usa margen=0.
+        """
+        from collections import deque
+        orig_x, orig_y = cx, cy
+        # dimensiones escaladas de sprite
+        w = sprite.image.get_width()
+        h = sprite.image.get_height()
+        if scale != 1.0:
+            w = int(w * scale)
+            h = int(h * scale)
+        feet_w = int(w * 0.5)
+        feet_h = int(h * 0.2)
+        offset_x = (w - feet_w) // 2
+        offset_y = h - feet_h
+        def bfs(margin):
+            visited = {(orig_x, orig_y)}
+            q = deque([(orig_x, orig_y, 0)])
+            while q:
+                tx, ty, dist = q.popleft()
+                px = tx * TILE_SIZE - w // 2
+                py = ty * TILE_SIZE - h // 2
+                rect = pygame.Rect(px + offset_x, py + offset_y, feet_w, feet_h)
+                if margin > 0:
+                    mpx = margin * TILE_SIZE
+                    rect = rect.inflate(mpx * 2, mpx * 2)
+                if not any(rect.colliderect(tile.rect) for tile in self.map_manager.solid_tiles):
+                    return tx, ty
+                if dist < max_radius:
+                    for dx, dy in ((1,0),(-1,0),(0,1),(0,-1)):
+                        nx, ny = tx + dx, ty + dy
+                        if (nx, ny) not in visited:
+                            visited.add((nx, ny))
+                            q.append((nx, ny, dist + 1))
+            return None
+        # Intento con margen
+        found = bfs(margin_tiles)
+        if found:
+            return found
+        # Intento sin margen
+        found = bfs(0)
+        return found or (orig_x, orig_y)
 
     def get_entities_with(self, *component_types):
         for eid in self.entities:
