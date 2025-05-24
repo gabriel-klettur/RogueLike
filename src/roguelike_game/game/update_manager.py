@@ -14,6 +14,7 @@ def update_game(
     tiles_editor,
     buildings_editor,
     minimap,
+    ecs,
     perf_log
 ):
     """
@@ -62,6 +63,11 @@ def update_game(
         entities.update(state, map, systems, perf_log)
     _update_entities()
 
+    # 3.3.5) ECS logic
+    @benchmark(perf_log, "2.3.5.ecs.update")
+    def _update_ecs():
+        ecs.update(clock, screen)
+    _update_ecs()
 
     # 3.4) Movimiento especial del jugador
     @benchmark(perf_log, "2.4.player.update_dash")

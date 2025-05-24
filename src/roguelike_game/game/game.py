@@ -198,10 +198,11 @@ class Game:
             self.clock,
             self.screen,
             self.map,
-            self.entities,            
+            self.entities,
             self.tiles_editor,
             self.buildings_editor,
             self.minimap,
+            self.ecs,
             self.perf_log
         )
 

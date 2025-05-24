@@ -1,6 +1,12 @@
 from .components.position import Position
 from .components.sprite import Sprite
+from .components.patrol import Patrol
+from .components.movement_speed import MovementSpeed
+from .components.animator import Animator
+from .components.scale import Scale
 from .systems.render_system import RenderSystem
+from .systems.patrol_system import PatrolSystem
+from .systems.animation_system import AnimationSystem
 from roguelike_engine.map.utils import calculate_lobby_offset
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
@@ -9,11 +15,18 @@ class NPCWorld:
     def __init__(self, screen):
         self.screen = screen
         self.entities = []
+        # Components include position, sprite, patrol, movement speed and animator
         self.components = {
             'Position': {},
-            'Sprite': {}
+            'Sprite': {},
+            'Patrol': {},
+            'MovementSpeed': {},
+            'Animator': {},
+            'Scale': {}
         }
-        self.systems = [RenderSystem(screen)]
+        # Systems: patrol and animation updates, then rendering
+        self.update_systems = [PatrolSystem(), AnimationSystem()]
+        self.render_systems = [RenderSystem(screen)]
 
         # Calculate lobby center
         lobby_x, lobby_y = calculate_lobby_offset()
@@ -21,7 +34,7 @@ class NPCWorld:
         cx = lobby_x + zone_w // 2
         cy = lobby_y + zone_h // 2
 
-        # Spawn one NPC at center
+        # Spawn one NPC at center and setup patrol
         self.spawn_npc(cx, cy)
 
     def create_entity(self):
@@ -37,8 +50,31 @@ class NPCWorld:
         # Calculate pixel position centered on tile center
         px = cx * TILE_SIZE - sprite.image.get_width() // 2
         py = cy * TILE_SIZE - sprite.image.get_height() // 2
+        # Assign components
         self.components['Position'][eid] = Position(px, py)
         self.components['Sprite'][eid] = sprite
+        # Load directional sprites
+        down_surf = sprite.image
+        left_surf = Sprite("assets/npc/monsters/barbol/barbol_1_left.png").image
+        right_surf = Sprite("assets/npc/monsters/barbol/barbol_1_right.png").image
+        up_surf = Sprite("assets/npc/monsters/barbol/barbol_1_top.png").image
+        sprites_by_direction = {
+            'down': [down_surf],
+            'left': [left_surf],
+            'right': [right_surf],
+            'up': [up_surf],
+        }
+        # Create patrol component with directional sprites
+        patrol_comp = Patrol((px, py), sprites_by_direction=sprites_by_direction)
+        patrol_comp.default_sprite = down_surf
+        self.components['Patrol'][eid] = patrol_comp
+        # Movement speed component (pixels per update)
+        self.components['MovementSpeed'][eid] = MovementSpeed(speed=patrol_comp.speed)
+        # Animator component: maps states to frames
+        animator = Animator(animations=sprites_by_direction, current_state='down')
+        self.components['Animator'][eid] = animator
+        # Scale component: factor de escalado para el sprite (1.0 = tamaño original)
+        self.components['Scale'][eid] = Scale(scale=0.25)
 
     def get_entities_with(self, *component_types):
         for eid in self.entities:
@@ -46,10 +82,11 @@ class NPCWorld:
                 yield eid
 
     def update(self):
-        # No dynamic logic yet
-        pass
+        # Run patrol and animation update systems
+        for system in self.update_systems:
+            system.update(self)
 
     def render(self, screen, camera):
-        # Render all ECS entities anchored to map using camera
-        for system in self.systems:
+        # Run render systems to draw entities
+        for system in self.render_systems:
             system.update(self, screen, camera)
