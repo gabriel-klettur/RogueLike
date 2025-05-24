@@ -5,6 +5,7 @@ from ..components.movement_speed import MovementSpeed
 from ..components.animator import Animator
 from ..components.scale import Scale
 from ..components.velocity import Velocity
+from ..components.multi_collider import MultiCollider
 import pygame
 
 class PatrolSystem:
@@ -15,8 +16,8 @@ class PatrolSystem:
         pass
 
     def update(self, world):
-        # Para cada entidad con Position y Patrol
-        for eid in world.get_entities_with('Position', 'Patrol'):
+        # Requerimos Position, Patrol, Velocity y MultiCollider para colisión en patrulla
+        for eid in world.get_entities_with('Position', 'Patrol', 'Velocity', 'MultiCollider'):
             pos: Position = world.components['Position'][eid]
             patrol: Patrol = world.components['Patrol'][eid]
             # Speed from component if exists
@@ -33,18 +34,59 @@ class PatrolSystem:
                 pos.x, pos.y = target
                 patrol.current_index = (patrol.current_index + 1) % len(patrol.waypoints)
                 continue
-            # Determinar intención de movimiento (sin mover Position aquí)
+            # Resetear velocidad y test de colisión para salto de waypoint
             direction = None
             vel_comp: Velocity = world.components['Velocity'][eid]
             vel_comp.vx = vel_comp.vy = 0
+            multi: MultiCollider = world.components['MultiCollider'][eid]
+            feet = multi.colliders.get('feet')
+            if not feet:
+                continue
+            feet_rect = pygame.Rect(
+                pos.x + feet.offset_x,
+                pos.y + feet.offset_y,
+                feet.width,
+                feet.height
+            )
+            moved = False
+            # Intentar mover en X primero
             if dx != 0:
-                move = speed if dx > 0 else -speed
-                vel_comp.vx = move
-                direction = 'right' if move > 0 else 'left'
+                step_x = speed if dx > 0 else -speed
+                new_x = feet_rect.move(step_x, 0)
+                if not any(new_x.colliderect(t.rect) for t in getattr(world.map_manager, 'solid_tiles', [])):
+                    vel_comp.vx = step_x
+                    direction = 'right' if step_x > 0 else 'left'
+                    moved = True
+                else:
+                    # Fallback en Y
+                    if dy != 0:
+                        step_y = speed if dy > 0 else -speed
+                        new_y = feet_rect.move(0, step_y)
+                        if not any(new_y.colliderect(t.rect) for t in getattr(world.map_manager, 'solid_tiles', [])):
+                            vel_comp.vy = step_y
+                            direction = 'down' if step_y > 0 else 'up'
+                            moved = True
             else:
-                move = speed if dy > 0 else -speed
-                vel_comp.vy = move
-                direction = 'down' if move > 0 else 'up'
+                # Intentar mover en Y
+                step_y = speed if dy > 0 else -speed
+                new_y = feet_rect.move(0, step_y)
+                if not any(new_y.colliderect(t.rect) for t in getattr(world.map_manager, 'solid_tiles', [])):
+                    vel_comp.vy = step_y
+                    direction = 'down' if step_y > 0 else 'up'
+                    moved = True
+                else:
+                    # Fallback en X
+                    if dx != 0:
+                        step_x = speed if dx > 0 else -speed
+                        new_x = feet_rect.move(step_x, 0)
+                        if not any(new_x.colliderect(t.rect) for t in getattr(world.map_manager, 'solid_tiles', [])):
+                            vel_comp.vx = step_x
+                            direction = 'right' if step_x > 0 else 'left'
+                            moved = True
+            # Si sigue bloqueado, saltar waypoint
+            if not moved:
+                patrol.current_index = (patrol.current_index + 1) % len(patrol.waypoints)
+                continue
             # Update animator state if available
             if eid in world.components['Animator']:
                 animator: Animator = world.components['Animator'][eid]
