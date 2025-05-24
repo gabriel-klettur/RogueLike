@@ -6,11 +6,13 @@ from .components.animator import Animator
 from .components.scale import Scale
 from .components.velocity import Velocity
 from .components.collider import Collider
+from .components.multi_collider import MultiCollider
+from .components.mask_collider import MaskCollider
 from .components.identity import Identity, Faction
 from .components.health import Health
 from .systems.render_system import RenderSystem
 from .systems.patrol_system import PatrolSystem
-from .systems.collision_system import CollisionSystem
+from .systems.movement_collision_system import MovementCollisionSystem
 from .systems.animation_system import AnimationSystem
 from .systems.health_bar_system import HealthBarSystem
 from .systems.nameplate_system import NamePlateSystem
@@ -18,6 +20,7 @@ from .systems.collision_debug_system import CollisionDebugSystem
 from roguelike_engine.map.utils import calculate_lobby_offset
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
+import pygame
 
 class NPCWorld:
     def __init__(self, screen, map_manager):
@@ -36,10 +39,10 @@ class NPCWorld:
             'Scale': {},
             'Identity': {},
             'Velocity': {},
-            'Collider': {}
+            'MultiCollider': {}
         }
         # Systems: patrol and animation updates, then rendering
-        self.update_systems = [PatrolSystem(), CollisionSystem(), AnimationSystem()]
+        self.update_systems = [PatrolSystem(), MovementCollisionSystem(), AnimationSystem()]
         self.render_systems = [RenderSystem(screen), HealthBarSystem(), NamePlateSystem(), CollisionDebugSystem()]
 
         # Calculate lobby center
@@ -103,14 +106,26 @@ class NPCWorld:
         self.components['Scale'][eid] = Scale(scale=0.25)
         # Velocity componente: intención de movimiento
         self.components['Velocity'][eid] = Velocity(0, 0)
-        # Collider componente: volumen basado en sprite y escala
+        # MultiCollider con 'body' y 'feet'
         scale_comp = self.components['Scale'][eid]
         w = sprite.image.get_width()
         h = sprite.image.get_height()
         if scale_comp.scale != 1.0:
             w = int(w * scale_comp.scale)
             h = int(h * scale_comp.scale)
-        self.components['Collider'][eid] = Collider(w, h)
+        # body collider basado en la máscara del sprite
+        surf = sprite.image
+        if scale_comp.scale != 1.0:
+            surf = pygame.transform.scale(surf, (w, h))
+        mask = pygame.mask.from_surface(surf)
+        body = MaskCollider(mask, 0, 0)
+        # feet collider (50% ancho x 20% alto)
+        feet_w = int(w * 0.5)
+        feet_h = int(h * 0.2)
+        feet_offset_x = (w - feet_w) // 2
+        feet_offset_y = h - feet_h
+        feet = Collider(feet_w, feet_h, feet_offset_x, feet_offset_y)
+        self.components['MultiCollider'][eid] = MultiCollider({'body': body, 'feet': feet})
         # Health component: puntos de vida actuales y máximos
         self.components['Health'][eid] = Health(current_hp=100, max_hp=100)
         # Identity component: nombre, título y facción
