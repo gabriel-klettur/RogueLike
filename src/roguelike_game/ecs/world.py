@@ -19,9 +19,11 @@ from .systems.health_bar_system import HealthBarSystem
 from .systems.nameplate_system import NamePlateSystem
 from .systems.collision_debug_system import CollisionDebugSystem
 from .systems.death_system import DeathSystem
+from .systems.death_timer_debug_system import DeathTimerDebugSystem
 from roguelike_engine.map.utils import calculate_lobby_offset
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_engine.utils.loader import load_image
 from roguelike_game.systems.config_z_layer import Z_LAYERS
 import pygame
 
@@ -45,9 +47,9 @@ class NPCWorld:
             'MultiCollider': {},
             'ZLayer': {}
         }
-        # Systems: patrol, movimiento, animación, muerte y luego rendering
-        self.update_systems = [PatrolSystem(), MovementCollisionSystem(), AnimationSystem(), DeathSystem()]
-        self.render_systems = [HealthBarSystem(), NamePlateSystem(), CollisionDebugSystem()]
+        # Systems: patrol, movimiento, muerte, animación y luego rendering
+        self.update_systems = [PatrolSystem(), MovementCollisionSystem(), DeathSystem(), AnimationSystem()]
+        self.render_systems = [HealthBarSystem(), NamePlateSystem(), CollisionDebugSystem(), DeathTimerDebugSystem()]
 
         # Calculate lobby center
         lobby_x, lobby_y = calculate_lobby_offset()
@@ -60,7 +62,9 @@ class NPCWorld:
             cx, cy,
             name="Barbol con tetas",
             title="Mas lista pero menos fuerte que un Barbol",
-            faction=Faction.EVIL
+            faction=Faction.EVIL,
+            death_sprite="assets/npc/monsters/barbol/barbol_female_death.png",
+            death_scale=0.6
         )
 
     def create_entity(self):
@@ -75,12 +79,26 @@ class NPCWorld:
         name: str = "",
         title: str = "",
         faction: Faction = Faction.EVIL,
-        z_layer: int | None = None
+        z_layer: int | None = None,
+        death_sprite: str | None = None,
+        death_scale: float | None = None
     ):
         print("[ECS]: Spawning NPC at tile", cx, cy)
         eid = self.create_entity()
         # Instantiate sprite and center on tile
         sprite = Sprite("assets/npc/monsters/barbol/barbol_1_down.png")
+        # Configurar ruta y escala de sprite de muerte
+        sprite.death_image_path = death_sprite
+        sprite.death_scale = death_scale
+        # Pre-cargar imagen de muerte
+        if death_sprite:
+            raw = load_image(death_sprite)
+            if death_scale:
+                w_, h_ = raw.get_size()
+                raw = pygame.transform.scale(raw, (int(w_*death_scale), int(h_*death_scale)))
+            sprite.death_image = raw
+        else:
+            sprite.death_image = None
         # Ajustar spawn para que pies no colisionen
         cx, cy = self.find_valid_spawn(cx, cy, sprite, scale=0.25, max_radius=5, margin_tiles=1)
         # Calculate pixel position centered on tile center

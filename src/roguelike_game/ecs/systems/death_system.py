@@ -1,6 +1,7 @@
 import time
 from roguelike_engine.utils.loader import load_image
 from roguelike_game.systems.combat.explosions.fire import FireExplosion
+import pygame
 
 class DeathSystem:
     """
@@ -16,22 +17,34 @@ class DeathSystem:
         # Recorre entidades con Health
         for eid, hp in list(world.components['Health'].items()):
             if hp.current_hp <= 0:
-                # Primera vez que detectamos muerte
+                # Obtener sprite y manejar muerte solo una vez
+                sprite = world.components['Sprite'].get(eid)
+                if not sprite:
+                    continue
                 if eid not in self.death_times:
-                    # Cambiar sprite a cadáver
-                    sprite = world.components['Sprite'].get(eid)
-                    if sprite:
-                        sprite.image = load_image(
-                            "assets/npc/monsters/barbol/barbol_female_deth.png"
-                        )
-                    # Deshabilitar movimiento y colisiones
+                    # Usar imagen de muerte pre-cargada o cargar una vez
+                    death_img = getattr(sprite, 'death_image', None)
+                    if death_img is None:
+                        death_path = getattr(sprite, 'death_image_path', None)
+                        if death_path:
+                            raw_img = load_image(death_path)
+                            death_scale = getattr(sprite, 'death_scale', None)
+                            if death_scale:
+                                w, h = raw_img.get_size()
+                                raw_img = pygame.transform.scale(raw_img, (int(w*death_scale), int(h*death_scale)))
+                            death_img = raw_img
+                        else:
+                            death_img = sprite.image
+                        sprite.death_image = death_img
+                    sprite.image = death_img
+                    # Deshabilitar sistemas de movimiento y animación
                     world.components['Patrol'].pop(eid, None)
                     world.components['Velocity'].pop(eid, None)
                     world.components['MultiCollider'].pop(eid, None)
+                    world.components['Animator'].pop(eid, None)
                     # Registrar hora de muerte
                     self.death_times[eid] = now
-                # Si han pasado >=60s, remover entidad
+                # Remover entidad tras 60s
                 elif now - self.death_times[eid] >= 60:
                     world.remove_entity(eid)
-                    # Podríamos disparar un evento "corpse_removed" aquí
                     del self.death_times[eid]
