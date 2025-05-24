@@ -157,3 +157,31 @@ class Building:
             print(f"↩️ Tamaño reseteado a original: {self.original_scale}")
         else:
             print("⚠️ No se encontró escala original para este edificio.")
+
+    @property
+    def collision_rect(self) -> pygame.Rect:
+        """
+        Rectángulo de colisión: parte inferior del edificio según split_ratio.
+        """
+        full_h = self.image.get_height()
+        cut_h = int(full_h * self.split_ratio)
+        return pygame.Rect(
+            self.x,
+            self.y + cut_h,
+            self.image.get_width(),
+            full_h - cut_h
+        )
+
+    @property
+    def collision_tiles(self) -> list[pygame.Rect]:
+        """
+        Retorna una lista de pygame.Rect para cada celda '#' de collision_map.
+        """
+        tiles = []
+        for row_idx, row in enumerate(self.collision_map):
+            for col_idx, cell in enumerate(row):
+                if cell == '#':
+                    x = self.x + col_idx * TILE_SIZE
+                    y = self.y + row_idx * TILE_SIZE
+                    tiles.append(pygame.Rect(x, y, TILE_SIZE, TILE_SIZE))
+        return tiles

@@ -20,7 +20,14 @@ class MovementCollisionSystem:
             # Mover en X
             if vel.vx != 0:
                 new_rect = feet.rect.move(vel.vx, 0)
-                if not any(new_rect.colliderect(tile.rect) for tile in world.map_manager.solid_tiles):
+                # Colisión con tiles del mapa o con celdas sólidas de edificios
+                blocked_by_map = any(new_rect.colliderect(tile.rect) for tile in world.map_manager.solid_tiles)
+                blocked_by_building = any(
+                    new_rect.colliderect(cell_rect)
+                    for b in getattr(world, 'buildings', [])
+                    for cell_rect in getattr(b, 'collision_tiles', [])
+                )
+                if not blocked_by_map and not blocked_by_building:
                     pos.x += vel.vx
                     feet.rect = new_rect
                 else:
@@ -28,7 +35,14 @@ class MovementCollisionSystem:
             # Mover en Y
             if vel.vy != 0:
                 new_rect = feet.rect.move(0, vel.vy)
-                if not any(new_rect.colliderect(tile.rect) for tile in world.map_manager.solid_tiles):
+                # Colisión con tiles del mapa o con celdas sólidas de edificios
+                blocked_by_map = any(new_rect.colliderect(tile.rect) for tile in world.map_manager.solid_tiles)
+                blocked_by_building = any(
+                    new_rect.colliderect(cell_rect)
+                    for b in getattr(world, 'buildings', [])
+                    for cell_rect in getattr(b, 'collision_tiles', [])
+                )
+                if not blocked_by_map and not blocked_by_building:
                     pos.y += vel.vy
                     feet.rect = new_rect
                 else:

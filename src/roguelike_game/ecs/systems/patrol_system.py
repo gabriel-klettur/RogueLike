@@ -62,15 +62,45 @@ class PatrolSystem:
         if not feet:
             return 0, 0, None
         rect = pygame.Rect(pos.x + feet.offset_x, pos.y + feet.offset_y, feet.width, feet.height)
+        buildings = getattr(world, 'buildings', [])  # lista de Building
         # Try X then Y
         if dx != 0:
             vx = speed if dx > 0 else -speed
-            if not any(rect.move(vx, 0).colliderect(t.rect) for t in world.map_manager.solid_tiles):
+            new_rect_x = rect.move(vx, 0)
+            # Colisión contra tiles y edificios
+            blocked_map = any(new_rect_x.colliderect(t.rect) for t in world.map_manager.solid_tiles)
+            blocked_build = any(
+                new_rect_x.colliderect(cell)
+                for b in buildings
+                for cell in getattr(b, 'collision_tiles', [])
+            )
+            if not blocked_map and not blocked_build:
                 return vx, 0, 'right' if vx > 0 else 'left'
         if dy != 0:
             vy = speed if dy > 0 else -speed
-            if not any(rect.move(0, vy).colliderect(t.rect) for t in world.map_manager.solid_tiles):
+            new_rect_y = rect.move(0, vy)
+            # Colisión contra tiles y edificios
+            blocked_map = any(new_rect_y.colliderect(t.rect) for t in world.map_manager.solid_tiles)
+            blocked_build = any(
+                new_rect_y.colliderect(cell)
+                for b in buildings
+                for cell in getattr(b, 'collision_tiles', [])
+            )
+            if not blocked_map and not blocked_build:
                 return 0, vy, 'down' if vy > 0 else 'up'
+        # Diagonal fallback: si ambos ejes cuestan, probar movimiento diagonal
+        if dx != 0 and dy != 0:
+            vx = speed if dx > 0 else -speed
+            vy = speed if dy > 0 else -speed
+            new_rect_d = rect.move(vx, vy)
+            blocked_map = any(new_rect_d.colliderect(t.rect) for t in world.map_manager.solid_tiles)
+            blocked_build = any(
+                new_rect_d.colliderect(cell)
+                for b in buildings
+                for cell in getattr(b, 'collision_tiles', [])
+            )
+            if not blocked_map and not blocked_build:
+                return vx, vy, None
         return 0, 0, None
 
     def _update_animator(self, world, eid, direction):

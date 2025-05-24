@@ -137,8 +137,8 @@ class Game:
         """
         Inicializa el gestor ECS
         """
-        # Pasar referencia del mapa para colisiones en ECS
-        self.ecs = ECSManager(screen, self.map)
+        # Pasar referencia del mapa y entidades para colisiones en ECS
+        self.ecs = ECSManager(screen, self.map, self.entities)
 
     def _init_renderer(self):
         """
