@@ -9,8 +9,8 @@ class NamePlateSystem:
     """
     def __init__(self):
         pygame.font.init()
-        self.name_font = pygame.font.SysFont(None, 22)
-        self.title_font = pygame.font.SysFont(None, 16)
+        self.name_font = pygame.font.SysFont(None, 30)
+        self.title_font = pygame.font.SysFont(None, 24)
 
     def update(self, world, screen, camera):
         for eid in world.get_entities_with('Position', 'Identity'):
@@ -18,6 +18,10 @@ class NamePlateSystem:
             id_comp: Identity = world.components['Identity'][eid]
             # Posición en pantalla
             screen_x, screen_y = camera.apply((pos.x, pos.y))
+            # Determinar top de health bar para ubicar textos encima
+            bar_margin = 2
+            bar_height = 5
+            bar_y = screen_y - bar_margin - bar_height
             # Color según facción
             if id_comp.faction == Faction.GOOD:
                 color = (0, 0, 255)
@@ -30,12 +34,14 @@ class NamePlateSystem:
             name_surf = self.name_font.render(id_comp.name, True, color)
             name_rect = name_surf.get_rect()
             name_rect.centerx = screen_x + (world.components['Scale'].get(eid, Scale()).scale * world.components['Sprite'][eid].image.get_width()) // 2
-            name_rect.bottom = screen_y - 8
+            # Ubicar nombre justo encima de la barra de salud
+            name_rect.bottom = bar_y - 2
             screen.blit(name_surf, name_rect)
             # Renderizar título encima del nombre
             if id_comp.title:
                 title_surf = self.title_font.render(id_comp.title, True, color)
                 title_rect = title_surf.get_rect()
                 title_rect.centerx = name_rect.centerx
-                title_rect.bottom = name_rect.top - 2
+                # Ubicar título encima del nombre
+                title_rect.bottom = name_rect.top - 1
                 screen.blit(title_surf, title_rect)

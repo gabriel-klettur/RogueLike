@@ -45,7 +45,7 @@ class NPCWorld:
             cx, cy,
             name="Barbol con tetas",
             title="Mas lista pero menos fuerte que un Barbol",
-            faction=Faction.NEUTRAL
+            faction=Faction.EVIL
         )
 
     def create_entity(self):
@@ -59,7 +59,7 @@ class NPCWorld:
         cy,
         name: str = "",
         title: str = "",
-        faction: Faction = Faction.NEUTRAL
+        faction: Faction = Faction.EVIL
     ):
         print("[ECS]: Spawning NPC at tile", cx, cy)
         eid = self.create_entity()
