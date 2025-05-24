@@ -4,11 +4,13 @@ from .components.patrol import Patrol
 from .components.movement_speed import MovementSpeed
 from .components.animator import Animator
 from .components.scale import Scale
+from .components.identity import Identity, Faction
 from .components.health import Health
 from .systems.render_system import RenderSystem
 from .systems.patrol_system import PatrolSystem
 from .systems.animation_system import AnimationSystem
 from .systems.health_bar_system import HealthBarSystem
+from .systems.nameplate_system import NamePlateSystem
 from roguelike_engine.map.utils import calculate_lobby_offset
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
@@ -17,7 +19,7 @@ class NPCWorld:
     def __init__(self, screen):
         self.screen = screen
         self.entities = []
-        # Components include position, sprite, patrol, movement speed, animator, health and scale
+        # Components include position, sprite, patrol, movement speed, animator, health, scale and identity
         self.components = {
             'Position': {},
             'Sprite': {},
@@ -25,11 +27,12 @@ class NPCWorld:
             'MovementSpeed': {},
             'Animator': {},
             'Health': {},
-            'Scale': {}
+            'Scale': {},
+            'Identity': {}
         }
         # Systems: patrol and animation updates, then rendering
         self.update_systems = [PatrolSystem(), AnimationSystem()]
-        self.render_systems = [RenderSystem(screen), HealthBarSystem()]
+        self.render_systems = [RenderSystem(screen), HealthBarSystem(), NamePlateSystem()]
 
         # Calculate lobby center
         lobby_x, lobby_y = calculate_lobby_offset()
@@ -37,15 +40,27 @@ class NPCWorld:
         cx = lobby_x + zone_w // 2
         cy = lobby_y + zone_h // 2
 
-        # Spawn one NPC at center and setup patrol
-        self.spawn_npc(cx, cy)
+        # Spawn one NPC at center with full identity and setup patrol
+        self.spawn_npc(
+            cx, cy,
+            name="Barbol con tetas",
+            title="Mas lista pero menos fuerte que un Barbol",
+            faction=Faction.NEUTRAL
+        )
 
     def create_entity(self):
         eid = len(self.entities) + 1
         self.entities.append(eid)
         return eid
 
-    def spawn_npc(self, cx, cy):
+    def spawn_npc(
+        self,
+        cx,
+        cy,
+        name: str = "",
+        title: str = "",
+        faction: Faction = Faction.NEUTRAL
+    ):
         print("[ECS]: Spawning NPC at tile", cx, cy)
         eid = self.create_entity()
         # Instantiate sprite and center on tile
@@ -80,6 +95,12 @@ class NPCWorld:
         self.components['Scale'][eid] = Scale(scale=0.25)
         # Health component: puntos de vida actuales y máximos
         self.components['Health'][eid] = Health(current_hp=100, max_hp=100)
+        # Identity component: nombre, título y facción
+        self.components['Identity'][eid] = Identity(
+            name=name,
+            title=title,
+            faction=faction
+        )
 
     def get_entities_with(self, *component_types):
         for eid in self.entities:

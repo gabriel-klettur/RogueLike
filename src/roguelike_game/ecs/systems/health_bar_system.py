@@ -38,3 +38,13 @@ class HealthBarSystem:
             pygame.draw.rect(screen, (50, 50, 50), (bar_x, bar_y, bar_width, bar_height))
             # Dibujar relleno (verde)
             pygame.draw.rect(screen, (0, 255, 0), (bar_x, bar_y, fill_width, bar_height))
+            # Dibujar borde de la barra
+            pygame.draw.rect(screen, (0, 0, 0), (bar_x, bar_y, bar_width, bar_height), 1)
+            # Dibujar separadores cada 20 HP
+            num_segments = health.max_hp // 20
+            if num_segments > 0:
+                seg_width = bar_width / num_segments
+                for i in range(1, num_segments):
+                    x = bar_x + int(seg_width * i)
+                    pygame.draw.line(screen, (0, 0, 0), (x, bar_y), (x, bar_y + bar_height))
+            # (Nombre y título separados en NamePlateSystem)
