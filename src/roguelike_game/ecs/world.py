@@ -3,6 +3,7 @@ from .components.sprite import Sprite
 from .systems.render_system import RenderSystem
 from roguelike_engine.map.utils import calculate_lobby_offset
 from roguelike_engine.config.map_config import global_map_settings
+from roguelike_engine.config.config_tiles import TILE_SIZE
 
 class NPCWorld:
     def __init__(self, screen):
@@ -29,12 +30,15 @@ class NPCWorld:
         return eid
 
     def spawn_npc(self, cx, cy):
-        print("[ECS]: Spawning NPC at", cx, cy)
+        print("[ECS]: Spawning NPC at tile", cx, cy)
         eid = self.create_entity()
-        self.components['Position'][eid] = Position(cx, cy)
-        self.components['Sprite'][eid] = Sprite(
-            "assets/npc/monsters/barbol/barbol_1_down.png"
-        )
+        # Instantiate sprite and center on tile
+        sprite = Sprite("assets/npc/monsters/barbol/barbol_1_down.png")
+        # Calculate pixel position centered on tile center
+        px = cx * TILE_SIZE - sprite.image.get_width() // 2
+        py = cy * TILE_SIZE - sprite.image.get_height() // 2
+        self.components['Position'][eid] = Position(px, py)
+        self.components['Sprite'][eid] = sprite
 
     def get_entities_with(self, *component_types):
         for eid in self.entities:
@@ -45,6 +49,7 @@ class NPCWorld:
         # No dynamic logic yet
         pass
 
-    def render(self):
+    def render(self, screen, camera):
+        # Render all ECS entities anchored to map using camera
         for system in self.systems:
-            system.update(self)
+            system.update(self, screen, camera)

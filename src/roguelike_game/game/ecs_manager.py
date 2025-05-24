@@ -10,5 +10,5 @@ class ECSManager:
         self.npc_world.update()
 
     def render(self, screen, camera):
-        # Renderiza todas las entidades ECS en pantalla
-        self.npc_world.render()
+        # Renderiza todas las entidades ECS en pantalla con cámara
+        self.npc_world.render(screen, camera)
