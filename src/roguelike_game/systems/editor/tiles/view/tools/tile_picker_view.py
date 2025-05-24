@@ -1,5 +1,5 @@
-# Path: src/roguelike_game/systems/editor/tiles/view/tools/tile_picker_view.py
 
+# Path: src/roguelike_game/systems/editor/tiles/view/tools/tile_picker_view.py
 import pygame
 from roguelike_game.systems.editor.tiles.tiles_editor_config import (
     CLR_HOVER,
@@ -68,6 +68,17 @@ class TilePickerView:
         self.picker_state.btn_default_rect = pygame.Rect(PAD*2 + BTN_W, PAD + h_grid, BTN_W, BTN_H)
         self._draw_button(self.picker_state.btn_delete_rect,  "Borrar")
         self._draw_button(self.picker_state.btn_default_rect, "Default")
+
+        # Close button at top-right
+        close_size = BTN_H
+        close_rect = pygame.Rect(w - PAD - close_size, PAD, close_size, close_size)
+        # Draw close button
+        pygame.draw.rect(self.picker_state.surface, (60, 60, 60), close_rect)
+        pygame.draw.rect(self.picker_state.surface, CLR_BORDER, close_rect, 1)
+        # 'X' mark
+        pygame.draw.line(self.picker_state.surface, CLR_BORDER, (close_rect.left+4, close_rect.top+4), (close_rect.right-4, close_rect.bottom-4), 2)
+        pygame.draw.line(self.picker_state.surface, CLR_BORDER, (close_rect.right-4, close_rect.top+4), (close_rect.left+4, close_rect.bottom-4), 2)
+        self.picker_state.btn_close_rect = close_rect
 
         if self.picker_state.pos is None:
             sw, sh = screen.get_size()

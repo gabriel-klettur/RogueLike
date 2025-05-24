@@ -1,10 +1,9 @@
 # Path: src/roguelike_game/main.py
-
 import pygame
 from collections import defaultdict
 
 from roguelike_game.game.game import Game
-from roguelike_engine.config import FPS, SCREEN_WIDTH, SCREEN_HEIGHT
+from roguelike_engine.config.config import FPS, SCREEN_WIDTH, SCREEN_HEIGHT
 from roguelike_engine.utils.benchmark import benchmark
 
 def init_debug():
@@ -15,7 +14,7 @@ def main():
     pygame.init()
     screen = pygame.display.set_mode(
         (SCREEN_WIDTH, SCREEN_HEIGHT),
-        pygame.HWSURFACE | pygame.DOUBLEBUF
+        pygame.HWSURFACE | pygame.DOUBLEBUF | pygame.RESIZABLE
     )
     pygame.display.set_caption("Roguelike")
 
@@ -26,7 +25,8 @@ def main():
     game = Game(
         screen,
         perf_log        = performance_log,        
-        map_name        = None
+        map_name        = None,
+        loading_bg      = "ui/background_ini.png"
     )
     if not hasattr(game, 'state'):
         raise RuntimeError("Game state not initialized properly!")

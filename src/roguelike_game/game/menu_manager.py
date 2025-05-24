@@ -1,4 +1,4 @@
-#Path: src/roguelike_game/game/menu_manager.py
+# Path: src/roguelike_game/game/menu_manager.py
 import pygame
 
 class MenuManager:

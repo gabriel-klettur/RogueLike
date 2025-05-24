@@ -1,5 +1,3 @@
-
-# Path: src/roguelike_game/systems/editor/buildings/model/building_editor_state.py
 class BuildingsEditorState:
     def __init__(self):
 
@@ -30,3 +28,17 @@ class BuildingsEditorState:
         self.entries: list = []             # populado por picker_controller
         self.selected_entry = None          # elemento actual (para drag)
         self.dragging_building: bool = False
+
+        # --- NUEVO: Collision brush UI ---
+        # Herramienta actual: 'select' | 'collision_brush'
+        self.current_tool: str = 'select'
+        self.collision_picker_open = False   # toggle del picker de colisión
+        self.collision_choice = None         # '#' o '.' seleccionado
+        self.collision_picker_rects = {}     # rects de UI del picker
+        self.collision_picker_pos = None     # posición del panel picker
+        self.collision_picker_dragging = False
+        self.collision_picker_drag_offset = (0, 0)
+        self.collision_picker_panel_size = (0, 0)
+        # Flag to indicate collision brush painting active
+        self.collision_brush_dragging: bool = False
+# Path: src/roguelike_game/systems/editor/buildings/model/building_editor_state.py

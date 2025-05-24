@@ -1,17 +1,13 @@
-#Path: src/roguelike_game/game/entities_manager.py
-
+# Path: src/roguelike_game/game/entities_manager.py
 from typing import Tuple, List
 
 from roguelike_game.entities.load_entities import load_entities
-from roguelike_game.entities.load_hostile import load_hostile
 from roguelike_game.game.map_manager import MapManager
-from roguelike_engine.config_tiles import TILE_SIZE
-from roguelike_engine.config_map import DUNGEON_CONNECT_SIDE
-from roguelike_engine.map.core.service import _calculate_dungeon_offset
+from roguelike_engine.utils.benchmark import benchmark
 
 class EntitiesManager:
     """
-    Carga y mantiene entidades del juego: jugador, obstáculos, edificios y enemigos.
+    Carga y mantiene entidades del juego: jugador, obstáculos y edificios.
     """
     
     def __init__(self, z_state, game_map: MapManager):
@@ -20,11 +16,9 @@ class EntitiesManager:
         
         self.player = None
         self.obstacles = []
-        self.buildings = []
-        self.enemies = []        
+        self.buildings = []        
 
-        self.init_statics()
-        self.init_enemies()        
+        self.init_statics()    
 
     def init_statics(self):
         """
@@ -32,35 +26,49 @@ class EntitiesManager:
         Devuelve (player, obstacles, buildings).
         """        
         self.player, self.obstacles, self.buildings = load_entities(self.z_state)
+        self.recalibrate_buildings()
+        
         return self.player, self.obstacles, self.buildings    
 
-    def init_enemies(self):
+    def recalibrate_buildings(self):
         """
-        Carga enemigos en la dungeon.
+        Actualiza el rect de colisión/render de cada edificio,
+        usando las propiedades x,y derivadas de rel_x/rel_y y zone.
         """
-        # 2️⃣ Calcular offset en tiles de la dungeon
-        lob_x, lob_y = self.map.lobby_offset
-        dungeon_offset = _calculate_dungeon_offset(
-            (lob_x, lob_y),
-            DUNGEON_CONNECT_SIDE
-        )
-        # 4️⃣ Spawn procedural de enemigos
-        self.enemies = self.spawn_enemies(dungeon_offset)
+        for b in self.buildings:
+            if getattr(b, "zone", None) is not None and getattr(b, "rel_x", None) is not None:
+                abs_x, abs_y = b.x, b.y
+                if hasattr(b, "rect"):
+                    b.rect.topleft = (abs_x, abs_y)
 
-    def spawn_enemies(self, dungeon_offset: Tuple[int, int]) -> List:
+    def update(self, state, game_map, systems, perf_log):
         """
-        Genera y devuelve la lista de enemigos usando metadata del mapa.
+        Actualiza todas las entidades de la partida:
+          - Jugador
+          - Obstáculos
+          - Edificios
+          # NPCs gestionados por ECS; eliminados de este método
+        Cada sección está medida para perfilado.
         """
-        # Coordenada inicial del jugador en tiles
-        px = int(self.player.x) // TILE_SIZE
-        py = int(self.player.y) // TILE_SIZE
-        player_tile = (px, py)
 
-        rooms = self.map.rooms
-        self.enemies = load_hostile(
-            rooms,
-            player_tile,
-            dungeon_offset,
-            self.map.tiles
-        )
-        return self.enemies
+        # 1) Jugador
+        @benchmark(perf_log, "2.1.player_update")
+        def _update_player():
+            self.player.update(game_map)
+        _update_player()
+
+        # 2) Obstáculos
+        @benchmark(perf_log, "2.2.obstacles_update")
+        def _update_obstacles():
+            for ob in self.obstacles:
+                if hasattr(ob, "update"):
+                    ob.update(state, game_map)
+        _update_obstacles()
+
+        # 3) Edificios
+        @benchmark(perf_log, "2.3.buildings_update")
+        def _update_buildings():
+            for b in self.buildings:
+                if hasattr(b, "update"):
+                    b.update(state, game_map)
+        _update_buildings()

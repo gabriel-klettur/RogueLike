@@ -15,7 +15,7 @@ class ExplosionSystem:
         for e in self.explosions:
             e.update()
 
-    @benchmark(lambda self: self.perf_log, "----3.6.3 explosions_render")
+    @benchmark(lambda self: self.perf_log, "3.6.3 explosions_render")
     def render(self, screen, camera):
         dirty_rects = []
         for e in self.explosions:

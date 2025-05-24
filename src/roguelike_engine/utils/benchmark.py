@@ -1,5 +1,3 @@
-# roguelike_project/utils/benchmark.py
-
 # Path: src/roguelike_engine/utils/benchmark.py
 import time
 from functools import wraps

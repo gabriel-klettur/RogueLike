@@ -1,12 +1,14 @@
 # Path: src/roguelike_engine/input/keyboard.py
 import pygame, time
-import roguelike_engine.config as config
+import roguelike_engine.config.config as config
+from roguelike_engine.map.events.events import handle_expand_dungeon
 
-
-from roguelike_game.entities.npc.factory import NPCFactory
-
-def handle_keyboard(event, state, camera, clock, menu, entities, effects, tiles_editor):
+def handle_keyboard(event, state, camera, clock, menu, entities, effects, tiles_editor, map_manager):
     if event.type == pygame.KEYDOWN:
+        
+        if event.key == pygame.K_F3:
+            handle_expand_dungeon(event, map_manager, entities)
+
         if event.key == pygame.K_ESCAPE:
             menu.show_menu = not menu.show_menu
 
@@ -86,20 +88,6 @@ def handle_keyboard(event, state, camera, clock, menu, entities, effects, tiles_
         elif event.key == pygame.K_F9:
             config.DEBUG = not config.DEBUG
             print(f"🧪 DEBUG {'activado' if config.DEBUG else 'desactivado'}")
-
-        # ---------- Monster Spawner (F7) --------- #
-        elif event.key == pygame.K_F7:
-            print("Monster positions:")
-
-            for entity in entities.enemies:
-                print(f"- {entity.name} at ({entity.x}, {entity.y})")            
-
-            mouse_x, mouse_y = pygame.mouse.get_pos()
-            world_x = round(mouse_x / camera.zoom + camera.offset_x)
-            world_y = round(mouse_y / camera.zoom + camera.offset_y)
-            print(f"Spawning enemy at {world_x}, {world_y}")
-            entities.enemies.append( NPCFactory.create("elite", world_x, world_y)) 
-            
 
         # ---------- TILE-EDITOR (F8) --------- #
         elif event.key == pygame.K_F8:

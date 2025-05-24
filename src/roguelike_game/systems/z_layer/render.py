@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/systems/z_layer/render.py
 
 """
 Renderizado ordenado por capas Z y eje Y.
@@ -19,3 +18,4 @@ def render_z_ordered(entities, screen, camera, z_state):
 
     for entity in entities_sorted:
         entity.render(screen, camera)
+# Path: src/roguelike_game/systems/z_layer/render.py

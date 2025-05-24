@@ -2,7 +2,7 @@
 
 # Path: src/roguelike_game/systems/editor/tiles/view/tools/tile_outline_view.py
 import pygame
-from roguelike_engine.config_tiles import TILE_SIZE
+from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.systems.editor.tiles.tiles_editor_config import OUTLINE_HOVER, OUTLINE_SEL
 
 class TileOutlineView:

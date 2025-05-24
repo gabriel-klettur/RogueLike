@@ -1,5 +1,5 @@
-#Path: src/roguelike_game/game/tile_editor_manager.py
 
+# Path: src/roguelike_game/game/tiles_editor_manager.py
 from roguelike_game.systems.editor.tiles.model.tile_editor_state import TileEditorState
 from roguelike_game.systems.editor.tiles.controller.tile_editor_controller import TileEditorController
 from roguelike_game.systems.editor.tiles.events.tile_editor_events import TileEditorEventHandler
@@ -34,12 +34,12 @@ class TilesEditorManager:
         if self.editor_state.active:
             self.handler.handle(camera, game_map)
 
-    def update(self, camera):
+    def update(self, camera, game_map):
         """
         Actualiza el controlador si está activo.
         """
         if self.editor_state.active:
-            self.controller.update(camera)
+            self.controller.update(camera, game_map)
 
     def render(self, screen, camera, game_map):
         """

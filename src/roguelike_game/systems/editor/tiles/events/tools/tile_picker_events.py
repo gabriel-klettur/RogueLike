@@ -1,5 +1,4 @@
 # Path: src/roguelike_game/systems/editor/tiles/events/tools/tile_picker_events.py
-
 from roguelike_game.systems.editor.tiles.tiles_editor_config import PAD, THUMB, COLS
 
 class TilePickerEventHandler:
@@ -33,7 +32,15 @@ class TilePickerEventHandler:
         if self.picker_state.btn_default_rect and self.picker_state.btn_default_rect.collidepoint((lx, ly)):
             self.controller._set_default(map)
             return True
-
+        # Botón Cerrar
+        if self.picker_state.btn_close_rect and self.picker_state.btn_close_rect.collidepoint((lx, ly)):
+            self.controller._close()
+            return True
+        # Arrastrar ventana completa con botón derecho
+        if button == 3:
+            self.picker_state.dragging = True
+            self.picker_state.drag_offset = (lx, ly)
+            return True
         # Cálculo de índice en la rejilla de assets
         col = (lx - PAD) // (THUMB + PAD)
         row = (ly - PAD + self.editor_state.scroll_offset) // (THUMB + PAD)
@@ -59,8 +66,4 @@ class TilePickerEventHandler:
         self.editor_state.current_choice = value
         self.picker_state.current_choice = value
 
-        # Soporte arrastre con botón derecho
-        if button == 3:
-            self.picker_state.dragging = True
-            self.picker_state.drag_offset = (lx, ly)
         return True

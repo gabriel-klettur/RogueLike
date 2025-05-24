@@ -1,4 +1,3 @@
-
 # Path: src/roguelike_game/systems/combat/spells/spells_system.py
 import pygame
 from pygame.math import Vector2
@@ -125,8 +124,7 @@ class SpellsSystem:
         self.dash_views.append(view)
 
     def spawn_slash(self, direction: Vector2, entities):
-        px, py = self._player_center(entities.player)
-        #enemies = entities.enemies + list(self.state.remote_entities.values()) 
+        px, py = self._player_center(entities.player)        
         model = SlashModel(px, py, direction)
         ctrl = SlashController(model)
         view = SlashView(model)
@@ -134,9 +132,9 @@ class SpellsSystem:
         self.slash_views.append(view)
 
 
-    def spawn_laser(self, x, y, enemies, entities):
+    def spawn_laser(self, x, y, entities):
         px, py = self._player_center(entities.player)
-        model  = LaserBeamModel(px, py, x, y, enemies=enemies)
+        model  = LaserBeamModel(px, py, x, y)
         ctrl   = LaserBeamController(model)
         view   = LaserBeamView(model)
         self.laser_controllers.append(ctrl)
@@ -180,10 +178,10 @@ class SpellsSystem:
 
     def spawn_fireball(self, angle, map, entities, explosions):
         px, py   = self._player_center(entities.player)
-        tiles    = [t for t in map.tiles_in_region if t.solid]
-        enemies  = entities.enemies
+        tiles    = map.solid_tiles
+        
         model   = FireballModel(px, py, angle)
-        ctrl    = FireballController(model, tiles, enemies, explosions)
+        ctrl    = FireballController(model, tiles, explosions)
         view    = FireballView(model)
         self.fireball_controllers.append(ctrl)
         self.fireball_views.append(view)
@@ -191,8 +189,8 @@ class SpellsSystem:
     def spawn_lightning(self, target_pos, entities):
         px, py   = self._player_center(entities.player)
         model    = LightningModel((px, py), target_pos)
-        enemies  = entities.enemies
-        ctrl     = LightningController(model, enemies)
+        
+        ctrl     = LightningController(model)
         view     = LightningView(model)
         self.lightning_controllers.append(ctrl)
         self.lightning_views.append(view)
@@ -296,7 +294,7 @@ class SpellsSystem:
     # ------------------------------------------------ #
     #                     Render                       #
     # ------------------------------------------------ #
-    @benchmark(lambda self: self.perf_log, "----3.6.2 effects_render")
+    @benchmark(lambda self: self.perf_log, "3.6.2 effects_render")
     def render(self, screen, camera):
         dirty_rects = []
 

@@ -68,4 +68,5 @@ PLAYER_DASH_SPEED = 2000  # velocidad de dash
 PLAYER_DASH_COOLDOWN = 2.0  # cooldown de dash
 PLAYER_DASH_DURATION = 0.2  # duración del dash
 PLAYER_TELEPORT_COOLDOWN = 0.5  # cooldown de teleport
-PLAYER_TELEPORT_DISTANCE = 100  # distancia de teleport
+PLAYER_TELEPORT_DISTANCE = 400  # distancia de teleport
+# Path: src/roguelike_game/entities/player/config_player.py

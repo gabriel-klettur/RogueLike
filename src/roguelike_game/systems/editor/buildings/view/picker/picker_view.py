@@ -1,5 +1,5 @@
-# Path: src/roguelike_game/systems/editor/buildings/view/picker/picker_view.py
 
+# Path: src/roguelike_game/systems/editor/buildings/view/picker/picker_view.py
 import os
 import pygame
 from roguelike_engine.utils.loader import load_image

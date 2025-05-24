@@ -1,13 +1,14 @@
-#Path: src/roguelike_game/systems/editor/tiles/controller/tools/tile_picker_controller.py
-
+# Path: src/roguelike_game/systems/editor/tiles/controller/tools/tile_picker_controller.py
 import pygame
 from pathlib import Path
 
 from roguelike_engine.utils.loader import load_image
-from roguelike_engine.config import ASSETS_DIR
-from roguelike_engine.map.overlay.overlay_manager import save_overlay
-from roguelike_engine.config_tiles import TILE_SIZE
-from roguelike_engine.tiles.assets import load_base_tile_images
+from roguelike_engine.config.config import ASSETS_DIR
+from roguelike_engine.map.model.overlay.overlay_manager import load_layers, save_layers
+from roguelike_engine.map.model.layer import Layer
+from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_engine.tile.assets import load_base_tile_images
+from roguelike_engine.config.map_config import global_map_settings
 
 from roguelike_game.systems.editor.tiles.tiles_editor_config import (
     BASE_TILE_DIR,
@@ -74,18 +75,6 @@ class TilePickerController:
             except Exception as e:
                 print(f"[TilePicker] ERROR cargando {rel_path}: {e}")
 
-    def open_with_selection(self, choice_path):
-        """
-        Abre el picker y hace scroll hasta la miniatura cuyo valor coincide con choice_path.
-        """
-        self.picker_state.open = True
-        self.picker_state.current_choice = choice_path
-        for idx, entry in enumerate(self.assets):
-            if entry[0] == choice_path:
-                row = idx // COLS
-                self.editor_state.scroll_offset = row * (THUMB + PAD)
-                break
-
     def is_over(self, mouse_pos) -> bool:
         if not self.picker_state.surface or not self.picker_state.pos:
             return False
@@ -110,22 +99,64 @@ class TilePickerController:
     def _delete_tile(self, map):
         tile = self.editor_state.selected_tile
         if tile:
-            # Eliminar sprite y limpiar overlay
-            tile.sprite = pygame.Surface((TILE_SIZE, TILE_SIZE), pygame.SRCALPHA)
-            tile.scaled_cache.clear()
+            # Borrar sprite y overlay en la capa actual
+            layer = self.editor_state.current_layer
+            row = tile.y // TILE_SIZE; col = tile.x // TILE_SIZE
+            grid = map.tiles_by_layer.get(layer)
+            if grid and 0 <= row < len(grid) and 0 <= col < len(grid[0]):
+                t = grid[row][col]
+                if t:
+                    t.sprite = pygame.Surface((TILE_SIZE, TILE_SIZE), pygame.SRCALPHA)
+                    t.scaled_cache.clear()
             self._persist_overlay(tile, "", map)
+            map.view.invalidate_cache()
+        # Debug output for Borrar tool
+        row = tile.y // TILE_SIZE; col = tile.x // TILE_SIZE
+        for zn,(ox,oy) in global_map_settings.zone_offsets.items():
+            if ox <= col < ox + global_map_settings.zone_width and oy <= row < oy + global_map_settings.zone_height:
+                zone_name, offx, offy = zn, ox, oy
+                break
+        else:
+            zone_name, offx, offy = 'no_zone', 0, 0
+        if zone_name != 'no_zone':
+            h, w = global_map_settings.zone_height, global_map_settings.zone_width
+        else:
+            h, w = len(map.tiles), len(map.tiles[0]) if map.tiles else 0
+        local_r, local_c = row-offy, col-offx
+        print(f"[Tile][Borrar] 📝 Overlay actualizado: global ({row},{col}), local ({local_r},{local_c}) en zona '{zone_name}', capa: {self.editor_state.current_layer.name}")
         self._close()
 
     def _set_default(self, map):
         tile = self.editor_state.selected_tile
         if tile:
-            # Restaurar sprite base según tipo de tile
-            base_map = load_base_tile_images()
-            imgs = base_map.get(tile.tile_type)
-            sprite = imgs[0] if isinstance(imgs, list) else imgs
-            tile.sprite = sprite
-            tile.scaled_cache.clear()
+            # Restaurar sprite base según tipo de tile en la capa actual
+            layer = self.editor_state.current_layer
+            row = tile.y // TILE_SIZE; col = tile.x // TILE_SIZE
+            grid = map.tiles_by_layer.get(layer)
+            if grid and 0 <= row < len(grid) and 0 <= col < len(grid[0]):
+                t = grid[row][col]
+                if t:
+                    base_map = load_base_tile_images()
+                    imgs = base_map.get(t.tile_type)
+                    sprite = imgs[0] if isinstance(imgs, list) else imgs
+                    t.sprite = sprite
+                    t.scaled_cache.clear()
             self._persist_overlay(tile, "", map)
+            map.view.invalidate_cache()
+        # Debug output for Default tool
+        row = tile.y // TILE_SIZE; col = tile.x // TILE_SIZE
+        for zn,(ox,oy) in global_map_settings.zone_offsets.items():
+            if ox <= col < ox + global_map_settings.zone_width and oy <= row < oy + global_map_settings.zone_height:
+                zone_name, offx, offy = zn, ox, oy
+                break
+        else:
+            zone_name, offx, offy = 'no_zone', 0, 0
+        if zone_name != 'no_zone':
+            h, w = global_map_settings.zone_height, global_map_settings.zone_width
+        else:
+            h, w = len(map.tiles), len(map.tiles[0]) if map.tiles else 0
+        local_r, local_c = row-offy, col-offx
+        print(f"[Tile][Default] 📝 Overlay actualizado: global ({row},{col}), local ({local_r},{local_c}) en zona '{zone_name}', capa: {self.editor_state.current_layer.name}")
         self._close()
 
     def _close(self):
@@ -134,12 +165,55 @@ class TilePickerController:
         self.picker_state.dragging = False
 
     def _persist_overlay(self, tile, code: str, map):
+        # Calcular posición global del tile
         row = tile.y // TILE_SIZE
         col = tile.x // TILE_SIZE
-        if map.overlay is None:
-            h = len(map.tiles)
-            w = len(map.tiles[0]) if h else 0
-            map.overlay = [["" for _ in range(w)] for _ in range(h)]
-        map.overlay[row][col] = code
-        save_overlay(map.name, map.overlay)
-        print(f"📝 Overlay guardado en: {map.name}.overlay.json")
+
+        # Determinar zona según configuración
+        zone_name = None
+        zone_offset_x = zone_offset_y = 0
+        for zn, (ox, oy) in global_map_settings.zone_offsets.items():
+            if ox <= col < ox + global_map_settings.zone_width and oy <= row < oy + global_map_settings.zone_height:
+                zone_name = zn
+                zone_offset_x, zone_offset_y = ox, oy
+                break
+        if zone_name is None:
+            zone_name = "no_zone"
+
+        # Persistir JSON de capas de la zona
+        layer = self.editor_state.current_layer
+        zone_layers = load_layers(zone_name) or {}
+        # Dimensiones de la zona
+        if zone_name != 'no_zone':
+            h,w = global_map_settings.zone_height, global_map_settings.zone_width
+        else:
+            h = len(map.tiles); w = len(map.tiles[0]) if map.tiles else 0
+        # Asegurar grid por capa en la zona
+        for l in Layer:
+            zone_layers.setdefault(l, [["" for _ in range(w)] for _ in range(h)])
+        # Índices locales
+        if zone_name in global_map_settings.zone_offsets:
+            local_row = row - zone_offset_y
+            local_col = col - zone_offset_x
+        else:
+            local_row, local_col = row, col
+        # Actualizar la capa seleccionada de la zona
+        try:
+            zone_layers[layer][local_row][local_col] = code
+        except Exception:
+            pass
+        # Guardar sólo la zona
+        save_layers(zone_name, zone_layers)
+        print(f"[Tile][Persist] Capas guardadas: zona '{zone_name}', capa: {layer.name}, global ({row},{col})")
+        # Actualizar in-memory de map.layers y map.tiles_by_layer
+        if layer in map.layers:
+            try:
+                map.layers[layer][row][col] = code
+            except Exception:
+                pass
+        grid = map.tiles_by_layer.get(layer)
+        if grid and 0 <= row < len(grid) and 0 <= col < len(grid[0]):
+            t = grid[row][col]
+            if t:
+                t.overlay_code = code
+        map.view.invalidate_cache()

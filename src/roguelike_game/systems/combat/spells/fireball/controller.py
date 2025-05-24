@@ -12,12 +12,11 @@ class FireballController:
         self,
         model: FireballModel,
         tiles: list,
-        enemies: list,
+        
         explosions_list
     ):
         self.model = model
-        self.tiles = tiles
-        self.enemies = enemies
+        self.tiles = tiles        
         # override del callback para agregar la explosion
         def _explode_callback(ex, ey):
             # Crear explosión en la posición de impacto
@@ -44,17 +43,6 @@ class FireballController:
         rect = Rect(model.x, model.y, *model.size)
         for t in self.tiles:
             if t.solid and rect.colliderect(t.rect):
-                model.on_explode(model.x, model.y)
-                model.alive = False
-                return
-
-        for e in self.enemies:
-            # Solo colisionar si ambas máscaras existen y el enemigo está vivo
-            if not e.alive or model.mask is None or getattr(e, 'mask', None) is None:
-                continue
-            offset = (int(e.x - model.x), int(e.y - model.y))
-            if model.mask.overlap(e.mask, offset):
-                e.take_damage(model.damage)
                 model.on_explode(model.x, model.y)
                 model.alive = False
                 return

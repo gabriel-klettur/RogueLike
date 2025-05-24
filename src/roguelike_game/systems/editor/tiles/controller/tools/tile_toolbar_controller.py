@@ -1,5 +1,4 @@
-
-# Path: src/roguelike_game/systems/editor/tiles/controller/tools/tile_toolbar.py
+# Path: src/roguelike_game/systems/editor/tiles/controller/tools/tile_toolbar_controller.py
 import pygame
 from roguelike_engine.utils.loader import load_image
 
@@ -31,19 +30,77 @@ class TileToolbarController:
 
         # Rects para detectar clicks
         self.icon_rects: dict[str, pygame.Rect] = {}
+        # Rects for layer dropdown items
+        self.layer_option_rects: dict = {}
 
 
     def handle_click(self, mouse_pos) -> bool:
+        # Handle layer visibility dropdown clicks
+        if self.editor.layers_view_open:
+            for key, rect in self.layer_option_rects.items():
+                if rect.collidepoint(mouse_pos):
+                    # Toggle visibility for layers or buildings
+                    if key == "buildings":
+                        self.editor.show_buildings = not self.editor.show_buildings
+                        print(f"[DEBUG][Layer View] buildings: {'visible' if self.editor.show_buildings else 'hidden'}")
+                    else:
+                        self.editor.visible_layers[key] = not self.editor.visible_layers[key]
+                        print(f"[DEBUG][Layer View] {key}: {'visible' if self.editor.visible_layers[key] else 'hidden'}")
+                    return True
         for tool, rect in self.icon_rects.items():
             if rect.collidepoint(mouse_pos):                
                 if tool == "view":
-                    # Toggle view panel
+                    # Toggle main view panel
                     self.editor.view_active = not self.editor.view_active
+                elif tool == "view_layers":
+                    # Toggle layers visibility dropdown
+                    self.editor.layers_view_open = not self.editor.layers_view_open
+                    print(f"[DEBUG][View layers]: {'open' if self.editor.layers_view_open else 'closed'}")
+                elif tool == "view_collisions":
+                    # Cycle collision modes: off -> only -> overlay -> off
+                    if not self.editor.show_collisions and not self.editor.show_collisions_overlay:
+                        self.editor.show_collisions = True
+                        self.editor.show_collisions_overlay = False
+                    elif self.editor.show_collisions and not self.editor.show_collisions_overlay:
+                        self.editor.show_collisions_overlay = True
+                    else:
+                        self.editor.show_collisions = False
+                        self.editor.show_collisions_overlay = False
+                    # Open/close collision picker and switch to collision brush
+                    if self.editor.show_collisions or self.editor.show_collisions_overlay:
+                        # Activate collision brush
+                        self.editor.current_tool = "brush"
+                        self.editor.collision_picker_open = True
+                        self.editor.picker_state.open = False
+                    else:
+                        # Close collision picker when collision view is off
+                        self.editor.collision_picker_open = False
+                        self.editor.collision_choice = None
+                    # close layers dropdown
+                    self.editor.layers_view_open = False
+                    # Debug print collision view mode
+                    mode = 'overlay' if self.editor.show_collisions_overlay else ('only' if self.editor.show_collisions else 'off')
+                    print(f"[DEBUG][Collision view mode]: {mode}")
+                    return True
                 else:
                     self.editor.current_tool = tool
-                    # Al seleccionar la brocha, abrimos la paleta
+                # Handle brush picker: collision vs normal and toggle tile picker
                 if tool == "brush":
-                    self.editor.picker_state.open = True
-                    self.editor.scroll_offset    = 0
+                    if self.editor.show_collisions or self.editor.show_collisions_overlay:
+                        # Toggle collision picker
+                        if self.editor.collision_picker_open:
+                            self.editor.collision_picker_open = False
+                        else:
+                            self.editor.collision_picker_open = True
+                            self.editor.picker_state.open = False
+                    else:
+                        # Toggle normal tile picker
+                        if self.editor.picker_state.open:
+                            self.editor.picker_state.open = False
+                        else:
+                            self.editor.collision_picker_open = False
+                            self.editor.collision_choice = None
+                            self.editor.picker_state.open = True
+                            self.editor.scroll_offset = 0
                 return True
         return False

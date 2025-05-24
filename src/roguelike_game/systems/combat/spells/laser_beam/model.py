@@ -8,14 +8,13 @@ class LaserBeamModel:
     """
     Modelo puro para el rayo láser: datos de posición, partículas y explosión.
     """
-    def __init__(self, x1, y1, x2, y2, particle_count=60, enemies=None, damage=0.25):
+    def __init__(self, x1, y1, x2, y2, particle_count=60, damage=0.25):
         self.origin = (x1, y1)
         self.target = (x2, y2)
         dx = x2 - x1
         dy = y2 - y1
         self.angle = math.atan2(dy, dx) if (dx or dy) else 0
-        self.distance = math.hypot(dx, dy)
-        self.enemies = enemies or []
+        self.distance = math.hypot(dx, dy)        
         self.damage = damage
         self._damaged_ids = set()
         # Explosión eléctrica al destino

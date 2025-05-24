@@ -1,18 +1,15 @@
-# Path: roguelike_game/game/render_manager.py
+# Path: src/roguelike_game/game/render_manager.py
 import pygame
-
-
-from roguelike_engine.minimap.minimap import render_minimap
 from roguelike_engine.utils.mouse import draw_mouse_crosshair
-from roguelike_engine.config_tiles import TILE_SIZE
-import roguelike_engine.config as config
+from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.debug import DebugOverlay, render_debug_overlay
+from roguelike_engine.config.config_tiles import TILE_SIZE
 
 # Sistema de orden Z
 from roguelike_game.systems.z_layer.render import render_z_ordered
 
 # Importar el decorador centralizado de benchmark
-from roguelike_engine.utils.benchmark import benchmark
-from roguelike_engine.utils.debug_overlay import DebugOverlay
+from roguelike_engine.zone.view.zone_view import ZoneView
 
 
 class RendererManager:
@@ -31,20 +28,33 @@ class RendererManager:
         self,
         screen,
         camera,
-        game_map,
+        map,
         entities,
         buildings_editor,
         tiles_editor,
-        perf_log
+        perf_log,
+        minimap,
+        ecs
     ):
         self.screen = screen
         self.camera = camera
-        self.map = game_map
+        self.map = map
         self.entities = entities
         self.buildings_editor = buildings_editor
         self.tiles_editor = tiles_editor
         self._dirty_rects = []        
         self.debug_overlay = DebugOverlay(perf_log=perf_log)
+        self.zone_view = ZoneView()
+        self.minimap = minimap
+        self.ecs = ecs
+
+        self._last_state = None  # almacenar último estado para editor
+        
+        self._last_visible_layers = None # Cache last visible layers to minimize cache invalidations
+        self._collision_last_zoom = None # Collision view cache: regenerate surfaces only when zoom changes
+        self._collision_font = None
+        self._collision_surf_solid = None
+        self._collision_surf_walkable = None
 
     def render_game(
         self,
@@ -55,112 +65,181 @@ class RendererManager:
         menu=None,
         map=None,
         entities=None,        
-        systems=None
+        systems=None,        
     ):
-        self._dirty_rects = []
-        screen.fill((0, 0, 0))
 
-        # 1) Tiles
-        @benchmark(perf_log, "--3.1. tiles")
-        def _bench_tiles():
-            self._render_tiles(camera, screen, map)
-        _bench_tiles()
+        # guardar state para _render_editors
+        self._last_state = state
+
+        @benchmark(perf_log, "3.0. init_and_cleaning")
+        def _init_and_cleaning():
+            screen.fill((0, 0, 0))
+            self._dirty_rects = []
+        _init_and_cleaning()
+
+        # 1) Map
+        @benchmark(perf_log, "3.1. map")
+        def _bench_map():
+            self._render_map(camera, screen, map)
+        _bench_map()
 
         # 2) Entidades orden Z
-        @benchmark(perf_log, "--3.2. z_entities")
+        @benchmark(perf_log, "3.2. z_entities")
         def _bench_z_entities():
-            self._render_z_entities(state, camera, screen, entities)
+            # Skip entity rendering in collision-only mode
+            if not (self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.show_collisions and not self.tiles_editor.editor_state.show_collisions_overlay):
+                self._render_z_entities(state, camera, screen, entities)
         _bench_z_entities()
 
         # 3) Efectos
-        @benchmark(perf_log, "--3.3. effects")
+        @benchmark(perf_log, "3.3. effects")
         def _bench_effects():
             self._render_effects(camera, screen, systems.effects)
         _bench_effects()
 
         # 4) HUD
-        @benchmark(perf_log, "--3.4. hud")
+        @benchmark(perf_log, "3.4. hud")
         def _bench_hud():
-            self.entities.player.render_hud(screen, camera)
+            # Ocultar HUD de jugador en modo collision brush
+            if not (self.buildings_editor.editor_state.active and self.buildings_editor.editor_state.current_tool == "collision_brush"):
+                self.entities.player.render_hud(screen, camera)
         _bench_hud()
 
         # 4.b) Capa del Tile Editor
-        @benchmark(perf_log, "--3.4b. tile_editor")
+        @benchmark(perf_log, "3.4b. tile_editor")
         def _bench_tile_editor():
-            self._render_tile_editor_layer(state, screen, camera, map)
+            # Skip tile editor UI in collision-only mode
+            if not (self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.show_collisions and not self.tiles_editor.editor_state.show_collisions_overlay):
+                self._render_tile_editor_layer(state, screen, camera, map)
         _bench_tile_editor()
 
         # 5) Crosshair
-        @benchmark(perf_log, "--3.5. crosshair")
+        @benchmark(perf_log, "3.5. crosshair")
         def _bench_crosshair():
             draw_mouse_crosshair(screen, camera)
         _bench_crosshair()
 
         # 6) Menú
-        @benchmark(perf_log, "--3.6. menu")
+        @benchmark(perf_log, "3.6. menu")
         def _bench_menu():
             self._render_menu(screen, menu)
         _bench_menu()
 
         # 7) Minimap
-        @benchmark(perf_log, "--3.7. minimap")
+        @benchmark(perf_log, "3.7. minimap")
         def _bench_minimap():
-            self._render_minimap(state, screen, map, entities)
+            self._render_minimap(screen)
         _bench_minimap()
 
         # 8) Otros sistemas
-        @benchmark(perf_log, "--3.8. systems")
+        @benchmark(perf_log, "3.8. systems")
         def _bench_systems():
             systems.render(screen, camera)
         _bench_systems()
 
         # 9) Editores
-        @benchmark(perf_log, "--3.9. editors")
+        @benchmark(perf_log, "3.9. editors")
         def _bench_editors():
             self._render_editors()
         _bench_editors()
 
+        # 10) ECS
+        @benchmark(perf_log, "3.10. ecs")
+        def _bench_ecs():
+            self.ecs.render(screen, camera)
+        _bench_ecs()
+
+
         # Debug: overlay y bordes
-        if config.DEBUG and perf_log is not None:
-            self.debug_overlay.render(
-                screen,
-                state=state,
-                camera=camera,
-                map_manager=self.map,
-                entities=entities,
-                show_borders=True
-            )
-        pygame.display.flip()
+        render_debug_overlay(self.debug_overlay, screen, state, camera, self.map, entities, show_borders=True)
+        # Mostrar ayuda de controles según el modo
+        self._render_help_overlay(state)
+
+        @benchmark(perf_log, "3.10. update dirth rects")        
+        def _update_dirty_rects():
+            # Actualizar solo regiones sucias, o todo si hay demasiadas        
+            if len(self._dirty_rects) > 100:
+                # demasiados rects, repintamos todo para evitar overhead
+                pygame.display.flip()
+            else:
+                pygame.display.update(self._dirty_rects)
+
+        _update_dirty_rects()
+
         return self._dirty_rects
+        
 
     def _render_editors(self):
         """
         Renderiza los editores de edificios y tiles si están activos.
         """
+        if self.tiles_editor.editor_state.active:
+            # Si estamos en modo brush, re-renderizar mapa y entidades para ver el cambio inmediato
+            if self.tiles_editor.editor_state.current_tool == "brush":
+                self._render_map(self.camera, self.screen, self.map)
+                # re-dibujar entidades (edificios, enemigos, jugador)
+                self._render_z_entities(
+                    self._last_state, self.camera, self.screen, self.entities
+                )
+            # Render tile editor UI
+            self.tiles_editor.view.render(
+                self.screen,
+                self.camera,
+                self.map
+            )
+            # Mostrar indicador de capa encima del jugador si estamos en modo brush
+            if self.tiles_editor.editor_state.current_tool == "brush":
+                player = self.entities.player
+                # Convertir coords de mundo a pantalla
+                sx = (player.x - self.camera.offset_x) * self.camera.zoom
+                sy = (player.y - self.camera.offset_y) * self.camera.zoom
+                font = pygame.font.SysFont("Arial", 14)
+                layer_name = self.tiles_editor.editor_state.current_layer.name
+                text_surf = font.render(layer_name, True, (255, 255, 255))
+                text_rect = text_surf.get_rect(center=(sx, sy - 20))
+                bg_rect = text_rect.inflate(8, 8)
+                pygame.draw.rect(self.screen, (0, 0, 0), bg_rect)
+                self.screen.blit(text_surf, text_rect)
+                self._dirty_rects.extend([bg_rect, text_rect])
+        # Render Building Editor UI
         if self.buildings_editor.editor_state.active:
             self.buildings_editor.view.render(
                 self.screen,
                 self.camera,
                 self.entities.buildings
             )
-        if self.tiles_editor.editor_state.active:
-            self.tiles_editor.view.render(
-                self.screen,
-                self.camera,
-                self.map
-            )
 
     def _render_effects(self, camera, screen, effects):
         dirty_rects = effects.render(screen, camera)
         self._dirty_rects.extend(dirty_rects)
 
-    def _render_tiles(self, camera, screen, map):
-        for tile in map.tiles_in_region:
-            if not camera.is_in_view(tile.x, tile.y, tile.sprite_size):
-                continue
-            dirty = tile.render(screen, camera)
-            if dirty:
-                self._dirty_rects.append(dirty)
+    def _render_map(self, camera, screen, map):
+        # Collision-only mode: render only collision grid
+        if self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.show_collisions and not self.tiles_editor.editor_state.show_collisions_overlay:
+            dirty = self._render_collisions(screen, camera, map)
+            self._dirty_rects.extend(dirty)
+            return
+        # Layer visibility filter when tile editor is active
+        editor_state = getattr(self.tiles_editor, 'editor_state', None)
+        if editor_state and editor_state.active and hasattr(editor_state, 'visible_layers'):
+            visible = editor_state.visible_layers
+            # Only invalidate cache on visibility change
+            if visible != self._last_visible_layers:
+                self.map.view.invalidate_cache()
+                self._last_visible_layers = visible.copy()
+            orig = map.tiles_by_layer
+            # apply filter without modifying original
+            filtered = {layer: orig[layer] for layer in orig if visible.get(layer, True)}
+            map.tiles_by_layer = filtered
+            dirty_rects = self.map.view.render(screen, camera, map)
+            map.tiles_by_layer = orig
+        else:
+            dirty_rects = self.map.view.render(screen, camera, map)
+        self._dirty_rects.extend(dirty_rects)
+        # Overlay collision grid in overlay mode
+        if self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.show_collisions_overlay:
+            dirty2 = self._render_collisions(screen, camera, map)
+            self._dirty_rects.extend(dirty2)
 
     def _render_tile_editor_layer(self, state, screen, camera, map):
         if getattr(state, "tile_editor_state", None) and state.tile_editor_state.active:
@@ -172,18 +251,18 @@ class RendererManager:
             e for e in entities.obstacles
             if camera.is_in_view(e.x, e.y, getattr(e, "sprite_size", (64, 64)))
         ])
-        all_entities.extend([
-            e for e in entities.enemies
-            if camera.is_in_view(e.x, e.y, e.sprite_size)
-        ])
         if camera.is_in_view(entities.player.x, entities.player.y, entities.player.sprite_size):
             all_entities.append(entities.player)
-        for b in entities.buildings:
-            if not camera.is_in_view(b.x, b.y, b.image.get_size()):
-                continue
-            for part in b.get_parts():
-                state.z_state.set(part, part.z)
-                all_entities.append(part)
+        # Only render buildings if not hidden by editor or collision-only mode (NPC rendering removed; gestionado por ECS)
+        editor_state = self.tiles_editor.editor_state
+        if not ((editor_state.active and not editor_state.show_buildings)
+                or (editor_state.active and editor_state.show_collisions and not editor_state.show_collisions_overlay)):
+            for b in entities.buildings:
+                if not camera.is_in_view(b.x, b.y, b.image.get_size()):
+                    continue
+                for part in b.get_parts():
+                    state.z_state.set(part, part.z)
+                    all_entities.append(part)
 
         render_z_ordered(all_entities, screen, camera, state.z_state)
 
@@ -192,7 +271,103 @@ class RendererManager:
             menu_rect = menu.draw(screen)
             self._dirty_rects.append(menu_rect)
 
-    def _render_minimap(self, state, screen, map, entities):
-        minimap_rect = render_minimap(state, screen, map, entities)
-        self._dirty_rects.append(minimap_rect)
+    def _render_minimap(self, screen):
+            rect = self.minimap.render(screen)
+            self._dirty_rects.append(rect)
 
+    def _render_collisions(self, screen, camera, map):
+        """Render collision grid (# solid, . walkable) efficiently"""
+        dirty = []
+        sw, sh = screen.get_size()
+        tile_sz = TILE_SIZE
+        zoom = camera.zoom
+        x_off = camera.offset_x
+        y_off = camera.offset_y
+        # Determine visible tile range
+        col_start = max(0, int(x_off / tile_sz))
+        row_start = max(0, int(y_off / tile_sz))
+        col_end = min(len(map.tiles[0]), int((x_off + sw / zoom) / tile_sz) + 1)
+        row_end = min(len(map.tiles), int((y_off + sh / zoom) / tile_sz) + 1)
+        # Regenerate text surfaces only on zoom change
+        if zoom != self._collision_last_zoom:
+            size = max(1, int(14 * zoom))
+            self._collision_font = pygame.font.SysFont("Arial", size)
+            self._collision_surf_solid = self._collision_font.render('#', True, (255, 0, 0))
+            self._collision_surf_walkable = self._collision_font.render('.', True, (200, 200, 200))
+            self._collision_last_zoom = zoom
+        # Draw only visible tiles
+        for r in range(row_start, row_end):
+            for c in range(col_start, col_end):
+                tile = map.tiles[r][c]
+                surf = self._collision_surf_solid if getattr(tile, 'solid', False) else self._collision_surf_walkable
+                sx = int((c * tile_sz - x_off) * zoom)
+                sy = int((r * tile_sz - y_off) * zoom)
+                # Center collision symbol in tile
+                text_rect = surf.get_rect()
+                text_rect.center = (sx + tile_sz * zoom / 2, sy + tile_sz * zoom / 2)
+                screen.blit(surf, text_rect.topleft)
+                dirty.append(text_rect)
+        return dirty
+
+    def _render_help_overlay(self, state):
+        # Dibuja un recuadro con los controles disponibles en la esquina inferior derecha
+        import pygame
+        screen = self.screen
+        width, height = screen.get_size()
+        if self.buildings_editor.editor_state.active:
+            lines = [
+                "Modo Edición Edificios:",
+                "F10: alternar editor/cambiar modo",
+                "P: alternar selector edificio",
+                "ESC: salir editor",
+                "D: reset edificio",
+                "R: redimensionar",
+                "Ctrl+S: guardar",
+                "Ctrl+Z: deshacer",
+                "N: edificio aleatorio",
+                "Supr: borrar edificio"
+            ]
+        elif self.tiles_editor.editor_state.active:
+            lines = [
+                "Modo Edición Tiles:",
+                "F8: alternar editor tiles",
+                "ESC: salir editor",
+                "B: alternar edificios",
+                "Click Izq: seleccionar/pintar",
+                "Rueda: cambiar capa",
+                "Click Der: arrastrar paleta"
+            ]
+        else:
+            lines = [
+                "Modo Normal:",
+                "F8: editor tiles",
+                "F10: editor edificios",
+                "F9: activar debug",
+                "ESC: menú",
+                "Q: restaurar vida",
+                "1: escudo",
+                "F: fuegos artificiales",
+                "R: emisor humo",
+                "T: humo persistente",
+                "Z: rayo",
+                "X: llama arcana",
+                "V: dash",
+                "E: slash",
+                "F3: expandir dungeon"
+            ]
+        font = pygame.font.SysFont("Arial", 14)
+        pad = 5
+        texts = [font.render(l, True, (255,255,255)) for l in lines]
+        lh = texts[0].get_height() if texts else 0
+        bw = max((t.get_width() for t in texts), default=0) + pad*2
+        bh = lh*len(texts) + pad*2
+        x0 = width - bw - 10
+        y0 = height - bh - 10
+        box = pygame.Rect(x0, y0, bw, bh)
+        pygame.draw.rect(screen, (0,0,0), box)
+        pygame.draw.rect(screen, (255,255,255), box, 1)
+        y = y0 + pad
+        for t in texts:
+            screen.blit(t, (x0+pad, y))
+            y += lh
+        self._dirty_rects.append(box)
