@@ -4,9 +4,11 @@ from .components.patrol import Patrol
 from .components.movement_speed import MovementSpeed
 from .components.animator import Animator
 from .components.scale import Scale
+from .components.health import Health
 from .systems.render_system import RenderSystem
 from .systems.patrol_system import PatrolSystem
 from .systems.animation_system import AnimationSystem
+from .systems.health_bar_system import HealthBarSystem
 from roguelike_engine.map.utils import calculate_lobby_offset
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
@@ -15,18 +17,19 @@ class NPCWorld:
     def __init__(self, screen):
         self.screen = screen
         self.entities = []
-        # Components include position, sprite, patrol, movement speed and animator
+        # Components include position, sprite, patrol, movement speed, animator, health and scale
         self.components = {
             'Position': {},
             'Sprite': {},
             'Patrol': {},
             'MovementSpeed': {},
             'Animator': {},
+            'Health': {},
             'Scale': {}
         }
         # Systems: patrol and animation updates, then rendering
         self.update_systems = [PatrolSystem(), AnimationSystem()]
-        self.render_systems = [RenderSystem(screen)]
+        self.render_systems = [RenderSystem(screen), HealthBarSystem()]
 
         # Calculate lobby center
         lobby_x, lobby_y = calculate_lobby_offset()
@@ -75,6 +78,8 @@ class NPCWorld:
         self.components['Animator'][eid] = animator
         # Scale component: factor de escalado para el sprite (1.0 = tamaño original)
         self.components['Scale'][eid] = Scale(scale=0.25)
+        # Health component: puntos de vida actuales y máximos
+        self.components['Health'][eid] = Health(current_hp=100, max_hp=100)
 
     def get_entities_with(self, *component_types):
         for eid in self.entities:
