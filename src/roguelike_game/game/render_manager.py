@@ -10,7 +10,7 @@ from roguelike_game.systems.z_layer.render import render_z_ordered
 
 # Importar el decorador centralizado de benchmark
 from roguelike_engine.zone.view.zone_view import ZoneView
-
+from roguelike_game.ecs.world import NPCWorld
 
 class RendererManager:
     """
@@ -263,6 +263,13 @@ class RendererManager:
                 for part in b.get_parts():
                     state.z_state.set(part, part.z)
                     all_entities.append(part)
+        # 4) NPCs ECS: envolver cada entidad y asignar capa Z
+        for eid in self.ecs.npc_world.get_entities_with('Position', 'Sprite', 'ZLayer'):
+            layer = self.ecs.npc_world.components['ZLayer'][eid].layer
+            # wrapper ligero para que tenga x,y,render
+            npc = _NPCWrapper(self.ecs.npc_world, eid)
+            state.z_state.set(npc, layer)
+            all_entities.append(npc)
 
         render_z_ordered(all_entities, screen, camera, state.z_state)
 
@@ -371,3 +378,25 @@ class RendererManager:
             screen.blit(t, (x0+pad, y))
             y += lh
         self._dirty_rects.append(box)
+
+class _NPCWrapper:
+    """Envoltorio para renderizar NPCs dentro de render_z_ordered."""
+    __slots__ = ('world', 'eid')
+    def __init__(self, world, eid):
+        self.world = world
+        self.eid = eid
+    @property
+    def x(self): return self.world.components['Position'][self.eid].x
+    @property
+    def y(self): return self.world.components['Position'][self.eid].y
+    def render(self, screen, camera):
+        sprite = self.world.components['Sprite'][self.eid]
+        image = sprite.image
+        # aplicar escala si existe
+        scale_comp = self.world.components['Scale'].get(self.eid)
+        if scale_comp and scale_comp.scale != 1.0:
+            w,h = image.get_size()
+            image = pygame.transform.scale(
+                image, (int(w*scale_comp.scale), int(h*scale_comp.scale))
+            )
+        screen.blit(image, camera.apply((self.x, self.y)))

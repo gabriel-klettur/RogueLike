@@ -10,6 +10,7 @@ from .components.multi_collider import MultiCollider
 from .components.mask_collider import MaskCollider
 from .components.identity import Identity, Faction
 from .components.health import Health
+from .components.z_layer import ZLayer
 from .systems.render_system import RenderSystem
 from .systems.patrol_system import PatrolSystem
 from .systems.movement_collision_system import MovementCollisionSystem
@@ -20,6 +21,7 @@ from .systems.collision_debug_system import CollisionDebugSystem
 from roguelike_engine.map.utils import calculate_lobby_offset
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_game.systems.config_z_layer import Z_LAYERS
 import pygame
 
 class NPCWorld:
@@ -39,11 +41,12 @@ class NPCWorld:
             'Scale': {},
             'Identity': {},
             'Velocity': {},
-            'MultiCollider': {}
+            'MultiCollider': {},
+            'ZLayer': {}
         }
         # Systems: patrol and animation updates, then rendering
         self.update_systems = [PatrolSystem(), MovementCollisionSystem(), AnimationSystem()]
-        self.render_systems = [RenderSystem(screen), HealthBarSystem(), NamePlateSystem(), CollisionDebugSystem()]
+        self.render_systems = [HealthBarSystem(), NamePlateSystem(), CollisionDebugSystem()]
 
         # Calculate lobby center
         lobby_x, lobby_y = calculate_lobby_offset()
@@ -70,7 +73,8 @@ class NPCWorld:
         cy,
         name: str = "",
         title: str = "",
-        faction: Faction = Faction.EVIL
+        faction: Faction = Faction.EVIL,
+        z_layer: int | None = None
     ):
         print("[ECS]: Spawning NPC at tile", cx, cy)
         eid = self.create_entity()
@@ -128,6 +132,9 @@ class NPCWorld:
         feet_offset_y = h - feet_h
         feet = Collider(feet_w, feet_h, feet_offset_x, feet_offset_y)
         self.components['MultiCollider'][eid] = MultiCollider({'body': body, 'feet': feet})
+        # ZLayer component: default to player layer if not specified
+        layer = z_layer if z_layer is not None else Z_LAYERS["player"]
+        self.components['ZLayer'][eid] = ZLayer(layer)
         # Health component: puntos de vida actuales y máximos
         self.components['Health'][eid] = Health(current_hp=100, max_hp=100)
         # Identity component: nombre, título y facción

@@ -400,8 +400,8 @@
     },
     {
         "zone": "lobby",
-        "rel_x": 618,
-        "rel_y": 479,
+        "rel_x": 621,
+        "rel_y": 458,
         "image_path": "assets/buildings\\gardens\\flowers_9.PNG",
         "solid": true,
         "scale": [
