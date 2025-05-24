@@ -33,7 +33,8 @@ class RendererManager:
         buildings_editor,
         tiles_editor,
         perf_log,
-        minimap
+        minimap,
+        ecs
     ):
         self.screen = screen
         self.camera = camera
@@ -45,11 +46,12 @@ class RendererManager:
         self.debug_overlay = DebugOverlay(perf_log=perf_log)
         self.zone_view = ZoneView()
         self.minimap = minimap
+        self.ecs = ecs
+
         self._last_state = None  # almacenar último estado para editor
-        # Cache last visible layers to minimize cache invalidations
-        self._last_visible_layers = None
-        # Collision view cache: regenerate surfaces only when zoom changes
-        self._collision_last_zoom = None
+        
+        self._last_visible_layers = None # Cache last visible layers to minimize cache invalidations
+        self._collision_last_zoom = None # Collision view cache: regenerate surfaces only when zoom changes
         self._collision_font = None
         self._collision_surf_solid = None
         self._collision_surf_walkable = None
@@ -140,6 +142,13 @@ class RendererManager:
         def _bench_editors():
             self._render_editors()
         _bench_editors()
+
+        # 10) ECS
+        @benchmark(perf_log, "3.10. ecs")
+        def _bench_ecs():
+            self.ecs.render(screen, camera)
+        _bench_ecs()
+
 
         # Debug: overlay y bordes
         render_debug_overlay(self.debug_overlay, screen, state, camera, self.map, entities, show_borders=True)

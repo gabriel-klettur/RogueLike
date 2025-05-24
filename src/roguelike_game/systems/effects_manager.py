@@ -22,7 +22,7 @@ class EffectsManager:
         )        
     
     def _render_effects(self, screen, camera):
-        return self.effects.render(screen, camera)
+        return self.effects.render(screen, camera) 
     
     def _render_explosions(self, screen, camera):
         return self.explosions.render(screen, camera)

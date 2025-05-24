@@ -44,6 +44,9 @@ from roguelike_engine.world.world import WorldManager
 from roguelike_engine.world.world_config import WORLD_CONFIG
 from roguelike_game.entities.player.model.player_data import PlayerData
 
+#! -------------------------- Paquetes locales: ECS ---------------------------------
+from roguelike_game.game.ecs_manager import ECSManager
+
 class Game:
     def __init__(
             self, 
@@ -63,15 +66,16 @@ class Game:
             ("Cargando editor de edificios",       lambda: self._init_buildings_editor()),
             ("Cargando editor de tiles",           lambda: self._init_tile_editor()),
             ("Cargando minimapa",                  lambda: self._init_minimap()),
+            ("Inicializando ECS",                  lambda: self._init_ecs(screen)),
             ("Inicializando renderizador",         lambda: self._init_renderer()),
             ("Inicializando menú",                 lambda: self._init_menu()),            
-            ("Inicializando efectos",             lambda: self._init_effects(perf_log)),
+            ("Inicializando efectos",              lambda: self._init_effects(perf_log)),            
         ]
         total = len(stages)
         for i, (msg, func) in enumerate(stages):
             func()
             self.loader.draw((i+1)/total, msg)
-                   
+
     def _init_systems_states(self, screen, perf_log, loading_bg):
         """
         Inicializa el estado de los sistemas
@@ -129,6 +133,12 @@ class Game:
         """
         self.tiles_editor = TilesEditorManager(self)
 
+    def _init_ecs(self, screen):
+        """
+        Inicializa el gestor ECS
+        """
+        self.ecs = ECSManager(screen)
+
     def _init_renderer(self):
         """
         Inicializa el renderizador con todas sus dependencias.
@@ -141,7 +151,8 @@ class Game:
             self.buildings_editor,
             self.tiles_editor,
             self.perf_log,
-            self.minimap
+            self.minimap,
+            self.ecs
         )
 
     def _init_menu(self):

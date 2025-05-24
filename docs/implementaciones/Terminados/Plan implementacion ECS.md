@@ -1,6 +1,6 @@
 ## plan de alto nivel para un ECS mínimo que te permita respawnear un NPC con el sprite barbol_1_down.png en el centro del lobby, sin librerías externas:
 
-0. Pre-requisitos [Completado]
+0. Pre-requisitos 
 - Crear estructura de paquetes para el ECS:
   ```text
   src/roguelike_game/game/ecs/
@@ -25,12 +25,12 @@
   cy = lobby_y + zone_h // 2
   ```
 
-1. Definir la arquitectura ECS [Completado]
+1. Definir la arquitectura ECS 
 - Entidad: un simple ID entero.
 - Componente: clases de datos puras (sin lógica), p. ej. Position, Sprite.
 - Sistema: procesos que actúan sobre entidades que tengan ciertos componentes, p. ej. RenderSystem.
 
-2. Implementación de `src/roguelike_game/game/ecs/world.py` [Completado]
+2. Implementación de `src/roguelike_game/game/ecs/world.py` 
 ```python
 from .components.position import Position
 from .components.sprite import Sprite
@@ -79,7 +79,7 @@ class NPCWorld:
             system.update(self)
 ```
 
-3. Componentes mínimos [Completado]
+3. Componentes mínimos 
    - `src/roguelike_game/game/ecs/components/position.py`:
 ```python
 class Position:
@@ -96,7 +96,7 @@ class Sprite:
         self.image = pygame.image.load(image_path).convert_alpha()
 ```
 
-4. Sistema de render [Completado]
+4. Sistema de render 
 ```python
 class RenderSystem:
     def __init__(self, screen):
@@ -109,7 +109,7 @@ class RenderSystem:
             self.screen.blit(sprite.image, (pos.x, pos.y))
 ```
 
-5. Integración en `src/roguelike_game/game/ecs_manager.py` [Completado]
+5. Integración en `src/roguelike_game/game/ecs_manager.py` 
 ```python
 from .ecs.world import NPCWorld
 
@@ -125,8 +125,8 @@ class ECSManager:
         self.npc_world.render()        
 ```
 
-6. Implementación final en `src/roguelike_game/game/game.py` y `src/roguelike_game/game/ecs_manager.py` [Completado]
-   - En `game.py`: importar `ECSManager` e instanciarlo en `_init_systems`, añadiéndolo a `self.systems`.
+6. Implementación final en `src/roguelike_game/game/game.py` y `src/roguelike_game/game/ecs_manager.py` 
+   - En `game.py`: importar `ECSManager` e instanciarlo en `_init_ECS`, añadiéndolo a `self.ecs`.
    - En `ecs_manager.py`: actualizar métodos:
      ```python
      def update(self, clock, screen):

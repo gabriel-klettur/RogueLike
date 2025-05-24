@@ -29,6 +29,7 @@ class NPCWorld:
         return eid
 
     def spawn_npc(self, cx, cy):
+        print("[ECS]: Spawning NPC at", cx, cy)
         eid = self.create_entity()
         self.components['Position'][eid] = Position(cx, cy)
         self.components['Sprite'][eid] = Sprite(
