@@ -8,6 +8,8 @@ class RenderSystem:
 
     def update(self, world, screen, camera):
         """Renderiza sprites ordenados por capa Z y posición Y para manejar profundidad."""
+        # Preparar culling de pantalla
+        screen_rect = screen.get_rect()
         # Cache de componentes para renderizado eficiente
         comps = world.components
         pos_map = comps['Position']
@@ -29,4 +31,8 @@ class RenderSystem:
                 w, h = image.get_size()
                 image = pygame.transform.scale(image,
                                               (int(w * sc.scale), int(h * sc.scale)))
-            screen.blit(image, camapply((pos.x, pos.y)))
+            dest = camapply((pos.x, pos.y))
+            # Skip off-screen sprites
+            if not screen_rect.colliderect(pygame.Rect(dest, image.get_size())):
+                continue
+            screen.blit(image, dest)

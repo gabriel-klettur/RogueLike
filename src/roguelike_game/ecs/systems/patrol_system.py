@@ -14,9 +14,13 @@ class PatrolSystem:
 
     def update(self, world):
         """Actualiza la lógica de patrulla: asigna velocidad, gestiona waypoints y actualiza animación y sprite."""
+        # Cache de componentes y referencias
+        comps = world.components
+        pos_map = comps['Position']; patrol_map = comps['Patrol']
+        vel_map = comps['Velocity']; multi_map = comps['MultiCollider']
+        tile_query = world.get_solid_tiles_for_rect
         for eid in world.get_entities_with('Position', 'Patrol', 'Velocity', 'MultiCollider'):
-            pos = world.components['Position'][eid]
-            patrol = world.components['Patrol'][eid]
+            pos = pos_map[eid]; patrol = patrol_map[eid]
             speed = self._get_speed(world, eid, patrol)
             self._ensure_valid_index(patrol)
             target = patrol.waypoints[patrol.current_index]
@@ -25,7 +29,7 @@ class PatrolSystem:
                 self._reach_waypoint(pos, patrol, target)
                 continue
             vx, vy, direction = self._compute_velocity(world, eid, pos, dx, dy, speed)
-            vel = world.components['Velocity'][eid]
+            vel = vel_map[eid]
             vel.vx, vel.vy = vx, vy
             if vx == 0 and vy == 0:
                 patrol.current_index = (patrol.current_index + 1) % len(patrol.waypoints)
@@ -58,49 +62,34 @@ class PatrolSystem:
 
     def _compute_velocity(self, world, eid, pos: Position, dx: int, dy: int, speed: int) -> tuple[int, int, str | None]:
         """Calcula velocidad (vx, vy) y dirección válida probando colisiones: eje X primero, luego Y."""
-        multi = world.components['MultiCollider'][eid]
+        # Cache de componentes y espacio de colisión
+        comps = world.components
+        multi = comps['MultiCollider'][eid]
         feet = multi.colliders.get('feet')
         if not feet:
             return 0, 0, None
+        # Generar rect del collider y referencia a índice espacial
         rect = build_collider_rect(pos.x, pos.y, feet)
-        buildings = getattr(world, 'buildings', [])  # lista de Building
-        # Try X then Y
+        query = world.get_solid_tiles_for_rect
         if dx != 0:
             vx = speed if dx > 0 else -speed
             new_rect_x = rect.move(vx, 0)
-            # Colisión contra tiles y edificios
-            blocked_map = any(new_rect_x.colliderect(t.rect) for t in world.map_manager.solid_tiles)
-            blocked_build = any(
-                new_rect_x.colliderect(cell)
-                for b in buildings
-                for cell in getattr(b, 'collision_tiles', [])
-            )
-            if not blocked_map and not blocked_build:
+            # Colisión optimizada: tiles de mapa y edificios indexados
+            if not any(new_rect_x.colliderect(t) for t in query(new_rect_x)):
                 return vx, 0, 'right' if vx > 0 else 'left'
         if dy != 0:
             vy = speed if dy > 0 else -speed
             new_rect_y = rect.move(0, vy)
-            # Colisión contra tiles y edificios
-            blocked_map = any(new_rect_y.colliderect(t.rect) for t in world.map_manager.solid_tiles)
-            blocked_build = any(
-                new_rect_y.colliderect(cell)
-                for b in buildings
-                for cell in getattr(b, 'collision_tiles', [])
-            )
-            if not blocked_map and not blocked_build:
+            # Colisión optimizada: tiles de mapa y edificios indexados
+            if not any(new_rect_y.colliderect(t) for t in query(new_rect_y)):
                 return 0, vy, 'down' if vy > 0 else 'up'
         # Diagonal fallback: si ambos ejes cuestan, probar movimiento diagonal
         if dx != 0 and dy != 0:
             vx = speed if dx > 0 else -speed
             vy = speed if dy > 0 else -speed
             new_rect_d = rect.move(vx, vy)
-            blocked_map = any(new_rect_d.colliderect(t.rect) for t in world.map_manager.solid_tiles)
-            blocked_build = any(
-                new_rect_d.colliderect(cell)
-                for b in buildings
-                for cell in getattr(b, 'collision_tiles', [])
-            )
-            if not blocked_map and not blocked_build:
+            # Colisión optimizada: tiles de mapa y edificios indexados
+            if not any(new_rect_d.colliderect(t) for t in query(new_rect_d)):
                 return vx, vy, None
         return 0, 0, None
 
