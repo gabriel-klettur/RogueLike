@@ -10,6 +10,7 @@ from .systems.death_timer_bar_system import DeathTimerBarSystem
 from roguelike_engine.map.utils import calculate_lobby_offset
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
+import roguelike_engine.config.config as config
 from .factories.entity_factory import spawn_monster
 import pygame
 import random
@@ -53,10 +54,21 @@ class NPCWorld:
         lobby_x, lobby_y = calculate_lobby_offset()
         zone_w, zone_h = global_map_settings.zone_size
 
-        # Spawn 10 'barbol' in random positions within the lobby zone
-        for _ in range(10):
-            tx = lobby_x + random.randint(0, zone_w - 1)
-            ty = lobby_y + random.randint(0, zone_h - 1)
+        print(f"[ECS][Spawn] Lobby center: ({lobby_x}, {lobby_y})")
+        print(f"[ECS][Spawn] Lobby size: ({zone_w}, {zone_h})")
+
+        # Extraer posiciones caminables dentro del lobby
+        solid_coords = {(tile.rect.x // TILE_SIZE, tile.rect.y // TILE_SIZE)
+                       for tile in self.map_manager.solid_tiles}
+        lobby_tiles = [(x, y)
+                       for x in range(lobby_x, lobby_x + zone_w)
+                       for y in range(lobby_y, lobby_y + zone_h)]
+        walkable_tiles = [pos for pos in lobby_tiles if pos not in solid_coords]
+        print(f"[ECS][Spawn] Walkable tiles in lobby: {len(walkable_tiles)}")
+
+        # Samplear hasta 10 spawn positions sobre tiles caminables
+        for i, (tx, ty) in enumerate(random.sample(walkable_tiles, min(100, len(walkable_tiles)))):
+            print(f"[ECS][Spawn] {i}: walkable pos ({tx}, {ty})")
             spawn_monster(self, "barbol", tx, ty)
 
     def create_entity(self):
@@ -85,6 +97,21 @@ class NPCWorld:
         # Run render systems to draw entities
         for system in self.render_systems:
             system.update(self, screen, camera)
+        # Debug: highlight spawn tiles in red cuando DEBUG=True
+        if config.DEBUG and hasattr(self, 'spawn_tiles'):
+            for tx, ty, eid in self.spawn_tiles:
+                # calcular posición de pixel y tamaño con cámara
+                x, y = tx * TILE_SIZE, ty * TILE_SIZE
+                px, py = camera.apply((x, y))
+                size = int(TILE_SIZE * camera.zoom)
+                rect = pygame.Rect(px, py, size, size)
+                pygame.draw.rect(screen, (255, 0, 0), rect, 2)
+                # dibujar ID de NPC centrado en el rectángulo
+                font_size = max(8, size // 2)
+                font = pygame.font.SysFont(None, font_size)
+                text_surf = font.render(str(eid), True, (255, 0, 0))
+                text_rect = text_surf.get_rect(center=rect.center)
+                screen.blit(text_surf, text_rect)
 
     def remove_entity(self, eid):
         """
