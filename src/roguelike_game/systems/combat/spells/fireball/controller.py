@@ -61,10 +61,11 @@ class FireballController:
                     model.alive = False
                     return
 
-        # Colisión con tiles sólidos
+        # Colisión con tiles sólidos (optimized)
         rect = Rect(model.x, model.y, *model.size)
-        for t in self.tiles:
-            if t.solid and rect.colliderect(t.rect):
-                model.on_explode(model.x, model.y)
-                model.alive = False
-                return
+        # Spatial query: solo rects cercanos
+        nearby = self.npc_world.get_solid_tiles_for_rect(rect)
+        if nearby and rect.collidelist(nearby) != -1:
+            model.on_explode(model.x, model.y)
+            model.alive = False
+            return
