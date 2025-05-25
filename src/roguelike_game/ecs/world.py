@@ -26,6 +26,7 @@ from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.utils.loader import load_image
 from roguelike_game.systems.config_z_layer import Z_LAYERS
+from .factories.entity_factory import spawn_monster
 import pygame
 
 class NPCWorld:
@@ -59,15 +60,7 @@ class NPCWorld:
         cx = lobby_x + zone_w // 2
         cy = lobby_y + zone_h // 2
 
-        # Spawn one NPC at center with full identity and setup patrol
-        self.spawn_npc(
-            cx, cy,
-            name="Barbol con tetas",
-            title="Mas lista pero menos fuerte que un Barbol",
-            faction=Faction.EVIL,
-            death_sprite="assets/npc/monsters/barbol/barbol_female_death.png",
-            death_scale=0.6
-        )
+        spawn_monster(self, "barbol", cx, cy)
 
     def create_entity(self):
         eid = len(self.entities) + 1

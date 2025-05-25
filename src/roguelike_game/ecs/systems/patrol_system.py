@@ -113,9 +113,16 @@ class PatrolSystem:
         if not direction:
             return
         sprite = world.components['Sprite'][eid]
-        if direction in patrol.sprites_by_direction and patrol.sprites_by_direction[direction]:
-            sprite.image = patrol.sprites_by_direction[direction][0]
-        elif patrol.current_index in patrol.sprite_per_point:
+        frames = patrol.sprites_by_direction.get(direction)
+        if frames:
+            # Acepta lista de frames o Surface individual
+            if isinstance(frames, (list, tuple)) and frames:
+                sprite.image = frames[0]
+            elif isinstance(frames, pygame.Surface):
+                sprite.image = frames
+            return
+        # Fallback por waypoint si coincide índice
+        if patrol.current_index in patrol.sprite_per_point:
             sprite.image = patrol.sprite_per_point[patrol.current_index]
         elif patrol.default_sprite:
             sprite.image = patrol.default_sprite
