@@ -15,7 +15,7 @@ from ..components.collider import Collider
 from ..components.identity import Identity, Faction
 from ..components.z_layer import ZLayer
 from roguelike_game.systems.config_z_layer import Z_LAYERS
-from ..spawn_utils import find_valid_spawn
+from roguelike_game.ecs.utils.spawn_utils import find_valid_spawn
 
 _defs = json.load(open("data/monsters.json", "r"))
 

@@ -2,6 +2,7 @@ import pygame
 from ..components.position import Position
 from ..components.velocity import Velocity
 from ..components.multi_collider import MultiCollider
+from roguelike_game.ecs.utils.collider_utils import build_collider_rect
 
 class MovementCollisionSystem:
     """
@@ -15,8 +16,8 @@ class MovementCollisionSystem:
             feet = multi.colliders.get('feet')
             if not feet:
                 continue
-            # Sincronizar rect feet con la posición actual
-            feet.rect.topleft = (pos.x + feet.offset_x, pos.y + feet.offset_y)
+            # Sincronizar rect feet con la posición actual usando helper
+            feet.rect = build_collider_rect(pos.x, pos.y, feet)
             # Mover en X
             if vel.vx != 0:
                 new_rect = feet.rect.move(vel.vx, 0)

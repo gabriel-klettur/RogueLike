@@ -1,6 +1,7 @@
 from ..components.position import Position
 from ..components.velocity import Velocity
 from ..components.collider import Collider
+from roguelike_game.ecs.utils.collider_utils import build_collider_rect
 
 class CollisionSystem:
     """
@@ -11,8 +12,8 @@ class CollisionSystem:
             pos = world.components['Position'][eid]
             vel = world.components['Velocity'][eid]
             col = world.components['Collider'][eid]
-            # Sincronizar collider con posición actual
-            col.rect.topleft = (pos.x + col.offset_x, pos.y + col.offset_y)
+            # Sincronizar collider con posición actual usando helper
+            col.rect = build_collider_rect(pos.x, pos.y, col)
             # Resolver movimiento eje X
             if vel.vx != 0:
                 new_rect = col.rect.move(vel.vx, 0)

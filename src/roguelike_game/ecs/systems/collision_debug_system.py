@@ -1,5 +1,6 @@
 import pygame
 import roguelike_engine.config.config as config
+from roguelike_game.ecs.utils.collider_utils import build_collider_rect
 
 class CollisionDebugSystem:
     """
@@ -25,12 +26,7 @@ class CollisionDebugSystem:
                         pygame.draw.polygon(screen, color, pts, 1)
                 else:
                     # Dibujar rectángulo para collider rectangular
-                    rect_world = pygame.Rect(
-                        pos.x + collider.offset_x,
-                        pos.y + collider.offset_y,
-                        collider.width,
-                        collider.height
-                    )
+                    rect_world = build_collider_rect(pos.x, pos.y, collider)
                     screen_pos = camera.apply((rect_world.x, rect_world.y))
                     rect_screen = pygame.Rect(screen_pos, (rect_world.width, rect_world.height))
                     pygame.draw.rect(screen, color, rect_screen, 1)

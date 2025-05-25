@@ -2,6 +2,7 @@ from ..components.patrol import Patrol
 from ..components.position import Position
 
 import pygame
+from roguelike_game.ecs.utils.collider_utils import build_collider_rect
 
 class PatrolSystem:
     """
@@ -61,7 +62,7 @@ class PatrolSystem:
         feet = multi.colliders.get('feet')
         if not feet:
             return 0, 0, None
-        rect = pygame.Rect(pos.x + feet.offset_x, pos.y + feet.offset_y, feet.width, feet.height)
+        rect = build_collider_rect(pos.x, pos.y, feet)
         buildings = getattr(world, 'buildings', [])  # lista de Building
         # Try X then Y
         if dx != 0:
