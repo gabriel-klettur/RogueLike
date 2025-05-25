@@ -12,7 +12,11 @@ class HealthBarSystem:
         pass
 
     def update(self, world, screen, camera):
+        # Omitir entidades muertas manejadas por DeathTimerBarSystem
+        dt_store = world.components.get('DeathTimer', {})
         for eid in world.get_entities_with('Position', 'Health'):
+            if eid in dt_store:
+                continue
             pos: Position = world.components['Position'][eid]
             health: Health = world.components['Health'][eid]
             # Posición en pantalla

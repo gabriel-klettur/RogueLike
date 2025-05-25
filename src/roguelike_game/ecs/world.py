@@ -20,6 +20,7 @@ from .systems.nameplate_system import NamePlateSystem
 from .systems.collision_debug_system import CollisionDebugSystem
 from .systems.death_system import DeathSystem
 from .systems.death_timer_debug_system import DeathTimerDebugSystem
+from .systems.death_timer_bar_system import DeathTimerBarSystem
 from roguelike_engine.map.utils import calculate_lobby_offset
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
@@ -50,7 +51,7 @@ class NPCWorld:
         }
         # Systems: patrol, movimiento, muerte, animación y luego rendering
         self.update_systems = [PatrolSystem(), MovementCollisionSystem(), DeathSystem(), AnimationSystem()]
-        self.render_systems = [HealthBarSystem(), NamePlateSystem(), CollisionDebugSystem(), DeathTimerDebugSystem()]
+        self.render_systems = [HealthBarSystem(), NamePlateSystem(), CollisionDebugSystem(), DeathTimerDebugSystem(), DeathTimerBarSystem()]
 
         # Calculate lobby center
         lobby_x, lobby_y = calculate_lobby_offset()

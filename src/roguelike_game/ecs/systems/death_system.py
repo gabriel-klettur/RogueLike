@@ -51,5 +51,7 @@ class DeathSystem:
                 dt = dt_store[eid]
                 # Expirar y eliminar
                 if now - dt.start_time >= dt.duration:
+                    # Eliminar entidad (world.remove_entity ya limpia el componente DeathTimer)
                     world.remove_entity(eid)
-                    del dt_store[eid]
+                    # No eliminar dt_store manualmente para evitar KeyError
+                    continue
