@@ -1,17 +1,4 @@
-from .components.position import Position
-from .components.sprite import Sprite
-from .components.patrol import Patrol
-from .components.movement_speed import MovementSpeed
-from .components.animator import Animator
-from .components.scale import Scale
-from .components.velocity import Velocity
-from .components.collider import Collider
-from .components.multi_collider import MultiCollider
-from .components.mask_collider import MaskCollider
-from .components.identity import Identity, Faction
-from .components.health import Health
-from .components.z_layer import ZLayer
-from .systems.render_system import RenderSystem
+
 from .systems.patrol_system import PatrolSystem
 from .systems.movement_collision_system import MovementCollisionSystem
 from .systems.animation_system import AnimationSystem
@@ -24,8 +11,6 @@ from .systems.death_timer_bar_system import DeathTimerBarSystem
 from roguelike_engine.map.utils import calculate_lobby_offset
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
-from roguelike_engine.utils.loader import load_image
-from roguelike_game.systems.config_z_layer import Z_LAYERS
 from .factories.entity_factory import spawn_monster
 import pygame
 
@@ -67,96 +52,6 @@ class NPCWorld:
         self.entities.append(eid)
         return eid
 
-    def spawn_npc(
-        self,
-        cx,
-        cy,
-        name: str = "",
-        title: str = "",
-        faction: Faction = Faction.EVIL,
-        z_layer: int | None = None,
-        death_sprite: str | None = None,
-        death_scale: float | None = None
-    ):
-        print("[ECS]: Spawning NPC at tile", cx, cy)
-        eid = self.create_entity()
-        # Instantiate sprite and center on tile
-        sprite = Sprite("assets/npc/monsters/barbol/barbol_1_down.png")
-        # Configurar ruta y escala de sprite de muerte
-        sprite.death_image_path = death_sprite
-        sprite.death_scale = death_scale
-        # Pre-cargar imagen de muerte
-        if death_sprite:
-            raw = load_image(death_sprite)
-            if death_scale:
-                w_, h_ = raw.get_size()
-                raw = pygame.transform.scale(raw, (int(w_*death_scale), int(h_*death_scale)))
-            sprite.death_image = raw
-        else:
-            sprite.death_image = None
-        # Ajustar spawn para que pies no colisionen
-        cx, cy = self.find_valid_spawn(cx, cy, sprite, scale=0.25, max_radius=5, margin_tiles=1)
-        # Calculate pixel position centered on tile center
-        px = cx * TILE_SIZE - sprite.image.get_width() // 2
-        py = cy * TILE_SIZE - sprite.image.get_height() // 2
-        # Assign components
-        self.components['Position'][eid] = Position(px, py)
-        self.components['Sprite'][eid] = sprite
-        # Load directional sprites
-        down_surf = sprite.image
-        left_surf = Sprite("assets/npc/monsters/barbol/barbol_1_left.png").image
-        right_surf = Sprite("assets/npc/monsters/barbol/barbol_1_right.png").image
-        up_surf = Sprite("assets/npc/monsters/barbol/barbol_1_top.png").image
-        sprites_by_direction = {
-            'down': [down_surf],
-            'left': [left_surf],
-            'right': [right_surf],
-            'up': [up_surf],
-        }
-        # Create patrol component with directional sprites
-        patrol_comp = Patrol((px, py), sprites_by_direction=sprites_by_direction)
-        patrol_comp.default_sprite = down_surf
-        self.components['Patrol'][eid] = patrol_comp
-        # Movement speed component (pixels per update)
-        self.components['MovementSpeed'][eid] = MovementSpeed(speed=patrol_comp.speed)
-        # Animator component: maps states to frames
-        animator = Animator(animations=sprites_by_direction, current_state='down')
-        self.components['Animator'][eid] = animator
-        # Scale component: factor de escalado para el sprite (1.0 = tamaño original)
-        self.components['Scale'][eid] = Scale(scale=0.25)
-        # Velocity componente: intención de movimiento
-        self.components['Velocity'][eid] = Velocity(0, 0)
-        # MultiCollider con 'body' y 'feet'
-        scale_comp = self.components['Scale'][eid]
-        w = sprite.image.get_width()
-        h = sprite.image.get_height()
-        if scale_comp.scale != 1.0:
-            w = int(w * scale_comp.scale)
-            h = int(h * scale_comp.scale)
-        # body collider basado en la máscara del sprite
-        surf = sprite.image
-        if scale_comp.scale != 1.0:
-            surf = pygame.transform.scale(surf, (w, h))
-        mask = pygame.mask.from_surface(surf)
-        body = MaskCollider(mask, 0, 0)
-        # feet collider (50% ancho x 20% alto)
-        feet_w = int(w * 0.5)
-        feet_h = int(h * 0.2)
-        feet_offset_x = (w - feet_w) // 2
-        feet_offset_y = h - feet_h
-        feet = Collider(feet_w, feet_h, feet_offset_x, feet_offset_y)
-        self.components['MultiCollider'][eid] = MultiCollider({'body': body, 'feet': feet})
-        # ZLayer component: default to player layer if not specified
-        layer = z_layer if z_layer is not None else Z_LAYERS["player"]
-        self.components['ZLayer'][eid] = ZLayer(layer)
-        # Health component: puntos de vida actuales y máximos
-        self.components['Health'][eid] = Health(current_hp=100, max_hp=100)
-        # Identity component: nombre, título y facción
-        self.components['Identity'][eid] = Identity(
-            name=name,
-            title=title,
-            faction=faction
-        )
 
     def find_valid_spawn(self, cx, cy, sprite, scale: float = 0.25, max_radius: int = 5, margin_tiles: int = 1):
         """
