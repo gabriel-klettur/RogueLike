@@ -1,57 +1,96 @@
 import time
 from roguelike_engine.utils.loader import load_image
 from roguelike_game.ecs.components.death_timer import DeathTimer
-from roguelike_game.systems.combat.explosions.fire import FireExplosion
-import pygame
 
 class DeathSystem:
     """
-    Gestiona la muerte de NPCs: cambia sprite a cadáver, deshabilita movimiento,
-    y elimina la entidad tras 60 segundos.
+    Gestión de muerte de NPCs:
+      1) Cambia el sprite a la imagen de cadáver.
+      2) Deshabilita movimiento, colisión y animación.
+      3) Elimina la entidad cuando expire el temporizador.
     """
-    def __init__(self):
-        # Ahora usamos componente DeathTimer para almacenar el tiempo de muerte
-        pass
+    def __init__(self, default_duration: float = 60.0):
+        """
+        Inicializa el sistema de muerte.
+
+        Args:
+            default_duration (float): Segundos antes de eliminar el cadáver.
+        """
+        self.default_duration = default_duration
 
     def update(self, world):
+        """
+        Actualiza las entidades en estado de muerte.
+
+        - Primera detección: aplica efectos de muerte.
+        - Detecciones subsecuentes: elimina al expirar el temporizador.
+
+        Args:
+            world (NPCWorld): Instancia del mundo ECS.
+        """
         now = time.time()
         dt_store = world.components['DeathTimer']
-        # Recorrer entidades con Health=0 y manejar muerte via componente
         for eid, hp in list(world.components['Health'].items()):
             if hp.current_hp > 0:
                 continue
-            sprite = world.components['Sprite'].get(eid)
-            if not sprite:
-                continue
-            # Primera muerte: asignar sprite de muerte y registrar componente
-            if eid not in dt_store:
-                # Cambiar imagen a la pre-cargada o cargar una vez
-                death_img = getattr(sprite, 'death_image', None)
-                if death_img is None:
-                    death_path = getattr(sprite, 'death_image_path', None)
-                    if death_path:
-                        raw = load_image(death_path)
-                        scale_v = getattr(sprite, 'death_scale', None)
-                        if scale_v:
-                            w_, h_ = raw.get_size()
-                            raw = pygame.transform.scale(raw, (int(w_*scale_v), int(h_*scale_v)))
-                        death_img = raw
-                    else:
-                        death_img = sprite.image
-                    sprite.death_image = death_img
-                sprite.image = death_img
-                # Deshabilitar movimiento y animación
-                world.components['Patrol'].pop(eid, None)
-                world.components['Velocity'].pop(eid, None)
-                world.components['MultiCollider'].pop(eid, None)
-                world.components['Animator'].pop(eid, None)
-                # Registrar componente DeathTimer
-                dt_store[eid] = DeathTimer(start_time=now, duration=60.0)
-            else:
-                dt = dt_store[eid]
-                # Expirar y eliminar
-                if now - dt.start_time >= dt.duration:
-                    # Eliminar entidad (world.remove_entity ya limpia el componente DeathTimer)
-                    world.remove_entity(eid)
-                    # No eliminar dt_store manualmente para evitar KeyError
-                    continue
+            self._process_entity(eid, world, now, dt_store)
+
+    def _process_entity(self, eid, world, now, dt_store):
+        """
+        Procesa la muerte de una entidad individual.
+        """
+        sprite = world.components['Sprite'].get(eid)
+        if not sprite:
+            return
+
+        if eid not in dt_store:
+            self._handle_initial_death(eid, sprite, world, now, dt_store)
+        else:
+            self._handle_expiration(eid, dt_store[eid], now, world)
+
+    def _handle_initial_death(self, eid, sprite, world, now, dt_store):
+        """
+        Aplica efectos de la muerte inicial:
+        - Cambia al sprite de cadáver.
+        - Deshabilita movimiento, colisión y animación.
+        - Registra el temporizador de muerte.
+        """
+        death_img = self._get_death_image(sprite)
+        sprite.image = death_img
+        self._disable_entity_systems(eid, world)
+        dt_store[eid] = DeathTimer(start_time=now, duration=self.default_duration)
+
+    def _get_death_image(self, sprite):
+        """
+        Carga o reutiliza la imagen de muerte con escalado si se define.
+        """
+        img = getattr(sprite, 'death_image', None)
+        if img:
+            return img
+
+        death_path = getattr(sprite, 'death_image_path', None)
+        if death_path:
+            raw = load_image(death_path)
+            scale_v = getattr(sprite, 'death_scale', None)
+            if scale_v:
+                w, h = raw.get_size()
+                raw = pygame.transform.scale(raw, (int(w * scale_v), int(h * scale_v)))
+        else:
+            raw = sprite.image
+
+        sprite.death_image = raw
+        return raw
+
+    def _disable_entity_systems(self, eid, world):
+        """
+        Elimina componentes de movimiento, colisión y animación para la entidad.
+        """
+        for comp in ('Patrol', 'Velocity', 'MultiCollider', 'Animator'):
+            world.components[comp].pop(eid, None)
+
+    def _handle_expiration(self, eid, dt, now, world):
+        """
+        Elimina la entidad si el temporizador ha expirado.
+        """
+        if now - dt.start_time >= dt.duration:
+            world.remove_entity(eid)
