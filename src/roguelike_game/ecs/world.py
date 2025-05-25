@@ -45,7 +45,8 @@ class NPCWorld:
             'Identity': {},
             'Velocity': {},
             'MultiCollider': {},
-            'ZLayer': {}
+            'ZLayer': {},
+            'DeathTimer': {}
         }
         # Systems: patrol, movimiento, muerte, animación y luego rendering
         self.update_systems = [PatrolSystem(), MovementCollisionSystem(), DeathSystem(), AnimationSystem()]

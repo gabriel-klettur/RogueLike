@@ -1,7 +1,7 @@
 import pygame
 import time
 import roguelike_engine.config.config as config
-from .death_system import DeathSystem
+from roguelike_game.ecs.components.death_timer import DeathTimer
 
 class DeathTimerDebugSystem:
     """
@@ -19,17 +19,10 @@ class DeathTimerDebugSystem:
     def update(self, world, screen, camera):
         if not config.DEBUG:
             return
-        # Obtener instancia de DeathSystem
-        death_system = None
-        for system in world.update_systems:
-            if isinstance(system, DeathSystem):
-                death_system = system
-                break
-        if not death_system:
-            return
         now = time.time()
-        for eid, death_time in death_system.death_times.items():
-            remaining = int(60 - (now - death_time))
+        dt_store = world.components.get('DeathTimer', {})
+        for eid, dt in dt_store.items():
+            remaining = int(dt.duration - (now - dt.start_time))
             if remaining <= 0:
                 continue
             # Posición y dimensiones del NPC
