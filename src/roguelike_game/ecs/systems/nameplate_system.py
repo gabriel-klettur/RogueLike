@@ -2,6 +2,7 @@ import pygame
 from ..components.position import Position
 from ..components.identity import Identity, Faction
 from ..components.scale import Scale
+import roguelike_engine.config.config as config
 
 class NamePlateSystem:
     """
@@ -33,9 +34,10 @@ class NamePlateSystem:
             else:
                 color = (128, 128, 128)
             # Obtener o renderizar nombre desde cache
-            name_key = (id_comp.name, color)
+            display_name = f"{id_comp.id} {id_comp.name}" if config.DEBUG else id_comp.name
+            name_key = (display_name, color)
             if name_key not in self.name_cache:
-                self.name_cache[name_key] = self.name_font.render(id_comp.name, True, color)
+                self.name_cache[name_key] = self.name_font.render(display_name, True, color)
             name_surf = self.name_cache[name_key]
             name_rect = name_surf.get_rect()
             name_rect.centerx = screen_x + (world.components['Scale'].get(eid, Scale()).scale * world.components['Sprite'][eid].image.get_width()) // 2

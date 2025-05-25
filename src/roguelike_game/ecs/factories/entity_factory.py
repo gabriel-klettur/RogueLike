@@ -49,7 +49,7 @@ def spawn_monster(world, monster_type: str, tile_x: int, tile_y: int):
         world.map_manager,
         tile_x, tile_y,
         sprite,
-        scale=cfg.get("scale", 1.0)
+        scale=cfg.get("scale", 0.25)
     )
     px = tx * TILE_SIZE - sprite.image.get_width() // 2
     py = ty * TILE_SIZE - sprite.image.get_height() // 2
@@ -95,6 +95,7 @@ def spawn_monster(world, monster_type: str, tile_x: int, tile_y: int):
     world.components["Health"][eid] = Health(cfg["hp"], cfg["hp"])
     world.components["Scale"][eid] = Scale(cfg["scale"])
     world.components["Identity"][eid] = Identity(
+        id=eid,
         name=monster_type.capitalize(),
         title="",
         faction=faction,
