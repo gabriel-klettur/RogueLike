@@ -9,9 +9,11 @@ class AnimationSystem:
         pass
 
     def update(self, world):
-        for eid in world.get_entities_with('Animator', 'Sprite'):
-            animator: Animator = world.components['Animator'][eid]
-            sprite_comp: Sprite = world.components['Sprite'][eid]
+        # Cache de componentes y referencias
+        comps = world.components
+        anim_map = comps['Animator']
+        sprite_map = comps['Sprite']
+        for eid, animator in anim_map.items():
             frame = animator.next_frame()
-            if frame is not None:
-                sprite_comp.image = frame
+            if frame and eid in sprite_map:
+                sprite_map[eid].image = frame

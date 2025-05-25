@@ -8,25 +8,27 @@ class CollisionSystem:
     Sistema que resuelve colisiones para entidades con Position, Velocity y Collider.
     """
     def update(self, world):
+        # Cache de componentes y tiles sólidas
+        comps = world.components
+        pos_map = comps['Position']
+        vel_map = comps['Velocity']
+        col_map = comps['Collider']
+        solid_tiles = world.map_manager.solid_tiles
         for eid in world.get_entities_with('Position', 'Velocity', 'Collider'):
-            pos = world.components['Position'][eid]
-            vel = world.components['Velocity'][eid]
-            col = world.components['Collider'][eid]
+            pos = pos_map[eid]; vel = vel_map[eid]; col = col_map[eid]
             # Sincronizar collider con posición actual usando helper
             col.rect = build_collider_rect(pos.x, pos.y, col)
             # Resolver movimiento eje X
             if vel.vx != 0:
                 new_rect = col.rect.move(vel.vx, 0)
-                if not any(new_rect.colliderect(tile.rect) for tile in world.map_manager.solid_tiles):
-                    pos.x += vel.vx
-                    col.rect = new_rect
+                if not any(new_rect.colliderect(tile.rect) for tile in solid_tiles):
+                    pos.x += vel.vx; col.rect = new_rect
                 else:
                     vel.vx = 0
             # Resolver movimiento eje Y
             if vel.vy != 0:
                 new_rect = col.rect.move(0, vel.vy)
-                if not any(new_rect.colliderect(tile.rect) for tile in world.map_manager.solid_tiles):
-                    pos.y += vel.vy
-                    col.rect = new_rect
+                if not any(new_rect.colliderect(tile.rect) for tile in solid_tiles):
+                    pos.y += vel.vy; col.rect = new_rect
                 else:
                     vel.vy = 0

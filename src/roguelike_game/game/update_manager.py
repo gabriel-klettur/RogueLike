@@ -64,13 +64,13 @@ def update_game(
     _update_entities()
 
     # 3.3.5) ECS logic
-    @benchmark(perf_log, "2.3.5.ecs.update")
+    @benchmark(perf_log, "2.4.ecs.update")
     def _update_ecs():
         ecs.update(clock, screen)
     _update_ecs()
 
     # 3.4) Movimiento especial del jugador
-    @benchmark(perf_log, "2.4.player.update_dash")
+    @benchmark(perf_log, "2.5.player.update_dash")
     def _update_dash():
         # Incluir colisiones de buildings
         solid = map.solid_tiles
@@ -86,7 +86,7 @@ def update_game(
     _update_dash()
 
     # 3.5) Minimap update
-    @benchmark(perf_log, "2.5.minimap.update")
+    @benchmark(perf_log, "2.6.minimap.update")
     def _update_minimap():
         minimap.update(
             player_pos=(entities.player.x, entities.player.y),

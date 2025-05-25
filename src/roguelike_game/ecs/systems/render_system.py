@@ -8,27 +8,25 @@ class RenderSystem:
 
     def update(self, world, screen, camera):
         """Renderiza sprites ordenados por capa Z y posición Y para manejar profundidad."""
-        # Recolecta e identifica Z de cada entidad
-        eids = list(world.get_entities_with('Position', 'Sprite'))
-        sorted_eids = sorted(
-            eids,
-            key=lambda eid: (
-                (world.components['ZLayer'].get(eid).layer)
-                if world.components['ZLayer'].get(eid)
-                else DEFAULT_Z,
-                world.components['Position'][eid].y
-            )
-        )
-        for eid in sorted_eids:
-            pos = world.components['Position'][eid]
-            sprite = world.components['Sprite'][eid]
-            # Escalado si existe componente Scale
-            scale_comp: Scale = world.components['Scale'].get(eid)
+        # Cache de componentes para renderizado eficiente
+        comps = world.components
+        pos_map = comps['Position']
+        sprite_map = comps['Sprite']
+        z_map = comps['ZLayer']
+        scale_map = comps['Scale']
+        # Entidades con Position y Sprite
+        eids = [eid for eid in pos_map if eid in sprite_map]
+        # Ordenar por capa Z y posición Y
+        eids.sort(key=lambda eid: (z_map[eid].layer if eid in z_map else DEFAULT_Z,
+                                  pos_map[eid].y))
+        camapply = camera.apply
+        for eid in eids:
+            pos = pos_map[eid]
+            sprite = sprite_map[eid]
             image = sprite.image
-            if scale_comp and scale_comp.scale != 1.0:
+            sc = scale_map.get(eid)
+            if sc and sc.scale != 1.0:
                 w, h = image.get_size()
-                image = pygame.transform.scale(
-                    image, (int(w * scale_comp.scale), int(h * scale_comp.scale))
-                )
-            # Dibujar en pantalla
-            screen.blit(image, camera.apply((pos.x, pos.y)))
+                image = pygame.transform.scale(image,
+                                              (int(w * sc.scale), int(h * sc.scale)))
+            screen.blit(image, camapply((pos.x, pos.y)))

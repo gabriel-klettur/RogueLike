@@ -11,6 +11,9 @@ class NamePlateSystem:
         pygame.font.init()
         self.name_font = pygame.font.SysFont(None, 30)
         self.title_font = pygame.font.SysFont(None, 24)
+        # Cache de superficies de texto para nombres y títulos
+        self.name_cache: dict[tuple[str, tuple[int,int,int]], pygame.Surface] = {}
+        self.title_cache: dict[tuple[str, tuple[int,int,int]], pygame.Surface] = {}
 
     def update(self, world, screen, camera):
         for eid in world.get_entities_with('Position', 'Identity'):
@@ -29,9 +32,11 @@ class NamePlateSystem:
                 color = (255, 0, 0)
             else:
                 color = (128, 128, 128)
-            # Renderizar nombre centrado encima del sprite/barra
-            # Suponemos que HealthBarSystem dibuja la barra antes, así screen_y apunta al tope
-            name_surf = self.name_font.render(id_comp.name, True, color)
+            # Obtener o renderizar nombre desde cache
+            name_key = (id_comp.name, color)
+            if name_key not in self.name_cache:
+                self.name_cache[name_key] = self.name_font.render(id_comp.name, True, color)
+            name_surf = self.name_cache[name_key]
             name_rect = name_surf.get_rect()
             name_rect.centerx = screen_x + (world.components['Scale'].get(eid, Scale()).scale * world.components['Sprite'][eid].image.get_width()) // 2
             # Ubicar nombre justo encima de la barra de salud
@@ -39,7 +44,11 @@ class NamePlateSystem:
             screen.blit(name_surf, name_rect)
             # Renderizar título encima del nombre
             if id_comp.title:
-                title_surf = self.title_font.render(id_comp.title, True, color)
+                # Obtener o renderizar título desde cache
+                title_key = (id_comp.title, color)
+                if title_key not in self.title_cache:
+                    self.title_cache[title_key] = self.title_font.render(id_comp.title, True, color)
+                title_surf = self.title_cache[title_key]
                 title_rect = title_surf.get_rect()
                 title_rect.centerx = name_rect.centerx
                 # Ubicar título encima del nombre
