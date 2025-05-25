@@ -15,6 +15,7 @@ from ..components.collider import Collider
 from ..components.identity import Identity, Faction
 from ..components.z_layer import ZLayer
 from roguelike_game.systems.config_z_layer import Z_LAYERS
+from ..spawn_utils import find_valid_spawn
 
 _defs = json.load(open("data/monsters.json", "r"))
 
@@ -44,8 +45,11 @@ def spawn_monster(world, monster_type: str, tile_x: int, tile_y: int):
 
     # 2) Posición válida sobre mapa
     #    Reutiliza el método find_valid_spawn de tu world
-    tx, ty = world.find_valid_spawn(
-        tile_x, tile_y, sprite, scale=cfg.get("scale", 1.0)
+    tx, ty = find_valid_spawn(
+        world.map_manager,
+        tile_x, tile_y,
+        sprite,
+        scale=cfg.get("scale", 1.0)
     )
     px = tx * TILE_SIZE - sprite.image.get_width() // 2
     py = ty * TILE_SIZE - sprite.image.get_height() // 2
