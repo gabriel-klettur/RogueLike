@@ -2,6 +2,7 @@
 
 import os
 import pygame
+import types
 from roguelike_engine.utils.loader import load_image
 from roguelike_game.systems.config_z_layer import Z_LAYERS
 from roguelike_engine.config.config_tiles import TILE_SIZE
@@ -186,4 +187,22 @@ class Building:
                         y = self.y + row_idx * TILE_SIZE
                         cache.append(pygame.Rect(x, y, TILE_SIZE, TILE_SIZE))
             self._collision_tiles_cache = cache
+            # Build wrapper objects once
+            self._collision_tile_objs = [types.SimpleNamespace(solid=True, rect=rect)
+                                         for rect in cache]
         return self._collision_tiles_cache
+
+    @property
+    def collision_tile_objs(self) -> list[types.SimpleNamespace]:
+        """
+        Fast access to building collision tile objects (solid flag + rect).
+        """
+        # Ensure cache exists
+        _ = self.collision_tiles
+        return self._collision_tile_objs
+ 
+    def resize(self, new_width, new_height):
+        self.image = pygame.transform.scale(load_image(self.image_path), (new_width, new_height))
+        self.rect = pygame.Rect(self.x, self.y, new_width, new_height)
+        self.scaled_cache.clear()
+        self._render_part_cache.clear()

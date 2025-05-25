@@ -10,16 +10,13 @@ def handle_continuous(state, camera, map, entities, menu, effects):
         dx = (keys[pygame.K_RIGHT] or keys[pygame.K_d]) - (keys[pygame.K_LEFT] or keys[pygame.K_a])
         dy = (keys[pygame.K_DOWN]  or keys[pygame.K_s]) - (keys[pygame.K_UP]   or keys[pygame.K_w])
         entities.player.is_walking = bool(dx or dy)
-        solid = map.solid_tiles
-        # Incluir colisiones de buildings
-        bt_tiles = []
-        for b in entities.buildings:
-            for ry, row in enumerate(b.collision_map):
-                for cx, ch in enumerate(row):
-                    if ch == '#':
-                        rect = pygame.Rect(b.x + cx * TILE_SIZE, b.y + ry * TILE_SIZE, TILE_SIZE, TILE_SIZE)
-                        bt_tiles.append(types.SimpleNamespace(solid=True, rect=rect))
-        solid_tiles = list(solid) + bt_tiles
+        # Cache combined map and building collision tiles
+        if not hasattr(entities, '_collision_tiles_cache'):
+            bt = []
+            for b in entities.buildings:
+                bt.extend(b.collision_tile_objs)
+            entities._collision_tiles_cache = list(map.solid_tiles) + bt
+        solid_tiles = entities._collision_tiles_cache
         entities.player.move(dx, dy, solid_tiles, entities.obstacles)
     
     if effects.shooting_laser:

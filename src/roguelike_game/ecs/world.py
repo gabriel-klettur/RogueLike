@@ -54,7 +54,7 @@ class NPCWorld:
         zone_w, zone_h = global_map_settings.zone_size
 
         # Spawn 10 'barbol' in random positions within the lobby zone
-        for _ in range(20):
+        for _ in range(100):
             tx = lobby_x + random.randint(0, zone_w - 1)
             ty = lobby_y + random.randint(0, zone_h - 1)
             spawn_monster(self, "barbol", tx, ty)
@@ -99,16 +99,17 @@ class NPCWorld:
         """
         Devuelve solo los rects sólidos de tiles cercanos al área dada usando índice espacial.
         """
+        # Indexar colisiones de edificios solo una vez
+        if not getattr(self, '_building_indexed', False) and hasattr(self, 'buildings'):
+            for b in self.buildings:
+                for cell in b.collision_tiles:
+                    gx, gy = cell.x // TILE_SIZE, cell.y // TILE_SIZE
+                    self._solid_tile_index.setdefault((gx, gy), []).append(cell)
+            self._building_indexed = True
         x1, y1 = rect.left // TILE_SIZE, rect.top // TILE_SIZE
         x2, y2 = rect.right // TILE_SIZE, rect.bottom // TILE_SIZE
         tiles = []
         for x in range(x1, x2 + 1):
             for y in range(y1, y2 + 1):
                 tiles.extend(self._solid_tile_index.get((x, y), []))
-        # Agregar colisiones de buildings dinámicamente
-        if hasattr(self, 'buildings'):
-            for b in self.buildings:
-                for cell in b.collision_tiles:
-                    if cell.colliderect(rect):
-                        tiles.append(cell)
         return tiles
