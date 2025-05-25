@@ -175,13 +175,15 @@ class Building:
     @property
     def collision_tiles(self) -> list[pygame.Rect]:
         """
-        Retorna una lista de pygame.Rect para cada celda '#' de collision_map.
+        Retorna una lista de pygame.Rect para cada celda '#' de collision_map (cacheada).
         """
-        tiles = []
-        for row_idx, row in enumerate(self.collision_map):
-            for col_idx, cell in enumerate(row):
-                if cell == '#':
-                    x = self.x + col_idx * TILE_SIZE
-                    y = self.y + row_idx * TILE_SIZE
-                    tiles.append(pygame.Rect(x, y, TILE_SIZE, TILE_SIZE))
-        return tiles
+        if not hasattr(self, '_collision_tiles_cache'):
+            cache = []
+            for row_idx, row in enumerate(self.collision_map):
+                for col_idx, cell in enumerate(row):
+                    if cell == '#':
+                        x = self.x + col_idx * TILE_SIZE
+                        y = self.y + row_idx * TILE_SIZE
+                        cache.append(pygame.Rect(x, y, TILE_SIZE, TILE_SIZE))
+            self._collision_tiles_cache = cache
+        return self._collision_tiles_cache
