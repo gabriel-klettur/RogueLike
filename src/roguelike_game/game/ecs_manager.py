@@ -7,9 +7,8 @@ class ECSManager:
         self.map_manager = map_manager
         # Guardar gestor de entidades para colisiones con edificios
         self.entities_manager = entities_manager
-        # Inicializar mundo ECS y asociar edificios para colisiones
-        self.npc_world = NPCWorld(screen, map_manager)
-        self.npc_world.buildings = entities_manager.buildings
+        # Inicializar mundo ECS y pasar edificios para colisiones
+        self.npc_world = NPCWorld(screen, map_manager, entities_manager.buildings)
 
     def update(self, clock, screen):
         # Actualiza la lógica del mundo ECS

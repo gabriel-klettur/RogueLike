@@ -56,8 +56,7 @@ def spawn_monster(world, monster_type: str, tile_x: int, tile_y: int):
     w_s = int(orig_w * scale_val)
     h_s = int(orig_h * scale_val)
     px = tx * TILE_SIZE + (TILE_SIZE - w_s) // 2
-    py = (ty + 1) * TILE_SIZE - h_s
-    print(f"[ECS][Spawn] NPC {eid} spawn at tile ({tx}, {ty}) -> pos ({px}, {py}), scaled size ({w_s},{h_s})")
+    py = (ty + 1) * TILE_SIZE - h_s    
 
     world.components["Position"][eid] = Position(px, py)
 

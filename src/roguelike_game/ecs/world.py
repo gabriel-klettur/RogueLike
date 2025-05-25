@@ -16,17 +16,19 @@ import pygame
 import random
 
 class NPCWorld:
-    def __init__(self, screen, map_manager):
+    def __init__(self, screen, map_manager, buildings):
         # Referencia al mapa para colisiones
         self.map_manager = map_manager
+        # Lista de edificios para colisiones y spawn
+        self.buildings = buildings
         # Construir índice espacial de tiles sólidos
         self._solid_tile_index: dict[tuple[int,int], list[pygame.Rect]] = {}
         for tile in self.map_manager.solid_tiles:
             gx, gy = tile.rect.x // TILE_SIZE, tile.rect.y // TILE_SIZE
             self._solid_tile_index.setdefault((gx, gy), []).append(tile.rect)
         # Añadir colisiones de edificios al índice espacial
-        for b in getattr(self.map_manager, 'buildings', []):
-            for cell_rect in getattr(b, 'collision_tiles', []):
+        for b in self.buildings:
+            for cell_rect in b.collision_tiles:
                 gx, gy = cell_rect.x // TILE_SIZE, cell_rect.y // TILE_SIZE
                 self._solid_tile_index.setdefault((gx, gy), []).append(cell_rect)
         self.screen = screen
@@ -64,11 +66,31 @@ class NPCWorld:
                        for x in range(lobby_x, lobby_x + zone_w)
                        for y in range(lobby_y, lobby_y + zone_h)]
         walkable_tiles = [pos for pos in lobby_tiles if pos not in solid_coords]
-        print(f"[ECS][Spawn] Walkable tiles in lobby: {len(walkable_tiles)}")
+        print(f"[ECS][Spawn] Walkable tiles in lobby: {walkable_tiles}")
 
-        # Samplear hasta 10 spawn positions sobre tiles caminables
-        for i, (tx, ty) in enumerate(random.sample(walkable_tiles, min(100, len(walkable_tiles)))):
-            print(f"[ECS][Spawn] {i}: walkable pos ({tx}, {ty})")
+        # Validación: conservar solo tiles caminables con 8 vecinos no sólidos
+        valid_walkable_tiles = []
+        for x, y in walkable_tiles:
+            if all(((x + dx, y + dy) not in solid_coords) for dx in (-1, 0, 1) for dy in (-1, 0, 1) if (dx, dy) != (0, 0)):
+                valid_walkable_tiles.append((x, y))
+        print(f"[ECS][Spawn] Valid walkable tiles (8 vecinos libres): {len(valid_walkable_tiles)}")
+
+        building_collision_coords = {
+            (rect.x // TILE_SIZE, rect.y // TILE_SIZE)
+            for b in self.buildings
+            for rect in b.collision_tiles
+        }
+        print(f"[ECS][Spawn] Building collision coords: {building_collision_coords}")
+
+        # Filtrar spawn: tiles valid_walkable y sus 8 vecinos libres de colisión de edificios
+        free_tiles = []
+        for x, y in valid_walkable_tiles:
+            if (x, y) not in building_collision_coords and all(((x + dx, y + dy) not in building_collision_coords) for dx in (-1, 0, 1) for dy in (-1, 0, 1) if (dx, dy) != (0, 0)):
+                free_tiles.append((x, y))
+        print(f"[ECS][Spawn] Valid spawn tiles (8 vecinos libres de edificios): {len(free_tiles)}")
+
+        # Samplear hasta 10 posiciones de spawn
+        for i, (tx, ty) in enumerate(random.sample(free_tiles, min(1000, len(free_tiles)))):            
             spawn_monster(self, "barbol", tx, ty)
 
     def create_entity(self):
@@ -97,7 +119,7 @@ class NPCWorld:
         # Run render systems to draw entities
         for system in self.render_systems:
             system.update(self, screen, camera)
-        # Debug: highlight spawn tiles in red cuando DEBUG=True
+        # Debug: highlight spawn tiles in red cuando DEBUG=true
         if config.DEBUG and hasattr(self, 'spawn_tiles'):
             for tx, ty, eid in self.spawn_tiles:
                 # calcular posición de pixel y tamaño con cámara
