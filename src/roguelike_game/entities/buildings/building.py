@@ -35,6 +35,7 @@ class Building:
         self.solid = solid
         self.image_path = image_path
         self.scaled_cache: dict[float, pygame.Surface] = {}
+        self._render_part_cache: dict[float, tuple[pygame.Surface, pygame.Surface]] = {}
 
         # Carga y escala de la imagen
         self.image = load_image(image_path)
@@ -46,6 +47,7 @@ class Building:
 
         # División en dos mitades según split_ratio
         self.split_ratio = max(0.0, min(split_ratio, 1.0))
+        self._cut_world = int(self.image.get_height() * self.split_ratio)
         self.z_bottom = z_bottom if z_bottom is not None else Z_LAYERS["building_low"]
         self.z_top    = z_top    if z_top    is not None else Z_LAYERS["building_high"]
 
@@ -91,31 +93,27 @@ class Building:
     def _get_scaled_image(self, camera):
         zoom = round(camera.zoom, 2)
         if zoom not in self.scaled_cache:
-            self.scaled_cache[zoom] = pygame.transform.scale(
+            scaled = pygame.transform.scale(
                 self.image, camera.scale(self.image.get_size())
             )
+            self.scaled_cache[zoom] = scaled
+            # Cache top/bottom surfaces for render part
+            w, h = scaled.get_size()
+            cut_scaled = int(h * self.split_ratio)
+            top_surf = scaled.subsurface(pygame.Rect(0, 0, w, cut_scaled)).copy()
+            bottom_surf = scaled.subsurface(pygame.Rect(0, cut_scaled, w, h - cut_scaled)).copy()
+            self._render_part_cache[zoom] = (top_surf, bottom_surf)
         return self.scaled_cache[zoom]
 
     def _render_part(self, screen, camera, *, top: bool):
-        full_scaled = self._get_scaled_image(camera)
-        full_w, full_h = full_scaled.get_size()
-
-        cut_scaled = int(full_h * self.split_ratio)
-        cut_world  = int(self.image.get_height() * self.split_ratio)
-
-        if top:
-            sub_rect = pygame.Rect(0, 0, full_w, cut_scaled)
-            offset_y_world = 0
-        else:
-            sub_rect = pygame.Rect(0, cut_scaled, full_w, full_h - cut_scaled)
-            offset_y_world = cut_world
-
-        part_surface = full_scaled.subsurface(sub_rect)
-        screen.blit(
-            part_surface,
-            camera.apply((self.x, self.y + offset_y_world))
-        )
-
+        zoom = round(camera.zoom, 2)
+        if zoom not in self._render_part_cache:
+            # ensure part cache is built
+            self._get_scaled_image(camera)
+        top_surf, bottom_surf = self._render_part_cache[zoom]
+        surf = top_surf if top else bottom_surf
+        offset = 0 if top else self._cut_world
+        screen.blit(surf, camera.apply((self.x, self.y + offset)))
         if self.solid and not top:
             draw_debug_rect(screen, camera, self.rect, color=(255,255,255), width=1)
 
@@ -150,6 +148,7 @@ class Building:
         self.image = pygame.transform.scale(load_image(self.image_path), (new_width, new_height))
         self.rect = pygame.Rect(self.x, self.y, new_width, new_height)
         self.scaled_cache.clear()
+        self._render_part_cache.clear()
 
     def reset_to_original_size(self):
         if self.original_scale:

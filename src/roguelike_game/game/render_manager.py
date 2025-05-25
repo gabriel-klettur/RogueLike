@@ -155,16 +155,8 @@ class RendererManager:
         # Mostrar ayuda de controles según el modo
         self._render_help_overlay(state)
 
-        @benchmark(perf_log, "3.10. update dirth rects")        
-        def _update_dirty_rects():
-            # Actualizar solo regiones sucias, o todo si hay demasiadas        
-            if len(self._dirty_rects) > 100:
-                # demasiados rects, repintamos todo para evitar overhead
-                pygame.display.flip()
-            else:
-                pygame.display.update(self._dirty_rects)
-
-        _update_dirty_rects()
+        # Reemplazar dirty rects por flip completo para rendimiento constante
+        pygame.display.flip()
 
         return self._dirty_rects
         
