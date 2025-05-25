@@ -55,6 +55,9 @@ class RendererManager:
         self._collision_font = None
         self._collision_surf_solid = None
         self._collision_surf_walkable = None
+        # Cache para help overlay: (mode_key, screen_size) -> (surface, rect)
+        self._help_overlay_key = None
+        self._help_overlay_surf = None
 
     def render_game(
         self,
@@ -309,67 +312,49 @@ class RendererManager:
         return dirty
 
     def _render_help_overlay(self, state):
-        # Dibuja un recuadro con los controles disponibles en la esquina inferior derecha
-        import pygame
+        # Cachea el overlay de ayuda para evitar renderizado de texto cada frame
         screen = self.screen
-        width, height = screen.get_size()
-        if self.buildings_editor.editor_state.active:
-            lines = [
-                "Modo Edición Edificios:",
-                "F10: alternar editor/cambiar modo",
-                "P: alternar selector edificio",
-                "ESC: salir editor",
-                "D: reset edificio",
-                "R: redimensionar",
-                "Ctrl+S: guardar",
-                "Ctrl+Z: deshacer",
-                "N: edificio aleatorio",
-                "Supr: borrar edificio"
-            ]
-        elif self.tiles_editor.editor_state.active:
-            lines = [
-                "Modo Edición Tiles:",
-                "F8: alternar editor tiles",
-                "ESC: salir editor",
-                "B: alternar edificios",
-                "Click Izq: seleccionar/pintar",
-                "Rueda: cambiar capa",
-                "Click Der: arrastrar paleta"
-            ]
-        else:
-            lines = [
-                "Modo Normal:",
-                "F8: editor tiles",
-                "F10: editor edificios",
-                "F9: activar debug",
-                "ESC: menú",
-                "Q: restaurar vida",
-                "1: escudo",
-                "F: fuegos artificiales",
-                "R: emisor humo",
-                "T: humo persistente",
-                "Z: rayo",
-                "X: llama arcana",
-                "V: dash",
-                "E: slash",
-                "F3: expandir dungeon"
-            ]
-        font = pygame.font.SysFont("Arial", 14)
-        pad = 5
-        texts = [font.render(l, True, (255,255,255)) for l in lines]
-        lh = texts[0].get_height() if texts else 0
-        bw = max((t.get_width() for t in texts), default=0) + pad*2
-        bh = lh*len(texts) + pad*2
-        x0 = width - bw - 10
-        y0 = height - bh - 10
-        box = pygame.Rect(x0, y0, bw, bh)
-        pygame.draw.rect(screen, (0,0,0), box)
-        pygame.draw.rect(screen, (255,255,255), box, 1)
-        y = y0 + pad
-        for t in texts:
-            screen.blit(t, (x0+pad, y))
-            y += lh
-        self._dirty_rects.append(box)
+        size = screen.get_size()
+        mode = ('buildings' if self.buildings_editor.editor_state.active else
+                'tiles' if self.tiles_editor.editor_state.active else 'normal')
+        key = (mode, size)
+        if key != self._help_overlay_key:
+            # Reconstruir overlay
+            import pygame
+            screen_w, screen_h = size
+            if mode == 'buildings':
+                lines = [
+                    "Modo Edición Edificios:", "F10: modo", "P: selector edificio",
+                    "ESC: salir", "D: reset", "R: redimensionar",
+                    "Ctrl+S: guardar", "Ctrl+Z: deshacer", "N: aleatorio",
+                    "Supr: borrar"
+                ]
+            elif mode == 'tiles':
+                lines = ["Modo Edición Tiles:", "F8: editor tiles", "ESC: salir",
+                         "B: alternar edificios", "Click Izq: pintar", "Rueda: capa",
+                         "Click Der: arrastrar"]
+            else:
+                lines = ["Modo Normal:", "F8: tiles", "F10: edificios",
+                         "F9: debug", "ESC: menú", "Q: vida",
+                         "1: escudo", "F: fuegos art.", "R: humo", "T: humo pers.",
+                         "Z: rayo", "X: llama", "V: dash", "E: slash", "F3: expand dungeon"]
+            font = pygame.font.SysFont("Arial", 14)
+            pad = 5
+            texts = [font.render(l, True, (255,255,255)) for l in lines]
+            lh = texts[0].get_height() if texts else 0
+            bw = max((t.get_width() for t in texts), default=0) + pad*2
+            bh = len(texts)*lh + pad*2
+            overlay = pygame.Surface((bw, bh), flags=pygame.SRCALPHA)
+            overlay.fill((0,0,0,128))
+            for i, t in enumerate(texts):
+                overlay.blit(t, (pad, pad + i*lh))
+            rect = overlay.get_rect()
+            rect.bottomright = (screen_w - pad, screen_h - pad)
+            self._help_overlay_surf = (overlay, rect)
+            self._help_overlay_key = key
+        # Blitear overlay cacheado
+        surf, rect = self._help_overlay_surf
+        screen.blit(surf, rect)
 
 class _NPCWrapper:
     """Envoltorio para renderizar NPCs dentro de render_z_ordered."""

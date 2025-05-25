@@ -96,7 +96,9 @@ class PlayerMovement:
         self.player.is_walking = False
 
     def _collides(self, future: pygame.Rect, collision_tiles, obstacles) -> bool:
-        for tile in collision_tiles:
+        # support sequence or spatial query function
+        tiles = collision_tiles(future) if callable(collision_tiles) else collision_tiles
+        for tile in tiles:
             if getattr(tile, "solid", False) and future.colliderect(tile.rect):
                 return True
         for ob in obstacles:
