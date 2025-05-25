@@ -67,14 +67,14 @@ class NPCWorld:
 
 
     def get_entities_with(self, *component_types):
-        # Itera sobre el componente con menos entidades para mejorar rendimiento
-        comps = self.components
         if not component_types:
             return
-        smallest = min(component_types, key=lambda c: len(comps.get(c, {})))
-        for eid in comps.get(smallest, {}):
-            if all(eid in comps.get(ct, {}) for ct in component_types):
-                yield eid
+        comps = self.components
+        # fast intersection of entity IDs across requested components
+        sets = [set(comps.get(ct, {}).keys()) for ct in component_types]
+        common = set.intersection(*sets) if sets else set()
+        for eid in common:
+            yield eid
 
     def update(self):
         # Run patrol and animation update systems

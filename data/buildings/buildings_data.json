@@ -319,7 +319,7 @@
         ],
         "split_ratio": 0.56,
         "z_bottom": 3,
-        "z_top": 4,
+        "z_top": 6,
         "z": 3
     },
     {
@@ -609,8 +609,8 @@
     },
     {
         "zone": "lobby",
-        "rel_x": 108,
-        "rel_y": 934,
+        "rel_x": 94,
+        "rel_y": 932,
         "image_path": "assets/buildings\\houses\\orden_house_2.png",
         "solid": true,
         "scale": [
@@ -621,9 +621,9 @@
             1024,
             1024
         ],
-        "split_ratio": 0.5,
+        "split_ratio": 0.718,
         "z_bottom": 3,
-        "z_top": 5,
+        "z_top": 6,
         "z": 3
     },
     {

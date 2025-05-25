@@ -1,4 +1,3 @@
-
 # Path: src/roguelike_game/entities/player/model/movement_model.py
 import math
 import pygame
@@ -19,6 +18,11 @@ class PlayerMovement:
     """
     def __init__(self, player):
         self.player = player
+        # Pre-allocate foot hitbox rectangle
+        w, h = self.player.sprite_size
+        self._foot_w = int(w * 0.5)
+        self._foot_h = int(h * 0.25)
+        self._hitbox = pygame.Rect(0, 0, self._foot_w, self._foot_h)
         self.speed = PLAYER_SPEED
 
         # Dash
@@ -42,11 +46,12 @@ class PlayerMovement:
         px = x if x is not None else self.player.x
         py = y if y is not None else self.player.y
         w, h = self.player.sprite_size
-        foot_h = int(h * 0.25)
-        foot_w = int(w * 0.5)
-        foot_x = px + (w - foot_w) // 2
-        foot_y = py + h - foot_h
-        return pygame.Rect(foot_x, foot_y, foot_w, foot_h)
+        # Reuse preallocated hitbox rect
+        self._hitbox.width = self._foot_w
+        self._hitbox.height = self._foot_h
+        self._hitbox.x = px + (w - self._foot_w) // 2
+        self._hitbox.y = py + h - self._foot_h
+        return self._hitbox
 
     def move(self, dx, dy, collision_tiles, obstacles):
         """
