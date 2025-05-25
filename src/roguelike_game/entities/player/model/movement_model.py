@@ -98,9 +98,10 @@ class PlayerMovement:
     def _collides(self, future: pygame.Rect, collision_tiles, obstacles) -> bool:
         # support sequence or spatial query function
         tiles = collision_tiles(future) if callable(collision_tiles) else collision_tiles
-        for tile in tiles:
-            if getattr(tile, "solid", False) and future.colliderect(tile.rect):
-                return True
+        # build list of rects for solid tiles and use collidelist
+        rects = [t.rect for t in tiles if getattr(t, "solid", False)]
+        if rects and future.collidelist(rects) != -1:
+            return True
         for ob in obstacles:
             if future.colliderect(ob.rect):
                 return True

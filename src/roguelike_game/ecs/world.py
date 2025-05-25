@@ -54,7 +54,7 @@ class NPCWorld:
         zone_w, zone_h = global_map_settings.zone_size
 
         # Spawn 10 'barbol' in random positions within the lobby zone
-        for _ in range(10):
+        for _ in range(20):
             tx = lobby_x + random.randint(0, zone_w - 1)
             ty = lobby_y + random.randint(0, zone_h - 1)
             spawn_monster(self, "barbol", tx, ty)
@@ -105,4 +105,10 @@ class NPCWorld:
         for x in range(x1, x2 + 1):
             for y in range(y1, y2 + 1):
                 tiles.extend(self._solid_tile_index.get((x, y), []))
+        # Agregar colisiones de buildings dinámicamente
+        if hasattr(self, 'buildings'):
+            for b in self.buildings:
+                for cell in b.collision_tiles:
+                    if cell.colliderect(rect):
+                        tiles.append(cell)
         return tiles

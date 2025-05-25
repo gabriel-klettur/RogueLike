@@ -58,6 +58,9 @@ class Building:
         self.rect = pygame.Rect(self.x, self.y, *self.image.get_size())
         # Collision map por tile (# = sólido, . = transitable)
         self.collision_map: list[list[str]] = []
+        # Instancias persistentes de partes para render
+        self._bottom_part = Building._BuildingPart(self, top=False)
+        self._top_part    = Building._BuildingPart(self, top=True)
 
     def __repr__(self) -> str:
         name = os.path.basename(self.image_path)
@@ -139,10 +142,8 @@ class Building:
             self._parent._render_part(screen, camera, top=self._top)
 
     def get_parts(self):
-        return [
-            Building._BuildingPart(self, top=False),
-            Building._BuildingPart(self, top=True)
-        ]
+        # Retorna instancias cacheadas de las dos mitades
+        return [self._bottom_part, self._top_part]
 
     def resize(self, new_width, new_height):
         self.image = pygame.transform.scale(load_image(self.image_path), (new_width, new_height))

@@ -25,9 +25,9 @@ class MovementCollisionSystem:
             if vel.vx != 0:
                 old_x = feet.rect.x
                 feet.rect.x += vel.vx
-                # Broad-phase via spatial index
-                blocked = any(feet.rect.colliderect(t) for t in tile_query(feet.rect))
-                if not blocked:
+                # Broad-phase + precise via collidelist
+                nearby = tile_query(feet.rect)
+                if feet.rect.collidelist(nearby) == -1:
                     pos.x += vel.vx
                 else:
                     feet.rect.x = old_x
@@ -36,8 +36,8 @@ class MovementCollisionSystem:
             if vel.vy != 0:
                 old_y = feet.rect.y
                 feet.rect.y += vel.vy
-                blocked = any(feet.rect.colliderect(t) for t in tile_query(feet.rect))
-                if not blocked:
+                nearby = tile_query(feet.rect)
+                if feet.rect.collidelist(nearby) == -1:
                     pos.y += vel.vy
                 else:
                     feet.rect.y = old_y
