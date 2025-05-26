@@ -37,6 +37,8 @@ class RenderSystem:
                                   pos_map[eid].y))
         camapply = camera.apply
         zoom_key = round(zoom, 2)
+        # Preparar batch blit
+        blit_ops = []
         for eid in eids:
             pos = pos_map[eid]
             sprite = sprite_map[eid]
@@ -59,4 +61,7 @@ class RenderSystem:
             self._blit_rect.topleft = dest
             if not screen_rect.colliderect(self._blit_rect):
                 continue
-            screen.blit(image, dest)
+            blit_ops.append((image, dest))
+        # Ejecutar batch blit de todos los sprites
+        if blit_ops:
+            screen.blits(blit_ops)
