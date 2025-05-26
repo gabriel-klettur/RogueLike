@@ -24,7 +24,7 @@ from typing import Any, Dict, Optional, Tuple
 logger = logging.getLogger(__name__)
 
 # Data directory and definitions
-_DATA_DIR = Path(__file__).resolve().parents[3] / "data"
+_DATA_DIR = Path(__file__).resolve().parents[4] / "data"
 _DEFS: Dict[str, Any] = json.load(open(_DATA_DIR / "monsters.json", "r"))
 
 # Caches for sprite and death surfaces
