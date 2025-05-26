@@ -2,7 +2,6 @@
 from pygame import Rect
 from roguelike_game.systems.combat.spells.fireball.model import FireballModel
 from roguelike_game.systems.combat.explosions.fire import FireExplosion
-import roguelike_engine.config.config as config
 
 class FireballController:
     """
@@ -48,8 +47,8 @@ class FireballController:
             body = multi.colliders.get('body')
             if body:
                 pos = self.npc_world.components['Position'][eid]
-                # pixel-perfect en DEBUG
-                if config.DEBUG and hasattr(body, 'mask'):
+                # pixel-perfect si existe máscara
+                if hasattr(body, 'mask'):
                     offset = (
                         int(pos.x + body.offset_x - model.x),
                         int(pos.y + body.offset_y - model.y)
