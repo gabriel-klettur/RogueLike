@@ -31,6 +31,11 @@ def _load_caches_once():
         dir_map = {}
         for d, path in cfg["sprites"].items():
             surf = pygame.image.load(path).convert_alpha()
+            # Pre-scale sprite surface based on config
+            scale_val = cfg.get("scale", 1.0)
+            if scale_val != 1.0:
+                w, h = surf.get_size()
+                surf = pygame.transform.scale(surf, (int(w * scale_val), int(h * scale_val)))
             dir_map[d] = surf
         _SPRITE_SURFACES[mtype] = dir_map
         # Death sprite opcional
