@@ -2,6 +2,7 @@
 from pygame import Rect
 from roguelike_game.systems.combat.spells.fireball.model import FireballModel
 from roguelike_game.systems.combat.explosions.fire import FireExplosion
+import roguelike_engine.config.config as config
 
 class FireballController:
     """
@@ -40,26 +41,38 @@ class FireballController:
             model.alive = False
             return
 
-        # Colisión con NPCs
+        # Colisión con NPCs (pixel-perfect vs bbox según DEBUG)
         rect = Rect(model.x, model.y, *model.size)
         for eid in self.npc_world.get_entities_with('Position','MultiCollider','Health'):
             multi = self.npc_world.components['MultiCollider'][eid]
             body = multi.colliders.get('body')
             if body:
                 pos = self.npc_world.components['Position'][eid]
-                # Si es MaskCollider, usar mask.get_size(), si no, usar width/height
-                if hasattr(body, 'mask'):
-                    w, h = body.mask.get_size()
+                # pixel-perfect en DEBUG
+                if config.DEBUG and hasattr(body, 'mask'):
+                    offset = (
+                        int(pos.x + body.offset_x - model.x),
+                        int(pos.y + body.offset_y - model.y)
+                    )
+                    if model.mask.overlap(body.mask, offset):
+                        hp = self.npc_world.components['Health'][eid]
+                        hp.current_hp -= model.damage
+                        if hp.current_hp < 0: hp.current_hp = 0
+                        model.on_explode(model.x, model.y)
+                        model.alive = False
+                        return
                 else:
-                    w, h = body.width, body.height
-                br = Rect(pos.x + body.offset_x, pos.y + body.offset_y, w, h)
-                if rect.colliderect(br):
-                    hp = self.npc_world.components['Health'][eid]
-                    hp.current_hp -= model.damage
-                    if hp.current_hp < 0: hp.current_hp = 0
-                    model.on_explode(model.x, model.y)
-                    model.alive = False
-                    return
+                    # bounding box collision
+                    w = getattr(body, 'width', body.mask.get_size()[0])
+                    h = getattr(body, 'height', body.mask.get_size()[1])
+                    br = Rect(pos.x + body.offset_x, pos.y + body.offset_y, w, h)
+                    if rect.colliderect(br):
+                        hp = self.npc_world.components['Health'][eid]
+                        hp.current_hp -= model.damage
+                        if hp.current_hp < 0: hp.current_hp = 0
+                        model.on_explode(model.x, model.y)
+                        model.alive = False
+                        return
 
         # Colisión con tiles sólidos (optimized)
         rect = Rect(model.x, model.y, *model.size)
