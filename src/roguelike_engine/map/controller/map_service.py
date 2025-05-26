@@ -161,6 +161,13 @@ class MapService:
                 logger.warning(f"Zona padre '{parent}' no definida para zona adicional '{zone_name}'.")
                 continue
             offset = offsets[zone_name]
+            # Si la zona es vacía (nombre empieza con 'empty'), generar zona de suelo caminable
+            if zone_name.startswith("empty"):
+                zone = Zone(zone_name, offset)
+                zone_rows = ["." * global_map_settings.zone_width for _ in range(global_map_settings.zone_height)]
+                zone.set_matrix_from_rows(zone_rows)
+                self._merge_zone_into_world(world, zone)
+                continue
             # Generar mapa para zona adicional
             raw_map, metadata_zone = self.generator.generate(
                 width=global_map_settings.zone_width,
