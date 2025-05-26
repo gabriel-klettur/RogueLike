@@ -16,31 +16,49 @@ from ..components.identity import Identity, Faction
 from ..components.z_layer import ZLayer
 from roguelike_game.systems.config_z_layer import Z_LAYERS
 
-
 _defs = json.load(open("data/monsters.json", "r"))
+# Caches vacíos hasta inicialización
+_SPRITE_SURFACES = {}
+_DEATH_SURFACES = {}
+_caches_loaded = False
+
+def _load_caches_once():
+    global _caches_loaded
+    if _caches_loaded:
+        return
+    for mtype, cfg in _defs.items():
+        # Sprites por dirección
+        dir_map = {}
+        for d, path in cfg["sprites"].items():
+            surf = pygame.image.load(path).convert_alpha()
+            dir_map[d] = surf
+        _SPRITE_SURFACES[mtype] = dir_map
+        # Death sprite opcional
+        dpath = cfg.get("death_sprite")
+        if dpath:
+            ds = pygame.image.load(dpath).convert_alpha()
+            if (scl := cfg.get("death_scale")):
+                w,h = ds.get_size(); ds = pygame.transform.scale(ds,(int(w*scl),int(h*scl)))
+            _DEATH_SURFACES[mtype] = ds
+        else:
+            _DEATH_SURFACES[mtype] = None
+    _caches_loaded = True
 
 def spawn_monster(world, monster_type: str, tile_x: int, tile_y: int):
     """
     Crea una entidad según la entrada monster_type de monsters.json
     """
+    # Asegurar que el display está inicializado antes de cargar imágenes
+    _load_caches_once()
     cfg = _defs[monster_type]
     eid = world.create_entity()
 
-    # 1) SPRITE + DeathSprite
-    sprite = Sprite(cfg["sprites"]["down"])
-    sprite.death_image_path = cfg.get("death_sprite")
-    sprite.death_scale = cfg.get("death_scale")
-    if sprite.death_image_path:
-        raw = pygame.image.load(sprite.death_image_path).convert_alpha()
-        if sprite.death_scale:
-            raw = pygame.transform.scale(
-                raw,
-                (
-                    int(raw.get_width() * sprite.death_scale),
-                    int(raw.get_height() * sprite.death_scale),
-                ),
-            )
-        sprite.death_image = raw
+    # 1) Sprite principal y DeathImage desde caché
+    base_map = _SPRITE_SURFACES.get(monster_type, {})
+    sprite = Sprite(base_map.get("down", {}).copy())
+    dsurf = _DEATH_SURFACES.get(monster_type)
+    if dsurf:
+        sprite.death_image = dsurf
     world.components["Sprite"][eid] = sprite
 
     # 2) Posición válida sobre mapa
@@ -60,16 +78,11 @@ def spawn_monster(world, monster_type: str, tile_x: int, tile_y: int):
 
     world.components["Position"][eid] = Position(px, py)
 
-    # 3) Patrol + Animator
-    #    Genera diccionario de sprites por dirección
-    # Carga sprites como listas de frames por dirección
-    sprites = {
-        dir: [pygame.image.load(path).convert_alpha()]
-        for dir, path in cfg["sprites"].items()
-    }
+    # 3) Patrol + Animator: usar caché de sprites pre-cargados
+    sprites = {d: [surf.copy()] for d, surf in _SPRITE_SURFACES.get(monster_type, {}).items()}
     patrol = Patrol((px, py), sprites_by_direction=sprites)
     # default_sprite debe ser un Surface, usamos el primer frame
-    patrol.default_sprite = sprites["down"][0]
+    patrol.default_sprite = sprites.get("down", [])[0]
     world.components["Patrol"][eid] = patrol
     world.components["MovementSpeed"][eid] = MovementSpeed(speed=cfg["speed"])
     world.components["Animator"][eid] = Animator(animations=sprites, current_state="down")

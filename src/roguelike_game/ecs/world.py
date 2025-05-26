@@ -96,11 +96,13 @@ class NPCWorld:
         if not component_types:
             return
         comps = self.components
-        # fast intersection of entity IDs across requested components
-        sets = [set(comps.get(ct, {}).keys()) for ct in component_types]
-        common = set.intersection(*sets) if sets else set()
-        for eid in common:
-            yield eid
+        # Elegir el componente con menos entidades para iterar
+        dicts = [comps.get(ct, {}) for ct in component_types]
+        smallest = min(dicts, key=lambda d: len(d))
+        for eid in smallest:
+            # comprobar que eid exista en todos los componentes solicitados
+            if all(eid in comps.get(ct, {}) for ct in component_types):
+                yield eid
 
     def update(self):
         # Run patrol and animation update systems
