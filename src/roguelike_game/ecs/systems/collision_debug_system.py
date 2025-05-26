@@ -9,24 +9,34 @@ class CollisionDebugSystem:
     def update(self, world, screen, camera):
         if not config.DEBUG:
             return
-        for eid, multi in world.components.get('MultiCollider', {}).items():
-            pos = world.components['Position'][eid]
+        comps = world.components
+        multi_map = comps.get('MultiCollider', {})
+        pos_map = comps.get('Position', {})
+        cam_apply = camera.apply
+        screen_rect = screen.get_rect()
+        draw_polygon = pygame.draw.polygon
+        draw_rect = pygame.draw.rect
+        for eid, multi in multi_map.items():
+            pos = pos_map.get(eid)
+            if pos is None:
+                continue
             for name, collider in multi.colliders.items():
-                # Color según sub-collider
                 color = (255, 0, 0) if name == 'body' else (0, 255, 0)
+                # Bounding rect culling
+                rect_world = build_collider_rect(pos.x, pos.y, collider)
+                screen_pos = cam_apply((rect_world.x, rect_world.y))
+                rect_screen = pygame.Rect(screen_pos, (rect_world.width, rect_world.height))
+                if not screen_rect.colliderect(rect_screen):
+                    continue
                 if hasattr(collider, 'mask'):
-                    # Dibujar silueta de la máscara
-                    outline = collider.mask.outline()
+                    # Cache mask outline
+                    if not hasattr(collider, '_outline_cache'):
+                        collider._outline_cache = collider.mask.outline()
+                    outline = collider._outline_cache
                     if outline:
-                        pts = []
-                        for ox, oy in outline:
-                            wx = pos.x + collider.offset_x + ox
-                            wy = pos.y + collider.offset_y + oy
-                            pts.append(camera.apply((wx, wy)))
-                        pygame.draw.polygon(screen, color, pts, 1)
+                        pts = [cam_apply((pos.x + collider.offset_x + ox,
+                                         pos.y + collider.offset_y + oy))
+                               for ox, oy in outline]
+                        draw_polygon(screen, color, pts, 1)
                 else:
-                    # Dibujar rectángulo para collider rectangular
-                    rect_world = build_collider_rect(pos.x, pos.y, collider)
-                    screen_pos = camera.apply((rect_world.x, rect_world.y))
-                    rect_screen = pygame.Rect(screen_pos, (rect_world.width, rect_world.height))
-                    pygame.draw.rect(screen, color, rect_screen, 1)
+                    draw_rect(screen, color, rect_screen, 1)
