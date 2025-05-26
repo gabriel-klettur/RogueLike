@@ -11,9 +11,10 @@ from roguelike_engine.map.utils import calculate_lobby_offset
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
 import roguelike_engine.config.config as config
+from .systems.spawn_debug_system import SpawnDebugSystem
 from .factories.entity_factory import spawn_monster
+from .utils.spawn_utils import find_spawn_positions
 import pygame
-import random
 
 class NPCWorld:
     def __init__(self, screen, map_manager, buildings):
@@ -56,23 +57,22 @@ class NPCWorld:
             HealthBarSystem(), NamePlateSystem(),
             CollisionDebugSystem(), DeathTimerDebugSystem(), DeathTimerBarSystem()
         ]
+        # Añadir sistema de debug de spawn cuando DEBUG=true
+        if config.DEBUG:
+            self.render_systems.append(SpawnDebugSystem())
 
     def _spawn_initial_npcs(self):
         """Ejecuta la lógica de spawn de NPCs asegurando tiles válidos."""
-        lobby_x, lobby_y = calculate_lobby_offset()
-        w, h = global_map_settings.zone_size
-        print(f"[ECS][Spawn] Lobby center: ({lobby_x}, {lobby_y})")
-        print(f"[ECS][Spawn] Lobby size: ({w}, {h})")
-        solid_coords = set(self._solid_tile_index.keys())
-        tiles = [(x, y) for x in range(lobby_x, lobby_x + w) for y in range(lobby_y, lobby_y + h)]
-        walkable = [t for t in tiles if t not in solid_coords]
-        valid = [t for t in walkable if all(((t[0]+dx, t[1]+dy) not in solid_coords)
-                                           for dx in (-1,0,1) for dy in (-1,0,1) if (dx,dy)!=(0,0))]
-        bcoll = {(rect.x//TILE_SIZE, rect.y//TILE_SIZE) for b in self.buildings for rect in b.collision_tiles}
-        free = [t for t in valid if t not in bcoll and all(((t[0]+dx, t[1]+dy) not in bcoll)
-                                                           for dx in (-1,0,1) for dy in (-1,0,1) if (dx,dy)!=(0,0))]
-        print(f"[ECS][Spawn] Spawn candidates: {len(free)}")
-        for tx, ty in random.sample(free, min(1000, len(free))):
+        # Delegar selección de posiciones de spawn a spawn_utils
+        lobby_offset = calculate_lobby_offset()
+        zone_size = global_map_settings.zone_size
+        positions = find_spawn_positions(
+            self.map_manager, self.buildings,
+            lobby_offset, zone_size,
+            neighbor_padding=1, sample_count=1000
+        )
+        print(f"[ECS][Spawn] Spawn candidates: {len(positions)}")
+        for tx, ty in positions:
             spawn_monster(self, "barbol", tx, ty)
 
     def create_entity(self):
@@ -99,21 +99,6 @@ class NPCWorld:
         # Run render systems to draw entities
         for system in self.render_systems:
             system.update(self, screen, camera)
-        # Debug: highlight spawn tiles in red cuando DEBUG=true
-        if config.DEBUG and hasattr(self, 'spawn_tiles'):
-            for tx, ty, eid in self.spawn_tiles:
-                # calcular posición de pixel y tamaño con cámara
-                x, y = tx * TILE_SIZE, ty * TILE_SIZE
-                px, py = camera.apply((x, y))
-                size = int(TILE_SIZE * camera.zoom)
-                rect = pygame.Rect(px, py, size, size)
-                pygame.draw.rect(screen, (255, 0, 0), rect, 2)
-                # dibujar ID de NPC centrado en el rectángulo
-                font_size = max(8, size // 2)
-                font = pygame.font.SysFont(None, font_size)
-                text_surf = font.render(str(eid), True, (255, 0, 0))
-                text_rect = text_surf.get_rect(center=rect.center)
-                screen.blit(text_surf, text_rect)
 
     def remove_entity(self, eid):
         """
