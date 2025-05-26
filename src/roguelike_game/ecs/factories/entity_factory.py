@@ -15,113 +15,149 @@ from ..components.collider import Collider
 from ..components.identity import Identity, Faction
 from ..components.z_layer import ZLayer
 from roguelike_game.systems.config_z_layer import Z_LAYERS
+import logging
+import os
+from pathlib import Path
+from typing import Any, Dict, Optional, Tuple
 
-_defs = json.load(open("data/monsters.json", "r"))
-# Caches vacíos hasta inicialización
-_SPRITE_SURFACES = {}
-_DEATH_SURFACES = {}
-_caches_loaded = False
+# Initialize logger
+logger = logging.getLogger(__name__)
 
-def _load_caches_once():
+# Data directory and definitions
+_DATA_DIR = Path(__file__).resolve().parents[3] / "data"
+_DEFS: Dict[str, Any] = json.load(open(_DATA_DIR / "monsters.json", "r"))
+
+# Caches for sprite and death surfaces
+_SPRITE_SURFACES: Dict[str, Dict[str, pygame.Surface]] = {}
+_DEATH_SURFACES: Dict[str, Optional[pygame.Surface]] = {}
+_caches_loaded: bool = False
+
+def _load_caches_once() -> None:
+    """Load and cache sprite and death surfaces for each monster type."""
     global _caches_loaded
     if _caches_loaded:
         return
-    for mtype, cfg in _defs.items():
-        # Sprites por dirección
-        dir_map = {}
-        for d, path in cfg["sprites"].items():
-            surf = pygame.image.load(path).convert_alpha()
-            # Pre-scale sprite surface based on config
+    for mtype, cfg in _DEFS.items():
+        logger.debug(f"Loading sprites for: {mtype}")
+        dir_map: Dict[str, pygame.Surface] = {}
+        for direction, path in cfg["sprites"].items():
+            image = pygame.image.load(path).convert_alpha()
             scale_val = cfg.get("scale", 1.0)
             if scale_val != 1.0:
-                w, h = surf.get_size()
-                surf = pygame.transform.scale(surf, (int(w * scale_val), int(h * scale_val)))
-            dir_map[d] = surf
+                w, h = image.get_size()
+                image = pygame.transform.scale(image, (int(w*scale_val), int(h*scale_val)))
+            dir_map[direction] = image
         _SPRITE_SURFACES[mtype] = dir_map
-        # Death sprite opcional
-        dpath = cfg.get("death_sprite")
-        if dpath:
-            ds = pygame.image.load(dpath).convert_alpha()
-            if (scl := cfg.get("death_scale")):
-                w,h = ds.get_size(); ds = pygame.transform.scale(ds,(int(w*scl),int(h*scl)))
-            _DEATH_SURFACES[mtype] = ds
+        death_path = cfg.get("death_sprite")
+        if death_path:
+            death_img = pygame.image.load(death_path).convert_alpha()
+            death_scale = cfg.get("death_scale", 1.0)
+            if death_scale != 1.0:
+                w, h = death_img.get_size()
+                death_img = pygame.transform.scale(death_img, (int(w*death_scale), int(h*death_scale)))
+            _DEATH_SURFACES[mtype] = death_img
         else:
             _DEATH_SURFACES[mtype] = None
     _caches_loaded = True
 
-def spawn_monster(world, monster_type: str, tile_x: int, tile_y: int):
-    """
-    Crea una entidad según la entrada monster_type de monsters.json
-    """
-    # Asegurar que el display está inicializado antes de cargar imágenes
-    _load_caches_once()
-    cfg = _defs[monster_type]
-    eid = world.create_entity()
-
-    # 1) Sprite principal y DeathImage desde caché
+def _create_sprite_component(monster_type: str) -> Tuple[Sprite, Optional[pygame.Surface]]:
+    """Create Sprite component and retrieve optional death image."""
     base_map = _SPRITE_SURFACES.get(monster_type, {})
     sprite = Sprite(base_map.get("down", {}).copy())
-    dsurf = _DEATH_SURFACES.get(monster_type)
-    if dsurf:
-        sprite.death_image = dsurf
-    world.components["Sprite"][eid] = sprite
+    death_image = _DEATH_SURFACES.get(monster_type)
+    return sprite, death_image
 
-    # 2) Posición válida sobre mapa
-    #    Reutiliza el método find_valid_spawn de tu world
-    tx, ty = tile_x, tile_y
-    # Debug: almacenar tile exacto de spawn para dibujar marcador
-    if not hasattr(world, 'spawn_tiles'):
-        world.spawn_tiles = []
-    world.spawn_tiles.append((tx, ty, eid))  # incluir NPC id para dibujar número
-    # Calcular bottom-center del sprite escalado en el tile
-    scale_val = cfg["scale"]
+def _calculate_position(tile_x: int, tile_y: int, cfg: Dict[str, Any], sprite: Sprite) -> Tuple[int, int]:
+    """Compute the bottom-center pixel coordinates for the sprite on the map tile."""
+    scale_val = cfg.get("scale", 1.0)
     orig_w, orig_h = sprite.image.get_size()
-    w_s = int(orig_w * scale_val)
-    h_s = int(orig_h * scale_val)
-    px = tx * TILE_SIZE + (TILE_SIZE - w_s) // 2
-    py = (ty + 1) * TILE_SIZE - h_s    
+    width = int(orig_w * scale_val)
+    height = int(orig_h * scale_val)
+    px = tile_x * TILE_SIZE + (TILE_SIZE - width) // 2
+    py = (tile_y + 1) * TILE_SIZE - height
+    return px, py
 
-    world.components["Position"][eid] = Position(px, py)
-
-    # 3) Patrol + Animator: usar caché de sprites pre-cargados
+def _create_patrol_components(px: int, py: int, monster_type: str, cfg: Dict[str, Any]) -> Tuple[Patrol, MovementSpeed, Animator]:
+    """Initialize Patrol, MovementSpeed, and Animator ECS components."""
     sprites = {d: [surf.copy()] for d, surf in _SPRITE_SURFACES.get(monster_type, {}).items()}
     patrol = Patrol((px, py), sprites_by_direction=sprites)
-    # default_sprite debe ser un Surface, usamos el primer frame
     patrol.default_sprite = sprites.get("down", [])[0]
-    world.components["Patrol"][eid] = patrol
-    world.components["MovementSpeed"][eid] = MovementSpeed(speed=cfg["speed"])
-    world.components["Animator"][eid] = Animator(animations=sprites, current_state="down")
+    movement = MovementSpeed(speed=cfg.get("speed", 0))
+    animator = Animator(animations=sprites, current_state="down")
+    return patrol, movement, animator
 
-    # 4) Scale, Velocity
-    world.components["Scale"][eid] = Scale(scale=cfg["scale"])
-    world.components["Velocity"][eid] = Velocity(0, 0)
+def _create_physics_components(cfg: Dict[str, Any]) -> Tuple[Scale, Velocity]:
+    """Create Scale and Velocity ECS components."""
+    scale_cmp = Scale(scale=cfg.get("scale", 1.0))
+    velocity_cmp = Velocity(0, 0)
+    return scale_cmp, velocity_cmp
 
-    # 5) Colliders (cuerpo + pies)
-    #    Reusa tu lógica actual de máscara + rect
+def _create_collider_components(sprite: Sprite, cfg: Dict[str, Any]) -> MultiCollider:
+    """Construct body and feet colliders based on sprite surface."""
     mask_surf = sprite.image
-    scale_v = cfg["scale"]
-    if scale_v != 1.0:
-        mask_surf = pygame.transform.scale(
-            mask_surf, 
-            (int(mask_surf.get_width()*scale_v), int(mask_surf.get_height()*scale_v))
-        )
+    scale_val = cfg.get("scale", 1.0)
+    if scale_val != 1.0:
+        w, h = mask_surf.get_size()
+        mask_surf = pygame.transform.scale(mask_surf, (int(w*scale_val), int(h*scale_val)))
     body = MaskCollider(pygame.mask.from_surface(mask_surf), 0, 0)
     w, h = mask_surf.get_size()
     feet = Collider(int(w*0.5), int(h*0.2), (w - int(w*0.5))//2, h - int(h*0.2))
-    world.components["MultiCollider"][eid] = MultiCollider({"body": body, "feet": feet})
+    return MultiCollider({"body": body, "feet": feet})
 
-    # 6) ZLayer
-    faction = getattr(Faction, cfg["faction"])
-    world.components["ZLayer"][eid] = ZLayer(Z_LAYERS["monster"])
+def _create_zlayer_component(cfg: Dict[str, Any]) -> ZLayer:
+    """Set the rendering Z-layer for the entity."""
+    faction = getattr(Faction, cfg.get("faction"), None)
+    return ZLayer(Z_LAYERS.get("monster", 0))
 
-    # 7) Health & Identity
-    world.components["Health"][eid] = Health(cfg["hp"], cfg["hp"])
-    world.components["Scale"][eid] = Scale(cfg["scale"])
-    world.components["Identity"][eid] = Identity(
-        id=eid,
-        name=monster_type.capitalize(),
-        title="",
-        faction=faction,
-    )
+def _create_health_identity_components(eid: int, monster_type: str, cfg: Dict[str, Any]) -> Tuple[Health, Identity]:
+    """Create Health and Identity ECS components."""
+    health_cmp = Health(cfg.get("hp", 0), cfg.get("hp", 0))
+    identity_cmp = Identity(id=eid, name=monster_type.capitalize(), title="", faction=getattr(Faction, cfg.get("faction")))
+    return health_cmp, identity_cmp
+
+def spawn_monster(world, monster_type: str, tile_x: int, tile_y: int) -> int:
+    """Create a monster entity based on the provided monster type and tile coordinates."""
+    _load_caches_once()
+    cfg = _DEFS[monster_type]
+    eid = world.create_entity()
+
+    # Sprite & Death Image
+    sprite, death_img = _create_sprite_component(monster_type)
+    if death_img:
+        sprite.death_image = death_img
+    world.components["Sprite"][eid] = sprite
+
+    # Record spawn tile for debugging
+    if not hasattr(world, "spawn_tiles"):
+        world.spawn_tiles = []
+    world.spawn_tiles.append((tile_x, tile_y, eid))
+
+    # Position
+    px, py = _calculate_position(tile_x, tile_y, cfg, sprite)
+    world.components["Position"][eid] = Position(px, py)
+
+    # Patrol, MovementSpeed, Animator
+    patrol, movement, animator = _create_patrol_components(px, py, monster_type, cfg)
+    world.components["Patrol"][eid] = patrol
+    world.components["MovementSpeed"][eid] = movement
+    world.components["Animator"][eid] = animator
+
+    # Physics: Scale & Velocity
+    scale_cmp, velocity_cmp = _create_physics_components(cfg)
+    world.components["Scale"][eid] = scale_cmp
+    world.components["Velocity"][eid] = velocity_cmp
+
+    # Colliders
+    collider_cmp = _create_collider_components(sprite, cfg)
+    world.components["MultiCollider"][eid] = collider_cmp
+
+    # Z-Layer
+    zlayer_cmp = _create_zlayer_component(cfg)
+    world.components["ZLayer"][eid] = zlayer_cmp
+
+    # Health & Identity
+    health_cmp, identity_cmp = _create_health_identity_components(eid, monster_type, cfg)
+    world.components["Health"][eid] = health_cmp
+    world.components["Identity"][eid] = identity_cmp
 
     return eid
