@@ -357,23 +357,43 @@ class RendererManager:
         screen.blit(surf, rect)
 
 class _NPCWrapper:
-    """Envoltorio para renderizar NPCs dentro de render_z_ordered."""
-    __slots__ = ('world', 'eid')
+    """Envoltorio optimizado para renderizar NPCs dentro de render_z_ordered."""
+    __slots__ = ('eid', 'pos_map', 'sprite_map', 'scale_map')
+    # Cache de superficies escaladas: {(eid, scale): Surface}
+    _scale_cache = {}
+
     def __init__(self, world, eid):
-        self.world = world
+        comps = world.components
         self.eid = eid
+        self.pos_map = comps['Position']
+        self.sprite_map = comps['Sprite']
+        self.scale_map = comps.get('Scale', {})
+
     @property
-    def x(self): return self.world.components['Position'][self.eid].x
+    def x(self):
+        return self.pos_map[self.eid].x
+
     @property
-    def y(self): return self.world.components['Position'][self.eid].y
+    def y(self):
+        return self.pos_map[self.eid].y
+
     def render(self, screen, camera):
-        sprite = self.world.components['Sprite'][self.eid]
-        image = sprite.image
-        # aplicar escala si existe
-        scale_comp = self.world.components['Scale'].get(self.eid)
-        if scale_comp and scale_comp.scale != 1.0:
-            w,h = image.get_size()
-            image = pygame.transform.scale(
-                image, (int(w*scale_comp.scale), int(h*scale_comp.scale))
-            )
-        screen.blit(image, camera.apply((self.x, self.y)))
+        # Hot-path: referencias locales
+        blit = screen.blit
+        apply = camera.apply
+        eid = self.eid
+        sprite = self.sprite_map[eid]
+        orig = sprite.image
+        scale_comp = self.scale_map.get(eid)
+        scale_val = scale_comp.scale if scale_comp else 1.0
+        if scale_val != 1.0:
+            # Include image identity to distinguish direction/frame
+            key = (eid, scale_val, id(orig))
+            image = _NPCWrapper._scale_cache.get(key)
+            if image is None:
+                w, h = orig.get_size()
+                image = pygame.transform.scale(orig, (int(w * scale_val), int(h * scale_val)))
+                _NPCWrapper._scale_cache[key] = image
+        else:
+            image = orig
+        blit(image, apply((self.x, self.y)))
