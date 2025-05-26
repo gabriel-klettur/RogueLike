@@ -40,17 +40,16 @@ class RenderSystem:
         for eid in eids:
             pos = pos_map[eid]
             sprite = sprite_map[eid]
-            sc = scale_map.get(eid)
-            if sc and sc.scale != 1.0:
-                key = (eid, zoom_key)
+            # Calcular factor combinado de escala (zoom * entidad)
+            entity_scale = (scale_map.get(eid).scale if scale_map.get(eid) else 1.0)
+            scale_factor = entity_scale * zoom_key
+            if scale_factor != 1.0:
+                key = (eid, scale_factor)
                 cache = self._scaled_sprite_cache
                 if key not in cache:
                     orig = sprite.image
                     w, h = orig.get_size()
-                    cache[key] = pygame.transform.scale(
-                        orig,
-                        (int(w * sc.scale), int(h * sc.scale))
-                    )
+                    cache[key] = pygame.transform.scale(orig, (int(w * scale_factor), int(h * scale_factor)))
                 image = cache[key]
             else:
                 image = sprite.image

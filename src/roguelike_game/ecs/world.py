@@ -24,8 +24,8 @@ class NPCWorld:
         self.map_manager = map_manager
         self.buildings = buildings
         self.entities = []
-        # next_entity_id para garantizar IDs únicos
-        self.next_entity_id = 1
+        self.next_entity_id = 1     # next_entity_id para garantizar IDs únicos
+
         self._setup_spatial_index()
         self._init_components()
         self._init_systems()

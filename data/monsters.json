@@ -7,10 +7,10 @@
         "up":    "assets/npc/monsters/barbol/barbol_1_top.png"
       },
       "death_sprite": "assets/npc/monsters/barbol/barbol_female_death.png",
-      "death_scale": 0.6,
+      "death_scale": 1.25,
       "hp": 100,
       "speed": 1.0,
-      "scale": 0.25,
+      "scale": 0.1,
       "faction": "EVIL"
     }    
   }
