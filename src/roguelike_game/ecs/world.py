@@ -67,6 +67,8 @@ class NPCWorld:
 
     def _spawn_initial_npcs(self):
         """Ejecuta la lógica de spawn de NPCs asegurando tiles válidos."""
+
+        #!-------------------------------- LOBBY ---------------------------------------------------
         # Delegar selección de posiciones de spawn a spawn_utils
         lobby_offset = calculate_lobby_offset()
         zone_size = global_map_settings.zone_size
@@ -84,6 +86,23 @@ class NPCWorld:
             self.components['SpawnRequest'][eid_req] = SpawnRequest(
                 prototype="barbol", position=(tx, ty)
             )
+        #!-------------------------------- EMPTY ZONE LEFT--------------------------------------------------
+        # Spawn 20 NPCs 'barbol' in the empty_left zone
+        offsets = global_map_settings.zone_offsets
+        empty_offset = offsets.get('empty_left')
+        if empty_offset:
+            empty_positions = find_spawn_positions(
+                self.map_manager, self.buildings,
+                empty_offset, zone_size,
+                neighbor_padding=3, sample_count=500
+            )
+            print(f"[ECS][Spawn] Spawn in empty_left: {len(empty_positions)}")
+            for tx, ty in empty_positions:
+                eid_req = self.create_entity()
+                self.components['SpawnRequest'][eid_req] = SpawnRequest(
+                    prototype="barbol", position=(tx, ty)
+                )
+        #!-----------------------------------------------------------------------------------
 
     def create_entity(self):
         # Asignar ID secuencial único
