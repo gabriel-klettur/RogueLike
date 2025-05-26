@@ -1,4 +1,5 @@
 from roguelike_game.ecs.world import NPCWorld
+from roguelike_game.ecs.world import NPCWorld
 from roguelike_game.game.map_manager import MapManager
 
 class ECSManager:

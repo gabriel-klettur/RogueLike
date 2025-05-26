@@ -12,8 +12,9 @@ from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
 import roguelike_engine.config.config as config
 from .systems.spawn_debug_system import SpawnDebugSystem
-from .factories.entity_factory import spawn_monster
+from .systems.spawn_system import SpawnSystem
 from .utils.spawn_utils import find_spawn_positions
+from .components.spawn_request import SpawnRequest
 import pygame
 
 class NPCWorld:
@@ -23,6 +24,8 @@ class NPCWorld:
         self.map_manager = map_manager
         self.buildings = buildings
         self.entities = []
+        # next_entity_id para garantizar IDs únicos
+        self.next_entity_id = 1
         self._setup_spatial_index()
         self._init_components()
         self._init_systems()
@@ -44,14 +47,15 @@ class NPCWorld:
         self.components = {
             'Position': {}, 'Sprite': {}, 'Patrol': {}, 'MovementSpeed': {},
             'Animator': {}, 'Health': {}, 'Scale': {}, 'Identity': {},
-            'Velocity': {}, 'MultiCollider': {}, 'ZLayer': {}, 'DeathTimer': {}
+            'Velocity': {}, 'MultiCollider': {}, 'ZLayer': {}, 'DeathTimer': {},
+            'SpawnRequest': {}
         }
 
     def _init_systems(self):
         """Configura sistemas de actualización y renderizado."""
         self.update_systems = [
             PatrolSystem(), MovementCollisionSystem(),
-            DeathSystem(), AnimationSystem()
+            DeathSystem(), AnimationSystem(), SpawnSystem()
         ]
         self.render_systems = [
             HealthBarSystem(), NamePlateSystem(),
@@ -66,17 +70,25 @@ class NPCWorld:
         # Delegar selección de posiciones de spawn a spawn_utils
         lobby_offset = calculate_lobby_offset()
         zone_size = global_map_settings.zone_size
+
+        #! El neighbor_padding deberia calcularse de forma automatica teniendo encuenta el numero de tiles que utiliza el collider de los pies del npc
         positions = find_spawn_positions(
             self.map_manager, self.buildings,
             lobby_offset, zone_size,
-            neighbor_padding=1, sample_count=1000
+            neighbor_padding=3, sample_count=100
         )
         print(f"[ECS][Spawn] Spawn candidates: {len(positions)}")
         for tx, ty in positions:
-            spawn_monster(self, "barbol", tx, ty)
+            # Crear request de spawn en ECS
+            eid_req = self.create_entity()
+            self.components['SpawnRequest'][eid_req] = SpawnRequest(
+                prototype="barbol", position=(tx, ty)
+            )
 
     def create_entity(self):
-        eid = len(self.entities) + 1
+        # Asignar ID secuencial único
+        eid = self.next_entity_id
+        self.next_entity_id += 1
         self.entities.append(eid)
         return eid
 
