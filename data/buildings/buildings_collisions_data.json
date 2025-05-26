@@ -4240,5 +4240,10 @@
                 "."
             ]
         ]
+    },
+    "assets/buildings\\combat\\coliseo_2.png": {
+        "width": 0,
+        "height": 0,
+        "collision": []
     }
 }
