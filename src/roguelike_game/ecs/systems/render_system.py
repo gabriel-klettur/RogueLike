@@ -12,27 +12,37 @@ class RenderSystem:
 
     def update(self, world, screen, camera):
         """Renderiza sprites ordenados por capa Z y posición Y para manejar profundidad."""
-        # Preparar culling de pantalla
+        # Preparar culling de pantalla y calcular área de mundo visible
         screen_rect = screen.get_rect()
+        sw, sh = screen_rect.size
+        zoom = camera.zoom
+        # Mundo visible en coordenadas de mundo
+        world_left = camera.offset_x
+        world_top = camera.offset_y
+        world_w = sw / zoom
+        world_h = sh / zoom
+        world_rect = pygame.Rect(world_left, world_top, world_w, world_h)
         # Cache de componentes para renderizado eficiente
         comps = world.components
         pos_map = comps['Position']
         sprite_map = comps['Sprite']
         z_map = comps['ZLayer']
         scale_map = comps['Scale']
-        # Entidades con Position y Sprite
-        eids = [eid for eid in pos_map if eid in sprite_map]
+        # Culling: solo entidades con Position/ Sprite dentro de viewport
+        eids = [eid for eid in pos_map
+                if eid in sprite_map and
+                   world_rect.collidepoint(pos_map[eid].x, pos_map[eid].y)]
         # Ordenar por capa Z y posición Y
         eids.sort(key=lambda eid: (z_map[eid].layer if eid in z_map else DEFAULT_Z,
                                   pos_map[eid].y))
         camapply = camera.apply
-        zoom = round(camera.zoom, 2)
+        zoom_key = round(zoom, 2)
         for eid in eids:
             pos = pos_map[eid]
             sprite = sprite_map[eid]
             sc = scale_map.get(eid)
             if sc and sc.scale != 1.0:
-                key = (eid, zoom)
+                key = (eid, zoom_key)
                 cache = self._scaled_sprite_cache
                 if key not in cache:
                     orig = sprite.image
