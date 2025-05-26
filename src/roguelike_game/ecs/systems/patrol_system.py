@@ -1,5 +1,6 @@
 from ..components.patrol import Patrol
 from ..components.position import Position
+from ..components.chase_target import ChaseTarget
 
 import pygame
 from roguelike_game.ecs.utils.collider_utils import build_collider_rect
@@ -20,6 +21,9 @@ class PatrolSystem:
         vel_map = comps['Velocity']; multi_map = comps['MultiCollider']
         tile_query = world.get_solid_tiles_for_rect
         for eid in world.get_entities_with('Position', 'Patrol', 'Velocity', 'MultiCollider'):
+            # Skip patrolling when chasing the player
+            if eid in world.components.get('ChaseTarget', {}):
+                continue
             pos = pos_map[eid]; patrol = patrol_map[eid]
             speed = self._get_speed(world, eid, patrol)
             self._ensure_valid_index(patrol)

@@ -7,6 +7,12 @@ from .systems.collision_debug_system import CollisionDebugSystem
 from .systems.death_system import DeathSystem
 from .systems.death_timer_debug_system import DeathTimerDebugSystem
 from .systems.death_timer_bar_system import DeathTimerBarSystem
+from .systems.npc_melee_decision_system import NPCMeleeDecisionSystem
+from .systems.melee_combat_system import MeleeCombatSystem
+from .systems.attack_cooldown_system import AttackCooldownSystem
+from .systems.aggro_system import AggroSystem
+from .systems.chase_system import ChaseSystem
+from .systems.facing_system import FacingSystem
 from roguelike_engine.map.utils import calculate_lobby_offset
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
@@ -48,13 +54,20 @@ class NPCWorld:
             'Position': {}, 'Sprite': {}, 'Patrol': {}, 'MovementSpeed': {},
             'Animator': {}, 'Health': {}, 'Scale': {}, 'Identity': {},
             'Velocity': {}, 'MultiCollider': {}, 'ZLayer': {}, 'DeathTimer': {},
-            'SpawnRequest': {}
+            'SpawnRequest': {},
+            'CombatStats': {}, 'MeleeWeapon': {},
+            'WantsToMelee': {}, 'AttackCooldown': {},
+            'AggroRange': {}, 'ChaseTarget': {}, 'FacingCooldown': {}
         }
 
     def _init_systems(self):
         """Configura sistemas de actualización y renderizado."""
         self.update_systems = [
+            AggroSystem(), ChaseSystem(), FacingSystem(),
             PatrolSystem(), MovementCollisionSystem(),
+            AttackCooldownSystem(),
+            NPCMeleeDecisionSystem(),
+            MeleeCombatSystem(),
             DeathSystem(), AnimationSystem(), SpawnSystem()
         ]
         self.render_systems = [

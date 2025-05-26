@@ -1,5 +1,4 @@
 from roguelike_game.ecs.world import NPCWorld
-from roguelike_game.ecs.world import NPCWorld
 from roguelike_game.game.map_manager import MapManager
 
 class ECSManager:
@@ -10,6 +9,7 @@ class ECSManager:
         self.entities_manager = entities_manager
         # Inicializar mundo ECS y pasar edificios para colisiones
         self.npc_world = NPCWorld(screen, map_manager, entities_manager.buildings)
+        self.npc_world.player = entities_manager.player
 
     def update(self, clock, screen):
         # Actualiza la lógica del mundo ECS

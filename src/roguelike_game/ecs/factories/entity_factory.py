@@ -13,6 +13,9 @@ from ..components.multi_collider import MultiCollider
 from ..components.mask_collider import MaskCollider
 from ..components.collider import Collider
 from ..components.identity import Identity, Faction
+from ..components.combat_stats import CombatStats
+from ..components.melee_weapon import MeleeWeapon
+from ..components.aggro_range import AggroRange
 from ..components.z_layer import ZLayer
 from roguelike_game.systems.config_z_layer import Z_LAYERS
 import logging
@@ -159,5 +162,10 @@ def spawn_monster(world, monster_type: str, tile_x: int, tile_y: int) -> int:
     health_cmp, identity_cmp = _create_health_identity_components(eid, monster_type, cfg)
     world.components["Health"][eid] = health_cmp
     world.components["Identity"][eid] = identity_cmp
+
+    # CombatStats, MeleeWeapon, AggroRange
+    world.components["CombatStats"][eid] = CombatStats(cfg.get("hp", 0), cfg.get("hp", 0), cfg.get("power", 0), cfg.get("defense", 0))
+    world.components["MeleeWeapon"][eid] = MeleeWeapon(cfg.get("melee_damage", 0), cfg.get("melee_cooldown", 1.0))
+    world.components["AggroRange"][eid] = AggroRange(cfg.get("aggro_range", 0))
 
     return eid
