@@ -1,7 +1,4 @@
-import pygame
-from ..components.position import Position
-from ..components.velocity import Velocity
-from ..components.multi_collider import MultiCollider
+
 from roguelike_game.ecs.utils.collider_utils import build_collider_rect
 
 class MovementCollisionSystem:

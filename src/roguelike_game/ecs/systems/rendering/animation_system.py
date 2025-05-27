@@ -1,5 +1,3 @@
-from ..components.animator import Animator
-from ..components.sprite import Sprite
 
 class AnimationSystem:
     """

@@ -1,8 +1,5 @@
-import math
-from ..components.position import Position
-from ..components.aggro_range import AggroRange
-from ..components.identity import Identity, Faction
-from ..components.chase_target import ChaseTarget
+from roguelike_game.ecs.components.ai.chase_target import ChaseTarget
+from roguelike_game.ecs.components.core.identity import Faction
 
 class AggroSystem:
     """

@@ -1,6 +1,5 @@
-from ..components.patrol import Patrol
-from ..components.position import Position
-from ..components.chase_target import ChaseTarget
+from roguelike_game.ecs.components.ai.patrol import Patrol
+from roguelike_game.ecs.components.transform.position import Position
 
 import pygame
 from roguelike_game.ecs.utils.collider_utils import build_collider_rect

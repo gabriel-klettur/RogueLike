@@ -1,7 +1,7 @@
 import pygame
-from ..components.position import Position
-from ..components.identity import Identity, Faction
-from ..components.scale import Scale
+from roguelike_game.ecs.components.transform.position import Position
+from roguelike_game.ecs.components.core.identity import Identity, Faction
+from roguelike_game.ecs.components.transform.scale import Scale
 import roguelike_engine.config.config as config
 
 class NamePlateSystem:

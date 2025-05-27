@@ -1,5 +1,4 @@
-from ..components.spawn_request import SpawnRequest
-from ..factories.entity_factory import spawn_monster
+from roguelike_game.ecs.factories.entity_factory import spawn_monster
 
 class SpawnSystem:
     """Consume SpawnRequest y crea NPCs reales."""

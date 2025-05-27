@@ -1,5 +1,3 @@
-from ..components.combat_stats import CombatStats
-from ..components.wants_to_melee import WantsToMelee
 
 class MeleeCombatSystem:
     """

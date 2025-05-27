@@ -1,8 +1,8 @@
 # src/roguelike_game/ecs/utils/collider_utils.py
 
 import pygame
-from ..components.collider import Collider
-from ..components.mask_collider import MaskCollider
+from roguelike_game.ecs.components.physics.collider import Collider
+from roguelike_game.ecs.components.physics.mask_collider import MaskCollider
 
 def build_collider_rect(pos_x: float,
                         pos_y: float,

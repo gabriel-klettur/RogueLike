@@ -1,8 +1,8 @@
 import pygame
-from ..components.position import Position
-from ..components.health import Health
-from ..components.scale import Scale
-from ..components.sprite import Sprite
+from roguelike_game.ecs.components.transform.position import Position
+from roguelike_game.ecs.components.combat.health import Health
+from roguelike_game.ecs.components.transform.scale import Scale
+from roguelike_game.ecs.components.rendering.sprite import Sprite
 
 class HealthBarSystem:
     """

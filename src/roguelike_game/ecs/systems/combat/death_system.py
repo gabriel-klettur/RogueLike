@@ -1,6 +1,6 @@
 import time
 from roguelike_engine.utils.loader import load_image
-from roguelike_game.ecs.components.death_timer import DeathTimer
+from roguelike_game.ecs.components.combat.death_timer import DeathTimer
 
 class DeathSystem:
     """

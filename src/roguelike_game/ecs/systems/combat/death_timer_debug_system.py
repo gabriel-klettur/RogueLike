@@ -1,7 +1,6 @@
 import pygame
 import time
 import roguelike_engine.config.config as config
-from roguelike_game.ecs.components.death_timer import DeathTimer
 
 class DeathTimerDebugSystem:
     """

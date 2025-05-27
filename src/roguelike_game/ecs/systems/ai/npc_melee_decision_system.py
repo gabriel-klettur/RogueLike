@@ -1,9 +1,8 @@
 import time
-from ..components.position import Position
-from ..components.combat_stats import CombatStats
-from ..components.melee_weapon import MeleeWeapon
-from ..components.wants_to_melee import WantsToMelee
-from ..components.attack_cooldown import AttackCooldown
+from roguelike_game.ecs.components.transform.position import Position
+from roguelike_game.ecs.components.combat.combat_stats import CombatStats
+from roguelike_game.ecs.components.ai.wants_to_melee import WantsToMelee
+from roguelike_game.ecs.components.combat.attack_cooldown import AttackCooldown
 
 class NPCMeleeDecisionSystem:
     """

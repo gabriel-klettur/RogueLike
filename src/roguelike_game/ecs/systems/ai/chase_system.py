@@ -1,7 +1,6 @@
-from ..components.position import Position
-from ..components.velocity import Velocity
-from ..components.movement_speed import MovementSpeed
-from ..components.chase_target import ChaseTarget
+
+
+from roguelike_game.ecs.components.transform.velocity import Velocity
 
 class ChaseSystem:
     """

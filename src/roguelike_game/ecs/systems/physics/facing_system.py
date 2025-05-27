@@ -1,7 +1,5 @@
-from ..components.velocity import Velocity
-from ..components.animator import Animator
 import time
-from ..components.facing_cooldown import FacingCooldown
+from roguelike_game.ecs.components.combat.facing_cooldown import FacingCooldown
 
 class FacingSystem:
     """

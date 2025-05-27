@@ -1,5 +1,4 @@
 import time
-from ..components.attack_cooldown import AttackCooldown
 
 class AttackCooldownSystem:
     """

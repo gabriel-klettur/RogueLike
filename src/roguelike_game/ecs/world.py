@@ -20,7 +20,7 @@ import roguelike_engine.config.config as config
 from .systems.spawn_debug_system import SpawnDebugSystem
 from .systems.spawn_system import SpawnSystem
 from .utils.spawn_utils import find_spawn_positions
-from .components.spawn_request import SpawnRequest
+from roguelike_game.ecs.components.spawn.spawn_request import SpawnRequest
 import pygame
 
 class NPCWorld:
@@ -90,7 +90,7 @@ class NPCWorld:
         positions = find_spawn_positions(
             self.map_manager, self.buildings,
             lobby_offset, zone_size,
-            neighbor_padding=3, sample_count=100
+            neighbor_padding=3, sample_count=500
         )
         print(f"[ECS][Spawn] Spawn candidates: {len(positions)}")
         for tx, ty in positions:
