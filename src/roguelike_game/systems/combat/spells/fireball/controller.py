@@ -62,8 +62,8 @@ class FireballController:
                         return
                 else:
                     # bounding box collision
-                    w = getattr(body, 'width', body.mask.get_size()[0])
-                    h = getattr(body, 'height', body.mask.get_size()[1])
+                    w = body.width
+                    h = body.height
                     br = Rect(pos.x + body.offset_x, pos.y + body.offset_y, w, h)
                     if rect.colliderect(br):
                         hp = self.npc_world.components['Health'][eid]
