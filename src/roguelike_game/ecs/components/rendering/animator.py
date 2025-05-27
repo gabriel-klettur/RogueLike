@@ -17,6 +17,8 @@ class Animator:
         frames = self.animations.get(self.current_state, [])
         if not frames:
             return None
+        # Clamp frame_idx in case it exceeds frames list
+        self.frame_idx %= len(frames)
         img = frames[self.frame_idx]
         self.frame_idx = (self.frame_idx + 1) % len(frames)
         return img

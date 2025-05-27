@@ -43,23 +43,37 @@ class FacingSystem:
                 fc = FacingCooldown()
                 fc_map[eid] = fc
 
-            # 3) Si no se mueve, no actualizamos la dirección
+            # Habilitar lógica de idle/walk solo para el jugador
+            is_player = eid in comps.get('PlayerTagComponent', {})
+            suffix_avail = is_player  # NPCs usarán solo estados base
             vx, vy = vel.vx, vel.vy
             if vx == 0 and vy == 0:
+                # Entidad quieta: elegir estado idle o base
+                if suffix_avail:
+                    base = animator.current_state.split('_')[0]
+                    idle_key = f"{base}_idle"
+                    new_state = idle_key if idle_key in animator.animations else base
+                else:
+                    new_state = animator.current_state
+                if new_state != animator.current_state:
+                    animator.current_state = new_state
                 continue
 
             # 4) Respetar cooldown antes de cambiar facing
             if now < fc.next_allowed:
                 continue
 
-            # 5) Determinar nueva dirección: eje mayor decide
+            # 5) Determinar nueva dirección y animación de caminata
             if abs(vx) > abs(vy):
-                new_state = 'right' if vx > 0 else 'left'
+                direction = 'right' if vx > 0 else 'left'
             else:
-                new_state = 'down' if vy > 0 else 'up'
-
-            # 6) Actualizar solo si la dirección cambió
+                direction = 'down' if vy > 0 else 'up'
+            if suffix_avail:
+                key = f"{direction}_walk"
+                new_state = key if key in animator.animations else direction
+            else:
+                new_state = direction
             if new_state != animator.current_state:
                 animator.current_state = new_state
-                # 7) Reiniciar cooldown (1 segundo por defecto)
+                # Reiniciar cooldown de facing
                 fc.next_allowed = now + 1.0

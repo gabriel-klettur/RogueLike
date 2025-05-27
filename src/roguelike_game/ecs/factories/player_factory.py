@@ -17,6 +17,8 @@ from roguelike_game.ecs.components.rendering.animator import Animator
 from roguelike_game.ecs.components.combat.health import Health
 from roguelike_game.ecs.components.combat.combat_stats import CombatStats
 from roguelike_game.ecs.components.combat.melee_weapon import MeleeWeapon
+from roguelike_game.ecs.components.transform.z_layer import ZLayer
+from roguelike_game.systems.config_z_layer import Z_LAYERS
 
 
 def spawn_player(world, x, y, character_name: str = "first_hero") -> int:
@@ -39,13 +41,20 @@ def spawn_player(world, x, y, character_name: str = "first_hero") -> int:
     world.components["CameraFollowComponent"][eid] = CameraFollowComponent()
     # Componente de entrada
     world.components["InputComponent"][eid] = InputComponent()
-    # Componente de renderizado (Sprite y Animator) - solo estado idle
+    # Componente ZLayer para renderizado de jugador
+    world.components["ZLayer"][eid] = ZLayer(Z_LAYERS["player"])
+    # Cargar sprites del jugador
     sprites_dict, _ = PlayerAssets(character_name, ORIGINAL_SPRITE_SIZE).get_sprites()
-    idle_frames = sprites_dict.get('down', {}).get('idle', [])
-    if idle_frames:
-        world.components["Sprite"][eid] = Sprite(idle_frames[0])
-    # Animator con frames idle
-    world.components["Animator"][eid] = Animator(animations={'idle': idle_frames}, current_state='idle')
+    # Sprite inicial: primer frame idle 'down'
+    down_idle = sprites_dict.get('down', {}).get('idle', [])
+    if down_idle:
+        world.components["Sprite"][eid] = Sprite(down_idle[0])
+    # Animator: mapear animaciones idle y walk separadas por dirección
+    anim_map = {}
+    for direction, frames in sprites_dict.items():
+        anim_map[f"{direction}_idle"] = frames.get('idle', [])
+        anim_map[f"{direction}_walk"] = frames.get('walk', [])
+    world.components["Animator"][eid] = Animator(animations=anim_map, current_state='down_idle')
     # Componente de movimiento
     world.components["MovementSpeed"][eid] = MovementSpeed(PLAYER_SPEED)
     # Componente de velocidad
