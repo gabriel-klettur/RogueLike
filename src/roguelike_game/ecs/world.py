@@ -23,6 +23,7 @@ from .systems.core.spawn_debug_system import SpawnDebugSystem
 from .systems.core.spawn_system import SpawnSystem
 from .systems.input.input_system import InputSystem
 from .systems.ability_system import AbilitySystem
+from .systems.combat.fireball_system import FireballSystem
 
 from roguelike_engine.map.utils import calculate_lobby_offset
 from .utils.spawn_utils import find_spawn_positions
@@ -59,6 +60,7 @@ class NPCWorld:
             'Position': {}, 'Sprite': {}, 'Patrol': {}, 'MovementSpeed': {},
             'Animator': {}, 'Health': {}, 'Scale': {}, 'Identity': {},
             'Velocity': {}, 'MultiCollider': {}, 'ZLayer': {}, 'DeathTimer': {},
+            'FireballComponent': {},
             'SpawnRequest': {},
             'CombatStats': {}, 'MeleeWeapon': {},
             'WantsToMelee': {}, 'AttackCooldown': {},
@@ -74,6 +76,7 @@ class NPCWorld:
             AttackCooldownSystem(),
             NPCMeleeDecisionSystem(),
             MeleeCombatSystem(), AbilitySystem(),
+            FireballSystem(),
             DeathSystem(), AnimationSystem(), SpawnSystem()
         ]
         self.render_systems = [
@@ -142,10 +145,10 @@ class NPCWorld:
             if all(eid in comps.get(ct, {}) for ct in component_types):
                 yield eid
 
-    def update(self):
-        # Run patrol and animation update systems
+    def update(self, camera):
+        # Ejecutar sistemas de actualización con manejo de firma variable        
         for system in self.update_systems:
-            system.update(self)
+            system.update(self, camera)
 
     def render(self, screen, camera):
         # Run render systems to draw entities

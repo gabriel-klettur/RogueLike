@@ -15,9 +15,9 @@ class ECSManager:
         pid = spawn_player(self.npc_world, entities_manager.player.x, entities_manager.player.y, entities_manager.player.model.character_name)
         self.npc_world.player_entity = pid
 
-    def update(self, clock, screen):
+    def update(self, clock, screen, camera):
         # Actualiza la lógica del mundo ECS
-        self.npc_world.update()
+        self.npc_world.update(camera)
 
     def render(self, screen, camera):
         # Renderiza todas las entidades ECS en pantalla con cámara

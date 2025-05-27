@@ -12,7 +12,7 @@ class PatrolSystem:
         """Inicializa el sistema de patrulla. No mantiene estado interno."""
         pass
 
-    def update(self, world):
+    def update(self, world, camera=None):
         """Actualiza la lógica de patrulla: asigna velocidad, gestiona waypoints y actualiza animación y sprite."""
         # Cache de componentes y referencias
         comps = world.components

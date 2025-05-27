@@ -18,7 +18,7 @@ class DeathSystem:
         """
         self.default_duration = default_duration
 
-    def update(self, world):
+    def update(self, world, camera=None):
         """
         Actualiza las entidades en estado de muerte.
 

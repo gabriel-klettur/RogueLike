@@ -5,7 +5,7 @@ class ChaseSystem:
     Sistema que mueve NPCs hacia su ChaseTarget.
     """
 
-    def update(self, world):
+    def update(self, world, camera=None):
         """
         Para cada entidad con un ChaseTarget activo, calcula la dirección
         hacia su objetivo y ajusta su componente Velocity para moverla.

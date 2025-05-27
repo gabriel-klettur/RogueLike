@@ -17,7 +17,7 @@ class AnimationSystem:
         # No hay estado interno por el momento
         pass
 
-    def update(self, world):
+    def update(self, world, camera=None):
         """
         Avanza las animaciones de todas las entidades y actualiza su imagen de Sprite.
 

@@ -7,7 +7,7 @@ class AggroSystem:
     Detecta jugadores en rango y asigna ChaseTarget a NPCs enemigos.
     """
 
-    def update(self, world):
+    def update(self, world, camera=None):
         """
         Recorre todas las entidades que tengan Position, AggroRange e Identity.
         Si el jugador está dentro del radio de agresión (AggroRange) de un NPC de facción EVIL,

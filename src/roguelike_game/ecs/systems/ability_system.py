@@ -4,6 +4,8 @@ Sistema que procesa intenciones de lanzamiento de hechizo (WantsToCastSpell).
 """
 from roguelike_game.ecs.components.ai.wants_to_cast import WantsToCastSpell
 import pygame
+from roguelike_game.ecs.components.transform.position import Position
+from roguelike_game.ecs.components.transform.velocity import Velocity
 
 class AbilitySystem:
     """
@@ -27,9 +29,19 @@ class AbilitySystem:
                 pos = world.components['Position'][eid]
                 dx = wx - pos.x
                 dy = wy - pos.y
-                print(f"[AbilitySystem] pixel_fire direction: dx={dx:.2f}, dy={dy:.2f}")
+                # Normalizar dirección y crear fireball en ECS
+                length = (dx**2 + dy**2)**0.5 or 1
+                ndx, ndy = dx/length, dy/length
+                from roguelike_game.ecs.components.abilities.fireball_component import FireballComponent
+                # Crear entidad fireball
+                fid = world.create_entity()
+                world.components['Position'][fid] = Position(pos.x, pos.y)
+                world.components['Velocity'][fid] = Velocity(ndx * 15, ndy * 15)
+                world.components['FireballComponent'][fid] = FireballComponent(ndx * 15, ndy * 15)
+                # Limpiar intención
+                world.remove_entity(eid)
             # Aquí podrías instanciar la lógica de hechizo (spawn de efecto, cooldowns, etc.)
             # Ejemplo: world.components.setdefault('SpawnRequest', {})[eid] = SpawnRequest(...)
             # Limpiar la intención al procesar
-            del world.components['WantsToCastSpell'][eid]
-            print(f"[AbilitySystem] Removed intent for caster={eid}")
+            # del world.components['WantsToCastSpell'][eid]
+            # print(f"[AbilitySystem] Removed intent for caster={eid}")

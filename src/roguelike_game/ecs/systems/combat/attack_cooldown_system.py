@@ -6,7 +6,7 @@ class AttackCooldownSystem:
     que hayan expirado hace demasiado tiempo.
     """
 
-    def update(self, world):
+    def update(self, world, camera=None):
         """
         Recorre todos los AttackCooldown activos y elimina aquellos
         cuyo timestamp de próxima acción (next_time) esté atrasado

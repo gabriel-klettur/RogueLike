@@ -9,7 +9,7 @@ class NPCMeleeDecisionSystem:
     Sistema de IA que decide ataques cuerpo a cuerpo para NPCs adyacentes.
     """
 
-    def update(self, world):
+    def update(self, world, camera=None):
         """
         Recorre todas las entidades con Position y CombatStats para:
         1. Encontrar pares de entidades adyacentes (Manhattan = 1).
