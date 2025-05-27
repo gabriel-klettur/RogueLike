@@ -32,7 +32,9 @@ def update_game(
             tiles_editor.update(camera, map)
         _update_tiles_editor()
         # Centrar cámara en el jugador incluso con editor activo
-        camera.update(entities.player)
+        eid = ecs.npc_world.player_entity
+        pos = ecs.npc_world.components['Position'][eid]
+        camera.update(types.SimpleNamespace(x=pos.x, y=pos.y))
         return
 
     # 2) Si el Buildings-Editor está activo, solo actualizamos él
@@ -42,13 +44,18 @@ def update_game(
             buildings_editor.update(camera)
         _update_buildings_editor()
         # Centrar cámara en el jugador incluso con editor activo
-        camera.update(entities.player)
+        eid = ecs.npc_world.player_entity
+        pos = ecs.npc_world.components['Position'][eid]
+        camera.update(types.SimpleNamespace(x=pos.x, y=pos.y))
         return
 
     # 3.1) Cámara sigue al jugador
     @benchmark(perf_log, "2.1.camera.update")
     def _update_camera():
-        camera.update(entities.player)
+        # Centrar cámara usando la posición del jugador en ECS
+        eid = ecs.npc_world.player_entity
+        pos = ecs.npc_world.components['Position'][eid]
+        camera.update(types.SimpleNamespace(x=pos.x, y=pos.y))
     _update_camera()
 
     # 3.2) Sistemas principales
