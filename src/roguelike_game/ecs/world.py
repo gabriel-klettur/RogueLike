@@ -60,7 +60,7 @@ class NPCWorld:
             'SpawnRequest': {},
             'CombatStats': {}, 'MeleeWeapon': {},
             'WantsToMelee': {}, 'AttackCooldown': {},
-            'AggroRange': {}, 'ChaseTarget': {}, 'FacingCooldown': {}
+            'AggroRange': {}, 'ChaseTarget': {}, 'FacingCooldown': {}, 'InputComponent': {}, 'InventoryComponent': {}, 'CameraFollowComponent': {}, 'PlayerTagComponent': {}
         }
 
     def _init_systems(self):
