@@ -14,11 +14,13 @@ from roguelike_game.entities.player.config_player import ORIGINAL_SPRITE_SIZE, P
 from roguelike_game.entities.player.view.assets import PlayerAssets
 from roguelike_game.ecs.components.rendering.sprite import Sprite
 from roguelike_game.ecs.components.rendering.animator import Animator
+from roguelike_game.ecs.components.rendering.animation_timer import AnimationTimer
 from roguelike_game.ecs.components.combat.health import Health
 from roguelike_game.ecs.components.combat.combat_stats import CombatStats
 from roguelike_game.ecs.components.combat.melee_weapon import MeleeWeapon
 from roguelike_game.ecs.components.transform.z_layer import ZLayer
 from roguelike_game.systems.config_z_layer import Z_LAYERS
+import time
 
 
 def spawn_player(world, x, y, character_name: str = "first_hero") -> int:
@@ -55,6 +57,8 @@ def spawn_player(world, x, y, character_name: str = "first_hero") -> int:
         anim_map[f"{direction}_idle"] = frames.get('idle', [])
         anim_map[f"{direction}_walk"] = frames.get('walk', [])
     world.components["Animator"][eid] = Animator(animations=anim_map, current_state='down_idle')
+    # Control de velocidad de animación (pies caminando)
+    world.components["AnimationTimer"][eid] = AnimationTimer(last_time=time.time(), interval=0.15)
     # Componente de movimiento
     world.components["MovementSpeed"][eid] = MovementSpeed(PLAYER_SPEED)
     # Componente de velocidad

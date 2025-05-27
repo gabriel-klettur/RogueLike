@@ -4,6 +4,9 @@ Module: animation_system.py
 Updates entity animations by advancing frames and applying the current frame to the Sprite component.
 """
 
+import time
+from roguelike_game.ecs.components.rendering.animation_timer import AnimationTimer
+
 class AnimationSystem:
     """
     Sistema para actualizar animaciones y volcar el frame actual en Sprite.
@@ -29,11 +32,18 @@ class AnimationSystem:
         """
         # 1) Cachear componentes para accesos rápidos
         comps = world.components
+        timer_map = comps.get('AnimationTimer', {})
         anim_map = comps.get('Animator', {})   # Map id -> Animator component
         sprite_map = comps.get('Sprite', {})   # Map id -> Sprite component
 
         # 2) Iterar sobre cada Animator
         for eid, animator in anim_map.items():
+            timer = timer_map.get(eid)
+            now = time.time()
+            if timer and now - timer.last_time < timer.interval:
+                continue
+            if timer:
+                timer.last_time = now
             # Obtener el siguiente frame de animación
             frame = animator.next_frame()
             # Si hay un frame válido y la entidad tiene Sprite, aplicarlo

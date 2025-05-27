@@ -19,6 +19,7 @@ from .systems.combat.attack_cooldown_system import AttackCooldownSystem
 from .systems.ai.aggro_system import AggroSystem
 from .systems.ai.chase_system import ChaseSystem
 from .systems.physics.facing_system import FacingSystem
+from .systems.physics.player_facing_system import PlayerFacingSystem
 from .systems.core.spawn_debug_system import SpawnDebugSystem
 from .systems.core.spawn_system import SpawnSystem
 from .systems.input.input_system import InputSystem
@@ -59,7 +60,7 @@ class NPCWorld:
         """Inicializa el diccionario de componentes para el ECS."""
         self.components = {
             'Position': {}, 'Sprite': {}, 'Patrol': {}, 'MovementSpeed': {},
-            'Animator': {}, 'Health': {}, 'Scale': {}, 'Identity': {},
+            'Animator': {}, 'AnimationTimer': {}, 'Health': {}, 'Scale': {}, 'Identity': {},
             'Velocity': {}, 'MultiCollider': {}, 'ZLayer': {}, 'DeathTimer': {},
             'FireballComponent': {},
             'SpawnRequest': {},
@@ -72,7 +73,7 @@ class NPCWorld:
     def _init_systems(self):
         """Configura sistemas de actualización y renderizado."""
         self.update_systems = [
-            AggroSystem(), ChaseSystem(), FacingSystem(), InputSystem(),
+            AggroSystem(), ChaseSystem(), PlayerFacingSystem(), FacingSystem(), InputSystem(),
             PatrolSystem(), MovementCollisionSystem(),
             AttackCooldownSystem(),
             NPCMeleeDecisionSystem(),
