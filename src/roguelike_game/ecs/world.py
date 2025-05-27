@@ -24,6 +24,7 @@ from .systems.core.spawn_system import SpawnSystem
 from .systems.input.input_system import InputSystem
 from .systems.ability_system import AbilitySystem
 from .systems.combat.fireball_system import FireballSystem
+from .systems.rendering.fireball_render_system import FireballRenderSystem
 
 from roguelike_engine.map.utils import calculate_lobby_offset
 from .utils.spawn_utils import find_spawn_positions
@@ -81,7 +82,8 @@ class NPCWorld:
         ]
         self.render_systems = [
             HealthBarSystem(), NamePlateSystem(),
-            CollisionDebugSystem(), DeathTimerDebugSystem(), DeathTimerBarSystem()
+            CollisionDebugSystem(), DeathTimerDebugSystem(), DeathTimerBarSystem(),
+            FireballRenderSystem()
         ]
         # Añadir sistema de debug de spawn cuando DEBUG=true
         if config.DEBUG:
@@ -99,7 +101,7 @@ class NPCWorld:
         positions = find_spawn_positions(
             self.map_manager, self.buildings,
             lobby_offset, zone_size,
-            neighbor_padding=3, sample_count=500
+            neighbor_padding=3, sample_count=25
         )
         print(f"[ECS][Spawn] Spawn candidates: {len(positions)}")
         for tx, ty in positions:
@@ -116,7 +118,7 @@ class NPCWorld:
             empty_positions = find_spawn_positions(
                 self.map_manager, self.buildings,
                 empty_offset, zone_size,
-                neighbor_padding=3, sample_count=500
+                neighbor_padding=3, sample_count=25
             )
             print(f"[ECS][Spawn] Spawn in empty_left: {len(empty_positions)}")
             for tx, ty in empty_positions:

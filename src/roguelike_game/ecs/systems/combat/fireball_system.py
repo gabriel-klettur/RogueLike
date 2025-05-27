@@ -23,7 +23,7 @@ class FireballSystem:
                 continue
             # Colisión con NPCs
             for target in world.get_entities_with('Position', 'MultiCollider', 'Health'):
-                if target == eid:
+                if target == eid or target == comp.caster:
                     continue
                 multi = world.components['MultiCollider'][target]
                 body = multi.colliders.get('body')

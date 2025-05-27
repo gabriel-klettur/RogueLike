@@ -9,7 +9,8 @@ def handle_mouse(event, state, camera, clock, map, entities, effects, explosions
 
     elif event.type == pygame.MOUSEBUTTONDOWN:
         if event.button == 1:
-            _click_left(state, camera, map, entities, effects, explosions)
+            # Left click now handled by ECS InputSystem
+            pass
         elif event.button == 2:
             effects.shooting_laser = True
             effects.last_laser_time = 0

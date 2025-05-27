@@ -6,6 +6,7 @@ from roguelike_game.ecs.components.ai.wants_to_cast import WantsToCastSpell
 import pygame
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.transform.velocity import Velocity
+from roguelike_game.ecs.components.rendering.sprite import Sprite
 
 class AbilitySystem:
     """
@@ -15,16 +16,16 @@ class AbilitySystem:
         pass
 
     def update(self, world, camera):
-        print("[AbilitySystem] update called")
+        #print("[AbilitySystem] update called")
         # Posición del ratón en coordenadas de pantalla
         mx, my = pygame.mouse.get_pos()
         # Convertir a coordenadas del mundo según cámara
         wx = mx / camera.zoom + camera.offset_x
         wy = my / camera.zoom + camera.offset_y
-        print(f"[AbilitySystem] Mouse world pos: ({wx:.2f}, {wy:.2f})")
+        #print(f"[AbilitySystem] Mouse world pos: ({wx:.2f}, {wy:.2f})")
         # Para cada intención de hechizo
         for eid, intent in list(world.components.get('WantsToCastSpell', {}).items()):
-            print(f"[AbilitySystem] Processing intent: caster={intent.caster}, spell={intent.spell}")
+            #print(f"[AbilitySystem] Processing intent: caster={intent.caster}, spell={intent.spell}")
             if intent.spell == 'pixel_fire':
                 pos = world.components['Position'][eid]
                 dx = wx - pos.x
@@ -35,13 +36,19 @@ class AbilitySystem:
                 from roguelike_game.ecs.components.abilities.fireball_component import FireballComponent
                 # Crear entidad fireball
                 fid = world.create_entity()
-                world.components['Position'][fid] = Position(pos.x, pos.y)
+                # Spawn fireball at center of caster sprite
+                spawn_x, spawn_y = pos.x, pos.y
+                sprite_comp = world.components.get('Sprite', {}).get(eid)
+                if sprite_comp:
+                    w, h = sprite_comp.image.get_size()
+                    spawn_x += w / 2
+                    spawn_y += h / 2
+                world.components['Position'][fid] = Position(spawn_x, spawn_y)
                 world.components['Velocity'][fid] = Velocity(ndx * 15, ndy * 15)
-                world.components['FireballComponent'][fid] = FireballComponent(ndx * 15, ndy * 15)
-                # Limpiar intención
-                world.remove_entity(eid)
+                world.components['FireballComponent'][fid] = FireballComponent(ndx * 15, ndy * 15, caster=eid)
+                world.components['Sprite'][fid] = Sprite("assets/projectiles/fireball.png")
+                # Limpiar intención (eliminar solo el componente de deseo)
+                world.components['WantsToCastSpell'].pop(eid, None)
             # Aquí podrías instanciar la lógica de hechizo (spawn de efecto, cooldowns, etc.)
             # Ejemplo: world.components.setdefault('SpawnRequest', {})[eid] = SpawnRequest(...)
-            # Limpiar la intención al procesar
-            # del world.components['WantsToCastSpell'][eid]
             # print(f"[AbilitySystem] Removed intent for caster={eid}")
