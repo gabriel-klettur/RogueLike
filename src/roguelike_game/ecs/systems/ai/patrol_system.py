@@ -17,8 +17,7 @@ class PatrolSystem:
         # Cache de componentes y referencias
         comps = world.components
         pos_map = comps['Position']; patrol_map = comps['Patrol']
-        vel_map = comps['Velocity']; multi_map = comps['MultiCollider']
-        tile_query = world.get_solid_tiles_for_rect
+        vel_map = comps['Velocity']; multi_map = comps['MultiCollider']        
         for eid in world.get_entities_with('Position', 'Patrol', 'Velocity', 'MultiCollider'):
             # Skip patrolling when chasing the player
             if eid in world.components.get('ChaseTarget', {}):

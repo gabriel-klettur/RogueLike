@@ -1,27 +1,30 @@
-from .systems.patrol_system import PatrolSystem
-from .systems.movement_collision_system import MovementCollisionSystem
-from .systems.animation_system import AnimationSystem
-from .systems.health_bar_system import HealthBarSystem
-from .systems.nameplate_system import NamePlateSystem
-from .systems.collision_debug_system import CollisionDebugSystem
-from .systems.death_system import DeathSystem
-from .systems.death_timer_debug_system import DeathTimerDebugSystem
-from .systems.death_timer_bar_system import DeathTimerBarSystem
-from .systems.npc_melee_decision_system import NPCMeleeDecisionSystem
-from .systems.melee_combat_system import MeleeCombatSystem
-from .systems.attack_cooldown_system import AttackCooldownSystem
-from .systems.aggro_system import AggroSystem
-from .systems.chase_system import ChaseSystem
-from .systems.facing_system import FacingSystem
-from roguelike_engine.map.utils import calculate_lobby_offset
+import pygame
+
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
 import roguelike_engine.config.config as config
-from .systems.spawn_debug_system import SpawnDebugSystem
-from .systems.spawn_system import SpawnSystem
+
+from .systems.ai.patrol_system import PatrolSystem
+from .systems.physics.movement_collision_system import MovementCollisionSystem
+from .systems.rendering.animation_system import AnimationSystem
+from .systems.rendering.health_bar_system import HealthBarSystem
+from .systems.rendering.nameplate_system import NamePlateSystem
+from .systems.physics.collision_debug_system import CollisionDebugSystem
+from .systems.combat.death_system import DeathSystem
+from .systems.combat.death_timer_debug_system import DeathTimerDebugSystem
+from .systems.rendering.death_timer_bar_system import DeathTimerBarSystem
+from .systems.ai.npc_melee_decision_system import NPCMeleeDecisionSystem
+from .systems.combat.melee_combat_system import MeleeCombatSystem
+from .systems.combat.attack_cooldown_system import AttackCooldownSystem
+from .systems.ai.aggro_system import AggroSystem
+from .systems.ai.chase_system import ChaseSystem
+from .systems.physics.facing_system import FacingSystem
+from .systems.core.spawn_debug_system import SpawnDebugSystem
+from .systems.core.spawn_system import SpawnSystem
+
+from roguelike_engine.map.utils import calculate_lobby_offset
 from .utils.spawn_utils import find_spawn_positions
 from roguelike_game.ecs.components.spawn.spawn_request import SpawnRequest
-import pygame
 
 class NPCWorld:
     def __init__(self, screen, map_manager, buildings):

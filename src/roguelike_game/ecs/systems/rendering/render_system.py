@@ -1,67 +1,113 @@
 import pygame
-from ..components.scale import Scale
+from roguelike_game.ecs.components.transform.scale import Scale
 from roguelike_game.systems.config_z_layer import DEFAULT_Z
 
 class RenderSystem:
+    """
+    Sistema responsable de renderizar todas las entidades con Sprite,
+    usando culling y orden Z/Y para simular profundidad.
+    """
+
     def __init__(self, screen):
+        """
+        Inicializa el RenderSystem.
+
+        Args:
+            screen (pygame.Surface): Superficie principal de renderizado.
+        """
         self.screen = screen
-        # Cache for scaled sprites: {(eid, zoom): Surface}
-        self._scaled_sprite_cache = {}
-        # Reusable rect for blitting and culling
+        # Cache de sprites escalados: clave = (entity_id, scale_factor)
+        self._scaled_sprite_cache: dict[tuple[int, float], pygame.Surface] = {}
+        # Rect reutilizable para culling y blit
         self._blit_rect = pygame.Rect(0, 0, 0, 0)
 
     def update(self, world, screen, camera):
-        """Renderiza sprites ordenados por capa Z y posición Y para manejar profundidad."""
-        # Preparar culling de pantalla y calcular área de mundo visible
+        """
+        Calcula y dibuja todos los sprites visibles, ordenados por capa Z y eje Y.
+
+        Pasos:
+        1. Determinar el rectángulo de mundo visible (viewport) usando la cámara.
+        2. Filtrar entidades que tengan Position y Sprite dentro de ese viewport.
+        3. Ordenar esas entidades por (ZLayer, posición Y).
+        4. Para cada entidad:
+           a. Calcular escala combinada (zoom de cámara × scale del componente).
+           b. Obtener o generar sprite escalado usando cache.
+           c. Convertir posición de mundo a pantalla.
+           d. Aplicar culling de pantalla.
+           e. Acumular operaciones de blit.
+        5. Ejecutar todas las operaciones de blit en batch para eficiencia.
+        """
+        # 1) Preparar parámetros de viewport y culling
         screen_rect = screen.get_rect()
         sw, sh = screen_rect.size
         zoom = camera.zoom
-        # Mundo visible en coordenadas de mundo
         world_left = camera.offset_x
         world_top = camera.offset_y
         world_w = sw / zoom
         world_h = sh / zoom
         world_rect = pygame.Rect(world_left, world_top, world_w, world_h)
-        # Cache de componentes para renderizado eficiente
-        comps = world.components
-        pos_map = comps['Position']
+
+        # 2) Acceso rápido a componentes
+        comps      = world.components
+        pos_map    = comps['Position']
         sprite_map = comps['Sprite']
-        z_map = comps['ZLayer']
-        scale_map = comps['Scale']
-        # Culling: solo entidades con Position/ Sprite dentro de viewport
-        eids = [eid for eid in pos_map
-                if eid in sprite_map and
-                   world_rect.collidepoint(pos_map[eid].x, pos_map[eid].y)]
-        # Ordenar por capa Z y posición Y
-        eids.sort(key=lambda eid: (z_map[eid].layer if eid in z_map else DEFAULT_Z,
-                                  pos_map[eid].y))
+        z_map      = comps.get('ZLayer', {})
+        scale_map  = comps.get('Scale', {})
+
+        # 3) Filtrar entidades visibles en el viewport
+        visible_eids = [
+            eid for eid, pos in pos_map.items()
+            if eid in sprite_map
+               and world_rect.collidepoint(pos.x, pos.y)
+        ]
+
+        # 4) Ordenar entidades por capa Z (fallback DEFAULT_Z) y posición Y
+        visible_eids.sort(key=lambda eid: (
+            z_map[eid].layer if eid in z_map else DEFAULT_Z,
+            pos_map[eid].y
+        ))
+
         camapply = camera.apply
         zoom_key = round(zoom, 2)
-        # Preparar batch blit
-        blit_ops = []
-        for eid in eids:
-            pos = pos_map[eid]
+
+        blit_ops: list[tuple[pygame.Surface, tuple[int,int]]] = []
+
+        # 5) Procesar cada entidad para preparar blit
+        for eid in visible_eids:
+            pos    = pos_map[eid]
             sprite = sprite_map[eid]
-            # Calcular factor combinado de escala (zoom * entidad)
-            entity_scale = (scale_map.get(eid).scale if scale_map.get(eid) else 1.0)
+
+            # 5a) Calcular scale_factor: zoom de cámara × scale del componente
+            entity_scale = scale_map.get(eid, Scale()).scale
             scale_factor = entity_scale * zoom_key
+
+            # 5b) Obtener sprite escalado del cache o generarlo
             if scale_factor != 1.0:
                 key = (eid, scale_factor)
                 cache = self._scaled_sprite_cache
                 if key not in cache:
                     orig = sprite.image
                     w, h = orig.get_size()
-                    cache[key] = pygame.transform.scale(orig, (int(w * scale_factor), int(h * scale_factor)))
+                    cache[key] = pygame.transform.scale(
+                        orig,
+                        (int(w * scale_factor), int(h * scale_factor))
+                    )
                 image = cache[key]
             else:
                 image = sprite.image
+
+            # 5c) Convertir posición de mundo a pantalla
             dest = camapply((pos.x, pos.y))
-            # Skip off-screen sprites using reusable rect
+
+            # 5d) Culling: saltar sprites fuera de la pantalla
             self._blit_rect.size = image.get_size()
             self._blit_rect.topleft = dest
             if not screen_rect.colliderect(self._blit_rect):
                 continue
+
+            # 5e) Acumular operación de blit
             blit_ops.append((image, dest))
-        # Ejecutar batch blit de todos los sprites
+
+        # 6) Ejecutar todos los blits en batch (más eficiente que múltiples blit individuales)
         if blit_ops:
             screen.blits(blit_ops)

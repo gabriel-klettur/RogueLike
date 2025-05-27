@@ -6,49 +6,84 @@ from roguelike_game.ecs.components.rendering.sprite import Sprite
 
 class HealthBarSystem:
     """
-    Sistema para renderizar barras de salud centradas sobre las entidades con Health.
+    Sistema para renderizar barras de salud sobre entidades vivas.
+
+    • Se dibuja solo para entidades con componentes Position y Health.
+    • Se omiten las entidades con un DeathTimer activo (muertas).
+    • La barra se centra sobre el sprite, ajustándose a la escala.
+    • Se segmenta cada 20 puntos de vida para referencia visual.
     """
+
     def __init__(self):
+        """
+        Inicializa el sistema de barras de salud.
+        No mantiene estado interno.
+        """
         pass
 
     def update(self, world, screen, camera):
-        # Omitir entidades muertas manejadas por DeathTimerBarSystem
-        dt_store = world.components.get('DeathTimer', {})
+        """
+        Recorre todas las entidades vivas y dibuja su barra de salud.
+
+        Args:
+            world: Instancia del ECS que contiene componentes y entidades.
+            screen: Superficie de Pygame donde dibujar.
+            camera: Cámara para convertir coordenadas de mundo a pantalla.
+        """
+        # 1) Obtener temporizadores activos para omitir entidades muertas
+        death_timers = world.components.get('DeathTimer', {})
+
+        # 2) Iterar entidades con Position y Health
         for eid in world.get_entities_with('Position', 'Health'):
-            if eid in dt_store:
+            # 2.1) Si la entidad está “muerta”, saltarla
+            if eid in death_timers:
                 continue
+
+            # 3) Obtener componentes necesarios
             pos: Position = world.components['Position'][eid]
             health: Health = world.components['Health'][eid]
-            # Posición en pantalla
-            screen_x, screen_y = camera.apply((pos.x, pos.y))
-            # Obtener ancho de sprite escalado
             sprite: Sprite = world.components['Sprite'][eid]
-            image = sprite.image
             scale_comp: Scale = world.components['Scale'].get(eid)
-            width = image.get_width()
+
+            # 4) Convertir posición del mundo a pantalla (esquina superior izquierda del sprite)
+            screen_x, screen_y = camera.apply((pos.x, pos.y))
+
+            # 5) Calcular ancho de la barra basado en el ancho del sprite y su escala
+            base_width = sprite.image.get_width()
             if scale_comp and scale_comp.scale != 1.0:
-                width = int(width * scale_comp.scale)
-            # Dimensiones de la barra
-            bar_width = width
+                base_width = int(base_width * scale_comp.scale)
+
+            # 6) Definir dimensiones y posición de la barra
+            bar_width  = base_width
             bar_height = 5
-            margin = 2
-            # Posicionar arriba del sprite
+            margin     = 2
             bar_x = screen_x
-            bar_y = screen_y - margin - bar_height
-            # Calcular proporción y relleno
+            bar_y = screen_y - margin - bar_height  # justo encima del sprite
+
+            # 7) Calcular proporción de vida restante y ancho de relleno
             ratio = max(0, health.current_hp) / health.max_hp
             fill_width = int(bar_width * ratio)
-            # Dibujar fondo (gris)
+
+            # 8) Dibujar la barra de fondo (gris)
             pygame.draw.rect(screen, (50, 50, 50), (bar_x, bar_y, bar_width, bar_height))
-            # Dibujar relleno (verde)
+
+            # 9) Dibujar el relleno de la barra (verde)
             pygame.draw.rect(screen, (0, 255, 0), (bar_x, bar_y, fill_width, bar_height))
-            # Dibujar borde de la barra
+
+            # 10) Dibujar borde exterior de la barra (negro)
             pygame.draw.rect(screen, (0, 0, 0), (bar_x, bar_y, bar_width, bar_height), 1)
-            # Dibujar separadores cada 20 HP
+
+            # 11) Opcional: segmentar la barra cada 20 puntos de vida
             num_segments = health.max_hp // 20
             if num_segments > 0:
-                seg_width = bar_width / num_segments
+                segment_width = bar_width / num_segments
                 for i in range(1, num_segments):
-                    x = bar_x + int(seg_width * i)
-                    pygame.draw.line(screen, (0, 0, 0), (x, bar_y), (x, bar_y + bar_height))
-            # (Nombre y título separados en NamePlateSystem)
+                    x = bar_x + int(segment_width * i)
+                    pygame.draw.line(
+                        screen,
+                        (0, 0, 0),
+                        (x, bar_y),
+                        (x, bar_y + bar_height)
+                    )
+
+        # El sistema NamePlateSystem se encarga del texto de nombres y títulos.
