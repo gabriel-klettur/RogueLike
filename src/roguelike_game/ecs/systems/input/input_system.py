@@ -13,6 +13,7 @@ from roguelike_game.ecs.components.physics.multi_collider import MultiCollider
 from roguelike_game.ecs.components.combat.attack_cooldown import AttackCooldown
 from roguelike_game.ecs.components.ai.wants_to_melee import WantsToMelee
 from roguelike_game.ecs.components.combat.melee_weapon import MeleeWeapon
+from roguelike_game.ecs.components.ai.wants_to_cast import WantsToCastSpell
 from roguelike_game.entities.player.config_player import PLAYER_SPEED
 
 class InputSystem:
@@ -36,6 +37,20 @@ class InputSystem:
             if vel and ms:
                 vel.vx = inp.move_x * ms.speed
                 vel.vy = inp.move_y * ms.speed
+            # Mapear habilidades Q, E y click
+            inp.skill_q = bool(keys[pygame.K_q])
+            inp.skill_e = bool(keys[pygame.K_e])
+            inp.click = bool(pygame.mouse.get_pressed()[0])
+            # Generar intenciones de hechizo
+            if inp.skill_q:
+                world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='firework')
+                inp.skill_q = False
+            if inp.skill_e:
+                world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='smoke')
+                inp.skill_e = False
+            if inp.click:
+                world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='pixel_fire')
+                inp.click = False
             # Procesar ataque: tecla SPACE
             if keys[pygame.K_SPACE]:
                 now = time.time()
