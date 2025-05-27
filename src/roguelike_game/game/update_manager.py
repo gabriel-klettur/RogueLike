@@ -95,8 +95,11 @@ def update_game(
     # 3.5) Minimap update
     @benchmark(perf_log, "2.6.minimap.update")
     def _update_minimap():
+        # Usar posición del jugador en ECS
+        eid = ecs.npc_world.player_entity
+        pos = ecs.npc_world.components['Position'][eid]
         minimap.update(
-            player_pos=(entities.player.x, entities.player.y),
+            player_pos=(pos.x, pos.y),
             tiles=map.tiles_in_region
         )
     _update_minimap()

@@ -3,9 +3,7 @@ import pygame
 from roguelike_game.entities.player.model.player_model import PlayerModel
 from roguelike_game.entities.player.view.assets import PlayerAssets
 from roguelike_game.entities.player.view.player_view import PlayerView
-from roguelike_game.entities.player.view.hud_view import HUDView
-from roguelike_engine.utils.loader import load_image
-from roguelike_game.entities.player.config_player import ORIGINAL_SPRITE_SIZE, HUD_RESTORE, HUD_DASH, HUD_SLASH, HUD_SHIELD, HUD_FIREWORK, HUD_SMOKE, HUD_LIGHTNING, HUD_ARCANE_FIRE, HUD_TELEPORT
+from roguelike_game.entities.player.config_player import ORIGINAL_SPRITE_SIZE
 
 class PlayerController:
     def __init__(self, x, y, z_state=None, obstacles=None):
@@ -23,21 +21,6 @@ class PlayerController:
         sprites, _      = PlayerAssets(self.model.character_name, ORIGINAL_SPRITE_SIZE).get_sprites()
         self.player_view   = PlayerView(sprites)
         self.renderer      = self.player_view  # alias para Game._init_systems
-
-        # Vista del HUD
-        icon_paths = {
-            "Restore":    HUD_RESTORE,
-            "Dash":       HUD_DASH,
-            "Slash":      HUD_SLASH,
-            "Shield":     HUD_SHIELD,
-            "Firework":   HUD_FIREWORK,
-            "Smoke":      HUD_SMOKE,
-            "Lightning":  HUD_LIGHTNING,
-            "Pixel Fire": HUD_ARCANE_FIRE,
-            "Teleport":   HUD_TELEPORT,
-        }
-        icons = {n: load_image(p, (48,48)) for n,p in icon_paths.items()}
-        self.hud_view = HUDView(icons)
 
         # Registrar capa Z
         if z_state:
@@ -82,11 +65,6 @@ class PlayerController:
     # Renderizado del jugador (solo sprite)
     def render(self, screen, camera):
         self.player_view.render(self.model, screen, camera)
-
-    # Renderizado del HUD (barras y cooldowns)
-    def render_hud(self, screen, camera):
-        self.hud_view.draw_status_bars(self.model, screen, camera)
-        self.hud_view.render_cooldowns(self.model, screen)
 
     # Update frame (dash, teletransport) - usar lista precomputada de tiles sólidos
     def update(self, map):

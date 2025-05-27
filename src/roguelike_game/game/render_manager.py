@@ -100,16 +100,8 @@ class RendererManager:
             self._render_effects(camera, screen, systems.effects)
         _bench_effects()
 
-        # 4) HUD
-        @benchmark(perf_log, "3.4. hud")
-        def _bench_hud():
-            # Ocultar HUD de jugador en modo collision brush
-            if not (self.buildings_editor.editor_state.active and self.buildings_editor.editor_state.current_tool == "collision_brush"):
-                self.entities.player.render_hud(screen, camera)
-        _bench_hud()
-
-        # 4.b) Capa del Tile Editor
-        @benchmark(perf_log, "3.4b. tile_editor")
+        # 4) Capa del Tile Editor
+        @benchmark(perf_log, "3.4. tile_editor")
         def _bench_tile_editor():
             # Skip tile editor UI in collision-only mode
             if not (self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.show_collisions and not self.tiles_editor.editor_state.show_collisions_overlay):
@@ -246,8 +238,6 @@ class RendererManager:
             e for e in entities.obstacles
             if camera.is_in_view(e.x, e.y, getattr(e, "sprite_size", (64, 64)))
         ])
-        if camera.is_in_view(entities.player.x, entities.player.y, entities.player.sprite_size):
-            all_entities.append(entities.player)
         # Only render buildings if not hidden by editor or collision-only mode (NPC rendering removed; gestionado por ECS)
         editor_state = self.tiles_editor.editor_state
         if not ((editor_state.active and not editor_state.show_buildings)

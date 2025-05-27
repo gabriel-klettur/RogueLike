@@ -44,7 +44,7 @@ class EntitiesManager:
     def update(self, state, game_map, systems, perf_log):
         """
         Actualiza todas las entidades de la partida:
-          - Jugador
+          - #!Jugador (gestionado por ECS)
           - Obstáculos
           - Edificios
           # NPCs gestionados por ECS; eliminados de este método
@@ -52,10 +52,7 @@ class EntitiesManager:
         """
 
         # 1) Jugador
-        @benchmark(perf_log, "2.1.player_update")
-        def _update_player():
-            self.player.update(game_map)
-        _update_player()
+        # Player update now handled by ECS
 
         # 2) Obstáculos
         @benchmark(perf_log, "2.2.obstacles_update")
