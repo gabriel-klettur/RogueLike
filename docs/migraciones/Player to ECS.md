@@ -47,6 +47,8 @@ Para cada dato del jugador, crea o reutiliza los siguientes componentes ECS (en 
 - Creado `ecs/components/core/camera_follow.py` con `CameraFollowComponent`
 - Creado `ecs/components/core/player_tag.py` con `PlayerTagComponent`
 - Registrado en `NPCWorld._init_components` las claves `InputComponent`, `InventoryComponent`, `CameraFollowComponent`, `PlayerTagComponent`
+- Creado `ecs/factories/player_factory.py` con `spawn_player` para generar al jugador con Position, PlayerTag, CameraFollow e Input
+- Integrado `spawn_player` en `ECSManager.__init__` para crear la entidad jugador y almacenar su ID en `npc_world.player_entity`
 
 Crear un PlayerFactory o builder
 Un módulo que en la carga de escena haga:
@@ -64,6 +66,7 @@ Fase 2: Entrada & movimiento
 - Asigna a la entidad jugador los componentes `InputComponent`, `Velocity`, `MovementSpeed` y `MultiCollider`.
 - Implementa `InputSystem` (`ecs/systems/input/input_system.py`) que traduzca eventos de Pygame a `InputComponent` y actualice `Velocity`.
 - Reutiliza `MovementCollisionSystem` y `FacingSystem` (`ecs/systems/physics`) para mover y orientar al jugador.
+- Utiliza `spawn_player` para crear la entidad jugador.
 
 Fase 3: Combate & cooldown
 - En `InputSystem`, al pulsar ataque, genera `WantsToMelee` y actualiza `AttackCooldown`.
