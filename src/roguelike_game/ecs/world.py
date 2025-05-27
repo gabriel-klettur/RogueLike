@@ -26,6 +26,8 @@ from .systems.input.input_system import InputSystem
 from .systems.ability_system import AbilitySystem
 from .systems.combat.fireball_system import FireballSystem
 from .systems.rendering.fireball_render_system import FireballRenderSystem
+from .systems.rendering.player_debug_render_system import PlayerDebugRenderSystem
+from .systems.rendering.chase_debug_system import ChaseDebugSystem
 
 from roguelike_engine.map.utils import calculate_lobby_offset
 from .utils.spawn_utils import find_spawn_positions
@@ -84,7 +86,9 @@ class NPCWorld:
         self.render_systems = [
             HealthBarSystem(), NamePlateSystem(),
             CollisionDebugSystem(), DeathTimerDebugSystem(), DeathTimerBarSystem(),
-            FireballRenderSystem()
+            FireballRenderSystem(),
+            ChaseDebugSystem(),
+            PlayerDebugRenderSystem()
         ]
         # Añadir sistema de debug de spawn cuando DEBUG=true
         if config.DEBUG:

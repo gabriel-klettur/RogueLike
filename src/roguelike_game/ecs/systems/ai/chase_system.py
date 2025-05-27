@@ -12,28 +12,39 @@ class ChaseSystem:
         """
         comps = world.components
 
+        # Obtener centro del sprite del jugador ECS
+        player_eid = getattr(world, 'player_entity', None)
+        if player_eid is None:
+            return
+        player_pos = comps.get('Position', {}).get(player_eid)
+        player_sprite = comps.get('Sprite', {}).get(player_eid)
+        if not player_pos or not player_sprite:
+            return
+        center_x = player_pos.x + player_sprite.image.get_width() / 2
+        center_y = player_pos.y + player_sprite.image.get_height() / 2
+
         # Iterar sobre una copia de ChaseTarget para permitir modificaciones
         for eid, chase in list(comps.get('ChaseTarget', {}).items()):
-            target = chase.target
-
-            # Verificar que el target tenga coordenadas válidas
-            if not hasattr(target, 'x') or not hasattr(target, 'y'):
-                # Si el objetivo carece de posición, omitimos esta entidad
-                continue
-
-            # Obtener la posición actual de la entidad
-            pos = comps['Position'].get(eid)
+            # Posición del NPC
+            pos = comps.get('Position', {}).get(eid)
             if not pos:
-                # Si no hay componente Position, no podemos moverla
                 continue
-
-            # Determinar la velocidad de movimiento base de la entidad
-            speed_cmp = comps['MovementSpeed'].get(eid)
+            # Velocidad de NPC
+            speed_cmp = comps.get('MovementSpeed', {}).get(eid)
             speed = speed_cmp.speed if speed_cmp else 0
 
-            # Calcular vector bruto hacia el objetivo
-            dx = target.x - pos.x
-            dy = target.y - pos.y
+            # Ajustar origen al centro del sprite del NPC
+            npc_sprite = comps.get('Sprite', {}).get(eid)
+            if npc_sprite:
+                origin_x = pos.x + npc_sprite.image.get_width() / 2
+                origin_y = pos.y + npc_sprite.image.get_height() / 2
+            else:
+                origin_x = pos.x
+                origin_y = pos.y
+
+            # Calcular vector bruto hacia el centro del jugador
+            dx = center_x - origin_x
+            dy = center_y - origin_y
 
             # Decidir movimiento principalmente en el eje más grande
             if abs(dx) > abs(dy):
