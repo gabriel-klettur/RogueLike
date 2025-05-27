@@ -3,12 +3,16 @@ Module: input_system.py
 Sistema que traduce el estado de teclado a InputComponent y actualiza Velocity.
 """
 import pygame
+import time
 from roguelike_game.ecs.components.input_component import InputComponent
 from roguelike_game.ecs.components.transform.velocity import Velocity
 from roguelike_game.ecs.components.transform.movement_speed import MovementSpeed
 from roguelike_game.ecs.components.physics.mask_collider import MaskCollider
 from roguelike_game.ecs.components.physics.collider import Collider
 from roguelike_game.ecs.components.physics.multi_collider import MultiCollider
+from roguelike_game.ecs.components.combat.attack_cooldown import AttackCooldown
+from roguelike_game.ecs.components.ai.wants_to_melee import WantsToMelee
+from roguelike_game.ecs.components.combat.melee_weapon import MeleeWeapon
 from roguelike_game.entities.player.config_player import PLAYER_SPEED
 
 class InputSystem:
@@ -32,3 +36,17 @@ class InputSystem:
             if vel and ms:
                 vel.vx = inp.move_x * ms.speed
                 vel.vy = inp.move_y * ms.speed
+            # Procesar ataque: tecla SPACE
+            if keys[pygame.K_SPACE]:
+                now = time.time()
+                # Verificar cooldown
+                cd = world.components.get('AttackCooldown', {}).get(eid)
+                weapon = world.components.get('MeleeWeapon', {}).get(eid)
+                cooldown_time = weapon.cooldown if weapon else 1.0
+                if cd is None or now >= cd.next_time:
+                    # Seleccionar primer objetivo distinto
+                    for target in world.components.get('CombatStats', {}):
+                        if target != eid:
+                            world.components.setdefault('WantsToMelee', {})[eid] = WantsToMelee(attacker=eid, target=target)
+                            world.components.setdefault('AttackCooldown', {})[eid] = AttackCooldown(now + cooldown_time)
+                            break

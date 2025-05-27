@@ -70,7 +70,7 @@ Fase 2: Entrada & movimiento
 + - Utiliza `spawn_player` para crear la entidad jugador.
 
 Fase 3: Combate & cooldown
-- En `InputSystem`, al pulsar ataque, genera `WantsToMelee` y actualiza `AttackCooldown`.
+- En `ecs/systems/input/input_system.py` (`InputSystem`), al pulsar `SPACE`, genera `WantsToMelee` y añade `AttackCooldown`.
 - Reutiliza `MeleeCombatSystem` (`ecs/systems/combat/melee_combat_system.py`) para procesar `WantsToMelee` y aplicar daño.
 - Utiliza `DeathTimerSystem`, `DeathTimerBarSystem` o `DeathTimerDebugSystem` para manejar la muerte cuando `Health.current_hp` ≤ 0.
 
