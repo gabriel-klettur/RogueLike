@@ -63,10 +63,11 @@ Fase 1: Render & posición
 - Extrae la lógica de render de `PlayerView` a `RenderSystem` (`ecs/systems/rendering/render_system.py`) usando `Position` + `Sprite` (+ `Animator`).
 
 Fase 2: Entrada & movimiento
-- Asigna a la entidad jugador los componentes `InputComponent`, `Velocity`, `MovementSpeed` y `MultiCollider`.
-- Implementa `InputSystem` (`ecs/systems/input/input_system.py`) que traduzca eventos de Pygame a `InputComponent` y actualice `Velocity`.
-- Reutiliza `MovementCollisionSystem` y `FacingSystem` (`ecs/systems/physics`) para mover y orientar al jugador.
-- Utiliza `spawn_player` para crear la entidad jugador.
++ - `spawn_player` añade los componentes `InputComponent`, `Velocity`, `MovementSpeed` y `MultiCollider`.
++ - Implementa `InputSystem` (`ecs/systems/input/input_system.py`) que traduzca eventos de Pygame a `InputComponent` y actualice `Velocity`.
++ - Registra `InputSystem` en `NPCWorld._init_systems`.
++ - Reutiliza `MovementCollisionSystem` y `FacingSystem` (`ecs/systems/physics`) para mover y orientar al jugador.
++ - Utiliza `spawn_player` para crear la entidad jugador.
 
 Fase 3: Combate & cooldown
 - En `InputSystem`, al pulsar ataque, genera `WantsToMelee` y actualiza `AttackCooldown`.

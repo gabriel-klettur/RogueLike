@@ -21,6 +21,7 @@ from .systems.ai.chase_system import ChaseSystem
 from .systems.physics.facing_system import FacingSystem
 from .systems.core.spawn_debug_system import SpawnDebugSystem
 from .systems.core.spawn_system import SpawnSystem
+from .systems.input.input_system import InputSystem
 
 from roguelike_engine.map.utils import calculate_lobby_offset
 from .utils.spawn_utils import find_spawn_positions
@@ -66,7 +67,7 @@ class NPCWorld:
     def _init_systems(self):
         """Configura sistemas de actualización y renderizado."""
         self.update_systems = [
-            AggroSystem(), ChaseSystem(), FacingSystem(),
+            AggroSystem(), ChaseSystem(), FacingSystem(), InputSystem(),
             PatrolSystem(), MovementCollisionSystem(),
             AttackCooldownSystem(),
             NPCMeleeDecisionSystem(),
