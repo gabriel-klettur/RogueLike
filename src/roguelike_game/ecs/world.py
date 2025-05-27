@@ -22,6 +22,7 @@ from .systems.physics.facing_system import FacingSystem
 from .systems.core.spawn_debug_system import SpawnDebugSystem
 from .systems.core.spawn_system import SpawnSystem
 from .systems.input.input_system import InputSystem
+from .systems.ability_system import AbilitySystem
 
 from roguelike_engine.map.utils import calculate_lobby_offset
 from .utils.spawn_utils import find_spawn_positions
@@ -61,6 +62,7 @@ class NPCWorld:
             'SpawnRequest': {},
             'CombatStats': {}, 'MeleeWeapon': {},
             'WantsToMelee': {}, 'AttackCooldown': {},
+            'WantsToCastSpell': {},
             'AggroRange': {}, 'ChaseTarget': {}, 'FacingCooldown': {}, 'InputComponent': {}, 'InventoryComponent': {}, 'CameraFollowComponent': {}, 'PlayerTagComponent': {}
         }
 
@@ -71,7 +73,7 @@ class NPCWorld:
             PatrolSystem(), MovementCollisionSystem(),
             AttackCooldownSystem(),
             NPCMeleeDecisionSystem(),
-            MeleeCombatSystem(),
+            MeleeCombatSystem(), AbilitySystem(),
             DeathSystem(), AnimationSystem(), SpawnSystem()
         ]
         self.render_systems = [

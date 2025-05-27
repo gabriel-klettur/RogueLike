@@ -66,7 +66,7 @@ def update_game(
     # 3.3.5) ECS logic
     @benchmark(perf_log, "2.4.ecs.update")
     def _update_ecs():
-        ecs.update(clock, screen)
+        ecs.update(clock, screen, camera)
     _update_ecs()
 
     # 3.4) Movimiento especial del jugador
