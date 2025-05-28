@@ -1,9 +1,38 @@
 from roguelike_game.ecs.components.transform.velocity import Velocity
+from roguelike_game.ecs.components.transform.scale import Scale
 
 class ChaseSystem:
     """
     Sistema que mueve NPCs hacia su ChaseTarget.
     """
+
+    @staticmethod
+    def compute_centers(world):
+        """
+        Devuelve el centro del jugador y un dict de centros de NPCs {eid: (x,y)}.
+        """
+        comps = world.components
+        pid = getattr(world, 'player_entity', None)
+        if pid is None:
+            return None, None, {}
+        ppos = comps.get('Position', {}).get(pid)
+        pspr = comps.get('Sprite', {}).get(pid)
+        if not ppos or not pspr:
+            return None, None, {}
+        pscale = comps.get('Scale', {}).get(pid).scale if comps.get('Scale', {}).get(pid) else 1.0
+        cx = ppos.x + (pspr.image.get_width()*pscale)/2
+        cy = ppos.y + (pspr.image.get_height()*pscale)/2
+        origins = {}
+        for eid, _ in list(comps.get('ChaseTarget', {}).items()):
+            pos = comps.get('Position', {}).get(eid)
+            spr = comps.get('Sprite', {}).get(eid)
+            if not pos or not spr:
+                continue
+            nscale = comps.get('Scale', {}).get(eid).scale if comps.get('Scale', {}).get(eid) else 1.0
+            ox = pos.x + (spr.image.get_width()*nscale)/2
+            oy = pos.y + (spr.image.get_height()*nscale)/2
+            origins[eid] = (ox, oy)
+        return cx, cy, origins
 
     def update(self, world, camera=None):
         """
@@ -12,37 +41,21 @@ class ChaseSystem:
         """
         comps = world.components
 
-        # Obtener centro del sprite del jugador ECS
-        player_eid = getattr(world, 'player_entity', None)
-        if player_eid is None:
+        # Usar compute_centers para evitar duplicidad
+        center_x, center_y, origins = ChaseSystem.compute_centers(world)
+        if not origins:
             return
-        player_pos = comps.get('Position', {}).get(player_eid)
-        player_sprite = comps.get('Sprite', {}).get(player_eid)
-        if not player_pos or not player_sprite:
-            return
-        center_x = player_pos.x + player_sprite.image.get_width() / 2
-        center_y = player_pos.y + player_sprite.image.get_height() / 2
 
-        # Iterar sobre una copia de ChaseTarget para permitir modificaciones
-        for eid, chase in list(comps.get('ChaseTarget', {}).items()):
+        # Iterar sobre centros de NPCs
+        for eid, (origin_x, origin_y) in origins.items():
             # Posición del NPC
             pos = comps.get('Position', {}).get(eid)
             if not pos:
                 continue
-            # Velocidad de NPC
             speed_cmp = comps.get('MovementSpeed', {}).get(eid)
             speed = speed_cmp.speed if speed_cmp else 0
 
-            # Ajustar origen al centro del sprite del NPC
-            npc_sprite = comps.get('Sprite', {}).get(eid)
-            if npc_sprite:
-                origin_x = pos.x + npc_sprite.image.get_width() / 2
-                origin_y = pos.y + npc_sprite.image.get_height() / 2
-            else:
-                origin_x = pos.x
-                origin_y = pos.y
-
-            # Calcular vector bruto hacia el centro del jugador
+            # Vector hacia centro del jugador
             dx = center_x - origin_x
             dy = center_y - origin_y
 

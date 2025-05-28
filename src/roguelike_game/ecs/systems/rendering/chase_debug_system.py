@@ -1,5 +1,7 @@
 import pygame
 from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_game.ecs.components.transform.scale import Scale
+from roguelike_game.ecs.systems.ai.chase_system import ChaseSystem
 
 class ChaseDebugSystem:
     """
@@ -23,30 +25,22 @@ class ChaseDebugSystem:
             return
 
         comps = world.components
-        # Centro del jugador
-        player_eid = getattr(world, 'player_entity', None)
-        if player_eid is None:
+        # Obtener centros usando ChaseSystem
+        center_x, center_y, origins = ChaseSystem.compute_centers(world)
+        if origins is None or not origins:
             return
-        player_pos = comps.get('Position', {}).get(player_eid)
-        player_sprite = comps.get('Sprite', {}).get(player_eid)
-        if not player_pos or not player_sprite:
-            return
-        center_x = player_pos.x + player_sprite.image.get_width() / 2
-        center_y = player_pos.y + player_sprite.image.get_height() / 2
         scx = (center_x - camera.offset_x) * camera.zoom
         scy = (center_y - camera.offset_y) * camera.zoom
         # Dibujar centro del jugador
         pygame.draw.circle(screen, (0,255,0), (int(scx), int(scy)), 4)
 
         # Para cada NPC con ChaseTarget
-        for eid, chase in list(comps.get('ChaseTarget', {}).items()):
+        for eid, (origin_x, origin_y) in origins.items():
             pos = comps.get('Position', {}).get(eid)
             sprite = comps.get('Sprite', {}).get(eid)
             if not pos or not sprite:
                 continue
             # Centro del NPC
-            origin_x = pos.x + sprite.image.get_width() / 2
-            origin_y = pos.y + sprite.image.get_height() / 2
             sox = (origin_x - camera.offset_x) * camera.zoom
             soy = (origin_y - camera.offset_y) * camera.zoom
             pygame.draw.circle(screen, (255,0,255), (int(sox), int(soy)), 4)
@@ -54,10 +48,14 @@ class ChaseDebugSystem:
             pygame.draw.line(screen, (0,0,255), (int(sox), int(soy)), (int(scx), int(scy)), 1)
             # Bounding box del NPC en amarillo
             w, h = sprite.image.get_size()
+            # Ajustar escala de la entidad
+            scale_cmp = comps.get('Scale', {}).get(eid)
+            entity_scale = scale_cmp.scale if scale_cmp else 1.0
+            scale_factor = entity_scale * camera.zoom
             sx = (pos.x - camera.offset_x) * camera.zoom
             sy = (pos.y - camera.offset_y) * camera.zoom
-            sw = w * camera.zoom
-            sh = h * camera.zoom
+            sw = w * scale_factor
+            sh = h * scale_factor
             pygame.draw.rect(screen, (255,255,0), pygame.Rect(sx, sy, sw, sh), 1)
             # Tile donde está el NPC en rojo
             tile_x = (pos.x // TILE_SIZE) * TILE_SIZE
