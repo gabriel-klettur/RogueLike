@@ -87,7 +87,7 @@ Tareas:
 Entregables:
 - `patrol_state.py`, `patrol_route.py`, y tests de ruta.
 
-## Fase 7: Estado Aggro (En progreso)
+## Fase 7: Estado Aggro (✅ Completada)
 **Objetivo:** Persecución activa del jugador.
 
 Tareas:
@@ -100,7 +100,7 @@ Tareas:
 Entregables:
 - `aggro_state.py` y actualización de `aggro_system.py`.
 
-## Fase 8: Estado Attack
+## Fase 8: Estado Attack (En progreso)
 **Objetivo:** Ejecución de lógica de combate.
 
 Tareas:
@@ -111,7 +111,7 @@ Tareas:
 - Ajustar `CombatSystem` en `src/roguelike_game/ecs/systems/combat_system.py`.
 
 Entregables:
-- `attack_state.py` y tests de daño.
+- `attack_state.py`
 
 ## Fase 9: Estado Flee y Muerte
 **Objetivo:** Comportamientos de huida y muerte.

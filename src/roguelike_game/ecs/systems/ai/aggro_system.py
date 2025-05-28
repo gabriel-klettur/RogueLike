@@ -64,3 +64,19 @@ class AggroSystem:
             else:
                 # Fuera de rango: eliminar ChaseTarget si existía
                 world.components['ChaseTarget'].pop(eid, None)
+
+    def track_target(self, world, entity):
+        """Detecta jugador para una entidad y asigna o elimina ChaseTarget."""
+        from roguelike_game.ecs.components.ai.chase_target import ChaseTarget
+        from roguelike_engine.config.config_tiles import TILE_SIZE
+        player_pos = world.player_position
+        if not player_pos:
+            return
+        pos = world.components['Position'][entity]
+        rng_cmp = world.components['AggroRange'][entity]
+        dx = pos.x - player_pos.x
+        dy = pos.y - player_pos.y
+        if dx*dx + dy*dy <= (rng_cmp.radius * TILE_SIZE) ** 2:
+            world.components['ChaseTarget'][entity] = ChaseTarget(world.player_entity)
+        else:
+            world.components['ChaseTarget'].pop(entity, None)

@@ -1,7 +1,7 @@
 import math
 from roguelike_game.ecs.fsm.state import State
 from roguelike_game.ecs.fsm.states.idle_state import IdleState
-from roguelike_game.ecs.fsm.states.chase_state import ChaseState
+from roguelike_game.ecs.fsm.states.aggro_state import AggroState
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.transform.movement_speed import MovementSpeed
 from roguelike_game.ecs.components.fsm.patrol_route import PatrolRoute
@@ -23,14 +23,14 @@ class PatrolState(State):
         pos = world.components['Position'][entity]
         route = world.components['PatrolRoute'][entity]
         speed_cmp = world.components['MovementSpeed'][entity]
-        # Detectar jugador y cambiar a ChaseState
+        # Detectar jugador y cambiar a AggroState
         player_pos = world.player_position
         if player_pos:
             dx_p = pos.x - player_pos.x
             dy_p = pos.y - player_pos.y
             if dx_p*dx_p + dy_p*dy_p <= (world.components['AggroRange'][entity].radius * TILE_SIZE) ** 2:
                 npc_state = world.components['NPCState'][entity]
-                npc_state.fsm.change_state(ChaseState(), entity)
+                npc_state.fsm.change_state(AggroState(), entity)
                 return
         # Mover hacia el waypoint actual
         if self.current_index < len(route.points):

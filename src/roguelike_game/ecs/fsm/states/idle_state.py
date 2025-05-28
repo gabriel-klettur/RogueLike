@@ -24,10 +24,10 @@ class IdleState(State):
         dist_sq = dx*dx + dy*dy
         rng_cmp = world.components['AggroRange'][entity]
         if dist_sq <= (rng_cmp.radius * TILE_SIZE)**2:
-            # Cambiar a ChaseState
-            from roguelike_game.ecs.fsm.states.chase_state import ChaseState
+            # Cambiar a AggroState
+            from roguelike_game.ecs.fsm.states.aggro_state import AggroState
             npc_state = world.components['NPCState'][entity]
-            npc_state.fsm.change_state(ChaseState(), entity)
+            npc_state.fsm.change_state(AggroState(), entity)
 
     def exit(self, entity):
         # Limpiar animaciones o flags de Idle (opcional)
