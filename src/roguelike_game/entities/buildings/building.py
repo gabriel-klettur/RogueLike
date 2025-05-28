@@ -44,7 +44,14 @@ class Building:
             self.image = pygame.transform.scale(self.image, scale)
             self.original_scale = scale
         else:
-            self.original_scale = self.image.get_size()
+            w, h = self.image.get_size()
+            # Auto-resize large buildings (>512x512) to half size
+            if w > 512 or h > 512:
+                new_size = (w // 4, h // 4)
+                self.image = pygame.transform.scale(self.image, new_size)
+                self.original_scale = new_size
+            else:
+                self.original_scale = (w, h)
 
         # División en dos mitades según split_ratio
         self.split_ratio = max(0.0, min(split_ratio, 1.0))
@@ -151,6 +158,8 @@ class Building:
         self.rect = pygame.Rect(self.x, self.y, new_width, new_height)
         self.scaled_cache.clear()
         self._render_part_cache.clear()
+        # Recalculate cut position after resize to keep parts aligned
+        self._cut_world = int(self.image.get_height() * self.split_ratio)
 
     def reset_to_original_size(self):
         if self.original_scale:
@@ -206,3 +215,5 @@ class Building:
         self.rect = pygame.Rect(self.x, self.y, new_width, new_height)
         self.scaled_cache.clear()
         self._render_part_cache.clear()
+        # Recalculate cut position after resize to keep parts aligned
+        self._cut_world = int(self.image.get_height() * self.split_ratio)

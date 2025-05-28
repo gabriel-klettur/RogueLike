@@ -45,8 +45,8 @@ class BuildingEditorView:
         surf.fill((20, 20, 20, 235))
         sw, sh = screen.get_size()
         if self.editor.collision_picker_pos is None:
-            px = (sw - w) // 2
-            py = (sh - h) // 2
+            px = 0
+            py = 0
             self.editor.collision_picker_pos = (px, py)
         else:
             px, py = self.editor.collision_picker_pos
@@ -61,10 +61,10 @@ class BuildingEditorView:
                                   y + (THUMB - text_surf.get_height()) // 2))
             abs_rect = pygame.Rect(px + x, py + y, THUMB, THUMB)
             self.editor.collision_picker_rects[ch] = abs_rect
-            # Mostrar selección solo mientras se está arrastrando el brush
+            # Mostrar selección
             if abs_rect.collidepoint(mouse_pos):
                 pygame.draw.rect(surf, CLR_HOVER, (x, y, THUMB, THUMB), 3)
-            elif self.editor.collision_choice == ch and self.editor.collision_brush_dragging:
+            elif self.editor.collision_choice == ch:
                 pygame.draw.rect(surf, CLR_SELECTION, (x, y, THUMB, THUMB), 3)
             lbl_surf = label_font.render(label, True, (255, 255, 255))
             surf.blit(lbl_surf, (x + (THUMB - lbl_surf.get_width()) // 2,
@@ -101,11 +101,13 @@ class BuildingEditorView:
         if self.editor.picker_active:
             self.picker_view.render(screen, camera)
         for b in buildings:
+            # Solo mostrar opciones en el edificio bajo el cursor
+            if b != getattr(self.editor, 'hovered_building', None):
+                continue
             x, y = camera.apply((b.x, b.y))
             w, h = camera.scale(b.image.get_size())
             rect = pygame.Rect(x, y, w, h)
-            if hasattr(self.editor, 'hovered_building') and b == self.editor.hovered_building:
-                pygame.draw.rect(screen, (0, 255, 255), rect, 4)
+            pygame.draw.rect(screen, (0, 255, 255), rect, 4)
             pygame.draw.rect(screen, (255, 255, 255), rect, 1)
             if self.editor.collision_picker_open and getattr(b, 'collision_map', None):
                 self._render_building_collision_overlay(screen, camera, b)
