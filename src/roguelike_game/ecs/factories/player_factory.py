@@ -19,8 +19,7 @@ from roguelike_game.ecs.components.combat.combat_stats import CombatStats
 from roguelike_game.ecs.components.combat.melee_weapon import MeleeWeapon
 from roguelike_game.ecs.components.transform.z_layer import ZLayer
 from roguelike_game.systems.config_z_layer import Z_LAYERS
-
-from roguelike_game.entities.player.view.assets import PlayerAssets
+from roguelike_game.ecs.assets.player_assets import PlayerAssets
 import time
 
 
