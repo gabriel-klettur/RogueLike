@@ -70,19 +70,10 @@ class BuildingEditorController:
                 if reset_rect.collidepoint(mx, my):
                     self.default_tool.apply_reset(b)
                     return
-
-        # 2b) Resize handle (clic der)
-        if button == 3:
-            for b in reversed(buildings):
+                # Detect resize handle (click izquierdo)
                 if self.resize_tool.check_resize_handle_click(mx, my, b, camera):
                     self._start_resize(b, (mx, my))
                     return
-                # Click en el handle de reset (usar view para hitbox consistente)
-                reset_rect = self.default_view.get_reset_handle_rect(b, camera)
-                if reset_rect.collidepoint(mx, my):
-                    self.default_tool.apply_reset(b)
-                    return
-
 
         # 3) Selección / drag de edificio (clic der)
         if button == 3:
