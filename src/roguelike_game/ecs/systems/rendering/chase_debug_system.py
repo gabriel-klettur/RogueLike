@@ -34,6 +34,15 @@ class ChaseDebugSystem:
         scy = (center_y - camera.offset_y) * camera.zoom
         # Dibujar centro del jugador
         pygame.draw.circle(screen, (0,255,0), (int(scx), int(scy)), 4)
+        # Tile centrado en los pies del jugador
+        for pid in comps.get('PlayerTagComponent', {}):
+            tile_coords = compute_foot_tile(world, pid, TILE_SIZE)
+            if tile_coords:
+                tx, ty = tile_coords
+                ts = TILE_SIZE * camera.zoom
+                tsx = (tx * TILE_SIZE - camera.offset_x) * camera.zoom
+                tsy = (ty * TILE_SIZE - camera.offset_y) * camera.zoom
+                pygame.draw.rect(screen, (0,0,255), pygame.Rect(tsx, tsy, ts, ts), 1)
 
         # Para cada NPC con ChaseTarget
         for eid, (origin_x, origin_y) in origins.items():
