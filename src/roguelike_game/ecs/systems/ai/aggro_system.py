@@ -42,7 +42,7 @@ class AggroSystem:
 
             if dist_sq <= aggro_radius_sq:
                 # Dentro del rango: asignar ChaseTarget para perseguir al jugador
-                world.components['ChaseTarget'][eid] = ChaseTarget(world.player)
+                world.components['ChaseTarget'][eid] = ChaseTarget(world.player_entity)
             else:
                 # Fuera de rango: eliminar ChaseTarget si existía
                 world.components['ChaseTarget'].pop(eid, None)

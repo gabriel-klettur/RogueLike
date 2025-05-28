@@ -4,17 +4,11 @@ Sistema que traduce el estado de teclado a InputComponent y actualiza Velocity.
 """
 import pygame
 import time
-from roguelike_game.ecs.components.input_component import InputComponent
-from roguelike_game.ecs.components.transform.velocity import Velocity
-from roguelike_game.ecs.components.transform.movement_speed import MovementSpeed
-from roguelike_game.ecs.components.physics.mask_collider import MaskCollider
-from roguelike_game.ecs.components.physics.collider import Collider
-from roguelike_game.ecs.components.physics.multi_collider import MultiCollider
+
 from roguelike_game.ecs.components.combat.attack_cooldown import AttackCooldown
 from roguelike_game.ecs.components.ai.wants_to_melee import WantsToMelee
-from roguelike_game.ecs.components.combat.melee_weapon import MeleeWeapon
 from roguelike_game.ecs.components.ai.wants_to_cast import WantsToCastSpell
-from roguelike_game.entities.player.config_player import PLAYER_SPEED
+from roguelike_game.config_player import PLAYER_SPEED
 
 class InputSystem:
     """

@@ -42,7 +42,6 @@ from roguelike_engine.utils.loading_screen import LoadingScreen
 #! -------------------------- Paquetes locales: world ---------------------------------
 from roguelike_engine.world.world import WorldManager
 from roguelike_engine.world.world_config import WORLD_CONFIG
-from roguelike_game.entities.player.model.player_data import PlayerData
 
 #! -------------------------- Paquetes locales: ECS ---------------------------------
 from roguelike_game.game.ecs_manager import ECSManager
@@ -89,7 +88,7 @@ class Game:
         self.perf_log = perf_log
 
         # — Mundo y persistencia global —
-        self.world = WorldManager(PlayerData(), WORLD_CONFIG)
+        self.world = WorldManager(WORLD_CONFIG)
         self._last_autosave_time = time.time()
 
         # initialize loading screen

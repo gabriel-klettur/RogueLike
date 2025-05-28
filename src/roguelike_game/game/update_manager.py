@@ -76,24 +76,8 @@ def update_game(
         ecs.update(clock, screen, camera)
     _update_ecs()
 
-    # 3.4) Movimiento especial del jugador
-    @benchmark(perf_log, "2.5.player.update_dash")
-    def _update_dash():
-        # Incluir colisiones de buildings
-        solid = map.solid_tiles
-        bt_tiles = []
-        for b in entities.buildings:
-            for ry, row in enumerate(b.collision_map):
-                for cx, ch in enumerate(row):
-                    if ch == '#':
-                        rect = pygame.Rect(b.x + cx * TILE_SIZE, b.y + ry * TILE_SIZE, TILE_SIZE, TILE_SIZE)
-                        bt_tiles.append(types.SimpleNamespace(solid=True, rect=rect))
-        collision_tiles = list(solid) + bt_tiles
-        entities.player.movement.update_dash(collision_tiles, entities.obstacles)
-    _update_dash()
-
     # 3.5) Minimap update
-    @benchmark(perf_log, "2.6.minimap.update")
+    @benchmark(perf_log, "2.5.minimap.update")
     def _update_minimap():
         # Usar posición del jugador en ECS
         eid = ecs.npc_world.player_entity

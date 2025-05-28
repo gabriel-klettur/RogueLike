@@ -10,8 +10,7 @@ from roguelike_game.ecs.components.transform.velocity import Velocity
 from roguelike_game.ecs.components.transform.movement_speed import MovementSpeed
 from roguelike_game.ecs.components.physics.collider import Collider
 from roguelike_game.ecs.components.physics.multi_collider import MultiCollider
-from roguelike_game.entities.player.config_player import ORIGINAL_SPRITE_SIZE, PLAYER_SPEED, RENDERED_SPRITE_SIZE, PLAYER_STATS
-from roguelike_game.entities.player.view.assets import PlayerAssets
+from roguelike_game.config_player import ORIGINAL_SPRITE_SIZE, PLAYER_SPEED, RENDERED_SPRITE_SIZE, PLAYER_STATS
 from roguelike_game.ecs.components.rendering.sprite import Sprite
 from roguelike_game.ecs.components.rendering.animator import Animator
 from roguelike_game.ecs.components.rendering.animation_timer import AnimationTimer
@@ -20,6 +19,8 @@ from roguelike_game.ecs.components.combat.combat_stats import CombatStats
 from roguelike_game.ecs.components.combat.melee_weapon import MeleeWeapon
 from roguelike_game.ecs.components.transform.z_layer import ZLayer
 from roguelike_game.systems.config_z_layer import Z_LAYERS
+
+from roguelike_game.entities.player.view.assets import PlayerAssets
 import time
 
 

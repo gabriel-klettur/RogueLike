@@ -11,9 +11,8 @@ class WorldManager:
     Orquesta múltiples MapManagers (niveles), mantiene el estado global persistente
     (jugador, NPCs, inventario) y gestiona carga/descarga de niveles.
     """
-    def __init__(self, player_data, global_config=WORLD_CONFIG):
-        # Estado persistente del jugador y NPCs globales
-        self.player_data = player_data
+    def __init__(self, global_config=WORLD_CONFIG):
+        # Estado persistente del jugador y NPCs globales        
         self.npc_memory: Dict[str, dict] = {}
         # Configuración global (paths, límites de carga, etc.)
         self.config = global_config
@@ -35,7 +34,7 @@ class WorldManager:
         """
         Aplica el estado cargado en memoria: jugador, NPCs y niveles.
         """
-        self.player_data = type(self.player_data).from_dict(data.get("player", {}))
+        
         self.npc_memory = data.get("npcs", {})
         # Pre-cargar niveles si se guardaron estados
         for lvl_name, lvl_state in data.get("levels", {}).items():

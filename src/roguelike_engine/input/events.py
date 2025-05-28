@@ -1,11 +1,9 @@
 # Path: src/roguelike_engine/input/events.py
 import pygame
-import roguelike_engine.config.config as config
-from roguelike_engine.config.map_config import global_map_settings
 
 from .keyboard     import handle_keyboard
 from .mouse        import handle_mouse
-from .continuous   import handle_continuous
+
 
 def handle_events(
     state,
@@ -35,7 +33,10 @@ def handle_events(
     elif active_buildings:
         buildings_editor.handler.handle(camera, entities)
     # Cache handlers and debug panel
-    kb = handle_keyboard; ms = handle_mouse; cont = handle_continuous
+    
+    kb = handle_keyboard
+    ms = handle_mouse
+
     panel = debug_overlay._panel_rect if debug_overlay else None
     events = pygame.event.get()
     for ev in events:
@@ -53,6 +54,5 @@ def handle_events(
                     consumed = True
             if not consumed and not active_tiles and not active_buildings:
                 ms(ev, state, camera, clock, map, entities, effects, explosions)
-    # Continuous handlers
-    if not active_tiles and not active_buildings:
-        cont(state, camera, map, entities, menu, effects)
+    
+    
