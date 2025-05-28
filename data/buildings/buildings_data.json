@@ -210,8 +210,8 @@
     },
     {
         "zone": "lobby",
-        "rel_x": 933,
-        "rel_y": -169,
+        "rel_x": 935,
+        "rel_y": -177,
         "image_path": "assets/buildings/temples/satanist.png",
         "solid": true,
         "scale": [
@@ -241,7 +241,7 @@
             1024,
             1024
         ],
-        "split_ratio": 0.487,
+        "split_ratio": 0.361,
         "z_bottom": 3,
         "z_top": 5,
         "z": 3
@@ -359,25 +359,6 @@
         "z_bottom": 2,
         "z_top": 6,
         "z": 2
-    },
-    {
-        "zone": "lobby",
-        "rel_x": 501,
-        "rel_y": 667,
-        "image_path": "assets/buildings\\vegetation\\tree_10.PNG",
-        "solid": true,
-        "scale": [
-            203,
-            262
-        ],
-        "original_scale": [
-            251,
-            324
-        ],
-        "split_ratio": 0.95,
-        "z_bottom": 4,
-        "z_top": 8,
-        "z": 4
     },
     {
         "zone": "lobby",
@@ -837,8 +818,8 @@
     },
     {
         "zone": "empty_left",
-        "rel_x": 499,
-        "rel_y": 461,
+        "rel_x": 841,
+        "rel_y": 719,
         "image_path": "assets/buildings\\shops\\alchemy_tower.png",
         "solid": true,
         "scale": [
@@ -875,21 +856,40 @@
     },
     {
         "zone": "empty_left",
-        "rel_x": 191,
-        "rel_y": 693,
-        "image_path": "assets/buildings\\temples\\ChatGPT Image May 5, 2025, 09_14_51 PM.png",
+        "rel_x": 53,
+        "rel_y": 692,
+        "image_path": "assets/buildings\\vegetation\\tree_6.png",
         "solid": true,
         "scale": [
-            318,
-            318
+            331,
+            331
         ],
         "original_scale": [
-            256,
-            256
+            135,
+            135
         ],
         "split_ratio": 0.5,
         "z_bottom": 3,
         "z_top": 5,
         "z": 3
+    },
+    {
+        "zone": "empty_left",
+        "rel_x": 1383,
+        "rel_y": 59,
+        "image_path": "assets/buildings\\portals\\portal_2.png",
+        "solid": true,
+        "scale": [
+            189,
+            283
+        ],
+        "original_scale": [
+            256,
+            384
+        ],
+        "split_ratio": 0.237,
+        "z_bottom": 3,
+        "z_top": 7,
+        "z": 1
     }
 ]
