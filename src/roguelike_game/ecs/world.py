@@ -28,6 +28,7 @@ from .systems.combat.fireball_system import FireballSystem
 from .systems.rendering.fireball_render_system import FireballRenderSystem
 from .systems.rendering.player_debug_render_system import PlayerDebugRenderSystem
 from .systems.rendering.chase_debug_system import ChaseDebugSystem
+from .systems.ai.npc_tile_resolution_system import NPCTileResolutionSystem
 
 from roguelike_engine.map.utils import calculate_lobby_offset
 from .utils.spawn_utils import find_spawn_positions
@@ -76,7 +77,7 @@ class NPCWorld:
         """Configura sistemas de actualización y renderizado."""
         self.update_systems = [
             AggroSystem(), ChaseSystem(), PlayerFacingSystem(), FacingSystem(), InputSystem(),
-            PatrolSystem(), MovementCollisionSystem(),
+            PatrolSystem(), MovementCollisionSystem(), NPCTileResolutionSystem(),
             AttackCooldownSystem(),
             NPCMeleeDecisionSystem(),
             MeleeCombatSystem(), AbilitySystem(),
