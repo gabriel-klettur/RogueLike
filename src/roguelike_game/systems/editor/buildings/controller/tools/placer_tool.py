@@ -2,6 +2,7 @@
 import pygame
 
 from roguelike_game.systems.editor.buildings.utils.zone_helpers import assign_zone_and_relatives
+from roguelike_engine.config.config_tiles import TILE_SIZE
 
 class PlacerTool:
     def __init__(self, state, editor_state, building_class, default_image, default_scale=(512, 512), default_solid=True):
@@ -26,6 +27,10 @@ class PlacerTool:
         )
         # Asignar zona y coordenadas relativas
         assign_zone_and_relatives(new_building)
+        # Initialize collision_map for new building
+        w = new_building.image.get_width() // TILE_SIZE
+        h = new_building.image.get_height() // TILE_SIZE
+        new_building.collision_map = [["." for _ in range(w)] for _ in range(h)]
 
         buildings.append(new_building)
         print(f"➕ Edificio agregado en ({int(world_x)}, {int(world_y)}) [zona={new_building.zone}, rel=({new_building.rel_x},{new_building.rel_y})]")
@@ -41,6 +46,10 @@ class PlacerTool:
         )
         # Asignar zona y coordenadas relativas
         assign_zone_and_relatives(new_building)
+        # Initialize collision_map for new building
+        w = new_building.image.get_width() // TILE_SIZE
+        h = new_building.image.get_height() // TILE_SIZE
+        new_building.collision_map = [["." for _ in range(w)] for _ in range(h)]
 
         buildings.append(new_building)
         print(f"➕ Edificio '{image_path}' colocado en ({int(world_x)}, {int(world_y)}) [zona={new_building.zone}, rel=({new_building.rel_x},{new_building.rel_y})]")
