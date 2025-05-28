@@ -151,6 +151,8 @@ class Building:
         self.rect = pygame.Rect(self.x, self.y, new_width, new_height)
         self.scaled_cache.clear()
         self._render_part_cache.clear()
+        # Recalculate cut position after resize to keep parts aligned
+        self._cut_world = int(self.image.get_height() * self.split_ratio)
 
     def reset_to_original_size(self):
         if self.original_scale:
@@ -206,3 +208,5 @@ class Building:
         self.rect = pygame.Rect(self.x, self.y, new_width, new_height)
         self.scaled_cache.clear()
         self._render_part_cache.clear()
+        # Recalculate cut position after resize to keep parts aligned
+        self._cut_world = int(self.image.get_height() * self.split_ratio)
