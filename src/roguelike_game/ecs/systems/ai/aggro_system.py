@@ -1,6 +1,7 @@
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.ecs.components.ai.chase_target import ChaseTarget
 from roguelike_game.ecs.components.core.identity import Faction
+from roguelike_game.ecs.components.ai.in_combat import InCombat
 
 class AggroSystem:
     """
@@ -16,6 +17,9 @@ class AggroSystem:
         """
         # Obtener entidad jugador de world.player_entity y su posición
         comps = world.components
+        # No asignar ChaseTarget a NPCs ya en combate
+        # (Evita que el sistema de Aggro vuelva a asignarles persecución)
+        
         player_pos = world.player_position
         if not player_pos:
             return
@@ -23,6 +27,8 @@ class AggroSystem:
 
         # Para cada entidad con Position, AggroRange e Identity...
         for eid in world.get_entities_with('Position', 'AggroRange', 'Identity'):
+            if eid in comps.get('InCombat', {}):
+                continue
             ident = world.components['Identity'][eid]
             # Solo NPCs malvados (EVIL) pueden agredir al jugador
             if ident.faction != Faction.EVIL:

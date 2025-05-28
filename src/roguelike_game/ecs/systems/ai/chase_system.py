@@ -1,7 +1,8 @@
 from roguelike_game.ecs.components.transform.velocity import Velocity
 from roguelike_game.ecs.components.transform.scale import Scale
 from roguelike_game.ecs.utils.position_utils import compute_entity_center
-from roguelike_game.ecs.utils.position_utils import compute_foot_tile
+from roguelike_game.ecs.utils.collider_utils import build_collider_rect
+from roguelike_game.ecs.components.ai.in_combat import InCombat
 
 class ChaseSystem:
     """
@@ -42,6 +43,17 @@ class ChaseSystem:
         """
         comps = world.components
 
+        # Calcular colisión entre pies de jugador y NPCs
+        player_id = getattr(world, 'player_entity', None)
+        player_feet_rect = None
+        if player_id:
+            ppos = comps.get('Position', {}).get(player_id)
+            pmulti = comps.get('MultiCollider', {}).get(player_id)
+            if ppos and pmulti:
+                pfeet = pmulti.colliders.get('feet')
+                if pfeet:
+                    player_feet_rect = build_collider_rect(ppos.x, ppos.y, pfeet)
+
         # Usar compute_centers para evitar duplicidad
         center_x, center_y, origins = ChaseSystem.compute_centers(world)
         if not origins:
@@ -49,6 +61,23 @@ class ChaseSystem:
 
         # Iterar sobre centros de NPCs
         for eid, (origin_x, origin_y) in origins.items():
+            # Si colisionan pies, entrar en modo combate
+            if player_feet_rect:
+                npos = comps.get('Position', {}).get(eid)
+                nmulti = comps.get('MultiCollider', {}).get(eid)
+                if npos and nmulti:
+                    nfeet = nmulti.colliders.get('feet')
+                    if nfeet:
+                        npc_feet_rect = build_collider_rect(npos.x, npos.y, nfeet)
+                        if npc_feet_rect.colliderect(player_feet_rect):
+                            comps['ChaseTarget'].pop(eid, None)
+                            comps['InCombat'][eid] = InCombat()
+                            vel_cmp = comps.get('Velocity', {}).get(eid)
+                            if vel_cmp:
+                                vel_cmp.vx = 0
+                                vel_cmp.vy = 0
+                            continue
+
             # Posición del NPC
             pos = comps.get('Position', {}).get(eid)
             if not pos:

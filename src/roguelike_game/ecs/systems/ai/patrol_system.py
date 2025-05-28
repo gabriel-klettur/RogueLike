@@ -19,8 +19,8 @@ class PatrolSystem:
         pos_map = comps['Position']; patrol_map = comps['Patrol']
         vel_map = comps['Velocity']; multi_map = comps['MultiCollider']        
         for eid in world.get_entities_with('Position', 'Patrol', 'Velocity', 'MultiCollider'):
-            # Skip patrolling when chasing the player
-            if eid in world.components.get('ChaseTarget', {}):
+            # Skip patrolling when chasing the player or in combat
+            if eid in world.components.get('ChaseTarget', {}) or eid in world.components.get('InCombat', {}):
                 continue
             pos = pos_map[eid]; patrol = patrol_map[eid]
             speed = self._get_speed(world, eid, patrol)
