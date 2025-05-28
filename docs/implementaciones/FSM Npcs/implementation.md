@@ -18,7 +18,7 @@ Entregables:
 1. `monsters.json` o `AIConfig` con valores iniciales.
 2. `docs/specs/fsm_npcs_requirements.md`.
 
-## Fase 2: Diseño del diagrama de estados (En progreso)
+## Fase 2: Diseño del diagrama de estados (✅ Completada)
 **Objetivo:** Visualizar estados y transiciones con condiciones claras.
 
 Tareas:
@@ -29,7 +29,7 @@ Tareas:
 Entregables:
 - `docs/diagrams/fsm_npcs.mmd` y `fsm_npcs.svg`.
 
-## Fase 3: Núcleo FSM
+## Fase 3: Núcleo FSM (En progreso)
 **Objetivo:** Implementar clases base para estados y máquina.
 
 Tareas:
