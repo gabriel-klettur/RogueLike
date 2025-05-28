@@ -91,8 +91,8 @@ class BuildingEditorView:
         if self.editor.picker_active:
             self.picker_view.render(screen, camera)
         for b in buildings:
-            # Solo mostrar opciones en el edificio bajo el cursor
-            if b != getattr(self.editor, 'hovered_building', None):
+            # Solo mostrar opciones en el edificio activo (persistente)
+            if b != getattr(self.editor, 'active_building', None):
                 continue
             x, y = camera.apply((b.x, b.y))
             w, h = camera.scale(b.image.get_size())
