@@ -30,6 +30,9 @@ class BuildingEditorEventHandler:
 
     def handle(self, camera, entities):
         for ev in pygame.event.get():
+            if ev.type == pygame.QUIT:
+                self.state.running = False
+                return
             # --- Finaliza resize al soltar R ---
             if ev.type == pygame.KEYUP and ev.key == pygame.K_r:
                 if self.editor.resizing:

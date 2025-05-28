@@ -248,8 +248,8 @@
     },
     {
         "zone": "lobby",
-        "rel_x": 154,
-        "rel_y": 458,
+        "rel_x": 158,
+        "rel_y": 450,
         "image_path": "assets/buildings/shops/magic_tower.png",
         "solid": true,
         "scale": [
