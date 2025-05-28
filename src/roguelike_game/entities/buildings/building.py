@@ -44,7 +44,14 @@ class Building:
             self.image = pygame.transform.scale(self.image, scale)
             self.original_scale = scale
         else:
-            self.original_scale = self.image.get_size()
+            w, h = self.image.get_size()
+            # Auto-resize large buildings (>512x512) to half size
+            if w > 512 or h > 512:
+                new_size = (w // 4, h // 4)
+                self.image = pygame.transform.scale(self.image, new_size)
+                self.original_scale = new_size
+            else:
+                self.original_scale = (w, h)
 
         # División en dos mitades según split_ratio
         self.split_ratio = max(0.0, min(split_ratio, 1.0))

@@ -101,11 +101,13 @@ class BuildingEditorView:
         if self.editor.picker_active:
             self.picker_view.render(screen, camera)
         for b in buildings:
+            # Solo mostrar opciones en el edificio bajo el cursor
+            if b != getattr(self.editor, 'hovered_building', None):
+                continue
             x, y = camera.apply((b.x, b.y))
             w, h = camera.scale(b.image.get_size())
             rect = pygame.Rect(x, y, w, h)
-            if hasattr(self.editor, 'hovered_building') and b == self.editor.hovered_building:
-                pygame.draw.rect(screen, (0, 255, 255), rect, 4)
+            pygame.draw.rect(screen, (0, 255, 255), rect, 4)
             pygame.draw.rect(screen, (255, 255, 255), rect, 1)
             if self.editor.collision_picker_open and getattr(b, 'collision_map', None):
                 self._render_building_collision_overlay(screen, camera, b)
