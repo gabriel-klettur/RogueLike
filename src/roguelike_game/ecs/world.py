@@ -31,6 +31,8 @@ from .systems.rendering.chase_debug_system import ChaseDebugSystem
 
 from roguelike_engine.map.utils import calculate_lobby_offset
 from .utils.spawn_utils import find_spawn_positions
+from roguelike_game.ecs.factories.entity_factory import _load_caches_once, _DEFS, _create_sprite_component, _calculate_position, _create_collider_components
+from roguelike_game.ecs.utils.collider_utils import build_collider_rect
 from roguelike_game.ecs.components.spawn.spawn_request import SpawnRequest
 
 class NPCWorld:
@@ -107,15 +109,30 @@ class NPCWorld:
         lobby_offset = calculate_lobby_offset()
         zone_size = global_map_settings.zone_size
 
-        #! El neighbor_padding deberia calcularse de forma automatica teniendo encuenta el numero de tiles que utiliza el collider de los pies del npc
+        # Filtrado de colisión de pies para evitar solapamiento al spawn
+        _load_caches_once()
+        cfg = _DEFS["barbol"]
+        sprite, _ = _create_sprite_component("barbol")
+        spawned_rects = []
+
         positions = find_spawn_positions(
             self.map_manager, self.buildings,
             lobby_offset, zone_size,
             neighbor_padding=3, sample_count=100
         )
-        print(f"[ECS][Spawn] Spawn candidates: {len(positions)}")
+        # Filtrar posiciones por colisión de collider 'feet'
+        filtered_positions = []
         for tx, ty in positions:
-            # Crear request de spawn en ECS
+            px, py = _calculate_position(tx, ty, cfg, sprite)
+            multi = _create_collider_components(sprite, cfg)
+            feet = multi.colliders.get("feet")
+            if feet:
+                rect = build_collider_rect(px, py, feet)
+                if not any(rect.colliderect(r) for r in spawned_rects):
+                    spawned_rects.append(rect)
+                    filtered_positions.append((tx, ty))
+        print(f"[ECS][Spawn] Spawn candidates: {len(positions)}, válidos tras filtrado: {len(filtered_positions)}")
+        for tx, ty in filtered_positions:
             eid_req = self.create_entity()
             self.components['SpawnRequest'][eid_req] = SpawnRequest(
                 prototype="barbol", position=(tx, ty)
@@ -130,8 +147,20 @@ class NPCWorld:
                 empty_offset, zone_size,
                 neighbor_padding=3, sample_count=100
             )
-            print(f"[ECS][Spawn] Spawn in empty_left: {len(empty_positions)}")
+            print(f"[ECS][Spawn] Spawn in empty_left candidatos: {len(empty_positions)}")
+            # Filtrar también en zona empty_left
+            filtered_empty = []
             for tx, ty in empty_positions:
+                px, py = _calculate_position(tx, ty, cfg, sprite)
+                multi = _create_collider_components(sprite, cfg)
+                feet = multi.colliders.get("feet")
+                if feet:
+                    rect = build_collider_rect(px, py, feet)
+                    if not any(rect.colliderect(r) for r in spawned_rects):
+                        spawned_rects.append(rect)
+                        filtered_empty.append((tx, ty))
+            print(f"[ECS][Spawn] Spawn empty_left válidos: {len(filtered_empty)}")
+            for tx, ty in filtered_empty:
                 eid_req = self.create_entity()
                 self.components['SpawnRequest'][eid_req] = SpawnRequest(
                     prototype="barbol", position=(tx, ty)
