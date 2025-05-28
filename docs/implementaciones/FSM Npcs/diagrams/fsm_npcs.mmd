@@ -1,0 +1,24 @@
+
+stateDiagram-v2
+    [*] --> Patrol
+    Patrol --> Chase: DistanciaJugador <= detectionRange
+    Chase --> Attack: DistanciaJugador <= attackRange
+    Chase --> Patrol: DistanciaJugador > detectionRange
+
+    Attack --> Flee: VidaActual/MaxVida <= fleeThreshold & random() < fleeChance
+    Attack --> Dodge: random() < dodgeChance
+    Attack --> Chase: DistanciaJugador > attackRange & DistanciaJugador <= detectionRange
+    Attack --> Patrol: JugadorMuerto
+
+    Dodge --> Attack: Esquiva completada
+    Flee --> Patrol: DistanciaJugador > detectionRange
+
+    %% Transición a Dead desde cualquier estado
+    Patrol --> Dead: VidaActual <= 0
+    Chase --> Dead: VidaActual <= 0
+    Attack --> Dead: VidaActual <= 0
+    Dodge --> Dead: VidaActual <= 0
+    Flee --> Dead: VidaActual <= 0
+
+    Dead --> [*]
+
