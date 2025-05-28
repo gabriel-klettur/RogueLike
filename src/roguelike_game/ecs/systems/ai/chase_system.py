@@ -1,5 +1,7 @@
 from roguelike_game.ecs.components.transform.velocity import Velocity
 from roguelike_game.ecs.components.transform.scale import Scale
+from roguelike_game.ecs.utils.position_utils import compute_entity_center
+from roguelike_game.ecs.utils.position_utils import compute_foot_tile
 
 class ChaseSystem:
     """
@@ -19,18 +21,18 @@ class ChaseSystem:
         pspr = comps.get('Sprite', {}).get(pid)
         if not ppos or not pspr:
             return None, None, {}
-        pscale = comps.get('Scale', {}).get(pid).scale if comps.get('Scale', {}).get(pid) else 1.0
-        cx = ppos.x + (pspr.image.get_width()*pscale)/2
-        cy = ppos.y + (pspr.image.get_height()*pscale)/2
+        scale_cmp = comps.get('Scale', {}).get(pid)
+        vec = compute_entity_center(ppos, pspr, scale_cmp)
+        cx, cy = vec.x, vec.y
         origins = {}
         for eid, _ in list(comps.get('ChaseTarget', {}).items()):
             pos = comps.get('Position', {}).get(eid)
             spr = comps.get('Sprite', {}).get(eid)
             if not pos or not spr:
                 continue
-            nscale = comps.get('Scale', {}).get(eid).scale if comps.get('Scale', {}).get(eid) else 1.0
-            ox = pos.x + (spr.image.get_width()*nscale)/2
-            oy = pos.y + (spr.image.get_height()*nscale)/2
+            scale_cmp2 = comps.get('Scale', {}).get(eid)
+            vec2 = compute_entity_center(pos, spr, scale_cmp2)
+            ox, oy = vec2.x, vec2.y
             origins[eid] = (ox, oy)
         return cx, cy, origins
 
