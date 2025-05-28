@@ -2,6 +2,7 @@ import pygame
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.ecs.systems.ai.chase_system import ChaseSystem
 from roguelike_game.ecs.utils.position_utils import compute_foot_tile
+from roguelike_game.ecs.utils.render_utils import draw_sprite_bbox
 
 class ChaseDebugSystem:
     """
@@ -47,16 +48,9 @@ class ChaseDebugSystem:
             # Línea hacia centro del jugador
             pygame.draw.line(screen, (0,0,255), (int(sox), int(soy)), (int(scx), int(scy)), 1)
             # Bounding box del NPC en amarillo
-            w, h = sprite.image.get_size()
-            # Ajustar escala de la entidad
             scale_cmp = comps.get('Scale', {}).get(eid)
             entity_scale = scale_cmp.scale if scale_cmp else 1.0
-            scale_factor = entity_scale * camera.zoom
-            sx = (pos.x - camera.offset_x) * camera.zoom
-            sy = (pos.y - camera.offset_y) * camera.zoom
-            sw = w * scale_factor
-            sh = h * scale_factor
-            pygame.draw.rect(screen, (255,255,0), pygame.Rect(sx, sy, sw, sh), 1)
+            draw_sprite_bbox(screen, camera, pos, sprite, color=(255,255,0), width=1, scale=entity_scale)
             # Tile centrado en los pies del NPC
             tile_coords = compute_foot_tile(world, eid, TILE_SIZE)
             if tile_coords:

@@ -1,4 +1,5 @@
 import pygame
+from roguelike_game.ecs.utils.render_utils import draw_sprite_bbox, draw_sprite_center
 
 class PlayerDebugRenderSystem:
     """
@@ -30,21 +31,8 @@ class PlayerDebugRenderSystem:
         if not sprite or not pos:
             return
 
-        # Obtener tamaño del sprite
-        w, h = sprite.image.get_size()
-        # Calcular rect en pantalla
-        sx = (pos.x - camera.offset_x) * camera.zoom
-        sy = (pos.y - camera.offset_y) * camera.zoom
-        sw = w * camera.zoom
-        sh = h * camera.zoom
-
-        # Dibujar rectángulo rojo alrededor del sprite
-        rect = pygame.Rect(sx, sy, sw, sh)
-        pygame.draw.rect(screen, (255, 0, 0), rect, 1)
-
-        # Dibujar centro en verde
-        cx = (pos.x + w / 2 - camera.offset_x) * camera.zoom
-        cy = (pos.y + h / 2 - camera.offset_y) * camera.zoom
-        pygame.draw.circle(screen, (0, 255, 0), (int(cx), int(cy)), 3)
+        # Dibuja bounding box y marcador de centro usando utilidades
+        bbox = draw_sprite_bbox(screen, camera, pos, sprite)
+        cx, cy = draw_sprite_center(screen, camera, pos, sprite)
         # Debug: dibujar destino de NPCs (chase target) en azul
-        pygame.draw.circle(screen, (0, 0, 255), (int(cx), int(cy)), 6, 1)
+        pygame.draw.circle(screen, (0, 0, 255), (cx, cy), 6, 1)
