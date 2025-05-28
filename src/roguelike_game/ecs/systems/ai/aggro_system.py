@@ -16,10 +16,7 @@ class AggroSystem:
         """
         # Obtener entidad jugador de world.player_entity y su posición
         comps = world.components
-        player_eid = getattr(world, 'player_entity', None)
-        if player_eid is None:
-            return
-        player_pos = comps.get('Position', {}).get(player_eid)
+        player_pos = world.player_position
         if not player_pos:
             return
         px, py = player_pos.x, player_pos.y
@@ -45,7 +42,7 @@ class AggroSystem:
 
             if dist_sq <= aggro_radius_sq:
                 # Dentro del rango: asignar ChaseTarget para perseguir al jugador
-                world.components['ChaseTarget'][eid] = ChaseTarget(player_eid)
+                world.components['ChaseTarget'][eid] = ChaseTarget(world.player)
             else:
                 # Fuera de rango: eliminar ChaseTarget si existía
                 world.components['ChaseTarget'].pop(eid, None)

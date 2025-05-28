@@ -14,10 +14,9 @@ class ChaseSystem:
         Devuelve el centro del jugador y un dict de centros de NPCs {eid: (x,y)}.
         """
         comps = world.components
+        # Obtener posición del jugador
+        ppos = world.player_position
         pid = getattr(world, 'player_entity', None)
-        if pid is None:
-            return None, None, {}
-        ppos = comps.get('Position', {}).get(pid)
         pspr = comps.get('Sprite', {}).get(pid)
         if not ppos or not pspr:
             return None, None, {}

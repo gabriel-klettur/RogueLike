@@ -49,6 +49,16 @@ class NPCWorld:
         self._init_systems()
         self._spawn_initial_npcs()
 
+    @property
+    def player_position(self):
+        """Retorna el componente Position del jugador o None."""
+        return self.components['Position'].get(self.player_entity)
+
+    @property
+    def player(self):
+        """Alias deprecated para player_position."""
+        return self.player_position
+
     def _setup_spatial_index(self):
         """Construye índice espacial con tiles sólidos y colisiones de edificios."""
         self._solid_tile_index: dict[tuple[int,int], list[pygame.Rect]] = {}
