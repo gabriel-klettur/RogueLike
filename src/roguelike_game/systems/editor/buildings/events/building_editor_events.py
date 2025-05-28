@@ -52,6 +52,10 @@ class BuildingEditorEventHandler:
                         # Enter collision brush mode
                         self.editor.current_tool = 'collision_brush'
                         self.editor.collision_picker_open = True
+                        # Close asset picker to prevent accidental building placement
+                        self.editor.picker_active = False
+                        self.editor.dragging_building = False
+                        self.editor.selected_entry = None
                     else:
                         # Exit editor
                         self.controller.toggle_editor()
@@ -269,6 +273,10 @@ class BuildingEditorEventHandler:
                     # Enter collision brush mode
                     self.editor.current_tool = 'collision_brush'
                     self.editor.collision_picker_open = True
+                    # Close asset picker to prevent accidental building placement
+                    self.editor.picker_active = False
+                    self.editor.dragging_building = False
+                    self.editor.selected_entry = None
                 else:
                     # Exit editor
                     self.controller.toggle_editor()

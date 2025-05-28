@@ -607,7 +607,7 @@
                 "#",
                 ".",
                 ".",
-                "#"
+                "."
             ],
             [
                 ".",
@@ -4242,6 +4242,11 @@
         ]
     },
     "assets/buildings\\castles\\castle_2.png": {
+        "width": 0,
+        "height": 0,
+        "collision": []
+    },
+    "assets/buildings\\shops\\alchemy_tower.png": {
         "width": 0,
         "height": 0,
         "collision": []
