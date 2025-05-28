@@ -10,6 +10,7 @@ from roguelike_game.ecs.components.transform.velocity import Velocity
 from roguelike_game.ecs.components.transform.movement_speed import MovementSpeed
 from roguelike_game.ecs.components.physics.collider import Collider
 from roguelike_game.ecs.components.physics.multi_collider import MultiCollider
+from roguelike_game.ecs.components.physics.mask_collider import MaskCollider
 from roguelike_game.config_player import ORIGINAL_SPRITE_SIZE, PLAYER_SPEED, RENDERED_SPRITE_SIZE, PLAYER_STATS
 from roguelike_game.ecs.components.rendering.sprite import Sprite
 from roguelike_game.ecs.components.rendering.animator import Animator
@@ -21,6 +22,7 @@ from roguelike_game.ecs.components.transform.z_layer import ZLayer
 from roguelike_game.systems.config_z_layer import Z_LAYERS
 from roguelike_game.ecs.assets.player_assets import PlayerAssets
 import time
+import pygame
 
 
 def spawn_player(world, x, y, character_name: str = "first_hero") -> int:
@@ -50,7 +52,8 @@ def spawn_player(world, x, y, character_name: str = "first_hero") -> int:
     # Sprite inicial: primer frame idle 'down'
     down_idle = sprites_dict.get('down', {}).get('idle', [])
     if down_idle:
-        world.components["Sprite"][eid] = Sprite(down_idle[0])
+        sprite = Sprite(down_idle[0])
+        world.components["Sprite"][eid] = sprite
     # Animator: mapear animaciones idle y walk separadas por dirección
     anim_map = {}
     for direction, frames in sprites_dict.items():
@@ -63,10 +66,18 @@ def spawn_player(world, x, y, character_name: str = "first_hero") -> int:
     world.components["MovementSpeed"][eid] = MovementSpeed(PLAYER_SPEED)
     # Componente de velocidad
     world.components["Velocity"][eid] = Velocity(0, 0)
-    # Componente de colisión múltiple (body y feet)
+    # Componente de colisión múltiple (body con MaskCollider y feet)
+    # Crear body basado en la máscara del sprite (primer frame 'down')
+    orig_image = sprite.image
+    body_mask = pygame.mask.from_surface(orig_image)
+    body = MaskCollider(body_mask, 0, 0)
+    # Dimensiones y offsets para centrar feet collider
     w, h = RENDERED_SPRITE_SIZE
-    body = Collider(w, h, 0, 0)
-    feet = Collider(w//2, h//4, w//4, 3*h//4)
+    fw = w // 2
+    fh = h // 4
+    feet_offset_x = (w - fw) // 2
+    feet_offset_y = h - (fh // 2)
+    feet = Collider(fw, fh, feet_offset_x, feet_offset_y)
     world.components["MultiCollider"][eid] = MultiCollider({"body": body, "feet": feet})
     # Componente de salud
     max_hp = PLAYER_STATS.get(character_name, {}).get("max_health", 100)

@@ -5,6 +5,7 @@ Handles resolving collisions between moving entities and solid tiles.
 
 # Utility to build a pygame.Rect from a collider description and entity position
 from roguelike_game.ecs.utils.collider_utils import build_collider_rect
+from roguelike_game.ecs.components.physics.multi_collider import MultiCollider
 
 class CollisionSystem:
     """
@@ -23,16 +24,24 @@ class CollisionSystem:
         comps = world.components
         pos_map = comps['Position']
         vel_map = comps['Velocity']
-        col_map = comps['Collider']
+        col_map = comps.get('Collider', {})
+        multi_map = comps.get('MultiCollider', {})
         solid_tiles = world.map_manager.solid_tiles
 
-        # Iterar sobre todas las entidades que puedan colisionar
-        for eid in world.get_entities_with('Position', 'Velocity', 'Collider'):
+        # Iterar sobre entidades con posición y velocidad, y que tengan collider o multicolider
+        for eid in world.get_entities_with('Position', 'Velocity'):
             pos = pos_map[eid]
             vel = vel_map[eid]
-            col = col_map[eid]
+            # Preferir collider de cuerpo en MultiCollider (fallback a pies)
+            if eid in multi_map:
+                colliders = multi_map[eid].colliders
+                col = colliders.get('body', colliders.get('feet'))
+            else:
+                col = col_map.get(eid)
+            if col is None:
+                continue
 
-            # 1) Sincronizar collider.rect con la posición actual del entity
+            # 1) Obtener rect de colisión en base a feet o collider
             col.rect = build_collider_rect(pos.x, pos.y, col)
 
             # 2) Resolver movimiento horizontal (eje X)
