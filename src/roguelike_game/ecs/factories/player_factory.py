@@ -69,14 +69,13 @@ def spawn_player(world, x, y, character_name: str = "first_hero") -> int:
     # Componente de colisión múltiple (body con MaskCollider y feet)
     # Crear body basado en la máscara del sprite (primer frame 'down')
     orig_image = sprite.image
-    body_mask = pygame.mask.from_surface(orig_image)
-    body = MaskCollider(body_mask, 0, 0)
-    # Dimensiones y offsets para centrar feet collider
-    w, h = RENDERED_SPRITE_SIZE
-    fw = w // 2
-    fh = h // 4
-    feet_offset_x = (w - fw) // 2
-    feet_offset_y = h - (fh // 2)
+    body = MaskCollider(pygame.mask.from_surface(orig_image), 0, 0)
+    # Dimensiones reales del sprite para feet collider
+    w_img, h_img = orig_image.get_size()
+    fw = w_img // 2
+    fh = h_img // 4
+    feet_offset_x = (w_img - fw) // 2                 # centrar horizontalmente
+    feet_offset_y = h_img - fh                        # alinear parte superior del collider con la base del sprite
     feet = Collider(fw, fh, feet_offset_x, feet_offset_y)
     world.components["MultiCollider"][eid] = MultiCollider({"body": body, "feet": feet})
     # Componente de salud
