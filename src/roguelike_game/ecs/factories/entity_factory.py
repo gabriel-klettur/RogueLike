@@ -76,8 +76,10 @@ def _calculate_position(tile_x: int, tile_y: int, cfg: Dict[str, Any], sprite: S
     orig_w, orig_h = sprite.image.get_size()
     width = int(orig_w * scale_val)
     height = int(orig_h * scale_val)
-    px = tile_x * TILE_SIZE + (TILE_SIZE - width) // 2
-    py = (tile_y + 1) * TILE_SIZE - height
+    # Centrar horizontalmente pies en tile
+    px = tile_x * TILE_SIZE + (TILE_SIZE // 2) - (width // 2)
+    # Ajuste de 1 px para centrar el pie dentro del tile
+    py = (tile_y + 1) * TILE_SIZE - height - 1
     return px, py
 
 def _create_patrol_components(px: int, py: int, monster_type: str, cfg: Dict[str, Any]) -> Tuple[Patrol, MovementSpeed, Animator]:

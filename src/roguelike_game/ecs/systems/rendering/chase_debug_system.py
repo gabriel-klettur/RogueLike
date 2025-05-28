@@ -1,6 +1,5 @@
 import pygame
 from roguelike_engine.config.config_tiles import TILE_SIZE
-from roguelike_game.ecs.components.transform.scale import Scale
 from roguelike_game.ecs.systems.ai.chase_system import ChaseSystem
 
 class ChaseDebugSystem:
@@ -57,9 +56,11 @@ class ChaseDebugSystem:
             sw = w * scale_factor
             sh = h * scale_factor
             pygame.draw.rect(screen, (255,255,0), pygame.Rect(sx, sy, sw, sh), 1)
-            # Tile donde está el NPC en rojo
-            tile_x = (pos.x // TILE_SIZE) * TILE_SIZE
-            tile_y = (pos.y // TILE_SIZE) * TILE_SIZE
+            # Tile centrado en los pies del NPC
+            foot_x = pos.x + (w * entity_scale) / 2
+            foot_y = pos.y + (h * entity_scale)
+            tile_x = (int(foot_x) // TILE_SIZE) * TILE_SIZE
+            tile_y = (int(foot_y) // TILE_SIZE) * TILE_SIZE
             ts = TILE_SIZE * camera.zoom
             tsx = (tile_x - camera.offset_x) * camera.zoom
             tsy = (tile_y - camera.offset_y) * camera.zoom
