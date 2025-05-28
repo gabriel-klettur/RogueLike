@@ -29,7 +29,7 @@ Tareas:
 Entregables:
 - `docs/diagrams/fsm_npcs.mmd` y `fsm_npcs.svg`.
 
-## Fase 3: Núcleo FSM (En progreso)
+## Fase 3: Núcleo FSM (✅ Completada)
 **Objetivo:** Implementar clases base para estados y máquina.
 
 Tareas:
@@ -43,7 +43,7 @@ Tareas:
 Entregables:
 - Módulos `state.py`, `fsm.py` con docstrings y tests.
 
-## Fase 4: Componente FSM
+## Fase 4: Componente FSM (✅ Completada)
 **Objetivo:** Integrar FSM con ECS.
 
 Tareas:
@@ -60,7 +60,7 @@ Tareas:
 Entregables:
 - `npc_state.py`, `fsm_system.py` y actualización en `entity_factory.py`.
 
-## Fase 5: Estado Idle (Patrol iniziale)
+## Fase 5: Estado Idle (✅ Completada)
 **Objetivo:** Comportamiento pasivo y transición a Chase.
 
 Tareas:
@@ -73,7 +73,7 @@ Tareas:
 Entregables:
 - `idle_state.py` con lógica y tests en `tests/test_idle_state.py`.
 
-## Fase 6: Estado Patrol
+## Fase 6: Estado Patrol (✅ Completada)
 **Objetivo:** Recorrer waypoints definidos.
 
 Tareas:
@@ -87,7 +87,7 @@ Tareas:
 Entregables:
 - `patrol_state.py`, `patrol_route.py`, y tests de ruta.
 
-## Fase 7: Estado Aggro
+## Fase 7: Estado Aggro (En progreso)
 **Objetivo:** Persecución activa del jugador.
 
 Tareas:

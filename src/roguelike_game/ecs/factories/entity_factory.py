@@ -19,6 +19,8 @@ from roguelike_game.ecs.components.ai.aggro_range import AggroRange
 from roguelike_game.ecs.components.combat.melee_range import MeleeRange
 from roguelike_game.ecs.components.transform.z_layer import ZLayer
 from roguelike_game.systems.config_z_layer import Z_LAYERS
+from roguelike_game.ecs.fsm.fsm import FiniteStateMachine
+from roguelike_game.ecs.components.fsm.npc_state import NPCState
 import logging
 
 from pathlib import Path
@@ -172,5 +174,14 @@ def spawn_monster(world, monster_type: str, tile_x: int, tile_y: int) -> int:
     world.components["AggroRange"][eid] = AggroRange(cfg.get("aggro_range", 0))
     # Añadir componente de melee_range para lógica de combate
     world.components["MeleeRange"][eid] = MeleeRange(cfg.get("melee_range", 0))
+
+    # FSM component
+    from roguelike_game.ecs.fsm.states.patrol_state import PatrolState
+    from roguelike_game.ecs.components.fsm.patrol_route import PatrolRoute
+    # Ruta de patrulla (ejemplo), se puede cargar del config
+    route_points = [(px, py), (px + 5 * TILE_SIZE, py)]
+    world.components["PatrolRoute"][eid] = PatrolRoute(route_points)
+    fsm = FiniteStateMachine(PatrolState())
+    world.components["NPCState"][eid] = NPCState(fsm, "PatrolState")
 
     return eid

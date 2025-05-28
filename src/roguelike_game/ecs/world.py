@@ -69,6 +69,7 @@ class NPCWorld:
         """Inicializa el diccionario de componentes para el ECS."""
         self.components = {
             'Position': {}, 'Sprite': {}, 'Patrol': {}, 'MovementSpeed': {},
+            'PatrolRoute': {}, 'NPCState': {},
             'Animator': {}, 'AnimationTimer': {}, 'Health': {}, 'Scale': {}, 'Identity': {},
             'Velocity': {}, 'MultiCollider': {}, 'ZLayer': {}, 'DeathTimer': {},
             'FireballComponent': {},
