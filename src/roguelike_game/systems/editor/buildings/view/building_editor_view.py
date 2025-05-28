@@ -75,21 +75,11 @@ class BuildingEditorView:
         if not self.editor.active:
             return
 
-        # Collision brush mode: sólo overlay y borde del building bajo el cursor
+        # Collision brush mode: persist active collision building until exit or scroll
         if self.editor.current_tool == 'collision_brush':
-            mx, my = pygame.mouse.get_pos()
-            world_x = mx / camera.zoom + camera.offset_x
-            world_y = my / camera.zoom + camera.offset_y
-            target = None
-            for b in reversed(buildings):
-                bx, by = b.x, b.y
-                w_img, h_img = b.image.get_size()
-                if pygame.Rect(bx, by, w_img, h_img).collidepoint(world_x, world_y):
-                    target = b
-                    break
+            target = getattr(self.editor, 'collision_active_building', None)
             if target and getattr(target, 'collision_map', None):
                 self._render_building_collision_overlay(screen, camera, target)
-                # borde del edificio activo
                 x, y = camera.apply((target.x, target.y))
                 w, h = camera.scale(target.image.get_size())
                 pygame.draw.rect(screen, (0, 255, 255), (x, y, w, h), 4)

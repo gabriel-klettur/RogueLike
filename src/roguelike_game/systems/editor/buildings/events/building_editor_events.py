@@ -52,6 +52,8 @@ class BuildingEditorEventHandler:
                         # Enter collision brush mode
                         self.editor.current_tool = 'collision_brush'
                         self.editor.collision_picker_open = True
+                        # Initialize collision target to current hovered building
+                        self.editor.collision_active_building = getattr(self.editor, 'hovered_building', None)
                         # Close asset picker to prevent accidental building placement
                         self.editor.picker_active = False
                         self.editor.dragging_building = False
@@ -198,6 +200,13 @@ class BuildingEditorEventHandler:
                 self.controller.on_mouse_up(ev.button, camera, entities.buildings)
             elif ev.type == pygame.MOUSEMOTION:
                 mx, my = ev.pos
+                # Clear active collision building if mouse leaves its bounds
+                if self.editor.current_tool == 'collision_brush':
+                    world_x = mx / camera.zoom + camera.offset_x
+                    world_y = my / camera.zoom + camera.offset_y
+                    cab = getattr(self.editor, 'collision_active_building', None)
+                    if cab and not cab.rect.collidepoint(world_x, world_y):
+                        self.editor.collision_active_building = None
                 # Mover panel picker
                 if self.editor.collision_picker_dragging:
                     dx, dy = self.editor.collision_picker_drag_offset
@@ -217,7 +226,12 @@ class BuildingEditorEventHandler:
                             if 0 <= row < len(b.collision_map) and 0 <= col < len(b.collision_map[0]):
                                 b.collision_map[row][col] = self.editor.collision_choice
                             return
+                # Delegate motion and set active building if none and hovering
                 self.controller.on_mouse_motion(ev.pos, camera, entities.buildings)
+                if self.editor.current_tool == 'collision_brush' and getattr(self.editor, 'collision_active_building', None) is None:
+                    hb = getattr(self.editor, 'hovered_building', None)
+                    if hb:
+                        self.editor.collision_active_building = hb
             elif ev.type == pygame.MOUSEWHEEL:
                 self._handle_mouse_wheel(ev, entities.buildings)
 
@@ -238,6 +252,9 @@ class BuildingEditorEventHandler:
             idx = (idx + (-1 if ev.y < 0 else 1)) % len(hovered_list)
             self.editor.hovered_building_index = idx
             self.editor.hovered_building = hovered_list[idx]
+        # Sync collision target with hovered when scrolling
+        if self.editor.current_tool == 'collision_brush':
+            self.editor.collision_active_building = getattr(self.editor, 'hovered_building', None)
 
     def _on_quit(self, ev):
         logger.info("Quit event received in Building Editor")
@@ -273,6 +290,8 @@ class BuildingEditorEventHandler:
                     # Enter collision brush mode
                     self.editor.current_tool = 'collision_brush'
                     self.editor.collision_picker_open = True
+                    # Initialize collision target to current hovered building
+                    self.editor.collision_active_building = getattr(self.editor, 'hovered_building', None)
                     # Close asset picker to prevent accidental building placement
                     self.editor.picker_active = False
                     self.editor.dragging_building = False
