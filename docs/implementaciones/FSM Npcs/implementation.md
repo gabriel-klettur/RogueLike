@@ -5,7 +5,7 @@ Este documento describe las 10 fases propuestas para implementar la Máquina de 
 
 ---
 
-## Fase 1: Definición de requisitos y alcance (✅ Completada)
+## Fase 1: Definición de requisitos y alcance ( Completada)
 **Objetivo:** Establecer comportamientos y datos necesarios para la FSM.
 
 Tareas:
@@ -18,7 +18,7 @@ Entregables:
 1. `monsters.json` o `AIConfig` con valores iniciales.
 2. `docs/specs/fsm_npcs_requirements.md`.
 
-## Fase 2: Diseño del diagrama de estados (✅ Completada)
+## Fase 2: Diseño del diagrama de estados ( Completada)
 **Objetivo:** Visualizar estados y transiciones con condiciones claras.
 
 Tareas:
@@ -29,7 +29,7 @@ Tareas:
 Entregables:
 - `docs/diagrams/fsm_npcs.mmd` y `fsm_npcs.svg`.
 
-## Fase 3: Núcleo FSM (✅ Completada)
+## Fase 3: Núcleo FSM ( Completada)
 **Objetivo:** Implementar clases base para estados y máquina.
 
 Tareas:
@@ -43,7 +43,7 @@ Tareas:
 Entregables:
 - Módulos `state.py`, `fsm.py` con docstrings y tests.
 
-## Fase 4: Componente FSM (✅ Completada)
+## Fase 4: Componente FSM ( Completada)
 **Objetivo:** Integrar FSM con ECS.
 
 Tareas:
@@ -60,7 +60,7 @@ Tareas:
 Entregables:
 - `npc_state.py`, `fsm_system.py` y actualización en `entity_factory.py`.
 
-## Fase 5: Estado Idle (✅ Completada)
+## Fase 5: Estado Idle ( Completada)
 **Objetivo:** Comportamiento pasivo y transición a Chase.
 
 Tareas:
@@ -73,7 +73,7 @@ Tareas:
 Entregables:
 - `idle_state.py` con lógica y tests en `tests/test_idle_state.py`.
 
-## Fase 6: Estado Patrol (✅ Completada)
+## Fase 6: Estado Patrol ( Completada)
 **Objetivo:** Recorrer waypoints definidos.
 
 Tareas:
@@ -87,7 +87,7 @@ Tareas:
 Entregables:
 - `patrol_state.py`, `patrol_route.py`, y tests de ruta.
 
-## Fase 7: Estado Aggro (✅ Completada)
+## Fase 7: Estado Aggro ( Completada)
 **Objetivo:** Persecución activa del jugador.
 
 Tareas:
@@ -100,7 +100,7 @@ Tareas:
 Entregables:
 - `aggro_state.py` y actualización de `aggro_system.py`.
 
-## Fase 8: Estado Attack (En progreso)
+## Fase 8: Estado Attack ( Completada)
 **Objetivo:** Ejecución de lógica de combate.
 
 Tareas:
@@ -113,7 +113,7 @@ Tareas:
 Entregables:
 - `attack_state.py`
 
-## Fase 9: Estado Flee y Muerte
+## Fase 9: Estado Flee y Muerte ( Completada)
 **Objetivo:** Comportamientos de huida y muerte.
 
 Tareas:
@@ -128,7 +128,7 @@ Tareas:
 Entregables:
 - `flee_state.py`, `death_state.py`, y tests de expirar muerte.
 
-## Fase 10: Integración, pruebas y optimización
+## Fase 10: Integración, pruebas y optimización (En progreso)
 **Objetivo:** Completar integración, validar y perfilar.
 
 Tareas:
@@ -141,4 +141,5 @@ Tareas:
 Entregables:
 - `world.py` actualizado, suite de tests completa, resultados de benchmark, guía de usuario.
 
+---
 ---
