@@ -53,8 +53,8 @@ class CollisionDebugSystem:
 
             # Iterar cada collider dentro del MultiCollider
             for name, collider in multi.colliders.items():
-                # Color rojo para 'body', verde para otros
-                color = (255, 0, 0) if name == 'body' else (0, 255, 0)
+                # Color morado para 'body', blanco para otros
+                color = (255, 0, 255) if name == 'body' else (255, 255, 255)
 
                 # Calcular rectángulo en mundo y pasar a coordenadas de pantalla
                 rect_world = build_collider_rect(pos.x, pos.y, collider)
@@ -93,8 +93,8 @@ class CollisionDebugSystem:
                             wx = pos.x + collider.offset_x * scale_val + dx
                             wy = pos.y + collider.offset_y * scale_val + dy
                             self._pts.append(cam_apply((wx, wy)))
-                        draw_polygon(screen, color, self._pts, 1)
+                        draw_polygon(screen, color, self._pts, 2)
 
                 else:
                     # Si no hay máscara, dibujar rectángulo simple
-                    draw_rect(screen, color, self._rect, 1)
+                    draw_rect(screen, color, self._rect, 2)
