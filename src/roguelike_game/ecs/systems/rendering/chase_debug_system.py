@@ -1,4 +1,5 @@
 import pygame
+from roguelike_engine.config.config_tiles import TILE_SIZE
 
 class ChaseDebugSystem:
     """
@@ -51,3 +52,17 @@ class ChaseDebugSystem:
             pygame.draw.circle(screen, (255,0,255), (int(sox), int(soy)), 4)
             # Línea hacia centro del jugador
             pygame.draw.line(screen, (0,0,255), (int(sox), int(soy)), (int(scx), int(scy)), 1)
+            # Bounding box del NPC en amarillo
+            w, h = sprite.image.get_size()
+            sx = (pos.x - camera.offset_x) * camera.zoom
+            sy = (pos.y - camera.offset_y) * camera.zoom
+            sw = w * camera.zoom
+            sh = h * camera.zoom
+            pygame.draw.rect(screen, (255,255,0), pygame.Rect(sx, sy, sw, sh), 1)
+            # Tile donde está el NPC en rojo
+            tile_x = (pos.x // TILE_SIZE) * TILE_SIZE
+            tile_y = (pos.y // TILE_SIZE) * TILE_SIZE
+            ts = TILE_SIZE * camera.zoom
+            tsx = (tile_x - camera.offset_x) * camera.zoom
+            tsy = (tile_y - camera.offset_y) * camera.zoom
+            pygame.draw.rect(screen, (255,0,0), pygame.Rect(tsx, tsy, ts, ts), 1)

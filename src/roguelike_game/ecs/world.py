@@ -106,7 +106,7 @@ class NPCWorld:
         positions = find_spawn_positions(
             self.map_manager, self.buildings,
             lobby_offset, zone_size,
-            neighbor_padding=3, sample_count=25
+            neighbor_padding=3, sample_count=5
         )
         print(f"[ECS][Spawn] Spawn candidates: {len(positions)}")
         for tx, ty in positions:
@@ -123,7 +123,7 @@ class NPCWorld:
             empty_positions = find_spawn_positions(
                 self.map_manager, self.buildings,
                 empty_offset, zone_size,
-                neighbor_padding=3, sample_count=25
+                neighbor_padding=3, sample_count=5
             )
             print(f"[ECS][Spawn] Spawn in empty_left: {len(empty_positions)}")
             for tx, ty in empty_positions:
