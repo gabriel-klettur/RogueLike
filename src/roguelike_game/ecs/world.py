@@ -29,6 +29,7 @@ from .systems.rendering.fireball_render_system import FireballRenderSystem
 from .systems.rendering.player_debug_render_system import PlayerDebugRenderSystem
 from .systems.rendering.chase_debug_system import ChaseDebugSystem
 from .systems.ai.npc_tile_resolution_system import NPCTileResolutionSystem
+from .systems.ai.npc_tile_avoidance_system import NPCTileAvoidanceSystem
 
 from roguelike_engine.map.utils import calculate_lobby_offset
 from .utils.spawn_utils import find_spawn_positions
@@ -70,7 +71,8 @@ class NPCWorld:
             'CombatStats': {}, 'MeleeWeapon': {},
             'WantsToMelee': {}, 'AttackCooldown': {},
             'WantsToCastSpell': {},
-            'AggroRange': {}, 'ChaseTarget': {}, 'FacingCooldown': {}, 'InputComponent': {}, 'InventoryComponent': {}, 'CameraFollowComponent': {}, 'PlayerTagComponent': {}
+            'AggroRange': {}, 'ChaseTarget': {}, 'FacingCooldown': {}, 'InputComponent': {}, 'InventoryComponent': {}, 'CameraFollowComponent': {}, 'PlayerTagComponent': {},
+            'TileAvoidance': {}
         }
 
     def _init_systems(self):
@@ -78,6 +80,7 @@ class NPCWorld:
         self.update_systems = [
             AggroSystem(), ChaseSystem(), PlayerFacingSystem(), FacingSystem(), InputSystem(),
             PatrolSystem(), MovementCollisionSystem(), NPCTileResolutionSystem(),
+            NPCTileAvoidanceSystem(),
             AttackCooldownSystem(),
             NPCMeleeDecisionSystem(),
             MeleeCombatSystem(), AbilitySystem(),
@@ -107,7 +110,7 @@ class NPCWorld:
         positions = find_spawn_positions(
             self.map_manager, self.buildings,
             lobby_offset, zone_size,
-            neighbor_padding=3, sample_count=5
+            neighbor_padding=3, sample_count=100
         )
         print(f"[ECS][Spawn] Spawn candidates: {len(positions)}")
         for tx, ty in positions:
@@ -124,7 +127,7 @@ class NPCWorld:
             empty_positions = find_spawn_positions(
                 self.map_manager, self.buildings,
                 empty_offset, zone_size,
-                neighbor_padding=3, sample_count=5
+                neighbor_padding=3, sample_count=100
             )
             print(f"[ECS][Spawn] Spawn in empty_left: {len(empty_positions)}")
             for tx, ty in empty_positions:
