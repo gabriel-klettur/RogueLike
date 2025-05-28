@@ -16,6 +16,7 @@ from roguelike_game.ecs.components.core.identity import Identity, Faction
 from roguelike_game.ecs.components.combat.combat_stats import CombatStats
 from roguelike_game.ecs.components.combat.melee_weapon import MeleeWeapon
 from roguelike_game.ecs.components.ai.aggro_range import AggroRange
+from roguelike_game.ecs.components.combat.melee_range import MeleeRange
 from roguelike_game.ecs.components.transform.z_layer import ZLayer
 from roguelike_game.systems.config_z_layer import Z_LAYERS
 import logging
@@ -169,5 +170,7 @@ def spawn_monster(world, monster_type: str, tile_x: int, tile_y: int) -> int:
     world.components["CombatStats"][eid] = CombatStats(cfg.get("hp", 0), cfg.get("hp", 0), cfg.get("power", 0), cfg.get("defense", 0))
     world.components["MeleeWeapon"][eid] = MeleeWeapon(cfg.get("melee_damage", 0), cfg.get("melee_cooldown", 1.0))
     world.components["AggroRange"][eid] = AggroRange(cfg.get("aggro_range", 0))
+    # Añadir componente de melee_range para lógica de combate
+    world.components["MeleeRange"][eid] = MeleeRange(cfg.get("melee_range", 0))
 
     return eid

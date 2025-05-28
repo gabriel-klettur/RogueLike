@@ -15,7 +15,7 @@
       "aggro_range": 20,
       "melee_damage": 10,      
       "melee_cooldown": 1.0,
-      "melee_range": 1,
+      "melee_range": 5,
       "defense": 5,
       "power": 10
     }    

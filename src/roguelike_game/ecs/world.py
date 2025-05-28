@@ -74,6 +74,7 @@ class NPCWorld:
             'FireballComponent': {},
             'SpawnRequest': {},
             'CombatStats': {}, 'MeleeWeapon': {},
+            'MeleeRange': {},
             'WantsToMelee': {}, 'AttackCooldown': {},
             'WantsToCastSpell': {},
             'AggroRange': {}, 'ChaseTarget': {}, 'FacingCooldown': {}, 'InputComponent': {}, 'InventoryComponent': {}, 'CameraFollowComponent': {}, 'PlayerTagComponent': {}, 'InCombat': {},
