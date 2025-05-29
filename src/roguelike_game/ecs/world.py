@@ -22,6 +22,7 @@ from .systems.rendering.player_debug_render_system import PlayerDebugRenderSyste
 from .systems.rendering.death_timer_bar_system import DeathTimerBarSystem
 from .systems.rendering.death_timer_debug_system import DeathTimerDebugSystem
 from .systems.rendering.chase_debug_system import ChaseDebugSystem
+from .systems.rendering.states_debug_render_system import StatesDebugRenderSystem
 
 #! DEBERIAMOS IMPLEMENTARLO DENTRO DE NUESTRO FSM
 #!from .systems.rendering.chase_debug_system import ChaseDebugSystem
@@ -97,7 +98,8 @@ class NPCWorld:
             FireballRenderSystem(),
             ChaseDebugSystem(),
             PlayerDebugRenderSystem(),
-            DeathTimerBarSystem()
+            DeathTimerBarSystem(),
+            StatesDebugRenderSystem()
         ]
         # Añadir sistema de debug de spawn cuando DEBUG=true
         if config.DEBUG:
