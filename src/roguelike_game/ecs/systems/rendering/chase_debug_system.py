@@ -4,6 +4,8 @@ from roguelike_game.ecs.systems.ai.chase_system import ChaseSystem
 from roguelike_game.ecs.utils.position_utils import compute_foot_tile
 from roguelike_game.ecs.utils.render_utils import draw_sprite_bbox
 
+#! DEBERIAMOS IMPLEMENTARLO DENTRO DE NUESTRO FSM
+
 class ChaseDebugSystem:
     """
     Dibuja debug de ChaseSystem:

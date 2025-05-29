@@ -1,8 +1,6 @@
 from roguelike_game.ecs.fsm.state import State
-from roguelike_game.ecs.components.transform.position import Position
-from roguelike_game.ecs.components.transform.movement_speed import MovementSpeed
-from roguelike_game.ecs.components.ai.aggro_range import AggroRange
 from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_game.ecs.fsm.states.death_state import DeathState
 
 class FleeState(State):
     """
@@ -14,6 +12,11 @@ class FleeState(State):
 
     def execute(self, entity, dt):
         world = entity.world
+        # Verificar muerte
+        hp_cmp = world.components['Health'][entity]
+        if hp_cmp.current_hp <= 0:
+            world.components['NPCState'][entity].fsm.change_state(DeathState(), entity)
+            return
         pos = world.components['Position'][entity]
         player_pos = world.player_position
         if not player_pos:

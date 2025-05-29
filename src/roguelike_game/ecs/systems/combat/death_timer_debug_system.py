@@ -7,6 +7,8 @@ Módulo que provee un sistema de debug para mostrar contadores de muerte
 (tiempo restante antes de eliminar la entidad) sobre los NPCs.
 """
 
+#! DEBERIAMOS IMPLEMENTARLO DENTRO DE NUESTRO FSM
+
 class DeathTimerDebugSystem:
     """
     Sistema que renderiza un contador de segundos sobre NPCs muertos,

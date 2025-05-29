@@ -1,8 +1,6 @@
 from roguelike_game.ecs.fsm.state import State
+from roguelike_game.ecs.fsm.states.death_state import DeathState
 from roguelike_game.ecs.systems.combat.combat_system import CombatSystem
-from roguelike_game.ecs.components.ai.chase_target import ChaseTarget
-from roguelike_game.ecs.components.transform.position import Position
-from roguelike_game.ecs.components.combat.melee_range import MeleeRange
 from roguelike_engine.config.config_tiles import TILE_SIZE
 
 class AttackState(State):
@@ -15,6 +13,11 @@ class AttackState(State):
 
     def execute(self, entity, dt):
         world = entity.world
+        # Verificar muerte
+        hp_cmp = world.components['Health'][entity]
+        if hp_cmp.current_hp <= 0:
+            world.components['NPCState'][entity].fsm.change_state(DeathState(), entity)
+            return
         chase_cmp = world.components['ChaseTarget'].get(entity)
         if not chase_cmp:
             return

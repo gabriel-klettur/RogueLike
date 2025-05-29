@@ -2,7 +2,7 @@ from roguelike_game.ecs.fsm.state import State
 from roguelike_game.ecs.fsm.fsm import FiniteStateMachine
 from roguelike_game.ecs.fsm.states.spell.prepare_spell_state import PrepareSpellState
 from roguelike_game.ecs.fsm.states.aggro_state import AggroState
-from roguelike_game.ecs.components.transform.position import Position
+
 
 class CastState(State):
     def __init__(self):

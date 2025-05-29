@@ -4,20 +4,15 @@ from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
 import roguelike_engine.config.config as config
 
-from .systems.ai.patrol_system import PatrolSystem
 from .systems.physics.movement_collision_system import MovementCollisionSystem
 from .systems.rendering.animation_system import AnimationSystem
 from .systems.rendering.health_bar_system import HealthBarSystem
 from .systems.rendering.nameplate_system import NamePlateSystem
 from .systems.physics.collision_debug_system import CollisionDebugSystem
-from .systems.combat.death_system import DeathSystem
 from .systems.combat.death_timer_debug_system import DeathTimerDebugSystem
 from .systems.rendering.death_timer_bar_system import DeathTimerBarSystem
-from .systems.ai.npc_melee_decision_system import NPCMeleeDecisionSystem
 from .systems.combat.melee_combat_system import MeleeCombatSystem
 from .systems.combat.attack_cooldown_system import AttackCooldownSystem
-from .systems.ai.aggro_system import AggroSystem
-from .systems.ai.chase_system import ChaseSystem
 from .systems.physics.facing_system import FacingSystem
 from .systems.physics.player_facing_system import PlayerFacingSystem
 from .systems.core.spawn_debug_system import SpawnDebugSystem
@@ -27,7 +22,11 @@ from .systems.combat.spell_casting_system import SpellCastingSystem
 from .systems.combat.fireball_system import FireballSystem
 from .systems.rendering.fireball_render_system import FireballRenderSystem
 from .systems.rendering.player_debug_render_system import PlayerDebugRenderSystem
-from .systems.rendering.chase_debug_system import ChaseDebugSystem
+
+#! DEBERIAMOS IMPLEMENTARLO DENTRO DE NUESTRO FSM
+#!from .systems.rendering.chase_debug_system import ChaseDebugSystem
+
+
 from .systems.fsm.fsm_system import FSMSystem
 from roguelike_game.ecs.utils.collider_utils import build_collider_rect
 
@@ -85,19 +84,19 @@ class NPCWorld:
     def _init_systems(self):
         """Configura sistemas de actualización y renderizado."""
         self.update_systems = [
-            AggroSystem(), ChaseSystem(), PlayerFacingSystem(), FacingSystem(), InputSystem(),
-            PatrolSystem(), MovementCollisionSystem(),
-            AttackCooldownSystem(),
-            NPCMeleeDecisionSystem(),
+            FSMSystem(),
+            PlayerFacingSystem(), FacingSystem(), InputSystem(),
+            MovementCollisionSystem(),
+            AttackCooldownSystem(),            
             MeleeCombatSystem(), SpellCastingSystem(),
             FireballSystem(),
-            DeathSystem(), FSMSystem(), AnimationSystem(), SpawnSystem()
+            AnimationSystem(), SpawnSystem()
         ]
         self.render_systems = [
             HealthBarSystem(), NamePlateSystem(),
             CollisionDebugSystem(), DeathTimerDebugSystem(), DeathTimerBarSystem(),
             FireballRenderSystem(),
-            ChaseDebugSystem(),
+            #ChaseDebugSystem(),
             PlayerDebugRenderSystem()
         ]
         # Añadir sistema de debug de spawn cuando DEBUG=true

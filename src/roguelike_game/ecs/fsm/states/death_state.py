@@ -12,8 +12,8 @@ class DeathState(State):
         world.components['DeathTimer'][entity] = DeathTimer(time.time())
 
     def execute(self, entity, dt):
-        """La eliminación la realiza DeathSystem tras expirar temporizador."""
-        pass
+        """Elimina inmediatamente la entidad del mundo."""
+        entity.world.remove_entity(entity.id)
 
     def exit(self, entity):
         """Limpia si fuera necesario."""

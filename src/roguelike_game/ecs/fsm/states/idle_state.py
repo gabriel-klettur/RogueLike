@@ -3,6 +3,7 @@ from roguelike_game.ecs.fsm.state import State
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.ai.aggro_range import AggroRange
 from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_game.ecs.fsm.states.death_state import DeathState
 
 class IdleState(State):
     """
@@ -13,8 +14,13 @@ class IdleState(State):
         self.start_time = time.time()
 
     def execute(self, entity, dt):
+        # Verificar muerte
+        world = entity.world
+        hp_cmp = world.components['Health'][entity]
+        if hp_cmp.current_hp <= 0:
+            world.components['NPCState'][entity].fsm.change_state(DeathState(), entity)
+            return
         # Obtener mundo y posiciones
-        world = entity.world  # requiere ajuste: registrar referencia al world en la entidad
         pos = world.components['Position'][entity]
         player_pos = world.player_position
         if not player_pos:
