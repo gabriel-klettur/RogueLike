@@ -3,7 +3,7 @@ from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.combat.health import Health
 from roguelike_game.ecs.components.transform.scale import Scale
 from roguelike_game.ecs.components.rendering.sprite import Sprite
-from roguelike_game.ecs.components.physics.multi_collider import MultiCollider
+
 
 class HealthBarSystem:
     """

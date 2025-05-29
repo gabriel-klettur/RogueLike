@@ -21,6 +21,7 @@ from .systems.rendering.fireball_render_system import FireballRenderSystem
 from .systems.rendering.player_debug_render_system import PlayerDebugRenderSystem
 from .systems.rendering.death_timer_bar_system import DeathTimerBarSystem
 from .systems.rendering.death_timer_debug_system import DeathTimerDebugSystem
+from .systems.rendering.chase_debug_system import ChaseDebugSystem
 
 #! DEBERIAMOS IMPLEMENTARLO DENTRO DE NUESTRO FSM
 #!from .systems.rendering.chase_debug_system import ChaseDebugSystem
@@ -88,13 +89,13 @@ class NPCWorld:
             MovementCollisionSystem(),                       
             MeleeCombatSystem(), SpellCastingSystem(),
             FireballSystem(),
-            AnimationSystem(), SpawnSystem()
+            AnimationSystem(), SpawnSystem(),            
         ]
         self.render_systems = [
             HealthBarSystem(), NamePlateSystem(),
             CollisionDebugSystem(),
             FireballRenderSystem(),
-            #ChaseDebugSystem(),
+            ChaseDebugSystem(),
             PlayerDebugRenderSystem(),
             DeathTimerBarSystem()
         ]

@@ -1,7 +1,4 @@
 import pygame
-from roguelike_game.ecs.components.abilities.fireball_component import FireballComponent
-from roguelike_game.ecs.components.transform.position import Position
-from roguelike_game.ecs.components.transform.velocity import Velocity
 
 class FireballSystem:
     """
