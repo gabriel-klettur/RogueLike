@@ -1,11 +1,9 @@
 # Path: src/roguelike_engine/input/events.py
 import pygame
-import roguelike_engine.config.config as config
-from roguelike_engine.config.map_config import global_map_settings
 
 from .keyboard     import handle_keyboard
 from .mouse        import handle_mouse
-from .continuous   import handle_continuous
+
 
 def handle_events(
     state,
@@ -26,36 +24,35 @@ def handle_events(
     - Prioridad: si algún editor está activo, rutea al handler correspondiente
     - Si no, procesa eventos de juego (keyboard, mouse, continuous)
     """
-    # 1) Prioridad a Tile Editor
-    if tiles_editor.editor_state.active:
+    # Optimized event handling
+    active_tiles = tiles_editor.editor_state.active
+    active_buildings = buildings_editor.editor_state.active
+    # Pre-handle editors
+    if active_tiles:
         tiles_editor.handler.handle(camera, map)
-
-    # 2) Prioridad a Buildings Editor
-    if buildings_editor.editor_state.active:
+    elif active_buildings:
         buildings_editor.handler.handle(camera, entities)
+    # Cache handlers and debug panel
+    
+    kb = handle_keyboard
+    ms = handle_mouse
 
-    # 3) Procesar eventos de juego
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+    panel = debug_overlay._panel_rect if debug_overlay else None
+    events = pygame.event.get()
+    for ev in events:
+        et = ev.type
+        if et == pygame.QUIT:
             state.running = False
-        
-        elif event.type in (pygame.KEYDOWN, pygame.KEYUP):
-            handle_keyboard(event, state, camera, clock, menu, entities, effects, tiles_editor, map)
-
-        elif event.type in (pygame.MOUSEWHEEL, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP):
-            # Intercept overlay scroll/click when hovering debug panel
+        elif et in (pygame.KEYDOWN, pygame.KEYUP):
+            kb(ev, state, camera, clock, menu, entities, effects, tiles_editor, map)
+        elif et in (pygame.MOUSEWHEEL, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP):
             consumed = False
-            if config.DEBUG and debug_overlay:
-                # get mouse pos for wheel vs click
-                if event.type == pygame.MOUSEWHEEL:
-                    mx, my = pygame.mouse.get_pos()
-                else:
-                    mx, my = event.pos
-                if debug_overlay._panel_rect and debug_overlay._panel_rect.collidepoint((mx, my)):
-                    debug_overlay.handle_event(event)
+            if panel:
+                mx, my = (pygame.mouse.get_pos() if et == pygame.MOUSEWHEEL else ev.pos)
+                if panel.collidepoint((mx, my)):
+                    debug_overlay.handle_event(ev)
                     consumed = True
-            if not consumed:
-                handle_mouse(event, state, camera, clock, map, entities, effects, explosions)
-
-    # Movimiento y láser continuo fuera del loop de eventos
-    handle_continuous(state, camera, map, entities, menu, effects)
+            if not consumed and not active_tiles and not active_buildings:
+                ms(ev, state, camera, clock, map, entities, effects, explosions)
+    
+    

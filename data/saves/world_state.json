@@ -1,7 +1,19 @@
 {
   "player": {
-    "last_position": {}
+    "level": "global_map",
+    "pos": [
+      72,
+      69
+    ]
   },
   "npcs": {},
-  "levels": {}
+  "levels": {
+    "global_map": {
+      "player_pos": [
+        72,
+        69
+      ],
+      "npc_states": {}
+    }
+  }
 }

@@ -80,6 +80,24 @@ class MapManager:
         """
         self._local_state["player_pos"] = tile_pos
 
+    def get_spawn_pixel(self, tile_pos: tuple[int, int]) -> tuple[int, int]:
+        """
+        Dada una posición en tiles, devuelve coordenadas en píxeles para alinear el collider 'feet'
+        """
+        from roguelike_game.config_player import RENDERED_SPRITE_SIZE
+        # Centro del tile en píxeles
+        tx, ty = tile_pos
+        tile_cx = tx * TILE_SIZE + TILE_SIZE // 2
+        tile_cy = ty * TILE_SIZE + TILE_SIZE // 2
+        # Tamaño sprite y collider 'feet'
+        w, h = RENDERED_SPRITE_SIZE
+        fh = h // 4
+        half_fh = fh // 2
+        # Calcular esquina superior-izquierda del sprite para alinear feet en el centro del tile
+        px = tile_cx - w // 2
+        py = tile_cy - (h - half_fh)
+        return px, py
+
     def restore_npc_states(self, npc_memory: dict):
         """
         Actualiza _local_state['npc_states'] con el diccionario global `npc_memory`.

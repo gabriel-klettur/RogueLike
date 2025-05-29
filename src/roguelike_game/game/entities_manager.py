@@ -1,5 +1,5 @@
 # Path: src/roguelike_game/game/entities_manager.py
-from typing import Tuple, List
+from types import SimpleNamespace
 
 from roguelike_game.entities.load_entities import load_entities
 from roguelike_game.game.map_manager import MapManager
@@ -14,21 +14,29 @@ class EntitiesManager:
         self.z_state = z_state
         self.map = game_map
         
-        self.player = None
         self.obstacles = []
         self.buildings = []        
 
         self.init_statics()    
+
+    @property
+    def player(self):
+        ecs_mgr = getattr(self, 'ecs_manager', None)
+        if ecs_mgr:
+            pos = ecs_mgr.npc_world.player_position
+            if pos:
+                return SimpleNamespace(x=pos.x, y=pos.y)
+        return None
 
     def init_statics(self):
         """
         Carga jugador, obstáculos y edificios.
         Devuelve (player, obstacles, buildings).
         """        
-        self.player, self.obstacles, self.buildings = load_entities(self.z_state)
+        self.obstacles, self.buildings = load_entities(self.z_state)
         self.recalibrate_buildings()
         
-        return self.player, self.obstacles, self.buildings    
+        return self.obstacles, self.buildings    
 
     def recalibrate_buildings(self):
         """
@@ -44,7 +52,7 @@ class EntitiesManager:
     def update(self, state, game_map, systems, perf_log):
         """
         Actualiza todas las entidades de la partida:
-          - Jugador
+          - #!Jugador (gestionado por ECS)
           - Obstáculos
           - Edificios
           # NPCs gestionados por ECS; eliminados de este método
@@ -52,10 +60,7 @@ class EntitiesManager:
         """
 
         # 1) Jugador
-        @benchmark(perf_log, "2.1.player_update")
-        def _update_player():
-            self.player.update(game_map)
-        _update_player()
+        # Player update now handled by ECS
 
         # 2) Obstáculos
         @benchmark(perf_log, "2.2.obstacles_update")

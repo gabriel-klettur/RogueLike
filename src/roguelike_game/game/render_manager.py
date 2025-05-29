@@ -10,7 +10,7 @@ from roguelike_game.systems.z_layer.render import render_z_ordered
 
 # Importar el decorador centralizado de benchmark
 from roguelike_engine.zone.view.zone_view import ZoneView
-
+from roguelike_game.ecs.world import NPCWorld
 
 class RendererManager:
     """
@@ -55,6 +55,9 @@ class RendererManager:
         self._collision_font = None
         self._collision_surf_solid = None
         self._collision_surf_walkable = None
+        # Cache para help overlay: (mode_key, screen_size) -> (surface, rect)
+        self._help_overlay_key = None
+        self._help_overlay_surf = None
 
     def render_game(
         self,
@@ -97,16 +100,8 @@ class RendererManager:
             self._render_effects(camera, screen, systems.effects)
         _bench_effects()
 
-        # 4) HUD
-        @benchmark(perf_log, "3.4. hud")
-        def _bench_hud():
-            # Ocultar HUD de jugador en modo collision brush
-            if not (self.buildings_editor.editor_state.active and self.buildings_editor.editor_state.current_tool == "collision_brush"):
-                self.entities.player.render_hud(screen, camera)
-        _bench_hud()
-
-        # 4.b) Capa del Tile Editor
-        @benchmark(perf_log, "3.4b. tile_editor")
+        # 4) Capa del Tile Editor
+        @benchmark(perf_log, "3.4. tile_editor")
         def _bench_tile_editor():
             # Skip tile editor UI in collision-only mode
             if not (self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.show_collisions and not self.tiles_editor.editor_state.show_collisions_overlay):
@@ -155,16 +150,8 @@ class RendererManager:
         # Mostrar ayuda de controles según el modo
         self._render_help_overlay(state)
 
-        @benchmark(perf_log, "3.10. update dirth rects")        
-        def _update_dirty_rects():
-            # Actualizar solo regiones sucias, o todo si hay demasiadas        
-            if len(self._dirty_rects) > 100:
-                # demasiados rects, repintamos todo para evitar overhead
-                pygame.display.flip()
-            else:
-                pygame.display.update(self._dirty_rects)
-
-        _update_dirty_rects()
+        # Reemplazar dirty rects por flip completo para rendimiento constante
+        pygame.display.flip()
 
         return self._dirty_rects
         
@@ -251,8 +238,6 @@ class RendererManager:
             e for e in entities.obstacles
             if camera.is_in_view(e.x, e.y, getattr(e, "sprite_size", (64, 64)))
         ])
-        if camera.is_in_view(entities.player.x, entities.player.y, entities.player.sprite_size):
-            all_entities.append(entities.player)
         # Only render buildings if not hidden by editor or collision-only mode (NPC rendering removed; gestionado por ECS)
         editor_state = self.tiles_editor.editor_state
         if not ((editor_state.active and not editor_state.show_buildings)
@@ -263,6 +248,13 @@ class RendererManager:
                 for part in b.get_parts():
                     state.z_state.set(part, part.z)
                     all_entities.append(part)
+        # 4) NPCs ECS: envolver cada entidad y asignar capa Z
+        for eid in self.ecs.npc_world.get_entities_with('Position', 'Sprite', 'ZLayer'):
+            layer = self.ecs.npc_world.components['ZLayer'][eid].layer
+            # wrapper ligero para que tenga x,y,render
+            npc = _NPCWrapper(self.ecs.npc_world, eid)
+            state.z_state.set(npc, layer)
+            all_entities.append(npc)
 
         render_z_ordered(all_entities, screen, camera, state.z_state)
 
@@ -310,64 +302,88 @@ class RendererManager:
         return dirty
 
     def _render_help_overlay(self, state):
-        # Dibuja un recuadro con los controles disponibles en la esquina inferior derecha
-        import pygame
+        # Cachea el overlay de ayuda para evitar renderizado de texto cada frame
         screen = self.screen
-        width, height = screen.get_size()
-        if self.buildings_editor.editor_state.active:
-            lines = [
-                "Modo Edición Edificios:",
-                "F10: alternar editor/cambiar modo",
-                "P: alternar selector edificio",
-                "ESC: salir editor",
-                "D: reset edificio",
-                "R: redimensionar",
-                "Ctrl+S: guardar",
-                "Ctrl+Z: deshacer",
-                "N: edificio aleatorio",
-                "Supr: borrar edificio"
-            ]
-        elif self.tiles_editor.editor_state.active:
-            lines = [
-                "Modo Edición Tiles:",
-                "F8: alternar editor tiles",
-                "ESC: salir editor",
-                "B: alternar edificios",
-                "Click Izq: seleccionar/pintar",
-                "Rueda: cambiar capa",
-                "Click Der: arrastrar paleta"
-            ]
+        size = screen.get_size()
+        mode = ('buildings' if self.buildings_editor.editor_state.active else
+                'tiles' if self.tiles_editor.editor_state.active else 'normal')
+        key = (mode, size)
+        if key != self._help_overlay_key:
+            # Reconstruir overlay
+            import pygame
+            screen_w, screen_h = size
+            if mode == 'buildings':
+                lines = [
+                    "Modo Edición Edificios:", "F10: modo", "P: selector edificio",
+                    "ESC: salir", "D: reset", "R: redimensionar",
+                    "Ctrl+S: guardar", "Ctrl+Z: deshacer", "N: aleatorio",
+                    "Supr: borrar"
+                ]
+            elif mode == 'tiles':
+                lines = ["Modo Edición Tiles:", "F8: editor tiles", "ESC: salir",
+                         "B: alternar edificios", "Click Izq: pintar", "Rueda: capa",
+                         "Click Der: arrastrar"]
+            else:
+                lines = ["Modo Normal:", "F8: tiles", "F10: edificios",
+                         "F9: debug", "ESC: menú", "Q: vida",
+                         "1: escudo", "F: fuegos art.", "R: humo", "T: humo pers.",
+                         "Z: rayo", "X: llama", "V: dash", "E: slash", "F3: expand dungeon"]
+            font = pygame.font.SysFont("Arial", 14)
+            pad = 5
+            texts = [font.render(l, True, (255,255,255)) for l in lines]
+            lh = texts[0].get_height() if texts else 0
+            bw = max((t.get_width() for t in texts), default=0) + pad*2
+            bh = len(texts)*lh + pad*2
+            overlay = pygame.Surface((bw, bh), flags=pygame.SRCALPHA)
+            overlay.fill((0,0,0,128))
+            for i, t in enumerate(texts):
+                overlay.blit(t, (pad, pad + i*lh))
+            rect = overlay.get_rect()
+            rect.bottomright = (screen_w - pad, screen_h - pad)
+            self._help_overlay_surf = (overlay, rect)
+            self._help_overlay_key = key
+        # Blitear overlay cacheado
+        surf, rect = self._help_overlay_surf
+        screen.blit(surf, rect)
+
+class _NPCWrapper:
+    """Envoltorio optimizado para renderizar NPCs dentro de render_z_ordered."""
+    __slots__ = ('eid', 'pos_map', 'sprite_map', 'scale_map')
+    # Cache de superficies escaladas: {(eid, scale): Surface}
+    _scale_cache = {}
+
+    def __init__(self, world, eid):
+        comps = world.components
+        self.eid = eid
+        self.pos_map = comps['Position']
+        self.sprite_map = comps['Sprite']
+        self.scale_map = comps.get('Scale', {})
+
+    @property
+    def x(self):
+        return self.pos_map[self.eid].x
+
+    @property
+    def y(self):
+        return self.pos_map[self.eid].y
+
+    def render(self, screen, camera):
+        # Hot-path: referencias locales
+        blit = screen.blit
+        apply = camera.apply
+        eid = self.eid
+        sprite = self.sprite_map[eid]
+        orig = sprite.image
+        scale_comp = self.scale_map.get(eid)
+        scale_val = scale_comp.scale if scale_comp else 1.0
+        if scale_val != 1.0:
+            # Include image identity to distinguish direction/frame
+            key = (eid, scale_val, id(orig))
+            image = _NPCWrapper._scale_cache.get(key)
+            if image is None:
+                w, h = orig.get_size()
+                image = pygame.transform.scale(orig, (int(w * scale_val), int(h * scale_val)))
+                _NPCWrapper._scale_cache[key] = image
         else:
-            lines = [
-                "Modo Normal:",
-                "F8: editor tiles",
-                "F10: editor edificios",
-                "F9: activar debug",
-                "ESC: menú",
-                "Q: restaurar vida",
-                "1: escudo",
-                "F: fuegos artificiales",
-                "R: emisor humo",
-                "T: humo persistente",
-                "Z: rayo",
-                "X: llama arcana",
-                "V: dash",
-                "E: slash",
-                "F3: expandir dungeon"
-            ]
-        font = pygame.font.SysFont("Arial", 14)
-        pad = 5
-        texts = [font.render(l, True, (255,255,255)) for l in lines]
-        lh = texts[0].get_height() if texts else 0
-        bw = max((t.get_width() for t in texts), default=0) + pad*2
-        bh = lh*len(texts) + pad*2
-        x0 = width - bw - 10
-        y0 = height - bh - 10
-        box = pygame.Rect(x0, y0, bw, bh)
-        pygame.draw.rect(screen, (0,0,0), box)
-        pygame.draw.rect(screen, (255,255,255), box, 1)
-        y = y0 + pad
-        for t in texts:
-            screen.blit(t, (x0+pad, y))
-            y += lh
-        self._dirty_rects.append(box)
+            image = orig
+        blit(image, apply((self.x, self.y)))

@@ -42,7 +42,6 @@ from roguelike_engine.utils.loading_screen import LoadingScreen
 #! -------------------------- Paquetes locales: world ---------------------------------
 from roguelike_engine.world.world import WorldManager
 from roguelike_engine.world.world_config import WORLD_CONFIG
-from roguelike_game.entities.player.model.player_data import PlayerData
 
 #! -------------------------- Paquetes locales: ECS ---------------------------------
 from roguelike_game.game.ecs_manager import ECSManager
@@ -89,7 +88,7 @@ class Game:
         self.perf_log = perf_log
 
         # — Mundo y persistencia global —
-        self.world = WorldManager(PlayerData(), WORLD_CONFIG)
+        self.world = WorldManager(WORLD_CONFIG)
         self._last_autosave_time = time.time()
 
         # initialize loading screen
@@ -104,8 +103,17 @@ class Game:
     def _init_map(self, map_name: str | None):
         """
         Construye el mapa global y carga todos sus datos en el estado.
-        """        
-        self.map = MapManager(map_name)                                        
+        """
+        # Si hay un nivel previamente guardado, cargarlo
+        if self.world.current_level:
+            self.world.load_level(self.world.current_level)
+            self.map = self.world.maps[self.world.current_level]
+        else:
+            # Carga inicial de mapa
+            self.map = MapManager(map_name)
+            # Registrar mapa inicial en WorldManager
+            self.world.maps[self.map.name] = self.map
+            self.world.current_level = self.map.name
 
     def _init_entities(self):
         """
@@ -137,7 +145,8 @@ class Game:
         """
         Inicializa el gestor ECS
         """
-        self.ecs = ECSManager(screen)
+        # Pasar referencia del mapa y entidades para colisiones en ECS
+        self.ecs = ECSManager(screen, self.map, self.entities)
 
     def _init_renderer(self):
         """
@@ -165,7 +174,7 @@ class Game:
         """
         Inicializa los sistemas del juego (combat, effects, explosions, etc.).
         """
-        self.effects = EffectsManager(self.state, perf_log)
+        self.effects = EffectsManager(self.state, perf_log, self.ecs.npc_world)
 
     def _init_minimap(self):
         """

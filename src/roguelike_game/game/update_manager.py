@@ -32,7 +32,9 @@ def update_game(
             tiles_editor.update(camera, map)
         _update_tiles_editor()
         # Centrar cámara en el jugador incluso con editor activo
-        camera.update(entities.player)
+        eid = ecs.npc_world.player_entity
+        pos = ecs.npc_world.components['Position'][eid]
+        camera.update(types.SimpleNamespace(x=pos.x, y=pos.y))
         return
 
     # 2) Si el Buildings-Editor está activo, solo actualizamos él
@@ -42,13 +44,18 @@ def update_game(
             buildings_editor.update(camera)
         _update_buildings_editor()
         # Centrar cámara en el jugador incluso con editor activo
-        camera.update(entities.player)
+        eid = ecs.npc_world.player_entity
+        pos = ecs.npc_world.components['Position'][eid]
+        camera.update(types.SimpleNamespace(x=pos.x, y=pos.y))
         return
 
     # 3.1) Cámara sigue al jugador
     @benchmark(perf_log, "2.1.camera.update")
     def _update_camera():
-        camera.update(entities.player)
+        # Centrar cámara usando la posición del jugador en ECS
+        eid = ecs.npc_world.player_entity
+        pos = ecs.npc_world.components['Position'][eid]
+        camera.update(types.SimpleNamespace(x=pos.x, y=pos.y))
     _update_camera()
 
     # 3.2) Sistemas principales
@@ -64,32 +71,19 @@ def update_game(
     _update_entities()
 
     # 3.3.5) ECS logic
-    @benchmark(perf_log, "2.3.5.ecs.update")
+    @benchmark(perf_log, "2.4.ecs.update")
     def _update_ecs():
-        ecs.update(clock, screen)
+        ecs.update(clock, screen, camera)
     _update_ecs()
-
-    # 3.4) Movimiento especial del jugador
-    @benchmark(perf_log, "2.4.player.update_dash")
-    def _update_dash():
-        # Incluir colisiones de buildings
-        solid = map.solid_tiles
-        bt_tiles = []
-        for b in entities.buildings:
-            for ry, row in enumerate(b.collision_map):
-                for cx, ch in enumerate(row):
-                    if ch == '#':
-                        rect = pygame.Rect(b.x + cx * TILE_SIZE, b.y + ry * TILE_SIZE, TILE_SIZE, TILE_SIZE)
-                        bt_tiles.append(types.SimpleNamespace(solid=True, rect=rect))
-        collision_tiles = list(solid) + bt_tiles
-        entities.player.movement.update_dash(collision_tiles, entities.obstacles)
-    _update_dash()
 
     # 3.5) Minimap update
     @benchmark(perf_log, "2.5.minimap.update")
     def _update_minimap():
+        # Usar posición del jugador en ECS
+        eid = ecs.npc_world.player_entity
+        pos = ecs.npc_world.components['Position'][eid]
         minimap.update(
-            player_pos=(entities.player.x, entities.player.y),
+            player_pos=(pos.x, pos.y),
             tiles=map.tiles_in_region
         )
     _update_minimap()

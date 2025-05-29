@@ -10,6 +10,7 @@ Z_LAYERS = {
     "low_object": 2,       # Obstáculos bajos, árboles cortos
     "building_low": 3,      # Edificios, estructuras grandes
     "player": 4,           # Jugador, enemigos, NPCs en piso
+    "monster": 4,           # Enemigos
     "building_high": 5,         # Entidades flotando, proyectiles mágicos
     "sky": 6,              # Elementos atmosféricos (rayos, fuego, lluvia, etc.)
     "ui": 10               # Cualquier render que va sobre todo (crosshair, HUD)

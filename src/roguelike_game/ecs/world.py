@@ -1,118 +1,228 @@
-from .components.position import Position
-from .components.sprite import Sprite
-from .components.patrol import Patrol
-from .components.movement_speed import MovementSpeed
-from .components.animator import Animator
-from .components.scale import Scale
-from .components.identity import Identity, Faction
-from .components.health import Health
-from .systems.render_system import RenderSystem
-from .systems.patrol_system import PatrolSystem
-from .systems.animation_system import AnimationSystem
-from .systems.health_bar_system import HealthBarSystem
-from .systems.nameplate_system import NamePlateSystem
-from roguelike_engine.map.utils import calculate_lobby_offset
+import pygame
+
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
+import roguelike_engine.config.config as config
+
+from .systems.ai.patrol_system import PatrolSystem
+from .systems.physics.movement_collision_system import MovementCollisionSystem
+from .systems.rendering.animation_system import AnimationSystem
+from .systems.rendering.health_bar_system import HealthBarSystem
+from .systems.rendering.nameplate_system import NamePlateSystem
+from .systems.physics.collision_debug_system import CollisionDebugSystem
+from .systems.combat.death_system import DeathSystem
+from .systems.combat.death_timer_debug_system import DeathTimerDebugSystem
+from .systems.rendering.death_timer_bar_system import DeathTimerBarSystem
+from .systems.ai.npc_melee_decision_system import NPCMeleeDecisionSystem
+from .systems.combat.melee_combat_system import MeleeCombatSystem
+from .systems.combat.attack_cooldown_system import AttackCooldownSystem
+from .systems.ai.aggro_system import AggroSystem
+from .systems.ai.chase_system import ChaseSystem
+from .systems.physics.facing_system import FacingSystem
+from .systems.physics.player_facing_system import PlayerFacingSystem
+from .systems.core.spawn_debug_system import SpawnDebugSystem
+from .systems.core.spawn_system import SpawnSystem
+from .systems.input.input_system import InputSystem
+from .systems.combat.spell_casting_system import SpellCastingSystem
+from .systems.combat.fireball_system import FireballSystem
+from .systems.rendering.fireball_render_system import FireballRenderSystem
+from .systems.rendering.player_debug_render_system import PlayerDebugRenderSystem
+from .systems.rendering.chase_debug_system import ChaseDebugSystem
+from .systems.fsm.fsm_system import FSMSystem
+from roguelike_game.ecs.utils.collider_utils import build_collider_rect
+
+from roguelike_engine.map.utils import calculate_lobby_offset
+from .utils.spawn_utils import find_spawn_positions
+from roguelike_game.ecs.factories.entity_factory import _load_caches_once, _DEFS, _create_sprite_component, _calculate_position, _create_collider_components
+from roguelike_game.ecs.components.spawn.spawn_request import SpawnRequest
 
 class NPCWorld:
-    def __init__(self, screen):
+    def __init__(self, screen, map_manager, buildings):
+        """Inicializa NPCWorld: configura índice espacial, componentes, sistemas y spawn inicial."""
         self.screen = screen
+        self.map_manager = map_manager
+        self.buildings = buildings
         self.entities = []
-        # Components include position, sprite, patrol, movement speed, animator, health, scale and identity
+        self.next_entity_id = 1     # next_entity_id para garantizar IDs únicos
+
+        self._setup_spatial_index()
+        self._init_components()
+        self._init_systems()
+        self._spawn_initial_npcs()
+
+    @property
+    def player_position(self):
+        """Retorna el componente Position del jugador o None."""
+        return self.components['Position'].get(self.player_entity)
+
+    def _setup_spatial_index(self):
+        """Construye índice espacial con tiles sólidos y colisiones de edificios."""
+        self._solid_tile_index: dict[tuple[int,int], list[pygame.Rect]] = {}
+        for tile in self.map_manager.solid_tiles:
+            key = (tile.rect.x // TILE_SIZE, tile.rect.y // TILE_SIZE)
+            self._solid_tile_index.setdefault(key, []).append(tile.rect)
+        for b in self.buildings:
+            for rect in b.collision_tiles:
+                key = (rect.x // TILE_SIZE, rect.y // TILE_SIZE)
+                self._solid_tile_index.setdefault(key, []).append(rect)
+
+    def _init_components(self):
+        """Inicializa el diccionario de componentes para el ECS."""
         self.components = {
-            'Position': {},
-            'Sprite': {},
-            'Patrol': {},
-            'MovementSpeed': {},
-            'Animator': {},
-            'Health': {},
-            'Scale': {},
-            'Identity': {}
+            'Position': {}, 'Sprite': {}, 'Patrol': {}, 'MovementSpeed': {},
+            'PatrolRoute': {}, 'NPCState': {},
+            'Animator': {}, 'AnimationTimer': {}, 'Health': {}, 'Scale': {}, 'Identity': {},
+            'Velocity': {}, 'MultiCollider': {}, 'ZLayer': {}, 'DeathTimer': {},
+            'FireballComponent': {},
+            'SpawnRequest': {},
+            'CombatStats': {}, 'MeleeWeapon': {},
+            'MeleeRange': {},
+            'WantsToMelee': {}, 'AttackCooldown': {},
+            'WantsToCastSpell': {},
+            'AggroRange': {}, 'ChaseTarget': {}, 'FacingCooldown': {}, 'InputComponent': {}, 'InventoryComponent': {}, 'CameraFollowComponent': {}, 'PlayerTagComponent': {}, 'InCombat': {},
         }
-        # Systems: patrol and animation updates, then rendering
-        self.update_systems = [PatrolSystem(), AnimationSystem()]
-        self.render_systems = [RenderSystem(screen), HealthBarSystem(), NamePlateSystem()]
 
-        # Calculate lobby center
-        lobby_x, lobby_y = calculate_lobby_offset()
-        zone_w, zone_h = global_map_settings.zone_size
-        cx = lobby_x + zone_w // 2
-        cy = lobby_y + zone_h // 2
+    def _init_systems(self):
+        """Configura sistemas de actualización y renderizado."""
+        self.update_systems = [
+            AggroSystem(), ChaseSystem(), PlayerFacingSystem(), FacingSystem(), InputSystem(),
+            PatrolSystem(), MovementCollisionSystem(),
+            AttackCooldownSystem(),
+            NPCMeleeDecisionSystem(),
+            MeleeCombatSystem(), SpellCastingSystem(),
+            FireballSystem(),
+            DeathSystem(), FSMSystem(), AnimationSystem(), SpawnSystem()
+        ]
+        self.render_systems = [
+            HealthBarSystem(), NamePlateSystem(),
+            CollisionDebugSystem(), DeathTimerDebugSystem(), DeathTimerBarSystem(),
+            FireballRenderSystem(),
+            ChaseDebugSystem(),
+            PlayerDebugRenderSystem()
+        ]
+        # Añadir sistema de debug de spawn cuando DEBUG=true
+        if config.DEBUG:
+            self.render_systems.append(SpawnDebugSystem())
 
-        # Spawn one NPC at center with full identity and setup patrol
-        self.spawn_npc(
-            cx, cy,
-            name="Barbol con tetas",
-            title="Mas lista pero menos fuerte que un Barbol",
-            faction=Faction.NEUTRAL
+    def _spawn_initial_npcs(self):
+        """Ejecuta la lógica de spawn de NPCs asegurando tiles válidos."""
+
+        #!-------------------------------- LOBBY ---------------------------------------------------
+        # Delegar selección de posiciones de spawn a spawn_utils
+        lobby_offset = calculate_lobby_offset()
+        zone_size = global_map_settings.zone_size
+
+        # Filtrado de colisión de pies para evitar solapamiento al spawn
+        _load_caches_once()
+        cfg = _DEFS["barbol"]
+        sprite, _ = _create_sprite_component("barbol")
+        spawned_rects = []
+
+        positions = find_spawn_positions(
+            self.map_manager, self.buildings,
+            lobby_offset, zone_size,
+            neighbor_padding=3, sample_count=100
         )
+        # Filtrar posiciones por colisión de collider 'feet'
+        filtered_positions = []
+        for tx, ty in positions:
+            px, py = _calculate_position(tx, ty, cfg, sprite)
+            multi = _create_collider_components(sprite, cfg)
+            feet = multi.colliders.get("feet")
+            if feet:
+                rect = build_collider_rect(px, py, feet)
+                if not any(rect.colliderect(r) for r in spawned_rects):
+                    spawned_rects.append(rect)
+                    filtered_positions.append((tx, ty))
+        print(f"[ECS][Spawn] Spawn candidates: {len(positions)}, válidos tras filtrado: {len(filtered_positions)}")
+        for tx, ty in filtered_positions:
+            eid_req = self.create_entity()
+            self.components['SpawnRequest'][eid_req] = SpawnRequest(
+                prototype="barbol", position=(tx, ty)
+            )
+        #!-------------------------------- EMPTY ZONE LEFT--------------------------------------------------
+        # Spawn 20 NPCs 'barbol' in the empty_left zone
+        offsets = global_map_settings.zone_offsets
+        empty_offset = offsets.get('empty_left')
+        if empty_offset:
+            empty_positions = find_spawn_positions(
+                self.map_manager, self.buildings,
+                empty_offset, zone_size,
+                neighbor_padding=3, sample_count=100
+            )
+            print(f"[ECS][Spawn] Spawn in empty_left candidatos: {len(empty_positions)}")
+            # Filtrar también en zona empty_left
+            filtered_empty = []
+            for tx, ty in empty_positions:
+                px, py = _calculate_position(tx, ty, cfg, sprite)
+                multi = _create_collider_components(sprite, cfg)
+                feet = multi.colliders.get("feet")
+                if feet:
+                    rect = build_collider_rect(px, py, feet)
+                    if not any(rect.colliderect(r) for r in spawned_rects):
+                        spawned_rects.append(rect)
+                        filtered_empty.append((tx, ty))
+            print(f"[ECS][Spawn] Spawn empty_left válidos: {len(filtered_empty)}")
+            for tx, ty in filtered_empty:
+                eid_req = self.create_entity()
+                self.components['SpawnRequest'][eid_req] = SpawnRequest(
+                    prototype="barbol", position=(tx, ty)
+                )
+        #!-----------------------------------------------------------------------------------
 
     def create_entity(self):
-        eid = len(self.entities) + 1
+        # Asignar ID secuencial único
+        eid = self.next_entity_id
+        self.next_entity_id += 1
         self.entities.append(eid)
         return eid
 
-    def spawn_npc(
-        self,
-        cx,
-        cy,
-        name: str = "",
-        title: str = "",
-        faction: Faction = Faction.NEUTRAL
-    ):
-        print("[ECS]: Spawning NPC at tile", cx, cy)
-        eid = self.create_entity()
-        # Instantiate sprite and center on tile
-        sprite = Sprite("assets/npc/monsters/barbol/barbol_1_down.png")
-        # Calculate pixel position centered on tile center
-        px = cx * TILE_SIZE - sprite.image.get_width() // 2
-        py = cy * TILE_SIZE - sprite.image.get_height() // 2
-        # Assign components
-        self.components['Position'][eid] = Position(px, py)
-        self.components['Sprite'][eid] = sprite
-        # Load directional sprites
-        down_surf = sprite.image
-        left_surf = Sprite("assets/npc/monsters/barbol/barbol_1_left.png").image
-        right_surf = Sprite("assets/npc/monsters/barbol/barbol_1_right.png").image
-        up_surf = Sprite("assets/npc/monsters/barbol/barbol_1_top.png").image
-        sprites_by_direction = {
-            'down': [down_surf],
-            'left': [left_surf],
-            'right': [right_surf],
-            'up': [up_surf],
-        }
-        # Create patrol component with directional sprites
-        patrol_comp = Patrol((px, py), sprites_by_direction=sprites_by_direction)
-        patrol_comp.default_sprite = down_surf
-        self.components['Patrol'][eid] = patrol_comp
-        # Movement speed component (pixels per update)
-        self.components['MovementSpeed'][eid] = MovementSpeed(speed=patrol_comp.speed)
-        # Animator component: maps states to frames
-        animator = Animator(animations=sprites_by_direction, current_state='down')
-        self.components['Animator'][eid] = animator
-        # Scale component: factor de escalado para el sprite (1.0 = tamaño original)
-        self.components['Scale'][eid] = Scale(scale=0.25)
-        # Health component: puntos de vida actuales y máximos
-        self.components['Health'][eid] = Health(current_hp=100, max_hp=100)
-        # Identity component: nombre, título y facción
-        self.components['Identity'][eid] = Identity(
-            name=name,
-            title=title,
-            faction=faction
-        )
-
     def get_entities_with(self, *component_types):
-        for eid in self.entities:
-            if all(eid in self.components[ctype] for ctype in component_types):
+        if not component_types:
+            return
+        comps = self.components
+        # Elegir el componente con menos entidades para iterar
+        dicts = [comps.get(ct, {}) for ct in component_types]
+        smallest = min(dicts, key=lambda d: len(d))
+        for eid in smallest:
+            # comprobar que eid exista en todos los componentes solicitados
+            if all(eid in comps.get(ct, {}) for ct in component_types):
                 yield eid
 
-    def update(self):
-        # Run patrol and animation update systems
+    def update(self, camera):
+        # Ejecutar sistemas de actualización con manejo de firma variable        
         for system in self.update_systems:
-            system.update(self)
+            system.update(self, camera)
 
     def render(self, screen, camera):
         # Run render systems to draw entities
         for system in self.render_systems:
             system.update(self, screen, camera)
+
+    def remove_entity(self, eid):
+        """
+        Elimina la entidad y sus componentes.
+        """
+        if eid in self.entities:
+            self.entities.remove(eid)
+        for comp_dict in self.components.values():
+            comp_dict.pop(eid, None)
+
+    def get_solid_tiles_for_rect(self, rect: pygame.Rect) -> list[pygame.Rect]:
+        """
+        Devuelve solo los rects sólidos de tiles cercanos al área dada usando índice espacial.
+        """
+        # Indexar colisiones de edificios solo una vez
+        if not getattr(self, '_building_indexed', False) and hasattr(self, 'buildings'):
+            for b in self.buildings:
+                for cell in b.collision_tiles:
+                    gx, gy = cell.x // TILE_SIZE, cell.y // TILE_SIZE
+                    self._solid_tile_index.setdefault((gx, gy), []).append(cell)
+            self._building_indexed = True
+        x1, y1 = rect.left // TILE_SIZE, rect.top // TILE_SIZE
+        x2, y2 = rect.right // TILE_SIZE, rect.bottom // TILE_SIZE
+        tiles = []
+        for x in range(x1, x2 + 1):
+            for y in range(y1, y2 + 1):
+                tiles.extend(self._solid_tile_index.get((x, y), []))
+        return tiles

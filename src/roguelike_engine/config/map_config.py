@@ -33,6 +33,7 @@ class MapSettings:
 
     # Zonas dinámicas: nombre -> (zona padre, lado de conexión)
     additional_zones: Dict[str, Tuple[str, Literal['bottom', 'top', 'left', 'right']]] = field(default_factory=lambda: {              
+        'empty_left': ('lobby', 'left'),  # Zona vacía a la izquierda del lobby
     })
 
 

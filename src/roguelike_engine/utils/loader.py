@@ -25,6 +25,7 @@ def load_image(path: str, scale=None) -> pygame.Surface:
     img = pygame.image.load(full_path).convert_alpha()
     if scale:
         img = pygame.transform.scale(img, scale)
+    # Devolver dimensiones si no hay scale para debug
     return img
 
 def load_sprite_sheet(path: str, sprite_size: tuple[int,int],
@@ -40,4 +41,3 @@ def load_sprite_sheet(path: str, sprite_size: tuple[int,int],
         rect = pygame.Rect(col * w, row * h, w, h)
         frames.append(sheet.subsurface(rect).copy())
     return frames
-

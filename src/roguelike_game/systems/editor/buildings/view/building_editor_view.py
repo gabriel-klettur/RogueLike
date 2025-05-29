@@ -45,8 +45,8 @@ class BuildingEditorView:
         surf.fill((20, 20, 20, 235))
         sw, sh = screen.get_size()
         if self.editor.collision_picker_pos is None:
-            px = (sw - w) // 2
-            py = (sh - h) // 2
+            px = 0
+            py = 0
             self.editor.collision_picker_pos = (px, py)
         else:
             px, py = self.editor.collision_picker_pos
@@ -61,10 +61,10 @@ class BuildingEditorView:
                                   y + (THUMB - text_surf.get_height()) // 2))
             abs_rect = pygame.Rect(px + x, py + y, THUMB, THUMB)
             self.editor.collision_picker_rects[ch] = abs_rect
-            # Mostrar selección solo mientras se está arrastrando el brush
+            # Mostrar selección
             if abs_rect.collidepoint(mouse_pos):
                 pygame.draw.rect(surf, CLR_HOVER, (x, y, THUMB, THUMB), 3)
-            elif self.editor.collision_choice == ch and self.editor.collision_brush_dragging:
+            elif self.editor.collision_choice == ch:
                 pygame.draw.rect(surf, CLR_SELECTION, (x, y, THUMB, THUMB), 3)
             lbl_surf = label_font.render(label, True, (255, 255, 255))
             surf.blit(lbl_surf, (x + (THUMB - lbl_surf.get_width()) // 2,
@@ -75,21 +75,11 @@ class BuildingEditorView:
         if not self.editor.active:
             return
 
-        # Collision brush mode: sólo overlay y borde del building bajo el cursor
+        # Collision brush mode: persist active collision building until exit or scroll
         if self.editor.current_tool == 'collision_brush':
-            mx, my = pygame.mouse.get_pos()
-            world_x = mx / camera.zoom + camera.offset_x
-            world_y = my / camera.zoom + camera.offset_y
-            target = None
-            for b in reversed(buildings):
-                bx, by = b.x, b.y
-                w_img, h_img = b.image.get_size()
-                if pygame.Rect(bx, by, w_img, h_img).collidepoint(world_x, world_y):
-                    target = b
-                    break
+            target = getattr(self.editor, 'collision_active_building', None)
             if target and getattr(target, 'collision_map', None):
                 self._render_building_collision_overlay(screen, camera, target)
-                # borde del edificio activo
                 x, y = camera.apply((target.x, target.y))
                 w, h = camera.scale(target.image.get_size())
                 pygame.draw.rect(screen, (0, 255, 255), (x, y, w, h), 4)
@@ -101,11 +91,13 @@ class BuildingEditorView:
         if self.editor.picker_active:
             self.picker_view.render(screen, camera)
         for b in buildings:
+            # Solo mostrar opciones en el edificio activo (persistente)
+            if b != getattr(self.editor, 'active_building', None):
+                continue
             x, y = camera.apply((b.x, b.y))
             w, h = camera.scale(b.image.get_size())
             rect = pygame.Rect(x, y, w, h)
-            if hasattr(self.editor, 'hovered_building') and b == self.editor.hovered_building:
-                pygame.draw.rect(screen, (0, 255, 255), rect, 4)
+            pygame.draw.rect(screen, (0, 255, 255), rect, 4)
             pygame.draw.rect(screen, (255, 255, 255), rect, 1)
             if self.editor.collision_picker_open and getattr(b, 'collision_map', None):
                 self._render_building_collision_overlay(screen, camera, b)

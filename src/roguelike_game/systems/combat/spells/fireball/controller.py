@@ -12,11 +12,12 @@ class FireballController:
         self,
         model: FireballModel,
         tiles: list,
-        
-        explosions_list
+        explosions_list,
+        npc_world
     ):
         self.model = model
-        self.tiles = tiles        
+        self.tiles = tiles
+        self.npc_world = npc_world
         # override del callback para agregar la explosion
         def _explode_callback(ex, ey):
             # Crear explosión en la posición de impacto
@@ -39,10 +40,44 @@ class FireballController:
             model.alive = False
             return
 
-        # Colisión con tiles sólidos
+        # Colisión con NPCs (pixel-perfect vs bbox según DEBUG)
         rect = Rect(model.x, model.y, *model.size)
-        for t in self.tiles:
-            if t.solid and rect.colliderect(t.rect):
-                model.on_explode(model.x, model.y)
-                model.alive = False
-                return
+        for eid in self.npc_world.get_entities_with('Position','MultiCollider','Health'):
+            multi = self.npc_world.components['MultiCollider'][eid]
+            body = multi.colliders.get('body')
+            if body:
+                pos = self.npc_world.components['Position'][eid]
+                # pixel-perfect si existe máscara
+                if hasattr(body, 'mask'):
+                    offset = (
+                        int(pos.x + body.offset_x - model.x),
+                        int(pos.y + body.offset_y - model.y)
+                    )
+                    if model.mask.overlap(body.mask, offset):
+                        hp = self.npc_world.components['Health'][eid]
+                        hp.current_hp -= model.damage
+                        if hp.current_hp < 0: hp.current_hp = 0
+                        model.on_explode(model.x, model.y)
+                        model.alive = False
+                        return
+                else:
+                    # bounding box collision
+                    w = body.width
+                    h = body.height
+                    br = Rect(pos.x + body.offset_x, pos.y + body.offset_y, w, h)
+                    if rect.colliderect(br):
+                        hp = self.npc_world.components['Health'][eid]
+                        hp.current_hp -= model.damage
+                        if hp.current_hp < 0: hp.current_hp = 0
+                        model.on_explode(model.x, model.y)
+                        model.alive = False
+                        return
+
+        # Colisión con tiles sólidos (optimized)
+        rect = Rect(model.x, model.y, *model.size)
+        # Spatial query: solo rects cercanos
+        nearby = self.npc_world.get_solid_tiles_for_rect(rect)
+        if nearby and rect.collidelist(nearby) != -1:
+            model.on_explode(model.x, model.y)
+            model.alive = False
+            return

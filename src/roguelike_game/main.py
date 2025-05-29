@@ -2,9 +2,11 @@
 import pygame
 from collections import defaultdict
 
+from roguelike_engine.config.config import SCREEN_WIDTH, SCREEN_HEIGHT
+from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_game.config_player import RENDERED_SPRITE_SIZE
+
 from roguelike_game.game.game import Game
-from roguelike_engine.config.config import FPS, SCREEN_WIDTH, SCREEN_HEIGHT
-from roguelike_engine.utils.benchmark import benchmark
 
 def init_debug():
     pygame.mouse.set_visible(True)
@@ -37,6 +39,25 @@ def main():
         print(f"An error occurred: {e}")
         raise
     finally:
+        # Guardar posición del jugador antes de cerrar
+        try:
+            eid = game.ecs.npc_world.player_entity
+            pos = game.ecs.npc_world.components['Position'][eid]
+            # Calcular coords de tile usando centro del collider 'feet'
+            w, h = RENDERED_SPRITE_SIZE
+            fh = h // 4
+            half_fh = fh // 2
+            feet_cx = pos.x + w // 2
+            feet_cy = pos.y + (h - half_fh)
+            tx = int(feet_cx // TILE_SIZE)
+            ty = int(feet_cy // TILE_SIZE)
+            game.map.spawn_player((tx, ty))
+            # Registrar mapa actual en WorldManager
+            game.world.maps[game.map.name] = game.map
+            game.world.current_level = game.map.name
+            game.world.save_world()
+        except Exception:
+            pass
         pygame.quit()
     
 

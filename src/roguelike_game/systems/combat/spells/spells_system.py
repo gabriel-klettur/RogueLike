@@ -67,9 +67,10 @@ from roguelike_engine.utils.benchmark import benchmark
 
 
 class SpellsSystem:
-    def __init__(self, state, perf_log):
-        self.state = state 
-        self.perf_log = perf_log       
+    def __init__(self, state, perf_log, npc_world):
+        self.state = state
+        self.perf_log = perf_log
+        self.npc_world = npc_world  # Mundo ECS para colisionar con NPCs
 
         # MVC lists
         self.laser_controllers:         list[LaserBeamController]      = []
@@ -181,7 +182,7 @@ class SpellsSystem:
         tiles    = map.solid_tiles
         
         model   = FireballModel(px, py, angle)
-        ctrl    = FireballController(model, tiles, explosions)
+        ctrl    = FireballController(model, tiles, explosions, self.npc_world)
         view    = FireballView(model)
         self.fireball_controllers.append(ctrl)
         self.fireball_views.append(view)

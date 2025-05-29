@@ -1,0 +1,82 @@
+from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_game.ecs.components.ai.chase_target import ChaseTarget
+from roguelike_game.ecs.components.core.identity import Faction
+from roguelike_game.ecs.components.ai.in_combat import InCombat
+from roguelike_game.ecs.components.combat.melee_range import MeleeRange
+
+class AggroSystem:
+    """
+    Detecta jugadores en rango y asigna ChaseTarget a NPCs enemigos.
+    """
+
+    def update(self, world, camera=None):
+        """
+        Recorre todas las entidades que tengan Position, AggroRange e Identity.
+        Si el jugador está dentro del radio de agresión (AggroRange) de un NPC de facción EVIL,
+        le añade o actualiza el componente ChaseTarget para que empiece a perseguirlo.
+        Si el jugador sale de ese rango, elimina el ChaseTarget de esa entidad.
+        """
+        # Obtener entidad jugador de world.player_entity y su posición
+        comps = world.components
+        # No asignar ChaseTarget a NPCs ya en combate
+        # (Evita que el sistema de Aggro vuelva a asignarles persecución)
+        
+        player_pos = world.player_position
+        if not player_pos:
+            return
+        px, py = player_pos.x, player_pos.y
+
+        # Salir de combate si el jugador sale de melee_range y reanudar persecución
+        for cid in list(comps.get('InCombat', {})):
+            pos_cmp = comps.get('Position', {}).get(cid)
+            mr_cmp = comps.get('MeleeRange', {}).get(cid)
+            if pos_cmp and mr_cmp:
+                dx = pos_cmp.x - px
+                dy = pos_cmp.y - py
+                if dx*dx + dy*dy > (mr_cmp.range * TILE_SIZE) ** 2:
+                    comps['InCombat'].pop(cid, None)
+                    world.components['ChaseTarget'][cid] = ChaseTarget(world.player_entity)
+
+        # Para cada entidad con Position, AggroRange e Identity...
+        for eid in world.get_entities_with('Position', 'AggroRange', 'Identity'):
+            if eid in comps.get('InCombat', {}):
+                continue
+            ident = world.components['Identity'][eid]
+            # Solo NPCs malvados (EVIL) pueden agredir al jugador
+            if ident.faction != Faction.EVIL:
+                continue
+
+            # Recuperar posición y rango de aggro del NPC
+            pos = world.components['Position'][eid]
+            rng = world.components['AggroRange'][eid]
+
+            # Calcular distancia al jugador (cuadrado para evitar sqrt)
+            dx = pos.x - px
+            dy = pos.y - py
+            dist_sq = dx*dx + dy*dy
+
+            # Transformar el radio de tiles a unidades del mundo y elevar al cuadrado
+            aggro_radius_sq = (rng.radius * TILE_SIZE) ** 2
+
+            if dist_sq <= aggro_radius_sq:
+                # Dentro del rango: asignar ChaseTarget para perseguir al jugador
+                world.components['ChaseTarget'][eid] = ChaseTarget(world.player_entity)
+            else:
+                # Fuera de rango: eliminar ChaseTarget si existía
+                world.components['ChaseTarget'].pop(eid, None)
+
+    def track_target(self, world, entity):
+        """Detecta jugador para una entidad y asigna o elimina ChaseTarget."""
+        from roguelike_game.ecs.components.ai.chase_target import ChaseTarget
+        from roguelike_engine.config.config_tiles import TILE_SIZE
+        player_pos = world.player_position
+        if not player_pos:
+            return
+        pos = world.components['Position'][entity]
+        rng_cmp = world.components['AggroRange'][entity]
+        dx = pos.x - player_pos.x
+        dy = pos.y - player_pos.y
+        if dx*dx + dy*dy <= (rng_cmp.radius * TILE_SIZE) ** 2:
+            world.components['ChaseTarget'][entity] = ChaseTarget(world.player_entity)
+        else:
+            world.components['ChaseTarget'].pop(entity, None)

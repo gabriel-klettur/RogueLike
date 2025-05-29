@@ -44,7 +44,7 @@ class TileEditorController:
 
     def apply_brush(self, mouse_pos, camera, map):
         """
-        Pinta el sprite seleccionado sobre el tile bajo el ratón
+        Pinta el sprite seleccionado sobre el tile bajo la ratón
         y persiste el código de overlay (quitando el prefijo "tiles/").
         """
         # Collision editing when in collision mode
@@ -153,13 +153,16 @@ class TileEditorController:
             return
 
         # 2) Determinar código de overlay o tipo base
-        code = tile.overlay_code or tile.tile_type
+        code = tile.overlay_code or tile.tile_type or "#"
 
         # 3) Mapear código a nombre de asset en OVERLAY_CODE_MAP o DEFAULT_TILE_MAP
         if code in OVERLAY_CODE_MAP:
             asset_name = OVERLAY_CODE_MAP[code]
         else:
             asset_name = DEFAULT_TILE_MAP.get(code)
+        # Fallback al asset de muro por defecto si no existe mapping
+        if not asset_name:
+            asset_name = DEFAULT_TILE_MAP.get('#')
         if not asset_name:
             return
 
