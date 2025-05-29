@@ -28,6 +28,7 @@ from .systems.combat.fireball_system import FireballSystem
 from .systems.rendering.fireball_render_system import FireballRenderSystem
 from .systems.rendering.player_debug_render_system import PlayerDebugRenderSystem
 from .systems.rendering.chase_debug_system import ChaseDebugSystem
+from .systems.fsm.fsm_system import FSMSystem
 
 from roguelike_engine.map.utils import calculate_lobby_offset
 from .utils.spawn_utils import find_spawn_positions
@@ -69,6 +70,7 @@ class NPCWorld:
         """Inicializa el diccionario de componentes para el ECS."""
         self.components = {
             'Position': {}, 'Sprite': {}, 'Patrol': {}, 'MovementSpeed': {},
+            'PatrolRoute': {}, 'NPCState': {},
             'Animator': {}, 'AnimationTimer': {}, 'Health': {}, 'Scale': {}, 'Identity': {},
             'Velocity': {}, 'MultiCollider': {}, 'ZLayer': {}, 'DeathTimer': {},
             'FireballComponent': {},
@@ -89,7 +91,7 @@ class NPCWorld:
             NPCMeleeDecisionSystem(),
             MeleeCombatSystem(), AbilitySystem(),
             FireballSystem(),
-            DeathSystem(), AnimationSystem(), SpawnSystem()
+            DeathSystem(), FSMSystem(), AnimationSystem(), SpawnSystem()
         ]
         self.render_systems = [
             HealthBarSystem(), NamePlateSystem(),
@@ -119,7 +121,7 @@ class NPCWorld:
         positions = find_spawn_positions(
             self.map_manager, self.buildings,
             lobby_offset, zone_size,
-            neighbor_padding=3, sample_count=5
+            neighbor_padding=3, sample_count=500
         )
         # Filtrar posiciones por colisión de collider 'feet'
         filtered_positions = []
@@ -146,7 +148,7 @@ class NPCWorld:
             empty_positions = find_spawn_positions(
                 self.map_manager, self.buildings,
                 empty_offset, zone_size,
-                neighbor_padding=3, sample_count=5
+                neighbor_padding=3, sample_count=500
             )
             print(f"[ECS][Spawn] Spawn in empty_left candidatos: {len(empty_positions)}")
             # Filtrar también en zona empty_left

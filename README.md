@@ -68,6 +68,16 @@ from roguelike_game.game.game import Game
 * Evitar imports relativos excesivos: usar relativos solo dentro de un mismo subpaquete.
 * Uso de `benchmark` para perfilar `handle_events`, `update` y `render` en modo DEBUG.
 
+## 👾 FSM para NPCs
+Esta versión incluye un sistema de Máquina de Estados (FSM) para controlar el comportamiento de NPCs:
+1. Define estados personalizados heredando de `State` en `src/roguelike_game/ecs/fsm/states/`.
+2. Crea una FSM con un estado inicial: `fsm = FiniteStateMachine(IdleState())`.
+3. Asocia el componente FSM a la entidad NPC: `world.components['NPCState'][eid] = NPCState(fsm, 'Idle')`.
+4. Registra `FSMSystem()` en `world.py` tras `DeathSystem` para actualizar estados cada tick.
+5. Implementa estados: Idle, Patrol, Aggro, Attack, Flee y Death.
+6. Pruebas de integración en `tests/test_fsm_integration.py`.
+7. Ajusta parámetros en `AIConfig` y perfila con `benchmark`.
+
 ---
 
 ## 🏗️ Empaquetado con PyInstaller
