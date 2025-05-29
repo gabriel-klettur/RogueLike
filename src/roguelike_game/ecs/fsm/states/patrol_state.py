@@ -3,6 +3,7 @@ from roguelike_game.ecs.fsm.state import State
 from roguelike_game.ecs.fsm.states.idle_state import IdleState
 from roguelike_game.ecs.fsm.states.aggro_state import AggroState
 from roguelike_game.ecs.fsm.states.death_state import DeathState
+from roguelike_game.ecs.components.transform.velocity import Velocity
 from roguelike_engine.config.config_tiles import TILE_SIZE
 
 class PatrolState(State):
@@ -17,21 +18,24 @@ class PatrolState(State):
 
     def execute(self, entity, dt):
         world = entity.world
+        eid = entity.id
+        # Resetear velocidad antes de mover
+        world.components['Velocity'][eid] = Velocity(0, 0)
         # Verificar muerte
-        hp_cmp = world.components['Health'][entity]
+        hp_cmp = world.components['Health'][eid]
         if hp_cmp.current_hp <= 0:
-            world.components['NPCState'][entity].fsm.change_state(DeathState(), entity)
+            world.components['NPCState'][eid].fsm.change_state(DeathState(), entity)
             return
-        pos = world.components['Position'][entity]
-        route = world.components['PatrolRoute'][entity]
-        speed_cmp = world.components['MovementSpeed'][entity]
+        pos = world.components['Position'][eid]
+        route = world.components['PatrolRoute'][eid]
+        speed_cmp = world.components['MovementSpeed'][eid]
         # Detectar jugador y cambiar a AggroState
         player_pos = world.player_position
         if player_pos:
             dx_p = pos.x - player_pos.x
             dy_p = pos.y - player_pos.y
-            if dx_p*dx_p + dy_p*dy_p <= (world.components['AggroRange'][entity].radius * TILE_SIZE) ** 2:
-                npc_state = world.components['NPCState'][entity]
+            if dx_p*dx_p + dy_p*dy_p <= (world.components['AggroRange'][eid].radius * TILE_SIZE) ** 2:
+                npc_state = world.components['NPCState'][eid]
                 npc_state.fsm.change_state(AggroState(), entity)
                 return
         # Mover hacia el waypoint actual
@@ -43,14 +47,17 @@ class PatrolState(State):
             step = speed_cmp.speed * dt if dt else speed_cmp.speed
             if dist_sq <= step*step:
                 self.current_index += 1
+                # Detener al llegar al waypoint
+                world.components['Velocity'][eid] = Velocity(0, 0)
             else:
                 dist = math.sqrt(dist_sq)
-                pos.x += dx/dist * step
-                pos.y += dy/dist * step
+                vx = dx/dist * step
+                vy = dy/dist * step
+                world.components['Velocity'][eid] = Velocity(vx, vy)
         else:
             # Ruta completa, volver a IdleState
-            npc_state = world.components['NPCState'][entity]
-            npc_state.fsm.change_state(IdleState(), entity)
+            world.components['Velocity'][eid] = Velocity(0, 0)
+            world.components['NPCState'][eid].fsm.change_state(IdleState(), entity)
 
     def exit(self, entity):
         pass

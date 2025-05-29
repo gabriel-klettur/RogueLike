@@ -3,6 +3,7 @@ from roguelike_game.ecs.fsm.states.death_state import DeathState
 from roguelike_game.ecs.fsm.states.chase_state import ChaseState
 from roguelike_game.ecs.systems.combat.combat_system import CombatSystem
 from roguelike_game.ecs.components.ai.chase_target import ChaseTarget
+from roguelike_game.ecs.components.transform.velocity import Velocity
 from roguelike_engine.config.config_tiles import TILE_SIZE
 
 class AttackState(State):
@@ -14,6 +15,8 @@ class AttackState(State):
         world = entity.world
         eid = entity.id
         world.components['ChaseTarget'][eid] = ChaseTarget(world.player_entity)
+        # Resetear velocidad al entrar en AttackState
+        world.components['Velocity'][eid] = Velocity(0, 0)
 
     def execute(self, entity, dt):
         world = entity.world
@@ -43,3 +46,5 @@ class AttackState(State):
         # Limpiar animación de ataque y remover target de persecución
         world = entity.world
         world.components.get('ChaseTarget', {}).pop(entity.id, None)
+        # Resetear velocidad al salir de AttackState
+        world.components['Velocity'][entity.id] = Velocity(0, 0)
