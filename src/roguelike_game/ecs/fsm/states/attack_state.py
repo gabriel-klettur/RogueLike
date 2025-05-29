@@ -2,6 +2,7 @@ from roguelike_game.ecs.fsm.state import State
 from roguelike_game.ecs.fsm.states.death_state import DeathState
 from roguelike_game.ecs.fsm.states.chase_state import ChaseState
 from roguelike_game.ecs.systems.combat.combat_system import CombatSystem
+from roguelike_game.ecs.components.ai.chase_target import ChaseTarget
 from roguelike_engine.config.config_tiles import TILE_SIZE
 
 class AttackState(State):
@@ -9,36 +10,36 @@ class AttackState(State):
     Estado Attack: lógica de combate cuerpo a cuerpo.
     """
     def enter(self, entity):
-        # Opcional: iniciar animación de ataque
-        pass
+        # Iniciar animación de ataque y asignar target de persecución
+        world = entity.world
+        eid = entity.id
+        world.components['ChaseTarget'][eid] = ChaseTarget(world.player_entity)
 
     def execute(self, entity, dt):
         world = entity.world
+        eid = entity.id
         # Verificar muerte
-        hp_cmp = world.components['Health'][entity]
+        hp_cmp = world.components['Health'][eid]
         if hp_cmp.current_hp <= 0:
-            world.components['NPCState'][entity].fsm.change_state(DeathState(), entity)
+            world.components['NPCState'][eid].fsm.change_state(DeathState(), entity)
             return
-        chase_cmp = world.components['ChaseTarget'].get(entity)
-        if not chase_cmp:
-            return
-        target_id = chase_cmp.target
-        # Ejecutar ataque
-        CombatSystem().perform_melee(world, entity, target_id)
-        # Tras ataque, comprobar si sigue en rango
-        pos = world.components['Position'][entity]
+        # Obtener posiciones del NPC y jugador
+        pos = world.components['Position'][eid]
         player_pos = world.player_position
-        if player_pos:
-            dx = player_pos.x - pos.x
-            dy = player_pos.y - pos.y
-            dist_sq = dx*dx + dy*dy
-            mr_cmp = world.components['MeleeRange'][entity]
-            if dist_sq <= (mr_cmp.range * TILE_SIZE) ** 2:
-                # continuar atacando
-                return
-        # Fuera de rango: volver a ChaseState
-        world.components['NPCState'][entity].fsm.change_state(ChaseState(), entity)
+        if not player_pos:
+            return
+        dx = player_pos.x - pos.x
+        dy = player_pos.y - pos.y
+        dist_sq = dx*dx + dy*dy
+        # Si dentro de rango melee: atacar y quedarse en AttackState
+        mr_cmp = world.components['MeleeRange'][eid]
+        if dist_sq <= (mr_cmp.range * TILE_SIZE) ** 2:
+            CombatSystem().perform_melee(world, entity, world.player_entity)
+            return
+        # Fuera de rango: cambiar a ChaseState
+        world.components['NPCState'][eid].fsm.change_state(ChaseState(), entity)
 
     def exit(self, entity):
-        # Opcional: limpiar animación de ataque
-        pass
+        # Limpiar animación de ataque y remover target de persecución
+        world = entity.world
+        world.components.get('ChaseTarget', {}).pop(entity.id, None)
