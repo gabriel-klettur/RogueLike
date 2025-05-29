@@ -4,6 +4,7 @@ from roguelike_game.ecs.fsm.states.chase_state import ChaseState
 from roguelike_game.ecs.fsm.states.aggro_state import AggroState
 from roguelike_game.ecs.utils.position_utils import compute_foot_tile
 from roguelike_game.ecs.utils.render_utils import draw_sprite_bbox
+from roguelike_game.ecs.components.transform.scale import Scale
 
 #! DEBERIAMOS IMPLEMENTARLO DENTRO DE NUESTRO FSM
 
@@ -56,15 +57,18 @@ class ChaseDebugSystem:
 
         # Para cada NPC en ChaseState o AggroState
         for eid in world.get_entities_with('NPCState', 'Position', 'Sprite'):
-            state = comps['NPCState'][eid].fsm.current_state
-            # Considerar AggroState también como chase
-            if not isinstance(state, (ChaseState, AggroState)):
-                continue
+            npc_state = comps['NPCState'][eid]
             pos = comps['Position'][eid]
             sprite = comps['Sprite'][eid]
-            # Centro del NPC
-            sox = (pos.x - camera.offset_x) * camera.zoom
-            soy = (pos.y - camera.offset_y) * camera.zoom
+            # Centro del NPC con escala del sprite
+            w, h = sprite.image.get_size()
+            scale_cmp = comps.get('Scale', {}).get(eid, Scale(scale=1.0))
+            w *= scale_cmp.scale
+            h *= scale_cmp.scale
+            center_x = pos.x + w/2
+            center_y = pos.y + h/2
+            sox = (center_x - camera.offset_x) * camera.zoom
+            soy = (center_y - camera.offset_y) * camera.zoom
             pygame.draw.circle(screen, (255,0,255), (int(sox), int(soy)), 4)
             # Línea hacia jugador
             if player_pos:
