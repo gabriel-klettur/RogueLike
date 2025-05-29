@@ -23,17 +23,17 @@ from .systems.physics.player_facing_system import PlayerFacingSystem
 from .systems.core.spawn_debug_system import SpawnDebugSystem
 from .systems.core.spawn_system import SpawnSystem
 from .systems.input.input_system import InputSystem
-from .systems.ability_system import AbilitySystem
+from .systems.combat.spell_casting_system import SpellCastingSystem
 from .systems.combat.fireball_system import FireballSystem
 from .systems.rendering.fireball_render_system import FireballRenderSystem
 from .systems.rendering.player_debug_render_system import PlayerDebugRenderSystem
 from .systems.rendering.chase_debug_system import ChaseDebugSystem
 from .systems.fsm.fsm_system import FSMSystem
+from roguelike_game.ecs.utils.collider_utils import build_collider_rect
 
 from roguelike_engine.map.utils import calculate_lobby_offset
 from .utils.spawn_utils import find_spawn_positions
 from roguelike_game.ecs.factories.entity_factory import _load_caches_once, _DEFS, _create_sprite_component, _calculate_position, _create_collider_components
-from roguelike_game.ecs.utils.collider_utils import build_collider_rect
 from roguelike_game.ecs.components.spawn.spawn_request import SpawnRequest
 
 class NPCWorld:
@@ -89,7 +89,7 @@ class NPCWorld:
             PatrolSystem(), MovementCollisionSystem(),
             AttackCooldownSystem(),
             NPCMeleeDecisionSystem(),
-            MeleeCombatSystem(), AbilitySystem(),
+            MeleeCombatSystem(), SpellCastingSystem(),
             FireballSystem(),
             DeathSystem(), FSMSystem(), AnimationSystem(), SpawnSystem()
         ]
