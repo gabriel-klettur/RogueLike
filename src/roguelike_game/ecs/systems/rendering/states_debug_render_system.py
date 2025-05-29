@@ -1,5 +1,6 @@
 import pygame
 from roguelike_game.ecs.components.fsm.npc_state import NPCState
+from roguelike_game.ecs.components.transform.scale import Scale
 
 class StatesDebugRenderSystem:
     """
@@ -15,6 +16,10 @@ class StatesDebugRenderSystem:
             pos = comps['Position'][eid]
             sprite_cmp = comps['Sprite'][eid]
             w, h = sprite_cmp.image.get_size()
+            # Ajustar por escala del sprite
+            scale_cmp = comps.get('Scale', {}).get(eid, Scale(scale=1.0))
+            w *= scale_cmp.scale
+            h *= scale_cmp.scale
             # calcular posición en pantalla
             x = (pos.x - camera.offset_x + w/2) * camera.zoom
             y = (pos.y - camera.offset_y) * camera.zoom
