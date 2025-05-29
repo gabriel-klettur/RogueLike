@@ -1,7 +1,7 @@
 """
 Sistema ECS para actualizar la FSM de NPCs.
 """
-
+from roguelike_game.ecs.components.fsm.npc_state import NPCState
 
 # Wrapper para pasar entidad con acceso a world e id como key en componentes
 class _EntityProxy:

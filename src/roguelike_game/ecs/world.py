@@ -9,8 +9,6 @@ from .systems.rendering.animation_system import AnimationSystem
 from .systems.rendering.health_bar_system import HealthBarSystem
 from .systems.rendering.nameplate_system import NamePlateSystem
 from .systems.physics.collision_debug_system import CollisionDebugSystem
-from .systems.combat.death_timer_debug_system import DeathTimerDebugSystem
-from .systems.rendering.death_timer_bar_system import DeathTimerBarSystem
 from .systems.combat.melee_combat_system import MeleeCombatSystem
 from .systems.combat.attack_cooldown_system import AttackCooldownSystem
 from .systems.physics.facing_system import FacingSystem
@@ -22,6 +20,7 @@ from .systems.combat.spell_casting_system import SpellCastingSystem
 from .systems.combat.fireball_system import FireballSystem
 from .systems.rendering.fireball_render_system import FireballRenderSystem
 from .systems.rendering.player_debug_render_system import PlayerDebugRenderSystem
+from .systems.rendering.death_render_system import DeathRenderSystem
 
 #! DEBERIAMOS IMPLEMENTARLO DENTRO DE NUESTRO FSM
 #!from .systems.rendering.chase_debug_system import ChaseDebugSystem
@@ -94,7 +93,7 @@ class NPCWorld:
         ]
         self.render_systems = [
             HealthBarSystem(), NamePlateSystem(),
-            CollisionDebugSystem(), DeathTimerDebugSystem(), DeathTimerBarSystem(),
+            CollisionDebugSystem(), DeathRenderSystem(),
             FireballRenderSystem(),
             #ChaseDebugSystem(),
             PlayerDebugRenderSystem()
