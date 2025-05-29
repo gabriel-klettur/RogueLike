@@ -23,7 +23,10 @@ class FireballSystem:
                 continue
             # Colisión con NPCs
             for target in world.get_entities_with('Position', 'MultiCollider', 'Health'):
+                # Saltar self, caster y cadáveres con DeathTimer
                 if target == eid or target == comp.caster:
+                    continue
+                if target in world.components.get('DeathTimer', {}):
                     continue
                 multi = world.components['MultiCollider'][target]
                 body = multi.colliders.get('body')

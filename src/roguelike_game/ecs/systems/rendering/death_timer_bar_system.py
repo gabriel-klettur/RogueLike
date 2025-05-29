@@ -1,6 +1,7 @@
 import pygame
 import time
 import roguelike_engine.config.config as config
+from roguelike_game.ecs.fsm.states.death_state import DeathState
 
 class DeathTimerBarSystem:
     """
@@ -50,6 +51,10 @@ class DeathTimerBarSystem:
 
         # 2) Para cada temporizador, obtener parámetros de dibujo
         for eid, dt in active.items():
+            # Sólo renderizar para entidades en Estado de Muerte
+            state_comp = world.components.get('NPCState', {}).get(eid)
+            if not state_comp or not isinstance(state_comp.fsm.current_state, DeathState):
+                continue
             params = self._gather_draw_params(eid, world, now, dt, camera)
             if params:
                 # 3) Dibujar la barra usando los parámetros calculados

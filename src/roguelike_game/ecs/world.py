@@ -20,7 +20,8 @@ from .systems.combat.spell_casting_system import SpellCastingSystem
 from .systems.combat.fireball_system import FireballSystem
 from .systems.rendering.fireball_render_system import FireballRenderSystem
 from .systems.rendering.player_debug_render_system import PlayerDebugRenderSystem
-from .systems.rendering.death_render_system import DeathRenderSystem
+from .systems.rendering.death_timer_bar_system import DeathTimerBarSystem
+from .systems.rendering.death_timer_debug_system import DeathTimerDebugSystem
 
 #! DEBERIAMOS IMPLEMENTARLO DENTRO DE NUESTRO FSM
 #!from .systems.rendering.chase_debug_system import ChaseDebugSystem
@@ -93,14 +94,16 @@ class NPCWorld:
         ]
         self.render_systems = [
             HealthBarSystem(), NamePlateSystem(),
-            CollisionDebugSystem(), DeathRenderSystem(),
+            CollisionDebugSystem(),
             FireballRenderSystem(),
             #ChaseDebugSystem(),
-            PlayerDebugRenderSystem()
+            PlayerDebugRenderSystem(),
+            DeathTimerBarSystem()
         ]
         # Añadir sistema de debug de spawn cuando DEBUG=true
         if config.DEBUG:
             self.render_systems.append(SpawnDebugSystem())
+            self.render_systems.append(DeathTimerDebugSystem())
 
     def _spawn_initial_npcs(self):
         """Ejecuta la lógica de spawn de NPCs asegurando tiles válidos."""

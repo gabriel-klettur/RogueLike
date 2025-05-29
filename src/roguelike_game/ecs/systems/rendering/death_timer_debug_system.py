@@ -1,13 +1,12 @@
 import pygame
 import time
 import roguelike_engine.config.config as config
+from roguelike_game.ecs.fsm.states.death_state import DeathState
 
 """
 Módulo que provee un sistema de debug para mostrar contadores de muerte
 (tiempo restante antes de eliminar la entidad) sobre los NPCs.
 """
-
-#! DEBERIAMOS IMPLEMENTARLO DENTRO DE NUESTRO FSM
 
 class DeathTimerDebugSystem:
     """
@@ -55,6 +54,10 @@ class DeathTimerDebugSystem:
         dt_store = world.components.get('DeathTimer', {})
 
         for eid, dt in dt_store.items():
+            # Sólo renderizar para entidades en Estado de Muerte
+            state_comp = world.components.get('NPCState', {}).get(eid)
+            if not state_comp or not isinstance(state_comp.fsm.current_state, DeathState):
+                continue
             # Tiempo restante en segundos (entero)
             remaining = int(dt.duration - (now - dt.start_time))
             if remaining <= 0:
