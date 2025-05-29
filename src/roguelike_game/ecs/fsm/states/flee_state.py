@@ -1,17 +1,26 @@
 from roguelike_game.ecs.fsm.state import State
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.ecs.fsm.states.death_state import DeathState
+import time
 
 class FleeState(State):
     """
     Estado Flee: huye del jugador cuando la salud es baja.
     """
     def enter(self, entity):
+        # Iniciar temporizador de huida
+        self.start_time = time.time()
         # Opcional: iniciar animación de huida
         pass
 
     def execute(self, entity, dt):
         world = entity.world
+        # Volver a AggroState tras 5 segundos de huida
+        if time.time() - self.start_time >= 5.0:
+            # Importar localmente para evitar dependencia circular
+            from roguelike_game.ecs.fsm.states.aggro_state import AggroState
+            world.components['NPCState'][entity].fsm.change_state(AggroState(), entity)
+            return
         # Verificar muerte
         hp_cmp = world.components['Health'][entity]
         if hp_cmp.current_hp <= 0:
@@ -30,12 +39,7 @@ class FleeState(State):
         if mag != 0:
             pos.x += dx/mag * step
             pos.y += dy/mag * step
-        # Volver a PatrolState si fuera de rango
-        dist_sq = dx*dx + dy*dy
-        rng_cmp = world.components['AggroRange'][entity]
-        if dist_sq > (rng_cmp.radius * TILE_SIZE) ** 2:
-            from roguelike_game.ecs.fsm.states.patrol_state import PatrolState
-            world.components['NPCState'][entity].fsm.change_state(PatrolState(), entity)
+        # La huida continúa hasta agotar el temporizador; no cambiar a PatrolState aquí
 
     def exit(self, entity):
         # Limpieza al salir de huida

@@ -10,7 +10,6 @@ from .systems.rendering.health_bar_system import HealthBarSystem
 from .systems.rendering.nameplate_system import NamePlateSystem
 from .systems.physics.collision_debug_system import CollisionDebugSystem
 from .systems.combat.melee_combat_system import MeleeCombatSystem
-from .systems.combat.attack_cooldown_system import AttackCooldownSystem
 from .systems.physics.facing_system import FacingSystem
 from .systems.physics.player_facing_system import PlayerFacingSystem
 from .systems.core.spawn_debug_system import SpawnDebugSystem
@@ -86,8 +85,7 @@ class NPCWorld:
         self.update_systems = [
             FSMSystem(),
             PlayerFacingSystem(), FacingSystem(), InputSystem(),
-            MovementCollisionSystem(),
-            AttackCooldownSystem(),            
+            MovementCollisionSystem(),                       
             MeleeCombatSystem(), SpellCastingSystem(),
             FireballSystem(),
             AnimationSystem(), SpawnSystem()

@@ -1,5 +1,6 @@
 from roguelike_game.ecs.fsm.state import State
 from roguelike_game.ecs.fsm.states.death_state import DeathState
+from roguelike_game.ecs.fsm.states.chase_state import ChaseState
 from roguelike_game.ecs.systems.combat.combat_system import CombatSystem
 from roguelike_engine.config.config_tiles import TILE_SIZE
 
@@ -35,9 +36,8 @@ class AttackState(State):
             if dist_sq <= (mr_cmp.range * TILE_SIZE) ** 2:
                 # continuar atacando
                 return
-        # Fuera de rango: volver a AggroState
-        from roguelike_game.ecs.fsm.states.aggro_state import AggroState
-        world.components['NPCState'][entity].fsm.change_state(AggroState(), entity)
+        # Fuera de rango: volver a ChaseState
+        world.components['NPCState'][entity].fsm.change_state(ChaseState(), entity)
 
     def exit(self, entity):
         # Opcional: limpiar animación de ataque
