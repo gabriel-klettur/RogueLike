@@ -86,3 +86,33 @@ def spawn_player(world, x, y, character_name: str = "first_hero") -> int:
     # Componente de arma cuerpo a cuerpo
     world.components["MeleeWeapon"][eid] = MeleeWeapon(damage=1, cooldown=1.0)
     return eid
+
+
+def spawn_player_tile(world, tile_x: int, tile_y: int, character_name: str = "first_hero") -> int:
+    """
+    Crea la entidad jugador usando coordenadas de tile.
+    Calcula la posición en píxeles para alinear el collider 'feet' al centro del tile.
+    """
+    from roguelike_game.ecs.assets.player_assets import PlayerAssets
+    from roguelike_game.config_player import ORIGINAL_SPRITE_SIZE
+    from roguelike_engine.config.config_tiles import TILE_SIZE
+
+    # Obtener sprite para medir dimensiones
+    sprites_dict, _ = PlayerAssets(character_name, ORIGINAL_SPRITE_SIZE).get_sprites()
+    down_idle = sprites_dict.get('down', {}).get('idle', [])
+    if not down_idle:
+        # Fallback: uso esquina superior izquierda del tile
+        px = tile_x * TILE_SIZE
+        py = tile_y * TILE_SIZE
+    else:
+        img = down_idle[0]
+        w_img, h_img = img.get_size()
+        fh = h_img // 4
+        half_fh = fh // 2
+        # Centro del tile en píxeles
+        cx = tile_x * TILE_SIZE + TILE_SIZE // 2
+        cy = tile_y * TILE_SIZE + TILE_SIZE // 2
+        # Calcular top-left del sprite para alinear feet
+        px = cx - w_img // 2
+        py = cy - (h_img - half_fh)
+    return spawn_player(world, px, py, character_name)

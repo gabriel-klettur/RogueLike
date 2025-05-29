@@ -9,10 +9,10 @@ from roguelike_game.game.map_manager import MapManager
 class WorldManager:
     """
     Orquesta múltiples MapManagers (niveles), mantiene el estado global persistente
-    (jugador, NPCs, inventario) y gestiona carga/descarga de niveles.
+    (NPCs, inventario) y gestiona carga/descarga de niveles.
     """
     def __init__(self, global_config=WORLD_CONFIG):
-        # Estado persistente del jugador y NPCs globales        
+        # Estado persistente de NPCs globales        
         self.npc_memory: Dict[str, dict] = {}
         # Configuración global (paths, límites de carga, etc.)
         self.config = global_config
@@ -32,7 +32,7 @@ class WorldManager:
 
     def _apply_loaded_state(self, data: dict):
         """
-        Aplica el estado cargado en memoria: jugador, NPCs y niveles.
+        Aplica el estado cargado en memoria: NPCs y niveles.
         """
         
         self.npc_memory = data.get("npcs", {})
@@ -41,10 +41,15 @@ class WorldManager:
             mgr = MapManager(lvl_name)
             mgr.deserialize_state(lvl_state)
             self.maps[lvl_name] = mgr
+        # Restaurar nivel actual del jugador si existe
+        player_info = data.get("player", {})
+        level = player_info.get("level")
+        if level in self.maps:
+            self.current_level = level
 
     def load_level(self, level_name: str):
         """
-        Carga o construye el mapa indicado, descarga si es necesario
+        Carga o construye el mapa indicado, descarga si es ndecesario
         y restaura estado de jugador/NPCs.
         """
         # Descargar exceso de niveles según max_loaded_levels
@@ -57,8 +62,9 @@ class WorldManager:
 
         # Restaurar posición del jugador y NPCs globales
         mgr = self.maps[level_name]
-        last_pos = self.player_data.last_position.get(level_name)
-        if last_pos:
+        # Cargar posición previa de jugador desde estado local del mapa
+        last_pos = mgr._local_state.get("player_pos")
+        if last_pos is not None:
             mgr.spawn_player(last_pos)
         mgr.restore_npc_states(self.npc_memory)
 
@@ -77,17 +83,18 @@ class WorldManager:
 
     def save_world(self, path: Optional[str] = None):
         """
-        Serializa estado global (jugador, NPCs, estado de niveles) a disco.
+        Serializa estado global (NPCs, estado de niveles) a disco.
         """
         save_path = path or str(self.config.save_path)
-        state = {
-            "player": self.player_data.to_dict(),
-            "npcs": self.npc_memory,
-            "levels": {
-                name: mgr.serialize_state()
-                for name, mgr in self.maps.items()
-            }
-        }
+        # Construir estado con zona y posición del jugador
+        state = {}
+        # Zona y posición del jugador
+        if self.current_level and self.current_level in self.maps:
+            pos = self.maps[self.current_level]._local_state.get("player_pos")
+            state["player"] = {"level": self.current_level, "pos": list(pos) if pos is not None else None}
+        # Memoria de NPCs y niveles
+        state["npcs"] = self.npc_memory
+        state["levels"] = {name: mgr.serialize_state() for name, mgr in self.maps.items()}
         save_world_state(save_path, state)
 
         # Actualizar autosave

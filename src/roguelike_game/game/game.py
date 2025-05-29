@@ -103,8 +103,17 @@ class Game:
     def _init_map(self, map_name: str | None):
         """
         Construye el mapa global y carga todos sus datos en el estado.
-        """        
-        self.map = MapManager(map_name)                                        
+        """
+        # Si hay un nivel previamente guardado, cargarlo
+        if self.world.current_level:
+            self.world.load_level(self.world.current_level)
+            self.map = self.world.maps[self.world.current_level]
+        else:
+            # Carga inicial de mapa
+            self.map = MapManager(map_name)
+            # Registrar mapa inicial en WorldManager
+            self.world.maps[self.map.name] = self.map
+            self.world.current_level = self.map.name
 
     def _init_entities(self):
         """
