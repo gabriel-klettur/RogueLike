@@ -10,6 +10,7 @@ class FiniteStateMachine:
         Inicializa la FSM con un estado inicial.
         """
         self.current_state = initial_state
+        initial_state.fsm = self
 
     def change_state(self, new_state: State, entity):
         """
@@ -17,6 +18,7 @@ class FiniteStateMachine:
         """
         self.current_state.exit(entity)
         self.current_state = new_state
+        new_state.fsm = self
         self.current_state.enter(entity)
 
     def update(self, entity, dt):

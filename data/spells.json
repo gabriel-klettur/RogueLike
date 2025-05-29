@@ -1,0 +1,10 @@
+{
+    "pixel_fire": {
+      "prepare_duration": 0.2,
+      "channel_duration": 0.5,
+      "cooldown_duration": 1.0,
+      "speed": 15,
+      "damage": 10,
+      "lifespan": 60
+    }
+}
