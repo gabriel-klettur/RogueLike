@@ -8,8 +8,19 @@ class StatesDebugRenderSystem:
     """
     def __init__(self):
         self.font = pygame.font.SysFont(None, 14)
+        self.debug = False
+        self.last_pressed = False
 
     def update(self, world, screen, camera):
+
+        keys = pygame.key.get_pressed()
+        f9 = keys[pygame.K_F9]
+        if f9 and not self.last_pressed:
+            self.debug = not self.debug
+        self.last_pressed = f9
+        if not self.debug:
+            return
+
         comps = world.components
         for eid in world.get_entities_with('NPCState', 'Position', 'Sprite'):
             state_name = comps['NPCState'][eid].fsm.current_state.__class__.__name__
