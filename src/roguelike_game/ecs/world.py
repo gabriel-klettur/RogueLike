@@ -191,12 +191,12 @@ class NPCWorld:
             if all(eid in comps.get(ct, {}) for ct in component_types):
                 yield eid
 
-    def update(self, camera):
+    def update(self, camera, perf_log):         #! AGREGAR PERF_LOG en cada sistema
         # Ejecutar sistemas de actualización con manejo de firma variable        
         for system in self.update_systems:
             system.update(self, camera)
 
-    def render(self, screen, camera):
+    def render(self, screen, camera, perf_log):     #! AGREGAR PERF_LOG en cada sistema
         # Run render systems to draw entities
         for system in self.render_systems:
             system.update(self, screen, camera)

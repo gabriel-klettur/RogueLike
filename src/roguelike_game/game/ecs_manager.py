@@ -1,12 +1,11 @@
 from roguelike_game.ecs.world import NPCWorld
-from roguelike_game.game.map_manager import MapManager
 from roguelike_game.ecs.factories.player_factory import spawn_player_tile
-from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.config.map_config import global_map_settings
-from roguelike_game.config_player import RENDERED_SPRITE_SIZE
+
 
 class ECSManager:
-    def __init__(self, screen, map_manager, entities_manager):
+    def __init__(self, screen, map_manager, entities_manager, perf_log):
+        self.perf_log = perf_log
         self.screen = screen
         self.map_manager = map_manager
         # Guardar gestor de entidades para colisiones con edificios
@@ -30,8 +29,8 @@ class ECSManager:
 
     def update(self, clock, screen, camera):
         # Actualiza la lógica del mundo ECS
-        self.npc_world.update(camera)
+        self.npc_world.update(camera, self.perf_log)
 
     def render(self, screen, camera):
         # Renderiza todas las entidades ECS en pantalla con cámara
-        self.npc_world.render(screen, camera)
+        self.npc_world.render(screen, camera, self.perf_log)

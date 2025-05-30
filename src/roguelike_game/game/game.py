@@ -65,7 +65,7 @@ class Game:
             ("Cargando editor de edificios",       lambda: self._init_buildings_editor()),
             ("Cargando editor de tiles",           lambda: self._init_tile_editor()),
             ("Cargando minimapa",                  lambda: self._init_minimap()),
-            ("Inicializando ECS",                  lambda: self._init_ecs(screen)),
+            ("Inicializando ECS",                  lambda: self._init_ecs(screen, perf_log)),
             ("Inicializando renderizador",         lambda: self._init_renderer()),
             ("Inicializando menú",                 lambda: self._init_menu()),            
             ("Inicializando efectos",              lambda: self._init_effects(perf_log)),            
@@ -141,12 +141,12 @@ class Game:
         """
         self.tiles_editor = TilesEditorManager(self)
 
-    def _init_ecs(self, screen):
+    def _init_ecs(self, screen, perf_log):
         """
         Inicializa el gestor ECS
         """
         # Pasar referencia del mapa y entidades para colisiones en ECS
-        self.ecs = ECSManager(screen, self.map, self.entities)
+        self.ecs = ECSManager(screen, self.map, self.entities, perf_log)
 
     def _init_renderer(self):
         """

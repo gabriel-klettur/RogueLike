@@ -1,5 +1,4 @@
 from roguelike_game.ecs.fsm.state import State
-from roguelike_game.ecs.fsm.states.chase_state import ChaseState
 from roguelike_game.ecs.fsm.states.flee_state import FleeState
 from roguelike_game.ecs.fsm.states.attack_state import AttackState
 from roguelike_game.ecs.fsm.states.death_state import DeathState
@@ -38,6 +37,7 @@ class AggroState(State):
                 world.components['NPCState'][entity].fsm.change_state(AttackState(), entity)
                 return
         # Si no ataca ni huye, continuar persiguiendo
+        from roguelike_game.ecs.fsm.states.chase_state import ChaseState
         ChaseState().execute(entity, dt)
 
     def exit(self, entity):

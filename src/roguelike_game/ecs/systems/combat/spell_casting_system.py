@@ -12,18 +12,23 @@ from roguelike_game.ecs.components.rendering.sprite import Sprite
 
 class SpellCastingSystem:
     def update(self, world, camera=None):
+        #print(f"[ECS][SpellCastingSystem] Procesando intenciones de hechizo...")
         # Procesar intenciones de hechizo (AI y jugador)
         wants = world.components.get('WantsToCastSpell', {})
         npcs = world.components.get('NPCState', {})
         for eid in list(wants.keys()):
             intent = wants[eid]
             if eid in npcs:
+                print(f"[ECS][SpellCastingSystem] Procesando intención de hechizo del NPC...")
                 # AI: iniciar sub-FSM de hechizo
                 npc_state = npcs[eid]
                 entity = _EntityProxy(world, eid)
                 npc_state.fsm.change_state(CastState(), entity)
             else:
                 # Player: instant fireball hacia mouse
+                print(f"[ECS][SpellCastingSystem] Procesando intención de hechizo del jugador...")
+
+                #!-------------------- Esto no deberia moverse a la FSM????? ------------------------
                 pos_cmp = world.components['Position'][eid]
                 mx, my = pygame.mouse.get_pos()
                 wx = mx / camera.zoom + camera.offset_x

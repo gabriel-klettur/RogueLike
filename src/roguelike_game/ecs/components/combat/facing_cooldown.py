@@ -1,5 +1,3 @@
-import time
-
 class FacingCooldown:
     """
     Componente para controlar la frecuencia de cambio de dirección de sprite.

@@ -1,8 +1,9 @@
 import math
 from roguelike_game.ecs.fsm.state import State
 from roguelike_game.ecs.fsm.states.death_state import DeathState
-from roguelike_engine.config.config_tiles import TILE_SIZE
+
 from roguelike_game.ecs.components.transform.velocity import Velocity
+from roguelike_engine.config.config_tiles import TILE_SIZE
 
 class ChaseState(State):
     """
@@ -13,7 +14,6 @@ class ChaseState(State):
         pass
 
     def execute(self, entity, dt):
-        from roguelike_game.ecs.fsm.states.idle_state import IdleState
         world = entity.world
         eid = entity.id
         # Resetear velocidad antes de moverse
@@ -34,7 +34,8 @@ class ChaseState(State):
         aggro_radius = world.components['AggroRange'][entity].radius * TILE_SIZE
         if dist_sq > aggro_radius**2:
             npc_state = world.components['NPCState'][entity]
-            npc_state.fsm.change_state(IdleState(), entity)
+            from roguelike_game.ecs.fsm.states.patrol_state import PatrolState
+            npc_state.fsm.change_state(PatrolState(), entity)
             return
         speed_cmp = world.components['MovementSpeed'][eid]
         step = speed_cmp.speed * dt if dt else speed_cmp.speed

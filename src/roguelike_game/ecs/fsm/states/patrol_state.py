@@ -1,7 +1,6 @@
 import math
 from roguelike_game.ecs.fsm.state import State
 from roguelike_game.ecs.fsm.states.idle_state import IdleState
-from roguelike_game.ecs.fsm.states.aggro_state import AggroState
 from roguelike_game.ecs.fsm.states.death_state import DeathState
 from roguelike_game.ecs.components.transform.velocity import Velocity
 from roguelike_engine.config.config_tiles import TILE_SIZE
@@ -36,6 +35,7 @@ class PatrolState(State):
             dy_p = pos.y - player_pos.y
             if dx_p*dx_p + dy_p*dy_p <= (world.components['AggroRange'][eid].radius * TILE_SIZE) ** 2:
                 npc_state = world.components['NPCState'][eid]
+                from roguelike_game.ecs.fsm.states.aggro_state import AggroState
                 npc_state.fsm.change_state(AggroState(), entity)
                 return
         # Mover hacia el waypoint actual
