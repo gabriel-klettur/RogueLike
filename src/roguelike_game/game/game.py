@@ -225,9 +225,25 @@ class Game:
             self.menu,
             self.map,
             self.entities,
-            self.effects,            
-        )
+            self.effects,
+        )        
 
+            
+    @benchmark(lambda self: self.perf_log, "4.2.ecs - update")
+    def update_ecs(self):
+        self.ecs.update(self.clock, self.screen, self.camera)
+    
+
+    @benchmark(lambda self: self.perf_log, "4.1 ecs - render")
+    def render_ecs(self):
+        self.ecs.render(self.screen, self.camera)
+
+
+    @benchmark(lambda self: self.perf_log, "4.TOTAL ECS")
+    def run_ecs(self):        
+        self.render_ecs()       
+        self.update_ecs()
+        
     
     def run(self):
         """
@@ -237,23 +253,29 @@ class Game:
             # 1) Procesar entrada
             self.handle_events()
 
-            # 2) Actualizar juego
+            # 2) Actualizar resto de partes del juego que no son ECS (menú, HUD, etc.)
             self.update()
 
-            # 3) Renderizar todo (incluye pygame.display.flip() dentro de render_game)
-            self.render()
+            # 3) Renderizar resto de partes del juego que no son ECS (map, editores, buildings, minimap)
+            self.render()      
 
-            # 4) Actualizar título con FPS actuales
+            # 4) Renderizar ECS
+            self.run_ecs()
+
+            # 5) Actualizar pantalla
+            pygame.display.flip()  
+
+            # 6) Actualizar título con FPS actuales
             fps = self.clock.get_fps()
             pygame.display.set_caption(f"Roguelike - FPS: {fps:0.1f}")
 
-            # 5) Autosave periódico según configuración de WorldConfig            
+            # 7) Autosave periódico según configuración de WorldConfig            
             if self.world.config.autosave_enabled and time.time() - self._last_autosave_time >= self.world.config.autosave_interval:
                 # Guarda en el path por defecto (WORLD_CONFIG.save_path)
                 self.world.save_world()
                 self._last_autosave_time = time.time()
 
-            # 6) Limitar velocidad de fotogramas
+            # 8) Limitar velocidad de fotogramas
             self.clock.tick(config.FPS)
 
 if __name__ == "__main__":

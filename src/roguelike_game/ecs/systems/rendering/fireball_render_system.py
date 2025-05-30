@@ -8,7 +8,7 @@ class FireballRenderSystem:
         self.radius = radius
         self.color = color
 
-    def update(self, world, screen, camera):
+    def update(self, world, screen, camera, perf_log=None):
         # Itera todas las fireballs y dibuja un círculo en su posición de mundo
         for eid, comp in world.components.get('FireballComponent', {}).items():
             pos = world.components['Position'][eid]

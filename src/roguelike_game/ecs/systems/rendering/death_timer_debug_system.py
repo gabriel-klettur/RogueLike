@@ -30,7 +30,7 @@ class DeathTimerDebugSystem:
         # Pre-cache de superficies de texto para valores de 0 a 60 segundos
         self.text_cache = {i: self.font.render(str(i), True, self.color) for i in range(0, 61)}
 
-    def update(self, world, screen, camera):
+    def update(self, world, screen, camera, perf_log=None):
         """
         Dibuja en pantalla los contadores sobre cada entidad con DeathTimer activo.
 

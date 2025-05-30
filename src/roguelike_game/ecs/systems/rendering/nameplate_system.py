@@ -29,7 +29,7 @@ class NamePlateSystem:
         self.name_cache: dict[tuple[str, tuple[int,int,int]], pygame.Surface] = {}
         self.title_cache: dict[tuple[str, tuple[int,int,int]], pygame.Surface] = {}
 
-    def update(self, world, screen, camera):
+    def update(self, world, screen, camera, perf_log=None):
         """
         Recorre todas las entidades con Position + Identity y dibuja:
          - Barra de salud ya posicionada (NamePlateSystem solo ajusta encima).

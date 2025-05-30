@@ -17,7 +17,7 @@ class InputSystem:
     def __init__(self):
         pass
 
-    def update(self, world, camera=None):
+    def update(self, world, camera=None, perf_log=None):
         # Obtener estado actual del teclado
         keys = pygame.key.get_pressed()
         # Para cada entidad con InputComponent

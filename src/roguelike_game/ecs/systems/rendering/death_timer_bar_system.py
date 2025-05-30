@@ -33,7 +33,7 @@ class DeathTimerBarSystem:
         self.color_bg = color_bg
         self.color_fg = color_fg
 
-    def update(self, world, screen, camera):
+    def update(self, world, screen, camera, perf_log=None):
         """
         Recorre todos los DeathTimers activos y dibuja su barra.
 

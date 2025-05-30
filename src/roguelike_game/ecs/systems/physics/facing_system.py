@@ -15,7 +15,7 @@ class FacingSystem:
     respetando un cooldown para evitar cambios demasiado rápidos.
     """
 
-    def update(self, world, camera=None):
+    def update(self, world, camera=None, perf_log=None):
         """
         Recorre todas las entidades con Velocity y Animator, y:
           1. Ignora entidades sin Animator.

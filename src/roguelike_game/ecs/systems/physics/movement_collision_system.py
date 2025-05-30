@@ -13,7 +13,7 @@ class MovementCollisionSystem:
     Se aplica un test por separado en X y en Y para un movimiento suave y consistente.
     """
 
-    def update(self, world, camera=None):
+    def update(self, world, camera=None, perf_log=None):
         """
         Recorre todas las entidades con Position, Velocity y MultiCollider, y para cada una:
           1. Obtiene el collider de 'feet' y lo posiciona en el mundo.

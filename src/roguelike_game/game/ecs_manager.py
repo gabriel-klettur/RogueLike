@@ -11,7 +11,7 @@ class ECSManager:
         # Guardar gestor de entidades para colisiones con edificios
         self.entities_manager = entities_manager
         # Inicializar mundo ECS y pasar edificios para colisiones
-        self.npc_world = NPCWorld(screen, map_manager, entities_manager.buildings)
+        self.npc_world = NPCWorld(screen, map_manager, entities_manager.buildings, perf_log)
         # Spawn de la entidad jugador según posición guardada en tile coords o centro del lobby
         saved_tile = self.map_manager._local_state.get("player_pos")
         if saved_tile is not None:
@@ -29,8 +29,8 @@ class ECSManager:
 
     def update(self, clock, screen, camera):
         # Actualiza la lógica del mundo ECS
-        self.npc_world.update(camera, self.perf_log)
+        self.npc_world.update(camera)
 
     def render(self, screen, camera):
         # Renderiza todas las entidades ECS en pantalla con cámara
-        self.npc_world.render(screen, camera, self.perf_log)
+        self.npc_world.render(screen, camera)

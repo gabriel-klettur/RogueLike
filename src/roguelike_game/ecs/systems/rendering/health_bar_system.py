@@ -22,7 +22,7 @@ class HealthBarSystem:
         """
         pass
 
-    def update(self, world, screen, camera):
+    def update(self, world, screen, camera, perf_log=None):
         """
         Recorre todas las entidades vivas y dibuja su barra de salud.
 

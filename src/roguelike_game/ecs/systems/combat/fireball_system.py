@@ -4,7 +4,7 @@ class FireballSystem:
     """
     Sistema que actualiza fireballs: movimiento, edad, colisiones con NPC y tiles.
     """
-    def update(self, world, camera):
+    def update(self, world, camera, perf_log=None):
         # Actualizar cada fireball
         for eid in list(world.components.get('FireballComponent', {})):
             comp = world.components['FireballComponent'][eid]

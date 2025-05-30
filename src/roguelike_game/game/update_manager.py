@@ -70,13 +70,7 @@ def update_game(
         entities.update(state, map, systems, perf_log)
     _update_entities()
 
-    # 3.3.5) ECS logic
-    @benchmark(perf_log, "2.4.ecs.update")
-    def _update_ecs():
-        ecs.update(clock, screen, camera)
-    _update_ecs()
-
-    # 3.5) Minimap update
+    # 3.4) Minimap update
     @benchmark(perf_log, "2.5.minimap.update")
     def _update_minimap():
         # Usar posición del jugador en ECS

@@ -11,7 +11,7 @@ class StatesDebugRenderSystem:
         self.debug = False
         self.last_pressed = False
 
-    def update(self, world, screen, camera):
+    def update(self, world, screen, camera, perf_log=None):
 
         keys = pygame.key.get_pressed()
         f9 = keys[pygame.K_F9]

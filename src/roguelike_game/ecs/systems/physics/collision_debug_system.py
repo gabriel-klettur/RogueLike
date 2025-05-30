@@ -22,7 +22,7 @@ class CollisionDebugSystem:
         self._pts = []
         self._mask_outline_cache = {}
 
-    def update(self, world, screen, camera):
+    def update(self, world, screen, camera, perf_log=None):
         """
         Recorre todas las entidades con MultiCollider y Position. Si DEBUG=True:
           1. Construye el rectángulo de colisión en coordenadas de mundo.

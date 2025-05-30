@@ -21,7 +21,7 @@ class FSMSystem:
     """
     Recorre entidades con NPCState y ejecuta la FSM.
     """
-    def update(self, world, camera=None):
+    def update(self, world, camera=None, perf_log=None):
         # Iterar sobre copia para evitar modificación concurrente al remover entidades
         for eid in list(world.get_entities_with('NPCState')):
             npc_state = world.components['NPCState'][eid]

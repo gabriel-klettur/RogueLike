@@ -5,7 +5,7 @@ class PlayerFacingSystem:
     Sistema que actualiza Animator.current_state para el jugador
     basándose en la posición del ratón y su velocidad (idle/walk).
     """
-    def update(self, world, camera=None):
+    def update(self, world, camera=None, perf_log=None):
         comps = world.components
         pos_map = comps.get('Position', {})
         vel_map = comps.get('Velocity', {})

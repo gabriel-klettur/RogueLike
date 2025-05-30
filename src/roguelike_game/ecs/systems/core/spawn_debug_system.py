@@ -13,7 +13,7 @@ class SpawnDebugSystem:
     Sistema que dibuja marcadores de spawn de NPCs en pantalla 
     si la configuración DEBUG está activada y el mundo define spawn_tiles.
     """
-    def update(self, world, screen, camera):
+    def update(self, world, screen, camera, perf_log=None):
         """
         Recorre la lista world.spawn_tiles y dibuja:
           - Un rectángulo rojo alrededor del tile de spawn.

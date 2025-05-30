@@ -37,7 +37,10 @@ from roguelike_game.ecs.factories.entity_factory import _load_caches_once, _DEFS
 from roguelike_game.ecs.components.spawn.spawn_request import SpawnRequest
 
 class NPCWorld:
-    def __init__(self, screen, map_manager, buildings):
+    def __init__(self, screen, map_manager, buildings, perf_log=None):
+        """Inicia perf_log para logging de performance."""
+        self.perf_log = perf_log
+
         """Inicializa NPCWorld: configura índice espacial, componentes, sistemas y spawn inicial."""
         self.screen = screen
         self.map_manager = map_manager
@@ -191,12 +194,12 @@ class NPCWorld:
             if all(eid in comps.get(ct, {}) for ct in component_types):
                 yield eid
 
-    def update(self, camera, perf_log):         #! AGREGAR PERF_LOG en cada sistema
+    def update(self, camera):         #! AGREGAR PERF_LOG en cada sistema
         # Ejecutar sistemas de actualización con manejo de firma variable        
         for system in self.update_systems:
             system.update(self, camera)
 
-    def render(self, screen, camera, perf_log):     #! AGREGAR PERF_LOG en cada sistema
+    def render(self, screen, camera):     #! AGREGAR PERF_LOG en cada sistema
         # Run render systems to draw entities
         for system in self.render_systems:
             system.update(self, screen, camera)

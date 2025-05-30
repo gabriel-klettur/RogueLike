@@ -17,7 +17,7 @@ class MeleeCombatSystem:
       3. Reduce los puntos de vida del objetivo.
       4. Elimina el componente WantsToMelee para limpiar el evento.
     """
-    def update(self, world, camera=None):
+    def update(self, world, camera=None, perf_log=None):
         """
         Recorre todos los eventos WantsToMelee registrados en el mundo,
         aplica el daño calculado y luego purga cada evento para evitar

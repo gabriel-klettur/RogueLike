@@ -10,7 +10,7 @@ from roguelike_game.systems.z_layer.render import render_z_ordered
 
 # Importar el decorador centralizado de benchmark
 from roguelike_engine.zone.view.zone_view import ZoneView
-from roguelike_game.ecs.world import NPCWorld
+
 
 class RendererManager:
     """
@@ -129,7 +129,7 @@ class RendererManager:
         # 8) Otros sistemas
         @benchmark(perf_log, "3.8. systems")
         def _bench_systems():
-            systems.render(screen, camera)
+            systems.render(screen, camera)            
         _bench_systems()
 
         # 9) Editores
@@ -138,11 +138,6 @@ class RendererManager:
             self._render_editors()
         _bench_editors()
 
-        # 10) ECS
-        @benchmark(perf_log, "3.10. ecs")
-        def _bench_ecs():
-            self.ecs.render(screen, camera)
-        _bench_ecs()
 
 
         # Debug: overlay y bordes
@@ -151,8 +146,6 @@ class RendererManager:
         self._render_help_overlay(state)
 
         # Reemplazar dirty rects por flip completo para rendimiento constante
-        pygame.display.flip()
-
         return self._dirty_rects
         
 

@@ -15,7 +15,7 @@ class ChaseDebugSystem:
         self.debug = False
         self.last_pressed = False
 
-    def update(self, world, screen, camera):
+    def update(self, world, screen, camera, perf_log=None):
         # Toggle debug mode on F9 (only on key down)
         keys = pygame.key.get_pressed()
         f9 = keys[pygame.K_F9]

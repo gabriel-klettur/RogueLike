@@ -11,7 +11,7 @@ from roguelike_game.ecs.components.abilities.fireball_component import FireballC
 from roguelike_game.ecs.components.rendering.sprite import Sprite
 
 class SpellCastingSystem:
-    def update(self, world, camera=None):
+    def update(self, world, camera=None, perf_log=None):
         #print(f"[ECS][SpellCastingSystem] Procesando intenciones de hechizo...")
         # Procesar intenciones de hechizo (AI y jugador)
         wants = world.components.get('WantsToCastSpell', {})
