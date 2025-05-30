@@ -2,6 +2,7 @@ import pygame
 import time
 import roguelike_engine.config.config as config
 from roguelike_game.ecs.fsm.states.death_state import DeathState
+from roguelike_engine.utils.benchmark import benchmark
 
 """
 Módulo que provee un sistema de debug para mostrar contadores de muerte
@@ -13,7 +14,7 @@ class DeathTimerDebugSystem:
     Sistema que renderiza un contador de segundos sobre NPCs muertos,
     mostrando cuánto tiempo falta para que sean removidos.
     """
-    def __init__(self, font_size: int = 32, color: tuple = (255, 0, 0)):
+    def __init__(self, font_size: int = 32, color: tuple = (255, 0, 0), perf_log=None):
         """
         Inicializa el sistema de debug.
 
@@ -30,7 +31,8 @@ class DeathTimerDebugSystem:
         # Pre-cache de superficies de texto para valores de 0 a 60 segundos
         self.text_cache = {i: self.font.render(str(i), True, self.color) for i in range(0, 61)}
 
-    def update(self, world, screen, camera, perf_log=None):
+    @benchmark(lambda self: self.perf_log, "4.2.2.DeathTimerDebugSystem.update")
+    def update(self, world, screen, camera):
         """
         Dibuja en pantalla los contadores sobre cada entidad con DeathTimer activo.
 

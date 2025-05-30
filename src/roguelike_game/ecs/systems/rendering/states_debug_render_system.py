@@ -1,17 +1,20 @@
 import pygame
 from roguelike_game.ecs.components.fsm.npc_state import NPCState
 from roguelike_game.ecs.components.transform.scale import Scale
+from roguelike_engine.utils.benchmark import benchmark
 
 class StatesDebugRenderSystem:
     """
     Dibuja una etiqueta con el nombre del estado FSM sobre cada NPC.
     """
-    def __init__(self):
+    def __init__(self, perf_log):
         self.font = pygame.font.SysFont(None, 14)
         self.debug = False
         self.last_pressed = False
+        self.perf_log = perf_log
 
-    def update(self, world, screen, camera, perf_log=None):
+    @benchmark(lambda self: self.perf_log, "4.2.2.StatesDebugRenderSystem.update")
+    def update(self, world, screen, camera):
 
         keys = pygame.key.get_pressed()
         f9 = keys[pygame.K_F9]

@@ -1,16 +1,19 @@
 import pygame
 from roguelike_game.ecs.utils.render_utils import draw_sprite_bbox, draw_sprite_center
+from roguelike_engine.utils.benchmark import benchmark
 
 class PlayerDebugRenderSystem:
     """
     Dibuja bounding box y centro del sprite del jugador cuando se presiona F9.
     """
-    def __init__(self):
+    def __init__(self, perf_log):
         # Estado de toggling de debug
         self.debug = False
         self.last_pressed = False
+        self.perf_log = perf_log
 
-    def update(self, world, screen, camera, perf_log=None):
+    @benchmark(lambda self: self.perf_log, "4.2.2.PlayerDebugRenderSystem.update")
+    def update(self, world, screen, camera):
         # Toggle debug mode on F9 press
         keys = pygame.key.get_pressed()
         f9 = keys[pygame.K_F9]

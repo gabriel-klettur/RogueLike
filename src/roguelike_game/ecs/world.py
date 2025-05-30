@@ -88,26 +88,26 @@ class NPCWorld:
     def _init_systems(self):
         """Configura sistemas de actualización y renderizado."""
         self.update_systems = [
-            FSMSystem(),
-            PlayerFacingSystem(), FacingSystem(), InputSystem(),
-            MovementCollisionSystem(),                       
-            MeleeCombatSystem(), SpellCastingSystem(),
-            FireballSystem(),
-            AnimationSystem(), SpawnSystem(),            
+            FSMSystem(self.perf_log),
+            PlayerFacingSystem(self.perf_log), FacingSystem(self.perf_log), InputSystem(self.perf_log),
+            MovementCollisionSystem(self.perf_log),                       
+            MeleeCombatSystem(self.perf_log), SpellCastingSystem(self.perf_log),
+            FireballSystem(self.perf_log),
+            AnimationSystem(self.perf_log), SpawnSystem(self.perf_log),            
         ]
         self.render_systems = [
-            HealthBarSystem(), NamePlateSystem(),
-            CollisionDebugSystem(),
-            FireballRenderSystem(),
-            ChaseDebugSystem(),
-            PlayerDebugRenderSystem(),
-            DeathTimerBarSystem(),
-            StatesDebugRenderSystem()
+            HealthBarSystem(self.perf_log), NamePlateSystem(self.perf_log),
+            CollisionDebugSystem(self.perf_log),
+            FireballRenderSystem(self.perf_log),
+            ChaseDebugSystem(self.perf_log),
+            PlayerDebugRenderSystem(self.perf_log),
+            DeathTimerBarSystem(self.perf_log),
+            StatesDebugRenderSystem(self.perf_log)
         ]
         # Añadir sistema de debug de spawn cuando DEBUG=true
         if config.DEBUG:
-            self.render_systems.append(SpawnDebugSystem())
-            self.render_systems.append(DeathTimerDebugSystem())
+            self.render_systems.append(SpawnDebugSystem(self.perf_log))
+            self.render_systems.append(DeathTimerDebugSystem(self.perf_log))
 
     def _spawn_initial_npcs(self):
         """Ejecuta la lógica de spawn de NPCs asegurando tiles válidos."""
@@ -194,12 +194,12 @@ class NPCWorld:
             if all(eid in comps.get(ct, {}) for ct in component_types):
                 yield eid
 
-    def update(self, camera):         #! AGREGAR PERF_LOG en cada sistema
+    def update(self, camera):      
         # Ejecutar sistemas de actualización con manejo de firma variable        
         for system in self.update_systems:
             system.update(self, camera)
 
-    def render(self, screen, camera):     #! AGREGAR PERF_LOG en cada sistema
+    def render(self, screen, camera):  
         # Run render systems to draw entities
         for system in self.render_systems:
             system.update(self, screen, camera)

@@ -6,6 +6,7 @@ and target defense.
 """
 
 from roguelike_game.ecs.components.combat.combat_stats import CombatStats
+from roguelike_engine.utils.benchmark import benchmark
 
 class MeleeCombatSystem:
     """
@@ -15,9 +16,14 @@ class MeleeCombatSystem:
       1. Recupera estadísticas de atacante y objetivo.
       2. Calcula daño = max(0, ataque + bonus_arma - defensa).
       3. Reduce los puntos de vida del objetivo.
-      4. Elimina el componente WantsToMelee para limpiar el evento.
+      4. Elimina el componente WantsToMelee para limpiar el evento.      
     """
-    def update(self, world, camera=None, perf_log=None):
+
+    def __init__(self, perf_log):
+        self.perf_log = perf_log
+
+    @benchmark(lambda self: self.perf_log, "4.2.2.MeleeCombatSystem.update")
+    def update(self, world, camera=None):
         """
         Recorre todos los eventos WantsToMelee registrados en el mundo,
         aplica el daño calculado y luego purga cada evento para evitar

@@ -9,9 +9,15 @@ from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.transform.velocity import Velocity
 from roguelike_game.ecs.components.abilities.fireball_component import FireballComponent
 from roguelike_game.ecs.components.rendering.sprite import Sprite
+from roguelike_engine.utils.benchmark import benchmark
 
 class SpellCastingSystem:
-    def update(self, world, camera=None, perf_log=None):
+
+    def __init__(self, perf_log=None):
+        self.perf_log = perf_log
+
+    @benchmark(lambda self: self.perf_log, "4.2.2.SpellCastingSystem.update")
+    def update(self, world, camera=None):
         #print(f"[ECS][SpellCastingSystem] Procesando intenciones de hechizo...")
         # Procesar intenciones de hechizo (AI y jugador)
         wants = world.components.get('WantsToCastSpell', {})

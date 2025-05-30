@@ -7,15 +7,18 @@ applying a cooldown between direction changes to prevent flickering.
 import time
 
 from roguelike_game.ecs.components.combat.facing_cooldown import FacingCooldown
-
+from roguelike_engine.utils.benchmark import benchmark
 
 class FacingSystem:
     """
     Sistema que actualiza el Animator.current_state basado en Velocity (4 direcciones)
     respetando un cooldown para evitar cambios demasiado rápidos.
     """
+    def __init__(self, perf_log):
+        self.perf_log = perf_log
 
-    def update(self, world, camera=None, perf_log=None):
+    @benchmark(lambda self: self.perf_log, "4.2.2.FacingSystem.update")
+    def update(self, world, camera=None):
         """
         Recorre todas las entidades con Velocity y Animator, y:
           1. Ignora entidades sin Animator.

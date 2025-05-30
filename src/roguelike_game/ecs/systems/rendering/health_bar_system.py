@@ -3,7 +3,7 @@ from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.combat.health import Health
 from roguelike_game.ecs.components.transform.scale import Scale
 from roguelike_game.ecs.components.rendering.sprite import Sprite
-
+from roguelike_engine.utils.benchmark import benchmark
 
 class HealthBarSystem:
     """
@@ -15,14 +15,15 @@ class HealthBarSystem:
     • Se segmenta cada 20 puntos de vida para referencia visual.
     """
 
-    def __init__(self):
+    def __init__(self, perf_log):
         """
         Inicializa el sistema de barras de salud.
         No mantiene estado interno.
         """
-        pass
+        self.perf_log = perf_log
 
-    def update(self, world, screen, camera, perf_log=None):
+    @benchmark(lambda self: self.perf_log, "4.2.2.HealthBarSystem.update")
+    def update(self, world, screen, camera):
         """
         Recorre todas las entidades vivas y dibuja su barra de salud.
 

@@ -9,15 +9,17 @@ from roguelike_game.ecs.components.combat.attack_cooldown import AttackCooldown
 from roguelike_game.ecs.components.ai.wants_to_melee import WantsToMelee
 from roguelike_game.ecs.components.ai.wants_to_cast import WantsToCastSpell
 from roguelike_game.config_player import PLAYER_SPEED
+from roguelike_engine.utils.benchmark import benchmark
 
 class InputSystem:
     """
     Captura el estado del teclado y actualiza InputComponent y Velocity.
     """
-    def __init__(self):
-        pass
+    def __init__(self, perf_log):
+        self.perf_log = perf_log
 
-    def update(self, world, camera=None, perf_log=None):
+    @benchmark(lambda self: self.perf_log, "4.2.2.InputSystem.update")
+    def update(self, world, camera=None):
         # Obtener estado actual del teclado
         keys = pygame.key.get_pressed()
         # Para cada entidad con InputComponent

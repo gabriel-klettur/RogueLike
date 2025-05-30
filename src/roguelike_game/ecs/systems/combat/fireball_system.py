@@ -1,10 +1,15 @@
 import pygame
+from roguelike_engine.utils.benchmark import benchmark
 
 class FireballSystem:
     """
     Sistema que actualiza fireballs: movimiento, edad, colisiones con NPC y tiles.
     """
-    def update(self, world, camera, perf_log=None):
+    def __init__(self, perf_log):
+        self.perf_log = perf_log
+
+    @benchmark(lambda self: self.perf_log, "4.2.2.FireballSystem.update")
+    def update(self, world, camera=None):
         # Actualizar cada fireball
         for eid in list(world.components.get('FireballComponent', {})):
             comp = world.components['FireballComponent'][eid]

@@ -2,7 +2,7 @@ import pygame
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.ecs.utils.position_utils import compute_foot_tile
 from roguelike_game.ecs.utils.render_utils import draw_sprite_bbox
-from roguelike_game.ecs.components.transform.scale import Scale
+from roguelike_engine.utils.benchmark import benchmark
 
 class ChaseDebugSystem:
     """
@@ -11,11 +11,13 @@ class ChaseDebugSystem:
     - Centro de cada NPC en magenta
     - Línea desde NPC al destino en azul
     """
-    def __init__(self):
+    def __init__(self, perf_log):
         self.debug = False
         self.last_pressed = False
+        self.perf_log = perf_log
 
-    def update(self, world, screen, camera, perf_log=None):
+    @benchmark(lambda self: self.perf_log, "4.2.2.ChaseDebugSystem.update")
+    def update(self, world, screen, camera):
         # Toggle debug mode on F9 (only on key down)
         keys = pygame.key.get_pressed()
         f9 = keys[pygame.K_F9]
