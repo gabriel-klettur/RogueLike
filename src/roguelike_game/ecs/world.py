@@ -126,7 +126,7 @@ class NPCWorld:
         positions = find_spawn_positions(
             self.map_manager, self.buildings,
             lobby_offset, zone_size,
-            neighbor_padding=3, sample_count=100
+            neighbor_padding=3, sample_count=10
         )
         # Filtrar posiciones por colisión de collider 'feet'
         filtered_positions = []
@@ -153,7 +153,7 @@ class NPCWorld:
             empty_positions = find_spawn_positions(
                 self.map_manager, self.buildings,
                 empty_offset, zone_size,
-                neighbor_padding=3, sample_count=100
+                neighbor_padding=3, sample_count=10
             )
             print(f"[ECS][Spawn] Spawn in empty_left candidatos: {len(empty_positions)}")
             # Filtrar también en zona empty_left

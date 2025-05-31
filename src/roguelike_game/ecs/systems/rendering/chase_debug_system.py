@@ -39,6 +39,28 @@ class ChaseDebugSystem:
         draw_line = pygame.draw.line
         draw_rect = pygame.draw.rect
 
+        # Visualizar área de visión (AggroRange) de cada NPC, centrado en el collider 'feet'
+        for eid, agg in comps.get('AggroRange', {}).items():
+            pos = comps['Position'].get(eid)
+            if not pos: continue
+            mc = comps.get('MultiCollider', {}).get(eid)
+            if mc and 'feet' in mc.colliders:
+                feet = mc.colliders['feet']
+                cx = pos.x + feet.offset_x + feet.width / 2
+                cy = pos.y + feet.offset_y + feet.height / 2
+            else:
+                sprite = comps.get('Sprite', {}).get(eid)
+                if sprite:
+                    w, h = sprite.image.get_size()
+                else:
+                    w, h = 0, 0
+                cx = pos.x + w * 0.5
+                cy = pos.y + h * 0.5
+            scx = int((cx - offset_x) * zoom)
+            scy = int((cy - offset_y) * zoom)
+            rad = int(agg.radius * TILE_SIZE * zoom)
+            draw_circle(screen, (255, 0, 0), (scx, scy), rad, 1)
+
         # Draw player center and foot tile
         player_pos = world.player_position
         if player_pos:
