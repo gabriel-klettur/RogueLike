@@ -30,6 +30,13 @@ class ChaseState(State):
         dx = player_pos.x - pos.x
         dy = player_pos.y - pos.y
         dist_sq = dx*dx + dy*dy
+        # Actualizar animación de chase según dirección
+        anim = world.components['Animator'][eid]
+        if abs(dx) > abs(dy):
+            direction = 'left' if dx < 0 else 'right'
+        else:
+            direction = 'down' if dy > 0 else 'up'
+        anim.current_state = f"chase_{direction}"
         # Si jugador sale de rango de aggro, volver a Idle
         aggro_radius = world.components['AggroRange'][entity].radius * TILE_SIZE
         if dist_sq > aggro_radius**2:

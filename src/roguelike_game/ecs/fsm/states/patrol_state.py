@@ -55,9 +55,9 @@ class PatrolState(State):
                 vy = dy/dist * step
                 world.components['Velocity'][eid] = Velocity(vx, vy)
         else:
-            # Ruta completa, volver a IdleState
+            # Ruta completa, reiniciar para patrulla en bucle
             world.components['Velocity'][eid] = Velocity(0, 0)
-            world.components['NPCState'][eid].fsm.change_state(IdleState(), entity)
+            self.current_index = 0
 
     def exit(self, entity):
         pass

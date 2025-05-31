@@ -38,7 +38,8 @@ class AggroState(State):
                 return
         # Si no ataca ni huye, continuar persiguiendo
         from roguelike_game.ecs.fsm.states.chase_state import ChaseState
-        ChaseState().execute(entity, dt)
+        world.components['NPCState'][entity].fsm.change_state(ChaseState(), entity)
+        return
 
     def exit(self, entity):
         # Limpiar animaciones de agresión

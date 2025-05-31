@@ -20,14 +20,13 @@ class FleeState(State):
         eid = entity.id
         # Resetear velocidad cada tick
         world.components['Velocity'][eid] = Velocity(0, 0)
-        # Volver a AggroState tras 5 segundos de huida
-        if time.time() - self.start_time >= 5.0:
-            # Importar localmente para evitar dependencia circular
-            from roguelike_game.ecs.fsm.states.aggro_state import AggroState
-            world.components['NPCState'][entity].fsm.change_state(AggroState(), entity)
+        # Salir de FleeState cuando salud completa: volver a patrulla
+        hp_cmp = world.components['Health'][eid]
+        if hp_cmp.current_hp >= hp_cmp.max_hp:
+            from roguelike_game.ecs.fsm.states.patrol_state import PatrolState
+            world.components['NPCState'][entity].fsm.change_state(PatrolState(), entity)
             return
         # Verificar muerte
-        hp_cmp = world.components['Health'][eid]
         if hp_cmp.current_hp <= 0:
             world.components['NPCState'][entity].fsm.change_state(DeathState(), entity)
             return
