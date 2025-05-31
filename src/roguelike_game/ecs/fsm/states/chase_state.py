@@ -37,6 +37,15 @@ class ChaseState(State):
         else:
             direction = 'down' if dy > 0 else 'up'
         anim.current_state = f"chase_{direction}"
+        # Si dentro de rango melee: cambiar a AttackState
+        mr_cmp = world.components['MeleeRange'][entity]
+        melee_dist_sq = (mr_cmp.range * TILE_SIZE) ** 2
+        dx = world.player_position.x - world.components['Position'][entity].x
+        dy = world.player_position.y - world.components['Position'][entity].y
+        if dx*dx + dy*dy <= melee_dist_sq:
+            from roguelike_game.ecs.fsm.states.attack_state import AttackState
+            world.components['NPCState'][eid].fsm.change_state(AttackState(), entity)
+            return
         # Si jugador sale de rango de aggro, volver a Idle
         aggro_radius = world.components['AggroRange'][entity].radius * TILE_SIZE
         if dist_sq > aggro_radius**2:

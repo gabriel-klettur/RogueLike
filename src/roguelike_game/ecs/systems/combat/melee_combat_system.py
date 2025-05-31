@@ -9,6 +9,7 @@ from roguelike_game.ecs.components.combat.combat_stats import CombatStats
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.ecs.fsm.states.chase_state import ChaseState
 from roguelike_game.ecs.fsm.states.damage_state import DamageState
+from roguelike_game.ecs.fsm.states.attack_state import AttackState
 from roguelike_game.ecs.systems.fsm.fsm_system import _EntityProxy
 
 class MeleeCombatSystem:
@@ -58,8 +59,10 @@ class MeleeCombatSystem:
                 from_left = attacker_pos.x < defender_pos.x
                 fsm = world.components['NPCState'][target_eid].fsm
                 proxy = _EntityProxy(world, target_eid)
-                # usar DamageState para pausa y luego ChaseState
-                fsm.change_state(DamageState(ChaseState(), from_left), proxy)
+                # usar DamageState: si ya estaba en AttackState, volver a Attack, sino Chase
+                current = fsm.current_state
+                next_state = AttackState() if isinstance(current, AttackState) else ChaseState()
+                fsm.change_state(DamageState(next_state, from_left), proxy)
             
             # (Opcional) Aquí podrías disparar efectos secundarios,
             # p.ej. animaciones, sonidos o eventos de muerte si HP ≤ 0

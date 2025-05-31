@@ -23,6 +23,7 @@
       "melee_damage": 5,      
       "melee_cooldown": 1.0,      
       "defense": 5,
-      "power": 10
+      "power": 10,
+      "chasing_speed": 1.5
     }    
   }

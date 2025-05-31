@@ -1,7 +1,6 @@
 from roguelike_game.ecs.fsm.state import State
 from roguelike_game.ecs.fsm.states.death_state import DeathState
 from roguelike_game.ecs.fsm.states.chase_state import ChaseState
-from roguelike_game.ecs.systems.combat.combat_system import CombatSystem
 from roguelike_game.ecs.components.ai.chase_target import ChaseTarget
 from roguelike_game.ecs.components.transform.velocity import Velocity
 from roguelike_engine.config.config_tiles import TILE_SIZE
@@ -37,6 +36,8 @@ class AttackState(State):
         # Si dentro de rango melee: atacar y quedarse en AttackState
         mr_cmp = world.components['MeleeRange'][eid]
         if dist_sq <= (mr_cmp.range * TILE_SIZE) ** 2:
+            # Importar aquí para evitar import circular
+            from roguelike_game.ecs.systems.combat.combat_system import CombatSystem
             CombatSystem().perform_melee(world, entity, world.player_entity)
             return
         # Fuera de rango: cambiar a ChaseState
