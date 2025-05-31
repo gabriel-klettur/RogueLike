@@ -18,8 +18,11 @@ class FlashSystem:
             if elapsed >= flash.duration:
                 del flash_map[eid]
             else:
-                sprite = sprite_map.get(eid)
-                if sprite:
-                    img = sprite.image.copy()
-                    img.fill(flash.color, special_flags=pygame.BLEND_RGB_ADD)
-                    sprite.image = img
+                # blinking: only tint on even intervals
+                blink_interval = flash.duration / 4
+                if blink_interval <= 0 or int(elapsed / blink_interval) % 2 == 0:
+                    sprite = sprite_map.get(eid)
+                    if sprite:
+                        img = sprite.image.copy()
+                        img.fill(flash.color, special_flags=pygame.BLEND_RGB_ADD)
+                        sprite.image = img
