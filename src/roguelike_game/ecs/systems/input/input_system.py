@@ -4,6 +4,7 @@ Sistema que traduce el estado de teclado a InputComponent y actualiza Velocity.
 """
 import pygame
 import time
+import math
 
 from roguelike_game.ecs.components.combat.attack_cooldown import AttackCooldown
 from roguelike_game.ecs.components.ai.wants_to_melee import WantsToMelee
@@ -31,8 +32,14 @@ class InputSystem:
             vel = world.components.get('Velocity', {}).get(eid)
             ms = world.components.get('MovementSpeed', {}).get(eid)
             if vel and ms:
-                vel.vx = inp.move_x * ms.speed
-                vel.vy = inp.move_y * ms.speed
+                dx, dy = inp.move_x, inp.move_y
+                speed = ms.speed
+                length = math.hypot(dx, dy)
+                if length > 0:
+                    vel.vx = dx / length * speed
+                    vel.vy = dy / length * speed
+                else:
+                    vel.vx = vel.vy = 0
             # Mapear habilidades Q, E y click
             inp.skill_q = bool(keys[pygame.K_q])
             inp.skill_e = bool(keys[pygame.K_e])
