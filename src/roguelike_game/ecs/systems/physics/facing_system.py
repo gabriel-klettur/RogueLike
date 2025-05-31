@@ -38,6 +38,9 @@ class FacingSystem:
             animator = anim_map.get(eid)
             if not animator:
                 continue
+            # No sobrescribir animaciones de chase para evitar parpadeo
+            if animator.current_state.startswith('chase_'):
+                continue
 
             # 2) Obtener o crear el cooldown de facing
             now = time.time()

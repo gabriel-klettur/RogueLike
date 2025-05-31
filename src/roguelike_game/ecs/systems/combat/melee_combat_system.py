@@ -7,6 +7,8 @@ and target defense.
 
 from roguelike_game.ecs.components.combat.combat_stats import CombatStats
 from roguelike_engine.utils.benchmark import benchmark
+from roguelike_game.ecs.fsm.states.chase_state import ChaseState
+from roguelike_game.ecs.systems.fsm.fsm_system import _EntityProxy
 
 class MeleeCombatSystem:
     """
@@ -45,6 +47,13 @@ class MeleeCombatSystem:
             
             # Aplicar daño al objetivo
             defender_stats.current_hp -= damage
+            
+            # NPC recibe daño de jugador -> pasar a ChaseState
+            if intent.attacker in world.components.get('PlayerTagComponent', {}):
+                target_eid = intent.target
+                fsm = world.components['NPCState'][target_eid].fsm
+                proxy = _EntityProxy(world, target_eid)
+                fsm.change_state(ChaseState(), proxy)
             
             # (Opcional) Aquí podrías disparar efectos secundarios,
             # p.ej. animaciones, sonidos o eventos de muerte si HP ≤ 0

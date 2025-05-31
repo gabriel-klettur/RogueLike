@@ -4,7 +4,11 @@
         "down":  "assets/npc/monsters/barbol/barbol_1_down.png",
         "left":  "assets/npc/monsters/barbol/barbol_1_left.png",
         "right": "assets/npc/monsters/barbol/barbol_1_right.png",
-        "up":    "assets/npc/monsters/barbol/barbol_1_top.png"
+        "up":    "assets/npc/monsters/barbol/barbol_1_top.png",
+        "chase_down": "assets/npc/monsters/barbol/barbol_1_down_chase.png",
+        "chase_left": "assets/npc/monsters/barbol/barbol_1_left_chase.png",
+        "chase_right": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
+        "chase_up": "assets/npc/monsters/barbol/barbol_1_top_chase.png"
       },
       "death_sprite": "assets/npc/monsters/barbol/barbol_female_death.png",
       "death_scale": 0.5,

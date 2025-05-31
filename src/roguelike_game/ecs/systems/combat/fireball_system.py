@@ -1,5 +1,6 @@
 import pygame
 from roguelike_engine.utils.benchmark import benchmark
+from roguelike_game.ecs.systems.fsm.fsm_system import _EntityProxy
 
 class FireballSystem:
     """
@@ -46,6 +47,13 @@ class FireballSystem:
                         hp = world.components['Health'][target]
                         hp.current_hp = max(0, hp.current_hp - comp.damage)
                         world.remove_entity(eid)
+                        # Si el daño viene de fireball de jugador, estado alerta de chase
+                        caster = comp.caster
+                        if caster in world.components.get('PlayerTagComponent', {}):
+                            fsm = world.components['NPCState'][target].fsm
+                            from roguelike_game.ecs.fsm.states.alert_chase_state import AlertChaseState
+                            proxy = _EntityProxy(world, target)
+                            fsm.change_state(AlertChaseState(), proxy)
                         break
             # Colisión con tiles sólidos
             point = pygame.Rect(pos.x, pos.y, 1, 1)
