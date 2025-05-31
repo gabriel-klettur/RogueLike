@@ -15,6 +15,10 @@ class ChaseState(State):
 
     def execute(self, entity, dt):
         world = entity.world
+        # Si jugador en modo fantasma, no perseguir
+        ghost_map = world.components.get('IsGhost', {})
+        if ghost_map.get(world.player_entity):
+            return
         eid = entity.id
         # Resetear velocidad antes de moverse
         world.components['Velocity'][eid] = Velocity(0, 0)

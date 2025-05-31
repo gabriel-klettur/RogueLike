@@ -58,6 +58,8 @@ class RendererManager:
         # Cache para help overlay: (mode_key, screen_size) -> (surface, rect)
         self._help_overlay_key = None
         self._help_overlay_surf = None
+        # Overlay para modo fantasma (grayscale multiplicativo)
+        self._ghost_overlay = None
 
     def render_game(
         self,
@@ -89,10 +91,16 @@ class RendererManager:
         # 2) Entidades orden Z
         @benchmark(perf_log, "3.2. z_entities")
         def _bench_z_entities():
-            # Skip entity rendering in collision-only mode
+            # Dibujo de entidades estáticas (obstáculos, edificios)
             if not (self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.show_collisions and not self.tiles_editor.editor_state.show_collisions_overlay):
                 self._render_z_entities(state, camera, screen, entities)
         _bench_z_entities()
+        # 3) ECS entities rendering
+        @benchmark(perf_log, "3.2.1 ecs_entities")
+        def _bench_ecs_entities():
+            # Usar sistemas de renderizado ECS (RenderSystem)
+            self.ecs.npc_world.render(screen, camera)
+        _bench_ecs_entities()
 
         # 3) Efectos
         @benchmark(perf_log, "3.3. effects")
@@ -160,9 +168,17 @@ class RendererManager:
         # Mostrar ayuda de controles según el modo
         self._render_help_overlay(state)
 
+        # Si el jugador es fantasma, aplicar overlay grayscale para performance
+        ghost_map = self.ecs.npc_world.components.get('IsGhost', {})
+        if ghost_map.get(self.ecs.npc_world.player_entity):
+            w, h = screen.get_size()
+            if self._ghost_overlay is None or self._ghost_overlay.get_size() != (w, h):
+                overlay = pygame.Surface((w, h)).convert()
+                overlay.fill((76, 150, 29))
+                self._ghost_overlay = overlay
+            screen.blit(self._ghost_overlay, (0, 0), special_flags=pygame.BLEND_RGB_MULT)
         # Reemplazar dirty rects por flip completo para rendimiento constante
         return self._dirty_rects
-        
 
     def _render_editors(self):
         """

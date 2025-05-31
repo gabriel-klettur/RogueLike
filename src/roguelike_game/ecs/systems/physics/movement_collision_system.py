@@ -55,6 +55,14 @@ class MovementCollisionSystem:
             pos   = pos_map[eid]
             vel   = vel_map[eid]
             multi = multi_map[eid]
+            # Si el jugador es fantasma, atraviesa todo
+            ghost_map = comps.get('IsGhost', {})
+            if eid in comps.get('PlayerTagComponent', {}) and ghost_map.get(eid):
+                # Debug: movimiento fantasma sin colisiones
+                print(f"[MovementCollisionSystem] Ghost player {eid} moved vx={vel.vx:.2f}, vy={vel.vy:.2f}")
+                pos.x += vel.vx
+                pos.y += vel.vy
+                continue
 
             # 2a) Obtener el collider de los pies; si no existe, saltar
             feet = multi.colliders.get('feet')

@@ -1,5 +1,6 @@
 from roguelike_game.ecs.fsm.state import State
 from roguelike_game.ecs.fsm.states.death_state import DeathState
+from roguelike_game.ecs.fsm.states.patrol_state import PatrolState
 from roguelike_game.ecs.fsm.states.chase_state import ChaseState
 from roguelike_game.ecs.components.ai.chase_target import ChaseTarget
 from roguelike_game.ecs.components.transform.velocity import Velocity
@@ -37,6 +38,11 @@ class AttackState(State):
         dy = player_pos.y - pos.y
         dist_sq = dx*dx + dy*dy
         # Si dentro de rango melee: atacar y quedarse en AttackState
+        ghost_map = world.components.get('IsGhost', {})
+        if ghost_map.get(world.player_entity):
+            # Ignorar ataque: cambiar NPC a patrulla
+            world.components['NPCState'][eid].fsm.change_state(PatrolState(), entity)
+            return
         mr_cmp = world.components['MeleeRange'][eid]
         if dist_sq <= (mr_cmp.range * TILE_SIZE) ** 2:
             # Daño periódico al jugador cada 1s en AttackState

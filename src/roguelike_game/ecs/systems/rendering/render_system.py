@@ -21,6 +21,8 @@ class RenderSystem:
         self._scaled_sprite_cache: dict[tuple[int, float], pygame.Surface] = {}
         # Rect reutilizable para culling y blit
         self._blit_rect = pygame.Rect(0, 0, 0, 0)
+        # Overlay para modo fantasma (grayscale multiplicativo)
+        self._ghost_overlay: pygame.Surface | None = None
 
     def update(self, world, screen, camera):
         """
@@ -115,3 +117,16 @@ class RenderSystem:
         # 6) Ejecutar todos los blits en batch (más eficiente que múltiples blit individuales)
         if blit_ops:
             screen.blits(blit_ops)
+
+        # Si el jugador es fantasma, aplicar post-proceso en B/N
+        ghost_map = comps.get('IsGhost', {})
+        if ghost_map.get(world.player_entity):
+            # Crear o actualizar overlay de tamaño de pantalla
+            w, h = screen.get_size()
+            if self._ghost_overlay is None or self._ghost_overlay.get_size() != (w, h):
+                surf = pygame.Surface((w, h)).convert()
+                # coeficientes aproximados de RGB a grayscale
+                surf.fill((76, 150, 29))
+                self._ghost_overlay = surf
+            # Multiplicar colores para efecto grayscale
+            screen.blit(self._ghost_overlay, (0, 0), special_flags=pygame.BLEND_RGB_MULT)
