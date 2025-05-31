@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import time
 
 @dataclass
@@ -8,4 +8,4 @@ class FlashComponent:
     """
     color: tuple         # Color RGB para el flash, e.g. (255,255,255)
     duration: float      # Duración en segundos
-    start_time: float = time.time()  # Timestamp de inicio
+    start_time: float = field(default_factory=time.time)  # Timestamp de inicio

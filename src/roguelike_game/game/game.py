@@ -241,8 +241,8 @@ class Game:
 
     @benchmark(lambda self: self.perf_log, "4.TOTAL ECS")
     def run_ecs(self):        
-        self.render_ecs()       
-        self.update_ecs()
+        self.update_ecs()       
+        self.render_ecs()
         
     
     def run(self):
