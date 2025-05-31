@@ -366,14 +366,15 @@ class _NPCWrapper:
         sprite = self.sprite_map[eid]
         orig = sprite.image
         scale_comp = self.scale_map.get(eid)
-        scale_val = scale_comp.scale if scale_comp else 1.0
-        if scale_val != 1.0:
-            # Include image identity to distinguish direction/frame
-            key = (eid, scale_val, id(orig))
+        entity_scale = scale_comp.scale if scale_comp else 1.0
+        scale_factor = entity_scale * camera.zoom
+        if scale_factor != 1.0:
+            # Quantize factor for cache key stability
+            key = (eid, round(scale_factor, 2), id(orig))
             image = _NPCWrapper._scale_cache.get(key)
             if image is None:
                 w, h = orig.get_size()
-                image = pygame.transform.scale(orig, (int(w * scale_val), int(h * scale_val)))
+                image = pygame.transform.scale(orig, (int(w * scale_factor), int(h * scale_factor)))
                 _NPCWrapper._scale_cache[key] = image
         else:
             image = orig
