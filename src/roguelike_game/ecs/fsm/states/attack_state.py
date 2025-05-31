@@ -3,7 +3,10 @@ from roguelike_game.ecs.fsm.states.death_state import DeathState
 from roguelike_game.ecs.fsm.states.chase_state import ChaseState
 from roguelike_game.ecs.components.ai.chase_target import ChaseTarget
 from roguelike_game.ecs.components.transform.velocity import Velocity
+from roguelike_game.ecs.components.combat.npc_attack_cooldown import NPCAttackCooldown
+from roguelike_game.ecs.components.combat.health import Health
 from roguelike_engine.config.config_tiles import TILE_SIZE
+import time
 
 class AttackState(State):
     """
@@ -36,9 +39,19 @@ class AttackState(State):
         # Si dentro de rango melee: atacar y quedarse en AttackState
         mr_cmp = world.components['MeleeRange'][eid]
         if dist_sq <= (mr_cmp.range * TILE_SIZE) ** 2:
-            # Importar aquí para evitar import circular
-            from roguelike_game.ecs.systems.combat.combat_system import CombatSystem
-            CombatSystem().perform_melee(world, entity, world.player_entity)
+            # Daño periódico al jugador cada 1s en AttackState
+            now = time.time()
+            cd_map = world.components.setdefault('NPCAttackCooldown', {})
+            cd = cd_map.get(eid)
+            if cd is None:
+                # establecer primera oportunidad tras 1s
+                cd_map[eid] = NPCAttackCooldown(next_time=now + 1)
+            elif now >= cd.next_time:
+                # aplicar daño al jugador
+                ph = world.components['Health'][world.player_entity]
+                ph.current_hp = max(0, ph.current_hp - 10)
+                # reset cooldown
+                cd_map[eid] = NPCAttackCooldown(next_time=now + 1)
             return
         # Fuera de rango: cambiar a ChaseState
         world.components['NPCState'][eid].fsm.change_state(ChaseState(), entity)

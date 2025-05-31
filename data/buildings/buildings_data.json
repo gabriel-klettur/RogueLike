@@ -818,8 +818,8 @@
     },
     {
         "zone": "empty_left",
-        "rel_x": 1383,
-        "rel_y": 59,
+        "rel_x": 838,
+        "rel_y": 498,
         "image_path": "assets/buildings\\portals\\portal_2.png",
         "solid": true,
         "scale": [

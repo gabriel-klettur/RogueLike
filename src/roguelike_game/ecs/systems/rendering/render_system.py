@@ -94,10 +94,8 @@ class RenderSystem:
                 if key not in cache:
                     orig = sprite.image
                     w, h = orig.get_size()
-                    cache[key] = pygame.transform.scale(
-                        orig,
-                        (int(w * scale_factor), int(h * scale_factor))
-                    )
+                    # Usar rotozoom para mejor performance y suavidad
+                    cache[key] = pygame.transform.rotozoom(orig, 0, scale_factor)
                 image = cache[key]
             else:
                 image = sprite.image
