@@ -41,6 +41,9 @@ class MovementCollisionSystem:
         for nid in world.get_entities_with('Position', 'MultiCollider'):
             if nid in comps.get('PlayerTagComponent', {}):
                 continue
+            # Omitir colisiones con NPCs muertos
+            if nid in comps.get('DeathTimer', {}):
+                continue
             npos = pos_map[nid]
             nmulti = multi_map[nid]
             nfeet = nmulti.colliders.get('feet')
