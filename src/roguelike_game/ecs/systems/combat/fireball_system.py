@@ -1,6 +1,7 @@
 import pygame
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.ecs.systems.fsm.fsm_system import _EntityProxy
+from roguelike_game.ecs.fsm.states.damage_state import DamageState
 
 class FireballSystem:
     """
@@ -52,8 +53,12 @@ class FireballSystem:
                         if caster in world.components.get('PlayerTagComponent', {}):
                             fsm = world.components['NPCState'][target].fsm
                             from roguelike_game.ecs.fsm.states.alert_chase_state import AlertChaseState
+                            # determinar dirección de daño
+                            attacker_pos = world.components['Position'][caster]
+                            defender_pos = world.components['Position'][target]
+                            from_left = attacker_pos.x < defender_pos.x
                             proxy = _EntityProxy(world, target)
-                            fsm.change_state(AlertChaseState(), proxy)
+                            fsm.change_state(DamageState(AlertChaseState(), from_left), proxy)
                         break
             # Colisión con tiles sólidos
             point = pygame.Rect(pos.x, pos.y, 1, 1)
