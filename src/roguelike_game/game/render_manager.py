@@ -108,32 +108,47 @@ class RendererManager:
                 self._render_tile_editor_layer(state, screen, camera, map)
         _bench_tile_editor()
 
-        # 5) Crosshair
-        @benchmark(perf_log, "3.5. crosshair")
+        # 5) ECS trail snapshots
+        @benchmark(perf_log, "3.5. ecs_trail")
+        def _bench_ecs_trail():
+            for eid, trail in self.ecs.npc_world.components.get('TrailComponent', {}).items():
+                for snap in trail.snapshots:
+                    screen.blit(snap.image, camera.apply(snap.pos))
+        _bench_ecs_trail()
+
+        # 6) Crosshair
+        @benchmark(perf_log, "3.6. crosshair")
         def _bench_crosshair():
             draw_mouse_crosshair(screen, camera)
         _bench_crosshair()
 
-        # 6) Menú
-        @benchmark(perf_log, "3.6. menu")
+        # 7) Menú
+        @benchmark(perf_log, "3.7. menu")
         def _bench_menu():
             self._render_menu(screen, menu)
         _bench_menu()
 
-        # 7) Minimap
-        @benchmark(perf_log, "3.7. minimap")
+        # 8) Minimap
+        @benchmark(perf_log, "3.8. minimap")
         def _bench_minimap():
             self._render_minimap(screen)
         _bench_minimap()
 
-        # 8) Otros sistemas
-        @benchmark(perf_log, "3.8. systems")
+        # 9) Otros sistemas
+        @benchmark(perf_log, "3.9. systems")
         def _bench_systems():
             systems.render(screen, camera)            
         _bench_systems()
 
-        # 9) Editores
-        @benchmark(perf_log, "3.9. editors")
+        # 10) ECS render
+        @benchmark(perf_log, "3.10. ecs_render")
+        def _bench_ecs_render():
+            # usar self.ecs en lugar de systems.ecs
+            self.ecs.render(screen, camera)
+        _bench_ecs_render()
+
+        # 11) Editores
+        @benchmark(perf_log, "3.11. editors")
         def _bench_editors():
             self._render_editors()
         _bench_editors()

@@ -24,6 +24,7 @@ from .systems.rendering.death_timer_debug_system import DeathTimerDebugSystem
 from .systems.rendering.chase_debug_system import ChaseDebugSystem
 from .systems.rendering.states_debug_render_system import StatesDebugRenderSystem
 from .systems.rendering.flash_system import FlashSystem
+from .systems.rendering.trail_system import TrailSystem
 
 #! DEBERIAMOS IMPLEMENTARLO DENTRO DE NUESTRO FSM
 #!from .systems.rendering.chase_debug_system import ChaseDebugSystem
@@ -85,7 +86,7 @@ class NPCWorld:
             'WantsToMelee': {}, 'AttackCooldown': {},
             'WantsToCastSpell': {},
             'AggroRange': {}, 'ChaseTarget': {}, 'FacingCooldown': {}, 'InputComponent': {}, 'InventoryComponent': {}, 'CameraFollowComponent': {}, 'PlayerTagComponent': {}, 'InCombat': {},
-            'FlashComponent': {},
+            'FlashComponent': {}, 'TrailComponent': {},
         }
 
     def _init_systems(self):
@@ -96,6 +97,7 @@ class NPCWorld:
             MovementCollisionSystem(self.perf_log),                       
             MeleeCombatSystem(self.perf_log), SpellCastingSystem(self.perf_log),
             FireballSystem(self.perf_log),
+            TrailSystem(self.perf_log),
             AnimationSystem(self.perf_log), FlashSystem(self.perf_log), SpawnSystem(self.perf_log),            
         ]
         self.render_systems = [
