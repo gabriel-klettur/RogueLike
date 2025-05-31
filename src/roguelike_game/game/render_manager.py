@@ -113,7 +113,15 @@ class RendererManager:
         def _bench_ecs_trail():
             for eid, trail in self.ecs.npc_world.components.get('TrailComponent', {}).items():
                 for snap in trail.snapshots:
-                    screen.blit(snap.image, camera.apply(snap.pos))
+                    # Escalar snapshot según zoom de la cámara
+                    orig = snap.image
+                    zoom = camera.zoom
+                    if zoom != 1.0:
+                        w, h = orig.get_size()
+                        image_scaled = pygame.transform.scale(orig, (int(w * zoom), int(h * zoom)))
+                    else:
+                        image_scaled = orig
+                    screen.blit(image_scaled, camera.apply(snap.pos))
         _bench_ecs_trail()
 
         # 6) Crosshair
