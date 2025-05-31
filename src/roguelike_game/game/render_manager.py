@@ -140,13 +140,6 @@ class RendererManager:
             systems.render(screen, camera)            
         _bench_systems()
 
-        # 10) ECS render
-        @benchmark(perf_log, "3.10. ecs_render")
-        def _bench_ecs_render():
-            # usar self.ecs en lugar de systems.ecs
-            self.ecs.render(screen, camera)
-        _bench_ecs_render()
-
         # 11) Editores
         @benchmark(perf_log, "3.11. editors")
         def _bench_editors():
