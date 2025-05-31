@@ -139,7 +139,6 @@ class RendererManager:
         _bench_editors()
 
 
-
         # Debug: overlay y bordes
         render_debug_overlay(self.debug_overlay, screen, state, camera, self.map, entities, show_borders=True)
         # Mostrar ayuda de controles según el modo
@@ -302,8 +301,7 @@ class RendererManager:
                 'tiles' if self.tiles_editor.editor_state.active else 'normal')
         key = (mode, size)
         if key != self._help_overlay_key:
-            # Reconstruir overlay
-            import pygame
+            # Reconstruir overlay            
             screen_w, screen_h = size
             if mode == 'buildings':
                 lines = [
