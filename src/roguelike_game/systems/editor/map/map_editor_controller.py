@@ -1,6 +1,9 @@
 import json
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config import DATA_DIR
+import pygame
+from roguelike_engine.utils.loader import load_image
+from roguelike_engine.map.model.layer import Layer
 
 class MapEditorController:
     """
@@ -9,6 +12,8 @@ class MapEditorController:
     def __init__(self, state, map_manager):
         self.state = state
         self.map_manager = map_manager
+        # Toolbar for zone visibility
+        self.toolbar = MapToolbarController(self.state)
 
     def select_zone(self, zone_name):
         if zone_name in self.map_manager.tiles_by_zone:
@@ -60,3 +65,48 @@ class MapEditorController:
             global_map_settings.__dict__.pop('zone_offsets', None)
         except Exception:
             pass
+
+# Toolbar component for Map Editor: single view_layers button
+class MapToolbarController:
+    """Toolbar for Map Editor: single view_layers button."""
+    def __init__(self, editor_state):
+        self.editor = editor_state
+        ICON_PATH = "assets/ui/layers_view_tool.png"
+        self.icon = load_image(ICON_PATH, (64, 64))
+        self.x, self.y = 10, 10
+        self.size = 64
+        self.padding = 8
+        self.icon_rect: pygame.Rect | None = None
+        self.option_rects: dict[Layer, pygame.Rect] = {}
+
+    def handle_click(self, mouse_pos) -> bool:
+        # Toggle dropdown when clicking icon
+        if self.icon_rect and self.icon_rect.collidepoint(mouse_pos):
+            self.editor.layers_view_open = not self.editor.layers_view_open
+            return True
+        # Handle clicks on dropdown items
+        if self.editor.layers_view_open:
+            for key, rect in self.option_rects.items():
+                if rect.collidepoint(mouse_pos):
+                    if key == "show_all":
+                        # Show all layers and buildings
+                        for layer in self.editor.visible_layers:
+                            self.editor.visible_layers[layer] = True
+                        self.editor.show_buildings = True
+                        print("[DEBUG][Layer View] show_all: all layers visible")
+                    elif key == "hide_all":
+                        # Hide all layers and buildings
+                        for layer in self.editor.visible_layers:
+                            self.editor.visible_layers[layer] = False
+                        self.editor.show_buildings = False
+                        print("[DEBUG][Layer View] hide_all: all layers hidden")
+                    elif isinstance(key, Layer):
+                        # Toggle tile layer visibility
+                        self.editor.visible_layers[key] = not self.editor.visible_layers[key]
+                        print(f"[DEBUG][Layer View] {key.name}: {'visible' if self.editor.visible_layers[key] else 'hidden'}")
+                    elif key == "buildings":
+                        # Toggle building layer visibility
+                        self.editor.show_buildings = not self.editor.show_buildings
+                        print(f"[DEBUG][Layer View] buildings: {'visible' if self.editor.show_buildings else 'hidden'}")
+                    return True
+        return False

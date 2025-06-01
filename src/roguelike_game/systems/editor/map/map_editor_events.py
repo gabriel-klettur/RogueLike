@@ -1,4 +1,5 @@
 import pygame
+from pygame.locals import *
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
 
@@ -68,6 +69,9 @@ class MapEditorEventHandler:
                     return
             # Selección y arrastre
             elif ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
+                # Toolbar click toggle dropdown
+                if self.controller.toolbar.handle_click(ev.pos):
+                    return
                 mx, my = ev.pos
                 tx = mx // TILE_SIZE
                 ty = my // TILE_SIZE

@@ -1,6 +1,10 @@
 import pygame
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
+import pygame
+from roguelike_game.systems.editor.map.map_editor_controller import MapToolbarController
+from roguelike_game.systems.editor.tiles.tiles_editor_config import BTN_W, BTN_H
+from roguelike_engine.map.model.layer import Layer
 
 class MapEditorView:
     """
@@ -59,3 +63,34 @@ class MapEditorView:
                         screen_tl[1] + screen_size[1] // 2)
             )
             screen.blit(label, label_rect)
+        # Render Map Editor toolbar and dropdown
+        toolbar = self.controller.toolbar
+        # Draw toolbar icon
+        screen.blit(toolbar.icon, (toolbar.x, toolbar.y))
+        toolbar.icon_rect = pygame.Rect(toolbar.x, toolbar.y, toolbar.size, toolbar.size)
+        # Draw tile layer visibility dropdown
+        if self.state.layers_view_open:
+            font = pygame.font.SysFont("Arial", 14)
+            drop_x = toolbar.x + toolbar.size + toolbar.padding
+            drop_y = toolbar.y
+            toolbar.option_rects.clear()
+            # Show All, Hide All, each tile layer, and Buildings
+            keys = ["show_all", "hide_all"] + list(Layer) + ["buildings"]
+            for idx, key in enumerate(keys):
+                ry = drop_y + idx * BTN_H
+                rect = pygame.Rect(drop_x, ry, BTN_W, BTN_H)
+                toolbar.option_rects[key] = rect
+                pygame.draw.rect(screen, (20, 20, 20), rect)
+                if key == "show_all" or key == "hide_all":
+                    border_color = (255, 255, 255)
+                elif isinstance(key, Layer):
+                    border_color = (0, 255, 0) if self.state.visible_layers[key] else (255, 0, 0)
+                else:  # buildings
+                    border_color = (128, 0, 128) if self.state.show_buildings else (255, 0, 0)
+                pygame.draw.rect(screen, border_color, rect, 2)
+                text = ("Show All" if key == "show_all" else
+                        "Hide All" if key == "hide_all" else
+                        key.name if isinstance(key, Layer) else
+                        "Buildings")
+                text_surf = font.render(text, True, (255, 255, 255))
+                screen.blit(text_surf, (drop_x + 5, ry + (BTN_H - text_surf.get_height()) // 2))

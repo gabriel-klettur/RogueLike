@@ -53,6 +53,7 @@ class RendererManager:
         self._last_state = None  # almacenar último estado para editor
         
         self._last_visible_layers = None # Cache last visible layers to minimize cache invalidations
+        self._last_map_visible_layers = None # Cache for map editor visible layers
         self._collision_last_zoom = None # Collision view cache: regenerate surfaces only when zoom changes
         self._collision_font = None
         self._collision_surf_solid = None
@@ -213,11 +214,15 @@ class RendererManager:
         self._dirty_rects.extend(dirty_rects)
 
     def _render_map(self, camera, screen, map):
-        # Hide ground tiles in Map Editor mode, ensure restoration
+        # Filter tile layers in Map Editor mode using visible_layers state
         if self.map_editor.editor_state.active:
-            from roguelike_engine.map.model.layer import Layer
+            # Invalidate cache on layer visibility change
+            visible = self.map_editor.editor_state.visible_layers
+            if visible != self._last_map_visible_layers:
+                self.map.view.invalidate_cache()
+                self._last_map_visible_layers = visible.copy()
             orig = map.tiles_by_layer
-            filtered = {layer: tiles for layer, tiles in orig.items() if layer != Layer.Ground}
+            filtered = {layer: tiles for layer, tiles in orig.items() if visible.get(layer, True)}
             map.tiles_by_layer = filtered
             try:
                 dirty_rects = self.map.view.render(screen, camera, map)
@@ -259,6 +264,16 @@ class RendererManager:
     def _render_z_entities(self, state, camera, screen, entities):
         # Hide buildings and NPCs in Map Editor mode
         if self.map_editor.editor_state.active:
+            # Draw buildings if enabled in Map Editor
+            if self.map_editor.editor_state.show_buildings:
+                parts = []
+                for b in entities.buildings:
+                    if not camera.is_in_view(b.x, b.y, b.image.get_size()):
+                        continue
+                    for part in b.get_parts():
+                        state.z_state.set(part, part.z)
+                        parts.append(part)
+                render_z_ordered(parts, screen, camera, state.z_state)
             return
         all_entities = []
         # Only render buildings if not hidden by editor or collision-only mode (NPC rendering removed; gestionado por ECS)
