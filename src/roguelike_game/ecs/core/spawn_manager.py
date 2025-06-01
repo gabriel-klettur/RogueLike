@@ -7,7 +7,7 @@ from roguelike_game.ecs.factories.entity_factory import _load_caches_once, _DEFS
 from roguelike_game.ecs.utils.spawn_utils import find_spawn_positions
 from roguelike_game.ecs.components.spawn.spawn_request import SpawnRequest
 
-class SpawnManager:
+class SpawnNPCManager:
     def __init__(self, world):
         """
         :param world: instancia de ECSWorld (se asume que ya tiene spatial_index, map_manager y buildings).
@@ -16,7 +16,7 @@ class SpawnManager:
         self.map_manager = world.map_manager
         self.buildings = world.buildings
 
-    def spawn_initial(self):
+    def spawn_npc_initial(self):
         """
         Lógica de spawn inicial de NPCs, exactamente lo que antes estaba en _spawn_initial_npcs de ECSWorld,
         pero referenciando self.world para crear entidades y asignar componentes.

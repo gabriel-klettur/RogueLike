@@ -13,8 +13,7 @@ class EntitiesManager:
     def __init__(self, z_state, game_map: MapManager):
         self.z_state = z_state
         self.map = game_map
-        
-        self.obstacles = []
+            
         self.buildings = []        
 
         self.init_statics()    
@@ -33,10 +32,10 @@ class EntitiesManager:
         Carga jugador, obstáculos y edificios.
         Devuelve (player, obstacles, buildings).
         """        
-        self.obstacles, self.buildings = load_entities(self.z_state)
+        self.buildings = load_entities(self.z_state)
         self.recalibrate_buildings()
         
-        return self.obstacles, self.buildings    
+        return self.buildings    
 
     def recalibrate_buildings(self):
         """
@@ -52,8 +51,7 @@ class EntitiesManager:
     def update(self, state, game_map, systems, perf_log):
         """
         Actualiza todas las entidades de la partida:
-          - #!Jugador (gestionado por ECS)
-          - Obstáculos
+          - #!Jugador (gestionado por ECS)          
           - Edificios
           # NPCs gestionados por ECS; eliminados de este método
         Cada sección está medida para perfilado.
@@ -62,16 +60,8 @@ class EntitiesManager:
         # 1) Jugador
         # Player update now handled by ECS
 
-        # 2) Obstáculos
-        @benchmark(perf_log, "2.2.obstacles_update")
-        def _update_obstacles():
-            for ob in self.obstacles:
-                if hasattr(ob, "update"):
-                    ob.update(state, game_map)
-        _update_obstacles()
-
-        # 3) Edificios
-        @benchmark(perf_log, "2.3.buildings_update")
+        # 2) Edificios
+        @benchmark(perf_log, "2.1.buildings_update")
         def _update_buildings():
             for b in self.buildings:
                 if hasattr(b, "update"):

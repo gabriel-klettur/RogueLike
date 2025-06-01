@@ -3,7 +3,7 @@
 from .component_registry import create_empty_component_store
 from .system_registry import get_update_system_classes, get_render_system_classes
 from .spatial_index import SpatialIndex
-from .spawn_manager import SpawnManager
+from .spawn_manager import SpawnNPCManager
 
 class ECSWorld:
     def __init__(self, screen, map_manager, buildings, perf_log=None):
@@ -25,8 +25,8 @@ class ECSWorld:
         self._init_systems()
 
         # 4) Crear y disparar spawn inicial
-        self.spawn_manager = SpawnManager(self)
-        self.spawn_manager.spawn_initial()
+        self.spawn_npc_manager = SpawnNPCManager(self)
+        self.spawn_npc_manager.spawn_npc_initial()
 
     @property
     def player_position(self):

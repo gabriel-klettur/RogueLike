@@ -343,8 +343,8 @@
     },
     {
         "zone": "lobby",
-        "rel_x": 426,
-        "rel_y": 945,
+        "rel_x": 450,
+        "rel_y": 946,
         "image_path": "assets/buildings/shops/jewlery_shop.png",
         "solid": true,
         "scale": [
@@ -590,8 +590,8 @@
     },
     {
         "zone": "lobby",
-        "rel_x": 94,
-        "rel_y": 932,
+        "rel_x": 106,
+        "rel_y": 934,
         "image_path": "assets/buildings\\houses\\orden_house_2.png",
         "solid": true,
         "scale": [

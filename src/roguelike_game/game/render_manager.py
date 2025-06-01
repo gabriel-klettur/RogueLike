@@ -241,10 +241,6 @@ class RendererManager:
 
     def _render_z_entities(self, state, camera, screen, entities):
         all_entities = []
-        all_entities.extend([
-            e for e in entities.obstacles
-            if camera.is_in_view(e.x, e.y, getattr(e, "sprite_size", (64, 64)))
-        ])
         # Only render buildings if not hidden by editor or collision-only mode (NPC rendering removed; gestionado por ECS)
         editor_state = self.tiles_editor.editor_state
         if not ((editor_state.active and not editor_state.show_buildings)
