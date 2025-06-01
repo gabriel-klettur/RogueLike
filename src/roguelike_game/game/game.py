@@ -28,6 +28,7 @@ from roguelike_game.game.menu_manager import MenuManager
 #! --------------------- Paquetes locales: editores (tile) -------------------------------------
 from roguelike_game.game.buildings_editor_manager import BuildingEditorManager
 from roguelike_game.game.tiles_editor_manager import TilesEditorManager
+from roguelike_game.game.map_editor_manager import MapEditorManager
 from roguelike_engine.minimap.minimap import Minimap
 
 #! -------------------------- Paquetes locales: z-layer ----------------------------------------
@@ -64,6 +65,7 @@ class Game:
             ("Cargando Z-layer",                   lambda: self._init_z_layer(self.entities)),
             ("Cargando editor de edificios",       lambda: self._init_buildings_editor()),
             ("Cargando editor de tiles",           lambda: self._init_tile_editor()),
+            ("Cargando editor de mapa",            lambda: self._init_map_editor()),
             ("Cargando minimapa",                  lambda: self._init_minimap()),
             ("Inicializando ECS",                  lambda: self._init_ecs(screen, perf_log)),
             ("Inicializando renderizador",         lambda: self._init_renderer()),
@@ -141,6 +143,12 @@ class Game:
         """
         self.tiles_editor = TilesEditorManager(self)
 
+    def _init_map_editor(self):
+        """
+        Inicializa el editor de mapa.
+        """
+        self.map_editor = MapEditorManager(self)
+
     def _init_ecs(self, screen, perf_log):
         """
         Inicializa el gestor ECS
@@ -152,6 +160,10 @@ class Game:
         """
         Inicializa el renderizador con todas sus dependencias.
         """
+        # Ensure map_editor is initialized
+        if not hasattr(self, 'map_editor'):
+            print(" Map Editor missing on Game, initializing now")
+            self._init_map_editor()
         self.renderer = RendererManager(
             self.screen,
             self.camera,
@@ -159,6 +171,7 @@ class Game:
             self.entities,
             self.buildings_editor,
             self.tiles_editor,
+            self.map_editor,
             self.perf_log,
             self.minimap,
             self.ecs
@@ -195,6 +208,7 @@ class Game:
             self.effects.explosions,
             self.tiles_editor,
             self.buildings_editor,
+            self.map_editor,
             self.renderer.debug_overlay
         )
 
@@ -210,6 +224,7 @@ class Game:
             self.entities,
             self.tiles_editor,
             self.buildings_editor,
+            self.map_editor,
             self.minimap,
             self.ecs,
             self.perf_log

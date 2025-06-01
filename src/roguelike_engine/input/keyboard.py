@@ -3,7 +3,7 @@ import pygame, time
 import roguelike_engine.config.config as config
 from roguelike_engine.map.events.events import handle_expand_dungeon
 
-def handle_keyboard(event, state, camera, clock, menu, entities, effects, tiles_editor, map_manager):
+def handle_keyboard(event, state, camera, clock, menu, entities, effects, tiles_editor, buildings_editor, map_editor, map_manager):
     if event.type == pygame.KEYDOWN:
         
         if event.key == pygame.K_F3:
@@ -84,6 +84,7 @@ def handle_keyboard(event, state, camera, clock, menu, entities, effects, tiles_
                 state.editor.picker_active = new_val
                 print("🛠️ Building Editor ON (picker abierto)"  if new_val else
                       "🛑 Building Editor OFF (picker cerrado)")
+            return
 
         elif event.key == pygame.K_F9:
             config.DEBUG = not config.DEBUG
@@ -106,3 +107,8 @@ def handle_keyboard(event, state, camera, clock, menu, entities, effects, tiles_
 
             print("🟩 Tile-Editor ON" if new_val else "🟥 Tile-Editor OFF")
             return  # evitamos más atajos este frame
+
+        elif event.key == pygame.K_F11:
+            # Toggle Map Editor
+            map_editor.toggle()
+            return

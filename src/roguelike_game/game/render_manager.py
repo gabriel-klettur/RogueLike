@@ -32,6 +32,7 @@ class RendererManager:
         entities,
         buildings_editor,
         tiles_editor,
+        map_editor,
         perf_log,
         minimap,
         ecs
@@ -42,6 +43,7 @@ class RendererManager:
         self.entities = entities
         self.buildings_editor = buildings_editor
         self.tiles_editor = tiles_editor
+        self.map_editor = map_editor
         self._dirty_rects = []        
         self.debug_overlay = DebugOverlay(perf_log=perf_log)
         self.zone_view = ZoneView()
@@ -203,6 +205,9 @@ class RendererManager:
                 self.camera,
                 self.entities.buildings
             )
+        # Render Map Editor UI
+        if self.map_editor.editor_state.active:
+            self.map_editor.render(self.screen, self.camera, self.map)
 
     def _render_effects(self, camera, screen, effects):
         dirty_rects = effects.render(screen, camera)

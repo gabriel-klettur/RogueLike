@@ -13,6 +13,7 @@ def update_game(
     entities,      
     tiles_editor,
     buildings_editor,
+    map_editor,
     minimap,
     ecs,
     perf_log
@@ -43,6 +44,18 @@ def update_game(
         def _update_buildings_editor():
             buildings_editor.update(camera)
         _update_buildings_editor()
+        # Centrar cámara en el jugador incluso con editor activo
+        eid = ecs.npc_world.player_entity
+        pos = ecs.npc_world.components['Position'][eid]
+        camera.update(types.SimpleNamespace(x=pos.x, y=pos.y))
+        return
+
+    # 3) Si el Map-Editor está activo, solo actualizamos él
+    if map_editor.editor_state.active:
+        @benchmark(perf_log, "2.0.3.map_editor.update")
+        def _update_map_editor():
+            map_editor.update(camera, map)
+        _update_map_editor()
         # Centrar cámara en el jugador incluso con editor activo
         eid = ecs.npc_world.player_entity
         pos = ecs.npc_world.components['Position'][eid]
