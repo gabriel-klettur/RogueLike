@@ -97,6 +97,9 @@ class Building:
     def x(self, value: int):
         """Setter for absolute X coordinate."""
         self.model.x = value
+        # invalidate collision tiles cache when moving building
+        self.model._collision_tiles_cache = None
+        self.model._collision_tile_objs = None
         if self.controller:
             self.controller.update_on_camera_change()
 
@@ -109,6 +112,9 @@ class Building:
     def y(self, value: int):
         """Setter for absolute Y coordinate."""
         self.model.y = value
+        # invalidate collision tiles cache when moving building
+        self.model._collision_tiles_cache = None
+        self.model._collision_tile_objs = None
         if self.controller:
             self.controller.update_on_camera_change()
 

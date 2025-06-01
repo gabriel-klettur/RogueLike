@@ -62,8 +62,8 @@ class BuildingView:
         if top:
             screen.blit(top_surf, (screen_x, screen_y))
         else:
-            # La parte “bottom” debe dibujarse desplazada en Y por el corte
-            offset = int(self._model._cut_world * zoom)
+            # La parte “bottom” debe dibujarse desplazada por la altura del top_render
+            offset = top_surf.get_height()
             screen.blit(bot_surf, (screen_x, screen_y + offset))
 
             # Si el edificio es sólido, dibujamos (para debugging) el rect de colisión:

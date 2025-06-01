@@ -58,19 +58,19 @@
     },
     {
         "zone": "lobby",
-        "rel_x": 481,
-        "rel_y": 251,
+        "rel_x": 574,
+        "rel_y": 193,
         "image_path": "assets/buildings/vegetation/tree_3.png",
         "solid": true,
         "scale": [
-            369,
-            469
+            190,
+            241
         ],
         "original_scale": [
-            369,
-            469
+            190,
+            241
         ],
-        "split_ratio": 0.708,
+        "split_ratio": 0.701,
         "z_bottom": 4,
         "z_top": 6,
         "z": 4
@@ -134,8 +134,8 @@
     },
     {
         "zone": "lobby",
-        "rel_x": 880,
-        "rel_y": 577,
+        "rel_x": 834,
+        "rel_y": 569,
         "image_path": "assets/buildings/vegetation/tree_10.png",
         "solid": true,
         "scale": [
@@ -153,8 +153,8 @@
     },
     {
         "zone": "lobby",
-        "rel_x": 1065,
-        "rel_y": 256,
+        "rel_x": 1041,
+        "rel_y": 210,
         "image_path": "assets/buildings/vegetation/tree_11.png",
         "solid": true,
         "scale": [
@@ -381,8 +381,8 @@
     },
     {
         "zone": "lobby",
-        "rel_x": 658,
-        "rel_y": 451,
+        "rel_x": 630,
+        "rel_y": 447,
         "image_path": "assets/buildings\\gardens\\flowers_9.PNG",
         "solid": true,
         "scale": [
@@ -393,7 +393,7 @@
             169,
             412
         ],
-        "split_ratio": 0.475,
+        "split_ratio": 0.95,
         "z_bottom": 3,
         "z_top": 3,
         "z": 3
@@ -780,8 +780,8 @@
     },
     {
         "zone": "lobby",
-        "rel_x": 725,
-        "rel_y": 828,
+        "rel_x": 716,
+        "rel_y": 823,
         "image_path": "assets/buildings\\portals\\portal.png",
         "solid": true,
         "scale": [
@@ -833,6 +833,25 @@
         "split_ratio": 0.237,
         "z_bottom": 3,
         "z_top": 7,
+        "z": 3
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 564,
+        "rel_y": 568,
+        "image_path": "assets/buildings\\vegetation\\tree_1.PNG",
+        "solid": true,
+        "scale": [
+            197,
+            269
+        ],
+        "original_scale": [
+            197,
+            269
+        ],
+        "split_ratio": 0.632,
+        "z_bottom": 3,
+        "z_top": 5,
         "z": 3
     }
 ]

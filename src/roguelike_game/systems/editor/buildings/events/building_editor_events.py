@@ -185,6 +185,9 @@ class BuildingEditorEventHandler:
                             row = int((world_y - y_b) // TILE_SIZE)
                             if 0 <= row < len(b.collision_map) and 0 <= col < len(b.collision_map[0]):
                                 b.collision_map[row][col] = self.editor.collision_choice
+                                # Invalidate collision tiles cache so world sees update
+                                b.model._collision_tiles_cache = None
+                                b.model._collision_tile_objs = None
                             return
                 # Delegar al controlador
                 self.controller.on_mouse_down((mx, my), ev.button, camera, entities.buildings)
@@ -247,6 +250,9 @@ class BuildingEditorEventHandler:
                             row = int((world_y - y_b) // TILE_SIZE)
                             if 0 <= row < len(b.collision_map) and 0 <= col < len(b.collision_map[0]):
                                 b.collision_map[row][col] = self.editor.collision_choice
+                                # Invalidate collision tiles cache so world sees update
+                                b.model._collision_tiles_cache = None
+                                b.model._collision_tile_objs = None
                             return
                 # Delegate motion and update hover list
                 self.controller.on_mouse_motion(ev.pos, camera, entities.buildings)

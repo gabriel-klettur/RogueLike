@@ -1,4 +1,3 @@
-
 # Path: src/roguelike_game/systems/editor/buildings/controller/tools/split_tool.py
 import pygame
 
@@ -38,6 +37,11 @@ class SplitTool:
         # Ratio en coordenadas de pantalla ⇒ mundo
         rel = (my - by) / max(h_scaled, 1)
         b.split_ratio = max(0.05, min(rel, 0.95))
+        # Recalcular punto de corte (_cut_world) tras cambiar split_ratio
+        b.model._cut_world = int(b.model.image.get_height() * b.split_ratio)
+        # Limpiar caches de vista para aplicar split actualizado
+        if b.controller:
+            b.controller.update_on_camera_change()
 
     def stop_drag(self):
         self.editor.split_dragging = False
