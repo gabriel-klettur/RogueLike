@@ -1,4 +1,4 @@
-# src/roguelike_game/entities/buildings/model/building_model.py
+# src/roguelike_engine/buildings/model/building_model.py
 
 import os
 import types

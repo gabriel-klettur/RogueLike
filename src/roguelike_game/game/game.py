@@ -16,7 +16,7 @@ from roguelike_game.game.update_manager import update_game
 
 #!----------------------------- Paquetes locales: managers ------------------------------------
 from roguelike_game.game.map_manager import MapManager
-from roguelike_game.game.entities_manager import EntitiesManager
+from roguelike_game.game.buildings_manager import BuildingsManager
 from roguelike_game.game.z_layer_manager import ZLayerManager
 
 #!----------------------- Paquetes locales: sistemas ------------------------------
@@ -61,8 +61,8 @@ class Game:
             ("Inicializando estados de sistemas",  lambda: self._init_systems_states(screen, perf_log, loading_bg)),
             ("Inicializando estado Principal",     lambda: self._init_state()),
             ("Cargando mapa",                      lambda: self._init_map(map_name)),
-            ("Cargando entidades",                 lambda: self._init_entities()),
-            ("Cargando Z-layer",                   lambda: self._init_z_layer(self.entities)),
+            ("Cargando edificios",                 lambda: self._init_buildings()),
+            ("Cargando Z-layer",                   lambda: self._init_z_layer(self.buildings)),
             ("Cargando editor de edificios",       lambda: self._init_buildings_editor()),
             ("Cargando editor de tiles",           lambda: self._init_tile_editor()),
             ("Cargando editor de mapa",            lambda: self._init_map_editor()),
@@ -117,19 +117,19 @@ class Game:
             self.world.maps[self.map.name] = self.map
             self.world.current_level = self.map.name
 
-    def _init_entities(self):
+    def _init_buildings(self):
         """
-        Inicializa el gestor de entidades (player, obstacles y buildings) y carga los datos en el estado.
+        Inicializa el gestor de edificios.
         """
-        self.entities = EntitiesManager(self.z_state, self.map)        
+        self.buildings = BuildingsManager(self.z_state, self.map)        
         
 
-    def _init_z_layer(self, entities):
+    def _init_z_layer(self, buildings):
         """
         Inicializa el gestor de capas Z y asigna las capas a las entidades.
         """
         self.zlayer = ZLayerManager(self.z_state)
-        self.zlayer.initialize(self.state, entities)
+        self.zlayer.initialize(self.state, buildings)
 
     def _init_buildings_editor(self):
         """
@@ -154,7 +154,7 @@ class Game:
         Inicializa el gestor ECS
         """
         # Pasar referencia del mapa y entidades para colisiones en ECS
-        self.ecs = ECSManager(screen, self.map, self.entities, perf_log)
+        self.ecs = ECSManager(screen, self.map, self.buildings, perf_log)
 
     def _init_renderer(self):
         """
@@ -168,7 +168,7 @@ class Game:
             self.screen,
             self.camera,
             self.map,
-            self.entities,
+            self.buildings,
             self.buildings_editor,
             self.tiles_editor,
             self.map_editor,
@@ -203,7 +203,7 @@ class Game:
             self.clock,
             self.menu,
             self.map,
-            self.entities,
+            self.buildings,
             self.effects.effects,
             self.effects.explosions,
             self.tiles_editor,
@@ -221,7 +221,7 @@ class Game:
             self.clock,
             self.screen,
             self.map,
-            self.entities,
+            self.buildings,
             self.tiles_editor,
             self.buildings_editor,
             self.map_editor,
@@ -239,7 +239,7 @@ class Game:
             self.perf_log,
             self.menu,
             self.map,
-            self.entities,
+            self.buildings,
             self.effects,
         )        
 
