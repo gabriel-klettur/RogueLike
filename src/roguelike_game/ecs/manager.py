@@ -1,3 +1,5 @@
+#Path: src/roguelike_game/ecs/world.py
+
 import pygame
 
 from roguelike_engine.config.map_config import global_map_settings
@@ -26,9 +28,6 @@ from .systems.rendering.states_debug_render_system import StatesDebugRenderSyste
 from .systems.rendering.flash_system import FlashSystem
 from .systems.rendering.trail_system import TrailSystem
 
-#! DEBERIAMOS IMPLEMENTARLO DENTRO DE NUESTRO FSM
-#!from .systems.rendering.chase_debug_system import ChaseDebugSystem
-
 
 from .systems.fsm.fsm_system import FSMSystem
 from roguelike_game.ecs.utils.collider_utils import build_collider_rect
@@ -38,12 +37,12 @@ from .utils.spawn_utils import find_spawn_positions
 from roguelike_game.ecs.factories.entity_factory import _load_caches_once, _DEFS, _create_sprite_component, _calculate_position, _create_collider_components
 from roguelike_game.ecs.components.spawn.spawn_request import SpawnRequest
 
-class NPCWorld:
+class ECSWorld:
     def __init__(self, screen, map_manager, buildings, perf_log=None):
         """Inicia perf_log para logging de performance."""
         self.perf_log = perf_log
 
-        """Inicializa NPCWorld: configura índice espacial, componentes, sistemas y spawn inicial."""
+        """Inicializa ECSWorld: configura índice espacial, componentes, sistemas y spawn inicial."""
         self.screen = screen
         self.map_manager = map_manager
         self.buildings = buildings

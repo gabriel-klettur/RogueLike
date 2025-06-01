@@ -48,7 +48,7 @@ Para cada dato del jugador, crea o reutiliza los siguientes componentes ECS (en 
 - Creado `ecs/components/core/player_tag.py` con `PlayerTagComponent`
 - Registrado en `NPCWorld._init_components` las claves `InputComponent`, `InventoryComponent`, `CameraFollowComponent`, `PlayerTagComponent`
 - Creado `ecs/factories/player_factory.py` con `spawn_player` para generar al jugador con Position, PlayerTag, CameraFollow e Input
-- Integrado `spawn_player` en `ECSManager.__init__` para crear la entidad jugador y almacenar su ID en `npc_world.player_entity`
+- Integrado `spawn_player` en `ECSManager.__init__` para crear la entidad jugador y almacenar su ID en `ecs_world.player_entity`
 
 Crear un PlayerFactory o builder
 Un módulo que en la carga de escena haga:

@@ -89,7 +89,7 @@ class RendererManager:
         # 5) ECS trail snapshots
         @benchmark(perf_log, "3.5. ecs_trail")
         def _bench_ecs_trail():
-            for eid, trail in self.ecs.npc_world.components.get('TrailComponent', {}).items():
+            for eid, trail in self.ecs.ecs_world.components.get('TrailComponent', {}).items():
                 for snap in trail.snapshots:
                     orig = snap.image
                     zoom = camera.zoom
@@ -256,10 +256,10 @@ class RendererManager:
                     state.z_state.set(part, part.z)
                     all_entities.append(part)
         # 4) NPCs ECS: envolver cada entidad y asignar capa Z
-        for eid in self.ecs.npc_world.get_entities_with('Position', 'Sprite', 'ZLayer'):
-            layer = self.ecs.npc_world.components['ZLayer'][eid].layer
+        for eid in self.ecs.ecs_world.get_entities_with('Position', 'Sprite', 'ZLayer'):
+            layer = self.ecs.ecs_world.components['ZLayer'][eid].layer
             # wrapper ligero para que tenga x,y,render
-            npc = _NPCWrapper(self.ecs.npc_world, eid)
+            npc = _NPCWrapper(self.ecs.ecs_world, eid)
             state.z_state.set(npc, layer)
             all_entities.append(npc)
 

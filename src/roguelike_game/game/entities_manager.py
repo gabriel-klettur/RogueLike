@@ -23,7 +23,7 @@ class EntitiesManager:
     def player(self):
         ecs_mgr = getattr(self, 'ecs_manager', None)
         if ecs_mgr:
-            pos = ecs_mgr.npc_world.player_position
+            pos = ecs_mgr.ecs_world.player_position
             if pos:
                 return SimpleNamespace(x=pos.x, y=pos.y)
         return None

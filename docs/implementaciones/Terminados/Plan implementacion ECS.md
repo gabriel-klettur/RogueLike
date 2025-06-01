@@ -116,13 +116,13 @@ from .ecs.world import NPCWorld
 class ECSManager:
     def __init__(self, screen):
         self.screen = screen
-        self.npc_world = NPCWorld(screen)
+        self.ecs_world = NPCWorld(screen)
 
     def update(self, dt):
-        self.npc_world.update()
+        self.ecs_world.update()
 
     def render(self):        
-        self.npc_world.render()        
+        self.ecs_world.render()        
 ```
 
 6. Implementación final en `src/roguelike_game/game/game.py` y `src/roguelike_game/game/ecs_manager.py` 
@@ -130,9 +130,9 @@ class ECSManager:
    - En `ecs_manager.py`: actualizar métodos:
      ```python
      def update(self, clock, screen):
-         self.npc_world.update()
+         self.ecs_world.update()
      def render(self, screen, camera):
-         self.npc_world.render()
+         self.ecs_world.render()
      ```
    - Verificar que `render_manager.py` y `update_manager.py` ejecutan `systems.render` y `systems.update` para incluir el ECS.
 
