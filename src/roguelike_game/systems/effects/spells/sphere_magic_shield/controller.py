@@ -1,6 +1,6 @@
-# Path: src/roguelike_game/systems/combat/spells/sphere_magic_shield/controller.py
+# Path: src/roguelike_game/systems/effects/spells/sphere_magic_shield/controller.py
 import math
-from roguelike_game.systems.combat.spells.sphere_magic_shield.model import SphereMagicShieldModel
+from roguelike_game.systems.effects.spells.sphere_magic_shield.model import SphereMagicShieldModel
 
 class SphereMagicShieldController:
     """

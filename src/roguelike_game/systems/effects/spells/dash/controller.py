@@ -1,5 +1,5 @@
-# Path: src/roguelike_game/systems/combat/spells/dash/controller.py
-from roguelike_game.systems.combat.spells.dash.model import DashModel
+# Path: src/roguelike_game/systems/effects/spells/dash/controller.py
+from roguelike_game.systems.effects.spells.dash.model import DashModel
 
 class DashController:
     """

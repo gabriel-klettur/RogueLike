@@ -1,7 +1,6 @@
-# Path: src/roguelike_game/systems/combat/spells/lightning/controller.py
-import pygame
-from pygame.math import Vector2
-from roguelike_game.systems.combat.spells.lightning.model import LightningModel
+# Path: src/roguelike_game/systems/effects/spells/lightning/controller.py
+
+from roguelike_game.systems.effects.spells.lightning.model import LightningModel
 
 class LightningController:
     """

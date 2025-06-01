@@ -1,5 +1,5 @@
-# Path: src/roguelike_game/systems/combat/spells/arcane_flame/controller.py
-from roguelike_game.systems.combat.spells.arcane_flame.model import ArcaneFlameModel
+# Path: src/roguelike_game/systems/effects/spells/arcane_flame/controller.py
+from roguelike_game.systems.effects.spells.arcane_flame.model import ArcaneFlameModel
 
 class ArcaneFlameController:
     """

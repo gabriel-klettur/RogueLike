@@ -1,7 +1,7 @@
-# Path: src/roguelike_game/systems/combat/spells/fireball/controller.py
+# Path: src/roguelike_game/systems/effects/spells/fireball/controller.py
 from pygame import Rect
-from roguelike_game.systems.combat.spells.fireball.model import FireballModel
-from roguelike_game.systems.combat.explosions.fire import FireExplosion
+from roguelike_game.systems.effects.spells.fireball.model import FireballModel
+from roguelike_game.systems.effects.explosions.fire import FireExplosion
 
 class FireballController:
     """

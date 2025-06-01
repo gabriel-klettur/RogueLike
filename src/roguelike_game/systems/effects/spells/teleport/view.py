@@ -1,8 +1,8 @@
-# Path: src/roguelike_game/systems/combat/spells/teleport/view.py
+# Path: src/roguelike_game/systems/effects/spells/teleport/view.py
 import pygame
 import time
 from pygame import Surface
-from roguelike_game.systems.combat.spells.teleport.model import TeleportModel
+from roguelike_game.systems.effects.spells.teleport.model import TeleportModel
 
 class TeleportView:
     def __init__(self, model: TeleportModel):

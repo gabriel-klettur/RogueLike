@@ -1,5 +1,5 @@
-# Path: src/roguelike_game/systems/combat/spells/smoke/view.py
-from roguelike_game.systems.combat.spells.smoke.model import SmokeModel
+# Path: src/roguelike_game/systems/effects/spells/smoke/view.py
+from roguelike_game.systems.effects.spells.smoke.model import SmokeModel
 
 class SmokeView:
     """
