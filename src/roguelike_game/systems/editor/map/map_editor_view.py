@@ -10,8 +10,9 @@ class MapEditorView:
         self.controller = controller
         self.state = state
         self.map_manager = map_manager
-        # fuente para etiquetas
-        self.font = pygame.font.SysFont(None, 16)
+        # fuente para etiquetas, 3x tamaño más grande
+        base_size = 16
+        self.font = pygame.font.SysFont(None, base_size * 3)
 
     def render(self, screen, camera, map_manager):
         if not self.state.active:
@@ -43,6 +44,11 @@ class MapEditorView:
             screen.blit(surf, screen_tl)
             # borde
             pygame.draw.rect(screen, outline_color, (*screen_tl, *screen_size), 2)
-            # etiqueta
+            # etiqueta centrada y más grande
             label = self.font.render(zone, True, (255, 255, 255))
-            screen.blit(label, screen_tl)
+            # centrar label en la zona
+            label_rect = label.get_rect(
+                center=(screen_tl[0] + screen_size[0] // 2,
+                        screen_tl[1] + screen_size[1] // 2)
+            )
+            screen.blit(label, label_rect)

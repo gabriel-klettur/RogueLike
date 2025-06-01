@@ -214,6 +214,16 @@ class RendererManager:
         self._dirty_rects.extend(dirty_rects)
 
     def _render_map(self, camera, screen, map):
+        # Hide ground tiles in Map Editor mode
+        if self.map_editor.editor_state.active:
+            from roguelike_engine.map.model.layer import Layer
+            orig = map.tiles_by_layer
+            filtered = {layer: tiles for layer, tiles in orig.items() if layer != Layer.Ground}
+            map.tiles_by_layer = filtered
+            dirty_rects = self.map.view.render(screen, camera, map)
+            map.tiles_by_layer = orig
+            self._dirty_rects.extend(dirty_rects)
+            return
         # Collision-only mode: render only collision grid
         if self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.show_collisions and not self.tiles_editor.editor_state.show_collisions_overlay:
             dirty = self._render_collisions(screen, camera, map)
@@ -246,6 +256,9 @@ class RendererManager:
             state.tile_editor_view.render(screen, camera, map)
 
     def _render_z_entities(self, state, camera, screen, entities):
+        # Hide buildings and NPCs in Map Editor mode
+        if self.map_editor.editor_state.active:
+            return
         all_entities = []
         all_entities.extend([
             e for e in entities.obstacles

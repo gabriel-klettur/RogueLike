@@ -26,13 +26,9 @@ class MapEditorEventHandler:
                     self.state.dragging = None
                     print(" Map Editor OFF")
                     return
-                # Salir de editor (Escape)
+                # Exit game on Escape
                 if ev.key == pygame.K_ESCAPE:
-                    self.state.active = False
-                    # reset substate
-                    self.state.selected_zone = None
-                    self.state.hidden_zones.clear()
-                    self.state.dragging = None
+                    self.state.running = False
                     return
                 # Nueva zona
                 if ev.key == pygame.K_n:

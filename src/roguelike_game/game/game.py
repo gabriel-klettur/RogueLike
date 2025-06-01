@@ -274,8 +274,9 @@ class Game:
             # 3) Renderizar resto de partes del juego que no son ECS (map, editores, buildings, minimap)
             self.render()      
 
-            # 4) Renderizar ECS
-            self.run_ecs()
+            # 4) Renderizar ECS (solo si no estamos en Map Editor)
+            if not self.map_editor.editor_state.active:
+                self.run_ecs()
 
             # 5) Actualizar pantalla
             pygame.display.flip()  

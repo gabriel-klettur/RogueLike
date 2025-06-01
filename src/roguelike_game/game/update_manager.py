@@ -56,10 +56,13 @@ def update_game(
         def _update_map_editor():
             map_editor.update(camera, map)
         _update_map_editor()
-        # Centrar cámara en el jugador incluso con editor activo
-        eid = ecs.npc_world.player_entity
-        pos = ecs.npc_world.components['Position'][eid]
-        camera.update(types.SimpleNamespace(x=pos.x, y=pos.y))
+        # Free camera panning with arrow keys
+        keys = pygame.key.get_pressed()
+        dx = int(keys[pygame.K_RIGHT]) - int(keys[pygame.K_LEFT])
+        dy = int(keys[pygame.K_DOWN]) - int(keys[pygame.K_UP])
+        pan_speed = 10
+        camera.offset_x += dx * pan_speed
+        camera.offset_y += dy * pan_speed
         return
 
     # 3.1) Cámara sigue al jugador
