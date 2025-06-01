@@ -12,17 +12,24 @@ class MapEditorManager:
         self.editor_state = MapEditorState()
         self.controller = MapEditorController(self.editor_state, game.map)
         self.view = MapEditorView(self.controller, self.editor_state, game.map)
-        self.handler = MapEditorEventHandler(self.editor_state, self.controller, game.map)
+        # Pass self to handler so toggle logic resets zoom and recenter on exit
+        self.handler = MapEditorEventHandler(self, self.editor_state, self.controller, game.map)
 
     def toggle(self):
         active = not self.editor_state.active
         self.editor_state.active = active
-        if not active:
+        # Reset zoom to minimum when entering Map Editor
+        if active:
+            self.game.camera.zoom = 0.5
+        else:
+            # Restore zoom and recenter camera on exit
+            self.game.camera.zoom = 1.0
+            self.game.camera.update(self.game.entities.player)
             # reset de subestado al cerrar
             self.editor_state.selected_zone = None
             self.editor_state.hidden_zones.clear()
             self.editor_state.dragging = None
-        print("🗺️ Map Editor ON" if active else "🛑 Map Editor OFF")
+        print(" Map Editor ON" if active else " Map Editor OFF")
 
     def handle(self, camera, map_manager):
         if self.editor_state.active:

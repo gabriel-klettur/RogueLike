@@ -60,7 +60,10 @@ def update_game(
         keys = pygame.key.get_pressed()
         dx = int(keys[pygame.K_RIGHT]) - int(keys[pygame.K_LEFT])
         dy = int(keys[pygame.K_DOWN]) - int(keys[pygame.K_UP])
-        pan_speed = 10
+        # Base speed and speed boost with Shift
+        base_speed = 10
+        shift = keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]
+        pan_speed = base_speed * (3 if shift else 1)
         camera.offset_x += dx * pan_speed
         camera.offset_y += dy * pan_speed
         return

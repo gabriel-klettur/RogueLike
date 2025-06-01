@@ -46,6 +46,13 @@ class MapEditorView:
             pygame.draw.rect(screen, outline_color, (*screen_tl, *screen_size), 2)
             # etiqueta centrada y más grande
             label = self.font.render(zone, True, (255, 255, 255))
+            # Escalar label para que quepa en la zona
+            label_w, label_h = label.get_size()
+            max_w, max_h = screen_size
+            if label_w > max_w or label_h > max_h:
+                scale = min(max_w / label_w, max_h / label_h)
+                new_size = (int(label_w * scale), int(label_h * scale))
+                label = pygame.transform.smoothscale(label, new_size)
             # centrar label en la zona
             label_rect = label.get_rect(
                 center=(screen_tl[0] + screen_size[0] // 2,

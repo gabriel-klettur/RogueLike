@@ -213,14 +213,16 @@ class RendererManager:
         self._dirty_rects.extend(dirty_rects)
 
     def _render_map(self, camera, screen, map):
-        # Hide ground tiles in Map Editor mode
+        # Hide ground tiles in Map Editor mode, ensure restoration
         if self.map_editor.editor_state.active:
             from roguelike_engine.map.model.layer import Layer
             orig = map.tiles_by_layer
             filtered = {layer: tiles for layer, tiles in orig.items() if layer != Layer.Ground}
             map.tiles_by_layer = filtered
-            dirty_rects = self.map.view.render(screen, camera, map)
-            map.tiles_by_layer = orig
+            try:
+                dirty_rects = self.map.view.render(screen, camera, map)
+            finally:
+                map.tiles_by_layer = orig
             self._dirty_rects.extend(dirty_rects)
             return
         # Collision-only mode: render only collision grid

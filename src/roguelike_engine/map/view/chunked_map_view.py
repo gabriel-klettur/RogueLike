@@ -92,7 +92,8 @@ class ChunkedMapView:
         """
         dirty_rects: list[pygame.Rect] = []
         screen_w, screen_h = screen.get_size()
-        zoom = round(camera.zoom * 10) / 10.0
+        # Quantize zoom for caching and clamp to minimum to avoid division by zero
+        zoom = max(round(camera.zoom * 10) / 10.0, 0.1)
 
         # rebuild cache para este zoom si falta
         if zoom not in self.chunks_by_zoom:

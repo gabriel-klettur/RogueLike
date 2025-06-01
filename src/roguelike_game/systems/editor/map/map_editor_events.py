@@ -6,29 +6,45 @@ class MapEditorEventHandler:
     """
     Maneja eventos para el Map Editor.
     """
-    def __init__(self, state, controller, map_manager):
+    def __init__(self, manager, state, controller, map_manager):
+        self.manager = manager
         self.state = state
         self.controller = controller
         self.map_manager = map_manager
 
     def handle(self, camera, map_manager):
         for ev in pygame.event.get():
+            # Handle quit
             if ev.type == pygame.QUIT:
-                self.state.running = False
+                # Exit entire game
+                self.manager.game.state.running = False
+                return
+            # Zoom in/out in Map Editor (infinite, pivot on mouse)
+            elif ev.type == pygame.MOUSEWHEEL:
+                # store world coords under cursor before zoom
+                mx, my = pygame.mouse.get_pos()
+                wx = mx / camera.zoom + camera.offset_x
+                wy = my / camera.zoom + camera.offset_y
+                # adjust zoom with clamp to avoid zero
+                zoom_step = 0.1
+                if ev.y > 0:
+                    new_zoom = camera.zoom + zoom_step
+                else:
+                    new_zoom = camera.zoom - zoom_step
+                camera.zoom = max(new_zoom, 0.01)
+                # recalc offset so (wx,wy) remains under cursor
+                camera.offset_x = wx - mx / camera.zoom
+                camera.offset_y = wy - my / camera.zoom
                 return
             if ev.type == pygame.KEYDOWN:
                 # Toggle Map Editor OFF via F11
                 if ev.key == pygame.K_F11:
-                    self.state.active = False
-                    # reset substate
-                    self.state.selected_zone = None
-                    self.state.hidden_zones.clear()
-                    self.state.dragging = None
-                    print(" Map Editor OFF")
+                    self.manager.toggle()
                     return
                 # Exit game on Escape
                 if ev.key == pygame.K_ESCAPE:
-                    self.state.running = False
+                    # Exit entire game
+                    self.manager.game.state.running = False
                     return
                 # Nueva zona
                 if ev.key == pygame.K_n:
