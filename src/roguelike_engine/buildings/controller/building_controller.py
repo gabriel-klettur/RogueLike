@@ -1,6 +1,6 @@
-# src/roguelike_game/entities/buildings/controller/building_controller.py
+# src/roguelike_engine/buildings/controller/building_controller.py
 
-from roguelike_engine.config.map_config import global_map_settings
+from roguelike_engine.buildings.view.building_view import BuildingView
 
 class BuildingController:
     """
@@ -17,8 +17,7 @@ class BuildingController:
         """
         self.model = model
         self.view = None
-        if model.image is not None:
-            from roguelike_game.entities.buildings.view.building_view import BuildingView
+        if model.image is not None:            
             self.view = BuildingView(model, camera)
 
     def assign_zone(self, zone_name: str):

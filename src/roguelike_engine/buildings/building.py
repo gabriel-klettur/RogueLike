@@ -1,10 +1,10 @@
-# src/roguelike_game/entities/buildings/building.py
+# src/roguelike_engine/buildings/building.py
 
 import pygame
 import types
 
-from roguelike_game.entities.buildings.model.building_model import BuildingModel
-from roguelike_game.entities.buildings.controller.building_controller import BuildingController
+from roguelike_engine.buildings.model.building_model import BuildingModel
+from roguelike_engine.buildings.controller.building_controller import BuildingController
 
 class Building:
     """
