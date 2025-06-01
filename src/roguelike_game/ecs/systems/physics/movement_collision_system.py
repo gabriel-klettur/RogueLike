@@ -79,16 +79,12 @@ class MovementCollisionSystem:
                     vel.vx = 0
                 else:
                     # Sin colisión con tile, verificar NPCs
-                    if eid in comps.get('PlayerTagComponent', {}):
-                        # Jugador atraviesa NPCs
-                        pos.x += vel.vx
+                    if any(feet.rect.colliderect(r) for id2, r in npc_feet_rects.items() if id2 != eid):
+                        # Colisión con otro NPC: revertir
+                        feet.rect.x = old_x
                     else:
-                        # NPCs no deben solaparse: revertir pero no anular velocidad
-                        if any(feet.rect.colliderect(r) for id2, r in npc_feet_rects.items() if id2 != eid):
-                            feet.rect.x = old_x
-                        else:
-                            pos.x += vel.vx
-                            npc_feet_rects[eid] = feet.rect.copy()
+                        pos.x += vel.vx
+                        npc_feet_rects[eid] = feet.rect.copy()
 
             # 4) Resolver movimiento en Y (idéntico al de X)
             if vel.vy != 0:
@@ -101,11 +97,9 @@ class MovementCollisionSystem:
                     feet.rect.y = old_y
                     vel.vy = 0
                 else:
-                    if eid in comps.get('PlayerTagComponent', {}):
-                        pos.y += vel.vy
+                    if any(feet.rect.colliderect(r) for id2, r in npc_feet_rects.items() if id2 != eid):
+                        # Colisión con otro NPC: revertir
+                        feet.rect.y = old_y
                     else:
-                        if any(feet.rect.colliderect(r) for id2, r in npc_feet_rects.items() if id2 != eid):
-                            feet.rect.y = old_y
-                        else:
-                            pos.y += vel.vy
-                            npc_feet_rects[eid] = feet.rect.copy()
+                        pos.y += vel.vy
+                        npc_feet_rects[eid] = feet.rect.copy()

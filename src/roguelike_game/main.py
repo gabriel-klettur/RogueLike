@@ -41,8 +41,8 @@ def main():
     finally:
         # Guardar posición del jugador antes de cerrar
         try:
-            eid = game.ecs.npc_world.player_entity
-            pos = game.ecs.npc_world.components['Position'][eid]
+            eid = game.ecs.ecs_world.player_entity
+            pos = game.ecs.ecs_world.components['Position'][eid]
             # Calcular coords de tile usando centro del collider 'feet'
             w, h = RENDERED_SPRITE_SIZE
             fh = h // 4

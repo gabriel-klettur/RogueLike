@@ -33,8 +33,8 @@ def update_game(
             tiles_editor.update(camera, map)
         _update_tiles_editor()
         # Centrar cámara en el jugador incluso con editor activo
-        eid = ecs.npc_world.player_entity
-        pos = ecs.npc_world.components['Position'][eid]
+        eid = ecs.ecs_world.player_entity
+        pos = ecs.ecs_world.components['Position'][eid]
         camera.update(types.SimpleNamespace(x=pos.x, y=pos.y))
         return
 
@@ -45,8 +45,8 @@ def update_game(
             buildings_editor.update(camera)
         _update_buildings_editor()
         # Centrar cámara en el jugador incluso con editor activo
-        eid = ecs.npc_world.player_entity
-        pos = ecs.npc_world.components['Position'][eid]
+        eid = ecs.ecs_world.player_entity
+        pos = ecs.ecs_world.components['Position'][eid]
         camera.update(types.SimpleNamespace(x=pos.x, y=pos.y))
         return
 
@@ -69,8 +69,8 @@ def update_game(
     @benchmark(perf_log, "2.1.camera.update")
     def _update_camera():
         # Centrar cámara usando la posición del jugador en ECS
-        eid = ecs.npc_world.player_entity
-        pos = ecs.npc_world.components['Position'][eid]
+        eid = ecs.ecs_world.player_entity
+        pos = ecs.ecs_world.components['Position'][eid]
         camera.update(types.SimpleNamespace(x=pos.x, y=pos.y))
     _update_camera()
 
@@ -90,8 +90,8 @@ def update_game(
     @benchmark(perf_log, "2.5.minimap.update")
     def _update_minimap():
         # Usar posición del jugador en ECS
-        eid = ecs.npc_world.player_entity
-        pos = ecs.npc_world.components['Position'][eid]
+        eid = ecs.ecs_world.player_entity
+        pos = ecs.ecs_world.components['Position'][eid]
         minimap.update(
             player_pos=(pos.x, pos.y),
             tiles=map.tiles_in_region

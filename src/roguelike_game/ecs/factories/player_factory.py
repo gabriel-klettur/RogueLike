@@ -31,7 +31,7 @@ def spawn_player(world, x, y, character_name: str = "first_hero") -> int:
     Crea la entidad jugador y añade los componentes básicos.
 
     Args:
-        world: instancia de NPCWorld
+        world: instancia de ECSWorld
         x, y: coordenadas iniciales en píxeles
         character_name: identificador de sprite/asset del jugador
     Returns:

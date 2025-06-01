@@ -1,219 +1,303 @@
 # src/roguelike_game/entities/buildings/building.py
 
-import os
 import pygame
 import types
-from roguelike_engine.utils.loader import load_image
-from roguelike_game.systems.config_z_layer import Z_LAYERS
-from roguelike_engine.config.config_tiles import TILE_SIZE
-from roguelike_engine.config.map_config import global_map_settings
-from roguelike_engine.utils.debug import draw_debug_rect
+
+from roguelike_game.entities.buildings.model.building_model import BuildingModel
+from roguelike_game.entities.buildings.controller.building_controller import BuildingController
 
 class Building:
     """
-    Un edificio ahora se almacena con coordenadas relativas (rel_x, rel_y) dentro de su zona,
-    y calcula sus posiciones absolutas (x, y) al vuelo.
+    Fachada ligera que expone una única clase Building para el resto del juego,
+    delegando internamente en nuestro patrón MVC:
+      • BuildingModel: almacena estado y lógica de datos.
+      • BuildingView: se encarga de renderizar según la cámara.
+      • BuildingController: orquesta modelo y vista, carga zona y collision_map,
+        y expone métodos de render y actualización.
     """
 
     def __init__(
         self,
         rel_x: int,
         rel_y: int,
-        image_path,
-        solid=True,
-        scale=None,
+        image_path: str,
+        camera=None,
         *,
+        solid: bool = True,
+        scale: tuple[int, int] | None = None,
         split_ratio: float = 0.5,
         z_bottom: int | None = None,
         z_top: int | None = None
     ):
-        # Coordenadas relativas dentro de la zona
-        self.rel_x = rel_x
-        self.rel_y = rel_y
-        # Zona (se asigna con assign_zone_and_relatives o al cargar desde JSON)
-        self.zone = None
-
-        self.solid = solid
-        self.image_path = image_path
-        self.scaled_cache: dict[float, pygame.Surface] = {}
-        self._render_part_cache: dict[float, tuple[pygame.Surface, pygame.Surface]] = {}
-
-        # Carga y escala de la imagen
-        self.image = load_image(image_path)
-        if scale:
-            self.image = pygame.transform.scale(self.image, scale)
-            self.original_scale = scale
-        else:
-            w, h = self.image.get_size()
-            # Auto-resize large buildings (>512x512) to half size
-            if w > 512 or h > 512:
-                new_size = (w // 4, h // 4)
-                self.image = pygame.transform.scale(self.image, new_size)
-                self.original_scale = new_size
-            else:
-                self.original_scale = (w, h)
-
-        # División en dos mitades según split_ratio
-        self.split_ratio = max(0.0, min(split_ratio, 1.0))
-        self._cut_world = int(self.image.get_height() * self.split_ratio)
-        self.z_bottom = z_bottom if z_bottom is not None else Z_LAYERS["building_low"]
-        self.z_top    = z_top    if z_top    is not None else Z_LAYERS["building_high"]
-
-        # Compatibilidad: algunos sistemas aún consultan `z`
-        self.z = self.z_bottom
-
-        # Rectángulo de colisión/renderizado (usa propiedades x,y)
-        self.rect = pygame.Rect(self.x, self.y, *self.image.get_size())
-        # Collision map por tile (# = sólido, . = transitable)
-        self.collision_map: list[list[str]] = []
-        # Instancias persistentes de partes para render
-        self._bottom_part = Building._BuildingPart(self, top=False)
-        self._top_part    = Building._BuildingPart(self, top=True)
-
-    def __repr__(self) -> str:
-        name = os.path.basename(self.image_path)
-        w, h = self.image.get_size()
-        return (f"<Building '{name}' rel=({self.rel_x},{self.rel_y}) zone={self.zone!r} "
-                f"size=({w}x{h}) split={self.split_ratio:.2f} "
-                f"Zs=({self.z_bottom},{self.z_top}) solid={self.solid}>")
-
-    @property
-    def x(self):        
-        ox, oy = global_map_settings.zone_offsets.get(self.zone, (0, 0))
-        return ox * TILE_SIZE + self.rel_x
-    @x.setter
-    def x(self, value):
-        ox, oy = global_map_settings.zone_offsets.get(self.zone, (0, 0))
-        px = int(value)
-        self.rel_x = px - ox * TILE_SIZE
-        if hasattr(self, 'rect'):
-            self.rect.x = px
-
-    @property
-    def y(self):        
-        ox, oy = global_map_settings.zone_offsets.get(self.zone, (0, 0))
-        return oy * TILE_SIZE + self.rel_y
-    @y.setter
-    def y(self, value):
-        ox, oy = global_map_settings.zone_offsets.get(self.zone, (0, 0))
-        py = int(value)
-        self.rel_y = py - oy * TILE_SIZE
-        if hasattr(self, 'rect'):
-            self.rect.y = py
-
-    def _get_scaled_image(self, camera):
-        zoom = round(camera.zoom, 2)
-        if zoom not in self.scaled_cache:
-            scaled = pygame.transform.scale(
-                self.image, camera.scale(self.image.get_size())
-            )
-            self.scaled_cache[zoom] = scaled
-            # Cache top/bottom surfaces for render part
-            w, h = scaled.get_size()
-            cut_scaled = int(h * self.split_ratio)
-            top_surf = scaled.subsurface(pygame.Rect(0, 0, w, cut_scaled)).copy()
-            bottom_surf = scaled.subsurface(pygame.Rect(0, cut_scaled, w, h - cut_scaled)).copy()
-            self._render_part_cache[zoom] = (top_surf, bottom_surf)
-        return self.scaled_cache[zoom]
-
-    def _render_part(self, screen, camera, *, top: bool):
-        zoom = round(camera.zoom, 2)
-        if zoom not in self._render_part_cache:
-            # ensure part cache is built
-            self._get_scaled_image(camera)
-        top_surf, bottom_surf = self._render_part_cache[zoom]
-        surf = top_surf if top else bottom_surf
-        offset = 0 if top else self._cut_world
-        screen.blit(surf, camera.apply((self.x, self.y + offset)))
-        if self.solid and not top:
-            draw_debug_rect(screen, camera, self.rect, color=(255,255,255), width=1)
-
-    class _BuildingPart:
-        """Wrapper ligero que representa una de las mitades."""
-        __slots__ = ("_parent", "_top")
-
-        def __init__(self, parent: "Building", top: bool):
-            self._parent = parent
-            self._top = top
-
-        @property
-        def x(self): return self._parent.x
-        @property
-        def y(self): return self._parent.y
-        @property
-        def z(self):
-            return self._parent.z_top if self._top else self._parent.z_bottom
-        @property
-        def sprite_size(self):
-            return self._parent.image.get_size()
-        def render(self, screen, camera):
-            self._parent._render_part(screen, camera, top=self._top)
-
-    def get_parts(self):
-        # Retorna instancias cacheadas de las dos mitades
-        return [self._bottom_part, self._top_part]
-
-    def resize(self, new_width, new_height):
-        self.image = pygame.transform.scale(load_image(self.image_path), (new_width, new_height))
-        self.rect = pygame.Rect(self.x, self.y, new_width, new_height)
-        self.scaled_cache.clear()
-        self._render_part_cache.clear()
-        # Recalculate cut position after resize to keep parts aligned
-        self._cut_world = int(self.image.get_height() * self.split_ratio)
-
-    def reset_to_original_size(self):
-        if self.original_scale:
-            self.resize(*self.original_scale)
-            print(f"↩️ Tamaño reseteado a original: {self.original_scale}")
-        else:
-            print("⚠️ No se encontró escala original para este edificio.")
-
-    @property
-    def collision_rect(self) -> pygame.Rect:
         """
-        Rectángulo de colisión: parte inferior del edificio según split_ratio.
+        Crea internamente el BuildingModel y el BuildingController (que a su vez
+        generará la BuildingView ligada a la cámara). Luego se podrá llamar a:
+          • assign_zone(zone_name)
+          • load_collision_map(collision_data)
+          • render(screen)
+          • update_on_camera_change()
         """
-        full_h = self.image.get_height()
-        cut_h = int(full_h * self.split_ratio)
-        return pygame.Rect(
-            self.x,
-            self.y + cut_h,
-            self.image.get_width(),
-            full_h - cut_h
+        # 1) Instancia del modelo, que carga y ajusta la imagen
+        self.model = BuildingModel(
+            rel_x=rel_x,
+            rel_y=rel_y,
+            image_path=image_path,
+            solid=solid,
+            scale=scale,
+            split_ratio=split_ratio,
+            z_bottom=z_bottom,
+            z_top=z_top
         )
+
+        # 2) Instancia del controlador solo si se pasa cámara
+        if camera is not None:
+            self.controller = BuildingController(self.model, camera)
+        else:
+            self.controller = None
+
+    def assign_zone(self, zone_name: str):
+        """
+        Asigna la zona al BuildingModel y actualiza sus coordenadas absolutas.
+        Debe llamarse antes de renderizar si la zona no se había establecido aún.
+        """
+        if self.controller:
+            self.controller.assign_zone(zone_name)
+
+    def load_collision_map(self, collision_data: list[list[str]]):
+        """
+        Carga en el modelo la matriz de strings ('#' / '.') que define las
+        celdas sólidas de este edificio. Al asignarla, se invalidan los caches
+        de colisión internos.
+        """
+        if self.controller:
+            self.controller.load_collision_map(collision_data)
+
+    def render(self, screen):
+        """
+        Llama al controlador para que dibuje primero la parte inferior (bottom)
+        y luego la superior (top) del edificio, usando la vista y el modelo.
+        """
+        if self.controller:
+            self.controller.render(screen)
+
+    def update_on_camera_change(self):
+        """
+        Debe invocarse cuando la cámara cambie (zoom u offset) para que la vista
+        invalide sus caches de superficies escaladas.
+        """
+        if self.controller:
+            self.controller.update_on_camera_change()
+
+    @property
+    def x(self) -> int:
+        """Coordenada X absoluta en el mundo."""
+        return self.model.x
+
+    @x.setter
+    def x(self, value: int):
+        """Setter for absolute X coordinate."""
+        self.model.x = value
+        # invalidate collision tiles cache when moving building
+        self.model._collision_tiles_cache = None
+        self.model._collision_tile_objs = None
+        if self.controller:
+            self.controller.update_on_camera_change()
+
+    @property
+    def y(self) -> int:
+        """Coordenada Y absoluta en el mundo."""
+        return self.model.y
+
+    @y.setter
+    def y(self, value: int):
+        """Setter for absolute Y coordinate."""
+        self.model.y = value
+        # invalidate collision tiles cache when moving building
+        self.model._collision_tiles_cache = None
+        self.model._collision_tile_objs = None
+        if self.controller:
+            self.controller.update_on_camera_change()
+
+    @property
+    def rel_x(self) -> int:
+        """Coordenada X relativa en la zona."""
+        return self.model.rel_x
+
+    @rel_x.setter
+    def rel_x(self, value: int):
+        """Set relative X coordinate in zone."""
+        self.model.rel_x = value
+
+    @property
+    def rel_y(self) -> int:
+        """Coordenada Y relativa en la zona."""
+        return self.model.rel_y
+
+    @rel_y.setter
+    def rel_y(self, value: int):
+        """Set relative Y coordinate in zone."""
+        self.model.rel_y = value
+
+    @property
+    def zone(self) -> str | None:
+        """Zona asignada al edificio."""
+        return self.model.zone
+
+    @zone.setter
+    def zone(self, value: str | None):
+        """Setter para zona: actualiza modelo y controlador si existe."""
+        self.model.zone = value
+        if self.controller:
+            self.controller.assign_zone(value)
+
+    @property
+    def original_scale(self) -> tuple[int, int] | None:
+        """Escala original de la imagen cargada."""
+        return self.model.original_scale
+
+    @original_scale.setter
+    def original_scale(self, value: tuple[int, int]):
+        """Setter para restaurar escala original sin recargar."""
+        self.model.original_scale = value
+
+    @property
+    def collision_rect(self):
+        """Rectángulo de colisión completo (parte inferior) en coordenadas absolutas."""
+        return self.model.collision_rect
 
     @property
     def collision_tiles(self) -> list[pygame.Rect]:
         """
-        Retorna una lista de pygame.Rect para cada celda '#' de collision_map (cacheada).
+        Lista de rectángulos (por tile) para cada celda sólida ('#') de este edificio.
         """
-        if not hasattr(self, '_collision_tiles_cache'):
-            cache = []
-            for row_idx, row in enumerate(self.collision_map):
-                for col_idx, cell in enumerate(row):
-                    if cell == '#':
-                        x = self.x + col_idx * TILE_SIZE
-                        y = self.y + row_idx * TILE_SIZE
-                        cache.append(pygame.Rect(x, y, TILE_SIZE, TILE_SIZE))
-            self._collision_tiles_cache = cache
-            # Build wrapper objects once
-            self._collision_tile_objs = [types.SimpleNamespace(solid=True, rect=rect)
-                                         for rect in cache]
-        return self._collision_tiles_cache
+        return self.model.collision_tiles
 
     @property
     def collision_tile_objs(self) -> list[types.SimpleNamespace]:
         """
-        Fast access to building collision tile objects (solid flag + rect).
+        Lista de objetos con atributos .solid y .rect para cada tile de colisión.
         """
-        # Ensure cache exists
-        _ = self.collision_tiles
-        return self._collision_tile_objs
- 
-    def resize(self, new_width, new_height):
-        self.image = pygame.transform.scale(load_image(self.image_path), (new_width, new_height))
-        self.rect = pygame.Rect(self.x, self.y, new_width, new_height)
-        self.scaled_cache.clear()
-        self._render_part_cache.clear()
-        # Recalculate cut position after resize to keep parts aligned
-        self._cut_world = int(self.image.get_height() * self.split_ratio)
+        return self.model.collision_tile_objs
+
+    @property
+    def collision_map(self) -> list[list[str]]:
+        """Raw collision map of the building."""
+        return self.model.collision_map
+
+    @collision_map.setter
+    def collision_map(self, data: list[list[str]]):
+        """Set collision map for the building and invalidate caches."""
+        self.model.collision_map = data
+
+    @property
+    def z_bottom(self) -> int:
+        """Capa Z inferior del edificio."""
+        return self.model.z_bottom
+
+    @property
+    def z_top(self) -> int:
+        """Capa Z superior del edificio."""
+        return self.model.z_top
+
+    @property
+    def z(self) -> int:
+        """Capa Z actual (alias de z_bottom)."""
+        return self.model.z
+
+    @z.setter
+    def z(self, value: int):
+        """Setter para capa Z: actualiza el modelo."""
+        self.model.z = value
+
+    @property
+    def image(self) -> pygame.Surface:
+        """Imagen del edificio (surface) para render y culling."""
+        return self.model.image
+
+    @property
+    def split_ratio(self) -> float:
+        """Proportion for splitting top/bottom of building image."""
+        return self.model.split_ratio
+
+    @split_ratio.setter
+    def split_ratio(self, value: float):
+        """Update split ratio and clear view caches."""
+        # Clamp value between 0.0 and 1.0
+        self.model.split_ratio = max(0.0, min(value, 1.0))
+        if self.controller:
+            self.controller.update_on_camera_change()
+
+    @property
+    def image_path(self) -> str:
+        """Original image file path for this building."""
+        return self.model.image_path
+
+    @property
+    def rect(self) -> pygame.Rect:
+        """Bounding box of the full building image."""
+        w, h = self.image.get_size()
+        return pygame.Rect(self.x, self.y, w, h)
+
+    @property
+    def solid(self) -> bool:
+        """Whether this building is solid."""
+        return self.model.solid
+
+    @solid.setter
+    def solid(self, value: bool):
+        """Set solidity of building."""
+        self.model.solid = value
+
+    @property
+    def zone(self) -> str | None:
+        """Zona asignada al edificio."""
+        return self.model.zone
+
+    @zone.setter
+    def zone(self, value: str | None):
+        """Setter para zona: actualiza modelo y controlador si existe."""
+        self.model.zone = value
+        if self.controller:
+            self.controller.assign_zone(value)
+
+    def get_parts(self) -> list[types.SimpleNamespace]:
+        """
+        Retorna partes renderizables (bottom y top) para render z-ordenado.
+        Cada parte expone x, y, z, image y método render(screen, camera).
+        """
+        parts = []
+        for top in (False, True):
+            zval = self.z_bottom if not top else self.z_top
+            def _render(screen, camera, top=top):
+                # Lazy init controller/view if missing
+                if self.controller is None:
+                    self.controller = BuildingController(self.model, camera)
+                self.controller.view.render_part(screen, top=top)
+            part = types.SimpleNamespace(
+                x=self.x,
+                y=self.y,
+                z=zval,
+                image=self.image,
+                render=_render
+            )
+            parts.append(part)
+        return parts
+
+    def resize(self, new_width: int, new_height: int):
+        """
+        Redimensiona la imagen del edificio a new_width×new_height, invalidando
+        caches de renderizado internos. Se delega en el modelo.
+        """
+        self.model.resize(new_width, new_height)
+        # Después de cambiar el tamaño en el modelo, hay que limpiar caches de vista:
+        self.update_on_camera_change()
+
+    def reset_to_original_size(self):
+        """
+        Restaura el tamaño original que tenía la imagen al cargarse. Se delega en el modelo.
+        """
+        self.model.reset_to_original_size()
+        self.update_on_camera_change()
+
+    def __repr__(self) -> str:
+        return repr(self.model)

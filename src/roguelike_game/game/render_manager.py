@@ -88,6 +88,21 @@ class RendererManager:
             self._render_map(camera, screen, map)
         _bench_map()
 
+        # 5) ECS trail snapshots
+        @benchmark(perf_log, "3.5. ecs_trail")
+        def _bench_ecs_trail():
+            for eid, trail in self.ecs.ecs_world.components.get('TrailComponent', {}).items():
+                for snap in trail.snapshots:
+                    orig = snap.image
+                    zoom = camera.zoom
+                    if zoom != 1.0:
+                        w, h = orig.get_size()
+                        image_scaled = pygame.transform.scale(orig, (int(w * zoom), int(h * zoom)))
+                    else:
+                        image_scaled = orig
+                    screen.blit(image_scaled, camera.apply(snap.pos))
+        _bench_ecs_trail()
+
         # 2) Entidades orden Z
         @benchmark(perf_log, "3.2. z_entities")
         def _bench_z_entities():
@@ -109,22 +124,6 @@ class RendererManager:
             if not (self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.show_collisions and not self.tiles_editor.editor_state.show_collisions_overlay):
                 self._render_tile_editor_layer(state, screen, camera, map)
         _bench_tile_editor()
-
-        # 5) ECS trail snapshots
-        @benchmark(perf_log, "3.5. ecs_trail")
-        def _bench_ecs_trail():
-            for eid, trail in self.ecs.npc_world.components.get('TrailComponent', {}).items():
-                for snap in trail.snapshots:
-                    # Escalar snapshot según zoom de la cámara
-                    orig = snap.image
-                    zoom = camera.zoom
-                    if zoom != 1.0:
-                        w, h = orig.get_size()
-                        image_scaled = pygame.transform.scale(orig, (int(w * zoom), int(h * zoom)))
-                    else:
-                        image_scaled = orig
-                    screen.blit(image_scaled, camera.apply(snap.pos))
-        _bench_ecs_trail()
 
         # 6) Crosshair
         @benchmark(perf_log, "3.6. crosshair")
@@ -260,10 +259,6 @@ class RendererManager:
         if self.map_editor.editor_state.active:
             return
         all_entities = []
-        all_entities.extend([
-            e for e in entities.obstacles
-            if camera.is_in_view(e.x, e.y, getattr(e, "sprite_size", (64, 64)))
-        ])
         # Only render buildings if not hidden by editor or collision-only mode (NPC rendering removed; gestionado por ECS)
         editor_state = self.tiles_editor.editor_state
         if not ((editor_state.active and not editor_state.show_buildings)
@@ -275,10 +270,10 @@ class RendererManager:
                     state.z_state.set(part, part.z)
                     all_entities.append(part)
         # 4) NPCs ECS: envolver cada entidad y asignar capa Z
-        for eid in self.ecs.npc_world.get_entities_with('Position', 'Sprite', 'ZLayer'):
-            layer = self.ecs.npc_world.components['ZLayer'][eid].layer
+        for eid in self.ecs.ecs_world.get_entities_with('Position', 'Sprite', 'ZLayer'):
+            layer = self.ecs.ecs_world.components['ZLayer'][eid].layer
             # wrapper ligero para que tenga x,y,render
-            npc = _NPCWrapper(self.ecs.npc_world, eid)
+            npc = _NPCWrapper(self.ecs.ecs_world, eid)
             state.z_state.set(npc, layer)
             all_entities.append(npc)
 
