@@ -1,9 +1,10 @@
 # Path: src/roguelike_game/game/entities_manager.py
 from types import SimpleNamespace
 
-from roguelike_game.entities.load_entities import load_entities
+
 from roguelike_game.game.map_manager import MapManager
 from roguelike_engine.utils.benchmark import benchmark
+from roguelike_game.systems.editor.buildings.model.persistence.load_buildings_from_json import load_buildings_from_json
 
 class BuildingsManager:
     """
@@ -23,7 +24,7 @@ class BuildingsManager:
         Carga edificios.
         Devuelve buildings.
         """        
-        self.buildings = load_entities(self.z_state)
+        self.buildings = load_buildings_from_json(self.z_state)
         self.recalibrate_buildings()
         
         return self.buildings    
