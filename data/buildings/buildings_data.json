@@ -1,8 +1,8 @@
 [
     {
         "zone": "lobby",
-        "rel_x": 927,
-        "rel_y": 420,
+        "rel_x": 961,
+        "rel_y": 383,
         "image_path": "assets/buildings/temples/catholic.png",
         "solid": true,
         "scale": [
@@ -134,8 +134,8 @@
     },
     {
         "zone": "lobby",
-        "rel_x": 834,
-        "rel_y": 569,
+        "rel_x": 853,
+        "rel_y": 584,
         "image_path": "assets/buildings/vegetation/tree_10.png",
         "solid": true,
         "scale": [
@@ -793,25 +793,6 @@
             1536
         ],
         "split_ratio": 0.202,
-        "z_bottom": 3,
-        "z_top": 5,
-        "z": 3
-    },
-    {
-        "zone": "no zone",
-        "rel_x": 3289,
-        "rel_y": 2395,
-        "image_path": "assets/buildings\\castles\\castle_2.png",
-        "solid": true,
-        "scale": [
-            1024,
-            1024
-        ],
-        "original_scale": [
-            1024,
-            1024
-        ],
-        "split_ratio": 0.5,
         "z_bottom": 3,
         "z_top": 5,
         "z": 3

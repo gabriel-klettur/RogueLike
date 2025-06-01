@@ -258,7 +258,8 @@ class Game:
     def run_ecs(self):        
         self.update_ecs()       
         self.render_ecs()
-        
+
+
     
     def run(self):
         """
@@ -293,6 +294,48 @@ class Game:
 
             # 8) Limitar velocidad de fotogramas
             self.clock.tick(config.FPS)
+
+
+    def shutdown(self):
+        """
+        Este método se encarga de TODO lo que haga falta guardar antes de cerrar el juego:
+        - Guardar posición del jugador en el mapa actual.
+        - Actualizar WorldManager (maps, current_level, etc.)
+        - Serializar/salvar el mundo en disco.
+        """
+        try:
+            # 1) Obtenemos la entidad del jugador
+            eid = self.ecs.ecs_world.player_entity
+            pos = self.ecs.ecs_world.components["Position"][eid]
+
+            # 2) Calculamos las coordenadas de tile usando el centro del collider 'feet'
+            from roguelike_game.config_player import RENDERED_SPRITE_SIZE
+            from roguelike_engine.config.config_tiles import TILE_SIZE
+
+            w, h = RENDERED_SPRITE_SIZE
+            fh = h // 4
+            half_fh = fh // 2
+
+            feet_cx = pos.x + w // 2
+            feet_cy = pos.y + (h - half_fh)
+
+            tx = int(feet_cx // TILE_SIZE)
+            ty = int(feet_cy // TILE_SIZE)
+
+            # 3) Hacemos spawn del jugador en el mapa (para que guarde la nueva posición)
+            self.map.spawn_player((tx, ty))
+
+            # 4) Actualizamos WorldManager
+            self.world.maps[self.map.name] = self.map
+            self.world.current_level = self.map.name
+
+            # 5) Salvamos el mundo en disco
+            self.world.save_world()
+
+        except Exception as exc:
+            # Si hay error al guardar, lo imprimimos o lo loggeamos, 
+            # pero no interrumpimos el cierre de Pygame.
+            print(f"[WARN] No se pudo guardar la posición al cerrar: {exc}")
 
 if __name__ == "__main__":
     # Inicializa pygame
