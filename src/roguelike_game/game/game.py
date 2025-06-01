@@ -261,9 +261,6 @@ class Game:
 
             # 4) Renderizar ECS
             self.run_ecs()
-            # Detectar modo fantasma del jugador y guardarlo
-            ghost_map = self.ecs.npc_world.components.get('IsGhost', {})
-            self.is_ghost = ghost_map.get(self.ecs.npc_world.player_entity, False)
 
             # 5) Actualizar pantalla
             pygame.display.flip()  

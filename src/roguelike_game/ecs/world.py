@@ -17,7 +17,6 @@ from .systems.core.spawn_system import SpawnSystem
 from .systems.input.input_system import InputSystem
 from .systems.combat.spell_casting_system import SpellCastingSystem
 from .systems.combat.fireball_system import FireballSystem
-from .systems.combat.player_ghost_system import PlayerGhostSystem
 from .systems.rendering.fireball_render_system import FireballRenderSystem
 from .systems.rendering.player_debug_render_system import PlayerDebugRenderSystem
 from .systems.rendering.death_timer_bar_system import DeathTimerBarSystem
@@ -26,7 +25,6 @@ from .systems.rendering.chase_debug_system import ChaseDebugSystem
 from .systems.rendering.states_debug_render_system import StatesDebugRenderSystem
 from .systems.rendering.flash_system import FlashSystem
 from .systems.rendering.trail_system import TrailSystem
-from .systems.rendering.render_system import RenderSystem
 
 #! DEBERIAMOS IMPLEMENTARLO DENTRO DE NUESTRO FSM
 #!from .systems.rendering.chase_debug_system import ChaseDebugSystem
@@ -89,14 +87,11 @@ class NPCWorld:
             'WantsToCastSpell': {},
             'AggroRange': {}, 'ChaseTarget': {}, 'FacingCooldown': {}, 'InputComponent': {}, 'InventoryComponent': {}, 'CameraFollowComponent': {}, 'PlayerTagComponent': {}, 'InCombat': {},
             'FlashComponent': {}, 'TrailComponent': {},
-            # Fantasma: atraviesa muros y es ignorado por NPCs
-            'IsGhost': {},
         }
 
     def _init_systems(self):
         """Configura sistemas de actualización y renderizado."""
         self.update_systems = [
-            PlayerGhostSystem(self.perf_log),  # detectar muerte antes de las FSM
             FSMSystem(self.perf_log),
             PlayerFacingSystem(self.perf_log), FacingSystem(self.perf_log), InputSystem(self.perf_log),
             MovementCollisionSystem(self.perf_log),                       
@@ -106,8 +101,6 @@ class NPCWorld:
             AnimationSystem(self.perf_log), FlashSystem(self.perf_log), SpawnSystem(self.perf_log),            
         ]
         self.render_systems = [
-            # RenderSystem para dibujar sprites y post-procesado
-            RenderSystem(self.screen),
             HealthBarSystem(self.perf_log), NamePlateSystem(self.perf_log),
             CollisionDebugSystem(self.perf_log),
             FireballRenderSystem(self.perf_log),
