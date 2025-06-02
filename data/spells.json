@@ -1,10 +1,10 @@
 {
     "fireball": {
-      "prepare_duration": 0.2,
-      "channel_duration": 0.5,
-      "cooldown_duration": 1.0,
+      "prepare_duration": 0.0,
+      "channel_duration": 0.0,
+      "cooldown_duration": 0.25,
       "speed": 30,
-      "damage": 10,
+      "damage": 20,
       "lifespan": 60,
       "sprite": "assets/projectiles/fireball.png"
     },

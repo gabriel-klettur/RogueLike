@@ -22,6 +22,9 @@ class FireballSystem:
             pos.x += vel.vx
             pos.y += vel.vy
             comp.age += 1
+            # Evitar colisiones el primer frame para no impactar desde el spawn
+            if comp.age == 1:
+                continue
             # Expirar por lifespan
             if comp.age >= comp.lifespan:
                 world.remove_entity(eid)

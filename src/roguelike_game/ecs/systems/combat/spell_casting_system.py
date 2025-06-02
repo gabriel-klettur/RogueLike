@@ -81,23 +81,28 @@ class SpellCastingSystem:
                 npc_state = npcs[eid]
                 # Preparar nuevo estado de hechizo con contexto en sub-FSM
                 new_state = CastState()
-                # Para jugador, calcular dirección y spawn según posición del mouse
+                # Calcular posición central del jugador
                 pos_cmp = world.components['Position'][eid]
-                mx, my = pygame.mouse.get_pos()
-                # Convertir pantalla a mundo
-                wx = mx / camera.zoom + camera.offset_x
-                wy = my / camera.zoom + camera.offset_y
-                # Vector objetivo
-                dx = wx - pos_cmp.x
-                dy = wy - pos_cmp.y
-                length = (dx*dx + dy*dy) ** 0.5 or 1
-                dir_x, dir_y = dx / length, dy / length
-                # Posición de spawn ajustada por sprite
-                spawn_x, spawn_y = pos_cmp.x, pos_cmp.y
+                center_x = pos_cmp.x
+                center_y = pos_cmp.y
                 sprite_cmp = world.components['Sprite'].get(eid)
                 if sprite_cmp:
                     w, h = sprite_cmp.image.get_size()
-                    spawn_x += w / 2; spawn_y += h / 2
+                    center_x += w / 2
+                    center_y += h / 2
+                # Pantalla → mundo para el mouse
+                mx, my = pygame.mouse.get_pos()
+                wx = mx / camera.zoom + camera.offset_x
+                wy = my / camera.zoom + camera.offset_y
+                # Vector dirección desde el centro del jugador
+                dx = wx - center_x
+                dy = wy - center_y
+                length = (dx*dx + dy*dy) ** 0.5 or 1
+                dir_x, dir_y = dx / length, dy / length
+                # Desplazar spawn un poco adelante del jugador
+                offset = (max(w, h) / 2) if sprite_cmp else 0
+                spawn_x = center_x + dir_x * offset
+                spawn_y = center_y + dir_y * offset
                 # Guardar en contexto de la sub-FSM
                 ctx = new_state.spell_fsm.context
                 ctx['direction'] = (dir_x, dir_y)
