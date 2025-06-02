@@ -11,6 +11,7 @@ class PlayerDebugRenderSystem:
         self.debug = False
         self.last_pressed = False
         self.perf_log = perf_log
+        self.font = pygame.font.Font(None, 24)
 
     @benchmark(lambda self: self.perf_log, "4.2.2.PlayerDebugRenderSystem.update")
     def update(self, world, screen, camera):
@@ -39,3 +40,9 @@ class PlayerDebugRenderSystem:
         cx, cy = draw_sprite_center(screen, camera, pos, sprite)
         # Debug: dibujar destino de NPCs (chase target) en azul
         pygame.draw.circle(screen, (0, 0, 255), (cx, cy), 6, 1)
+        # Debug: dibujar estado FSM del jugador
+        state_cmp = comps.get('NPCState', {}).get(player_eid)
+        state_name = state_cmp.fsm.current_state.__class__.__name__ if state_cmp else 'NoState'
+        label = self.font.render(state_name, True, (255, 255, 255))
+        lw, lh = label.get_size()
+        screen.blit(label, (bbox.x + bbox.width/2 - lw/2, bbox.y - lh - 2))
