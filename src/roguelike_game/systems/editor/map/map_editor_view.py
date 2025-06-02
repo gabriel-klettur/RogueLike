@@ -48,26 +48,86 @@ class MapEditorView:
             screen.blit(surf, screen_tl)
             # borde
             pygame.draw.rect(screen, outline_color, (*screen_tl, *screen_size), 2)
+            # Highlight pending deletion
+            if self.state.pending_delete_zone == zone:
+                outline_color = (255, 0, 0)
+                fill_color = (255, 0, 0, 50)
             # etiqueta centrada y más grande
-            label = self.font.render(zone, True, (255, 255, 255))
-            # Escalar label para que quepa en la zona
-            label_w, label_h = label.get_size()
-            max_w, max_h = screen_size
-            if label_w > max_w or label_h > max_h:
-                scale = min(max_w / label_w, max_h / label_h)
-                new_size = (int(label_w * scale), int(label_h * scale))
-                label = pygame.transform.smoothscale(label, new_size)
-            # centrar label en la zona
-            label_rect = label.get_rect(
-                center=(screen_tl[0] + screen_size[0] // 2,
-                        screen_tl[1] + screen_size[1] // 2)
-            )
-            screen.blit(label, label_rect)
+            if self.state.renaming_zone == zone:
+                text = self.state.rename_input or ''
+                # calcular rect de zona en pantalla
+                px, py = ox * TILE_SIZE, oy * TILE_SIZE
+                pw, ph = zone_w * TILE_SIZE, zone_h * TILE_SIZE
+                screen_tl = camera.apply((px, py))
+                screen_size = camera.scale((pw, ph))
+                total_w = screen_size[0]
+                # renderizar texto de entrada
+                input_surf = self.font.render(text, True, (0, 0, 0))
+                text_h = input_surf.get_height()
+                padding_y = 4
+                box_h = max(text_h + padding_y * 2, BTN_H)
+                # calcular anchuras
+                accept_w = box_h * 2
+                input_w = max(20, total_w - accept_w - 5)
+                input_x = screen_tl[0]
+                input_y = screen_tl[1] + screen_size[1] - box_h - 5
+                input_rect = pygame.Rect(input_x, input_y, input_w, box_h)
+                # dibujar caja de entrada (blanca con borde negro)
+                pygame.draw.rect(screen, (255, 255, 255), input_rect)
+                pygame.draw.rect(screen, (0, 0, 0), input_rect, 2)
+                # dibujar texto
+                screen.blit(input_surf, (input_x + 5, input_y + (box_h - text_h) // 2))
+                self.state.rename_input_rect = input_rect
+                # dibujar botón de aceptar (azul profesional)
+                accept_rect = pygame.Rect(input_rect.right + 5, input_y, accept_w, box_h)
+                pygame.draw.rect(screen, (0, 120, 215), accept_rect)
+                pygame.draw.rect(screen, (255, 255, 255), accept_rect, 2)
+                btn_font = pygame.font.SysFont(None, int(box_h * 0.6))
+                ok_surf = btn_font.render("Aceptar", True, (255, 255, 255))
+                screen.blit(ok_surf, (accept_rect.centerx - ok_surf.get_width() // 2,
+                                      accept_rect.centery - ok_surf.get_height() // 2))
+                self.state.rename_accept_rect = accept_rect
+                # dibujar cursor parpadeante
+                now = pygame.time.get_ticks()
+                if (now // 500) % 2 == 0:
+                    caret_x = input_x + 5 + input_surf.get_width()
+                    caret_y1 = input_y + padding_y
+                    caret_y2 = input_y + box_h - padding_y
+                    pygame.draw.line(screen, (0, 0, 0), (caret_x, caret_y1), (caret_x, caret_y2), 2)
+            else:
+                label = self.font.render(zone, True, (255, 255, 255))
+                # Escalar label para que quepa en la zona
+                label_w, label_h = label.get_size()
+                max_w, max_h = screen_size
+                if label_w > max_w or label_h > max_h:
+                    scale = min(max_w / label_w, max_h / label_h)
+                    new_size = (int(label_w * scale), int(label_h * scale))
+                    label = pygame.transform.smoothscale(label, new_size)
+                # centrar label en la zona
+                label_rect = label.get_rect(
+                    center=(screen_tl[0] + screen_size[0] // 2,
+                            screen_tl[1] + screen_size[1] // 2)
+                )
+                screen.blit(label, label_rect)
         # Render Map Editor toolbar and dropdown
         toolbar = self.controller.toolbar
         # Draw toolbar icon
         screen.blit(toolbar.icon, (toolbar.x, toolbar.y))
         toolbar.icon_rect = pygame.Rect(toolbar.x, toolbar.y, toolbar.size, toolbar.size)
+        # Draw Add Zone button
+        add_x = toolbar.x
+        add_y = toolbar.y + toolbar.size + toolbar.padding
+        screen.blit(toolbar.add_icon, (add_x, add_y))
+        toolbar.add_rect = pygame.Rect(add_x, add_y, toolbar.size, toolbar.size)
+        if self.state.add_zone_mode:
+            pygame.draw.rect(screen, (0, 255, 0), toolbar.add_rect, 3)
+        # Draw Delete Zone button
+        del_x = toolbar.x
+        del_y = toolbar.y + 2 * (toolbar.size + toolbar.padding)
+        screen.blit(toolbar.delete_icon, (del_x, del_y))
+        toolbar.delete_rect = pygame.Rect(del_x, del_y, toolbar.size, toolbar.size)
+        if self.state.delete_zone_mode:
+            pygame.draw.rect(screen, (255, 0, 0), toolbar.delete_rect, 3)
         # Draw tile layer visibility dropdown
         if self.state.layers_view_open:
             font = pygame.font.SysFont("Arial", 14)
@@ -94,3 +154,37 @@ class MapEditorView:
                         "Buildings")
                 text_surf = font.render(text, True, (255, 255, 255))
                 screen.blit(text_surf, (drop_x + 5, ry + (BTN_H - text_surf.get_height()) // 2))
+        # Render delete confirmation dialog
+        if self.state.confirm_delete_zone and self.state.pending_delete_zone:
+            sw, sh = screen.get_size()
+            msg = f"Eliminar zona {self.state.pending_delete_zone}?"
+            font = pygame.font.SysFont(None, 24)
+            text_surf = font.render(msg, True, (255, 255, 255))
+            box_w = text_surf.get_width() + 20
+            box_h = text_surf.get_height() + 60
+            box_x = (sw - box_w) // 2
+            box_y = (sh - box_h) // 2
+            box_rect = pygame.Rect(box_x, box_y, box_w, box_h)
+            pygame.draw.rect(screen, (0, 0, 0), box_rect)
+            pygame.draw.rect(screen, (255, 255, 255), box_rect, 2)
+            screen.blit(text_surf, (box_x + 10, box_y + 10))
+            # Yes button
+            yes_w, yes_h = 60, 30
+            yes_x = box_x + 10
+            yes_y = box_y + box_h - yes_h - 10
+            yes_rect = pygame.Rect(yes_x, yes_y, yes_w, yes_h)
+            pygame.draw.rect(screen, (0, 200, 0), yes_rect)
+            pygame.draw.rect(screen, (255, 255, 255), yes_rect, 2)
+            yes_surf = font.render("Sí", True, (255, 255, 255))
+            screen.blit(yes_surf, (yes_rect.centerx - yes_surf.get_width() // 2, yes_rect.centery - yes_surf.get_height() // 2))
+            self.state.confirm_yes_rect = yes_rect
+            # No button
+            no_w, no_h = 60, 30
+            no_x = yes_rect.right + 10
+            no_y = yes_y
+            no_rect = pygame.Rect(no_x, no_y, no_w, no_h)
+            pygame.draw.rect(screen, (200, 0, 0), no_rect)
+            pygame.draw.rect(screen, (255, 255, 255), no_rect, 2)
+            no_surf = font.render("No", True, (255, 255, 255))
+            screen.blit(no_surf, (no_rect.centerx - no_surf.get_width() // 2, no_rect.centery - no_surf.get_height() // 2))
+            self.state.confirm_no_rect = no_rect
