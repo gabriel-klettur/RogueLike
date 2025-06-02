@@ -6,7 +6,8 @@
       "speed": 30,
       "damage": 20,
       "lifespan": 60,
-      "sprite": "assets/projectiles/fireball.png"
+      "sprite": "assets/projectiles/fireball.png",
+      "scale": 0.5
     },
     "iceball": {
       "prepare_duration": 0.2,
@@ -15,7 +16,8 @@
       "speed": 15,
       "damage": 10,
       "lifespan": 60,
-      "sprite": "assets/projectiles/iceball.png"
+      "sprite": "assets/projectiles/iceball.png",
+      "scale": 1.0
     },
     "lightball": {
       "prepare_duration": 0.2,
@@ -24,7 +26,8 @@
       "speed": 60,
       "damage": 10,
       "lifespan": 60,
-      "sprite": "assets/projectiles/lightball.png"
+      "sprite": "assets/projectiles/lightball.png",
+      "scale": 1.0
     },
     "darkball": {
       "prepare_duration": 0.2,
@@ -33,6 +36,7 @@
       "speed": 10,
       "damage": 10,
       "lifespan": 60,
-      "sprite": "assets/projectiles/darkball.png"
+      "sprite": "assets/projectiles/darkball.png",
+      "scale": 1.0
     }
 }
