@@ -13,26 +13,30 @@ class CastState(State):
         self.spawn_pos: tuple[float,float] = (0, 0)
 
     def enter(self, entity):
-        # Calcular dirección y posición de spawn de la fireball
-        world = entity.world
-        pos_cmp = world.components['Position'][entity.id]
-        player_pos = world.player_position
-        if player_pos:
-            dx = player_pos.x - pos_cmp.x
-            dy = player_pos.y - pos_cmp.y
-            length = (dx*dx + dy*dy) ** 0.5 or 1
-            self.direction = (dx/length, dy/length)
+        # Calcular dirección y posición de spawn de la fireball (usa contexto si fue proporcionado)
+        ctx = self.spell_fsm.context
+        if 'direction' in ctx and 'spawn_pos' in ctx:
+            self.direction, self.spawn_pos = ctx['direction'], ctx['spawn_pos']
         else:
-            self.direction = (1, 0)
-        spawn_x, spawn_y = pos_cmp.x, pos_cmp.y
-        sprite_cmp = world.components['Sprite'].get(entity.id)
-        if sprite_cmp:
-            w, h = sprite_cmp.image.get_size()
-            spawn_x += w/2; spawn_y += h/2
-        self.spawn_pos = (spawn_x, spawn_y)
-        # Almacenar dirección y posición en contexto de la sub-FSM
-        self.spell_fsm.context['direction'] = self.direction
-        self.spell_fsm.context['spawn_pos'] = self.spawn_pos
+            world = entity.world
+            pos_cmp = world.components['Position'][entity.id]
+            player_pos = world.player_position
+            if player_pos:
+                dx = player_pos.x - pos_cmp.x
+                dy = player_pos.y - pos_cmp.y
+                length = (dx*dx + dy*dy) ** 0.5 or 1
+                self.direction = (dx/length, dy/length)
+            else:
+                self.direction = (1, 0)
+            spawn_x, spawn_y = pos_cmp.x, pos_cmp.y
+            sprite_cmp = world.components['Sprite'].get(entity.id)
+            if sprite_cmp:
+                w, h = sprite_cmp.image.get_size()
+                spawn_x += w/2; spawn_y += h/2
+            self.spawn_pos = (spawn_x, spawn_y)
+            # Almacenar dirección y posición en contexto de la sub-FSM para ReleaseSpellState y ResolveSpellState
+            self.spell_fsm.context['direction'] = self.direction
+            self.spell_fsm.context['spawn_pos'] = self.spawn_pos
         # Iniciar sub-FSM de hechizo
         self.spell_fsm.current_state.enter(entity)
 

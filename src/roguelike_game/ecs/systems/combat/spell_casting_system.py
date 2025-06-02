@@ -57,8 +57,8 @@ class SpellCastingSystem:
             intent = wants[eid]
             print(f"\n[SpellCastingSystem] Procesando entidad {eid} con intención de hechizo '{intent.spell}'.")
 
-            # 1) Si la entidad con intención está en 'npcs', se trata de un NPC
-            if eid in npcs:
+            # 1) Si la entidad con intención está en 'NPCState' y NO es jugador, se trata de un NPC
+            if eid in npcs and eid != world.player_entity:
                 print(f"[SpellCastingSystem] Entidad {eid} es NPC. Iniciando sub-FSM de hechizo.")
                 # Obtener el componente NPCState (que contiene la FSM)
                 npc_state = npcs[eid]
@@ -81,6 +81,27 @@ class SpellCastingSystem:
                 npc_state = npcs[eid]
                 # Preparar nuevo estado de hechizo con contexto en sub-FSM
                 new_state = CastState()
+                # Para jugador, calcular dirección y spawn según posición del mouse
+                pos_cmp = world.components['Position'][eid]
+                mx, my = pygame.mouse.get_pos()
+                # Convertir pantalla a mundo
+                wx = mx / camera.zoom + camera.offset_x
+                wy = my / camera.zoom + camera.offset_y
+                # Vector objetivo
+                dx = wx - pos_cmp.x
+                dy = wy - pos_cmp.y
+                length = (dx*dx + dy*dy) ** 0.5 or 1
+                dir_x, dir_y = dx / length, dy / length
+                # Posición de spawn ajustada por sprite
+                spawn_x, spawn_y = pos_cmp.x, pos_cmp.y
+                sprite_cmp = world.components['Sprite'].get(eid)
+                if sprite_cmp:
+                    w, h = sprite_cmp.image.get_size()
+                    spawn_x += w / 2; spawn_y += h / 2
+                # Guardar en contexto de la sub-FSM
+                ctx = new_state.spell_fsm.context
+                ctx['direction'] = (dir_x, dir_y)
+                ctx['spawn_pos'] = (spawn_x, spawn_y)
                 new_state.spell_fsm.context['spell'] = intent.spell
                 print(f"[SpellCastingSystem] Jugador {eid} switch FSM a CastState con hechizo '{intent.spell}'.")
                 npc_state.fsm.change_state(new_state, entity_proxy)
