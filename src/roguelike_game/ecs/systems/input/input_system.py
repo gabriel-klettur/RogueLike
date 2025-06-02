@@ -11,6 +11,7 @@ from roguelike_game.ecs.components.ai.wants_to_melee import WantsToMelee
 from roguelike_game.ecs.components.ai.wants_to_cast import WantsToCastSpell
 from roguelike_game.config_player import PLAYER_SPEED
 from roguelike_engine.utils.benchmark import benchmark
+from roguelike_game.ecs.fsm.states.aggro_state import AggroState
 
 class InputSystem:
     """
@@ -43,17 +44,20 @@ class InputSystem:
             # Mapear habilidades Q, E y click
             inp.skill_q = bool(keys[pygame.K_q])
             inp.skill_e = bool(keys[pygame.K_e])
+            # Actualizar estado del click
             inp.click = bool(pygame.mouse.get_pressed()[0])
-            # Generar intenciones de hechizo
+            # Generar intenciones Q y E (solo una vez)
             if inp.skill_q:
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='firework')
                 inp.skill_q = False
             if inp.skill_e:
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='smoke')
                 inp.skill_e = False
+            # Generar intención de fireball solo si click y en AggroState (o primer disparo)
             if inp.click:
-                world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='fireball')
-                inp.click = False
+                state = world.components.get('NPCState', {}).get(eid)
+                if state is None or isinstance(state.fsm.current_state, AggroState):
+                    world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='fireball')
             # Procesar ataque: tecla SPACE
             if keys[pygame.K_SPACE]:
                 now = time.time()

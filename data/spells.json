@@ -2,7 +2,7 @@
     "fireball": {
       "prepare_duration": 0.0,
       "channel_duration": 0.0,
-      "cooldown_duration": 0.25,
+      "cooldown_duration": 0.33,
       "speed": 30,
       "damage": 20,
       "lifespan": 60,

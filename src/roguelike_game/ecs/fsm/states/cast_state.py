@@ -45,12 +45,8 @@ class CastState(State):
         self.spell_fsm.update(entity, dt)
         # Cuando la sub-FSM vuelve a AggroState, procesar según tipo de entidad
         if isinstance(self.spell_fsm.current_state, AggroState):
-            # Si es el jugador, finalizamos su FSM de hechizo
-            if entity.id == entity.world.player_entity:
-                entity.world.components['NPCState'].pop(entity.id, None)
-            else:
-                # Para NPCs, volvemos al flujo AI normal (Aggro)
-                entity.world.components['NPCState'][entity.id].fsm.change_state(AggroState(), entity)
+            # Para NPCs y jugador: volver a AggroState tras completar el ciclo de hechizo
+            entity.world.components['NPCState'][entity.id].fsm.change_state(AggroState(), entity)
 
     def exit(self, entity):
         pass

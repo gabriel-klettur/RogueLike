@@ -14,6 +14,9 @@ class AggroState(State):
 
     def execute(self, entity, dt):
         world = entity.world
+        # Ignorar Aggro para jugador sin componente MeleeRange
+        if entity.id == world.player_entity:
+            return
         # Verificar muerte
         hp_cmp = world.components['Health'][entity]
         if hp_cmp.current_hp <= 0:

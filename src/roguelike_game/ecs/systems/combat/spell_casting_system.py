@@ -5,6 +5,7 @@ y jugadores.
 """
 from roguelike_game.ecs.fsm.states.cast_state import CastState
 from roguelike_game.ecs.systems.fsm.fsm_system import _EntityProxy
+from roguelike_game.ecs.fsm.states.aggro_state import AggroState
 from roguelike_game.ecs.components.fsm.npc_state import NPCState
 from roguelike_game.ecs.fsm.fsm import FiniteStateMachine
 import pygame
@@ -54,6 +55,12 @@ class SpellCastingSystem:
 
         # Iterar sobre una copia de las llaves, porque vamos a eliminar intenciones mientras iteramos
         for eid in list(wants.keys()):
+            # Ignorar intents mientras estemos en cualquier estado de casting/cooldown
+            state = npcs.get(eid)
+            if state and not isinstance(state.fsm.current_state, AggroState):
+                # Consumir intención mientras no estemos en AggroState
+                wants.pop(eid, None)
+                continue
             intent = wants[eid]
             print(f"\n[SpellCastingSystem] Procesando entidad {eid} con intención de hechizo '{intent.spell}'.")
 
