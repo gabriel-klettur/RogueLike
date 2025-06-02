@@ -27,10 +27,6 @@ from roguelike_game.systems.effects.spells.firework_launch.model      import Fir
 from roguelike_game.systems.effects.spells.firework_launch.controller import FireworkLaunchController
 from roguelike_game.systems.effects.spells.firework_launch.view       import FireworkLaunchView
 
-# MVC: Fireball
-from roguelike_game.systems.effects.spells.fireball.model      import FireballModel
-from roguelike_game.systems.effects.spells.fireball.controller import FireballController
-from roguelike_game.systems.effects.spells.fireball.view       import FireballView
 
 # MVC: Lightning
 from roguelike_game.systems.effects.spells.lightning.model      import LightningModel
