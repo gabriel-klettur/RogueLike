@@ -40,14 +40,51 @@ class MapEditorController:
         self.map_manager.zone_rooms[new_key] = list(self.map_manager.zone_rooms.get(sel, []))
         self.map_manager.matrix = self.map_manager.matrix[:]  # placeholder
 
+    def add_zone(self, tx: int, ty: int) -> None:
+        """Agrega una nueva zona 50x50 alineada al grid de zonas."""
+        zone_w, zone_h = global_map_settings.zone_size
+        offx = (tx // zone_w) * zone_w
+        offy = (ty // zone_h) * zone_h
+        new_name = f"zone_{offx}_{offy}"
+        path = DATA_DIR + '/zones/zones.json'
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                offsets = json.load(f)
+        except Exception:
+            offsets = {}
+        # Nombre único
+        base = new_name; idx = 1
+        while new_name in offsets:
+            new_name = f"{base}_{idx}"; idx += 1
+        offsets[new_name] = [offx, offy]
+        # Persistir JSON
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(offsets, f, indent=2)
+        # Recargar offsets y mapa
+        global_map_settings.__dict__.pop('zone_offsets', None)
+        self.map_manager.reload_map()
+        self.state.selected_zone = new_name
+        print(f"DEBUG [Controller.add_zone] Added zone {new_name} at offset {(offx, offy)}")
+
     def delete_zone(self):
         sel = self.state.selected_zone
         if not sel or sel == 'lobby':
             return
-        # eliminar de offsets y matrix
-        global_map_settings.additional_zones.pop(sel, None)
+        path = DATA_DIR + '/zones/zones.json'
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                offsets = json.load(f)
+        except Exception:
+            offsets = {}
+        offsets.pop(sel, None)
+        # Persistir JSON
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(offsets, f, indent=2)
+        # Recargar offsets y mapa
         global_map_settings.__dict__.pop('zone_offsets', None)
-        self.map_manager.expand_zone('', '', '')  # refrescar offsets
+        self.map_manager.reload_map()
+        self.state.selected_zone = None
+        print(f"DEBUG [Controller.delete_zone] Removed zone {sel}")
 
     def rename_zone(self, old_name: str, new_name: str) -> None:
         """
@@ -114,16 +151,36 @@ class MapToolbarController:
         self.editor = editor_state
         ICON_PATH = "assets/ui/layers_view_tool.png"
         self.icon = load_image(ICON_PATH, (64, 64))
+        # Add Zone and Delete Zone icons
+        self.add_icon = load_image("assets/ui/add_zone.png", (64, 64))
+        self.delete_icon = load_image("assets/ui/delete_zone.png", (64, 64))
         self.x, self.y = 10, 10
         self.size = 64
         self.padding = 8
+        # Icon rects for each tool
         self.icon_rect: pygame.Rect | None = None
+        self.add_rect: pygame.Rect | None = None
+        self.delete_rect: pygame.Rect | None = None
         self.option_rects: dict[Layer, pygame.Rect] = {}
 
     def handle_click(self, mouse_pos) -> bool:
         # Toggle dropdown when clicking icon
         if self.icon_rect and self.icon_rect.collidepoint(mouse_pos):
             self.editor.layers_view_open = not self.editor.layers_view_open
+            return True
+        # Handle Add Zone button click
+        if self.add_rect and self.add_rect.collidepoint(mouse_pos):
+            # Toggle add zone mode, disable delete mode
+            self.editor.add_zone_mode = not self.editor.add_zone_mode
+            self.editor.delete_zone_mode = False
+            print(f"[DEBUG][Toolbar] add_zone_mode set to {self.editor.add_zone_mode}")
+            return True
+        # Handle Delete Zone button click
+        if self.delete_rect and self.delete_rect.collidepoint(mouse_pos):
+            # Toggle delete zone mode, disable add mode
+            self.editor.delete_zone_mode = not self.editor.delete_zone_mode
+            self.editor.add_zone_mode = False
+            print(f"[DEBUG][Toolbar] delete_zone_mode set to {self.editor.delete_zone_mode}")
             return True
         # Handle clicks on dropdown items
         if self.editor.layers_view_open:

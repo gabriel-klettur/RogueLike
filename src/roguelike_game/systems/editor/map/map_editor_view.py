@@ -48,6 +48,10 @@ class MapEditorView:
             screen.blit(surf, screen_tl)
             # borde
             pygame.draw.rect(screen, outline_color, (*screen_tl, *screen_size), 2)
+            # Highlight pending deletion
+            if self.state.pending_delete_zone == zone:
+                outline_color = (255, 0, 0)
+                fill_color = (255, 0, 0, 50)
             # etiqueta centrada y más grande
             if self.state.renaming_zone == zone:
                 text = self.state.rename_input or ''
@@ -110,6 +114,20 @@ class MapEditorView:
         # Draw toolbar icon
         screen.blit(toolbar.icon, (toolbar.x, toolbar.y))
         toolbar.icon_rect = pygame.Rect(toolbar.x, toolbar.y, toolbar.size, toolbar.size)
+        # Draw Add Zone button
+        add_x = toolbar.x
+        add_y = toolbar.y + toolbar.size + toolbar.padding
+        screen.blit(toolbar.add_icon, (add_x, add_y))
+        toolbar.add_rect = pygame.Rect(add_x, add_y, toolbar.size, toolbar.size)
+        if self.state.add_zone_mode:
+            pygame.draw.rect(screen, (0, 255, 0), toolbar.add_rect, 3)
+        # Draw Delete Zone button
+        del_x = toolbar.x
+        del_y = toolbar.y + 2 * (toolbar.size + toolbar.padding)
+        screen.blit(toolbar.delete_icon, (del_x, del_y))
+        toolbar.delete_rect = pygame.Rect(del_x, del_y, toolbar.size, toolbar.size)
+        if self.state.delete_zone_mode:
+            pygame.draw.rect(screen, (255, 0, 0), toolbar.delete_rect, 3)
         # Draw tile layer visibility dropdown
         if self.state.layers_view_open:
             font = pygame.font.SysFont("Arial", 14)
@@ -136,3 +154,37 @@ class MapEditorView:
                         "Buildings")
                 text_surf = font.render(text, True, (255, 255, 255))
                 screen.blit(text_surf, (drop_x + 5, ry + (BTN_H - text_surf.get_height()) // 2))
+        # Render delete confirmation dialog
+        if self.state.confirm_delete_zone and self.state.pending_delete_zone:
+            sw, sh = screen.get_size()
+            msg = f"Eliminar zona {self.state.pending_delete_zone}?"
+            font = pygame.font.SysFont(None, 24)
+            text_surf = font.render(msg, True, (255, 255, 255))
+            box_w = text_surf.get_width() + 20
+            box_h = text_surf.get_height() + 60
+            box_x = (sw - box_w) // 2
+            box_y = (sh - box_h) // 2
+            box_rect = pygame.Rect(box_x, box_y, box_w, box_h)
+            pygame.draw.rect(screen, (0, 0, 0), box_rect)
+            pygame.draw.rect(screen, (255, 255, 255), box_rect, 2)
+            screen.blit(text_surf, (box_x + 10, box_y + 10))
+            # Yes button
+            yes_w, yes_h = 60, 30
+            yes_x = box_x + 10
+            yes_y = box_y + box_h - yes_h - 10
+            yes_rect = pygame.Rect(yes_x, yes_y, yes_w, yes_h)
+            pygame.draw.rect(screen, (0, 200, 0), yes_rect)
+            pygame.draw.rect(screen, (255, 255, 255), yes_rect, 2)
+            yes_surf = font.render("Sí", True, (255, 255, 255))
+            screen.blit(yes_surf, (yes_rect.centerx - yes_surf.get_width() // 2, yes_rect.centery - yes_surf.get_height() // 2))
+            self.state.confirm_yes_rect = yes_rect
+            # No button
+            no_w, no_h = 60, 30
+            no_x = yes_rect.right + 10
+            no_y = yes_y
+            no_rect = pygame.Rect(no_x, no_y, no_w, no_h)
+            pygame.draw.rect(screen, (200, 0, 0), no_rect)
+            pygame.draw.rect(screen, (255, 255, 255), no_rect, 2)
+            no_surf = font.render("No", True, (255, 255, 255))
+            screen.blit(no_surf, (no_rect.centerx - no_surf.get_width() // 2, no_rect.centery - no_surf.get_height() // 2))
+            self.state.confirm_no_rect = no_rect

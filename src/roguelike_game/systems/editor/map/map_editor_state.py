@@ -9,6 +9,12 @@ class MapEditorState:
         self.active = False
         self.selected_zone = None
         self.hidden_zones: set[str] = set()
+        self.add_zone_mode: bool = False  # Adding zone mode
+        self.delete_zone_mode: bool = False  # Deleting zone mode
+        self.confirm_delete_zone: bool = False  # Confirm deletion dialog active
+        self.pending_delete_zone: str | None = None  # Zone awaiting deletion confirmation
+        self.confirm_yes_rect: pygame.Rect | None = None  # Yes button for delete confirm
+        self.confirm_no_rect: pygame.Rect | None = None   # No button for delete confirm
         self.dragging: str | None = None
         self.drag_offset: tuple[int,int] = (0, 0)
         # Toggle dropdown for zone visibility

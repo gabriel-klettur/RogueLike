@@ -3,12 +3,20 @@
     50,
     100
   ],
-  "empty_left": [
+  "zone_100_100": [
+    100,
+    100
+  ],
+  "Batte Area": [
     0,
     50
   ],
-  "lobby sexy": [
+  "Main Lobby": [
     50,
+    50
+  ],
+  "Forest": [
+    100,
     50
   ]
 }

@@ -40,6 +40,34 @@ class MapEditorEventHandler:
                 camera.offset_y = wy - my / camera.zoom
                 return
             if ev.type == pygame.KEYDOWN:
+                # Si estamos en modo renombrar, capturar solo las teclas de renombrado
+                if self.state.renaming_zone:
+                    if ev.key == pygame.K_RETURN:
+                        old_zone = self.state.renaming_zone
+                        print(f"DEBUG: Enter pressed in renaming mode. old_name={old_zone}, input_buffer='{self.state.rename_input}'")
+                        new_name = self.state.rename_input.strip()
+                        print(f"DEBUG: renaming to new_name={new_name}")
+                        self.controller.rename_zone(old_zone, new_name)
+                        # Actualizar propiedades de zona en edificios
+                        for b in self.manager.game.buildings.buildings:
+                            if getattr(b, 'zone', None) == old_zone:
+                                b.zone = new_name
+                                print(f"DEBUG: building {b} zone updated from {old_zone} to {new_name}")
+                        save_buildings_to_json(self.manager.game.buildings.buildings, z_state=self.manager.game.z_state, zone_offsets=global_map_settings.zone_offsets)
+                        print("DEBUG: persisted buildings_data.json")
+                        print("DEBUG: rename_zone executed")
+                        self.state.selected_zone = new_name
+                        print(f"DEBUG: selected_zone updated to {new_name}")
+                        self.state.renaming_zone = None
+                        self.state.rename_input = ""
+                        print("DEBUG: exited renaming mode")
+                        return
+                    elif ev.key == pygame.K_BACKSPACE:
+                        self.state.rename_input = self.state.rename_input[:-1]
+                        return
+                    elif ev.unicode and ev.unicode.isprintable():
+                        self.state.rename_input += ev.unicode
+                        return
                 # Toggle Map Editor OFF via F11
                 if ev.key == pygame.K_F11:
                     self.manager.toggle()
@@ -69,34 +97,6 @@ class MapEditorEventHandler:
                 if ev.key == pygame.K_h and self.state.selected_zone:
                     self.controller.toggle_hide_zone(self.state.selected_zone)
                     return
-                if self.state.renaming_zone:
-                    # Handle rename input
-                    if ev.key == pygame.K_RETURN:
-                        old_zone = self.state.renaming_zone
-                        print(f"DEBUG: Enter pressed in renaming mode. old_name={old_zone}, input_buffer='{self.state.rename_input}'")
-                        new_name = self.state.rename_input.strip()
-                        print(f"DEBUG: renaming to new_name={new_name}")
-                        self.controller.rename_zone(old_zone, new_name)
-                        # Update buildings zone property
-                        for b in self.manager.game.buildings.buildings:
-                            if getattr(b, 'zone', None) == old_zone:
-                                b.zone = new_name
-                                print(f"DEBUG: building {b} zone updated from {old_zone} to {new_name}")
-                        save_buildings_to_json(self.manager.game.buildings.buildings, z_state=self.manager.game.z_state, zone_offsets=global_map_settings.zone_offsets)
-                        print("DEBUG: persisted buildings_data.json")
-                        print("DEBUG: rename_zone executed")
-                        self.state.selected_zone = new_name
-                        print(f"DEBUG: selected_zone updated to {new_name}")
-                        self.state.renaming_zone = None
-                        self.state.rename_input = ""
-                        print("DEBUG: exited renaming mode")
-                        return
-                    elif ev.key == pygame.K_BACKSPACE:
-                        self.state.rename_input = self.state.rename_input[:-1]
-                        return
-                    elif ev.unicode and ev.unicode.isprintable():
-                        self.state.rename_input += ev.unicode
-                        return
             # If renaming mode, process accept click
             if self.state.renaming_zone and ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
                 print(f"DEBUG: processing accept click at {ev.pos} for renaming_zone={self.state.renaming_zone}")
@@ -122,6 +122,45 @@ class MapEditorEventHandler:
                 return
             # Selección y arrastre
             elif ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
+                # Handle deletion confirmation dialog
+                if self.state.confirm_delete_zone:
+                    if self.state.confirm_yes_rect and self.state.confirm_yes_rect.collidepoint(ev.pos):
+                        zone = self.state.pending_delete_zone
+                        self.state.selected_zone = zone
+                        self.controller.delete_zone()
+                        self.state.confirm_delete_zone = False
+                        self.state.pending_delete_zone = None
+                        self.state.confirm_yes_rect = None
+                        self.state.confirm_no_rect = None
+                        return
+                    if self.state.confirm_no_rect and self.state.confirm_no_rect.collidepoint(ev.pos):
+                        self.state.confirm_delete_zone = False
+                        self.state.pending_delete_zone = None
+                        self.state.confirm_yes_rect = None
+                        self.state.confirm_no_rect = None
+                        return
+                # Handle add zone mode (click to add 50x50 zone)
+                if self.state.add_zone_mode:
+                    world_x = ev.pos[0] / camera.zoom + camera.offset_x
+                    world_y = ev.pos[1] / camera.zoom + camera.offset_y
+                    tx = int(world_x) // TILE_SIZE
+                    ty = int(world_y) // TILE_SIZE
+                    self.controller.add_zone(tx, ty)
+                    self.state.add_zone_mode = False
+                    return
+                # Handle delete zone mode (click to select zone for deletion)
+                if self.state.delete_zone_mode:
+                    world_x = ev.pos[0] / camera.zoom + camera.offset_x
+                    world_y = ev.pos[1] / camera.zoom + camera.offset_y
+                    tx = int(world_x) // TILE_SIZE
+                    ty = int(world_y) // TILE_SIZE
+                    for zn, (ox, oy) in global_map_settings.zone_offsets.items():
+                        w, h = global_map_settings.zone_size
+                        if ox <= tx < ox + w and oy <= ty < oy + h:
+                            self.state.pending_delete_zone = zn
+                            self.state.confirm_delete_zone = True
+                            self.state.delete_zone_mode = False
+                            return
                 # compute world tile coords
                 world_x = ev.pos[0] / camera.zoom + camera.offset_x
                 world_y = ev.pos[1] / camera.zoom + camera.offset_y
