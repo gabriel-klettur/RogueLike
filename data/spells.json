@@ -42,5 +42,17 @@
       "lifespan": 60,
       "sprite": "assets/projectiles/darkball.png",
       "scale": 0.1
+    },
+    "healing_aura": {
+      "type": "aura",
+      "prepare_duration": 0.2,
+      "channel_duration": 0.5,
+      "cooldown_duration": 1.0,
+      "radius": 100,
+      "buff": { "heal_per_second": 20 },
+      "duration": 8.0,
+      "vfx": "healing_ring",
+      "sprite": null,
+      "scale": 0.3
     }
 }

@@ -12,68 +12,10 @@ def handle_keyboard(event, state, camera, clock, menu, entities, effects, tiles_
         if event.key == pygame.K_ESCAPE:
             menu.show_menu = not menu.show_menu
 
-        elif event.key == pygame.K_q:
-            entities.player.restore_all()
-            effects.spawn_healing_aura(clock, entities)
-            entities.player.stats.last_restore_time = time.time()
-
         elif menu.show_menu:
             result = menu.handle_input(event)
             if result:
                 menu.execute_menu_option(result, state)
-
-        # ---------- HABILIDADES DEL JUGADOR ---------- #
-        elif event.key == pygame.K_1:
-            if entities.player.stats.activate_shield():
-                effects.spawn_magic_shield(entities)
-                entities.player.stats.last_shield_time = time.time()
-
-        elif event.key == pygame.K_f:
-            effects.spawn_firework(camera, entities)
-            entities.player.stats.last_firework_time = time.time()
-
-        elif event.key == pygame.K_r:
-            effects.spawn_smoke_emitter(entities)
-            entities.player.stats.last_smoke_time = time.time()
-
-        elif event.key == pygame.K_t:
-            effects.spawn_smoke(camera, entities)
-            entities.player.stats.last_smoke_time = time.time()
-
-        elif event.key == pygame.K_z:
-            mx, my = pygame.mouse.get_pos()
-            world_x = mx / camera.zoom + camera.offset_x
-            world_y = my / camera.zoom + camera.offset_y
-            effects.spawn_lightning((world_x, world_y), entities)
-            entities.player.stats.last_lightning_time = time.time()
-
-        elif event.key == pygame.K_x:
-            mx, my = pygame.mouse.get_pos()
-            wx = mx / camera.zoom + camera.offset_x
-            wy = my / camera.zoom + camera.offset_y
-            effects.spawn_arcane_flame(wx, wy)
-
-        elif event.key == pygame.K_v:
-            mx, my = pygame.mouse.get_pos()
-            wx = mx / camera.zoom + camera.offset_x
-            wy = my / camera.zoom + camera.offset_y
-            px, py = effects._player_center(entities.player)
-            dir_vec = pygame.math.Vector2(wx - px, wy - py)
-            if dir_vec.length():
-                dir_vec.normalize_ip()
-            effects.spawn_dash(entities.player, dir_vec)
-            entities.player.stats.last_dash_time = time.time()
-
-        elif event.key == pygame.K_e:
-            mx, my = pygame.mouse.get_pos()
-            world_x = mx / camera.zoom + camera.offset_x
-            world_y = my / camera.zoom + camera.offset_y
-            px, py = effects._player_center(entities.player)
-            dir_vec = pygame.math.Vector2(world_x - px, world_y - py)
-            if dir_vec.length():
-                dir_vec.normalize_ip()
-            effects.spawn_slash(dir_vec, entities)
-            entities.player.stats.last_slash_time = time.time()
 
         # ---------- TEST / DEBUG ---------- #
         elif event.key == pygame.K_F10:

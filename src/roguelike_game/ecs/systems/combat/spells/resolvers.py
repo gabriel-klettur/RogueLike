@@ -42,18 +42,44 @@ class ProjectileResolver(BaseSpellResolver):
             lifespan=cfg.get('lifespan', 0),
             caster=caster
         )
-        img = pygame.image.load(cfg.get('sprite')).convert_alpha()
-        world.components['Sprite'][fid] = Sprite(img)
-        world.components['Scale'][fid] = Scale(scale=cfg.get('scale', 1.0))
+        sprite_path = cfg.get('sprite')
+        if sprite_path:
+            img = pygame.image.load(sprite_path).convert_alpha()
+            world.components['Sprite'][fid] = Sprite(img)
+            world.components['Scale'][fid] = Scale(scale=cfg.get('scale', 1.0))
 
 class AuraResolver(BaseSpellResolver):
     def resolve(self, world, caster, spawn_meta, cfg, camera):
-        # Aplica un aura al caster: este es un stub, define AuraComponent
+        # Aplica un aura al caster
         from roguelike_game.ecs.components.abilities.aura_component import AuraComponent
         radius = cfg.get('radius', 100)
         buff = cfg.get('buff', {})
         duration = cfg.get('duration', 5.0)
         world.components.setdefault('AuraComponent', {})[caster] = AuraComponent(radius, buff, duration)
+        # Spawn healing particles VFX
+        if cfg.get('vfx') == 'healing_ring':
+            import random, math
+            from roguelike_game.ecs.components.particles.particle_component import ParticleComponent
+            # Center of caster
+            pos_cmp = world.components['Position'][caster]
+            cx, cy = pos_cmp.x, pos_cmp.y
+            sprite_cmp = world.components['Sprite'].get(caster)
+            if sprite_cmp:
+                w, h = sprite_cmp.image.get_size()
+                cx += w/2; cy += h/2
+            # Spawn configurable particle burst
+            count = cfg.get('particle_count', 20)
+            speed = cfg.get('particle_speed', 1.0)
+            color = tuple(cfg.get('particle_color', [0,255,100]))
+            size = cfg.get('particle_size', 3)
+            lifespan = cfg.get('particle_lifespan', 30)
+            for _ in range(count):
+                angle = random.random() * 2 * math.pi
+                dx = math.cos(angle) * speed
+                dy = math.sin(angle) * speed
+                pid = world.create_entity()
+                world.components['Position'][pid] = Position(cx, cy)
+                world.components['ParticleComponent'][pid] = ParticleComponent(dx, dy, color, size, lifespan)
 
 # Registro de resolutores por tipo de hechizo
 default_resolvers = {

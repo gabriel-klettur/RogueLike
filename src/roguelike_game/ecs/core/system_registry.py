@@ -16,7 +16,11 @@ from roguelike_game.ecs.systems.core.spawn_system import SpawnSystem
 from roguelike_game.ecs.systems.input.input_system import InputSystem
 from roguelike_game.ecs.systems.combat.spells.spell_casting_system import SpellCastingSystem
 from roguelike_game.ecs.systems.combat.spells.fireball_system import FireballSystem
+from roguelike_game.ecs.systems.combat.spells.aura_system import AuraSystem
+from roguelike_game.ecs.systems.particles.particle_system import ParticleSystem
 from roguelike_game.ecs.systems.rendering.combat.spells.fireball_render_system import FireballRenderSystem
+from roguelike_game.ecs.systems.rendering.particles.particle_render_system import ParticleRenderSystem
+from roguelike_game.ecs.systems.rendering.combat.spells.aura_render_system import AuraRenderSystem
 from roguelike_game.ecs.systems.rendering.player_debug_render_system import PlayerDebugRenderSystem
 from roguelike_game.ecs.systems.rendering.death_timer_bar_system import DeathTimerBarSystem
 from roguelike_game.ecs.systems.rendering.death_timer_debug_system import DeathTimerDebugSystem
@@ -34,7 +38,7 @@ def get_update_system_classes():
         FSMSystem,
         PlayerFacingSystem, FacingSystem, InputSystem,
         MovementCollisionSystem,
-        MeleeCombatSystem, SpellCastingSystem, FireballSystem,
+        MeleeCombatSystem, SpellCastingSystem, AuraSystem, ParticleSystem, FireballSystem,
         TrailSystem,
         AnimationSystem, FlashSystem, SpawnSystem,
     ]
@@ -47,7 +51,7 @@ def get_render_system_classes():
     base = [
         HealthBarSystem, NamePlateSystem,
         CollisionDebugSystem,
-        FireballRenderSystem,
+        FireballRenderSystem, ParticleRenderSystem, AuraRenderSystem,
         ChaseDebugSystem,
         PlayerDebugRenderSystem,
         DeathTimerBarSystem,

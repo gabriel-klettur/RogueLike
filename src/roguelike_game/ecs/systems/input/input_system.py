@@ -45,6 +45,7 @@ class InputSystem:
             # Mapear habilidades Q, E y click
             inp.skill_q = bool(keys[pygame.K_q])
             inp.skill_e = bool(keys[pygame.K_e])
+            inp.skill_x = bool(keys[pygame.K_x])
             # Actualizar estado del click
             inp.click = bool(pygame.mouse.get_pressed()[0])
             # Generar intenciones Q y E (solo una vez)
@@ -56,6 +57,10 @@ class InputSystem:
                 print(f"[DEBUG][{time.time():.3f}] eid={eid} skill_e -> smoke")
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='smoke')
                 inp.skill_e = False
+            if inp.skill_x:
+                print(f"[DEBUG][{time.time():.3f}] eid={eid} skill_x -> healing_aura")
+                world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='healing_aura')
+                inp.skill_x = False
             # Generar intención de fireball solo si click y en AggroState (o primer disparo)
             if inp.click:
                 print(f"[DEBUG][{time.time():.3f}] eid={eid} click -> fireball")
