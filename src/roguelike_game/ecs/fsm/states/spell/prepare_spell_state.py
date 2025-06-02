@@ -2,7 +2,8 @@ from roguelike_game.ecs.fsm.state import State
 import time
 from roguelike_game.ecs.fsm.states.spell.channel_spell_state import ChannelSpellState
 from roguelike_game.config.spells_config import SPELLS
-cfg = SPELLS['pixel_fire']
+
+cfg = SPELLS['fireball']
 PREPARE_DURATION = cfg['prepare_duration']
 
 class PrepareSpellState(State):

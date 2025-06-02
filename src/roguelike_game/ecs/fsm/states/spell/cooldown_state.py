@@ -3,7 +3,7 @@ from roguelike_game.ecs.fsm.states.aggro_state import AggroState
 import time
 from roguelike_game.config.spells_config import SPELLS
 
-cfg = SPELLS['pixel_fire']
+cfg = SPELLS['fireball']
 COOLDOWN_DURATION = cfg['cooldown_duration']  # segundos de enfriamiento
 
 class CooldownState(State):

@@ -6,7 +6,7 @@ from roguelike_game.ecs.components.rendering.sprite import Sprite
 from roguelike_game.ecs.fsm.states.spell.resolve_spell_state import ResolveSpellState
 from roguelike_game.config.spells_config import SPELLS
 
-cfg = SPELLS['pixel_fire']
+cfg = SPELLS['fireball']
 
 class ReleaseSpellState(State):
     def enter(self, entity):
