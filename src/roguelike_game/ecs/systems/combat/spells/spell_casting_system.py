@@ -10,11 +10,6 @@ from roguelike_game.ecs.components.fsm.npc_state import NPCState
 from roguelike_game.ecs.fsm.fsm import FiniteStateMachine
 import pygame
 
-from roguelike_game.config.spells_config import SPELLS
-from roguelike_game.ecs.components.transform.position import Position
-from roguelike_game.ecs.components.transform.velocity import Velocity
-from roguelike_game.ecs.components.abilities.fireball_component import FireballComponent
-from roguelike_game.ecs.components.rendering.sprite import Sprite
 from roguelike_engine.utils.benchmark import benchmark
 
 

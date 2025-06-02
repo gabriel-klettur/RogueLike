@@ -32,7 +32,7 @@ class SpawnNPCManager:
         spawned_rects = []
 
         # 3) Spawn en LOBBY
-        positions = find_spawn_positions(self.map_manager, self.buildings, lobby_offset, zone_size, neighbor_padding=3, sample_count=100)
+        positions = find_spawn_positions(self.map_manager, self.buildings, lobby_offset, zone_size, neighbor_padding=3, sample_count=10)
         filtered_positions = []
         for tx, ty in positions:
             px, py = _calculate_position(tx, ty, cfg, sprite)

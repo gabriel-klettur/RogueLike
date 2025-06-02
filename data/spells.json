@@ -2,7 +2,7 @@
     "fireball": {
       "prepare_duration": 0.0,
       "channel_duration": 0.0,
-      "cooldown_duration": 0.33,
+      "cooldown_duration": 0.05,
       "speed": 30,
       "damage": 20,
       "lifespan": 60,
@@ -20,12 +20,12 @@
       "scale": 0.1
     },
     "lightball": {
-      "prepare_duration": 0.2,
-      "channel_duration": 0.5,
-      "cooldown_duration": 1.0,
+      "prepare_duration": 0.0,
+      "channel_duration": 0.0,
+      "cooldown_duration": 0.001,
       "speed": 60,
       "damage": 10,
-      "lifespan": 60,
+      "lifespan": 120,
       "sprite": "assets/projectiles/lightball.png",
       "scale": 0.1
     },

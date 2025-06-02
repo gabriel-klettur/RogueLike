@@ -57,7 +57,7 @@ class InputSystem:
             if inp.click:
                 state = world.components.get('NPCState', {}).get(eid)
                 if state is None or isinstance(state.fsm.current_state, AggroState):
-                    world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='fireball')
+                    world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='lightball')
             # Procesar ataque: tecla SPACE
             if keys[pygame.K_SPACE]:
                 now = time.time()
