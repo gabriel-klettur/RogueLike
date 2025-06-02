@@ -52,7 +52,7 @@ class InputSystem:
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='smoke')
                 inp.skill_e = False
             if inp.click:
-                world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='pixel_fire')
+                world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='fireball')
                 inp.click = False
             # Procesar ataque: tecla SPACE
             if keys[pygame.K_SPACE]:

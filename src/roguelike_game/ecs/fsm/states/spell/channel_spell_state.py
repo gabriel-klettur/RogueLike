@@ -2,7 +2,9 @@ from roguelike_game.ecs.fsm.state import State
 import time
 from roguelike_game.ecs.fsm.states.spell.release_spell_state import ReleaseSpellState
 from roguelike_game.config.spells_config import SPELLS
-cfg = SPELLS['pixel_fire']
+
+cfg = SPELLS['fireball']
+
 CHANNEL_DURATION = cfg['channel_duration']  # segundos de canalización
 
 class ChannelSpellState(State):
