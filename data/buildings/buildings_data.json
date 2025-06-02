@@ -780,8 +780,8 @@
     },
     {
         "zone": "lobby",
-        "rel_x": 674,
-        "rel_y": 832,
+        "rel_x": 726,
+        "rel_y": 834,
         "image_path": "assets/buildings\\portals\\portal.png",
         "solid": true,
         "scale": [
