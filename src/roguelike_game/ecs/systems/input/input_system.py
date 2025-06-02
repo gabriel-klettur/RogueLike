@@ -29,6 +29,7 @@ class InputSystem:
             # Movimiento en ejes X e Y
             inp.move_x = int(keys[pygame.K_RIGHT]) - int(keys[pygame.K_LEFT])
             inp.move_y = int(keys[pygame.K_DOWN]) - int(keys[pygame.K_UP])
+            #print(f"[DEBUG][{time.time():.3f}] eid={eid} move=({inp.move_x},{inp.move_y}), click={inp.click}")
             # Actualizar velocidad según MovementSpeed
             vel = world.components.get('Velocity', {}).get(eid)
             ms = world.components.get('MovementSpeed', {}).get(eid)
@@ -48,16 +49,19 @@ class InputSystem:
             inp.click = bool(pygame.mouse.get_pressed()[0])
             # Generar intenciones Q y E (solo una vez)
             if inp.skill_q:
+                print(f"[DEBUG][{time.time():.3f}] eid={eid} skill_q -> firework")
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='firework')
                 inp.skill_q = False
             if inp.skill_e:
+                print(f"[DEBUG][{time.time():.3f}] eid={eid} skill_e -> smoke")
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='smoke')
                 inp.skill_e = False
             # Generar intención de fireball solo si click y en AggroState (o primer disparo)
             if inp.click:
+                print(f"[DEBUG][{time.time():.3f}] eid={eid} click -> fireball")
                 state = world.components.get('NPCState', {}).get(eid)
                 if state is None or isinstance(state.fsm.current_state, AggroState):
-                    world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='lightball')
+                    world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='fireball')
             # Procesar ataque: tecla SPACE
             if keys[pygame.K_SPACE]:
                 now = time.time()

@@ -1,8 +1,8 @@
 {
     "fireball": {
-      "prepare_duration": 0.0,
-      "channel_duration": 0.0,
-      "cooldown_duration": 0.05,
+      "prepare_duration": 0.5,
+      "channel_duration": 0.5,
+      "cooldown_duration": 0.5,
       "speed": 30,
       "damage": 20,
       "lifespan": 60,
@@ -20,9 +20,9 @@
       "scale": 0.1
     },
     "lightball": {
-      "prepare_duration": 0.0,
-      "channel_duration": 0.0,
-      "cooldown_duration": 0.001,
+      "prepare_duration": 0.5,
+      "channel_duration": 0.5,
+      "cooldown_duration": 0.5,
       "speed": 60,
       "damage": 10,
       "lifespan": 120,
