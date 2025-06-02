@@ -84,17 +84,12 @@ class SpellCastingSystem:
                     w, h = sprite_cmp.image.get_size()
                     cx += w/2; cy += h/2
                 offset = (max(w, h)/2) if sprite_cmp else 0
-                mx, my = pygame.mouse.get_pos()
-                wx = mx/camera.zoom + camera.offset_x
-                wy = my/camera.zoom + camera.offset_y
-                dx, dy = wx-cx, wy-cy
-                length = (dx*dx+dy*dy)**0.5 or 1
-                dir_x, dir_y = dx/length, dy/length
                 pd = cfg.get('prepare_duration', 0)
                 ch = cfg.get('channel_duration', 0)
                 spawn_time = now + pd + ch
-                print(f"[DEBUG][SpellCastingSystem] schedule spawn_time={spawn_time:.3f}, caster={eid}, spell={intent.spell}, center=({cx:.1f},{cy:.1f}), dir=({dir_x:.2f},{dir_y:.2f}), offset={offset:.1f}")
-                self.pending_spawns.append((eid, intent.spell, (dir_x, dir_y), offset, spawn_time))
+                print(f"[DEBUG][SpellCastingSystem] schedule spawn_time={spawn_time:.3f}, caster={eid}, spell={intent.spell}, center=({cx:.1f},{cy:.1f}), offset={offset:.1f}")
+                # Store only offset and schedule time; direction recalculated at spawn
+                self.pending_spawns.append((eid, intent.spell, offset, spawn_time))
                 wants.pop(eid, None)
                 continue
 
@@ -117,21 +112,26 @@ class SpellCastingSystem:
         # Procesar spawns diferidos del jugador
         now = time.time()
         remaining = []
-        for caster, spell, direction, offset, t in self.pending_spawns:
+        for caster, spell, offset, t in self.pending_spawns:
             if now >= t:
-                # Recalcular spawn desde posición actual
+                # Recalculate direction at spawn time based on current mouse position
                 pos_cmp = world.components['Position'][caster]
                 cx, cy = pos_cmp.x, pos_cmp.y
                 sprite_cmp = world.components['Sprite'].get(caster)
                 if sprite_cmp:
                     w, h = sprite_cmp.image.get_size()
                     cx += w/2; cy += h/2
-                sx = cx + direction[0]*offset
-                sy = cy + direction[1]*offset
-                print(f"[DEBUG][SpellCastingSystem] _spawn_fireball t={time.time():.3f}, caster={caster}, spell={spell}, recalculated_spawn=({sx:.1f},{sy:.1f})")
-                self._spawn_fireball(world, caster, spell, direction, (sx, sy))
+                mx, my = pygame.mouse.get_pos()
+                wx = mx / camera.zoom + camera.offset_x
+                wy = my / camera.zoom + camera.offset_y
+                dx, dy = wx - cx, wy - cy
+                length = (dx*dx + dy*dy) ** 0.5 or 1
+                dir_x, dir_y = dx/length, dy/length
+                sx, sy = cx + dir_x*offset, cy + dir_y*offset
+                print(f"[DEBUG][SpellCastingSystem] _spawn_fireball t={time.time():.3f}, caster={caster}, spell={spell}, direction=({dir_x:.2f},{dir_y:.2f}), spawn=({sx:.1f},{sy:.1f})")
+                self._spawn_fireball(world, caster, spell, (dir_x, dir_y), (sx, sy))
             else:
-                remaining.append((caster, spell, direction, offset, t))
+                remaining.append((caster, spell, offset, t))
         self.pending_spawns = remaining
 
     def _spawn_fireball(self, world, caster, spell_key, direction, spawn_pos):
