@@ -49,20 +49,62 @@ class MapEditorView:
             # borde
             pygame.draw.rect(screen, outline_color, (*screen_tl, *screen_size), 2)
             # etiqueta centrada y más grande
-            label = self.font.render(zone, True, (255, 255, 255))
-            # Escalar label para que quepa en la zona
-            label_w, label_h = label.get_size()
-            max_w, max_h = screen_size
-            if label_w > max_w or label_h > max_h:
-                scale = min(max_w / label_w, max_h / label_h)
-                new_size = (int(label_w * scale), int(label_h * scale))
-                label = pygame.transform.smoothscale(label, new_size)
-            # centrar label en la zona
-            label_rect = label.get_rect(
-                center=(screen_tl[0] + screen_size[0] // 2,
-                        screen_tl[1] + screen_size[1] // 2)
-            )
-            screen.blit(label, label_rect)
+            if self.state.renaming_zone == zone:
+                text = self.state.rename_input or ''
+                # calcular rect de zona en pantalla
+                px, py = ox * TILE_SIZE, oy * TILE_SIZE
+                pw, ph = zone_w * TILE_SIZE, zone_h * TILE_SIZE
+                screen_tl = camera.apply((px, py))
+                screen_size = camera.scale((pw, ph))
+                total_w = screen_size[0]
+                # renderizar texto de entrada
+                input_surf = self.font.render(text, True, (0, 0, 0))
+                text_h = input_surf.get_height()
+                padding_y = 4
+                box_h = max(text_h + padding_y * 2, BTN_H)
+                # calcular anchuras
+                accept_w = box_h * 2
+                input_w = max(20, total_w - accept_w - 5)
+                input_x = screen_tl[0]
+                input_y = screen_tl[1] + screen_size[1] - box_h - 5
+                input_rect = pygame.Rect(input_x, input_y, input_w, box_h)
+                # dibujar caja de entrada (blanca con borde negro)
+                pygame.draw.rect(screen, (255, 255, 255), input_rect)
+                pygame.draw.rect(screen, (0, 0, 0), input_rect, 2)
+                # dibujar texto
+                screen.blit(input_surf, (input_x + 5, input_y + (box_h - text_h) // 2))
+                self.state.rename_input_rect = input_rect
+                # dibujar botón de aceptar (azul profesional)
+                accept_rect = pygame.Rect(input_rect.right + 5, input_y, accept_w, box_h)
+                pygame.draw.rect(screen, (0, 120, 215), accept_rect)
+                pygame.draw.rect(screen, (255, 255, 255), accept_rect, 2)
+                btn_font = pygame.font.SysFont(None, int(box_h * 0.6))
+                ok_surf = btn_font.render("Aceptar", True, (255, 255, 255))
+                screen.blit(ok_surf, (accept_rect.centerx - ok_surf.get_width() // 2,
+                                      accept_rect.centery - ok_surf.get_height() // 2))
+                self.state.rename_accept_rect = accept_rect
+                # dibujar cursor parpadeante
+                now = pygame.time.get_ticks()
+                if (now // 500) % 2 == 0:
+                    caret_x = input_x + 5 + input_surf.get_width()
+                    caret_y1 = input_y + padding_y
+                    caret_y2 = input_y + box_h - padding_y
+                    pygame.draw.line(screen, (0, 0, 0), (caret_x, caret_y1), (caret_x, caret_y2), 2)
+            else:
+                label = self.font.render(zone, True, (255, 255, 255))
+                # Escalar label para que quepa en la zona
+                label_w, label_h = label.get_size()
+                max_w, max_h = screen_size
+                if label_w > max_w or label_h > max_h:
+                    scale = min(max_w / label_w, max_h / label_h)
+                    new_size = (int(label_w * scale), int(label_h * scale))
+                    label = pygame.transform.smoothscale(label, new_size)
+                # centrar label en la zona
+                label_rect = label.get_rect(
+                    center=(screen_tl[0] + screen_size[0] // 2,
+                            screen_tl[1] + screen_size[1] // 2)
+                )
+                screen.blit(label, label_rect)
         # Render Map Editor toolbar and dropdown
         toolbar = self.controller.toolbar
         # Draw toolbar icon

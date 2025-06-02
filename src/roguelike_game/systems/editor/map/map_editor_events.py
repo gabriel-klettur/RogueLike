@@ -15,6 +15,7 @@ class MapEditorEventHandler:
 
     def handle(self, camera, map_manager):
         for ev in pygame.event.get():
+            print(f"DEBUG: Event {ev.type} at {getattr(ev, 'pos', None)}")
             # Handle quit
             if ev.type == pygame.QUIT:
                 # Exit entire game
@@ -67,36 +68,69 @@ class MapEditorEventHandler:
                 if ev.key == pygame.K_h and self.state.selected_zone:
                     self.controller.toggle_hide_zone(self.state.selected_zone)
                     return
+                if self.state.renaming_zone:
+                    # Handle rename input
+                    if ev.key == pygame.K_RETURN:
+                        self.controller.rename_zone(self.state.renaming_zone, self.state.rename_input)
+                        self.state.renaming_zone = None
+                        self.state.rename_input = ""
+                        return
+                    elif ev.key == pygame.K_BACKSPACE:
+                        self.state.rename_input = self.state.rename_input[:-1]
+                        return
+                    elif ev.unicode and ev.unicode.isprintable():
+                        self.state.rename_input += ev.unicode
+                        return
+            # If renaming mode, process accept click
+            if self.state.renaming_zone and ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
+                print(f"DEBUG: processing accept click at {ev.pos} for renaming_zone={self.state.renaming_zone}")
+                # If clicked on accept button, apply rename
+                if self.state.rename_accept_rect and self.state.rename_accept_rect.collidepoint(ev.pos):
+                    print("DEBUG: accept_rect clicked, invoking rename_zone")
+                    self.controller.rename_zone(self.state.renaming_zone, self.state.rename_input)
+                # Exit renaming mode
+                self.state.renaming_zone = None
+                self.state.rename_input = ""
+                self.state.rename_input_rect = None
+                self.state.rename_accept_rect = None
+                return
             # Selección y arrastre
             elif ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
+                # compute world tile coords
+                world_x = ev.pos[0] / camera.zoom + camera.offset_x
+                world_y = ev.pos[1] / camera.zoom + camera.offset_y
+                tx = int(world_x) // TILE_SIZE
+                ty = int(world_y) // TILE_SIZE
+                print(f"DEBUG: MouseButtonDown at screen={ev.pos}, world=({world_x:.1f},{world_y:.1f}), grid=({tx},{ty})")
+                mx, my = ev.pos
+                # convert to world coords
+                world_x = mx / camera.zoom + camera.offset_x
+                world_y = my / camera.zoom + camera.offset_y
+                tx = int(world_x) // TILE_SIZE
+                ty = int(world_y) // TILE_SIZE
                 # Toolbar click toggle dropdown
                 if self.controller.toolbar.handle_click(ev.pos):
                     return
-                mx, my = ev.pos
-                tx = mx // TILE_SIZE
-                ty = my // TILE_SIZE
                 # Determinar zona bajo el cursor
                 for zn, (ox, oy) in global_map_settings.zone_offsets.items():
                     w, h = global_map_settings.zone_size
+                    print(f"DEBUG: checking zone {zn}: offset=({ox},{oy}), size=({w},{h}), click_grid=({tx},{ty})")
                     if ox <= tx < ox + w and oy <= ty < oy + h:
+                        print(f"DEBUG: click candidate on zone {zn}")
+                        # Manual double-click detection
+                        now = pygame.time.get_ticks()
+                        print(f"DEBUG: time since last click: {now - self.state.last_click_time}")
+                        if self.state.last_click_zone == zn and now - self.state.last_click_time <= 400:
+                            print(f"DEBUG: double-click detected for zone {zn}")
+                            print("DEBUG: entering renaming mode")
+                            self.state.renaming_zone = zn
+                            self.state.rename_input = zn
+                            # reset last click
+                            self.state.last_click_zone = None
+                            self.state.last_click_time = 0
+                            return
+                        # Single click: select zone and prepare for double-click
                         self.state.selected_zone = zn
-                        # Preparar arrastre
-                        self.state.dragging = zn
-                        dx = mx - (ox * TILE_SIZE)
-                        dy = my - (oy * TILE_SIZE)
-                        self.state.drag_offset = (dx, dy)
+                        self.state.last_click_zone = zn
+                        self.state.last_click_time = now
                         return
-            elif ev.type == pygame.MOUSEMOTION and self.state.dragging:
-                mx, my = ev.pos
-                dx, dy = self.state.drag_offset
-                new_tx = (mx - dx) // TILE_SIZE
-                new_ty = (my - dy) // TILE_SIZE
-                # Mover zona
-                self.controller.move_zone(self.state.dragging,
-                                          new_tx - global_map_settings.zone_offsets[self.state.dragging][0],
-                                          new_ty - global_map_settings.zone_offsets[self.state.dragging][1])
-                return
-            elif ev.type == pygame.MOUSEBUTTONUP and ev.button == 1:
-                if self.state.dragging:
-                    self.state.dragging = None
-                    return

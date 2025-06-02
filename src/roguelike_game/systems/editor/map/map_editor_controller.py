@@ -49,12 +49,43 @@ class MapEditorController:
         global_map_settings.__dict__.pop('zone_offsets', None)
         self.map_manager.expand_zone('', '', '')  # refrescar offsets
 
+    def rename_zone(self, old_name: str, new_name: str) -> None:
+        """
+        Renombra una zona: actualiza additional_zones, zone_offsets, map_manager y guarda cambios.
+        """
+        old_name = old_name.strip()
+        new_name = new_name.strip()
+        if not old_name or not new_name or old_name == new_name:
+            return
+        # Evitar conflicto con nombres existentes
+        if new_name in global_map_settings.zone_offsets:
+            return
+        # Renombrar en additional_zones si existe
+        parent_side = global_map_settings.additional_zones.pop(old_name, None)
+        if parent_side is None:
+            return
+        global_map_settings.additional_zones[new_name] = parent_side
+        # Limpiar cache de offsets
+        global_map_settings.__dict__.pop('zone_offsets', None)
+        # Actualizar map_manager.zone_rooms
+        rooms = self.map_manager.zone_rooms.pop(old_name, [])
+        self.map_manager.zone_rooms[new_name] = rooms
+        # Actualizar map_manager.tiles_by_zone y tile.zone
+        tiles = self.map_manager.tiles_by_zone.pop(old_name, [])
+        for tile in tiles:
+            tile.zone = new_name
+        self.map_manager.tiles_by_zone[new_name] = tiles
+        # Persistir cambios en zones.json
+        self.save_zones()
+
     def save_zones(self):
+        global_map_settings.use_zones_json = True
         path = DATA_DIR + '/zones/zones.json'
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(global_map_settings.zone_offsets, f, indent=2)
 
     def load_zones(self):
+        global_map_settings.use_zones_json = True
         path = DATA_DIR + '/zones/zones.json'
         try:
             with open(path, 'r', encoding='utf-8') as f:
