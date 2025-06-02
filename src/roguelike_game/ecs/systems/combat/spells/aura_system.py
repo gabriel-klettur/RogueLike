@@ -1,5 +1,5 @@
-import time
 import math
+import time
 from roguelike_game.ecs.components.abilities.aura_component import AuraComponent
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.combat.health import Health
@@ -27,8 +27,6 @@ class AuraSystem:
                 pos_cmp = world.components['Position'][caster]
                 cx, cy = pos_cmp.x, pos_cmp.y
                 for eid in world.get_entities_with('Position', 'Health'):
-                    if eid == caster:
-                        continue
                     tpos = world.components['Position'][eid]
                     if (tpos.x - cx)**2 + (tpos.y - cy)**2 <= aura.radius**2:
                         hp = world.components['Health'][eid]
