@@ -1,10 +1,38 @@
 {
-    "pixel_fire": {
+    "fireball": {
+      "prepare_duration": 0.2,
+      "channel_duration": 0.5,
+      "cooldown_duration": 1.0,
+      "speed": 30,
+      "damage": 10,
+      "lifespan": 60,
+      "sprite": "assets/projectiles/fireball.png"
+    },
+    "iceball": {
       "prepare_duration": 0.2,
       "channel_duration": 0.5,
       "cooldown_duration": 1.0,
       "speed": 15,
       "damage": 10,
-      "lifespan": 60
+      "lifespan": 60,
+      "sprite": "assets/projectiles/iceball.png"
+    },
+    "lightball": {
+      "prepare_duration": 0.2,
+      "channel_duration": 0.5,
+      "cooldown_duration": 1.0,
+      "speed": 60,
+      "damage": 10,
+      "lifespan": 60,
+      "sprite": "assets/projectiles/lightball.png"
+    },
+    "darkball": {
+      "prepare_duration": 0.2,
+      "channel_duration": 0.5,
+      "cooldown_duration": 1.0,
+      "speed": 10,
+      "damage": 10,
+      "lifespan": 60,
+      "sprite": "assets/projectiles/darkball.png"
     }
 }
