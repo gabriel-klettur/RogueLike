@@ -11,6 +11,7 @@ from roguelike_game.ecs.fsm.fsm import FiniteStateMachine
 import pygame
 import time
 from roguelike_game.config.spells_config import SPELLS
+from roguelike_game.ecs.systems.combat.spells.resolvers import SPELL_RESOLVERS
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.transform.velocity import Velocity
 from roguelike_game.ecs.components.abilities.fireball_component import FireballComponent
@@ -114,40 +115,28 @@ class SpellCastingSystem:
         remaining = []
         for caster, spell, offset, t in self.pending_spawns:
             if now >= t:
-                # Recalculate direction at spawn time based on current mouse position
-                pos_cmp = world.components['Position'][caster]
-                cx, cy = pos_cmp.x, pos_cmp.y
-                sprite_cmp = world.components['Sprite'].get(caster)
-                if sprite_cmp:
-                    w, h = sprite_cmp.image.get_size()
-                    cx += w/2; cy += h/2
-                mx, my = pygame.mouse.get_pos()
-                wx = mx / camera.zoom + camera.offset_x
-                wy = my / camera.zoom + camera.offset_y
-                dx, dy = wx - cx, wy - cy
-                length = (dx*dx + dy*dy) ** 0.5 or 1
-                dir_x, dir_y = dx/length, dy/length
-                sx, sy = cx + dir_x*offset, cy + dir_y*offset
-                print(f"[DEBUG][SpellCastingSystem] _spawn_fireball t={time.time():.3f}, caster={caster}, spell={spell}, direction=({dir_x:.2f},{dir_y:.2f}), spawn=({sx:.1f},{sy:.1f})")
-                self._spawn_fireball(world, caster, spell, (dir_x, dir_y), (sx, sy))
+                cfg = SPELLS.get(spell, {})
+                resolver = SPELL_RESOLVERS.get(cfg.get('type', 'projectile'))
+                print(f"[DEBUG][SpellCastingSystem] resolve spell={spell} type={cfg.get('type')} caster={caster} at {now:.3f}")
+                resolver.resolve(world, caster, {'offset': offset}, cfg, camera)
             else:
                 remaining.append((caster, spell, offset, t))
         self.pending_spawns = remaining
 
-    def _spawn_fireball(self, world, caster, spell_key, direction, spawn_pos):
-        cfg = SPELLS.get(spell_key, {})
-        dx, dy = direction
-        sx, sy = spawn_pos
-        fid = world.create_entity()
-        world.components['Position'][fid] = Position(sx, sy)
-        spd = cfg.get('speed', 0)
-        world.components['Velocity'][fid] = Velocity(dx*spd, dy*spd)
-        world.components['FireballComponent'][fid] = FireballComponent(
-            dx*spd, dy*spd,
-            damage=cfg.get('damage', 0),
-            lifespan=cfg.get('lifespan', 0),
-            caster=caster
-        )
-        img = pygame.image.load(cfg.get('sprite')).convert_alpha()
-        world.components['Sprite'][fid] = Sprite(img)
-        world.components['Scale'][fid] = Scale(scale=cfg.get('scale', 1.0))
+    # def _spawn_fireball(self, world, caster, spell_key, direction, spawn_pos):
+    #     cfg = SPELLS.get(spell_key, {})
+    #     dx, dy = direction
+    #     sx, sy = spawn_pos
+    #     fid = world.create_entity()
+    #     world.components['Position'][fid] = Position(sx, sy)
+    #     spd = cfg.get('speed', 0)
+    #     world.components['Velocity'][fid] = Velocity(dx*spd, dy*spd)
+    #     world.components['FireballComponent'][fid] = FireballComponent(
+    #         dx*spd, dy*spd,
+    #         damage=cfg.get('damage', 0),
+    #         lifespan=cfg.get('lifespan', 0),
+    #         caster=caster
+    #     )
+    #     img = pygame.image.load(cfg.get('sprite')).convert_alpha()
+    #     world.components['Sprite'][fid] = Sprite(img)
+    #     world.components['Scale'][fid] = Scale(scale=cfg.get('scale', 1.0))
