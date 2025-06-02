@@ -2,6 +2,7 @@ import pygame
 from pygame.locals import *
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_game.systems.editor.buildings.model.persistence.save_buildings_to_json import save_buildings_to_json
 
 class MapEditorEventHandler:
     """
@@ -71,10 +72,18 @@ class MapEditorEventHandler:
                 if self.state.renaming_zone:
                     # Handle rename input
                     if ev.key == pygame.K_RETURN:
-                        print(f"DEBUG: Enter pressed in renaming mode. old_name={self.state.renaming_zone}, input_buffer='{self.state.rename_input}'")
+                        old_zone = self.state.renaming_zone
+                        print(f"DEBUG: Enter pressed in renaming mode. old_name={old_zone}, input_buffer='{self.state.rename_input}'")
                         new_name = self.state.rename_input.strip()
                         print(f"DEBUG: renaming to new_name={new_name}")
-                        self.controller.rename_zone(self.state.renaming_zone, new_name)
+                        self.controller.rename_zone(old_zone, new_name)
+                        # Update buildings zone property
+                        for b in self.manager.game.buildings.buildings:
+                            if getattr(b, 'zone', None) == old_zone:
+                                b.zone = new_name
+                                print(f"DEBUG: building {b} zone updated from {old_zone} to {new_name}")
+                        save_buildings_to_json(self.manager.game.buildings.buildings, z_state=self.manager.game.z_state, zone_offsets=global_map_settings.zone_offsets)
+                        print("DEBUG: persisted buildings_data.json")
                         print("DEBUG: rename_zone executed")
                         self.state.selected_zone = new_name
                         print(f"DEBUG: selected_zone updated to {new_name}")
@@ -93,10 +102,17 @@ class MapEditorEventHandler:
                 print(f"DEBUG: processing accept click at {ev.pos} for renaming_zone={self.state.renaming_zone}")
                 # If clicked on accept button, apply rename
                 if self.state.rename_accept_rect and self.state.rename_accept_rect.collidepoint(ev.pos):
-                    print("DEBUG: accept_rect clicked, invoking rename_zone")
-                    # perform rename and keep selection on new name
+                    old_zone = self.state.renaming_zone
+                    print("DEBUG: accept_rect clicked, invoking rename_zone for zone", old_zone)
                     new_name = self.state.rename_input.strip()
-                    self.controller.rename_zone(self.state.renaming_zone, new_name)
+                    self.controller.rename_zone(old_zone, new_name)
+                    # Update buildings zone property
+                    for b in self.manager.game.buildings.buildings:
+                        if getattr(b, 'zone', None) == old_zone:
+                            b.zone = new_name
+                            print(f"DEBUG: building {b} zone updated from {old_zone} to {new_name}")
+                    save_buildings_to_json(self.manager.game.buildings.buildings, z_state=self.manager.game.z_state, zone_offsets=global_map_settings.zone_offsets)
+                    print("DEBUG: persisted buildings_data.json")
                     self.state.selected_zone = new_name
                 # Exit renaming mode
                 self.state.renaming_zone = None
