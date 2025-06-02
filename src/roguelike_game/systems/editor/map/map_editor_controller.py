@@ -51,32 +51,42 @@ class MapEditorController:
 
     def rename_zone(self, old_name: str, new_name: str) -> None:
         """
-        Renombra una zona: actualiza additional_zones, zone_offsets, map_manager y guarda cambios.
+        Renombra una zona: actualiza JSON zone_offsets mapping directamente, soporta renombrar cualquier zona y elimina lógica de additional_zones.
         """
         old_name = old_name.strip()
         new_name = new_name.strip()
+        print(f"DEBUG [Controller.rename_zone] called with old_name={old_name!r}, new_name={new_name!r}")
         if not old_name or not new_name or old_name == new_name:
+            print("DEBUG [Controller.rename_zone] abort: invalid or same name")
             return
-        # Evitar conflicto con nombres existentes
-        if new_name in global_map_settings.zone_offsets:
+        # Refactor: edit JSON mapping of offsets to rename any zone
+        global_map_settings.use_zones_json = True
+        offsets = dict(global_map_settings.zone_offsets)
+        print(f"DEBUG [Controller.rename_zone] loaded offsets before rename: {offsets}")
+        if old_name not in offsets or new_name in offsets:
+            print("DEBUG [Controller.rename_zone] abort: old_name not in offsets or new_name exists")
             return
-        # Renombrar en additional_zones si existe
-        parent_side = global_map_settings.additional_zones.pop(old_name, None)
-        if parent_side is None:
-            return
-        global_map_settings.additional_zones[new_name] = parent_side
-        # Limpiar cache de offsets
+        # Update mapping and persist
+        offsets[new_name] = offsets.pop(old_name)
+        print(f"DEBUG [Controller.rename_zone] offsets after rename: {offsets}")
+        path = DATA_DIR + '/zones/zones.json'
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(offsets, f, indent=2)
+        print(f"DEBUG [Controller.rename_zone] saved zones.json at {path}")
+        # Clear cached offsets to force reload
         global_map_settings.__dict__.pop('zone_offsets', None)
+        print("DEBUG [Controller.rename_zone] cleared cached zone_offsets")
         # Actualizar map_manager.zone_rooms
         rooms = self.map_manager.zone_rooms.pop(old_name, [])
+        print(f"DEBUG [Controller.rename_zone] updated zone_rooms keys: {list(self.map_manager.zone_rooms.keys())}")
         self.map_manager.zone_rooms[new_name] = rooms
         # Actualizar map_manager.tiles_by_zone y tile.zone
         tiles = self.map_manager.tiles_by_zone.pop(old_name, [])
+        print(f"DEBUG [Controller.rename_zone] updated tiles_by_zone keys before: {list(self.map_manager.tiles_by_zone.keys())}")
         for tile in tiles:
             tile.zone = new_name
         self.map_manager.tiles_by_zone[new_name] = tiles
-        # Persistir cambios en zones.json
-        self.save_zones()
+        print(f"DEBUG [Controller.rename_zone] updated tiles_by_zone keys after: {list(self.map_manager.tiles_by_zone.keys())}")
 
     def save_zones(self):
         global_map_settings.use_zones_json = True

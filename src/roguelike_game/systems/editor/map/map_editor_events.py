@@ -15,7 +15,7 @@ class MapEditorEventHandler:
 
     def handle(self, camera, map_manager):
         for ev in pygame.event.get():
-            print(f"DEBUG: Event {ev.type} at {getattr(ev, 'pos', None)}")
+            #print(f"DEBUG: Event {ev.type} at {getattr(ev, 'pos', None)}")
             # Handle quit
             if ev.type == pygame.QUIT:
                 # Exit entire game
@@ -71,9 +71,16 @@ class MapEditorEventHandler:
                 if self.state.renaming_zone:
                     # Handle rename input
                     if ev.key == pygame.K_RETURN:
-                        self.controller.rename_zone(self.state.renaming_zone, self.state.rename_input)
+                        print(f"DEBUG: Enter pressed in renaming mode. old_name={self.state.renaming_zone}, input_buffer='{self.state.rename_input}'")
+                        new_name = self.state.rename_input.strip()
+                        print(f"DEBUG: renaming to new_name={new_name}")
+                        self.controller.rename_zone(self.state.renaming_zone, new_name)
+                        print("DEBUG: rename_zone executed")
+                        self.state.selected_zone = new_name
+                        print(f"DEBUG: selected_zone updated to {new_name}")
                         self.state.renaming_zone = None
                         self.state.rename_input = ""
+                        print("DEBUG: exited renaming mode")
                         return
                     elif ev.key == pygame.K_BACKSPACE:
                         self.state.rename_input = self.state.rename_input[:-1]
@@ -87,7 +94,10 @@ class MapEditorEventHandler:
                 # If clicked on accept button, apply rename
                 if self.state.rename_accept_rect and self.state.rename_accept_rect.collidepoint(ev.pos):
                     print("DEBUG: accept_rect clicked, invoking rename_zone")
-                    self.controller.rename_zone(self.state.renaming_zone, self.state.rename_input)
+                    # perform rename and keep selection on new name
+                    new_name = self.state.rename_input.strip()
+                    self.controller.rename_zone(self.state.renaming_zone, new_name)
+                    self.state.selected_zone = new_name
                 # Exit renaming mode
                 self.state.renaming_zone = None
                 self.state.rename_input = ""
