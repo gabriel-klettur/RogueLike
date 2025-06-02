@@ -18,6 +18,7 @@ class ChunkedMapView:
         self.chunks_by_zoom: dict[float, dict[tuple[int,int], pygame.Surface]] = {}
 
     def _build_chunk_surfaces(self, map_model: MapModel, zoom: float):
+        print(f"[DEBUG][ChunkedMapView] _build_chunk_surfaces called for zoom {zoom}")
         """
         Pre-dibuja cada chunk (bloque de tiles) en una surface escalada
         y la guarda en self.chunks_by_zoom[zoom].
@@ -77,6 +78,7 @@ class ChunkedMapView:
         self.chunks_by_zoom[zoom] = chunk_dict
 
     def invalidate_cache(self):
+        print(f"[DEBUG][ChunkedMapView] invalidate_cache called")
         """Forzar reconstrucción de todos los chunks en el próximo render."""
         self.chunks_by_zoom.clear()
 
@@ -86,6 +88,7 @@ class ChunkedMapView:
         camera,
         map_model: MapModel
     ) -> list[pygame.Rect]:
+        #print(f"[DEBUG][ChunkedMapView] render called for zoom {round(camera.zoom*10)/10.0}, cache keys: {list(self.chunks_by_zoom.keys())}")
         """
         Dibuja únicamente los chunks visibles según la cámara,
         devolviendo la lista de dirty rects.
