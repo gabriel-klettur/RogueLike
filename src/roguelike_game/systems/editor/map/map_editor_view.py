@@ -243,6 +243,74 @@ class MapEditorView:
             no_surf = font.render("No", True, (255, 255, 255))
             screen.blit(no_surf, (no_rect.centerx - no_surf.get_width() // 2, no_rect.centery - no_surf.get_height() // 2))
             self.state.confirm_paint_no_rect = no_rect
+        # Render clear colliders confirmation dialog
+        if self.state.confirm_clear_colliders and self.state.pending_clear_colliders_zone:
+            sw, sh = screen.get_size()
+            msg = f"Vaciar colliders de zona {self.state.pending_clear_colliders_zone}?"
+            font = pygame.font.SysFont(None, 24)
+            text_surf = font.render(msg, True, (255, 255, 255))
+            box_w = text_surf.get_width() + 20
+            box_h = text_surf.get_height() + 60
+            box_x = (sw - box_w) // 2
+            box_y = (sh - box_h) // 2
+            box_rect = pygame.Rect(box_x, box_y, box_w, box_h)
+            pygame.draw.rect(screen, (0, 0, 0), box_rect)
+            pygame.draw.rect(screen, (255, 255, 255), box_rect, 2)
+            screen.blit(text_surf, (box_x + 10, box_y + 10))
+            # Yes button
+            yes_w, yes_h = 60, 30
+            yes_x = box_x + 10
+            yes_y = box_y + box_h - yes_h - 10
+            yes_rect = pygame.Rect(yes_x, yes_y, yes_w, yes_h)
+            pygame.draw.rect(screen, (0, 200, 0), yes_rect)
+            pygame.draw.rect(screen, (255, 255, 255), yes_rect, 2)
+            yes_surf = font.render("Sí", True, (255, 255, 255))
+            screen.blit(yes_surf, (yes_rect.centerx - yes_surf.get_width() // 2, yes_rect.centery - yes_surf.get_height() // 2))
+            self.state.confirm_clear_colliders_yes_rect = yes_rect
+            # No button
+            no_w, no_h = 60, 30
+            no_x = yes_rect.right + 10
+            no_y = yes_y
+            no_rect = pygame.Rect(no_x, no_y, no_w, no_h)
+            pygame.draw.rect(screen, (200, 0, 0), no_rect)
+            pygame.draw.rect(screen, (255, 255, 255), no_rect, 2)
+            no_surf = font.render("No", True, (255, 255, 255))
+            screen.blit(no_surf, (no_rect.centerx - no_surf.get_width() // 2, no_rect.centery - no_surf.get_height() // 2))
+            self.state.confirm_clear_colliders_no_rect = no_rect
+        # Render paint colliders confirmation dialog
+        if self.state.confirm_paint_colliders and self.state.pending_paint_colliders_zone:
+            sw, sh = screen.get_size()
+            msg = f"Pintar colliders de zona {self.state.pending_paint_colliders_zone}?"
+            font = pygame.font.SysFont(None, 24)
+            text_surf = font.render(msg, True, (255, 255, 255))
+            box_w = text_surf.get_width() + 20
+            box_h = text_surf.get_height() + 60
+            box_x = (sw - box_w) // 2
+            box_y = (sh - box_h) // 2
+            box_rect = pygame.Rect(box_x, box_y, box_w, box_h)
+            pygame.draw.rect(screen, (0, 0, 0), box_rect)
+            pygame.draw.rect(screen, (255, 255, 255), box_rect, 2)
+            screen.blit(text_surf, (box_x + 10, box_y + 10))
+            # Yes button
+            yes_w, yes_h = 60, 30
+            yes_x = box_x + 10
+            yes_y = box_y + box_h - yes_h - 10
+            yes_rect = pygame.Rect(yes_x, yes_y, yes_w, yes_h)
+            pygame.draw.rect(screen, (0, 200, 0), yes_rect)
+            pygame.draw.rect(screen, (255, 255, 255), yes_rect, 2)
+            yes_surf = font.render("Sí", True, (255, 255, 255))
+            screen.blit(yes_surf, (yes_rect.centerx - yes_surf.get_width() // 2, yes_rect.centery - yes_surf.get_height() // 2))
+            self.state.confirm_paint_colliders_yes_rect = yes_rect
+            # No button
+            no_w, no_h = 60, 30
+            no_x = yes_rect.right + 10
+            no_y = yes_y
+            no_rect = pygame.Rect(no_x, no_y, no_w, no_h)
+            pygame.draw.rect(screen, (200, 0, 0), no_rect)
+            pygame.draw.rect(screen, (255, 255, 255), no_rect, 2)
+            no_surf = font.render("No", True, (255, 255, 255))
+            screen.blit(no_surf, (no_rect.centerx - no_surf.get_width() // 2, no_rect.centery - no_surf.get_height() // 2))
+            self.state.confirm_paint_colliders_no_rect = no_rect
         # Render add zone confirmation dialog
         if self.state.confirm_add_zone and self.state.pending_add_zone_coords:
             sw, sh = screen.get_size()

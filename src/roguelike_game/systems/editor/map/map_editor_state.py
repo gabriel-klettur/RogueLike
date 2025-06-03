@@ -20,6 +20,16 @@ class MapEditorState:
         self.pending_paint_tiles_zone: str | None = None
         self.confirm_paint_yes_rect: pygame.Rect | None = None
         self.confirm_paint_no_rect: pygame.Rect | None = None
+        # Confirm Clear Colliders dialog flags
+        self.confirm_clear_colliders: bool = False
+        self.pending_clear_colliders_zone: str | None = None
+        self.confirm_clear_colliders_yes_rect: pygame.Rect | None = None
+        self.confirm_clear_colliders_no_rect: pygame.Rect | None = None
+        # Confirm Paint Colliders dialog flags
+        self.confirm_paint_colliders: bool = False
+        self.pending_paint_colliders_zone: str | None = None
+        self.confirm_paint_colliders_yes_rect: pygame.Rect | None = None
+        self.confirm_paint_colliders_no_rect: pygame.Rect | None = None
         self.dragging: str | None = None
         self.drag_offset: tuple[int,int] = (0, 0)
         # Toggle dropdown for zone visibility
