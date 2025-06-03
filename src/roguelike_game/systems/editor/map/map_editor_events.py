@@ -9,6 +9,7 @@ from roguelike_engine.map.model.layer import Layer
 from roguelike_engine.tile.assets import get_sprite_for_tile
 from roguelike_game.systems.editor.buildings.model.persistence.save_buildings_to_json import save_buildings_to_json
 from roguelike_engine.map.model.overlay.overlay_manager import load_layers, save_layers
+from roguelike_game.ecs.core.spatial_index import SpatialIndex
 
 class MapEditorEventHandler:
     """
@@ -244,6 +245,8 @@ class MapEditorEventHandler:
                         except Exception as e:
                             print(f"DEBUG [MapEditorEventHandler] failed to clear colliders for zone {zone}: {e}")
                         self.map_manager.reload_map()
+                        # Refresh ECS collision index
+                        self.manager.game.ecs.ecs_world.spatial_index = SpatialIndex(self.map_manager, self.manager.game.buildings.buildings)
                         self.state.confirm_clear_colliders = False
                         self.state.pending_clear_colliders_zone = None
                         self.state.confirm_clear_colliders_yes_rect = None
@@ -271,6 +274,8 @@ class MapEditorEventHandler:
                         except Exception as e:
                             print(f"DEBUG [MapEditorEventHandler] failed to paint colliders for zone {zone}: {e}")
                         self.map_manager.reload_map()
+                        # Refresh ECS collision index
+                        self.manager.game.ecs.ecs_world.spatial_index = SpatialIndex(self.map_manager, self.manager.game.buildings.buildings)
                         self.state.confirm_paint_colliders = False
                         self.state.pending_paint_colliders_zone = None
                         self.state.confirm_paint_colliders_yes_rect = None
