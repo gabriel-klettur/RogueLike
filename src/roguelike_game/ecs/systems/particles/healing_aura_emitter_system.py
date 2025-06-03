@@ -1,15 +1,12 @@
 # Path: src/roguelike_game/systems/combat/spells/healing_aura/healing_aura_emitter_system.py
 
 import random
-import math
 import time
-import pygame
+
 from pygame.math import Vector2
 from roguelike_engine.utils.benchmark import benchmark
-from roguelike_game.ecs.components.abilities.aura_component import AuraComponent
 from roguelike_game.ecs.components.transform.position import Position
-from roguelike_game.ecs.components.transform.velocity import Velocity
-from roguelike_game.ecs.components.rendering.sprite import Sprite
+from roguelike_game.ecs.components.abilities.aura_component import AuraComponent
 from roguelike_game.ecs.components.particles.particle_component import ParticleComponent
 
 class HealingAuraEmitterSystem:

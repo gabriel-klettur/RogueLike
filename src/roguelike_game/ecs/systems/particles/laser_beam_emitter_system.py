@@ -26,6 +26,9 @@ class LaserBeamEmitterSystem:
             print(f"[DEBUG][LaserBeamEmitter] frame={now:.3f} beams={beam_count}")
         to_remove = []
         for caster, beam in list(world.components.get('LaserBeamComponent', {}).items()):
+            # dynamic thickness from beam.scale
+            thickness_px = max(2, int(beam.scale * 20))
+            half_thickness = thickness_px / 2
             # Recalculate beam origin/target to follow caster and cursor
             pos_cmp = world.components['Position'].get(caster)
             if pos_cmp:
@@ -52,7 +55,7 @@ class LaserBeamEmitterSystem:
                 pid = world.create_entity()
                 world.components['Position'][pid] = Position(px, py)
                 color = random.choice(beam.colors)
-                size = max(2, int(beam.scale * 20))
+                size = thickness_px
                 # beam particles live only one frame to avoid trails
                 lifespan_frames = 1
                 world.components['ParticleComponent'][pid] = ParticleComponent(0, 0, color, size, lifespan_frames)
@@ -66,7 +69,7 @@ class LaserBeamEmitterSystem:
                 proj = (tdx * dx + tdy * dy) / length
                 if 0 <= proj <= length:
                     pdist = abs(tdx * dy - tdy * dx) / length
-                    if pdist < beam.scale * 5:
+                    if pdist < half_thickness:
                         hp = world.components['Health'][target]
                         hp.current_hp = max(0, hp.current_hp - beam.damage)
                         beam._damaged_ids.add(target)
