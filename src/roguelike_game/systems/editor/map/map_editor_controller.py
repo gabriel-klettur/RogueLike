@@ -89,6 +89,14 @@ class MapEditorController:
                 print(f"DEBUG [Controller.delete_zone] Removed collision file {coll_path}")
             except Exception as e:
                 print(f"DEBUG [Controller.delete_zone] failed to remove collision file {coll_path}: {e}")
+        # Delete overlay file for this zone
+        overlay_path = os.path.join(DATA_DIR, 'zones', 'overlays', f'{sel}.overlay.json')
+        if os.path.isfile(overlay_path):
+            try:
+                os.remove(overlay_path)
+                print(f"DEBUG [Controller.delete_zone] Removed overlay file {overlay_path}")
+            except Exception as e:
+                print(f"DEBUG [Controller.delete_zone] failed to remove overlay file {overlay_path}: {e}")
         # Recargar offsets y mapa
         global_map_settings.__dict__.pop('zone_offsets', None)
         self.map_manager.reload_map()
@@ -164,7 +172,6 @@ class MapToolbarController:
         self.add_icon = load_image("assets/ui/add_zone.png", (64, 64))
         self.delete_icon = load_image("assets/ui/delete_zone.png", (64, 64))
         # Clear/Paint Tiles and Colliders icons
-        self.clear_tiles_icon = load_image("assets/ui/vaciar_tiles_zone.png", (64, 64))
         self.paint_tiles_icon = load_image("assets/ui/pintar_tiles_zone.png", (64, 64))
         self.clear_colliders_icon = load_image("assets/ui/vaciar_colliders_zone.png", (64, 64))
         self.paint_colliders_icon = load_image("assets/ui/pintar_colliders_zone.png", (64, 64))
@@ -175,7 +182,6 @@ class MapToolbarController:
         self.icon_rect: pygame.Rect | None = None
         self.add_rect: pygame.Rect | None = None
         self.delete_rect: pygame.Rect | None = None
-        self.clear_tiles_rect: pygame.Rect | None = None
         self.paint_tiles_rect: pygame.Rect | None = None
         self.clear_colliders_rect: pygame.Rect | None = None
         self.paint_colliders_rect: pygame.Rect | None = None
@@ -200,23 +206,10 @@ class MapToolbarController:
             self.editor.add_zone_mode = False
             print(f"[DEBUG][Toolbar] delete_zone_mode set to {self.editor.delete_zone_mode}")
             return True
-        # Handle Clear Tiles Zone button click
-        if self.clear_tiles_rect and self.clear_tiles_rect.collidepoint(mouse_pos):
-            print("[DEBUG][Toolbar] clicked Clear Tiles Zone button")
-            self.editor.clear_tiles_mode = not self.editor.clear_tiles_mode
-            # disable other modes
-            self.editor.paint_tiles_mode = False
-            self.editor.add_zone_mode = False
-            self.editor.delete_zone_mode = False
-            self.editor.clear_colliders_mode = False
-            self.editor.paint_colliders_mode = False
-            print(f"[DEBUG][Toolbar] clear_tiles_mode set to {self.editor.clear_tiles_mode}")
-            return True
         # Handle Paint Tiles Zone button click
         if self.paint_tiles_rect and self.paint_tiles_rect.collidepoint(mouse_pos):
             print("[DEBUG][Toolbar] clicked Paint Tiles Zone button")
             self.editor.paint_tiles_mode = not self.editor.paint_tiles_mode
-            self.editor.clear_tiles_mode = False
             self.editor.add_zone_mode = False
             self.editor.delete_zone_mode = False
             self.editor.clear_colliders_mode = False
@@ -227,7 +220,6 @@ class MapToolbarController:
         if self.clear_colliders_rect and self.clear_colliders_rect.collidepoint(mouse_pos):
             print("[DEBUG][Toolbar] clicked Clear Colliders Zone button")
             self.editor.clear_colliders_mode = not self.editor.clear_colliders_mode
-            self.editor.clear_tiles_mode = False
             self.editor.paint_tiles_mode = False
             self.editor.add_zone_mode = False
             self.editor.delete_zone_mode = False
@@ -238,7 +230,6 @@ class MapToolbarController:
         if self.paint_colliders_rect and self.paint_colliders_rect.collidepoint(mouse_pos):
             print("[DEBUG][Toolbar] clicked Paint Colliders Zone button")
             self.editor.paint_colliders_mode = not self.editor.paint_colliders_mode
-            self.editor.clear_tiles_mode = False
             self.editor.paint_tiles_mode = False
             self.editor.add_zone_mode = False
             self.editor.delete_zone_mode = False

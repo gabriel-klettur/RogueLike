@@ -36,12 +36,10 @@ class MapEditorState:
         self.last_click_zone: str | None = None
         self.last_click_time: int = 0  # milliseconds
         # Modes for clearing/painting tiles and colliders
-        self.clear_tiles_mode: bool = False  # Clear tiles in selected zone
         self.paint_tiles_mode: bool = False  # Paint tiles in selected zone
         self.clear_colliders_mode: bool = False  # Clear colliders in selected zone
         self.paint_colliders_mode: bool = False  # Paint colliders in selected zone
         # Rectangles for toolbar buttons
-        self.clear_tiles_rect: pygame.Rect | None = None
         self.paint_tiles_rect: pygame.Rect | None = None
         self.clear_colliders_rect: pygame.Rect | None = None
         self.paint_colliders_rect: pygame.Rect | None = None

@@ -128,30 +128,23 @@ class MapEditorView:
         toolbar.delete_rect = pygame.Rect(del_x, del_y, toolbar.size, toolbar.size)
         if self.state.delete_zone_mode:
             pygame.draw.rect(screen, (255, 0, 0), toolbar.delete_rect, 3)
-        # Draw Clear Tiles Zone button
-        ct_x = toolbar.x
-        ct_y = toolbar.y + 3 * (toolbar.size + toolbar.padding)
-        screen.blit(toolbar.clear_tiles_icon, (ct_x, ct_y))
-        toolbar.clear_tiles_rect = pygame.Rect(ct_x, ct_y, toolbar.size, toolbar.size)
-        if self.state.clear_tiles_mode:
-            pygame.draw.rect(screen, (0, 255, 0), toolbar.clear_tiles_rect, 3)
         # Draw Paint Tiles Zone button
         pt_x = toolbar.x
-        pt_y = toolbar.y + 4 * (toolbar.size + toolbar.padding)
+        pt_y = toolbar.y + 3 * (toolbar.size + toolbar.padding)
         screen.blit(toolbar.paint_tiles_icon, (pt_x, pt_y))
         toolbar.paint_tiles_rect = pygame.Rect(pt_x, pt_y, toolbar.size, toolbar.size)
         if self.state.paint_tiles_mode:
             pygame.draw.rect(screen, (0, 0, 255), toolbar.paint_tiles_rect, 3)
         # Draw Clear Colliders Zone button
         cc_x = toolbar.x
-        cc_y = toolbar.y + 5 * (toolbar.size + toolbar.padding)
+        cc_y = toolbar.y + 4 * (toolbar.size + toolbar.padding)
         screen.blit(toolbar.clear_colliders_icon, (cc_x, cc_y))
         toolbar.clear_colliders_rect = pygame.Rect(cc_x, cc_y, toolbar.size, toolbar.size)
         if self.state.clear_colliders_mode:
             pygame.draw.rect(screen, (255, 165, 0), toolbar.clear_colliders_rect, 3)
         # Draw Paint Colliders Zone button
         pc_x = toolbar.x
-        pc_y = toolbar.y + 6 * (toolbar.size + toolbar.padding)
+        pc_y = toolbar.y + 5 * (toolbar.size + toolbar.padding)
         screen.blit(toolbar.paint_colliders_icon, (pc_x, pc_y))
         toolbar.paint_colliders_rect = pygame.Rect(pc_x, pc_y, toolbar.size, toolbar.size)
         if self.state.paint_colliders_mode:
