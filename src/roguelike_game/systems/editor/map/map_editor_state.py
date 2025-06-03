@@ -45,3 +45,8 @@ class MapEditorState:
         self.paint_tiles_rect: pygame.Rect | None = None
         self.clear_colliders_rect: pygame.Rect | None = None
         self.paint_colliders_rect: pygame.Rect | None = None
+        # Confirm add zone dialog flags
+        self.confirm_add_zone: bool = False  # Confirm adding a new zone
+        self.pending_add_zone_coords: tuple[int,int] | None = None  # Coords for pending zone
+        self.confirm_add_yes_rect: pygame.Rect | None = None  # Yes button for add confirm
+        self.confirm_add_no_rect: pygame.Rect | None = None   # No button for add confirm

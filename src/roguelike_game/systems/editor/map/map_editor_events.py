@@ -210,13 +210,33 @@ class MapEditorEventHandler:
                         self.state.confirm_paint_yes_rect = None
                         self.state.confirm_paint_no_rect = None
                     return
+                # Handle add zone confirmation dialog
+                if self.state.confirm_add_zone and self.state.pending_add_zone_coords:
+                    # Yes: add the zone
+                    if self.state.confirm_add_yes_rect and self.state.confirm_add_yes_rect.collidepoint(ev.pos):
+                        tx, ty = self.state.pending_add_zone_coords
+                        self.controller.add_zone(tx, ty)
+                        self.state.confirm_add_zone = False
+                        self.state.pending_add_zone_coords = None
+                        self.state.confirm_add_yes_rect = None
+                        self.state.confirm_add_no_rect = None
+                        return
+                    # No: cancel adding zone
+                    if self.state.confirm_add_no_rect and self.state.confirm_add_no_rect.collidepoint(ev.pos):
+                        self.state.confirm_add_zone = False
+                        self.state.pending_add_zone_coords = None
+                        self.state.confirm_add_yes_rect = None
+                        self.state.confirm_add_no_rect = None
+                        return
                 # Handle add zone mode (click to add 50x50 zone)
                 if self.state.add_zone_mode:
                     world_x = ev.pos[0] / camera.zoom + camera.offset_x
                     world_y = ev.pos[1] / camera.zoom + camera.offset_y
                     tx = int(world_x) // TILE_SIZE
                     ty = int(world_y) // TILE_SIZE
-                    self.controller.add_zone(tx, ty)
+                    # set up confirmation for adding zone
+                    self.state.pending_add_zone_coords = (tx, ty)
+                    self.state.confirm_add_zone = True
                     self.state.add_zone_mode = False
                     return
                 # Handle delete zone mode (click to select zone for deletion)
