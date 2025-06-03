@@ -46,6 +46,22 @@ class MapEditorEventHandler:
                 camera.offset_x = wx - mx / camera.zoom
                 camera.offset_y = wy - my / camera.zoom
                 return
+            # Middle-click to pan map
+            elif ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 2:
+                self.state.panning = True
+                self.state.pan_start_mouse = ev.pos
+                self.state.pan_start_offset = (camera.offset_x, camera.offset_y)
+                return
+            elif ev.type == pygame.MOUSEBUTTONUP and ev.button == 2:
+                self.state.panning = False
+                return
+            elif ev.type == pygame.MOUSEMOTION and self.state.panning:
+                mx, my = ev.pos
+                dx = (mx - self.state.pan_start_mouse[0]) / camera.zoom
+                dy = (my - self.state.pan_start_mouse[1]) / camera.zoom
+                camera.offset_x = self.state.pan_start_offset[0] - dx
+                camera.offset_y = self.state.pan_start_offset[1] - dy
+                return
             if ev.type == pygame.KEYDOWN:
                 # Si estamos en modo renombrar, capturar solo las teclas de renombrado
                 if self.state.renaming_zone:
@@ -68,6 +84,8 @@ class MapEditorEventHandler:
                         self.state.renaming_zone = None
                         self.state.rename_input = ""
                         print("DEBUG: exited renaming mode")
+                        # disable repeat after editing
+                        pygame.key.set_repeat()
                         return
                     elif ev.key == pygame.K_BACKSPACE:
                         self.state.rename_input = self.state.rename_input[:-1]
@@ -126,6 +144,8 @@ class MapEditorEventHandler:
                 self.state.rename_input = ""
                 self.state.rename_input_rect = None
                 self.state.rename_accept_rect = None
+                # disable repeat after editing
+                pygame.key.set_repeat()
                 return
             # Selección y arrastre
             elif ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
@@ -402,6 +422,15 @@ class MapEditorEventHandler:
                             print("DEBUG: entering renaming mode")
                             self.state.renaming_zone = zn
                             self.state.rename_input = zn
+                            # enable backspace repeat for editing
+                            pygame.key.set_repeat(400, 50)
+                            # center camera on this zone
+                            ox, oy = global_map_settings.zone_offsets[zn]
+                            zw, zh = global_map_settings.zone_size
+                            cx = (ox * TILE_SIZE) + (zw * TILE_SIZE) / 2
+                            cy = (oy * TILE_SIZE) + (zh * TILE_SIZE) / 2
+                            camera.offset_x = cx - camera.screen_width/(2*camera.zoom)
+                            camera.offset_y = cy - camera.screen_height/(2*camera.zoom)
                             # reset last click
                             self.state.last_click_zone = None
                             self.state.last_click_time = 0

@@ -50,6 +50,11 @@ class MapEditorState:
         self.paint_tiles_mode: bool = False  # Paint tiles in selected zone
         self.clear_colliders_mode: bool = False  # Clear colliders in selected zone
         self.paint_colliders_mode: bool = False  # Paint colliders in selected zone
+        # Middle-click pan mode
+        self.panning: bool = False
+        # Starting mouse pos and offset for panning
+        self.pan_start_mouse: tuple[int,int] = (0, 0)
+        self.pan_start_offset: tuple[float,float] = (0.0, 0.0)
         # Rectangles for toolbar buttons
         self.paint_tiles_rect: pygame.Rect | None = None
         self.clear_colliders_rect: pygame.Rect | None = None

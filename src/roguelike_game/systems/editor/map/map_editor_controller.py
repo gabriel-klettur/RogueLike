@@ -127,6 +127,27 @@ class MapEditorController:
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(offsets, f, indent=2)
         print(f"DEBUG [Controller.rename_zone] saved zones.json at {path}")
+        # Rename collision and overlay files
+        # Collision file
+        coll_dir = os.path.join(DATA_DIR, 'collisions')
+        old_coll = os.path.join(coll_dir, f'{old_name}.json')
+        new_coll = os.path.join(coll_dir, f'{new_name}.json')
+        if os.path.exists(old_coll):
+            try:
+                os.rename(old_coll, new_coll)
+                print(f"DEBUG [Controller.rename_zone] Renamed collision file {old_coll} -> {new_coll}")
+            except Exception as e:
+                print(f"DEBUG [Controller.rename_zone] Failed to rename collision file {old_coll}: {e}")
+        # Overlay file
+        overlay_dir = os.path.join(DATA_DIR, 'zones', 'overlays')
+        old_overlay = os.path.join(overlay_dir, f'{old_name}.overlay.json')
+        new_overlay = os.path.join(overlay_dir, f'{new_name}.overlay.json')
+        if os.path.exists(old_overlay):
+            try:
+                os.rename(old_overlay, new_overlay)
+                print(f"DEBUG [Controller.rename_zone] Renamed overlay file {old_overlay} -> {new_overlay}")
+            except Exception as e:
+                print(f"DEBUG [Controller.rename_zone] Failed to rename overlay file {old_overlay}: {e}")
         # Clear cached offsets to force reload
         global_map_settings.__dict__.pop('zone_offsets', None)
         print("DEBUG [Controller.rename_zone] cleared cached zone_offsets")
