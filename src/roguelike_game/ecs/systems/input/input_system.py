@@ -47,16 +47,7 @@ class InputSystem:
             inp.skill_e = bool(keys[pygame.K_e])
             inp.skill_x = bool(keys[pygame.K_x])
             # Actualizar estado del click
-            inp.click = bool(pygame.mouse.get_pressed()[0])
-            # Generar intenciones Q y E (solo una vez)
-            if inp.skill_q:
-                print(f"[DEBUG][{time.time():.3f}] eid={eid} skill_q -> firework")
-                world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='firework')
-                inp.skill_q = False
-            if inp.skill_e:
-                print(f"[DEBUG][{time.time():.3f}] eid={eid} skill_e -> smoke")
-                world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='smoke')
-                inp.skill_e = False
+            inp.click = bool(pygame.mouse.get_pressed()[0])            
             if inp.skill_x:
                 print(f"[DEBUG][{time.time():.3f}] eid={eid} skill_x -> healing_aura")
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='healing_aura')
@@ -67,6 +58,11 @@ class InputSystem:
                 state = world.components.get('NPCState', {}).get(eid)
                 if state is None or isinstance(state.fsm.current_state, AggroState):
                     world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='fireball')
+            # Lanzar el beam con click del medio
+            middle = pygame.mouse.get_pressed()[1]
+            if middle:
+                print(f"[DEBUG][{time.time():.3f}] eid={eid} middle-click -> laser_beam")
+                world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='laser_beam')
             # Procesar ataque: tecla SPACE
             if keys[pygame.K_SPACE]:
                 now = time.time()

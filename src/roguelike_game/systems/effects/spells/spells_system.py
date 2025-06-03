@@ -7,11 +7,6 @@ from roguelike_game.systems.effects.spells.laser_beam.model      import LaserBea
 from roguelike_game.systems.effects.spells.laser_beam.controller import LaserBeamController
 from roguelike_game.systems.effects.spells.laser_beam.view       import LaserBeamView
 
-# MVC: HealingAura
-from roguelike_game.systems.effects.spells.healing_aura.model      import HealingAuraModel
-from roguelike_game.systems.effects.spells.healing_aura.controller import HealingAuraController
-from roguelike_game.systems.effects.spells.healing_aura.view       import HealingAuraView
-
 # MVC: Smoke
 from roguelike_game.systems.effects.spells.smoke.model      import SmokeModel
 from roguelike_game.systems.effects.spells.smoke.controller import SmokeController

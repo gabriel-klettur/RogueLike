@@ -54,5 +54,18 @@
       "vfx": "healing_ring",
       "sprite": null,
       "scale": 0.3
+    },
+    "laser_beam": {
+      "type": "beam",
+      "prepare_duration": 0.1,
+      "channel_duration": 0.2,
+      "cooldown_duration": 1.0,
+      "particle_count": 60,
+      "damage": 0.25,
+      "particle_dispersion": 4,
+      "particle_colors": [[0,255,255],[150,255,255],[255,255,255]],      
+      "lifespan": 1.0,
+      "sprite": null,
+      "scale": 0.1
     }
 }

@@ -5,6 +5,8 @@ from roguelike_game.ecs.components.transform.velocity import Velocity
 from roguelike_game.ecs.components.abilities.fireball_component import FireballComponent
 from roguelike_game.ecs.components.rendering.sprite import Sprite
 from roguelike_game.ecs.components.transform.scale import Scale
+import random
+from roguelike_game.ecs.components.particles.particle_component import ParticleComponent
 
 class BaseSpellResolver:
     def resolve(self, world, caster, spawn_meta, cfg, camera):
@@ -57,9 +59,55 @@ class AuraResolver(BaseSpellResolver):
         duration = cfg.get('duration', 5.0)
         world.components.setdefault('AuraComponent', {})[caster] = AuraComponent(radius, buff, duration)
 
+class BeamResolver(BaseSpellResolver):
+    """
+    Resolver for continuous beam spells: spawns beam particles and applies damage along line.
+    """
+    def resolve(self, world, caster, spawn_meta, cfg, camera):
+        offset = spawn_meta.get('offset', 0)
+        pos_cmp = world.components['Position'][caster]
+        cx, cy = pos_cmp.x, pos_cmp.y
+        sprite_cmp = world.components['Sprite'].get(caster)
+        if sprite_cmp:
+            w, h = sprite_cmp.image.get_size()
+            cx += w/2; cy += h/2
+        # compute world target from cursor
+        mx, my = pygame.mouse.get_pos()
+        wx = mx / camera.zoom + camera.offset_x
+        wy = my / camera.zoom + camera.offset_y
+        dx, dy = wx - cx, wy - cy
+        length = (dx*dx + dy*dy)**0.5 or 1
+        # spawn beam particles along the line
+        count = cfg.get('particle_count', 0)
+        dispersion = cfg.get('particle_dispersion', 0)
+        colors = cfg.get('particle_colors', [])
+        lifespan = int(cfg.get('lifespan', 0))
+        scale = cfg.get('scale', 1.0)
+        for i in range(count):
+            t = i / count
+            px = cx + t * dx + random.uniform(-dispersion, dispersion)
+            py = cy + t * dy + random.uniform(-dispersion, dispersion)
+            pid = world.create_entity()
+            world.components.setdefault('Position', {})[pid] = Position(px, py)
+            world.components.setdefault('ParticleComponent', {})[pid] = ParticleComponent(
+                0, 0, random.choice(colors), int(scale * 10), lifespan
+            )
+        # apply damage to entities along beam
+        damage = cfg.get('damage', 0)
+        for target in world.get_entities_with('Position', 'Health'):
+            tpos = world.components['Position'][target]
+            tdx, tdy = tpos.x - cx, tpos.y - cy
+            proj = (tdx * dx + tdy * dy) / length
+            if 0 <= proj <= length:
+                pdist = abs(tdx * dy - tdy * dx) / length
+                if pdist < scale * 5:
+                    hp = world.components['Health'][target]
+                    hp.current_hp = max(0, hp.current_hp - damage)
+
 # Registro de resolutores por tipo de hechizo
 default_resolvers = {
     'projectile': ProjectileResolver(),
     'aura': AuraResolver(),
+    'beam': BeamResolver(),
 }
 SPELL_RESOLVERS = default_resolvers

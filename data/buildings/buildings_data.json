@@ -362,8 +362,8 @@
     },
     {
         "zone": "Main Lobby",
-        "rel_x": 1186,
-        "rel_y": 212,
+        "rel_x": 1189,
+        "rel_y": 207,
         "image_path": "assets/buildings\\shops\\banco.png",
         "solid": true,
         "scale": [
