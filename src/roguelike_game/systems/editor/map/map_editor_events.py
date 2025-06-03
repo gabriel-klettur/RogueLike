@@ -153,14 +153,15 @@ class MapEditorEventHandler:
                     # Yes: apply paint
                     if self.state.confirm_paint_yes_rect and self.state.confirm_paint_yes_rect.collidepoint(ev.pos):
                         print(f"DEBUG: confirming paint tiles for zone {zone}")
-                        tile_code = "."
+                        tile_code = "floor"
                         print(f"DEBUG: painting with tile '{tile_code}' on layer '{Layer.Ground.name}'")
-                        img = get_sprite_for_tile(tile_code)
+                        # sprite generated per tile using overlay code
                         count = 0
                         for tile in self.map_manager.tiles_by_zone.get(zone, []):
-                            tile.tile_type = tile_code
-                            tile.solid = False
-                            tile.sprite = img
+                            original_char = tile.tile_type
+                            tile.overlay_code = tile_code
+                            sprite = get_sprite_for_tile(original_char, tile.overlay_code)
+                            tile.sprite = sprite
                             tile.scaled_cache.clear()
                             # Also update the ground layer tile used for chunked rendering
                             tx = tile.x // TILE_SIZE
@@ -168,9 +169,10 @@ class MapEditorEventHandler:
                             ground = self.map_manager.tiles_by_layer.get(Layer.Ground)
                             if ground and 0 <= ty < len(ground) and 0 <= tx < len(ground[0]):
                                 gt = ground[ty][tx]
-                                gt.tile_type = tile_code
-                                gt.solid = False
-                                gt.sprite = img
+                                original_char = gt.tile_type
+                                gt.overlay_code = tile_code
+                                sprite = get_sprite_for_tile(original_char, gt.overlay_code)
+                                gt.sprite = sprite
                                 gt.scaled_cache.clear()
                             count += 1
                         print(f"DEBUG: painted {count} tiles in zone {zone}")
@@ -186,7 +188,7 @@ class MapEditorEventHandler:
                                 local_x = tx - off_x
                                 local_y = ty - off_y
                                 if 0 <= local_x < zone_w and 0 <= local_y < zone_h:
-                                    overlay_grid[local_y][local_x] = t.tile_type
+                                    overlay_grid[local_y][local_x] = t.overlay_code
                             # Merge with existing overlay layers
                             layers = load_layers(zone)
                             layers[Layer.Ground] = overlay_grid
