@@ -129,9 +129,30 @@ class MapEditorEventHandler:
                 return
             # Selección y arrastre
             elif ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
-                # Handle toolbar button clicks, return if handled
+                # Handle toolbar button clicks (tools & layers view)
                 if self.controller.toolbar.handle_click(ev.pos):
                     return
+                # Handle layer view option clicks
+                if self.state.layers_view_open:
+                    for key, rect in self.controller.toolbar.option_rects.items():
+                        if rect and rect.collidepoint(ev.pos):
+                            if key == "show_all":
+                                for layer in self.state.visible_layers:
+                                    self.state.visible_layers[layer] = True
+                                self.state.show_buildings = True
+                                self.state.show_colliders = True
+                            elif key == "hide_all":
+                                for layer in self.state.visible_layers:
+                                    self.state.visible_layers[layer] = False
+                                self.state.show_buildings = False
+                                self.state.show_colliders = False
+                            elif isinstance(key, Layer):
+                                self.state.visible_layers[key] = not self.state.visible_layers[key]
+                            elif key == "buildings":
+                                self.state.show_buildings = not self.state.show_buildings
+                            elif key == "colliders":
+                                self.state.show_colliders = not self.state.show_colliders
+                            return
                 # Handle deletion confirmation dialog
                 if self.state.confirm_delete_zone:
                     if self.state.confirm_yes_rect and self.state.confirm_yes_rect.collidepoint(ev.pos):
