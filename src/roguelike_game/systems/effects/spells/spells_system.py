@@ -2,11 +2,6 @@
 import pygame
 from pygame.math import Vector2
 
-# MVC: LaserBeam
-from roguelike_game.systems.effects.spells.laser_beam.model      import LaserBeamModel
-from roguelike_game.systems.effects.spells.laser_beam.controller import LaserBeamController
-from roguelike_game.systems.effects.spells.laser_beam.view       import LaserBeamView
-
 # MVC: Smoke
 from roguelike_game.systems.effects.spells.smoke.model      import SmokeModel
 from roguelike_game.systems.effects.spells.smoke.controller import SmokeController
