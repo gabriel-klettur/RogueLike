@@ -167,3 +167,5 @@ default_resolvers = {
     'slash': SlashResolver(),
 }
 SPELL_RESOLVERS = default_resolvers
+
+# Función para resolver hechizos

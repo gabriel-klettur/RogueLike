@@ -191,8 +191,8 @@
     },
     {
         "zone": "Lobby",
-        "rel_x": 140,
-        "rel_y": -813,
+        "rel_x": 45,
+        "rel_y": -873,
         "image_path": "assets/buildings/castles/castle_2.png",
         "solid": true,
         "scale": [
@@ -324,8 +324,8 @@
     },
     {
         "zone": "Lobby",
-        "rel_x": 209,
-        "rel_y": -211,
+        "rel_x": 184,
+        "rel_y": -249,
         "image_path": "assets/buildings/shops/blacksmith.png",
         "solid": true,
         "scale": [
@@ -361,9 +361,9 @@
         "z": 2
     },
     {
-        "zone": "Main Lobby",
-        "rel_x": 1186,
-        "rel_y": 212,
+        "zone": "Lobby",
+        "rel_x": 1179,
+        "rel_y": 221,
         "image_path": "assets/buildings\\shops\\banco.png",
         "solid": true,
         "scale": [
@@ -779,9 +779,9 @@
         "z": 3
     },
     {
-        "zone": "lobby",
-        "rel_x": 674,
-        "rel_y": 832,
+        "zone": "Lobby",
+        "rel_x": 705,
+        "rel_y": 819,
         "image_path": "assets/buildings\\portals\\portal.png",
         "solid": true,
         "scale": [
@@ -795,25 +795,6 @@
         "split_ratio": 0.202,
         "z_bottom": 3,
         "z_top": 5,
-        "z": 3
-    },
-    {
-        "zone": "Batte Area",
-        "rel_x": 838,
-        "rel_y": 498,
-        "image_path": "assets/buildings\\portals\\portal_2.png",
-        "solid": true,
-        "scale": [
-            189,
-            283
-        ],
-        "original_scale": [
-            256,
-            384
-        ],
-        "split_ratio": 0.237,
-        "z_bottom": 3,
-        "z_top": 7,
         "z": 3
     },
     {
