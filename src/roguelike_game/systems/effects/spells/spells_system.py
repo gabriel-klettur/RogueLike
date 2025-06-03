@@ -2,11 +2,6 @@
 import pygame
 from pygame.math import Vector2
 
-# MVC: LaserBeam
-from roguelike_game.systems.effects.spells.laser_beam.model      import LaserBeamModel
-from roguelike_game.systems.effects.spells.laser_beam.controller import LaserBeamController
-from roguelike_game.systems.effects.spells.laser_beam.view       import LaserBeamView
-
 # MVC: Smoke
 from roguelike_game.systems.effects.spells.smoke.model      import SmokeModel
 from roguelike_game.systems.effects.spells.smoke.controller import SmokeController
@@ -47,11 +42,6 @@ from roguelike_game.systems.effects.spells.teleport.view       import TeleportVi
 from roguelike_game.systems.effects.spells.slash.model      import SlashModel
 from roguelike_game.systems.effects.spells.slash.controller import SlashController
 from roguelike_game.systems.effects.spells.slash.view       import SlashView
-
-# Legacy: DashTrail, DashBounce
-from roguelike_game.systems.effects.spells.dash.model      import DashModel
-from roguelike_game.systems.effects.spells.dash.controller import DashController
-from roguelike_game.systems.effects.spells.dash.view       import DashView
 
 # Benchmarking
 from roguelike_engine.utils.benchmark import benchmark

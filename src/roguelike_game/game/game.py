@@ -248,7 +248,7 @@ class Game:
             self.menu,
             self.map,
             self.buildings,
-            self.effects.effects,
+            self.effects,
             self.effects.explosions,
             self.tiles_editor,
             self.buildings_editor,

@@ -61,18 +61,27 @@ class LaserBeamEmitterSystem:
                 world.components['ParticleComponent'][pid] = ParticleComponent(0, 0, color, size, lifespan_frames)
             # 2. Aplicar daño a entidades en el haz (una vez por caster)
             for target in world.get_entities_with('Position', 'Health'):
-                if target in beam._damaged_ids:
-                    continue
-                tpos = world.components['Position'][target]
-                tdx = tpos.x - x1
-                tdy = tpos.y - y1
+                pos_t = world.components['Position'][target]
+                sprite_t = world.components.get('Sprite', {}).get(target)
+                if sprite_t:
+                    tw, th = sprite_t.image.get_size()
+                    tx = pos_t.x + tw / 2
+                    ty = pos_t.y + th / 2
+                    br = max(tw, th) / 2
+                else:
+                    tx = pos_t.x
+                    ty = pos_t.y
+                    br = 0
+                tdx = tx - x1
+                tdy = ty - y1
                 proj = (tdx * dx + tdy * dy) / length
-                if 0 <= proj <= length:
-                    pdist = abs(tdx * dy - tdy * dx) / length
-                    if pdist < half_thickness:
-                        hp = world.components['Health'][target]
-                        hp.current_hp = max(0, hp.current_hp - beam.damage)
-                        beam._damaged_ids.add(target)
+                # skip if outside extended segment
+                if proj + br < 0 or proj - br > length:
+                    continue
+                pdist = abs(tdx * dy - tdy * dx) / length
+                if pdist <= half_thickness + br:
+                    hp = world.components['Health'][target]
+                    hp.current_hp = max(0, hp.current_hp - beam.damage)
             # 3. Quitar componente si expiró la duración
             if beam.duration is not None and now >= beam.start_time + beam.duration:
                 to_remove.append(caster)

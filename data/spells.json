@@ -67,5 +67,27 @@
       "lifespan": 1.0,
       "sprite": null,
       "scale": 2.0
+    },
+    "dash": {
+      "type": "dash",
+      "prepare_duration": 0.0,
+      "channel_duration": 0.0,
+      "cooldown_duration": 1.0,
+      "speed": 2000,
+      "duration": 0.2
+    },
+    "slash": {
+      "type": "slash",
+      "prepare_duration": 0.0,
+      "channel_duration": 0.0,
+      "cooldown_duration": 0.5,
+      "radius": 28,
+      "particle_count": 30,
+      "arc_range_degrees": 120,
+      "lifespan": 15,
+      "speed_multiplier": 1.0,
+      "size_range": [4, 12],
+      "color": [100, 220, 255],
+      "offset": 0
     }
 }

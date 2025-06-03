@@ -30,6 +30,7 @@ from roguelike_game.ecs.systems.rendering.fsm.states_debug_render_system import 
 from roguelike_game.ecs.systems.rendering.flash_system import FlashSystem
 from roguelike_game.ecs.systems.rendering.trail_system import TrailSystem
 from roguelike_game.ecs.systems.fsm.fsm_system import FSMSystem
+from roguelike_game.ecs.systems.combat.spells.dash_system import DashSystem
 
 def get_update_system_classes():
     """
@@ -39,7 +40,7 @@ def get_update_system_classes():
         FSMSystem,
         PlayerFacingSystem, FacingSystem, InputSystem,
         MovementCollisionSystem,
-        MeleeCombatSystem, SpellCastingSystem, AuraSystem, ParticleSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, FireballSystem,
+        MeleeCombatSystem, SpellCastingSystem, AuraSystem, ParticleSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, FireballSystem, DashSystem,
         TrailSystem,
         AnimationSystem, FlashSystem, SpawnSystem,
     ]
