@@ -2,6 +2,7 @@ import json
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config import DATA_DIR
 import pygame
+import os
 from roguelike_engine.utils.loader import load_image
 from roguelike_engine.map.model.layer import Layer
 
@@ -80,6 +81,14 @@ class MapEditorController:
         # Persistir JSON
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(offsets, f, indent=2)
+        # Delete collision file for this zone
+        coll_path = os.path.join(DATA_DIR, 'collisions', f'{sel}.json')
+        if os.path.isfile(coll_path):
+            try:
+                os.remove(coll_path)
+                print(f"DEBUG [Controller.delete_zone] Removed collision file {coll_path}")
+            except Exception as e:
+                print(f"DEBUG [Controller.delete_zone] failed to remove collision file {coll_path}: {e}")
         # Recargar offsets y mapa
         global_map_settings.__dict__.pop('zone_offsets', None)
         self.map_manager.reload_map()
