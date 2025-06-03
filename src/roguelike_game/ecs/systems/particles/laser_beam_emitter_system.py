@@ -53,8 +53,8 @@ class LaserBeamEmitterSystem:
                 world.components['Position'][pid] = Position(px, py)
                 color = random.choice(beam.colors)
                 size = max(2, int(beam.scale * 20))
-                # convert lifespan seconds to frames (assuming 60 FPS)
-                lifespan_frames = int(beam.lifespan * 60)
+                # beam particles live only one frame to avoid trails
+                lifespan_frames = 1
                 world.components['ParticleComponent'][pid] = ParticleComponent(0, 0, color, size, lifespan_frames)
             # 2. Aplicar daño a entidades en el haz (una vez por caster)
             for target in world.get_entities_with('Position', 'Health'):
