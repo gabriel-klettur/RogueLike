@@ -1,5 +1,6 @@
 import pygame
 import os
+import json
 from pygame.locals import *
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
@@ -265,6 +266,46 @@ class MapEditorEventHandler:
                             self.state.confirm_paint_tiles = True
                             self.state.paint_tiles_mode = False
                             print(f"DEBUG: paint_tiles_mode: pending zone {zn}, asking confirmation")
+                            return
+                # Handle Clear Colliders Zone mode: set all colliders to wall '#'
+                if self.state.clear_colliders_mode:
+                    world_x = ev.pos[0] / camera.zoom + camera.offset_x
+                    world_y = ev.pos[1] / camera.zoom + camera.offset_y
+                    tx = int(world_x) // TILE_SIZE
+                    ty = int(world_y) // TILE_SIZE
+                    for zn, (ox, oy) in global_map_settings.zone_offsets.items():
+                        w, h = global_map_settings.zone_size
+                        if ox <= tx < ox + w and oy <= ty < oy + h:
+                            grid = [['#' for _ in range(w)] for _ in range(h)]
+                            path = os.path.join(DATA_DIR, 'collisions', f'{zn}.json')
+                            try:
+                                with open(path, 'w', encoding='utf-8') as f:
+                                    json.dump(grid, f, indent=2)
+                                print(f"DEBUG [MapEditorEventHandler] cleared colliders for zone {zn}")
+                            except Exception as e:
+                                print(f"DEBUG [MapEditorEventHandler] failed to clear colliders for zone {zn}: {e}")
+                            self.map_manager.reload_map()
+                            self.state.clear_colliders_mode = False
+                            return
+                # Handle Paint Colliders Zone mode: set all colliders to floor '.'
+                if self.state.paint_colliders_mode:
+                    world_x = ev.pos[0] / camera.zoom + camera.offset_x
+                    world_y = ev.pos[1] / camera.zoom + camera.offset_y
+                    tx = int(world_x) // TILE_SIZE
+                    ty = int(world_y) // TILE_SIZE
+                    for zn, (ox, oy) in global_map_settings.zone_offsets.items():
+                        w, h = global_map_settings.zone_size
+                        if ox <= tx < ox + w and oy <= ty < oy + h:
+                            grid = [['.' for _ in range(w)] for _ in range(h)]
+                            path = os.path.join(DATA_DIR, 'collisions', f'{zn}.json')
+                            try:
+                                with open(path, 'w', encoding='utf-8') as f:
+                                    json.dump(grid, f, indent=2)
+                                print(f"DEBUG [MapEditorEventHandler] painted colliders for zone {zn}")
+                            except Exception as e:
+                                print(f"DEBUG [MapEditorEventHandler] failed to paint colliders for zone {zn}: {e}")
+                            self.map_manager.reload_map()
+                            self.state.paint_colliders_mode = False
                             return
                 # compute world tile coords
                 world_x = ev.pos[0] / camera.zoom + camera.offset_x
