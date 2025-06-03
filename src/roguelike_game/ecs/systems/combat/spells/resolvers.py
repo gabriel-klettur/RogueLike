@@ -6,7 +6,9 @@ from roguelike_game.ecs.components.abilities.fireball_component import FireballC
 from roguelike_game.ecs.components.rendering.sprite import Sprite
 from roguelike_game.ecs.components.transform.scale import Scale
 import random
+import pygame
 from roguelike_game.ecs.components.particles.particle_component import ParticleComponent
+from roguelike_game.ecs.components.abilities.laser_beam_component import LaserBeamComponent
 
 class BaseSpellResolver:
     def resolve(self, world, caster, spawn_meta, cfg, camera):
@@ -77,32 +79,18 @@ class BeamResolver(BaseSpellResolver):
         wy = my / camera.zoom + camera.offset_y
         dx, dy = wx - cx, wy - cy
         length = (dx*dx + dy*dy)**0.5 or 1
-        # spawn beam particles along the line
-        count = cfg.get('particle_count', 0)
-        dispersion = cfg.get('particle_dispersion', 0)
-        colors = cfg.get('particle_colors', [])
-        lifespan = int(cfg.get('lifespan', 0))
-        scale = cfg.get('scale', 1.0)
-        for i in range(count):
-            t = i / count
-            px = cx + t * dx + random.uniform(-dispersion, dispersion)
-            py = cy + t * dy + random.uniform(-dispersion, dispersion)
-            pid = world.create_entity()
-            world.components.setdefault('Position', {})[pid] = Position(px, py)
-            world.components.setdefault('ParticleComponent', {})[pid] = ParticleComponent(
-                0, 0, random.choice(colors), int(scale * 10), lifespan
-            )
-        # apply damage to entities along beam
-        damage = cfg.get('damage', 0)
-        for target in world.get_entities_with('Position', 'Health'):
-            tpos = world.components['Position'][target]
-            tdx, tdy = tpos.x - cx, tpos.y - cy
-            proj = (tdx * dx + tdy * dy) / length
-            if 0 <= proj <= length:
-                pdist = abs(tdx * dy - tdy * dx) / length
-                if pdist < scale * 5:
-                    hp = world.components['Health'][target]
-                    hp.current_hp = max(0, hp.current_hp - damage)
+        # Register continuous laser beam component to handle particle emission and damage over time
+        # Continuous beam: no fixed duration, removed on mouse release
+        world.components.setdefault('LaserBeamComponent', {})[caster] = LaserBeamComponent(
+            cx, cy, wx, wy,
+            particle_count=cfg.get('particle_count', 0),
+            dispersion=cfg.get('particle_dispersion', 0),
+            colors=cfg.get('particle_colors', []),
+            lifespan=float(cfg.get('lifespan', 0)),
+            scale=cfg.get('scale', 1.0),
+            damage=cfg.get('damage', 0),
+            duration=None
+        )
 
 # Registro de resolutores por tipo de hechizo
 default_resolvers = {
