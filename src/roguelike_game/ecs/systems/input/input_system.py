@@ -63,6 +63,11 @@ class InputSystem:
             if middle:
                 print(f"[DEBUG][{time.time():.3f}] eid={eid} middle-click -> laser_beam")
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='laser_beam')
+            # Lanzar dash con click derecho
+            right = pygame.mouse.get_pressed()[2]
+            if right:
+                print(f"[DEBUG][{time.time():.3f}] eid={eid} right-click -> dash")
+                world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='dash')
             # Procesar ataque: tecla SPACE
             if keys[pygame.K_SPACE]:
                 now = time.time()

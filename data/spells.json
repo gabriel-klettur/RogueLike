@@ -67,5 +67,13 @@
       "lifespan": 1.0,
       "sprite": null,
       "scale": 2.0
+    },
+    "dash": {
+      "type": "dash",
+      "prepare_duration": 0.0,
+      "channel_duration": 0.0,
+      "cooldown_duration": 1.0,
+      "speed": 2000,
+      "duration": 0.2
     }
 }

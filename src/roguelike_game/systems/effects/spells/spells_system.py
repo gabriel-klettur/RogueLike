@@ -43,11 +43,6 @@ from roguelike_game.systems.effects.spells.slash.model      import SlashModel
 from roguelike_game.systems.effects.spells.slash.controller import SlashController
 from roguelike_game.systems.effects.spells.slash.view       import SlashView
 
-# Legacy: DashTrail, DashBounce
-from roguelike_game.systems.effects.spells.dash.model      import DashModel
-from roguelike_game.systems.effects.spells.dash.controller import DashController
-from roguelike_game.systems.effects.spells.dash.view       import DashView
-
 # Benchmarking
 from roguelike_engine.utils.benchmark import benchmark
 
