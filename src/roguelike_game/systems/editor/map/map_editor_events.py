@@ -22,6 +22,96 @@ class MapEditorEventHandler:
         self.map_manager = map_manager
 
     def handle(self, camera, map_manager):
+        # Asynchronous tool execution loop
+        if self.state.executing_tool:
+            tool = self.state.executing_tool
+            zone = self.state.executing_zone
+            if tool == "paint_tiles":
+                idx = self.state.execution_index
+                if idx < self.state.execution_total:
+                    tile = self.state.execution_list[idx]
+                    orig = tile.tile_type
+                    tile.overlay_code = self.state.tile_code
+                    sprite = get_sprite_for_tile(orig, tile.overlay_code)
+                    tile.sprite = sprite
+                    tile.scaled_cache.clear()
+                    # update ground layer
+                    tx = tile.x // TILE_SIZE
+                    ty = tile.y // TILE_SIZE
+                    ground = self.map_manager.tiles_by_layer.get(Layer.Ground)
+                    if ground and 0 <= ty < len(ground) and 0 <= tx < len(ground[0]):
+                        gt = ground[ty][tx]
+                        orig2 = gt.tile_type
+                        gt.overlay_code = tile.overlay_code
+                        sprite2 = get_sprite_for_tile(orig2, gt.overlay_code)
+                        gt.sprite = sprite2
+                        gt.scaled_cache.clear()
+                    self.state.execution_index += 1
+                else:
+                    # finalize overlay persistence
+                    layers = load_layers(zone)
+                    off_x, off_y = global_map_settings.zone_offsets.get(zone)
+                    wz, hz = global_map_settings.zone_size
+                    grid = [["" for _ in range(wz)] for _ in range(hz)]
+                    for t in self.map_manager.tiles_by_zone.get(zone, []):
+                        lx = t.x // TILE_SIZE - off_x
+                        ly = t.y // TILE_SIZE - off_y
+                        if 0 <= lx < wz and 0 <= ly < hz:
+                            grid[ly][lx] = t.overlay_code
+                    layers[Layer.Ground] = grid
+                    save_layers(zone, layers)
+                    print(f"DEBUG: persisted overlay for zone {zone}")
+                    self.map_manager.view.invalidate_cache()
+                    # clear execution state
+                    self.state.executing_tool = None
+                    self.state.executing_zone = None
+                    self.state.execution_list.clear()
+                    self.state.execution_index = 0
+                    self.state.execution_total = 0
+                    self.state.tile_code = None
+            elif tool == "clear_colliders":
+                idx = self.state.execution_index
+                if idx < self.state.execution_total:
+                    self.state.execution_index += 1
+                else:
+                    w, h = global_map_settings.zone_size
+                    grid = [["#" for _ in range(w)] for _ in range(h)]
+                    path = os.path.join(DATA_DIR, 'collisions', f'{zone}.json')
+                    try:
+                        with open(path, 'w', encoding='utf-8') as f:
+                            json.dump(grid, f, indent=2)
+                        print(f"DEBUG [MapEditorEventHandler] cleared colliders for zone {zone}")
+                    except Exception as e:
+                        print(f"DEBUG [MapEditorEventHandler] failed to clear colliders for zone {zone}: {e}")
+                    self.map_manager.reload_map()
+                    self.manager.game.ecs.ecs_world.spatial_index = SpatialIndex(self.map_manager, self.manager.game.buildings.buildings)
+                    self.state.executing_tool = None
+                    self.state.executing_zone = None
+                    self.state.execution_list.clear()
+                    self.state.execution_index = 0
+                    self.state.execution_total = 0
+            elif tool == "paint_colliders":
+                idx = self.state.execution_index
+                if idx < self.state.execution_total:
+                    self.state.execution_index += 1
+                else:
+                    w, h = global_map_settings.zone_size
+                    grid = [["." for _ in range(w)] for _ in range(h)]
+                    path = os.path.join(DATA_DIR, 'collisions', f'{zone}.json')
+                    try:
+                        with open(path, 'w', encoding='utf-8') as f:
+                            json.dump(grid, f, indent=2)
+                        print(f"DEBUG [MapEditorEventHandler] painted colliders for zone {zone}")
+                    except Exception as e:
+                        print(f"DEBUG [MapEditorEventHandler] failed to paint colliders for zone {zone}: {e}")
+                    self.map_manager.reload_map()
+                    self.manager.game.ecs.ecs_world.spatial_index = SpatialIndex(self.map_manager, self.manager.game.buildings.buildings)
+                    self.state.executing_tool = None
+                    self.state.executing_zone = None
+                    self.state.execution_list.clear()
+                    self.state.execution_index = 0
+                    self.state.execution_total = 0
+            return
         for ev in pygame.event.get():
             #print(f"DEBUG: Event {ev.type} at {getattr(ev, 'pos', None)}")
             # Handle quit
@@ -190,69 +280,6 @@ class MapEditorEventHandler:
                         self.state.confirm_yes_rect = None
                         self.state.confirm_no_rect = None
                         return
-                # Handle paint tiles confirmation dialog
-                if self.state.confirm_paint_tiles:
-                    zone = self.state.pending_paint_tiles_zone
-                    # Yes: apply paint
-                    if self.state.confirm_paint_yes_rect and self.state.confirm_paint_yes_rect.collidepoint(ev.pos):
-                        print(f"DEBUG: confirming paint tiles for zone {zone}")
-                        tile_code = "floor"
-                        print(f"DEBUG: painting with tile '{tile_code}' on layer '{Layer.Ground.name}'")
-                        # sprite generated per tile using overlay code
-                        count = 0
-                        for tile in self.map_manager.tiles_by_zone.get(zone, []):
-                            original_char = tile.tile_type
-                            tile.overlay_code = tile_code
-                            sprite = get_sprite_for_tile(original_char, tile.overlay_code)
-                            tile.sprite = sprite
-                            tile.scaled_cache.clear()
-                            # Also update the ground layer tile used for chunked rendering
-                            tx = tile.x // TILE_SIZE
-                            ty = tile.y // TILE_SIZE
-                            ground = self.map_manager.tiles_by_layer.get(Layer.Ground)
-                            if ground and 0 <= ty < len(ground) and 0 <= tx < len(ground[0]):
-                                gt = ground[ty][tx]
-                                original_char = gt.tile_type
-                                gt.overlay_code = tile_code
-                                sprite = get_sprite_for_tile(original_char, gt.overlay_code)
-                                gt.sprite = sprite
-                                gt.scaled_cache.clear()
-                            count += 1
-                        print(f"DEBUG: painted {count} tiles in zone {zone}")
-                        # Persistir overlay de ground para zona
-                        zone_offset = global_map_settings.zone_offsets.get(zone)
-                        if zone_offset:
-                            off_x, off_y = zone_offset
-                            zone_w, zone_h = global_map_settings.zone_size
-                            overlay_grid = [["" for _ in range(zone_w)] for _ in range(zone_h)]
-                            for t in self.map_manager.tiles_by_zone.get(zone, []):
-                                tx = t.x // TILE_SIZE
-                                ty = t.y // TILE_SIZE
-                                local_x = tx - off_x
-                                local_y = ty - off_y
-                                if 0 <= local_x < zone_w and 0 <= local_y < zone_h:
-                                    overlay_grid[local_y][local_x] = t.overlay_code
-                            # Merge with existing overlay layers
-                            layers = load_layers(zone)
-                            layers[Layer.Ground] = overlay_grid
-                            save_layers(zone, layers)
-                            print(f"DEBUG: persisted overlay for zone {zone}")
-                        # Invalidate cached chunk surfaces to reflect updated tile sprites
-                        print(f"[DEBUG][MapEditorEventHandler] invalidating chunk cache after painting")
-                        self.map_manager.view.invalidate_cache()
-                        # clear confirmation state
-                        self.state.confirm_paint_tiles = False
-                        self.state.pending_paint_tiles_zone = None
-                        self.state.confirm_paint_yes_rect = None
-                        self.state.confirm_paint_no_rect = None
-                    # No: cancel
-                    elif self.state.confirm_paint_no_rect and self.state.confirm_paint_no_rect.collidepoint(ev.pos):
-                        print("DEBUG: canceled paint tiles")
-                        self.state.confirm_paint_tiles = False
-                        self.state.pending_paint_tiles_zone = None
-                        self.state.confirm_paint_yes_rect = None
-                        self.state.confirm_paint_no_rect = None
-                    return
                 # Handle add zone confirmation dialog
                 if self.state.confirm_add_zone and self.state.pending_add_zone_coords:
                     # Yes: add the zone
@@ -274,20 +301,13 @@ class MapEditorEventHandler:
                 # Handle clear colliders confirmation dialog
                 if self.state.confirm_clear_colliders:
                     zone = self.state.pending_clear_colliders_zone
-                    # Yes: apply clear
+                    # Yes: schedule async clear colliders
                     if self.state.confirm_clear_colliders_yes_rect and self.state.confirm_clear_colliders_yes_rect.collidepoint(ev.pos):
-                        w,h = global_map_settings.zone_size
-                        grid = [["#" for _ in range(w)] for _ in range(h)]
-                        path = os.path.join(DATA_DIR, 'collisions', f'{zone}.json')
-                        try:
-                            with open(path, 'w', encoding='utf-8') as f:
-                                json.dump(grid, f, indent=2)
-                            print(f"DEBUG [MapEditorEventHandler] cleared colliders for zone {zone}")
-                        except Exception as e:
-                            print(f"DEBUG [MapEditorEventHandler] failed to clear colliders for zone {zone}: {e}")
-                        self.map_manager.reload_map()
-                        # Refresh ECS collision index
-                        self.manager.game.ecs.ecs_world.spatial_index = SpatialIndex(self.map_manager, self.manager.game.buildings.buildings)
+                        self.state.executing_tool = "clear_colliders"
+                        self.state.executing_zone = zone
+                        self.state.execution_list = list(self.map_manager.tiles_by_zone.get(zone, []))
+                        self.state.execution_total = len(self.state.execution_list)
+                        self.state.execution_index = 0
                         self.state.confirm_clear_colliders = False
                         self.state.pending_clear_colliders_zone = None
                         self.state.confirm_clear_colliders_yes_rect = None
@@ -303,20 +323,13 @@ class MapEditorEventHandler:
                 # Handle paint colliders confirmation dialog
                 if self.state.confirm_paint_colliders:
                     zone = self.state.pending_paint_colliders_zone
-                    # Yes: apply paint
+                    # Yes: schedule async paint colliders
                     if self.state.confirm_paint_colliders_yes_rect and self.state.confirm_paint_colliders_yes_rect.collidepoint(ev.pos):
-                        w,h = global_map_settings.zone_size
-                        grid = [["." for _ in range(w)] for _ in range(h)]
-                        path = os.path.join(DATA_DIR, 'collisions', f'{zone}.json')
-                        try:
-                            with open(path, 'w', encoding='utf-8') as f:
-                                json.dump(grid, f, indent=2)
-                            print(f"DEBUG [MapEditorEventHandler] painted colliders for zone {zone}")
-                        except Exception as e:
-                            print(f"DEBUG [MapEditorEventHandler] failed to paint colliders for zone {zone}: {e}")
-                        self.map_manager.reload_map()
-                        # Refresh ECS collision index
-                        self.manager.game.ecs.ecs_world.spatial_index = SpatialIndex(self.map_manager, self.manager.game.buildings.buildings)
+                        self.state.executing_tool = "paint_colliders"
+                        self.state.executing_zone = zone
+                        self.state.execution_list = list(self.map_manager.tiles_by_zone.get(zone, []))
+                        self.state.execution_total = len(self.state.execution_list)
+                        self.state.execution_index = 0
                         self.state.confirm_paint_colliders = False
                         self.state.pending_paint_colliders_zone = None
                         self.state.confirm_paint_colliders_yes_rect = None
@@ -329,6 +342,33 @@ class MapEditorEventHandler:
                         self.state.confirm_paint_colliders_yes_rect = None
                         self.state.confirm_paint_colliders_no_rect = None
                         return
+                # Handle paint tiles confirmation dialog
+                if self.state.confirm_paint_tiles:
+                    zone = self.state.pending_paint_tiles_zone
+                    # Yes: schedule async paint
+                    if self.state.confirm_paint_yes_rect and self.state.confirm_paint_yes_rect.collidepoint(ev.pos):
+                        print(f"DEBUG: scheduling paint tiles for zone {zone}")
+                        self.state.executing_tool = "paint_tiles"
+                        self.state.executing_zone = zone
+                        self.state.execution_list = list(self.map_manager.tiles_by_zone.get(zone, []))
+                        self.state.execution_total = len(self.state.execution_list)
+                        self.state.execution_index = 0
+                        self.state.tile_code = "floor"
+                        # clear confirmation
+                        self.state.confirm_paint_tiles = False
+                        self.state.pending_paint_tiles_zone = None
+                        self.state.confirm_paint_yes_rect = None
+                        self.state.confirm_paint_no_rect = None
+                        return
+                    # No: cancel
+                    if self.state.confirm_paint_no_rect and self.state.confirm_paint_no_rect.collidepoint(ev.pos):
+                        print("DEBUG: canceled paint tiles")
+                        self.state.confirm_paint_tiles = False
+                        self.state.pending_paint_tiles_zone = None
+                        self.state.confirm_paint_yes_rect = None
+                        self.state.confirm_paint_no_rect = None
+                        return
+                    return
                 # Handle add zone mode (click to add 50x50 zone)
                 if self.state.add_zone_mode:
                     world_x = ev.pos[0] / camera.zoom + camera.offset_x

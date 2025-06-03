@@ -64,3 +64,13 @@ class MapEditorState:
         self.pending_add_zone_coords: tuple[int,int] | None = None  # Coords for pending zone
         self.confirm_add_yes_rect: pygame.Rect | None = None  # Yes button for add confirm
         self.confirm_add_no_rect: pygame.Rect | None = None   # No button for add confirm
+        # Async execution for tool operations
+        self.executing_tool: str | None = None  # current tool in execution
+        self.executing_zone: str | None = None  # target zone or identifier
+        self.execution_list: list = []          # list of items to process
+        self.execution_index: int = 0          # progress index
+        self.execution_total: int = 0          # total items count
+        # Execution scheduling for tool operations
+        self.executing_tool: str | None = None  # type of tool being applied
+        self.executing_zone: str | None = None  # zone or tool param
+        self.execution_start_time: int = 0      # tick at which execution was scheduled

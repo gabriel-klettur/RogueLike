@@ -21,6 +21,29 @@ class MapEditorView:
     def render(self, screen, camera, map_manager):
         if not self.state.active:
             return
+        # Show full-screen loading overlay and progress bar for async tools
+        if self.state.executing_tool:
+            sw, sh = screen.get_size()
+            # draw dim overlay
+            overlay = pygame.Surface((sw, sh), pygame.SRCALPHA)
+            overlay.fill((0, 0, 0, 150))
+            screen.blit(overlay, (0, 0))
+            # draw progress bar
+            bar_w, bar_h = sw * 0.5, 20
+            bar_x = (sw - bar_w) / 2
+            bar_y = (sh - bar_h) / 2
+            pygame.draw.rect(screen, (50, 50, 50), (bar_x, bar_y, bar_w, bar_h))
+            total = max(self.state.execution_total, 1)
+            progress = self.state.execution_index / total
+            fill_w = bar_w * progress
+            pygame.draw.rect(screen, (0, 150, 215), (bar_x, bar_y, fill_w, bar_h))
+            pygame.draw.rect(screen, (255, 255, 255), (bar_x, bar_y, bar_w, bar_h), 2)
+            font_small = pygame.font.SysFont(None, 24)
+            label = f"{self.state.executing_tool.replace('_', ' ').title()}: {int(progress*100)}%"
+            text_surf = font_small.render(label, True, (255, 255, 255))
+            screen.blit(text_surf, (bar_x + (bar_w - text_surf.get_width()) / 2,
+                                     bar_y + (bar_h - text_surf.get_height()) / 2))
+            return
         zones = global_map_settings.zone_offsets
         zone_w, zone_h = global_map_settings.zone_size
         for zone, (ox, oy) in zones.items():
@@ -360,3 +383,23 @@ class MapEditorView:
             screen.blit(no_surf, (no_rect.centerx - no_surf.get_width() // 2,
                                   no_rect.centery - no_surf.get_height() // 2))
             self.state.confirm_add_no_rect = no_rect
+        # Determinate progress bar for async tool execution
+        if self.state.executing_tool:
+            sw, sh = screen.get_size()
+            bar_w, bar_h = sw * 0.5, 8
+            bar_x = (sw - bar_w) / 2
+            bar_y = sh * 0.85
+            # track background
+            pygame.draw.rect(screen, (50, 50, 50), (bar_x, bar_y, bar_w, bar_h))
+            # fill according to progress
+            total = max(self.state.execution_total, 1)
+            progress = self.state.execution_index / total
+            fill_w = bar_w * progress
+            pygame.draw.rect(screen, (0, 150, 215), (bar_x, bar_y, fill_w, bar_h))
+            # border
+            pygame.draw.rect(screen, (255, 255, 255), (bar_x, bar_y, bar_w, bar_h), 1)
+            # label
+            font_small = pygame.font.SysFont(None, 20)
+            label = f"{self.state.executing_tool.replace('_', ' ').title()}: {int(progress*100)}%"
+            text_surf = font_small.render(label, True, (255, 255, 255))
+            screen.blit(text_surf, (bar_x, bar_y - bar_h - 2))
