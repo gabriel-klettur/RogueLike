@@ -154,6 +154,11 @@ class MapToolbarController:
         # Add Zone and Delete Zone icons
         self.add_icon = load_image("assets/ui/add_zone.png", (64, 64))
         self.delete_icon = load_image("assets/ui/delete_zone.png", (64, 64))
+        # Clear/Paint Tiles and Colliders icons
+        self.clear_tiles_icon = load_image("assets/ui/vaciar_tiles_zone.png", (64, 64))
+        self.paint_tiles_icon = load_image("assets/ui/pintar_tiles_zone.png", (64, 64))
+        self.clear_colliders_icon = load_image("assets/ui/vaciar_colliders_zone.png", (64, 64))
+        self.paint_colliders_icon = load_image("assets/ui/pintar_colliders_zone.png", (64, 64))
         self.x, self.y = 10, 10
         self.size = 64
         self.padding = 8
@@ -161,6 +166,10 @@ class MapToolbarController:
         self.icon_rect: pygame.Rect | None = None
         self.add_rect: pygame.Rect | None = None
         self.delete_rect: pygame.Rect | None = None
+        self.clear_tiles_rect: pygame.Rect | None = None
+        self.paint_tiles_rect: pygame.Rect | None = None
+        self.clear_colliders_rect: pygame.Rect | None = None
+        self.paint_colliders_rect: pygame.Rect | None = None
         self.option_rects: dict[Layer, pygame.Rect] = {}
 
     def handle_click(self, mouse_pos) -> bool:
@@ -181,6 +190,51 @@ class MapToolbarController:
             self.editor.delete_zone_mode = not self.editor.delete_zone_mode
             self.editor.add_zone_mode = False
             print(f"[DEBUG][Toolbar] delete_zone_mode set to {self.editor.delete_zone_mode}")
+            return True
+        # Handle Clear Tiles Zone button click
+        if self.clear_tiles_rect and self.clear_tiles_rect.collidepoint(mouse_pos):
+            print("[DEBUG][Toolbar] clicked Clear Tiles Zone button")
+            self.editor.clear_tiles_mode = not self.editor.clear_tiles_mode
+            # disable other modes
+            self.editor.paint_tiles_mode = False
+            self.editor.add_zone_mode = False
+            self.editor.delete_zone_mode = False
+            self.editor.clear_colliders_mode = False
+            self.editor.paint_colliders_mode = False
+            print(f"[DEBUG][Toolbar] clear_tiles_mode set to {self.editor.clear_tiles_mode}")
+            return True
+        # Handle Paint Tiles Zone button click
+        if self.paint_tiles_rect and self.paint_tiles_rect.collidepoint(mouse_pos):
+            print("[DEBUG][Toolbar] clicked Paint Tiles Zone button")
+            self.editor.paint_tiles_mode = not self.editor.paint_tiles_mode
+            self.editor.clear_tiles_mode = False
+            self.editor.add_zone_mode = False
+            self.editor.delete_zone_mode = False
+            self.editor.clear_colliders_mode = False
+            self.editor.paint_colliders_mode = False
+            print(f"[DEBUG][Toolbar] paint_tiles_mode set to {self.editor.paint_tiles_mode}")
+            return True
+        # Handle Clear Colliders Zone button click
+        if self.clear_colliders_rect and self.clear_colliders_rect.collidepoint(mouse_pos):
+            print("[DEBUG][Toolbar] clicked Clear Colliders Zone button")
+            self.editor.clear_colliders_mode = not self.editor.clear_colliders_mode
+            self.editor.clear_tiles_mode = False
+            self.editor.paint_tiles_mode = False
+            self.editor.add_zone_mode = False
+            self.editor.delete_zone_mode = False
+            self.editor.paint_colliders_mode = False
+            print(f"[DEBUG][Toolbar] clear_colliders_mode set to {self.editor.clear_colliders_mode}")
+            return True
+        # Handle Paint Colliders Zone button click
+        if self.paint_colliders_rect and self.paint_colliders_rect.collidepoint(mouse_pos):
+            print("[DEBUG][Toolbar] clicked Paint Colliders Zone button")
+            self.editor.paint_colliders_mode = not self.editor.paint_colliders_mode
+            self.editor.clear_tiles_mode = False
+            self.editor.paint_tiles_mode = False
+            self.editor.add_zone_mode = False
+            self.editor.delete_zone_mode = False
+            self.editor.clear_colliders_mode = False
+            print(f"[DEBUG][Toolbar] paint_colliders_mode set to {self.editor.paint_colliders_mode}")
             return True
         # Handle clicks on dropdown items
         if self.editor.layers_view_open:

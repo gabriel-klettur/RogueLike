@@ -1,8 +1,13 @@
 import pygame
+import os
 from pygame.locals import *
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_engine.config.config import DATA_DIR, ASSETS_DIR
+from roguelike_engine.map.model.layer import Layer
+from roguelike_engine.tile.assets import get_sprite_for_tile
 from roguelike_game.systems.editor.buildings.model.persistence.save_buildings_to_json import save_buildings_to_json
+from roguelike_engine.map.model.overlay.overlay_manager import load_layers, save_layers
 
 class MapEditorEventHandler:
     """
@@ -122,6 +127,9 @@ class MapEditorEventHandler:
                 return
             # Selección y arrastre
             elif ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
+                # Handle toolbar button clicks, return if handled
+                if self.controller.toolbar.handle_click(ev.pos):
+                    return
                 # Handle deletion confirmation dialog
                 if self.state.confirm_delete_zone:
                     if self.state.confirm_yes_rect and self.state.confirm_yes_rect.collidepoint(ev.pos):
@@ -139,6 +147,69 @@ class MapEditorEventHandler:
                         self.state.confirm_yes_rect = None
                         self.state.confirm_no_rect = None
                         return
+                # Handle paint tiles confirmation dialog
+                if self.state.confirm_paint_tiles:
+                    zone = self.state.pending_paint_tiles_zone
+                    # Yes: apply paint
+                    if self.state.confirm_paint_yes_rect and self.state.confirm_paint_yes_rect.collidepoint(ev.pos):
+                        print(f"DEBUG: confirming paint tiles for zone {zone}")
+                        tile_code = "floor"
+                        print(f"DEBUG: painting with tile '{tile_code}' on layer '{Layer.Ground.name}'")
+                        # sprite generated per tile using overlay code
+                        count = 0
+                        for tile in self.map_manager.tiles_by_zone.get(zone, []):
+                            original_char = tile.tile_type
+                            tile.overlay_code = tile_code
+                            sprite = get_sprite_for_tile(original_char, tile.overlay_code)
+                            tile.sprite = sprite
+                            tile.scaled_cache.clear()
+                            # Also update the ground layer tile used for chunked rendering
+                            tx = tile.x // TILE_SIZE
+                            ty = tile.y // TILE_SIZE
+                            ground = self.map_manager.tiles_by_layer.get(Layer.Ground)
+                            if ground and 0 <= ty < len(ground) and 0 <= tx < len(ground[0]):
+                                gt = ground[ty][tx]
+                                original_char = gt.tile_type
+                                gt.overlay_code = tile_code
+                                sprite = get_sprite_for_tile(original_char, gt.overlay_code)
+                                gt.sprite = sprite
+                                gt.scaled_cache.clear()
+                            count += 1
+                        print(f"DEBUG: painted {count} tiles in zone {zone}")
+                        # Persistir overlay de ground para zona
+                        zone_offset = global_map_settings.zone_offsets.get(zone)
+                        if zone_offset:
+                            off_x, off_y = zone_offset
+                            zone_w, zone_h = global_map_settings.zone_size
+                            overlay_grid = [["" for _ in range(zone_w)] for _ in range(zone_h)]
+                            for t in self.map_manager.tiles_by_zone.get(zone, []):
+                                tx = t.x // TILE_SIZE
+                                ty = t.y // TILE_SIZE
+                                local_x = tx - off_x
+                                local_y = ty - off_y
+                                if 0 <= local_x < zone_w and 0 <= local_y < zone_h:
+                                    overlay_grid[local_y][local_x] = t.overlay_code
+                            # Merge with existing overlay layers
+                            layers = load_layers(zone)
+                            layers[Layer.Ground] = overlay_grid
+                            save_layers(zone, layers)
+                            print(f"DEBUG: persisted overlay for zone {zone}")
+                        # Invalidate cached chunk surfaces to reflect updated tile sprites
+                        print(f"[DEBUG][MapEditorEventHandler] invalidating chunk cache after painting")
+                        self.map_manager.view.invalidate_cache()
+                        # clear confirmation state
+                        self.state.confirm_paint_tiles = False
+                        self.state.pending_paint_tiles_zone = None
+                        self.state.confirm_paint_yes_rect = None
+                        self.state.confirm_paint_no_rect = None
+                    # No: cancel
+                    elif self.state.confirm_paint_no_rect and self.state.confirm_paint_no_rect.collidepoint(ev.pos):
+                        print("DEBUG: canceled paint tiles")
+                        self.state.confirm_paint_tiles = False
+                        self.state.pending_paint_tiles_zone = None
+                        self.state.confirm_paint_yes_rect = None
+                        self.state.confirm_paint_no_rect = None
+                    return
                 # Handle add zone mode (click to add 50x50 zone)
                 if self.state.add_zone_mode:
                     world_x = ev.pos[0] / camera.zoom + camera.offset_x
@@ -161,12 +232,26 @@ class MapEditorEventHandler:
                             self.state.confirm_delete_zone = True
                             self.state.delete_zone_mode = False
                             return
+                # Handle Paint Tiles Zone mode (click to select zone for painting)
+                if self.state.paint_tiles_mode:
+                    world_x = ev.pos[0] / camera.zoom + camera.offset_x
+                    world_y = ev.pos[1] / camera.zoom + camera.offset_y
+                    tx = int(world_x) // TILE_SIZE
+                    ty = int(world_y) // TILE_SIZE
+                    for zn, (ox, oy) in global_map_settings.zone_offsets.items():
+                        w, h = global_map_settings.zone_size
+                        if ox <= tx < ox + w and oy <= ty < oy + h:
+                            self.state.pending_paint_tiles_zone = zn
+                            self.state.confirm_paint_tiles = True
+                            self.state.paint_tiles_mode = False
+                            print(f"DEBUG: paint_tiles_mode: pending zone {zn}, asking confirmation")
+                            return
                 # compute world tile coords
                 world_x = ev.pos[0] / camera.zoom + camera.offset_x
                 world_y = ev.pos[1] / camera.zoom + camera.offset_y
                 tx = int(world_x) // TILE_SIZE
                 ty = int(world_y) // TILE_SIZE
-                print(f"DEBUG: MouseButtonDown at screen={ev.pos}, world=({world_x:.1f},{world_y:.1f}), grid=({tx},{ty})")
+                #print(f"DEBUG: MouseButtonDown at screen={ev.pos}, world=({world_x:.1f},{world_y:.1f}), grid=({tx},{ty})")
                 mx, my = ev.pos
                 # convert to world coords
                 world_x = mx / camera.zoom + camera.offset_x
@@ -179,7 +264,7 @@ class MapEditorEventHandler:
                 # Determinar zona bajo el cursor
                 for zn, (ox, oy) in global_map_settings.zone_offsets.items():
                     w, h = global_map_settings.zone_size
-                    print(f"DEBUG: checking zone {zn}: offset=({ox},{oy}), size=({w},{h}), click_grid=({tx},{ty})")
+                    #print(f"DEBUG: checking zone {zn}: offset=({ox},{oy}), size=({w},{h}), click_grid=({tx},{ty})")
                     if ox <= tx < ox + w and oy <= ty < oy + h:
                         print(f"DEBUG: click candidate on zone {zn}")
                         # Manual double-click detection
