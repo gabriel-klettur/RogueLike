@@ -1,5 +1,6 @@
 import pygame
 import os
+import json
 from pygame.locals import *
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
@@ -8,6 +9,7 @@ from roguelike_engine.map.model.layer import Layer
 from roguelike_engine.tile.assets import get_sprite_for_tile
 from roguelike_game.systems.editor.buildings.model.persistence.save_buildings_to_json import save_buildings_to_json
 from roguelike_engine.map.model.overlay.overlay_manager import load_layers, save_layers
+from roguelike_game.ecs.core.spatial_index import SpatialIndex
 
 class MapEditorEventHandler:
     """
@@ -210,13 +212,91 @@ class MapEditorEventHandler:
                         self.state.confirm_paint_yes_rect = None
                         self.state.confirm_paint_no_rect = None
                     return
+                # Handle add zone confirmation dialog
+                if self.state.confirm_add_zone and self.state.pending_add_zone_coords:
+                    # Yes: add the zone
+                    if self.state.confirm_add_yes_rect and self.state.confirm_add_yes_rect.collidepoint(ev.pos):
+                        tx, ty = self.state.pending_add_zone_coords
+                        self.controller.add_zone(tx, ty)
+                        self.state.confirm_add_zone = False
+                        self.state.pending_add_zone_coords = None
+                        self.state.confirm_add_yes_rect = None
+                        self.state.confirm_add_no_rect = None
+                        return
+                    # No: cancel adding zone
+                    if self.state.confirm_add_no_rect and self.state.confirm_add_no_rect.collidepoint(ev.pos):
+                        self.state.confirm_add_zone = False
+                        self.state.pending_add_zone_coords = None
+                        self.state.confirm_add_yes_rect = None
+                        self.state.confirm_add_no_rect = None
+                        return
+                # Handle clear colliders confirmation dialog
+                if self.state.confirm_clear_colliders:
+                    zone = self.state.pending_clear_colliders_zone
+                    # Yes: apply clear
+                    if self.state.confirm_clear_colliders_yes_rect and self.state.confirm_clear_colliders_yes_rect.collidepoint(ev.pos):
+                        w,h = global_map_settings.zone_size
+                        grid = [["#" for _ in range(w)] for _ in range(h)]
+                        path = os.path.join(DATA_DIR, 'collisions', f'{zone}.json')
+                        try:
+                            with open(path, 'w', encoding='utf-8') as f:
+                                json.dump(grid, f, indent=2)
+                            print(f"DEBUG [MapEditorEventHandler] cleared colliders for zone {zone}")
+                        except Exception as e:
+                            print(f"DEBUG [MapEditorEventHandler] failed to clear colliders for zone {zone}: {e}")
+                        self.map_manager.reload_map()
+                        # Refresh ECS collision index
+                        self.manager.game.ecs.ecs_world.spatial_index = SpatialIndex(self.map_manager, self.manager.game.buildings.buildings)
+                        self.state.confirm_clear_colliders = False
+                        self.state.pending_clear_colliders_zone = None
+                        self.state.confirm_clear_colliders_yes_rect = None
+                        self.state.confirm_clear_colliders_no_rect = None
+                        return
+                    # No: cancel
+                    if self.state.confirm_clear_colliders_no_rect and self.state.confirm_clear_colliders_no_rect.collidepoint(ev.pos):
+                        self.state.confirm_clear_colliders = False
+                        self.state.pending_clear_colliders_zone = None
+                        self.state.confirm_clear_colliders_yes_rect = None
+                        self.state.confirm_clear_colliders_no_rect = None
+                        return
+                # Handle paint colliders confirmation dialog
+                if self.state.confirm_paint_colliders:
+                    zone = self.state.pending_paint_colliders_zone
+                    # Yes: apply paint
+                    if self.state.confirm_paint_colliders_yes_rect and self.state.confirm_paint_colliders_yes_rect.collidepoint(ev.pos):
+                        w,h = global_map_settings.zone_size
+                        grid = [["." for _ in range(w)] for _ in range(h)]
+                        path = os.path.join(DATA_DIR, 'collisions', f'{zone}.json')
+                        try:
+                            with open(path, 'w', encoding='utf-8') as f:
+                                json.dump(grid, f, indent=2)
+                            print(f"DEBUG [MapEditorEventHandler] painted colliders for zone {zone}")
+                        except Exception as e:
+                            print(f"DEBUG [MapEditorEventHandler] failed to paint colliders for zone {zone}: {e}")
+                        self.map_manager.reload_map()
+                        # Refresh ECS collision index
+                        self.manager.game.ecs.ecs_world.spatial_index = SpatialIndex(self.map_manager, self.manager.game.buildings.buildings)
+                        self.state.confirm_paint_colliders = False
+                        self.state.pending_paint_colliders_zone = None
+                        self.state.confirm_paint_colliders_yes_rect = None
+                        self.state.confirm_paint_colliders_no_rect = None
+                        return
+                    # No: cancel
+                    if self.state.confirm_paint_colliders_no_rect and self.state.confirm_paint_colliders_no_rect.collidepoint(ev.pos):
+                        self.state.confirm_paint_colliders = False
+                        self.state.pending_paint_colliders_zone = None
+                        self.state.confirm_paint_colliders_yes_rect = None
+                        self.state.confirm_paint_colliders_no_rect = None
+                        return
                 # Handle add zone mode (click to add 50x50 zone)
                 if self.state.add_zone_mode:
                     world_x = ev.pos[0] / camera.zoom + camera.offset_x
                     world_y = ev.pos[1] / camera.zoom + camera.offset_y
                     tx = int(world_x) // TILE_SIZE
                     ty = int(world_y) // TILE_SIZE
-                    self.controller.add_zone(tx, ty)
+                    # set up confirmation for adding zone
+                    self.state.pending_add_zone_coords = (tx, ty)
+                    self.state.confirm_add_zone = True
                     self.state.add_zone_mode = False
                     return
                 # Handle delete zone mode (click to select zone for deletion)
@@ -245,6 +325,32 @@ class MapEditorEventHandler:
                             self.state.confirm_paint_tiles = True
                             self.state.paint_tiles_mode = False
                             print(f"DEBUG: paint_tiles_mode: pending zone {zn}, asking confirmation")
+                            return
+                # Handle Clear Colliders Zone mode: prepare confirmation
+                if self.state.clear_colliders_mode:
+                    world_x = ev.pos[0] / camera.zoom + camera.offset_x
+                    world_y = ev.pos[1] / camera.zoom + camera.offset_y
+                    tx = int(world_x) // TILE_SIZE
+                    ty = int(world_y) // TILE_SIZE
+                    for zn, (ox, oy) in global_map_settings.zone_offsets.items():
+                        w, h = global_map_settings.zone_size
+                        if ox <= tx < ox + w and oy <= ty < oy + h:
+                            self.state.pending_clear_colliders_zone = zn
+                            self.state.confirm_clear_colliders = True
+                            self.state.clear_colliders_mode = False
+                            return
+                # Handle Paint Colliders Zone mode: prepare confirmation
+                if self.state.paint_colliders_mode:
+                    world_x = ev.pos[0] / camera.zoom + camera.offset_x
+                    world_y = ev.pos[1] / camera.zoom + camera.offset_y
+                    tx = int(world_x) // TILE_SIZE
+                    ty = int(world_y) // TILE_SIZE
+                    for zn, (ox, oy) in global_map_settings.zone_offsets.items():
+                        w, h = global_map_settings.zone_size
+                        if ox <= tx < ox + w and oy <= ty < oy + h:
+                            self.state.pending_paint_colliders_zone = zn
+                            self.state.confirm_paint_colliders = True
+                            self.state.paint_colliders_mode = False
                             return
                 # compute world tile coords
                 world_x = ev.pos[0] / camera.zoom + camera.offset_x
