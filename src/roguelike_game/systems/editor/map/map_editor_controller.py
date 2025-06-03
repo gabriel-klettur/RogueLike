@@ -191,6 +191,7 @@ class MapToolbarController:
         # Toggle dropdown when clicking icon
         if self.icon_rect and self.icon_rect.collidepoint(mouse_pos):
             self.editor.layers_view_open = not self.editor.layers_view_open
+            print(f"[DEBUG][Toolbar] layers_view_open set to {self.editor.layers_view_open}")
             return True
         # Handle Add Zone button click
         if self.add_rect and self.add_rect.collidepoint(mouse_pos):
@@ -260,5 +261,9 @@ class MapToolbarController:
                         # Toggle building layer visibility
                         self.editor.show_buildings = not self.editor.show_buildings
                         print(f"[DEBUG][Layer View] buildings: {'visible' if self.editor.show_buildings else 'hidden'}")
+                    elif key == "colliders":
+                        # Toggle colliders layer visibility
+                        self.editor.show_colliders = not self.editor.show_colliders
+                        print(f"[DEBUG][Layer View] colliders: {'visible' if self.editor.show_colliders else 'hidden'}")
                     return True
         return False

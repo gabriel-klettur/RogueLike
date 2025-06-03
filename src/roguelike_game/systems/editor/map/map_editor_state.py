@@ -38,6 +38,7 @@ class MapEditorState:
         self.visible_layers: dict[Layer, bool] = {layer: True for layer in Layer}
         # Toggle building layer visibility
         self.show_buildings: bool = True
+        self.show_colliders: bool = False
         self.renaming_zone: str | None = None  # Current zone being renamed
         self.rename_input: str = ""  # Buffer for rename text
         self.rename_input_rect: pygame.Rect | None = None  # Rect para caja de input

@@ -109,6 +109,15 @@ class MapEditorView:
                             screen_tl[1] + screen_size[1] // 2)
                 )
                 screen.blit(label, label_rect)
+        # Draw colliders overlay on top of zones
+        if self.state.show_colliders:
+            for tile in self.map_manager.solid_tiles:
+                tl = camera.apply((tile.x, tile.y))
+                size = camera.scale((TILE_SIZE, TILE_SIZE))
+                overlay = pygame.Surface(size, pygame.SRCALPHA)
+                overlay.fill((255, 0, 0, 80))
+                screen.blit(overlay, tl)
+                pygame.draw.rect(screen, (255, 0, 0), (*tl, *size), 1)
         # Render Map Editor toolbar and dropdown
         toolbar = self.controller.toolbar
         # Draw toolbar icon
@@ -156,23 +165,26 @@ class MapEditorView:
             drop_y = toolbar.y
             toolbar.option_rects.clear()
             # Show All, Hide All, each tile layer, and Buildings
-            keys = ["show_all", "hide_all"] + list(Layer) + ["buildings"]
+            keys = ["show_all", "hide_all"] + list(Layer) + ["buildings", "colliders"]
             for idx, key in enumerate(keys):
                 ry = drop_y + idx * BTN_H
                 rect = pygame.Rect(drop_x, ry, BTN_W, BTN_H)
                 toolbar.option_rects[key] = rect
                 pygame.draw.rect(screen, (20, 20, 20), rect)
-                if key == "show_all" or key == "hide_all":
+                if key in ("show_all", "hide_all"):  # show/hide all
                     border_color = (255, 255, 255)
-                elif isinstance(key, Layer):
+                elif isinstance(key, Layer):  # tile layers
                     border_color = (0, 255, 0) if self.state.visible_layers[key] else (255, 0, 0)
-                else:  # buildings
+                elif key == "buildings":  # buildings layer
                     border_color = (128, 0, 128) if self.state.show_buildings else (255, 0, 0)
+                elif key == "colliders":  # collision layer
+                    border_color = (255, 255, 0) if self.state.show_colliders else (255, 0, 0)
                 pygame.draw.rect(screen, border_color, rect, 2)
                 text = ("Show All" if key == "show_all" else
                         "Hide All" if key == "hide_all" else
                         key.name if isinstance(key, Layer) else
-                        "Buildings")
+                        "Buildings" if key == "buildings" else
+                        "Colliders")
                 text_surf = font.render(text, True, (255, 255, 255))
                 screen.blit(text_surf, (drop_x + 5, ry + (BTN_H - text_surf.get_height()) // 2))
         # Render delete confirmation dialog
