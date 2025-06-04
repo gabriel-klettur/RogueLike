@@ -34,7 +34,8 @@ class CollisionDebugSystem:
              y lo dibuja escalado como un polígono.
           4. Si no hay máscara, dibuja el rectángulo.
         """
-        if not config.DEBUG:
+        # Also show collision shapes when hitbox debug is active
+        if not (config.DEBUG or config.DEBUG_HITBOX):
             return
 
         comps = world.components
