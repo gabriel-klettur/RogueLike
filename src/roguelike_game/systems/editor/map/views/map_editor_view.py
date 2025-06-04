@@ -2,7 +2,6 @@ import pygame
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
 import pygame
-from roguelike_game.systems.editor.map.map_editor_controller import MapToolbarController
 from roguelike_game.systems.editor.tiles.tiles_editor_config import BTN_W, BTN_H
 from roguelike_engine.map.model.layer import Layer
 
