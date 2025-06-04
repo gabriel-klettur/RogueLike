@@ -23,10 +23,13 @@ class DamageState(State):
         damage_cfg = world.components['DamageConfig'][eid]
         world.components.setdefault('FlashComponent', {})[eid] = FlashComponent((255,255,255), damage_cfg.duration)
         # Mostrar sprite de daño
-        anim = world.components['Animator'][eid]
-        state = 'damage_left' if self.from_left else 'damage_right'
-        if state in anim.animations:
-            anim.current_state = state
+        anim = world.components.get('Animator', {}).get(eid)
+        if anim:
+            state = 'damage_left' if self.from_left else 'damage_right'
+            if state in anim.animations:
+                anim.current_state = state
+        else:
+            logging.warning(f"[DamageState] No Animator for eid {eid}, skipping animation")
 
     def execute(self, entity, dt):
         # Tras 2 segundos, transitar a next_state

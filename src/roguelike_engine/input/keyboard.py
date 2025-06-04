@@ -32,6 +32,10 @@ def handle_keyboard(event, state, camera, clock, menu, entities, effects, tiles_
             config.DEBUG = not config.DEBUG
             print(f"🧪 DEBUG {'activado' if config.DEBUG else 'desactivado'}")
 
+        elif event.key == pygame.K_F12:
+            config.DEBUG_HITBOX = not config.DEBUG_HITBOX
+            print(f"🧪 HITBOX DEBUG {'activado' if config.DEBUG_HITBOX else 'desactivado'}")
+
         # ---------- TILE-EDITOR (F8) --------- #
         elif event.key == pygame.K_F8:
             # Alternamos el flag global (ya existe en state)

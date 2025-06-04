@@ -10,6 +10,7 @@ import pygame
 from roguelike_game.ecs.components.particles.particle_component import ParticleComponent
 from roguelike_game.ecs.components.abilities.laser_beam_component import LaserBeamComponent
 from roguelike_game.ecs.components.abilities.dash_component import DashComponent
+from roguelike_game.ecs.components.combat.hitbox import HitboxComponent
 import math
 
 class BaseSpellResolver:
@@ -116,7 +117,9 @@ class DashResolver(BaseSpellResolver):
 class SlashResolver(BaseSpellResolver):
     def resolve(self, world, caster, spawn_meta, cfg, camera):
         # Recalcular centro del caster
-        offset = spawn_meta.get('offset', 0)
+        spawn_offset = spawn_meta.get('offset', 0)
+        cfg_offset = cfg.get('offset', 0)
+        offset = spawn_offset + cfg_offset
         pos_cmp = world.components['Position'][caster]
         cx, cy = pos_cmp.x, pos_cmp.y
         sprite_cmp = world.components['Sprite'].get(caster)
@@ -157,6 +160,21 @@ class SlashResolver(BaseSpellResolver):
                 size,
                 lifespan
             )
+        # Crear hitbox de slash para colisión
+        hb_id = world.create_entity()
+        # Ajustar posición del hitbox usando offset combinado
+        real_x = cx + dir_x * offset
+        real_y = cy + dir_y * offset
+        world.components['Position'][hb_id] = Position(real_x, real_y)
+        world.components['HitboxComponent'][hb_id] = HitboxComponent(
+            owner=caster,
+            offset=offset,
+            radius=radius,
+            arc_angle=arc_range,
+            direction=(dir_x, dir_y),
+            lifespan=lifespan,
+            damage=cfg.get('damage', 0),
+        )
 
 # Registro de resolutores por tipo de hechizo
 default_resolvers = {
