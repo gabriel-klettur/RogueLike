@@ -81,6 +81,7 @@
       "prepare_duration": 0.0,
       "channel_duration": 0.0,
       "cooldown_duration": 0.5,
+      "damage": 20,
       "radius": 28,
       "particle_count": 30,
       "arc_range_degrees": 120,
