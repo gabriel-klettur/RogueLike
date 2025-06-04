@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/systems/z_layer/logic.py
 
 """
 Funciones de lógica relacionadas con las capas Z.
@@ -35,3 +34,4 @@ def is_below(e1, e2, z_state):
     True si e1 está en una capa inferior a e2.
     """
     return z_state.get(e1) < z_state.get(e2)
+# Path: src/roguelike_game/systems/z_layer/logic.py

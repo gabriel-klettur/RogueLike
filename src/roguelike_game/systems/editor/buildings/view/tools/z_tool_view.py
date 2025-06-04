@@ -1,6 +1,6 @@
 # Path: src/roguelike_game/systems/editor/buildings/view/tools/z_tool_view.py
 import pygame
-from src.roguelike_game.systems.editor.buildings.buildings_editor_config import Z_PANEL_W, Z_PANEL_H, Z_BTN_W, Z_BTN_H
+from roguelike_game.systems.editor.buildings.buildings_editor_config import Z_PANEL_W, Z_PANEL_H, Z_BTN_W, Z_BTN_H
 
 class ZToolView:
     def __init__(self, state, editor_state, target="bottom"):
@@ -11,14 +11,14 @@ class ZToolView:
         self._panel_cache = {}   # zoom -> Surface
         self._text_cache  = {}   # (char, zoom) -> Surface
 
-    def render(self, screen, building):
-        cam         = self.state.camera
-        w_scaled, h_scaled = cam.scale(building.image.get_size())
-        x, y        = cam.apply((building.x, building.y))
+    def render(self, screen, building, camera):
+        
+        w_scaled, h_scaled = camera.scale(building.image.get_size())
+        x, y        = camera.apply((building.x, building.y))
         panel_x     = x + (w_scaled - Z_PANEL_W) // 2
         panel_y     = y + (h_scaled - 50 if self.target == "bottom" else 10)
 
-        zoom  = round(cam.zoom, 2)
+        zoom  = round(camera.zoom, 2)
         base  = self._get_cached_panel_base(zoom)
         panel = base.copy()
 

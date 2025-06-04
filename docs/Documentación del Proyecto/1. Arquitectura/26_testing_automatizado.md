@@ -55,7 +55,7 @@ tests/
 
 ```python
 import unittest
-from src.roguelike_project.entities.player.stats import PlayerStats
+from roguelike_project.entities.player.stats import PlayerStats
 
 class TestPlayerStats(unittest.TestCase):
     def setUp(self):

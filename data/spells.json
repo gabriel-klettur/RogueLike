@@ -1,0 +1,94 @@
+{
+    "fireball": {
+      "type": "projectile",
+      "prepare_duration": 0.5,
+      "channel_duration": 0.5,
+      "cooldown_duration": 0.5,
+      "speed": 30,
+      "damage": 20,
+      "lifespan": 60,
+      "sprite": "assets/projectiles/fireball.png",
+      "scale": 0.1
+    },
+    "iceball": {
+      "type": "projectile",
+      "prepare_duration": 0.2,
+      "channel_duration": 0.5,
+      "cooldown_duration": 1.0,
+      "speed": 15,
+      "damage": 10,
+      "lifespan": 60,
+      "sprite": "assets/projectiles/iceball.png",
+      "scale": 0.1
+    },
+    "lightball": {
+      "type": "projectile",
+      "prepare_duration": 0.5,
+      "channel_duration": 0.5,
+      "cooldown_duration": 0.5,
+      "speed": 60,
+      "damage": 10,
+      "lifespan": 120,
+      "sprite": "assets/projectiles/lightball.png",
+      "scale": 0.1
+    },
+    "darkball": {
+      "type": "projectile",
+      "prepare_duration": 0.2,
+      "channel_duration": 0.5,
+      "cooldown_duration": 1.0,
+      "speed": 10,
+      "damage": 10,
+      "lifespan": 60,
+      "sprite": "assets/projectiles/darkball.png",
+      "scale": 0.1
+    },
+    "healing_aura": {
+      "type": "aura",
+      "prepare_duration": 0.2,
+      "channel_duration": 0.5,
+      "cooldown_duration": 1.0,
+      "radius": 100,
+      "buff": { "heal_per_second": 20 },
+      "duration": 8.0,
+      "vfx": "healing_ring",
+      "sprite": null,
+      "scale": 0.3
+    },
+    "laser_beam": {
+      "type": "beam",
+      "prepare_duration": 0.1,
+      "channel_duration": 0.2,
+      "cooldown_duration": 1.0,
+      "particle_count": 60,
+      "damage": 0.25,
+      "particle_dispersion": 4,
+      "particle_colors": [[0,255,255],[150,255,255],[255,255,255]],      
+      "lifespan": 1.0,
+      "sprite": null,
+      "scale": 2.0
+    },
+    "dash": {
+      "type": "dash",
+      "prepare_duration": 0.0,
+      "channel_duration": 0.0,
+      "cooldown_duration": 1.0,
+      "speed": 2000,
+      "duration": 0.2
+    },
+    "slash": {
+      "type": "slash",
+      "prepare_duration": 0.0,
+      "channel_duration": 0.0,
+      "cooldown_duration": 0.5,
+      "damage": 20,
+      "radius": 28,
+      "particle_count": 30,
+      "arc_range_degrees": 120,
+      "lifespan": 15,
+      "speed_multiplier": 1.0,
+      "size_range": [4, 12],
+      "color": [100, 220, 255],
+      "offset": 0
+    }
+}

@@ -1,23 +1,102 @@
-# Path: src/roguelike_game/game/update_manager.py
+from roguelike_engine.utils.benchmark import benchmark
+import pygame
+import types
+from roguelike_engine.config.config_tiles import TILE_SIZE
 
-def update_game(state):
+def update_game(
+    state,
+    systems,
+    camera,
+    clock,
+    screen,
+    map,
+    entities,      
+    tiles_editor,
+    buildings_editor,
+    map_editor,
+    minimap,
+    ecs,
+    perf_log
+):
+    """
+    Actualiza el juego en cada frame, incluyendo:
+      1) Lógica de editores (tiles/buildings)
+      2) Mecánicas core: cámara, sistemas, enemigos, jugador...
+    """
     if not state.running:
         return
 
-    state.camera.update(state.player)
+    # 1) Prioridad: si el Tile-Editor está activo, nada más se hace
+    if tiles_editor.editor_state.active:
+        @benchmark(perf_log, "2.0.1.tiles_editor.update")
+        def _update_tiles_editor():
+            tiles_editor.update(camera, map)
+        _update_tiles_editor()
+        # Centrar cámara en el jugador incluso con editor activo
+        eid = ecs.ecs_world.player_entity
+        pos = ecs.ecs_world.components['Position'][eid]
+        camera.update(types.SimpleNamespace(x=pos.x, y=pos.y))
+        return
 
-    state.systems.update()
+    # 2) Si el Buildings-Editor está activo, solo actualizamos él
+    if buildings_editor.editor_state.active:
+        @benchmark(perf_log, "2.0.2.buildings_editor.update")
+        def _update_buildings_editor():
+            buildings_editor.update(camera)
+        _update_buildings_editor()
+        # Centrar cámara en el jugador incluso con editor activo
+        eid = ecs.ecs_world.player_entity
+        pos = ecs.ecs_world.components['Position'][eid]
+        camera.update(types.SimpleNamespace(x=pos.x, y=pos.y))
+        return
 
-    #!------------------ ESTO DEBERIAMOS MEJORARLO ------------------
-    enemies = state.enemies + list(state.remote_entities.values())    
-    for enemy in enemies:
-        enemy.update()
+    # 3) Si el Map-Editor está activo, solo actualizamos él
+    if map_editor.editor_state.active:
+        @benchmark(perf_log, "2.0.3.map_editor.update")
+        def _update_map_editor():
+            map_editor.update(camera, map)
+        _update_map_editor()
+        # Free camera panning with arrow keys
+        keys = pygame.key.get_pressed()
+        dx = int(keys[pygame.K_RIGHT]) - int(keys[pygame.K_LEFT])
+        dy = int(keys[pygame.K_DOWN]) - int(keys[pygame.K_UP])
+        # Base speed and speed boost with Shift
+        base_speed = 10
+        shift = keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]
+        pan_speed = base_speed * (3 if shift else 1)
+        camera.offset_x += dx * pan_speed
+        camera.offset_y += dy * pan_speed
+        return
 
-    state.player.movement.update_dash(
-        [t for t in state.tiles if t.solid],
-        state.obstacles
-    )
+    # 3.1) Cámara sigue al jugador
+    @benchmark(perf_log, "2.1.camera.update")
+    def _update_camera():
+        # Centrar cámara usando la posición del jugador en ECS
+        eid = ecs.ecs_world.player_entity
+        pos = ecs.ecs_world.components['Position'][eid]
+        camera.update(types.SimpleNamespace(x=pos.x, y=pos.y))
+    _update_camera()
 
-    #!---------------------------------------------------------------
+    # 3.2) Sistemas principales
+    @benchmark(perf_log, "2.2.systems.update")
+    def _update_systems():
+        systems.update(clock, screen)
+    _update_systems()
 
-    
+    # 3.3) Todas las entidades
+    @benchmark(perf_log, "2.3.entities.update")
+    def _update_entities():
+        entities.update(state, map, systems, perf_log)
+    _update_entities()
+
+    # 3.4) Minimap update
+    @benchmark(perf_log, "2.5.minimap.update")
+    def _update_minimap():
+        # Usar posición del jugador en ECS
+        eid = ecs.ecs_world.player_entity
+        pos = ecs.ecs_world.components['Position'][eid]
+        minimap.update(
+            player_pos=(pos.x, pos.y),
+            tiles=map.tiles_in_region
+        )
+    _update_minimap()

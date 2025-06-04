@@ -1,6 +1,6 @@
 # Path: src/roguelike_game/systems/editor/buildings/view/tools/split_tool_view.py
 import pygame
-from src.roguelike_game.systems.editor.buildings.buildings_editor_config import SPLIT_HANDLE_SIZE, SPLIT_BAR_COLOR
+from roguelike_game.systems.editor.buildings.buildings_editor_config import SPLIT_HANDLE_SIZE, SPLIT_BAR_COLOR
 
 class SplitToolView:
     def __init__(self, state, editor_state):
@@ -9,10 +9,10 @@ class SplitToolView:
         self.handle_size = SPLIT_HANDLE_SIZE
         self.bar_color   = SPLIT_BAR_COLOR
 
-    def render(self, screen, building):
-        cam = self.state.camera
-        bx, by       = cam.apply((building.x, building.y))
-        w_scaled, h_scaled = cam.scale(building.image.get_size())
+    def render(self, screen, building, camera):
+        
+        bx, by       = camera.apply((building.x, building.y))
+        w_scaled, h_scaled = camera.scale(building.image.get_size())
         y_split      = by + int(h_scaled * building.split_ratio)
 
         # barra

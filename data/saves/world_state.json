@@ -1,0 +1,19 @@
+{
+  "player": {
+    "level": "global_map",
+    "pos": [
+      75,
+      81
+    ]
+  },
+  "npcs": {},
+  "levels": {
+    "global_map": {
+      "player_pos": [
+        75,
+        81
+      ],
+      "npc_states": {}
+    }
+  }
+}
