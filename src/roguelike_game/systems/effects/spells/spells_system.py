@@ -49,12 +49,6 @@ class SpellsSystem:
         self.ecs_world = ecs_world  # Mundo ECS para colisionar con NPCs
 
         # MVC lists
-        self.laser_controllers:         list[LaserBeamController]      = []
-        self.laser_views:               list[LaserBeamView]            = []
-
-        self.healing_controllers:       list[HealingAuraController]    = []
-        self.healing_views:             list[HealingAuraView]          = []
-
         self.smoke_controllers:         list[SmokeController]          = []
         self.smoke_views:               list[SmokeView]                = []
 
@@ -64,8 +58,6 @@ class SpellsSystem:
         self.firework_controllers:      list[FireworkLaunchController] = []
         self.firework_views:            list[FireworkLaunchView]       = []
 
-        self.fireball_controllers:      list[FireballController]       = []
-        self.fireball_views:            list[FireballView]             = []
 
         self.lightning_controllers:     list[LightningController]      = []
         self.lightning_views:           list[LightningView]            = []
@@ -79,12 +71,6 @@ class SpellsSystem:
         self.teleport_controllers:      list[TeleportController]        = []
         self.teleport_views:            list[TeleportView]              = []
 
-        self.slash_controllers:         list[SlashController]           = []
-        self.slash_views:               list[SlashView]                 = []
-        
-        self.dash_controllers:          list[DashController]            = []
-        self.dash_views:                list[DashView]                  = []
-
         # Laser continuous
         self.shooting_laser = False
         self.last_laser_time = 0
@@ -93,33 +79,7 @@ class SpellsSystem:
     #                   Spawn methods                  #
     # ------------------------------------------------ #
 
-    def spawn_dash(self, player, direction: pygame.Vector2):
-        model = DashModel(player, direction)
-        ctrl  = DashController(model)
-        view  = DashView(model)
-        self.dash_controllers.append(ctrl)
-        self.dash_views.append(view)
 
-    def spawn_slash(self, direction: Vector2, entities):
-        px, py = self._player_center(entities.player)        
-        model = SlashModel(px, py, direction)
-        ctrl = SlashController(model)
-        view = SlashView(model)
-        self.slash_controllers.append(ctrl)
-        self.slash_views.append(view)
-
-
-    def spawn_laser(self, x, y, entities):
-        px, py = self._player_center(entities.player)
-        model  = LaserBeamModel(px, py, x, y)
-        ctrl   = LaserBeamController(model)
-        view   = LaserBeamView(model)
-        self.laser_controllers.append(ctrl)
-        self.laser_views.append(view)
-        # cap history
-        if len(self.laser_controllers) > 3:
-            self.laser_controllers.pop(0)
-            self.laser_views.pop(0)
 
     def spawn_smoke(self, camera, entities):
         mx, my  = pygame.mouse.get_pos()
@@ -153,16 +113,6 @@ class SpellsSystem:
         self.firework_controllers.append(ctrl)
         self.firework_views.append(view)
 
-    def spawn_fireball(self, angle, map, entities, explosions):
-        px, py   = self._player_center(entities.player)
-        tiles    = map.solid_tiles
-        
-        model   = FireballModel(px, py, angle)
-        ctrl    = FireballController(model, tiles, explosions, self.ecs_world)
-        view    = FireballView(model)
-        self.fireball_controllers.append(ctrl)
-        self.fireball_views.append(view)
-
     def spawn_lightning(self, target_pos, entities):
         px, py   = self._player_center(entities.player)
         model    = LightningModel((px, py), target_pos)
@@ -171,13 +121,6 @@ class SpellsSystem:
         view     = LightningView(model)
         self.lightning_controllers.append(ctrl)
         self.lightning_views.append(view)
-
-    def spawn_healing_aura(self, clock, entities):
-        model  = HealingAuraModel(entities.player)
-        ctrl   = HealingAuraController(model, clock)
-        view   = HealingAuraView(model)
-        self.healing_controllers.append(ctrl)
-        self.healing_views.append(view)
 
     def spawn_arcane_flame(self, x, y):
         model  = ArcaneFlameModel(x, y)
@@ -205,16 +148,6 @@ class SpellsSystem:
     #                     Update                       #
     # ------------------------------------------------ #
     def update(self, clock, screen):
-        # HealingAura
-        for c in self.healing_controllers: c.update()
-        self.healing_controllers = [c for c in self.healing_controllers if not c.model.is_empty()]
-        self.healing_views       = [v for v in self.healing_views       if not v.model.is_empty()]
-
-        # LaserBeam
-        for c in self.laser_controllers: c.update()
-        self.laser_controllers = [c for c in self.laser_controllers if not c.model.finished]
-        self.laser_views       = [v for v in self.laser_views       if not v.model.finished]
-
         # Smoke
         for c in self.smoke_controllers: c.update()
         self.smoke_controllers = [c for c in self.smoke_controllers if not c.model.is_finished()]
@@ -231,11 +164,6 @@ class SpellsSystem:
         for c in self.firework_controllers: c.update()
         self.firework_controllers = [c for c in self.firework_controllers if not c.model.finished]
         self.firework_views       = [v for v in self.firework_views       if not v.model.finished]
-
-        # Fireball
-        for c in self.fireball_controllers: c.update()
-        self.fireball_controllers = [c for c in self.fireball_controllers if c.model.alive]
-        self.fireball_views       = [v for v in self.fireball_views       if v.model.alive]
 
         # Lightning
         for c in self.lightning_controllers: c.update()
@@ -256,16 +184,6 @@ class SpellsSystem:
         for c in self.teleport_controllers: c.update()
         self.teleport_controllers = [c for c in self.teleport_controllers if not c.model.is_finished()]
         self.teleport_views       = [v for v in self.teleport_views       if not v.model.is_finished()]
-
-        # Slash
-        for c in self.slash_controllers: c.update()
-        self.slash_controllers = [c for c in self.slash_controllers if not c.model.is_finished()]
-        self.slash_views = [v for v in self.slash_views if not v.model.is_finished()]
-
-        #Dash
-        for c in self.dash_controllers: c.update(clock)
-        self.dash_controllers = [c for c in self.dash_controllers if not c.is_finished()]
-        self.dash_views       = [v for v in self.dash_views       if not v.model.is_finished()]
         
 
     # ------------------------------------------------ #
@@ -275,25 +193,17 @@ class SpellsSystem:
     def render(self, screen, camera):
         dirty_rects = []
 
-        # MVC renders
-        for v in self.laser_views:         v.render(screen, camera)
+        # MVC renders        
         for v in self.smoke_views:         v.render(screen, camera)
         for v in self.smoke_emitter_views: v.render(screen, camera)
-        for v in self.firework_views:      v.render(screen, camera)
-        for v in self.fireball_views:      v.render(screen, camera)
-        for v in self.healing_views:       v.render(screen, camera)
+        for v in self.firework_views:      v.render(screen, camera)        
         for v in self.lightning_views:
             if (d := v.render(screen, camera)): dirty_rects.append(d)
         for v in self.arcane_views:         v.render(screen, camera)
         for v in self.shield_views:
             if (d := v.render(screen, camera)): dirty_rects.append(d)
         for v in self.teleport_views:       v.render(screen, camera)
-        for v in self.slash_views:
-            if (d := v.render(screen, camera)):
-                dirty_rects.append(d)        
-        for v in self.dash_views:
-            if (d := v.render(screen, camera)):
-                dirty_rects.append(d)
+                        
 
         return dirty_rects
 

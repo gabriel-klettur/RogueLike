@@ -11,6 +11,7 @@ class DamageState(State):
     def __init__(self, next_state, from_left: bool):
         self.next_state = next_state
         self.from_left = from_left
+        self.prev_anim_state = None
 
     def enter(self, entity):
         self.start_time = time.time()
@@ -25,9 +26,12 @@ class DamageState(State):
         # Mostrar sprite de daño
         anim = world.components.get('Animator', {}).get(eid)
         if anim:
+            # store previous animation state
+            self.prev_anim_state = anim.current_state
             state = 'damage_left' if self.from_left else 'damage_right'
             if state in anim.animations:
                 anim.current_state = state
+                anim.frame_idx = 0  # reset to first damage frame
         else:
             logging.warning(f"[DamageState] No Animator for eid {eid}, skipping animation")
 
@@ -40,6 +44,14 @@ class DamageState(State):
             entity.world.components['NPCState'][entity.id].fsm.change_state(self.next_state, entity)
 
     def exit(self, entity):
-        print(f"[DamageState] Entity {entity.id} exiting damage state")
-        # No acciones adicionales al salir
-        pass
+        eid = entity.id
+        world = entity.world
+        print(f"[DamageState] Entity {eid} exiting damage state")
+        # Clear any remaining flash
+        world.components.get('FlashComponent', {}).pop(eid, None)
+        # Restore animation state before damage
+        anim = world.components.get('Animator', {}).get(eid)
+        prev = getattr(self, 'prev_anim_state', None)
+        if anim and prev and prev in anim.animations:
+            anim.current_state = prev
+            anim.frame_idx = 0
