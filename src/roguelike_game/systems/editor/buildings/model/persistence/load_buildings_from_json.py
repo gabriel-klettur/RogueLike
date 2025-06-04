@@ -6,7 +6,7 @@ from typing import List
 from roguelike_engine.config.config import BUILDINGS_DATA_PATH, BUILDINGS_COLLISIONS_DATA_PATH
 from roguelike_game.systems.z_layer.persistence import extract_z_from_json
 
-from roguelike_game.entities.buildings.building import Building
+from roguelike_engine.buildings.building import Building
 
 def load_buildings_from_json(
     z_state=None

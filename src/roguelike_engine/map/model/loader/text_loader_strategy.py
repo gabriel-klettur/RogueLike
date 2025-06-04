@@ -8,7 +8,11 @@ from roguelike_engine.map.model.layer import Layer
 from roguelike_engine.config.map_config import global_map_settings
 
 # Importar el generador de overlay_map (códigos → assets)
-from scripts.generate_overlay_map import main as generate_overlay_map
+try:
+    from scripts.generate_overlay_map import main as generate_overlay_map
+except ImportError:
+    def generate_overlay_map():
+        print("[TextMapLoader] Warning: scripts.generate_overlay_map not found, skipping overlay generation")
 
 class TextMapLoader(MapLoader):
     def load(

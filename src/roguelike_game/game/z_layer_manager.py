@@ -24,10 +24,6 @@ class ZLayerManager:
         # Jugador a capa 'player'
         zs.set(entities.player, Z_LAYERS["player"])
 
-        # Obstáculos a capa 'low_object'
-        for o in entities.obstacles:
-            zs.set(o, Z_LAYERS["low_object"])
-
         # Edificios por su propiedad z_bottom
         for b in entities.buildings:
             zs.set(b, b.z_bottom)

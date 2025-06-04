@@ -3,7 +3,7 @@ from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.combat.health import Health
 from roguelike_game.ecs.components.transform.scale import Scale
 from roguelike_game.ecs.components.rendering.sprite import Sprite
-from roguelike_game.ecs.components.physics.multi_collider import MultiCollider
+from roguelike_engine.utils.benchmark import benchmark
 
 class HealthBarSystem:
     """
@@ -15,13 +15,14 @@ class HealthBarSystem:
     • Se segmenta cada 20 puntos de vida para referencia visual.
     """
 
-    def __init__(self):
+    def __init__(self, perf_log):
         """
         Inicializa el sistema de barras de salud.
         No mantiene estado interno.
         """
-        pass
+        self.perf_log = perf_log
 
+    @benchmark(lambda self: self.perf_log, "4.2.2.HealthBarSystem.update")
     def update(self, world, screen, camera):
         """
         Recorre todas las entidades vivas y dibuja su barra de salud.
@@ -47,28 +48,17 @@ class HealthBarSystem:
             scale_comp: Scale = world.components['Scale'].get(eid)
 
             # 4) Calcular ancho de la barra basado en el ancho del sprite y su escala
-            base_width = sprite.image.get_width()
-            if scale_comp and scale_comp.scale != 1.0:
-                base_width = int(base_width * scale_comp.scale)
-            bar_width = base_width
+            orig_w, orig_h = sprite.image.get_size()
+            entity_scale = scale_comp.scale if scale_comp else 1.0
+            scaled_w = int(orig_w * entity_scale)
+            bar_width = scaled_w
             bar_height = 5
             margin = 2
 
-            # 5) Obtener la posición del centro del collider de los pies
-            multi = world.components.get('MultiCollider', {}).get(eid)
-            if multi and 'feet' in multi.colliders:
-                feet = multi.colliders['feet']
-                foot_cx = pos.x + feet.offset_x + feet.width / 2
-                foot_cy = pos.y + feet.offset_y + feet.height / 2
-                screen_cx, screen_cy = camera.apply((foot_cx, foot_cy))
-            else:
-                # fallback: centro superior del sprite
-                w, _ = sprite.image.get_size()
-                screen_cx, screen_cy = camera.apply((pos.x + w/2, pos.y))
-
-            # 6) Posición de la barra centrada horizontalmente sobre el pie
-            bar_x = screen_cx - bar_width / 2
-            bar_y = screen_cy - margin - bar_height
+            # centrar barra en la parte superior del sprite escalado
+            screen_x, screen_y = camera.apply((pos.x, pos.y))
+            bar_x = screen_x + scaled_w / 2 - bar_width / 2
+            bar_y = screen_y - margin - bar_height
 
             # 7) Calcular proporción de vida restante y ancho de relleno
             ratio = max(0, health.current_hp) / health.max_hp

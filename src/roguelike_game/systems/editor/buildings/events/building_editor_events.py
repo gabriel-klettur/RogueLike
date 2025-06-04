@@ -31,6 +31,14 @@ class BuildingEditorEventHandler:
     def handle(self, camera, entities):
         for ev in pygame.event.get():
             if ev.type == pygame.QUIT:
+                # Persist building changes if editor active
+                if self.editor.active:
+                    save_buildings_to_json(
+                        self.buildings,
+                        BUILDINGS_DATA_PATH,
+                        z_state=self.state.z_state,
+                        zone_offsets=self.zone_offsets
+                    )
                 self.state.running = False
                 return
             # --- Finaliza resize al soltar R ---
@@ -170,20 +178,25 @@ class BuildingEditorEventHandler:
                         w_img, h_img = b.image.get_size()
                         rect = pygame.Rect(x_b, y_b, w_img, h_img)
                         if rect.collidepoint(world_x, world_y):
+                            # focus this building for collision editing
+                            self.editor.collision_active_building = b
                             self.editor.collision_brush_dragging = True
                             col = int((world_x - x_b) // TILE_SIZE)
                             row = int((world_y - y_b) // TILE_SIZE)
                             if 0 <= row < len(b.collision_map) and 0 <= col < len(b.collision_map[0]):
                                 b.collision_map[row][col] = self.editor.collision_choice
+                                # Invalidate collision tiles cache so world sees update
+                                b.model._collision_tiles_cache = None
+                                b.model._collision_tile_objs = None
                             return
                 # Delegar al controlador
                 self.controller.on_mouse_down((mx, my), ev.button, camera, entities.buildings)
             elif ev.type == pygame.MOUSEBUTTONUP:
-                # Fin drag collision picker
+                # 1) Fin drag collision picker
                 if ev.button == 3 and self.editor.collision_picker_dragging:
                     self.editor.collision_picker_dragging = False
                     return
-                # Fin collision brush y guardar
+                # 2) Fin collision brush y guardar
                 if ev.button == 1 and self.editor.current_tool == 'collision_brush' and self.editor.collision_brush_dragging:
                     self.editor.collision_brush_dragging = False
                     # Persistir colisiones
@@ -199,16 +212,19 @@ class BuildingEditorEventHandler:
                         json.dump(data, cf, indent=4)
                     print(f"✅ Colisiones guardadas en {BUILDINGS_COLLISIONS_DATA_PATH}")
                     return
+                # 3) Delegar al controlador y guardar cambios de posición/tamaño
                 self.controller.on_mouse_up(ev.button, camera, entities.buildings)
+                # Persistir cambios de edificios (posición, tamaño, split)
+                save_buildings_to_json(
+                    entities.buildings,
+                    BUILDINGS_DATA_PATH,
+                    z_state=self.state.z_state,
+                    zone_offsets=self.zone_offsets
+                )
+                return
             elif ev.type == pygame.MOUSEMOTION:
                 mx, my = ev.pos
-                # Clear active collision building if mouse leaves its bounds
-                if self.editor.current_tool == 'collision_brush':
-                    world_x = mx / camera.zoom + camera.offset_x
-                    world_y = my / camera.zoom + camera.offset_y
-                    cab = getattr(self.editor, 'collision_active_building', None)
-                    if cab and not cab.rect.collidepoint(world_x, world_y):
-                        self.editor.collision_active_building = None
+                # no longer auto-clear collision_active_building on move
                 # Clear active building if mouse leaves its bounds in editor mode
                 if self.editor.current_tool == 'select':
                     world_x = mx / camera.zoom + camera.offset_x
@@ -234,9 +250,17 @@ class BuildingEditorEventHandler:
                             row = int((world_y - y_b) // TILE_SIZE)
                             if 0 <= row < len(b.collision_map) and 0 <= col < len(b.collision_map[0]):
                                 b.collision_map[row][col] = self.editor.collision_choice
+                                # Invalidate collision tiles cache so world sees update
+                                b.model._collision_tiles_cache = None
+                                b.model._collision_tile_objs = None
                             return
-                # Delegate motion and set active building if none
+                # Delegate motion and update hover list
                 self.controller.on_mouse_motion(ev.pos, camera, entities.buildings)
+                # In collision brush mode without painting, update focus to hovered
+                if self.editor.current_tool == 'collision_brush' and not self.editor.collision_brush_dragging:
+                    hb = getattr(self.editor, 'hovered_building', None)
+                    self.editor.collision_active_building = hb
+                # Focus active building for select mode
                 if self.editor.current_tool == 'select' and getattr(self.editor, 'active_building', None) is None:
                     hb = getattr(self.editor, 'hovered_building', None)
                     if hb:

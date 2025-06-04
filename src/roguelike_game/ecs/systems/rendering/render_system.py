@@ -1,6 +1,7 @@
 import pygame
 from roguelike_game.ecs.components.transform.scale import Scale
 from roguelike_game.systems.config_z_layer import DEFAULT_Z
+from roguelike_game.ecs.fsm.states.death_state import DeathState
 
 class RenderSystem:
     """
@@ -74,6 +75,11 @@ class RenderSystem:
 
         # 5) Procesar cada entidad para preparar blit
         for eid in visible_eids:
+            # Omitir entidades en DeathState para no dibujar sprite normal
+            npc_state = world.components['NPCState'].get(eid)
+            if npc_state and isinstance(npc_state.fsm.current_state, DeathState):
+                continue
+
             pos    = pos_map[eid]
             sprite = sprite_map[eid]
 
@@ -88,10 +94,8 @@ class RenderSystem:
                 if key not in cache:
                     orig = sprite.image
                     w, h = orig.get_size()
-                    cache[key] = pygame.transform.scale(
-                        orig,
-                        (int(w * scale_factor), int(h * scale_factor))
-                    )
+                    # Usar rotozoom para mejor performance y suavidad
+                    cache[key] = pygame.transform.rotozoom(orig, 0, scale_factor)
                 image = cache[key]
             else:
                 image = sprite.image

@@ -1,16 +1,19 @@
 # Path: src/roguelike_game/main.py
+
 import pygame
 from collections import defaultdict
 
 from roguelike_engine.config.config import SCREEN_WIDTH, SCREEN_HEIGHT
-from roguelike_engine.config.config_tiles import TILE_SIZE
-from roguelike_game.config_player import RENDERED_SPRITE_SIZE
-
 from roguelike_game.game.game import Game
 
-def init_debug():
+
+def init_debug_log():
+    """
+    Activa el cursor y devuelve un diccionario para logging de performance.
+    """
     pygame.mouse.set_visible(True)
     return defaultdict(list)
+
 
 def main():
     pygame.init()
@@ -20,46 +23,34 @@ def main():
     )
     pygame.display.set_caption("Roguelike")
 
-    # -------- Inicializar performance_log --------
-    performance_log = init_debug()
+    # Inicializamos el registro de rendimiento (performance_log)
+    performance_log = init_debug_log()
 
-    # Creamos el juego pasándole el log
+    # Creamos la instancia de Game
     game = Game(
         screen,
-        perf_log        = performance_log,        
-        map_name        = None,
-        loading_bg      = "ui/background_ini.png"
+        perf_log=performance_log,
+        map_name=None,
+        loading_bg="ui/background_ini.png"
     )
-    if not hasattr(game, 'state'):
+
+    # Asegurarnos de que el estado se inicializó correctamente
+    if not hasattr(game, "state"):
         raise RuntimeError("Game state not initialized properly!")
 
     try:
-        game.run()  
+        # Arrancamos el bucle principal
+        game.run()
     except Exception as e:
-        print(f"An error occurred: {e}")
+        # Podrías aquí registrar el error en un log si lo deseas
+        print(f"[ERROR] Uncaught exception en main(): {e}")
+        # Propagar la excepción para que Pygame se cierre correctamente
         raise
     finally:
-        # Guardar posición del jugador antes de cerrar
-        try:
-            eid = game.ecs.npc_world.player_entity
-            pos = game.ecs.npc_world.components['Position'][eid]
-            # Calcular coords de tile usando centro del collider 'feet'
-            w, h = RENDERED_SPRITE_SIZE
-            fh = h // 4
-            half_fh = fh // 2
-            feet_cx = pos.x + w // 2
-            feet_cy = pos.y + (h - half_fh)
-            tx = int(feet_cx // TILE_SIZE)
-            ty = int(feet_cy // TILE_SIZE)
-            game.map.spawn_player((tx, ty))
-            # Registrar mapa actual en WorldManager
-            game.world.maps[game.map.name] = game.map
-            game.world.current_level = game.map.name
-            game.world.save_world()
-        except Exception:
-            pass
+        # Llamamos a un método de Game para que se encargue de
+        # guardar TODO lo necesario antes de hacer pygame.quit()
+        game.shutdown()
         pygame.quit()
-    
 
 
 if __name__ == "__main__":

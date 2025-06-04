@@ -10,7 +10,7 @@ from roguelike_game.systems.z_layer.render import render_z_ordered
 
 # Importar el decorador centralizado de benchmark
 from roguelike_engine.zone.view.zone_view import ZoneView
-from roguelike_game.ecs.world import NPCWorld
+
 
 class RendererManager:
     """
@@ -32,6 +32,7 @@ class RendererManager:
         entities,
         buildings_editor,
         tiles_editor,
+        map_editor,
         perf_log,
         minimap,
         ecs
@@ -42,6 +43,7 @@ class RendererManager:
         self.entities = entities
         self.buildings_editor = buildings_editor
         self.tiles_editor = tiles_editor
+        self.map_editor = map_editor
         self._dirty_rects = []        
         self.debug_overlay = DebugOverlay(perf_log=perf_log)
         self.zone_view = ZoneView()
@@ -51,6 +53,7 @@ class RendererManager:
         self._last_state = None  # almacenar último estado para editor
         
         self._last_visible_layers = None # Cache last visible layers to minimize cache invalidations
+        self._last_map_visible_layers = None # Cache for map editor visible layers
         self._collision_last_zoom = None # Collision view cache: regenerate surfaces only when zoom changes
         self._collision_font = None
         self._collision_surf_solid = None
@@ -86,6 +89,21 @@ class RendererManager:
             self._render_map(camera, screen, map)
         _bench_map()
 
+        # 5) ECS trail snapshots
+        @benchmark(perf_log, "3.5. ecs_trail")
+        def _bench_ecs_trail():
+            for eid, trail in self.ecs.ecs_world.components.get('TrailComponent', {}).items():
+                for snap in trail.snapshots:
+                    orig = snap.image
+                    zoom = camera.zoom
+                    if zoom != 1.0:
+                        w, h = orig.get_size()
+                        image_scaled = pygame.transform.scale(orig, (int(w * zoom), int(h * zoom)))
+                    else:
+                        image_scaled = orig
+                    screen.blit(image_scaled, camera.apply(snap.pos))
+        _bench_ecs_trail()
+
         # 2) Entidades orden Z
         @benchmark(perf_log, "3.2. z_entities")
         def _bench_z_entities():
@@ -108,41 +126,35 @@ class RendererManager:
                 self._render_tile_editor_layer(state, screen, camera, map)
         _bench_tile_editor()
 
-        # 5) Crosshair
-        @benchmark(perf_log, "3.5. crosshair")
+        # 6) Crosshair
+        @benchmark(perf_log, "3.6. crosshair")
         def _bench_crosshair():
             draw_mouse_crosshair(screen, camera)
         _bench_crosshair()
 
-        # 6) Menú
-        @benchmark(perf_log, "3.6. menu")
+        # 7) Menú
+        @benchmark(perf_log, "3.7. menu")
         def _bench_menu():
             self._render_menu(screen, menu)
         _bench_menu()
 
-        # 7) Minimap
-        @benchmark(perf_log, "3.7. minimap")
+        # 8) Minimap
+        @benchmark(perf_log, "3.8. minimap")
         def _bench_minimap():
             self._render_minimap(screen)
         _bench_minimap()
 
-        # 8) Otros sistemas
-        @benchmark(perf_log, "3.8. systems")
+        # 9) Otros sistemas
+        @benchmark(perf_log, "3.9. systems")
         def _bench_systems():
-            systems.render(screen, camera)
+            systems.render(screen, camera)            
         _bench_systems()
 
-        # 9) Editores
-        @benchmark(perf_log, "3.9. editors")
+        # 11) Editores
+        @benchmark(perf_log, "3.11. editors")
         def _bench_editors():
             self._render_editors()
         _bench_editors()
-
-        # 10) ECS
-        @benchmark(perf_log, "3.10. ecs")
-        def _bench_ecs():
-            self.ecs.render(screen, camera)
-        _bench_ecs()
 
 
         # Debug: overlay y bordes
@@ -151,8 +163,6 @@ class RendererManager:
         self._render_help_overlay(state)
 
         # Reemplazar dirty rects por flip completo para rendimiento constante
-        pygame.display.flip()
-
         return self._dirty_rects
         
 
@@ -195,12 +205,31 @@ class RendererManager:
                 self.camera,
                 self.entities.buildings
             )
+        # Render Map Editor UI
+        if self.map_editor.editor_state.active:
+            self.map_editor.render(self.screen, self.camera, self.map)
 
     def _render_effects(self, camera, screen, effects):
         dirty_rects = effects.render(screen, camera)
         self._dirty_rects.extend(dirty_rects)
 
     def _render_map(self, camera, screen, map):
+        # Filter tile layers in Map Editor mode using visible_layers state
+        if self.map_editor.editor_state.active:
+            # Invalidate cache on layer visibility change
+            visible = self.map_editor.editor_state.visible_layers
+            if visible != self._last_map_visible_layers:
+                self.map.view.invalidate_cache()
+                self._last_map_visible_layers = visible.copy()
+            orig = map.tiles_by_layer
+            filtered = {layer: tiles for layer, tiles in orig.items() if visible.get(layer, True)}
+            map.tiles_by_layer = filtered
+            try:
+                dirty_rects = self.map.view.render(screen, camera, map)
+            finally:
+                map.tiles_by_layer = orig
+            self._dirty_rects.extend(dirty_rects)
+            return
         # Collision-only mode: render only collision grid
         if self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.show_collisions and not self.tiles_editor.editor_state.show_collisions_overlay:
             dirty = self._render_collisions(screen, camera, map)
@@ -233,11 +262,20 @@ class RendererManager:
             state.tile_editor_view.render(screen, camera, map)
 
     def _render_z_entities(self, state, camera, screen, entities):
+        # Hide buildings and NPCs in Map Editor mode
+        if self.map_editor.editor_state.active:
+            # Draw buildings if enabled in Map Editor
+            if self.map_editor.editor_state.show_buildings:
+                parts = []
+                for b in entities.buildings:
+                    if not camera.is_in_view(b.x, b.y, b.image.get_size()):
+                        continue
+                    for part in b.get_parts():
+                        state.z_state.set(part, part.z)
+                        parts.append(part)
+                render_z_ordered(parts, screen, camera, state.z_state)
+            return
         all_entities = []
-        all_entities.extend([
-            e for e in entities.obstacles
-            if camera.is_in_view(e.x, e.y, getattr(e, "sprite_size", (64, 64)))
-        ])
         # Only render buildings if not hidden by editor or collision-only mode (NPC rendering removed; gestionado por ECS)
         editor_state = self.tiles_editor.editor_state
         if not ((editor_state.active and not editor_state.show_buildings)
@@ -249,10 +287,10 @@ class RendererManager:
                     state.z_state.set(part, part.z)
                     all_entities.append(part)
         # 4) NPCs ECS: envolver cada entidad y asignar capa Z
-        for eid in self.ecs.npc_world.get_entities_with('Position', 'Sprite', 'ZLayer'):
-            layer = self.ecs.npc_world.components['ZLayer'][eid].layer
+        for eid in self.ecs.ecs_world.get_entities_with('Position', 'Sprite', 'ZLayer'):
+            layer = self.ecs.ecs_world.components['ZLayer'][eid].layer
             # wrapper ligero para que tenga x,y,render
-            npc = _NPCWrapper(self.ecs.npc_world, eid)
+            npc = _NPCWrapper(self.ecs.ecs_world, eid)
             state.z_state.set(npc, layer)
             all_entities.append(npc)
 
@@ -309,8 +347,7 @@ class RendererManager:
                 'tiles' if self.tiles_editor.editor_state.active else 'normal')
         key = (mode, size)
         if key != self._help_overlay_key:
-            # Reconstruir overlay
-            import pygame
+            # Reconstruir overlay            
             screen_w, screen_h = size
             if mode == 'buildings':
                 lines = [
@@ -375,14 +412,15 @@ class _NPCWrapper:
         sprite = self.sprite_map[eid]
         orig = sprite.image
         scale_comp = self.scale_map.get(eid)
-        scale_val = scale_comp.scale if scale_comp else 1.0
-        if scale_val != 1.0:
-            # Include image identity to distinguish direction/frame
-            key = (eid, scale_val, id(orig))
+        entity_scale = scale_comp.scale if scale_comp else 1.0
+        scale_factor = entity_scale * camera.zoom
+        if scale_factor != 1.0:
+            # Quantize factor for cache key stability
+            key = (eid, round(scale_factor, 2), id(orig))
             image = _NPCWrapper._scale_cache.get(key)
             if image is None:
                 w, h = orig.get_size()
-                image = pygame.transform.scale(orig, (int(w * scale_val), int(h * scale_val)))
+                image = pygame.transform.scale(orig, (int(w * scale_factor), int(h * scale_factor)))
                 _NPCWrapper._scale_cache[key] = image
         else:
             image = orig

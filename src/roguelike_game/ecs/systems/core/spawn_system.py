@@ -5,11 +5,17 @@ using the entity factory.
 """
 
 from roguelike_game.ecs.factories.entity_factory import spawn_monster
+from roguelike_engine.utils.benchmark import benchmark
 
 class SpawnSystem:
     """
     Sistema que procesa componentes SpawnRequest y genera NPCs en el mundo.
     """
+
+    def __init__(self, perf_log):
+        self.perf_log = perf_log
+
+    @benchmark(lambda self: self.perf_log, "4.2.2.SpawnSystem.update")
     def update(self, world, camera=None):
         """
         1. Encuentra todas las entidades que solicitaron un spawn (SpawnRequest).

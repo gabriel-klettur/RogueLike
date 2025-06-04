@@ -10,6 +10,10 @@ from roguelike_engine.config.config_tiles import TILE_SIZE
 
 class MapManager:
     def __init__(self, map_name: str | None):
+        # Force persistent zone names: load offsets from zones.json
+        global_map_settings.use_zones_json = True
+        # Clear cached offsets so it reloads updated JSON data
+        global_map_settings.__dict__.pop('zone_offsets', None)
         # Guardar nombre para recargas dinámicas
         self.map_name = map_name
         # 1) Construir datos con MapService

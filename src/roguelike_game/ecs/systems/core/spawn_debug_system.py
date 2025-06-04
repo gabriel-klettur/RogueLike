@@ -7,12 +7,17 @@ on the map when DEBUG mode is enabled.
 import pygame
 import roguelike_engine.config.config as config
 from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_engine.utils.benchmark import benchmark
 
 class SpawnDebugSystem:
     """
     Sistema que dibuja marcadores de spawn de NPCs en pantalla 
     si la configuración DEBUG está activada y el mundo define spawn_tiles.
     """
+    def __init__(self, perf_log):
+        self.perf_log = perf_log
+
+    @benchmark(lambda self: self.perf_log, "4.2.2.SpawnDebugSystem.update")
     def update(self, world, screen, camera):
         """
         Recorre la lista world.spawn_tiles y dibuja:

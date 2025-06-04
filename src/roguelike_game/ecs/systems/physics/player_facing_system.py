@@ -1,10 +1,15 @@
 import pygame
+from roguelike_engine.utils.benchmark import benchmark
 
 class PlayerFacingSystem:
     """
     Sistema que actualiza Animator.current_state para el jugador
     basándose en la posición del ratón y su velocidad (idle/walk).
     """
+    def __init__(self, perf_log):
+        self.perf_log = perf_log
+
+    @benchmark(lambda self: self.perf_log, "4.2.2.PlayerFacingSystem.update")
     def update(self, world, camera=None):
         comps = world.components
         pos_map = comps.get('Position', {})

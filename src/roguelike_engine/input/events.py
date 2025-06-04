@@ -16,6 +16,7 @@ def handle_events(
     explosions,
     tiles_editor,
     buildings_editor,
+    map_editor,
     debug_overlay=None
 ):
     """
@@ -27,11 +28,21 @@ def handle_events(
     # Optimized event handling
     active_tiles = tiles_editor.editor_state.active
     active_buildings = buildings_editor.editor_state.active
+    active_map = False
+    try:
+        active_map = map_editor.editor_state.active
+    except Exception:
+        pass
     # Pre-handle editors
     if active_tiles:
         tiles_editor.handler.handle(camera, map)
+        return
     elif active_buildings:
         buildings_editor.handler.handle(camera, entities)
+        return
+    elif active_map:
+        map_editor.handler.handle(camera, map)
+        return
     # Cache handlers and debug panel
     
     kb = handle_keyboard
@@ -44,7 +55,7 @@ def handle_events(
         if et == pygame.QUIT:
             state.running = False
         elif et in (pygame.KEYDOWN, pygame.KEYUP):
-            kb(ev, state, camera, clock, menu, entities, effects, tiles_editor, map)
+            kb(ev, state, camera, clock, menu, entities, effects, tiles_editor, buildings_editor, map_editor, map)
         elif et in (pygame.MOUSEWHEEL, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP):
             consumed = False
             if panel:
@@ -54,5 +65,3 @@ def handle_events(
                     consumed = True
             if not consumed and not active_tiles and not active_buildings:
                 ms(ev, state, camera, clock, map, entities, effects, explosions)
-    
-    

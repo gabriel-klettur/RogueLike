@@ -1,7 +1,7 @@
 """
 Sistema ECS para actualizar la FSM de NPCs.
 """
-from roguelike_game.ecs.components.fsm.npc_state import NPCState
+from roguelike_engine.utils.benchmark import benchmark
 
 # Wrapper para pasar entidad con acceso a world e id como key en componentes
 class _EntityProxy:
@@ -18,11 +18,15 @@ class _EntityProxy:
         return f"<EntityProxy {self.id}>"
 
 class FSMSystem:
-    """
-    Recorre entidades con NPCState y ejecuta la FSM.
-    """
+    def __init__(self, perf_log):
+        self.perf_log = perf_log
+
+    @benchmark(lambda self: self.perf_log, "4.2.1.FSMSystem.update")
     def update(self, world, camera=None):
-        for eid in world.get_entities_with('NPCState'):
+        # Iterar sobre copia para evitar modificación concurrente al remover entidades
+        for eid in list(world.get_entities_with('NPCState')):
             npc_state = world.components['NPCState'][eid]
             entity = _EntityProxy(world, eid)
             npc_state.fsm.update(entity, 0)
+    
+    

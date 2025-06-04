@@ -12,7 +12,7 @@ class BuildingEditorManager:
         self.game = game
         state = game.state
         # tomamos la lista de edificios para pasarla también al event handler
-        buildings = game.entities.buildings
+        buildings = game.buildings.buildings
 
         # Inicialización del editor de edificios
         self.editor_state = BuildingsEditorState()

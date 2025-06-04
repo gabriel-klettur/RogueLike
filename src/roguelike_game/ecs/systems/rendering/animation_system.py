@@ -5,21 +5,22 @@ Updates entity animations by advancing frames and applying the current frame to 
 """
 
 import time
-from roguelike_game.ecs.components.rendering.animation_timer import AnimationTimer
+from roguelike_engine.utils.benchmark import benchmark
 
 class AnimationSystem:
     """
     Sistema para actualizar animaciones y volcar el frame actual en Sprite.
     Recorre todos los Animator y, si hay un nuevo frame, lo aplica al componente Sprite correspondiente.
     """
-    def __init__(self):
+    def __init__(self, perf_log=None):
         """
         Inicializa el AnimationSystem.
         Actualmente no mantiene estado interno, pero se reserva para futura configuración.
         """
         # No hay estado interno por el momento
-        pass
+        self.perf_log = perf_log
 
+    @benchmark(lambda self: self.perf_log, "4.2.2.AnimationSystem.update")
     def update(self, world, camera=None):
         """
         Avanza las animaciones de todas las entidades y actualiza su imagen de Sprite.

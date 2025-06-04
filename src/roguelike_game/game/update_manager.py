@@ -13,6 +13,7 @@ def update_game(
     entities,      
     tiles_editor,
     buildings_editor,
+    map_editor,
     minimap,
     ecs,
     perf_log
@@ -32,8 +33,8 @@ def update_game(
             tiles_editor.update(camera, map)
         _update_tiles_editor()
         # Centrar cámara en el jugador incluso con editor activo
-        eid = ecs.npc_world.player_entity
-        pos = ecs.npc_world.components['Position'][eid]
+        eid = ecs.ecs_world.player_entity
+        pos = ecs.ecs_world.components['Position'][eid]
         camera.update(types.SimpleNamespace(x=pos.x, y=pos.y))
         return
 
@@ -44,17 +45,35 @@ def update_game(
             buildings_editor.update(camera)
         _update_buildings_editor()
         # Centrar cámara en el jugador incluso con editor activo
-        eid = ecs.npc_world.player_entity
-        pos = ecs.npc_world.components['Position'][eid]
+        eid = ecs.ecs_world.player_entity
+        pos = ecs.ecs_world.components['Position'][eid]
         camera.update(types.SimpleNamespace(x=pos.x, y=pos.y))
+        return
+
+    # 3) Si el Map-Editor está activo, solo actualizamos él
+    if map_editor.editor_state.active:
+        @benchmark(perf_log, "2.0.3.map_editor.update")
+        def _update_map_editor():
+            map_editor.update(camera, map)
+        _update_map_editor()
+        # Free camera panning with arrow keys
+        keys = pygame.key.get_pressed()
+        dx = int(keys[pygame.K_RIGHT]) - int(keys[pygame.K_LEFT])
+        dy = int(keys[pygame.K_DOWN]) - int(keys[pygame.K_UP])
+        # Base speed and speed boost with Shift
+        base_speed = 10
+        shift = keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]
+        pan_speed = base_speed * (3 if shift else 1)
+        camera.offset_x += dx * pan_speed
+        camera.offset_y += dy * pan_speed
         return
 
     # 3.1) Cámara sigue al jugador
     @benchmark(perf_log, "2.1.camera.update")
     def _update_camera():
         # Centrar cámara usando la posición del jugador en ECS
-        eid = ecs.npc_world.player_entity
-        pos = ecs.npc_world.components['Position'][eid]
+        eid = ecs.ecs_world.player_entity
+        pos = ecs.ecs_world.components['Position'][eid]
         camera.update(types.SimpleNamespace(x=pos.x, y=pos.y))
     _update_camera()
 
@@ -70,18 +89,12 @@ def update_game(
         entities.update(state, map, systems, perf_log)
     _update_entities()
 
-    # 3.3.5) ECS logic
-    @benchmark(perf_log, "2.4.ecs.update")
-    def _update_ecs():
-        ecs.update(clock, screen, camera)
-    _update_ecs()
-
-    # 3.5) Minimap update
+    # 3.4) Minimap update
     @benchmark(perf_log, "2.5.minimap.update")
     def _update_minimap():
         # Usar posición del jugador en ECS
-        eid = ecs.npc_world.player_entity
-        pos = ecs.npc_world.components['Position'][eid]
+        eid = ecs.ecs_world.player_entity
+        pos = ecs.ecs_world.components['Position'][eid]
         minimap.update(
             player_pos=(pos.x, pos.y),
             tiles=map.tiles_in_region

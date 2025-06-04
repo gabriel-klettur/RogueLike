@@ -1,15 +1,14 @@
 # Path: src/roguelike_game/systems/systems_manager.py
-from roguelike_game.systems.combat.spells.spells_system import SpellsSystem
-
-from roguelike_game.systems.combat.explosions.explosions_system import ExplosionSystem
+from roguelike_game.systems.effects.spells.spells_system import SpellsSystem
+from roguelike_game.systems.effects.explosions.explosions_system import ExplosionSystem
 
 class EffectsManager:
 
-    def __init__(self, state, perf_log, npc_world):     
-        self.effects = SpellsSystem(state, perf_log, npc_world)
+    def __init__(self, state, perf_log, ecs_world):     
+        self.effects = SpellsSystem(state, perf_log, ecs_world)
         self.explosions = ExplosionSystem(state, perf_log)
         self.state = state
-        self.npc_world = npc_world
+        self.ecs_world = ecs_world
         
     def update(self, clock, screen):        
         self.effects.update(clock, screen)        

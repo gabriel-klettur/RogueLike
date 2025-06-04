@@ -21,6 +21,7 @@ from roguelike_game.ecs.components.transform.z_layer import ZLayer
 from roguelike_game.systems.config_z_layer import Z_LAYERS
 from roguelike_game.ecs.fsm.fsm import FiniteStateMachine
 from roguelike_game.ecs.components.fsm.npc_state import NPCState
+from roguelike_game.ecs.components.ai.damage_config import DamageConfig
 import logging
 
 from pathlib import Path
@@ -174,6 +175,8 @@ def spawn_monster(world, monster_type: str, tile_x: int, tile_y: int) -> int:
     world.components["AggroRange"][eid] = AggroRange(cfg.get("aggro_range", 0))
     # Añadir componente de melee_range para lógica de combate
     world.components["MeleeRange"][eid] = MeleeRange(cfg.get("melee_range", 0))
+    # Configurar duración de daño desde monsters.json
+    world.components["DamageConfig"][eid] = DamageConfig(cfg.get("damage_duration", 0.5))
 
     # FSM component
     from roguelike_game.ecs.fsm.states.patrol_state import PatrolState

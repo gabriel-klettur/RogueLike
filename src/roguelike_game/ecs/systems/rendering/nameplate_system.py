@@ -3,6 +3,7 @@ from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.core.identity import Identity, Faction
 from roguelike_game.ecs.components.transform.scale import Scale
 import roguelike_engine.config.config as config
+from roguelike_engine.utils.benchmark import benchmark
 
 class NamePlateSystem:
     """
@@ -14,7 +15,7 @@ class NamePlateSystem:
     • Cachea superficies de texto para mejorar el rendimiento.
     """
 
-    def __init__(self):
+    def __init__(self, perf_log):
         """
         Inicializa fuentes y caches.
 
@@ -28,7 +29,9 @@ class NamePlateSystem:
         self.title_font = pygame.font.SysFont(None, 24)
         self.name_cache: dict[tuple[str, tuple[int,int,int]], pygame.Surface] = {}
         self.title_cache: dict[tuple[str, tuple[int,int,int]], pygame.Surface] = {}
+        self.perf_log = perf_log
 
+    @benchmark(lambda self: self.perf_log, "4.2.2.NamePlateSystem.update")
     def update(self, world, screen, camera):
         """
         Recorre todas las entidades con Position + Identity y dibuja:

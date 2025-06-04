@@ -37,6 +37,25 @@ class MapService:
         key = map_name or "global_map"
         # 1) Calcular offsets (auto-ajuste si corresponde)
         offsets = global_map_settings.zone_offsets
+        # Determine actual keys for base zones in case they were renamed
+        # Lobby
+        if 'lobby' not in offsets:
+            dyn_offs = global_map_settings._dynamic_offsets()
+            dyn_lobby = dyn_offs['lobby']
+            lobby_key = next((k for k, v in offsets.items() if v == dyn_lobby), None)
+            if lobby_key is None:
+                raise KeyError("'lobby' not found in zone offsets")
+        else:
+            lobby_key = 'lobby'
+        # Dungeon
+        if 'dungeon' not in offsets:
+            dyn_offs = global_map_settings._dynamic_offsets()
+            dyn_dungeon = dyn_offs['dungeon']
+            dungeon_key = next((k for k, v in offsets.items() if v == dyn_dungeon), None)
+            if dungeon_key is None:
+                raise KeyError("'dungeon' not found in zone offsets")
+        else:
+            dungeon_key = 'dungeon'
         # 2) Crear zona 'world' con dimensiones actualizadas
         world = Zone(
             key,
@@ -46,7 +65,7 @@ class MapService:
         )
         # 3) Generar y colocar 'lobby'
         lobby_rows = generate_lobby_matrix()
-        lobby = Zone("lobby", offsets["lobby"])
+        lobby = Zone(lobby_key, offsets[lobby_key])
         lobby.set_matrix_from_rows(lobby_rows)
         self._merge_zone_into_world(world, lobby)
         # 4) Generar y colocar 'dungeon'
@@ -55,14 +74,14 @@ class MapService:
             height=global_map_settings.zone_height,
             return_rooms=True,
         )
-        dungeon = Zone("dungeon", offsets["dungeon"])
+        dungeon = Zone(dungeon_key, offsets[dungeon_key])
         dungeon_rows = ["".join(r) for r in raw_map]
         dungeon.set_matrix_from_rows(dungeon_rows)
         self._merge_zone_into_world(world, dungeon)
         # Conectar túneles entre lobby y dungeon
         self._connect_tunnels_in_world(
             world,
-            offsets["lobby"],
+            offsets[lobby_key],
             dungeon,
             dungeon_meta.get("rooms", [])
         )
@@ -73,7 +92,7 @@ class MapService:
         # 7) Cargar capas y tiles
         _, tiles_by_layer, layers = self.loader.load(rows, key)
         # 8) Preparar metadata final
-        result_meta = {"lobby_offset": offsets["lobby"], **dungeon_meta}
+        result_meta = {"lobby_offset": offsets[lobby_key], **dungeon_meta}
         return Map(rows, layers, tiles_by_layer, result_meta, key)
 
     def _place_lobby_zone(self, world: Zone) -> Tuple[int, int]:

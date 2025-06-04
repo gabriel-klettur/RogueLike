@@ -8,6 +8,7 @@ MAX_DIRTY = 50
 
 # Debug Mode
 DEBUG = False
+DEBUG_HITBOX = False
 
 # Pantalla
 SCREEN_WIDTH = 1600
