@@ -38,11 +38,6 @@ from roguelike_game.systems.effects.spells.teleport.model      import TeleportMo
 from roguelike_game.systems.effects.spells.teleport.controller import TeleportController
 from roguelike_game.systems.effects.spells.teleport.view       import TeleportView
 
-# MVC: SlashEffect (legacy)
-from roguelike_game.systems.effects.spells.slash.model      import SlashModel
-from roguelike_game.systems.effects.spells.slash.controller import SlashController
-from roguelike_game.systems.effects.spells.slash.view       import SlashView
-
 # Benchmarking
 from roguelike_engine.utils.benchmark import benchmark
 
