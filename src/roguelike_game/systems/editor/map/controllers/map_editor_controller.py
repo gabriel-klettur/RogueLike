@@ -1,290 +1,390 @@
 import json
+import os
+import pygame
+
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config import DATA_DIR
-import pygame
-import os
 from roguelike_engine.utils.loader import load_image
 from roguelike_engine.map.model.layer import Layer
 
+
 class MapEditorController:
     """
-    Lógica de negocio para el Map Editor.
+    Lógica de negocio para el Map Editor, organizada en responsabilidades:
+      1. Selección y visibilidad de zonas
+      2. Operaciones CRUD sobre zonas (añadir, duplicar, mover, borrar, renombrar, cargar/guardar)
+      3. Helpers privados para persistencia y archivos en disco
+      4. Inicialización de la toolbar
     """
+
     def __init__(self, state, map_manager):
         self.state = state
         self.map_manager = map_manager
-        # Toolbar for zone visibility
         self.toolbar = MapToolbarController(self.state)
 
-    def select_zone(self, zone_name):
+    # -------------------------------------------------------------
+    # 1. SELECCIÓN Y VISIBILIDAD DE ZONAS
+    # -------------------------------------------------------------
+    def select_zone(self, zone_name: str) -> None:
+        """Selecciona la zona si existe en el map_manager."""
         if zone_name in self.map_manager.tiles_by_zone:
             self.state.selected_zone = zone_name
 
-    def toggle_hide_zone(self, zone_name):
-        if zone_name in self.state.hidden_zones:
-            self.state.hidden_zones.remove(zone_name)
+    def toggle_hide_zone(self, zone_name: str) -> None:
+        """
+        Alterna el estado de oculto/visible para la zona indicada,
+        esto solo afecta la capa de renderizado, no elimina datos.
+        """
+        hidden = self.state.hidden_zones
+        if zone_name in hidden:
+            hidden.remove(zone_name)
         else:
-            self.state.hidden_zones.add(zone_name)
+            hidden.add(zone_name)
 
-    def move_zone(self, zone_name, dx, dy):
-        offs = global_map_settings.zone_offsets
-        x, y = offs[zone_name]
-        offs[zone_name] = (x+dx, y+dy)
+    def move_zone(self, zone_name: str, dx: int, dy: int) -> None:
+        """
+        Desplaza la zona en el grid global de zonas según (dx, dy).
+        Actualiza únicamente el mapping en global_map_settings.zone_offsets.
+        """
+        offsets = global_map_settings.zone_offsets
+        if zone_name not in offsets:
+            return
+        x, y = offsets[zone_name]
+        offsets[zone_name] = (x + dx, y + dy)
 
-    def duplicate_zone(self):
+    def duplicate_zone(self) -> None:
+        """
+        Duplica la zona actualmente seleccionada:
+          - Crea una nueva clave con sufijo "_copy"
+          - Copia ubicación, habitaciones y datos asociados
+        """
         sel = self.state.selected_zone
         if not sel:
             return
-        offs = global_map_settings.zone_offsets
-        new_key = sel + "_copy"
-        offs[new_key] = offs[sel]
-        self.map_manager.zone_rooms[new_key] = list(self.map_manager.zone_rooms.get(sel, []))
-        self.map_manager.matrix = self.map_manager.matrix[:]  # placeholder
 
+        offsets = global_map_settings.zone_offsets
+        new_key = self._generate_unique_zone_key(sel, offsets)
+        offsets[new_key] = offsets[sel]
+
+        # Clonar lista de habitaciones y matriz (placeholder)
+        self.map_manager.zone_rooms[new_key] = list(self.map_manager.zone_rooms.get(sel, []))
+        self.map_manager.matrix = self.map_manager.matrix[:]
+
+    # -------------------------------------------------------------
+    # 2. OPERACIONES CRUD SOBRE ZONAS
+    # -------------------------------------------------------------
     def add_zone(self, tx: int, ty: int) -> None:
-        """Agrega una nueva zona 50x50 alineada al grid de zonas."""
+        """
+        Agrega una nueva zona de tamaño zone_size alineada al grid de zonas.
+        1. Calcula offset en tiles basado en (tx, ty).
+        2. Lee/actualiza JSON de zonas en disco.
+        3. Recarga settings y mapa, selecciona la nueva zona.
+        """
         zone_w, zone_h = global_map_settings.zone_size
         offx = (tx // zone_w) * zone_w
         offy = (ty // zone_h) * zone_h
-        new_name = f"zone_{offx}_{offy}"
-        path = DATA_DIR + '/zones/zones.json'
-        try:
-            with open(path, 'r', encoding='utf-8') as f:
-                offsets = json.load(f)
-        except Exception:
-            offsets = {}
-        # Nombre único
-        base = new_name; idx = 1
-        while new_name in offsets:
-            new_name = f"{base}_{idx}"; idx += 1
+        base_name = f"zone_{offx}_{offy}"
+
+        json_path = os.path.join(DATA_DIR, "zones", "zones.json")
+        offsets = self._load_json_or_empty(json_path)
+
+        new_name = self._ensure_unique_name(base_name, offsets)
         offsets[new_name] = [offx, offy]
-        # Persistir JSON
-        with open(path, 'w', encoding='utf-8') as f:
-            json.dump(offsets, f, indent=2)
-        # Recargar offsets y mapa
-        global_map_settings.__dict__.pop('zone_offsets', None)
+        self._save_json(json_path, offsets)
+
+        # Forzar recarga de offsets y mapa
+        global_map_settings.__dict__.pop("zone_offsets", None)
         self.map_manager.reload_map()
         self.state.selected_zone = new_name
-        print(f"DEBUG [Controller.add_zone] Added zone {new_name} at offset {(offx, offy)}")
 
-    def delete_zone(self):
+        print(f"DEBUG [Controller.add_zone] Added zone {new_name} at offset ({offx}, {offy})")
+
+    def delete_zone(self) -> None:
+        """
+        Elimina la zona actualmente seleccionada (excepto 'lobby'):
+          1. Retira del JSON de zones y persiste.
+          2. Borra archivos de colisiones y overlays asociados.
+          3. Recarga offsets y mapa, deselecciona la zona.
+        """
         sel = self.state.selected_zone
-        if not sel or sel == 'lobby':
+        if not sel or sel == "lobby":
             return
-        path = DATA_DIR + '/zones/zones.json'
-        try:
-            with open(path, 'r', encoding='utf-8') as f:
-                offsets = json.load(f)
-        except Exception:
-            offsets = {}
+
+        json_path = os.path.join(DATA_DIR, "zones", "zones.json")
+        offsets = self._load_json_or_empty(json_path)
         offsets.pop(sel, None)
-        # Persistir JSON
-        with open(path, 'w', encoding='utf-8') as f:
-            json.dump(offsets, f, indent=2)
-        # Delete collision file for this zone
-        coll_path = os.path.join(DATA_DIR, 'collisions', f'{sel}.json')
-        if os.path.isfile(coll_path):
-            try:
-                os.remove(coll_path)
-                print(f"DEBUG [Controller.delete_zone] Removed collision file {coll_path}")
-            except Exception as e:
-                print(f"DEBUG [Controller.delete_zone] failed to remove collision file {coll_path}: {e}")
-        # Delete overlay file for this zone
-        overlay_path = os.path.join(DATA_DIR, 'zones', 'overlays', f'{sel}.overlay.json')
-        if os.path.isfile(overlay_path):
-            try:
-                os.remove(overlay_path)
-                print(f"DEBUG [Controller.delete_zone] Removed overlay file {overlay_path}")
-            except Exception as e:
-                print(f"DEBUG [Controller.delete_zone] failed to remove overlay file {overlay_path}: {e}")
+        self._save_json(json_path, offsets)
+
+        # Borrar archivo de colisiones de esta zona
+        coll_path = os.path.join(DATA_DIR, "collisions", f"{sel}.json")
+        self._safe_remove_file(coll_path, "[Controller.delete_zone]")
+
+        # Borrar archivo de overlay de esta zona
+        overlay_path = os.path.join(DATA_DIR, "zones", "overlays", f"{sel}.overlay.json")
+        self._safe_remove_file(overlay_path, "[Controller.delete_zone]")
+
         # Recargar offsets y mapa
-        global_map_settings.__dict__.pop('zone_offsets', None)
+        global_map_settings.__dict__.pop("zone_offsets", None)
         self.map_manager.reload_map()
         self.state.selected_zone = None
+
         print(f"DEBUG [Controller.delete_zone] Removed zone {sel}")
 
     def rename_zone(self, old_name: str, new_name: str) -> None:
         """
-        Renombra una zona: actualiza JSON zone_offsets mapping directamente, soporta renombrar cualquier zona y elimina lógica de additional_zones.
+        Renombra una zona (si old_name existe y new_name no existe):
+          1. Actualiza JSON de zones y persiste.
+          2. Renombra archivos de colisiones y overlays en disco.
+          3. Limpia caché y actualiza map_manager (zone_rooms y tiles_by_zone).
         """
-        old_name = old_name.strip()
-        new_name = new_name.strip()
-        print(f"DEBUG [Controller.rename_zone] called with old_name={old_name!r}, new_name={new_name!r}")
-        if not old_name or not new_name or old_name == new_name:
+        old = old_name.strip()
+        new = new_name.strip()
+        print(f"DEBUG [Controller.rename_zone] called with old_name={old!r}, new_name={new!r}")
+
+        if not old or not new or old == new:
             print("DEBUG [Controller.rename_zone] abort: invalid or same name")
             return
-        # Refactor: edit JSON mapping of offsets to rename any zone
+
+        # Forzar uso de JSON y obtener offsets actuales
         global_map_settings.use_zones_json = True
         offsets = dict(global_map_settings.zone_offsets)
-        print(f"DEBUG [Controller.rename_zone] loaded offsets before rename: {offsets}")
-        if old_name not in offsets or new_name in offsets:
+
+        if old not in offsets or new in offsets:
             print("DEBUG [Controller.rename_zone] abort: old_name not in offsets or new_name exists")
             return
-        # Update mapping and persist
-        offsets[new_name] = offsets.pop(old_name)
-        print(f"DEBUG [Controller.rename_zone] offsets after rename: {offsets}")
-        path = DATA_DIR + '/zones/zones.json'
-        with open(path, 'w', encoding='utf-8') as f:
-            json.dump(offsets, f, indent=2)
-        print(f"DEBUG [Controller.rename_zone] saved zones.json at {path}")
-        # Rename collision and overlay files
-        # Collision file
-        coll_dir = os.path.join(DATA_DIR, 'collisions')
-        old_coll = os.path.join(coll_dir, f'{old_name}.json')
-        new_coll = os.path.join(coll_dir, f'{new_name}.json')
-        if os.path.exists(old_coll):
-            try:
-                os.rename(old_coll, new_coll)
-                print(f"DEBUG [Controller.rename_zone] Renamed collision file {old_coll} -> {new_coll}")
-            except Exception as e:
-                print(f"DEBUG [Controller.rename_zone] Failed to rename collision file {old_coll}: {e}")
-        # Overlay file
-        overlay_dir = os.path.join(DATA_DIR, 'zones', 'overlays')
-        old_overlay = os.path.join(overlay_dir, f'{old_name}.overlay.json')
-        new_overlay = os.path.join(overlay_dir, f'{new_name}.overlay.json')
-        if os.path.exists(old_overlay):
-            try:
-                os.rename(old_overlay, new_overlay)
-                print(f"DEBUG [Controller.rename_zone] Renamed overlay file {old_overlay} -> {new_overlay}")
-            except Exception as e:
-                print(f"DEBUG [Controller.rename_zone] Failed to rename overlay file {old_overlay}: {e}")
-        # Clear cached offsets to force reload
-        global_map_settings.__dict__.pop('zone_offsets', None)
-        print("DEBUG [Controller.rename_zone] cleared cached zone_offsets")
-        # Actualizar map_manager.zone_rooms
-        rooms = self.map_manager.zone_rooms.pop(old_name, [])
-        print(f"DEBUG [Controller.rename_zone] updated zone_rooms keys: {list(self.map_manager.zone_rooms.keys())}")
-        self.map_manager.zone_rooms[new_name] = rooms
-        # Actualizar map_manager.tiles_by_zone y tile.zone
-        tiles = self.map_manager.tiles_by_zone.pop(old_name, [])
-        print(f"DEBUG [Controller.rename_zone] updated tiles_by_zone keys before: {list(self.map_manager.tiles_by_zone.keys())}")
+
+        # 1. Actualizar JSON de zones
+        offsets[new] = offsets.pop(old)
+        json_path = os.path.join(DATA_DIR, "zones", "zones.json")
+        self._save_json(json_path, offsets)
+        print(f"DEBUG [Controller.rename_zone] saved zones.json at {json_path}")
+
+        # 2. Renombrar archivos de colisiones y overlays
+        self._rename_zone_file("collisions", old, new, "[Controller.rename_zone]")
+        self._rename_zone_file(os.path.join("zones", "overlays"), old, new, "[Controller.rename_zone]", suffix=".overlay.json")
+
+        # 3. Limpiar caché y actualizar map_manager
+        global_map_settings.__dict__.pop("zone_offsets", None)
+        rooms = self.map_manager.zone_rooms.pop(old, [])
+        self.map_manager.zone_rooms[new] = rooms
+
+        tiles = self.map_manager.tiles_by_zone.pop(old, [])
         for tile in tiles:
-            tile.zone = new_name
-        self.map_manager.tiles_by_zone[new_name] = tiles
-        print(f"DEBUG [Controller.rename_zone] updated tiles_by_zone keys after: {list(self.map_manager.tiles_by_zone.keys())}")
+            tile.zone = new
+        self.map_manager.tiles_by_zone[new] = tiles
 
-    def save_zones(self):
-        global_map_settings.use_zones_json = True
-        path = DATA_DIR + '/zones/zones.json'
-        with open(path, 'w', encoding='utf-8') as f:
-            json.dump(global_map_settings.zone_offsets, f, indent=2)
+        print(f"DEBUG [Controller.rename_zone] Completed rename from {old} to {new}")
 
-    def load_zones(self):
+    def save_zones(self) -> None:
+        """
+        Persiste el mapping zone_offsets en el JSON correspondiente.
+        """
         global_map_settings.use_zones_json = True
-        path = DATA_DIR + '/zones/zones.json'
+        json_path = os.path.join(DATA_DIR, "zones", "zones.json")
+        self._save_json(json_path, global_map_settings.zone_offsets)
+
+    def load_zones(self) -> None:
+        """
+        Carga offsets desde JSON, actualiza additional_zones y limpia caché.
+        """
+        global_map_settings.use_zones_json = True
+        json_path = os.path.join(DATA_DIR, "zones", "zones.json")
         try:
-            with open(path, 'r', encoding='utf-8') as f:
+            with open(json_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
             global_map_settings.additional_zones.clear()
-            for k,(x,y) in data.items():
+            for k, (x, y) in data.items():
                 global_map_settings.additional_zones[k] = (None, None)
-            global_map_settings.__dict__.pop('zone_offsets', None)
+            global_map_settings.__dict__.pop("zone_offsets", None)
         except Exception:
             pass
 
-# Toolbar component for Map Editor: single view_layers button
+    # -------------------------------------------------------------
+    # 3. HELPERS PRIVADOS DE PERSISTENCIA Y ARCHIVOS
+    # -------------------------------------------------------------
+    def _load_json_or_empty(self, path: str) -> dict:
+        """
+        Abre y parsea JSON en 'path'; si falla, retorna {}.
+        """
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {}
+
+    def _save_json(self, path: str, data: dict) -> None:
+        """
+        Persiste 'data' en formato JSON legible con indentación.
+        """
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+
+    def _safe_remove_file(self, file_path: str, debug_tag: str = "") -> None:
+        """
+        Elimina el archivo si existe, imprimiendo debug en caso de éxito o fallo.
+        """
+        if os.path.isfile(file_path):
+            try:
+                os.remove(file_path)
+                print(f"DEBUG {debug_tag} Removed file {file_path}")
+            except Exception as e:
+                print(f"DEBUG {debug_tag} failed to remove file {file_path}: {e}")
+
+    def _rename_zone_file(self, subdir: str, old: str, new: str, debug_tag: str = "", suffix: str = ".json") -> None:
+        """
+        Renombra archivo de zona en un subdirectorio específico:
+          - subdir: ruta relativa dentro de DATA_DIR
+          - old, new: nombres de zona
+          - suffix: extensión del archivo (default ".json", usar ".overlay.json" para overlays)
+        """
+        old_file = os.path.join(DATA_DIR, subdir, f"{old}{suffix}")
+        new_file = os.path.join(DATA_DIR, subdir, f"{new}{suffix}")
+        if os.path.exists(old_file):
+            try:
+                os.rename(old_file, new_file)
+                print(f"DEBUG {debug_tag} Renamed file {old_file} -> {new_file}")
+            except Exception as e:
+                print(f"DEBUG {debug_tag} Failed to rename file {old_file}: {e}")
+
+    def _generate_unique_zone_key(self, base: str, offsets: dict) -> str:
+        """
+        Genera una clave única a partir de 'base', agregando sufijo _1, _2, ... si existe.
+        """
+        new_key = base
+        idx = 1
+        while new_key in offsets:
+            new_key = f"{base}_{idx}"
+            idx += 1
+        return new_key
+
+    def _ensure_unique_name(self, base: str, existing: dict) -> str:
+        """
+        Versión pública de _generate_unique_zone_key, solo cambia nombre sin afectar offsets.
+        """
+        return self._generate_unique_zone_key(base, existing)
+
+
 class MapToolbarController:
-    """Toolbar for Map Editor: single view_layers button."""
+    """
+    Componente de toolbar para el Map Editor:
+      - Botón principal para layers view
+      - Botones: agregar zona, borrar zona, pintar tiles, vaciar colliders, pintar colliders
+      - Manejo de clics para activar/desactivar modos en el estado del editor
+    """
+
     def __init__(self, editor_state):
         self.editor = editor_state
-        ICON_PATH = "assets/ui/layers_view_tool.png"
-        self.icon = load_image(ICON_PATH, (64, 64))
-        # Add Zone and Delete Zone icons
+
+        # Cargar íconos con dimensiones fijas
+        self.icon = load_image("assets/ui/layers_view_tool.png", (64, 64))
         self.add_icon = load_image("assets/ui/add_zone.png", (64, 64))
         self.delete_icon = load_image("assets/ui/delete_zone.png", (64, 64))
-        # Clear/Paint Tiles and Colliders icons
         self.paint_tiles_icon = load_image("assets/ui/pintar_tiles_zone.png", (64, 64))
         self.clear_colliders_icon = load_image("assets/ui/vaciar_colliders_zone.png", (64, 64))
         self.paint_colliders_icon = load_image("assets/ui/pintar_colliders_zone.png", (64, 64))
+
+        # Posicionamiento inicial
         self.x, self.y = 10, 10
         self.size = 64
         self.padding = 8
-        # Icon rects for each tool
+
+        # Rectángulos que se asignarán en renderizado
         self.icon_rect: pygame.Rect | None = None
         self.add_rect: pygame.Rect | None = None
         self.delete_rect: pygame.Rect | None = None
         self.paint_tiles_rect: pygame.Rect | None = None
         self.clear_colliders_rect: pygame.Rect | None = None
         self.paint_colliders_rect: pygame.Rect | None = None
-        self.option_rects: dict[Layer, pygame.Rect] = {}
+        self.option_rects: dict[Layer | str, pygame.Rect] = {}
 
-    def handle_click(self, mouse_pos) -> bool:
-        # Toggle dropdown when clicking icon
+    def handle_click(self, mouse_pos: tuple[int, int]) -> bool:
+        """
+        Procesa un clic del usuario en la toolbar o dropdown:
+          - Si clic en ícono principal: toggle layers_view_open
+          - Si clic en cualquiera de los botones: activa/desactiva su modo correspondiente
+          - Si layers_view_open: procesa clics dentro del dropdown para show/hide capas, edificios o colliders
+        """
+        # 1. Toggle dropdown layers view
         if self.icon_rect and self.icon_rect.collidepoint(mouse_pos):
             self.editor.layers_view_open = not self.editor.layers_view_open
-            print(f"[DEBUG][Toolbar] layers_view_open set to {self.editor.layers_view_open}")
+            print(f"[DEBUG][Toolbar] layers_view_open -> {self.editor.layers_view_open}")
             return True
-        # Handle Add Zone button click
+
+        # 2. Botones secuenciales: add_zone, delete_zone, paint_tiles, clear_colliders, paint_colliders
         if self.add_rect and self.add_rect.collidepoint(mouse_pos):
-            # Toggle add zone mode, disable delete mode
-            self.editor.add_zone_mode = not self.editor.add_zone_mode
-            self.editor.delete_zone_mode = False
-            print(f"[DEBUG][Toolbar] add_zone_mode set to {self.editor.add_zone_mode}")
+            self._toggle_mode("add_zone_mode", disable=["delete_zone_mode"])
+            print(f"[DEBUG][Toolbar] add_zone_mode -> {self.editor.add_zone_mode}")
             return True
-        # Handle Delete Zone button click
+
         if self.delete_rect and self.delete_rect.collidepoint(mouse_pos):
-            # Toggle delete zone mode, disable add mode
-            self.editor.delete_zone_mode = not self.editor.delete_zone_mode
-            self.editor.add_zone_mode = False
-            print(f"[DEBUG][Toolbar] delete_zone_mode set to {self.editor.delete_zone_mode}")
+            self._toggle_mode("delete_zone_mode", disable=["add_zone_mode"])
+            print(f"[DEBUG][Toolbar] delete_zone_mode -> {self.editor.delete_zone_mode}")
             return True
-        # Handle Paint Tiles Zone button click
+
         if self.paint_tiles_rect and self.paint_tiles_rect.collidepoint(mouse_pos):
-            print("[DEBUG][Toolbar] clicked Paint Tiles Zone button")
-            self.editor.paint_tiles_mode = not self.editor.paint_tiles_mode
-            self.editor.add_zone_mode = False
-            self.editor.delete_zone_mode = False
-            self.editor.clear_colliders_mode = False
-            self.editor.paint_colliders_mode = False
-            print(f"[DEBUG][Toolbar] paint_tiles_mode set to {self.editor.paint_tiles_mode}")
+            self._toggle_mode("paint_tiles_mode", disable=["add_zone_mode", "delete_zone_mode", "clear_colliders_mode", "paint_colliders_mode"])
+            print(f"[DEBUG][Toolbar] paint_tiles_mode -> {self.editor.paint_tiles_mode}")
             return True
-        # Handle Clear Colliders Zone button click
+
         if self.clear_colliders_rect and self.clear_colliders_rect.collidepoint(mouse_pos):
-            print("[DEBUG][Toolbar] clicked Clear Colliders Zone button")
-            self.editor.clear_colliders_mode = not self.editor.clear_colliders_mode
-            self.editor.paint_tiles_mode = False
-            self.editor.add_zone_mode = False
-            self.editor.delete_zone_mode = False
-            self.editor.paint_colliders_mode = False
-            print(f"[DEBUG][Toolbar] clear_colliders_mode set to {self.editor.clear_colliders_mode}")
+            self._toggle_mode("clear_colliders_mode", disable=["add_zone_mode", "delete_zone_mode", "paint_tiles_mode", "paint_colliders_mode"])
+            print(f"[DEBUG][Toolbar] clear_colliders_mode -> {self.editor.clear_colliders_mode}")
             return True
-        # Handle Paint Colliders Zone button click
+
         if self.paint_colliders_rect and self.paint_colliders_rect.collidepoint(mouse_pos):
-            print("[DEBUG][Toolbar] clicked Paint Colliders Zone button")
-            self.editor.paint_colliders_mode = not self.editor.paint_colliders_mode
-            self.editor.paint_tiles_mode = False
-            self.editor.add_zone_mode = False
-            self.editor.delete_zone_mode = False
-            self.editor.clear_colliders_mode = False
-            print(f"[DEBUG][Toolbar] paint_colliders_mode set to {self.editor.paint_colliders_mode}")
+            self._toggle_mode("paint_colliders_mode", disable=["add_zone_mode", "delete_zone_mode", "paint_tiles_mode", "clear_colliders_mode"])
+            print(f"[DEBUG][Toolbar] paint_colliders_mode -> {self.editor.paint_colliders_mode}")
             return True
-        # Handle clicks on dropdown items
+
+        # 3. Procesar clic dentro del dropdown de visibilidad de capas
         if self.editor.layers_view_open:
             for key, rect in self.option_rects.items():
                 if rect.collidepoint(mouse_pos):
-                    if key == "show_all":
-                        # Show all layers and buildings
-                        for layer in self.editor.visible_layers:
-                            self.editor.visible_layers[layer] = True
-                        self.editor.show_buildings = True
-                        print("[DEBUG][Layer View] show_all: all layers visible")
-                    elif key == "hide_all":
-                        # Hide all layers and buildings
-                        for layer in self.editor.visible_layers:
-                            self.editor.visible_layers[layer] = False
-                        self.editor.show_buildings = False
-                        print("[DEBUG][Layer View] hide_all: all layers hidden")
-                    elif isinstance(key, Layer):
-                        # Toggle tile layer visibility
-                        self.editor.visible_layers[key] = not self.editor.visible_layers[key]
-                        print(f"[DEBUG][Layer View] {key.name}: {'visible' if self.editor.visible_layers[key] else 'hidden'}")
-                    elif key == "buildings":
-                        # Toggle building layer visibility
-                        self.editor.show_buildings = not self.editor.show_buildings
-                        print(f"[DEBUG][Layer View] buildings: {'visible' if self.editor.show_buildings else 'hidden'}")
-                    elif key == "colliders":
-                        # Toggle colliders layer visibility
-                        self.editor.show_colliders = not self.editor.show_colliders
-                        print(f"[DEBUG][Layer View] colliders: {'visible' if self.editor.show_colliders else 'hidden'}")
+                    self._handle_dropdown_selection(key)
                     return True
+
         return False
+
+    def _toggle_mode(self, mode_attr: str, disable: list[str] = []) -> None:
+        """
+        Activa/desactiva la modalidad especificada en el editor_state,
+        desactivando cualquier otro mode en la lista 'disable'.
+        """
+        current = getattr(self.editor, mode_attr)
+        setattr(self.editor, mode_attr, not current)
+        for other in disable:
+            setattr(self.editor, other, False)
+
+    def _handle_dropdown_selection(self, key: Layer | str) -> None:
+        """
+        Procesa la selección en el dropdown de visibilidad:
+          - "show_all" / "hide_all": toggle global
+          - Layer: toggle visibilidad de esa capa
+          - "buildings": toggle show_buildings
+          - "colliders": toggle show_colliders
+        """
+        if key == "show_all":
+            for layer in self.editor.visible_layers:
+                self.editor.visible_layers[layer] = True
+            self.editor.show_buildings = True
+            print("[DEBUG][Layer View] show_all: all layers visible")
+
+        elif key == "hide_all":
+            for layer in self.editor.visible_layers:
+                self.editor.visible_layers[layer] = False
+            self.editor.show_buildings = False
+            print("[DEBUG][Layer View] hide_all: all layers hidden")
+
+        elif isinstance(key, Layer):
+            vl = self.editor.visible_layers
+            vl[key] = not vl[key]
+            print(f"[DEBUG][Layer View] {key.name}: {'visible' if vl[key] else 'hidden'}")
+
+        elif key == "buildings":
+            self.editor.show_buildings = not self.editor.show_buildings
+            print(f"[DEBUG][Layer View] buildings: {'visible' if self.editor.show_buildings else 'hidden'}")
+
+        elif key == "colliders":
+            self.editor.show_colliders = not self.editor.show_colliders
+            print(f"[DEBUG][Layer View] colliders: {'visible' if self.editor.show_colliders else 'hidden'}")
