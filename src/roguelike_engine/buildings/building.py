@@ -194,10 +194,24 @@ class Building:
         """Capa Z inferior del edificio."""
         return self.model.z_bottom
 
+    @z_bottom.setter
+    def z_bottom(self, value: int):
+        """Setter para z_bottom."""
+        self.model.z_bottom = value
+        if self.controller:
+            self.controller.update_on_camera_change()
+
     @property
     def z_top(self) -> int:
         """Capa Z superior del edificio."""
         return self.model.z_top
+
+    @z_top.setter
+    def z_top(self, value: int):
+        """Setter para z_top."""
+        self.model.z_top = value
+        if self.controller:
+            self.controller.update_on_camera_change()
 
     @property
     def z(self) -> int:
