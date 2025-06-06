@@ -1,0 +1,17 @@
+{
+  "ORIGINAL_SPRITE_SIZE": [128, 128],
+  "RENDERED_SPRITE_SIZE": [64, 64],
+  "PLAYER_STATS": {
+    "first_hero": {
+      "max_health": 100,
+      "max_mana": 50,
+      "max_energy": 100
+    },
+    "valkyria": {
+      "max_health": 120,
+      "max_mana": 80,
+      "max_energy": 60
+    }
+  },
+  "PLAYER_SPEED": 5
+}
