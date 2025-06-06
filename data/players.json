@@ -1,6 +1,14 @@
 {
   "ORIGINAL_SPRITE_SIZE": [128, 128],
   "RENDERED_SPRITE_SIZE": [64, 64],
+  "DEFAULT_CLASS": "dwarf",
+  "ANIMATION_INTERVAL": 0.15,
+  "INITIAL_ANIMATION_STATE": "down_idle",
+  "MELEE_WEAPON": {
+    "damage": 1,
+    "cooldown": 1.0
+  },
+  "FEET_HEIGHT_DIVISOR": 4,
   "PLAYER_STATS": {
     "dwarf": {
       "max_health": 100,

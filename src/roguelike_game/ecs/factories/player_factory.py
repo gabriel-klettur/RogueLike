@@ -21,6 +21,7 @@ from roguelike_game.ecs.components.transform.z_layer import ZLayer
 from roguelike_game.systems.config_z_layer import Z_LAYERS
 from roguelike_game.ecs.assets.player_assets import PlayerAssets
 from roguelike_game.ecs.components.rendering.trail_component import TrailComponent, TrailConfig
+from roguelike_engine.config.config_tiles import TILE_SIZE
 import time
 import pygame
 import json
@@ -34,13 +35,17 @@ with open(_config_path) as _f:
     _player_cfg = json.load(_f)
 ORIGINAL_SPRITE_SIZE = tuple(_player_cfg["ORIGINAL_SPRITE_SIZE"])
 RENDERED_SPRITE_SIZE = tuple(_player_cfg["RENDERED_SPRITE_SIZE"])
-# Removed global PLAYER_SPEED; movement speed now per-character
 PLAYER_STATS = _player_cfg["PLAYER_STATS"]
-DEFAULT_PLAYER_SPEED = PLAYER_STATS.get("dwarf", {}).get("speed", 5)
+DEFAULT_CLASS        = _player_cfg.get("DEFAULT_CLASS", "dwarf")
+DEFAULT_PLAYER_SPEED = PLAYER_STATS.get(DEFAULT_CLASS, {}).get("speed", 5)
+ANIMATION_INTERVAL   = _player_cfg.get("ANIMATION_INTERVAL", 0.15)
+INITIAL_ANIMATION_STATE = _player_cfg.get("INITIAL_ANIMATION_STATE", "down_idle")
+MELEE_WEAPON_CFG     = _player_cfg.get("MELEE_WEAPON", {})
+FEET_HEIGHT_DIVISOR  = _player_cfg.get("FEET_HEIGHT_DIVISOR", 4)
 
 
 
-def spawn_player(world, x, y, class_player: str = "dwarf") -> int:
+def spawn_player(world, x, y, class_player: str = DEFAULT_CLASS) -> int:
     """
     Crea la entidad jugador y añade los componentes básicos.
 
@@ -86,9 +91,9 @@ def spawn_player(world, x, y, class_player: str = "dwarf") -> int:
     for direction, frames in sprites_dict.items():
         anim_map[f"{direction}_idle"] = frames.get('idle', [])
         anim_map[f"{direction}_walk"] = frames.get('walk', [])
-    world.components["Animator"][eid] = Animator(animations=anim_map, current_state='down_idle')
+    world.components["Animator"][eid] = Animator(animations=anim_map, current_state=INITIAL_ANIMATION_STATE)
     # Control de velocidad de animación (pies caminando)
-    world.components["AnimationTimer"][eid] = AnimationTimer(last_time=time.time(), interval=0.15)
+    world.components["AnimationTimer"][eid] = AnimationTimer(last_time=time.time(), interval=ANIMATION_INTERVAL)
     # Componente de movimiento
     # Ajustar velocidad de movimiento según configuración JSON
     speed = PLAYER_STATS.get(class_player, {}).get("speed", DEFAULT_PLAYER_SPEED)
@@ -102,7 +107,7 @@ def spawn_player(world, x, y, class_player: str = "dwarf") -> int:
     # Dimensiones reales del sprite para feet collider
     w_img, h_img = orig_image.get_size()
     fw = w_img // 2
-    fh = h_img // 4
+    fh = h_img // FEET_HEIGHT_DIVISOR
     feet_offset_x = (w_img - fw) // 2                 # centrar horizontalmente
     feet_offset_y = h_img - fh                        # alinear parte superior del collider con la base del sprite
     feet = Collider(fw, fh, feet_offset_x, feet_offset_y)
@@ -113,7 +118,10 @@ def spawn_player(world, x, y, class_player: str = "dwarf") -> int:
     # Componente de combate
     world.components["CombatStats"][eid] = CombatStats(max_hp, max_hp, 1, 0)
     # Componente de arma cuerpo a cuerpo
-    world.components["MeleeWeapon"][eid] = MeleeWeapon(damage=1, cooldown=1.0)
+    world.components["MeleeWeapon"][eid] = MeleeWeapon(
+        damage=MELEE_WEAPON_CFG.get("damage", 1),
+        cooldown=MELEE_WEAPON_CFG.get("cooldown", 1.0)
+    )
     # Trail de sombra configurable desde JSON
     trail_params = PLAYER_STATS.get(class_player, {}).get("trail", {})
     trail_cfg = TrailConfig(
@@ -125,13 +133,11 @@ def spawn_player(world, x, y, class_player: str = "dwarf") -> int:
     return eid
 
 
-def spawn_player_tile(world, tile_x: int, tile_y: int, class_player: str = "dwarf") -> int:
+def spawn_player_tile(world, tile_x: int, tile_y: int, class_player: str = DEFAULT_CLASS) -> int:
     """
     Crea la entidad jugador usando coordenadas de tile.
     Calcula la posición en píxeles para alinear el collider 'feet' al centro del tile.
     """
-    from roguelike_game.ecs.assets.player_assets import PlayerAssets
-    from roguelike_engine.config.config_tiles import TILE_SIZE
 
     # Obtener sprite para medir dimensiones
     sprites_dict, _ = PlayerAssets(class_player, ORIGINAL_SPRITE_SIZE).get_sprites()
@@ -143,7 +149,7 @@ def spawn_player_tile(world, tile_x: int, tile_y: int, class_player: str = "dwar
     else:
         img = down_idle[0]
         w_img, h_img = img.get_size()
-        fh = h_img // 4
+        fh = h_img // FEET_HEIGHT_DIVISOR
         half_fh = fh // 2
         # Centro del tile en píxeles
         cx = tile_x * TILE_SIZE + TILE_SIZE // 2
