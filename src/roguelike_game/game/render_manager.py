@@ -343,13 +343,20 @@ class RendererManager:
         # Cachea el overlay de ayuda para evitar renderizado de texto cada frame
         screen = self.screen
         size = screen.get_size()
-        mode = ('buildings' if self.buildings_editor.editor_state.active else
-                'tiles' if self.tiles_editor.editor_state.active else 'normal')
+        mode = ('map' if self.map_editor.editor_state.active else
+                'buildings' if self.buildings_editor.editor_state.active else
+                'tiles' if self.tiles_editor.editor_state.active else
+                'normal')
         key = (mode, size)
         if key != self._help_overlay_key:
             # Reconstruir overlay            
             screen_w, screen_h = size
-            if mode == 'buildings':
+            if mode == 'map':
+                lines = ["Modo Edición Mapas:", "F11: modo", "ESC: salir",
+                         "N: duplicar zona", "L: cargar zonas", "Ctrl+S: guardar zonas",
+                         "D: borrar zona", "H: ocultar zona", "Click Izq: toolbar",
+                         "Click Medio: arrastrar", "Rueda: zoom"]
+            elif mode == 'buildings':
                 lines = [
                     "Modo Edición Edificios:", "F10: modo", "P: selector edificio",
                     "ESC: salir", "D: reset", "R: redimensionar",
@@ -361,10 +368,11 @@ class RendererManager:
                          "B: alternar edificios", "Click Izq: pintar", "Rueda: capa",
                          "Click Der: arrastrar"]
             else:
-                lines = ["Modo Normal:", "F8: tiles", "F10: edificios",
-                         "F9: debug", "ESC: menú", "Q: vida",
-                         "1: escudo", "F: fuegos art.", "R: humo", "T: humo pers.",
-                         "Z: rayo", "X: llama", "V: dash", "E: slash", "F3: expand dungeon"]
+                lines = ["Mode Normal:", "F8:Tiles Editor", "F10: Buildings Editor",
+                         "F9: Debug Mode", "ESC: Menu","F11: Map Editor, F12: Entities Editor",                         
+                         "X: Healing", "Mouse left: Fire Ball", "Mouse right: Slash",
+                         "Mouse middle: Laser Beam","F3: expand dungeon",
+                         "E: Slash"]
             font = pygame.font.SysFont("Arial", 14)
             pad = 5
             texts = [font.render(l, True, (255,255,255)) for l in lines]

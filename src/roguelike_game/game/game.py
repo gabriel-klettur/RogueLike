@@ -241,6 +241,17 @@ class Game:
 
     @benchmark(lambda self: self.perf_log, "1.TOTAL: HANDLE EVENTS")
     def handle_events(self):
+        # Si estamos en un editor activo, delegamos solo a su handler y bloqueamos ataques/spells
+        if self.tiles_editor.editor_state.active:
+            self.tiles_editor.handle(self.camera, self.map)
+            return
+        if self.buildings_editor.editor_state.active:
+            self.buildings_editor.handle(self.camera, self.buildings)
+            return
+        if self.map_editor.editor_state.active:
+            self.map_editor.handle(self.camera, self.map)
+            return
+        # Modo normal: procesar eventos de juego (ataques, spells, dash, etc.)
         handle_events(
             self.state,
             self.camera,
@@ -318,8 +329,12 @@ class Game:
             # 3) Renderizar resto de partes del juego que no son ECS (mapa, editores, buildings, minimapa)
             self.render()
 
-            # 4) Renderizar ECS (solo si no estamos en Map Editor)
-            if not self.map_editor.editor_state.active:
+            # 4) Renderizar ECS (solo si no estamos en ningún editor)
+            if not (
+                self.tiles_editor.editor_state.active or
+                self.buildings_editor.editor_state.active or
+                self.map_editor.editor_state.active
+            ):
                 self.run_ecs()
 
             # 5) Actualizar pantalla
