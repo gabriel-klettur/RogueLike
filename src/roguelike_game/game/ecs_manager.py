@@ -16,7 +16,8 @@ class ECSManager:
         self.ecs_world = ECSWorld(screen, map_manager, entities_manager.buildings, perf_log)
         # Spawn de la entidad jugador según posición guardada en tile coords o centro del lobby
         saved_tile = self.map_manager._local_state.get("player_pos")
-        if saved_tile is not None:
+        # Validar que saved_tile sea secuencia de dos valores
+        if isinstance(saved_tile, (tuple, list)) and len(saved_tile) == 2:
             tx, ty = saved_tile
         else:
             off_x, off_y = self.map_manager.lobby_offset

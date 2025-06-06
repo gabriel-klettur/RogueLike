@@ -2,13 +2,21 @@
   "ORIGINAL_SPRITE_SIZE": [128, 128],
   "RENDERED_SPRITE_SIZE": [64, 64],
   "DEFAULT_CLASS": "dwarf",
+  "DEFAULT_SCALE": 1.0,
+  "DEFAULT_SPEED": 5,
+  "DEFAULT_TRAIL": {
+    "interval": 0.1,
+    "life_time": 0.5,
+    "max_trails": 10
+  },
+  "FEET_WIDTH_DIVISOR": 2,
+  "FEET_HEIGHT_DIVISOR": 4,
   "ANIMATION_INTERVAL": 0.15,
   "INITIAL_ANIMATION_STATE": "down_idle",
   "MELEE_WEAPON": {
     "damage": 1,
     "cooldown": 1.0
   },
-  "FEET_HEIGHT_DIVISOR": 4,
   "PLAYER_STATS": {
     "dwarf": {
       "max_health": 100,
