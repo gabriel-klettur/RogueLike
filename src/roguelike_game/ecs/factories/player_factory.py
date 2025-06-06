@@ -114,8 +114,13 @@ def spawn_player(world, x, y, character_name: str = "first_hero") -> int:
     world.components["CombatStats"][eid] = CombatStats(max_hp, max_hp, 1, 0)
     # Componente de arma cuerpo a cuerpo
     world.components["MeleeWeapon"][eid] = MeleeWeapon(damage=1, cooldown=1.0)
-    # Trail de sombra
-    trail_cfg = TrailConfig(interval=0.1, life_time=0.5, max_trails=10)
+    # Trail de sombra configurable desde JSON
+    trail_params = PLAYER_STATS.get(character_name, {}).get("trail", {})
+    trail_cfg = TrailConfig(
+        interval=trail_params.get("interval", 0.1),
+        life_time=trail_params.get("life_time", 0.5),
+        max_trails=trail_params.get("max_trails", 10),
+    )
     world.components["TrailComponent"][eid] = TrailComponent(config=trail_cfg)
     return eid
 

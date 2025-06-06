@@ -6,15 +6,25 @@
       "max_health": 100,
       "max_mana": 50,
       "max_energy": 100,
-      "scale": 2.0,
-      "speed": 5
+      "scale": 0.7,
+      "speed": 5,
+      "trail": {
+        "interval": 0.1,
+        "life_time": 0.2,
+        "max_trails": 100
+      }
     },
     "valkyrie": {
       "max_health": 120,
       "max_mana": 80,
       "max_energy": 60,
       "scale": 1.25,
-      "speed": 6
+      "speed": 6,
+      "trail": {
+        "interval": 0.1,
+        "life_time": 0.5,
+        "max_trails": 10
+      }
     }   
   }
 }
