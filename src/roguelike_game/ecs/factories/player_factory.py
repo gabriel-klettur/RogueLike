@@ -36,18 +36,18 @@ ORIGINAL_SPRITE_SIZE = tuple(_player_cfg["ORIGINAL_SPRITE_SIZE"])
 RENDERED_SPRITE_SIZE = tuple(_player_cfg["RENDERED_SPRITE_SIZE"])
 # Removed global PLAYER_SPEED; movement speed now per-character
 PLAYER_STATS = _player_cfg["PLAYER_STATS"]
-DEFAULT_PLAYER_SPEED = PLAYER_STATS.get("first_hero", {}).get("speed", 5)
+DEFAULT_PLAYER_SPEED = PLAYER_STATS.get("dwarf", {}).get("speed", 5)
 
 
 
-def spawn_player(world, x, y, character_name: str = "first_hero") -> int:
+def spawn_player(world, x, y, class_player: str = "dwarf") -> int:
     """
     Crea la entidad jugador y añade los componentes básicos.
 
     Args:
         world: instancia de ECSWorld
         x, y: coordenadas iniciales en píxeles
-        character_name: identificador de sprite/asset del jugador
+        class_player: identificador de sprite/asset del jugador
     Returns:
         eid: ID de la entidad creada
     """
@@ -63,9 +63,9 @@ def spawn_player(world, x, y, character_name: str = "first_hero") -> int:
     # Componente ZLayer para renderizado de jugador
     world.components["ZLayer"][eid] = ZLayer(Z_LAYERS["player"])
     # Cargar sprites del jugador
-    sprites_dict, _ = PlayerAssets(character_name, ORIGINAL_SPRITE_SIZE).get_sprites()
+    sprites_dict, _ = PlayerAssets(class_player, ORIGINAL_SPRITE_SIZE).get_sprites()
     # Ajustar escala de sprites según configuración JSON
-    scale = PLAYER_STATS.get(character_name, {}).get("scale", 1.0)
+    scale = PLAYER_STATS.get(class_player, {}).get("scale", 1.0)
     if scale != 1.0:
         for direction, anims in sprites_dict.items():
             for state, frames in anims.items():
@@ -91,7 +91,7 @@ def spawn_player(world, x, y, character_name: str = "first_hero") -> int:
     world.components["AnimationTimer"][eid] = AnimationTimer(last_time=time.time(), interval=0.15)
     # Componente de movimiento
     # Ajustar velocidad de movimiento según configuración JSON
-    speed = PLAYER_STATS.get(character_name, {}).get("speed", DEFAULT_PLAYER_SPEED)
+    speed = PLAYER_STATS.get(class_player, {}).get("speed", DEFAULT_PLAYER_SPEED)
     world.components["MovementSpeed"][eid] = MovementSpeed(speed)
     # Componente de velocidad
     world.components["Velocity"][eid] = Velocity(0, 0)
@@ -108,14 +108,14 @@ def spawn_player(world, x, y, character_name: str = "first_hero") -> int:
     feet = Collider(fw, fh, feet_offset_x, feet_offset_y)
     world.components["MultiCollider"][eid] = MultiCollider({"body": body, "feet": feet})
     # Componente de salud
-    max_hp = PLAYER_STATS.get(character_name, {}).get("max_health", 100)
+    max_hp = PLAYER_STATS.get(class_player, {}).get("max_health", 100)
     world.components["Health"][eid] = Health(max_hp, max_hp)
     # Componente de combate
     world.components["CombatStats"][eid] = CombatStats(max_hp, max_hp, 1, 0)
     # Componente de arma cuerpo a cuerpo
     world.components["MeleeWeapon"][eid] = MeleeWeapon(damage=1, cooldown=1.0)
     # Trail de sombra configurable desde JSON
-    trail_params = PLAYER_STATS.get(character_name, {}).get("trail", {})
+    trail_params = PLAYER_STATS.get(class_player, {}).get("trail", {})
     trail_cfg = TrailConfig(
         interval=trail_params.get("interval", 0.1),
         life_time=trail_params.get("life_time", 0.5),
@@ -125,7 +125,7 @@ def spawn_player(world, x, y, character_name: str = "first_hero") -> int:
     return eid
 
 
-def spawn_player_tile(world, tile_x: int, tile_y: int, character_name: str = "first_hero") -> int:
+def spawn_player_tile(world, tile_x: int, tile_y: int, class_player: str = "dwarf") -> int:
     """
     Crea la entidad jugador usando coordenadas de tile.
     Calcula la posición en píxeles para alinear el collider 'feet' al centro del tile.
@@ -134,7 +134,7 @@ def spawn_player_tile(world, tile_x: int, tile_y: int, character_name: str = "fi
     from roguelike_engine.config.config_tiles import TILE_SIZE
 
     # Obtener sprite para medir dimensiones
-    sprites_dict, _ = PlayerAssets(character_name, ORIGINAL_SPRITE_SIZE).get_sprites()
+    sprites_dict, _ = PlayerAssets(class_player, ORIGINAL_SPRITE_SIZE).get_sprites()
     down_idle = sprites_dict.get('down', {}).get('idle', [])
     if not down_idle:
         # Fallback: uso esquina superior izquierda del tile
@@ -151,4 +151,4 @@ def spawn_player_tile(world, tile_x: int, tile_y: int, character_name: str = "fi
         # Calcular top-left del sprite para alinear feet
         px = cx - w_img // 2
         py = cy - (h_img - half_fh)
-    return spawn_player(world, px, py, character_name)
+    return spawn_player(world, px, py, class_player)

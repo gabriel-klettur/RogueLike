@@ -89,7 +89,7 @@ def load_image(path, scale=None):
 ### ✔️ Ejemplo de uso:
 
 ```python
-sprite = load_image("assets/characters/first_hero/first_hero_down.png", scale=(128, 128))
+sprite = load_image("assets/characters/dwarf/first_hero_down.png", scale=(128, 128))
 ```
 
 - ✅ Las rutas son **relativas al proyecto**, no absolutas.

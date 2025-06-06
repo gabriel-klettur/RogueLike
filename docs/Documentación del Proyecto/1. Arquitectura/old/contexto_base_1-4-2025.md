@@ -35,7 +35,7 @@ Estás desarrollando un **videojuego Roguelike 2D con vista Top-Down**, utilizan
 - Sistema de minimapa dinámico que se actualiza en tiempo real.
 
 #### 👤 Jugador
-- Dos personajes seleccionables: `first_hero` y `valkyria`.
+- Dos personajes seleccionables: `dwarf` y `valkyria`.
 - Cada uno tiene **sprites por dirección** (8 direcciones) y **stats únicos**:
   - Vida, maná y energía.
 - Interfaz HUD con icono de restauración y **sistema de cooldown (tecla Q)**.

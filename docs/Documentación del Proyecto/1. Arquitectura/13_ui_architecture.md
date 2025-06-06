@@ -17,7 +17,7 @@ Este documento describe la estructura de la interfaz de usuario del juego, inclu
 
 - Acceso con tecla `ESC`.
 - Opciones actuales:
-  - Cambiar personaje (alternar entre `first_hero` y `valkyria`)
+  - Cambiar personaje (alternar entre `dwarf` y `valkyria`)
   - Salir del juego
 - Interacción por teclado (`↑ ↓ Enter`)
 - Renderizado condicional según `self.show_menu`

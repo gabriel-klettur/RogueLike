@@ -32,7 +32,7 @@ def load_sprite_sheet(path: str, sprite_size: tuple[int,int],
                       row=0, columns=1, start_col=0) -> list[pygame.Surface]:
     """
     Igual que load_image, pero corta el sheet en frames.
-    path = "characters/first_hero/first_hero.png", etc.
+    path = "characters/dwarf/dwarf.png", etc.
     """
     sheet = load_image(path)
     w, h = sprite_size

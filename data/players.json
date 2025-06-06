@@ -2,7 +2,7 @@
   "ORIGINAL_SPRITE_SIZE": [128, 128],
   "RENDERED_SPRITE_SIZE": [64, 64],
   "PLAYER_STATS": {
-    "first_hero": {
+    "dwarf": {
       "max_health": 100,
       "max_mana": 50,
       "max_energy": 100,
