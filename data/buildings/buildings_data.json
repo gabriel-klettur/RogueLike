@@ -25,16 +25,16 @@
         "image_path": "assets/buildings/vegetation/tree_1.png",
         "solid": true,
         "scale": [
-            162,
-            220
+            166,
+            225
         ],
         "original_scale": [
-            456,
-            626
+            166,
+            225
         ],
         "split_ratio": 0.632,
         "z_bottom": 2,
-        "z_top": 7,
+        "z_top": 6,
         "z": 2
     },
     {
@@ -780,21 +780,21 @@
     },
     {
         "zone": "Lobby",
-        "rel_x": 705,
-        "rel_y": 819,
+        "rel_x": 719,
+        "rel_y": 787,
         "image_path": "assets/buildings\\portals\\portal.png",
         "solid": true,
         "scale": [
-            139,
-            208
+            161,
+            239
         ],
         "original_scale": [
-            1024,
-            1536
+            161,
+            239
         ],
-        "split_ratio": 0.202,
+        "split_ratio": 0.722,
         "z_bottom": 3,
-        "z_top": 5,
+        "z_top": 2,
         "z": 3
     },
     {
