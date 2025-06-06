@@ -48,16 +48,16 @@ RENDERED_SPRITE_SIZE = tuple(_player_cfg["RENDERED_SPRITE_SIZE"])
 # Estadísticas detalladas por clase de jugador
 PLAYER_STATS = _player_cfg["PLAYER_STATS"]
 
-# Valores por defecto (se usan si no se especifica en PLAYER_STATS)
-DEFAULT_CLASS = _player_cfg.get("DEFAULT_CLASS", "dwarf")
-DEFAULT_SCALE = _player_cfg.get("DEFAULT_SCALE", 1.0)
-DEFAULT_SPEED = _player_cfg.get("DEFAULT_SPEED", 5)
-ANIMATION_INTERVAL = _player_cfg.get("ANIMATION_INTERVAL", 0.15)
-INITIAL_ANIMATION_STATE = _player_cfg.get("INITIAL_ANIMATION_STATE", "down_idle")
-MELEE_WEAPON_CFG = _player_cfg.get("MELEE_WEAPON", {})
-DEFAULT_TRAIL = _player_cfg.get("DEFAULT_TRAIL", {})
-FEET_WIDTH_DIVISOR = _player_cfg.get("FEET_WIDTH_DIVISOR", 2)
-FEET_HEIGHT_DIVISOR = _player_cfg.get("FEET_HEIGHT_DIVISOR", 4)
+# Valores por defecto (ahora obligatorios en el JSON)
+DEFAULT_CLASS = _player_cfg["DEFAULT_CLASS"]
+DEFAULT_SCALE = _player_cfg["DEFAULT_SCALE"]
+DEFAULT_SPEED = _player_cfg["DEFAULT_SPEED"]
+ANIMATION_INTERVAL = _player_cfg["ANIMATION_INTERVAL"]
+INITIAL_ANIMATION_STATE = _player_cfg["INITIAL_ANIMATION_STATE"]
+MELEE_WEAPON_CFG = _player_cfg["MELEE_WEAPON"]
+DEFAULT_TRAIL = _player_cfg["DEFAULT_TRAIL"]
+FEET_WIDTH_DIVISOR = _player_cfg["FEET_WIDTH_DIVISOR"]
+FEET_HEIGHT_DIVISOR = _player_cfg["FEET_HEIGHT_DIVISOR"]
 
 
 # --------------------------------------------
@@ -69,7 +69,7 @@ def _load_and_scale_sprites(class_player: str) -> dict[str, dict[str, list[pygam
     Carga los sprites de la clase indicada y, si corresponde, los escala según el factor 'scale'.
     
     Args:
-        class_player: Identificador de la clase (p.ej. "dwarf", "human", etc.)
+        class_player: Identificador de la clase (p.ej. "dwarf", "valkyrie", etc.)
     
     Retorna:
         sprites_dict: Diccionario anidado con la estructura:
@@ -80,13 +80,11 @@ def _load_and_scale_sprites(class_player: str) -> dict[str, dict[str, list[pygam
                 "right": {...}
             }
     """
-    # 1) Obtener sprites brutos desde PlayerAssets
     sprites_dict, _ = PlayerAssets(class_player, ORIGINAL_SPRITE_SIZE).get_sprites()
 
-    # 2) Determinar factor de escala (override por clase en PLAYER_STATS)
-    scale_factor = PLAYER_STATS.get(class_player, {}).get("scale", DEFAULT_SCALE)
+    # Determinar factor de escala (obligatorio en PLAYER_STATS)
+    scale_factor = PLAYER_STATS[class_player]["scale"]
 
-    # 3) Si hay que escalar, recorrer todas las animaciones y frames
     if scale_factor != 1.0:
         for direction, anims in sprites_dict.items():
             for state, frames in anims.items():
@@ -106,10 +104,8 @@ def _extract_initial_frame(sprites_dict: dict[str, dict[str, list[pygame.Surface
     Obtiene el primer fotograma de la animación 'down_idle', si existe.
     Sirve como sprite inicial estático.
     """
-    down_idle_frames = sprites_dict.get("down", {}).get("idle", [])
-    if down_idle_frames:
-        return down_idle_frames[0]
-    return None
+    down_idle_frames = sprites_dict["down"]["idle"]
+    return down_idle_frames[0] if down_idle_frames else None
 
 
 def _build_animator_map(sprites_dict: dict[str, dict[str, list[pygame.Surface]]]) -> dict[str, list[pygame.Surface]]:
@@ -130,10 +126,8 @@ def _build_animator_map(sprites_dict: dict[str, dict[str, list[pygame.Surface]]]
     """
     anim_map: dict[str, list[pygame.Surface]] = {}
     for direction, states in sprites_dict.items():
-        idle_frames = states.get("idle", [])
-        walk_frames = states.get("walk", [])
-        anim_map[f"{direction}_idle"] = idle_frames
-        anim_map[f"{direction}_walk"] = walk_frames
+        anim_map[f"{direction}_idle"] = states["idle"]
+        anim_map[f"{direction}_walk"] = states["walk"]
     return anim_map
 
 
@@ -149,18 +143,16 @@ def _create_body_and_feet(sprite_surface: pygame.Surface) -> MultiCollider:
     Retorna:
         MultiCollider({"body": MaskCollider, "feet": Collider})
     """
-    # ——— Body ———
+    # Body
     mascara = pygame.mask.from_surface(sprite_surface)
     body_collider = MaskCollider(mascara, offset_x=0, offset_y=0)
 
-    # ——— Feet ———
+    # Feet
     w_img, h_img = sprite_surface.get_size()
     feet_width = w_img // FEET_WIDTH_DIVISOR
     feet_height = h_img // FEET_HEIGHT_DIVISOR
 
-    # Centrar horizontalmente:
     offset_x = (w_img - feet_width) // 2
-    # Alinear verticalmente en la base del sprite:
     offset_y = h_img - feet_height
 
     feet_collider = Collider(feet_width, feet_height, offset_x, offset_y)
@@ -204,22 +196,18 @@ def spawn_player(world, x: int, y: int, class_player: str = DEFAULT_CLASS) -> in
     # 6) Sprites y animaciones
     # ------------------------------------------------
 
-    # 6.1) Cargar y escalar todos los sprites de la clase
     sprites_dict = _load_and_scale_sprites(class_player)
 
-    # 6.2) Sprite inicial estático: primer frame 'down_idle'
     initial_frame = _extract_initial_frame(sprites_dict)
     if initial_frame:
         world.components["Sprite"][eid] = Sprite(initial_frame)
 
-    # 6.3) Construir el mapa de animaciones para Animator
     anim_map = _build_animator_map(sprites_dict)
     world.components["Animator"][eid] = Animator(
         animations=anim_map,
         current_state=INITIAL_ANIMATION_STATE,
     )
 
-    # 6.4) Temporizador para controlar velocidad de animación
     world.components["AnimationTimer"][eid] = AnimationTimer(
         last_time=time.time(),
         interval=ANIMATION_INTERVAL,
@@ -229,11 +217,9 @@ def spawn_player(world, x: int, y: int, class_player: str = DEFAULT_CLASS) -> in
     # 7) Movimiento: velocidad y vector de velocidad
     # ------------------------------------------------
 
-    # 7.1) Obtener velocidad desde PLAYER_STATS o usar DEFAULT_SPEED
-    speed_value = PLAYER_STATS.get(class_player, {}).get("speed", DEFAULT_SPEED)
+    speed_value = PLAYER_STATS[class_player]["speed"]
     world.components["MovementSpeed"][eid] = MovementSpeed(speed_value)
 
-    # 7.2) Vector de velocidad inicial (0,0)
     world.components["Velocity"][eid] = Velocity(0, 0)
 
     # ------------------------------------------------
@@ -248,17 +234,18 @@ def spawn_player(world, x: int, y: int, class_player: str = DEFAULT_CLASS) -> in
     # 9) Salud y estadísticas de combate
     # ------------------------------------------------
 
-    # 9.1) Salud máxima desde PLAYER_STATS o 100 por defecto
-    max_hp = PLAYER_STATS.get(class_player, {}).get("max_health", 100)
+    max_hp = PLAYER_STATS[class_player]["max_health"]
     world.components["Health"][eid] = Health(max_hp, max_hp)
 
-    # 9.2) Estadísticas base de combate: (health, max_health, attack, defense)
-    #      Por simplicidad se usan valores fijos para ataque y defensa.
+    # Si attack y defense están definidos en PLAYER_STATS, úsalos; 
+    # de lo contrario, asumimos valores mínimos (1 y 0).
+    attack_value = PLAYER_STATS[class_player]["attack"]
+    defense_value = PLAYER_STATS[class_player]["defense"]
     world.components["CombatStats"][eid] = CombatStats(
         current_hp=max_hp,
         max_hp=max_hp,
-        power=PLAYER_STATS.get(class_player, {}).get("attack", 1),
-        defense=PLAYER_STATS.get(class_player, {}).get("defense", 0),
+        power=attack_value,
+        defense=defense_value,
     )
 
     # ------------------------------------------------
@@ -266,19 +253,21 @@ def spawn_player(world, x: int, y: int, class_player: str = DEFAULT_CLASS) -> in
     # ------------------------------------------------
 
     world.components["MeleeWeapon"][eid] = MeleeWeapon(
-        damage=MELEE_WEAPON_CFG.get("damage", 1),
-        cooldown=MELEE_WEAPON_CFG.get("cooldown", 1.0),
+        damage=MELEE_WEAPON_CFG["damage"],
+        cooldown=MELEE_WEAPON_CFG["cooldown"],
     )
 
     # ------------------------------------------------
     # 11) Efecto visual: Trail de sombra
     # ------------------------------------------------
 
-    trail_params = PLAYER_STATS.get(class_player, {}).get("trail", {})
+    # Tomamos directamente del JSON: primero buscamos en la clase,
+    # si no estuviera, heredamos de DEFAULT_TRAIL (forzando que esté definido allí).
+    trail_params = PLAYER_STATS[class_player].get("trail", DEFAULT_TRAIL)
     trail_cfg = TrailConfig(
-        interval=trail_params.get("interval", DEFAULT_TRAIL.get("interval", 0.1)),
-        life_time=trail_params.get("life_time", DEFAULT_TRAIL.get("life_time", 0.5)),
-        max_trails=trail_params.get("max_trails", DEFAULT_TRAIL.get("max_trails", 10)),
+        interval=trail_params["interval"],
+        life_time=trail_params["life_time"],
+        max_trails=trail_params["max_trails"],
     )
     world.components["TrailComponent"][eid] = TrailComponent(config=trail_cfg)
 
@@ -300,28 +289,23 @@ def spawn_player_tile(world, tile_x: int, tile_y: int, class_player: str = DEFAU
     """
     # 1) Cargar sprites sin escalar (solo necesitamos el primer frame 'down_idle' para medir)
     sprites_dict, _ = PlayerAssets(class_player, ORIGINAL_SPRITE_SIZE).get_sprites()
-    down_idle_frames = sprites_dict.get("down", {}).get("idle", [])
+    down_idle_frames = sprites_dict["down"]["idle"]
 
     if not down_idle_frames:
         # Si no existen sprites, usar esquina superior del tile
         px = tile_x * TILE_SIZE
         py = tile_y * TILE_SIZE
     else:
-        # Obtener el primer frame para medidas
         first_frame = down_idle_frames[0]
         w_img, h_img = first_frame.get_size()
 
-        # Altura del collider de pies según divisor de configuración
         feet_height = h_img // FEET_HEIGHT_DIVISOR
         half_feet = feet_height // 2
 
-        # Centro del tile en píxeles
         cx = tile_x * TILE_SIZE + TILE_SIZE // 2
         cy = tile_y * TILE_SIZE + TILE_SIZE // 2
 
-        # Calcular posición x,y de la esquina superior izquierda del sprite
         px = cx - (w_img // 2)
         py = cy - (h_img - half_feet)
 
-    # 2) Delegar a spawn_player con las coordenadas en píxeles calculadas
     return spawn_player(world, px, py, class_player)
