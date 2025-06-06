@@ -34,8 +34,9 @@ with open(_config_path) as _f:
     _player_cfg = json.load(_f)
 ORIGINAL_SPRITE_SIZE = tuple(_player_cfg["ORIGINAL_SPRITE_SIZE"])
 RENDERED_SPRITE_SIZE = tuple(_player_cfg["RENDERED_SPRITE_SIZE"])
-PLAYER_SPEED = _player_cfg["PLAYER_SPEED"]
+# Removed global PLAYER_SPEED; movement speed now per-character
 PLAYER_STATS = _player_cfg["PLAYER_STATS"]
+DEFAULT_PLAYER_SPEED = PLAYER_STATS.get("first_hero", {}).get("speed", 5)
 
 
 
@@ -89,7 +90,9 @@ def spawn_player(world, x, y, character_name: str = "first_hero") -> int:
     # Control de velocidad de animación (pies caminando)
     world.components["AnimationTimer"][eid] = AnimationTimer(last_time=time.time(), interval=0.15)
     # Componente de movimiento
-    world.components["MovementSpeed"][eid] = MovementSpeed(PLAYER_SPEED)
+    # Ajustar velocidad de movimiento según configuración JSON
+    speed = PLAYER_STATS.get(character_name, {}).get("speed", DEFAULT_PLAYER_SPEED)
+    world.components["MovementSpeed"][eid] = MovementSpeed(speed)
     # Componente de velocidad
     world.components["Velocity"][eid] = Velocity(0, 0)
     # Componente de colisión múltiple (body con MaskCollider y feet)
