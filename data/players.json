@@ -5,13 +5,17 @@
     "first_hero": {
       "max_health": 100,
       "max_mana": 50,
-      "max_energy": 100
+      "max_energy": 100,
+      "scale": 2.0,
+      "speed": 5
     },
-    "valkyria": {
+    "valkyrie": {
       "max_health": 120,
       "max_mana": 80,
-      "max_energy": 60
-    }
-  },
+      "max_energy": 60,
+      "scale": 1.25,
+      "speed": 6
+    }   
+  },    
   "PLAYER_SPEED": 5
 }

@@ -63,6 +63,18 @@ def spawn_player(world, x, y, character_name: str = "first_hero") -> int:
     world.components["ZLayer"][eid] = ZLayer(Z_LAYERS["player"])
     # Cargar sprites del jugador
     sprites_dict, _ = PlayerAssets(character_name, ORIGINAL_SPRITE_SIZE).get_sprites()
+    # Ajustar escala de sprites según configuración JSON
+    scale = PLAYER_STATS.get(character_name, {}).get("scale", 1.0)
+    if scale != 1.0:
+        for direction, anims in sprites_dict.items():
+            for state, frames in anims.items():
+                sprites_dict[direction][state] = [
+                    pygame.transform.scale(frame, (
+                        int(frame.get_width() * scale),
+                        int(frame.get_height() * scale)
+                    ))
+                    for frame in frames
+                ]
     # Sprite inicial: primer frame idle 'down'
     down_idle = sprites_dict.get('down', {}).get('idle', [])
     if down_idle:
