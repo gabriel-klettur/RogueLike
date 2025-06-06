@@ -11,7 +11,6 @@ from roguelike_game.ecs.components.transform.movement_speed import MovementSpeed
 from roguelike_game.ecs.components.physics.collider import Collider
 from roguelike_game.ecs.components.physics.multi_collider import MultiCollider
 from roguelike_game.ecs.components.physics.mask_collider import MaskCollider
-from roguelike_game.config_player import ORIGINAL_SPRITE_SIZE, PLAYER_SPEED, RENDERED_SPRITE_SIZE, PLAYER_STATS
 from roguelike_game.ecs.components.rendering.sprite import Sprite
 from roguelike_game.ecs.components.rendering.animator import Animator
 from roguelike_game.ecs.components.rendering.animation_timer import AnimationTimer
@@ -22,18 +21,38 @@ from roguelike_game.ecs.components.transform.z_layer import ZLayer
 from roguelike_game.systems.config_z_layer import Z_LAYERS
 from roguelike_game.ecs.assets.player_assets import PlayerAssets
 from roguelike_game.ecs.components.rendering.trail_component import TrailComponent, TrailConfig
+from roguelike_engine.config.config_tiles import TILE_SIZE
 import time
 import pygame
+import json
+from pathlib import Path
 
 
-def spawn_player(world, x, y, character_name: str = "first_hero") -> int:
+#!------------------- Paquetes locales: config ESTO DEBERIAMOS MOVERLO A UN ARCHIVO APARTE --------------------
+# Load player config from JSON
+_config_path = Path(__file__).resolve().parents[4] / "data" / "players.json"
+with open(_config_path) as _f:
+    _player_cfg = json.load(_f)
+ORIGINAL_SPRITE_SIZE = tuple(_player_cfg["ORIGINAL_SPRITE_SIZE"])
+RENDERED_SPRITE_SIZE = tuple(_player_cfg["RENDERED_SPRITE_SIZE"])
+PLAYER_STATS = _player_cfg["PLAYER_STATS"]
+DEFAULT_CLASS        = _player_cfg.get("DEFAULT_CLASS", "dwarf")
+DEFAULT_PLAYER_SPEED = PLAYER_STATS.get(DEFAULT_CLASS, {}).get("speed", 5)
+ANIMATION_INTERVAL   = _player_cfg.get("ANIMATION_INTERVAL", 0.15)
+INITIAL_ANIMATION_STATE = _player_cfg.get("INITIAL_ANIMATION_STATE", "down_idle")
+MELEE_WEAPON_CFG     = _player_cfg.get("MELEE_WEAPON", {})
+FEET_HEIGHT_DIVISOR  = _player_cfg.get("FEET_HEIGHT_DIVISOR", 4)
+
+
+
+def spawn_player(world, x, y, class_player: str = DEFAULT_CLASS) -> int:
     """
     Crea la entidad jugador y añade los componentes básicos.
 
     Args:
         world: instancia de ECSWorld
         x, y: coordenadas iniciales en píxeles
-        character_name: identificador de sprite/asset del jugador
+        class_player: identificador de sprite/asset del jugador
     Returns:
         eid: ID de la entidad creada
     """
@@ -49,7 +68,19 @@ def spawn_player(world, x, y, character_name: str = "first_hero") -> int:
     # Componente ZLayer para renderizado de jugador
     world.components["ZLayer"][eid] = ZLayer(Z_LAYERS["player"])
     # Cargar sprites del jugador
-    sprites_dict, _ = PlayerAssets(character_name, ORIGINAL_SPRITE_SIZE).get_sprites()
+    sprites_dict, _ = PlayerAssets(class_player, ORIGINAL_SPRITE_SIZE).get_sprites()
+    # Ajustar escala de sprites según configuración JSON
+    scale = PLAYER_STATS.get(class_player, {}).get("scale", 1.0)
+    if scale != 1.0:
+        for direction, anims in sprites_dict.items():
+            for state, frames in anims.items():
+                sprites_dict[direction][state] = [
+                    pygame.transform.scale(frame, (
+                        int(frame.get_width() * scale),
+                        int(frame.get_height() * scale)
+                    ))
+                    for frame in frames
+                ]
     # Sprite inicial: primer frame idle 'down'
     down_idle = sprites_dict.get('down', {}).get('idle', [])
     if down_idle:
@@ -60,11 +91,13 @@ def spawn_player(world, x, y, character_name: str = "first_hero") -> int:
     for direction, frames in sprites_dict.items():
         anim_map[f"{direction}_idle"] = frames.get('idle', [])
         anim_map[f"{direction}_walk"] = frames.get('walk', [])
-    world.components["Animator"][eid] = Animator(animations=anim_map, current_state='down_idle')
+    world.components["Animator"][eid] = Animator(animations=anim_map, current_state=INITIAL_ANIMATION_STATE)
     # Control de velocidad de animación (pies caminando)
-    world.components["AnimationTimer"][eid] = AnimationTimer(last_time=time.time(), interval=0.15)
+    world.components["AnimationTimer"][eid] = AnimationTimer(last_time=time.time(), interval=ANIMATION_INTERVAL)
     # Componente de movimiento
-    world.components["MovementSpeed"][eid] = MovementSpeed(PLAYER_SPEED)
+    # Ajustar velocidad de movimiento según configuración JSON
+    speed = PLAYER_STATS.get(class_player, {}).get("speed", DEFAULT_PLAYER_SPEED)
+    world.components["MovementSpeed"][eid] = MovementSpeed(speed)
     # Componente de velocidad
     world.components["Velocity"][eid] = Velocity(0, 0)
     # Componente de colisión múltiple (body con MaskCollider y feet)
@@ -74,35 +107,40 @@ def spawn_player(world, x, y, character_name: str = "first_hero") -> int:
     # Dimensiones reales del sprite para feet collider
     w_img, h_img = orig_image.get_size()
     fw = w_img // 2
-    fh = h_img // 4
+    fh = h_img // FEET_HEIGHT_DIVISOR
     feet_offset_x = (w_img - fw) // 2                 # centrar horizontalmente
     feet_offset_y = h_img - fh                        # alinear parte superior del collider con la base del sprite
     feet = Collider(fw, fh, feet_offset_x, feet_offset_y)
     world.components["MultiCollider"][eid] = MultiCollider({"body": body, "feet": feet})
     # Componente de salud
-    max_hp = PLAYER_STATS.get(character_name, {}).get("max_health", 100)
+    max_hp = PLAYER_STATS.get(class_player, {}).get("max_health", 100)
     world.components["Health"][eid] = Health(max_hp, max_hp)
     # Componente de combate
     world.components["CombatStats"][eid] = CombatStats(max_hp, max_hp, 1, 0)
     # Componente de arma cuerpo a cuerpo
-    world.components["MeleeWeapon"][eid] = MeleeWeapon(damage=1, cooldown=1.0)
-    # Trail de sombra
-    trail_cfg = TrailConfig(interval=0.1, life_time=0.5, max_trails=10)
+    world.components["MeleeWeapon"][eid] = MeleeWeapon(
+        damage=MELEE_WEAPON_CFG.get("damage", 1),
+        cooldown=MELEE_WEAPON_CFG.get("cooldown", 1.0)
+    )
+    # Trail de sombra configurable desde JSON
+    trail_params = PLAYER_STATS.get(class_player, {}).get("trail", {})
+    trail_cfg = TrailConfig(
+        interval=trail_params.get("interval", 0.1),
+        life_time=trail_params.get("life_time", 0.5),
+        max_trails=trail_params.get("max_trails", 10),
+    )
     world.components["TrailComponent"][eid] = TrailComponent(config=trail_cfg)
     return eid
 
 
-def spawn_player_tile(world, tile_x: int, tile_y: int, character_name: str = "first_hero") -> int:
+def spawn_player_tile(world, tile_x: int, tile_y: int, class_player: str = DEFAULT_CLASS) -> int:
     """
     Crea la entidad jugador usando coordenadas de tile.
     Calcula la posición en píxeles para alinear el collider 'feet' al centro del tile.
     """
-    from roguelike_game.ecs.assets.player_assets import PlayerAssets
-    from roguelike_game.config_player import ORIGINAL_SPRITE_SIZE
-    from roguelike_engine.config.config_tiles import TILE_SIZE
 
     # Obtener sprite para medir dimensiones
-    sprites_dict, _ = PlayerAssets(character_name, ORIGINAL_SPRITE_SIZE).get_sprites()
+    sprites_dict, _ = PlayerAssets(class_player, ORIGINAL_SPRITE_SIZE).get_sprites()
     down_idle = sprites_dict.get('down', {}).get('idle', [])
     if not down_idle:
         # Fallback: uso esquina superior izquierda del tile
@@ -111,7 +149,7 @@ def spawn_player_tile(world, tile_x: int, tile_y: int, character_name: str = "fi
     else:
         img = down_idle[0]
         w_img, h_img = img.get_size()
-        fh = h_img // 4
+        fh = h_img // FEET_HEIGHT_DIVISOR
         half_fh = fh // 2
         # Centro del tile en píxeles
         cx = tile_x * TILE_SIZE + TILE_SIZE // 2
@@ -119,4 +157,4 @@ def spawn_player_tile(world, tile_x: int, tile_y: int, character_name: str = "fi
         # Calcular top-left del sprite para alinear feet
         px = cx - w_img // 2
         py = cy - (h_img - half_fh)
-    return spawn_player(world, px, py, character_name)
+    return spawn_player(world, px, py, class_player)

@@ -373,8 +373,6 @@ class Game:
             pos = self.ecs.ecs_world.components["Position"][eid]
 
             # 2) Calcular coordenadas de tile usando el centro del collider 'feet'
-            from roguelike_game.config_player import RENDERED_SPRITE_SIZE
-            from roguelike_engine.config.config_tiles import TILE_SIZE
 
             w, h = RENDERED_SPRITE_SIZE
             fh = h // 4

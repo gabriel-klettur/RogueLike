@@ -34,7 +34,7 @@ El jugador está representado por una instancia de `Player` (`entities/player/ba
 ### Estado del jugador:
 ```python
 self.x, self.y                # Posición
-self.character_name           # Personaje activo
+self.class_player           # Clase de personaje activo
 self.direction                # Dirección visual actual
 self.sprite                   # Sprite actual
 self.stats.health, .mana...  # Recursos internos
