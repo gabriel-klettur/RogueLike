@@ -9,7 +9,6 @@ import math
 from roguelike_game.ecs.components.combat.attack_cooldown import AttackCooldown
 from roguelike_game.ecs.components.ai.wants_to_melee import WantsToMelee
 from roguelike_game.ecs.components.ai.wants_to_cast import WantsToCastSpell
-from roguelike_game.config_player import PLAYER_SPEED
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.ecs.fsm.states.aggro_state import AggroState
 

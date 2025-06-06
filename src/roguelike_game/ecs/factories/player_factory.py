@@ -11,7 +11,6 @@ from roguelike_game.ecs.components.transform.movement_speed import MovementSpeed
 from roguelike_game.ecs.components.physics.collider import Collider
 from roguelike_game.ecs.components.physics.multi_collider import MultiCollider
 from roguelike_game.ecs.components.physics.mask_collider import MaskCollider
-from roguelike_game.config_player import ORIGINAL_SPRITE_SIZE, PLAYER_SPEED, RENDERED_SPRITE_SIZE, PLAYER_STATS
 from roguelike_game.ecs.components.rendering.sprite import Sprite
 from roguelike_game.ecs.components.rendering.animator import Animator
 from roguelike_game.ecs.components.rendering.animation_timer import AnimationTimer
@@ -24,6 +23,16 @@ from roguelike_game.ecs.assets.player_assets import PlayerAssets
 from roguelike_game.ecs.components.rendering.trail_component import TrailComponent, TrailConfig
 import time
 import pygame
+import json
+from pathlib import Path
+
+# Load player config from JSON
+_config_path = Path(__file__).resolve().parents[4] / "data" / "players.json"
+with open(_config_path) as _f:
+    _player_cfg = json.load(_f)
+ORIGINAL_SPRITE_SIZE = tuple(_player_cfg["ORIGINAL_SPRITE_SIZE"])
+PLAYER_SPEED = _player_cfg["PLAYER_SPEED"]
+PLAYER_STATS = _player_cfg["PLAYER_STATS"]
 
 
 def spawn_player(world, x, y, character_name: str = "first_hero") -> int:
@@ -98,7 +107,6 @@ def spawn_player_tile(world, tile_x: int, tile_y: int, character_name: str = "fi
     Calcula la posición en píxeles para alinear el collider 'feet' al centro del tile.
     """
     from roguelike_game.ecs.assets.player_assets import PlayerAssets
-    from roguelike_game.config_player import ORIGINAL_SPRITE_SIZE
     from roguelike_engine.config.config_tiles import TILE_SIZE
 
     # Obtener sprite para medir dimensiones
