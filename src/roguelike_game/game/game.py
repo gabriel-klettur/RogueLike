@@ -48,10 +48,6 @@ from roguelike_engine.world.world_config import WORLD_CONFIG
 #! -------------------------- Paquetes locales: ECS ---------------------------------
 from roguelike_game.game.ecs_manager import ECSManager
 
-#! -------------------------- Paquetes locales: config -------------------------------
-from roguelike_game.ecs.factories.player_factory import RENDERED_SPRITE_SIZE
-from roguelike_engine.config.config_tiles import TILE_SIZE
-
 
 class Game:
     def __init__(
