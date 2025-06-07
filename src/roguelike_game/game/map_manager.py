@@ -140,6 +140,8 @@ class MapManager:
         from roguelike_engine.map.model.loader.text_loader_strategy import TextMapLoader
         from roguelike_engine.tile.loader import load_tiles_from_text
 
+        # Forzar offsets dinámicos para incluir nuevas zonas en runtime
+        global_map_settings.use_zones_json = False
         # Guardar offsets viejos
         old_offsets = global_map_settings.zone_offsets.copy()
         # Limpiar cache de offsets y recalcular

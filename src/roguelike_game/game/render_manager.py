@@ -160,6 +160,8 @@ class RendererManager:
 
         # Debug: overlay y bordes
         render_debug_overlay(self.debug_overlay, screen, state, camera, self.map, entities, show_borders=True)
+        # Resaltar área de expansión de dungeon
+        self._render_expand_area(self._last_state)
         # Mostrar ayuda de controles según el modo
         self._render_help_overlay(state)
 
@@ -404,6 +406,23 @@ class RendererManager:
         # Blitear overlay cacheado
         surf, rect = self._help_overlay_surf
         screen.blit(surf, rect)
+
+    def _render_expand_area(self, state):
+        """Dibuja overlay semitransparente en los 9 tiles del trigger de expansión."""
+        if not hasattr(state, 'expand_area_coords'):
+            return
+        for tx, ty in state.expand_area_coords:
+            zoom = self.camera.zoom
+            x = int((tx * TILE_SIZE - self.camera.offset_x) * zoom)
+            y = int((ty * TILE_SIZE - self.camera.offset_y) * zoom)
+            size = int(TILE_SIZE * zoom)
+            rect = pygame.Rect(x, y, size, size)
+            # Red semi-transparent fill and border for visibility
+            surf = pygame.Surface((size, size), flags=pygame.SRCALPHA)
+            surf.fill((255, 0, 0, 150))
+            self.screen.blit(surf, rect.topleft)
+            pygame.draw.rect(self.screen, (255, 0, 0), rect, width=2)
+            self._dirty_rects.append(rect)
 
 class _NPCWrapper:
     """Envoltorio optimizado para renderizar NPCs dentro de render_z_ordered."""
