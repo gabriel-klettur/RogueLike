@@ -14,7 +14,7 @@ import math
 from roguelike_engine.config.config_tiles import TILE_SIZE
 
 # Extra padding para seguridad de spawn en tiles
-SPAWN_PADDING_EXTRA = 3
+SPAWN_PADDING_EXTRA = 1
 
 class SpawnNPCManager:
     def __init__(self, world):
