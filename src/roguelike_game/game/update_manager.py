@@ -5,6 +5,7 @@ from roguelike_engine.config.config_tiles import TILE_SIZE
 import time
 from roguelike_engine.map.events.events import handle_expand_dungeon, _next_zone_key
 from roguelike_engine.config.map_config import global_map_settings
+from roguelike_game.ecs.core.spatial_index import SpatialIndex
 
 def update_game(
     state,
@@ -144,6 +145,8 @@ def update_game(
                 new_key, parent_key = _next_zone_key()
                 fake_evt = types.SimpleNamespace(type=pygame.KEYDOWN, key=pygame.K_F3)
                 handle_expand_dungeon(fake_evt, map, entities)
+                # Actualizar índice espacial tras expansión para colisiones
+                ecs.ecs_world.spatial_index = SpatialIndex(map, entities.buildings)
                 # Recalcular área para nueva zona
                 off_x, off_y = global_map_settings.zone_offsets[new_key]
                 zone_w, zone_h = global_map_settings.zone_width, global_map_settings.zone_height
