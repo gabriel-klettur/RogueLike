@@ -7,6 +7,7 @@ from roguelike_engine.map.events.events import handle_expand_dungeon, _next_zone
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_game.ecs.core.spatial_index import SpatialIndex
 from roguelike_game.ecs.utils.collider_utils import build_collider_rect
+from collections import deque
 
 def update_game(
     state,
@@ -108,18 +109,39 @@ def update_game(
 
     # 4) Detectar estancia en área 3x3 para expandir dungeon (solo si existe dungeon inicial)
     if map.rooms and not hasattr(state, 'expand_area_coords'):
-        # Calcular centro de la sala más lejana al lobby y offset de dungeon
+        # BFS path para sala más lejana desde lobby
+        # Construir walkable tiles
+        walkable = set()
+        for row in map.tiles:
+            for tile in row:
+                tx = tile.x // TILE_SIZE; ty = tile.y // TILE_SIZE
+                if not getattr(tile, "solid", False):
+                    walkable.add((tx, ty))
+        # Origen: centro del lobby en tiles
         lob_x, lob_y = map.lobby_offset
-        dun_x, dun_y = map.dungeon_offset
         zone_w, zone_h = global_map_settings.zone_width, global_map_settings.zone_height
-        center_lobby = (lob_x + zone_w//2, lob_y + zone_h//2)
-        max_dist = -1; far_center = None
+        origin = (lob_x + zone_w//2, lob_y + zone_h//2)
+        # BFS distancias
+        dist = {origin: 0}
+        dq = deque([origin])
+        while dq:
+            x, y = dq.popleft()
+            for nx, ny in ((x+1,y),(x-1,y),(x,y+1),(x,y-1)):
+                if (nx, ny) in walkable and (nx, ny) not in dist:
+                    dist[(nx, ny)] = dist[(x, y)] + 1
+                    dq.append((nx, ny))
+        # Seleccionar room con distancia máxima
+        far_center, max_d = origin, -1
+        dun_x, dun_y = map.dungeon_offset
         for r in map.rooms:
             cx_rel = (r[0] + r[2]) // 2; cy_rel = (r[1] + r[3]) // 2
-            cx = dun_x + cx_rel; cy = dun_y + cy_rel
-            d = abs(cx - center_lobby[0]) + abs(cy - center_lobby[1])
-            if d > max_dist:
-                max_dist, far_center = d, (cx, cy)
+            c = (dun_x + cx_rel, dun_y + cy_rel)
+            d = dist.get(c)
+            if d is not None and d > max_d:
+                max_d, far_center = d, c
+        # Default si no hay ruta
+        if max_d < 0:
+            far_center = origin
         state.expand_area_coords = [(far_center[0] + dx, far_center[1] + dy)
                                     for dx in (-1,0,1) for dy in (-1,0,1)]
         state.expand_area_start_time = None
@@ -164,16 +186,40 @@ def update_game(
                 handle_expand_dungeon(fake_evt, map, entities)
                 # Actualizar índice espacial tras expansión para colisiones
                 ecs.ecs_world.spatial_index = SpatialIndex(map, entities.buildings)
-                # Recalcular área para nueva zona
-                off_x, off_y = global_map_settings.zone_offsets[new_key]
+                # Recalcular área de expansión usando ruta más larga desde lobby
+                # Construir conjunto de tiles caminables
+                walkable = set()
+                for row in map.tiles:
+                    for tile in row:
+                        tx = tile.x // TILE_SIZE; ty = tile.y // TILE_SIZE
+                        if not getattr(tile, "solid", False):
+                            walkable.add((tx, ty))
+                # Origen BFS: centro del lobby
+                lob_x, lob_y = map.lobby_offset
                 zone_w, zone_h = global_map_settings.zone_width, global_map_settings.zone_height
-                new_center = (off_x + zone_w//2, off_y + zone_h//2)
-                state.expand_area_coords = [(new_center[0]+dx, new_center[1]+dy)
+                origin = (lob_x + zone_w//2, lob_y + zone_h//2)
+                # BFS para distancias
+                dist = {origin: 0}
+                dq = deque([origin])
+                while dq:
+                    x, y = dq.popleft()
+                    for nx, ny in ((x+1,y),(x-1,y),(x,y+1),(x,y-1)):
+                        if (nx, ny) in walkable and (nx, ny) not in dist:
+                            dist[(nx, ny)] = dist[(x, y)] + 1
+                            dq.append((nx, ny))
+                # Seleccionar centro de room con distancia máxima
+                far_center = origin; max_d = -1
+                for zkey, rooms in map.zone_rooms.items():
+                    off_zx, off_zy = global_map_settings.zone_offsets[zkey]
+                    for r in rooms:
+                        cx_rel = (r[0]+r[2])//2; cy_rel = (r[1]+r[3])//2
+                        c = (off_zx + cx_rel, off_zy + cy_rel)
+                        d = dist.get(c)
+                        if d is not None and d > max_d:
+                            max_d, far_center = d, c
+                state.expand_area_coords = [(far_center[0]+dx, far_center[1]+dy)
                                             for dx in (-1,0,1) for dy in (-1,0,1)]
-                print(f"[ExpansionTrigger] Nueva área coords: {state.expand_area_coords}")
-                # Reset timers
-                state.expand_area_start_time = None
-                state.last_area_print_time = None
+                print(f"[ExpansionTrigger] Nueva área coords (path): {state.expand_area_coords}")
         else:
             # Fuera del área: reset timers
             state.expand_area_start_time = None
