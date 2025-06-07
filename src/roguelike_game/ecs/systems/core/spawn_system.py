@@ -4,7 +4,7 @@ Handles conversion of SpawnRequest components into actual game entities
 using the entity factory.
 """
 
-from roguelike_game.ecs.factories.entity_factory import spawn_monster
+from roguelike_game.ecs.factories.monster.monster_factory import spawn_monster
 from roguelike_engine.utils.benchmark import benchmark
 
 class SpawnSystem:
