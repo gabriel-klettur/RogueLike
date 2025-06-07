@@ -27,7 +27,10 @@
     "damage_duration": 0.5,
     "chasing_speed": 1.5,
     "feet_width_factor": 0.5,
-    "feet_height_factor": 0.2
+    "feet_height_factor": 0.2,
+    "spawn_padding": 3,
+    "spawn_count": 10,
+    "spawn_margin": 0
   },
   "barbol_oscuro": {
     "sprites": {
@@ -62,7 +65,10 @@
       30,
       30,
       30
-    ]
+    ],
+    "spawn_padding": 3,
+    "spawn_count": 10,
+    "spawn_margin": 0
   },
   "barbol_morado": {
     "sprites": {
@@ -97,7 +103,10 @@
       128,
       0,
       128
-    ]
+    ],
+    "spawn_padding": 3,
+    "spawn_count": 10,
+    "spawn_margin": 0
   },
   "barbol_boss": {
     "sprites": {
@@ -132,7 +141,10 @@
       255,
       0,
       0
-    ]
+    ],
+    "spawn_padding": 3,
+    "spawn_count": 10,
+    "spawn_margin": 0
   },
   "barbol_cyan": {
     "sprites": {
@@ -167,7 +179,10 @@
       0,
       255,
       255
-    ]
+    ],
+    "spawn_padding": 3,
+    "spawn_count": 10,
+    "spawn_margin": 0
   },
   "barbol_gris": {
     "sprites": {
@@ -202,7 +217,10 @@
       150,
       150,
       150
-    ]
+    ],
+    "spawn_padding": 3,
+    "spawn_count": 10,
+    "spawn_margin": 0
   },
   "barbol_musgo": {
     "sprites": {
@@ -237,7 +255,10 @@
       34,
       139,
       34
-    ]
+    ],
+    "spawn_padding": 3,
+    "spawn_count": 10,
+    "spawn_margin": 0
   },
   "barbol_amarillo": {
     "sprites": {
@@ -272,7 +293,10 @@
       255,
       215,
       0
-    ]
+    ],
+    "spawn_padding": 3,
+    "spawn_count": 10,
+    "spawn_margin": 0
   },
   "barbol_baby": {
     "sprites": {
@@ -307,7 +331,10 @@
       255,
       182,
       193
-    ]
+    ],
+    "spawn_padding": 3,
+    "spawn_count": 10,
+    "spawn_margin": 0
   },
   "barbol_gigante": {
     "sprites": {
@@ -342,6 +369,9 @@
       200,
       200,
       200
-    ]
+    ],
+    "spawn_padding": 3,
+    "spawn_count": 10,
+    "spawn_margin": 0
   }
 }
