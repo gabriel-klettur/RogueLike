@@ -1,5 +1,5 @@
 from roguelike_game.ecs.fsm.state import State
-from roguelike_game.ecs.fsm.states.aggro_state import AggroState
+from roguelike_game.ecs.fsm.states.monster.aggro_state import AggroState
 import time
 from roguelike_game.config.spells_config import SPELLS
 

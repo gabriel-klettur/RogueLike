@@ -1,6 +1,6 @@
 from roguelike_game.ecs.fsm.state import State
 from roguelike_game.ecs.fsm.states.death_state import DeathState
-from roguelike_game.ecs.fsm.states.chase_state import ChaseState
+from roguelike_game.ecs.fsm.states.monster.chase_state import ChaseState
 from roguelike_game.ecs.components.ai.chase_target import ChaseTarget
 from roguelike_game.ecs.components.transform.velocity import Velocity
 from roguelike_game.ecs.components.combat.npc_attack_cooldown import NPCAttackCooldown
