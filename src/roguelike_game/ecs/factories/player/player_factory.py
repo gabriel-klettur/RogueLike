@@ -13,9 +13,6 @@ from roguelike_game.ecs.components.input_component import InputComponent
 from roguelike_game.ecs.components.transform.velocity import Velocity
 from roguelike_game.ecs.components.transform.movement_speed import MovementSpeed
 from roguelike_game.ecs.components.transform.z_layer import ZLayer
-from roguelike_game.ecs.components.physics.collider import Collider
-from roguelike_game.ecs.components.physics.multi_collider import MultiCollider
-from roguelike_game.ecs.components.physics.mask_collider import MaskCollider
 from roguelike_game.ecs.components.rendering.sprite import Sprite
 from roguelike_game.ecs.components.rendering.animator import Animator
 from roguelike_game.ecs.components.rendering.animation_timer import AnimationTimer
@@ -27,6 +24,7 @@ from roguelike_game.systems.config_z_layer import Z_LAYERS
 from roguelike_game.ecs.assets.player_assets import PlayerAssets
 from roguelike_game.ecs.factories.player.config import ORIGINAL_SPRITE_SIZE, PLAYER_STATS, DEFAULT_CLASS, DEFAULT_SCALE, DEFAULT_SPEED, ANIMATION_INTERVAL, INITIAL_ANIMATION_STATE, MELEE_WEAPON_CFG, DEFAULT_TRAIL, FEET_WIDTH_DIVISOR, FEET_HEIGHT_DIVISOR
 from roguelike_game.ecs.factories.player.sprite_loader import load_and_scale_sprites, extract_initial_frame, build_animator_map
+from roguelike_game.ecs.factories.player.collider import create_body_and_feet
 from roguelike_engine.config.config_tiles import TILE_SIZE
 
 
@@ -97,7 +95,7 @@ def spawn_player(world, x: int, y: int, class_player: str = DEFAULT_CLASS) -> in
     # ------------------------------------------------
 
     if initial_frame:
-        multi_collider = _create_body_and_feet(initial_frame)
+        multi_collider = create_body_and_feet(initial_frame)
         world.components["MultiCollider"][eid] = multi_collider
 
     # ------------------------------------------------
@@ -179,32 +177,3 @@ def spawn_player_tile(world, tile_x: int, tile_y: int, class_player: str = DEFAU
         py = cy - (h_img - half_feet)
 
     return spawn_player(world, px, py, class_player)
-
-
-def _create_body_and_feet(sprite_surface: pygame.Surface) -> MultiCollider:
-    """
-    Genera un MultiCollider que contiene:
-      - "body": MaskCollider basado en la máscara de píxeles opacos del sprite.
-      - "feet": Collider rectangular en la parte inferior del sprite.
-
-    Args:
-        sprite_surface: Surface de pygame con la imagen del jugador.
-
-    Retorna:
-        MultiCollider({"body": MaskCollider, "feet": Collider})
-    """
-    # Body
-    mascara = pygame.mask.from_surface(sprite_surface)
-    body_collider = MaskCollider(mascara, offset_x=0, offset_y=0)
-
-    # Feet
-    w_img, h_img = sprite_surface.get_size()
-    feet_width = w_img // FEET_WIDTH_DIVISOR
-    feet_height = h_img // FEET_HEIGHT_DIVISOR
-
-    offset_x = (w_img - feet_width) // 2
-    offset_y = h_img - feet_height
-
-    feet_collider = Collider(feet_width, feet_height, offset_x, offset_y)
-
-    return MultiCollider({"body": body_collider, "feet": feet_collider})
