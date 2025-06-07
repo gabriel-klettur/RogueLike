@@ -94,17 +94,4 @@ class InputSystem:
             if right:
                 print(f"[DEBUG][{time.time():.3f}] eid={eid} right-click -> dash")
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='dash')
-            # Procesar ataque: tecla SPACE
-            if keys[pygame.K_SPACE]:
-                now = time.time()
-                # Verificar cooldown
-                cd = world.components.get('AttackCooldown', {}).get(eid)
-                weapon = world.components.get('MeleeWeapon', {}).get(eid)
-                cooldown_time = weapon.cooldown if weapon else 1.0
-                if cd is None or now >= cd.next_time:
-                    # Seleccionar primer objetivo distinto
-                    for target in world.components.get('CombatStats', {}):
-                        if target != eid:
-                            world.components.setdefault('WantsToMelee', {})[eid] = WantsToMelee(attacker=eid, target=target)
-                            world.components.setdefault('AttackCooldown', {})[eid] = AttackCooldown(now + cooldown_time)
-                            break
+
