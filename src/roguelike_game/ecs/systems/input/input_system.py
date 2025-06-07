@@ -82,12 +82,11 @@ class InputSystem:
                 print(f"[DEBUG][{time.time():.3f}] eid={eid} skill_e -> slash")
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='slash')
                 inp.skill_e = False
-            # Generar intención de fireball solo si click y en AggroState (o primer disparo)
-            if inp.click:
+            # Generar intención de fireball para el Player con clic izquierdo
+            if eid in world.components.get('PlayerTagComponent', {}) and inp.click:
                 print(f"[DEBUG][{time.time():.3f}] eid={eid} click -> fireball")
-                state = world.components.get('NPCState', {}).get(eid)
-                if state is None or isinstance(state.fsm.current_state, AggroState):
-                    world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='fireball')
+                world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='fireball')
+                inp.click = False
             # Lanzar el beam con click del medio
             middle = pygame.mouse.get_pressed()[1]
             if middle:
