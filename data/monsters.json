@@ -24,6 +24,9 @@
       "melee_cooldown": 1.0,      
       "defense": 5,
       "power": 10,
-      "chasing_speed": 1.5
+      "damage_duration": 0.5,
+      "chasing_speed": 1.5,
+      "feet_width_factor": 0.5,
+      "feet_height_factor": 0.2
     }    
   }
