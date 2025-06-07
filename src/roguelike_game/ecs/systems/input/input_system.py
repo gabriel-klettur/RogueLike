@@ -79,6 +79,10 @@ class InputSystem:
                 print(f"[DEBUG][{time.time():.3f}] eid={eid} skill_e -> slash")
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='slash')
                 inp.skill_e = False
+            if inp.skill_q:
+                print(f"[DEBUG][{time.time():.3f}] eid={eid} skill_q -> lightball")
+                world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='lightball')
+                inp.skill_q = False
             # Generar intención de fireball para el Player con clic izquierdo
             if eid in world.components.get('PlayerTagComponent', {}) and inp.click:
                 print(f"[DEBUG][{time.time():.3f}] eid={eid} click -> fireball")
