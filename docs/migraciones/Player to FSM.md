@@ -4,7 +4,7 @@ Este documento describe los pasos necesarios para migrar la entidad **Player** a
 
 ---
 
-## 1. Crear estados de Player
+## 1. Crear estados de Player ✅
 
 Carpeta: `src/roguelike_game/ecs/fsm/states/player`
 
@@ -30,7 +30,7 @@ Carpeta: `src/roguelike_game/ecs/fsm/states/player`
 
 ---
 
-## 2. Añadir NPCState al Player
+## 2. Añadir NPCState al Player ✅
 
 Modificar `ecs/factories/player/player_factory.py`:
 
@@ -49,7 +49,7 @@ Modificar `ecs/factories/player/player_factory.py`:
 
 ---
 
-## 3. Integrar InputSystem con FSM
+## 3. Integrar InputSystem con FSM ✅
 
 ### 3.1 Agregar imports
 
@@ -92,7 +92,7 @@ Ejemplo de diff:
 
 ---
 
-## 4. Revisar FSMSystem
+## 4. Revisar FSMSystem ✅
 
 No son necesarios cambios: `FSMSystem` ya actualiza todas las entidades con `NPCState`.
 
