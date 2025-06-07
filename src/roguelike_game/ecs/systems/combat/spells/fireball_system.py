@@ -56,7 +56,7 @@ class FireballSystem:
                         caster = comp.caster
                         if caster in world.components.get('PlayerTagComponent', {}):
                             fsm = world.components['NPCState'][target].fsm
-                            from roguelike_game.ecs.fsm.states.alert_chase_state import AlertChaseState
+                            from roguelike_game.ecs.fsm.states.monster.alert_chase_state import AlertChaseState
                             # determinar dirección de daño y siguiente estado
                             attacker_pos = world.components['Position'][caster]
                             defender_pos = world.components['Position'][target]
