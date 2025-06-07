@@ -5,7 +5,7 @@ from roguelike_engine.map.utils import calculate_dungeon_offset
 from roguelike_engine.map.utils import get_zone_for_tile
 from roguelike_engine.map.view.chunked_map_view import ChunkedMapView
 from roguelike_engine.config.map_config import global_map_settings
-from roguelike_game.ecs.factories.player_factory import RENDERED_SPRITE_SIZE
+from roguelike_game.ecs.factories.player.config import RENDERED_SPRITE_SIZE
 from roguelike_engine.config.config_tiles import TILE_SIZE
 
 class MapManager:
