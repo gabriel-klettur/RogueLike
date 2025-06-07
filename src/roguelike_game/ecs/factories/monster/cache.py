@@ -23,6 +23,11 @@ def _load_caches_once() -> None:
             if scale_val != 1.0:
                 w, h = image.get_size()
                 image = pygame.transform.scale(image, (int(w*scale_val), int(h*scale_val)))
+            # Apply optional tint from config
+            tint = cfg.get("tint")
+            if tint:
+                # Multiply color channels by tint (RGB tuple)
+                image.fill(tuple(tint), special_flags=pygame.BLEND_RGB_MULT)
             dir_map[direction] = image
         _SPRITE_SURFACES[mtype] = dir_map
         death_path = cfg.get("death_sprite")
@@ -32,6 +37,10 @@ def _load_caches_once() -> None:
             if death_scale != 1.0:
                 w, h = death_img.get_size()
                 death_img = pygame.transform.scale(death_img, (int(w*death_scale), int(h*death_scale)))
+            # Apply optional tint to death image
+            tint = cfg.get("tint")
+            if tint and death_img:
+                death_img.fill(tuple(tint), special_flags=pygame.BLEND_RGB_MULT)
             _DEATH_SURFACES[mtype] = death_img
         else:
             _DEATH_SURFACES[mtype] = None
