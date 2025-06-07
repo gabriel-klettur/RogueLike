@@ -6,6 +6,7 @@ import time
 from roguelike_engine.map.events.events import handle_expand_dungeon, _next_zone_key
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_game.ecs.core.spatial_index import SpatialIndex
+from roguelike_game.ecs.utils.collider_utils import build_collider_rect
 
 def update_game(
     state,
@@ -127,9 +128,25 @@ def update_game(
 
     # Verificar estancia en área de expansión si se definió
     if hasattr(state, 'expand_area_coords'):
-        px, py = entities.player.x, entities.player.y
-        tx, ty = int(px)//TILE_SIZE, int(py)//TILE_SIZE
-        inside = (tx, ty) in state.expand_area_coords
+        # Detect NPCs and player via their colliders: if any collider overlaps el área roja
+        inside = False
+        pos_map = ecs.ecs_world.components['Position']
+        for eid in ecs.ecs_world.get_entities_with('MultiCollider','Position'):
+            multi = ecs.ecs_world.components['MultiCollider'][eid]
+            pos = pos_map[eid]
+            for collider in multi.colliders.values():
+                # construir rect del collider sea cual sea su tipo
+                rect = build_collider_rect(pos.x, pos.y, collider)
+                x1, x2 = rect.left // TILE_SIZE, rect.right // TILE_SIZE
+                y1, y2 = rect.top  // TILE_SIZE, rect.bottom // TILE_SIZE
+                for cx in range(x1, x2+1):
+                    for cy in range(y1, y2+1):
+                        if (cx, cy) in state.expand_area_coords:
+                            inside = True
+                            break
+                    if inside: break
+                if inside: break
+            if inside: break
         if inside:
             now = time.time()
             # Print once per second

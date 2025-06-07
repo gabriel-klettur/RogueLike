@@ -384,7 +384,7 @@ class RendererManager:
                     "Mouse Wheel: Scroll Overlay"
                 ]
             else:
-                lines = ["Normal Mode:", "ESC: Menu", "F3: expand dungeon", "F8:Tiles Editor", "F9: Debug Mode","F10: Buildings Editor",
+                lines = ["Normal Mode:", "ESC: Menu", "[IN DUNGEON] Red area expand dungeon", "F8:Tiles Editor", "F9: Debug Mode","F10: Buildings Editor",
                          "F11: Map Editor", "F12: Entities Editor",                         
                          "E: Slash","X: Healing", "Mouse left: Fire Ball", "Mouse right: Slash",
                          "Mouse middle: Laser Beam"
