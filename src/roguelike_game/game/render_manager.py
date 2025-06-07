@@ -4,6 +4,7 @@ from roguelike_engine.utils.mouse import draw_mouse_crosshair
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_engine.utils.debug import DebugOverlay, render_debug_overlay
 from roguelike_engine.config.config_tiles import TILE_SIZE
+import roguelike_engine.config.config as config
 
 # Sistema de orden Z
 from roguelike_game.systems.z_layer.render import render_z_ordered
@@ -343,10 +344,16 @@ class RendererManager:
         # Cachea el overlay de ayuda para evitar renderizado de texto cada frame
         screen = self.screen
         size = screen.get_size()
-        mode = ('map' if self.map_editor.editor_state.active else
-                'buildings' if self.buildings_editor.editor_state.active else
-                'tiles' if self.tiles_editor.editor_state.active else
-                'normal')
+        if self.map_editor.editor_state.active:
+            mode = 'map'
+        elif self.buildings_editor.editor_state.active:
+            mode = 'buildings'
+        elif self.tiles_editor.editor_state.active:
+            mode = 'tiles'
+        elif config.DEBUG:
+            mode = 'debug'
+        else:
+            mode = 'normal'
         key = (mode, size)
         if key != self._help_overlay_key:
             # Reconstruir overlay            
@@ -367,12 +374,19 @@ class RendererManager:
                 lines = ["Modo Edición Tiles:", "F8: editor tiles", "ESC: salir",
                          "B: alternar edificios", "Click Izq: pintar", "Rueda: capa",
                          "Click Der: arrastrar"]
+            elif mode == 'debug':
+                lines = [
+                    "Debug Mode:",
+                    "F9: Toggle Debug Overlay",
+                    "F12: Toggle Hitbox Debug",
+                    "Mouse Wheel: Scroll Overlay"
+                ]
             else:
-                lines = ["Mode Normal:", "F8:Tiles Editor", "F10: Buildings Editor",
-                         "F9: Debug Mode", "ESC: Menu","F11: Map Editor, F12: Entities Editor",                         
-                         "X: Healing", "Mouse left: Fire Ball", "Mouse right: Slash",
-                         "Mouse middle: Laser Beam","F3: expand dungeon",
-                         "E: Slash"]
+                lines = ["Normal Mode:", "ESC: Menu", "F3: expand dungeon", "F8:Tiles Editor", "F9: Debug Mode","F10: Buildings Editor",
+                         "F11: Map Editor", "F12: Entities Editor",                         
+                         "E: Slash","X: Healing", "Mouse left: Fire Ball", "Mouse right: Slash",
+                         "Mouse middle: Laser Beam"
+                         ]
             font = pygame.font.SysFont("Arial", 14)
             pad = 5
             texts = [font.render(l, True, (255,255,255)) for l in lines]
