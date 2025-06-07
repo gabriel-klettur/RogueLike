@@ -17,10 +17,17 @@ def init_debug_log():
 
 def main():
     pygame.init()
+
+
     screen = pygame.display.set_mode(
         (SCREEN_WIDTH, SCREEN_HEIGHT),
         pygame.HWSURFACE | pygame.DOUBLEBUF | pygame.RESIZABLE
     )
+
+    # Cambiar icono de la ventana
+    icon = pygame.image.load("assets/ui/icon.png").convert()
+
+    pygame.display.set_icon(icon)
     pygame.display.set_caption("Roguelike")
 
     # Inicializamos el registro de rendimiento (performance_log)
