@@ -4,9 +4,6 @@ Builder para crear la entidad jugador con todos sus componentes ECS.
 """
 
 import time
-import json
-from pathlib import Path
-
 import pygame
 
 from roguelike_game.ecs.components.transform.position import Position
@@ -28,136 +25,9 @@ from roguelike_game.ecs.components.combat.combat_stats import CombatStats
 from roguelike_game.ecs.components.combat.melee_weapon import MeleeWeapon
 from roguelike_game.systems.config_z_layer import Z_LAYERS
 from roguelike_game.ecs.assets.player_assets import PlayerAssets
+from roguelike_game.ecs.factories.player.config import ORIGINAL_SPRITE_SIZE, PLAYER_STATS, DEFAULT_CLASS, DEFAULT_SCALE, DEFAULT_SPEED, ANIMATION_INTERVAL, INITIAL_ANIMATION_STATE, MELEE_WEAPON_CFG, DEFAULT_TRAIL, FEET_WIDTH_DIVISOR, FEET_HEIGHT_DIVISOR
+from roguelike_game.ecs.factories.player.sprite_loader import load_and_scale_sprites, extract_initial_frame, build_animator_map
 from roguelike_engine.config.config_tiles import TILE_SIZE
-
-# --------------------------------------------
-# Configuración global: carga de JSON y constantes
-# --------------------------------------------
-
-# Ruta absoluta al JSON con la configuración de jugadores
-_config_path = Path(__file__).resolve().parents[4] / "data" / "players.json"
-
-# Cargar configuración solo una vez
-with open(_config_path, encoding="utf-8") as _f:
-    _player_cfg = json.load(_f)
-
-# Tamaño original y renderizado de sprites
-ORIGINAL_SPRITE_SIZE = tuple(_player_cfg["ORIGINAL_SPRITE_SIZE"])
-RENDERED_SPRITE_SIZE = tuple(_player_cfg["RENDERED_SPRITE_SIZE"])
-
-# Estadísticas detalladas por clase de jugador
-PLAYER_STATS = _player_cfg["PLAYER_STATS"]
-
-# Valores por defecto (ahora obligatorios en el JSON)
-DEFAULT_CLASS = _player_cfg["DEFAULT_CLASS"]
-DEFAULT_SCALE = _player_cfg["DEFAULT_SCALE"]
-DEFAULT_SPEED = _player_cfg["DEFAULT_SPEED"]
-ANIMATION_INTERVAL = _player_cfg["ANIMATION_INTERVAL"]
-INITIAL_ANIMATION_STATE = _player_cfg["INITIAL_ANIMATION_STATE"]
-MELEE_WEAPON_CFG = _player_cfg["MELEE_WEAPON"]
-DEFAULT_TRAIL = _player_cfg["DEFAULT_TRAIL"]
-FEET_WIDTH_DIVISOR = _player_cfg["FEET_WIDTH_DIVISOR"]
-FEET_HEIGHT_DIVISOR = _player_cfg["FEET_HEIGHT_DIVISOR"]
-
-
-# --------------------------------------------
-# Funciones auxiliares internas
-# --------------------------------------------
-
-def _load_and_scale_sprites(class_player: str) -> dict[str, dict[str, list[pygame.Surface]]]:
-    """
-    Carga los sprites de la clase indicada y, si corresponde, los escala según el factor 'scale'.
-    
-    Args:
-        class_player: Identificador de la clase (p.ej. "dwarf", "valkyrie", etc.)
-    
-    Retorna:
-        sprites_dict: Diccionario anidado con la estructura:
-            {
-                "down": {"idle": [Surface, ...], "walk": [Surface, ...]},
-                "up":   {"idle": [...], "walk": [...]},
-                "left": {...},
-                "right": {...}
-            }
-    """
-    sprites_dict, _ = PlayerAssets(class_player, ORIGINAL_SPRITE_SIZE).get_sprites()
-
-    # Determinar factor de escala (obligatorio en PLAYER_STATS)
-    scale_factor = PLAYER_STATS[class_player]["scale"]
-
-    if scale_factor != 1.0:
-        for direction, anims in sprites_dict.items():
-            for state, frames in anims.items():
-                scaled_frames: list[pygame.Surface] = []
-                for frame in frames:
-                    nuevo_ancho = int(frame.get_width() * scale_factor)
-                    nuevo_alto = int(frame.get_height() * scale_factor)
-                    scaled = pygame.transform.scale(frame, (nuevo_ancho, nuevo_alto))
-                    scaled_frames.append(scaled)
-                sprites_dict[direction][state] = scaled_frames
-
-    return sprites_dict
-
-
-def _extract_initial_frame(sprites_dict: dict[str, dict[str, list[pygame.Surface]]]) -> pygame.Surface | None:
-    """
-    Obtiene el primer fotograma de la animación 'down_idle', si existe.
-    Sirve como sprite inicial estático.
-    """
-    down_idle_frames = sprites_dict["down"]["idle"]
-    return down_idle_frames[0] if down_idle_frames else None
-
-
-def _build_animator_map(sprites_dict: dict[str, dict[str, list[pygame.Surface]]]) -> dict[str, list[pygame.Surface]]:
-    """
-    Construye un diccionario plano de animaciones para Animator, con clave "<dirección>_<estado>".
-    
-    Ejemplo de salida:
-        {
-            "down_idle":  [...],
-            "down_walk":  [...],
-            "up_idle":    [...],
-            "up_walk":    [...],
-            "left_idle":  [...],
-            "left_walk":  [...],
-            "right_idle": [...],
-            "right_walk": [...],
-        }
-    """
-    anim_map: dict[str, list[pygame.Surface]] = {}
-    for direction, states in sprites_dict.items():
-        anim_map[f"{direction}_idle"] = states["idle"]
-        anim_map[f"{direction}_walk"] = states["walk"]
-    return anim_map
-
-
-def _create_body_and_feet(sprite_surface: pygame.Surface) -> MultiCollider:
-    """
-    Genera un MultiCollider que contiene:
-      - "body": MaskCollider basado en la máscara de píxeles opacos del sprite.
-      - "feet": Collider rectangular en la parte inferior del sprite.
-
-    Args:
-        sprite_surface: Surface de pygame con la imagen del jugador.
-
-    Retorna:
-        MultiCollider({"body": MaskCollider, "feet": Collider})
-    """
-    # Body
-    mascara = pygame.mask.from_surface(sprite_surface)
-    body_collider = MaskCollider(mascara, offset_x=0, offset_y=0)
-
-    # Feet
-    w_img, h_img = sprite_surface.get_size()
-    feet_width = w_img // FEET_WIDTH_DIVISOR
-    feet_height = h_img // FEET_HEIGHT_DIVISOR
-
-    offset_x = (w_img - feet_width) // 2
-    offset_y = h_img - feet_height
-
-    feet_collider = Collider(feet_width, feet_height, offset_x, offset_y)
-
-    return MultiCollider({"body": body_collider, "feet": feet_collider})
 
 
 # --------------------------------------------
@@ -196,13 +66,13 @@ def spawn_player(world, x: int, y: int, class_player: str = DEFAULT_CLASS) -> in
     # 6) Sprites y animaciones
     # ------------------------------------------------
 
-    sprites_dict = _load_and_scale_sprites(class_player)
+    sprites_dict = load_and_scale_sprites(class_player)
 
-    initial_frame = _extract_initial_frame(sprites_dict)
+    initial_frame = extract_initial_frame(sprites_dict)
     if initial_frame:
         world.components["Sprite"][eid] = Sprite(initial_frame)
 
-    anim_map = _build_animator_map(sprites_dict)
+    anim_map = build_animator_map(sprites_dict)
     world.components["Animator"][eid] = Animator(
         animations=anim_map,
         current_state=INITIAL_ANIMATION_STATE,
@@ -309,3 +179,32 @@ def spawn_player_tile(world, tile_x: int, tile_y: int, class_player: str = DEFAU
         py = cy - (h_img - half_feet)
 
     return spawn_player(world, px, py, class_player)
+
+
+def _create_body_and_feet(sprite_surface: pygame.Surface) -> MultiCollider:
+    """
+    Genera un MultiCollider que contiene:
+      - "body": MaskCollider basado en la máscara de píxeles opacos del sprite.
+      - "feet": Collider rectangular en la parte inferior del sprite.
+
+    Args:
+        sprite_surface: Surface de pygame con la imagen del jugador.
+
+    Retorna:
+        MultiCollider({"body": MaskCollider, "feet": Collider})
+    """
+    # Body
+    mascara = pygame.mask.from_surface(sprite_surface)
+    body_collider = MaskCollider(mascara, offset_x=0, offset_y=0)
+
+    # Feet
+    w_img, h_img = sprite_surface.get_size()
+    feet_width = w_img // FEET_WIDTH_DIVISOR
+    feet_height = h_img // FEET_HEIGHT_DIVISOR
+
+    offset_x = (w_img - feet_width) // 2
+    offset_y = h_img - feet_height
+
+    feet_collider = Collider(feet_width, feet_height, offset_x, offset_y)
+
+    return MultiCollider({"body": body_collider, "feet": feet_collider})

@@ -1,7 +1,7 @@
 # Path: src/roguelike_game/game/ecs_manager.py
 
 from roguelike_game.ecs.core.manager import ECSWorld
-from roguelike_game.ecs.factories.player_factory import spawn_player_tile
+from roguelike_game.ecs.factories.player.player_factory import spawn_player_tile
 from roguelike_engine.config.map_config import global_map_settings
 
 
