@@ -10,6 +10,9 @@ from roguelike_engine.utils.loader import load_image
 # Caché de imágenes para evitar recargas constantes desde disco
 _BASE_TILE_IMAGES_CACHE: dict[str, list[pygame.Surface] | pygame.Surface] | None = None
 
+# Caché de sprites para evitar recomputar o randomizar cada tile
+_SPRITE_CACHE: dict[tuple[str, str|None], pygame.Surface | None] = {}
+
 
 def load_base_tile_images(theme: str = "default") -> dict[str, list[pygame.Surface] | pygame.Surface]:
     """
@@ -53,27 +56,30 @@ def load_base_tile_images(theme: str = "default") -> dict[str, list[pygame.Surfa
 def get_sprite_for_tile(char: str, overlay_code: str | None = None) -> pygame.Surface | None:
     """
     Determina y devuelve el sprite para un carácter de mapa y código de overlay opcional.
-    - Primero prioriza cualquier código de overlay.
-    - Luego toma una variante aleatoria del mapa base (o la imagen única).
-    - Si no encuentra nada, recurre a DEFAULT_TILE_MAP.
+    con cache para evitar recomputar/randomizar múltiples veces.
     """
-    # 1) Si hay código de overlay, priorizar ese asset
+    # Intentar cache
+    key = (char, overlay_code)
+    if key in _SPRITE_CACHE:
+        return _SPRITE_CACHE[key]
+
+    sprite: pygame.Surface | None = None
+    # 1) Si hay código de overlay
     if overlay_code:
         name = OVERLAY_CODE_MAP.get(overlay_code)
         if name:
-            return load_image(f"tiles/{name}.png", (TILE_SIZE, TILE_SIZE))
+            sprite = load_image(f"tiles/{name}.png", (TILE_SIZE, TILE_SIZE))
 
-    # 2) Usar el mapa base cacheado
-    base_images = load_base_tile_images()
-    imgs = base_images.get(char)
-    if imgs is None:
-        # 3) Fallback a DEFAULT_TILE_MAP
-        variant = DEFAULT_TILE_MAP.get(char)
-        if variant:
-            return load_image(f"tiles/{variant}.png", (TILE_SIZE, TILE_SIZE))
-        return None
+    if sprite is None:
+        base_images = load_base_tile_images()
+        imgs = base_images.get(char)
+        if imgs is None:
+            variant = DEFAULT_TILE_MAP.get(char)
+            if variant:
+                sprite = load_image(f"tiles/{variant}.png", (TILE_SIZE, TILE_SIZE))
+        else:
+            sprite = random.choice(imgs) if isinstance(imgs, list) else imgs
 
-    # 4) Si es lista de variantes, elegir una al azar
-    if isinstance(imgs, list):
-        return random.choice(imgs)
-    return imgs
+    # Guardar en cache y devolver
+    _SPRITE_CACHE[key] = sprite
+    return sprite
