@@ -1,6 +1,6 @@
 import pygame
 import logging
-from typing import Dict, Optional
+from typing import Dict, Optional, Iterable
 from roguelike_game.ecs.factories.monster.config import MONSTER_DEFS
 from roguelike_engine.utils.loader import load_image
 
@@ -8,27 +8,26 @@ logger = logging.getLogger(__name__)
 
 _SPRITE_SURFACES: Dict[str, Dict[str, pygame.Surface]] = {}
 _DEATH_SURFACES: Dict[str, Optional[pygame.Surface]] = {}
-_caches_loaded: bool = False
+_loaded_variants: set[str] = set()
 
-def _load_caches_once() -> None:
-    """Load and cache sprite and death surfaces for each monster type."""
-    global _caches_loaded
-    if _caches_loaded:
-        return
-    for mtype, cfg in MONSTER_DEFS.items():
+def load_caches_for(variants: Iterable[str]) -> None:
+    """Load and cache sprite and death surfaces for specified monster types."""
+    global _loaded_variants
+    for mtype in variants:
+        if mtype in _loaded_variants:
+            continue
+        cfg = MONSTER_DEFS[mtype]
         logger.debug(f"Loading sprites for: {mtype}")
         scale_val = cfg["scale"]
         dir_map: Dict[str, pygame.Surface] = {}
         for direction, path in cfg["sprites"].items():
-            # Load raw image with caching
             raw = load_image(path)
-            # Scale if needed with caching
+            # Scale raw surface in memory instead of reloading
             if scale_val != 1.0:
                 w0, h0 = raw.get_size()
-                image = load_image(path, (int(w0*scale_val), int(h0*scale_val)))
+                image = pygame.transform.scale(raw, (int(w0*scale_val), int(h0*scale_val)))
             else:
                 image = raw
-            # Apply optional tint
             tint = cfg.get("tint")
             if tint:
                 image.fill(tuple(tint), special_flags=pygame.BLEND_RGB_MULT)
@@ -40,7 +39,7 @@ def _load_caches_once() -> None:
             death_scale = cfg["death_scale"]
             if death_scale != 1.0:
                 w0, h0 = raw_death.get_size()
-                death_img = load_image(death_path, (int(w0*death_scale), int(h0*death_scale)))
+                death_img = pygame.transform.scale(raw_death, (int(w0*death_scale), int(h0*death_scale)))
             else:
                 death_img = raw_death
             tint = cfg.get("tint")
@@ -49,4 +48,8 @@ def _load_caches_once() -> None:
             _DEATH_SURFACES[mtype] = death_img
         else:
             _DEATH_SURFACES[mtype] = None
-    _caches_loaded = True
+        _loaded_variants.add(mtype)
+
+def _load_caches_once() -> None:
+    """Load all monster caches."""
+    load_caches_for(MONSTER_DEFS.keys())

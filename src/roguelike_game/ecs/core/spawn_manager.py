@@ -3,7 +3,7 @@
 from roguelike_engine.map.utils import calculate_lobby_offset
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_game.ecs.utils.collider_utils import build_collider_rect
-from roguelike_game.ecs.factories.monster.cache import _load_caches_once, _SPRITE_SURFACES
+from roguelike_game.ecs.factories.monster.cache import load_caches_for, _SPRITE_SURFACES
 from roguelike_game.ecs.factories.monster.physics import calculate_position, create_collider_components
 from roguelike_game.ecs.factories.monster.config import MONSTER_DEFS
 from roguelike_game.ecs.utils.spawn_utils import find_spawn_positions
@@ -35,9 +35,10 @@ class SpawnNPCManager:
         zone_size = global_map_settings.zone_size
 
         # 2) Cargar definiciones y preparar prototipos de colliders
-        _load_caches_once()
         # Variantes de barbol a spawnear
         barbol_variants = [k for k in MONSTER_DEFS if k.startswith("barbol")]
+        # Cargar sprites solo para estas variantes
+        load_caches_for(barbol_variants)
         # Precompute prototipos de sprite y colliders
         proto_sprites: dict[str, Any] = {}
         proto_colliders: dict[str, Any] = {}
