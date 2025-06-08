@@ -26,6 +26,9 @@ from roguelike_game.ecs.factories.player.config import ORIGINAL_SPRITE_SIZE, PLA
 from roguelike_game.ecs.factories.player.sprite_loader import load_and_scale_sprites, extract_initial_frame, build_animator_map
 from roguelike_game.ecs.factories.player.collider import create_body_and_feet
 from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_game.ecs.components.fsm.npc_state import NPCState
+from roguelike_game.ecs.fsm.states.idle_state import IdleState
+from roguelike_game.ecs.fsm.fsm import FiniteStateMachine
 
 
 # --------------------------------------------
@@ -138,6 +141,12 @@ def spawn_player(world, x: int, y: int, class_player: str = DEFAULT_CLASS) -> in
         max_trails=trail_params["max_trails"],
     )
     world.components["TrailComponent"][eid] = TrailComponent(config=trail_cfg)
+
+    # ------------------------------------------------
+    # 12) FSM del Player
+    # ------------------------------------------------
+    fsm = FiniteStateMachine(IdleState())
+    world.components["NPCState"][eid] = NPCState(fsm, "IdleState")
 
     return eid
 

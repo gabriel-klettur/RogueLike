@@ -191,8 +191,8 @@
     },
     {
         "zone": "Lobby",
-        "rel_x": 45,
-        "rel_y": -873,
+        "rel_x": 141,
+        "rel_y": -833,
         "image_path": "assets/buildings/castles/castle_2.png",
         "solid": true,
         "scale": [

@@ -47,8 +47,15 @@ class ProjectileResolver(BaseSpellResolver):
             dir_x * speed, dir_y * speed,
             damage=cfg.get('damage', 0),
             lifespan=cfg.get('lifespan', 0),
-            caster=caster
+            caster=caster,
+            spell_key=spawn_meta.get('spell'),
+            spawn_pos=(sx, sy)
         )
+        # Destruir automáticamente luego de range si es configurado
+        max_range = cfg.get('range', 0)
+        if max_range:
+            # programar expiración por rango en el componente (se maneja en FireballSystem)
+            pass
         sprite_path = cfg.get('sprite')
         if sprite_path:
             img = pygame.image.load(sprite_path).convert_alpha()

@@ -10,7 +10,11 @@ from roguelike_game.ecs.components.combat.attack_cooldown import AttackCooldown
 from roguelike_game.ecs.components.ai.wants_to_melee import WantsToMelee
 from roguelike_game.ecs.components.ai.wants_to_cast import WantsToCastSpell
 from roguelike_engine.utils.benchmark import benchmark
-from roguelike_game.ecs.fsm.states.aggro_state import AggroState
+from roguelike_game.ecs.fsm.states.idle_state import IdleState
+from roguelike_game.ecs.fsm.states.player.move_state import MoveState
+from roguelike_game.ecs.fsm.states.player.player_attack_state import PlayerAttackState
+from roguelike_game.ecs.fsm.states.player.player_spell_select_state import PlayerSpellSelectState
+from roguelike_game.ecs.systems.fsm.fsm_system import _EntityProxy
 
 class InputSystem:
     """
@@ -41,6 +45,26 @@ class InputSystem:
                     vel.vy = dy / length * speed
                 else:
                     vel.vx = vel.vy = 0
+
+            # Integración FSM para Player
+            # Detectar Player usando componente PlayerTagComponent
+            if eid in world.components.get('PlayerTagComponent', {}):
+                state_comp = world.components.get('NPCState', {}).get(eid)
+                if state_comp:
+                    current = state_comp.fsm.current_state
+                    proxy = _EntityProxy(world, eid)
+                    # Movimiento
+                    if (inp.move_x != 0 or inp.move_y != 0) and isinstance(current, IdleState):
+                        state_comp.fsm.change_state(MoveState(), proxy)
+                    elif inp.move_x == 0 and inp.move_y == 0 and isinstance(current, MoveState):
+                        state_comp.fsm.change_state(IdleState(), proxy)
+                    # Ataque físico
+                    if inp.attack:
+                        state_comp.fsm.change_state(PlayerAttackState(), proxy)
+                    # Hechizos (q/e)
+                    if inp.skill_q or inp.skill_e:
+                        state_comp.fsm.change_state(PlayerSpellSelectState(), proxy)
+
             # Mapear habilidades Q, E y click
             inp.skill_q = bool(keys[pygame.K_q])
             inp.skill_e = bool(keys[pygame.K_e])
@@ -55,12 +79,15 @@ class InputSystem:
                 print(f"[DEBUG][{time.time():.3f}] eid={eid} skill_e -> slash")
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='slash')
                 inp.skill_e = False
-            # Generar intención de fireball solo si click y en AggroState (o primer disparo)
-            if inp.click:
-                print(f"[DEBUG][{time.time():.3f}] eid={eid} click -> fireball")
-                state = world.components.get('NPCState', {}).get(eid)
-                if state is None or isinstance(state.fsm.current_state, AggroState):
-                    world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='fireball')
+            if inp.skill_q:
+                print(f"[DEBUG][{time.time():.3f}] eid={eid} skill_q -> lightball")
+                world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='lightball')
+                inp.skill_q = False
+            # Generar intención de fireball para el Player con clic izquierdo
+            if eid in world.components.get('PlayerTagComponent', {}) and inp.click:
+                #print(f"[DEBUG][{time.time():.3f}] eid={eid} click -> fireball")
+                world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='fireball')
+                inp.click = False
             # Lanzar el beam con click del medio
             middle = pygame.mouse.get_pressed()[1]
             if middle:
@@ -71,17 +98,4 @@ class InputSystem:
             if right:
                 print(f"[DEBUG][{time.time():.3f}] eid={eid} right-click -> dash")
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='dash')
-            # Procesar ataque: tecla SPACE
-            if keys[pygame.K_SPACE]:
-                now = time.time()
-                # Verificar cooldown
-                cd = world.components.get('AttackCooldown', {}).get(eid)
-                weapon = world.components.get('MeleeWeapon', {}).get(eid)
-                cooldown_time = weapon.cooldown if weapon else 1.0
-                if cd is None or now >= cd.next_time:
-                    # Seleccionar primer objetivo distinto
-                    for target in world.components.get('CombatStats', {}):
-                        if target != eid:
-                            world.components.setdefault('WantsToMelee', {})[eid] = WantsToMelee(attacker=eid, target=target)
-                            world.components.setdefault('AttackCooldown', {})[eid] = AttackCooldown(now + cooldown_time)
-                            break
+

@@ -3,6 +3,8 @@ from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.ecs.systems.fsm.fsm_system import _EntityProxy
 from roguelike_game.ecs.fsm.states.damage_state import DamageState
 from roguelike_game.ecs.fsm.states.attack_state import AttackState
+import math
+from roguelike_game.config.spells_config import SPELLS
 
 class FireballSystem:
     """
@@ -22,6 +24,15 @@ class FireballSystem:
             pos.x += vel.vx
             pos.y += vel.vy
             comp.age += 1
+            # Destruir si supera rango configurado
+            cfg = SPELLS.get(getattr(comp, 'spell_key', ''), {})
+            max_range = cfg.get('range', 0)
+            if max_range and comp.spawn_pos:
+                dxr = pos.x - comp.spawn_pos[0]
+                dyr = pos.y - comp.spawn_pos[1]
+                if math.hypot(dxr, dyr) > max_range:
+                    world.remove_entity(eid)
+                    continue
             # Evitar colisiones el primer frame para no impactar desde el spawn
             if comp.age == 1:
                 continue
@@ -56,7 +67,7 @@ class FireballSystem:
                         caster = comp.caster
                         if caster in world.components.get('PlayerTagComponent', {}):
                             fsm = world.components['NPCState'][target].fsm
-                            from roguelike_game.ecs.fsm.states.alert_chase_state import AlertChaseState
+                            from roguelike_game.ecs.fsm.states.monster.alert_chase_state import AlertChaseState
                             # determinar dirección de daño y siguiente estado
                             attacker_pos = world.components['Position'][caster]
                             defender_pos = world.components['Position'][target]

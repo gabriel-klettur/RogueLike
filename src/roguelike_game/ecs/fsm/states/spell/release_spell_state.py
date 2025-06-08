@@ -5,6 +5,7 @@ from roguelike_game.ecs.components.abilities.fireball_component import FireballC
 from roguelike_game.ecs.fsm.states.spell.resolve_spell_state import ResolveSpellState
 from roguelike_game.config.spells_config import SPELLS
 import pygame
+import math
 from roguelike_game.ecs.components.rendering.sprite import Sprite
 from roguelike_game.ecs.components.transform.scale import Scale
 
@@ -15,8 +16,32 @@ class ReleaseSpellState(State):
         spell_key = ctx.get('spell')
         cfg = SPELLS.get(spell_key, {})
         world = entity.world
-        dx, dy = ctx.get('direction', (1, 0))
-        spawn_x, spawn_y = ctx.get('spawn_pos', (0, 0))
+        # Proyectiles spawnean desde el centro del caster
+        if cfg.get('type') == 'projectile':
+            pos_cmp = world.components['Position'][entity.id]
+            sprite_cmp = world.components.get('Sprite', {}).get(entity.id)
+            if sprite_cmp:
+                w, h = sprite_cmp.image.get_size()
+                spawn_x, spawn_y = pos_cmp.x + w/2, pos_cmp.y + h/2
+            else:
+                spawn_x, spawn_y = pos_cmp.x, pos_cmp.y
+        else:
+            spawn_x, spawn_y = ctx.get('spawn_pos', (0, 0))
+        # Recalcular dirección si no lock_cast_direction
+        lock = cfg.get('lock_cast_direction', True)
+        if not lock:
+            camera = ctx.get('camera')
+            mx, my = pygame.mouse.get_pos()
+            if camera:
+                world_x = mx / camera.zoom + camera.offset_x
+                world_y = my / camera.zoom + camera.offset_y
+            else:
+                world_x, world_y = mx, my
+            dx, dy = world_x - spawn_x, world_y - spawn_y
+            length = math.hypot(dx, dy) or 1
+            dx, dy = dx/length, dy/length
+        else:
+            dx, dy = ctx.get('direction', (1, 0))
         fid = world.create_entity()
         # Mantener spawn_pos como centro de la fireball
         world.components['Position'][fid] = Position(spawn_x, spawn_y)
@@ -26,12 +51,16 @@ class ReleaseSpellState(State):
             dx * speed, dy * speed,
             damage=cfg.get('damage', 0),
             lifespan=cfg.get('lifespan', 0),
-            caster=entity.id
+            caster=entity.id,
+            spell_key=spell_key,
+            spawn_pos=(spawn_x, spawn_y)
         )
-        # Añadir sprite y aplicar scale
-        img = pygame.image.load(cfg.get('sprite')).convert_alpha()
-        world.components['Sprite'][fid] = Sprite(img)
-        world.components['Scale'][fid] = Scale(scale=cfg.get('scale', 1.0))
+        # Añadir sprite y aplicar scale si existe ruta
+        sprite_path = cfg.get('sprite')
+        if sprite_path:
+            img = pygame.image.load(sprite_path).convert_alpha()
+            world.components['Sprite'][fid] = Sprite(img)
+            world.components['Scale'][fid] = Scale(scale=cfg.get('scale', 1.0))
         ctx['fireball_id'] = fid
 
     def execute(self, entity, dt):

@@ -97,7 +97,8 @@ class CollisionDebugSystem:
                             wx = pos.x + collider.offset_x * scale_val + dx
                             wy = pos.y + collider.offset_y * scale_val + dy
                             self._pts.append(cam_apply((wx, wy)))
-                        draw_polygon(screen, color, self._pts, 2)
+                        if len(self._pts) >= 2:
+                            draw_polygon(screen, color, self._pts, 2)
 
                 else:
                     # Si no hay máscara, dibujar rectángulo simple

@@ -28,6 +28,8 @@ class ECSManager:
         self.ecs_world.player_entity = pid
         # Registrar tile coords en MapManager para persistencia
         self.map_manager.spawn_player((tx, ty))
+        # Spawn inicial de NPCs después de crear el jugador para que player sea id=1
+        self.ecs_world.spawn_npc_manager.spawn_npc_initial()
         self.entities_manager.ecs_manager = self
 
     def update(self, clock, screen, camera):

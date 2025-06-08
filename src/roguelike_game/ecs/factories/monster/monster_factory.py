@@ -1,28 +1,20 @@
-import pygame
+
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.ecs.components.transform.position import Position
-from roguelike_game.ecs.components.rendering.sprite import Sprite
+
 from roguelike_game.ecs.components.combat.health import Health
-from roguelike_game.ecs.components.transform.movement_speed import MovementSpeed
-from roguelike_game.ecs.components.transform.scale import Scale
-from roguelike_game.ecs.components.transform.velocity import Velocity
-from roguelike_game.ecs.components.ai.patrol import Patrol
-from roguelike_game.ecs.components.rendering.animator import Animator
-from roguelike_game.ecs.components.physics.multi_collider import MultiCollider
-from roguelike_game.ecs.components.physics.mask_collider import MaskCollider
-from roguelike_game.ecs.components.physics.collider import Collider
+
+from roguelike_game.ecs.fsm.states.monster.patrol_state import PatrolState
+from roguelike_game.ecs.components.fsm.patrol_route import PatrolRoute
 from roguelike_game.ecs.components.core.identity import Identity, Faction
 from roguelike_game.ecs.components.combat.combat_stats import CombatStats
 from roguelike_game.ecs.components.combat.melee_weapon import MeleeWeapon
 from roguelike_game.ecs.components.ai.aggro_range import AggroRange
 from roguelike_game.ecs.components.combat.melee_range import MeleeRange
-from roguelike_game.ecs.components.transform.z_layer import ZLayer
-from roguelike_game.systems.config_z_layer import Z_LAYERS
 from roguelike_game.ecs.fsm.fsm import FiniteStateMachine
 from roguelike_game.ecs.components.fsm.npc_state import NPCState
 from roguelike_game.ecs.components.ai.damage_config import DamageConfig
 import logging
-from typing import Dict, Optional, Tuple, Any
 
 from roguelike_game.ecs.factories.monster.config import MONSTER_DEFS
 from roguelike_game.ecs.factories.monster.cache import _load_caches_once
@@ -86,9 +78,7 @@ def spawn_monster(world, monster_type: str, tile_x: int, tile_y: int) -> int:
     # Configurar duración de daño desde monsters.json
     world.components["DamageConfig"][eid] = DamageConfig(cfg["damage_duration"])
 
-    # FSM component
-    from roguelike_game.ecs.fsm.states.patrol_state import PatrolState
-    from roguelike_game.ecs.components.fsm.patrol_route import PatrolRoute
+    # FSM component    
     # Ruta de patrulla (ejemplo), se puede cargar del config
     route_points = [(px, py), (px + 5 * TILE_SIZE, py)]
     world.components["PatrolRoute"][eid] = PatrolRoute(route_points)
