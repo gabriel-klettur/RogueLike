@@ -15,7 +15,7 @@
       "allow_movement": true,
       "lock_cast_direction": false,
       "automatic": true,
-      "automatic_cast_punish": 2.0
+      "automatic_cast_punish": 1.0
     },
     "iceball": {
       "type": "projectile",

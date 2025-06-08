@@ -1,5 +1,7 @@
 from roguelike_game.ecs.fsm.state import State
 from roguelike_game.ecs.components.combat.death_timer import DeathTimer
+from roguelike_game.ecs.components.core.player_tag import PlayerTagComponent
+from roguelike_game.ecs.components.rendering.grayscale_component import GrayscaleComponent
 import time
 
 class DeathState(State):
@@ -10,6 +12,7 @@ class DeathState(State):
         """Registra temporizador."""
         world = entity.world
         eid = entity.id
+        print(f"[DeathState.enter] eid={eid}, is_player={eid in world.components.get('PlayerTagComponent', {})}")
         # Iniciar temporizador
         world.components['DeathTimer'][eid] = DeathTimer(time.time())
         # Cambiar el sprite al de muerte para ocultar el sprite anterior
@@ -24,12 +27,33 @@ class DeathState(State):
     def execute(self, entity, dt):
         """Espera a que expire el temporizador antes de eliminar la entidad."""
         world = entity.world
-        # Obtener componente por id
-        dt_cmp = world.components['DeathTimer'][entity.id]
-        # Eliminar solo tras duración
-        if time.time() - dt_cmp.start_time >= dt_cmp.duration:
-            world.remove_entity(entity.id)
+        nid = entity.id
+        dt_cmp = world.components['DeathTimer'][nid]
+        now = time.time()
+        elapsed = now - dt_cmp.start_time
+        duration = dt_cmp.duration
+        comps = world.components
+        # Ejecutar acciones tras expiración del temporizador
+        if elapsed >= duration:
+            if nid in comps.get('PlayerTagComponent', {}):
+                if nid not in comps.get('GrayscaleComponent', {}):
+                    comps['GrayscaleComponent'][nid] = GrayscaleComponent()
+            else:
+                world.remove_entity(nid)
+        # Debug logs: solo una vez cada segundo
+        if now - dt_cmp.last_log_time >= 1.0:
+            if elapsed >= duration:
+                print(f"[DeathState.execute] Timer expired for eid={nid}")
+                if nid in comps.get('PlayerTagComponent', {}):
+                    print(f"[DeathState.execute] eid={nid} is Player -> grayscaling once")
+                else:
+                    print(f"[DeathState.execute] eid={nid} removed from world")
+            else:
+                print(f"[DeathState.execute] eid={nid}, elapsed={elapsed:.2f}/{duration} - waiting")
+            dt_cmp.last_log_time = now
+
 
     def exit(self, entity):
         """Limpia si fuera necesario."""
+        print(f"[DeathState.exit] eid={entity.id}")
         pass

@@ -51,6 +51,7 @@ from roguelike_engine.world.world_config import WORLD_CONFIG
 
 #! -------------------------- Paquetes locales: ECS ---------------------------------
 from roguelike_game.game.ecs_manager import ECSManager
+from roguelike_game.ecs.systems.rendering.render_system import RenderSystem
 
 
 class Game:
@@ -373,6 +374,9 @@ class Game:
                 self.run_ecs()
 
             # 5) Actualizar pantalla
+            # Aplicar escala de grises completa si hubo muerte
+            if self.ecs.ecs_world.components.get('GrayscaleComponent'):
+                RenderSystem(self.screen).apply_grayscale(self.screen)
             pygame.display.flip()
 
             # 6) Actualizar título con FPS actuales
