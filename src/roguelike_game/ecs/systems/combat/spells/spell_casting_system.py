@@ -6,6 +6,7 @@ y jugadores.
 from roguelike_game.ecs.fsm.states.cast_state import CastState
 from roguelike_game.ecs.fsm.states.player.player_spell_cast_state import PlayerSpellCastState
 from roguelike_game.ecs.fsm.states.idle_state import IdleState
+from roguelike_game.ecs.fsm.states.player.move_state import MoveState
 from roguelike_game.ecs.systems.fsm.fsm_system import _EntityProxy
 
 from roguelike_engine.utils.benchmark import benchmark
@@ -75,11 +76,14 @@ class SpellCastingSystem:
             allow_overlap = cfg.get('allow_overlap', True)
             if not allow_overlap and active > 0:
                 continue
-            # Permitir castear en movimiento según allow_movement
+            # Permitir castear solo si Idle o (allow_movement y MoveState)
             state_comp = npcs.get(eid)
             allow_mov = cfg.get('allow_movement', False)
-            if state_comp and not isinstance(state_comp.fsm.current_state, IdleState) and not allow_mov:
-                continue
+            if state_comp:
+                current = state_comp.fsm.current_state
+                # salto si no está en IdleState o MoveState con permiso
+                if not (isinstance(current, IdleState) or (allow_mov and isinstance(current, MoveState))):
+                    continue
             # Si tiene FSM global (NPC o jugador), iniciar sub-FSM de hechizo
             if eid in npcs:
                 npc_state = npcs[eid]
@@ -108,9 +112,13 @@ class SpellCastingSystem:
                     # Guardar camera y spell para recalcular aiming dinámico
                     new_state.spell_fsm.context['camera'] = camera
                     new_state.spell_fsm.context['spell'] = intent.spell
+                    new_state.spell_fsm.context['automatic'] = cfg.get('automatic', False)
+                    new_state.spell_fsm.context['automatic_cast_punish'] = cfg.get('automatic_cast_punish', 1.0)
                 else:
                     new_state = CastState()
                     new_state.spell_fsm.context['spell'] = intent.spell
+                    new_state.spell_fsm.context['automatic'] = cfg.get('automatic', False)
+                    new_state.spell_fsm.context['automatic_cast_punish'] = cfg.get('automatic_cast_punish', 1.0)
                 print(f"[SpellCastingSystem] Entidad {eid} inicia hechizo '{intent.spell}' via FSM.")
                 npc_state.fsm.change_state(new_state, proxy)
             # Limpiar intención

@@ -74,13 +74,14 @@ def update_game(
         camera.offset_y += dy * pan_speed
         return
 
-    # 3.1) Cámara sigue al jugador
+    # 3.1) Cámara sigue al jugador si está vivo (tiene Position)
     @benchmark(perf_log, "2.1.camera.update")
     def _update_camera():
-        # Centrar cámara usando la posición del jugador en ECS
         eid = ecs.ecs_world.player_entity
-        pos = ecs.ecs_world.components['Position'][eid]
-        camera.update(types.SimpleNamespace(x=pos.x, y=pos.y))
+        pos_map = ecs.ecs_world.components.get('Position', {})
+        if eid in pos_map:
+            pos = pos_map[eid]
+            camera.update(types.SimpleNamespace(x=pos.x, y=pos.y))
     _update_camera()
 
     # 3.2) Sistemas principales
@@ -98,13 +99,15 @@ def update_game(
     # 3.4) Minimap update
     @benchmark(perf_log, "2.5.minimap.update")
     def _update_minimap():
-        # Usar posición del jugador en ECS
+        # Actualizar minimapa solo si el jugador todavía existe (tiene Position)
         eid = ecs.ecs_world.player_entity
-        pos = ecs.ecs_world.components['Position'][eid]
-        minimap.update(
-            player_pos=(pos.x, pos.y),
-            tiles=map.tiles_in_region
-        )
+        pos_map = ecs.ecs_world.components.get('Position', {})
+        if eid in pos_map:
+            pos = pos_map[eid]
+            minimap.update(
+                player_pos=(pos.x, pos.y),
+                tiles=map.tiles_in_region
+            )
     _update_minimap()
 
     # 4) Detectar estancia en área 3x3 para expandir dungeon (solo si existe dungeon inicial)
