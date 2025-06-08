@@ -2,6 +2,7 @@
 
 import pygame
 from collections import defaultdict
+from roguelike_engine.utils.loader import load_image
 
 from roguelike_engine.config.config import SCREEN_WIDTH, SCREEN_HEIGHT
 from roguelike_game.game.game import Game
@@ -24,8 +25,8 @@ def main():
         pygame.HWSURFACE | pygame.DOUBLEBUF | pygame.RESIZABLE
     )
 
-    # Cambiar icono de la ventana
-    icon = pygame.image.load("assets/ui/icon.png").convert()
+    # Cambiar icono de la ventana usando caché de imágenes
+    icon = load_image("assets/ui/icon.png")
 
     pygame.display.set_icon(icon)
     pygame.display.set_caption("Roguelike")

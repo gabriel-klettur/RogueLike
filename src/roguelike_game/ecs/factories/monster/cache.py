@@ -2,6 +2,7 @@ import pygame
 import logging
 from typing import Dict, Optional
 from roguelike_game.ecs.factories.monster.config import MONSTER_DEFS
+from roguelike_engine.utils.loader import load_image
 
 logger = logging.getLogger(__name__)
 
@@ -16,28 +17,32 @@ def _load_caches_once() -> None:
         return
     for mtype, cfg in MONSTER_DEFS.items():
         logger.debug(f"Loading sprites for: {mtype}")
+        scale_val = cfg["scale"]
         dir_map: Dict[str, pygame.Surface] = {}
         for direction, path in cfg["sprites"].items():
-            image = pygame.image.load(path).convert_alpha()
-            scale_val = cfg["scale"]
+            # Load raw image with caching
+            raw = load_image(path)
+            # Scale if needed with caching
             if scale_val != 1.0:
-                w, h = image.get_size()
-                image = pygame.transform.scale(image, (int(w*scale_val), int(h*scale_val)))
-            # Apply optional tint from config
+                w0, h0 = raw.get_size()
+                image = load_image(path, (int(w0*scale_val), int(h0*scale_val)))
+            else:
+                image = raw
+            # Apply optional tint
             tint = cfg.get("tint")
             if tint:
-                # Multiply color channels by tint (RGB tuple)
                 image.fill(tuple(tint), special_flags=pygame.BLEND_RGB_MULT)
             dir_map[direction] = image
         _SPRITE_SURFACES[mtype] = dir_map
         death_path = cfg.get("death_sprite")
         if death_path:
-            death_img = pygame.image.load(death_path).convert_alpha()
+            raw_death = load_image(death_path)
             death_scale = cfg["death_scale"]
             if death_scale != 1.0:
-                w, h = death_img.get_size()
-                death_img = pygame.transform.scale(death_img, (int(w*death_scale), int(h*death_scale)))
-            # Apply optional tint to death image
+                w0, h0 = raw_death.get_size()
+                death_img = load_image(death_path, (int(w0*death_scale), int(h0*death_scale)))
+            else:
+                death_img = raw_death
             tint = cfg.get("tint")
             if tint and death_img:
                 death_img.fill(tuple(tint), special_flags=pygame.BLEND_RGB_MULT)

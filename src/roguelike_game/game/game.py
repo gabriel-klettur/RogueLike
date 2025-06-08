@@ -8,6 +8,8 @@ from datetime import datetime
 import logging
 from typing import Callable
 from functools import partial
+import cProfile
+import pstats
 
 #!---------------------- Paquetes locales: configuración --------------------------------
 import roguelike_engine.config.config as config
@@ -261,7 +263,20 @@ class Game:
         """
         Inicializa el gestor ECS (ECSManager), que maneja entidades, componentes y sistemas.
         """
+        # Profile ECSManager initialization
+        profile = cProfile.Profile()
+        profile.enable()
+        t0 = time.perf_counter()
         self.ecs = ECSManager(screen, self.map, self.buildings, perf_log)
+        elapsed = time.perf_counter() - t0
+        profile.disable()
+        # Dump profiling stats for ECS init
+        logs_dir = Path('logs'); logs_dir.mkdir(exist_ok=True)
+        profile_log = logs_dir / f'ecs_init_profile_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log'
+        with open(profile_log, 'w') as pf:
+            stats = pstats.Stats(profile, stream=pf)
+            stats.sort_stats('tottime').print_stats(30)
+        logging.info(f"[Profiling] _init_ecs: {elapsed:.4f}s stats -> {profile_log}")
 
     def _init_renderer(self):
         """
