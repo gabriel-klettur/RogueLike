@@ -5,6 +5,7 @@ import time
 import os
 from pathlib import Path
 from datetime import datetime
+from typing import Callable
 
 #!---------------------- Paquetes locales: configuración --------------------------------
 import roguelike_engine.config.config as config
@@ -96,52 +97,55 @@ class Game:
         # Registro de inicio de stages
         with open(self.stage_log_path, 'a', encoding='utf-8') as log_file:
             log_file.write(f"[{datetime.now().isoformat()}] Pipeline de etapas:\n")
-        # Ensambla pipeline de etapas: sistemas, core y extras
-        system_stages = [
-            ("Pantalla, reloj y fuente", lambda: self._setup_display(screen, perf_log)),
-            ("Mundo (sin estado)", self._setup_world),
-            ("Cargando estado de mundo", lambda: self._load_world_state()),
-            ("Creando loader", lambda: self._create_loader(loading_bg)),
-            *self.extra_systems_stages
-        ]
+        # Construye pipeline dinámico de stages
+        stages: list[tuple[str, Callable]] = []
+        # Sistemas iniciales
+        stages.append(("Pantalla, reloj y fuente", lambda: self._setup_display(screen, perf_log)))
+        stages.append(("Mundo (sin estado)", lambda: self._setup_world()))
+        # Carga de estado mundial
+        stages.append(("Cargando estado de mundo", lambda: self._load_world_state()))
+        # Resto de sistemas
+        stages.append(("Creando loader", lambda: self._create_loader(loading_bg)))
+        for msg, func in self.extra_systems_stages:
+            stages.append((msg, func))
+        # Etapas por defecto
         default_stages = [
-            ("Inicializando estado Principal",
-             lambda: self._init_state()),
-            ("Cargando mapa",
-             lambda: self._init_map(map_name)),
-            ("Cargando edificios",
-             lambda: self._init_buildings()),
-            ("Cargando Z-layer",
-             lambda: self._init_z_layer(self.buildings)),
-            ("Cargando editor de edificios",
-             lambda: self._init_buildings_editor()),
-            ("Cargando editor de tiles",
-             lambda: self._init_tile_editor()),
-            ("Cargando editor de mapa",
-             lambda: self._init_map_editor()),
-            ("Cargando minimapa",
-             lambda: self._init_minimap()),
-            ("Inicializando ECS",
-             lambda: self._init_ecs(screen, perf_log)),
-            ("Inicializando renderizador",
-             lambda: self._init_renderer()),
-            ("Inicializando menú",
-             lambda: self._init_menu()),
-            ("Inicializando efectos",
-             lambda: self._init_effects(perf_log)),
+            ("Inicializando estado Principal", lambda: self._init_state()),
+            ("Cargando mapa", lambda: self._init_map(map_name)),
+            ("Cargando edificios", lambda: self._init_buildings()),
+            ("Cargando Z-layer", lambda: self._init_z_layer(self.buildings)),
+            ("Cargando editor de edificios", lambda: self._init_buildings_editor()),
+            ("Cargando editor de tiles", lambda: self._init_tile_editor()),
+            ("Cargando editor de mapa", lambda: self._init_map_editor()),
+            ("Cargando minimapa", lambda: self._init_minimap()),
+            ("Inicializando ECS", lambda: self._init_ecs(screen, perf_log)),
+            ("Inicializando renderizador", lambda: self._init_renderer()),
+            ("Inicializando menú", lambda: self._init_menu()),
+            ("Inicializando efectos", lambda: self._init_effects(perf_log)),
         ]
-
-        # Combina sistemas, core y adicionales
-        stages = system_stages + default_stages + self.extra_stages
+        for msg, func in default_stages:
+            stages.append((msg, func))
+        # Etapas extras definidas por usuario
+        for msg, func in self.extra_stages:
+            stages.append((msg, func))
+        # Ejecución y registro de tiempos
         total = len(stages)
-        # Ejecuta y registra duración de cada etapa
         with open(self.stage_log_path, 'a', encoding='utf-8') as log_file:
             for i, (msg, func) in enumerate(stages):
                 start_t = time.time()
                 func()
                 elapsed = time.time() - start_t
-                self.loader.draw((i + 1) / total, msg)
+                fraction = (i + 1) / total
+                self.loader.draw(fraction, msg)
                 log_file.write(f"{msg}: {elapsed:.4f}s\n")
+                # Deserializar niveles diferidos justo tras cargar el estado mundial
+                if msg == "Cargando estado de mundo":
+                    for lvl in list(getattr(self.world, '_pending_levels', [])):
+                        t0 = time.time()
+                        self.world._load_pending_level(lvl)
+                        el2 = time.time() - t0
+                        self.loader.draw(fraction, f"Deserializando nivel {lvl}")
+                        log_file.write(f"Deserializando nivel {lvl}: {el2:.4f}s\n")
 
     # -----------------------------------------------------------------------------------
     # Métodos _init_*: cada uno se encarga de inicializar una parte del Game
