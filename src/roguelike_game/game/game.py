@@ -74,7 +74,8 @@ class Game:
         # Configura logs de tiempos de inicialización
         logs_dir = Path('logs')
         logs_dir.mkdir(exist_ok=True)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        # Timestamp formateado con guiones para fecha y hora
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         self.stage_log_path = logs_dir / f'stage_times_{timestamp}.log'
         with open(self.stage_log_path, 'w', encoding='utf-8') as f:
             f.write(f"[{datetime.now().isoformat()}] Inicio de inicialización\n")
@@ -98,7 +99,8 @@ class Game:
         # Ensambla pipeline de etapas: sistemas, core y extras
         system_stages = [
             ("Pantalla, reloj y fuente", lambda: self._setup_display(screen, perf_log)),
-            ("ZState y WorldManager", self._setup_world),
+            ("Mundo (sin estado)", self._setup_world),
+            ("Cargando estado de mundo", lambda: self._load_world_state()),
             ("Creando loader", lambda: self._create_loader(loading_bg)),
             *self.extra_systems_stages
         ]
@@ -154,8 +156,15 @@ class Game:
         self.perf_log = perf_log
 
     def _setup_world(self):
-        self.world = WorldManager(WORLD_CONFIG)
+        # Inicializa WorldManager sin cargar estado para acelerar init
+        self.world = WorldManager(WORLD_CONFIG, load_state_on_init=False)
         self._last_autosave_time = time.time()
+
+    def _load_world_state(self):
+        """
+        Carga el estado mundial guardado desde disco de forma separada
+        """
+        self.world.load_world()
 
     def _create_loader(self, loading_bg):
         self.loader = LoadingScreen(self.screen, loading_bg)
