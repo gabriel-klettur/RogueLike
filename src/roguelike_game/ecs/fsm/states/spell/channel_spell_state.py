@@ -10,7 +10,9 @@ class ChannelSpellState(State):
     def execute(self, entity, dt):
         # Dinámica: duración de canalización según hechizo
         spell = self.fsm.context.get('spell')
-        duration = SPELLS.get(spell, {}).get('channel_duration', 0)
+        base = SPELLS.get(spell, {}).get('channel_duration', 0)
+        punish = self.fsm.context.get('automatic_cast_punish', 1.0) if self.fsm.context.get('automatic', False) else 1.0
+        duration = base * punish
         if time.time() - self.fsm.context['channel_start'] >= duration:
             self.fsm.change_state(ReleaseSpellState(), entity)
 

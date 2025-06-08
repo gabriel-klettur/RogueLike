@@ -22,6 +22,8 @@ class InputSystem:
     """
     def __init__(self, perf_log):
         self.perf_log = perf_log
+        # Mapear estado previo de click para detección de flanco ascendente
+        self.prev_click = {}
 
     @benchmark(lambda self: self.perf_log, "4.2.2.InputSystem.update")
     def update(self, world, camera=None):
@@ -65,12 +67,14 @@ class InputSystem:
                     if inp.skill_q or inp.skill_e:
                         state_comp.fsm.change_state(PlayerSpellSelectState(), proxy)
 
-            # Mapear habilidades Q, E y click
+            # Mapear habilidades Q, E
             inp.skill_q = bool(keys[pygame.K_q])
             inp.skill_e = bool(keys[pygame.K_e])
             inp.skill_x = bool(keys[pygame.K_x])
-            # Actualizar estado del click
-            inp.click = bool(pygame.mouse.get_pressed()[0])            
+            # Actualizar estado del click y detectar flanco ascendente
+            curr_click = bool(pygame.mouse.get_pressed()[0])
+            inp.click = curr_click
+            prev = self.prev_click.get(eid, False)
             if inp.skill_x:
                 print(f"[DEBUG][{time.time():.3f}] eid={eid} skill_x -> healing_aura")
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='healing_aura')
@@ -83,11 +87,11 @@ class InputSystem:
                 print(f"[DEBUG][{time.time():.3f}] eid={eid} skill_q -> lightball")
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='lightball')
                 inp.skill_q = False
-            # Generar intención de fireball para el Player con clic izquierdo
-            if eid in world.components.get('PlayerTagComponent', {}) and inp.click:
-                #print(f"[DEBUG][{time.time():.3f}] eid={eid} click -> fireball")
+            # Generar intención de fireball sólo en flanco ascendente
+            if eid in world.components.get('PlayerTagComponent', {}) and curr_click and not prev:
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='fireball')
-                inp.click = False
+            # Guardar estado click para próxima iteración
+            self.prev_click[eid] = curr_click
             # Lanzar el beam con click del medio
             middle = pygame.mouse.get_pressed()[1]
             if middle:
@@ -98,4 +102,3 @@ class InputSystem:
             if right:
                 print(f"[DEBUG][{time.time():.3f}] eid={eid} right-click -> dash")
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='dash')
-
