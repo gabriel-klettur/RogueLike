@@ -3,8 +3,7 @@
 from roguelike_engine.map.utils import calculate_lobby_offset
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_game.ecs.utils.collider_utils import build_collider_rect
-from roguelike_game.ecs.factories.monster.cache import _load_caches_once
-from roguelike_game.ecs.factories.monster.sprite_loader import create_sprite_component
+from roguelike_game.ecs.factories.monster.cache import _load_caches_once, _SPRITE_SURFACES
 from roguelike_game.ecs.factories.monster.physics import calculate_position, create_collider_components
 from roguelike_game.ecs.factories.monster.config import MONSTER_DEFS
 from roguelike_game.ecs.utils.spawn_utils import find_spawn_positions
@@ -12,6 +11,7 @@ from roguelike_game.ecs.components.spawn.spawn_request import SpawnRequest
 import random
 import math
 from roguelike_engine.config.config_tiles import TILE_SIZE
+from typing import Any
 
 # Extra padding para seguridad de spawn en tiles
 SPAWN_PADDING_EXTRA = 1
@@ -34,19 +34,25 @@ class SpawnNPCManager:
         lobby_offset = calculate_lobby_offset()
         zone_size = global_map_settings.zone_size
 
-        # 2) Cargar definiciones y sprite base
+        # 2) Cargar definiciones y preparar prototipos de colliders
         _load_caches_once()
-        cfg = MONSTER_DEFS["barbol"]
-        sprite, _ = create_sprite_component("barbol")
-        # Cálculo automático del padding basado en collider de pies
-        multi_for_padding = create_collider_components(sprite, cfg)
-        feet_for_padding = multi_for_padding.colliders.get("feet")
-        # Radio en tiles basado en la dimensión mayor de feet
-        radius = max(feet_for_padding.width, feet_for_padding.height) / 2
-        neighbor_padding = math.ceil(radius / TILE_SIZE) + SPAWN_PADDING_EXTRA
-        spawned_rects = []
         # Variantes de barbol a spawnear
         barbol_variants = [k for k in MONSTER_DEFS if k.startswith("barbol")]
+        # Precompute prototipos de sprite y colliders
+        proto_sprites: dict[str, Any] = {}
+        proto_colliders: dict[str, Any] = {}
+        for variant in barbol_variants:
+            cfg_var = MONSTER_DEFS[variant]
+            raw_surf = _SPRITE_SURFACES[variant].get("down")
+            dummy = type("Proto", (), {})()
+            dummy.image = raw_surf
+            proto_sprites[variant] = dummy
+            proto_colliders[variant] = create_collider_components(dummy, cfg_var)
+        # Calcular padding de spawn según collider de pies de la variante base
+        feet = proto_colliders.get("barbol").colliders.get("feet")
+        radius = max(feet.width, feet.height) / 2
+        neighbor_padding = math.ceil(radius / TILE_SIZE) + SPAWN_PADDING_EXTRA
+        spawned_rects = []
 
         # 3) Spawn en LOBBY
         positions = find_spawn_positions(self.map_manager, self.buildings, lobby_offset,
@@ -55,19 +61,27 @@ class SpawnNPCManager:
         for tx, ty in positions:
             variant = random.choice(barbol_variants)
             cfg_var = MONSTER_DEFS[variant]
-            sprite_var, _ = create_sprite_component(variant)
-            px, py = calculate_position(tx, ty, cfg_var, sprite_var)
-            multi_var = create_collider_components(sprite_var, cfg_var)
-            # Colisiones de todos los colliders del NPC
-            rects_var = [build_collider_rect(px, py, c) for c in multi_var.colliders.values()]
-            # Evitar superposición con NPCs previos
-            if any(r.colliderect(old) for r in rects_var for old in spawned_rects):
-                continue
-            # Evitar colisión con edificios
-            if any(r.colliderect(brect) for r in rects_var for b in self.buildings for brect in b.collision_tiles):
-                continue
-            # Evitar colisión con tiles sólidos
-            if any(r.colliderect(tile.rect) for r in rects_var for tile in self.map_manager.solid_tiles):
+            dummy = proto_sprites[variant]
+            px, py = calculate_position(tx, ty, cfg_var, dummy)
+            rects_var = [build_collider_rect(px, py, c) for c in proto_colliders[variant].colliders.values()]
+            # Evitar colisiones con NPCs previos y elementos estáticos (mapa y edificios)
+            blocked = False
+            for r in rects_var:
+                # Chequear NPCs anteriores
+                for old in spawned_rects:
+                    if r.colliderect(old):
+                        blocked = True
+                        break
+                if blocked:
+                    break
+                # Chequear colisiones estáticas vía spatial_index
+                for s in self.world.get_solid_tiles_for_rect(r):
+                    if r.colliderect(s):
+                        blocked = True
+                        break
+                if blocked:
+                    break
+            if blocked:
                 continue
             # Registrar colisiones del NPC recién spawneado
             spawned_rects.extend(rects_var)
@@ -86,15 +100,25 @@ class SpawnNPCManager:
         for tx, ty in empty_positions:
             variant = random.choice(barbol_variants)
             cfg_var = MONSTER_DEFS[variant]
-            sprite_var, _ = create_sprite_component(variant)
-            px, py = calculate_position(tx, ty, cfg_var, sprite_var)
-            multi_var = create_collider_components(sprite_var, cfg_var)
-            rects_var = [build_collider_rect(px, py, c) for c in multi_var.colliders.values()]
-            if any(r.colliderect(old) for r in rects_var for old in spawned_rects):
-                continue
-            if any(r.colliderect(brect) for r in rects_var for b in self.buildings for brect in b.collision_tiles):
-                continue
-            if any(r.colliderect(tile.rect) for r in rects_var for tile in self.map_manager.solid_tiles):
+            dummy = proto_sprites[variant]
+            px, py = calculate_position(tx, ty, cfg_var, dummy)
+            rects_var = [build_collider_rect(px, py, c) for c in proto_colliders[variant].colliders.values()]
+            # Evitar colisiones con NPCs previos y elementos estáticos (mapa y edificios)
+            blocked = False
+            for r in rects_var:
+                for old in spawned_rects:
+                    if r.colliderect(old):
+                        blocked = True
+                        break
+                if blocked:
+                    break
+                for s in self.world.get_solid_tiles_for_rect(r):
+                    if r.colliderect(s):
+                        blocked = True
+                        break
+                if blocked:
+                    break
+            if blocked:
                 continue
             spawned_rects.extend(rects_var)
             eid_req = self.world.create_entity()
