@@ -7,3 +7,5 @@ class DeathTimer:
     def __init__(self, start_time: float, duration: float = 60.0):
         self.start_time = start_time
         self.duration = duration
+        # Timestamp para controlar frecuencia de logs
+        self.last_log_time = start_time
