@@ -2,6 +2,8 @@ from roguelike_game.ecs.fsm.state import State
 from roguelike_game.ecs.components.combat.death_timer import DeathTimer
 from roguelike_game.ecs.components.core.player_tag import PlayerTagComponent
 from roguelike_game.ecs.components.rendering.grayscale_component import GrayscaleComponent
+from roguelike_engine.config.map_config import global_map_settings
+from roguelike_engine.config.config_tiles import TILE_SIZE
 import time
 
 class DeathState(State):
@@ -40,6 +42,30 @@ class DeathState(State):
                     comps['GrayscaleComponent'][nid] = GrayscaleComponent()
             else:
                 world.remove_entity(nid)
+        # Lógica de resurrección: si está en lobby 3x3 y en gris, revivir
+        if nid in comps.get('PlayerTagComponent', {}) and nid in comps.get('GrayscaleComponent', {}):
+            pos = world.components.get('Position', {}).get(nid)
+            if pos:
+                tx = int(pos.x // TILE_SIZE)
+                ty = int(pos.y // TILE_SIZE)
+                lob_x, lob_y = world.map_manager.lobby_offset
+                cw = global_map_settings.zone_width
+                ch = global_map_settings.zone_height
+                center_tx = lob_x + cw // 2
+                center_ty = lob_y + ch // 2
+                if center_tx-1 <= tx <= center_tx+1 and center_ty-1 <= ty <= center_ty+1:
+                    # Revivir: quitar grayscale, timer y restaurar vida
+                    comps['GrayscaleComponent'].pop(nid, None)
+                    comps['DeathTimer'].pop(nid, None)
+                    hp = world.components.get('Health', {}).get(nid)
+                    if hp:
+                        hp.current_hp = hp.max_hp
+                    # Cambiar FSM a IdleState
+                    npc_state = comps.get('NPCState', {}).get(nid)
+                    if npc_state:
+                        from roguelike_game.ecs.fsm.states.idle_state import IdleState
+                        npc_state.fsm.change_state(IdleState(), entity)
+                    print(f"[DeathState.execute] eid={nid} revived in lobby")
         # Debug logs: solo una vez cada segundo
         if now - dt_cmp.last_log_time >= 1.0:
             if elapsed >= duration:
