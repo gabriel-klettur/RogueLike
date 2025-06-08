@@ -3,7 +3,7 @@ from .interfaces import MapLoader
 from .text_loader import parse_map_text
 from roguelike_engine.tile.loader import load_tiles_from_text
 from roguelike_engine.tile.model.tile import Tile
-from roguelike_engine.map.model.overlay.overlay_manager import load_layers, save_layers
+from roguelike_engine.map.model.overlay.overlay_manager import load_layers
 from roguelike_engine.map.model.layer import Layer
 from roguelike_engine.config.map_config import global_map_settings
 
@@ -14,14 +14,19 @@ except ImportError:
     def generate_overlay_map():
         print("[TextMapLoader] Warning: scripts.generate_overlay_map not found, skipping overlay generation")
 
+_overlay_map_generated = False
+
 class TextMapLoader(MapLoader):
     def load(
         self,
         map_data: List[str],
         map_name: str
     ) -> Tuple[List[List[str]], Dict[Layer, List[List[Tile]]], Dict[Layer, List[List[str]]]]:
-        # 0) (Re)generar el mapping de overlay codes → asset names
-        generate_overlay_map()
+        # 0) (Re)generar el mapping de overlay codes → asset names (solo una vez)
+        global _overlay_map_generated
+        if not _overlay_map_generated:
+            generate_overlay_map()
+            _overlay_map_generated = True
 
         # 1) Parsear la representación textual en matriz de caracteres
         matrix = parse_map_text(map_data)
@@ -53,7 +58,6 @@ class TextMapLoader(MapLoader):
                 raw_layers[layer] = new_grid
         if adapted:
             print(f"[TextMapLoader] Adaptando capas para '{map_name}' a {width}x{height}")
-            save_layers(map_name, raw_layers)
         # Merge overlays por zona en cada capa existente o nueva
         for zone_name, (off_x, off_y) in global_map_settings.zone_offsets.items():
             zone_layers = load_layers(zone_name)
