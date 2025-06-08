@@ -55,3 +55,27 @@ class Map:
             if layer == Layer.Ground:
                 self.overlay = codes
                 self.tiles = load_tiles_from_text(self.matrix, self.overlay)
+
+    # Support pickling: omit surfaces and rebuild on unpickle
+    def __getstate__(self):
+        return {
+            'matrix': self.matrix,
+            'layers': self.layers,
+            'metadata': self.metadata,
+            'name': self.name
+        }
+
+    def __setstate__(self, state):
+        self.matrix = state['matrix']
+        self.layers = state['layers']
+        self.metadata = state['metadata']
+        self.name = state['name']
+        # Reconstruct computed properties
+        from roguelike_engine.map.model.layer import Layer
+        from roguelike_engine.tile.loader import load_tiles_from_text
+        self.tiles_by_layer = {
+            layer: load_tiles_from_text(self.matrix, codes)
+            for layer, codes in self.layers.items()
+        }
+        self.overlay = self.layers.get(Layer.Ground)
+        self.tiles = load_tiles_from_text(self.matrix, self.overlay)

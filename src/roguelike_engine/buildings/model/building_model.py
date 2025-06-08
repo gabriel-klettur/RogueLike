@@ -5,6 +5,11 @@ import types
 import pygame
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.config.map_config import global_map_settings
+from roguelike_engine.utils.loader import load_image
+from typing import Dict, Tuple, Optional
+
+# Cache for building images: key = (image_path, scale)
+_BUILDING_IMAGE_CACHE: Dict[Tuple[str, Optional[Tuple[int,int]]], pygame.Surface] = {}
 
 class BuildingModel:
     """
@@ -90,20 +95,26 @@ class BuildingModel:
         • Si la imagen es muy grande (>512×512), reduce a 1/4.
         • Guarda en self.image y self.original_scale.
         """
-        from roguelike_engine.utils.loader import load_image
-
-        surf = load_image(self.image_path)
-        if scale:
-            surf = pygame.transform.scale(surf, scale)
-            self.original_scale = scale
+        # Use cache to avoid reloading and re-scaling
+        key = (self.image_path, scale)
+        if key in _BUILDING_IMAGE_CACHE:
+            surf = _BUILDING_IMAGE_CACHE[key]
+            self.original_scale = surf.get_size()
         else:
-            w, h = surf.get_size()
-            if w > 512 or h > 512:
-                new_size = (w // 4, h // 4)
-                surf = pygame.transform.scale(surf, new_size)
-                self.original_scale = new_size
+            raw = load_image(self.image_path)
+            if scale:
+                surf = pygame.transform.scale(raw, scale)
+                self.original_scale = scale
             else:
-                self.original_scale = (w, h)
+                w, h = raw.get_size()
+                if w > 512 or h > 512:
+                    new_size = (w // 4, h // 4)
+                    surf = pygame.transform.scale(raw, new_size)
+                    self.original_scale = new_size
+                else:
+                    surf = raw
+                    self.original_scale = (w, h)
+            _BUILDING_IMAGE_CACHE[key] = surf
         self.image = surf
         # Después de cambiar el tamaño, recalcular el “corte” en píxeles:
         self._cut_world = int(self.image.get_height() * self.split_ratio)
@@ -199,3 +210,35 @@ class BuildingModel:
         self._collision_map = data
         self._collision_tiles_cache = None
         self._collision_tile_objs = None
+
+    # Support pickling BuildingModel: omit surfaces and reconstruct on unpickle
+    def __getstate__(self):
+        return {
+            'rel_x': self.rel_x,
+            'rel_y': self.rel_y,
+            'zone': self.zone,
+            'solid': self.solid,
+            'image_path': self.image_path,
+            'split_ratio': self.split_ratio,
+            'z_bottom': self.z_bottom,
+            'z_top': self.z_top,
+            'collision_map': self._collision_map,
+            'original_scale': self.original_scale
+        }
+
+    def __setstate__(self, state):
+        self.rel_x = state['rel_x']
+        self.rel_y = state['rel_y']
+        self.zone = state.get('zone', None)
+        self.solid = state['solid']
+        self.image_path = state['image_path']
+        self.split_ratio = state['split_ratio']
+        self.z_bottom = state['z_bottom']
+        self.z_top = state['z_top']
+        self.z = self.z_bottom
+        self._collision_map = state['collision_map']
+        self._collision_tiles_cache = None
+        self._collision_tile_objs = None
+        self.original_scale = state.get('original_scale')
+        # Reload image using cached loader
+        self._load_and_prepare_image(self.original_scale)
