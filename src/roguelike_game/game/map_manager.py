@@ -7,6 +7,11 @@ from roguelike_engine.map.view.chunked_map_view import ChunkedMapView
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_game.ecs.factories.player.config import RENDERED_SPRITE_SIZE
 from roguelike_engine.config.config_tiles import TILE_SIZE
+import time
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 class MapManager:
     def __init__(self, map_name: str | None):
@@ -16,10 +21,15 @@ class MapManager:
         global_map_settings.__dict__.pop('zone_offsets', None)
         # Guardar nombre para recargas dinámicas
         self.map_name = map_name
-        # 1) Construir datos con MapService
+
+        # 1) Generar datos
+        t0 = time.perf_counter()
         self.result = build_map(map_name)
+        t1 = time.perf_counter()
+        logger.info(f"[SubStage] build_map: {t1-t0:.4f}s [Clases: build_map, BuildResult]")
 
         # 2) Propiedades básicas y multi-capa
+        t0 = time.perf_counter()
         self.name = self.result.name
         self.matrix = self.result.matrix
         # layers y tiles por capa
@@ -30,6 +40,8 @@ class MapManager:
         self.tiles = self.result.tiles
         # Precomputar tiles sólidos para colisiones
         self.solid_tiles = [tile for row in self.tiles for tile in row if getattr(tile, "solid", False)]
+        t1 = time.perf_counter()
+        logger.info(f"[SubStage] init properties: {t1-t0:.4f}s [Clases: MapManager]")
 
         # 3) Offset y rooms
         self.lobby_offset = self.result.metadata.get("lobby_offset", (0, 0))
@@ -37,16 +49,18 @@ class MapManager:
         # rooms de cada zona (usado para conectar túneles)
         self.zone_rooms: dict[str, list] = {}
         self.zone_rooms["dungeon"] = self.rooms
-
-        # 4) Offset de la dungeon (en tiles)
         lob_x, lob_y = self.lobby_offset
         self.dungeon_offset = calculate_dungeon_offset((lob_x, lob_y))
 
-        # 5) Flat list y vista chunked (se usa si necesitas seguir con chunked)
+        # 4) Vista chunked
+        t0 = time.perf_counter()
         self.tiles_in_region = self.all_tiles
         self.view = ChunkedMapView()
+        t1 = time.perf_counter()
+        logger.info(f"[SubStage] ChunkedMapView init: {t1-t0:.4f}s [Clases: ChunkedMapView]")
 
-        # 6) Etiquetado de zona por tile
+        # 5) Zone tagging
+        t0 = time.perf_counter()
         self.tiles_by_zone: dict[str, list] = {}
         for row in self.tiles:
             for tile in row:
@@ -55,13 +69,18 @@ class MapManager:
                 zone = get_zone_for_tile(tx, ty)
                 tile.zone = zone
                 self.tiles_by_zone.setdefault(zone, []).append(tile)
+        t1 = time.perf_counter()
+        logger.info(f"[SubStage] zone tagging: {t1-t0:.4f}s [Clases: MapManager, get_zone_for_tile]")
 
-        # 7) Collision layers per zone (data model)
+        # 6) Collision layers
+        # Initialize collision_layers dict before loading
         self.collision_layers: dict[str, list[list[str]]] = {}
-        # Load collision layers per zone
+        t0 = time.perf_counter()
         self._load_collision_layers()
-         
-        # Estado local del nivel (se usa para persistencia)
+        t1 = time.perf_counter()
+        logger.info(f"[SubStage] collision layers: {t1-t0:.4f}s [Clases: MapManager]")
+
+        # 7) Estado local del nivel (se usa para persistencia)
         self._local_state: dict = {
             "player_pos": None,    # Tuple[int,int] de posición de jugador en tiles
             "npc_states": {},      # dict[npc_id, estado serializado]

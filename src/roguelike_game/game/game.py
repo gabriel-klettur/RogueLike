@@ -5,10 +5,14 @@ import time
 import os
 from pathlib import Path
 from datetime import datetime
+import logging
 from typing import Callable
+from functools import partial
 
 #!---------------------- Paquetes locales: configuración --------------------------------
 import roguelike_engine.config.config as config
+from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_game.ecs.factories.player.config import RENDERED_SPRITE_SIZE
 
 #!------------------------ Paquetes locales: motor (engine) -----------------------------------
 from roguelike_engine.camera.camera import Camera
@@ -80,6 +84,14 @@ class Game:
         self.stage_log_path = logs_dir / f'stage_times_{timestamp}.log'
         with open(self.stage_log_path, 'w', encoding='utf-8') as f:
             f.write(f"[{datetime.now().isoformat()}] Inicio de inicialización\n")
+        # Configurar logging para capturar sub-stages en el mismo archivo de etapas
+        logging.basicConfig(
+            filename=str(self.stage_log_path),
+            filemode='a',
+            format='%(asctime)s %(message)s',
+            datefmt='[%Y-%m-%dT%H:%M:%S]',
+            level=logging.INFO
+        )
         self._initialize(screen, perf_log, map_name, loading_bg)
 
     def _initialize(
@@ -100,28 +112,28 @@ class Game:
         # Construye pipeline dinámico de stages
         stages: list[tuple[str, Callable]] = []
         # Sistemas iniciales
-        stages.append(("Pantalla, reloj y fuente", lambda: self._setup_display(screen, perf_log)))
-        stages.append(("Mundo (sin estado)", lambda: self._setup_world()))
+        stages.append(("Pantalla, reloj y fuente", partial(self._setup_display, screen, perf_log)))
+        stages.append(("Mundo (sin estado)", partial(self._setup_world)))
         # Carga de estado mundial
-        stages.append(("Cargando estado de mundo", lambda: self._load_world_state()))
+        stages.append(("Cargando estado de mundo", partial(self._load_world_state)))
         # Resto de sistemas
-        stages.append(("Creando loader", lambda: self._create_loader(loading_bg)))
+        stages.append(("Creando loader", partial(self._create_loader, loading_bg)))
         for msg, func in self.extra_systems_stages:
             stages.append((msg, func))
         # Etapas por defecto
         default_stages = [
-            ("Inicializando estado Principal", lambda: self._init_state()),
-            ("Cargando mapa", lambda: self._init_map(map_name)),
-            ("Cargando edificios", lambda: self._init_buildings()),
-            ("Cargando Z-layer", lambda: self._init_z_layer(self.buildings)),
-            ("Cargando editor de edificios", lambda: self._init_buildings_editor()),
-            ("Cargando editor de tiles", lambda: self._init_tile_editor()),
-            ("Cargando editor de mapa", lambda: self._init_map_editor()),
-            ("Cargando minimapa", lambda: self._init_minimap()),
-            ("Inicializando ECS", lambda: self._init_ecs(screen, perf_log)),
-            ("Inicializando renderizador", lambda: self._init_renderer()),
-            ("Inicializando menú", lambda: self._init_menu()),
-            ("Inicializando efectos", lambda: self._init_effects(perf_log)),
+            ("Inicializando estado Principal", partial(self._init_state)),
+            ("Cargando mapa", partial(self._init_map, map_name)),
+            ("Cargando edificios", partial(self._init_buildings)),
+            ("Cargando Z-layer", partial(self._init_z_layer)),
+            ("Cargando editor de edificios", partial(self._init_buildings_editor)),
+            ("Cargando editor de tiles", partial(self._init_tile_editor)),
+            ("Cargando editor de mapa", partial(self._init_map_editor)),
+            ("Cargando minimapa", partial(self._init_minimap)),
+            ("Inicializando ECS", partial(self._init_ecs, screen, perf_log)),
+            ("Inicializando renderizador", partial(self._init_renderer)),
+            ("Inicializando menú", partial(self._init_menu)),
+            ("Inicializando efectos", partial(self._init_effects, perf_log)),
         ]
         for msg, func in default_stages:
             stages.append((msg, func))
@@ -137,15 +149,30 @@ class Game:
                 elapsed = time.time() - start_t
                 fraction = (i + 1) / total
                 self.loader.draw(fraction, msg)
-                log_file.write(f"{msg}: {elapsed:.4f}s\n")
+                # Removed plain log to avoid duplication; using detailed logging instead
+                # Log sub-stage with function for class introspection
+                func_base = getattr(func, 'func', func)
+                func_name = getattr(func_base, '__qualname__', getattr(func_base, '__name__', str(func_base)))
+                logging.info(f"[StageDetail] {msg}: {elapsed:.4f}s [Clases: {func_name}]")
                 # Deserializar niveles diferidos justo tras cargar el estado mundial
                 if msg == "Cargando estado de mundo":
                     for lvl in list(getattr(self.world, '_pending_levels', [])):
-                        t0 = time.time()
-                        self.world._load_pending_level(lvl)
-                        el2 = time.time() - t0
-                        self.loader.draw(fraction, f"Deserializando nivel {lvl}")
-                        log_file.write(f"Deserializando nivel {lvl}: {el2:.4f}s\n")
+                        # Extraer estado serializado sin cambiar current_level
+                        state = self.world._pending_levels.pop(lvl)
+                        # 1) Construir mapa
+                        t_build = time.time()
+                        mgr = MapManager(lvl)
+                        build_elapsed = time.time() - t_build
+                        self.loader.draw(fraction, f"Construyendo nivel {lvl}")
+                        logging.info(f"[StageDetail] Construyendo nivel {lvl}: {build_elapsed:.4f}s [Clases: MapManager]")
+                        # 2) Aplicar estado guardado
+                        t_state = time.time()
+                        mgr.deserialize_state(state)
+                        state_elapsed = time.time() - t_state
+                        self.loader.draw(fraction, f"Aplicando estado nivel {lvl}")
+                        logging.info(f"[StageDetail] Aplicando estado nivel {lvl}: {state_elapsed:.4f}s [Clases: MapManager.deserialize_state]")
+                        # Registrar nivel en WorldManager en memoria
+                        self.world.maps[lvl] = mgr
 
     # -----------------------------------------------------------------------------------
     # Métodos _init_*: cada uno se encarga de inicializar una parte del Game
@@ -199,12 +226,13 @@ class Game:
         """
         self.buildings = BuildingsManager(self.z_state, self.map)
 
-    def _init_z_layer(self, buildings):
+    def _init_z_layer(self):
         """
         Inicializa el gestor de capas Z y asigna las capas a las entidades.
         """
         self.zlayer = ZLayerManager(self.z_state)
-        self.zlayer.initialize(self.state, buildings)
+        # Usar self.buildings, ya inicializado en _init_buildings
+        self.zlayer.initialize(self.state, self.buildings)
 
     def _init_buildings_editor(self):
         """

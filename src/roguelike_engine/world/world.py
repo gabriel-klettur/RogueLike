@@ -46,13 +46,11 @@ class WorldManager:
         current = player_info.get("level")
         # Carga lazy: guarda todos
         self._pending_levels = dict(levels_data)
-        # Deserializa sólo el nivel actual
+        # Determina nivel actual para futura carga sin deserializar aún
         if current and current in self._pending_levels:
-            state = self._pending_levels.pop(current)
-            mgr = MapManager(current)
-            mgr.deserialize_state(state)
-            self.maps[current] = mgr
             self.current_level = current
+        else:
+            self.current_level = None
 
     def load_level(self, level_name: str):
         """
