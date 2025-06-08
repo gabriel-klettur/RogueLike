@@ -122,4 +122,14 @@ class WorldManager:
         data = load_world_state(load_path)
         self._apply_loaded_state(data)
 
+    def _load_pending_level(self, level_name: str):
+        """
+        Carga un nivel previamente diferido sin cambiar current_level.
+        """
+        state = self._pending_levels.pop(level_name, None)
+        if state is not None:
+            mgr = MapManager(level_name)
+            mgr.deserialize_state(state)
+            self.maps[level_name] = mgr
+
 # Nota: MapManager debe exponer serialize_state(), deserialize_state(), spawn_player() y restore_npc_states().
