@@ -87,9 +87,9 @@ class SpellCastingSystem:
                 # Elegir estado inicial según tipo de entidad
                 if eid == world.player_entity:
                     new_state = PlayerSpellCastState()
-                    # Compute fireball direction and spawn position for player
+                    # Compute direction and spawn center
                     pos_cmp = world.components['Position'][eid]
-                    sprite_cmp = world.components['Sprite'].get(eid)
+                    sprite_cmp = world.components.get('Sprite', {}).get(eid)
                     if sprite_cmp:
                         w, h = sprite_cmp.image.get_size()
                         spawn_x, spawn_y = pos_cmp.x + w/2, pos_cmp.y + h/2
@@ -105,6 +105,8 @@ class SpellCastingSystem:
                     length = math.hypot(dx, dy) or 1
                     new_state.spell_fsm.context['direction'] = (dx/length, dy/length)
                     new_state.spell_fsm.context['spawn_pos'] = (spawn_x, spawn_y)
+                    # Guardar camera y spell para recalcular aiming dinámico
+                    new_state.spell_fsm.context['camera'] = camera
                     new_state.spell_fsm.context['spell'] = intent.spell
                 else:
                     new_state = CastState()
