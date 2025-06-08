@@ -85,7 +85,7 @@ class InputSystem:
                 inp.skill_q = False
             # Generar intención de fireball para el Player con clic izquierdo
             if eid in world.components.get('PlayerTagComponent', {}) and inp.click:
-                print(f"[DEBUG][{time.time():.3f}] eid={eid} click -> fireball")
+                #print(f"[DEBUG][{time.time():.3f}] eid={eid} click -> fireball")
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='fireball')
                 inp.click = False
             # Lanzar el beam con click del medio

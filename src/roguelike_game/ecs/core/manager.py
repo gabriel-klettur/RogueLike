@@ -24,9 +24,9 @@ class ECSWorld:
         # 3) Instanciar sistemas (update + render)
         self._init_systems()
 
-        # 4) Crear y disparar spawn inicial
+        # 4) Crear spawn inicial
         self.spawn_npc_manager = SpawnNPCManager(self)
-        self.spawn_npc_manager.spawn_npc_initial()
+        # spawn_npc_initial se llamará después de crear el jugador en ECSManager
 
     @property
     def player_position(self):
