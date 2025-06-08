@@ -15,6 +15,14 @@ class ReleaseSpellState(State):
         ctx = self.fsm.context
         spell_key = ctx.get('spell')
         cfg = SPELLS.get(spell_key, {})
+        # Evitar crear más instancias si se alcanzó el máximo en spells.json
+        if cfg.get('type') == 'projectile':
+            max_inst = cfg.get('max_instances', 0)
+            if max_inst:
+                active = sum(1 for comp in entity.world.components.get('FireballComponent', {}).values()
+                             if getattr(comp, 'spell_key', '') == spell_key)
+                if active >= max_inst:
+                    return
         world = entity.world
         # Proyectiles spawnean desde el centro del caster
         if cfg.get('type') == 'projectile':
