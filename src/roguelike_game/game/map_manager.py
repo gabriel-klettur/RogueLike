@@ -9,6 +9,11 @@ from roguelike_game.ecs.factories.player.config import RENDERED_SPRITE_SIZE
 from roguelike_engine.config.config_tiles import TILE_SIZE
 import time
 import logging
+import pickle
+from pathlib import Path
+import cProfile
+import pstats
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -22,11 +27,41 @@ class MapManager:
         # Guardar nombre para recargas dinámicas
         self.map_name = map_name
 
-        # 1) Generar datos
-        t0 = time.perf_counter()
-        self.result = build_map(map_name)
-        t1 = time.perf_counter()
-        logger.info(f"[SubStage] build_map: {t1-t0:.4f}s [Clases: build_map, BuildResult]")
+        # 1) Intentar cargar de cache; si falla o no existe, generar map y perfilar
+        cache_dir = Path('cache'); cache_dir.mkdir(exist_ok=True)
+        cache_file = cache_dir / f'map_{map_name}.pkl'
+        need_build = True
+        if cache_file.exists():
+            try:
+                t0 = time.perf_counter()
+                with open(cache_file, 'rb') as f:
+                    self.result = pickle.load(f)
+                t1 = time.perf_counter()
+                logger.info(f"[SubStage] load_map_cache: {t1-t0:.4f}s [Clases: MapManager]")
+                need_build = False
+            except Exception as e:
+                logger.warning(f"Cache load failed ({cache_file}): {e}. Regenerating map.")
+                cache_file.unlink(missing_ok=True)
+        if need_build:
+            # Profile build_map to find hotspots
+            profile = cProfile.Profile(); profile.enable()
+            t0 = time.perf_counter()
+            self.result = build_map(map_name)
+            t1 = time.perf_counter(); profile.disable()
+            logger.info(f"[SubStage] build_map: {t1-t0:.4f}s [Clases: build_map, BuildResult]")
+            # Guardar resultado en cache si es picklable
+            try:
+                with open(cache_file, 'wb') as f:
+                    pickle.dump(self.result, f)
+            except TypeError as e:
+                logger.warning(f"Skipping map cache dump ({cache_file}): {e}")
+            # Dump profiling stats a logs
+            logs_dir2 = Path('logs'); logs_dir2.mkdir(exist_ok=True)
+            profile_log = logs_dir2 / f'build_map_profile_{map_name}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log'
+            with open(profile_log, 'w') as pf:
+                stats = pstats.Stats(profile, stream=pf)
+                stats.sort_stats('tottime').print_stats(30)
+            logger.info(f"[Profiling] build_map stats -> {profile_log}")
 
         # 2) Propiedades básicas y multi-capa
         t0 = time.perf_counter()
@@ -61,11 +96,10 @@ class MapManager:
 
         # 5) Zone tagging
         t0 = time.perf_counter()
-        self.tiles_by_zone: dict[str, list] = {}
+        self.tiles_by_zone = {}
         for row in self.tiles:
             for tile in row:
-                tx = tile.x // TILE_SIZE
-                ty = tile.y // TILE_SIZE
+                tx, ty = tile.x // TILE_SIZE, tile.y // TILE_SIZE
                 zone = get_zone_for_tile(tx, ty)
                 tile.zone = zone
                 self.tiles_by_zone.setdefault(zone, []).append(tile)
@@ -73,9 +107,8 @@ class MapManager:
         logger.info(f"[SubStage] zone tagging: {t1-t0:.4f}s [Clases: MapManager, get_zone_for_tile]")
 
         # 6) Collision layers
-        # Initialize collision_layers dict before loading
-        self.collision_layers: dict[str, list[list[str]]] = {}
         t0 = time.perf_counter()
+        self.collision_layers = {}
         self._load_collision_layers()
         t1 = time.perf_counter()
         logger.info(f"[SubStage] collision layers: {t1-t0:.4f}s [Clases: MapManager]")
