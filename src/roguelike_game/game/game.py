@@ -13,6 +13,7 @@ from functools import partial
 import roguelike_engine.config.config as config
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.ecs.factories.player.config import RENDERED_SPRITE_SIZE
+from roguelike_engine.config.map_config import global_map_settings
 
 #!------------------------ Paquetes locales: motor (engine) -----------------------------------
 from roguelike_engine.camera.camera import Camera
@@ -196,7 +197,10 @@ class Game:
         """
         Carga el estado mundial guardado desde disco de forma separada
         """
-        self.world.load_world()
+        try:
+            self.world.load_world()
+        except FileNotFoundError as e:
+            print(f"[Game._load_world_state] No se encontró archivo de estado mundial: {e}, iniciando nuevo mundo sin cargar")
 
     def _create_loader(self, loading_bg):
         self.loader = LoadingScreen(self.screen, loading_bg)
@@ -405,6 +409,23 @@ class Game:
             # Aplicar escala de grises completa si hubo muerte
             if self.ecs.ecs_world.components.get('GrayscaleComponent'):
                 RenderSystem(self.screen).apply_grayscale(self.screen)
+                # Dibujar overlay de resurrección en lobby
+                map_mgr = self.ecs.ecs_world.map_manager
+                lob_x, lob_y = map_mgr.lobby_offset
+                cw = global_map_settings.zone_width
+                ch = global_map_settings.zone_height
+                center_tx = lob_x + cw // 2
+                center_ty = lob_y + ch // 2
+                # Calcular coordenadas de pantalla del overlay
+                world_x = (center_tx - 1) * TILE_SIZE
+                world_y = (center_ty - 1) * TILE_SIZE
+                x0, y0 = self.camera.apply((world_x, world_y))
+                w = TILE_SIZE * 3
+                h = TILE_SIZE * 3
+                overlay = pygame.Surface((w, h), pygame.SRCALPHA)
+                overlay.fill((255, 255, 0, 80))
+                self.screen.blit(overlay, (x0, y0))
+                pygame.draw.rect(self.screen, (255, 255, 0), pygame.Rect(x0, y0, w, h), 3)
             pygame.display.flip()
 
             # 6) Actualizar título con FPS actuales
