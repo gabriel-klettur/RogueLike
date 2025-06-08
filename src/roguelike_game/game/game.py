@@ -2,6 +2,9 @@
 
 import pygame
 import time
+import os
+from pathlib import Path
+from datetime import datetime
 
 #!---------------------- Paquetes locales: configuración --------------------------------
 import roguelike_engine.config.config as config
@@ -55,12 +58,26 @@ class Game:
         screen,
         perf_log=None,
         map_name: str = None,
-        loading_bg: str | None = None
+        loading_bg: str | None = None,
+        extra_stages: list[tuple] | None = None,
+        extra_systems_stages: list[tuple] | None = None
     ):
         """
         Constructor de Game. Solo se encarga de recibir los parámetros
         e invocar al método privado _initialize.
         """
+        # Guarda etapas personalizadas para carga estándar y de sistemas
+        self.extra_stages = extra_stages or []
+        self.extra_systems_stages = extra_systems_stages or []
+        # Inicializa loader tempranamente para evitar AttributeError
+        self.loader = LoadingScreen(screen, loading_bg)
+        # Configura logs de tiempos de inicialización
+        logs_dir = Path('logs')
+        logs_dir.mkdir(exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.stage_log_path = logs_dir / f'stage_times_{timestamp}.log'
+        with open(self.stage_log_path, 'w', encoding='utf-8') as f:
+            f.write(f"[{datetime.now().isoformat()}] Inicio de inicialización\n")
         self._initialize(screen, perf_log, map_name, loading_bg)
 
     def _initialize(
@@ -75,10 +92,17 @@ class Game:
           1) Define una lista de tuplas (mensaje, función_init)
           2) Recorre cada etapa, la ejecuta y luego dibuja la barra de carga.
         """
-        # Arreglo de etapas: (mensaje a mostrar, método que realiza la inicialización)
-        stages = [
-            ("Inicializando estados de sistemas",
-             lambda: self._init_systems_states(screen, perf_log, loading_bg)),
+        # Registro de inicio de stages
+        with open(self.stage_log_path, 'a', encoding='utf-8') as log_file:
+            log_file.write(f"[{datetime.now().isoformat()}] Pipeline de etapas:\n")
+        # Ensambla pipeline de etapas: sistemas, core y extras
+        system_stages = [
+            ("Pantalla, reloj y fuente", lambda: self._setup_display(screen, perf_log)),
+            ("ZState y WorldManager", self._setup_world),
+            ("Creando loader", lambda: self._create_loader(loading_bg)),
+            *self.extra_systems_stages
+        ]
+        default_stages = [
             ("Inicializando estado Principal",
              lambda: self._init_state()),
             ("Cargando mapa",
@@ -105,25 +129,23 @@ class Game:
              lambda: self._init_effects(perf_log)),
         ]
 
+        # Combina sistemas, core y adicionales
+        stages = system_stages + default_stages + self.extra_stages
         total = len(stages)
-        for i, (msg, func) in enumerate(stages):
-            func()
-            # Después de cada paso, dibujo la barra de carga
-            # (en la primera etapa ya debe existir self.loader)
-            self.loader.draw((i + 1) / total, msg)
+        # Ejecuta y registra duración de cada etapa
+        with open(self.stage_log_path, 'a', encoding='utf-8') as log_file:
+            for i, (msg, func) in enumerate(stages):
+                start_t = time.time()
+                func()
+                elapsed = time.time() - start_t
+                self.loader.draw((i + 1) / total, msg)
+                log_file.write(f"{msg}: {elapsed:.4f}s\n")
 
     # -----------------------------------------------------------------------------------
     # Métodos _init_*: cada uno se encarga de inicializar una parte del Game
     # -----------------------------------------------------------------------------------
 
-    def _init_systems_states(self, screen, perf_log, loading_bg):
-        """
-        Inicializa el estado de los sistemas:
-          - Configura pantalla, reloj, fuente y cámara
-          - Inicializa ZState y WorldManager
-          - Crea la instancia de LoadingScreen (para que exista antes del primer draw)
-        """
-        # — Sistema principal —
+    def _setup_display(self, screen, perf_log):
         self.screen = screen
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont(config.FONT_NAME, config.FONT_SIZE)
@@ -131,11 +153,11 @@ class Game:
         self.z_state = ZState()
         self.perf_log = perf_log
 
-        # — Mundo y persistencia global —
+    def _setup_world(self):
         self.world = WorldManager(WORLD_CONFIG)
         self._last_autosave_time = time.time()
 
-        # *** Importante: aquí creamos el objeto loader ANTES del primer draw() ***
+    def _create_loader(self, loading_bg):
         self.loader = LoadingScreen(self.screen, loading_bg)
 
     def _init_state(self):
