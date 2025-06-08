@@ -11,7 +11,7 @@ class WorldManager:
     Orquesta múltiples MapManagers (niveles), mantiene el estado global persistente
     (NPCs, inventario) y gestiona carga/descarga de niveles.
     """
-    def __init__(self, global_config=WORLD_CONFIG):
+    def __init__(self, global_config=WORLD_CONFIG, load_state_on_init: bool = True):
         # Estado persistente de NPCs globales        
         self.npc_memory: Dict[str, dict] = {}
         # Configuración global (paths, límites de carga, etc.)
@@ -19,10 +19,12 @@ class WorldManager:
 
         # Mapas cargados en memoria: nivel -> instancia MapManager
         self.maps: Dict[str, MapManager] = {}
+        # Pending levels para carga lazy: nombre -> estado serializado
+        self._pending_levels: Dict[str, dict] = {}
         self.current_level: Optional[str] = None
         
         # Si hay autosave, cargar estado previo
-        if self.config.autosave_enabled:
+        if load_state_on_init and self.config.autosave_enabled:
             try:
                 data = load_world_state(self.config.save_path)
                 self._apply_loaded_state(data)
@@ -32,20 +34,25 @@ class WorldManager:
 
     def _apply_loaded_state(self, data: dict):
         """
-        Aplica el estado cargado en memoria: NPCs y niveles.
+        Aplica estado cargado parcialmente: NPCs y nivel actual.
+        Guarda otros niveles para carga lazy.
         """
-        
+        # NPCs
         self.npc_memory = data.get("npcs", {})
-        # Pre-cargar niveles si se guardaron estados
-        for lvl_name, lvl_state in data.get("levels", {}).items():
-            mgr = MapManager(lvl_name)
-            mgr.deserialize_state(lvl_state)
-            self.maps[lvl_name] = mgr
-        # Restaurar nivel actual del jugador si existe
+        # Niveles serializados
+        levels_data = data.get("levels", {})
+        # Determinar nivel actual guardado
         player_info = data.get("player", {})
-        level = player_info.get("level")
-        if level in self.maps:
-            self.current_level = level
+        current = player_info.get("level")
+        # Carga lazy: guarda todos
+        self._pending_levels = dict(levels_data)
+        # Deserializa sólo el nivel actual
+        if current and current in self._pending_levels:
+            state = self._pending_levels.pop(current)
+            mgr = MapManager(current)
+            mgr.deserialize_state(state)
+            self.maps[current] = mgr
+            self.current_level = current
 
     def load_level(self, level_name: str):
         """
@@ -55,9 +62,15 @@ class WorldManager:
         # Descargar exceso de niveles según max_loaded_levels
         self._enforce_level_limit()
 
-        # Obtener o crear MapManager
+        # Obtener o crear MapManager (lazy load si hay estado)
         if level_name not in self.maps:
-            self.maps[level_name] = MapManager(level_name)
+            if getattr(self, '_pending_levels', None) and level_name in self._pending_levels:
+                state = self._pending_levels.pop(level_name)
+                mgr = MapManager(level_name)
+                mgr.deserialize_state(state)
+                self.maps[level_name] = mgr
+            else:
+                self.maps[level_name] = MapManager(level_name)
         self.current_level = level_name
 
         # Restaurar posición del jugador y NPCs globales
