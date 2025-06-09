@@ -4,6 +4,8 @@ from .component_registry import create_empty_component_store
 from .system_registry import get_update_system_classes, get_render_system_classes
 from .spatial_index import SpatialIndex
 from .spawn_manager import SpawnNPCManager
+import os
+from roguelike_game.ecs.systems.input.input_system import InputSystem
 
 class ECSWorld:
     def __init__(self, screen, map_manager, buildings, perf_log=None):
@@ -37,8 +39,14 @@ class ECSWorld:
         update_classes = get_update_system_classes()
         render_classes = get_render_system_classes()
 
-        # Instanciar cada uno, pasándole perf_log (u otros parámetros si hicieran falta)
-        self.update_systems = [cls(self.perf_log) for cls in update_classes]
+        # Instanciar cada sistema, inyectando config_path solo en InputSystem
+        config_path = os.path.join(os.getcwd(), 'data', 'config', 'input_bindings.json')
+        self.update_systems = []
+        for cls in update_classes:
+            if cls is InputSystem:
+                self.update_systems.append(cls(self.perf_log, config_path))
+            else:
+                self.update_systems.append(cls(self.perf_log))
         self.render_systems = [cls(self.perf_log) for cls in render_classes]
 
     def create_entity(self):

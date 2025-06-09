@@ -15,26 +15,39 @@ from roguelike_game.ecs.fsm.states.player.move_state import MoveState
 from roguelike_game.ecs.fsm.states.player.player_attack_state import PlayerAttackState
 from roguelike_game.ecs.fsm.states.player.player_spell_select_state import PlayerSpellSelectState
 from roguelike_game.ecs.systems.fsm.fsm_system import _EntityProxy
+from roguelike_game.config.input_config import InputConfig
 
 class InputSystem:
     """
     Captura el estado del teclado y actualiza InputComponent y Velocity.
     """
-    def __init__(self, perf_log):
+    def __init__(self, perf_log, config_path=None):
         self.perf_log = perf_log
         # Mapear estado previo de click y right-click para detección de flanco ascendente
         self.prev_click = {}
         self.prev_right = {}
+        # Cargar configuración de teclas desde JSON
+        self.config = InputConfig(config_path)
 
     @benchmark(lambda self: self.perf_log, "4.2.2.InputSystem.update")
     def update(self, world, camera=None):
         # Obtener estado actual del teclado
         keys = pygame.key.get_pressed()
+        # Leer bindings dinámicos
+        move_up = self.config.get_key("move_up")
+        move_down = self.config.get_key("move_down")
+        move_left = self.config.get_key("move_left")
+        move_right = self.config.get_key("move_right")
+        attack_key = self.config.get_key("attack")
+        skill_q_key = self.config.get_key("skill_q")
+        skill_e_key = self.config.get_key("skill_e")
+        skill_x_key = self.config.get_key("skill_x")
+        pause_key = self.config.get_key("pause")
         # Para cada entidad con InputComponent
         for eid, inp in world.components.get('InputComponent', {}).items():
             # Movimiento en ejes X e Y
-            inp.move_x = int(keys[pygame.K_RIGHT]) - int(keys[pygame.K_LEFT])
-            inp.move_y = int(keys[pygame.K_DOWN]) - int(keys[pygame.K_UP])
+            inp.move_x = int(keys[move_right]) - int(keys[move_left])
+            inp.move_y = int(keys[move_down]) - int(keys[move_up])
             #print(f"[DEBUG][{time.time():.3f}] eid={eid} move=({inp.move_x},{inp.move_y}), click={inp.click}")
             # Actualizar velocidad según MovementSpeed
             vel = world.components.get('Velocity', {}).get(eid)
@@ -69,9 +82,10 @@ class InputSystem:
                         state_comp.fsm.change_state(PlayerSpellSelectState(), proxy)
 
             # Mapear habilidades Q, E, X
-            inp.skill_q = bool(keys[pygame.K_q])
-            inp.skill_e = bool(keys[pygame.K_e])
-            inp.skill_x = bool(keys[pygame.K_x])
+            inp.attack  = bool(keys[attack_key])
+            inp.skill_q = bool(keys[skill_q_key])
+            inp.skill_e = bool(keys[skill_e_key])
+            inp.skill_x = bool(keys[skill_x_key])
             # Resetear flags de Q/E/X tras lectura para evitar duplicados
             if inp.skill_x:
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='healing_aura')
