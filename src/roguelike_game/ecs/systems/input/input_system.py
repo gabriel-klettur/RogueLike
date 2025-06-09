@@ -85,6 +85,9 @@ class InputSystem:
             inp.skill_q = bool(keys[pygame.K_q])
             inp.skill_e = bool(keys[pygame.K_e])
             inp.skill_x = bool(keys[pygame.K_x])
+            # Mapear habilidades 1 y 2
+            inp.skill_1 = bool(keys[pygame.K_1])
+            inp.skill_2 = bool(keys[pygame.K_2])
             # Resetear flags de Q/E/X tras lectura para evitar duplicados
             if inp.skill_x:
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='healing_aura')

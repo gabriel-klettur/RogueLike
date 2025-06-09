@@ -15,4 +15,7 @@ class InputComponent:
         # Habilidades secundarias
         self.skill_q: bool = False
         self.skill_e: bool = False
+        self.skill_x: bool = False
+        self.skill_1: bool = False
+        self.skill_2: bool = False
         self.click: bool = False
