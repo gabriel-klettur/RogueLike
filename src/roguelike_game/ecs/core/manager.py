@@ -69,6 +69,8 @@ class ECSWorld:
                 yield eid
 
     def update(self, camera):
+        # Rebuild spatial index to reflect latest tile collision edits
+        self.spatial_index = SpatialIndex(self.map_manager, self.buildings)
         # Ejecutar cada sistema de update
         for system in self.update_systems:
             system.update(self, camera)

@@ -342,6 +342,10 @@ class TileEditorController:
             print(f"[DEBUG][TileEditorController] map cache updated")
         except Exception as e:
             print(f"[ERROR][TileEditorController] failed to update map cache: {e}")
+        # Refresh in-memory collision layers and invalidate view cache
+        map._load_collision_layers()
+        map.view.invalidate_cache()
+        print("[DEBUG][TileEditorController] in-memory collision layers reloaded and view cache invalidated")
         # Reset pending
         self._pending_collision_zones.clear()
         self._pending_tile_zones.clear()
