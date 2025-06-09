@@ -22,8 +22,9 @@ class InputSystem:
     """
     def __init__(self, perf_log):
         self.perf_log = perf_log
-        # Mapear estado previo de click para detección de flanco ascendente
+        # Mapear estado previo de click y right-click para detección de flanco ascendente
         self.prev_click = {}
+        self.prev_right = {}
 
     @benchmark(lambda self: self.perf_log, "4.2.2.InputSystem.update")
     def update(self, world, camera=None):
@@ -97,8 +98,10 @@ class InputSystem:
             if middle:
                 print(f"[DEBUG][{time.time():.3f}] eid={eid} middle-click -> laser_beam")
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='laser_beam')
-            # Lanzar dash con click derecho
-            right = pygame.mouse.get_pressed()[2]
-            if right:
+            # Detectar dash (right-click) por flanco ascendente
+            curr_right = bool(pygame.mouse.get_pressed()[2])
+            prev_r = self.prev_right.get(eid, False)
+            if curr_right and not prev_r:
                 print(f"[DEBUG][{time.time():.3f}] eid={eid} right-click -> dash")
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='dash')
+            self.prev_right[eid] = curr_right

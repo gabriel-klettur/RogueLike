@@ -9,6 +9,7 @@ import math
 from roguelike_game.ecs.components.rendering.sprite import Sprite
 from roguelike_game.ecs.components.transform.scale import Scale
 from roguelike_game.ecs.components.abilities.aura_component import AuraComponent
+from roguelike_game.ecs.systems.combat.spells.resolvers import SPELL_RESOLVERS
 
 class ReleaseSpellState(State):
     def enter(self, entity):
@@ -24,6 +25,18 @@ class ReleaseSpellState(State):
                 cfg.get('buff', {}),
                 cfg.get('duration', 0)
             )
+            return
+        if spell_type == 'slash':
+            world = entity.world
+            # Resolver slash: crea hitbox y partículas según cfg
+            resolver = SPELL_RESOLVERS.get('slash')
+            resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
+            return
+        if spell_type == 'dash':
+            world = entity.world
+            # Resolver dash: registra DashComponent según cfg
+            resolver = SPELL_RESOLVERS.get('dash')
+            resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
             return
         # Evitar crear más instancias si se alcanzó el máximo en spells.json para proyectiles
         if spell_type == 'projectile':
