@@ -31,6 +31,8 @@ class InputSystem:
 
     @benchmark(lambda self: self.perf_log, "4.2.2.InputSystem.update")
     def update(self, world, camera=None):
+        # Recargar bindings para aplicar cambios guardados sin reiniciar
+        self.config._load()
         # Obtener estado actual del teclado
         keys = pygame.key.get_pressed()
         # Leer bindings dinámicos
@@ -39,9 +41,12 @@ class InputSystem:
         move_left = self.config.get_key("move_left")
         move_right = self.config.get_key("move_right")
         attack_key = self.config.get_key("attack")
-        skill_q_key = self.config.get_key("skill_q")
-        skill_e_key = self.config.get_key("skill_e")
-        skill_x_key = self.config.get_key("skill_x")
+        # Nuevos hechizos semánticos
+        lb_key = self.config.get_key("spell_lightball")
+        slash_key = self.config.get_key("spell_slash")
+        heal_key = self.config.get_key("spell_healing_aura")
+        db_key = self.config.get_key("spell_darkball")
+        ib_key = self.config.get_key("spell_iceball")
         pause_key = self.config.get_key("pause")
         # Para cada entidad con InputComponent
         for eid, inp in world.components.get('InputComponent', {}).items():
@@ -78,36 +83,36 @@ class InputSystem:
                     if inp.attack:
                         state_comp.fsm.change_state(PlayerAttackState(), proxy)
                     # Hechizos (q/e)
-                    if inp.skill_q or inp.skill_e:
+                    if inp.spell_lightball or inp.spell_slash:
                         state_comp.fsm.change_state(PlayerSpellSelectState(), proxy)
 
-            # Mapear habilidades Q, E, X
-            inp.skill_q = bool(keys[pygame.K_q])
-            inp.skill_e = bool(keys[pygame.K_e])
-            inp.skill_x = bool(keys[pygame.K_x])
-            # Mapear habilidades 1 y 2
-            inp.skill_1 = bool(keys[pygame.K_1])
-            inp.skill_2 = bool(keys[pygame.K_2])
+            # Mapear habilidades Q, E, X desde config
+            inp.spell_lightball = bool(keys[lb_key])
+            inp.spell_slash = bool(keys[slash_key])
+            inp.spell_healing_aura = bool(keys[heal_key])
+            # Mapear nuevos hechizos oscuro e hielo
+            inp.spell_darkball = bool(keys[db_key])
+            inp.spell_iceball = bool(keys[ib_key])
             # Resetear flags de Q/E/X tras lectura para evitar duplicados
-            if inp.skill_x:
+            if inp.spell_healing_aura:
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='healing_aura')
-                inp.skill_x = False
-            if inp.skill_e:
-                print(f"[DEBUG][{time.time():.3f}] eid={eid} skill_e -> slash")
+                inp.spell_healing_aura = False
+            if inp.spell_slash:
+                print(f"[DEBUG][{time.time():.3f}] eid={eid} spell_slash -> slash")
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='slash')
-                inp.skill_e = False
-            if inp.skill_q:
-                print(f"[DEBUG][{time.time():.3f}] eid={eid} skill_q -> lightball")
+                inp.spell_slash = False
+            if inp.spell_lightball:
+                print(f"[DEBUG][{time.time():.3f}] eid={eid} spell_lightball -> lightball")
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='lightball')
-                inp.skill_q = False
-            if inp.skill_1:
-                print(f"[DEBUG][{time.time():.3f}] eid={eid} skill_1 -> darkball")
+                inp.spell_lightball = False
+            if inp.spell_darkball:
+                print(f"[DEBUG][{time.time():.3f}] eid={eid} spell_darkball -> darkball")
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='darkball')
-                inp.skill_1 = False
-            if inp.skill_2:
-                print(f"[DEBUG][{time.time():.3f}] eid={eid} skill_2 -> iceball")
+                inp.spell_darkball = False
+            if inp.spell_iceball:
+                print(f"[DEBUG][{time.time():.3f}] eid={eid} spell_iceball -> iceball")
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='iceball')
-                inp.skill_2 = False
+                inp.spell_iceball = False
             # Actualizar estado del click y detectar flanco ascendente
             curr_click = bool(pygame.mouse.get_pressed()[0])
             inp.click = curr_click

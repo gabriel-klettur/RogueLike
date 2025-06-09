@@ -64,6 +64,8 @@ class MenuManager:
 
     def configure_bindings(self):
         """Muestra menú de reasignación con botones y prompt de tecla."""
+        # Recargar bindings desde JSON para reflejar cambios sin reiniciar
+        self.input_config._load()
         running = True
         while running:
             menu = pygame_menu.Menu('Configurar Botones', 600, 400, theme=pygame_menu.themes.THEME_DARK)

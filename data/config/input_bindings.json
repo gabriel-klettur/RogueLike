@@ -4,8 +4,10 @@
     "move_left": "left",
     "move_right": "right",
     "attack": "K_SPACE",
-    "skill_q": "K_q",
-    "skill_e": "K_e",
-    "skill_x": "K_x",
+    "spell_lightball": "z",
+    "spell_slash": "e",
+    "spell_healing_aura": "x",
+    "spell_darkball": "1",
+    "spell_iceball": "9",
     "pause": "K_ESCAPE"
 }
