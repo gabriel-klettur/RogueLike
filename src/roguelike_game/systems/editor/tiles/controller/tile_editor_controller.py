@@ -309,8 +309,10 @@ class TileEditorController:
 
     def flush_brush(self, map):
         """Persist pending changes after brush stroke ends."""
+        print(f"[DEBUG][TileEditorController] flush_brush called. Pending collisions: {getattr(self, '_pending_collision_zones', set())}, pending tiles: {getattr(self, '_pending_tile_zones', set())}")
         # Flush collision layer saves
         for zone in getattr(self, '_pending_collision_zones', []):
+            print(f"[DEBUG][TileEditorController] saving collision layer for zone '{zone}'")
             map.save_collision_layers(zone)
         # Flush tile overlay saves
         from roguelike_engine.config.map_config import global_map_settings
