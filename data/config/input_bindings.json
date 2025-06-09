@@ -1,11 +1,11 @@
 {
-    "move_up":    "K_UP",
-    "move_down":  "K_DOWN",
-    "move_left":  "K_LEFT",
-    "move_right": "K_RIGHT",
-    "attack":     "K_SPACE",
-    "skill_q":    "K_q",
-    "skill_e":    "K_e",
-    "skill_x":    "K_x",
-    "pause":      "K_ESCAPE"
+    "move_up": "up",
+    "move_down": "down",
+    "move_left": "left",
+    "move_right": "right",
+    "attack": "K_SPACE",
+    "skill_q": "K_q",
+    "skill_e": "K_e",
+    "skill_x": "K_x",
+    "pause": "K_ESCAPE"
 }

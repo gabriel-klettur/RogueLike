@@ -11,6 +11,7 @@ from functools import partial
 import cProfile
 import pstats
 from json import JSONDecodeError
+from roguelike_game.config.input_config import InputConfig
 
 #!---------------------- Paquetes locales: configuración --------------------------------
 import roguelike_engine.config.config as config
@@ -305,7 +306,9 @@ class Game:
         """
         Inicializa el menú principal del juego (MenuManager).
         """
-        self.menu = MenuManager(self.state)
+        # Cargar configuración de teclas y pasar screen a MenuManager
+        self.input_config = InputConfig()
+        self.menu = MenuManager(self.state, self.screen, self.input_config)
 
     def _init_effects(self, perf_log):
         """
@@ -329,13 +332,7 @@ class Game:
         if self.tiles_editor.editor_state.active:
             self.tiles_editor.handle(self.camera, self.map)
             return
-        if self.buildings_editor.editor_state.active:
-            self.buildings_editor.handle(self.camera, self.buildings)
-            return
-        if self.map_editor.editor_state.active:
-            self.map_editor.handle(self.camera, self.map)
-            return
-        # Modo normal: procesar eventos de juego (ataques, spells, dash, etc.)
+        # Continuar con manejo normal de eventos
         handle_events(
             self.state,
             self.camera,
