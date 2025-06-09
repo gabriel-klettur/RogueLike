@@ -20,7 +20,7 @@ class HitboxSystem:
     def __init__(self, perf_log=None):
         self.perf_log = perf_log
 
-    @benchmark(lambda self: self.perf_log, "HitboxSystem.update")
+    @benchmark(lambda self: self.perf_log, "4.7. HitboxSystem.update")
     def update(self, world, camera=None):
         positions = world.components.get('Position', {})
         healths = world.components.get('Health', {})

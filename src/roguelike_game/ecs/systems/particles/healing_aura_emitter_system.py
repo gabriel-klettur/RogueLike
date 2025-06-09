@@ -19,7 +19,7 @@ class HealingAuraEmitterSystem:
     def __init__(self, perf_log):
         self.perf_log = perf_log
 
-    @benchmark(lambda self: self.perf_log, "HealingAuraEmitterSystem.update")
+    @benchmark(lambda self: self.perf_log, "4.2.3.HealingAuraEmitterSystem.update")
     def update(self, world, camera=None):
         now = time.time()
         for caster, aura in world.components.get('AuraComponent', {}).items():
