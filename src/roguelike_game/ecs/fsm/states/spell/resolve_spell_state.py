@@ -8,15 +8,15 @@ class ResolveSpellState(State):
         pass
 
     def execute(self, entity, dt):
-        # Esperar hasta que la fireball haya colisionado o expirado
-        fid = self.fsm.context.get('fireball_id')
         world = entity.world
+        # Para el jugador, ir directo a cooldown tras el release sin esperar colisión/expiración
+        if entity.id == world.player_entity:
+            self.fsm.change_state(PlayerSpellCooldownState(), entity)
+            return
+        # Para NPCs, esperar a que la fireball desaparezca
+        fid = self.fsm.context.get('fireball_id')
         if fid not in world.components.get('FireballComponent', {}):
-            # La fireball ya no existe: pasar a cooldown según tipo de entidad
-            if entity.id == world.player_entity:
-                self.fsm.change_state(PlayerSpellCooldownState(), entity)
-            else:
-                self.fsm.change_state(CooldownState(), entity)
+            self.fsm.change_state(CooldownState(), entity)
 
     def exit(self, entity):
         pass

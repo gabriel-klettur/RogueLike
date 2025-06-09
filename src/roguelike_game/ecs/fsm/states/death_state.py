@@ -4,6 +4,7 @@ from roguelike_game.ecs.components.core.player_tag import PlayerTagComponent
 from roguelike_game.ecs.components.rendering.grayscale_component import GrayscaleComponent
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_game.config.players_config import PLAYER_STATS
 import time
 
 class DeathState(State):
@@ -15,8 +16,13 @@ class DeathState(State):
         world = entity.world
         eid = entity.id
         print(f"[DeathState.enter] eid={eid}, is_player={eid in world.components.get('PlayerTagComponent', {})}")
-        # Iniciar temporizador
-        world.components['DeathTimer'][eid] = DeathTimer(time.time())
+        # Iniciar temporizador según configuración de players.json
+        pt = world.components.get('PlayerTagComponent', {}).get(eid)
+        if pt and pt.class_name in PLAYER_STATS:
+            duration = PLAYER_STATS[pt.class_name].get('death_timer_duration', 60.0)
+        else:
+            duration = 60.0
+        world.components['DeathTimer'][eid] = DeathTimer(time.time(), duration)
         # Cambiar el sprite al de muerte para ocultar el sprite anterior
         sprite = world.components['Sprite'].get(eid)
         if sprite and hasattr(sprite, 'death_image'):
