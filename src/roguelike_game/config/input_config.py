@@ -34,10 +34,12 @@ class InputConfig:
                 "move_up": "K_UP",
                 "move_down": "K_DOWN",
                 "move_left": "K_LEFT",
-                "move_right": "K_RIGHT",                
+                "move_right": "K_RIGHT",
                 "spell_lightball": "K_q",
                 "spell_slash": "K_e",
                 "spell_healing_aura": "K_x",
+                "spell_darkball": "K_1",
+                "spell_iceball": "K_2",
                 "pause": "K_ESCAPE"
             }
             os.makedirs(os.path.dirname(self.path), exist_ok=True)

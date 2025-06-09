@@ -16,6 +16,6 @@ class InputComponent:
         self.spell_lightball: bool = False
         self.spell_slash: bool = False
         self.spell_healing_aura: bool = False
-        self.skill_1: bool = False
-        self.skill_2: bool = False
+        self.spell_darkball: bool = False
+        self.spell_iceball: bool = False
         self.click: bool = False
