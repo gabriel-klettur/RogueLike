@@ -44,6 +44,11 @@ class ReleaseSpellState(State):
             resolver = SPELL_RESOLVERS.get('beam')
             resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
             return
+        if spell_type == 'lightning':
+            world = entity.world
+            resolver = SPELL_RESOLVERS.get('lightning')
+            resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
+            return
         # Evitar crear más instancias si se alcanzó el máximo en spells.json para proyectiles
         if spell_type == 'projectile':
             max_inst = cfg.get('max_instances', 0)

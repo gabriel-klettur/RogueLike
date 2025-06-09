@@ -18,4 +18,5 @@ class InputComponent:
         self.spell_healing_aura: bool = False
         self.spell_darkball: bool = False
         self.spell_iceball: bool = False
+        self.spell_lightning: bool = False
         self.click: bool = False

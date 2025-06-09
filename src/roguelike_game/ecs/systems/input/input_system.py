@@ -47,6 +47,7 @@ class InputSystem:
         heal_key = self.config.get_key("spell_healing_aura")
         db_key = self.config.get_key("spell_darkball")
         ib_key = self.config.get_key("spell_iceball")
+        lightning_key = self.config.get_key("spell_lightning")
         pause_key = self.config.get_key("pause")
         # Para cada entidad con InputComponent
         for eid, inp in world.components.get('InputComponent', {}).items():
@@ -93,6 +94,7 @@ class InputSystem:
             # Mapear nuevos hechizos oscuro e hielo
             inp.spell_darkball = bool(keys[db_key])
             inp.spell_iceball = bool(keys[ib_key])
+            inp.spell_lightning = bool(keys[lightning_key])
             # Resetear flags de Q/E/X tras lectura para evitar duplicados
             if inp.spell_healing_aura:
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='healing_aura')
@@ -113,6 +115,10 @@ class InputSystem:
                 print(f"[DEBUG][{time.time():.3f}] eid={eid} spell_iceball -> iceball")
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='iceball')
                 inp.spell_iceball = False
+            if inp.spell_lightning:
+                print(f"[DEBUG][{time.time():.3f}] eid={eid} spell_lightning -> lightning")
+                world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='lightning')
+                inp.spell_lightning = False
             # Actualizar estado del click y detectar flanco ascendente
             curr_click = bool(pygame.mouse.get_pressed()[0])
             inp.click = curr_click

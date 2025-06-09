@@ -9,5 +9,6 @@
     "spell_healing_aura": "x",
     "spell_darkball": "1",
     "spell_iceball": "9",
+    "spell_lightning": "r",
     "pause": "K_ESCAPE"
 }
