@@ -37,4 +37,9 @@ def load_world_state(path: str) -> Dict[str, Any]:
         raise FileNotFoundError(f"No se encontró el archivo de estado del mundo: {load_path}")
     # Carga JSON de estado; usa _json (orjson/json) para parsear
     raw = load_path.read_bytes()
-    return _json.loads(raw)
+    try:
+        return _json.loads(raw)
+    except Exception as e:
+        # Error en parsing JSON, ignorar y retornar estado vacío
+        print(f"[persistence] Error cargando estado mundial JSON en {load_path}: {e}")
+        return {}
