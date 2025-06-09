@@ -29,7 +29,9 @@ class JsonOverlayStore(OverlayStore):
         zone_path = self.zones_dir / f"{zone_name}.overlay.json"
         if zone_path.is_file():
             with open(zone_path, "r", encoding="utf-8") as f:
-                return json.load(f)
+                data = json.load(f)
+                print(f"[DEBUG][JsonOverlayStore] load zone '{zone_name}', data_type={type(data)}, rows={len(data) if isinstance(data, list) else 'n/a'}")
+                return data
         return None
 
     def save(self, map_name: str, overlay: List[List[str]]) -> None:
@@ -41,3 +43,4 @@ class JsonOverlayStore(OverlayStore):
         out_path = self.zones_dir / f"{zone_name}.overlay.json"
         with open(out_path, "w", encoding="utf-8") as f:
             json.dump(overlay, f, ensure_ascii=False, indent=2)
+            print(f"[DEBUG][JsonOverlayStore] saved zone '{zone_name}', data_type={type(overlay)}, rows={len(overlay) if isinstance(overlay, list) else 'n/a'}")

@@ -53,6 +53,9 @@ class ChunkedMapView:
                     if key not in sprite_map:
                         sprite_map[key] = get_sprite_for_tile(char, code)
 
+        # Debug: imprimir claves sin sprite en sprite_map
+        missing = [k for k, s in sprite_map.items() if s is None]
+        print(f"[DEBUG][ChunkedMapView] claves sin sprite: {missing}")
         layers_ordered = sorted(map_model.layers.keys(), key=lambda l: l.value)
         for cy in range(n_chunks_y):
             for cx in range(n_chunks_x):
@@ -77,6 +80,8 @@ class ChunkedMapView:
                             if not code and layer != Layer.Ground:
                                 continue
                             sprite = sprite_map.get((char, code))
+                            if sprite is None:
+                                print(f"[DEBUG][ChunkedMapView] sin sprite para tile ({ty},{tx}) char={char}, code={code}")
                             if not sprite:
                                 continue
                             # scaled cache

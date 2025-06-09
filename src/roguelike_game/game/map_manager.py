@@ -30,6 +30,17 @@ class MapManager:
         # 1) Intentar cargar de cache; si falla o no existe, generar map y perfilar
         cache_dir = Path('cache'); cache_dir.mkdir(exist_ok=True)
         cache_file = cache_dir / f'map_{map_name}.pkl'
+        # Invalidate cache if any overlay JSON is newer than cache
+        overlays_dir = global_map_settings.ZONES_INDEX.parent / 'overlays'
+        try:
+            cache_mtime = cache_file.stat().st_mtime
+            for f in overlays_dir.glob('*.overlay.json'):
+                if f.stat().st_mtime > cache_mtime:
+                    cache_file.unlink()
+                    logger.info(f"[SubStage] cache invalidated due to newer overlay JSON: {f.name}")
+                    break
+        except Exception:
+            pass
         need_build = True
         if cache_file.exists():
             try:
@@ -181,6 +192,17 @@ class MapManager:
         """
         # Vuelve a inicializar el MapManager con el mismo map_name
         self.__init__(self.map_name)
+
+    def save_cache(self):
+        """
+        Actualiza el cache pickle tras modificaciones de mapa.
+        """
+        cache_dir = Path('cache')
+        cache_dir.mkdir(exist_ok=True)
+        cache_file = cache_dir / f'map_{self.map_name}.pkl'
+        with open(cache_file, 'wb') as f:
+            pickle.dump(self.result, f)
+        logger.info(f"[SubStage] update_cache: saved updated map cache to {cache_file}")
 
     def expand_zone(self, side: str, zone_key: str, parent_key: str) -> None:
         """

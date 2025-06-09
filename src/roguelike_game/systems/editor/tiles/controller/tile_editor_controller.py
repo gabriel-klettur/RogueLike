@@ -331,6 +331,17 @@ class TileEditorController:
                     sub.append(full[y][offx:offx+zw] if 0 <= y < len(full) else [''] * zw)
                 zone_layers[l] = sub
             save_layers(zone, zone_layers)
+            # Debug: recargar JSON justo tras guardar
+            from roguelike_engine.map.model.overlay.factory import get_overlay_store
+            store = get_overlay_store()
+            raw = store.load(zone)
+            print(f"[DEBUG][TileEditorController] raw JSON overlay for zone '{zone}': {raw}")
+        # Actualizar cache tras guardar overlays y colisiones
+        try:
+            map.save_cache()
+            print(f"[DEBUG][TileEditorController] map cache updated")
+        except Exception as e:
+            print(f"[ERROR][TileEditorController] failed to update map cache: {e}")
         # Reset pending
         self._pending_collision_zones.clear()
         self._pending_tile_zones.clear()
