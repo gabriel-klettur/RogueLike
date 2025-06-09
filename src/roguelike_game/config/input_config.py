@@ -3,7 +3,22 @@ import json
 import os
 
 class InputConfig:
+    # Singleton por ruta de config
+    _instances: dict[str, 'InputConfig'] = {}
+    def __new__(cls, path=None):
+        # Determinar ruta absoluta de config
+        resolved = path or os.path.join(os.getcwd(), 'data', 'config', 'input_bindings.json')
+        if resolved in cls._instances:
+            return cls._instances[resolved]
+        inst = super().__new__(cls)
+        cls._instances[resolved] = inst
+        return inst
+    
     def __init__(self, path=None):
+        # Evitar re-inicializar si ya cargado
+        if getattr(self, '_initialized', False):
+            return
+        self._initialized = True
         # Ruta por defecto al JSON de bindings
         self.path = path or os.path.join(os.getcwd(), 'data', 'config', 'input_bindings.json')
         self.bindings = {}
@@ -19,11 +34,10 @@ class InputConfig:
                 "move_up": "K_UP",
                 "move_down": "K_DOWN",
                 "move_left": "K_LEFT",
-                "move_right": "K_RIGHT",
-                "attack": "K_SPACE",
-                "skill_q": "K_q",
-                "skill_e": "K_e",
-                "skill_x": "K_x",
+                "move_right": "K_RIGHT",                
+                "spell_lightball": "K_q",
+                "spell_slash": "K_e",
+                "spell_healing_aura": "K_x",
                 "pause": "K_ESCAPE"
             }
             os.makedirs(os.path.dirname(self.path), exist_ok=True)

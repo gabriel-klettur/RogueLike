@@ -31,6 +31,8 @@ class InputSystem:
 
     @benchmark(lambda self: self.perf_log, "4.2.2.InputSystem.update")
     def update(self, world, camera=None):
+        # Recargar bindings para aplicar cambios guardados sin reiniciar
+        self.config._load()
         # Obtener estado actual del teclado
         keys = pygame.key.get_pressed()
         # Leer bindings dinámicos
@@ -42,6 +44,8 @@ class InputSystem:
         skill_q_key = self.config.get_key("skill_q")
         skill_e_key = self.config.get_key("skill_e")
         skill_x_key = self.config.get_key("skill_x")
+        skill_1_key = self.config.get_key("skill_1")
+        skill_2_key = self.config.get_key("skill_2")
         pause_key = self.config.get_key("pause")
         # Para cada entidad con InputComponent
         for eid, inp in world.components.get('InputComponent', {}).items():
@@ -78,28 +82,28 @@ class InputSystem:
                     if inp.attack:
                         state_comp.fsm.change_state(PlayerAttackState(), proxy)
                     # Hechizos (q/e)
-                    if inp.skill_q or inp.skill_e:
+                    if inp.spell_lightball or inp.spell_slash:
                         state_comp.fsm.change_state(PlayerSpellSelectState(), proxy)
 
-            # Mapear habilidades Q, E, X
-            inp.skill_q = bool(keys[pygame.K_q])
-            inp.skill_e = bool(keys[pygame.K_e])
-            inp.skill_x = bool(keys[pygame.K_x])
-            # Mapear habilidades 1 y 2
-            inp.skill_1 = bool(keys[pygame.K_1])
-            inp.skill_2 = bool(keys[pygame.K_2])
+            # Mapear habilidades Q, E, X desde config
+            inp.spell_lightball = bool(keys[skill_q_key])
+            inp.spell_slash = bool(keys[skill_e_key])
+            inp.spell_healing_aura = bool(keys[skill_x_key])
+            # Mapear habilidades 1 y 2 desde config
+            inp.skill_1 = bool(keys[skill_1_key])
+            inp.skill_2 = bool(keys[skill_2_key])
             # Resetear flags de Q/E/X tras lectura para evitar duplicados
-            if inp.skill_x:
+            if inp.spell_healing_aura:
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='healing_aura')
-                inp.skill_x = False
-            if inp.skill_e:
-                print(f"[DEBUG][{time.time():.3f}] eid={eid} skill_e -> slash")
+                inp.spell_healing_aura = False
+            if inp.spell_slash:
+                print(f"[DEBUG][{time.time():.3f}] eid={eid} spell_slash -> slash")
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='slash')
-                inp.skill_e = False
-            if inp.skill_q:
-                print(f"[DEBUG][{time.time():.3f}] eid={eid} skill_q -> lightball")
+                inp.spell_slash = False
+            if inp.spell_lightball:
+                print(f"[DEBUG][{time.time():.3f}] eid={eid} spell_lightball -> lightball")
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='lightball')
-                inp.skill_q = False
+                inp.spell_lightball = False
             if inp.skill_1:
                 print(f"[DEBUG][{time.time():.3f}] eid={eid} skill_1 -> darkball")
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='darkball')

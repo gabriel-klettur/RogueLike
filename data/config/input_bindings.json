@@ -4,8 +4,10 @@
     "move_left": "left",
     "move_right": "right",
     "attack": "K_SPACE",
-    "skill_q": "K_q",
-    "skill_e": "K_e",
-    "skill_x": "K_x",
+    "skill_q": "z",
+    "skill_e": "e",
+    "skill_x": "x",
+    "skill_1": "1",
+    "skill_2": "2",
     "pause": "K_ESCAPE"
 }

@@ -12,10 +12,10 @@ class PlayerSpellSelectState(State):
         if not inp:
             return
         fsm = entity.world.components['NPCState'][entity.id].fsm
-        if inp.skill_q:
+        if inp.spell_lightball:
             fsm.context['spell'] = 'fireball'
             fsm.change_state(PlayerSpellCastState(), entity)
-        elif inp.skill_e:
+        elif inp.spell_slash:
             fsm.context['spell'] = 'slash'
             fsm.change_state(PlayerSpellCastState(), entity)
 
