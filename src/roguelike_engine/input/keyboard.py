@@ -9,7 +9,9 @@ def handle_keyboard(event, state, camera, clock, menu, entities, effects, tiles_
         if event.key == pygame.K_F3:
             handle_expand_dungeon(event, map_manager, entities)
 
-        if event.key == pygame.K_ESCAPE:
+        # Alternar menú con tecla dinámica de 'pause'
+        pause_key = menu.input_config.get_key('pause')
+        if event.key == pause_key:
             menu.show_menu = not menu.show_menu
 
         elif menu.show_menu:

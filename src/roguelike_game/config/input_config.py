@@ -32,7 +32,19 @@ class InputConfig:
 
     def get_key(self, action):
         keyname = self.bindings.get(action)
-        return getattr(pygame, keyname)
+        if not keyname:
+            raise KeyError(f"No key binding for action '{action}'")
+        # Si es constante pygame (K_...)
+        if keyname.startswith("K_"):
+            try:
+                return getattr(pygame, keyname)
+            except AttributeError:
+                pass
+        # Intentar convertir nombre de tecla a código
+        try:
+            return pygame.key.key_code(keyname)
+        except Exception:
+            raise ValueError(f"Unknown key name '{keyname}' for action '{action}'")
 
     def set_key(self, action, keyname):
         self.bindings[action] = keyname
