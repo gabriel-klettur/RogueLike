@@ -74,12 +74,20 @@ def save_benchmarks(benchmarks):
     top_events_raw = heapq.nlargest(10, events, key=lambda x: x[0])
     top_events = [{'system': name, 'value': round(val, 2)} for val, name in top_events_raw]
 
-    # Write JSON output
+    # Group benchmarks by top-level numeric category
+    from collections import defaultdict
+    grouped = defaultdict(dict)
+    for name, stats in summary.items():
+        cat = name.split('.')[0] if name and name[0].isdigit() else '4'
+        grouped[cat][name] = stats
+    grouped_benchmarks = dict(grouped)
+
+    # Write JSON output with grouped benchmarks
     data = {
         'run_timestamp': ts_iso,
         'top_max': top_max,
         'top_events': top_events,
-        'benchmarks': summary
+        'benchmarks': grouped_benchmarks
     }
     with open(filepath, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=2)
