@@ -8,6 +8,7 @@ import pygame
 import math
 from roguelike_game.ecs.components.rendering.sprite import Sprite
 from roguelike_game.ecs.components.transform.scale import Scale
+from roguelike_game.ecs.components.abilities.aura_component import AuraComponent
 
 class ReleaseSpellState(State):
     def enter(self, entity):
@@ -15,8 +16,17 @@ class ReleaseSpellState(State):
         ctx = self.fsm.context
         spell_key = ctx.get('spell')
         cfg = SPELLS.get(spell_key, {})
-        # Evitar crear más instancias si se alcanzó el máximo en spells.json
-        if cfg.get('type') == 'projectile':
+        spell_type = cfg.get('type')
+        if spell_type == 'aura':
+            world = entity.world
+            world.components.setdefault('AuraComponent', {})[entity.id] = AuraComponent(
+                cfg.get('radius', 0),
+                cfg.get('buff', {}),
+                cfg.get('duration', 0)
+            )
+            return
+        # Evitar crear más instancias si se alcanzó el máximo en spells.json para proyectiles
+        if spell_type == 'projectile':
             max_inst = cfg.get('max_instances', 0)
             if max_inst:
                 active = sum(1 for comp in entity.world.components.get('FireballComponent', {}).values()

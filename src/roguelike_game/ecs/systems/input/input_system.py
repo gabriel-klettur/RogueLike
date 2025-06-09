@@ -67,16 +67,12 @@ class InputSystem:
                     if inp.skill_q or inp.skill_e:
                         state_comp.fsm.change_state(PlayerSpellSelectState(), proxy)
 
-            # Mapear habilidades Q, E
+            # Mapear habilidades Q, E, X
             inp.skill_q = bool(keys[pygame.K_q])
             inp.skill_e = bool(keys[pygame.K_e])
             inp.skill_x = bool(keys[pygame.K_x])
-            # Actualizar estado del click y detectar flanco ascendente
-            curr_click = bool(pygame.mouse.get_pressed()[0])
-            inp.click = curr_click
-            prev = self.prev_click.get(eid, False)
+            # Resetear flags de Q/E/X tras lectura para evitar duplicados
             if inp.skill_x:
-                print(f"[DEBUG][{time.time():.3f}] eid={eid} skill_x -> healing_aura")
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='healing_aura')
                 inp.skill_x = False
             if inp.skill_e:
@@ -87,6 +83,10 @@ class InputSystem:
                 print(f"[DEBUG][{time.time():.3f}] eid={eid} skill_q -> lightball")
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='lightball')
                 inp.skill_q = False
+            # Actualizar estado del click y detectar flanco ascendente
+            curr_click = bool(pygame.mouse.get_pressed()[0])
+            inp.click = curr_click
+            prev = self.prev_click.get(eid, False)
             # Generar intención de fireball sólo en flanco ascendente
             if eid in world.components.get('PlayerTagComponent', {}) and curr_click and not prev:
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='fireball')

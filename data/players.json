@@ -46,7 +46,7 @@
       },
       "attack": 1,
       "defense": 0,
-      "death_timer_duration": 45.0
+      "death_timer_duration": 10.0
     }   
   }
 }
