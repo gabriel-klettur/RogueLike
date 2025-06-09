@@ -72,6 +72,9 @@ class InputSystem:
             inp.skill_q = bool(keys[pygame.K_q])
             inp.skill_e = bool(keys[pygame.K_e])
             inp.skill_x = bool(keys[pygame.K_x])
+            # Habilidades 1 y 2: darkball e iceball
+            inp.skill_1 = bool(keys[pygame.K_1])
+            inp.skill_2 = bool(keys[pygame.K_2])
             # Resetear flags de Q/E/X tras lectura para evitar duplicados
             if inp.skill_x:
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='healing_aura')
@@ -84,6 +87,14 @@ class InputSystem:
                 print(f"[DEBUG][{time.time():.3f}] eid={eid} skill_q -> lightball")
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='lightball')
                 inp.skill_q = False
+            if inp.skill_1:
+                print(f"[DEBUG][{time.time():.3f}] eid={eid} skill_1 -> darkball")
+                world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='darkball')
+                inp.skill_1 = False
+            if inp.skill_2:
+                print(f"[DEBUG][{time.time():.3f}] eid={eid} skill_2 -> iceball")
+                world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='iceball')
+                inp.skill_2 = False
             # Actualizar estado del click y detectar flanco ascendente
             curr_click = bool(pygame.mouse.get_pressed()[0])
             inp.click = curr_click
