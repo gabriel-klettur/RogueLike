@@ -10,6 +10,7 @@ from typing import Callable
 from functools import partial
 import cProfile
 import pstats
+from json import JSONDecodeError
 
 #!---------------------- Paquetes locales: configuración --------------------------------
 import roguelike_engine.config.config as config
@@ -201,8 +202,8 @@ class Game:
         """
         try:
             self.world.load_world()
-        except FileNotFoundError as e:
-            print(f"[Game._load_world_state] No se encontró archivo de estado mundial: {e}, iniciando nuevo mundo sin cargar")
+        except Exception as e:
+            print(f"[Game._load_world_state] Error cargando estado mundial ({e}), iniciando nuevo mundo limpio")
 
     def _create_loader(self, loading_bg):
         self.loader = LoadingScreen(self.screen, loading_bg)
