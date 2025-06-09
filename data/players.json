@@ -22,7 +22,7 @@
       "max_health": 100,
       "max_mana": 50,
       "max_energy": 100,
-      "scale": 0.7,
+      "scale": 0.5,
       "speed": 5,
       "trail": {
         "interval": 0.1,
