@@ -6,5 +6,6 @@ class PlayerTagComponent:
     """
     Componente vacío que etiqueta la entidad como jugador.
     """
-    def __init__(self):
-        pass
+    def __init__(self, class_name=None):
+        # Almacena la clase de jugador para configuraciones específicas
+        self.class_name = class_name

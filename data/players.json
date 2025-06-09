@@ -30,7 +30,8 @@
         "max_trails": 100
       },
       "attack": 1,
-      "defense": 0
+      "defense": 0,
+      "death_timer_duration": 10.0
     },
     "valkyrie": {
       "max_health": 120,
@@ -44,7 +45,8 @@
         "max_trails": 10
       },
       "attack": 1,
-      "defense": 0
+      "defense": 0,
+      "death_timer_duration": 45.0
     }   
   }
 }

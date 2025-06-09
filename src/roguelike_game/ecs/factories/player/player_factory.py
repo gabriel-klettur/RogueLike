@@ -54,7 +54,7 @@ def spawn_player(world, x: int, y: int, class_player: str = DEFAULT_CLASS) -> in
     world.components["Position"][eid] = Position(x, y)
 
     # 3) Etiqueta de jugador (PlayerTag) y cámara (CameraFollow)
-    world.components["PlayerTagComponent"][eid] = PlayerTagComponent()
+    world.components["PlayerTagComponent"][eid] = PlayerTagComponent(class_player)
     world.components["CameraFollowComponent"][eid] = CameraFollowComponent()
 
     # 4) Componente de entrada para el jugador
