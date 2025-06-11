@@ -1,7 +1,7 @@
 import math
 import time
 from roguelike_game.ecs.fsm.state import State
-from roguelike_game.ecs.fsm.states.patrol_state import PatrolState
+from roguelike_game.ecs.fsm.states.monster.patrol_state import PatrolState
 from roguelike_game.ecs.fsm.states.death_state import DeathState
 from roguelike_game.ecs.components.transform.velocity import Velocity
 from roguelike_engine.config.config_tiles import TILE_SIZE

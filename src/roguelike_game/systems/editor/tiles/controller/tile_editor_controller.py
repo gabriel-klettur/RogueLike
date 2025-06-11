@@ -309,8 +309,10 @@ class TileEditorController:
 
     def flush_brush(self, map):
         """Persist pending changes after brush stroke ends."""
+        print(f"[DEBUG][TileEditorController] flush_brush called. Pending collisions: {getattr(self, '_pending_collision_zones', set())}, pending tiles: {getattr(self, '_pending_tile_zones', set())}")
         # Flush collision layer saves
         for zone in getattr(self, '_pending_collision_zones', []):
+            print(f"[DEBUG][TileEditorController] saving collision layer for zone '{zone}'")
             map.save_collision_layers(zone)
         # Flush tile overlay saves
         from roguelike_engine.config.map_config import global_map_settings
@@ -329,6 +331,21 @@ class TileEditorController:
                     sub.append(full[y][offx:offx+zw] if 0 <= y < len(full) else [''] * zw)
                 zone_layers[l] = sub
             save_layers(zone, zone_layers)
+            # Debug: recargar JSON justo tras guardar
+            from roguelike_engine.map.model.overlay.factory import get_overlay_store
+            store = get_overlay_store()
+            raw = store.load(zone)
+            print(f"[DEBUG][TileEditorController] raw JSON overlay for zone '{zone}': {raw}")
+        # Actualizar cache tras guardar overlays y colisiones
+        try:
+            map.save_cache()
+            print(f"[DEBUG][TileEditorController] map cache updated")
+        except Exception as e:
+            print(f"[ERROR][TileEditorController] failed to update map cache: {e}")
+        # Refresh in-memory collision layers and invalidate view cache
+        map._load_collision_layers()
+        map.view.invalidate_cache()
+        print("[DEBUG][TileEditorController] in-memory collision layers reloaded and view cache invalidated")
         # Reset pending
         self._pending_collision_zones.clear()
         self._pending_tile_zones.clear()

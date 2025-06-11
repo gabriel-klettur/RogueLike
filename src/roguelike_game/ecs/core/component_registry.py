@@ -15,5 +15,5 @@ def create_empty_component_store():
         'WantsToMelee': {}, 'AttackCooldown': {}, 'WantsToCastSpell': {}, 'AggroRange': {},
         'ChaseTarget': {}, 'FacingCooldown': {}, 'InputComponent': {}, 'InventoryComponent': {},
         'CameraFollowComponent': {}, 'PlayerTagComponent': {}, 'InCombat': {},
-        'FlashComponent': {}, 'TrailComponent': {},
+        'FlashComponent': {}, 'TrailComponent': {}, 'GrayscaleComponent': {},
     }

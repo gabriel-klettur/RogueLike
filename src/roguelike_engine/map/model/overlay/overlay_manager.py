@@ -23,8 +23,11 @@ def load_layers(map_name: str) -> Dict[Layer, List[List[str]]]:
     Carga todas las capas de overlay para un mapa dado.
     Devuelve diccionario Layer -> matriz de códigos.
     """
+    print(f"[DEBUG][OverlayManager] load_layers called for map '{map_name}'")
     raw = _default_store.load(map_name)
+    print(f"[DEBUG][OverlayManager] store.load raw for '{map_name}': {raw}")
     if raw is None:
+        print(f"[DEBUG][OverlayManager] no overlay data for '{map_name}'")
         return {}
     # Si formato antiguo (lista), asignar a Ground
     if isinstance(raw, list):
@@ -38,6 +41,7 @@ def load_layers(map_name: str) -> Dict[Layer, List[List[str]]]:
         except KeyError:
             continue
         result[layer] = grid
+    print(f"[DEBUG][OverlayManager] parsed layers for '{map_name}': {list(result.keys())}")
     return result
 
 def save_layers(map_name: str, layers: Dict[Layer, List[List[str]]]) -> None:

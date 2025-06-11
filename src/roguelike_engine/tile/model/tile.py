@@ -4,6 +4,7 @@ import pygame
 from roguelike_engine.config.config_tiles import TILE_SIZE
 
 class Tile:
+    __slots__ = ('x','y','tile_type','sprite','solid','rect','scaled_cache','overlay_code','zone')
     """
     Modelo puro de un tile:
       - x,y: posición en píxeles
@@ -18,7 +19,8 @@ class Tile:
         x: int,
         y: int,
         tile_type: str,
-        sprite: pygame.Surface
+        sprite: pygame.Surface,
+        overlay_code: str | None = None
     ):
         self.x = x
         self.y = y
@@ -33,3 +35,8 @@ class Tile:
 
         # Cache de versiones escaladas del sprite, key = zoom
         self.scaled_cache: dict[float, pygame.Surface] = {}
+        
+        # Overlay code
+        self.overlay_code = overlay_code
+        # Zone de mapa (inicializada luego)
+        self.zone: str | None = None

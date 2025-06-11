@@ -1,4 +1,3 @@
-
 # Path: src/roguelike_engine/tile/loader.py
 from typing import List, Optional
 from roguelike_engine.config.config_tiles import TILE_SIZE
@@ -20,12 +19,16 @@ def load_tiles_from_text(
     if overlay_map is None:
         overlay_map = [["" for _ in range(width)] for _ in range(height)]
 
+    # Precompute sprites for each unique (char, overlay) combination
+    keys = {(row[x], overlay_map[y][x]) for y, row in enumerate(map_data) for x in range(len(row))}
+    sprite_map = {k: get_sprite_for_tile(k[0], k[1]) for k in keys}
+
     tiles: List[List[Tile]] = []
     for y, row in enumerate(map_data):
         tile_row: List[Tile] = []
         for x, char in enumerate(row):
             code = overlay_map[y][x]
-            sprite = get_sprite_for_tile(char, code)
+            sprite = sprite_map[(char, code)]
             tile = Tile(x * TILE_SIZE, y * TILE_SIZE, char, sprite)
             tile.overlay_code = code
             tile_row.append(tile)

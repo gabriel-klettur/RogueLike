@@ -7,7 +7,7 @@ from roguelike_game.ecs.components.combat.hitbox import HitboxComponent
 from roguelike_game.ecs.components.core.identity import Identity
 from roguelike_game.ecs.fsm.states.damage_state import DamageState
 from roguelike_game.ecs.fsm.states.attack_state import AttackState
-from roguelike_game.ecs.fsm.states.alert_chase_state import AlertChaseState
+from roguelike_game.ecs.fsm.states.monster.alert_chase_state import AlertChaseState
 from roguelike_game.ecs.fsm.states.death_state import DeathState
 from roguelike_game.ecs.systems.fsm.fsm_system import _EntityProxy
 from roguelike_game.ecs.components.fsm.npc_state import NPCState
@@ -20,7 +20,7 @@ class HitboxSystem:
     def __init__(self, perf_log=None):
         self.perf_log = perf_log
 
-    @benchmark(lambda self: self.perf_log, "HitboxSystem.update")
+    @benchmark(lambda self: self.perf_log, "4.7. HitboxSystem.update")
     def update(self, world, camera=None):
         positions = world.components.get('Position', {})
         healths = world.components.get('Health', {})

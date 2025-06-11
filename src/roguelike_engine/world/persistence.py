@@ -1,8 +1,15 @@
 # src/roguelike_engine/world/persistence.py
 
-import json
 from pathlib import Path
 from typing import Any, Dict
+
+# Usa orjson si está disponible para acelerar parsing
+try:
+    import orjson as _json
+    _USE_ORJSON = True
+except ImportError:
+    import json as _json
+    _USE_ORJSON = False
 
 def save_world_state(path: str, state: Dict[str, Any]) -> None:
     """
@@ -11,8 +18,14 @@ def save_world_state(path: str, state: Dict[str, Any]) -> None:
     """
     save_path = Path(path)
     save_path.parent.mkdir(parents=True, exist_ok=True)
-    with save_path.open("w", encoding="utf-8") as f:
-        json.dump(state, f, ensure_ascii=False, indent=2)
+    # Guarda JSON; usa _json (orjson/json)
+    if _USE_ORJSON:
+        # orjson.dumps retorna bytes
+        content = _json.dumps(state)
+        save_path.write_bytes(content)
+    else:
+        with save_path.open("w", encoding="utf-8") as f:
+            _json.dump(state, f, ensure_ascii=False, indent=2)
 
 def load_world_state(path: str) -> Dict[str, Any]:
     """
@@ -22,5 +35,11 @@ def load_world_state(path: str) -> Dict[str, Any]:
     load_path = Path(path)
     if not load_path.is_file():
         raise FileNotFoundError(f"No se encontró el archivo de estado del mundo: {load_path}")
-    with load_path.open("r", encoding="utf-8") as f:
-        return json.load(f)
+    # Carga JSON de estado; usa _json (orjson/json) para parsear
+    raw = load_path.read_bytes()
+    try:
+        return _json.loads(raw)
+    except Exception as e:
+        # Error en parsing JSON, ignorar y retornar estado vacío
+        print(f"[persistence] Error cargando estado mundial JSON en {load_path}: {e}")
+        return {}

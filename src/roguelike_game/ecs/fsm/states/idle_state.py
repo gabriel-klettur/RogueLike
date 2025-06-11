@@ -14,26 +14,31 @@ class IdleState(State):
         self.start_time = time.time()
 
     def execute(self, entity, dt):
-        # Verificar muerte
         world = entity.world
-        hp_cmp = world.components['Health'][entity]
-        if hp_cmp.current_hp <= 0:
-            world.components['NPCState'][entity].fsm.change_state(DeathState(), entity)
+        # Verificar salud y muerte
+        hp_cmp = world.components.get('Health', {}).get(entity.id)
+        if hp_cmp and hp_cmp.current_hp <= 0:
+            npc_state = world.components.get('NPCState', {}).get(entity.id)
+            if npc_state:
+                npc_state.fsm.change_state(DeathState(), entity)
             return
-        # Obtener mundo y posiciones
-        pos = world.components['Position'][entity]
-        player_pos = world.player_position
-        if not player_pos:
+        # Verificar aggro solo para NPCs con AggroRange
+        rng_cmp = world.components.get('AggroRange', {}).get(entity.id)
+        if not rng_cmp:
             return
+        # Obtener posición y posición del jugador
+        pos = world.components.get('Position', {}).get(entity.id)
+        player_pos = getattr(world, 'player_position', None)
+        if not pos or not player_pos:
+            return
+        # Calcular distancia al jugador
         dx = pos.x - player_pos.x
         dy = pos.y - player_pos.y
-        dist_sq = dx*dx + dy*dy
-        rng_cmp = world.components['AggroRange'][entity]
-        if dist_sq <= (rng_cmp.radius * TILE_SIZE)**2:
-            # Cambiar a AggroState de forma local
+        if dx*dx + dy*dy <= (rng_cmp.radius * TILE_SIZE)**2:
             from roguelike_game.ecs.fsm.states.aggro_state import AggroState
-            npc_state = world.components['NPCState'][entity]
-            npc_state.fsm.change_state(AggroState(), entity)
+            npc_state = world.components.get('NPCState', {}).get(entity.id)
+            if npc_state:
+                npc_state.fsm.change_state(AggroState(), entity)
 
     def exit(self, entity):
         # Limpiar animaciones o flags de Idle (opcional)

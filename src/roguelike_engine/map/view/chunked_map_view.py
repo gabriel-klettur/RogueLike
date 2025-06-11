@@ -5,6 +5,10 @@ import math
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.map.model.map_model import Map as MapModel
 from roguelike_engine.map.model.layer import Layer
+from roguelike_engine.tile.assets import get_sprite_for_tile
+
+# Cache scaled sprites per (sprite, zoom)
+_SCALED_CACHE: dict[tuple[pygame.Surface, float], pygame.Surface] = {}
 
 class ChunkedMapView:
     """
@@ -23,14 +27,36 @@ class ChunkedMapView:
         Pre-dibuja cada chunk (bloque de tiles) en una surface escalada
         y la guarda en self.chunks_by_zoom[zoom].
         """
-        width  = len(map_model.tiles[0])
-        height = len(map_model.tiles)
+        width  = len(map_model.matrix[0])
+        height = len(map_model.matrix)
         cs = self.chunk_size
 
         n_chunks_x = math.ceil(width  / cs)
         n_chunks_y = math.ceil(height / cs)
         chunk_dict: dict[tuple[int,int], pygame.Surface] = {}
 
+        # Precompute sprites for each unique (char, overlay) pair with bounds check
+        sprite_map: dict[tuple[str, str|None], pygame.Surface|None] = {}
+        matrix = map_model.matrix
+        height_m = len(matrix)
+        for layer, grid in map_model.layers.items():
+            for y, row in enumerate(grid):
+                if y >= height_m:
+                    continue
+                row_str = matrix[y]
+                width_m = len(row_str)
+                for x, code in enumerate(row):
+                    if x >= width_m:
+                        continue
+                    char = row_str[x]
+                    key = (char, code)
+                    if key not in sprite_map:
+                        sprite_map[key] = get_sprite_for_tile(char, code)
+
+        # Debug: imprimir claves sin sprite en sprite_map
+        missing = [k for k, s in sprite_map.items() if s is None]
+        print(f"[DEBUG][ChunkedMapView] claves sin sprite: {missing}")
+        layers_ordered = sorted(map_model.layers.keys(), key=lambda l: l.value)
         for cy in range(n_chunks_y):
             for cx in range(n_chunks_x):
                 # tamaño en tiles de este chunk (puede recortarse al borde)
@@ -44,34 +70,31 @@ class ChunkedMapView:
                 surf = pygame.Surface((pix_w, pix_h), pygame.SRCALPHA)
                 zkey = round(zoom * 10) / 10.0
 
-                # dibujar cada tile por capa en orden
-                layers_ordered = sorted(map_model.tiles_by_layer.keys(), key=lambda l: l.value)
+                # dibujar cada tile por capa en orden usando raw_layers
                 for ty in range(cy*cs, cy*cs + tile_h):
                     for tx in range(cx*cs, cx*cs + tile_w):
+                        char = map_model.matrix[ty][tx]
                         for layer in layers_ordered:
-                            grid = map_model.tiles_by_layer.get(layer, [])
-                            if ty < 0 or ty >= len(grid) or tx < 0 or tx >= len(grid[0]):
+                            code = map_model.layers[layer][ty][tx]
+                            # Skip fallback drawing for blank overlay on non-Ground layers
+                            if not code and layer != Layer.Ground:
                                 continue
-                            tile = grid[ty][tx]
-                            if not tile:
-                                continue
-                            # Skip non-ground layers when no overlay code
-                            if layer != Layer.Ground and not getattr(tile, "overlay_code", None):
-                                continue
-                            # sprite cacheado por zoom
-                            sprite = tile.scaled_cache.get(zkey)
+                            sprite = sprite_map.get((char, code))
                             if sprite is None:
-                                sw, sh = tile.sprite.get_size()
-                                sprite = pygame.transform.scale(
-                                    tile.sprite,
-                                    (int(sw * zoom), int(sh * zoom))
-                                )
-                                tile.scaled_cache[zkey] = sprite
-
+                                print(f"[DEBUG][ChunkedMapView] sin sprite para tile ({ty},{tx}) char={char}, code={code}")
+                            if not sprite:
+                                continue
+                            # scaled cache
+                            skey = (sprite, zkey)
+                            scaled = _SCALED_CACHE.get(skey)
+                            if scaled is None:
+                                sw, sh = sprite.get_size()
+                                scaled = pygame.transform.scale(sprite, (int(sw * zoom), int(sh * zoom)))
+                                _SCALED_CACHE[skey] = scaled
                             # posición dentro del chunk
-                            x = int((tx - cx*cs) * TILE_SIZE * zoom)
-                            y = int((ty - cy*cs) * TILE_SIZE * zoom)
-                            surf.blit(sprite, (x, y))
+                            px = int((tx - cx*cs) * TILE_SIZE * zoom)
+                            py = int((ty - cy*cs) * TILE_SIZE * zoom)
+                            surf.blit(scaled, (px, py))
 
                 chunk_dict[(cx, cy)] = surf
 
@@ -114,10 +137,10 @@ class ChunkedMapView:
         # índices de chunk visibles
         min_cx = max(int((left  // TILE_SIZE) // cs), 0)
         max_cx = min(int((right // TILE_SIZE) // cs) + 1,
-                     math.ceil(len(map_model.tiles[0]) / cs))
+                     math.ceil(len(map_model.matrix[0]) / cs))
         min_cy = max(int((top   // TILE_SIZE) // cs), 0)
         max_cy = min(int((bottom// TILE_SIZE) // cs) + 1,
-                     math.ceil(len(map_model.tiles) / cs))
+                     math.ceil(len(map_model.matrix) / cs))
 
         # blitear sólo los chunks en ese rango
         for cy in range(min_cy, max_cy):
