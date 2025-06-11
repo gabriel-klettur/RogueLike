@@ -21,6 +21,7 @@ from roguelike_game.ecs.systems.particles.healing_aura_emitter_system import Hea
 from roguelike_game.ecs.systems.particles.particle_system import ParticleSystem
 from roguelike_game.ecs.systems.particles.laser_beam_emitter_system import LaserBeamEmitterSystem
 from roguelike_game.ecs.systems.rendering.combat.spells.fireball_render_system import FireballRenderSystem
+from roguelike_game.ecs.systems.rendering.combat.spells.lightning_render_system import LightningRenderSystem
 from roguelike_game.ecs.systems.rendering.particles.particle_render_system import ParticleRenderSystem
 from roguelike_game.ecs.systems.rendering.player_debug_render_system import PlayerDebugRenderSystem
 from roguelike_game.ecs.systems.rendering.death_timer_bar_system import DeathTimerBarSystem
@@ -33,6 +34,7 @@ from roguelike_game.ecs.systems.rendering.trail_system import TrailSystem
 from roguelike_game.ecs.systems.fsm.fsm_system import FSMSystem
 from roguelike_game.ecs.systems.combat.spells.dash_system import DashSystem
 from roguelike_game.ecs.systems.combat.hitbox_system import HitboxSystem
+from roguelike_game.ecs.systems.combat.spells.lightning_system import LightningSystem
 
 def get_update_system_classes():
     """
@@ -42,7 +44,7 @@ def get_update_system_classes():
         FSMSystem,
         PlayerFacingSystem, FacingSystem, InputSystem,
         MovementCollisionSystem,
-        MeleeCombatSystem, SpellCastingSystem, AuraSystem, ParticleSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, FireballSystem, DashSystem, HitboxSystem,
+        MeleeCombatSystem, SpellCastingSystem, AuraSystem, ParticleSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, FireballSystem, LightningSystem, DashSystem, HitboxSystem,
         TrailSystem,
         AnimationSystem, FlashSystem, SpawnSystem,
     ]
@@ -55,7 +57,7 @@ def get_render_system_classes():
     base = [
         HealthBarSystem, NamePlateSystem,
         CollisionDebugSystem,
-        FireballRenderSystem, ParticleRenderSystem,
+        FireballRenderSystem, ParticleRenderSystem, LightningRenderSystem,
         ChaseDebugSystem,
         PlayerDebugRenderSystem,
         DeathTimerBarSystem,

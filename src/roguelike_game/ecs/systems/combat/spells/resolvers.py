@@ -11,6 +11,7 @@ from roguelike_game.ecs.components.particles.particle_component import ParticleC
 from roguelike_game.ecs.components.abilities.laser_beam_component import LaserBeamComponent
 from roguelike_game.ecs.components.abilities.dash_component import DashComponent
 from roguelike_game.ecs.components.combat.hitbox import HitboxComponent
+from roguelike_game.ecs.components.abilities.lightning_component import LightningComponent
 import math
 
 class BaseSpellResolver:
@@ -183,6 +184,22 @@ class SlashResolver(BaseSpellResolver):
             damage=cfg.get('damage', 0),
         )
 
+class LightningResolver(BaseSpellResolver):
+    def resolve(self, world, caster, spawn_meta, cfg, camera):
+        # Instanciar LightningComponent en el caster
+        start = spawn_meta.get('spawn_pos', (0, 0))
+        mx, my = pygame.mouse.get_pos()
+        if camera:
+            wx = mx / camera.zoom + camera.offset_x
+            wy = my / camera.zoom + camera.offset_y
+        else:
+            wx, wy = mx, my
+        comp = LightningComponent(start, (wx, wy),
+                                   cfg.get('segments', 10),
+                                   cfg.get('offset', 0),
+                                   cfg.get('lifetime', 0))
+        world.components.setdefault('LightningComponent', {})[caster] = comp
+
 # Registro de resolutores por tipo de hechizo
 default_resolvers = {
     'projectile': ProjectileResolver(),
@@ -190,6 +207,7 @@ default_resolvers = {
     'beam': BeamResolver(),
     'dash': DashResolver(),
     'slash': SlashResolver(),
+    'lightning': LightningResolver(),
 }
 SPELL_RESOLVERS = default_resolvers
 

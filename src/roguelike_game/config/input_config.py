@@ -45,6 +45,9 @@ class InputConfig:
             os.makedirs(os.path.dirname(self.path), exist_ok=True)
             with open(self.path, 'w', encoding='utf-8') as f:
                 json.dump(self.bindings, f, indent=4)
+        # Asegurar binding para lightning
+        if "spell_lightning" not in self.bindings:
+            self.bindings["spell_lightning"] = "K_r"
 
     def get_key(self, action):
         keyname = self.bindings.get(action)
