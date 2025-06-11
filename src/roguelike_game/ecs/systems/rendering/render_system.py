@@ -3,6 +3,13 @@ from roguelike_game.ecs.components.transform.scale import Scale
 from roguelike_game.systems.config_z_layer import DEFAULT_Z
 from roguelike_game.ecs.fsm.states.death_state import DeathState
 
+try:
+    import numpy as np
+    from pygame import surfarray
+    HAS_NUMPY = True
+except ImportError:
+    HAS_NUMPY = False
+
 class RenderSystem:
     """
     Sistema responsable de renderizar todas las entidades con Sprite,
@@ -115,3 +122,24 @@ class RenderSystem:
         # 6) Ejecutar todos los blits en batch (más eficiente que múltiples blit individuales)
         if blit_ops:
             screen.blits(blit_ops)
+
+        # Aplicar escala de grises si se ha marcado
+        if world.components.get('GrayscaleComponent'):
+            self.apply_grayscale(screen)
+
+    def apply_grayscale(self, surface):
+        """Convierte la superficie entera a escala de grises."""
+        if HAS_NUMPY:
+            arr = surfarray.array3d(surface)
+            lum = (0.299 * arr[:, :, 0] + 0.587 * arr[:, :, 1] + 0.114 * arr[:, :, 2]).astype(np.uint8)
+            gray3 = np.stack((lum, lum, lum), axis=-1)
+            surfarray.blit_array(surface, gray3)
+        else:
+            pixels = pygame.PixelArray(surface)
+            w, h = surface.get_size()
+            for x in range(w):
+                for y in range(h):
+                    color = surface.unmap_rgb(pixels[x, y])
+                    lum = int(0.299*color.r + 0.587*color.g + 0.114*color.b)
+                    pixels[x, y] = surface.map_rgb((lum, lum, lum))
+            del pixels

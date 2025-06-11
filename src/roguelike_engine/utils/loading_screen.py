@@ -1,5 +1,6 @@
 import os
 import pygame
+from roguelike_engine.utils.loader import load_image
 import roguelike_engine.config.config as config
 
 class LoadingScreen:
@@ -9,12 +10,11 @@ class LoadingScreen:
         self.font = pygame.font.SysFont(config.FONT_NAME, config.FONT_SIZE)
         # Background
         if bg_filename:
-            bg_path = os.path.join(config.ASSETS_DIR, bg_filename)
             try:
-                bg_img = pygame.image.load(bg_path).convert()
-                self.bg = pygame.transform.scale(bg_img, (self.w, self.h))
+                bg_raw = load_image(bg_filename)
+                self.bg = pygame.transform.scale(bg_raw, (self.w, self.h))
             except Exception as e:
-                print(f"[Warning] No se pudo cargar {bg_path}: {e}")
+                print(f"[Warning] No se pudo cargar {bg_filename}: {e}")
                 self.bg = None
                 self.bg_color = bg_color
         else:

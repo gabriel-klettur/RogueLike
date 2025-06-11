@@ -4,11 +4,11 @@ class PlayerAssets:
     """
     Encapsula la carga de sprites desde un sprite sheet único.
     """
-    def __init__(self, character_name: str, sprite_size: tuple[int, int]):
-        self.character_name = character_name
+    def __init__(self, class_player: str, sprite_size: tuple[int, int]):
+        self.class_player = class_player
         self.sprite_size = sprite_size
         # Ruta relativa dentro de ASSETS_DIR
-        self.sheet_path = f"characters/{character_name}/{character_name}.png"
+        self.sheet_path = f"characters/{class_player}/{class_player}.png"
 
     def get_sprites(self) -> tuple[dict[str, dict[str, list]], tuple[int, int]]:
         """

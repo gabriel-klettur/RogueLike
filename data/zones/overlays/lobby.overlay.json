@@ -45,13 +45,13 @@
         "",
         "",
         "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        ""
+        "floor",
+        "floor",
+        "floor",
+        "floor",
+        "floor",
+        "floor",
+        "floor"
       ],
       [
         "",
@@ -103,7 +103,7 @@
         "tileset_1/tiles/ocean_grass/tileset_test_23",
         "floor",
         "floor",
-        ""
+        "floor"
       ],
       [
         "",
@@ -155,7 +155,7 @@
         "tileset_1/tiles/ocean_grass/tileset_test_23",
         "floor",
         "floor",
-        ""
+        "floor"
       ],
       [
         "",
@@ -207,7 +207,7 @@
         "tileset_1/tiles/ocean_grass/tileset_test_23",
         "floor",
         "floor",
-        ""
+        "floor"
       ],
       [
         "",
@@ -259,7 +259,7 @@
         "tileset_1/tiles/ocean_grass/tileset_test_43",
         "floor",
         "floor",
-        ""
+        "floor"
       ],
       [
         "",
@@ -311,7 +311,7 @@
         "floor",
         "floor",
         "floor",
-        ""
+        "floor"
       ],
       [
         "",
@@ -363,7 +363,7 @@
         "floor",
         "floor",
         "floor",
-        ""
+        "floor"
       ],
       [
         "multi_tiles/tiles/rock/multi_108",
@@ -415,7 +415,7 @@
         "multi_tiles/tiles/rock/multi_108",
         "tileset_1/rock_grass/rock_grass_32_2",
         "tileset_1/rock_grass/rock_grass_32_2",
-        ""
+        "floor"
       ],
       [
         "multi_tiles/tiles/rock/multi_108",
@@ -467,7 +467,7 @@
         "multi_tiles/tiles/rock/multi_108",
         "multi_tiles/tiles/rock/multi_108",
         "multi_tiles/tiles/rock/multi_108",
-        ""
+        "floor"
       ],
       [
         "multi_tiles/tiles/rock/multi_108",
@@ -519,7 +519,7 @@
         "tileset_1/rock_grass/rock_grass_32_12",
         "tileset_1/rock_grass/rock_grass_32_12",
         "tileset_1/rock_grass/rock_grass_32_12",
-        ""
+        "floor"
       ],
       [
         "",
@@ -571,7 +571,7 @@
         "tileset_1/rock_grass/rock_grass_32_17",
         "tileset_1/rock_grass/rock_grass_32_17",
         "tileset_1/rock_grass/rock_grass_32_17",
-        ""
+        "floor"
       ],
       [
         "",
@@ -623,7 +623,7 @@
         "floor/floor",
         "floor/floor",
         "floor/floor",
-        ""
+        "floor"
       ],
       [
         "",
@@ -675,7 +675,7 @@
         "floor/floor",
         "floor/floor",
         "floor/floor",
-        ""
+        "floor"
       ],
       [
         "wall",
@@ -727,7 +727,7 @@
         "floor/floor",
         "floor/floor",
         "floor/floor",
-        ""
+        "floor"
       ],
       [
         "",
@@ -779,7 +779,7 @@
         "floor/floor",
         "floor/floor",
         "floor/floor",
-        ""
+        "floor"
       ],
       [
         "wall",
@@ -831,7 +831,7 @@
         "floor/floor",
         "floor/floor",
         "floor/floor",
-        ""
+        "floor"
       ],
       [
         "",
@@ -883,7 +883,7 @@
         "floor/floor",
         "floor/floor",
         "floor/floor",
-        ""
+        "floor"
       ],
       [
         "wall",
@@ -935,7 +935,59 @@
         "floor/floor",
         "floor/floor",
         "floor/floor",
-        ""
+        "floor"
+      ],
+      [
+        "",
+        "tileset_1/rock_grass/rock_grass_32_8",
+        "floor/floor",
+        "floor/floor",
+        "floor/floor",
+        "floor/floor",
+        "floor/floor",
+        "floor/floor",
+        "floor/floor",
+        "floor/floor",
+        "floor/floor",
+        "floor/floor",
+        "floor/floor",
+        "floor/floor",
+        "floor/floor",
+        "floor/floor",
+        "tileset_1/tiles/ocean_grass/tileset_test_21",
+        "tileset_1/tiles/ocean_grass/tileset_test_22",
+        "tileset_1/tiles/ocean_grass/tileset_test_23",
+        "floor/floor",
+        "floor/floor",
+        "floor/floor",
+        "tileset_1/rock_grass/rock_grass_32_6",
+        "multi_tiles/tiles/rock/multi_108",
+        "multi_tiles/tiles/rock/multi_108",
+        "multi_tiles/tiles/rock/multi_108",
+        "multi_tiles/tiles/rock/multi_108",
+        "tileset_1/rock_grass/rock_grass_32_8",
+        "floor/floor",
+        "floor/floor",
+        "floor/floor",
+        "floor/floor",
+        "floor/floor",
+        "floor/floor",
+        "floor/floor",
+        "floor/floor",
+        "floor/floor",
+        "floor/floor",
+        "floor/floor",
+        "floor/floor",
+        "floor/floor",
+        "floor/floor",
+        "floor/floor",
+        "floor/floor",
+        "floor/floor",
+        "floor/floor",
+        "floor/floor",
+        "floor/floor",
+        "floor",
+        "floor"
       ],
       [
         "",
@@ -987,59 +1039,7 @@
         "floor/floor",
         "floor/floor",
         "floor/floor",
-        ""
-      ],
-      [
-        "",
-        "tileset_1/rock_grass/rock_grass_32_8",
-        "floor/floor",
-        "floor/floor",
-        "floor/floor",
-        "floor/floor",
-        "floor/floor",
-        "floor/floor",
-        "floor/floor",
-        "floor/floor",
-        "floor/floor",
-        "floor/floor",
-        "floor/floor",
-        "floor/floor",
-        "floor/floor",
-        "floor/floor",
-        "tileset_1/tiles/ocean_grass/tileset_test_21",
-        "tileset_1/tiles/ocean_grass/tileset_test_22",
-        "tileset_1/tiles/ocean_grass/tileset_test_23",
-        "floor/floor",
-        "floor/floor",
-        "floor/floor",
-        "tileset_1/rock_grass/rock_grass_32_6",
-        "multi_tiles/tiles/rock/multi_108",
-        "multi_tiles/tiles/rock/multi_108",
-        "multi_tiles/tiles/rock/multi_108",
-        "multi_tiles/tiles/rock/multi_108",
-        "tileset_1/rock_grass/rock_grass_32_8",
-        "floor/floor",
-        "floor/floor",
-        "floor/floor",
-        "floor/floor",
-        "floor/floor",
-        "floor/floor",
-        "floor/floor",
-        "floor/floor",
-        "floor/floor",
-        "floor/floor",
-        "floor/floor",
-        "floor/floor",
-        "floor/floor",
-        "floor/floor",
-        "floor/floor",
-        "floor/floor",
-        "floor/floor",
-        "floor/floor",
-        "floor/floor",
-        "floor/floor",
-        "floor/floor",
-        ""
+        "floor"
       ],
       [
         "",
@@ -1090,8 +1090,8 @@
         "tileset_1/rock_grass/rock_grass_32_8",
         "floor/floor",
         "floor/floor",
-        "floor/floor",
-        ""
+        "floor",
+        "floor"
       ],
       [
         "",
@@ -1142,8 +1142,8 @@
         "tileset_1/rock_grass/rock_grass_32_8",
         "floor/floor",
         "floor/floor",
-        "floor/floor",
-        ""
+        "floor",
+        "floor"
       ],
       [
         "",
@@ -1195,7 +1195,7 @@
         "floor/floor",
         "floor/floor",
         "floor/floor",
-        ""
+        "floor"
       ],
       [
         "",
@@ -1247,7 +1247,7 @@
         "floor/floor",
         "floor/floor",
         "floor/floor",
-        ""
+        "floor"
       ],
       [
         "",
@@ -1299,7 +1299,7 @@
         "floor/floor",
         "floor/floor",
         "floor/floor",
-        ""
+        "floor"
       ],
       [
         "",
@@ -1351,7 +1351,7 @@
         "floor/floor",
         "floor/floor",
         "floor/floor",
-        ""
+        "floor"
       ],
       [
         "",
@@ -1403,7 +1403,7 @@
         "floor/floor",
         "floor/floor",
         "floor/floor",
-        ""
+        "floor"
       ],
       [
         "",
@@ -1455,7 +1455,7 @@
         "floor/floor",
         "floor/floor",
         "floor/floor",
-        ""
+        "floor"
       ],
       [
         "multi_tiles/tiles/rock/multi_108",
@@ -1507,7 +1507,7 @@
         "floor/floor",
         "floor/floor",
         "floor/floor",
-        ""
+        "floor"
       ],
       [
         "multi_tiles/tiles/rock/multi_108",
@@ -1559,7 +1559,7 @@
         "floor/floor",
         "floor/floor",
         "floor/floor",
-        ""
+        "floor"
       ],
       [
         "multi_tiles/tiles/rock/multi_108",
@@ -1611,7 +1611,7 @@
         "floor/floor",
         "floor/floor",
         "floor/floor",
-        ""
+        "floor"
       ],
       [
         "multi_tiles/tiles/rock/multi_108",
@@ -1663,7 +1663,7 @@
         "floor/floor",
         "floor/floor",
         "floor/floor",
-        ""
+        "floor"
       ],
       [
         "",
@@ -1715,7 +1715,7 @@
         "floor/floor",
         "floor/floor",
         "floor/floor",
-        ""
+        "floor"
       ],
       [
         "",
@@ -1767,7 +1767,7 @@
         "floor/floor",
         "floor/floor",
         "floor/floor",
-        ""
+        "floor"
       ],
       [
         "",
@@ -1819,7 +1819,7 @@
         "floor/floor",
         "floor",
         "floor/floor",
-        ""
+        "floor"
       ],
       [
         "multi_tiles/tiles/rock/multi_108",
@@ -1871,7 +1871,7 @@
         "floor/floor",
         "floor",
         "floor/floor",
-        ""
+        "floor"
       ],
       [
         "multi_tiles/tiles/rock/multi_108",
@@ -1923,7 +1923,7 @@
         "floor/floor",
         "floor",
         "floor/floor",
-        ""
+        "floor"
       ],
       [
         "multi_tiles/tiles/rock/multi_108",
@@ -1975,7 +1975,7 @@
         "floor/floor",
         "floor",
         "floor",
-        ""
+        "floor"
       ],
       [
         "multi_tiles/tiles/rock/multi_108",
@@ -2027,7 +2027,7 @@
         "floor/floor",
         "floor",
         "floor/floor",
-        ""
+        "floor"
       ],
       [
         "",
@@ -2079,7 +2079,7 @@
         "floor/floor",
         "floor",
         "floor/floor",
-        ""
+        "floor"
       ],
       [
         "",
@@ -2131,7 +2131,7 @@
         "floor/floor",
         "floor",
         "floor/floor",
-        ""
+        "floor"
       ],
       [
         "",
@@ -2183,7 +2183,7 @@
         "floor/floor",
         "floor",
         "floor/floor",
-        ""
+        "floor"
       ],
       [
         "",
@@ -2235,7 +2235,7 @@
         "floor/floor",
         "floor",
         "floor",
-        ""
+        "floor"
       ],
       [
         "",
@@ -2287,7 +2287,7 @@
         "floor/floor",
         "floor/floor",
         "floor/floor",
-        ""
+        "floor"
       ],
       [
         "",
@@ -2339,7 +2339,7 @@
         "floor/floor",
         "floor/floor",
         "floor/floor",
-        ""
+        "floor"
       ],
       [
         "",
@@ -2391,7 +2391,7 @@
         "floor/floor",
         "floor/floor",
         "floor/floor",
-        ""
+        "floor"
       ],
       [
         "",
@@ -2443,7 +2443,7 @@
         "floor/floor",
         "floor",
         "floor/floor",
-        ""
+        "floor"
       ],
       [
         "",
@@ -2466,9 +2466,9 @@
         "tileset_1/rock_grass/rock_grass_32_12",
         "tileset_1/rock_grass/rock_grass_32_12",
         "tileset_1/rock_grass/rock_grass_32_12",
-        "tileset_1/rock_grass/rock_grass_32_12",
-        "tileset_1/rock_grass/rock_grass_32_12",
-        "tileset_1/rock_grass/rock_grass_32_5",
+        "multi_tiles/tiles/rock/multi_108",
+        "multi_tiles/tiles/rock/multi_108",
+        "multi_tiles/tiles/rock/multi_108",
         "multi_tiles/tiles/rock/multi_108",
         "multi_tiles/tiles/rock/multi_108",
         "multi_tiles/tiles/rock/multi_108",
@@ -2495,7 +2495,7 @@
         "floor/floor",
         "floor",
         "floor/floor",
-        ""
+        "floor"
       ],
       [
         "",
@@ -2518,9 +2518,9 @@
         "tileset_1/rock_grass/rock_grass_32_2",
         "tileset_1/rock_grass/rock_grass_32_2",
         "tileset_1/rock_grass/rock_grass_32_2",
-        "tileset_1/rock_grass/rock_grass_32_2",
-        "tileset_1/rock_grass/rock_grass_32_2",
-        "tileset_1/rock_grass/rock_grass_32_10",
+        "multi_tiles/tiles/rock/multi_108",
+        "multi_tiles/tiles/rock/multi_108",
+        "multi_tiles/tiles/rock/multi_108",
         "multi_tiles/tiles/rock/multi_108",
         "multi_tiles/tiles/rock/multi_108",
         "multi_tiles/tiles/rock/multi_108",
@@ -2547,7 +2547,7 @@
         "floor/floor",
         "floor/floor",
         "floor/floor",
-        ""
+        "floor"
       ],
       [
         "",
@@ -2569,37 +2569,37 @@
         "",
         "",
         "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        ""
+        "floor",
+        "floor",
+        "floor",
+        "floor",
+        "floor",
+        "floor",
+        "floor",
+        "floor",
+        "floor",
+        "floor",
+        "floor",
+        "floor",
+        "floor",
+        "floor",
+        "floor",
+        "floor",
+        "floor",
+        "floor",
+        "floor",
+        "floor",
+        "floor",
+        "floor",
+        "floor",
+        "floor",
+        "floor",
+        "floor",
+        "floor",
+        "floor",
+        "floor",
+        "floor",
+        "floor"
       ]
     ],
     "FloorDecals": [

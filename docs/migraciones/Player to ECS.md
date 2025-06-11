@@ -10,7 +10,7 @@ Revisa entities/player.py y apunta todos sus atributos (posición, sprite, stats
   - Atributos: state, model, stats, movement, attack, obstacles, player_view, hud_view, renderer  
   - Métodos: __init__(), render(), update(), render_hud(), handle_input(), change_character(), center(), restore_all(), move(), take_damage()  
 - PlayerModel (`src/roguelike_game/entities/player/model/player_model.py`):  
-  - Atributos: x, y, character_name, sprite_sheet_size, sprite_size, direction, is_walking, rect, hitbox_obj, stats, movement, attack  
+  - Atributos: x, y, class_player, sprite_sheet_size, sprite_size, direction, is_walking, rect, hitbox_obj, stats, movement, attack  
   - Métodos: center(), hitbox()  
 - PlayerStats (`src/roguelike_game/entities/player/model/stats_model.py`):  
   - Atributos: max_health, max_mana, max_energy, health, mana, energy, shield_points, last_restore_time, last_shield_time, last_firework_time, last_smoke_time, last_lightning_time, last_pixel_fire_time  

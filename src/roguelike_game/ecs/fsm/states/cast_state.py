@@ -1,7 +1,7 @@
 from roguelike_game.ecs.fsm.state import State
 from roguelike_game.ecs.fsm.fsm import FiniteStateMachine
 from roguelike_game.ecs.fsm.states.spell.prepare_spell_state import PrepareSpellState
-from roguelike_game.ecs.fsm.states.aggro_state import AggroState
+from roguelike_game.ecs.fsm.states.monster.aggro_state import AggroState    #Utilizado cuando la magia impacta en el enemigo
 
 
 class CastState(State):
@@ -12,8 +12,7 @@ class CastState(State):
         self.direction: tuple[float,float] = (0, 0)
         self.spawn_pos: tuple[float,float] = (0, 0)
 
-    def enter(self, entity):
-        # Calcular dirección y posición de spawn de la fireball (usa contexto si fue proporcionado)
+    def enter(self, entity):        
         ctx = self.spell_fsm.context
         if 'direction' in ctx and 'spawn_pos' in ctx:
             self.direction, self.spawn_pos = ctx['direction'], ctx['spawn_pos']

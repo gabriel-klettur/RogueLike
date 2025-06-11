@@ -1,14 +1,21 @@
 {
     "fireball": {
       "type": "projectile",
-      "prepare_duration": 0.5,
-      "channel_duration": 0.5,
-      "cooldown_duration": 0.5,
+      "prepare_duration": 0.015,
+      "channel_duration": 0.015,
+      "cooldown_duration": 0.033,
       "speed": 30,
       "damage": 20,
       "lifespan": 60,
       "sprite": "assets/projectiles/fireball.png",
-      "scale": 0.1
+      "scale": 0.1,
+      "max_instances": 20,
+      "allow_overlap": true,
+      "range": 1800,
+      "allow_movement": true,
+      "lock_cast_direction": false,
+      "automatic": true,
+      "automatic_cast_punish": 1.0
     },
     "iceball": {
       "type": "projectile",
@@ -19,7 +26,14 @@
       "damage": 10,
       "lifespan": 60,
       "sprite": "assets/projectiles/iceball.png",
-      "scale": 0.1
+      "scale": 0.1,
+      "max_instances": 1,
+      "allow_overlap": true,
+      "range": 900,
+      "allow_movement": true,
+      "lock_cast_direction": false,
+      "automatic": true,
+      "automatic_cast_punish": 2.0
     },
     "lightball": {
       "type": "projectile",
@@ -30,7 +44,14 @@
       "damage": 10,
       "lifespan": 120,
       "sprite": "assets/projectiles/lightball.png",
-      "scale": 0.1
+      "scale": 0.1,
+      "max_instances": 1,
+      "allow_overlap": true,
+      "range": 7200,
+      "allow_movement": true,
+      "lock_cast_direction": false,
+      "automatic": true,
+      "automatic_cast_punish": 2.0
     },
     "darkball": {
       "type": "projectile",
@@ -41,7 +62,14 @@
       "damage": 10,
       "lifespan": 60,
       "sprite": "assets/projectiles/darkball.png",
-      "scale": 0.1
+      "scale": 0.1,
+      "max_instances": 1,
+      "allow_overlap": true,
+      "range": 600,
+      "allow_movement": true,
+      "lock_cast_direction": false,
+      "automatic": true,
+      "automatic_cast_punish": 2.0
     },
     "healing_aura": {
       "type": "aura",
@@ -53,7 +81,13 @@
       "duration": 8.0,
       "vfx": "healing_ring",
       "sprite": null,
-      "scale": 0.3
+      "scale": 0.3,
+      "max_instances": 1,
+      "allow_overlap": false,
+      "allow_movement": false,
+      "lock_cast_direction": true,
+      "automatic": false,
+      "automatic_cast_punish": 2.0
     },
     "laser_beam": {
       "type": "beam",
@@ -66,7 +100,14 @@
       "particle_colors": [[0,255,255],[150,255,255],[255,255,255]],      
       "lifespan": 1.0,
       "sprite": null,
-      "scale": 2.0
+      "scale": 2.0,
+      "max_instances": 1,
+      "allow_overlap": true,
+      "range": 1000,
+      "allow_movement": false,
+      "lock_cast_direction": true,
+      "automatic": false,
+      "automatic_cast_punish": 2.0
     },
     "dash": {
       "type": "dash",
@@ -74,7 +115,13 @@
       "channel_duration": 0.0,
       "cooldown_duration": 1.0,
       "speed": 2000,
-      "duration": 0.2
+      "duration": 0.2,
+      "max_instances": 1,
+      "allow_overlap": false,
+      "allow_movement": false,
+      "lock_cast_direction": true,
+      "automatic": false,
+      "automatic_cast_punish": 2.0
     },
     "slash": {
       "type": "slash",
@@ -89,6 +136,23 @@
       "speed_multiplier": 1.0,
       "size_range": [4, 12],
       "color": [100, 220, 255],
-      "offset": 0
+      "offset": 0,
+      "max_instances": 1,
+      "allow_overlap": false,
+      "allow_movement": false,
+      "lock_cast_direction": true,
+      "automatic": false,
+      "automatic_cast_punish": 2.0
+    },
+    "lightning": {
+      "type": "lightning",
+      "prepare_duration": 0.1,
+      "channel_duration": 0.2,
+      "cooldown_duration": 1.0,
+      "segments": 12,
+      "offset": 15,
+      "lifetime": 8,
+      "automatic": false,
+      "automatic_cast_punish": 2.0
     }
 }

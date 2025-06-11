@@ -59,7 +59,7 @@ from roguelike_project.entities.player.stats import PlayerStats
 
 class TestPlayerStats(unittest.TestCase):
     def setUp(self):
-        self.stats = PlayerStats("first_hero")
+        self.stats = PlayerStats("dwarf")
 
     def test_restore_all(self):
         self.stats.health = 0

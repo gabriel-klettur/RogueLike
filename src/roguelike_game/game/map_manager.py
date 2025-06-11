@@ -5,8 +5,18 @@ from roguelike_engine.map.utils import calculate_dungeon_offset
 from roguelike_engine.map.utils import get_zone_for_tile
 from roguelike_engine.map.view.chunked_map_view import ChunkedMapView
 from roguelike_engine.config.map_config import global_map_settings
-
+from roguelike_game.ecs.factories.player.config import RENDERED_SPRITE_SIZE
 from roguelike_engine.config.config_tiles import TILE_SIZE
+import time
+import logging
+import pickle
+from pathlib import Path
+import cProfile
+import pstats
+from datetime import datetime
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 class MapManager:
     def __init__(self, map_name: str | None):
@@ -16,10 +26,56 @@ class MapManager:
         global_map_settings.__dict__.pop('zone_offsets', None)
         # Guardar nombre para recargas dinámicas
         self.map_name = map_name
-        # 1) Construir datos con MapService
-        self.result = build_map(map_name)
+
+        # 1) Intentar cargar de cache; si falla o no existe, generar map y perfilar
+        cache_dir = Path('cache'); cache_dir.mkdir(exist_ok=True)
+        cache_file = cache_dir / f'map_{map_name}.pkl'
+        # Invalidate cache if any overlay JSON is newer than cache
+        overlays_dir = global_map_settings.ZONES_INDEX.parent / 'overlays'
+        try:
+            cache_mtime = cache_file.stat().st_mtime
+            for f in overlays_dir.glob('*.overlay.json'):
+                if f.stat().st_mtime > cache_mtime:
+                    cache_file.unlink()
+                    logger.info(f"[SubStage] cache invalidated due to newer overlay JSON: {f.name}")
+                    break
+        except Exception:
+            pass
+        need_build = True
+        if cache_file.exists():
+            try:
+                t0 = time.perf_counter()
+                with open(cache_file, 'rb') as f:
+                    self.result = pickle.load(f)
+                t1 = time.perf_counter()
+                logger.info(f"[SubStage] load_map_cache: {t1-t0:.4f}s [Clases: MapManager]")
+                need_build = False
+            except Exception as e:
+                logger.warning(f"Cache load failed ({cache_file}): {e}. Regenerating map.")
+                cache_file.unlink(missing_ok=True)
+        if need_build:
+            # Profile build_map to find hotspots
+            profile = cProfile.Profile(); profile.enable()
+            t0 = time.perf_counter()
+            self.result = build_map(map_name)
+            t1 = time.perf_counter(); profile.disable()
+            logger.info(f"[SubStage] build_map: {t1-t0:.4f}s [Clases: build_map, BuildResult]")
+            # Guardar resultado en cache si es picklable
+            try:
+                with open(cache_file, 'wb') as f:
+                    pickle.dump(self.result, f)
+            except TypeError as e:
+                logger.warning(f"Skipping map cache dump ({cache_file}): {e}")
+            # Dump profiling stats a logs
+            logs_dir2 = Path('logs'); logs_dir2.mkdir(exist_ok=True)
+            profile_log = logs_dir2 / f'build_map_profile_{map_name}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log'
+            with open(profile_log, 'w') as pf:
+                stats = pstats.Stats(profile, stream=pf)
+                stats.sort_stats('tottime').print_stats(30)
+            logger.info(f"[Profiling] build_map stats -> {profile_log}")
 
         # 2) Propiedades básicas y multi-capa
+        t0 = time.perf_counter()
         self.name = self.result.name
         self.matrix = self.result.matrix
         # layers y tiles por capa
@@ -30,6 +86,8 @@ class MapManager:
         self.tiles = self.result.tiles
         # Precomputar tiles sólidos para colisiones
         self.solid_tiles = [tile for row in self.tiles for tile in row if getattr(tile, "solid", False)]
+        t1 = time.perf_counter()
+        logger.info(f"[SubStage] init properties: {t1-t0:.4f}s [Clases: MapManager]")
 
         # 3) Offset y rooms
         self.lobby_offset = self.result.metadata.get("lobby_offset", (0, 0))
@@ -37,31 +95,36 @@ class MapManager:
         # rooms de cada zona (usado para conectar túneles)
         self.zone_rooms: dict[str, list] = {}
         self.zone_rooms["dungeon"] = self.rooms
-
-        # 4) Offset de la dungeon (en tiles)
         lob_x, lob_y = self.lobby_offset
         self.dungeon_offset = calculate_dungeon_offset((lob_x, lob_y))
 
-        # 5) Flat list y vista chunked (se usa si necesitas seguir con chunked)
+        # 4) Vista chunked
+        t0 = time.perf_counter()
         self.tiles_in_region = self.all_tiles
         self.view = ChunkedMapView()
+        t1 = time.perf_counter()
+        logger.info(f"[SubStage] ChunkedMapView init: {t1-t0:.4f}s [Clases: ChunkedMapView]")
 
-        # 6) Etiquetado de zona por tile
-        self.tiles_by_zone: dict[str, list] = {}
+        # 5) Zone tagging
+        t0 = time.perf_counter()
+        self.tiles_by_zone = {}
         for row in self.tiles:
             for tile in row:
-                tx = tile.x // TILE_SIZE
-                ty = tile.y // TILE_SIZE
+                tx, ty = tile.x // TILE_SIZE, tile.y // TILE_SIZE
                 zone = get_zone_for_tile(tx, ty)
                 tile.zone = zone
                 self.tiles_by_zone.setdefault(zone, []).append(tile)
+        t1 = time.perf_counter()
+        logger.info(f"[SubStage] zone tagging: {t1-t0:.4f}s [Clases: MapManager, get_zone_for_tile]")
 
-        # 7) Collision layers per zone (data model)
-        self.collision_layers: dict[str, list[list[str]]] = {}
-        # Load collision layers per zone
+        # 6) Collision layers
+        t0 = time.perf_counter()
+        self.collision_layers = {}
         self._load_collision_layers()
-         
-        # Estado local del nivel (se usa para persistencia)
+        t1 = time.perf_counter()
+        logger.info(f"[SubStage] collision layers: {t1-t0:.4f}s [Clases: MapManager]")
+
+        # 7) Estado local del nivel (se usa para persistencia)
         self._local_state: dict = {
             "player_pos": None,    # Tuple[int,int] de posición de jugador en tiles
             "npc_states": {},      # dict[npc_id, estado serializado]
@@ -87,8 +150,7 @@ class MapManager:
     def get_spawn_pixel(self, tile_pos: tuple[int, int]) -> tuple[int, int]:
         """
         Dada una posición en tiles, devuelve coordenadas en píxeles para alinear el collider 'feet'
-        """
-        from roguelike_game.config_player import RENDERED_SPRITE_SIZE
+        """        
         # Centro del tile en píxeles
         tx, ty = tile_pos
         tile_cx = tx * TILE_SIZE + TILE_SIZE // 2
@@ -131,6 +193,17 @@ class MapManager:
         # Vuelve a inicializar el MapManager con el mismo map_name
         self.__init__(self.map_name)
 
+    def save_cache(self):
+        """
+        Actualiza el cache pickle tras modificaciones de mapa.
+        """
+        cache_dir = Path('cache')
+        cache_dir.mkdir(exist_ok=True)
+        cache_file = cache_dir / f'map_{self.map_name}.pkl'
+        with open(cache_file, 'wb') as f:
+            pickle.dump(self.result, f)
+        logger.info(f"[SubStage] update_cache: saved updated map cache to {cache_file}")
+
     def expand_zone(self, side: str, zone_key: str, parent_key: str) -> None:
         """
         Agrega una zona nueva al mapa existente de forma incremental.
@@ -141,6 +214,8 @@ class MapManager:
         from roguelike_engine.map.model.loader.text_loader_strategy import TextMapLoader
         from roguelike_engine.tile.loader import load_tiles_from_text
 
+        # Forzar offsets dinámicos para incluir nuevas zonas en runtime
+        global_map_settings.use_zones_json = False
         # Guardar offsets viejos
         old_offsets = global_map_settings.zone_offsets.copy()
         # Limpiar cache de offsets y recalcular

@@ -13,6 +13,10 @@ class InputComponent:
         # Acciones de combate
         self.attack: bool = False
         # Habilidades secundarias
-        self.skill_q: bool = False
-        self.skill_e: bool = False
+        self.spell_lightball: bool = False
+        self.spell_slash: bool = False
+        self.spell_healing_aura: bool = False
+        self.spell_darkball: bool = False
+        self.spell_iceball: bool = False
+        self.spell_lightning: bool = False
         self.click: bool = False

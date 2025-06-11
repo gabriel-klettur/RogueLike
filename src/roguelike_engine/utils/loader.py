@@ -2,6 +2,7 @@
 import pygame
 import os
 from roguelike_engine.config.config import ASSETS_DIR
+_IMAGE_CACHE = {}
 
 def load_image(path: str, scale=None) -> pygame.Surface:
     """
@@ -19,20 +20,25 @@ def load_image(path: str, scale=None) -> pygame.Surface:
     # Construimos la ruta absoluta
     full_path = os.path.join(ASSETS_DIR, *rel.split("/"))
 
+    # Cache images to avoid redundant I/O
+    key = (full_path, scale)
+    if key in _IMAGE_CACHE:
+        return _IMAGE_CACHE[key]
+
     if not os.path.isfile(full_path):
         raise FileNotFoundError(f"Imagen no encontrada: {full_path}")
 
     img = pygame.image.load(full_path).convert_alpha()
     if scale:
         img = pygame.transform.scale(img, scale)
-    # Devolver dimensiones si no hay scale para debug
+    _IMAGE_CACHE[key] = img
     return img
 
 def load_sprite_sheet(path: str, sprite_size: tuple[int,int],
                       row=0, columns=1, start_col=0) -> list[pygame.Surface]:
     """
     Igual que load_image, pero corta el sheet en frames.
-    path = "characters/first_hero/first_hero.png", etc.
+    path = "characters/dwarf/dwarf.png", etc.
     """
     sheet = load_image(path)
     w, h = sprite_size

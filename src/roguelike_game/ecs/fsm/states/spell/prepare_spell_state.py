@@ -11,7 +11,10 @@ class PrepareSpellState(State):
     def execute(self, entity, dt):
         # Duración dinámica de preparación según el hechizo
         spell = self.fsm.context.get('spell')
-        duration = SPELLS.get(spell, {}).get('prepare_duration', 0)
+        base = SPELLS.get(spell, {}).get('prepare_duration', 0)
+        # Penalización x multiplicador si es auto-cast
+        punish = self.fsm.context.get('automatic_cast_punish', 1.0) if self.fsm.context.get('automatic', False) else 1.0
+        duration = base * punish
         if time.time() - self.fsm.context['prepare_start'] >= duration:
             self.fsm.change_state(ChannelSpellState(), entity)
 

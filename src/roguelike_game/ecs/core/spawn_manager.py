@@ -3,9 +3,18 @@
 from roguelike_engine.map.utils import calculate_lobby_offset
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_game.ecs.utils.collider_utils import build_collider_rect
-from roguelike_game.ecs.factories.entity_factory import _load_caches_once, _DEFS, _create_sprite_component, _calculate_position, _create_collider_components
+from roguelike_game.ecs.factories.monster.cache import load_caches_for, _SPRITE_SURFACES
+from roguelike_game.ecs.factories.monster.physics import calculate_position, create_collider_components
+from roguelike_game.ecs.factories.monster.config import MONSTER_DEFS
 from roguelike_game.ecs.utils.spawn_utils import find_spawn_positions
 from roguelike_game.ecs.components.spawn.spawn_request import SpawnRequest
+import random
+import math
+from roguelike_engine.config.config_tiles import TILE_SIZE
+from typing import Any
+
+# Extra padding para seguridad de spawn en tiles
+SPAWN_PADDING_EXTRA = 1
 
 class SpawnNPCManager:
     def __init__(self, world):
@@ -25,29 +34,60 @@ class SpawnNPCManager:
         lobby_offset = calculate_lobby_offset()
         zone_size = global_map_settings.zone_size
 
-        # 2) Cargar definiciones y sprite base
-        _load_caches_once()
-        cfg = _DEFS["barbol"]
-        sprite, _ = _create_sprite_component("barbol")
+        # 2) Cargar definiciones y preparar prototipos de colliders
+        # Variantes de barbol a spawnear
+        barbol_variants = [k for k in MONSTER_DEFS if k.startswith("barbol")]
+        # Cargar sprites solo para estas variantes
+        load_caches_for(barbol_variants)
+        # Precompute prototipos de sprite y colliders
+        proto_sprites: dict[str, Any] = {}
+        proto_colliders: dict[str, Any] = {}
+        for variant in barbol_variants:
+            cfg_var = MONSTER_DEFS[variant]
+            raw_surf = _SPRITE_SURFACES[variant].get("down")
+            dummy = type("Proto", (), {})()
+            dummy.image = raw_surf
+            proto_sprites[variant] = dummy
+            proto_colliders[variant] = create_collider_components(dummy, cfg_var)
+        # Calcular padding de spawn según collider de pies de la variante base
+        feet = proto_colliders.get("barbol").colliders.get("feet")
+        radius = max(feet.width, feet.height) / 2
+        neighbor_padding = math.ceil(radius / TILE_SIZE) + SPAWN_PADDING_EXTRA
         spawned_rects = []
 
         # 3) Spawn en LOBBY
-        positions = find_spawn_positions(self.map_manager, self.buildings, lobby_offset, zone_size, neighbor_padding=3, sample_count=10)
-        filtered_positions = []
+        positions = find_spawn_positions(self.map_manager, self.buildings, lobby_offset,
+                                         zone_size, neighbor_padding=neighbor_padding, sample_count=10)
+        print(f"[SpawnManager][Spawn] Lobby: candidatos={len(positions)}")
         for tx, ty in positions:
-            px, py = _calculate_position(tx, ty, cfg, sprite)
-            multi = _create_collider_components(sprite, cfg)
-            feet = multi.colliders.get("feet")
-            if feet:
-                rect = build_collider_rect(px, py, feet)
-                if not any(rect.colliderect(r) for r in spawned_rects):
-                    spawned_rects.append(rect)
-                    filtered_positions.append((tx, ty))
-
-        print(f"[SpawnManager][Spawn] Lobby: candidatos={len(positions)}, válidos={len(filtered_positions)}")
-        for tx, ty in filtered_positions:
+            variant = random.choice(barbol_variants)
+            cfg_var = MONSTER_DEFS[variant]
+            dummy = proto_sprites[variant]
+            px, py = calculate_position(tx, ty, cfg_var, dummy)
+            rects_var = [build_collider_rect(px, py, c) for c in proto_colliders[variant].colliders.values()]
+            # Evitar colisiones con NPCs previos y elementos estáticos (mapa y edificios)
+            blocked = False
+            for r in rects_var:
+                # Chequear NPCs anteriores
+                for old in spawned_rects:
+                    if r.colliderect(old):
+                        blocked = True
+                        break
+                if blocked:
+                    break
+                # Chequear colisiones estáticas vía spatial_index
+                for s in self.world.get_solid_tiles_for_rect(r):
+                    if r.colliderect(s):
+                        blocked = True
+                        break
+                if blocked:
+                    break
+            if blocked:
+                continue
+            # Registrar colisiones del NPC recién spawneado
+            spawned_rects.extend(rects_var)
             eid_req = self.world.create_entity()
-            self.world.components['SpawnRequest'][eid_req] = SpawnRequest(prototype="barbol", position=(tx, ty))
+            self.world.components['SpawnRequest'][eid_req] = SpawnRequest(prototype=variant, position=(tx, ty))
 
         # 4) Spawn en EMPTY_LEFT (si existe)
         offsets = global_map_settings.zone_offsets
@@ -55,19 +95,32 @@ class SpawnNPCManager:
         if not empty_offset:
             return
 
-        empty_positions = find_spawn_positions(self.map_manager, self.buildings, empty_offset, zone_size, neighbor_padding=3, sample_count=100)
-        filtered_empty = []
+        empty_positions = find_spawn_positions(self.map_manager, self.buildings, empty_offset,
+                                               zone_size, neighbor_padding=neighbor_padding, sample_count=100)
+        print(f"[SpawnManager][Spawn] Empty Left: candidatos={len(empty_positions)}")
         for tx, ty in empty_positions:
-            px, py = _calculate_position(tx, ty, cfg, sprite)
-            multi = _create_collider_components(sprite, cfg)
-            feet = multi.colliders.get("feet")
-            if feet:
-                rect = build_collider_rect(px, py, feet)
-                if not any(rect.colliderect(r) for r in spawned_rects):
-                    spawned_rects.append(rect)
-                    filtered_empty.append((tx, ty))
-
-        print(f"[SpawnManager][Spawn] Empty Left: candidatos={len(empty_positions)}, válidos={len(filtered_empty)}")
-        for tx, ty in filtered_empty:
+            variant = random.choice(barbol_variants)
+            cfg_var = MONSTER_DEFS[variant]
+            dummy = proto_sprites[variant]
+            px, py = calculate_position(tx, ty, cfg_var, dummy)
+            rects_var = [build_collider_rect(px, py, c) for c in proto_colliders[variant].colliders.values()]
+            # Evitar colisiones con NPCs previos y elementos estáticos (mapa y edificios)
+            blocked = False
+            for r in rects_var:
+                for old in spawned_rects:
+                    if r.colliderect(old):
+                        blocked = True
+                        break
+                if blocked:
+                    break
+                for s in self.world.get_solid_tiles_for_rect(r):
+                    if r.colliderect(s):
+                        blocked = True
+                        break
+                if blocked:
+                    break
+            if blocked:
+                continue
+            spawned_rects.extend(rects_var)
             eid_req = self.world.create_entity()
-            self.world.components['SpawnRequest'][eid_req] = SpawnRequest(prototype="barbol", position=(tx, ty))
+            self.world.components['SpawnRequest'][eid_req] = SpawnRequest(prototype=variant, position=(tx, ty))

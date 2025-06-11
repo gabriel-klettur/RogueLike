@@ -1,7 +1,7 @@
 # Path: src/roguelike_game/game/entities_manager.py
 from types import SimpleNamespace
-from roguelike_game.config_player import RENDERED_SPRITE_SIZE
 
+from roguelike_game.ecs.factories.player.config import RENDERED_SPRITE_SIZE
 from roguelike_game.game.map_manager import MapManager
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.systems.editor.buildings.model.persistence.load_buildings_from_json import load_buildings_from_json

@@ -1,7 +1,7 @@
 # Path: src/roguelike_game/game/ecs_manager.py
 
 from roguelike_game.ecs.core.manager import ECSWorld
-from roguelike_game.ecs.factories.player_factory import spawn_player_tile
+from roguelike_game.ecs.factories.player.player_factory import spawn_player_tile
 from roguelike_engine.config.map_config import global_map_settings
 
 
@@ -16,7 +16,8 @@ class ECSManager:
         self.ecs_world = ECSWorld(screen, map_manager, entities_manager.buildings, perf_log)
         # Spawn de la entidad jugador según posición guardada en tile coords o centro del lobby
         saved_tile = self.map_manager._local_state.get("player_pos")
-        if saved_tile is not None:
+        # Validar que saved_tile sea secuencia de dos valores
+        if isinstance(saved_tile, (tuple, list)) and len(saved_tile) == 2:
             tx, ty = saved_tile
         else:
             off_x, off_y = self.map_manager.lobby_offset
@@ -27,6 +28,8 @@ class ECSManager:
         self.ecs_world.player_entity = pid
         # Registrar tile coords en MapManager para persistencia
         self.map_manager.spawn_player((tx, ty))
+        # Spawn inicial de NPCs después de crear el jugador para que player sea id=1
+        self.ecs_world.spawn_npc_manager.spawn_npc_initial()
         self.entities_manager.ecs_manager = self
 
     def update(self, clock, screen, camera):

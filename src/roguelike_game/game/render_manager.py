@@ -4,6 +4,7 @@ from roguelike_engine.utils.mouse import draw_mouse_crosshair
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_engine.utils.debug import DebugOverlay, render_debug_overlay
 from roguelike_engine.config.config_tiles import TILE_SIZE
+import roguelike_engine.config.config as config
 
 # Sistema de orden Z
 from roguelike_game.systems.z_layer.render import render_z_ordered
@@ -159,6 +160,8 @@ class RendererManager:
 
         # Debug: overlay y bordes
         render_debug_overlay(self.debug_overlay, screen, state, camera, self.map, entities, show_borders=True)
+        # Resaltar área de expansión de dungeon
+        self._render_expand_area(self._last_state)
         # Mostrar ayuda de controles según el modo
         self._render_help_overlay(state)
 
@@ -343,13 +346,26 @@ class RendererManager:
         # Cachea el overlay de ayuda para evitar renderizado de texto cada frame
         screen = self.screen
         size = screen.get_size()
-        mode = ('buildings' if self.buildings_editor.editor_state.active else
-                'tiles' if self.tiles_editor.editor_state.active else 'normal')
+        if self.map_editor.editor_state.active:
+            mode = 'map'
+        elif self.buildings_editor.editor_state.active:
+            mode = 'buildings'
+        elif self.tiles_editor.editor_state.active:
+            mode = 'tiles'
+        elif config.DEBUG:
+            mode = 'debug'
+        else:
+            mode = 'normal'
         key = (mode, size)
         if key != self._help_overlay_key:
             # Reconstruir overlay            
             screen_w, screen_h = size
-            if mode == 'buildings':
+            if mode == 'map':
+                lines = ["Modo Edición Mapas:", "F11: modo", "ESC: salir",
+                         "N: duplicar zona", "L: cargar zonas", "Ctrl+S: guardar zonas",
+                         "D: borrar zona", "H: ocultar zona", "Click Izq: toolbar",
+                         "Click Medio: arrastrar", "Rueda: zoom"]
+            elif mode == 'buildings':
                 lines = [
                     "Modo Edición Edificios:", "F10: modo", "P: selector edificio",
                     "ESC: salir", "D: reset", "R: redimensionar",
@@ -360,11 +376,19 @@ class RendererManager:
                 lines = ["Modo Edición Tiles:", "F8: editor tiles", "ESC: salir",
                          "B: alternar edificios", "Click Izq: pintar", "Rueda: capa",
                          "Click Der: arrastrar"]
+            elif mode == 'debug':
+                lines = [
+                    "Debug Mode:",
+                    "F9: Toggle Debug Overlay",
+                    "F12: Toggle Hitbox Debug",
+                    "Mouse Wheel: Scroll Overlay"
+                ]
             else:
-                lines = ["Modo Normal:", "F8: tiles", "F10: edificios",
-                         "F9: debug", "ESC: menú", "Q: vida",
-                         "1: escudo", "F: fuegos art.", "R: humo", "T: humo pers.",
-                         "Z: rayo", "X: llama", "V: dash", "E: slash", "F3: expand dungeon"]
+                lines = ["Normal Mode:", "ESC: Menu", "[IN DUNGEON] Red area expand dungeon", "F8:Tiles Editor", "F9: Debug Mode","F10: Buildings Editor",
+                         "F11: Map Editor", "F12: Entities Editor",                         
+                         "E: Slash","X: Healing", "Mouse left: Fire Ball", "Mouse right: Slash",
+                         "Mouse middle: Laser Beam"
+                         ]
             font = pygame.font.SysFont("Arial", 14)
             pad = 5
             texts = [font.render(l, True, (255,255,255)) for l in lines]
@@ -382,6 +406,23 @@ class RendererManager:
         # Blitear overlay cacheado
         surf, rect = self._help_overlay_surf
         screen.blit(surf, rect)
+
+    def _render_expand_area(self, state):
+        """Dibuja overlay semitransparente en los 9 tiles del trigger de expansión."""
+        if not hasattr(state, 'expand_area_coords'):
+            return
+        for tx, ty in state.expand_area_coords:
+            zoom = self.camera.zoom
+            x = int((tx * TILE_SIZE - self.camera.offset_x) * zoom)
+            y = int((ty * TILE_SIZE - self.camera.offset_y) * zoom)
+            size = int(TILE_SIZE * zoom)
+            rect = pygame.Rect(x, y, size, size)
+            # Red semi-transparent fill and border for visibility
+            surf = pygame.Surface((size, size), flags=pygame.SRCALPHA)
+            surf.fill((255, 0, 0, 150))
+            self.screen.blit(surf, rect.topleft)
+            pygame.draw.rect(self.screen, (255, 0, 0), rect, width=2)
+            self._dirty_rects.append(rect)
 
 class _NPCWrapper:
     """Envoltorio optimizado para renderizar NPCs dentro de render_z_ordered."""

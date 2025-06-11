@@ -1,4 +1,5 @@
 import pygame
+from roguelike_engine.utils.loader import load_image
 
 class Sprite:
     def __init__(self, image):
@@ -6,5 +7,5 @@ class Sprite:
         if isinstance(image, pygame.Surface):
             self.image = image
         else:
-            # Load from path and convert alpha for transparency
-            self.image = pygame.image.load(image).convert_alpha()
+            # Load from path using cached loader
+            self.image = load_image(image)
