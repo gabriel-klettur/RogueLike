@@ -7,11 +7,9 @@ from roguelike_game.ecs.systems.physics.movement_collision_system import Movemen
 from roguelike_game.ecs.systems.rendering.animation_system import AnimationSystem
 from roguelike_game.ecs.systems.rendering.health_bar_system import HealthBarSystem
 from roguelike_game.ecs.systems.rendering.nameplate_system import NamePlateSystem
-from roguelike_game.ecs.systems.physics.collision_debug_system import CollisionDebugSystem
 from roguelike_game.ecs.systems.combat.melee.melee_combat_system import MeleeCombatSystem
 from roguelike_game.ecs.systems.physics.facing_system import FacingSystem
 from roguelike_game.ecs.systems.physics.player_facing_system import PlayerFacingSystem
-from roguelike_game.ecs.systems.core.spawn_debug_system import SpawnDebugSystem
 from roguelike_game.ecs.systems.core.spawn_system import SpawnSystem
 from roguelike_game.ecs.systems.input.input_system import InputSystem
 from roguelike_game.ecs.systems.combat.spells.spell_casting_system import SpellCastingSystem
@@ -23,18 +21,14 @@ from roguelike_game.ecs.systems.particles.laser_beam_emitter_system import Laser
 from roguelike_game.ecs.systems.rendering.combat.spells.fireball_render_system import FireballRenderSystem
 from roguelike_game.ecs.systems.rendering.combat.spells.lightning_render_system import LightningRenderSystem
 from roguelike_game.ecs.systems.rendering.particles.particle_render_system import ParticleRenderSystem
-from roguelike_game.ecs.systems.rendering.player_debug_render_system import PlayerDebugRenderSystem
 from roguelike_game.ecs.systems.rendering.death_timer_bar_system import DeathTimerBarSystem
-from roguelike_game.ecs.systems.rendering.death_timer_debug_system import DeathTimerDebugSystem
-from roguelike_game.ecs.systems.rendering.fsm.chase_debug_system import ChaseDebugSystem
-from roguelike_game.ecs.systems.rendering.fsm.states_debug_render_system import StatesDebugRenderSystem
-from roguelike_game.ecs.systems.rendering.hitbox_debug_system import HitboxDebugSystem
 from roguelike_game.ecs.systems.rendering.flash_system import FlashSystem
 from roguelike_game.ecs.systems.rendering.trail_system import TrailSystem
 from roguelike_game.ecs.systems.fsm.fsm_system import FSMSystem
 from roguelike_game.ecs.systems.combat.spells.dash_system import DashSystem
 from roguelike_game.ecs.systems.combat.hitbox_system import HitboxSystem
 from roguelike_game.ecs.systems.combat.spells.lightning_system import LightningSystem
+from roguelike_game.ecs.systems.debug.entities_debug_system import EntitiesDebugSystem
 
 def get_update_system_classes():
     """
@@ -56,16 +50,12 @@ def get_render_system_classes():
     """
     base = [
         HealthBarSystem, NamePlateSystem,
-        CollisionDebugSystem,
         FireballRenderSystem, ParticleRenderSystem, LightningRenderSystem,
-        ChaseDebugSystem,
-        PlayerDebugRenderSystem,
         DeathTimerBarSystem,
-        StatesDebugRenderSystem,
     ]
-    if config.DEBUG:
-        base.append(SpawnDebugSystem)
-        base.append(DeathTimerDebugSystem)
-    # Always register HitboxDebugSystem; update() will early exit if DEBUG_HITBOX is False
-    base.append(HitboxDebugSystem)
+    # Render systems comunes
+    # Overlay unificado de debug de entidades (se activa/desactiva internamente con F12)
+    base.append(EntitiesDebugSystem)
+    # Otros sistemas de render (eliminados FlashSystem y TrailSystem de render)
+    # FlashSystem y TrailSystem son sistemas de update, no deben ir en render
     return base

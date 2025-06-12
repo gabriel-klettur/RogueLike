@@ -19,9 +19,7 @@ class ChaseDebugSystem:
 
     @benchmark(lambda self: self.perf_log, "4.2.2.ChaseDebugSystem.update")
     def update(self, world, screen, camera):
-        # Solo debug entidades (F12)
-        if not config.DEBUG_ENTITIES:
-            return
+        # Renderizar cada frame sin frame skipping
 
         # Cache components and camera parameters
         comps = world.components

@@ -14,9 +14,7 @@ class HitboxDebugSystem:
 
     @benchmark(lambda self: self.perf_log, "4.2.2.HitboxDebugSystem.update")
     def update(self, world, screen, camera):
-        # Solo renderizar debug si DEBUG_ENTITIES está activo
-        if not config.DEBUG_ENTITIES:
-            return
+        # Siempre dibujar hitbox shapes cada frame en la superficie dada
         pos_store = world.components.get('Position', {})
         hb_store = world.components.get('HitboxComponent', {})
         for eid, hb in hb_store.items():
