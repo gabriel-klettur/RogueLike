@@ -13,7 +13,7 @@
             1024,
             1536
         ],
-        "split_ratio": 0.78,
+        "split_ratio": 0.782,
         "z_bottom": 3,
         "z_top": 9,
         "z": 3
@@ -58,17 +58,17 @@
     },
     {
         "zone": "Lobby",
-        "rel_x": 565,
-        "rel_y": 189,
+        "rel_x": 543,
+        "rel_y": 143,
         "image_path": "assets/buildings/vegetation/tree_3.png",
         "solid": true,
         "scale": [
-            190,
-            241
+            258,
+            327
         ],
         "original_scale": [
-            190,
-            241
+            258,
+            327
         ],
         "split_ratio": 0.701,
         "z_bottom": 4,
@@ -248,8 +248,8 @@
     },
     {
         "zone": "Lobby",
-        "rel_x": 142,
-        "rel_y": 184,
+        "rel_x": 133,
+        "rel_y": 156,
         "image_path": "assets/buildings/shops/magic_tower.png",
         "solid": true,
         "scale": [
@@ -894,17 +894,17 @@
     },
     {
         "zone": "empty_left",
-        "rel_x": 541,
-        "rel_y": 217,
+        "rel_x": 535,
+        "rel_y": 177,
         "image_path": "assets/buildings\\vegetation\\tree_1.PNG",
         "solid": true,
         "scale": [
-            188,
-            257
+            183,
+            249
         ],
         "original_scale": [
-            188,
-            257
+            183,
+            249
         ],
         "split_ratio": 0.5,
         "z_bottom": 3,
