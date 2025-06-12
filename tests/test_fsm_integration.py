@@ -2,10 +2,10 @@ import time
 import pytest
 from roguelike_game.ecs.fsm.fsm import FiniteStateMachine
 from roguelike_game.ecs.fsm.states.idle_state import IdleState
-from roguelike_game.ecs.fsm.states.patrol_state import PatrolState
-from roguelike_game.ecs.fsm.states.aggro_state import AggroState
+from roguelike_game.ecs.fsm.states.monster.patrol_state import PatrolState
+from roguelike_game.ecs.fsm.states.monster.aggro_state import AggroState
+from roguelike_game.ecs.fsm.states.monster.flee_state import FleeState
 from roguelike_game.ecs.fsm.states.attack_state import AttackState
-from roguelike_game.ecs.fsm.states.flee_state import FleeState
 from roguelike_game.ecs.fsm.states.death_state import DeathState
 
 class DummyEntity:
@@ -14,13 +14,17 @@ class DummyEntity:
     """
     def __init__(self):
         self.world = None
+        self.id = 0
 
 
-def test_full_fsm_cycle():
+def test_full_fsm_cycle(world):
     """
     Test de integración completo de ciclo de FSM: Idle -> Patrol -> Aggro -> Attack -> Flee -> Death.
     """
     entity = DummyEntity()
+    # Asignar mundo y jugador para AttackState
+    entity.world = world
+    world.player_entity = entity.id
     fsm = FiniteStateMachine(IdleState())
     # Entrar a Idle
     fsm.current_state.enter(entity)

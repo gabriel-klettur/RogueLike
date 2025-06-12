@@ -11,9 +11,13 @@ class StatesDebugRenderSystem:
     def __init__(self, perf_log):
         self.font = pygame.font.SysFont(None, 14)
         self.perf_log = perf_log
+        # cache rendered labels per state
+        self.text_cache = {}
 
     @benchmark(lambda self: self.perf_log, "4.2.2.StatesDebugRenderSystem.update")
     def update(self, world, screen, camera):
+        # view frustum culling
+        view_rect = pygame.Rect(0, 0, camera.screen_width, camera.screen_height)
 
         # Solo debug de entidades (F12)
         if not config.DEBUG_ENTITIES:
@@ -32,6 +36,12 @@ class StatesDebugRenderSystem:
             # calcular posición en pantalla
             x = (pos.x - camera.offset_x + w/2) * camera.zoom
             y = (pos.y - camera.offset_y) * camera.zoom
-            label = self.font.render(state_name, True, (255, 255, 255))
+            # culling labels off-screen
+            if not view_rect.collidepoint(x, y):
+                continue
+            label = self.text_cache.get(state_name)
+            if label is None:
+                label = self.font.render(state_name, True, (255, 255, 255))
+                self.text_cache[state_name] = label
             lw, lh = label.get_size()
             screen.blit(label, (x - lw/2, y - lh))

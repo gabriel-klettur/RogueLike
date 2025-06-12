@@ -24,22 +24,22 @@ class EntitiesDebugSystem:
         ]
         self._debug_surface = None
         self.perf_log = perf_log
+        self._frame_count = 0
 
     @benchmark(lambda self: self.perf_log, "EntitiesDebugSystem.update")
     def update(self, world, screen, camera):
-        print(f"[DEBUG ENT] update called, DEBUG_ENTITIES={config.DEBUG_ENTITIES}")
+        # frame skip counter
+        self._frame_count += 1
         if not config.DEBUG_ENTITIES:
-            print("[DEBUG ENT] DEBUG_ENTITIES is False, returning")
             return
         # Inicializar o redimensionar superficie
         w, h = screen.get_size()
         if self._debug_surface is None or self._debug_surface.get_size() != (w, h):
-            print(f"[DEBUG ENT] initializing/resizing debug surface to {(w, h)}")
             self._debug_surface = pygame.Surface((w, h), pygame.SRCALPHA)
-        # Siempre redibujar capa de debug de entidades cada frame
-        self._debug_surface.fill((0, 0, 0, 0))
-        for sys in self.subsystems:
-            sys.update(world, self._debug_surface, camera)
+        # Sólo actualizar overlay cada N frames según frame_skip
+        if self._frame_count % config.DEBUG_ENTITIES_FRAME_SKIP == 0:
+            self._debug_surface.fill((0, 0, 0, 0))
+            for sys in self.subsystems:
+                sys.update(world, self._debug_surface, camera)
         # Blitear overlay siempre
         screen.blit(self._debug_surface, (0, 0))
-        print("[DEBUG ENT] overlay blitted")
