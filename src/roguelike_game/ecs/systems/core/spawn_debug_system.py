@@ -29,8 +29,8 @@ class SpawnDebugSystem:
           screen – Superficie de pygame donde dibujar.
           camera – Objeto que transforma coordenadas de mundo a pantalla.
         """
-        # No hacer nada si no estamos en modo DEBUG o no hay spawn_tiles
-        if not config.DEBUG or not hasattr(world, 'spawn_tiles'):
+        # Solo renderizar spawn debug en modo ENTITIES DEBUG (F12)
+        if not config.DEBUG_ENTITIES or not hasattr(world, 'spawn_tiles'):
             return
 
         # Iterar cada punto de spawn (tile_x, tile_y, entity_id)

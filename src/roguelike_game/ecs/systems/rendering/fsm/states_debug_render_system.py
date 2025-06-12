@@ -2,6 +2,7 @@ import pygame
 from roguelike_game.ecs.components.fsm.npc_state import NPCState
 from roguelike_game.ecs.components.transform.scale import Scale
 from roguelike_engine.utils.benchmark import benchmark
+import roguelike_engine.config.config as config
 
 class StatesDebugRenderSystem:
     """
@@ -9,19 +10,13 @@ class StatesDebugRenderSystem:
     """
     def __init__(self, perf_log):
         self.font = pygame.font.SysFont(None, 14)
-        self.debug = False
-        self.last_pressed = False
         self.perf_log = perf_log
 
     @benchmark(lambda self: self.perf_log, "4.2.2.StatesDebugRenderSystem.update")
     def update(self, world, screen, camera):
 
-        keys = pygame.key.get_pressed()
-        f9 = keys[pygame.K_F9]
-        if f9 and not self.last_pressed:
-            self.debug = not self.debug
-        self.last_pressed = f9
-        if not self.debug:
+        # Solo debug de entidades (F12)
+        if not config.DEBUG_ENTITIES:
             return
 
         comps = world.components

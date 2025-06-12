@@ -37,7 +37,7 @@ class DeathTimerDebugSystem:
         Dibuja en pantalla los contadores sobre cada entidad con DeathTimer activo.
 
         Pasos:
-        1. Verificar que estemos en modo DEBUG.
+        1. Verificar que estemos en modo DEBUG_ENTITIES.
         2. Obtener el tiempo actual.
         3. Para cada entidad con componente DeathTimer:
            - Calcular segundos restantes.
@@ -47,8 +47,8 @@ class DeathTimerDebugSystem:
            - Obtener (o crear) la superficie de texto para el número.
            - Calcular coordenadas en pantalla y renderizar.
         """
-        # Solo renderiza en modo DEBUG
-        if not config.DEBUG:
+        # Solo renderiza en modo ENTITIES DEBUG (F12)
+        if not config.DEBUG_ENTITIES:
             return
 
         now = time.time()

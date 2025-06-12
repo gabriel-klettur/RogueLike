@@ -106,6 +106,7 @@ class ECSWorld:
             pos = self.components.get('Position', {}).get(eid)
             if pos is None:
                 continue
-            # Filtrar por área visible de la cámara
-            if camera.rect.collidepoint(pos.x, pos.y):
+            # Filtrar por área visible de la cámara usando coordenadas de pantalla
+            sx, sy = camera.apply((pos.x, pos.y))
+            if 0 <= sx <= camera.screen_width and 0 <= sy <= camera.screen_height:
                 yield eid

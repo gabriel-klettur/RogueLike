@@ -3,6 +3,7 @@ from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.ecs.utils.position_utils import compute_foot_tile
 from roguelike_game.ecs.utils.render_utils import draw_sprite_bbox
 from roguelike_engine.utils.benchmark import benchmark
+import roguelike_engine.config.config as config
 
 class ChaseDebugSystem:
     """
@@ -18,14 +19,8 @@ class ChaseDebugSystem:
 
     @benchmark(lambda self: self.perf_log, "4.2.2.ChaseDebugSystem.update")
     def update(self, world, screen, camera):
-        # Toggle debug mode on F9 (only on key down)
-        keys = pygame.key.get_pressed()
-        f9 = keys[pygame.K_F9]
-        if f9 != self.last_pressed:
-            if f9:
-                self.debug = not self.debug
-            self.last_pressed = f9
-        if not self.debug:
+        # Solo debug entidades (F12)
+        if not config.DEBUG_ENTITIES:
             return
 
         # Cache components and camera parameters
