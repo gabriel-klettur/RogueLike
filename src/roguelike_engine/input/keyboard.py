@@ -35,8 +35,9 @@ def handle_keyboard(event, state, camera, clock, menu, entities, effects, tiles_
             print(f"🧪 DEBUG {'activado' if config.DEBUG else 'desactivado'}")
 
         elif event.key == pygame.K_F12:
-            config.DEBUG_HITBOX = not config.DEBUG_HITBOX
-            print(f"🧪 HITBOX DEBUG {'activado' if config.DEBUG_HITBOX else 'desactivado'}")
+            # Toggle de debug de entidades (FSM, IA, etc.)
+            config.DEBUG_ENTITIES = not config.DEBUG_ENTITIES
+            print(f"🧪 ENTITIES DEBUG {'activado' if config.DEBUG_ENTITIES else 'desactivado'}")
 
         # ---------- TILE-EDITOR (F8) --------- #
         elif event.key == pygame.K_F8:

@@ -1,4 +1,4 @@
-# Path: src/roguelike_engine/config.py
+# Path: src/roguelike_engine/config/config.py
 from pathlib import Path
 
 #! ------------------------ MAIN GAME SETTINGS ------------------------
@@ -9,6 +9,7 @@ MAX_DIRTY = 50
 # Debug Mode
 DEBUG = False
 DEBUG_HITBOX = False
+DEBUG_ENTITIES = False  # Debug de entidades (FSM, IA, etc.)
 
 # Pantalla
 SCREEN_WIDTH = 1600

@@ -46,8 +46,8 @@ class NamePlateSystem:
         # Obtener conjuntos de componentes para acceder por clave
         comps = world.components
 
-        # Recorrer entidades que tengan Position e Identity
-        for eid in world.get_entities_with('Position', 'Identity'):
+        # Renderizar solo entidades dentro del área de cámara
+        for eid in world.get_entities_in_camera(camera, 'Position', 'Identity'):
             # 1) Recuperar componentes
             pos: Position    = comps['Position'][eid]
             id_comp: Identity = comps['Identity'][eid]
