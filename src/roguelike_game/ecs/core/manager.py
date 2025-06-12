@@ -97,3 +97,15 @@ class ECSWorld:
     def invalidate_spatial_index(self):
         """Marca SpatialIndex para reconstrucción en el próximo update."""
         self._spatial_index_dirty = True
+
+    def get_entities_in_camera(self, camera, *component_types):
+        """
+        Devuelve entidades dentro del área de la cámara con los componentes dados.
+        """
+        for eid in self.get_entities_with(*component_types):
+            pos = self.components.get('Position', {}).get(eid)
+            if pos is None:
+                continue
+            # Filtrar por área visible de la cámara
+            if camera.rect.collidepoint(pos.x, pos.y):
+                yield eid
