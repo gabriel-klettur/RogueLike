@@ -13,6 +13,8 @@ class HitboxDebugSystem:
         self.perf_log = perf_log
         # cache fonts if needed
         self.font_cache = {}
+        # cache circle surfaces by radius to avoid per-frame draw
+        self.circle_surfs = {}
 
     @benchmark(lambda self: self.perf_log, "4.2.2.HitboxDebugSystem.update")
     def update(self, world, screen, camera):
@@ -40,9 +42,17 @@ class HitboxDebugSystem:
             # Skip drawing if off-screen
             if not rect.colliderect(view_rect):
                 continue
-            # Draw full circle outline in red
-            center_screen = camera.apply((cx, cy))
-            pygame.draw.circle(screen, (255, 0, 0), (int(center_screen[0]), int(center_screen[1])), int(r), 1)
+            # Blit cached circle surface instead of drawing each frame
+            radius = int(r)
+            if radius > 0:
+                surf = self.circle_surfs.get(radius)
+                if surf is None:
+                    size = radius * 2 + 2
+                    surf = pygame.Surface((size, size), flags=pygame.SRCALPHA)
+                    pygame.draw.circle(surf, (255, 0, 0), (radius+1, radius+1), radius, 1)
+                    self.circle_surfs[radius] = surf
+                cx_scr, cy_scr = camera.apply((cx, cy))
+                screen.blit(surf, (int(cx_scr - (radius+1)), int(cy_scr - (radius+1))))
             # Draw arc segment in green
             pygame.draw.arc(screen, (0, 255, 0), rect, start_ang, end_ang, 2)
         # Draw all colliders (bounding rect) in blue for debugging
