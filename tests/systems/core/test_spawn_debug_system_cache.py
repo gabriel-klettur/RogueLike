@@ -1,6 +1,4 @@
 import pygame
-import math
-import types
 import pytest
 from roguelike_game.ecs.systems.core.spawn_debug_system import SpawnDebugSystem
 import roguelike_engine.config.config as config
