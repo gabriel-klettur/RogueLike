@@ -1,7 +1,17 @@
 import sys, os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
 import pytest
-import pygame
+import types
+try:
+    import pygame
+except ModuleNotFoundError:
+    pygame = types.SimpleNamespace(
+        init=lambda: None,
+        Surface=lambda *args, **kwargs: None,
+        Rect=lambda *args, **kwargs: None,
+        mouse=types.SimpleNamespace(get_pos=lambda: (0,0), get_pressed=lambda: (False, False, False)),
+    )
+    sys.modules['pygame'] = pygame
 from roguelike_game.ecs.core.manager import ECSWorld
 
 class DummyMapManager:

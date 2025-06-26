@@ -12,3 +12,9 @@ Este documento describe brevemente lo que comprueba cada test en el proyecto.
 | tests/systems/rendering/test_hitbox_debug_system_cache.py | Verifica caché de superficies circulares y culling en el sistema de depuración de hitbox. |
 | tests/systems/rendering/test_states_debug_render_system_cache.py | Valida caché de etiquetas de estados y culling en el sistema de depuración de estados. |
 | tests/test_fsm_integration.py | Test de integración del FSM: ciclo completo de estados Idle -> Patrol -> Aggro -> Attack -> Flee -> Death. |
+| tests/systems/physics/test_movement_collision_system.py | Prueba el sistema de movimiento y colisión: mueve entidades según `Velocity`, detiene en muros y evita atravesar obstáculos. |
+| tests/systems/input/test_input_system.py | Comprueba captura de eventos de entrada y asignación de `InputComponent`. |
+| tests/systems/combat/spells/test_spell_casting_system.py | Verifica el sistema de lanzamiento de hechizos: agenda hechizos, gestiona cooldowns y genera intents de lanzamiento. |
+| tests/systems/combat/spells/test_fireball_system.py | Valida trayectoria, animación y daño del hechizo Fireball según `SpellCastingSystem`. |
+| tests/systems/core/test_death_timer_system.py | Comprueba creación de `DeathTimer` al morir y su remoción tras expirar. |
+| tests/systems/combat/spells/test_dynamic_spawn_system.py | Prueba spawns dinámicos de hechizos: recalcula posición y dirección según cursor y posición del jugador. |
