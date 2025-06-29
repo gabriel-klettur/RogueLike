@@ -32,8 +32,14 @@ class ProjectileResolver(BaseSpellResolver):
             cx += w / 2; cy += h / 2
         # Dirección hacia el cursor actual
         mx, my = pygame.mouse.get_pos()
-        wx = mx / camera.zoom + camera.offset_x
-        wy = my / camera.zoom + camera.offset_y
+        if camera:
+            zoom = getattr(camera, 'zoom', 1.0)
+            offset_x = getattr(camera, 'offset_x', 0)
+            offset_y = getattr(camera, 'offset_y', 0)
+            wx = mx / zoom + offset_x
+            wy = my / zoom + offset_y
+        else:
+            wx, wy = mx, my
         dx, dy = wx - cx, wy - cy
         length = (dx * dx + dy * dy) ** 0.5 or 1
         dir_x, dir_y = dx / length, dy / length

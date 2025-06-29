@@ -1,5 +1,7 @@
 from .state import State
 import time
+import pygame
+import math
 
 class FiniteStateMachine:
     """
@@ -12,6 +14,9 @@ class FiniteStateMachine:
         """
         self.current_state = initial_state
         initial_state.fsm = self
+        # Debug tracking
+        self._seen_states = {initial_state}
+        self._history = []
 
     def change_state(self, new_state: State, entity):
         """
@@ -19,6 +24,9 @@ class FiniteStateMachine:
         """
         old_state_name = self.current_state.__class__.__name__
         new_state_name = new_state.__class__.__name__
+        # Track debug history
+        self._seen_states.add(new_state)
+        self._history.append((self.current_state, new_state))
         # Debug con tiempos y tipo de hechizo si aplica
         ctx = getattr(self, 'context', {}) or {}
         spell = ctx.get('spell', '')
@@ -44,3 +52,26 @@ class FiniteStateMachine:
         Ejecuta la lógica del estado activo.
         """
         self.current_state.execute(entity, dt)
+
+    def debug_draw(self, screen):
+        '''Dibuja el grafo de estados y transiciones.'''
+        states = list(self._seen_states)
+        history = self._history
+        w, h = screen.get_size()
+        cx, cy = w // 2, h // 2
+        n = len(states) or 1
+        radius = min(w, h) // 3
+        angles = [i * 2 * math.pi / n for i in range(n)]
+        pos = {s: (cx + int(radius * math.cos(ang)), cy + int(radius * math.sin(ang))) for s, ang in zip(states, angles)}
+        # Dibujar transiciones
+        for old, new in history:
+            pygame.draw.line(screen, (200,200,200), pos[old], pos[new], 2)
+        # Dibujar nodos
+        font = pygame.font.SysFont(None, 24)
+        for s in states:
+            x, y = pos[s]
+            color = (0,255,0) if s == self.current_state else (100,100,100)
+            pygame.draw.circle(screen, color, (x,y), 30)
+            text = font.render(s.__class__.__name__, True, (255,255,255))
+            rect = text.get_rect(center=(x,y))
+            screen.blit(text, rect)

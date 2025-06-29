@@ -19,6 +19,8 @@ class ECSWorld:
 
         # 1) Inicializar índice espacial
         self.spatial_index = SpatialIndex(map_manager, buildings)
+        # Flag para evitar reconstruir SpatialIndex cada frame
+        self._spatial_index_dirty = False
 
         # 2) Registrar componentes
         self.components = create_empty_component_store()
@@ -69,8 +71,10 @@ class ECSWorld:
                 yield eid
 
     def update(self, camera):
-        # Rebuild spatial index to reflect latest tile collision edits
-        self.spatial_index = SpatialIndex(self.map_manager, self.buildings)
+        # Reconstruir SpatialIndex sólo si ha sido invalidado
+        if self._spatial_index_dirty:
+            self.spatial_index = SpatialIndex(self.map_manager, self.buildings)
+            self._spatial_index_dirty = False
         # Ejecutar cada sistema de update
         for system in self.update_systems:
             system.update(self, camera)
@@ -89,3 +93,20 @@ class ECSWorld:
     def get_solid_tiles_for_rect(self, rect):
         # Delegamos totalmente al spatial_index
         return self.spatial_index.get_solid_tiles_for_rect(rect)
+
+    def invalidate_spatial_index(self):
+        """Marca SpatialIndex para reconstrucción en el próximo update."""
+        self._spatial_index_dirty = True
+
+    def get_entities_in_camera(self, camera, *component_types):
+        """
+        Devuelve entidades dentro del área de la cámara con los componentes dados.
+        """
+        for eid in self.get_entities_with(*component_types):
+            pos = self.components.get('Position', {}).get(eid)
+            if pos is None:
+                continue
+            # Filtrar por área visible de la cámara usando coordenadas de pantalla
+            sx, sy = camera.apply((pos.x, pos.y))
+            if 0 <= sx <= camera.screen_width and 0 <= sy <= camera.screen_height:
+                yield eid

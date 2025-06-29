@@ -4,7 +4,6 @@ Provides a debug system to visualize entity collision shapes when DEBUG mode is 
 """
 
 import pygame
-import roguelike_engine.config.config as config
 from roguelike_game.ecs.utils.collider_utils import build_collider_rect
 from roguelike_engine.utils.benchmark import benchmark
 
@@ -27,16 +26,14 @@ class CollisionDebugSystem:
     @benchmark(lambda self: self.perf_log, "4.2.2.CollisionDebugSystem.update")
     def update(self, world, screen, camera):
         """
-        Recorre todas las entidades con MultiCollider y Position. Si DEBUG=True:
+        Recorre todas las entidades con MultiCollider y Position. Siempre dibuja:
           1. Construye el rectángulo de colisión en coordenadas de mundo.
           2. Aplica culling para omitir shapes fuera de la pantalla.
           3. Si el collider tiene 'mask', genera (o recupera del cache) el contorno
              y lo dibuja escalado como un polígono.
           4. Si no hay máscara, dibuja el rectángulo.
         """
-        # Also show collision shapes when hitbox debug is active
-        if not (config.DEBUG or config.DEBUG_HITBOX):
-            return
+        # Siempre dibujar shapes de colisión en la superficie dada
 
         comps = world.components
         multi_map = comps.get('MultiCollider', {})

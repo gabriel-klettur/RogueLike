@@ -30,6 +30,8 @@ class DeathTimerDebugSystem:
         self.color = color
         # Pre-cache de superficies de texto para valores de 0 a 60 segundos
         self.text_cache = {i: self.font.render(str(i), True, self.color) for i in range(0, 61)}
+        # Guardar perf_log para benchmark
+        self.perf_log = perf_log
 
     @benchmark(lambda self: self.perf_log, "4.2.2.DeathTimerDebugSystem.update")
     def update(self, world, screen, camera):
@@ -37,7 +39,7 @@ class DeathTimerDebugSystem:
         Dibuja en pantalla los contadores sobre cada entidad con DeathTimer activo.
 
         Pasos:
-        1. Verificar que estemos en modo DEBUG.
+        1. Verificar que estemos en modo DEBUG_ENTITIES.
         2. Obtener el tiempo actual.
         3. Para cada entidad con componente DeathTimer:
            - Calcular segundos restantes.
@@ -47,10 +49,7 @@ class DeathTimerDebugSystem:
            - Obtener (o crear) la superficie de texto para el número.
            - Calcular coordenadas en pantalla y renderizar.
         """
-        # Solo renderiza en modo DEBUG
-        if not config.DEBUG:
-            return
-
+        # Renderizar contador de muerte cada frame en la superficie dada
         now = time.time()
         # Obtener diccionario de componentes DeathTimer, o uno vacío
         dt_store = world.components.get('DeathTimer', {})
