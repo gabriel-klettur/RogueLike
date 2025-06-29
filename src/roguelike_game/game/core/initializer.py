@@ -20,6 +20,7 @@ from roguelike_game.game.render_manager import RendererManager
 from roguelike_game.game.map_manager import MapManager
 from roguelike_game.game.buildings_manager import BuildingsManager
 from roguelike_game.game.z_layer_manager import ZLayerManager
+from types import SimpleNamespace
 from roguelike_game.systems.effects_manager import EffectsManager
 from roguelike_game.game.menu_manager import MenuManager
 from roguelike_game.game.buildings_editor_manager import BuildingEditorManager
@@ -73,12 +74,13 @@ class GameInitializer:
             ("Inicializando estado Principal", partial(self._init_state)),
             ("Cargando mapa"                , partial(self._init_map)),
             ("Cargando edificios"           , partial(self._init_buildings)),
+            ("Inicializando ECS"            , partial(self._init_ecs)),
             ("Cargando Z-layer"             , partial(self._init_z_layer)),
             ("Cargando editor de edificios" , partial(self._init_buildings_editor)),
             ("Cargando editor de tiles"     , partial(self._init_tile_editor)),
             ("Cargando editor de mapa"      , partial(self._init_map_editor)),
             ("Cargando minimapa"            , partial(self._init_minimap)),
-            ("Inicializando ECS"            , partial(self._init_ecs)),
+
             ("Inicializando renderizador"   , partial(self._init_renderer)),
             ("Inicializando menú"           , partial(self._init_menu)),
             ("Inicializando efectos"        , partial(self._init_effects)),
@@ -155,7 +157,11 @@ class GameInitializer:
 
     def _init_z_layer(self):
         z = ZLayerManager(self.game.z_state)
-        z.initialize(self.game.state, self.game.buildings)
+        entities = SimpleNamespace(
+            player=self.game.ecs.ecs_world.player_position,
+            buildings=self.game.buildings.buildings
+        )
+        z.initialize(self.game.state, entities)
         self.game.zlayer = z
 
     def _init_buildings_editor(self):

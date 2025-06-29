@@ -41,7 +41,7 @@ class MapEditorManager:
         else:
             # Restore zoom and recenter camera on exit
             self.game.camera.zoom = 1.0
-            self.game.camera.update(self.game.buildings.player)
+            self.game.camera.update(self.game.ecs.ecs_world.player_position)
             # reset de subestado al cerrar
             self.editor_state.selected_zone = None
             self.editor_state.hidden_zones.clear()

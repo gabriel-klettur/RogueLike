@@ -1,8 +1,10 @@
 # Path: src/roguelike_game/game/buildings_manager.py
-from types import SimpleNamespace
 
-from roguelike_game.ecs.factories.player.config import RENDERED_SPRITE_SIZE
+
+
 from roguelike_game.game.map_manager import MapManager
+
+
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.systems.editor.buildings.model.persistence.load_buildings_from_json import load_buildings_from_json
 
@@ -52,19 +54,3 @@ class BuildingsManager:
                 if hasattr(b, "update"):
                     b.update(state, game_map)
         _update_buildings()
-
-    #! DEBERIA IR EN ECS
-    @property
-    def player(self):
-        ecs_mgr = getattr(self, 'ecs_manager', None)
-        if ecs_mgr:
-            pos = ecs_mgr.ecs_world.player_position
-            eid = getattr(ecs_mgr.ecs_world, 'player_entity', None)
-            if pos and eid is not None:
-                sprite_cmp = ecs_mgr.ecs_world.components.get('Sprite', {}).get(eid)
-                if sprite_cmp and hasattr(sprite_cmp, 'image'):
-                    sprite_size = sprite_cmp.image.get_size()
-                else:
-                    sprite_size = RENDERED_SPRITE_SIZE
-                return SimpleNamespace(x=pos.x, y=pos.y, sprite_size=sprite_size)
-        return None
