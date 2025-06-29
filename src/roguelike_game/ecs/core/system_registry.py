@@ -29,6 +29,7 @@ from roguelike_game.ecs.systems.combat.spells.dash_system import DashSystem
 from roguelike_game.ecs.systems.combat.hitbox_system import HitboxSystem
 from roguelike_game.ecs.systems.combat.spells.lightning_system import LightningSystem
 from roguelike_game.ecs.systems.debug.entities_debug_system import EntitiesDebugSystem
+from roguelike_game.ecs.systems.expansion_system import ExpansionSystem
 
 def get_update_system_classes():
     """
@@ -40,7 +41,7 @@ def get_update_system_classes():
         MovementCollisionSystem,
         MeleeCombatSystem, SpellCastingSystem, AuraSystem, ParticleSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, FireballSystem, LightningSystem, DashSystem, HitboxSystem,
         TrailSystem,
-        AnimationSystem, FlashSystem, SpawnSystem,
+        AnimationSystem, FlashSystem, SpawnSystem, ExpansionSystem,
     ]
 
 def get_render_system_classes():

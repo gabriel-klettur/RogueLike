@@ -2,14 +2,8 @@
 from roguelike_engine.utils.benchmark import benchmark
 import pygame
 import types
-from roguelike_engine.config.config_tiles import TILE_SIZE
-import time
-from roguelike_engine.map.events.events import handle_expand_dungeon, _next_zone_key
-from roguelike_engine.config.map_config import global_map_settings
-from roguelike_game.ecs.core.spatial_index import SpatialIndex
-from roguelike_game.ecs.utils.collider_utils import build_collider_rect
-from collections import deque
-from roguelike_game.ecs.systems.expansion_system import ExpansionSystem
+
+
 
 def update_game(
     state,
@@ -111,10 +105,3 @@ def update_game(
                 tiles=map.tiles_in_region
             )
     _update_minimap()
-
-    # 2.6) Dungeon expansion
-    @benchmark(perf_log, "2.6.expansion.update")
-    def _update_expansion():
-        exp = ExpansionSystem(perf_log)
-        exp.update(state, map, entities, ecs)
-    _update_expansion()

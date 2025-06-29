@@ -31,6 +31,7 @@ class ECSManager:
         # Spawn inicial de NPCs después de crear el jugador para que player sea id=1
         self.ecs_world.spawn_npc_manager.spawn_npc_initial()
         self.entities_manager.ecs_manager = self
+        self.ecs_world.entities_manager = self.entities_manager
 
     def update(self, clock, screen, camera):
         # Actualiza la lógica del mundo ECS

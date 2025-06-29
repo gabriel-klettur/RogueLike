@@ -176,6 +176,7 @@ class GameInitializer:
         pr.enable()
         t0 = time.perf_counter()
         g.ecs = ECSManager(self.screen, g.map, g.buildings, self.perf_log)
+        g.ecs.ecs_world.state = g.state
         elapsed = time.perf_counter() - t0
         pr.disable()
 
