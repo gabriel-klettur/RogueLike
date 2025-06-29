@@ -4,7 +4,7 @@ import pygame
 
 from roguelike_engine.input.events import handle_events
 from roguelike_engine.utils.benchmark import benchmark
-from roguelike_game.game.update_manager import update_game
+from roguelike_game.game.core.update_manager import update_game
 from roguelike_game.game.core.loop_manager import GameLoop
 from roguelike_game.game.core.shutdown_manager import ShutdownManager
 from roguelike_game.game.core.initializer import GameInitializer

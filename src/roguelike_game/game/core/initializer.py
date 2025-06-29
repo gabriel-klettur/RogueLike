@@ -15,17 +15,17 @@ from roguelike_engine.world.world import WorldManager
 from roguelike_engine.world.world_config import WORLD_CONFIG
 
 from roguelike_game.config.input_config import InputConfig
-from roguelike_game.game.state import GameState
-from roguelike_game.game.render_manager import RendererManager
+from roguelike_game.game.core.state import GameState
+from roguelike_game.game.core.render_manager import RendererManager
 from roguelike_game.game.map_manager import MapManager
 from roguelike_game.game.buildings_manager import BuildingsManager
 from roguelike_game.game.z_layer_manager import ZLayerManager
 from types import SimpleNamespace
 from roguelike_game.systems.effects_manager import EffectsManager
 from roguelike_game.game.menu_manager import MenuManager
-from roguelike_game.game.buildings_editor_manager import BuildingEditorManager
-from roguelike_game.game.tiles_editor_manager import TilesEditorManager
-from roguelike_game.game.map_editor_manager import MapEditorManager
+from roguelike_game.game.editors.buildings_editor_manager import BuildingEditorManager
+from roguelike_game.game.editors.tiles_editor_manager import TilesEditorManager
+from roguelike_game.game.editors.map_editor_manager import MapEditorManager
 from roguelike_engine.minimap.minimap import Minimap
 from roguelike_game.systems.z_layer.state import ZState
 from roguelike_game.game.ecs_manager import ECSManager
