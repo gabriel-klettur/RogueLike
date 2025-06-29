@@ -100,7 +100,6 @@ class Game:
             self.effects,
         )
 
-
     @benchmark(lambda self: self.perf_log, "4.2.ecs - update")
     def update_ecs(self):
         self.ecs.update(self.clock, self.screen, self.camera)

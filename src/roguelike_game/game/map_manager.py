@@ -14,6 +14,9 @@ from pathlib import Path
 import cProfile
 import pstats
 from datetime import datetime
+from pathlib import Path
+import json
+from roguelike_engine.config.config import DATA_DIR
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -365,10 +368,7 @@ class MapManager:
         self.solid_tiles = [t for r in self.tiles for t in r if getattr(t, "solid", False)]
 
     def save_collision_layers(self, zone_name: str):
-        """Guarda la capa de colisiones de la zona en JSON"""
-        from pathlib import Path
-        import json
-        from roguelike_engine.config.config import DATA_DIR
+        """Guarda la capa de colisiones de la zona en JSON"""        
         collisions_dir = Path(DATA_DIR) / "collisions"
         collisions_dir.mkdir(parents=True, exist_ok=True)
         data = self.collision_layers.get(zone_name)
