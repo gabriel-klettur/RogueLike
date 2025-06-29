@@ -34,9 +34,9 @@ class GameLoop:
 
 
     def _post_frame(self):
+
+        # 1) Actualizar ECS
         g = self.game
-
-
 
         # 2) Flip
         pygame.display.flip()
