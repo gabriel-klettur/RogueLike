@@ -9,7 +9,7 @@ class ParticleRenderSystem:
     def __init__(self, perf_log):
         self.perf_log = perf_log
 
-    @benchmark(lambda self: self.perf_log, "ParticleRenderSystem.update")
+    @benchmark(lambda self: self.perf_log, "4.2.2.ParticleRenderSystem.update")
     def update(self, world, screen, camera):
         particles = world.components.get('ParticleComponent', {})
         positions = world.components.get('Position', {})

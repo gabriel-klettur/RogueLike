@@ -5,6 +5,7 @@ from roguelike_engine.utils.benchmark import benchmark
 from roguelike_engine.utils.debug import DebugOverlay, render_debug_overlay
 from roguelike_engine.config.config_tiles import TILE_SIZE
 import roguelike_engine.config.config as config
+from types import SimpleNamespace
 
 # Sistema de orden Z
 from roguelike_game.systems.z_layer.render import render_z_ordered
@@ -159,7 +160,8 @@ class RendererManager:
 
 
         # Debug: overlay y bordes
-        render_debug_overlay(self.debug_overlay, screen, state, camera, self.map, entities, show_borders=True)
+        debug_entities = SimpleNamespace(player=self.ecs.ecs_world.player_position)
+        render_debug_overlay(self.debug_overlay, screen, state, camera, self.map, debug_entities, show_borders=True)
         # Resaltar área de expansión de dungeon
         self._render_expand_area(self._last_state)
         # Mostrar ayuda de controles según el modo

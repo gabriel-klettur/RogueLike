@@ -43,7 +43,6 @@ class Game:
         self.loop             = GameLoop(self)
         self.shutdown_manager = ShutdownManager(self)
 
-
     @benchmark(lambda self: self.perf_log, "1.TOTAL: HANDLE EVENTS")
     def handle_events(self):
         # Si un editor está activo, solo lo capturamos a él
@@ -67,7 +66,6 @@ class Game:
             self.renderer.debug_overlay
         )
 
-
     @benchmark(lambda self: self.perf_log, "2.TOTAL: UPDATE")
     def update(self):
         update_game(
@@ -86,7 +84,6 @@ class Game:
             self.perf_log
         )
 
-
     @benchmark(lambda self: self.perf_log, "3.TOTAL: RENDER")
     def render(self):
         self.renderer.render_game(
@@ -104,16 +101,13 @@ class Game:
     def update_ecs(self):
         self.ecs.update(self.clock, self.screen, self.camera)
 
-
     @benchmark(lambda self: self.perf_log, "4.1 ecs - render")
     def render_ecs(self):
         self.ecs.render(self.screen, self.camera)
 
-
     def run(self):
         """Arranca el bucle principal."""
         self.loop.run()
-
 
     def shutdown(self):
         """Guarda todo y cierra."""
