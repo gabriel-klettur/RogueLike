@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/ecs/components/rendering/sprite.py
 import pygame
 from roguelike_engine.utils.loader import load_image
 

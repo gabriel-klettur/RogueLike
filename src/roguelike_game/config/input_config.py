@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/config/input_config.py
 import pygame
 import json
 import os

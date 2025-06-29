@@ -1,3 +1,4 @@
+# Path: src/roguelike_engine/map/model/layer.py
 from enum import IntEnum
 
 class Layer(IntEnum):

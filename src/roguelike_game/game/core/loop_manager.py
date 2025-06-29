@@ -1,5 +1,5 @@
-# Path: src/roguelike_game/game/loop_manager.py
 
+# Path: src/roguelike_game/game/core/loop_manager.py
 import time
 import pygame
 

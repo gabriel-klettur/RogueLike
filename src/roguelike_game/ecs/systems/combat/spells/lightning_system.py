@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/ecs/systems/combat/spells/lightning_system.py
 import pygame
 import random
 from roguelike_engine.utils.benchmark import benchmark

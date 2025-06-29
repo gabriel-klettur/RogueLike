@@ -1,3 +1,4 @@
+# Path: tests/systems/core/test_spawn_debug_system_cache.py
 import pygame
 import pytest
 from roguelike_game.ecs.systems.core.spawn_debug_system import SpawnDebugSystem

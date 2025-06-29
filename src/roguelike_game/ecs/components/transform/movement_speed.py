@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/ecs/components/transform/movement_speed.py
 from dataclasses import dataclass
 
 @dataclass

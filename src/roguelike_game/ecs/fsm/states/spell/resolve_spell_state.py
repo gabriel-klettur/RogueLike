@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/ecs/fsm/states/spell/resolve_spell_state.py
 from roguelike_game.ecs.fsm.state import State
 from roguelike_game.ecs.fsm.states.spell.cooldown_state import CooldownState
 from roguelike_game.ecs.fsm.states.player.player_spell_cooldown_state import PlayerSpellCooldownState

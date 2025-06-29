@@ -8,3 +8,4 @@ class WantsToCastSpell:
         self.spell = spell
         self.target = target
         self.direction = direction
+# Path: src/roguelike_game/ecs/components/ai/wants_to_cast.py

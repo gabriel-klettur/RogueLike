@@ -1,3 +1,4 @@
+# Path: tests/visual/test_fsm_visual.py
 import pygame
 import pytest
 from roguelike_game.ecs.fsm.fsm import FiniteStateMachine  # Máquina de estados finitos personalizada del juego

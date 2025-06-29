@@ -1,4 +1,4 @@
-# Path: src/roguelike_game/systems/combat/spells/smoke/model.py
+# Path: src/roguelike_game/systems/effects/spells/smoke/model.py
 import math
 import random
 from roguelike_game.systems.particles.particle import Particle

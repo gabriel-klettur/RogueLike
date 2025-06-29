@@ -1,3 +1,4 @@
+# Path: src/roguelike_engine/utils/loading_screen.py
 import os
 import pygame
 from roguelike_engine.utils.loader import load_image

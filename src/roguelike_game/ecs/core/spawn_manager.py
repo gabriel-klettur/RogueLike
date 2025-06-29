@@ -1,5 +1,5 @@
-# Path: src/roguelike_game/ecs/core/spawn_manager.py
 
+# Path: src/roguelike_game/ecs/core/spawn_manager.py
 from roguelike_engine.map.utils import calculate_lobby_offset
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_game.ecs.utils.collider_utils import build_collider_rect

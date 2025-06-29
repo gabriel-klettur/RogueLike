@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/ecs/systems/combat/hitbox_system.py
 import math
 import pygame
 from roguelike_engine.utils.benchmark import benchmark

@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/core/component_registry.py
 
 def create_empty_component_store():
     """
@@ -17,3 +16,4 @@ def create_empty_component_store():
         'CameraFollowComponent': {}, 'PlayerTagComponent': {}, 'InCombat': {},
         'FlashComponent': {}, 'TrailComponent': {}, 'GrayscaleComponent': {},
     }
+# Path: src/roguelike_game/ecs/core/component_registry.py

@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/main.py
 import pygame
 from roguelike_engine.utils.loader import load_image
 from roguelike_engine.config.config import SCREEN_WIDTH, SCREEN_HEIGHT

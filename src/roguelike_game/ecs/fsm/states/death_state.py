@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/ecs/fsm/states/death_state.py
 from roguelike_game.ecs.fsm.state import State
 from roguelike_game.ecs.components.combat.death_timer import DeathTimer
 from roguelike_game.ecs.components.core.player_tag import PlayerTagComponent

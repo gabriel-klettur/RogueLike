@@ -1,3 +1,4 @@
+# Path: tests/core/test_components.py
 import pytest
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.transform.velocity import Velocity

@@ -1,4 +1,4 @@
-# Path: src/roguelike_game/systems/combat/explosions/firework_explosion.py
+# Path: src/roguelike_game/systems/effects/explosions/firework_explosion.py
 import random
 import math
 from roguelike_game.systems.particles.particle import Particle

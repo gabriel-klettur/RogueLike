@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/ecs/components/abilities/laser_beam_component.py
 import time
 
 class LaserBeamComponent:

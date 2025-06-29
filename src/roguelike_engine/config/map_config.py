@@ -1,3 +1,4 @@
+# Path: src/roguelike_engine/config/map_config.py
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, Tuple, Union, Literal

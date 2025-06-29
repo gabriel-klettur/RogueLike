@@ -1,5 +1,4 @@
-# src/roguelike_engine/world/world_config.py
-
+# Path: src/roguelike_engine/world/world_config.py
 from pathlib import Path
 from dataclasses import dataclass
 

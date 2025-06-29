@@ -1,5 +1,4 @@
-# src/roguelike_game/systems/editor/buildings/model/persistence/save_buildings_to_json.py
-
+# Path: src/roguelike_game/systems/editor/buildings/model/persistence/save_buildings_to_json.py
 import os
 import json
 from typing import Dict, Tuple, Optional

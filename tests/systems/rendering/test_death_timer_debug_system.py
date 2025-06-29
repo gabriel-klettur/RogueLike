@@ -1,3 +1,4 @@
+# Path: tests/systems/rendering/test_death_timer_debug_system.py
 import pygame
 import pytest
 from roguelike_game.ecs.systems.rendering.death_timer_debug_system import DeathTimerDebugSystem

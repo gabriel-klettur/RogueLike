@@ -1,5 +1,5 @@
-# Path: src/roguelike_game/ecs/core/spatial_index.py
 
+# Path: src/roguelike_game/ecs/core/spatial_index.py
 import pygame
 from roguelike_engine.config.config_tiles import TILE_SIZE
 

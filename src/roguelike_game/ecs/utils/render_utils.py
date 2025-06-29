@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/ecs/utils/render_utils.py
 import pygame
 
 def draw_sprite_bbox(screen, camera, pos, sprite, color=(255, 0, 0), width=1, scale=1.0):

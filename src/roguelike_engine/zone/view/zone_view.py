@@ -1,5 +1,4 @@
-# src/roguelike_engine/map/view/zone_view.py
-
+# Path: src/roguelike_engine/zone/view/zone_view.py
 import pygame
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.config.map_config import global_map_settings

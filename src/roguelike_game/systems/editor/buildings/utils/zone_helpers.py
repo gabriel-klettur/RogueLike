@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/systems/editor/buildings/utils/zone_helpers.py
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.map.utils import get_zone_for_tile
 from roguelike_engine.config.map_config import global_map_settings

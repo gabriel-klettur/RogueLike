@@ -1,4 +1,4 @@
-# Path: src/roguelike_game/systems/combat/spells/lightning/view.py
+# Path: src/roguelike_game/systems/effects/spells/lightning/view.py
 import pygame
 import random
 

@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/ecs/fsm/states/player/move_state.py
 from roguelike_game.ecs.fsm.state import State
 from roguelike_game.ecs.fsm.states.idle_state import IdleState
 

@@ -1,5 +1,5 @@
-# Path: src/roguelike_game/game/game.py
 
+# Path: src/roguelike_game/game/core/game.py
 import pygame
 
 from roguelike_engine.input.events import handle_events

@@ -1,5 +1,4 @@
-# src/roguelike_engine/tile/view/tile_view.py
-
+# Path: src/roguelike_engine/tile/view/tile_view.py
 import pygame
 from roguelike_engine.tile.model.tile import Tile
 

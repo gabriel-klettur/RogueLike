@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/ecs/factories/monster/config.py
 import json
 from pathlib import Path
 

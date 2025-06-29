@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/ecs/systems/rendering/death_timer_bar_system.py
 import pygame
 import time
 import roguelike_engine.config.config as config

@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/ecs/fsm/states/cast_state.py
 from roguelike_game.ecs.fsm.state import State
 from roguelike_game.ecs.fsm.fsm import FiniteStateMachine
 from roguelike_game.ecs.fsm.states.spell.prepare_spell_state import PrepareSpellState

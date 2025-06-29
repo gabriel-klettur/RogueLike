@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/ecs/components/spawn/spawn_request.py
 from dataclasses import dataclass
 
 @dataclass

@@ -1,3 +1,4 @@
+# Path: tests/test_fsm_integration.py
 import time
 import pytest
 from roguelike_game.ecs.fsm.fsm import FiniteStateMachine

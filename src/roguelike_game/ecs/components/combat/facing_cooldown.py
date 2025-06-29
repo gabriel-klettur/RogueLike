@@ -5,3 +5,4 @@ class FacingCooldown:
     """
     def __init__(self, next_allowed: float = 0.0):
         self.next_allowed = next_allowed
+# Path: src/roguelike_game/ecs/components/combat/facing_cooldown.py

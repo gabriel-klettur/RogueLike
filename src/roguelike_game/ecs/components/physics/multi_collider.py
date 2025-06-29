@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/ecs/components/physics/multi_collider.py
 from .collider import Collider
 
 typing = __import__('typing')

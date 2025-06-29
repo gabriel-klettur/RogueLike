@@ -1,5 +1,5 @@
-# Path: src/roguelike_game/systems/combat/spells/healing_aura/healing_aura_emitter_system.py
 
+# Path: src/roguelike_game/ecs/systems/particles/healing_aura_emitter_system.py
 import random
 import time
 

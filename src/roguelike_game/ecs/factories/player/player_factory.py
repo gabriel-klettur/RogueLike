@@ -3,6 +3,7 @@ Module: player_factory.py
 Builder para crear la entidad jugador con todos sus componentes ECS.
 """
 
+# Path: src/roguelike_game/ecs/factories/player/player_factory.py
 import time
 import pygame
 

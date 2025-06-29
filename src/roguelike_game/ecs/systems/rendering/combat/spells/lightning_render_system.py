@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/ecs/systems/rendering/combat/spells/lightning_render_system.py
 import pygame
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.ecs.components.abilities.lightning_component import LightningComponent

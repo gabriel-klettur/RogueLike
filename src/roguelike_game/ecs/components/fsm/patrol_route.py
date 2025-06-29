@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/ecs/components/fsm/patrol_route.py
 from dataclasses import dataclass
 from typing import List, Tuple
 

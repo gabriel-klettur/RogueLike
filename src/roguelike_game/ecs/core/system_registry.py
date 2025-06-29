@@ -1,5 +1,5 @@
-# Path: src/roguelike_game/ecs/core/system_registry.py
 
+# Path: src/roguelike_game/ecs/core/system_registry.py
 import roguelike_engine.config.config as config
 
 # Importamos cada clase de sistema

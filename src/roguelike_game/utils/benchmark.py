@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/utils/benchmark.py
 import os
 import json
 import logging

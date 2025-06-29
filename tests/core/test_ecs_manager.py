@@ -1,3 +1,4 @@
+# Path: tests/core/test_ecs_manager.py
 import pytest
 from roguelike_game.ecs.core.manager import ECSWorld
 from roguelike_game.ecs.components.transform.position import Position

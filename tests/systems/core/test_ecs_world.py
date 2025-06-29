@@ -1,3 +1,4 @@
+# Path: tests/systems/core/test_ecs_world.py
 import pytest
 from roguelike_game.ecs.core.manager import ECSWorld
 import roguelike_game.ecs.core.manager as mgr_mod

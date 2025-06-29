@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/ecs/fsm/states/player/player_spell_release_state.py
 from roguelike_game.ecs.fsm.states.spell.release_spell_state import ReleaseSpellState
 
 class PlayerSpellReleaseState(ReleaseSpellState):

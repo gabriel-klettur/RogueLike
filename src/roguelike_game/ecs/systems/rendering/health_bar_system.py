@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/ecs/systems/rendering/health_bar_system.py
 import pygame
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.combat.health import Health

@@ -1,5 +1,4 @@
-# src/roguelike_engine/buildings/controller/building_controller.py
-
+# Path: src/roguelike_engine/buildings/controller/building_controller.py
 from roguelike_engine.buildings.view.building_view import BuildingView
 
 class BuildingController:

@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/systems/editor/map/views/map_editor_view.py
 import pygame
 from pygame import Surface, Rect, font
 from roguelike_engine.config.map_config import global_map_settings

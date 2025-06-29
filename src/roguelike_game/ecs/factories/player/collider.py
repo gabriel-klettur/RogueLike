@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/ecs/factories/player/collider.py
 import pygame
 from roguelike_game.ecs.components.physics.mask_collider import MaskCollider
 from roguelike_game.ecs.components.physics.collider import Collider

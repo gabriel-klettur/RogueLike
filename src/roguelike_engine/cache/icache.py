@@ -1,3 +1,4 @@
+# Path: src/roguelike_engine/cache/icache.py
 from abc import ABC, abstractmethod
 
 class ICache(ABC):

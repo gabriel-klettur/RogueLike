@@ -1,3 +1,4 @@
+# Path: tests/systems/combat/test_inventory_component.py
 import pytest
 from roguelike_game.ecs.components.combat.inventory import InventoryComponent
 

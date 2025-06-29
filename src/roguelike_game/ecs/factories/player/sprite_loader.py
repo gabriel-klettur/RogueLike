@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/ecs/factories/player/sprite_loader.py
 import pygame
 from roguelike_game.ecs.assets.player_assets import PlayerAssets
 from roguelike_game.ecs.factories.player.config import ORIGINAL_SPRITE_SIZE, PLAYER_STATS, DEFAULT_SCALE

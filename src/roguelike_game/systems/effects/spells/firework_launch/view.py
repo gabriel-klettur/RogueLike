@@ -1,4 +1,4 @@
-# Path: src/roguelike_game/systems/combat/spells/firework_launch/view.py
+# Path: src/roguelike_game/systems/effects/spells/firework_launch/view.py
 import pygame
 
 class FireworkLaunchView:

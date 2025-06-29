@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/ecs/components/ai/patrol.py
 from typing import Tuple, List, Dict, Optional, Any
 
 class Patrol:

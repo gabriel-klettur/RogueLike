@@ -4,6 +4,7 @@ Module: animation_system.py
 Updates entity animations by advancing frames and applying the current frame to the Sprite component.
 """
 
+# Path: src/roguelike_game/ecs/systems/rendering/animation_system.py
 import time
 from roguelike_engine.utils.benchmark import benchmark
 

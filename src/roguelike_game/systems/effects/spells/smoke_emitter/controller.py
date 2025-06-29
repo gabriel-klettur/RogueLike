@@ -1,4 +1,4 @@
-# Path: src/roguelike_game/systems/combat/spells/smoke_emitter/controller.py
+# Path: src/roguelike_game/systems/effects/spells/smoke_emitter/controller.py
 from pygame.math import Vector2
 from .model import SmokeEmitterModel, SmokeParticle
 

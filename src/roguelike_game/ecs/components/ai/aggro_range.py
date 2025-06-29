@@ -4,3 +4,4 @@ class AggroRange:
     """
     def __init__(self, radius: int):
         self.radius = radius
+# Path: src/roguelike_game/ecs/components/ai/aggro_range.py

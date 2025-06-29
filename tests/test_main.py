@@ -1,3 +1,4 @@
+# Path: tests/test_main.py
 import pytest
 import pygame
 from unittest.mock import MagicMock

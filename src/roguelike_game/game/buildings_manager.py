@@ -1,4 +1,4 @@
-# Path: src/roguelike_game/game/entities_manager.py
+# Path: src/roguelike_game/game/buildings_manager.py
 from types import SimpleNamespace
 
 from roguelike_game.ecs.factories.player.config import RENDERED_SPRITE_SIZE

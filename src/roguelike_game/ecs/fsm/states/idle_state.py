@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/ecs/fsm/states/idle_state.py
 import time
 from roguelike_game.ecs.fsm.state import State
 from roguelike_game.ecs.components.transform.position import Position

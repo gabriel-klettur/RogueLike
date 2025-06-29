@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/ecs/systems/debug/entities_debug_system.py
 import pygame
 import roguelike_engine.config.config as config
 from roguelike_engine.utils.benchmark import benchmark

@@ -1,4 +1,4 @@
-# Path: src/roguelike_game/systems/combat/spells/arcane_flame/model.py
+# Path: src/roguelike_game/systems/effects/spells/arcane_flame/model.py
 import random
 import math
 import time

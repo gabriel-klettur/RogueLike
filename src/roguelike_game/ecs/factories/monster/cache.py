@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/ecs/factories/monster/cache.py
 import pygame
 import logging
 from typing import Dict, Optional, Iterable

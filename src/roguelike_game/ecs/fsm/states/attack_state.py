@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/ecs/fsm/states/attack_state.py
 from roguelike_game.ecs.fsm.state import State
 from roguelike_game.ecs.fsm.states.death_state import DeathState
 from roguelike_game.ecs.components.ai.chase_target import ChaseTarget

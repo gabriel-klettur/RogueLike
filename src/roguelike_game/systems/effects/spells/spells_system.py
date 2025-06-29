@@ -1,4 +1,4 @@
-# Path: src/roguelike_game/systems/combat/spells/spells_system.py
+# Path: src/roguelike_game/systems/effects/spells/spells_system.py
 import pygame
 from pygame.math import Vector2
 

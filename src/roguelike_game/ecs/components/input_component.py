@@ -20,3 +20,4 @@ class InputComponent:
         self.spell_iceball: bool = False
         self.spell_lightning: bool = False
         self.click: bool = False
+# Path: src/roguelike_game/ecs/components/input_component.py

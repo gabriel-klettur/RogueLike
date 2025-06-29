@@ -1,3 +1,4 @@
+# Path: tests/systems/combat/spells/test_dynamic_spawn_system.py
 import pygame
 import pytest
 from roguelike_game.ecs.systems.combat.spells.resolvers import ProjectileResolver

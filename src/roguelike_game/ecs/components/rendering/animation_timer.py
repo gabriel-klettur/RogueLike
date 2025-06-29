@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/ecs/components/rendering/animation_timer.py
 from dataclasses import dataclass
 
 @dataclass

@@ -1,4 +1,5 @@
 
+# Path: src/roguelike_game/ecs/factories/monster/monster_factory.py
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.ecs.components.transform.position import Position
 

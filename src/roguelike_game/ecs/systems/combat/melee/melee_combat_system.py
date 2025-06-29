@@ -5,6 +5,7 @@ and applies damage to targets based on attacker stats, weapon bonuses,
 and target defense.
 """
 
+# Path: src/roguelike_game/ecs/systems/combat/melee/melee_combat_system.py
 from roguelike_game.ecs.components.combat.combat_stats import CombatStats
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.ecs.fsm.states.monster.chase_state import ChaseState

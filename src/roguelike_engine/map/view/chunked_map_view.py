@@ -1,5 +1,4 @@
-# src/roguelike_engine/map/view/chunked_map_view.py
-
+# Path: src/roguelike_engine/map/view/chunked_map_view.py
 import pygame
 import math
 from roguelike_engine.config.config_tiles import TILE_SIZE

@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/ecs/fsm/states/spell/cooldown_state.py
 from roguelike_game.ecs.fsm.state import State
 from roguelike_game.ecs.fsm.states.monster.aggro_state import AggroState
 import time

@@ -4,6 +4,7 @@ Provides SpawnDebugSystem to visualize NPC spawn points
 on the map when DEBUG mode is enabled.
 """
 
+# Path: src/roguelike_game/ecs/systems/core/spawn_debug_system.py
 import pygame
 import roguelike_engine.config.config as config
 from roguelike_engine.config.config_tiles import TILE_SIZE

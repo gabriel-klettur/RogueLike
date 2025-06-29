@@ -1,3 +1,4 @@
+# Path: tests/systems/input/test_input_system.py
 import pytest
 from roguelike_game.ecs.systems.input.input_system import InputSystem
 

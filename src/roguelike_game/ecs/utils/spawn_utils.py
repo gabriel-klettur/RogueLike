@@ -1,6 +1,7 @@
 """spawn_utils.py: Utilities for entity spawning .
 """
 
+# Path: src/roguelike_game/ecs/utils/spawn_utils.py
 import random
 from roguelike_engine.config.config_tiles import TILE_SIZE
 

@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/systems/editor/map/state/map_editor_state.py
 import pygame
 from roguelike_engine.map.model.layer import Layer
 

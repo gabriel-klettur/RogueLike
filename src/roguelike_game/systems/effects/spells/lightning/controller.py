@@ -1,5 +1,5 @@
-# Path: src/roguelike_game/systems/effects/spells/lightning/controller.py
 
+# Path: src/roguelike_game/systems/effects/spells/lightning/controller.py
 from roguelike_game.systems.effects.spells.lightning.model import LightningModel
 
 class LightningController:

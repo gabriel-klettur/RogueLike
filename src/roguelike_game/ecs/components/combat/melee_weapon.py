@@ -5,3 +5,4 @@ class MeleeWeapon:
     def __init__(self, damage: int, cooldown: float):
         self.damage = damage
         self.cooldown = cooldown
+# Path: src/roguelike_game/ecs/components/combat/melee_weapon.py

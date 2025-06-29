@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/ecs/fsm/states/spell/channel_spell_state.py
 from roguelike_game.ecs.fsm.state import State
 import time
 from roguelike_game.ecs.fsm.states.spell.release_spell_state import ReleaseSpellState

@@ -1,3 +1,4 @@
+# Path: tests/systems/rendering/test_hitbox_debug_system.py
 import pytest
 import pygame
 from roguelike_game.ecs.components.transform.position import Position

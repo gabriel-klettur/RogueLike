@@ -1,3 +1,4 @@
+# Path: src/roguelike_game/ecs/components/combat/health.py
 from dataclasses import dataclass
 
 @dataclass

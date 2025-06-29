@@ -1,4 +1,4 @@
-# Path: src/roguelike_game/systems/combat/spells/firework_launch/controller.py
+# Path: src/roguelike_game/systems/effects/spells/firework_launch/controller.py
 import random
 import math
 from .model import FireworkLaunchModel, ParticleData
