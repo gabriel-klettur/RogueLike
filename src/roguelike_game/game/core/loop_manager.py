@@ -36,10 +36,7 @@ class GameLoop:
     def _post_frame(self):
         g = self.game
 
-        # 1) Grayscale + overlay de lobby
-        if g.ecs.ecs_world.components.get('GrayscaleComponent'):
-            RenderSystem(g.screen).apply_grayscale(g.screen)
-            self._draw_lobby_overlay()
+
 
         # 2) Flip
         pygame.display.flip()
@@ -56,22 +53,3 @@ class GameLoop:
 
         # 5) Cap FPS
         g.clock.tick(config.FPS)
-
-
-    def _draw_lobby_overlay(self):
-        g = self.game
-        lob_x, lob_y = g.ecs.ecs_world.map_manager.lobby_offset
-        cw, ch = global_map_settings.zone_width, global_map_settings.zone_height
-        tx, ty = lob_x + cw//2 - 1, lob_y + ch//2 - 1
-        wx, wy = tx * TILE_SIZE, ty * TILE_SIZE
-        x0, y0 = g.camera.apply((wx, wy))
-        size = TILE_SIZE * 3
-        overlay = pygame.Surface((size, size), pygame.SRCALPHA)
-        overlay.fill((255, 255, 0, 80))
-        g.screen.blit(overlay, (x0, y0))
-        pygame.draw.rect(
-            g.screen,
-            (255, 255, 0),
-            pygame.Rect(x0, y0, size, size),
-            3
-        )

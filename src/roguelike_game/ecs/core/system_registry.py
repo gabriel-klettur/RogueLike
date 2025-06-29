@@ -30,6 +30,8 @@ from roguelike_game.ecs.systems.combat.hitbox_system import HitboxSystem
 from roguelike_game.ecs.systems.combat.spells.lightning_system import LightningSystem
 from roguelike_game.ecs.systems.debug.entities_debug_system import EntitiesDebugSystem
 from roguelike_game.ecs.systems.expansion_system import ExpansionSystem
+from roguelike_game.ecs.systems.rendering.grayscale_render_system import GrayscaleRenderSystem
+from roguelike_game.ecs.systems.rendering.resurrection_area_system import ResurrectionAreaSystem
 
 def get_update_system_classes():
     """
@@ -57,6 +59,8 @@ def get_render_system_classes():
     # Render systems comunes
     # Overlay unificado de debug de entidades (se activa/desactiva internamente con F12)
     base.append(EntitiesDebugSystem)
+    base.append(GrayscaleRenderSystem)
+    base.append(ResurrectionAreaSystem)
     # Otros sistemas de render (eliminados FlashSystem y TrailSystem de render)
     # FlashSystem y TrailSystem son sistemas de update, no deben ir en render
     return base
