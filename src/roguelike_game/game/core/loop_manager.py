@@ -4,11 +4,7 @@ import time
 import pygame
 
 import roguelike_engine.config.config as config
-from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.utils.benchmark import benchmark
-from roguelike_game.ecs.systems.rendering.render_system import RenderSystem
-from roguelike_engine.config.map_config import global_map_settings
-
 
 class GameLoop:
     def __init__(self, game):
@@ -27,11 +23,15 @@ class GameLoop:
                 g.buildings_editor.editor_state.active or
                 g.map_editor.editor_state.active
             ):
-                g.update_ecs()
-                g.render_ecs()
+                self.run_ecs_phase(g)
 
             self._post_frame()
 
+
+    @benchmark(lambda self: self.game.perf_log, "4.TOTAL: ECS")
+    def run_ecs_phase(self, g):        
+        g.update_ecs()
+        g.render_ecs()
 
     def _post_frame(self):
 

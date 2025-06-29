@@ -68,7 +68,7 @@ class Game:
         )
 
 
-    @benchmark(lambda self: self.perf_log, "2.TOTAL UPDATE")
+    @benchmark(lambda self: self.perf_log, "2.TOTAL: UPDATE")
     def update(self):
         update_game(
             self.state,
@@ -87,7 +87,7 @@ class Game:
         )
 
 
-    @benchmark(lambda self: self.perf_log, "3.TOTAL RENDER")
+    @benchmark(lambda self: self.perf_log, "3.TOTAL: RENDER")
     def render(self):
         self.renderer.render_game(
             self.state,
