@@ -3,7 +3,7 @@ from typing import Dict, Optional
 from roguelike_engine.map.controller.map_controller import build_map
 from roguelike_engine.world.persistence import save_world_state, load_world_state
 from roguelike_engine.world.world_config import WORLD_CONFIG
-from roguelike_game.game.map_manager import MapManager
+from roguelike_game.managers.map_manager import MapManager
 
 
 class WorldManager:
