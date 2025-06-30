@@ -162,3 +162,5 @@ cython_debug/
 debug_maps_generated
 debug_maps
 logs
+
+data/saves/world_state.json
