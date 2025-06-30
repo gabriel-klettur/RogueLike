@@ -10,33 +10,42 @@ class ECSManager:
         self.perf_log = perf_log
         self.screen = screen
         self.map_manager = map_manager
-        # Guardar gestor de entidades para colisiones con edificios
         self.entities_manager = entities_manager
-        # Inicializar mundo ECS y pasar edificios para colisiones
-        self.ecs_world = ECSWorld(screen, map_manager, entities_manager.buildings, perf_log)
-        # Spawn de la entidad jugador según posición guardada en tile coords o centro del lobby
-        saved_tile = self.map_manager._local_state.get("player_pos")
-        # Validar que saved_tile sea secuencia de dos valores
-        if isinstance(saved_tile, (tuple, list)) and len(saved_tile) == 2:
-            tx, ty = saved_tile
-        else:
-            off_x, off_y = self.map_manager.lobby_offset
-            tx = off_x + global_map_settings.zone_width // 2
-            ty = off_y + global_map_settings.zone_height // 2
-        # Crear entidad jugador en ECS usando spawn_player_tile para alinear collider 'feet'
-        pid = spawn_player_tile(self.ecs_world, tx, ty)
-        self.ecs_world.player_entity = pid
-        # Registrar tile coords en MapManager para persistencia
-        self.map_manager.spawn_player((tx, ty))
-        # Spawn inicial de NPCs después de crear el jugador para que player sea id=1
-        self.ecs_world.spawn_npc_manager.spawn_npc_initial()
+
+        self.ecs_world = ECSWorld(
+            screen,
+            map_manager,
+            entities_manager.buildings,
+            perf_log
+        )
+
+        self._spawn_player()
+        self._spawn_initial_npcs()
+
         self.entities_manager.ecs_manager = self
         self.ecs_world.entities_manager = self.entities_manager
 
+    def _spawn_player(self):
+        tx, ty = self._get_initial_player_tile()
+        pid = spawn_player_tile(self.ecs_world, tx, ty)
+        self.ecs_world.player_entity = pid
+        self.map_manager.spawn_player((tx, ty))
+
+    def _spawn_initial_npcs(self):
+        self.ecs_world.spawn_npc_manager.spawn_npc_initial()
+
+    def _get_initial_player_tile(self):
+        saved = self.map_manager._local_state.get("player_pos")
+        if isinstance(saved, (tuple, list)) and len(saved) == 2:
+            return saved
+        off_x, off_y = self.map_manager.lobby_offset
+        return (
+            off_x + global_map_settings.zone_width // 2,
+            off_y + global_map_settings.zone_height // 2,
+        )
+
     def update(self, clock, screen, camera):
-        # Actualiza la lógica del mundo ECS
         self.ecs_world.update(camera)
 
     def render(self, screen, camera):
-        # Renderiza todas las entidades ECS en pantalla con cámara
         self.ecs_world.render(screen, camera)
