@@ -2,7 +2,7 @@
 import pygame
 import logging
 from typing import Dict, Optional, Iterable
-from roguelike_game.ecs.factories.monster.config import MONSTER_DEFS
+from roguelike_game.factories.monster.config import MONSTER_DEFS
 from roguelike_engine.utils.loader import load_image
 
 logger = logging.getLogger(__name__)

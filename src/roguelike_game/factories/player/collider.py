@@ -3,7 +3,7 @@ import pygame
 from roguelike_game.ecs.components.physics.mask_collider import MaskCollider
 from roguelike_game.ecs.components.physics.collider import Collider
 from roguelike_game.ecs.components.physics.multi_collider import MultiCollider
-from roguelike_game.ecs.factories.player.config import FEET_WIDTH_DIVISOR, FEET_HEIGHT_DIVISOR
+from roguelike_game.factories.player.config import FEET_WIDTH_DIVISOR, FEET_HEIGHT_DIVISOR
 
 def create_body_and_feet(sprite_surface: pygame.Surface) -> MultiCollider:
     """

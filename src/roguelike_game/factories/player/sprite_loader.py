@@ -1,7 +1,7 @@
 # Path: src/roguelike_game/ecs/factories/player/sprite_loader.py
 import pygame
-from roguelike_game.ecs.factories.player.assets.player_assets import PlayerAssets
-from roguelike_game.ecs.factories.player.config import ORIGINAL_SPRITE_SIZE, PLAYER_STATS, DEFAULT_SCALE
+from roguelike_game.factories.player.assets.player_assets import PlayerAssets
+from roguelike_game.factories.player.config import ORIGINAL_SPRITE_SIZE, PLAYER_STATS, DEFAULT_SCALE
 
 
 def load_and_scale_sprites(class_player: str) -> dict[str, dict[str, list[pygame.Surface]]]:

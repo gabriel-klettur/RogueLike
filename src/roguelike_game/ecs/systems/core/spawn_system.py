@@ -5,7 +5,7 @@ using the entity factory.
 """
 
 # Path: src/roguelike_game/ecs/systems/core/spawn_system.py
-from roguelike_game.ecs.factories.monster.monster_factory import spawn_monster
+from roguelike_game.factories.monster.monster_factory import spawn_monster
 from roguelike_engine.utils.benchmark import benchmark
 
 class SpawnSystem:

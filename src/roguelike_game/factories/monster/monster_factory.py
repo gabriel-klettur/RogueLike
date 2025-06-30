@@ -17,10 +17,10 @@ from roguelike_game.ecs.components.fsm.npc_state import NPCState
 from roguelike_game.ecs.components.ai.damage_config import DamageConfig
 import logging
 
-from roguelike_game.ecs.factories.monster.config import MONSTER_DEFS
-from roguelike_game.ecs.factories.monster.cache import _load_caches_once
-from roguelike_game.ecs.factories.monster.sprite_loader import create_sprite_component, create_patrol_components
-from roguelike_game.ecs.factories.monster.physics import calculate_position, create_physics_components, create_collider_components, create_zlayer_component
+from roguelike_game.factories.monster.config import MONSTER_DEFS
+from roguelike_game.factories.monster.cache import _load_caches_once
+from roguelike_game.factories.monster.sprite_loader import create_sprite_component, create_patrol_components
+from roguelike_game.factories.monster.physics import calculate_position, create_physics_components, create_collider_components, create_zlayer_component
 
 # Initialize logger
 logger = logging.getLogger(__name__)

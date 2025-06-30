@@ -5,7 +5,7 @@ from roguelike_game.ecs.components.rendering.sprite import Sprite
 from roguelike_game.ecs.components.ai.patrol import Patrol
 from roguelike_game.ecs.components.transform.movement_speed import MovementSpeed
 from roguelike_game.ecs.components.rendering.animator import Animator
-from roguelike_game.ecs.factories.monster.cache import _load_caches_once, _SPRITE_SURFACES, _DEATH_SURFACES
+from roguelike_game.factories.monster.cache import _load_caches_once, _SPRITE_SURFACES, _DEATH_SURFACES
 
 
 def create_sprite_component(monster_type: str) -> Tuple[Sprite, Optional[pygame.Surface]]:
