@@ -5,6 +5,20 @@
 import random
 from roguelike_engine.config.config_tiles import TILE_SIZE
 
+def tile_to_spawn_pixel(tile_pos: tuple[int, int], sprite_size: tuple[int, int], tile_size: int) -> tuple[int, int]:
+    """
+    Convierte posición de tile a coordenadas pixel para spawn, alineando collider 'feet'.
+    """
+    tx, ty = tile_pos
+    tile_cx = tx * tile_size + tile_size // 2
+    tile_cy = ty * tile_size + tile_size // 2
+    w, h = sprite_size
+    fh = h // 4
+    half_fh = fh // 2
+    px = tile_cx - w // 2
+    py = tile_cy - (h - half_fh)
+    return px, py
+
 def find_spawn_positions(map_manager, buildings, lobby_offset, zone_size, neighbor_padding=1, sample_count=100):
     """Devuelve hasta sample_count posiciones de spawn válidas muestreadas aleatoriamente."""
     lx, ly = lobby_offset

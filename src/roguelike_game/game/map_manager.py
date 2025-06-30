@@ -17,6 +17,7 @@ from datetime import datetime
 from pathlib import Path
 import json
 from roguelike_engine.config.config import DATA_DIR
+from roguelike_game.ecs.utils import map_utils, spawn_utils
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -139,7 +140,7 @@ class MapManager:
         """
         Devuelve todas las tiles del mapa en una lista plana.
         """
-        return [tile for row in self.tiles for tile in row]
+        return map_utils.flatten_tiles(self.tiles)
 
     # ─── Funciones de serialización / restauración ─────────────────────
 
@@ -154,18 +155,7 @@ class MapManager:
         """
         Dada una posición en tiles, devuelve coordenadas en píxeles para alinear el collider 'feet'
         """        
-        # Centro del tile en píxeles
-        tx, ty = tile_pos
-        tile_cx = tx * TILE_SIZE + TILE_SIZE // 2
-        tile_cy = ty * TILE_SIZE + TILE_SIZE // 2
-        # Tamaño sprite y collider 'feet'
-        w, h = RENDERED_SPRITE_SIZE
-        fh = h // 4
-        half_fh = fh // 2
-        # Calcular esquina superior-izquierda del sprite para alinear feet en el centro del tile
-        px = tile_cx - w // 2
-        py = tile_cy - (h - half_fh)
-        return px, py
+        return spawn_utils.tile_to_spawn_pixel(tile_pos, RENDERED_SPRITE_SIZE, TILE_SIZE)
 
     def restore_npc_states(self, npc_memory: dict):
         """
@@ -385,10 +375,8 @@ class MapManager:
 
     def get_zone_for(self, row: int, col: int) -> tuple[str, int, int]:
         """Devuelve nombre de zona y offsets (col, row) para coordenadas globales"""
-        zone = self.tiles[row][col].zone
-        offx, offy = global_map_settings.zone_offsets.get(zone, (0, 0))
-        return zone, offx, offy
+        return map_utils.get_zone_at(self.tiles, row, col)
 
     def get_zone_offset(self, zone_name: str) -> tuple[int, int]:
         """Devuelve offsets (col, row) para la zona dada"""
-        return global_map_settings.zone_offsets.get(zone_name, (0, 0))
+        return map_utils.get_zone_offset(zone_name)
