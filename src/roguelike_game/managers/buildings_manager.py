@@ -6,7 +6,7 @@ from roguelike_game.managers.map_manager import MapManager
 
 
 from roguelike_engine.utils.benchmark import benchmark
-from roguelike_game.systems.editor.buildings.model.persistence.load_buildings_from_json import load_buildings_from_json
+from roguelike_game.systems.editors.buildings.model.persistence.load_buildings_from_json import load_buildings_from_json
 
 class BuildingsManager:
     """

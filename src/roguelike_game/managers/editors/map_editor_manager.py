@@ -1,8 +1,8 @@
 # Path: src/roguelike_game/game/map_editor_manager.py
-from roguelike_game.systems.editor.map.state.map_editor_state import MapEditorState
-from roguelike_game.systems.editor.map.controllers.map_editor_controller import MapEditorController
-from roguelike_game.systems.editor.map.events.map_editor_events import MapEditorEventHandler
-from roguelike_game.systems.editor.map.views.map_editor_view import MapEditorView
+from roguelike_game.systems.editors.map.state.map_editor_state import MapEditorState
+from roguelike_game.systems.editors.map.controllers.map_editor_controller import MapEditorController
+from roguelike_game.systems.editors.map.events.map_editor_events import MapEditorEventHandler
+from roguelike_game.systems.editors.map.views.map_editor_view import MapEditorView
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.map.utils import get_zone_for_tile
 from roguelike_engine.config.map_config import global_map_settings
