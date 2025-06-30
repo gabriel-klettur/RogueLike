@@ -1,7 +1,6 @@
 # Path: src/roguelike_game/ecs/fsm/states/death_state.py
-from roguelike_game.ecs.fsm.state import State
+from roguelike_game.ecs.systems.fsm.state import State
 from roguelike_game.ecs.components.combat.death_timer import DeathTimer
-from roguelike_game.ecs.components.core.player_tag import PlayerTagComponent
 from roguelike_game.ecs.components.rendering.grayscale_component import GrayscaleComponent
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
@@ -70,7 +69,7 @@ class DeathState(State):
                     # Cambiar FSM a IdleState
                     npc_state = comps.get('NPCState', {}).get(nid)
                     if npc_state:
-                        from roguelike_game.ecs.fsm.states.idle_state import IdleState
+                        from roguelike_game.ecs.systems.fsm.states.idle_state import IdleState
                         npc_state.fsm.change_state(IdleState(), entity)
                     print(f"[DeathState.execute] eid={nid} revived in lobby")
         # Debug logs: solo una vez cada segundo

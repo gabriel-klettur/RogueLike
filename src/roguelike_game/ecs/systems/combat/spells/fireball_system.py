@@ -2,10 +2,11 @@
 import pygame
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.ecs.systems.fsm.fsm_system import _EntityProxy
-from roguelike_game.ecs.fsm.states.damage_state import DamageState
-from roguelike_game.ecs.fsm.states.attack_state import AttackState
+from roguelike_game.ecs.systems.fsm.states.damage_state import DamageState
+from roguelike_game.ecs.systems.fsm.states.attack_state import AttackState
 import math
 from roguelike_game.config.spells_config import SPELLS
+from roguelike_game.ecs.systems.fsm.states.monster.alert_chase_state import AlertChaseState
 
 class FireballSystem:
     """
@@ -67,8 +68,7 @@ class FireballSystem:
                         # Si el daño viene de fireball de jugador, estado alerta de chase
                         caster = comp.caster
                         if caster in world.components.get('PlayerTagComponent', {}):
-                            fsm = world.components['NPCState'][target].fsm
-                            from roguelike_game.ecs.fsm.states.monster.alert_chase_state import AlertChaseState
+                            fsm = world.components['NPCState'][target].fsm                            
                             # determinar dirección de daño y siguiente estado
                             attacker_pos = world.components['Position'][caster]
                             defender_pos = world.components['Position'][target]

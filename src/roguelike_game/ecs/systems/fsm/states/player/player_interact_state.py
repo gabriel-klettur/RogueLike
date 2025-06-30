@@ -1,6 +1,6 @@
 # Path: src/roguelike_game/ecs/fsm/states/player/player_interact_state.py
-from roguelike_game.ecs.fsm.state import State
-from roguelike_game.ecs.fsm.states.idle_state import IdleState
+from roguelike_game.ecs.systems.fsm.state import State
+from roguelike_game.ecs.systems.fsm.states.idle_state import IdleState
 
 class PlayerInteractState(State):
     """Estado de interacción del jugador (recoger objetos, usar puertas, etc.)."""

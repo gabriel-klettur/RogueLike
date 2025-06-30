@@ -1,7 +1,7 @@
 # Path: src/roguelike_game/ecs/fsm/states/spell/channel_spell_state.py
-from roguelike_game.ecs.fsm.state import State
+from roguelike_game.ecs.systems.fsm.state import State
 import time
-from roguelike_game.ecs.fsm.states.spell.release_spell_state import ReleaseSpellState
+
 from roguelike_game.config.spells_config import SPELLS
 
 class ChannelSpellState(State):
@@ -15,6 +15,7 @@ class ChannelSpellState(State):
         punish = self.fsm.context.get('automatic_cast_punish', 1.0) if self.fsm.context.get('automatic', False) else 1.0
         duration = base * punish
         if time.time() - self.fsm.context['channel_start'] >= duration:
+            from roguelike_game.ecs.systems.fsm.states.spell.release_spell_state import ReleaseSpellState
             self.fsm.change_state(ReleaseSpellState(), entity)
 
     def exit(self, entity):

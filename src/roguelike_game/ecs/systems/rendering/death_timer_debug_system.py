@@ -1,8 +1,7 @@
 # Path: src/roguelike_game/ecs/systems/rendering/death_timer_debug_system.py
 import pygame
 import time
-import roguelike_engine.config.config as config
-from roguelike_game.ecs.fsm.states.death_state import DeathState
+from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
 from roguelike_engine.utils.benchmark import benchmark
 
 """

@@ -1,13 +1,12 @@
 # Path: tests/test_fsm_integration.py
-import time
-import pytest
-from roguelike_game.ecs.fsm.fsm import FiniteStateMachine
-from roguelike_game.ecs.fsm.states.idle_state import IdleState
-from roguelike_game.ecs.fsm.states.monster.patrol_state import PatrolState
-from roguelike_game.ecs.fsm.states.monster.aggro_state import AggroState
-from roguelike_game.ecs.fsm.states.monster.flee_state import FleeState
-from roguelike_game.ecs.fsm.states.attack_state import AttackState
-from roguelike_game.ecs.fsm.states.death_state import DeathState
+
+from roguelike_game.ecs.systems.fsm.fsm import FiniteStateMachine
+from roguelike_game.ecs.systems.fsm.states.idle_state import IdleState
+from roguelike_game.ecs.systems.fsm.states.monster.patrol_state import PatrolState
+from roguelike_game.ecs.systems.fsm.states.monster.aggro_state import AggroState
+from roguelike_game.ecs.systems.fsm.states.monster.flee_state import FleeState
+from roguelike_game.ecs.systems.fsm.states.attack_state import AttackState
+from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
 
 class DummyEntity:
     """

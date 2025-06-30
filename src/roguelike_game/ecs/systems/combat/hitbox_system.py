@@ -3,15 +3,11 @@ import math
 import pygame
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.ecs.utils.collider_utils import build_collider_rect
-from roguelike_game.ecs.components.transform.position import Position
-from roguelike_game.ecs.components.combat.hitbox import HitboxComponent
-from roguelike_game.ecs.components.core.identity import Identity
-from roguelike_game.ecs.fsm.states.damage_state import DamageState
-from roguelike_game.ecs.fsm.states.attack_state import AttackState
-from roguelike_game.ecs.fsm.states.monster.alert_chase_state import AlertChaseState
-from roguelike_game.ecs.fsm.states.death_state import DeathState
+from roguelike_game.ecs.systems.fsm.states.damage_state import DamageState
+from roguelike_game.ecs.systems.fsm.states.attack_state import AttackState
+from roguelike_game.ecs.systems.fsm.states.monster.alert_chase_state import AlertChaseState
+from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
 from roguelike_game.ecs.systems.fsm.fsm_system import _EntityProxy
-from roguelike_game.ecs.components.fsm.npc_state import NPCState
 
 class HitboxSystem:
     """

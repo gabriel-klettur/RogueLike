@@ -1,8 +1,8 @@
 # Path: src/roguelike_game/ecs/fsm/states/cast_state.py
-from roguelike_game.ecs.fsm.state import State
-from roguelike_game.ecs.fsm.fsm import FiniteStateMachine
-from roguelike_game.ecs.fsm.states.spell.prepare_spell_state import PrepareSpellState
-from roguelike_game.ecs.fsm.states.monster.aggro_state import AggroState    #Utilizado cuando la magia impacta en el enemigo
+from roguelike_game.ecs.systems.fsm.state import State
+from roguelike_game.ecs.systems.fsm.fsm import FiniteStateMachine
+from roguelike_game.ecs.systems.fsm.states.spell.prepare_spell_state import PrepareSpellState
+from roguelike_game.ecs.systems.fsm.states.monster.aggro_state import AggroState    #Utilizado cuando la magia impacta en el enemigo
 
 
 class CastState(State):

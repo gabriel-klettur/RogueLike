@@ -1,9 +1,9 @@
 # Path: src/roguelike_game/ecs/fsm/states/spell/release_spell_state.py
-from roguelike_game.ecs.fsm.state import State
+from roguelike_game.ecs.systems.fsm.state import State
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.transform.velocity import Velocity
 from roguelike_game.ecs.components.abilities.fireball_component import FireballComponent
-from roguelike_game.ecs.fsm.states.spell.resolve_spell_state import ResolveSpellState
+
 from roguelike_game.config.spells_config import SPELLS
 import pygame
 import math
@@ -108,6 +108,7 @@ class ReleaseSpellState(State):
 
     def execute(self, entity, dt):
         # Transición inmediata a fase de resolución
+        from roguelike_game.ecs.systems.fsm.states.spell.resolve_spell_state import ResolveSpellState
         self.fsm.change_state(ResolveSpellState(), entity)
 
     def exit(self, entity):

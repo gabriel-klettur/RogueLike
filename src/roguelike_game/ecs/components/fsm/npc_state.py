@@ -1,6 +1,6 @@
 # Path: src/roguelike_game/ecs/components/fsm/npc_state.py
 from dataclasses import dataclass
-from roguelike_game.ecs.fsm.fsm import FiniteStateMachine
+from roguelike_game.ecs.systems.fsm.fsm import FiniteStateMachine
 
 @dataclass
 class NPCState:

@@ -1,6 +1,6 @@
 # Path: src/roguelike_game/ecs/fsm/states/player/player_attack_state.py
-from roguelike_game.ecs.fsm.state import State
-from roguelike_game.ecs.fsm.states.idle_state import IdleState
+from roguelike_game.ecs.systems.fsm.state import State
+from roguelike_game.ecs.systems.fsm.states.idle_state import IdleState
 import time
 
 class PlayerAttackState(State):

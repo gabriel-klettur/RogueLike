@@ -1,6 +1,6 @@
 # Path: src/roguelike_game/ecs/fsm/states/attack_state.py
-from roguelike_game.ecs.fsm.state import State
-from roguelike_game.ecs.fsm.states.death_state import DeathState
+from roguelike_game.ecs.systems.fsm.state import State
+from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
 from roguelike_game.ecs.components.ai.chase_target import ChaseTarget
 from roguelike_game.ecs.components.transform.velocity import Velocity
 from roguelike_game.ecs.components.combat.npc_attack_cooldown import NPCAttackCooldown
@@ -54,7 +54,7 @@ class AttackState(State):
                 cd_map[eid] = NPCAttackCooldown(next_time=now + 1)
             return
         # Fuera de rango: cambiar a ChaseState
-        from roguelike_game.ecs.fsm.states.monster.chase_state import ChaseState
+        from roguelike_game.ecs.systems.fsm.states.monster.chase_state import ChaseState
         world.components['NPCState'][eid].fsm.change_state(ChaseState(), entity)
 
     def exit(self, entity):

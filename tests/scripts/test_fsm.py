@@ -2,8 +2,8 @@ import pytest
 import time
 import pickle
 import pygame
-from roguelike_game.ecs.fsm.fsm import FiniteStateMachine
-from roguelike_game.ecs.fsm.state import State
+from roguelike_game.ecs.systems.fsm.fsm import FiniteStateMachine
+from roguelike_game.ecs.systems.fsm.state import State
 
 class DummyState(State):
     def __init__(self, name):

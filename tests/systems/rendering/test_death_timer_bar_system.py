@@ -7,7 +7,7 @@ from types import SimpleNamespace
 import roguelike_engine.config.config as config
 from roguelike_game.ecs.systems.rendering.death_timer_bar_system import DeathTimerBarSystem
 from roguelike_game.ecs.components.combat.death_timer import DeathTimer
-from roguelike_game.ecs.fsm.states.death_state import DeathState
+from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
 
 @pytest.fixture(autouse=True)
 def init_pygame():

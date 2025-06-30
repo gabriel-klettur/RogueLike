@@ -1,9 +1,10 @@
 # Path: src/roguelike_game/ecs/fsm/states/monster/patrol_state.py
 import math
-from roguelike_game.ecs.fsm.state import State
-from roguelike_game.ecs.fsm.states.death_state import DeathState
+from roguelike_game.ecs.systems.fsm.state import State
+from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
 from roguelike_game.ecs.components.transform.velocity import Velocity
 from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_game.ecs.systems.fsm.states.monster.aggro_state import AggroState
 
 class PatrolState(State):
     """
@@ -33,8 +34,7 @@ class PatrolState(State):
         if player_pos:
             dx_p = pos.x - player_pos.x
             dy_p = pos.y - player_pos.y
-            if dx_p*dx_p + dy_p*dy_p <= (world.components['AggroRange'][eid].radius * TILE_SIZE) ** 2:
-                from roguelike_game.ecs.fsm.states.monster.aggro_state import AggroState
+            if dx_p*dx_p + dy_p*dy_p <= (world.components['AggroRange'][eid].radius * TILE_SIZE) ** 2:                
                 npc_state = world.components['NPCState'][eid]
                 npc_state.fsm.change_state(AggroState(), entity)
                 return

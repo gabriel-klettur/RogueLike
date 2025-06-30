@@ -4,10 +4,10 @@ arranca la máquina de estados de hechizos (CastState y subestados) para NPCs
 y jugadores.
 """
 # Path: src/roguelike_game/ecs/systems/combat/spells/spell_casting_system.py
-from roguelike_game.ecs.fsm.states.cast_state import CastState
-from roguelike_game.ecs.fsm.states.player.player_spell_cast_state import PlayerSpellCastState
-from roguelike_game.ecs.fsm.states.idle_state import IdleState
-from roguelike_game.ecs.fsm.states.player.move_state import MoveState
+from roguelike_game.ecs.systems.fsm.states.cast_state import CastState
+from roguelike_game.ecs.systems.fsm.states.player.player_spell_cast_state import PlayerSpellCastState
+from roguelike_game.ecs.systems.fsm.states.idle_state import IdleState
+from roguelike_game.ecs.systems.fsm.states.player.move_state import MoveState
 from roguelike_game.ecs.systems.fsm.fsm_system import _EntityProxy
 
 from roguelike_engine.utils.benchmark import benchmark

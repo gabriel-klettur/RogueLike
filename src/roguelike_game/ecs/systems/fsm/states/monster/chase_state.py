@@ -1,9 +1,11 @@
 # Path: src/roguelike_game/ecs/fsm/states/monster/chase_state.py
 import math
-from roguelike_game.ecs.fsm.state import State
-from roguelike_game.ecs.fsm.states.death_state import DeathState
+from roguelike_game.ecs.systems.fsm.state import State
+from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
 from roguelike_game.ecs.components.transform.velocity import Velocity
 from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_game.ecs.systems.fsm.states.attack_state import AttackState
+
 
 class ChaseState(State):
     """
@@ -42,15 +44,14 @@ class ChaseState(State):
         melee_dist_sq = (mr_cmp.range * TILE_SIZE) ** 2
         dx = world.player_position.x - world.components['Position'][entity].x
         dy = world.player_position.y - world.components['Position'][entity].y
-        if dx*dx + dy*dy <= melee_dist_sq:
-            from roguelike_game.ecs.fsm.states.attack_state import AttackState
+        if dx*dx + dy*dy <= melee_dist_sq:            
             world.components['NPCState'][eid].fsm.change_state(AttackState(), entity)
             return
         # Si jugador sale de rango de aggro, volver a Idle
         aggro_radius = world.components['AggroRange'][entity].radius * TILE_SIZE
-        if dist_sq > aggro_radius**2:
-            from roguelike_game.ecs.fsm.states.monster.patrol_state import PatrolState
-            npc_state = world.components['NPCState'][entity]
+        if dist_sq > aggro_radius**2:            
+            npc_state = world.components['NPCState'][entity]            
+            from roguelike_game.ecs.systems.fsm.states.monster.patrol_state import PatrolState
             npc_state.fsm.change_state(PatrolState(), entity)
             return
         speed_cmp = world.components['MovementSpeed'][eid]

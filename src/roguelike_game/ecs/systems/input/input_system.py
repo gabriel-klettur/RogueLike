@@ -7,14 +7,12 @@ import pygame
 import time
 import math
 
-from roguelike_game.ecs.components.combat.attack_cooldown import AttackCooldown
-from roguelike_game.ecs.components.ai.wants_to_melee import WantsToMelee
 from roguelike_game.ecs.components.ai.wants_to_cast import WantsToCastSpell
 from roguelike_engine.utils.benchmark import benchmark
-from roguelike_game.ecs.fsm.states.idle_state import IdleState
-from roguelike_game.ecs.fsm.states.player.move_state import MoveState
-from roguelike_game.ecs.fsm.states.player.player_attack_state import PlayerAttackState
-from roguelike_game.ecs.fsm.states.player.player_spell_select_state import PlayerSpellSelectState
+from roguelike_game.ecs.systems.fsm.states.idle_state import IdleState
+from roguelike_game.ecs.systems.fsm.states.player.move_state import MoveState
+from roguelike_game.ecs.systems.fsm.states.player.player_attack_state import PlayerAttackState
+from roguelike_game.ecs.systems.fsm.states.player.player_spell_select_state import PlayerSpellSelectState
 from roguelike_game.ecs.systems.fsm.fsm_system import _EntityProxy
 from roguelike_game.config.input_config import InputConfig
 

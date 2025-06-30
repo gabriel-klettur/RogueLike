@@ -1,9 +1,10 @@
 # Path: src/roguelike_game/ecs/fsm/states/player/player_spell_cooldown_state.py
-from roguelike_game.ecs.fsm.state import State
-from roguelike_game.ecs.fsm.states.idle_state import IdleState
+from roguelike_game.ecs.systems.fsm.state import State
+from roguelike_game.ecs.systems.fsm.states.idle_state import IdleState
 from roguelike_game.config.spells_config import SPELLS
 import time
 import pygame
+
 
 class PlayerSpellCooldownState(State):
     """Wrapper para cooldown de hechizo del jugador."""
@@ -23,8 +24,8 @@ class PlayerSpellCooldownState(State):
             spell_key = self.fsm.context.get('spell', '')
             print(f"[FSM DEBUG] Eid={entity.id} state PlayerSpellCooldownState -> IdleState (cooldown {elapsed:.2f}s spell={spell_key})")
             # Recast automático: si automatic y botón sigue presionado, reiniciar la sub-FSM a PrepareSpellState
-            if self.fsm.context.get('automatic', False) and pygame.mouse.get_pressed()[0]:
-                from roguelike_game.ecs.fsm.states.spell.prepare_spell_state import PrepareSpellState
+            if self.fsm.context.get('automatic', False) and pygame.mouse.get_pressed()[0]:                
+                from roguelike_game.ecs.systems.fsm.states.spell.prepare_spell_state import PrepareSpellState
                 self.fsm.change_state(PrepareSpellState(), entity)
                 return
             # No recast: salir a estado global IdleState

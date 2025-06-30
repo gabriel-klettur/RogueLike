@@ -1,8 +1,8 @@
 # Path: tests/visual/test_fsm_visual.py
 import pygame
 import pytest
-from roguelike_game.ecs.fsm.fsm import FiniteStateMachine  # Máquina de estados finitos personalizada del juego
-from roguelike_game.ecs.fsm.state import State              # Clase base para los estados
+from roguelike_game.ecs.systems.fsm.fsm import FiniteStateMachine  # Máquina de estados finitos personalizada del juego
+from roguelike_game.ecs.systems.fsm.state import State              # Clase base para los estados
 
 # Definición de un estado "dummy" para pruebas.
 # Hereda de la clase base `State` pero no implementa lógica.

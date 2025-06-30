@@ -1,5 +1,5 @@
 # Path: src/roguelike_game/ecs/fsm/states/player/player_spell_cast_state.py
-from roguelike_game.ecs.fsm.states.cast_state import CastState
+from roguelike_game.ecs.systems.fsm.states.cast_state import CastState
 
 class PlayerSpellCastState(CastState):
     """Wrapper para iniciar el casting de hechizo para el jugador."""

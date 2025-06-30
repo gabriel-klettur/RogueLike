@@ -5,14 +5,14 @@ from roguelike_game.ecs.components.transform.position import Position
 
 from roguelike_game.ecs.components.combat.health import Health
 
-from roguelike_game.ecs.fsm.states.monster.patrol_state import PatrolState
+from roguelike_game.ecs.systems.fsm.states.monster.patrol_state import PatrolState
 from roguelike_game.ecs.components.fsm.patrol_route import PatrolRoute
 from roguelike_game.ecs.components.core.identity import Identity, Faction
 from roguelike_game.ecs.components.combat.combat_stats import CombatStats
 from roguelike_game.ecs.components.combat.melee_weapon import MeleeWeapon
 from roguelike_game.ecs.components.ai.aggro_range import AggroRange
 from roguelike_game.ecs.components.combat.melee_range import MeleeRange
-from roguelike_game.ecs.fsm.fsm import FiniteStateMachine
+from roguelike_game.ecs.systems.fsm.fsm import FiniteStateMachine
 from roguelike_game.ecs.components.fsm.npc_state import NPCState
 from roguelike_game.ecs.components.ai.damage_config import DamageConfig
 import logging

@@ -1,7 +1,8 @@
 # Path: src/roguelike_game/ecs/fsm/states/monster/aggro_state.py
-from roguelike_game.ecs.fsm.state import State
-from roguelike_game.ecs.fsm.states.death_state import DeathState
+from roguelike_game.ecs.systems.fsm.state import State
+from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
 from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_game.ecs.systems.fsm.states.monster.chase_state import ChaseState
 
 class AggroState(State):
     """
@@ -40,8 +41,7 @@ class AggroState(State):
                 from roguelike_game.ecs.fsm.states.attack_state import AttackState
                 world.components['NPCState'][entity].fsm.change_state(AttackState(), entity)
                 return
-        # Si no ataca ni huye, continuar persiguiendo        
-        from roguelike_game.ecs.fsm.states.monster.chase_state import ChaseState
+        # Si no ataca ni huye, continuar persiguiendo                
         world.components['NPCState'][entity].fsm.change_state(ChaseState(), entity)
         return
 

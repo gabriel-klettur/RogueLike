@@ -28,8 +28,8 @@ from roguelike_game.ecs.factories.player.sprite_loader import load_and_scale_spr
 from roguelike_game.ecs.factories.player.collider import create_body_and_feet
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.ecs.components.fsm.npc_state import NPCState
-from roguelike_game.ecs.fsm.states.idle_state import IdleState
-from roguelike_game.ecs.fsm.fsm import FiniteStateMachine
+from roguelike_game.ecs.systems.fsm.states.idle_state import IdleState
+from roguelike_game.ecs.systems.fsm.fsm import FiniteStateMachine
 
 
 # --------------------------------------------

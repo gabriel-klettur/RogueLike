@@ -1,9 +1,7 @@
 # Path: src/roguelike_game/ecs/fsm/states/idle_state.py
 import time
-from roguelike_game.ecs.fsm.state import State
-from roguelike_game.ecs.components.transform.position import Position
-from roguelike_game.ecs.components.ai.aggro_range import AggroRange
-from roguelike_game.ecs.fsm.states.death_state import DeathState
+from roguelike_game.ecs.systems.fsm.state import State
+from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
 from roguelike_engine.config.config_tiles import TILE_SIZE
 
 class IdleState(State):

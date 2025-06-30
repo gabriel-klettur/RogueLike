@@ -1,7 +1,7 @@
 # Path: src/roguelike_game/ecs/fsm/states/spell/resolve_spell_state.py
-from roguelike_game.ecs.fsm.state import State
-from roguelike_game.ecs.fsm.states.spell.cooldown_state import CooldownState
-from roguelike_game.ecs.fsm.states.player.player_spell_cooldown_state import PlayerSpellCooldownState
+from roguelike_game.ecs.systems.fsm.state import State
+from roguelike_game.ecs.systems.fsm.states.spell.cooldown_state import CooldownState
+
 
 class ResolveSpellState(State):
     def enter(self, entity):
@@ -12,6 +12,7 @@ class ResolveSpellState(State):
         world = entity.world
         # Para el jugador, ir directo a cooldown tras el release sin esperar colisión/expiración
         if entity.id == world.player_entity:
+            from roguelike_game.ecs.systems.fsm.states.player.player_spell_cooldown_state import PlayerSpellCooldownState
             self.fsm.change_state(PlayerSpellCooldownState(), entity)
             return
         # Para NPCs, esperar a que la fireball desaparezca

@@ -1,7 +1,7 @@
 # Path: src/roguelike_game/ecs/fsm/states/damage_state.py
 import time
 import logging
-from roguelike_game.ecs.fsm.state import State
+from roguelike_game.ecs.systems.fsm.state import State
 from roguelike_game.ecs.components.transform.velocity import Velocity
 from roguelike_game.ecs.components.rendering.flash_component import FlashComponent
 
