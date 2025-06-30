@@ -38,7 +38,7 @@ class AggroState(State):
             dist_sq = dx*dx + dy*dy
             mr_cmp = world.components['MeleeRange'][entity]
             if dist_sq <= (mr_cmp.range * TILE_SIZE) ** 2:
-                from roguelike_game.ecs.fsm.states.attack_state import AttackState
+                from roguelike_game.ecs.systems.fsm.states.attack_state import AttackState
                 world.components['NPCState'][entity].fsm.change_state(AttackState(), entity)
                 return
         # Si no ataca ni huye, continuar persiguiendo                
