@@ -12,13 +12,6 @@ from roguelike_game.systems.effects.spells.smoke_emitter.model      import Smoke
 from roguelike_game.systems.effects.spells.smoke_emitter.controller import SmokeEmitterController
 from roguelike_game.systems.effects.spells.smoke_emitter.view       import SmokeEmitterView
 
-# MVC: FireworkLaunch
-from roguelike_game.systems.effects.spells.firework_launch.model      import FireworkLaunchModel
-from roguelike_game.systems.effects.spells.firework_launch.controller import FireworkLaunchController
-from roguelike_game.systems.effects.spells.firework_launch.view       import FireworkLaunchView
-
-
-
 # MVC: SphereMagicShield
 from roguelike_game.systems.effects.spells.sphere_magic_shield.model      import SphereMagicShieldModel
 from roguelike_game.systems.effects.spells.sphere_magic_shield.controller import SphereMagicShieldController
@@ -45,10 +38,6 @@ class SpellsSystem:
 
         self.smoke_emitter_controllers: list[SmokeEmitterController]   = []
         self.smoke_emitter_views:       list[SmokeEmitterView]         = []
-
-        self.firework_controllers:      list[FireworkLaunchController] = []
-        self.firework_views:            list[FireworkLaunchView]       = []        
-
 
         self.shield_controllers:        list[SphereMagicShieldController] = []
         self.shield_views:              list[SphereMagicShieldView]       = []
@@ -87,17 +76,6 @@ class SpellsSystem:
         self.smoke_emitter_controllers.append(ctrl)
         self.smoke_emitter_views.append(view)
 
-    def spawn_firework(self, camera, entities):
-        px, py = self._player_center(entities.player)
-        mx, my = pygame.mouse.get_pos()
-        wx      = mx / camera.zoom + camera.offset_x
-        wy      = my / camera.zoom + camera.offset_y
-        model  = FireworkLaunchModel(px, py, wx, wy)
-        ctrl   = FireworkLaunchController(model)
-        view   = FireworkLaunchView(model)
-        self.firework_controllers.append(ctrl)
-        self.firework_views.append(view)
-
     def spawn_magic_shield(self, entities):
         model  = SphereMagicShieldModel(entities.player)
         ctrl   = SphereMagicShieldController(model)
@@ -129,11 +107,6 @@ class SpellsSystem:
         self.smoke_emitter_controllers = [c for c in self.smoke_emitter_controllers if not c.model.is_empty()]
         self.smoke_emitter_views       = [v for v in self.smoke_emitter_views       if not v.model.is_empty()]
 
-        # FireworkLaunch
-        for c in self.firework_controllers: c.update()
-        self.firework_controllers = [c for c in self.firework_controllers if not c.model.finished]
-        self.firework_views       = [v for v in self.firework_views       if not v.model.finished]
-
         # SphereMagicShield
         for c in self.shield_controllers: c.update()
         self.shield_controllers = [c for c in self.shield_controllers if not c.model.is_finished()]
@@ -154,8 +127,7 @@ class SpellsSystem:
 
         # MVC renders        
         for v in self.smoke_views:         v.render(screen, camera)
-        for v in self.smoke_emitter_views: v.render(screen, camera)
-        for v in self.firework_views:      v.render(screen, camera)                        
+        for v in self.smoke_emitter_views: v.render(screen, camera)        
         for v in self.shield_views:
             if (d := v.render(screen, camera)): dirty_rects.append(d)
         for v in self.teleport_views:       v.render(screen, camera)

@@ -42,6 +42,7 @@ class InputConfig:
                 "spell_darkball": "K_1",
                 "spell_iceball": "K_2",
                 "spell_arcane_flame": "K_c",
+                "spell_firework_launch": "K_v",
                 "pause": "K_ESCAPE"
             }
             os.makedirs(os.path.dirname(self.path), exist_ok=True)
@@ -52,11 +53,17 @@ class InputConfig:
             self.bindings["spell_lightning"] = "K_r"
         # Asegurar binding para arcane flame
         if "spell_arcane_flame" not in self.bindings:
+            if "spell_firework_launch" not in self.bindings:
+                self.bindings["spell_firework_launch"] = "K_v"
+                self.save()
             self.bindings["spell_arcane_flame"] = "K_c"
             self.save()
             self.bindings["spell_lightning"] = "K_r"
 
     def get_key(self, action):
+        # Fallback para firework launch si no está en bindings
+        if action == "spell_firework_launch":
+            return pygame.K_v
         # Fallback para arcane flame si no está en bindings
         if action == "spell_arcane_flame":
             return pygame.K_c

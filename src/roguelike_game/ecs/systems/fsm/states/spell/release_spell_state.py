@@ -55,6 +55,12 @@ class ReleaseSpellState(State):
             resolver = SPELL_RESOLVERS.get('arcane_flame')
             resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
             return
+        if spell_type == 'firework_launch':
+            world = entity.world
+            resolver = SPELL_RESOLVERS.get('firework_launch')
+            resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
+            return
+
         # Evitar crear más instancias si se alcanzó el máximo en spells.json para proyectiles
         if spell_type == 'projectile':
             max_inst = cfg.get('max_instances', 0)

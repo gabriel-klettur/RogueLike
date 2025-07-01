@@ -18,6 +18,8 @@ from roguelike_game.ecs.components.abilities.lightning_component import Lightnin
 from roguelike_game.ecs.components.abilities.arcane_flame_component import ArcaneFlameComponent
 from roguelike_game.ecs.systems.rendering.combat.spells.arcane_flame.model import ArcaneFlameModel
 import math
+from roguelike_game.ecs.components.abilities.firework_launch_component import FireworkLaunchComponent
+from roguelike_game.ecs.systems.rendering.combat.spells.firework_launch.model import FireworkLaunchModel
 
 class BaseSpellResolver:
     def resolve(self, world, caster, spawn_meta, cfg, camera):
@@ -221,6 +223,28 @@ class ArcaneFlameResolver(BaseSpellResolver):
         model = ArcaneFlameModel(spawn_x, spawn_y, width, height, duration)
         world.components.setdefault('ArcaneFlameComponent', {})[caster] = ArcaneFlameComponent(model)
 
+class FireworkLaunchResolver(BaseSpellResolver):
+    def resolve(self, world, caster, spawn_meta, cfg, camera):
+        # Resolver para lanzamiento de fuegos artificiales
+        pos_cmp = world.components['Position'][caster]
+        cx, cy = pos_cmp.x, pos_cmp.y
+        sprite_cmp = world.components['Sprite'].get(caster)
+        if sprite_cmp:
+            w, h = sprite_cmp.image.get_size()
+            cx += w / 2; cy += h / 2
+        mx, my = pygame.mouse.get_pos()
+        if camera:
+            zoom = getattr(camera, 'zoom', 1.0)
+            offset_x = getattr(camera, 'offset_x', 0)
+            offset_y = getattr(camera, 'offset_y', 0)
+            wx = mx / zoom + offset_x
+            wy = my / zoom + offset_y
+        else:
+            wx, wy = mx, my
+        speed = cfg.get('speed', 0)
+        model = FireworkLaunchModel(cx, cy, wx, wy, speed)
+        world.components.setdefault('FireworkLaunchComponent', {})[caster] = FireworkLaunchComponent(model)
+
 # Registro de resolutores por tipo de hechizo
 default_resolvers = {
     'projectile': ProjectileResolver(),
@@ -230,6 +254,7 @@ default_resolvers = {
     'slash': SlashResolver(),
     'lightning': LightningResolver(),
     'arcane_flame': ArcaneFlameResolver(),
+    'firework_launch': FireworkLaunchResolver(),
 }
 SPELL_RESOLVERS = default_resolvers
 

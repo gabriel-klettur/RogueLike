@@ -173,5 +173,22 @@
       "lock_cast_direction": true,
       "automatic": false,
       "automatic_cast_punish": 2.0
+    },
+    "firework_launch": {
+      "type": "firework_launch",
+      "prepare_duration": 0.2,
+      "channel_duration": 0.5,
+      "cooldown_duration": 1.0,
+      "speed": 12,
+      "particle_count": 4,
+      "particle_colors": [[255,255,255],[255,200,150]],
+      "size_range": [1,3],
+      "particle_lifespan": 20,
+      "max_instances": 3,
+      "allow_overlap": true,
+      "allow_movement": false,
+      "lock_cast_direction": true,
+      "automatic": false,
+      "automatic_cast_punish": 1.0
     }
 }
