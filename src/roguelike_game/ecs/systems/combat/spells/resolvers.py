@@ -12,6 +12,7 @@ from roguelike_game.ecs.components.particles.particle_component import ParticleC
 from roguelike_game.ecs.components.abilities.laser_beam_component import LaserBeamComponent
 from roguelike_game.ecs.components.abilities.dash_component import DashComponent
 from roguelike_game.ecs.components.combat.hitbox import HitboxComponent
+from roguelike_game.ecs.components.particles.slash_emitter_component import SlashEmitterComponent
 from roguelike_game.ecs.components.abilities.lightning_component import LightningComponent
 import math
 
@@ -156,28 +157,8 @@ class SlashResolver(BaseSpellResolver):
         size_min, size_max = cfg.get('size_range', [1,1])
         base_color = cfg.get('color', [255,255,255])
         speed_mult = cfg.get('speed_multiplier', 1.0)
-        # Generar partículas de slash como entidades ECS
-        for i in range(count):
-            t = (i/(count-1)) - 0.5
-            angle = math.atan2(dir_y, dir_x) + t * arc_range
-            ox = math.cos(angle) * radius
-            oy = math.sin(angle) * radius
-            scale = 1 - abs(t) * 2
-            speed = speed_mult * (1 + scale * 2)
-            size = int(size_min + (size_max - size_min) * scale)
-            color = tuple(base_color)
-            fid = world.create_entity()
-            world.components['Position'][fid] = Position(cx + ox, cy + oy)
-            world.components['ParticleComponent'][fid] = ParticleComponent(
-                math.cos(angle) * speed,
-                math.sin(angle) * speed,
-                color,
-                size,
-                lifespan
-            )
-        # Crear hitbox de slash para colisión
+        # Registrar hitbox de slash para colisión
         hb_id = world.create_entity()
-        # Ajustar posición del hitbox usando offset combinado
         real_x = cx + dir_x * offset
         real_y = cy + dir_y * offset
         world.components['Position'][hb_id] = Position(real_x, real_y)
@@ -189,6 +170,18 @@ class SlashResolver(BaseSpellResolver):
             direction=(dir_x, dir_y),
             lifespan=lifespan,
             damage=cfg.get('damage', 0),
+        )
+        # Añadir emisor de partículas de slash
+        world.components.setdefault('SlashEmitterComponent', {})[caster] = SlashEmitterComponent(
+            radius=radius,
+            arc_range=arc_range,
+            count=count,
+            lifespan=lifespan,
+            size_range=(size_min, size_max),
+            color=tuple(base_color),
+            speed_multiplier=speed_mult,
+            direction=(dir_x, dir_y),
+            offset=offset
         )
 
 class LightningResolver(BaseSpellResolver):
