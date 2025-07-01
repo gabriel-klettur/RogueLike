@@ -11,6 +11,7 @@ import pygame
 from roguelike_game.ecs.components.particles.particle_component import ParticleComponent
 from roguelike_game.ecs.components.abilities.laser_beam_component import LaserBeamComponent
 from roguelike_game.ecs.components.abilities.dash_component import DashComponent
+from roguelike_game.ecs.components.particles.dash_emitter_component import DashEmitterComponent
 from roguelike_game.ecs.components.combat.hitbox import HitboxComponent
 from roguelike_game.ecs.components.particles.slash_emitter_component import SlashEmitterComponent
 from roguelike_game.ecs.components.abilities.lightning_component import LightningComponent
@@ -129,6 +130,13 @@ class DashResolver(BaseSpellResolver):
         speed = cfg.get('speed', 0)
         duration = cfg.get('duration', 0)
         world.components.setdefault('DashComponent', {})[caster] = DashComponent(dir_x, dir_y, speed, duration)
+        world.components.setdefault('DashEmitterComponent', {})[caster] = DashEmitterComponent(
+            count=10,
+            lifespan=15,
+            size_range=(3, 6),
+            color_choices=((200,200,255),(150,150,255),(255,255,255)),
+            speed_range=(1.0, 3.0)
+        )
 
 class SlashResolver(BaseSpellResolver):
     def resolve(self, world, caster, spawn_meta, cfg, camera):

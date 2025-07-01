@@ -19,6 +19,7 @@ from roguelike_game.ecs.systems.particles.healing_aura_emitter_system import Hea
 from roguelike_game.ecs.systems.particles.particle_system import ParticleSystem
 from roguelike_game.ecs.systems.particles.laser_beam_emitter_system import LaserBeamEmitterSystem
 from roguelike_game.ecs.systems.particles.slash_emitter_system import SlashEmitterSystem
+from roguelike_game.ecs.systems.particles.dash_emitter_system import DashEmitterSystem
 from roguelike_game.ecs.systems.rendering.combat.spells.fireball_render_system import FireballRenderSystem
 from roguelike_game.ecs.systems.rendering.combat.spells.lightning_render_system import LightningRenderSystem
 from roguelike_game.ecs.systems.rendering.particles.particle_render_system import ParticleRenderSystem
@@ -42,7 +43,7 @@ def get_update_system_classes():
         FSMSystem,
         PlayerFacingSystem, FacingSystem, InputSystem,
         MovementCollisionSystem,
-        MeleeCombatSystem, SpellCastingSystem, AuraSystem, ParticleSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, FireballSystem, LightningSystem, DashSystem, HitboxSystem,
+        MeleeCombatSystem, SpellCastingSystem, AuraSystem, ParticleSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, FireballSystem, LightningSystem, DashSystem, HitboxSystem,
         TrailSystem,
         AnimationSystem, FlashSystem, SpawnSystem, ExpansionSystem,
     ]
