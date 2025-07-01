@@ -1,10 +1,9 @@
-# Path: src/roguelike_game/systems/effects/spells/arcane_flame/model.py
 import random
 import math
 import time
 import pygame
 
-from roguelike_game.systems.effects.spells.arcane_flame.palette import (
+from roguelike_game.ecs.systems.rendering.combat.spells.arcane_flame.palette import (
     FLAME_COLOR_PALETTE, FLAME_COLOR_DEPTH, CELL_SIZE, SPREAD_FROM
 )
 
@@ -25,8 +24,7 @@ class FirePixel:
         self.sides = {"top": top, "left": left, "bottom": bottom, "right": right}
 
     def _generate_render_color(self) -> tuple[int,int,int]:
-        r,g,b = self.palette[self.idx]
-        # un poco de ruido para el parpadeo
+        r, g, b = self.palette[self.idx]
         return (
             max(0, min(255, r + random.randint(-10,10))),
             max(0, min(255, g + random.randint(-10,10))),
@@ -41,16 +39,13 @@ class FirePixel:
         else:
             self.idx += 1
         self.idx = max(0, min(self.idx, len(self.palette)-1))
-
-        # oscilación horizontal
         self.x_offset = math.sin(time.time() * 10 + self.y) * 1.5
         self.render_color = self._generate_render_color()
 
     def render(self, screen: pygame.Surface, camera):
-        # no dibujar si está fuera de vista
         if not camera.is_in_view(self.x, self.y, (CELL_SIZE, CELL_SIZE)):
             return
-        r,g,b = self.render_color
+        r, g, b = self.render_color
         alpha = max(0, int(255 * (1 - self.idx / (len(self.palette)-1))))
         key = (r, g, b, alpha)
         if key not in FirePixel.cached_surfaces:
@@ -59,7 +54,6 @@ class FirePixel:
             FirePixel.cached_surfaces[key] = surf
         pos = camera.apply((self.x + self.x_offset, self.y))
         screen.blit(FirePixel.cached_surfaces[key], pos)
-
 
 class ArcaneFlameModel:
     """
@@ -74,20 +68,15 @@ class ArcaneFlameModel:
         height: int = 256,
         max_duration: float = 5.0
     ):
-        # Centro de la animación
         self.center_x = x
         self.center_y = y
-        self.width      = width
-        self.height     = height
+        self.width = width
+        self.height = height
         self.max_duration = max_duration
-        self.start_time   = time.time()
-
-        # Gradiente de colores
+        self.start_time = time.time()
         self.palette = self._generate_gradient(FLAME_COLOR_DEPTH, FLAME_COLOR_PALETTE)
-        self.columns = width  // CELL_SIZE
-        self.rows    = height // CELL_SIZE
-
-        # Creamos la matriz de píxeles
+        self.columns = width // CELL_SIZE
+        self.rows = height // CELL_SIZE
         self._create_pixels()
 
     def _generate_gradient(self, size: int, stops: list[tuple[int,int,int]]) -> list[tuple[int,int,int]]:
@@ -109,7 +98,6 @@ class ArcaneFlameModel:
         self.pixels: list[list[FirePixel|None]] = []
         cx, cy = self.columns//2, self.rows//2
         radius = min(cx, cy)
-        # Generar píxeles solo dentro de un círculo con ruido
         for row in range(self.rows):
             row_list: list[FirePixel|None] = []
             for col in range(self.columns):
@@ -123,15 +111,14 @@ class ArcaneFlameModel:
                 else:
                     row_list.append(None)
             self.pixels.append(row_list)
-        # Conectar vecinos
         for r in range(self.rows):
             for c in range(self.columns):
                 p = self.pixels[r][c]
                 if not p: continue
-                top    = self.pixels[r-1][c]   if r>0               else None
-                left   = self.pixels[r][c-1]   if c>0               else None
-                bottom = self.pixels[r+1][c]   if r<self.rows-1     else None
-                right  = self.pixels[r][c+1]   if c<self.columns-1  else None
+                top = self.pixels[r-1][c] if r>0 else None
+                left = self.pixels[r][c-1] if c>0 else None
+                bottom = self.pixels[r+1][c] if r<self.rows-1 else None
+                right = self.pixels[r][c+1] if c<self.columns-1 else None
                 p.set_sides(top=top, left=left, bottom=bottom, right=right)
 
     def update(self):

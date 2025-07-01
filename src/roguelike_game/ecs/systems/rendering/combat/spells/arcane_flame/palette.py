@@ -17,4 +17,3 @@ FLAME_COLOR_PALETTE = [
 
 # Direcciones de propagación, con mayor peso hacia abajo
 SPREAD_FROM = ['bottom'] * 10 + ['left'] * 2 + ['right'] * 2 + ['top']
-# Path: src/roguelike_game/systems/effects/spells/arcane_flame/palette.py

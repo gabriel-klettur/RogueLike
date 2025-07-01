@@ -17,10 +17,7 @@ from roguelike_game.systems.effects.spells.firework_launch.model      import Fir
 from roguelike_game.systems.effects.spells.firework_launch.controller import FireworkLaunchController
 from roguelike_game.systems.effects.spells.firework_launch.view       import FireworkLaunchView
 
-# MVC: ArcaneFlame
-from roguelike_game.systems.effects.spells.arcane_flame.model      import ArcaneFlameModel
-from roguelike_game.systems.effects.spells.arcane_flame.controller import ArcaneFlameController
-from roguelike_game.systems.effects.spells.arcane_flame.view       import ArcaneFlameView
+
 
 # MVC: SphereMagicShield
 from roguelike_game.systems.effects.spells.sphere_magic_shield.model      import SphereMagicShieldModel
@@ -52,8 +49,6 @@ class SpellsSystem:
         self.firework_controllers:      list[FireworkLaunchController] = []
         self.firework_views:            list[FireworkLaunchView]       = []        
 
-        self.arcane_controllers:        list[ArcaneFlameController]    = []
-        self.arcane_views:              list[ArcaneFlameView]          = []
 
         self.shield_controllers:        list[SphereMagicShieldController] = []
         self.shield_views:              list[SphereMagicShieldView]       = []
@@ -103,13 +98,6 @@ class SpellsSystem:
         self.firework_controllers.append(ctrl)
         self.firework_views.append(view)
 
-    def spawn_arcane_flame(self, x, y):
-        model  = ArcaneFlameModel(x, y)
-        ctrl   = ArcaneFlameController(model)
-        view   = ArcaneFlameView(model)
-        self.arcane_controllers.append(ctrl)
-        self.arcane_views.append(view)
-
     def spawn_magic_shield(self, entities):
         model  = SphereMagicShieldModel(entities.player)
         ctrl   = SphereMagicShieldController(model)
@@ -146,11 +134,6 @@ class SpellsSystem:
         self.firework_controllers = [c for c in self.firework_controllers if not c.model.finished]
         self.firework_views       = [v for v in self.firework_views       if not v.model.finished]
 
-        # ArcaneFlame
-        for c in self.arcane_controllers: c.update()
-        self.arcane_controllers = [c for c in self.arcane_controllers if not c.model.is_finished()]
-        self.arcane_views       = [v for v in self.arcane_views       if not v.model.is_finished()]
-
         # SphereMagicShield
         for c in self.shield_controllers: c.update()
         self.shield_controllers = [c for c in self.shield_controllers if not c.model.is_finished()]
@@ -172,8 +155,7 @@ class SpellsSystem:
         # MVC renders        
         for v in self.smoke_views:         v.render(screen, camera)
         for v in self.smoke_emitter_views: v.render(screen, camera)
-        for v in self.firework_views:      v.render(screen, camera)                
-        for v in self.arcane_views:         v.render(screen, camera)
+        for v in self.firework_views:      v.render(screen, camera)                        
         for v in self.shield_views:
             if (d := v.render(screen, camera)): dirty_rects.append(d)
         for v in self.teleport_views:       v.render(screen, camera)

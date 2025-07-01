@@ -15,6 +15,8 @@ from roguelike_game.ecs.components.particles.dash_emitter_component import DashE
 from roguelike_game.ecs.components.combat.hitbox import HitboxComponent
 from roguelike_game.ecs.components.particles.slash_emitter_component import SlashEmitterComponent
 from roguelike_game.ecs.components.abilities.lightning_component import LightningComponent
+from roguelike_game.ecs.components.abilities.arcane_flame_component import ArcaneFlameComponent
+from roguelike_game.ecs.systems.rendering.combat.spells.arcane_flame.model import ArcaneFlameModel
 import math
 
 class BaseSpellResolver:
@@ -208,6 +210,17 @@ class LightningResolver(BaseSpellResolver):
                                    cfg.get('lifetime', 0))
         world.components.setdefault('LightningComponent', {})[caster] = comp
 
+class ArcaneFlameResolver(BaseSpellResolver):
+    def resolve(self, world, caster, spawn_meta, cfg, camera):
+        # Crear modelo legacy ArcaneFlame en posición de spawn
+        spawn_x, spawn_y = spawn_meta.get('spawn_pos', (0, 0))
+        radius = cfg.get('radius', 0)
+        width = radius * 2
+        height = radius * 2
+        duration = cfg.get('duration', 0.0)
+        model = ArcaneFlameModel(spawn_x, spawn_y, width, height, duration)
+        world.components.setdefault('ArcaneFlameComponent', {})[caster] = ArcaneFlameComponent(model)
+
 # Registro de resolutores por tipo de hechizo
 default_resolvers = {
     'projectile': ProjectileResolver(),
@@ -216,6 +229,7 @@ default_resolvers = {
     'dash': DashResolver(),
     'slash': SlashResolver(),
     'lightning': LightningResolver(),
+    'arcane_flame': ArcaneFlameResolver(),
 }
 SPELL_RESOLVERS = default_resolvers
 

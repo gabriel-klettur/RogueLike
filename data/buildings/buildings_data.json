@@ -785,16 +785,16 @@
         "image_path": "assets/buildings\\portals\\portal.png",
         "solid": true,
         "scale": [
-            161,
+            164,
             239
         ],
         "original_scale": [
-            161,
+            164,
             239
         ],
-        "split_ratio": 0.722,
+        "split_ratio": 0.234,
         "z_bottom": 3,
-        "z_top": 2,
+        "z_top": 6,
         "z": 3
     },
     {
@@ -818,17 +818,17 @@
     },
     {
         "zone": "empty_left",
-        "rel_x": 788,
-        "rel_y": 596,
+        "rel_x": 805,
+        "rel_y": 728,
         "image_path": "assets/buildings\\vegetation\\tree_5.png",
         "solid": true,
         "scale": [
-            363,
-            363
+            359,
+            359
         ],
         "original_scale": [
-            363,
-            363
+            359,
+            359
         ],
         "split_ratio": 0.799,
         "z_bottom": 3,
@@ -1119,5 +1119,24 @@
         "z_bottom": 3,
         "z_top": 5,
         "z": 3
+    },
+    {
+        "zone": "empty_left",
+        "rel_x": 769,
+        "rel_y": 1020,
+        "image_path": "assets/buildings\\statues\\statue_olim_01.png",
+        "solid": true,
+        "scale": [
+            256,
+            256
+        ],
+        "original_scale": [
+            256,
+            256
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "z": 1
     }
 ]

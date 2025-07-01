@@ -1,6 +1,6 @@
-# Path: src/roguelike_game/systems/effects/spells/arcane_flame/view.py
 import pygame
-from roguelike_game.systems.effects.spells.arcane_flame.model import ArcaneFlameModel
+
+from roguelike_game.ecs.systems.rendering.combat.spells.arcane_flame.model import ArcaneFlameModel
 
 class ArcaneFlameView:
     """
@@ -12,7 +12,6 @@ class ArcaneFlameView:
     def render(self, screen: pygame.Surface, camera):
         if self.model.is_finished():
             return
-        # Cada FirePixel sabe cómo dibujarse
         for row in self.model.pixels:
             for p in row:
                 if p:
