@@ -17,12 +17,6 @@ from roguelike_game.systems.effects.spells.firework_launch.model      import Fir
 from roguelike_game.systems.effects.spells.firework_launch.controller import FireworkLaunchController
 from roguelike_game.systems.effects.spells.firework_launch.view       import FireworkLaunchView
 
-
-# MVC: Lightning
-from roguelike_game.systems.effects.spells.lightning.model      import LightningModel
-from roguelike_game.systems.effects.spells.lightning.controller import LightningController
-from roguelike_game.systems.effects.spells.lightning.view       import LightningView
-
 # MVC: ArcaneFlame
 from roguelike_game.systems.effects.spells.arcane_flame.model      import ArcaneFlameModel
 from roguelike_game.systems.effects.spells.arcane_flame.controller import ArcaneFlameController
@@ -56,11 +50,7 @@ class SpellsSystem:
         self.smoke_emitter_views:       list[SmokeEmitterView]         = []
 
         self.firework_controllers:      list[FireworkLaunchController] = []
-        self.firework_views:            list[FireworkLaunchView]       = []
-
-
-        self.lightning_controllers:     list[LightningController]      = []
-        self.lightning_views:           list[LightningView]            = []
+        self.firework_views:            list[FireworkLaunchView]       = []        
 
         self.arcane_controllers:        list[ArcaneFlameController]    = []
         self.arcane_views:              list[ArcaneFlameView]          = []
@@ -113,15 +103,6 @@ class SpellsSystem:
         self.firework_controllers.append(ctrl)
         self.firework_views.append(view)
 
-    def spawn_lightning(self, target_pos, entities):
-        px, py   = self._player_center(entities.player)
-        model    = LightningModel((px, py), target_pos)
-        
-        ctrl     = LightningController(model)
-        view     = LightningView(model)
-        self.lightning_controllers.append(ctrl)
-        self.lightning_views.append(view)
-
     def spawn_arcane_flame(self, x, y):
         model  = ArcaneFlameModel(x, y)
         ctrl   = ArcaneFlameController(model)
@@ -165,11 +146,6 @@ class SpellsSystem:
         self.firework_controllers = [c for c in self.firework_controllers if not c.model.finished]
         self.firework_views       = [v for v in self.firework_views       if not v.model.finished]
 
-        # Lightning
-        for c in self.lightning_controllers: c.update()
-        self.lightning_controllers = [c for c in self.lightning_controllers if not c.model.is_finished()]
-        self.lightning_views       = [v for v in self.lightning_views       if not v.model.is_finished()]
-
         # ArcaneFlame
         for c in self.arcane_controllers: c.update()
         self.arcane_controllers = [c for c in self.arcane_controllers if not c.model.is_finished()]
@@ -196,9 +172,7 @@ class SpellsSystem:
         # MVC renders        
         for v in self.smoke_views:         v.render(screen, camera)
         for v in self.smoke_emitter_views: v.render(screen, camera)
-        for v in self.firework_views:      v.render(screen, camera)        
-        for v in self.lightning_views:
-            if (d := v.render(screen, camera)): dirty_rects.append(d)
+        for v in self.firework_views:      v.render(screen, camera)                
         for v in self.arcane_views:         v.render(screen, camera)
         for v in self.shield_views:
             if (d := v.render(screen, camera)): dirty_rects.append(d)
