@@ -8,7 +8,7 @@ import roguelike_engine.config.config as config
 from types import SimpleNamespace
 
 # Sistema de orden Z
-from roguelike_game.systems.z_layer.render import render_z_ordered
+from roguelike_engine.z_layer.render import render_z_ordered
 
 # Importar el decorador centralizado de benchmark
 from roguelike_engine.zone.view.zone_view import ZoneView

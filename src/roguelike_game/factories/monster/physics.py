@@ -8,7 +8,7 @@ from roguelike_game.ecs.components.physics.multi_collider import MultiCollider
 from roguelike_game.ecs.components.physics.mask_collider import MaskCollider
 from roguelike_game.ecs.components.physics.collider import Collider
 from roguelike_game.ecs.components.transform.z_layer import ZLayer
-from roguelike_game.systems.config_z_layer import Z_LAYERS
+from roguelike_engine.config_z_layer import Z_LAYERS
 from roguelike_game.ecs.components.core.identity import Faction
 
 

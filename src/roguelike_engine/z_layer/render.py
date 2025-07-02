@@ -1,4 +1,3 @@
-
 """
 Renderizado ordenado por capas Z y eje Y.
 Permite controlar qué entidades se dibujan encima o debajo de otras,
@@ -23,4 +22,3 @@ def render_z_ordered(entities, screen, camera, z_state):
         bucket.sort(key=lambda ent: getattr(ent, "y", 0))
         for entity in bucket:
             entity.render(screen, camera)
-# Path: src/roguelike_game/systems/z_layer/render.py

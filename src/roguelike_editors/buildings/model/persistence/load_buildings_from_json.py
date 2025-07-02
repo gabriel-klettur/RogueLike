@@ -3,7 +3,7 @@ import os
 import json
 from typing import List
 from roguelike_engine.config.config import BUILDINGS_DATA_PATH, BUILDINGS_COLLISIONS_DATA_PATH
-from roguelike_game.systems.z_layer.persistence import extract_z_from_json
+from roguelike_engine.z_layer.persistence import extract_z_from_json
 
 from roguelike_engine.buildings.building import Building
 

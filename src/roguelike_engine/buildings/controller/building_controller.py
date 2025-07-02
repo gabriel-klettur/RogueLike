@@ -51,7 +51,7 @@ class BuildingController:
             return
 
         # Importar Z_LAYERS para decidir el orden de llamada al render de cada parte
-        from roguelike_game.systems.config_z_layer import Z_LAYERS
+        from roguelike_engine.config_z_layer import Z_LAYERS
 
         # ─ Primero parte “bottom” ─
         # asumiendo que el world renderer (RenderSystem) va a agrupar por z-layer:

@@ -165,7 +165,7 @@
             233,
             233
         ],
-        "split_ratio": 0.801,
+        "split_ratio": 0.517,
         "z_bottom": 1,
         "z_top": 4,
         "z": 1
@@ -799,8 +799,8 @@
     },
     {
         "zone": "Lobby",
-        "rel_x": 564,
-        "rel_y": 568,
+        "rel_x": 556,
+        "rel_y": 569,
         "image_path": "assets/buildings\\vegetation\\tree_1.PNG",
         "solid": true,
         "scale": [
@@ -1137,6 +1137,6 @@
         "split_ratio": 0.5,
         "z_bottom": 3,
         "z_top": 5,
-        "z": 1
+        "z": 3
     }
 ]

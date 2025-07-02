@@ -1,7 +1,7 @@
 # Path: src/roguelike_game/ecs/systems/rendering/render_system.py
 import pygame
 from roguelike_game.ecs.components.transform.scale import Scale
-from roguelike_game.systems.config_z_layer import DEFAULT_Z
+from roguelike_engine.config_z_layer import DEFAULT_Z
 from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
 
 try:

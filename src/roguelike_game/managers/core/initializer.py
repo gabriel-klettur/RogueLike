@@ -26,7 +26,7 @@ from roguelike_game.managers.editors.buildings_editor_manager import BuildingEdi
 from roguelike_game.managers.editors.tiles_editor_manager import TilesEditorManager
 from roguelike_game.managers.editors.map_editor_manager import MapEditorManager
 from roguelike_engine.minimap.minimap import Minimap
-from roguelike_game.systems.z_layer.state import ZState
+from roguelike_engine.z_layer.state import ZState
 from roguelike_game.managers.ecs_manager import ECSManager
 
 
