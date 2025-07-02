@@ -6,11 +6,11 @@ from .spatial_index import SpatialIndex
 from .spawn_manager import SpawnNPCManager
 import os
 from roguelike_game.ecs.systems.input.input_system import InputSystem
-from roguelike_game.factories.player.player_factory import spawn_player_tile as _spawn_player_tile
+
 
 class ECSWorld:
-    ECSWorld = None
-    spawn_player_tile = staticmethod(_spawn_player_tile)
+
+
     def __init__(self, screen, map_manager, buildings, perf_log=None):
         self.perf_log = perf_log
         self.screen = screen

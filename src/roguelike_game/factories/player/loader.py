@@ -1,4 +1,6 @@
-# Path: src/roguelike_game/ecs/factories/player/sprite_loader.py
+"""
+Carga y prepara sprites para el jugador.
+"""
 import pygame
 from roguelike_game.factories.player.assets.player_assets import PlayerAssets
 from roguelike_game.factories.player.config import ORIGINAL_SPRITE_SIZE, PLAYER_STATS, DEFAULT_SCALE

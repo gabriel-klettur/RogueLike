@@ -1,9 +1,9 @@
 """
 Spawner de ECS: maneja spawn de jugador y NPCs.
 """
-from roguelike_game.factories.player.player_factory import spawn_player_tile
+from roguelike_game.factories.registry import get_factory
 from roguelike_engine.config.map_config import global_map_settings
-from roguelike_game.ecs.core.manager import ECSWorld
+
 
 class ECSSpawner:
     """
@@ -11,7 +11,7 @@ class ECSSpawner:
     """
     def spawn_player(self, ecs_world, map_manager):
         tx, ty = self._get_initial_player_tile(ecs_world, map_manager)
-        pid = getattr(ECSWorld, 'spawn_player_tile', spawn_player_tile)(ecs_world, tx, ty)
+        pid = get_factory("player").create(ecs_world, tile_x=tx, tile_y=ty)
         ecs_world.player_entity = pid
         map_manager.spawn_player((tx, ty))
 
