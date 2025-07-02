@@ -42,7 +42,7 @@ class BuildingsManager:
                 if hasattr(b, "rect"):
                     b.rect.topleft = (abs_x, abs_y)
 
-    def update(self, state, game_map, systems, perf_log):
+    def update(self, state, game_map, perf_log):
         """
         Actualiza edificios.
         """

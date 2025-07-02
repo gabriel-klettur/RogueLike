@@ -67,8 +67,7 @@ class Game:
     @benchmark(lambda self: self.perf_log, "2.TOTAL: UPDATE")
     def update(self):
         update_game(
-            self.state,
-            self.effects,
+            self.state,            
             self.camera,
             self.clock,
             self.screen,
@@ -91,8 +90,7 @@ class Game:
             self.perf_log,
             self.menu,
             self.map,
-            self.buildings,
-            self.effects,
+            self.buildings            
         )
 
     @benchmark(lambda self: self.perf_log, "4.2.ecs - update")

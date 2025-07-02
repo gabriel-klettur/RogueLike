@@ -6,13 +6,12 @@ import types
 
 
 def update_game(
-    state,
-    systems,
+    state,    
     camera,
     clock,
     screen,
     map,
-    entities,      
+    buildings,      
     tiles_editor,
     buildings_editor,
     map_editor,
@@ -83,7 +82,7 @@ def update_game(
     # 3.3) Todas las entidades
     @benchmark(perf_log, "2.3.entities.update")
     def _update_entities():
-        entities.update(state, map, systems, perf_log)
+        buildings.update(state, map, perf_log)
     _update_entities()
 
     # 3.4) Minimap update

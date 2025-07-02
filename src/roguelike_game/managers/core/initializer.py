@@ -21,7 +21,6 @@ from roguelike_game.managers.map_manager import MapManager
 from roguelike_game.managers.buildings_manager import BuildingsManager
 from roguelike_game.managers.z_layer_manager import ZLayerManager
 from types import SimpleNamespace
-from roguelike_game.systems.effects_manager import EffectsManager
 from roguelike_game.managers.menu_manager import MenuManager
 from roguelike_game.managers.editors.buildings_editor_manager import BuildingEditorManager
 from roguelike_game.managers.editors.tiles_editor_manager import TilesEditorManager
@@ -82,8 +81,7 @@ class GameInitializer:
             ("Cargando minimapa"            , partial(self._init_minimap)),
 
             ("Inicializando renderizador"   , partial(self._init_renderer)),
-            ("Inicializando menú"           , partial(self._init_menu)),
-            ("Inicializando efectos"        , partial(self._init_effects)),
+            ("Inicializando menú"           , partial(self._init_menu))            
         ]
         stages.extend(defaults)
 
@@ -213,7 +211,4 @@ class GameInitializer:
         g = self.game
         g.input_config = InputConfig()
         g.menu         = MenuManager(g.state, g.screen, g.input_config)
-
-    def _init_effects(self):
-        g = self.game
-        g.effects      = EffectsManager(g.state, self.perf_log, g.ecs.ecs_world)
+    
