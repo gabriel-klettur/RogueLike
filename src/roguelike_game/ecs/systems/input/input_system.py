@@ -53,6 +53,7 @@ class InputSystem:
         sm_key = self.config.get_key("spell_smoke")
         se_key = self.config.get_key("spell_smoke_emitter")
         sh_key = self.config.get_key("spell_sphere_magic_shield")
+        tp_key = self.config.get_key("spell_teleport")
         # Para cada entidad con InputComponent
         for eid, inp in world.components.get('InputComponent', {}).items():
             # Movimiento en ejes X e Y
@@ -104,6 +105,7 @@ class InputSystem:
             inp.spell_smoke = bool(keys[sm_key])
             inp.spell_smoke_emitter = bool(keys[se_key])
             inp.spell_sphere_magic_shield = bool(keys[sh_key])
+            inp.spell_teleport = bool(keys[tp_key])
             # Resetear flags de Q/E/X tras lectura para evitar duplicados
             if inp.spell_healing_aura:
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='healing_aura')
@@ -152,6 +154,10 @@ class InputSystem:
                 print(f"[DEBUG][{time.time():.3f}] eid={eid} spell_sphere_magic_shield -> sphere_magic_shield")
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='sphere_magic_shield')
                 inp.spell_sphere_magic_shield = False
+            if inp.spell_teleport:
+                print(f"[DEBUG][{time.time():.3f}] eid={eid} spell_teleport -> teleport")
+                world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='teleport')
+                inp.spell_teleport = False
             # Actualizar estado del click y detectar flanco ascendente
             curr_click = bool(pygame.mouse.get_pressed()[0])
             inp.click = curr_click

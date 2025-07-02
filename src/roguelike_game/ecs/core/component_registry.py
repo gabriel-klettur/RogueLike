@@ -10,6 +10,7 @@ def create_empty_component_store():
         'ZLayer': {}, 'DeathTimer': {}, 'DamageConfig': {}, 'FireballComponent': {}, 'ArcaneFlameComponent': {}, 'FireworkLaunchComponent': {}, 'SmokeComponent': {},
         'SmokeEmitterComponent': {},
         'SphereMagicShieldComponent': {},
+        'TeleportComponent': {},
         'AuraComponent': {}, 'LaserBeamComponent': {}, 'ParticleComponent': {},
         'HitboxComponent': {},
         'SpawnRequest': {}, 'CombatStats': {}, 'MeleeWeapon': {}, 'MeleeRange': {},

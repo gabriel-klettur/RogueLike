@@ -27,6 +27,8 @@ from roguelike_game.ecs.components.abilities.smoke_emitter_component import Smok
 from pygame.math import Vector2
 from roguelike_game.ecs.components.abilities.sphere_magic_shield_component import SphereMagicShieldComponent
 from roguelike_game.ecs.systems.rendering.combat.spells.sphere_magic_shield.model import SphereMagicShieldModel
+from roguelike_game.ecs.components.abilities.teleport_component import TeleportComponent
+from roguelike_game.ecs.systems.rendering.combat.spells.teleport.model import TeleportModel
 
 class BaseSpellResolver:
     def resolve(self, world, caster, spawn_meta, cfg, camera):
@@ -267,6 +269,19 @@ class SmokeResolver(BaseSpellResolver):
         model = SmokeModel(cx, cy, dir_vec, num_particles)
         world.components.setdefault('SmokeComponent', {})[caster] = SmokeComponent(model)
 
+class TeleportResolver(BaseSpellResolver):
+    def resolve(self, world, caster, spawn_meta, cfg, camera):
+        # Resolver for teleport effect
+        pos_cmp = world.components['Position'][caster]
+        cx, cy = pos_cmp.x, pos_cmp.y
+        direction = spawn_meta.get('direction', (1, 0))
+        distance = cfg.get('distance', 200)
+        end_x = cx + direction[0] * distance
+        end_y = cy + direction[1] * distance
+        lifespan = cfg.get('lifespan', 0.5)
+        model = TeleportModel((cx, cy), (end_x, end_y), lifespan=lifespan)
+        world.components.setdefault('TeleportComponent', {})[caster] = TeleportComponent(model)
+
 # Registro de resolutores por tipo de hechizo
 class SmokeEmitterResolver(BaseSpellResolver):
     def resolve(self, world, caster, spawn_meta, cfg, camera):
@@ -293,6 +308,7 @@ class SphereMagicShieldResolver(BaseSpellResolver):
         world.components.setdefault('SphereMagicShieldComponent', {})[caster] = SphereMagicShieldComponent(model)
 
 default_resolvers = {
+    'teleport': TeleportResolver(),
     'sphere_magic_shield': SphereMagicShieldResolver(),
     'projectile': ProjectileResolver(),
     'aura': AuraResolver(),

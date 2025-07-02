@@ -30,9 +30,11 @@ from roguelike_game.ecs.systems.rendering.combat.spells.arcane_flame_render_syst
 from roguelike_game.ecs.systems.rendering.combat.spells.firework_launch_render_system import FireworkLaunchRenderSystem
 from roguelike_game.ecs.systems.combat.spells.smoke_system import SmokeSystem
 from roguelike_game.ecs.systems.combat.spells.smoke_emitter_system import SmokeEmitterSystem
+from roguelike_game.ecs.systems.combat.spells.teleport_system import TeleportSystem
 from roguelike_game.ecs.systems.combat.spells.sphere_magic_shield_system import SphereMagicShieldSystem
 from roguelike_game.ecs.systems.rendering.combat.spells.smoke_render_system import SmokeRenderSystem
 from roguelike_game.ecs.systems.rendering.combat.spells.smoke_emitter_render_system import SmokeEmitterRenderSystem
+from roguelike_game.ecs.systems.rendering.combat.spells.teleport_render_system import TeleportRenderSystem
 from roguelike_game.ecs.systems.rendering.combat.spells.sphere_magic_shield_render_system import SphereMagicShieldRenderSystem
 
 from roguelike_game.ecs.systems.rendering.particles.particle_render_system import ParticleRenderSystem
@@ -56,7 +58,7 @@ def get_update_system_classes():
         FSMSystem,
         PlayerFacingSystem, FacingSystem, InputSystem,
         MovementCollisionSystem,
-        MeleeCombatSystem, SpellCastingSystem, ArcaneFlameSystem, SmokeSystem, SmokeEmitterSystem, SphereMagicShieldSystem, FireworkLaunchSystem, AuraSystem, ParticleSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, LightningEmitterSystem, FireballSystem, LightningSystem, DashSystem, HitboxSystem,
+        MeleeCombatSystem, SpellCastingSystem, ArcaneFlameSystem, SmokeSystem, SmokeEmitterSystem, SphereMagicShieldSystem, TeleportSystem, FireworkLaunchSystem, AuraSystem, ParticleSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, LightningEmitterSystem, FireballSystem, LightningSystem, DashSystem, HitboxSystem,
         TrailSystem,
         AnimationSystem, FlashSystem, SpawnSystem, ExpansionSystem,
     ]
@@ -68,7 +70,7 @@ def get_render_system_classes():
     """
     base = [
         HealthBarSystem, NamePlateSystem,
-        FireballRenderSystem, ArcaneFlameRenderSystem, FireworkLaunchRenderSystem, SmokeRenderSystem, SmokeEmitterRenderSystem, SphereMagicShieldRenderSystem, ParticleRenderSystem, LightningRenderSystem,
+        FireballRenderSystem, ArcaneFlameRenderSystem, FireworkLaunchRenderSystem, SmokeRenderSystem, SmokeEmitterRenderSystem, SphereMagicShieldRenderSystem, TeleportRenderSystem, ParticleRenderSystem, LightningRenderSystem,
         DeathTimerBarSystem,
     ]
     # Render systems comunes

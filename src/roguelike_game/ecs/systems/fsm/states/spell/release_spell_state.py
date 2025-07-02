@@ -24,6 +24,11 @@ class ReleaseSpellState(State):
             resolver = SPELL_RESOLVERS.get('sphere_magic_shield')
             resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
             return
+        if spell_type == 'teleport':
+            world = entity.world
+            resolver = SPELL_RESOLVERS.get('teleport')
+            resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
+            return
         if spell_type == 'aura':
             world = entity.world
             world.components.setdefault('AuraComponent', {})[entity.id] = AuraComponent(

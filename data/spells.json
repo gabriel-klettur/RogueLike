@@ -123,6 +123,20 @@
       "automatic": false,
       "automatic_cast_punish": 2.0
     },
+    "teleport": {
+      "type": "teleport",
+      "prepare_duration": 0.0,
+      "channel_duration": 0.0,
+      "cooldown_duration": 1.0,
+      "distance": 200,
+      "lifespan": 0.5,
+      "max_instances": 1,
+      "allow_overlap": false,
+      "allow_movement": false,
+      "lock_cast_direction": true,
+      "automatic": false,
+      "automatic_cast_punish": 1.0
+    },
     "slash": {
       "type": "slash",
       "prepare_duration": 0.0,
