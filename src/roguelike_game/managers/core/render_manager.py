@@ -114,12 +114,6 @@ class RendererManager:
                 self._render_z_entities(state, camera, screen, entities)
         _bench_z_entities()
 
-        # 3) Efectos
-        @benchmark(perf_log, "3.3. effects")
-        def _bench_effects():
-            self._render_effects(camera, screen, systems.effects)
-        _bench_effects()
-
         # 4) Capa del Tile Editor
         @benchmark(perf_log, "3.4. tile_editor")
         def _bench_tile_editor():
@@ -145,12 +139,6 @@ class RendererManager:
         def _bench_minimap():
             self._render_minimap(screen)
         _bench_minimap()
-
-        # 9) Otros sistemas
-        @benchmark(perf_log, "3.9. systems")
-        def _bench_systems():
-            systems.render(screen, camera)            
-        _bench_systems()
 
         # 11) Editores
         @benchmark(perf_log, "3.11. editors")

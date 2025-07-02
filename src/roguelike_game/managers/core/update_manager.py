@@ -80,12 +80,6 @@ def update_game(
             camera.update(types.SimpleNamespace(x=pos.x, y=pos.y))
     _update_camera()
 
-    # 3.2) Sistemas principales
-    @benchmark(perf_log, "2.2.systems.update")
-    def _update_systems():
-        systems.update(clock, screen)
-    _update_systems()
-
     # 3.3) Todas las entidades
     @benchmark(perf_log, "2.3.entities.update")
     def _update_entities():
