@@ -51,3 +51,13 @@ class SmokeEmitterModel:
 
     def is_empty(self) -> bool:
         return not self.particles
+
+    def update(self):
+        # Emit and update particles
+        for _ in range(self.emit_rate):
+            p = SmokeParticle(self.origin.x, self.origin.y, self.color)
+            self.particles.append(p)
+        # Update and remove dead
+        for p in self.particles:
+            p.update()
+        self.particles = [p for p in self.particles if not p.is_dead()]

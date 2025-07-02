@@ -29,7 +29,9 @@ from roguelike_game.ecs.systems.rendering.combat.spells.lightning_render_system 
 from roguelike_game.ecs.systems.rendering.combat.spells.arcane_flame_render_system import ArcaneFlameRenderSystem
 from roguelike_game.ecs.systems.rendering.combat.spells.firework_launch_render_system import FireworkLaunchRenderSystem
 from roguelike_game.ecs.systems.combat.spells.smoke_system import SmokeSystem
+from roguelike_game.ecs.systems.combat.spells.smoke_emitter_system import SmokeEmitterSystem
 from roguelike_game.ecs.systems.rendering.combat.spells.smoke_render_system import SmokeRenderSystem
+from roguelike_game.ecs.systems.rendering.combat.spells.smoke_emitter_render_system import SmokeEmitterRenderSystem
 
 from roguelike_game.ecs.systems.rendering.particles.particle_render_system import ParticleRenderSystem
 from roguelike_game.ecs.systems.rendering.death_timer_bar_system import DeathTimerBarSystem
@@ -52,7 +54,7 @@ def get_update_system_classes():
         FSMSystem,
         PlayerFacingSystem, FacingSystem, InputSystem,
         MovementCollisionSystem,
-        MeleeCombatSystem, SpellCastingSystem, ArcaneFlameSystem, SmokeSystem, FireworkLaunchSystem, AuraSystem, ParticleSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, LightningEmitterSystem, FireballSystem, LightningSystem, DashSystem, HitboxSystem,
+        MeleeCombatSystem, SpellCastingSystem, ArcaneFlameSystem, SmokeSystem, SmokeEmitterSystem, FireworkLaunchSystem, AuraSystem, ParticleSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, LightningEmitterSystem, FireballSystem, LightningSystem, DashSystem, HitboxSystem,
         TrailSystem,
         AnimationSystem, FlashSystem, SpawnSystem, ExpansionSystem,
     ]
@@ -64,7 +66,7 @@ def get_render_system_classes():
     """
     base = [
         HealthBarSystem, NamePlateSystem,
-        FireballRenderSystem, ArcaneFlameRenderSystem, FireworkLaunchRenderSystem, SmokeRenderSystem, ParticleRenderSystem, LightningRenderSystem,
+        FireballRenderSystem, ArcaneFlameRenderSystem, FireworkLaunchRenderSystem, SmokeRenderSystem, SmokeEmitterRenderSystem, ParticleRenderSystem, LightningRenderSystem,
         DeathTimerBarSystem,
     ]
     # Render systems comunes

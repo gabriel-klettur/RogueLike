@@ -44,6 +44,7 @@ class InputConfig:
                 "spell_arcane_flame": "K_c",
                 "spell_firework_launch": "K_v",
                 "spell_smoke": "K_f",
+                "spell_smoke_emitter": "K_g",
                 "pause": "K_ESCAPE"
             }
             os.makedirs(os.path.dirname(self.path), exist_ok=True)
@@ -71,6 +72,8 @@ class InputConfig:
         # Fallback para smoke si no está en bindings
         if action == "spell_smoke":
             return pygame.K_f
+        if action == "spell_smoke_emitter":
+            return pygame.K_g
         keyname = self.bindings.get(action)
         if not keyname:
             raise KeyError(f"No key binding for action '{action}'")

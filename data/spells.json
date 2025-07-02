@@ -202,5 +202,18 @@
       "lock_cast_direction": false,
       "automatic": false,
       "automatic_cast_punish": 1.0
+    },
+    "smoke_emitter": {
+      "type": "smoke_emitter",
+      "prepare_duration": 0.1,
+      "channel_duration": 0.2,
+      "cooldown_duration": 1.5,
+      "particle_color": [200,200,200],
+      "emit_rate": 3,
+      "allow_overlap": true,
+      "allow_movement": true,
+      "lock_cast_direction": true,
+      "automatic": false,
+      "automatic_cast_punish": 1.0
     }
 }

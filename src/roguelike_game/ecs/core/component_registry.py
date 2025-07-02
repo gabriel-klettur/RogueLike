@@ -8,6 +8,7 @@ def create_empty_component_store():
         'PatrolRoute': {}, 'NPCState': {}, 'Animator': {}, 'AnimationTimer': {},
         'Health': {}, 'Scale': {}, 'Identity': {}, 'Velocity': {}, 'MultiCollider': {},
         'ZLayer': {}, 'DeathTimer': {}, 'DamageConfig': {}, 'FireballComponent': {}, 'ArcaneFlameComponent': {}, 'FireworkLaunchComponent': {}, 'SmokeComponent': {},
+        'SmokeEmitterComponent': {},
         'AuraComponent': {}, 'LaserBeamComponent': {}, 'ParticleComponent': {},
         'HitboxComponent': {},
         'SpawnRequest': {}, 'CombatStats': {}, 'MeleeWeapon': {}, 'MeleeRange': {},
