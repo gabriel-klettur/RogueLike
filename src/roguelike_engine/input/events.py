@@ -11,9 +11,7 @@ def handle_events(
     clock,
     menu,
     map,
-    entities,
-    effects,
-    explosions,
+    entities,    
     tiles_editor,
     buildings_editor,
     map_editor,
@@ -55,7 +53,7 @@ def handle_events(
         if et == pygame.QUIT:
             state.running = False
         elif et in (pygame.KEYDOWN, pygame.KEYUP):
-            kb(ev, state, camera, clock, menu, entities, effects, tiles_editor, buildings_editor, map_editor, map)
+            kb(ev, state, camera, clock, menu, entities, tiles_editor, buildings_editor, map_editor, map)
         elif et in (pygame.MOUSEWHEEL, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP):
             consumed = False
             if panel:
@@ -64,4 +62,4 @@ def handle_events(
                     debug_overlay.handle_event(ev)
                     consumed = True
             if not consumed and not active_tiles and not active_buildings:
-                ms(ev, state, camera, clock, map, entities, effects, explosions)
+                ms(ev, state, camera, clock, map, entities)

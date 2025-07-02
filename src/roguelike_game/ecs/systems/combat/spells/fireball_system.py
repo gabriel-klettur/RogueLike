@@ -7,6 +7,9 @@ from roguelike_game.ecs.systems.fsm.states.attack_state import AttackState
 import math
 from roguelike_game.config.spells_config import SPELLS
 from roguelike_game.ecs.systems.fsm.states.monster.alert_chase_state import AlertChaseState
+from roguelike_game.ecs.components.transform.position import Position
+from roguelike_game.ecs.components.abilities.explosion_component import ExplosionComponent
+from roguelike_game.ecs.systems.combat.explosions_models import FireExplosionModel
 
 class FireballSystem:
     """
@@ -83,5 +86,10 @@ class FireballSystem:
             point = pygame.Rect(pos.x, pos.y, 1, 1)
             nearby = world.get_solid_tiles_for_rect(point)
             if nearby and point.collidelist(nearby) != -1:
+                # Spawn ECS explosion at collision point
+                x, y = pos.x, pos.y
+                eid2 = world.create_entity()
+                world.components['Position'][eid2] = Position(x, y)
+                world.components['ExplosionComponent'][eid2] = ExplosionComponent(FireExplosionModel(x, y))
                 world.remove_entity(eid)
                 continue

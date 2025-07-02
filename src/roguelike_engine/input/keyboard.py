@@ -3,7 +3,7 @@ import pygame, time
 import roguelike_engine.config.config as config
 from roguelike_engine.map.events.events import handle_expand_dungeon
 
-def handle_keyboard(event, state, camera, clock, menu, entities, effects, tiles_editor, buildings_editor, map_editor, map_manager):
+def handle_keyboard(event, state, camera, clock, menu, entities, tiles_editor, buildings_editor, map_editor, map_manager):
     if event.type == pygame.KEYDOWN:
         
         if event.key == pygame.K_F3:

@@ -19,6 +19,7 @@ from roguelike_game.ecs.systems.combat.spells.firework_launch_system import Fire
 from roguelike_game.ecs.systems.combat.spells.aura_system import AuraSystem
 from roguelike_game.ecs.systems.particles.healing_aura_emitter_system import HealingAuraEmitterSystem
 from roguelike_game.ecs.systems.particles.particle_system import ParticleSystem
+from roguelike_game.ecs.systems.rendering.particles.particle_render_system import ParticleRenderSystem
 from roguelike_game.ecs.systems.particles.laser_beam_emitter_system import LaserBeamEmitterSystem
 # from roguelike_game.ecs.systems.particles.arcane_flame_emitter_system import ArcaneFlameEmitterSystem
 from roguelike_game.ecs.systems.particles.slash_emitter_system import SlashEmitterSystem
@@ -31,10 +32,12 @@ from roguelike_game.ecs.systems.rendering.combat.spells.firework_launch_render_s
 from roguelike_game.ecs.systems.combat.spells.smoke_system import SmokeSystem
 from roguelike_game.ecs.systems.combat.spells.smoke_emitter_system import SmokeEmitterSystem
 from roguelike_game.ecs.systems.combat.spells.teleport_system import TeleportSystem
+from roguelike_game.ecs.systems.combat.explosion_system import ExplosionSystem
 from roguelike_game.ecs.systems.combat.spells.sphere_magic_shield_system import SphereMagicShieldSystem
 from roguelike_game.ecs.systems.rendering.combat.spells.smoke_render_system import SmokeRenderSystem
 from roguelike_game.ecs.systems.rendering.combat.spells.smoke_emitter_render_system import SmokeEmitterRenderSystem
 from roguelike_game.ecs.systems.rendering.combat.spells.teleport_render_system import TeleportRenderSystem
+from roguelike_game.ecs.systems.rendering.combat.explosions.explosion_render_system import ExplosionRenderSystem
 from roguelike_game.ecs.systems.rendering.combat.spells.sphere_magic_shield_render_system import SphereMagicShieldRenderSystem
 
 from roguelike_game.ecs.systems.rendering.particles.particle_render_system import ParticleRenderSystem
@@ -58,7 +61,7 @@ def get_update_system_classes():
         FSMSystem,
         PlayerFacingSystem, FacingSystem, InputSystem,
         MovementCollisionSystem,
-        MeleeCombatSystem, SpellCastingSystem, ArcaneFlameSystem, SmokeSystem, SmokeEmitterSystem, SphereMagicShieldSystem, TeleportSystem, FireworkLaunchSystem, AuraSystem, ParticleSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, LightningEmitterSystem, FireballSystem, LightningSystem, DashSystem, HitboxSystem,
+        MeleeCombatSystem, SpellCastingSystem, ArcaneFlameSystem, SmokeSystem, SmokeEmitterSystem, SphereMagicShieldSystem, TeleportSystem, FireworkLaunchSystem, AuraSystem, ParticleSystem, ExplosionSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, LightningEmitterSystem, FireballSystem, LightningSystem, DashSystem, HitboxSystem,
         TrailSystem,
         AnimationSystem, FlashSystem, SpawnSystem, ExpansionSystem,
     ]

@@ -1,7 +1,7 @@
 # Path: src/roguelike_engine/input/mouse.py
 import pygame
 
-def handle_mouse(event, state, camera, clock, map, entities, effects, explosions):
+def handle_mouse(event, state, camera, clock, map, entities):
     
     if event.type == pygame.MOUSEWHEEL:
         if event.y > 0: camera.zoom = min(camera.zoom + 0.1, 2.0)

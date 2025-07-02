@@ -11,6 +11,7 @@ def create_empty_component_store():
         'SmokeEmitterComponent': {},
         'SphereMagicShieldComponent': {},
         'TeleportComponent': {},
+        'ExplosionComponent': {},
         'AuraComponent': {}, 'LaserBeamComponent': {}, 'ParticleComponent': {},
         'HitboxComponent': {},
         'SpawnRequest': {}, 'CombatStats': {}, 'MeleeWeapon': {}, 'MeleeRange': {},
