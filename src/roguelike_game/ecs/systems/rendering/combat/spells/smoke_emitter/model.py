@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/systems/effects/spells/smoke_emitter/model.py
 import pygame
 import random
 
@@ -19,7 +18,6 @@ class SmokeParticle:
         self.acceleration += force
 
     def update(self):
-        # Actualiza física
         self.velocity += self.acceleration
         self.pos += self.velocity
         self.lifespan -= 2.5
@@ -31,9 +29,7 @@ class SmokeParticle:
     def render(self, screen, camera):
         if self.is_dead():
             return
-        # Aplicar cámara
         screen_pos = camera.apply((self.pos.x, self.pos.y))
-        # Alpha según vida restante
         alpha = max(0, min(255, int(self.lifespan * 2.55)))
         surf = pygame.Surface((self.size, self.size), pygame.SRCALPHA)
         surf.fill((*self.color, alpha))
@@ -46,18 +42,16 @@ class SmokeEmitterModel:
     def __init__(self, x: float, y: float, color=(200, 200, 200), emit_rate: int = 2):
         self.origin = pygame.math.Vector2(x, y)
         self.color = color
-        self.emit_rate = emit_rate  # Partículas generadas por frame
+        self.emit_rate = emit_rate
         self.particles: list[SmokeParticle] = []
 
     def is_empty(self) -> bool:
         return not self.particles
 
     def update(self):
-        # Emit and update particles
         for _ in range(self.emit_rate):
             p = SmokeParticle(self.origin.x, self.origin.y, self.color)
             self.particles.append(p)
-        # Update and remove dead
         for p in self.particles:
             p.update()
         self.particles = [p for p in self.particles if not p.is_dead()]

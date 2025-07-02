@@ -2,11 +2,6 @@
 import pygame
 from pygame.math import Vector2
 
-# MVC: SmokeEmitter
-from roguelike_game.systems.effects.spells.smoke_emitter.model      import SmokeEmitterModel
-from roguelike_game.systems.effects.spells.smoke_emitter.controller import SmokeEmitterController
-from roguelike_game.systems.effects.spells.smoke_emitter.view       import SmokeEmitterView
-
 # MVC: SphereMagicShield
 from roguelike_game.systems.effects.spells.sphere_magic_shield.model      import SphereMagicShieldModel
 from roguelike_game.systems.effects.spells.sphere_magic_shield.controller import SphereMagicShieldController
@@ -27,9 +22,6 @@ class SpellsSystem:
         self.perf_log = perf_log
         self.ecs_world = ecs_world  # Mundo ECS para colisionar con NPCs
 
-        self.smoke_emitter_controllers: list[SmokeEmitterController]   = []
-        self.smoke_emitter_views:       list[SmokeEmitterView]         = []
-
         self.shield_controllers:        list[SphereMagicShieldController] = []
         self.shield_views:              list[SphereMagicShieldView]       = []
 
@@ -44,14 +36,6 @@ class SpellsSystem:
     #                   Spawn methods                  #
     # ------------------------------------------------ #
 
-
-    def spawn_smoke_emitter(self, entities):
-        px, py = self._player_center(entities.player)
-        model   = SmokeEmitterModel(px, py)
-        ctrl    = SmokeEmitterController(model)
-        view    = SmokeEmitterView(model)
-        self.smoke_emitter_controllers.append(ctrl)
-        self.smoke_emitter_views.append(view)
 
     def spawn_magic_shield(self, entities):
         model  = SphereMagicShieldModel(entities.player)
@@ -73,13 +57,6 @@ class SpellsSystem:
     # ------------------------------------------------ #
     def update(self, clock, screen):
 
-        # SmokeEmitter
-        for c in self.smoke_emitter_controllers:
-            wind = (pygame.mouse.get_pos()[0] - screen.get_width()//2)/1000
-            c.apply_force(Vector2(wind,0)); c.update()
-        self.smoke_emitter_controllers = [c for c in self.smoke_emitter_controllers if not c.model.is_empty()]
-        self.smoke_emitter_views       = [v for v in self.smoke_emitter_views       if not v.model.is_empty()]
-
         # SphereMagicShield
         for c in self.shield_controllers: c.update()
         self.shield_controllers = [c for c in self.shield_controllers if not c.model.is_finished()]
@@ -98,8 +75,7 @@ class SpellsSystem:
     def render(self, screen, camera):
         dirty_rects = []
 
-        # MVC renders                
-        for v in self.smoke_emitter_views: v.render(screen, camera)        
+        # MVC renders                             
         for v in self.shield_views:
             if (d := v.render(screen, camera)): dirty_rects.append(d)
         for v in self.teleport_views:       v.render(screen, camera)

@@ -15,7 +15,7 @@ class SmokeSystem:
             for p in comp.model.particles:
                 p.update()
             # Remove dead particles
-            comp.model.particles = [p for p in comp.model.particles if p.age < p.lifespan]
+            comp.model.particles = [p for p in comp.model.particles if not p.is_dead()]
             # If no particles remain, remove component
             if not comp.model.particles:
                 world.components['SmokeComponent'].pop(eid, None)

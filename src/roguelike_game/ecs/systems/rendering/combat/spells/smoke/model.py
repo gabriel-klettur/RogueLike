@@ -1,6 +1,6 @@
 import pygame
 import random
-from roguelike_game.systems.effects.spells.smoke_emitter.model import SmokeParticle
+from roguelike_game.ecs.systems.rendering.combat.spells.smoke_emitter.model import SmokeParticle
 
 class SmokeModel:
     """

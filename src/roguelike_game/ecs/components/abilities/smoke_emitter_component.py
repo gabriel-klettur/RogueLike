@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from roguelike_game.systems.effects.spells.smoke_emitter.model import SmokeEmitterModel
+from roguelike_game.ecs.systems.rendering.combat.spells.smoke_emitter.model import SmokeEmitterModel
 
 @dataclass
 class SmokeEmitterComponent:

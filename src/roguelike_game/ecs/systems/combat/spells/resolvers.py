@@ -20,9 +20,9 @@ from roguelike_game.ecs.systems.rendering.combat.spells.arcane_flame.model impor
 import math
 from roguelike_game.ecs.components.abilities.firework_launch_component import FireworkLaunchComponent
 from roguelike_game.ecs.systems.rendering.combat.spells.firework_launch.model import FireworkLaunchModel
-from roguelike_game.systems.effects.spells.smoke.model import SmokeModel
+from roguelike_game.ecs.systems.rendering.combat.spells.smoke.model import SmokeModel
 from roguelike_game.ecs.components.abilities.smoke_component import SmokeComponent
-from roguelike_game.systems.effects.spells.smoke_emitter.model import SmokeEmitterModel
+from roguelike_game.ecs.systems.rendering.combat.spells.smoke_emitter.model import SmokeEmitterModel
 from roguelike_game.ecs.components.abilities.smoke_emitter_component import SmokeEmitterComponent
 from pygame.math import Vector2
 

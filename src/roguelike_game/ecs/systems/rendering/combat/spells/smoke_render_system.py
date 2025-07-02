@@ -1,7 +1,7 @@
 import pygame
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.ecs.components.abilities.smoke_component import SmokeComponent
-from roguelike_game.systems.effects.spells.smoke.view import SmokeView
+from roguelike_game.ecs.systems.rendering.combat.spells.smoke.view import SmokeView
 
 class SmokeRenderSystem:
     """

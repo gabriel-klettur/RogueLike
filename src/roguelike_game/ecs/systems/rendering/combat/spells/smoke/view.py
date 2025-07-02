@@ -1,5 +1,5 @@
 import pygame
-from roguelike_game.systems.effects.spells.smoke.model import SmokeModel
+from roguelike_game.ecs.systems.rendering.combat.spells.smoke.model import SmokeModel
 
 class SmokeView:
     """
