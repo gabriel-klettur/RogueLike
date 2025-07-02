@@ -35,6 +35,9 @@ class ECSManager:
         self.entities_manager.ecs_manager = self
         self.ecs_world.entities_manager = entities_manager
 
+    def _get_initial_player_tile(self):
+        return self.spawner._get_initial_player_tile(self.ecs_world, self.map_manager)
+
     def update(self, clock, screen, camera):
         self.runner.update(self.ecs_world, camera)
 

@@ -21,7 +21,7 @@ from roguelike_game.managers.map import MapManager
 from roguelike_game.managers.buildings import BuildingsManager
 from roguelike_game.managers.z_layer import ZLayerManager
 from types import SimpleNamespace
-from roguelike_game.managers.menu_manager import MenuManager
+from roguelike_game.managers.menu import MenuManager
 from roguelike_game.managers.editors.buildings_editor_manager import BuildingEditorManager
 from roguelike_game.managers.editors.tiles_editor_manager import TilesEditorManager
 from roguelike_game.managers.editors.map_editor_manager import MapEditorManager

@@ -4,7 +4,7 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
 
 import pytest
-from roguelike_game.managers.ecs_manager import ECSManager
+from roguelike_game.managers.ecs import ECSManager
 from roguelike_engine.config.map_config import global_map_settings
 
 class DummySpawnNPCManager:
@@ -50,11 +50,11 @@ class DummyPerfLog:
 
 @pytest.fixture(autouse=True)
 def patch_resources(monkeypatch):
-    import roguelike_game.managers.ecs_manager as em
-    monkeypatch.setattr(em, 'ECSWorld', DummyECSWorld)
+    from roguelike_game.ecs.core.manager import ECSWorld
+    monkeypatch.setattr(ECSWorld, 'ECSWorld', DummyECSWorld)
     def fake_spawn(esw, x, y):
         return 42
-    monkeypatch.setattr(em, 'spawn_player_tile', fake_spawn)
+    monkeypatch.setattr(ECSWorld, 'spawn_player_tile', fake_spawn)
     return
 
 def test_get_initial_player_tile_saved():
