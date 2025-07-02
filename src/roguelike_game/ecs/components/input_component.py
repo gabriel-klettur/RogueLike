@@ -23,5 +23,6 @@ class InputComponent:
         self.spell_firework_launch: bool = False
         self.spell_smoke: bool = False
         self.spell_smoke_emitter: bool = False
+        self.spell_sphere_magic_shield: bool = False
         self.click: bool = False
 # Path: src/roguelike_game/ecs/components/input_component.py

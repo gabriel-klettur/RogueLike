@@ -25,6 +25,8 @@ from roguelike_game.ecs.components.abilities.smoke_component import SmokeCompone
 from roguelike_game.ecs.systems.rendering.combat.spells.smoke_emitter.model import SmokeEmitterModel
 from roguelike_game.ecs.components.abilities.smoke_emitter_component import SmokeEmitterComponent
 from pygame.math import Vector2
+from roguelike_game.ecs.components.abilities.sphere_magic_shield_component import SphereMagicShieldComponent
+from roguelike_game.ecs.systems.rendering.combat.spells.sphere_magic_shield.model import SphereMagicShieldModel
 
 class BaseSpellResolver:
     def resolve(self, world, caster, spawn_meta, cfg, camera):
@@ -280,7 +282,18 @@ class SmokeEmitterResolver(BaseSpellResolver):
         model = SmokeEmitterModel(cx, cy, color, emit_rate)
         world.components.setdefault('SmokeEmitterComponent', {})[caster] = SmokeEmitterComponent(model)
 
+class SphereMagicShieldResolver(BaseSpellResolver):
+    def resolve(self, world, caster, spawn_meta, cfg, camera):
+        # Resolver for sphere magic shield spell
+        pos_cmp = world.components['Position'][caster]
+        cx, cy = pos_cmp.x, pos_cmp.y
+        model = SphereMagicShieldModel(cx, cy,
+                                       radius=cfg.get('radius', 80),
+                                       duration=cfg.get('duration', 5.0))
+        world.components.setdefault('SphereMagicShieldComponent', {})[caster] = SphereMagicShieldComponent(model)
+
 default_resolvers = {
+    'sphere_magic_shield': SphereMagicShieldResolver(),
     'projectile': ProjectileResolver(),
     'aura': AuraResolver(),
     'beam': BeamResolver(),
@@ -291,6 +304,7 @@ default_resolvers = {
     'firework_launch': FireworkLaunchResolver(),
     'smoke': SmokeResolver(),
     'smoke_emitter': SmokeEmitterResolver(),
+    'sphere_magic_shield': SphereMagicShieldResolver(),
 }
 SPELL_RESOLVERS = default_resolvers
 

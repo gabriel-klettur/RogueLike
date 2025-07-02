@@ -215,5 +215,19 @@
       "lock_cast_direction": true,
       "automatic": false,
       "automatic_cast_punish": 1.0
+    },
+    "sphere_magic_shield": {
+      "type": "sphere_magic_shield",
+      "prepare_duration": 0.2,
+      "channel_duration": 0.2,
+      "cooldown_duration": 5.0,
+      "radius": 80,
+      "duration": 5.0,
+      "max_instances": 1,
+      "allow_overlap": false,
+      "allow_movement": false,
+      "lock_cast_direction": false,
+      "automatic": false,
+      "automatic_cast_punish": 3.0
     }
 }
