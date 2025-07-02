@@ -19,7 +19,7 @@ from roguelike_game.managers.core.state import GameState
 from roguelike_game.managers.core.render_manager import RendererManager
 from roguelike_game.managers.map import MapManager
 from roguelike_game.managers.buildings import BuildingsManager
-from roguelike_game.managers.z_layer_manager import ZLayerManager
+from roguelike_game.managers.z_layer import ZLayerManager
 from types import SimpleNamespace
 from roguelike_game.managers.menu_manager import MenuManager
 from roguelike_game.managers.editors.buildings_editor_manager import BuildingEditorManager
