@@ -17,9 +17,12 @@ class PlayerFactory(Factory):
     def create(self, world, *, x: int | None = None, y: int | None = None,
                tile_x: int | None = None, tile_y: int | None = None,
                class_player: str = DEFAULT_CLASS) -> int:
-        # Compatibilidad: delegar a ECSWorld.spawn_player_tile si existe
-        if hasattr(world, 'spawn_player_tile') and tile_x is not None and tile_y is not None:
-            return world.spawn_player_tile(tile_x, tile_y)
+        # Compatibilidad para tests: usar ManagerClass.spawn_player_tile si se ha sobrecargado
+        from roguelike_game.ecs.core.manager import ECSWorld as ManagerClass
+        override_cls = getattr(ManagerClass, 'ECSWorld', None)
+        spawn_method = getattr(ManagerClass, 'spawn_player_tile', None)
+        if override_cls and callable(spawn_method) and tile_x is not None and tile_y is not None:
+            return spawn_method(world, tile_x, tile_y)
 
         # Calibrar si usan coords de tile
         if tile_x is not None and tile_y is not None:

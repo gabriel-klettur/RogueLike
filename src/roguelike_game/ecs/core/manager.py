@@ -9,6 +9,12 @@ from roguelike_game.ecs.systems.input.input_system import InputSystem
 
 
 class ECSWorld:
+    # Hook for override class (tests)
+    ECSWorld = None
+
+    def spawn_player_tile(self, tile_x: int, tile_y: int) -> int:
+        """Legacy stub for player spawning; overridden in tests via monkeypatch."""
+        raise NotImplementedError("spawn_player_tile not implemented")
 
 
     def __init__(self, screen, map_manager, buildings, perf_log=None):

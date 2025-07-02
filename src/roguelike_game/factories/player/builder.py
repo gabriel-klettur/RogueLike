@@ -50,7 +50,8 @@ class PlayerBuilder:
         # Sprites y animaciones
         sprites = load_and_scale_sprites(class_player)
         frame = extract_initial_frame(sprites)
-        if frame:
+        # Solo añadir Sprite si es una Surface de pygame
+        if frame and isinstance(frame, pygame.Surface):
             comps["Sprite"][eid] = Sprite(frame)
         comps["Animator"][eid] = Animator(animations=build_animator_map(sprites), current_state=INITIAL_ANIMATION_STATE)
         comps["AnimationTimer"][eid] = AnimationTimer(last_time=time.time(), interval=ANIMATION_INTERVAL)
@@ -59,7 +60,8 @@ class PlayerBuilder:
         comps["MovementSpeed"][eid] = MovementSpeed(speed_value)
         comps["Velocity"][eid] = Velocity(0, 0)
         # Colisiones
-        if frame:
+        # Solo crear colisión si el frame es un Surface de pygame
+        if frame and isinstance(frame, pygame.Surface):
             comps["MultiCollider"][eid] = create_body_and_feet(frame)
         # Salud y combate
         max_hp = PLAYER_STATS[class_player]["max_health"]
