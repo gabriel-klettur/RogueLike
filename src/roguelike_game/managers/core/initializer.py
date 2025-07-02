@@ -27,7 +27,7 @@ from roguelike_game.managers.editors.tiles_editor_manager import TilesEditorMana
 from roguelike_game.managers.editors.map_editor_manager import MapEditorManager
 from roguelike_engine.minimap.minimap import Minimap
 from roguelike_engine.z_layer.state import ZState
-from roguelike_game.managers.ecs_manager import ECSManager
+from roguelike_game.managers.ecs import ECSManager
 
 
 class GameInitializer:
