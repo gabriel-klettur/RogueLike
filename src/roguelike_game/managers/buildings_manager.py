@@ -2,7 +2,7 @@
 
 
 
-from roguelike_game.managers.map_manager import MapManager
+from roguelike_game.managers.map import MapManager
 
 
 from roguelike_engine.utils.benchmark import benchmark

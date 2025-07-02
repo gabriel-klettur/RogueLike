@@ -17,7 +17,7 @@ from roguelike_engine.world.world_config import WORLD_CONFIG
 from roguelike_game.config.input_config import InputConfig
 from roguelike_game.managers.core.state import GameState
 from roguelike_game.managers.core.render_manager import RendererManager
-from roguelike_game.managers.map_manager import MapManager
+from roguelike_game.managers.map import MapManager
 from roguelike_game.managers.buildings_manager import BuildingsManager
 from roguelike_game.managers.z_layer_manager import ZLayerManager
 from types import SimpleNamespace
