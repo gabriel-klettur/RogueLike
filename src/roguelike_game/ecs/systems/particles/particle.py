@@ -1,9 +1,19 @@
-# Path: src/roguelike_game/systems/particles/particle.py
+# Path: src/roguelike_game/ecs/systems/particles/particle.py
+# Migrated legacy Particle model into ECS folder for explosion effects
 import pygame
 import random
 import math
 
 class Particle:
+    """
+    ECS-compatible particle model that can be used in explosion and other VFX models.
+    x, y: position
+    dx, dy: velocity per tick
+    color: RGB tuple
+    size: pixel size
+    lifespan: ticks to live
+    age: current age in ticks
+    """
     def __init__(self, x, y, angle, speed, color, size, lifespan):
         self.x = x
         self.y = y

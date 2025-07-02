@@ -1,7 +1,7 @@
 # Path: src/roguelike_game/ecs/systems/combat/explosions_models.py
 import random
 import math
-from roguelike_game.systems.particles.particle import Particle
+from roguelike_game.ecs.systems.particles.particle import Particle
 
 class FireExplosionModel:
     def __init__(self, x, y, particle_count=100):
