@@ -50,6 +50,7 @@ class InputSystem:
         pause_key = self.config.get_key("pause")
         af_key = self.config.get_key("spell_arcane_flame")
         fw_key = self.config.get_key("spell_firework_launch")
+        sm_key = self.config.get_key("spell_smoke")
         # Para cada entidad con InputComponent
         for eid, inp in world.components.get('InputComponent', {}).items():
             # Movimiento en ejes X e Y
@@ -98,6 +99,7 @@ class InputSystem:
             inp.spell_lightning = bool(keys[lightning_key])
             inp.spell_arcane_flame = bool(keys[af_key])
             inp.spell_firework_launch = bool(keys[fw_key])
+            inp.spell_smoke = bool(keys[sm_key])
             # Resetear flags de Q/E/X tras lectura para evitar duplicados
             if inp.spell_healing_aura:
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='healing_aura')
@@ -130,6 +132,10 @@ class InputSystem:
                 print(f"[DEBUG][{time.time():.3f}] eid={eid} spell_firework_launch -> firework_launch")
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='firework_launch')
                 inp.spell_firework_launch = False
+            if inp.spell_smoke:
+                print(f"[DEBUG][{time.time():.3f}] eid={eid} spell_smoke -> smoke")
+                world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='smoke')
+                inp.spell_smoke = False
             # Actualizar estado del click y detectar flanco ascendente
             curr_click = bool(pygame.mouse.get_pressed()[0])
             inp.click = curr_click

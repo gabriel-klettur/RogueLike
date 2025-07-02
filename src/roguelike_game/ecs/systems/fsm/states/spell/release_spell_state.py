@@ -61,6 +61,12 @@ class ReleaseSpellState(State):
             resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
             return
 
+        if spell_type == 'smoke':
+            world = entity.world
+            resolver = SPELL_RESOLVERS.get('smoke')
+            resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
+            return
+
         # Evitar crear más instancias si se alcanzó el máximo en spells.json para proyectiles
         if spell_type == 'projectile':
             max_inst = cfg.get('max_instances', 0)

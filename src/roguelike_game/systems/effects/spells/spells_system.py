@@ -2,11 +2,6 @@
 import pygame
 from pygame.math import Vector2
 
-# MVC: Smoke
-from roguelike_game.systems.effects.spells.smoke.model      import SmokeModel
-from roguelike_game.systems.effects.spells.smoke.controller import SmokeController
-from roguelike_game.systems.effects.spells.smoke.view       import SmokeView
-
 # MVC: SmokeEmitter
 from roguelike_game.systems.effects.spells.smoke_emitter.model      import SmokeEmitterModel
 from roguelike_game.systems.effects.spells.smoke_emitter.controller import SmokeEmitterController
@@ -32,10 +27,6 @@ class SpellsSystem:
         self.perf_log = perf_log
         self.ecs_world = ecs_world  # Mundo ECS para colisionar con NPCs
 
-        # MVC lists
-        self.smoke_controllers:         list[SmokeController]          = []
-        self.smoke_views:               list[SmokeView]                = []
-
         self.smoke_emitter_controllers: list[SmokeEmitterController]   = []
         self.smoke_emitter_views:       list[SmokeEmitterView]         = []
 
@@ -53,20 +44,6 @@ class SpellsSystem:
     #                   Spawn methods                  #
     # ------------------------------------------------ #
 
-
-
-    def spawn_smoke(self, camera, entities):
-        mx, my  = pygame.mouse.get_pos()
-        wx       = mx / camera.zoom + camera.offset_x
-        wy       = my / camera.zoom + camera.offset_y
-        px, py   = self._player_center(entities.player)
-        dir_vec  = Vector2(wx - px, wy - py)
-        if dir_vec.length(): dir_vec.normalize_ip()
-        model  = SmokeModel(px, py, dir_vec)
-        ctrl   = SmokeController(model)
-        view   = SmokeView(model)
-        self.smoke_controllers.append(ctrl)
-        self.smoke_views.append(view)
 
     def spawn_smoke_emitter(self, entities):
         px, py = self._player_center(entities.player)
@@ -95,10 +72,6 @@ class SpellsSystem:
     #                     Update                       #
     # ------------------------------------------------ #
     def update(self, clock, screen):
-        # Smoke
-        for c in self.smoke_controllers: c.update()
-        self.smoke_controllers = [c for c in self.smoke_controllers if not c.model.is_finished()]
-        self.smoke_views       = [v for v in self.smoke_views       if not v.model.is_finished()]
 
         # SmokeEmitter
         for c in self.smoke_emitter_controllers:
@@ -125,8 +98,7 @@ class SpellsSystem:
     def render(self, screen, camera):
         dirty_rects = []
 
-        # MVC renders        
-        for v in self.smoke_views:         v.render(screen, camera)
+        # MVC renders                
         for v in self.smoke_emitter_views: v.render(screen, camera)        
         for v in self.shield_views:
             if (d := v.render(screen, camera)): dirty_rects.append(d)

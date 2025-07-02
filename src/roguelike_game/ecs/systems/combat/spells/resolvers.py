@@ -20,6 +20,9 @@ from roguelike_game.ecs.systems.rendering.combat.spells.arcane_flame.model impor
 import math
 from roguelike_game.ecs.components.abilities.firework_launch_component import FireworkLaunchComponent
 from roguelike_game.ecs.systems.rendering.combat.spells.firework_launch.model import FireworkLaunchModel
+from roguelike_game.systems.effects.spells.smoke.model import SmokeModel
+from roguelike_game.ecs.components.abilities.smoke_component import SmokeComponent
+from pygame.math import Vector2
 
 class BaseSpellResolver:
     def resolve(self, world, caster, spawn_meta, cfg, camera):
@@ -245,6 +248,21 @@ class FireworkLaunchResolver(BaseSpellResolver):
         model = FireworkLaunchModel(cx, cy, wx, wy, speed)
         world.components.setdefault('FireworkLaunchComponent', {})[caster] = FireworkLaunchComponent(model)
 
+class SmokeResolver(BaseSpellResolver):
+    def resolve(self, world, caster, spawn_meta, cfg, camera):
+        # Resolver para efecto de humo
+        pos_cmp = world.components['Position'][caster]
+        cx, cy = pos_cmp.x, pos_cmp.y
+        sprite_cmp = world.components['Sprite'].get(caster)
+        if sprite_cmp:
+            w, h = sprite_cmp.image.get_size()
+            cx += w/2; cy += h/2
+        direction = spawn_meta.get('direction', (1, 0))
+        dir_vec = Vector2(direction[0], direction[1])
+        num_particles = cfg.get('particle_count', 15)
+        model = SmokeModel(cx, cy, dir_vec, num_particles)
+        world.components.setdefault('SmokeComponent', {})[caster] = SmokeComponent(model)
+
 # Registro de resolutores por tipo de hechizo
 default_resolvers = {
     'projectile': ProjectileResolver(),
@@ -255,6 +273,7 @@ default_resolvers = {
     'lightning': LightningResolver(),
     'arcane_flame': ArcaneFlameResolver(),
     'firework_launch': FireworkLaunchResolver(),
+    'smoke': SmokeResolver(),
 }
 SPELL_RESOLVERS = default_resolvers
 

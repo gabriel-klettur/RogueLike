@@ -190,5 +190,17 @@
       "lock_cast_direction": true,
       "automatic": false,
       "automatic_cast_punish": 1.0
+    },
+    "smoke": {
+      "type": "smoke",
+      "prepare_duration": 0.15,
+      "channel_duration": 0.2,
+      "cooldown_duration": 1.0,
+      "particle_count": 15,
+      "allow_overlap": true,
+      "allow_movement": true,
+      "lock_cast_direction": false,
+      "automatic": false,
+      "automatic_cast_punish": 1.0
     }
 }
