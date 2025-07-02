@@ -3,7 +3,7 @@ Herramientas para persistencia de capas Z.
 Se usan para guardar y cargar la capa Z de entidades desde JSON.
 """
 
-from roguelike_engine.config_z_layer import DEFAULT_Z
+from roguelike_engine.config.config_z_layer import DEFAULT_Z
 
 def extract_z_from_json(entry, z_state=None, entity=None):
     """

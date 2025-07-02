@@ -3,7 +3,7 @@ Sistema central de almacenamiento para capas Z.
 Asocia cada entidad (por id) con su valor de altura/capa lógica (Z).
 """
 
-from roguelike_engine.config_z_layer import DEFAULT_Z
+from roguelike_engine.config.config_z_layer import DEFAULT_Z
 
 class ZState:
     def __init__(self):

@@ -21,7 +21,7 @@ from roguelike_game.ecs.components.rendering.trail_component import TrailCompone
 from roguelike_game.ecs.components.combat.health import Health
 from roguelike_game.ecs.components.combat.combat_stats import CombatStats
 from roguelike_game.ecs.components.combat.melee_weapon import MeleeWeapon
-from roguelike_engine.config_z_layer import Z_LAYERS
+from roguelike_engine.config.config_z_layer import Z_LAYERS
 from roguelike_game.factories.player.assets.player_assets import PlayerAssets
 from roguelike_game.factories.player.config import ORIGINAL_SPRITE_SIZE, PLAYER_STATS, DEFAULT_CLASS, DEFAULT_SCALE, DEFAULT_SPEED, ANIMATION_INTERVAL, INITIAL_ANIMATION_STATE, MELEE_WEAPON_CFG, DEFAULT_TRAIL, FEET_WIDTH_DIVISOR, FEET_HEIGHT_DIVISOR
 from roguelike_game.factories.player.sprite_loader import load_and_scale_sprites, extract_initial_frame, build_animator_map

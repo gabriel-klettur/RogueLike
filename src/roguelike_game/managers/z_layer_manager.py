@@ -1,6 +1,6 @@
 
 # Path: src/roguelike_game/game/z_layer_manager.py
-from roguelike_engine.config_z_layer import Z_LAYERS
+from roguelike_engine.config.config_z_layer import Z_LAYERS
 
 class ZLayerManager:
     """
