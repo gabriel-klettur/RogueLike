@@ -35,12 +35,21 @@ project_root/
     InventoryMonstersSchema.json
     InventoryPlayerSchema.json
     InventoryMapSchema.json
+  src/
+    roguelike_game/
+      ecs/
+        components/
+          item_model.py
+          inventory_component.py
+          item_stack.py
+        systems/
+          inventory_system.py
+        resources/
+          map_manager.py
   docs/
     developer_guide/
       Inventario.md
       items.md
-  components/
-    inventory_component.py
   tests/
     test_inventory.py
 ```
@@ -196,12 +205,17 @@ class ItemModel:
         ...
 ```
 
-### MapManager
+### ItemDropManager
 ```python
 from typing import List, Dict
 from yourgame.types import Position
 
-class MapManager:
+class ItemDropManager:
+    def __init__(self, path: str):
+        """Inicializa gestor de drops con ruta a inventory_map.json"""
+        self.path = path
+        ...
+
     def create_drop(self, drop_id: str, item_id: str, quantity: int, position: Position):
         """Registra un drop en el mapa con su drop_id y datos"""
         ...
@@ -210,7 +224,7 @@ class MapManager:
         """Elimina el drop del mapa y devuelve True si recogido"""
         ...
 
-    def load_drops(self) -> List[Dict]:
+    def load_all(self) -> List[Dict]:
         """Carga todos los drops persistidos desde inventory_map.json"""
         ...
 ```
