@@ -3,7 +3,7 @@ Calibración de posición de monstruos basada en coordenadas de tile.
 """
 from roguelike_game.factories.monster.config import MONSTER_DEFS
 from roguelike_game.factories.monster.sprite_loader import create_sprite_component
-from roguelike_game.factories.monster.physics import calculate_position
+import roguelike_game.factories.monster.physics as physics
 
 
 def calibrate_tile_position(tile_x: int, tile_y: int, monster_type: str) -> tuple[int, int]:
@@ -12,4 +12,4 @@ def calibrate_tile_position(tile_x: int, tile_y: int, monster_type: str) -> tupl
     """
     cfg = MONSTER_DEFS[monster_type]
     sprite, _ = create_sprite_component(monster_type)
-    return calculate_position(tile_x, tile_y, cfg, sprite)
+    return physics.calculate_position(tile_x, tile_y, cfg, sprite)
