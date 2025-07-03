@@ -9,35 +9,11 @@ Este documento describe el diseño e implementación del sistema de inventario p
 
 ## 2. Datos y formato JSON
 
-### 2.1 `items.json`
-Definir todos los ítems en `data/items.json`:
-```json
-[
-  {
-    "id": "coins",
-    "name": "Monedas",
-    "icon": "assets/items/coin.png",
-    "description": "Monedas de oro",
-    "stackable": true,
-    "max_stack": 999
-  },
-  {
-    "id": "experience",
-    "name": "Experiencia",
-    "icon": "assets/items/exp.png",
-    "description": "Puntos de experiencia",
-    "stackable": false
-  },
-  {
-    "id": "wood",
-    "name": "Madera",
-    "icon": "assets/items/wood.png",
-    "description": "Recurso de madera",
-    "stackable": true,
-    "max_stack": 99
-  }
-]
-```
+### 2.1 Definición de Ítems
+La definición y metadatos de los ítems se documenta en [`items.md`](items.md).
+
+
+
 
 ### 2.2 `monsters.json`
 Mantener caídas en `data/monsters.json`:
