@@ -7,22 +7,67 @@ Este documento describe el diseño e implementación del sistema de inventario p
 - Componente de inventario en el jugador.
 - Interfaz de usuario (UI) y manejo de entrada.
 
-## 2. Datos y formato JSON en `data/monsters.json`
-Añadir un nuevo campo `drops` a cada monstruo:
+## 2. Datos y formato JSON
+
+### 2.1 `items.json`
+Definir todos los ítems en `data/items.json`:
+```json
+[
+  {
+    "id": "coins",
+    "name": "Monedas",
+    "icon": "assets/items/coin.png",
+    "description": "Monedas de oro",
+    "stackable": true,
+    "max_stack": 999
+  },
+  {
+    "id": "experience",
+    "name": "Experiencia",
+    "icon": "assets/items/exp.png",
+    "description": "Puntos de experiencia",
+    "stackable": false
+  },
+  {
+    "id": "wood",
+    "name": "Madera",
+    "icon": "assets/items/wood.png",
+    "description": "Recurso de madera",
+    "stackable": true,
+    "max_stack": 99
+  }
+]
+```
+
+### 2.2 `monsters.json`
+Mantener caídas en `data/monsters.json`:
 ```json
 "barbol": {
-  ...
-  "spawn_margin": 0,
+  ...,  
   "drops": [
     { "item": "coins",      "min": 1,  "max": 5,  "chance": 0.8 },
     { "item": "experience", "min": 5,  "max": 15, "chance": 1.0 },
     { "item": "wood",       "min": 0,  "max": 3,  "chance": 0.5 }
   ]
-},
+}
 ```
-- `item`: identificador único.
-- `min`/`max`: rango de cantidad posible.
-- `chance`: probabilidad de que el drop ocurra (0.0–1.0).
+
+### 2.3 `inventory_player.json`
+Estructura de inventario del jugador en `data/inventory_player.json`:
+```json
+{
+  "capacity": 20,
+  "slots": [
+    { "item": "coins",      "quantity": 10 },
+    null,
+    { "item": "wood",       "quantity": 5 },
+    ...
+  ]
+}
+```
+- `capacity`: número total de ranuras.
+- `slots`: lista de ranuras (objeto o `null`).
+- Cada ranura define `item` y `quantity`.
 
 ## 3. Modelo de Ítems
 Definir una clase base `Item` con atributos comunes:
