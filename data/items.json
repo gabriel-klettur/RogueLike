@@ -1,0 +1,9 @@
+{
+  "gold": {
+    "id": "gold",
+    "name": "Oro",
+    "description": "Monedas de oro para comprar y comerciar.",
+    "stackable": true,
+    "icon": "assets/items/gold_coin_stack_1.png"
+  }
+}
