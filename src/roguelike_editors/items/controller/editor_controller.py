@@ -8,6 +8,10 @@ class ItemEditorController:
     def __init__(self, items: Dict[str, Any], assets: Dict[str, Any], font: pygame.font.Font):
         self.model = ItemEditorModel(items=items, assets=assets)
         self.view = ItemEditorView(assets, font)
+        # Para detección manual de doble click en propiedades
+        self.last_click_time = 0
+        self.last_click_key = None
+        self.double_click_interval = 500  # ms
 
     def handle_event(self, event: pygame.event.Event) -> None:
         # Inline editing input
@@ -44,24 +48,25 @@ class ItemEditorController:
 
         elif event.type == pygame.MOUSEBUTTONDOWN and self.model.visible and event.button == 1:
             mx, my = event.pos
-            # Double-click on property: start inline editing
-            if getattr(event, 'clicks', 1) >= 2 and hasattr(self.model, 'property_entries'):
-                for rect, key in self.model.property_entries:
-                    if rect.collidepoint(mx, my):
-                        self.model.editing_property = key
-                        self.model.focused_property = key
-                        # Prefill editing_text con valor actual
-                        item_id = self.model.selected_item_id or self.model.hovered_item_id
-                        item = self.model.items.get(item_id)
-                        if item:
-                            val = getattr(item, key, "")
-                            self.model.editing_text = str(val)
-                        return
-            # Single-click on property: set focus
+            print(f"[DEBUG controller] MOUSEBUTTONDOWN clicks={getattr(event, 'clicks',1)} pos=({mx},{my}) entries={[k for (_r,k) in self.model.property_entries]}")
+            
+            # Single-click on property: focus or start editing
             if hasattr(self.model, 'property_entries'):
                 for rect, key in self.model.property_entries:
                     if rect.collidepoint(mx, my):
-                        self.model.focused_property = key
+                        # Si ya había foco en esta propiedad, iniciar edición
+                        if self.model.focused_property == key:
+                            self.model.editing_property = key
+                            # Prefill editing_text con valor actual
+                            item_id = self.model.selected_item_id or self.model.hovered_item_id
+                            item = self.model.items.get(item_id)
+                            if item:
+                                val = getattr(item, key, "")
+                                self.model.editing_text = str(val)
+                            print(f"[DEBUG controller] editing_property={self.model.editing_property}, editing_text='{self.model.editing_text}'")
+                        else:
+                            self.model.focused_property = key
+                            print(f"[DEBUG controller] focused_property set to {self.model.focused_property}")
                         return
             # Si clic en panel de detalles, conservar foco/edición
             if hasattr(self.model, 'panel_rect') and self.model.panel_rect.collidepoint(mx, my):

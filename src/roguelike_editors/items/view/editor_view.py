@@ -6,6 +6,8 @@ class ItemEditorView:
     def __init__(self, assets: Dict[str, pygame.Surface], font: pygame.font.Font):
         self.assets = assets
         self.font = font
+        self.last_debug_property = None
+        self.last_debug_mode = None
 
     def _wrap_text(self, text: str, max_width: int) -> list[str]:
         words = text.split(' ')
@@ -162,12 +164,39 @@ class ItemEditorView:
                         truncated_entries.append((rect_tt, text_content))
                     ty += font_h + 2
 
-                # Highlight focused property
-                if model.focused_property:
+                
+                
+                # Debug: print border once per change
+                cur_prop = model.editing_property or model.focused_property
+                cur_mode = 'editing' if model.editing_property else ('focus' if model.focused_property else None)
+                if cur_prop:
+                    if cur_prop != self.last_debug_property or cur_mode != self.last_debug_mode:
+                        color = 'purple' if cur_mode=='editing' else 'yellow'
+                        print(f"[DEBUG view] drawing {color} border for {cur_prop}")
+                        self.last_debug_property = cur_prop
+                        self.last_debug_mode = cur_mode
+                else:
+                    self.last_debug_property = None
+                    self.last_debug_mode = None
+
+                # Draw input box for editing or highlight focused property
+                if model.editing_property:
+                    # Debug draw editing border
+                    
+                    # Purple border for active editing
+                    for rect_prop, key_prop in model.property_entries:
+                        if key_prop == model.editing_property:
+                            ed_rect = rect_prop.inflate(4, 0)
+                            pygame.draw.rect(screen, (128, 0, 128), ed_rect, 2)
+                            break
+                elif model.focused_property:
+                    # Debug draw focus border
+                    
+                    # Yellow border for focus
                     for rect_prop, key_prop in model.property_entries:
                         if key_prop == model.focused_property:
-                            border_rect = rect_prop.inflate(4, 0)
-                            pygame.draw.rect(screen, (255, 255, 0), border_rect, 2)
+                            hl_rect = rect_prop.inflate(4, 0)
+                            pygame.draw.rect(screen, (255, 255, 0), hl_rect, 2)
                             break
 
                 # Tooltips on hover
