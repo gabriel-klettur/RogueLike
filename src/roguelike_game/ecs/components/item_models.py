@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Dict
 
 
 class ItemModel(BaseModel):
@@ -25,3 +25,11 @@ class ItemStack:
     def __init__(self, item_id: str, quantity: int):
         self.item_id = item_id
         self.quantity = quantity
+
+
+def load_items(path: str) -> Dict[str, ItemModel]:
+    """Carga ítems desde JSON y retorna dict de instancias"""
+    import json
+    with open(path, encoding='utf-8') as f:
+        data = json.load(f)
+    return {key: ItemModel(**val) for key, val in data.items()}

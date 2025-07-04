@@ -131,11 +131,10 @@ class ItemModel(BaseModel):
 ## 6. Ejemplos de Uso
 Lee y accede a ítems desde JSON:
 ```python
-from roguelike_game.ecs.components.item_models import ItemModel
-import json
+from roguelike_game.ecs.components.item_models import load_items
 
-items = json.load(open('data/items.json'))
-item = ItemModel(**items['gold'])
+items = load_items('data/items.json')
+item = items['gold']
 print(item.name, item.max_stack)
 ```
 

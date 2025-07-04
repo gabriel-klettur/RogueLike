@@ -38,3 +38,14 @@ def test_item_stack_class():
     stack = ItemStack('gold', 5)
     assert stack.item_id == 'gold'
     assert stack.quantity == 5
+
+
+def test_load_items_function():
+    from roguelike_game.ecs.components.item_models import load_items, ItemModel
+    items = load_items('data/items.json')
+    raw = load_items_data()
+    assert isinstance(items, dict)
+    assert set(items.keys()) == set(raw.keys())
+    for key, data in raw.items():
+        assert key in items
+        assert isinstance(items[key], ItemModel)
