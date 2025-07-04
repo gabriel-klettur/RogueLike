@@ -70,37 +70,76 @@ class ItemEditorView:
 
         # Highlight y panel de información
         if model.hovered_item_id and model.hovered_item_id in model.items:
+            # Resaltar ítem
             idx_h = item_ids.index(model.hovered_item_id)
             col = idx_h % columns
             row = idx_h // columns
             if scroll <= row < scroll + visible_rows:
                 x = margin + col * (cell_size + margin)
                 y = margin + (row - scroll) * (cell_height + margin)
-                # Resaltar ítem
                 highlight_rect = pygame.Rect(x-2, y-2, cell_size+4, cell_size+4)
                 pygame.draw.rect(screen, (255, 255, 0), highlight_rect, 3)
-                # Panel de detalles
-                info_w = 200
-                info_x = sw - info_w - margin
-                info_y = margin
-                info_h = sh - 2*margin
-                info_surf = pygame.Surface((info_w, info_h), pygame.SRCALPHA)
+
+                # Preparar líneas de texto
+                item = model.items[model.hovered_item_id]
+                raw_name = item.name
+                lines = [raw_name]
+                desc = item.description
+                # Wrap descripción con ancho máximo provisional
+                desc_lines = self._wrap_text(desc, sw - margin*4)
+                lines.extend(desc_lines)
+
+                # Propiedades adicionales (incluye id, equip_slot, etc.)
+                if isinstance(item, dict):
+                    props = {k: v for k, v in item.items() if k not in ("name", "description")}
+                else:
+                    props = {k: v for k, v in vars(item).items() if k not in ("name", "description")}
+                for key, val in props.items():
+                    lines.append(f"{key}: {val}")
+
+                # Calcular dimensiones dinámicas
+                max_text_w = max(self.font.size(line)[0] for line in lines)
+                panel_padding = 10
+                panel_w = min(max_text_w + panel_padding*2, sw - margin*2, 500)  # ancho máximo del panel
+                panel_h = min(len(lines)*(font_h + 2) + panel_padding*2, sh - margin*2)
+
+                panel_x = sw - panel_w - margin
+                panel_y = margin
+
+                # Dibujar panel
+                info_surf = pygame.Surface((panel_w, panel_h), pygame.SRCALPHA)
                 info_surf.fill((0, 0, 0, 200))
-                screen.blit(info_surf, (info_x, info_y))
-                detail_x = info_x + 10
-                detail_y = info_y + 10
-                # Nombre (truncado)
-                raw_name = model.items[model.hovered_item_id].name
-                name = self._truncate_text(raw_name, info_w - 20)
-                name_txt = self.font.render(name, True, (255, 255, 0))
-                screen.blit(name_txt, (detail_x, detail_y))
-                detail_y += font_h + 5
-                # Descripción con wrap
-                desc = model.items[model.hovered_item_id].description
-                for line in self._wrap_text(desc, info_w - 20):
-                    txt = self.font.render(line, True, (200, 200, 200))
-                    screen.blit(txt, (detail_x, detail_y))
-                    detail_y += font_h + 2
+                screen.blit(info_surf, (panel_x, panel_y))
+
+                # Render texto con truncamiento y tooltips
+                tx = panel_x + panel_padding
+                ty = panel_y + panel_padding
+                truncated_entries = []
+                for idx_line, line in enumerate(lines):
+                    color = (255, 255, 0) if idx_line == 0 else (200, 200, 200)
+                    full_text = line
+                    max_line_width = panel_w - panel_padding*2
+                    display_text = self._truncate_text(full_text, max_line_width)
+                    txt_surf = self.font.render(display_text, True, color)
+                    screen.blit(txt_surf, (tx, ty))
+                    if display_text != full_text:
+                        rect = pygame.Rect(tx, ty, txt_surf.get_width(), font_h)
+                        truncated_entries.append((rect, full_text))
+                    ty += font_h + 2
+                # Tooltips on hover
+                mx, my = pygame.mouse.get_pos()
+                for rect, full_text in truncated_entries:
+                    if rect.collidepoint(mx, my):
+                        tt_w = self.font.size(full_text)[0] + 8
+                        tt_h = font_h + 4
+                        tt_x = min(mx + 10, sw - tt_w - margin)
+                        tt_y = min(my + 10, sh - tt_h - margin)
+                        tooltip_surf = pygame.Surface((tt_w, tt_h), pygame.SRCALPHA)
+                        tooltip_surf.fill((0, 0, 0, 220))
+                        tooltip_txt = self.font.render(full_text, True, (255, 255, 255))
+                        tooltip_surf.blit(tooltip_txt, (4, 2))
+                        screen.blit(tooltip_surf, (tt_x, tt_y))
+                        break
         # Parámetros de layout
         margin = 20
         cell_size = 64
@@ -109,57 +148,4 @@ class ItemEditorView:
         cell_height = cell_size + text_margin + font_h
         sw, sh = screen.get_size()
         columns = max(1, (sw - margin) // (cell_size + margin))
-        # Dibujar grid de ítems
-        item_ids = list(model.items.keys())
-        for idx, item_id in enumerate(item_ids):
-            item = model.items[item_id]
-            col = idx % columns
-            row = idx // columns
-            x = margin + col * (cell_size + margin)
-            y = margin + row * (cell_height + margin) - model.scroll_index * (cell_height + margin)
-            # Saltar filas fuera del área visible
-            if y + cell_size < margin or y > sh - margin:
-                continue
-            # Celda fondo
-            cell_rect = pygame.Rect(x, y, cell_size, cell_size)
-            pygame.draw.rect(screen, (50, 50, 50), cell_rect)
-            # Icono escalado
-            icon = self.assets.get(item_id)
-            if icon:
-                icon_surf = pygame.transform.smoothscale(icon, (cell_size, cell_size))
-                screen.blit(icon_surf, (x, y))
 
-        # Resaltar hover
-        # Barra de scroll: sólo dibujar filas visibles
-        if model.hovered_item_id and model.hovered_item_id in model.items:
-            idx = item_ids.index(model.hovered_item_id)
-            col = idx % columns
-            row = idx // columns
-            x = margin + col * (cell_size + margin)
-            y = margin + row * (cell_height + margin) - model.scroll_index * (cell_height + margin)
-            highlight_rect = pygame.Rect(x - 2, y - 2, cell_size + 4, cell_size + 4)
-            pygame.draw.rect(screen, (255, 255, 0), highlight_rect, 3)
-            # Panel de información
-            info_w = 200
-            info_h = 120
-            info_x = screen.get_width() - info_w - margin
-            info_y = margin
-            info_surf = pygame.Surface((info_w, info_h), pygame.SRCALPHA)
-            info_surf.fill((0, 0, 0, 200))
-            screen.blit(info_surf, (info_x, info_y))
-            # Detalles
-            detail_x = info_x + 10
-            detail_y = info_y + 10
-            # Nombre del ítem
-            raw_name = model.items[model.hovered_item_id].name
-            name = self._truncate_text(raw_name, info_w - 20)
-            name_txt = self.font.render(name, True, (255, 255, 0))
-            screen.blit(name_txt, (detail_x, detail_y))
-            detail_y += font_h + 5
-            # Descripción
-            desc = model.items[model.hovered_item_id].description
-            lines = self._wrap_text(desc, info_w - 20)
-            for line in lines:
-                txt = self.font.render(line, True, (200, 200, 200))
-                screen.blit(txt, (detail_x, detail_y))
-                detail_y += font_h + 2
