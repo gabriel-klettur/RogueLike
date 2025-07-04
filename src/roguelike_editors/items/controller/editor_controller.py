@@ -10,6 +10,20 @@ class ItemEditorController:
         self.view = ItemEditorView(assets, font)
 
     def handle_event(self, event: pygame.event.Event) -> None:
+        # Inline editing input
+        if self.model.visible and self.model.editing_property:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    self._commit_edit()
+                    return
+                elif event.key == pygame.K_BACKSPACE:
+                    self.model.editing_text = self.model.editing_text[:-1]
+                    return
+                else:
+                    self.model.editing_text += event.unicode
+                    return
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                self._commit_edit()
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_F7:
                 self.model.visible = not self.model.visible
@@ -23,6 +37,26 @@ class ItemEditorController:
 
         elif event.type == pygame.MOUSEBUTTONDOWN and self.model.visible and event.button == 1:
             mx, my = event.pos
+            # Double-click on property: start inline editing
+            if getattr(event, 'clicks', 1) >= 2 and hasattr(self.model, 'property_entries'):
+                for rect, key in self.model.property_entries:
+                    if rect.collidepoint(mx, my):
+                        self.model.editing_property = key
+                        self.model.focused_property = key
+                        # Prefill editing_text con valor actual
+                        item_id = self.model.selected_item_id or self.model.hovered_item_id
+                        item = self.model.items.get(item_id)
+                        if item:
+                            val = getattr(item, key, "")
+                            self.model.editing_text = str(val)
+                        return
+            # Single-click on property: set focus
+            if hasattr(self.model, 'property_entries'):
+                for rect, key in self.model.property_entries:
+                    if rect.collidepoint(mx, my):
+                        self.model.focused_property = key
+                        return
+            # Click on grid: selección de ítem y limpiar foco/edición
             screen_surf = pygame.display.get_surface()
             if screen_surf:
                 sw, sh = screen_surf.get_size()
@@ -37,7 +71,7 @@ class ItemEditorController:
                 columns = max(1, (sw - margin) // (cell_size + margin))
             else:
                 columns = 6
-            # Seleccionar item
+            # Seleccionar ítem en grilla
             if mx < margin or my < margin:
                 self.model.selected_item_id = None
             else:
@@ -51,6 +85,9 @@ class ItemEditorController:
                     self.model.selected_item_id = item_ids[idx]
                 else:
                     self.model.selected_item_id = None
+            # Limpiar foco y modo edición
+            self.model.focused_property = None
+            self.model.editing_property = None
         elif event.type == pygame.MOUSEMOTION and self.model.visible:
             mx, my = event.pos
             screen_surf = pygame.display.get_surface()
@@ -86,6 +123,40 @@ class ItemEditorController:
             # Reset hover cuando otros eventos
             self.model.hovered_item_id = None
 
+    def _commit_edit(self):
+        if not self.model.editing_property:
+            return
+        item_id = self.model.selected_item_id or self.model.hovered_item_id
+        if item_id and item_id in self.model.items:
+            item = self.model.items[item_id]
+            key = self.model.editing_property
+            new_text = self.model.editing_text
+            old_val = getattr(item, key, None)
+            try:
+                if isinstance(old_val, bool):
+                    converted = new_text.lower() in ("true", "1", "yes")
+                elif isinstance(old_val, int):
+                    converted = int(new_text)
+                elif isinstance(old_val, float):
+                    converted = float(new_text)
+                else:
+                    converted = new_text
+            except ValueError:
+                converted = new_text
+            setattr(item, key, converted)
+            # Guardar JSON
+            import json, os
+            path = os.path.join(os.getcwd(), "data", "items.json")
+            try:
+                with open(path, encoding="utf-8") as f:
+                    data = json.load(f)
+                data[item_id][key] = converted
+                with open(path, "w", encoding="utf-8") as f:
+                    json.dump(data, f, ensure_ascii=False, indent=2)
+            except Exception as e:
+                print(f"[ItemEditor] Error saving item {item_id}: {e}")
+        self.model.editing_property = None
+        self.model.editing_text = ""
     def draw(self, screen: pygame.Surface) -> None:
         if not self.model.visible:
             return

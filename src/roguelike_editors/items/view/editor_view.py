@@ -120,27 +120,51 @@ class ItemEditorView:
                 info_surf.fill((0, 0, 0, 200))
                 screen.blit(info_surf, (panel_x, panel_y))
 
-                # Render texto con truncamiento y tooltips
+                # Render texto con truncamiento, edición y tooltips
                 tx = panel_x + panel_padding
                 ty = panel_y + panel_padding
                 truncated_entries = []
+                # Area de clic de propiedades
+                model.property_entries = []
                 for idx_line, line in enumerate(lines):
                     color = (255, 255, 0) if idx_line == 0 else (200, 200, 200)
-                    full_text = line
                     max_line_width = panel_w - panel_padding*2
-                    display_text = self._truncate_text(full_text, max_line_width)
+                    # Lineas de propiedad
+                    if idx_line > desc_count:
+                        key, val = line.split(": ", 1)
+                        # Si está en edición, mostrar editing_text
+                        if model.editing_property == key:
+                            text_content = f"{key}: {model.editing_text}"
+                        else:
+                            text_content = f"{key}: {val}"
+                    else:
+                        text_content = line
+                    display_text = self._truncate_text(text_content, max_line_width)
                     # Aplicar cursiva a descripción
-                    if idx_line > 0 and idx_line <= desc_count:
+                    if 0 < idx_line <= desc_count:
                         self.font.set_italic(True)
                     txt_surf = self.font.render(display_text, True, color)
-                    # Revertir estilo
-                    if idx_line > 0 and idx_line <= desc_count:
+                    if 0 < idx_line <= desc_count:
                         self.font.set_italic(False)
                     screen.blit(txt_surf, (tx, ty))
-                    if display_text != full_text:
+                    # Registrar entry de propiedades para edición
+                    if idx_line > desc_count:
                         rect = pygame.Rect(tx, ty, txt_surf.get_width(), font_h)
-                        truncated_entries.append((rect, full_text))
+                        model.property_entries.append((rect, key))
+                    # Registrar entradas truncadas para tooltips
+                    if display_text != text_content:
+                        rect_tt = pygame.Rect(tx, ty, txt_surf.get_width(), font_h)
+                        truncated_entries.append((rect_tt, text_content))
                     ty += font_h + 2
+
+                # Highlight focused property
+                if model.focused_property:
+                    for rect_prop, key_prop in model.property_entries:
+                        if key_prop == model.focused_property:
+                            border_rect = rect_prop.inflate(4, 0)
+                            pygame.draw.rect(screen, (255, 255, 0), border_rect, 2)
+                            break
+
                 # Tooltips on hover
                 mx, my = pygame.mouse.get_pos()
                 for rect, full_text in truncated_entries:
