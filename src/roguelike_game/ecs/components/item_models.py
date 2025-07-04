@@ -1,8 +1,9 @@
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, model_validator, ConfigDict
 from typing import Optional, List, Union, Dict
 
 
 class ItemModel(BaseModel):
+    model_config = ConfigDict(extra="allow", validate_assignment=True)
     """Modelo de datos para ítems cargados del JSON"""
     id: str
     name: str
