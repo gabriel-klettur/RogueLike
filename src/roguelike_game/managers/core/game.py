@@ -45,6 +45,11 @@ class Game:
 
     @benchmark(lambda self: self.perf_log, "1.TOTAL: HANDLE EVENTS")
     def handle_events(self):
+        # Si el editor de ítems está visible, capturar solo sus eventos
+        if self.item_editor.model.visible:
+            for event in pygame.event.get():
+                self.item_editor.handle_event(event)
+            return
         # Si un editor está activo, solo lo capturamos a él
         if self.tiles_editor.editor_state.active:
             self.tiles_editor.handle(self.camera, self.map)
@@ -83,6 +88,7 @@ class Game:
 
     @benchmark(lambda self: self.perf_log, "3.TOTAL: RENDER")
     def render(self):
+        # Renderiza el mundo
         self.renderer.render_game(
             self.state,
             self.screen,
@@ -92,6 +98,8 @@ class Game:
             self.map,
             self.buildings            
         )
+        # Overlay del Item Editor
+        self.item_editor.draw(self.screen)
 
     @benchmark(lambda self: self.perf_log, "4.2.ecs - update")
     def update_ecs(self):

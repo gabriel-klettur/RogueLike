@@ -17,11 +17,12 @@ class GameLoop:
             g.update()
             g.render()
 
-            # ECS only si no hay ningún editor abierto
+            # ECS only si no hay ningún editor abierto y el ItemEditor no está visible
             if not (
                 g.tiles_editor.editor_state.active or
                 g.buildings_editor.editor_state.active or
-                g.map_editor.editor_state.active
+                g.map_editor.editor_state.active or
+                g.item_editor.model.visible
             ):
                 self.run_ecs_phase(g)
 

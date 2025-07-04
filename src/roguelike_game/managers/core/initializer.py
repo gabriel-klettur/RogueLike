@@ -193,9 +193,31 @@ class GameInitializer:
         logging.info(f"[Profiling] ECS init: {elapsed:.4f}s -> {logf}")
 
     def _load_items(self):
-        """Carga catálogo de ítems y lo expone en game.items"""
+        """Carga catálogo de ítems, assets e instancia ItemEditor"""
         items_path = Path('data') / 'items.json'
         self.game.items = load_items(str(items_path))
+        # Cargar assets de iconos
+        from roguelike_engine.utils.loader import load_image
+        self.game.item_assets = {}
+        for item_id, item in self.game.items.items():
+            icon_paths = []
+            if item.icon:
+                icon_paths = item.icon if isinstance(item.icon, list) else [item.icon]
+            else:
+                if item.icon_small:
+                    icon_paths.append(item.icon_small)
+                if item.icon_large:
+                    icon_paths.append(item.icon_large)
+            if icon_paths:
+                try:
+                    self.game.item_assets[item_id] = load_image(icon_paths[0])
+                except Exception as e:
+                    print(f"[ItemEditor] Error cargando icono {item_id}: {e}")
+        # Instanciar editor de ítems
+        from roguelike_editors.items import ItemEditor
+        self.game.item_editor = ItemEditor(self.game.items, self.game.item_assets, self.game.font)
+        # Exponer estado del ItemEditor en game.state
+        self.game.state.item_editor_state = self.game.item_editor.model
 
     def _init_renderer(self):
         g = self.game

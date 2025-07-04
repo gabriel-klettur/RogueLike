@@ -39,6 +39,13 @@ def handle_keyboard(event, state, camera, clock, menu, entities, tiles_editor, b
             config.DEBUG_ENTITIES = not config.DEBUG_ENTITIES
             print(f"🧪 ENTITIES DEBUG {'activado' if config.DEBUG_ENTITIES else 'desactivado'}")
 
+        # Toggle Item Editor (F7)
+        elif event.key == menu.input_config.get_key('toggle_item_editor'):
+            new_val = not state.item_editor_state.visible
+            state.item_editor_state.visible = new_val
+            print("🛠️ Item Editor ON" if new_val else "🛑 Item Editor OFF")
+            return
+
         # ---------- TILE-EDITOR (F8) --------- #
         elif event.key == pygame.K_F8:
             # Alternamos el flag global (ya existe en state)

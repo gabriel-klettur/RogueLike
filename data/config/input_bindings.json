@@ -11,5 +11,6 @@
     "spell_iceball": "9",
     "spell_lightning": "r",
     "pause": "K_ESCAPE",
-    "spell_arcane_flame": "K_c"
+    "spell_arcane_flame": "K_c",
+    "toggle_item_editor": "K_F7"
 }
