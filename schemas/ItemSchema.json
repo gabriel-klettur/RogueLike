@@ -15,7 +15,6 @@
         "description": { "type": "string" },
         "stackable": { "type": "boolean" },
         "max_stack": { "type": "integer", "minimum": 1 },
-        "threshold": { "type": "integer", "minimum": 1 },
         "icon": {
           "anyOf": [
             { "type": "string" },
@@ -24,13 +23,23 @@
         },
         "icon_small": { "type": "string" },
         "icon_large": { "type": "string" },
+        "threshold": { "type": "integer", "minimum": 1 },
         "experience": { "type": "integer", "minimum": 0 },
         "effect": { "type": "string" },
         "equip_slot": { "type": "string", "enum": ["head", "body", "weapon"] },
         "durability": { "type": "integer", "minimum": 0 },
+        "damage": { "type": "integer", "minimum": 0 },
+        "attack_speed": { "type": "number", "minimum": 0 },
+        "range": { "type": "integer", "minimum": 0 },
+        "crit_chance": { "type": "number", "minimum": 0, "maximum": 1 },
+        "crit_multiplier": { "type": "number", "minimum": 1 },
+        "weight": { "type": "number", "minimum": 0 },
+        "value": { "type": "integer", "minimum": 0 },
+        "rarity": { "type": "string", "enum": ["common", "uncommon", "rare", "epic", "legendary"] },
+        "level_requirement": { "type": "integer", "minimum": 1 },
         "quest_id": { "type": "string", "format": "uuid" }
       },
-      "required": ["id", "name", "description", "stackable"],
+      "required": ["id", "name", "description", "stackable", "icon"],
       "additionalProperties": false
     }
   }

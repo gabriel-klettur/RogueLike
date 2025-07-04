@@ -46,13 +46,22 @@
     "icon": "assets/items/iron_sword.png",
     "stackable": false,
     "equip_slot": "weapon",
-    "durability": 100
+    "durability": 100,
+    "damage": 12,
+    "attack_speed": 1.5,
+    "range": 1,
+    "crit_chance": 0.1,
+    "crit_multiplier": 1.5,
+    "weight": 3.2,
+    "value": 50,
+    "rarity": "common",
+    "level_requirement": 1
   },
   "ancient_relic_mask": {
     "id": "ancient_relic_mask",
     "name": "Máscara de Reliquia Antigua",
     "description": "Un objeto legendario vinculado a una misión.",
-    "icon": "assets/items/ancient_relic.png",
+    "icon": "assets/items/ancient_relic_mask.png",
     "stackable": false,
     "quest_id": "123e4567-e89b-12d3-a456-426614174000"
   }

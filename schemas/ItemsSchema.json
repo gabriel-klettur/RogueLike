@@ -2,31 +2,8 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Items Schema",
   "type": "object",
-  "additionalProperties": {
-    "type": "object",
-    "properties": {
-      "id": { "type": "string" },
-      "name": { "type": "string" },
-      "description": { "type": "string" },
-      "stackable": { "type": "boolean" },
-      "max_stack": { "type": "integer", "minimum": 1 },
-      "icon": {
-        "oneOf": [
-          { "type": "string" },
-          { "type": "array", "items": { "type": "string" } }
-        ]
-      },
-      "icon_small": { "type": "string" },
-      "icon_large": { "type": "string" },
-      "threshold": { "type": "integer", "minimum": 0 },
-      "experience": { "type": "integer", "minimum": 0 },
-      "effect": { "type": "string" },
-      "equip_slot": { "type": "string" },
-      "durability": { "type": "integer", "minimum": 0 },
-      "quest_id": { "type": "string", "format": "uuid" },
-      "schema_version": { "type": "string" }
-    },
-    "required": ["id", "name", "description", "stackable", "icon"],
-    "additionalProperties": false
-  }
+  "patternProperties": {
+    "^[a-z0-9_]+$": { "$ref": "ItemSchema.json#/definitions/item" }
+  },
+  "additionalProperties": false
 }
