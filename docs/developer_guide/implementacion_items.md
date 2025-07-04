@@ -12,7 +12,7 @@ Este documento describe el roadmap de alto nivel para llevar a producción la gu
 2. Generar ejemplos mínimos en `data/items.json` que cumplan el esquema.
 3. Validar con:
    ```bash
-   jsonschema -i data/items.json schemas/ItemSchema.json
+   check-jsonschema --schemafile schemas/ItemSchema.json data/items.json
    ```
 
 > Estado tras paso 1: Validación JSON completada sin errores.

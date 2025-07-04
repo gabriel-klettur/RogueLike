@@ -4,7 +4,7 @@ Este documento detalla los metadatos y atributos de cada ítem disponible en el 
 
 ## Getting Started
 1. Instala dependencias: `pip install -r requirements.txt`
-2. Valida JSON Schema con: `jsonschema -i data/items.json schemas/ItemSchema.json`
+2. Valida JSON Schema con: `check-jsonschema --schemafile schemas/ItemSchema.json data/items.json`
 3. Ejecuta tests: `pytest`
 
 ## Estructura de directorios

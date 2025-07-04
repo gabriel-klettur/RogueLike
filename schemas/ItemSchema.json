@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ItemSchema",
+  "type": "object",
+  "patternProperties": {
+    "^[a-z0-9_]+$": { "$ref": "#/definitions/item" }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "item": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "stackable": { "type": "boolean" },
+        "max_stack": { "type": "integer", "minimum": 1 },
+        "threshold": { "type": "integer", "minimum": 1 },
+        "icon": {
+          "anyOf": [
+            { "type": "string" },
+            { "type": "array", "items": { "type": "string" } }
+          ]
+        },
+        "icon_small": { "type": "string" },
+        "icon_large": { "type": "string" },
+        "experience": { "type": "integer", "minimum": 0 },
+        "effect": { "type": "string" },
+        "equip_slot": { "type": "string", "enum": ["head", "body", "weapon"] },
+        "durability": { "type": "integer", "minimum": 0 },
+        "quest_id": { "type": "string", "format": "uuid" }
+      },
+      "required": ["id", "name", "description", "stackable"],
+      "additionalProperties": false
+    }
+  }
+}

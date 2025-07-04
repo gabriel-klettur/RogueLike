@@ -10,3 +10,4 @@ pygame-menu
 pytest
 pydantic
 jsonschema
+check-jsonschema

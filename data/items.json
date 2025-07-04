@@ -1,9 +1,33 @@
 {
+  "experience_orb": {
+    "id": "experience_orb",
+    "name": "Orbe de Experiencia",
+    "experience": 10,
+    "icon": [
+      "assets/items/exp_orb_1.png",
+      "assets/items/exp_orb_2.png",
+      "assets/items/exp_orb_3.png",
+      "assets/items/exp_orb_4.png"
+    ],
+    "description": "Objeto que otorga puntos de experiencia al recogerse.",
+    "stackable": false
+  },
   "gold": {
     "id": "gold",
     "name": "Oro",
+    "icon_small": "assets/items/gold_coin_stack_1.png",
+    "icon_large": "assets/items/gold_coin_stack_2.png",
     "description": "Monedas de oro para comprar y comerciar.",
     "stackable": true,
-    "icon": "assets/items/gold_coin_stack_1.png"
+    "max_stack": 999,
+    "threshold": 10
+  },
+  "wood": {
+    "id": "wood",
+    "name": "Madera",
+    "icon": "assets/items/wood_log_bundle.png",
+    "description": "Recurso básico de madera.",
+    "stackable": true,
+    "max_stack": 99
   }
 }

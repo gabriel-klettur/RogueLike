@@ -17,7 +17,7 @@ Este documento describe el diseño e implementación del sistema de inventario p
 
 ## Getting Started
 1. Instala dependencias: `pip install -r requirements.txt`
-2. Valida esquemas: `jsonschema -i data/items.json schemas/ItemsSchema.json`
+2. Valida esquemas: `check-jsonschema --schemafile schemas/ItemsSchema.json data/items.json`
 3. Ejecuta tests: `pytest`
 
 ## Estructura de directorios
@@ -348,8 +348,8 @@ jobs:
         run: pip install -r requirements.txt
       - name: Validate Schemas
         run: |
-          jsonschema -i data/items.json schemas/ItemsSchema.json
-          jsonschema -i data/inventory_monsters.json schemas/InventoryMonstersSchema.json
+          check-jsonschema --schemafile schemas/ItemsSchema.json data/items.json
+          check-jsonschema --schemafile schemas/InventoryMonstersSchema.json data/inventory_monsters.json
       - name: Run tests
         run: pytest
 ```
@@ -372,9 +372,12 @@ classDiagram
 
 ```mermaid
 sequenceDiagram
-    NPC->>InventorySystem: on_npc_death()
-    InventorySystem->>MapManager: create_drop(drop_id, item)
-    Player->>MapManager: pick_up(drop_id)
+    NPC->>InventorySystem: on_npc_death(npc)
+    InventorySystem->>ItemDropManager: create_drop(drop_id, item_id, quantity, position)
+    Player->>InventorySystem: pick_up(drop_id)
+    InventorySystem->>ItemDropManager: pick_up(drop_id)
+    InventorySystem->>InventoryComponent: add(item_id, quantity)
+    InventorySystem->>UIManager: dispatch ItemPicked
 ```
 
 ## 19. Convenciones y Estilo

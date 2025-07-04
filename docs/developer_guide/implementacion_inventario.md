@@ -17,7 +17,7 @@ Este documento describe el roadmap de alto nivel para llevar a producción la gu
    - `InventoryPlayerSchema.json`
    - `InventoryMapSchema.json`
 2. Definir ejemplos mínimos en `data/` que cumplan cada esquema.
-3. Validar con `jsonschema -i data/*.json schemas/*.json`.
+3. Validar con `check-jsonschema --schemafile schemas/ItemsSchema.json data/items.json`.
 
 > Estado tras paso 1: Validación JSON completada sin errores.
 
