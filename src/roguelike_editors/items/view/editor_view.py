@@ -69,9 +69,11 @@ class ItemEditorView:
                 screen.blit(icon_surf, (x, y))
 
         # Highlight y panel de información
-        if model.hovered_item_id and model.hovered_item_id in model.items:
+        # Mostrar detalles del item seleccionado o en hover
+        active_id = model.selected_item_id or model.hovered_item_id
+        if active_id and active_id in model.items:
             # Resaltar ítem
-            idx_h = item_ids.index(model.hovered_item_id)
+            idx_h = item_ids.index(active_id)
             col = idx_h % columns
             row = idx_h // columns
             if scroll <= row < scroll + visible_rows:
@@ -81,7 +83,7 @@ class ItemEditorView:
                 pygame.draw.rect(screen, (255, 255, 0), highlight_rect, 3)
 
                 # Preparar líneas de texto
-                item = model.items[model.hovered_item_id]
+                item = model.items[active_id]
                 raw_name = item.name
                 lines = [raw_name]
                 desc = item.description

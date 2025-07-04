@@ -9,3 +9,4 @@ class ItemEditorModel:
     visible: bool = False
     scroll_index: int = 0
     hovered_item_id: Optional[str] = None
+    selected_item_id: Optional[str] = None
