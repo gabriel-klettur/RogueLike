@@ -28,6 +28,7 @@ from roguelike_game.managers.editors.map_editor_manager import MapEditorManager
 from roguelike_engine.minimap.minimap import Minimap
 from roguelike_engine.z_layer.state import ZState
 from roguelike_game.managers.ecs import ECSManager
+from roguelike_game.ecs.components.item_models import load_items
 
 
 class GameInitializer:
@@ -74,6 +75,7 @@ class GameInitializer:
             ("Cargando mapa"                , partial(self._init_map)),
             ("Cargando edificios"           , partial(self._init_buildings)),
             ("Inicializando ECS"            , partial(self._init_ecs)),
+            ("Cargando catálogo de ítems"    , partial(self._load_items)),
             ("Cargando Z-layer"             , partial(self._init_z_layer)),
             ("Cargando editor de edificios" , partial(self._init_buildings_editor)),
             ("Cargando editor de tiles"     , partial(self._init_tile_editor)),
@@ -189,6 +191,11 @@ class GameInitializer:
             p = pstats.Stats(pr, stream=pf)
             p.sort_stats('tottime').print_stats(30)
         logging.info(f"[Profiling] ECS init: {elapsed:.4f}s -> {logf}")
+
+    def _load_items(self):
+        """Carga catálogo de ítems y lo expone en game.items"""
+        items_path = Path('data') / 'items.json'
+        self.game.items = load_items(str(items_path))
 
     def _init_renderer(self):
         g = self.game
