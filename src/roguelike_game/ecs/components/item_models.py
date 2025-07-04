@@ -18,6 +18,15 @@ class ItemModel(BaseModel):
     equip_slot: Optional[str] = None
     durability: Optional[int] = None
     quest_id: Optional[str] = None
+    damage: Optional[int] = None
+    attack_speed: Optional[float] = None
+    range: Optional[int] = None
+    crit_chance: Optional[float] = None
+    crit_multiplier: Optional[float] = None
+    weight: Optional[float] = None
+    value: Optional[int] = None
+    rarity: Optional[str] = None
+    level_requirement: Optional[int] = None
 
 
 class ItemStack:

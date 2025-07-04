@@ -85,18 +85,25 @@ class ItemEditorView:
                 # Preparar líneas de texto
                 item = model.items[active_id]
                 raw_name = item.name
-                lines = [raw_name]
                 desc = item.description
                 # Wrap descripción con ancho máximo provisional
                 desc_lines = self._wrap_text(desc, sw - margin*4)
-                lines.extend(desc_lines)
+                # Contar líneas de descripción para aplicar cursiva
+                desc_count = len(desc_lines)
+                lines = [raw_name] + desc_lines
 
-                # Propiedades adicionales (incluye id, equip_slot, etc.)
-                if isinstance(item, dict):
-                    props = {k: v for k, v in item.items() if k not in ("name", "description")}
+                # Propiedades adicionales (cargadas desde el modelo)
+                if hasattr(item, 'model_dump'):
+                    data = item.model_dump()
                 else:
-                    props = {k: v for k, v in vars(item).items() if k not in ("name", "description")}
-                for key, val in props.items():
+                    try:
+                        data = item.dict()
+                    except:
+                        data = vars(item)
+                for key, val in data.items():
+                    # Excluir nombre, descripción y valores null
+                    if key in ("name", "description") or val is None:
+                        continue
                     lines.append(f"{key}: {val}")
 
                 # Calcular dimensiones dinámicas
@@ -122,7 +129,13 @@ class ItemEditorView:
                     full_text = line
                     max_line_width = panel_w - panel_padding*2
                     display_text = self._truncate_text(full_text, max_line_width)
+                    # Aplicar cursiva a descripción
+                    if idx_line > 0 and idx_line <= desc_count:
+                        self.font.set_italic(True)
                     txt_surf = self.font.render(display_text, True, color)
+                    # Revertir estilo
+                    if idx_line > 0 and idx_line <= desc_count:
+                        self.font.set_italic(False)
                     screen.blit(txt_surf, (tx, ty))
                     if display_text != full_text:
                         rect = pygame.Rect(tx, ty, txt_surf.get_width(), font_h)
