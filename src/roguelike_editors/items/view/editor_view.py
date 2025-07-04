@@ -119,6 +119,11 @@ class ItemEditorView:
                 info_surf = pygame.Surface((panel_w, panel_h), pygame.SRCALPHA)
                 info_surf.fill((0, 0, 0, 200))
                 screen.blit(info_surf, (panel_x, panel_y))
+                # Registrar área del panel para gestión de clics
+                try:
+                    model.panel_rect = pygame.Rect(panel_x, panel_y, panel_w, panel_h)
+                except Exception:
+                    pass
 
                 # Render texto con truncamiento, edición y tooltips
                 tx = panel_x + panel_padding

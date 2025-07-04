@@ -23,7 +23,14 @@ class ItemEditorController:
                     self.model.editing_text += event.unicode
                     return
             elif event.type == pygame.MOUSEBUTTONDOWN:
+                mx, my = event.pos
+                # Only commit when clicking outside editing property
+                if hasattr(self.model, 'property_entries'):
+                    for rect_prop, key_prop in self.model.property_entries:
+                        if key_prop == self.model.editing_property and rect_prop.collidepoint(mx, my):
+                            return
                 self._commit_edit()
+                return
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_F7:
                 self.model.visible = not self.model.visible
@@ -56,7 +63,10 @@ class ItemEditorController:
                     if rect.collidepoint(mx, my):
                         self.model.focused_property = key
                         return
-            # Click on grid: selección de ítem y limpiar foco/edición
+            # Si clic en panel de detalles, conservar foco/edición
+            if hasattr(self.model, 'panel_rect') and self.model.panel_rect.collidepoint(mx, my):
+                return
+            # Clic en grilla de ítems: calcular pantalla y columnas
             screen_surf = pygame.display.get_surface()
             if screen_surf:
                 sw, sh = screen_surf.get_size()
@@ -85,7 +95,7 @@ class ItemEditorController:
                     self.model.selected_item_id = item_ids[idx]
                 else:
                     self.model.selected_item_id = None
-            # Limpiar foco y modo edición
+            # Limpiar foco y modo edición al cambiar selección
             self.model.focused_property = None
             self.model.editing_property = None
         elif event.type == pygame.MOUSEMOTION and self.model.visible:
