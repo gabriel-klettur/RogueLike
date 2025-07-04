@@ -45,7 +45,7 @@
     "description": "Una espada básica de hierro.",
     "icon": "assets/items/iron_sword.png",
     "stackable": false,
-    "equip_slot": "weaaaaappon",
+    "equip_slot": "weapon",
     "durability": 100,
     "damage": 12,
     "attack_speed": 1.5,

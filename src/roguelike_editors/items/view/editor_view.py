@@ -37,6 +37,9 @@ class ItemEditorView:
         overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 180))
         screen.blit(overlay, (0, 0))
+        # Initialize blink interval for caret if needed
+        if not hasattr(self, 'blink_interval'):
+            self.blink_interval = 500  # ms cursor blink interval
 
         # Parámetros de layout
         margin = 20
@@ -188,6 +191,20 @@ class ItemEditorView:
                         if key_prop == model.editing_property:
                             ed_rect = rect_prop.inflate(4, 0)
                             pygame.draw.rect(screen, (128, 0, 128), ed_rect, 2)
+                            # Blinking caret
+                            t = pygame.time.get_ticks()
+                            if (t % self.blink_interval) < (self.blink_interval // 2):
+                                caret_x = rect_prop.right + 1
+                                caret_y_top = rect_prop.y
+                                caret_y_bottom = rect_prop.y + font_h
+                                pygame.draw.line(screen, (255, 255, 255), (caret_x, caret_y_top), (caret_x, caret_y_bottom), 1)
+                            # Blinking caret
+                            t = pygame.time.get_ticks()
+                            if (t % self.blink_interval) < (self.blink_interval // 2):
+                                caret_x = rect_prop.right + 1
+                                caret_y_top = rect_prop.y
+                                caret_y_bottom = rect_prop.y + font_h
+                                pygame.draw.line(screen, (255, 255, 255), (caret_x, caret_y_top), (caret_x, caret_y_bottom), 1)
                             break
                 elif model.focused_property:
                     # Debug draw focus border
