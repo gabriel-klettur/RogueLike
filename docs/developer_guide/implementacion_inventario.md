@@ -22,7 +22,7 @@ Este documento describe el roadmap de alto nivel para llevar a producción la gu
 > Estado tras paso 1: Validación JSON completada sin errores.
 
 ## 2. Modelos de datos
-1. Implementar `ItemModel` (pydantic) y `ItemStack` en `src/roguelike_game/ecs/components/models.py`.
+1. Implementar `ItemModel` (pydantic) y `ItemStack` en `src/roguelike_game/ecs/components/item_models.py`.
 2. Escribir tests para carga de `items.json` y validación de atributos.
 
 > Estado tras paso 2: Tests de modelos pasan.

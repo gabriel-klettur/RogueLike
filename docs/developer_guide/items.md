@@ -21,7 +21,7 @@ project_root/
     roguelike_game/
       ecs/
         components/
-          models.py
+          item_models.py
         systems/
         resources/
   tests/
@@ -131,7 +131,7 @@ class ItemModel(BaseModel):
 ## 6. Ejemplos de Uso
 Lee y accede a ítems desde JSON:
 ```python
-from roguelike_game.ecs.components.models import ItemModel
+from roguelike_game.ecs.components.item_models import ItemModel
 import json
 
 items = json.load(open('data/items.json'))
