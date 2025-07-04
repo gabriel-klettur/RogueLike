@@ -45,10 +45,21 @@ Este documento describe el roadmap de alto nivel para llevar a producción la gu
 
 ## 5. Activos y UI de Ítems
 1. Verificar rutas de iconos en `assets/items/`.
-2. Conectar `icon` o `icon_small`/`icon_large` con el renderer.
-3. Pruebas manuales de visualización en el juego.
+2. Cargar assets de iconos en `GameInitializer._load_items`, almacenándolos en `game.item_assets: Dict[str, Surface]`.
+3. Crear paquete MVC `item_editor` en `src/roguelike_editors/items`:
+   - Directorios:
+     - `model/`: definir `ItemEditorModel` (estado: lista de ítems, posición de scroll, visibilidad).
+     - `view/`: definir `ItemEditorView` (renderiza panel semi-transparente, iconos y datos de cada ítem).
+     - `controller/`: definir `ItemEditorController` (maneja input: F7 para togglear, flechas para navegar).
+   - `__init__.py`: exponer `ItemEditor = ItemEditorController(ItemEditorModel, ItemEditorView)`.
+4. Extender `InputConfig` en `roguelike_game.config.input_config` para mapear `pygame.K_F7` a `toggle_item_editor`.
+5. Integrar editor en la inicialización:
+   - En `GameInitializer._load_items`, instanciar `self.item_editor = ItemEditor(game.items, game.item_assets)` y añadir `game.show_item_editor=False`.
+   - En el bucle de eventos (en `RendererManager` o en el loop principal): llamar `game.item_editor.handle_event(event)`.
+   - En la fase de render: si `game.show_item_editor`, llamar `game.item_editor.draw(screen)`.
+6. Pruebas manuales: presionar F7 para abrir/cerrar el editor y verificar que muestre correctamente iconos y datos.
 
-> Estado tras paso 5: Ítems se muestran correctamente en UI.
+> Estado tras paso 5: Editor de ítems invocable con F7 y muestra datos e imágenes correctamente.
 
 ## 6. Testing & CI
 1. Añadir en CI:

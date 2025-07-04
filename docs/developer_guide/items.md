@@ -24,6 +24,12 @@ project_root/
           item_models.py
         systems/
         resources/
+    roguelike_editors/
+      items/
+        __init__.py
+        model/
+        view/
+        controller/
   tests/
     test_items.py
 ```
@@ -136,6 +142,32 @@ from roguelike_game.ecs.components.item_models import load_items
 items = load_items('data/items.json')
 item = items['gold']
 print(item.name, item.max_stack)
+```
+
+## Editor de Ítems (UI)
+Paquete: `src/roguelike_editors/items`
+
+Estructura MVC:
+```
+src/roguelike_editors/items/
+  __init__.py       # expone ItemEditor
+  model/
+    editor_model.py             # define ItemEditorModel
+  view/
+    editor_view.py              # define ItemEditorView (renderiza panel e ítems)
+  controller/
+    editor_controller.py        # define ItemEditorController (maneja eventos: F7, navegación)
+```
+
+Uso:
+```python
+from roguelike_editors.items import ItemEditor
+
+editor = ItemEditor(game.items, game.item_assets)
+for event in pygame.event.get():
+    editor.handle_event(event)
+# En la fase de render:
+editor.draw(screen)
 ```
 
 ## 7. API Reference
