@@ -2,11 +2,9 @@ import json
 import pytest
 from roguelike_game.ecs.components.item_models import ItemModel, ItemStack
 
-
 def load_items_data():
     with open('data/items.json', encoding='utf-8') as f:
         return json.load(f)
-
 
 def test_item_model_instantiation():
     items = load_items_data()
@@ -15,7 +13,6 @@ def test_item_model_instantiation():
         assert item.id == data['id']
         assert item.name == data.get('name')
         assert item.description == data.get('description')
-
 
 def test_stackable_properties():
     items = load_items_data()
@@ -33,12 +30,10 @@ def test_stackable_properties():
     assert orb.max_stack is None
     assert orb.threshold is None
 
-
 def test_item_stack_class():
     stack = ItemStack('gold', 5)
     assert stack.item_id == 'gold'
     assert stack.quantity == 5
-
 
 def test_load_items_function():
     from roguelike_game.ecs.components.item_models import load_items, ItemModel
@@ -49,3 +44,31 @@ def test_load_items_function():
     for key, data in raw.items():
         assert key in items
         assert isinstance(items[key], ItemModel)
+
+def test_consumable_item_model_validation():
+    raw = load_items_data()
+    from roguelike_game.ecs.components.item_models import ConsumableItemModel
+    potion_data = raw['health_potion']
+    potion = ConsumableItemModel(**potion_data)
+    assert potion.effect == potion_data['effect']
+    with pytest.raises(ValueError):
+        ConsumableItemModel(**raw['gold'])
+
+def test_equipable_item_model_validation():
+    raw = load_items_data()
+    from roguelike_game.ecs.components.item_models import EquipableItemModel
+    sword_data = raw['iron_sword']
+    sword = EquipableItemModel(**sword_data)
+    assert sword.durability == sword_data['durability']
+    assert sword.equip_slot == sword_data['equip_slot']
+    with pytest.raises(ValueError):
+        EquipableItemModel(**raw['experience_orb'])
+
+def test_quest_item_model_validation():
+    raw = load_items_data()
+    from roguelike_game.ecs.components.item_models import QuestItemModel
+    relic_data = raw['ancient_relic_mask']
+    relic = QuestItemModel(**relic_data)
+    assert relic.quest_id == relic_data['quest_id']
+    with pytest.raises(ValueError):
+        QuestItemModel(**raw['wood'])

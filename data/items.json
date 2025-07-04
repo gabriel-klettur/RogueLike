@@ -29,5 +29,31 @@
     "description": "Recurso básico de madera.",
     "stackable": true,
     "max_stack": 99
+  },
+  "health_potion": {
+    "id": "health_potion",
+    "name": "Poción de Salud",
+    "description": "Restaura salud al consumirse.",
+    "icon": "assets/items/health_potion.png",
+    "stackable": true,
+    "max_stack": 5,
+    "effect": "heal_50"
+  },
+  "iron_sword": {
+    "id": "iron_sword",
+    "name": "Espada de Hierro",
+    "description": "Una espada básica de hierro.",
+    "icon": "assets/items/iron_sword.png",
+    "stackable": false,
+    "equip_slot": "weapon",
+    "durability": 100
+  },
+  "ancient_relic_mask": {
+    "id": "ancient_relic_mask",
+    "name": "Máscara de Reliquia Antigua",
+    "description": "Un objeto legendario vinculado a una misión.",
+    "icon": "assets/items/ancient_relic.png",
+    "stackable": false,
+    "quest_id": "123e4567-e89b-12d3-a456-426614174000"
   }
 }

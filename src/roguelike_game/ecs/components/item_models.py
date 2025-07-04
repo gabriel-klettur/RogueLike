@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 from typing import Optional, List, Union, Dict
 
 
@@ -26,6 +26,30 @@ class ItemStack:
         self.item_id = item_id
         self.quantity = quantity
 
+
+class ConsumableItemModel(ItemModel):
+    """Modelo para ítems consumibles: debe tener effect"""
+    @model_validator(mode='after')
+    def check_effect(cls, model):
+        if model.effect is None:
+            raise ValueError("Consumable items must have an effect")
+        return model
+
+class EquipableItemModel(ItemModel):
+    """Modelo para ítems equipables: debe tener equip_slot y durability"""
+    @model_validator(mode='after')
+    def check_equipable(cls, model):
+        if model.equip_slot is None or model.durability is None:
+            raise ValueError("Equipable items must have equip_slot and durability")
+        return model
+
+class QuestItemModel(ItemModel):
+    """Modelo para ítems de misión: debe tener quest_id"""
+    @model_validator(mode='after')
+    def check_quest_item(cls, model):
+        if model.quest_id is None:
+            raise ValueError("Quest items must have quest_id")
+        return model
 
 def load_items(path: str) -> Dict[str, ItemModel]:
     """Carga ítems desde JSON y retorna dict de instancias"""
