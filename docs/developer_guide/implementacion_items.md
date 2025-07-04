@@ -57,20 +57,20 @@ Este documento describe el roadmap de alto nivel para llevar a producción la gu
    - En `GameInitializer._load_items`, instanciar `self.item_editor = ItemEditor(game.items, game.item_assets)` y añadir `game.show_item_editor=False`.
    - En el bucle de eventos (en `RendererManager` o en el loop principal): llamar `game.item_editor.handle_event(event)`.
    - En la fase de render: si `game.show_item_editor`, llamar `game.item_editor.draw(screen)`.
-6. Pruebas manuales: presionar F7 para abrir/cerrar el editor y verificar que muestre correctamente iconos y datos.
+6. Pruebas manuales: presionar F7 para abrir/cerrar el editor, verificar grid de iconos, scroll, hover y panel de detalles emergente.
 
 > Estado tras paso 5: Editor de ítems invocable con F7 y muestra datos e imágenes correctamente.
 
 ## 6. Testing & CI
 1. Añadir en CI:
    - Validación de `ItemSchema.json`.
-   - Ejecución de `pytest` para `test_items.py`.
+   - Ejecución de `pytest` para `test_items.py` y `test_item_editor_ui.py`.
 2. Pipeline verde garantiza calidad.
 
-> Estado tras paso 6: CI incorpora esquemas y tests de ítems.
+> Estado tras paso 6: CI incorpora esquemas, tests de ítems y UI del editor de ítems.
 
 ## 7. Revisión y Documentación Final
-1. Validar alineación de `items.md` con código generado.
+1. Validar alineación de `items.md` y `implementacion_items.md` con el grid UI y tests del editor de ítems.
 2. Ajustar ejemplos y diagramas si hay cambios.
 3. Aprobar PR y merge.
 
