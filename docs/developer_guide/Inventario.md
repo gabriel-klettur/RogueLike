@@ -205,6 +205,13 @@ class ItemModel:
         ...
 ```
 
+Este gestor persiste los “drops” en el suelo usando JSON con campos:
+- `item_id`: Identificador de ítem
+- `quantity`: Cantidad en el montón
+- `zone_id`: Zona del mapa donde se ubica
+- `tile`: Coordenadas de celda (enteras) *o* `position`: Coordenadas en píxeles (flotantes)
+- `schema_version`: Versión del esquema JSON
+
 ### ItemDropManager
 ```python
 from typing import List, Dict, Union

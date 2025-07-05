@@ -38,6 +38,8 @@ Este documento describe el roadmap de alto nivel para llevar a producción la gu
 > Estado tras paso 3: Inventario base funciona y tests pasan.
 
 ## 4. Mapa de drops
+
+> Nota: Al crear drops, se puede usar `tile` (enteros) o `position` (píxeles). Ambos formatos son válidos y se eligen según la necesidad de precisión.
 1. Crear `ItemDropManager` en `src/roguelike_game/managers/map/item_drop_manager.py` con:
    - `create_drop(drop_id, item_id, quantity, zone_id, tile=None, position=None)`
    - `pick_up(drop_id)`

@@ -2,7 +2,71 @@
   "drop1": {
     "item_id": "gold",
     "quantity": 3,
-    "position": { "x": 10.5, "y": 20.0 },
+    "zone_id": "Forest",
+    "tile": { "x": 10, "y": 20 },
+    "schema_version": "1.0.0"
+  },
+  "drop2": {
+    "item_id": "gold",
+    "quantity": 3,
+    "zone_id": "Forest",
+    "tile": { "x": 11, "y": 20 },
+    "schema_version": "1.0.0"
+  },
+  "drop3": {
+    "item_id": "gold",
+    "quantity": 3,
+    "zone_id": "Forest",
+    "tile": { "x": 12, "y": 20 },
+    "schema_version": "1.0.0"
+  },
+  "drop4": {
+    "item_id": "gold",
+    "quantity": 3,
+    "zone_id": "Forest",
+    "tile": { "x": 13, "y": 20 },
+    "schema_version": "1.0.0"
+  },
+  "drop5": {
+    "item_id": "gold",
+    "quantity": 3,
+    "zone_id": "Forest",
+    "tile": { "x": 14, "y": 20 },
+    "schema_version": "1.0.0"
+  },
+  "drop6": {
+    "item_id": "gold",
+    "quantity": 3,
+    "zone_id": "Forest",
+    "tile": { "x": 15, "y": 20 },
+    "schema_version": "1.0.0"
+  },
+  "drop7": {
+    "item_id": "gold",
+    "quantity": 3,
+    "zone_id": "Forest",
+    "tile": { "x": 16, "y": 20 },
+    "schema_version": "1.0.0"
+  },
+  "drop8": {
+    "item_id": "gold",
+    "quantity": 3,
+    "zone_id": "Forest",
+    "position": { "x": 17, "y": 20 },
+    "schema_version": "1.0.0"
+  },
+  "drop9": {
+    "item_id": "gold",
+    "quantity": 3,
+    "zone_id": "Forest",
+    "position": { "x": 18, "y": 20 },
+    "schema_version": "1.0.0"
+  },
+  "drop10": {
+    "item_id": "gold",
+    "quantity": 3,
+    "zone_id": "Forest",
+    "tile": { "x": 19, "y": 20 },
     "schema_version": "1.0.0"
   }
 }
