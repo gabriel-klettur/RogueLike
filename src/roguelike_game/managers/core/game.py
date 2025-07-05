@@ -45,9 +45,17 @@ class Game:
 
     @benchmark(lambda self: self.perf_log, "1.TOTAL: HANDLE EVENTS")
     def handle_events(self):
+        # Procesar QUIT antes que nada
+        # Detectar QUIT sin consumir otros eventos
+        if pygame.event.peek(pygame.QUIT):
+            # eliminar eventos QUIT
+            pygame.event.get(pygame.QUIT)
+            self.state.running = False
+            return
         # Si el editor de ítems está visible, capturar solo sus eventos
         if self.item_editor.model.visible:
-            for event in pygame.event.get():
+            events = pygame.event.get()
+            for event in events:
                 self.item_editor.handle_event(event)
             return
         # Si un editor está activo, solo lo capturamos a él
