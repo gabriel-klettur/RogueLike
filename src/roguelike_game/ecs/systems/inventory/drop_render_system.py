@@ -13,7 +13,9 @@ class DropRenderSystem:
         self.perf_log = perf_log
         items_path = os.path.join(os.getcwd(), 'data', 'items.json')
         self.items = load_items(items_path)
-        self._sprites = {}  # cache de surfaces por eid
+        # Cache de imágenes originales y escaladas
+        self._raw_surfaces = {}       # path -> raw Surface
+        self._scaled_cache = {}       # (eid, scale_factor) -> Surface
         self._last_world_positions = {}  # eid -> última posición mundial (x, y)
         
 
@@ -37,17 +39,21 @@ class DropRenderSystem:
                     path = icon
             if not path:
                 continue
-            if eid not in self._sprites:
+            # Preparar raw image
+            raw_surf = self._raw_surfaces.get(path)
+            if raw_surf is None:
                 raw_surf = load_image(path)
-                # Escalar sprite según propiedad scale_map
-                scale = getattr(model, 'scale_map', 1.0)
-                if scale != 1.0:
-                    w, h = raw_surf.get_size()
-                    surf = pygame.transform.smoothscale(raw_surf, (int(w * scale), int(h * scale)))
-                else:
-                    surf = raw_surf
-                self._sprites[eid] = surf
-            surf = self._sprites[eid]
+                self._raw_surfaces[path] = raw_surf
+            # Escalar según scale_map y zoom de cámara
+            scale_map = getattr(model, 'scale_map', 1.0)
+            zoom = getattr(camera, 'zoom', 1.0)
+            scale_factor = round(scale_map * zoom, 2)
+            key = (eid, scale_factor)
+            if key not in self._scaled_cache:
+                orig = raw_surf
+                # rotozoom para calidad y rotación 0
+                self._scaled_cache[key] = pygame.transform.rotozoom(orig, 0, scale_factor)
+            surf = self._scaled_cache[key]
             world_pos = (pos.x, pos.y)
             screen_pos = camera.apply(world_pos)
             if eid not in self._last_world_positions or self._last_world_positions[eid] != world_pos:
