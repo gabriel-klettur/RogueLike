@@ -118,17 +118,16 @@ class ItemEditorController:
             text_margin = 4
             font_h = self.view.font.get_height()
             cell_height = cell_size + text_margin + font_h
-            if sw:
-                columns = max(1, (sw - margin) // (cell_size + margin))
-            else:
-                columns = 6
+            # Columnas fijas: 12
+            columns = 12
             # Seleccionar ítem en grilla
             if mx < margin or my < margin:
                 self.model.selected_item_id = None
             else:
                 col = (mx - margin) // (cell_size + margin)
                 row = (my - margin + self.model.scroll_index * (cell_height + margin)) // (cell_height + margin)
-                item_ids = list(self.model.items.keys())
+                # Filtrar ítems excluyendo placeholder
+                item_ids = [i for i in self.model.items.keys() if i != "image_item_not_found"]
                 idx = row * columns + col
                 x0 = margin + col * (cell_size + margin)
                 y0 = margin + (row - self.model.scroll_index) * (cell_height + margin)
@@ -151,17 +150,16 @@ class ItemEditorController:
             text_margin = 4
             font_h = self.view.font.get_height()
             cell_height = cell_size + text_margin + font_h
-            if sw:
-                columns = max(1, (sw - margin) // (cell_size + margin))
-            else:
-                columns = 6
+            # Columnas fijas: 12
+            columns = 12
             # Verificar área vertical
             if mx < margin or my < margin:
                 self.model.hovered_item_id = None
             else:
                 col = (mx - margin) // (cell_size + margin)
                 row = (my - margin + self.model.scroll_index * (cell_height + margin)) // (cell_height + margin)
-                item_ids = list(self.model.items.keys())
+                # Filtrar ítems excluyendo placeholder
+                item_ids = [i for i in self.model.items.keys() if i != "image_item_not_found"]
                 idx = row * columns + col
                 x0 = margin + col * (cell_size + margin)
                 y0 = margin + (row - self.model.scroll_index) * (cell_height + margin)

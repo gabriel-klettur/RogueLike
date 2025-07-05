@@ -49,10 +49,11 @@ class ItemEditorView:
         font_h = self.font.get_height()
         cell_height = cell_size + text_margin + font_h
         sw, sh = screen.get_size()
-        # Columnas según ancho disponible (deja espacio panel)
-        columns = max(1, (sw - margin*3) // (cell_size + margin))
+        # Columnas fijas: 12
+        columns = 12
         visible_rows = max(1, (sh - 2*margin) // (cell_height + margin))
-        item_ids = list(model.items.keys())
+        # Exclude placeholder item from grid
+        item_ids = [i for i in model.items.keys() if i != "image_item_not_found"]
         total_rows = (len(item_ids) + columns - 1) // columns
         # Clamp scroll index
         scroll = max(0, min(model.scroll_index, total_rows - visible_rows))
@@ -77,7 +78,7 @@ class ItemEditorView:
         # Highlight y panel de información
         # Mostrar detalles del item seleccionado o en hover
         active_id = model.selected_item_id or model.hovered_item_id
-        if active_id and active_id in model.items:
+        if active_id and active_id in item_ids:
             # Resaltar ítem
             idx_h = item_ids.index(active_id)
             col = idx_h % columns
