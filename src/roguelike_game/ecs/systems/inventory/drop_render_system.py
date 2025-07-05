@@ -14,9 +14,11 @@ class DropRenderSystem:
         items_path = os.path.join(os.getcwd(), 'data', 'items.json')
         self.items = load_items(items_path)
         self._sprites = {}  # cache de surfaces por eid
+        self._last_world_positions = {}  # eid -> última posición mundial (x, y)
+        
 
     def update(self, world, screen, camera):
-        print(f"[DropRenderSystem] update called, entities_count={sum(1 for _ in world.get_entities_with('Position', 'PhysicalItemComponent'))}")
+        
         for eid in world.get_entities_with('Position', 'PhysicalItemComponent'):
             pos = world.components['Position'][eid]
             comp = world.components['PhysicalItemComponent'][eid]
@@ -46,6 +48,9 @@ class DropRenderSystem:
                     surf = raw_surf
                 self._sprites[eid] = surf
             surf = self._sprites[eid]
-            screen_pos = camera.apply((pos.x, pos.y))
-            print(f"[DropRenderSystem] Rendering drop eid={eid} item_id='{item_id}' at screen_pos={screen_pos}")
+            world_pos = (pos.x, pos.y)
+            screen_pos = camera.apply(world_pos)
+            if eid not in self._last_world_positions or self._last_world_positions[eid] != world_pos:
+                print(f"[DropRenderSystem] Rendering drop eid={eid} item_id='{item_id}' world_pos={world_pos} screen_pos={screen_pos}")
+                self._last_world_positions[eid] = world_pos
             screen.blit(surf, screen_pos)

@@ -3,6 +3,8 @@ from roguelike_game.managers.map.item_drop_manager import ItemDropManager
 from roguelike_game.ecs.components.physical_item_component import PhysicalItemComponent
 from roguelike_game.ecs.components.collectible_component import CollectibleComponent
 from roguelike_game.ecs.components.transform.position import Position
+from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_game.ecs.utils.map_utils import get_zone_offset
 
 class MapLoadDropsSystem:
     """
@@ -15,28 +17,28 @@ class MapLoadDropsSystem:
         self._loaded = False
 
     def update(self, world, camera=None):
-        print(f"[MapLoadDropsSystem] update called, loaded={self._loaded}")
+        
+
         if self._loaded:
             return
         drops_dict = self.drop_manager._data
-        # Filtrar drops por zona
-        current_zone = world.map_manager.name
-        print(f"[MapLoadDropsSystem] current_zone={current_zone}, total_drops={len(drops_dict)}")
+
         for drop_id, data in drops_dict.items():
-            # DEBUG: zone filter disabled for debug
-            # if data.get('zone_id') != current_zone:
-            #     continue
+
             item_id = data['item_id']
             quantity = data['quantity']
             zone_id = data.get('zone_id')
+            offset_tx, offset_ty = get_zone_offset(zone_id)
             # Convertir coordenadas a píxeles
             if 'tile' in data:
-                tx, ty = data['tile']['x'], data['tile']['y']
-                px, py = world.map_manager.get_spawn_pixel((tx, ty))
+                drop_tx, drop_ty = data['tile']['x'], data['tile']['y']
+                global_tx = offset_tx + drop_tx
+                global_ty = offset_ty + drop_ty
+                px, py = world.map_manager.get_spawn_pixel((global_tx, global_ty))
                 pos = Position(px, py)
             else:
                 coords = data['position']
-                pos = Position(coords['x'], coords['y'])
+                pos = Position(coords['x'] + offset_tx * TILE_SIZE, coords['y'] + offset_ty * TILE_SIZE)
             eid = world.create_entity()
             world.components['PhysicalItemComponent'][eid] = PhysicalItemComponent(
                 drop_id, item_id, quantity, zone_id
