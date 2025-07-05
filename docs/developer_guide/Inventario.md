@@ -118,6 +118,8 @@ class Item:
         self.icon_path = icon_path
         self.stackable = stackable
 ```
+> **Escala de Ítems**: cada Item incluye propiedades `scale_editor`, `scale_map` y `scale_inventory` (float) para ajustar su tamaño en diferentes contextos.
+```
 Subclases o componentes ECS:
 - `CoinItem`, `ExperienceItem`, `WoodItem`.
 

@@ -19,6 +19,9 @@
     "icon_large": "assets/items/gold_coin_stack_2.png",
     "description": "Monedas de oro para comprar y comerciar.",
     "stackable": true,
+    "scale_editor": 1.0,
+    "scale_map": 0.04,
+    "scale_inventory": 0.75,
     "max_stack": 999,
     "threshold": 10
   },
@@ -28,6 +31,9 @@
     "icon": "assets/items/wood_log_bundle.png",
     "description": "Recurso básico de madera.",
     "stackable": true,
+    "scale_editor": 1.0,
+    "scale_map": 0.5,
+    "scale_inventory": 0.75,
     "max_stack": 99
   },
   "health_potion": {
@@ -36,6 +42,9 @@
     "description": "Restaura salud al consumirse.",
     "icon": "assets/items/health_potion.png",
     "stackable": true,
+    "scale_editor": 1.0,
+    "scale_map": 0.5,
+    "scale_inventory": 0.75,
     "max_stack": 5,
     "effect": "heal_50"
   },
@@ -45,6 +54,9 @@
     "description": "Una espada básica de hierro.",
     "icon": "assets/items/iron_sword.png",
     "stackable": false,
+    "scale_editor": 1.0,
+    "scale_map": 0.5,
+    "scale_inventory": 0.75,
     "equip_slot": "weapon",
     "durability": 1000,
     "damage": 15,
@@ -63,6 +75,9 @@
     "description": "Un objeto legendario vinculado a una misión.",
     "icon": "assets/items/ancient_relic_mask.png",
     "stackable": false,
+    "scale_editor": 1.0,
+    "scale_map": 0.5,
+    "scale_inventory": 0.75,
     "quest_id": "123e4567-e89b-12d3-a456-426614174000"
   },
   "bucket": {
@@ -71,6 +86,9 @@
     "description": "Cubo vacío para transportar líquidos.",
     "icon": "assets/items/bucket.png",
     "stackable": false,
+    "scale_editor": 1.0,
+    "scale_map": 0.5,
+    "scale_inventory": 0.75,
     "max_stack": 1
   },
   "bucket_water": {
@@ -79,6 +97,9 @@
     "description": "Cubo lleno de agua fresca.",
     "icon": "assets/items/bucket_water.png",
     "stackable": false,
+    "scale_editor": 1.0,
+    "scale_map": 0.5,
+    "scale_inventory": 0.75,
     "max_stack": 1,
     "effect": "water_source"
   },
@@ -88,6 +109,9 @@
     "description": "Restaura energía al consumirse.",
     "icon": "assets/items/energy_potion.png",
     "stackable": true,
+    "scale_editor": 1.0,
+    "scale_map": 0.5,
+    "scale_inventory": 0.75,
     "max_stack": 5,
     "effect": "energize_50"
   },
@@ -97,6 +121,9 @@
     "description": "Causa una explosión al lanzarse.",
     "icon": "assets/items/explosion_potion.png",
     "stackable": true,
+    "scale_editor": 1.0,
+    "scale_map": 0.5,
+    "scale_inventory": 0.75,
     "max_stack": 3,
     "effect": "explode_area"
   },
@@ -106,6 +133,9 @@
     "description": "Alimento que restaura hambre.",
     "icon": "assets/items/food_chicken.png",
     "stackable": true,
+    "scale_editor": 1.0,
+    "scale_map": 0.5,
+    "scale_inventory": 0.75,
     "max_stack": 10,
     "effect": "restore_hunger_30"
   },
@@ -122,6 +152,9 @@
     "description": "Material para forjar armas y armaduras.",
     "icon": "assets/items/iron_ingot.png",
     "stackable": true,
+    "scale_editor": 1.0,
+    "scale_map": 0.5,
+    "scale_inventory": 0.75,
     "max_stack": 50
   },
   "mana_potion": {
@@ -130,6 +163,9 @@
     "description": "Restaura maná al consumirse.",
     "icon": "assets/items/mana_potion.png",
     "stackable": true,
+    "scale_editor": 1.0,
+    "scale_map": 0.5,
+    "scale_inventory": 0.75,
     "max_stack": 6,
     "effect": "restore_mana_50"
   },
@@ -139,6 +175,9 @@
     "description": "Envenena al objetivo al lanzarse.",
     "icon": "assets/items/poison_potion.png",
     "stackable": true,
+    "scale_editor": 1.0,
+    "scale_map": 0.5,
+    "scale_inventory": 0.75,
     "max_stack": 5,
     "effect": "poison_area"
   },
@@ -148,6 +187,9 @@
     "description": "Bastón básico para magos.",
     "icon": "assets/items/wizard_staff_lvl_1.png",
     "stackable": false,
+    "scale_editor": 1.0,
+    "scale_map": 0.5,
+    "scale_inventory": 0.75,
     "equip_slot": "weapon",
     "durability": 250,
     "damage": 8,
@@ -164,6 +206,9 @@
     "description": "Bastón intermedio para magos.",
     "icon": "assets/items/wizard_staff_lvl_2.png",
     "stackable": false,
+    "scale_editor": 1.0,
+    "scale_map": 0.5,
+    "scale_inventory": 0.75,
     "equip_slot": "weapon",
     "durability": 500,
     "damage": 12,
@@ -180,6 +225,9 @@
     "description": "Bastón avanzado para magos.",
     "icon": "assets/items/wizard_staff_lvl_3.png",
     "stackable": false,
+    "scale_editor": 1.0,
+    "scale_map": 0.5,
+    "scale_inventory": 0.75,
     "equip_slot": "weapon",
     "durability": 750,
     "damage": 16,

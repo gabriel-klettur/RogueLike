@@ -59,6 +59,8 @@ class ECSWorld:
             else:
                 self.update_systems.append(cls(self.perf_log))
         self.render_systems = [cls(self.perf_log) for cls in render_classes]
+        print(f"[ECSWorld] Update systems: {[type(s).__name__ for s in self.update_systems]}")
+        print(f"[ECSWorld] Render systems: {[type(s).__name__ for s in self.render_systems]}")
 
     def create_entity(self):
         eid = self.next_entity_id

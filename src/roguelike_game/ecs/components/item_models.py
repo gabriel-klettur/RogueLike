@@ -28,6 +28,10 @@ class ItemModel(BaseModel):
     value: Optional[int] = None
     rarity: Optional[str] = None
     level_requirement: Optional[int] = None
+    # Escalado: factores de escala para diferentes vistas
+    scale_editor: Optional[float] = 1.0
+    scale_map: Optional[float] = 1.0
+    scale_inventory: Optional[float] = 1.0
 
 
 class ItemStack:

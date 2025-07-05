@@ -1,4 +1,5 @@
 # Guía de desarrollo: Especificación de Ítems
+> **Nota:** ItemModel incluye nuevas propiedades `scale_editor`, `scale_map` y `scale_inventory` para controlar el tamaño de visualización en distintos contextos.
 
 Este documento detalla los metadatos y atributos de cada ítem disponible en el juego.
 
@@ -198,6 +199,12 @@ class ItemStack:
         self.item_id = item_id
         self.quantity = quantity
 ```
+
+> **Nuevas propiedades de escala**:
+>
+> - `scale_editor` (float): factor de escala en el editor de ítems.
+> - `scale_map` (float): factor de escala al renderizar en el mapa.
+> - `scale_inventory` (float): factor de escala en vistas de inventario.
 
 ## 8. Diagrama de Clases
 ```mermaid

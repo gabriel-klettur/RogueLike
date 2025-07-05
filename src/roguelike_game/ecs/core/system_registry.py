@@ -50,6 +50,8 @@ from roguelike_game.ecs.systems.combat.hitbox_system import HitboxSystem
 from roguelike_game.ecs.systems.combat.spells.lightning_system import LightningSystem
 from roguelike_game.ecs.systems.debug.entities_debug_system import EntitiesDebugSystem
 from roguelike_game.ecs.systems.expansion_system import ExpansionSystem
+from roguelike_game.ecs.systems.inventory.map_load_drops_system import MapLoadDropsSystem
+from roguelike_game.ecs.systems.inventory.drop_render_system import DropRenderSystem
 from roguelike_game.ecs.systems.rendering.grayscale_render_system import GrayscaleRenderSystem
 from roguelike_game.ecs.systems.rendering.resurrection_area_system import ResurrectionAreaSystem
 
@@ -63,7 +65,7 @@ def get_update_system_classes():
         MovementCollisionSystem,
         MeleeCombatSystem, SpellCastingSystem, ArcaneFlameSystem, SmokeSystem, SmokeEmitterSystem, SphereMagicShieldSystem, TeleportSystem, FireworkLaunchSystem, AuraSystem, ParticleSystem, ExplosionSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, LightningEmitterSystem, FireballSystem, LightningSystem, DashSystem, HitboxSystem,
         TrailSystem,
-        AnimationSystem, FlashSystem, SpawnSystem, ExpansionSystem,
+        AnimationSystem, FlashSystem, SpawnSystem, MapLoadDropsSystem, ExpansionSystem,
     ]
 
 def get_render_system_classes():
@@ -75,6 +77,7 @@ def get_render_system_classes():
         HealthBarSystem, NamePlateSystem,
         FireballRenderSystem, ArcaneFlameRenderSystem, FireworkLaunchRenderSystem, SmokeRenderSystem, SmokeEmitterRenderSystem, SphereMagicShieldRenderSystem, TeleportRenderSystem, ParticleRenderSystem, LightningRenderSystem,
         DeathTimerBarSystem,
+        DropRenderSystem,
     ]
     # Render systems comunes
     # Overlay unificado de debug de entidades (se activa/desactiva internamente con F12)

@@ -37,7 +37,10 @@
         "value": { "type": "integer", "minimum": 0 },
         "rarity": { "type": "string", "enum": ["common", "uncommon", "rare", "epic", "legendary"] },
         "level_requirement": { "type": "integer", "minimum": 1 },
-        "quest_id": { "type": "string", "format": "uuid" }
+        "quest_id": { "type": "string", "format": "uuid" },
+        "scale_editor": { "type": "number", "minimum": 0 },
+        "scale_map": { "type": "number", "minimum": 0 },
+        "scale_inventory": { "type": "number", "minimum": 0 }
       },
       "required": ["id", "name", "description", "stackable"],
       "additionalProperties": false,
