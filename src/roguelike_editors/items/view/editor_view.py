@@ -8,6 +8,7 @@ class ItemEditorView:
         self.font = font
         self.last_debug_property = None
         self.last_debug_mode = None
+        self.blink_interval = 500  # ms cursor blink interval
 
     def _wrap_text(self, text: str, max_width: int) -> list[str]:
         words = text.split(' ')
@@ -194,14 +195,10 @@ class ItemEditorView:
                             # Blinking caret
                             t = pygame.time.get_ticks()
                             if (t % self.blink_interval) < (self.blink_interval // 2):
-                                caret_x = rect_prop.right + 1
-                                caret_y_top = rect_prop.y
-                                caret_y_bottom = rect_prop.y + font_h
-                                pygame.draw.line(screen, (255, 255, 255), (caret_x, caret_y_top), (caret_x, caret_y_bottom), 1)
-                            # Blinking caret
-                            t = pygame.time.get_ticks()
-                            if (t % self.blink_interval) < (self.blink_interval // 2):
-                                caret_x = rect_prop.right + 1
+                                prefix = f"{model.editing_property}: "
+                                before_text = model.editing_text[:model.editing_cursor]
+                                x_offset = self.font.size(prefix + before_text)[0]
+                                caret_x = rect_prop.x + x_offset
                                 caret_y_top = rect_prop.y
                                 caret_y_bottom = rect_prop.y + font_h
                                 pygame.draw.line(screen, (255, 255, 255), (caret_x, caret_y_top), (caret_x, caret_y_bottom), 1)

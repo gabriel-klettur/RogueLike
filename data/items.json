@@ -46,7 +46,7 @@
     "icon": "assets/items/iron_sword.png",
     "stackable": false,
     "equip_slot": "weapon",
-    "durability": 100,
+    "durability": 1000,
     "damage": 12,
     "attack_speed": 1.5,
     "range": 1,

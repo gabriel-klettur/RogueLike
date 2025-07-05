@@ -12,6 +12,7 @@ class ItemEditorController:
         self.last_click_time = 0
         self.last_click_key = None
         self.double_click_interval = 500  # ms
+        pygame.key.set_repeat(300, 50)  # enable key repeat for continuous backspace and arrow keys
 
     def handle_event(self, event: pygame.event.Event) -> None:
         # Inline editing input
@@ -21,10 +22,27 @@ class ItemEditorController:
                     self._commit_edit()
                     return
                 elif event.key == pygame.K_BACKSPACE:
-                    self.model.editing_text = self.model.editing_text[:-1]
+                    if self.model.editing_cursor > 0:
+                        # delete char before cursor
+                        self.model.editing_text = (self.model.editing_text[:self.model.editing_cursor-1] + self.model.editing_text[self.model.editing_cursor:])
+                        self.model.editing_cursor -= 1
+                    return
+                elif event.key == pygame.K_LEFT:
+                    # move cursor left
+                    self.model.editing_cursor = max(0, self.model.editing_cursor-1)
+                    return
+                elif event.key == pygame.K_RIGHT:
+                    # move cursor right
+                    self.model.editing_cursor = min(len(self.model.editing_text), self.model.editing_cursor+1)
                     return
                 else:
-                    self.model.editing_text += event.unicode
+                    # insert character at cursor
+                    ch = event.unicode
+                    if ch:
+                        et = self.model.editing_text
+                        idx = self.model.editing_cursor
+                        self.model.editing_text = et[:idx] + ch + et[idx:]
+                        self.model.editing_cursor += len(ch)
                     return
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mx, my = event.pos
@@ -63,6 +81,7 @@ class ItemEditorController:
                             if item:
                                 val = getattr(item, key, "")
                                 self.model.editing_text = str(val)
+                                self.model.editing_cursor = len(self.model.editing_text)  # start cursor at end
                             print(f"[DEBUG controller] editing_property={self.model.editing_property}, editing_text='{self.model.editing_text}'")
                         else:
                             self.model.focused_property = key
