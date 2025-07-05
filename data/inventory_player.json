@@ -1,0 +1,12 @@
+{
+  "player_id": "22222222-2222-2222-2222-222222222222",
+  "capacity": 5,
+  "slots": [
+    null,
+    { "item": "gold", "quantity": 10, "stack_id": "33333333-3333-3333-3333-333333333333" },
+    null,
+    null,
+    null
+  ],
+  "schema_version": "1.0.0"
+}

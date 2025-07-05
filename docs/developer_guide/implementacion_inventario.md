@@ -39,7 +39,7 @@ Este documento describe el roadmap de alto nivel para llevar a producción la gu
 
 ## 4. Mapa de drops
 1. Crear `ItemDropManager` en `src/roguelike_game/managers/map/item_drop_manager.py` con:
-   - `create_drop(drop_id, item_id, qty, position)`
+   - `create_drop(drop_id, item_id, quantity, zone_id, tile=None, position=None)`
    - `pick_up(drop_id)`
    - `load_all()`
 2. Definir `inventory_map.json` y tests de flujo drop→pickup.

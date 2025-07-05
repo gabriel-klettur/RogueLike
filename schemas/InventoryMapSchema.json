@@ -7,6 +7,16 @@
     "properties": {
       "item_id": { "type": "string" },
       "quantity": { "type": "integer", "minimum": 1 },
+      "zone_id": { "type": "string" },
+      "tile": {
+        "type": "object",
+        "properties": {
+          "x": { "type": "integer" },
+          "y": { "type": "integer" }
+        },
+        "required": ["x", "y"],
+        "additionalProperties": false
+      },
       "position": {
         "type": "object",
         "properties": {
@@ -18,7 +28,11 @@
       },
       "schema_version": { "type": "string" }
     },
-    "required": ["item_id", "quantity", "position"],
+    "required": ["item_id", "quantity", "zone_id"],
+    "anyOf": [
+      { "required": ["tile"] },
+      { "required": ["position"] }
+    ],
     "additionalProperties": false
   }
 }

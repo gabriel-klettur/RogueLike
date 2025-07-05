@@ -207,8 +207,7 @@ class ItemModel:
 
 ### ItemDropManager
 ```python
-from typing import List, Dict
-from yourgame.types import Position
+from typing import List, Dict, Union
 
 class ItemDropManager:
     def __init__(self, path: str):
@@ -216,8 +215,8 @@ class ItemDropManager:
         self.path = path
         ...
 
-    def create_drop(self, drop_id: str, item_id: str, quantity: int, position: Position):
-        """Registra un drop en el mapa con su drop_id y datos"""
+    def create_drop(self, drop_id: str, item_id: str, quantity: int, zone_id: str, tile: Dict[str, int] = None, position: Dict[str, float] = None):
+        """Registra un drop en el mapa con su drop_id, zona y coordenadas de tile o posición relativa"""
         ...
 
     def pick_up(self, drop_id: str) -> bool:

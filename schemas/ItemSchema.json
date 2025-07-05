@@ -39,8 +39,12 @@
         "level_requirement": { "type": "integer", "minimum": 1 },
         "quest_id": { "type": "string", "format": "uuid" }
       },
-      "required": ["id", "name", "description", "stackable", "icon"],
-      "additionalProperties": false
+      "required": ["id", "name", "description", "stackable"],
+      "additionalProperties": false,
+      "anyOf": [
+        { "required": ["icon"] },
+        { "required": ["icon_small", "icon_large"] }
+      ]
     }
   }
 }

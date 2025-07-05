@@ -1,0 +1,8 @@
+{
+  "drop1": {
+    "item_id": "gold",
+    "quantity": 3,
+    "position": { "x": 10.5, "y": 20.0 },
+    "schema_version": "1.0.0"
+  }
+}
