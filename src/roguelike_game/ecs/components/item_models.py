@@ -62,8 +62,20 @@ class QuestItemModel(ItemModel):
         return model
 
 def load_items(path: str) -> Dict[str, ItemModel]:
-    """Carga ítems desde JSON y retorna dict de instancias"""
+    """Carga ítems desde JSON y retorna dict de instancias específicas según tipo"""
     import json
     with open(path, encoding='utf-8') as f:
         data = json.load(f)
-    return {key: ItemModel(**val) for key, val in data.items()}
+    result: Dict[str, ItemModel] = {}
+    for key, val in data.items():
+        # Determinar subclase según campos específicos
+        if val.get("effect") is not None:
+            model_cls = ConsumableItemModel
+        elif val.get("equip_slot") is not None or val.get("durability") is not None:
+            model_cls = EquipableItemModel
+        elif val.get("quest_id") is not None:
+            model_cls = QuestItemModel
+        else:
+            model_cls = ItemModel
+        result[key] = model_cls(**val)
+    return result

@@ -1,7 +1,7 @@
 # Guía de desarrollo: Sistema de Inventario
 
 ## 1. Introducción
-Este documento describe el diseño e implementación del sistema de inventario para jugadores (incluyendo multijugador) y NPCs. Incluye:
+Este documento describe el diseño e implementación del sistema de inventario para jugadores y NPCs. Incluye:
 - Definición de ítems (monedas, experiencia, madera).
 - Plantillas de inventario para NPCs.
 - Componente de inventario en jugadores y NPCs.
@@ -60,7 +60,7 @@ project_root/
 - Desarrollar componentes ECS de inventario
 - Implementar UI básica y manejo de entrada
 - Soporte de drops y pickups en el mapa
-- Integración multijugador
+
 - Configurar tests y CI
 
 ## 2. Datos y formato JSON

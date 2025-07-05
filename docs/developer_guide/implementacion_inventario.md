@@ -11,7 +11,7 @@ Este documento describe el roadmap de alto nivel para llevar a producción la gu
 - Asegurarse de que el juego arranca sin errores actuales.
 
 ## 1. JSON Schemas y datos de ejemplo
-1. Crear esquemas JSON en `schemas/` para:
+1. Crear o comprobar o actualizar esquemas JSON en `schemas/` para:
    - `ItemsSchema.json`
    - `InventoryMonstersSchema.json`
    - `InventoryPlayerSchema.json`
@@ -22,7 +22,7 @@ Este documento describe el roadmap de alto nivel para llevar a producción la gu
 > Estado tras paso 1: Validación JSON completada sin errores.
 
 ## 2. Modelos de datos
-1. Implementar `ItemModel` (pydantic) y `ItemStack` en `src/roguelike_game/ecs/components/item_models.py`.
+1. Implementar o comprobar o actualizar `ItemModel` (pydantic) y `ItemStack` en `src/roguelike_game/ecs/components/item_models.py`.
 2. Escribir tests para carga de `items.json` y validación de atributos.
 
 > Estado tras paso 2: Tests de modelos pasan.

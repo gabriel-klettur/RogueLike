@@ -72,3 +72,16 @@ def test_quest_item_model_validation():
     assert relic.quest_id == relic_data['quest_id']
     with pytest.raises(ValueError):
         QuestItemModel(**raw['wood'])
+
+
+def test_load_items_instantiates_subclasses():
+    from roguelike_game.ecs.components.item_models import load_items, ItemModel, ConsumableItemModel, EquipableItemModel, QuestItemModel
+    items = load_items('data/items.json')
+    # Consumable
+    assert isinstance(items['health_potion'], ConsumableItemModel)
+    # Equipable
+    assert isinstance(items['iron_sword'], EquipableItemModel)
+    # Quest item
+    assert isinstance(items['ancient_relic_mask'], QuestItemModel)
+    # Default type
+    assert isinstance(items['gold'], ItemModel)
