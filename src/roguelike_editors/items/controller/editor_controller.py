@@ -2,21 +2,37 @@ import pygame
 from typing import Any, Dict
 from roguelike_editors.items.model.editor_model import ItemEditorModel
 from roguelike_editors.items.view.editor_view import ItemEditorView
+from roguelike_ui.widgets.text_input import TextInput
+from roguelike_ui.widgets.double_click_detector import DoubleClickDetector
+from roguelike_ui.services.json_persistence import save_to_json
+import os
 
 class ItemEditorController:
     """Controller para editor de ítems: maneja visibilidad y navegación."""
     def __init__(self, items: Dict[str, Any], assets: Dict[str, Any], font: pygame.font.Font):
         self.model = ItemEditorModel(items=items, assets=assets)
         self.view = ItemEditorView(assets, font)
-        # Para detección manual de doble click en propiedades
-        self.last_click_time = 0
-        self.last_click_key = None
-        self.double_click_interval = 500  # ms
-        pygame.key.set_repeat(300, 50)  # enable key repeat for continuous backspace and arrow keys
+        # Initialize text input and double-click detector
+        self.text_input = TextInput(font)
+        self.dc_detector = DoubleClickDetector()
+        self.view.text_input = self.text_input
 
     def handle_event(self, event: pygame.event.Event) -> None:
         # Inline editing input
-        if self.model.visible and self.model.editing_property:
+
+        if self.text_input.active:
+            if self.text_input.handle_event(event):
+                # sync model text and cursor for view
+                self.model.editing_text = self.text_input.text
+                self.model.editing_cursor = self.text_input.cursor
+                # on Enter, TextInput deactivated and commit
+                if not self.text_input.active:
+                    self._commit_edit()
+                return
+            # swallow other events when editing
+            return
+
+        if False and self.model.visible and self.model.editing_property:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RETURN:
                     self._commit_edit()
@@ -68,24 +84,24 @@ class ItemEditorController:
             mx, my = event.pos
             print(f"[DEBUG controller] MOUSEBUTTONDOWN clicks={getattr(event, 'clicks',1)} pos=({mx},{my}) entries={[k for (_r,k) in self.model.property_entries]}")
             
-            # Single-click on property: focus or start editing
+            # Click on property: focus or edit
             if hasattr(self.model, 'property_entries'):
                 for rect, key in self.model.property_entries:
                     if rect.collidepoint(mx, my):
-                        # Si ya había foco en esta propiedad, iniciar edición
-                        if self.model.focused_property == key:
+                        # Double-click detection
+                        if self.dc_detector.is_double_click(key):
+                            self.model.focused_property = key
                             self.model.editing_property = key
-                            # Prefill editing_text con valor actual
+                            # prefill and activate text input
                             item_id = self.model.selected_item_id or self.model.hovered_item_id
                             item = self.model.items.get(item_id)
-                            if item:
-                                val = getattr(item, key, "")
-                                self.model.editing_text = str(val)
-                                self.model.editing_cursor = len(self.model.editing_text)  # start cursor at end
-                            print(f"[DEBUG controller] editing_property={self.model.editing_property}, editing_text='{self.model.editing_text}'")
+                            initial = str(getattr(item, key, "")) if item else ""
+                            # preserve the existing value and cursor
+                            self.model.editing_text = initial
+                            self.model.editing_cursor = len(initial)
+                            self.text_input.activate(initial)  # caret at end by default
                         else:
                             self.model.focused_property = key
-                            print(f"[DEBUG controller] focused_property set to {self.model.focused_property}")
                         return
             # Si clic en panel de detalles, conservar foco/edición
             if hasattr(self.model, 'panel_rect') and self.model.panel_rect.collidepoint(mx, my):
@@ -177,21 +193,41 @@ class ItemEditorController:
                     converted = new_text
             except ValueError:
                 converted = new_text
-            setattr(item, key, converted)
-            # Guardar JSON
-            import json, os
-            path = os.path.join(os.getcwd(), "data", "items.json")
             try:
-                with open(path, encoding="utf-8") as f:
-                    data = json.load(f)
-                data[item_id][key] = converted
-                with open(path, "w", encoding="utf-8") as f:
-                    json.dump(data, f, ensure_ascii=False, indent=2)
+                setattr(item, key, converted)
             except Exception as e:
-                print(f"[ItemEditor] Error saving item {item_id}: {e}")
+                print(f"[ItemEditor] Invalid assignment for {key}: '{converted}', error: {e}")
+                # cleanup on invalid input
+                self.text_input.deactivate()
+                self.model.editing_property = None
+                self.model.editing_text = ""
+                self.model.editing_cursor = 0
+                return
+            # Guardar JSON
+            from roguelike_ui.services.json_persistence import load_from_json
+            path = os.path.join(os.getcwd(), "data", "items.json")
+            data = load_from_json(path)
+            entry = data.get(item_id, {})
+            entry[key] = converted
+            save_to_json(path, item_id, entry)
         self.model.editing_property = None
         self.model.editing_text = ""
+        self.model.editing_cursor = 0
     def draw(self, screen: pygame.Surface) -> None:
+        if not self.model.visible:
+            return
+        # base rendering
+        self.view.draw(screen, self.model)
+        # overlay text input when editing
+        if self.model.editing_property:
+            for rect_prop, key_prop in self.model.property_entries:
+                if key_prop == self.model.editing_property:
+                    prefix = f"{key_prop}: "
+                    x = rect_prop.x + self.view.font.size(prefix)[0]
+                    y = rect_prop.y
+                    self.text_input.draw(screen, x, y)
+                    break
+
         if not self.model.visible:
             return
         self.view.draw(screen, self.model)

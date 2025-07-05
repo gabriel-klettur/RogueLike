@@ -13,3 +13,4 @@ class ItemEditorModel:
     focused_property: Optional[str] = None
     editing_property: Optional[str] = None
     editing_text: str = ""
+    editing_cursor: int = 0
