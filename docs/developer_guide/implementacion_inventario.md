@@ -51,6 +51,7 @@ Este documento describe el roadmap de alto nivel para llevar a producción la gu
 ## 5. Integración de NPCs
 1. Actualizar función `on_npc_death` para usar `inventory_monsters.json`.
 2. Probar dropeo de NPCs en entorno de juego.
+3. Implementar transferencia de ítems entre inventarios (suelo, jugador y NPC), soportando recogida y depósito usando `ItemDropManager` y `InventoryComponent`.
 
 > Estado tras paso 5: NPCs dropean items según plantilla.
 
@@ -75,6 +76,24 @@ Este documento describe el roadmap de alto nivel para llevar a producción la gu
    - Ejecutar tests con `pytest`.
 
 > Estado tras paso 9: Pipeline verde y documentación confiable.
+
+## 9. Sistemas ECS y eventos
+
+**Componentes necesarios:**
+- `InventoryComponent`: Gestor de ranuras (slots) para jugador y NPC.
+- `PhysicalItemComponent`: Representa montones en el suelo con `drop_id`, `item_id`, `quantity`.
+- `CollectibleComponent`: Etiqueta para entidades recogibles.
+- `Position`: Coordenadas (tile o píxeles).
+- `PlayerTag` / `NPCTag`: Etiquetas para filtrar entidades.
+
+**Sistemas necesarios:**
+- `MapLoadDropsSystem`: Carga y spawnea drops del JSON en el mundo.
+- `NPCInventorySystem`: Inicializa el `InventoryComponent` en NPCs desde plantilla.
+- `NPCDeathSystem`: Convierte inventario de NPC en drops al morir.
+- `PickupSystem`: Gestiona la recogida de drops y actualiza inventarios.
+- `InventoryTransferSystem`: Transfiere ítems entre inventarios (suelo, jugador, NPC).
+- `MapPersistDropsSystem` (opcional): Persiste cambios en `inventory_map.json`.
+- `InventoryUISystem` & `InventoryInputSystem`: Dibuja y maneja la UI de inventario.
 
 ## 9. Sistemas ECS y eventos
 1. Crear `src/roguelike_game/ecs/systems/inventory_system.py` con métodos:
