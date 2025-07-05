@@ -82,14 +82,15 @@ class ItemEditorController:
 
         elif event.type == pygame.MOUSEBUTTONDOWN and self.model.visible and event.button == 1:
             mx, my = event.pos
-            print(f"[DEBUG controller] MOUSEBUTTONDOWN clicks={getattr(event, 'clicks',1)} pos=({mx},{my}) entries={[k for (_r,k) in self.model.property_entries]}")
+            entries = [k for (_r, k) in getattr(self.model, 'property_entries', [])]
+            print(f"[DEBUG controller] MOUSEBUTTONDOWN clicks={getattr(event, 'clicks',1)} pos=({mx},{my}) entries={entries}")
             
             # Click on property: focus or edit
             if hasattr(self.model, 'property_entries'):
                 for rect, key in self.model.property_entries:
                     if rect.collidepoint(mx, my):
                         # Double-click detection
-                        if self.dc_detector.is_double_click(key):
+                        if getattr(event, 'clicks', 1) >= 2 or self.dc_detector.is_double_click(key):
                             self.model.focused_property = key
                             self.model.editing_property = key
                             # prefill and activate text input

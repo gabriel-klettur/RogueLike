@@ -11,6 +11,14 @@ class TextInput:
         self.text = ""
         self.cursor = 0
         self.active = False
+        # selection and rendering state
+        self.selection_start = 0
+        self.selection_end = 0
+        self.last_draw_x = 0
+        self.last_draw_y = 0
+        self.last_rect = pygame.Rect(0, 0, 0, 0)
+        self.cursor = 0
+        self.active = False
 
     def activate(self, initial_text: str = "", select_all: bool = False):
         self.text = initial_text
@@ -49,7 +57,9 @@ class TextInput:
             if event.key == pygame.K_HOME:
                 new_cursor = 0
                 if mod & pygame.KMOD_SHIFT:
-                    self.selection_end = new_cursor
+                    anchor = self.selection_start
+                    self.selection_start = min(anchor, new_cursor)
+                    self.selection_end = max(anchor, new_cursor)
                 else:
                     self.selection_start = new_cursor
                     self.selection_end = new_cursor
@@ -59,7 +69,9 @@ class TextInput:
             if event.key == pygame.K_END:
                 new_cursor = len(self.text)
                 if mod & pygame.KMOD_SHIFT:
-                    self.selection_end = new_cursor
+                    anchor = self.selection_start
+                    self.selection_start = min(anchor, new_cursor)
+                    self.selection_end = max(anchor, new_cursor)
                 else:
                     self.selection_start = new_cursor
                     self.selection_end = new_cursor
