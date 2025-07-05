@@ -254,9 +254,19 @@ if input.is_key_pressed("I"):
 Ver secciones anteriores para fragmentos completos y adaptarlos al proyecto.
 
 ## 9. Extensiones futuras
-- **Orden y filtros** automáticos.
-- **Drop desde el suelo** hacia el inventario.
-- **Sistema de crafting**, comerciantes y equipamiento.
+- **Loot Tables y Drop Tables configurables**: Definir probabilidades ponderadas y reglas de rareza.
+- **Sistemas de Efectos y Estados**: Asociar buffs, debuffs, animaciones y condiciones de uso a los ítems.
+- **Expiración de Drops**: Auto-eliminación de montones tras un tiempo configurable.
+- **Modding y Scripting**: Permitir la carga dinámica de definiciones de ítems, drops y comportamientos.
+- **Localización e i18n**: Soporte multilenguaje para nombres, descripciones y tooltips.
+- **Validación de Assets en Build Pipeline**: Verificar integridad de iconos, sonidos y datos antes de compilación.
+- **Telemetría y Analytics**: Exportar eventos de inventario para análisis de jugabilidad y balance.
+- **Registro y Factory de Ítems**: Centralizar la creación y configuración de instancias de ítems.
+- **Cache y Particionamiento Espacial**: Optimizar búsqueda y spawn de drops por zona/chunks.
+- **Rendimiento y Escalabilidad**: Pools de objetos, profiling y optimizaciones de memoria.
+- **Interfaz Avanzada**: Split stacks, multi-select, contexto, shortcuts (shift-click, hotkeys).
+- **Seguridad y Anti-Cheat**: Validación de transferencias y estados en multiplayer.
+- **Documentación y Schema-Driven Development**: Generación automática de docs desde JSON Schema.
 
 ---
 

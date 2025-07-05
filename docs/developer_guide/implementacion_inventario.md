@@ -45,6 +45,7 @@ Este documento describe el roadmap de alto nivel para llevar a producción la gu
    - `pick_up(drop_id)`
    - `load_all()`
 2. Definir `inventory_map.json` y tests de flujo drop→pickup.
+3. Spawnear y visualizar drops en el mapa: implementar `MapLoadDropsSystem` que use `ItemDropManager.load_all()` para crear entidades con `PhysicalItemComponent`, `Position` y `CollectibleComponent`. Añadir tests de integración que verifiquen la correcta aparición de los ítems en la escena.
 
 > Estado tras paso 4: Drops en mapa funcionan y no rompen inventario.
 
@@ -76,6 +77,22 @@ Este documento describe el roadmap de alto nivel para llevar a producción la gu
    - Ejecutar tests con `pytest`.
 
 > Estado tras paso 9: Pipeline verde y documentación confiable.
+
+### Requisitos avanzados para un sistema de inventario robusto
+- **EventBus / MessageBroker**: Canal central para eventos (`SpawnDropEvent`, `PickupEvent`, `TransferEvent`).
+- **Integridad transaccional**: Operaciones de transferencia atómicas (commit/rollback) para evitar estados inconsistentes.
+- **Control de concurrencia**: Locks o semáforos al leer/escribir persistencia para evitar race conditions.
+- **Sincronización en red (multijugador)**: Propagar cambios de inventario a clientes y servidor.
+- **Logging y telemetría**: Registrar eventos de drops y pickups para auditoría y debugging.
+- **Pruebas E2E y mocks**: Mocks de `ItemDropManager` e `InventoryComponent`, tests integrales de flujo inventario.
+- **UI Data Binding**: Enlazar estados ECS con la interfaz para feedback y refresco automático.
+- **Inyección de dependencias / Singleton**: Registrar `DropService` e `InventoryService` para facilitar testing y mantenimiento.
+- **Loot Tables / Drop Tables configurables**: Definir tablas de probabilidad ponderadas para drops dinámicos.
+- **Sistema de Efectos y States**: Vincular ítems a efectos (buffs/debuffs), animaciones y condiciones de uso.
+- **Políticas de expiración de drops**: Auto-limpieza de montones tras tiempo configurable.
+- **Soporte de mods y scripting**: Cargar definiciones de ítems y drops desde plugins o scripts externos.
+- **Item Registry / Factory**: Centralizar la definición y construcción de instancias de ítems.
+
 
 ## 9. Sistemas ECS y eventos
 
