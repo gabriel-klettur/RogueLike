@@ -84,7 +84,19 @@ Este documento describe el roadmap de alto nivel para llevar a producción la gu
     - Método `transfer(item_id, qty, source_entity, target_entity)` que asegura transacciones atómicas y rollback en fallo.
     - Despacho de `TransferEvent` para UI y logs.
 
-5. Editor de inventarios (F6):
+5. Implementar `InventoryDropSystem` en `src/roguelike_game/ecs/systems/inventory/inventory_drop_system.py` con:
+    - Capturar acción de dropeo (p.ej. tecla D o botón UI) en `InventoryInputSystem`.
+    - Llamar a `ItemDropManager.create_drop(drop_id, item_id, quantity, zone_id, position)` para cada ítem seleccionado.
+    - Remover el ítem del `InventoryComponent` con `remove(item_id, quantity)`.
+    - Persistir en `data/inventory_monsters.json` o `data/inventory_player.json` mapeando `entity_id`.
+
+6. Implementar `InventoryPickupSystem` en `src/roguelike_game/ecs/systems/inventory/inventory_pickup_system.py` con:
+    - Detectar colisión/interacción con drops (`CollectibleComponent`).
+    - Llamar a `InventoryComponent.add(item_id, quantity)`.
+    - Usar `ItemDropManager.pick_up(drop_id)` y remover la entidad de drop.
+    - Persistir inventario actualizado en el JSON activo.
+
+7. Editor de inventarios (F6):
     - Capturar tecla F6 en `InventoryInputSystem` para activar modo editor.
     - Implementar `InventoryEditorSystem` (fase update/render) con UI overlay:
         - Selector de entidad (Player, NPCs).
@@ -92,12 +104,12 @@ Este documento describe el roadmap de alto nivel para llevar a producción la gu
         - Drag & drop entre slots.
         - Botones “Guardar plantilla” y “Aplicar cambios”.
 
-6. Persistencia y eventos:
+8. Persistencia y eventos:
     - Al guardar cambios de inventario (editor o runtime), actualizar los archivos activos (`data/inventory_monsters.json` / `data/inventory_player.json`) mapeando `entity_id` → datos serializados de `InventoryComponent`.
     - Aplicar cambios runtime en `InventoryComponent`.
     - Despachar eventos ECS: `InventoryEditorOpened`, `InventoryChanged`, `InventoryEditorClosed`.
 
-7. Tests y CI:
+9. Tests y CI:
     - Pruebas unitarias para `InventoryInitSystem` e `InventoryTransferSystem`.
     - Tests E2E para flujo de editor (F6 → editar → guardar → aplicar).
     - Configurar CI (GitHub Actions) para validar JSON y ejecutar pytest.

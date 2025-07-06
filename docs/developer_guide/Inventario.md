@@ -146,12 +146,26 @@ Este apartado describe la integración de plantillas de inventario y gestión un
     - Vacía `InventoryComponent.slots`.
     - Actualiza los archivos activos (`data/inventory_monsters.json` o `data/inventory_player.json`) para la persistencia.
 
-4. **Transferencia de ítems**:
+4. **InventoryDropSystem**:
+    - Implementar `InventoryDropSystem` en `src/roguelike_game/ecs/systems/inventory/inventory_drop_system.py` con:
+        - Capturar acción de dropeo (p.ej. tecla D o botón UI) en `InventoryInputSystem`.
+        - Llamar a `ItemDropManager.create_drop(drop_id, item_id, quantity, zone_id, position)`.
+        - Remover el ítem del `InventoryComponent` con `remove(item_id, quantity)`.
+        - Persistir cambio en `data/inventory_monsters.json` o `data/inventory_player.json` mapeando `entity_id`.
+
+5. **InventoryPickupSystem**:
+    - Implementar `InventoryPickupSystem` en `src/roguelike_game/ecs/systems/inventory/inventory_pickup_system.py` con:
+        - Detectar colisión/interacción con drops (`CollectibleComponent`).
+        - Añadir al inventario con `InventoryComponent.add(item_id, quantity)`.
+        - Usar `ItemDropManager.pick_up(drop_id)` y eliminar la entidad de drop.
+        - Persistir cambio en JSON activo.
+
+6. **Transferencia de ítems**:
     - Crear `InventoryTransferSystem` en `src/roguelike_game/ecs/systems/inventory/inventory_transfer_system.py` con:
         - Método `transfer(item_id, qty, source_entity, target_entity)` garantizando transacciones atómicas y rollback.
         - Despacho de eventos `TransferEvent` para UI y logs.
 
-5. **Editor de inventarios (F6)**:
+7. **Editor de inventarios (F6)**:
     - Capturar tecla F6 en `InventoryInputSystem` para activar modo editor.
     - Implementar `InventoryEditorSystem` (fase *update*/*render*) con UI overlay:
         - Selector de entidad (Player, NPCs).
@@ -159,15 +173,19 @@ Este apartado describe la integración de plantillas de inventario y gestión un
         - Drag & drop entre slots.
         - Botones “Guardar plantilla” y “Aplicar cambios”.
 
-6. **Persistencia y eventos**:
-    - Guardar plantillas modificadas en `data/inventory_monsters.json` e `inventory_player.json`.
+8. **Persistencia y eventos**:
+    - Al guardar cambios de inventario, actualizar los archivos activos (`data/inventory_monsters.json` / `data/inventory_player.json`) mapeando `entity_id` → datos serializados de `InventoryComponent`.
     - Aplicar cambios runtime en `InventoryComponent`.
-    - Despacho de eventos ECS: `InventoryEditorOpened`, `InventoryChanged`, `InventoryEditorClosed`.
+    - Despachar eventos ECS: `InventoryEditorOpened`, `InventoryChanged`, `InventoryEditorClosed`.
 
-7. **Pruebas y CI**:
-    - Unit tests para `InventoryInitSystem`, `NPCDeathSystem`, `InventoryTransferSystem`.
-    - E2E tests de flujo de integración y editor.
-    - CI: Validar JSON y ejecutar pytest.
+9. **Pruebas y CI**:
+    - Pruebas unitarias para `InventoryInitSystem`, `NPCDeathSystem`, `InventoryDropSystem`, `InventoryPickupSystem`, `InventoryTransferSystem`.
+    - Tests E2E para flujo de dropeo/recolección, transferencia, editor.
+    - CI (GitHub Actions): validar JSON, ejecutar pytest.
+
+10. **Sistemas futuros**:
+    - **NPCTradeSystem**: implementar UI de comercio, eventos `TradeRequest`, `TradeExecute`, y rollback en fallo.
+    - **ContainerComponent/ContainerSystem**: soportar contenedores (cofres, baúles) con inventarios propios y transferencia genérica.
 
 ## 5. Componente de inventario en entidades (jugadores y NPCs)
 
