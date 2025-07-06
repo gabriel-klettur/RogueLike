@@ -6,6 +6,7 @@ Sistema que traduce el estado de teclado a InputComponent y actualiza Velocity.
 import pygame
 import time
 import math
+from roguelike_game.ecs.systems.inventory.drop_drag_system import DropDragSystem
 
 from roguelike_game.ecs.components.ai.wants_to_cast import WantsToCastSpell
 from roguelike_engine.utils.benchmark import benchmark
@@ -158,24 +159,32 @@ class InputSystem:
                 print(f"[DEBUG][{time.time():.3f}] eid={eid} spell_teleport -> teleport")
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='teleport')
                 inp.spell_teleport = False
-            # Actualizar estado del click y detectar flanco ascendente
-            curr_click = bool(pygame.mouse.get_pressed()[0])
-            inp.click = curr_click
-            prev = self.prev_click.get(eid, False)
-            # Generar intención de fireball sólo en flanco ascendente
-            if eid in world.components.get('PlayerTagComponent', {}) and curr_click and not prev:
-                world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='fireball')
-            # Guardar estado click para próxima iteración
-            self.prev_click[eid] = curr_click
-            # Lanzar el beam con click del medio
-            middle = pygame.mouse.get_pressed()[1]
-            if middle:
-                print(f"[DEBUG][{time.time():.3f}] eid={eid} middle-click -> laser_beam")
-                world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='laser_beam')
-            # Detectar dash (right-click) por flanco ascendente
-            curr_right = bool(pygame.mouse.get_pressed()[2])
-            prev_r = self.prev_right.get(eid, False)
-            if curr_right and not prev_r:
-                print(f"[DEBUG][{time.time():.3f}] eid={eid} right-click -> dash")
-                world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='dash')
-            self.prev_right[eid] = curr_right
+            # Control de click: desactivar cuando se arrastra un ítem
+            dragging = any(isinstance(s, DropDragSystem) and s.dragging_eid is not None for s in getattr(world, 'update_systems', []))
+            if dragging:
+                inp.click = False
+                self.prev_click[eid] = False
+                curr_right = False
+                self.prev_right[eid] = False
+            else:
+                # Actualizar estado del click y detectar flanco ascendente
+                curr_click = bool(pygame.mouse.get_pressed()[0])
+                inp.click = curr_click
+                prev = self.prev_click.get(eid, False)
+                # Generar intención de fireball sólo en flanco ascendente
+                if eid in world.components.get('PlayerTagComponent', {}) and curr_click and not prev:
+                    world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='fireball')
+                # Guardar estado click para próxima iteración
+                self.prev_click[eid] = curr_click
+                # Lanzar el beam con click del medio
+                middle = pygame.mouse.get_pressed()[1]
+                if middle:
+                    print(f"[DEBUG][{time.time():.3f}] eid={eid} middle-click -> laser_beam")
+                    world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='laser_beam')
+                # Detectar dash (right-click) por flanco ascendente
+                curr_right = bool(pygame.mouse.get_pressed()[2])
+                prev_r = self.prev_right.get(eid, False)
+                if curr_right and not prev_r:
+                    print(f"[DEBUG][{time.time():.3f}] eid={eid} right-click -> dash")
+                    world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='dash')
+                self.prev_right[eid] = curr_right

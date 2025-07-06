@@ -63,11 +63,11 @@ def get_update_system_classes():
     """
     return [
         FSMSystem,
-        PlayerFacingSystem, FacingSystem, InputSystem,
+        PlayerFacingSystem, FacingSystem, DropDragSystem, InputSystem,
         MovementCollisionSystem,
         MeleeCombatSystem, SpellCastingSystem, ArcaneFlameSystem, SmokeSystem, SmokeEmitterSystem, SphereMagicShieldSystem, TeleportSystem, FireworkLaunchSystem, AuraSystem, ParticleSystem, ExplosionSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, LightningEmitterSystem, FireballSystem, LightningSystem, DashSystem, HitboxSystem,
         TrailSystem,
-        AnimationSystem, FlashSystem, SpawnSystem, MapLoadDropsSystem, DropDragSystem, ExpansionSystem,
+        AnimationSystem, FlashSystem, SpawnSystem, MapLoadDropsSystem, ExpansionSystem,
     ]
 
 def get_render_system_classes():
