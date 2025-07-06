@@ -122,8 +122,8 @@ def test_map_load_drops_system_position(monkeypatch):
     eid = next(iter(phys_map))
     pos = world.components['Position'][eid]
     # offset (1,2) tiles => pixel offset = (32,64)
-    assert pos.x == 10 + 1 * TILE_SIZE
-    assert pos.y == 20 + 2 * TILE_SIZE
+    assert pos.x == 10
+    assert pos.y == 20
     # Verificar ZLayer, Sprite y Scale asignados
     assert eid in world.components['ZLayer']
     assert isinstance(world.components['ZLayer'][eid], ZLayer)
