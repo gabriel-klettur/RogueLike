@@ -1,4 +1,14 @@
 import pygame
+# Initialize font module to ensure SysFont works in tests
+pygame.font.init()
+# Wrap SysFont to ensure font module is initialized on each call
+_orig_sysfont = pygame.font.SysFont
+
+def _safe_sysfont(*args, **kwargs):
+    pygame.font.init()
+    return _orig_sysfont(*args, **kwargs)
+
+pygame.font.SysFont = _safe_sysfont
 from typing import Any, Dict
 from roguelike_editors.items.model.editor_model import ItemEditorModel
 from roguelike_editors.items.view.editor_view import ItemEditorView

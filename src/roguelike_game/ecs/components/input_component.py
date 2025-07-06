@@ -26,4 +26,6 @@ class InputComponent:
         self.spell_sphere_magic_shield: bool = False
         self.spell_teleport: bool = False
         self.click: bool = False
+        self.drop: bool = False
+        self.toggle_editor: bool = False
 # Path: src/roguelike_game/ecs/components/input_component.py

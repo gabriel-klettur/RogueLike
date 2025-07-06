@@ -48,14 +48,15 @@ class InputConfig:
                 "spell_sphere_magic_shield": "K_h",
                 "spell_teleport": "K_j",
                 "pause": "K_ESCAPE",
-                "toggle_item_editor": "K_F7"
+                "toggle_item_editor": "K_F6",
+                "drop": "K_d"
             }
             os.makedirs(os.path.dirname(self.path), exist_ok=True)
             with open(self.path, 'w', encoding='utf-8') as f:
                 json.dump(self.bindings, f, indent=4)
                 # Toggle Item Editor binding
         if "toggle_item_editor" not in self.bindings:
-            self.bindings["toggle_item_editor"] = "K_F7"
+            self.bindings["toggle_item_editor"] = "K_F6"
             self.save()
         # Asegurar binding para lightning
         if "spell_lightning" not in self.bindings:
@@ -72,7 +73,7 @@ class InputConfig:
     def get_key(self, action):
         # Fallback para Item Editor toggle
         if action == "toggle_item_editor":
-            return pygame.K_F7
+            return pygame.K_F6
         # Fallback para firework launch si no está en bindings
         if action == "spell_firework_launch":
             return pygame.K_v

@@ -26,6 +26,8 @@ class InputSystem:
         # Mapear estado previo de click y right-click para detección de flanco ascendente
         self.prev_click = {}
         self.prev_right = {}
+        self.prev_drop = {}
+        self.prev_toggle = {}
         # Cargar configuración de teclas desde JSON
         self.config = InputConfig(config_path)
 
@@ -159,6 +161,25 @@ class InputSystem:
                 print(f"[DEBUG][{time.time():.3f}] eid={eid} spell_teleport -> teleport")
                 world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='teleport')
                 inp.spell_teleport = False
+            # Toggle editor mode: detectar flanco ascendente
+            toggle_key = self.config.get_key("toggle_item_editor")
+            curr_toggle = bool(keys[toggle_key])
+            prev_toggle = self.prev_toggle.get(eid, False)
+            if curr_toggle and not prev_toggle:
+                inp.toggle_editor = True
+            else:
+                inp.toggle_editor = False
+            self.prev_toggle[eid] = curr_toggle
+
+            drop_key = self.config.get_key("drop")
+            curr_drop = bool(keys[drop_key])
+            prev_d = self.prev_drop.get(eid, False)
+            if curr_drop and not prev_d:
+                inp.drop = True
+            else:
+                inp.drop = False
+            self.prev_drop[eid] = curr_drop
+
             # Control de click: desactivar cuando se arrastra un ítem
             dragging = any(isinstance(s, DropDragSystem) and s.dragging_eid is not None for s in getattr(world, 'update_systems', []))
             if dragging:
