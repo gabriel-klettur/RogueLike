@@ -3,23 +3,32 @@
     "item_id": "gold",
     "quantity": 3,
     "zone_id": "Forest",
-    "tile": { "x": 10, "y": 20 },
     "schema_version": "1.0.0",
-    "z_layer": 1
+    "z_layer": 1,
+    "position": {
+      "x": 325.0,
+      "y": 1923.9999999999998
+    }
   },
   "drop2": {
     "item_id": "gold",
     "quantity": 3,
     "zone_id": "Forest",
-    "tile": { "x": 11, "y": 20 },
     "schema_version": "1.0.0",
-    "z_layer": 1
+    "z_layer": 1,
+    "position": {
+      "x": 234.71067811865424,
+      "y": 2093.2893218813424
+    }
   },
   "drop3": {
     "item_id": "gold",
     "quantity": 3,
     "zone_id": "Forest",
-    "tile": { "x": 12, "y": 20 },
+    "tile": {
+      "x": 12,
+      "y": 20
+    },
     "schema_version": "1.0.0",
     "z_layer": 1
   },
@@ -27,15 +36,21 @@
     "item_id": "gold",
     "quantity": 3,
     "zone_id": "Forest",
-    "tile": { "x": 13, "y": 20 },
     "schema_version": "1.0.0",
-    "z_layer": 1
+    "z_layer": 1,
+    "position": {
+      "x": 380.0,
+      "y": 2114.0
+    }
   },
   "drop5": {
     "item_id": "gold",
     "quantity": 3,
     "zone_id": "Forest",
-    "tile": { "x": 14, "y": 20 },
+    "tile": {
+      "x": 14,
+      "y": 20
+    },
     "schema_version": "1.0.0",
     "z_layer": 1
   },
@@ -43,7 +58,10 @@
     "item_id": "gold",
     "quantity": 3,
     "zone_id": "Forest",
-    "tile": { "x": 15, "y": 20 },
+    "tile": {
+      "x": 15,
+      "y": 20
+    },
     "schema_version": "1.0.0",
     "z_layer": 1
   },
@@ -51,15 +69,21 @@
     "item_id": "gold",
     "quantity": 3,
     "zone_id": "Forest",
-    "tile": { "x": 16, "y": 20 },
     "schema_version": "1.0.0",
-    "z_layer": 1
+    "z_layer": 1,
+    "position": {
+      "x": 477.0,
+      "y": 2315.0
+    }
   },
   "drop8": {
     "item_id": "gold",
     "quantity": 3,
     "zone_id": "Forest",
-    "position": { "x": 10, "y": 10 },
+    "position": {
+      "x": 10,
+      "y": 10
+    },
     "schema_version": "1.0.0",
     "z_layer": 1
   },
@@ -67,7 +91,10 @@
     "item_id": "gold",
     "quantity": 3,
     "zone_id": "Forest",
-    "position": { "x": 20, "y": 20 },
+    "position": {
+      "x": 20,
+      "y": 20
+    },
     "schema_version": "1.0.0",
     "z_layer": 9
   },
@@ -75,7 +102,10 @@
     "item_id": "gold",
     "quantity": 3,
     "zone_id": "Forest",
-    "position": { "x": 30, "y": 30 },
+    "position": {
+      "x": 30,
+      "y": 30
+    },
     "schema_version": "1.0.0",
     "z_layer": 9
   },
@@ -83,7 +113,10 @@
     "item_id": "gold",
     "quantity": 3,
     "zone_id": "Forest",
-    "position": { "x": 40, "y": 40 },
+    "position": {
+      "x": 40,
+      "y": 40
+    },
     "schema_version": "1.0.0",
     "z_layer": 9
   },
@@ -91,7 +124,10 @@
     "item_id": "gold",
     "quantity": 3,
     "zone_id": "Forest",
-    "position": { "x": 50, "y": 50 },
+    "position": {
+      "x": 50,
+      "y": 50
+    },
     "schema_version": "1.0.0",
     "z_layer": 9
   }

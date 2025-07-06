@@ -68,3 +68,30 @@ class ItemDropManager:
         Carga todos los drops persistidos desde inventory_map.json.
         """
         return list(self._data.values())
+
+    def update_drop(self, drop_id: str, tile=None, position=None) -> None:
+        """
+        Actualiza la posición de un drop existente en el JSON.
+        tile: dict u objeto con atributos x,y; position: dict u objeto con atributos x,y.
+        """
+        if drop_id not in self._data:
+            raise KeyError(f"Drop '{drop_id}' no existe")
+        entry = self._data[drop_id]
+        # Eliminar coordenadas anteriores
+        entry.pop('tile', None)
+        entry.pop('position', None)
+        if tile is not None:
+            if hasattr(tile, 'x') and hasattr(tile, 'y'):
+                coords = {'x': tile.x, 'y': tile.y}
+            else:
+                coords = {'x': tile.get('x'), 'y': tile.get('y')}
+            entry['tile'] = coords
+        elif position is not None:
+            if hasattr(position, 'x') and hasattr(position, 'y'):
+                coords = {'x': position.x, 'y': position.y}
+            else:
+                coords = {'x': position.get('x'), 'y': position.get('y')}
+            entry['position'] = coords
+        else:
+            raise ValueError("Debe especificar 'tile' o 'position'")
+        self._persist()

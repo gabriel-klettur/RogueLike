@@ -51,6 +51,7 @@ from roguelike_game.ecs.systems.combat.spells.lightning_system import LightningS
 from roguelike_game.ecs.systems.debug.entities_debug_system import EntitiesDebugSystem
 from roguelike_game.ecs.systems.expansion_system import ExpansionSystem
 from roguelike_game.ecs.systems.inventory.map_load_drops_system import MapLoadDropsSystem
+from roguelike_game.ecs.systems.inventory.drop_drag_system import DropDragSystem
 # from roguelike_game.ecs.systems.inventory.drop_render_system import DropRenderSystem  # drops handled by RenderSystem
 from roguelike_game.ecs.systems.rendering.drop_hover_system import DropHoverRenderSystem
 from roguelike_game.ecs.systems.rendering.grayscale_render_system import GrayscaleRenderSystem
@@ -66,7 +67,7 @@ def get_update_system_classes():
         MovementCollisionSystem,
         MeleeCombatSystem, SpellCastingSystem, ArcaneFlameSystem, SmokeSystem, SmokeEmitterSystem, SphereMagicShieldSystem, TeleportSystem, FireworkLaunchSystem, AuraSystem, ParticleSystem, ExplosionSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, LightningEmitterSystem, FireballSystem, LightningSystem, DashSystem, HitboxSystem,
         TrailSystem,
-        AnimationSystem, FlashSystem, SpawnSystem, MapLoadDropsSystem, ExpansionSystem,
+        AnimationSystem, FlashSystem, SpawnSystem, MapLoadDropsSystem, DropDragSystem, ExpansionSystem,
     ]
 
 def get_render_system_classes():

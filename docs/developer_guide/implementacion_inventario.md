@@ -51,6 +51,11 @@ Este documento describe el roadmap de alto nivel para llevar a producción la gu
     - Establecer `ZLayer`: `world.components['ZLayer'][eid] = ZLayer(layer)`.
     - Añadir `Sprite` (ruta de ícono) y `Scale` (factor `scale_map`) a la entidad.
     Estos componentes permiten que el sistema de renderizado principal (`RendererManager`) dibuje los drops junto con otras entidades, ordenándolos por `ZLayer` y posición Y. El antiguo `DropRenderSystem` ha sido eliminado.
+5. Implementar `DropHoverRenderSystem` para hover sobre drops en el mapa:
+    - Registrar `DropHoverRenderSystem` en `system_registry.get_render_system_classes()`.
+    - Detectar hover del cursor sobre entidades de drop (colisión con `Sprite` y `ZLayer`), priorizando la capa más alta.
+    - Resaltar el drop hovered con un borde amarillo.
+    - Mostrar un cuadro de información semitransparente (tooltip) con el nombre y descripción del ítem cerca del cursor.
 
 > Estado tras paso 4: Drops en mapa funcionan y no rompen inventario.
 

@@ -174,6 +174,8 @@ for event in pygame.event.get():
 editor.draw(screen)
 ```
 
+> **Hover en mapas:** Con la nueva `DropHoverRenderSystem`, al mover el cursor sobre un ítem en el mapa éste se resalta con un borde amarillo y aparece un tooltip con su nombre y descripción.
+
 ## 7. API Reference
 ```python
 from pydantic import BaseModel

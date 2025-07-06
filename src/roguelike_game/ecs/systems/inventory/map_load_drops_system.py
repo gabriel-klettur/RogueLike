@@ -43,9 +43,12 @@ class MapLoadDropsSystem:
                 global_ty = offset_ty + drop_ty
                 px, py = world.map_manager.get_spawn_pixel((global_tx, global_ty))
                 pos = Position(px, py)
-            else:
+            elif 'position' in data:
                 coords = data['position']
-                pos = Position(coords['x'] + offset_tx * TILE_SIZE, coords['y'] + offset_ty * TILE_SIZE)
+                # Cargar posición absoluta en píxeles guardada previamente
+                pos = Position(coords['x'], coords['y'])
+            else:
+                raise ValueError(f"Drop '{drop_id}' requiere 'tile' o 'position'")
             eid = world.create_entity()
             world.components['PhysicalItemComponent'][eid] = PhysicalItemComponent(
                 drop_id, item_id, quantity, zone_id
