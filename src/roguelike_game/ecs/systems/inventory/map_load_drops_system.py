@@ -5,6 +5,11 @@ from roguelike_game.ecs.components.collectible_component import CollectibleCompo
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.ecs.utils.map_utils import get_zone_offset
+from roguelike_game.ecs.components.transform.z_layer import ZLayer
+from roguelike_engine.config.config_z_layer import DEFAULT_Z
+from roguelike_game.ecs.components.item_models import load_items
+from roguelike_game.ecs.components.rendering.sprite import Sprite
+from roguelike_game.ecs.components.transform.scale import Scale
 
 class MapLoadDropsSystem:
     """
@@ -14,6 +19,8 @@ class MapLoadDropsSystem:
         self.perf_log = perf_log
         path = os.path.join(os.getcwd(), 'data', 'inventory_map.json')
         self.drop_manager = ItemDropManager(path)
+        items_path = os.path.join(os.getcwd(), 'data', 'items.json')
+        self.items = load_items(items_path)
         self._loaded = False
 
     def update(self, world, camera=None):
@@ -45,5 +52,26 @@ class MapLoadDropsSystem:
             )
             world.components['Position'][eid] = pos
             world.components['CollectibleComponent'][eid] = CollectibleComponent()
+            # Asignar ZLayer para ordenar renderizado
+            model = self.items.get(item_id)
+            # Priorizar z_layer definido en inventory_map.json
+            layer = data.get('z_layer')
+            if layer is None:
+                # Si no hay override en el drop, usar z_layer del modelo o DEFAULT_Z
+                layer = getattr(model, 'z_layer', None) if model else None
+            if layer is None:
+                layer = DEFAULT_Z
+            world.components['ZLayer'][eid] = ZLayer(layer)
+            # Añadir Sprite y Scale para que RendererManager los dibuje en orden Z
+            if model:
+                # elegir icon_small o fallback icon
+                if getattr(model, "icon_small", None):
+                    icon_path = model.icon_small
+                else:
+                    ic = getattr(model, "icon", None)
+                    icon_path = ic[0] if isinstance(ic, list) else ic
+                if icon_path:
+                    world.components["Sprite"][eid] = Sprite(icon_path)
+                    world.components["Scale"][eid] = Scale(getattr(model, "scale_map", 1.0))
             print(f"[MapLoadDropsSystem] Spawned drop '{drop_id}' item '{item_id}' at ({pos.x},{pos.y}) zone '{zone_id}' eid={eid}")
         self._loaded = True

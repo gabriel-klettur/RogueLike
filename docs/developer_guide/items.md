@@ -1,5 +1,5 @@
 # Guía de desarrollo: Especificación de Ítems
-> **Nota:** ItemModel incluye nuevas propiedades `scale_editor`, `scale_map` y `scale_inventory` para controlar el tamaño de visualización en distintos contextos.
+> **Nota:** ItemModel incluye nuevas propiedades `scale_editor`, `scale_map`, `scale_inventory` y `z_layer` para controlar el tamaño y la capa de renderizado en distintos contextos.
 
 Este documento detalla los metadatos y atributos de cada ítem disponible en el juego.
 
@@ -119,6 +119,7 @@ from pydantic import BaseModel
 from typing import Optional, List, Union
 
 class ItemModel(BaseModel):
+    z_layer: Optional[int] = None  # Capa de renderizado opcional, menor valor = renderiza más abajo
     id: str
     name: str
     description: str
@@ -177,6 +178,7 @@ from pydantic import BaseModel
 from typing import Optional, List, Union
 
 class ItemModel(BaseModel):
+    z_layer: Optional[int] = None  # Capa de renderizado opcional, menor valor = renderiza más abajo
     """Modelo de datos para ítems cargados del JSON"""
     id: str
     name: str

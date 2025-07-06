@@ -104,6 +104,22 @@ roguelike
 
 ---
 
+---
+
+## 🎲 Sistema de Drops
+
+El sistema `MapLoadDropsSystem` carga ítems dropeados desde `data/inventory_map.json` asignándoles los componentes:
+
+- `Position`: posición en el mundo.
+- `PhysicalItemComponent`: metadatos `item_id` y cantidad.
+- `ZLayer`: capa de renderizado.
+- `Sprite`: componente de imagen.
+- `Scale`: factor de escala.
+
+La renderización de drops se realiza con el `RenderSystem` junto al jugador y otras entidades, ordenando por `ZLayer` y posición Y. El antiguo `DropRenderSystem` ha sido eliminado.
+
+---
+
 ## 👾 FSM para NPCs
 
 Esta versión incluye un sistema de **Máquina de Estados Finita (FSM)** para controlar comportamiento de NPCs:

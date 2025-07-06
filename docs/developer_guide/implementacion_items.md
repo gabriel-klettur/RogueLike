@@ -8,7 +8,7 @@ Este documento describe el roadmap de alto nivel para llevar a producción la gu
 - Código base debe compilar y los tests actuales pasar.
 
 ## 1. JSON Schema y datos de ejemplo
-1. Crear `schemas/ItemSchema.json` con la definición completa de campos y validaciones.
+1. Crear `schemas/ItemSchema.json` con la definición completa de campos y validaciones, incluyendo un campo opcional `z_layer` (int) para definir la capa de renderizado de cada ítem.
 2. Generar ejemplos mínimos en `data/items.json` que cumplan el esquema.
 3. Validar con:
    ```bash

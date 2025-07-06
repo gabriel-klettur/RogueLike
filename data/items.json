@@ -10,7 +10,8 @@
       "assets/items/exp_orb_4.png"
     ],
     "description": "Objeto que otorga puntos de experiencia al recogerse.",
-    "stackable": false
+    "stackable": false,
+    "z_layer": 1
   },
   "gold": {
     "id": "gold",
@@ -23,18 +24,20 @@
     "scale_map": 0.04,
     "scale_inventory": 0.75,
     "max_stack": 999,
-    "threshold": 10
+    "threshold": 10,
+    "z_layer": 1
   },
   "wood": {
     "id": "wood",
     "name": "Madera",
     "icon": "assets/items/wood_log_bundle.png",
     "description": "Recurso básico de madera.",
-    "stackable": true,
+    "stackable": true,  
     "scale_editor": 1.0,
     "scale_map": 0.5,
     "scale_inventory": 0.75,
-    "max_stack": 99
+    "max_stack": 99,
+    "z_layer": 1
   },
   "health_potion": {
     "id": "health_potion",
@@ -46,7 +49,8 @@
     "scale_map": 0.5,
     "scale_inventory": 0.75,
     "max_stack": 5,
-    "effect": "heal_50"
+    "effect": "heal_50",
+    "z_layer": 1
   },
   "iron_sword": {
     "id": "iron_sword",
@@ -67,7 +71,8 @@
     "weight": 3.2,
     "value": 50,
     "rarity": "common",
-    "level_requirement": 1
+    "level_requirement": 1,
+    "z_layer": 1
   },
   "ancient_relic_mask": {
     "id": "ancient_relic_mask",
@@ -78,7 +83,8 @@
     "scale_editor": 1.0,
     "scale_map": 0.5,
     "scale_inventory": 0.75,
-    "quest_id": "123e4567-e89b-12d3-a456-426614174000"
+    "quest_id": "123e4567-e89b-12d3-a456-426614174000",
+    "z_layer": 1
   },
   "bucket": {
     "id": "bucket",
@@ -89,7 +95,8 @@
     "scale_editor": 1.0,
     "scale_map": 0.5,
     "scale_inventory": 0.75,
-    "max_stack": 1
+    "max_stack": 1,
+    "z_layer": 1
   },
   "bucket_water": {
     "id": "bucket_water",
@@ -101,19 +108,21 @@
     "scale_map": 0.5,
     "scale_inventory": 0.75,
     "max_stack": 1,
-    "effect": "water_source"
+    "effect": "water_source",
+    "z_layer": 1
   },
   "energy_potion": {
     "id": "energy_potion",
     "name": "Poción de Energía",
     "description": "Restaura energía al consumirse.",
     "icon": "assets/items/energy_potion.png",
-    "stackable": true,
+    "stackable": true,    
     "scale_editor": 1.0,
     "scale_map": 0.5,
     "scale_inventory": 0.75,
     "max_stack": 5,
-    "effect": "energize_50"
+    "effect": "energize_50",
+    "z_layer": 1    
   },
   "explosion_potion": {
     "id": "explosion_potion",
@@ -125,7 +134,8 @@
     "scale_map": 0.5,
     "scale_inventory": 0.75,
     "max_stack": 3,
-    "effect": "explode_area"
+    "effect": "explode_area",
+    "z_layer": 1
   },
   "food_chicken": {
     "id": "food_chicken",
@@ -137,14 +147,16 @@
     "scale_map": 0.5,
     "scale_inventory": 0.75,
     "max_stack": 10,
-    "effect": "restore_hunger_30"
+    "effect": "restore_hunger_30",
+    "z_layer": 1
   },
   "image_item_not_found": {
     "id": "image_item_not_found",
     "name": "Ítem Desconocido",
     "description": "Representa un ítem no encontrado en el juego.",
     "icon": "assets/items/image_item_not_found.png",
-    "stackable": false
+    "stackable": false,
+    "z_layer": 1
   },
   "iron_ingot": {
     "id": "iron_ingot",
@@ -155,7 +167,8 @@
     "scale_editor": 1.0,
     "scale_map": 0.5,
     "scale_inventory": 0.75,
-    "max_stack": 50
+    "max_stack": 50,
+    "z_layer": 1
   },
   "mana_potion": {
     "id": "mana_potion",
@@ -167,7 +180,8 @@
     "scale_map": 0.5,
     "scale_inventory": 0.75,
     "max_stack": 6,
-    "effect": "restore_mana_50"
+    "effect": "restore_mana_50",
+    "z_layer": 1
   },
   "poison_potion": {
     "id": "poison_potion",
@@ -179,7 +193,8 @@
     "scale_map": 0.5,
     "scale_inventory": 0.75,
     "max_stack": 5,
-    "effect": "poison_area"
+    "effect": "poison_area",
+    "z_layer": 1
   },
   "wizard_staff_lvl_1": {
     "id": "wizard_staff_lvl_1",
@@ -198,7 +213,8 @@
     "weight": 2.5,
     "value": 150,
     "rarity": "uncommon",
-    "level_requirement": 2
+    "level_requirement": 2,
+    "z_layer": 1
   },
   "wizard_staff_lvl_2": {
     "id": "wizard_staff_lvl_2",
@@ -217,7 +233,8 @@
     "weight": 2.7,
     "value": 300,
     "rarity": "rare",
-    "level_requirement": 5
+    "level_requirement": 5,
+    "z_layer": 1
   },
   "wizard_staff_lvl_3": {
     "id": "wizard_staff_lvl_3",
@@ -236,6 +253,7 @@
     "weight": 3.0,
     "value": 600,
     "rarity": "epic",
-    "level_requirement": 10
+    "level_requirement": 10,
+    "z_layer": 1
   }
 }

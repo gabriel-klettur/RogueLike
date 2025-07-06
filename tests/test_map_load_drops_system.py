@@ -1,4 +1,5 @@
 import pytest
+import pygame
 from types import SimpleNamespace
 
 from roguelike_engine.config.config_tiles import TILE_SIZE
@@ -8,6 +9,9 @@ from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.collectible_component import CollectibleComponent
 from roguelike_game.ecs.utils import map_utils
 import roguelike_game.ecs.systems.inventory.map_load_drops_system as mlds
+from roguelike_game.ecs.components.transform.z_layer import ZLayer
+from roguelike_game.ecs.components.rendering.sprite import Sprite
+from roguelike_game.ecs.components.transform.scale import Scale
 
 class DummyMapManager:
     def get_spawn_pixel(self, tile_coords):
@@ -20,7 +24,10 @@ class DummyWorld:
         self.components = {
             'PhysicalItemComponent': {},
             'Position': {},
-            'CollectibleComponent': {}
+            'CollectibleComponent': {},
+            'ZLayer': {},
+            'Sprite': {},
+            'Scale': {}
         }
         self._next_eid = 1
 
@@ -36,6 +43,13 @@ def suppress_persistence(monkeypatch):
         'roguelike_game.managers.map.item_drop_manager.ItemDropManager._persist',
         lambda self: None
     )
+    monkeypatch.setattr('roguelike_engine.utils.loader.load_image', lambda path, scale=None: pygame.Surface((1,1)))
+    monkeypatch.setattr('roguelike_game.ecs.components.rendering.sprite.load_image', lambda *args, **kwargs: pygame.Surface((1,1)))
+    # Stub load_items for MapLoadDropsSystem to include required models
+    monkeypatch.setattr('roguelike_game.ecs.systems.inventory.map_load_drops_system.load_items', lambda path: {
+        'gold': SimpleNamespace(icon_small=None, icon='gold.png', scale_map=1.0, z_layer=1),
+        'silver': SimpleNamespace(icon_small=None, icon='silver.png', scale_map=1.0, z_layer=1)
+    })
     return monkeypatch
 
 
@@ -74,6 +88,13 @@ def test_map_load_drops_system_tile(monkeypatch):
     assert pos.y == 8 * TILE_SIZE
     # CollectibleComponent exists
     assert isinstance(world.components['CollectibleComponent'][eid], CollectibleComponent)
+    # Verificar ZLayer, Sprite y Scale asignados
+    assert eid in world.components['ZLayer']
+    assert isinstance(world.components['ZLayer'][eid], ZLayer)
+    assert eid in world.components['Sprite']
+    assert isinstance(world.components['Sprite'][eid], Sprite)
+    assert eid in world.components['Scale']
+    assert isinstance(world.components['Scale'][eid], Scale)
 
     # Second update should not add new entities
     system.update(world)
@@ -103,3 +124,10 @@ def test_map_load_drops_system_position(monkeypatch):
     # offset (1,2) tiles => pixel offset = (32,64)
     assert pos.x == 10 + 1 * TILE_SIZE
     assert pos.y == 20 + 2 * TILE_SIZE
+    # Verificar ZLayer, Sprite y Scale asignados
+    assert eid in world.components['ZLayer']
+    assert isinstance(world.components['ZLayer'][eid], ZLayer)
+    assert eid in world.components['Sprite']
+    assert isinstance(world.components['Sprite'][eid], Sprite)
+    assert eid in world.components['Scale']
+    assert isinstance(world.components['Scale'][eid], Scale)

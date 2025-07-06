@@ -40,7 +40,8 @@
         "quest_id": { "type": "string", "format": "uuid" },
         "scale_editor": { "type": "number", "minimum": 0 },
         "scale_map": { "type": "number", "minimum": 0 },
-        "scale_inventory": { "type": "number", "minimum": 0 }
+        "scale_inventory": { "type": "number", "minimum": 0 },
+        "z_layer": { "type": "integer" }
       },
       "required": ["id", "name", "description", "stackable"],
       "additionalProperties": false,
