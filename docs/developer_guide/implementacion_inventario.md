@@ -109,12 +109,16 @@ Este documento describe el roadmap de alto nivel para llevar a producción la gu
     - Aplicar cambios runtime en `InventoryComponent`.
     - Despachar eventos ECS: `InventoryEditorOpened`, `InventoryChanged`, `InventoryEditorClosed`.
 
-9. Tests y CI:
-    - Pruebas unitarias para `InventoryInitSystem` e `InventoryTransferSystem`.
-    - Tests E2E para flujo de editor (F6 → editar → guardar → aplicar).
-    - Configurar CI (GitHub Actions) para validar JSON y ejecutar pytest.
+9. Pruebas y CI:
+    - Pruebas unitarias para `InventoryInitSystem`, `DeathDropSystem`, `InventoryDropSystem`, `InventoryPickupSystem` y `InventoryTransferSystem`.
+    - Tests E2E para flujo completo: init → drop al morir → drop manual → pickup → transferencia → editor (F6).
+    - CI (GitHub Actions): validar JSON con jsonschema y ejecutar pytest.
 
-> Estado tras paso 7: NPCs y Player inicializados, transferencia de ítems y editor F6 funcionando.
+10. Sistemas futuros:
+    - `NPCTradeSystem`: implementar UI de comercio, eventos `TradeRequest`, `TradeExecute` y rollback en fallo.
+    - `ContainerComponent`/`ContainerSystem`: soportar contenedores (cofres, baúles) con inventarios propios y transferencia genérica.
+
+> Estado tras paso 9: Flujo de inventario completo (init, drop al morir, drop manual, pickup, transferencia, editor).
 
 ## 6. UI e interacción
 1. Implementar ventana de inventario y grid de slots.
