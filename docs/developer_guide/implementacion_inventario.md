@@ -61,15 +61,19 @@ Este documento describe el roadmap de alto nivel para llevar a producción la gu
 
 ## 5. Integración de NPCs y Player
 
-1. Plantillas base en `data/defaults/` y archivos activos en `data/`:
-    - `data/defaults/inventory_monsters.json`
-    - `data/defaults/inventory_player.json`
-    - `data/inventory_monsters.json`
-    - `data/inventory_player.json`
+1. Plantillas base y archivos activos (runtime):
+    - Base NPCs: `data/defaults/inventory_monsters.json` (plantillas por `template_id`).
+    - Activo NPCs: `data/inventory_monsters.json` (mapea `entity_id` → instancia de inventario).
+    - Base Player: `data/defaults/inventory_player.json` (plantilla por `player_id`).
+    - Activo Player: `data/inventory_player.json` (mapea `entity_id` → instancia de inventario).
 
 2. Implementar `InventoryInitSystem` en `src/roguelike_game/ecs/systems/inventory/inventory_init_system.py` con:
-    - Detección de `PlayerTag` y `NPCTag` en entidades.
-    - Carga de plantilla JSON y población de `InventoryComponent` mediante `add(item_id, qty)`.
+    - Detectar entidades con `PlayerTag` y `NPCTag`.
+    - Cargar plantilla base desde `data/defaults/inventory_*.json` y poblar `InventoryComponent` con `add(item_id, qty)`.
+    - Registrar el inventario inicial en `data/inventory_monsters.json` o `data/inventory_player.json` usando `entity_id` como clave. El registro incluye:
+        - `template_id` o `player_id`.
+        - `slots`: serialización de `InventoryComponent.serialize()`.
+        - `schema_version`. 
 
 3. Implementar `DeathDropSystem` en `src/roguelike_game/ecs/systems/inventory/death_drop_system.py` con:
     - Escuchar evento de muerte de entidades con `PlayerTag` y `NPCTag`.
@@ -89,7 +93,7 @@ Este documento describe el roadmap de alto nivel para llevar a producción la gu
         - Botones “Guardar plantilla” y “Aplicar cambios”.
 
 6. Persistencia y eventos:
-    - Guardar plantillas modificadas en `data/inventory_monsters.json` e `inventory_player.json`.
+    - Al guardar cambios de inventario (editor o runtime), actualizar los archivos activos (`data/inventory_monsters.json` / `data/inventory_player.json`) mapeando `entity_id` → datos serializados de `InventoryComponent`.
     - Aplicar cambios runtime en `InventoryComponent`.
     - Despachar eventos ECS: `InventoryEditorOpened`, `InventoryChanged`, `InventoryEditorClosed`.
 
