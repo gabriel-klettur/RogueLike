@@ -175,6 +175,8 @@ editor.draw(screen)
 ```
 
 > **Hover en mapas:** Con la nueva `DropHoverRenderSystem`, al mover el cursor sobre un ítem en el mapa éste se resalta con un borde amarillo y aparece un tooltip con su nombre y descripción.
+> 
+> Se usan funciones `draw_tooltip` y `draw_highlight_rect` del módulo `roguelike_ui.ui_helpers` para la UI de hover en mapa.
 
 ## 7. API Reference
 ```python

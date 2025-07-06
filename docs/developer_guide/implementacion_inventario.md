@@ -70,6 +70,7 @@ Este documento describe el roadmap de alto nivel para llevar a producción la gu
 1. Implementar ventana de inventario y grid de slots.
 2. Conectar eventos de teclado (`I`) y drag & drop.
 3. Validar tooltips e indicadores de estado.
+4. Extraer componentes de UI reutilizables (tooltip, highlight) al módulo `roguelike_ui.ui_helpers`.
 
 > Estado tras paso 6: UI de inventario operativa sin errores.
 
