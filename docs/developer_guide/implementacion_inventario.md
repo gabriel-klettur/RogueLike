@@ -46,7 +46,11 @@ Este documento describe el roadmap de alto nivel para llevar a producción la gu
    - `load_all()`
 2. Definir `inventory_map.json` y tests de flujo drop→pickup.
 3. Spawnear y visualizar drops en el mapa: implementar `MapLoadDropsSystem` que use `ItemDropManager.load_all()` para crear entidades con `PhysicalItemComponent`, `Position` y `CollectibleComponent`. Añadir tests de integración que verifiquen la correcta aparición de los ítems en la escena.
-4. Asignar componente `ZLayer` en `MapLoadDropsSystem`: leer el campo `z_layer` de `ItemModel` (o usar un valor por defecto, p.ej. `DEFAULT_Z - 1`) y establecerlo usando `world.components['ZLayer'][eid] = ZLayer(layer=model.z_layer)`, garantizando que los ítems se renderizan en la capa deseada respecto al jugador.
+4. Asignar componentes `ZLayer`, `Sprite` y `Scale` en `MapLoadDropsSystem`:
+    - Leer el campo `z_layer` de `ItemModel` (o usar un valor por defecto, p.ej. `DEFAULT_Z`).
+    - Establecer `ZLayer`: `world.components['ZLayer'][eid] = ZLayer(layer)`.
+    - Añadir `Sprite` (ruta de ícono) y `Scale` (factor `scale_map`) a la entidad.
+    Estos componentes permiten que el sistema de renderizado principal (`RendererManager`) dibuje los drops junto con otras entidades, ordenándolos por `ZLayer` y posición Y. El antiguo `DropRenderSystem` ha sido eliminado.
 
 > Estado tras paso 4: Drops en mapa funcionan y no rompen inventario.
 

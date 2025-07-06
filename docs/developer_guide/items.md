@@ -1,5 +1,7 @@
 # Guía de desarrollo: Especificación de Ítems
 > **Nota:** ItemModel incluye nuevas propiedades `scale_editor`, `scale_map`, `scale_inventory` y `z_layer` para controlar el tamaño y la capa de renderizado en distintos contextos.
+>
+> **Renderizado de drops en mapa**: El sistema `MapLoadDropsSystem` añade los componentes `Sprite`, `Scale` y `ZLayer` a las entidades de drops y el `RendererManager` las dibuja junto con otras entidades, ordenándolas por `ZLayer` y posición Y. El antiguo `DropRenderSystem` se ha eliminado.
 
 Este documento detalla los metadatos y atributos de cada ítem disponible en el juego.
 

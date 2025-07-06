@@ -119,6 +119,8 @@ class Item:
         self.stackable = stackable
 ```
 > **Propiedades de visualización de Ítems**: cada Item incluye propiedades `scale_editor`, `scale_map`, `scale_inventory` (floats) y `z_layer` (int) para ajustar su tamaño y su capa de renderizado en diferentes contextos.
+>
+> **Renderizado en el mapa**: El sistema `MapLoadDropsSystem` añade a cada entidad de drop los componentes `Sprite`, `Scale` y `ZLayer`. El sistema de renderizado principal (`RendererManager`) agrupa todas las entidades con `Sprite` y `ZLayer` y las dibuja ordenadas por `layer` y posición Y. El antiguo `DropRenderSystem` se ha eliminado.
 ```
 Subclases o componentes ECS:
 - `CoinItem`, `ExperienceItem`, `WoodItem`.

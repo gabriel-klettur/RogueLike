@@ -46,6 +46,8 @@ Este documento describe el roadmap de alto nivel para llevar a producción la gu
 ## 5. Activos y UI de Ítems
 1. Verificar rutas de iconos en `assets/items/`.
 2. Cargar assets de iconos en `GameInitializer._load_items`, almacenándolos en `game.item_assets: Dict[str, Surface]`.
+   
+   2.a En runtime, `MapLoadDropsSystem` utiliza estos assets para asignar componentes `Sprite` y `Scale` a las entidades de drops, además de `ZLayer`, y el sistema de renderizado principal (`RendererManager`) las dibuja ordenadas por `ZLayer` y posición Y.
 3. Crear paquete MVC `item_editor` en `src/roguelike_editors/items`:
    - Directorios:
      - `model/`: definir `ItemEditorModel` (estado: lista de ítems, posición de scroll, visibilidad).
