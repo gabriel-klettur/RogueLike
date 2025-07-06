@@ -1,0 +1,62 @@
+{
+  "barbol": {
+    "template_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    "inventory": [
+      { "item": "gold", "min": 1, "max": 5, "chance": 0.8 },
+      { "item": "experience_orb", "min": 1, "max": 2, "chance": 1.0 }
+    ]
+  },
+  "barbol_oscuro": {
+    "template_id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+    "inventory": [
+      { "item": "gold", "min": 2, "max": 6, "chance": 0.9 },
+      { "item": "experience_orb", "min": 2, "max": 3, "chance": 1.0 }
+    ]
+  },
+  "barbol_morado": {
+    "template_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+    "inventory": [
+      { "item": "gold", "min": 3, "max": 7, "chance": 0.9 },
+      { "item": "experience_orb", "min": 3, "max": 4, "chance": 1.0 },
+      { "item": "wood", "min": 0, "max": 2, "chance": 0.5 }
+    ]
+  },
+  "barbol_boss": {
+    "template_id": "dddddddd-dddd-dddd-dddd-dddddddddddd",
+    "inventory": [
+      { "item": "iron_sword", "min": 1, "max": 1, "chance": 0.5 },
+      { "item": "gold", "min": 10, "max": 20, "chance": 1.0 },
+      { "item": "ancient_relic_mask", "min": 1, "max": 1, "chance": 0.1 }
+    ]
+  },
+  "barbol_cyan": {
+    "template_id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+    "inventory": [
+      { "item": "gold", "min": 2, "max": 5, "chance": 0.7 },
+      { "item": "experience_orb", "min": 1, "max": 2, "chance": 1.0 }
+    ]
+  },
+  "barbol_gris": {
+    "template_id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+    "inventory": [
+      { "item": "gold", "min": 1, "max": 4, "chance": 0.6 },
+      { "item": "experience_orb", "min": 1, "max": 2, "chance": 1.0 }
+    ]
+  },
+  "barbol_musgo": {
+    "template_id": "11111111-2222-3333-4444-555555555555",
+    "inventory": [
+      { "item": "wood", "min": 1, "max": 3, "chance": 0.8 },
+      { "item": "gold", "min": 1, "max": 3, "chance": 0.5 },
+      { "item": "experience_orb", "min": 1, "max": 2, "chance": 1.0 }
+    ]
+  },
+  "barbol_gigante": {
+    "template_id": "66666666-6666-6666-6666-666666666666",
+    "inventory": [
+      { "item": "gold", "min": 5, "max": 15, "chance": 1.0 },
+      { "item": "health_potion", "min": 1, "max": 2, "chance": 0.7 },
+      { "item": "experience_orb", "min": 5, "max": 10, "chance": 1.0 }
+    ]
+  }
+}

@@ -71,8 +71,8 @@ La definición y metadatos de los ítems se documenta en [`items.md`](items.md).
 
 
 
-### 2.2 `inventory_monsters.json`
-Definir plantillas de inventario en `data/inventory_monsters.json`. Cada plantilla NPC incluye un campo `template_id` único (string):
+### 2.2 Plantillas de NPCs
+Plantillas base en `data/defaults/inventory_monsters.json`. Archivo activo en `data/inventory_monsters.json`. Cada plantilla NPC incluye un campo `template_id` único (string):
 
 > **template_id**: UUID que identifica la plantilla de inventario de un NPC, usado para vincular esta configuración JSON con la entidad NPC correspondiente en el juego.
 ```json
@@ -87,8 +87,8 @@ Definir plantillas de inventario en `data/inventory_monsters.json`. Cada plantil
 }
 ```
 
-### 2.3 `inventory_player.json`
-Estructura de inventario del jugador en `data/inventory_player.json`. Incluye un campo `player_id` único (string):
+### 2.3 Plantilla de Player
+Plantilla base en `data/defaults/inventory_player.json`. Archivo activo en `data/inventory_player.json`. Incluye un campo `player_id` único (string):
 ```json
 {
   "player_id": "uuid-v4",
@@ -125,19 +125,51 @@ class Item:
 Subclases o componentes ECS:
 - `CoinItem`, `ExperienceItem`, `WoodItem`.
 
-## 4. Sistema de Inventario de NPCs
-Al morir un NPC, procesar su plantilla JSON y generar `DroppedItem` en el suelo:
-```python
-import random
+## 4. Integración de NPCs y Player
 
-def on_npc_death(npc):
-    template = npc.template  # datos cargados desde inventory_monsters.json
-    for entry in template["inventory"]:
-        if random.random() <= drop["chance"]:
-            qty = random.randint(drop["min"], drop["max"])
-            if qty > 0:
-                spawn_dropped_item(entry["item"], qty, position=npc.position)
-```
+Este apartado describe la integración de plantillas de inventario y gestión unificada para NPCs y Player:
+
+1. **Plantillas base y activas**:
+    - Base NPCs: `data/defaults/inventory_monsters.json`; activo: `data/inventory_monsters.json`.
+    - Base Player: `data/defaults/inventory_player.json`; activo: `data/inventory_player.json`.
+
+2. **Inicialización de inventarios**:
+    - `InventoryInitSystem` carga la plantilla base desde `data/defaults/...`.
+    - Crea entidades con `InventoryComponent` y `PlayerTag` o `NPCTag`.
+    - Puebla el componente con `add(item_id, qty)`.
+    - Persiste el inventario inicial en los archivos activos (`data/inventory_monsters.json` o `data/inventory_player.json`).
+
+3. **DeathDropSystem (NPC y Player)**:
+    - Implementar `DeathDropSystem` en `src/roguelike_game/ecs/systems/inventory/death_drop_system.py` que suscriba al evento de muerte para entidades con `PlayerTag` y `NPCTag`.
+    - Al morir, itera por cada `ItemStack` en `InventoryComponent.slots`:
+        - Llama a `ItemDropManager.create_drop(drop_id, item_id, quantity, zone_id, position=death_position)`.
+    - Vacía `InventoryComponent.slots`.
+    - Actualiza los archivos activos (`data/inventory_monsters.json` o `data/inventory_player.json`) para la persistencia.
+
+4. **Transferencia de ítems**:
+    - Crear `InventoryTransferSystem` en `src/roguelike_game/ecs/systems/inventory/inventory_transfer_system.py` con:
+        - Método `transfer(item_id, qty, source_entity, target_entity)` garantizando transacciones atómicas y rollback.
+        - Despacho de eventos `TransferEvent` para UI y logs.
+
+5. **Editor de inventarios (F6)**:
+    - Capturar tecla F6 en `InventoryInputSystem` para activar modo editor.
+    - Implementar `InventoryEditorSystem` (fase *update*/*render*) con UI overlay:
+        - Selector de entidad (Player, NPCs).
+        - Grids de slots de plantilla y estado actual.
+        - Drag & drop entre slots.
+        - Botones “Guardar plantilla” y “Aplicar cambios”.
+
+6. **Persistencia y eventos**:
+    - Guardar plantillas modificadas en `data/inventory_monsters.json` e `inventory_player.json`.
+    - Aplicar cambios runtime en `InventoryComponent`.
+    - Despacho de eventos ECS: `InventoryEditorOpened`, `InventoryChanged`, `InventoryEditorClosed`.
+
+7. **Pruebas y CI**:
+    - Unit tests para `InventoryInitSystem`, `NPCDeathSystem`, `InventoryTransferSystem`.
+    - E2E tests de flujo de integración y editor.
+    - CI: Validar JSON y ejecutar pytest.
+
+## 5. Componente de inventario en entidades (jugadores y NPCs)
 
 ## 5. Componente de inventario en entidades (jugadores y NPCs)
 ```python

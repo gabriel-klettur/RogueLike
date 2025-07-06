@@ -1,11 +1,6 @@
 import os
 import pygame
 from roguelike_engine.utils.benchmark import benchmark
-from roguelike_game.ecs.components.physical_item_component import PhysicalItemComponent
-from roguelike_game.ecs.components.transform.position import Position
-from roguelike_game.ecs.components.rendering.sprite import Sprite
-from roguelike_game.ecs.components.transform.z_layer import ZLayer
-from roguelike_game.ecs.components.transform.scale import Scale
 from roguelike_game.managers.map.item_drop_manager import ItemDropManager
 
 

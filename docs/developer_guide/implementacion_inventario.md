@@ -59,12 +59,46 @@ Este documento describe el roadmap de alto nivel para llevar a producción la gu
 
 > Estado tras paso 4: Drops en mapa funcionan y no rompen inventario.
 
-## 5. Integración de NPCs
-1. Actualizar función `on_npc_death` para usar `inventory_monsters.json`.
-2. Probar dropeo de NPCs en entorno de juego.
-3. Implementar transferencia de ítems entre inventarios (suelo, jugador y NPC), soportando recogida y depósito usando `ItemDropManager` y `InventoryComponent`.
+## 5. Integración de NPCs y Player
 
-> Estado tras paso 5: NPCs dropean items según plantilla.
+1. Plantillas base en `data/defaults/` y archivos activos en `data/`:
+    - `data/defaults/inventory_monsters.json`
+    - `data/defaults/inventory_player.json`
+    - `data/inventory_monsters.json`
+    - `data/inventory_player.json`
+
+2. Implementar `InventoryInitSystem` en `src/roguelike_game/ecs/systems/inventory/inventory_init_system.py` con:
+    - Detección de `PlayerTag` y `NPCTag` en entidades.
+    - Carga de plantilla JSON y población de `InventoryComponent` mediante `add(item_id, qty)`.
+
+3. Implementar `DeathDropSystem` en `src/roguelike_game/ecs/systems/inventory/death_drop_system.py` con:
+    - Escuchar evento de muerte de entidades con `PlayerTag` y `NPCTag`.
+    - Iterar `InventoryComponent.slots` y usar `ItemDropManager.create_drop(drop_id, item_id, quantity, zone_id, position=death_position)` para cada `ItemStack`.
+    - Vaciar `InventoryComponent.slots` y persistir en `data/inventory_monsters.json` o `data/inventory_player.json`.
+
+4. Crear `InventoryTransferSystem` en `src/roguelike_game/ecs/systems/inventory/inventory_transfer_system.py` con:
+    - Método `transfer(item_id, qty, source_entity, target_entity)` que asegura transacciones atómicas y rollback en fallo.
+    - Despacho de `TransferEvent` para UI y logs.
+
+5. Editor de inventarios (F6):
+    - Capturar tecla F6 en `InventoryInputSystem` para activar modo editor.
+    - Implementar `InventoryEditorSystem` (fase update/render) con UI overlay:
+        - Selector de entidad (Player, NPCs).
+        - Grids de slots: plantilla y estado actual.
+        - Drag & drop entre slots.
+        - Botones “Guardar plantilla” y “Aplicar cambios”.
+
+6. Persistencia y eventos:
+    - Guardar plantillas modificadas en `data/inventory_monsters.json` e `inventory_player.json`.
+    - Aplicar cambios runtime en `InventoryComponent`.
+    - Despachar eventos ECS: `InventoryEditorOpened`, `InventoryChanged`, `InventoryEditorClosed`.
+
+7. Tests y CI:
+    - Pruebas unitarias para `InventoryInitSystem` e `InventoryTransferSystem`.
+    - Tests E2E para flujo de editor (F6 → editar → guardar → aplicar).
+    - Configurar CI (GitHub Actions) para validar JSON y ejecutar pytest.
+
+> Estado tras paso 7: NPCs y Player inicializados, transferencia de ítems y editor F6 funcionando.
 
 ## 6. UI e interacción
 1. Implementar ventana de inventario y grid de slots.
