@@ -82,6 +82,7 @@ class ItemEditorController:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_F7:
                 self.model.visible = not self.model.visible
+                print(f"[DEBUG ItemEditorController] F7 pressed, visible={self.model.visible}")
                 if not self.model.visible:
                     self.model.selected_item_id = None
             elif self.model.visible:

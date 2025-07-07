@@ -80,6 +80,7 @@ class GameInitializer:
             ("Cargando editor de edificios" , partial(self._init_buildings_editor)),
             ("Cargando editor de tiles"     , partial(self._init_tile_editor)),
             ("Cargando editor de mapa"      , partial(self._init_map_editor)),
+            ("Cargando editor de inventario", partial(self._init_inventory_editor)),
             ("Cargando minimapa"            , partial(self._init_minimap)),
 
             ("Inicializando renderizador"   , partial(self._init_renderer)),
@@ -172,6 +173,11 @@ class GameInitializer:
 
     def _init_map_editor(self):
         self.game.map_editor = MapEditorManager(self.game)
+
+    def _init_inventory_editor(self):
+        from roguelike_editors.inventory import InventoryEditor
+        self.game.inventory_editor = InventoryEditor(self.game.ecs.ecs_world, self.game.item_assets, self.game.font)
+        self.game.state.inventory_editor_state = self.game.inventory_editor.model
 
     def _init_minimap(self):
         self.game.minimap = Minimap()

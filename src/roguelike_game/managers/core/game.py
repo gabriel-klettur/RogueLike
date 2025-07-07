@@ -52,12 +52,30 @@ class Game:
             pygame.event.get(pygame.QUIT)
             self.state.running = False
             return
-        # Si el editor de ítems está visible, capturar solo sus eventos
-        if self.item_editor.model.visible:
-            events = pygame.event.get()
-            for event in events:
+        # Procesar toggles globales y dirigir eventos
+        events = pygame.event.get()
+        for event in events:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_F6:
+                # Cerrar editor de ítems y alternar editor de inventario
+                self.item_editor.model.visible = False
+                self.inventory_editor.handle_event(event)
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_F7:
+                # Cerrar editor de inventario y alternar editor de ítems
+                self.inventory_editor.model.visible = False
                 self.item_editor.handle_event(event)
+        # Si el editor de ítems está activo, capturar solo sus eventos
+        if self.item_editor.model.visible:
+            for event in events:
+                if not (event.type == pygame.KEYDOWN and event.key == pygame.K_F7):
+                    self.item_editor.handle_event(event)
             return
+        # Si el editor de inventario está activo, capturar solo sus eventos
+        if self.inventory_editor.model.visible:
+            for event in events:
+                if not (event.type == pygame.KEYDOWN and event.key == pygame.K_F6):
+                    self.inventory_editor.handle_event(event)
+            return
+
         # Si un editor está activo, solo lo capturamos a él
         if self.tiles_editor.editor_state.active:
             self.tiles_editor.handle(self.camera, self.map)
@@ -108,6 +126,7 @@ class Game:
         )
         # Overlay del Item Editor
         self.item_editor.draw(self.screen)
+        self.inventory_editor.draw(self.screen)
 
     @benchmark(lambda self: self.perf_log, "4.2.ecs - update")
     def update_ecs(self):

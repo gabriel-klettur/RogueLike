@@ -1,0 +1,22 @@
+{
+  "7a043371-435f-4fc7-8e42-ce33d2ff702b": {
+    "item_id": "gold",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2380.1919356955045,
+      "y": 2779.7144389839227
+    }
+  },
+  "c38eaf2b-43ee-469b-8776-6036c65793f8": {
+    "item_id": "experience_orb",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2385.1919356955045,
+      "y": 2729.7144389839227
+    }
+  }
+}
