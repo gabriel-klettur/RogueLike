@@ -74,6 +74,10 @@ class InputConfig:
         # Fallback para Item Editor toggle
         if action == "toggle_item_editor":
             return pygame.K_F6
+        if action == "toggle_tile_editor":
+            return pygame.K_F8
+        if action == "toggle_map_editor":
+            return pygame.K_F11
         # Fallback para firework launch si no está en bindings
         if action == "spell_firework_launch":
             return pygame.K_v
