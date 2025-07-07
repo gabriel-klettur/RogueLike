@@ -74,6 +74,13 @@ class ItemDropManager:
         Actualiza la posición de un drop existente en el JSON.
         tile: dict u objeto con atributos x,y; position: dict u objeto con atributos x,y.
         """
+        # Recargar datos del archivo para actualizar cambios externos
+        try:
+            with open(self.path, 'r', encoding='utf-8') as f:
+                self._data = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            self._data = {}
+
         if drop_id not in self._data:
             raise KeyError(f"Drop '{drop_id}' no existe")
         entry = self._data[drop_id]

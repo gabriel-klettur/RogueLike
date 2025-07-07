@@ -22,17 +22,27 @@ class MapLoadDropsSystem:
         self.drop_manager = ItemDropManager(path)
         items_path = os.path.join(os.getcwd(), 'data', 'items.json')
         self.items = load_items(items_path)
+        self._initial_path = path
+        self._loaded = False
+
         self._spawned = set()
 
     def update(self, world, camera=None):
-        
-
-        # Carga incremental de drops desde archivo
-        try:
-            with open(self.drop_manager.path, 'r', encoding='utf-8') as f:
-                drops_dict = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            return
+        """
+        Spawn new drops from inventory_map.json each frame.
+        """
+        # Manual data scenario: prefer internal data and only run once
+        if self.drop_manager._data:
+            if self._loaded:
+                return
+            drops_dict = self.drop_manager._data
+        else:
+            # Read from file for dynamic loading
+            try:
+                with open(self.drop_manager.path, 'r', encoding='utf-8') as f:
+                    drops_dict = json.load(f)
+            except (FileNotFoundError, json.JSONDecodeError):
+                return
 
         for drop_id, data in drops_dict.items():
             if drop_id in self._spawned:
@@ -51,37 +61,32 @@ class MapLoadDropsSystem:
                 pos = Position(px, py)
             elif 'position' in data:
                 coords = data['position']
-                # Cargar posición absoluta en píxeles guardada previamente
                 pos = Position(coords['x'], coords['y'])
             else:
                 raise ValueError(f"Drop '{drop_id}' requiere 'tile' o 'position'")
+
             eid = world.create_entity()
             world.components['PhysicalItemComponent'][eid] = PhysicalItemComponent(
                 drop_id, item_id, quantity, zone_id
             )
             world.components['Position'][eid] = pos
             world.components['CollectibleComponent'][eid] = CollectibleComponent()
-            # Asignar ZLayer para ordenar renderizado
+
             model = self.items.get(item_id)
-            # Priorizar z_layer definido en inventory_map.json
-            layer = data.get('z_layer')
-            if layer is None:
-                # Si no hay override en el drop, usar z_layer del modelo o DEFAULT_Z
-                layer = getattr(model, 'z_layer', None) if model else None
-            if layer is None:
-                layer = DEFAULT_Z
+            layer = data.get('z_layer') or getattr(model, 'z_layer', None) or DEFAULT_Z
             world.components['ZLayer'][eid] = ZLayer(layer)
-            # Añadir Sprite y Scale para que RendererManager los dibuje en orden Z
+
             if model:
-                # elegir icon_small o fallback icon
-                if getattr(model, "icon_small", None):
-                    icon_path = model.icon_small
-                else:
-                    ic = getattr(model, "icon", None)
-                    icon_path = ic[0] if isinstance(ic, list) else ic
-                if icon_path:
-                    world.components["Sprite"][eid] = Sprite(icon_path)
-                    world.components["Scale"][eid] = Scale(getattr(model, "scale_map", 1.0))
+                icon = getattr(model, 'icon_small', None) or getattr(model, 'icon', None)
+                if isinstance(icon, list):
+                    icon = icon[0]
+                if icon:
+                    world.components['Sprite'][eid] = Sprite(icon)
+                    world.components['Scale'][eid] = Scale(getattr(model, 'scale_map', 1.0))
+
             print(f"[MapLoadDropsSystem] Spawned drop '{drop_id}' item '{item_id}' at ({pos.x},{pos.y}) zone '{zone_id}' eid={eid}")
             self._spawned.add(drop_id)
+        # Mark as loaded for manual drop data
+        if self.drop_manager._data:
+            self._loaded = True
 
