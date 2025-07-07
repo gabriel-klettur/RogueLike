@@ -19,13 +19,14 @@ class DeathState(State):
         print(f"[DeathState.enter] eid={eid}, is_player={eid in world.components.get('PlayerTagComponent', {})}")
         # Iniciar temporizador según configuración de players.json
         pt = world.components.get('PlayerTagComponent', {}).get(eid)
-        if pt and pt.class_name in PLAYER_STATS:
-            duration = PLAYER_STATS[pt.class_name].get('death_timer_duration', 60.0)
+        cls_name = getattr(pt, 'class_name', None)
+        if cls_name in PLAYER_STATS:
+            duration = PLAYER_STATS[cls_name].get('death_timer_duration', 60.0)
         else:
             duration = 60.0
         world.components['DeathTimer'][eid] = DeathTimer(time.time(), duration)
         # Cambiar el sprite al de muerte para ocultar el sprite anterior
-        sprite = world.components['Sprite'].get(eid)
+        sprite = world.components.get('Sprite', {}).get(eid)
         if sprite and hasattr(sprite, 'death_image'):
             sprite.image = sprite.death_image
             # Deshabilitar animación para no sobreescribir el sprite de muerte
