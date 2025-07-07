@@ -89,6 +89,8 @@ class InputConfig:
             return pygame.K_h
         if action == "spell_teleport":
             return pygame.K_j
+        if action == "drop":
+            return pygame.K_d
         keyname = self.bindings.get(action)
         if not keyname:
             raise KeyError(f"No key binding for action '{action}'")

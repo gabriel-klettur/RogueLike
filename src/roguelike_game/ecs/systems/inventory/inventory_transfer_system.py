@@ -14,6 +14,10 @@ class InventoryTransferSystem:
         self.active_monster_path = active_monster_path
         self.active_player_path = active_player_path
 
+    def update(self, world, *args):
+        """No-op update for transfer system"""
+        pass
+
     def transfer(self, world, item_id: str, quantity: int, source_eid: int, target_eid: int) -> None:
         comps = world.components
         invs = comps.get('InventoryComponent', {})

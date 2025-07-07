@@ -48,10 +48,23 @@ class InventoryInitSystem:
         npc_tag_store = comps.get('NPCTagComponent', {})
 
         # Cargar datos activos
-        with open(self.active_monster_path, 'r') as f:
-            active_monsters = json.load(f)
-        with open(self.active_player_path, 'r') as f:
-            active_players = json.load(f)
+        # Cargar datos activos
+        try:
+            with open(self.active_monster_path, 'r') as f:
+                active_monsters = json.load(f)
+        except (json.JSONDecodeError, FileNotFoundError):
+            active_monsters = {}
+            os.makedirs(os.path.dirname(self.active_monster_path), exist_ok=True)
+            with open(self.active_monster_path, 'w') as f:
+                json.dump(active_monsters, f, indent=2)
+        try:
+            with open(self.active_player_path, 'r') as f:
+                active_players = json.load(f)
+        except (json.JSONDecodeError, FileNotFoundError):
+            active_players = {}
+            os.makedirs(os.path.dirname(self.active_player_path), exist_ok=True)
+            with open(self.active_player_path, 'w') as f:
+                json.dump(active_players, f, indent=2)
 
         # Inicializar jugadores
         for eid in list(player_tag_store.keys()):
