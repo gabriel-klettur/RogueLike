@@ -52,28 +52,31 @@ class Game:
             pygame.event.get(pygame.QUIT)
             self.state.running = False
             return
-        # Procesar toggles globales y dirigir eventos
+        # Capturar eventos y toggles de editores
         events = pygame.event.get()
+        # Revisar toggles de editores
         for event in events:
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_F6:
-                # Cerrar editor de ítems y alternar editor de inventario
-                self.item_editor.model.visible = False
-                self.inventory_editor.handle_event(event)
-            elif event.type == pygame.KEYDOWN and event.key == pygame.K_F7:
-                # Cerrar editor de inventario y alternar editor de ítems
-                self.inventory_editor.model.visible = False
-                self.item_editor.handle_event(event)
+            if event.type == pygame.KEYDOWN and event.key == self.menu.input_config.get_key('toggle_item_editor'):
+                # Alternar Item Editor
+                self.state.item_editor_state.visible = not self.state.item_editor_state.visible
+                return
+            if event.type == pygame.KEYDOWN and event.key == self.menu.input_config.get_key('toggle_tile_editor'):
+                # Alternar Tile Editor
+                self.tiles_editor.editor_state.active = not self.tiles_editor.editor_state.active
+                return
+            if event.type == pygame.KEYDOWN and event.key == self.menu.input_config.get_key('toggle_map_editor'):
+                # Alternar Map Editor
+                self.map_editor.toggle()
+                return
         # Si el editor de ítems está activo, capturar solo sus eventos
         if self.item_editor.model.visible:
             for event in events:
-                if not (event.type == pygame.KEYDOWN and event.key == pygame.K_F7):
-                    self.item_editor.handle_event(event)
+                self.item_editor.handle_event(event)
             return
         # Si el editor de inventario está activo, capturar solo sus eventos
-        if self.inventory_editor.model.visible:
+        if hasattr(self, 'inventory_editor') and self.inventory_editor.model.visible:
             for event in events:
-                if not (event.type == pygame.KEYDOWN and event.key == pygame.K_F6):
-                    self.inventory_editor.handle_event(event)
+                self.inventory_editor.handle_event(event)
             return
 
         # Si un editor está activo, solo lo capturamos a él

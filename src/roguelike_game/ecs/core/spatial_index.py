@@ -10,7 +10,7 @@ class SpatialIndex:
         """
         # Static map tile index
         self._map_index: dict[tuple[int,int], list[pygame.Rect]] = {}
-        for tile in map_manager.solid_tiles:
+        for tile in getattr(map_manager, 'solid_tiles', []):
             key = (tile.rect.x // TILE_SIZE, tile.rect.y // TILE_SIZE)
             self._map_index.setdefault(key, []).append(tile.rect)
         # Static building index (cache para colisiones dinámicas)

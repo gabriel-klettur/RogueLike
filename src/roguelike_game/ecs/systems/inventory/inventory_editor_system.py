@@ -111,16 +111,21 @@ class InventoryEditorSystem:
                 print("[InventoryEditorApplied]")
 
     def render(self, world, surface, camera=None):
-        if not self.active or self.selected_eid is None:
+        if not self.active:
             return
         ow, oh = surface.get_size()
         # Overlay
         overlay = pygame.Surface((ow, oh), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 180))
+        # Early overlay draw when no world is provided
+        if world is None:
+            surface.blit(overlay, (0, 0))
+            return
         # Title
         title = f"Inventory Editor - Entity {self.selected_eid}"
         text = self.font.render(title, True, (255, 255, 255))
         overlay.blit(text, (10, 10))
+
         # Draw grid
         inv = world.components.get('InventoryComponent', {}).get(self.selected_eid)
         slots = inv.slots if inv else []

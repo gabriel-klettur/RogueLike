@@ -5,6 +5,7 @@ import json
 from roguelike_editors.inventory.model.editor_model import InventoryEditorModel
 from roguelike_editors.inventory.view.editor_view import InventoryEditorView
 from roguelike_game.ecs.components.item_models import ItemStack
+from types import SimpleNamespace
 
 class InventoryEditorController:
     """
@@ -58,7 +59,7 @@ class InventoryEditorController:
                 slot_idx = self.view.get_slot_at_pos((mx, my), len(inv.slots))
                 if slot_idx is not None and inv.slots[slot_idx]:
                     stack = inv.slots[slot_idx]
-                    self.model.drag_item = (stack.item_id, stack.quantity)
+                    self.model.drag_item = stack
                     self.model.drag_slot = slot_idx
                     inv.slots[slot_idx] = None
         # Mouse up
@@ -68,9 +69,9 @@ class InventoryEditorController:
             if inv and self.model.drag_item is not None:
                 slot_idx = self.view.get_slot_at_pos((mx, my), len(inv.slots))
                 if slot_idx is not None and inv.slots[slot_idx] is None:
-                    inv.slots[slot_idx] = ItemStack(self.model.drag_item[0], self.model.drag_item[1])
+                    inv.slots[slot_idx] = self.model.drag_item
                 else:
-                    inv.slots[self.model.drag_slot] = ItemStack(self.model.drag_item[0], self.model.drag_item[1])
+                    inv.slots[self.model.drag_slot] = self.model.drag_item
                 self.model.drag_item = None
                 self.model.drag_slot = None
             # Botones
