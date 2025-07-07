@@ -24,6 +24,26 @@ class DropHoverRenderSystem:
 
     @benchmark(lambda self: self.perf_log, "DropHoverRenderSystem.update")
     def update(self, world, screen, camera):
+        # Destacar todos los drops según flag show_all_drops en InputComponent
+        show_all = False
+        for inp in world.components.get('InputComponent', {}).values():
+            if getattr(inp, 'show_all_drops', False):
+                show_all = True
+                break
+        if show_all:
+            comps = world.components
+            for eid in world.get_entities_in_camera(camera, 'PhysicalItemComponent', 'Sprite', 'Position', 'ZLayer'):
+                pos = comps['Position'][eid]
+                sprite = comps['Sprite'][eid]
+                scale_comp = comps.get('Scale', {}).get(eid)
+                scale = scale_comp.scale if scale_comp else 1.0
+                w, h = sprite.image.get_size()
+                w = int(w * scale * camera.zoom)
+                h = int(h * scale * camera.zoom)
+                sx, sy = camera.apply((pos.x, pos.y))
+                rect = pygame.Rect(sx, sy, w, h)
+                draw_highlight_rect(screen, rect)
+            return
         # Obtener posición actual del ratón
         mouse_x, mouse_y = pygame.mouse.get_pos()
         comps = world.components

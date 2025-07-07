@@ -137,8 +137,8 @@
     "zone_id": "Lobby",
     "schema_version": "1.0.0",
     "position": {
-      "x": 2106.164780679945,
-      "y": 2579.7556339625403
+      "x": 1376.1647806799451,
+      "y": 2713.7556339625403
     }
   },
   "10c68179-23b7-40ae-b7c0-34af3daa1582": {
@@ -157,8 +157,8 @@
     "zone_id": "Lobby",
     "schema_version": "1.0.0",
     "position": {
-      "x": 1932.290894484397,
-      "y": 2563.2839752665986
+      "x": 1335.290894484397,
+      "y": 2629.2839752665986
     }
   },
   "71d22dff-ffad-4a52-be10-efcacc8f7c40": {
@@ -167,8 +167,78 @@
     "zone_id": "Lobby",
     "schema_version": "1.0.0",
     "position": {
-      "x": 1932.290894484397,
-      "y": 2563.2839752665986
+      "x": 1364.290894484397,
+      "y": 2559.2839752665986
+    }
+  },
+  "d490dd16-bbdc-46bd-a4f6-25d8a0bb6d89": {
+    "item_id": "gold",
+    "quantity": 6,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 1447.0,
+      "y": 2633.0
+    }
+  },
+  "dff40d80-36c6-4c7f-9cbd-cb0c5307fe10": {
+    "item_id": "experience_orb",
+    "quantity": 4,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 1260.0,
+      "y": 2670.0
+    }
+  },
+  "08721efa-09d8-46dd-967c-f285725f4b06": {
+    "item_id": "experience_orb",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 1225.5129710606002,
+      "y": 2712.7666150374444
+    }
+  },
+  "4ada4b3a-6386-4ed4-ab19-bbf513186698": {
+    "item_id": "experience_orb",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 1291.3557625473477,
+      "y": 2582.5610229870554
+    }
+  },
+  "276c071d-a17c-4148-a408-9f7f692421f7": {
+    "item_id": "gold",
+    "quantity": 0,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2402.0,
+      "y": 2889.0
+    }
+  },
+  "a071ff2b-d9ce-48b0-8292-1d3574d21a60": {
+    "item_id": "health_potion",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2380.0,
+      "y": 2958.0
+    }
+  },
+  "67e2d2cb-37e3-4015-b564-c54e23b5b5a7": {
+    "item_id": "mana_potion",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2349.0,
+      "y": 2909.0
     }
   }
 }

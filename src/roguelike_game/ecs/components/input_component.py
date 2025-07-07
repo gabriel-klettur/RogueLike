@@ -28,4 +28,5 @@ class InputComponent:
         self.click: bool = False
         self.drop: bool = False
         self.toggle_editor: bool = False
+        self.show_all_drops: bool = False
 # Path: src/roguelike_game/ecs/components/input_component.py

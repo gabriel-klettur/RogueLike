@@ -58,7 +58,11 @@ class InputSystem:
         sh_key = self.config.get_key("spell_sphere_magic_shield")
         tp_key = self.config.get_key("spell_teleport")
         # Para cada entidad con InputComponent
+        # Flag para mostrar todos los drops
+        alt_down = bool(pygame.key.get_mods() & pygame.KMOD_ALT)
         for eid, inp in world.components.get('InputComponent', {}).items():
+            # Asignar flag show_all_drops
+            inp.show_all_drops = alt_down
             # Movimiento en ejes X e Y
             inp.move_x = int(keys[move_right]) - int(keys[move_left])
             inp.move_y = int(keys[move_down]) - int(keys[move_up])
