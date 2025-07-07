@@ -1,4 +1,5 @@
 import os
+import json
 from roguelike_game.managers.map.item_drop_manager import ItemDropManager
 from roguelike_game.ecs.components.physical_item_component import PhysicalItemComponent
 from roguelike_game.ecs.components.collectible_component import CollectibleComponent
@@ -21,16 +22,21 @@ class MapLoadDropsSystem:
         self.drop_manager = ItemDropManager(path)
         items_path = os.path.join(os.getcwd(), 'data', 'items.json')
         self.items = load_items(items_path)
-        self._loaded = False
+        self._spawned = set()
 
     def update(self, world, camera=None):
         
 
-        if self._loaded:
+        # Carga incremental de drops desde archivo
+        try:
+            with open(self.drop_manager.path, 'r', encoding='utf-8') as f:
+                drops_dict = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
             return
-        drops_dict = self.drop_manager._data
 
         for drop_id, data in drops_dict.items():
+            if drop_id in self._spawned:
+                continue
 
             item_id = data['item_id']
             quantity = data['quantity']
@@ -77,4 +83,5 @@ class MapLoadDropsSystem:
                     world.components["Sprite"][eid] = Sprite(icon_path)
                     world.components["Scale"][eid] = Scale(getattr(model, "scale_map", 1.0))
             print(f"[MapLoadDropsSystem] Spawned drop '{drop_id}' item '{item_id}' at ({pos.x},{pos.y}) zone '{zone_id}' eid={eid}")
-        self._loaded = True
+            self._spawned.add(drop_id)
+
