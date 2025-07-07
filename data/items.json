@@ -10,6 +10,9 @@
       "assets/items/exp_orb_4.png"
     ],
     "description": "Objeto que otorga puntos de experiencia al recogerse.",
+    "scale_editor": 1.0,
+    "scale_map": 0.04,
+    "scale_inventory": 0.05,
     "stackable": false,
     "z_layer": 1
   },
@@ -22,7 +25,7 @@
     "stackable": true,
     "scale_editor": 1.0,
     "scale_map": 0.04,
-    "scale_inventory": 0.75,
+    "scale_inventory": 0.05,
     "max_stack": 999,
     "threshold": 10,
     "z_layer": 1
