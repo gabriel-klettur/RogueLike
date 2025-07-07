@@ -6,6 +6,7 @@ from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.config.players_config import PLAYER_STATS
 import time
+import json
 
 class DeathState(State):
     """
@@ -48,6 +49,15 @@ class DeathState(State):
                     comps['GrayscaleComponent'][nid] = GrayscaleComponent()
             else:
                 world.remove_entity(nid)
+                # Limpiar inventario activo para este monstruo
+                try:
+                    with open('data/inventory_monsters.json', 'r') as f:
+                        inv = json.load(f)
+                except (json.JSONDecodeError, FileNotFoundError):
+                    inv = {}
+                inv.pop(str(nid), None)
+                with open('data/inventory_monsters.json', 'w') as f:
+                    json.dump(inv, f, indent=2)
         # Lógica de resurrección: si está en lobby 3x3 y en gris, revivir
         if nid in comps.get('PlayerTagComponent', {}) and nid in comps.get('GrayscaleComponent', {}):
             pos = world.components.get('Position', {}).get(nid)
