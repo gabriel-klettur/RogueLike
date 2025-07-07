@@ -6,6 +6,7 @@ from .spatial_index import SpatialIndex
 from .spawn_manager import SpawnNPCManager
 import os
 from roguelike_game.ecs.systems.input.input_system import InputSystem
+from roguelike_game.ecs.systems.inventory.inventory_pickup_system import InventoryPickupSystem
 
 
 class ECSWorld:
@@ -55,9 +56,12 @@ class ECSWorld:
         self.update_systems = []
         for cls in update_classes:
             if cls is InputSystem:
-                self.update_systems.append(cls(self.perf_log, config_path))
+                inst = cls(self.perf_log, config_path)
+            elif cls is InventoryPickupSystem:
+                inst = cls()
             else:
-                self.update_systems.append(cls(self.perf_log))
+                inst = cls(self.perf_log)
+            self.update_systems.append(inst)
         self.render_systems = [cls(self.perf_log) for cls in render_classes]
         print(f"[ECSWorld] Update systems: {[type(s).__name__ for s in self.update_systems]}")
         print(f"[ECSWorld] Render systems: {[type(s).__name__ for s in self.render_systems]}")
