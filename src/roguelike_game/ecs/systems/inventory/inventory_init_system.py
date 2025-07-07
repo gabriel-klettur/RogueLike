@@ -114,6 +114,11 @@ class InventoryInitSystem:
             }
             self.initialized.add(eid)
 
+        # Remove entries for monsters no longer present
+        current_npc_keys = set(str(eid) for eid in npc_tag_store.keys())
+        for key in list(active_monsters.keys()):
+            if key not in current_npc_keys:
+                active_monsters.pop(key)
         # Guardar archivos activos
         with open(self.active_monster_path, 'w') as f:
             json.dump(active_monsters, f, indent=2)

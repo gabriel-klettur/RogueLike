@@ -58,5 +58,19 @@
       { "item": "health_potion", "min": 1, "max": 2, "chance": 1.0 },
       { "item": "experience_orb", "min": 5, "max": 10, "chance": 1.0 }
     ]
+  },
+  "barbol_amarillo": {
+    "template_id": "22222222-2222-2222-2222-222222222222",
+    "inventory": [
+      { "item": "gold", "min": 1, "max": 3, "chance": 1.0 },
+      { "item": "experience_orb", "min": 1, "max": 2, "chance": 1.0 }
+    ]
+  },
+  "barbol_baby": {
+    "template_id": "33333333-3333-3333-3333-333333333333",
+    "inventory": [
+      { "item": "gold", "min": 1, "max": 2, "chance": 1.0 },
+      { "item": "experience_orb", "min": 1, "max": 1, "chance": 1.0 }
+    ]
   }
 }
