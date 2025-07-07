@@ -25,6 +25,7 @@ from roguelike_game.ecs.systems.fsm.states.monster.patrol_state import PatrolSta
 from roguelike_game.ecs.systems.fsm.fsm import FiniteStateMachine
 from roguelike_game.ecs.components.fsm.npc_state import NPCState
 from roguelike_game.ecs.components.core.npc_tag import NPCTagComponent
+from roguelike_game.ecs.components.monster_instance_component import MonsterInstanceComponent
 
 
 class MonsterBuilder:
@@ -77,6 +78,8 @@ class MonsterBuilder:
         world.components["Identity"][eid] = Identity(id=eid, name=monster_type.capitalize(), title="", faction=getattr(Faction, cfg.get("faction"), None))
         # Etiqueta NPC para gestión de inventario
         world.components["NPCTagComponent"][eid] = NPCTagComponent()
+        # Identificador único de instancia para persistencia de inventario
+        world.components["MonsterInstanceComponent"][eid] = MonsterInstanceComponent()
 
         # Combat & CombatStats
         world.components["CombatStats"][eid] = CombatStats(current_hp=cfg["hp"], max_hp=cfg["hp"], power=cfg["power"], defense=cfg["defense"])

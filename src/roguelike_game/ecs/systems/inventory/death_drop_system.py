@@ -7,6 +7,7 @@ from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.managers.map.item_drop_manager import ItemDropManager
 from roguelike_game.ecs.components.inventory_component import InventoryComponent
 from roguelike_game.ecs.components.transform.position import Position
+from roguelike_game.ecs.components.monster_instance_component import MonsterInstanceComponent
 from roguelike_game.ecs.components.combat.death_timer import DeathTimer
 
 
@@ -26,6 +27,7 @@ class DeathDropSystem:
 
     def update(self, world, *args):
         comps = world.components
+        self.world = world
         inv_store = comps.get('InventoryComponent', {})
         death_store = comps.get('DeathTimer', {})
         pos_store = comps.get('Position', {})
@@ -60,7 +62,11 @@ class DeathDropSystem:
             self.processed.add(eid)
 
     def _persist_inventory(self, eid: int, inv: InventoryComponent):
-        key = str(eid)
+        inst = self.world.components.get('MonsterInstanceComponent', {}).get(eid)
+        if inst:
+            key = inst.instance_id
+        else:
+            key = str(eid)
         # Leer y actualizar JSON de monstruos
         try:
             with open(self.active_monster_path, 'r', encoding='utf-8') as f:

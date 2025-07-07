@@ -7,6 +7,7 @@ from roguelike_game.ecs.components.physical_item_component import PhysicalItemCo
 from roguelike_game.ecs.components.collectible_component import CollectibleComponent
 from roguelike_game.ecs.components.input_component import InputComponent
 from roguelike_game.ecs.components.transform.position import Position
+from roguelike_game.ecs.components.monster_instance_component import MonsterInstanceComponent
 from roguelike_engine.config.config_tiles import TILE_SIZE
 
 
@@ -26,6 +27,7 @@ class InventoryPickupSystem:
         # Reload drop data from file to sync new drops
         self.drop_manager = ItemDropManager(self.drop_manager.path)
         comps = world.components
+        self.world = world
         invs = comps.get('InventoryComponent', {})
         phys_items = comps.get('PhysicalItemComponent', {})
         collectibles = comps.get('CollectibleComponent', {})
@@ -62,7 +64,11 @@ class InventoryPickupSystem:
             inp.click = False
 
     def _persist_inventory(self, eid: int, inv: InventoryComponent):
-        key = str(eid)
+        inst = self.world.components.get('MonsterInstanceComponent', {}).get(eid)
+        if inst:
+            key = inst.instance_id
+        else:
+            key = str(eid)
         # Monster inventory
         try:
             with open(self.active_monster_path, 'r', encoding='utf-8') as f:

@@ -5,14 +5,26 @@ from roguelike_game.ecs.components.inventory_component import InventoryComponent
 
 
 class InventoryTransferSystem:
-    """
-    ECS system to handle item transfers between entities.
-    """
+
     def __init__(self,
                  active_monster_path: str = os.path.join(os.getcwd(), 'data', 'inventory_monsters.json'),
                  active_player_path: str = os.path.join(os.getcwd(), 'data', 'inventory_player.json')):
         self.active_monster_path = active_monster_path
         self.active_player_path = active_player_path
+        self.world = None
+
+    def update(self, world, *args):
+        self.world = world
+
+    def transfer(self, world, item_id: str, quantity: int, source_eid: int, target_eid: int) -> None:
+        """
+        ECS system to handle item transfers between entities.
+        """
+        def __init__(self,
+            active_monster_path: str = os.path.join(os.getcwd(), 'data', 'inventory_monsters.json'),
+            active_player_path: str = os.path.join(os.getcwd(), 'data', 'inventory_player.json')):
+            self.active_monster_path = active_monster_path
+            self.active_player_path = active_player_path
 
     def update(self, world, *args):
         """No-op update for transfer system"""
@@ -42,6 +54,11 @@ class InventoryTransferSystem:
         print(f"[TransferEvent] Transferred {quantity}x{item_id} from eid={source_eid} to eid={target_eid}")
 
     def _persist_inventory(self, eid: int, inv: InventoryComponent) -> None:
+        inst = self.world.components.get('MonsterInstanceComponent', {}).get(eid)
+        if inst:
+            key = inst.instance_id
+        else:
+            key = str(eid)
         key = str(eid)
         # Update monster inventory JSON
         try:

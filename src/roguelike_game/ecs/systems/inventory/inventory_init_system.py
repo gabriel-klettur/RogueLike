@@ -5,6 +5,7 @@ import random
 from roguelike_game.ecs.components.core.player_tag import PlayerTagComponent
 from roguelike_game.ecs.components.core.npc_tag import NPCTagComponent
 from roguelike_game.ecs.components.inventory_component import InventoryComponent
+from roguelike_game.ecs.components.monster_instance_component import MonsterInstanceComponent
 
 
 class InventoryInitSystem:
@@ -46,6 +47,7 @@ class InventoryInitSystem:
         comps = world.components
         player_tag_store = comps.get('PlayerTagComponent', {})
         npc_tag_store = comps.get('NPCTagComponent', {})
+        instance_store = comps.get('MonsterInstanceComponent', {})
 
         # Cargar datos activos
         # Cargar datos activos
@@ -89,6 +91,12 @@ class InventoryInitSystem:
 
         # Inicializar NPCs
         for eid in list(npc_tag_store.keys()):
+            inst = instance_store.get(eid)
+            if not inst:
+                continue
+            iid = inst.instance_id
+            if iid in self.initialized:
+                continue
             if eid in self.initialized:
                 continue
             # Determinar plantilla a partir de Identity.name
@@ -107,7 +115,7 @@ class InventoryInitSystem:
                         inv_comp.add(entry['item'], qty)
             world.components['InventoryComponent'][eid] = inv_comp
             # Persistir
-            active_monsters[str(eid)] = {
+            active_monsters[iid] = {
                 'template_id': template_id,
                 'slots': inv_comp.serialize().get('slots'),
                 'schema_version': self.schema_version
@@ -115,7 +123,7 @@ class InventoryInitSystem:
             self.initialized.add(eid)
 
         # Remove entries for monsters no longer present
-        current_npc_keys = set(str(eid) for eid in npc_tag_store.keys())
+        current_npc_keys = set(inst.instance_id for eid, inst in instance_store.items() if eid in npc_tag_store)
         for key in list(active_monsters.keys()):
             if key not in current_npc_keys:
                 active_monsters.pop(key)
