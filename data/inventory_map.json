@@ -47,12 +47,12 @@
     "item_id": "gold",
     "quantity": 3,
     "zone_id": "Forest",
-    "tile": {
-      "x": 14,
-      "y": 20
-    },
     "schema_version": "1.0.0",
-    "z_layer": 1
+    "z_layer": 1,
+    "position": {
+      "x": 549.0,
+      "y": 2377.0
+    }
   },
   "drop6": {
     "item_id": "gold",
@@ -72,8 +72,8 @@
     "schema_version": "1.0.0",
     "z_layer": 1,
     "position": {
-      "x": 477.0,
-      "y": 2315.0
+      "x": 571.0,
+      "y": 2459.0
     }
   },
   "drop8": {

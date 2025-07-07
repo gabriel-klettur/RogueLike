@@ -55,3 +55,12 @@ def test_transfer_no_space(tmp_files):
         system.transfer(world, 'item', 1, 1, 2)
     # Ensure rollback: source still has item
     assert inv1.has('item', 1)
+
+
+def test_update_noop(tmp_files):
+    monsters_path, players_path = tmp_files
+    system = InventoryTransferSystem(active_monster_path=monsters_path, active_player_path=players_path)
+    world = DummyWorld()
+    # Debería existir el método update y no lanzar
+    assert hasattr(system, 'update')
+    system.update(world)
