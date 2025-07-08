@@ -57,6 +57,7 @@ from roguelike_game.ecs.systems.inventory.inventory_pickup_system import Invento
 from roguelike_game.ecs.systems.inventory.inventory_transfer_system import InventoryTransferSystem
 from roguelike_game.ecs.systems.inventory.map_load_drops_system import MapLoadDropsSystem
 from roguelike_game.ecs.systems.inventory.drop_drag_system import DropDragSystem
+from roguelike_game.ecs.systems.inventory.inventory_ui_system import InventoryUISystem
 
 from roguelike_game.ecs.systems.rendering.drop_hover_system import DropHoverRenderSystem
 from roguelike_game.ecs.systems.rendering.grayscale_render_system import GrayscaleRenderSystem
@@ -93,5 +94,6 @@ def get_render_system_classes():
     base.append(ResurrectionAreaSystem)
     # Otros sistemas de render (eliminados FlashSystem y TrailSystem de render)
     base.append(DropHoverRenderSystem)
+    base.append(InventoryUISystem)
     # FlashSystem y TrailSystem son sistemas de update, no deben ir en render
     return base

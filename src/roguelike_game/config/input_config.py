@@ -49,7 +49,8 @@ class InputConfig:
                 "spell_teleport": "K_j",
                 "pause": "K_ESCAPE",
                 "toggle_item_editor": "K_F6",
-                "drop": "K_d"
+                "drop": "K_d",
+                "toggle_inventory": "K_i"
             }
             os.makedirs(os.path.dirname(self.path), exist_ok=True)
             with open(self.path, 'w', encoding='utf-8') as f:
@@ -57,6 +58,9 @@ class InputConfig:
                 # Toggle Item Editor binding
         if "toggle_item_editor" not in self.bindings:
             self.bindings["toggle_item_editor"] = "K_F6"
+            self.save()
+        if "toggle_inventory" not in self.bindings:
+            self.bindings["toggle_inventory"] = "K_i"
             self.save()
         # Asegurar binding para lightning
         if "spell_lightning" not in self.bindings:
@@ -72,6 +76,8 @@ class InputConfig:
 
     def get_key(self, action):
         # Fallback para Item Editor toggle
+        if action == "toggle_inventory":
+            return pygame.K_i
         if action == "toggle_item_editor":
             return pygame.K_F6
         if action == "toggle_tile_editor":

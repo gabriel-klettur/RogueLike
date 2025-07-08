@@ -12,5 +12,6 @@
     "spell_lightning": "r",
     "pause": "K_ESCAPE",
     "spell_arcane_flame": "K_c",
-    "toggle_item_editor": "K_F7"
+    "toggle_item_editor": "K_F7",
+    "toggle_inventory": "K_i"
 }
