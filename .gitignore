@@ -164,3 +164,4 @@ debug_maps
 logs
 
 data/saves/world_state.json
+/data/
