@@ -24,7 +24,7 @@ class InventoryEditorView:
         self.images = {}
 
     def draw(self, screen, model: InventoryEditorModel, world):
-        if not model.visible or model.selected_eid is None:
+        if not model.visible:
             return
         ow, oh = screen.get_size()
         # Overlay
@@ -57,16 +57,54 @@ class InventoryEditorView:
         instr = "Press 1:Player 2:Monsters 3:Map"
         instr_surf = self.font.render(instr, True, (200,200,200))
         overlay.blit(instr_surf, (10, tab_y + 30))
-        # Item List (text view)
-        inv = world.components.get('InventoryComponent', {}).get(model.selected_eid)
-        items = [(stack.item_id, stack.quantity) for stack in inv.slots if stack] if inv else []
-        list_x = 10
-        list_y = tab_y + 60
+        # Category-specific display
+        data = model.active_data.get(model.current_category, {})
+        y_offset = tab_y + 60
         line_height = self.font.get_linesize()
-        for idx, (item_id, qty) in enumerate(items):
-            line = f'{item_id} x{qty}'
-            surf = self.font.render(line, True, (255,255,255))
-            overlay.blit(surf, (list_x, list_y + idx * line_height))
+        if model.current_category == 'player':
+            # Player items
+            entries = data.values() if isinstance(data, dict) else data
+            for entry in entries:
+                slots = entry.get('slots', []) if isinstance(entry, dict) else []
+                for slot in slots:
+                    if slot:
+                        item_id = slot.get('item')
+                        qty = slot.get('quantity')
+                        line = f"{item_id} x{qty}"
+                        surf = self.font.render(line, True, (255,255,255))
+                        overlay.blit(surf, (10, y_offset))
+                        y_offset += line_height
+        elif model.current_category == 'monsters':
+            # Monster inventories
+            entries = data.items() if isinstance(data, dict) else []
+            for mon_id, entry in entries:
+                # Monster label
+                line = f"{mon_id}"
+                surf = self.font.render(line, True, (200,200,255))
+                overlay.blit(surf, (10, y_offset))
+                y_offset += line_height
+                slots = entry.get('slots', []) if isinstance(entry, dict) else []
+                for slot in slots:
+                    if slot:
+                        item_id = slot.get('item')
+                        qty = slot.get('quantity')
+                        line = f"  {item_id} x{qty}"
+                        surf = self.font.render(line, True, (255,255,255))
+                        overlay.blit(surf, (20, y_offset))
+                        y_offset += line_height
+        elif model.current_category == 'map':
+            # Floor items: JSON is a dict of id->entry
+            entries = data.values() if isinstance(data, dict) else data
+            for entry in entries:
+                item_id = entry.get('item_id')
+                qty = entry.get('quantity')
+                pos = entry.get('position', {})
+                x_coord = pos.get('x')
+                y_coord = pos.get('y')
+                line = f"{item_id} x{qty} @({x_coord:.1f},{y_coord:.1f})"
+                surf = self.font.render(line, True, (255,255,255))
+                overlay.blit(surf, (10, y_offset))
+                y_offset += line_height
 
         screen.blit(overlay, (0,0))
 
