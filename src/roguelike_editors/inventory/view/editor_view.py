@@ -83,6 +83,8 @@ class InventoryEditorView:
         max_offset = max(content_height - available_height, 0)
         model.scroll_offset = max(0, min(model.scroll_offset, max_offset))
         y_offset = base_y - model.scroll_offset
+        # Track rightmost drawn pixel for scrollbar position
+        max_line_right = 0
         if model.current_category == 'player':
             # Player items
             entries = data.values() if isinstance(data, dict) else data
@@ -95,6 +97,7 @@ class InventoryEditorView:
                         line = f"{item_id} x{qty}"
                         surf = self.font.render(line, True, (255,255,255))
                         overlay.blit(surf, (10, y_offset))
+                        max_line_right = max(max_line_right, 10 + surf.get_width())
                         y_offset += line_height
         elif model.current_category == 'monsters':
             # Monster inventories
@@ -104,6 +107,7 @@ class InventoryEditorView:
                 line = f"{mon_id}"
                 surf = self.font.render(line, True, (200,200,255))
                 overlay.blit(surf, (10, y_offset))
+                max_line_right = max(max_line_right, 10 + surf.get_width())
                 y_offset += line_height
                 slots = entry.get('slots', []) if isinstance(entry, dict) else []
                 for slot in slots:
@@ -113,6 +117,7 @@ class InventoryEditorView:
                         line = f"  {item_id} x{qty}"
                         surf = self.font.render(line, True, (255,255,255))
                         overlay.blit(surf, (20, y_offset))
+                        max_line_right = max(max_line_right, 20 + surf.get_width())
                         y_offset += line_height
         elif model.current_category == 'map':
             # Floor items: JSON is a dict of id->entry
@@ -126,12 +131,16 @@ class InventoryEditorView:
                 line = f"{item_id} x{qty} @({x_coord:.1f},{y_coord:.1f})"
                 surf = self.font.render(line, True, (255,255,255))
                 overlay.blit(surf, (10, y_offset))
+                max_line_right = max(max_line_right, 10 + surf.get_width())
                 y_offset += line_height
 
         # Draw scrollbar if content exceeds view
         if content_height > available_height:
             bar_width = 8
-            bar_x = ow - bar_width - 10
+            # Place scrollbar just to the right of content, but not beyond window edge
+            bar_x = max_line_right + self.margin
+            # Clamp to window right edge
+            bar_x = min(bar_x, ow - bar_width - 10)
             bar_y = base_y
             bar_height = available_height
             # Track
