@@ -56,7 +56,17 @@ class Game:
         events = pygame.event.get()
         # Revisar toggles de editores
         for event in events:
-            if event.type == pygame.KEYDOWN and event.key == self.menu.input_config.get_key('toggle_item_editor'):
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_F6:
+                # Alternar Inventory Editor
+                new_vis = not self.state.inventory_editor_state.visible
+                self.state.inventory_editor_state.visible = new_vis
+                if new_vis:
+                    players = list(self.inventory_editor.world.components.get('PlayerTagComponent', {}).keys())
+                    npcs = list(self.inventory_editor.world.components.get('NPCTagComponent', {}).keys())
+                    self.inventory_editor.model.entities = players + npcs
+                    self.inventory_editor.model.selected_eid = self.inventory_editor.model.entities[0] if self.inventory_editor.model.entities else None
+                return
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_F7:
                 # Alternar Item Editor
                 self.state.item_editor_state.visible = not self.state.item_editor_state.visible
                 return
