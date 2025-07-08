@@ -17,9 +17,6 @@ class ItemDropManager:
         """
         Inicializa gestor con la ruta a inventory_map.json.
         """
-        if getattr(self, '_initialized', False):
-            return
-        self._initialized = True
         self.path = path
         try:
             with open(self.path, 'r', encoding='utf-8') as f:
