@@ -2,6 +2,7 @@ import pygame
 import os
 from roguelike_editors.inventory.model.editor_model import InventoryEditorModel
 from roguelike_game.ecs.components.item_models import load_items
+from roguelike_ui.widgets.scroll_panel import ScrollPanel
 
 class InventoryEditorView:
     """
@@ -22,6 +23,7 @@ class InventoryEditorView:
         items_path = os.path.join(cwd, 'data', 'items.json')
         self.items = load_items(items_path)
         self.images = {}
+        self.scroll_panel = ScrollPanel(self.font, margin=self.margin)
 
     def draw(self, screen, model: InventoryEditorModel, world):
         if not model.visible:
@@ -57,100 +59,32 @@ class InventoryEditorView:
         instr = "Press 1:Player 2:Monsters 3:Map"
         instr_surf = self.font.render(instr, True, (200,200,200))
         overlay.blit(instr_surf, (10, tab_y + 30))
-        # Category-specific display
-        data = model.active_data.get(model.current_category, {})
-        # Vertical scroll support
-        line_height = self.font.get_linesize()
-        base_y = tab_y + 60
-        # Count lines to determine scroll bounds
-        num_lines = 0
-        if model.current_category == 'player':
-            for entry in data.values() if isinstance(data, dict) else []:
-                for slot in entry.get('slots', []):
-                    if slot:
-                        num_lines += 1
-        elif model.current_category == 'monsters':
-            for entry in data.values() if isinstance(data, dict) else []:
-                num_lines += 1
-                for slot in entry.get('slots', []):
-                    if slot:
-                        num_lines += 1
-        elif model.current_category == 'map':
-            for entry in data.values() if isinstance(data, dict) else []:
-                num_lines += 1
-        content_height = num_lines * line_height
-        available_height = oh - base_y
-        max_offset = max(content_height - available_height, 0)
-        model.scroll_offset = max(0, min(model.scroll_offset, max_offset))
-        y_offset = base_y - model.scroll_offset
-        # Track rightmost drawn pixel for scrollbar position
-        max_line_right = 0
-        if model.current_category == 'player':
-            # Player items
-            entries = data.values() if isinstance(data, dict) else data
-            for entry in entries:
-                slots = entry.get('slots', []) if isinstance(entry, dict) else []
-                for slot in slots:
-                    if slot:
-                        item_id = slot.get('item')
-                        qty = slot.get('quantity')
-                        line = f"{item_id} x{qty}"
-                        surf = self.font.render(line, True, (255,255,255))
-                        overlay.blit(surf, (10, y_offset))
-                        max_line_right = max(max_line_right, 10 + surf.get_width())
-                        y_offset += line_height
-        elif model.current_category == 'monsters':
-            # Monster inventories
-            entries = data.items() if isinstance(data, dict) else []
-            for mon_id, entry in entries:
-                # Monster label
-                line = f"{mon_id}"
-                surf = self.font.render(line, True, (200,200,255))
-                overlay.blit(surf, (10, y_offset))
-                max_line_right = max(max_line_right, 10 + surf.get_width())
-                y_offset += line_height
-                slots = entry.get('slots', []) if isinstance(entry, dict) else []
-                for slot in slots:
-                    if slot:
-                        item_id = slot.get('item')
-                        qty = slot.get('quantity')
-                        line = f"  {item_id} x{qty}"
-                        surf = self.font.render(line, True, (255,255,255))
-                        overlay.blit(surf, (20, y_offset))
-                        max_line_right = max(max_line_right, 20 + surf.get_width())
-                        y_offset += line_height
-        elif model.current_category == 'map':
-            # Floor items: JSON is a dict of id->entry
-            entries = data.values() if isinstance(data, dict) else data
-            for entry in entries:
-                item_id = entry.get('item_id')
-                qty = entry.get('quantity')
-                pos = entry.get('position', {})
-                x_coord = pos.get('x')
-                y_coord = pos.get('y')
-                line = f"{item_id} x{qty} @({x_coord:.1f},{y_coord:.1f})"
-                surf = self.font.render(line, True, (255,255,255))
-                overlay.blit(surf, (10, y_offset))
-                max_line_right = max(max_line_right, 10 + surf.get_width())
-                y_offset += line_height
 
-        # Draw scrollbar if content exceeds view
-        if content_height > available_height:
-            bar_width = 8
-            # Place scrollbar just to the right of content, but not beyond window edge
-            bar_x = max_line_right + self.margin
-            # Clamp to window right edge
-            bar_x = min(bar_x, ow - bar_width - 10)
-            bar_y = base_y
-            bar_height = available_height
-            # Track
-            pygame.draw.rect(overlay, (80,80,80,150), pygame.Rect(bar_x, bar_y, bar_width, bar_height))
-            # Thumb
-            thumb_height = max(int(bar_height * (available_height / content_height)), line_height)
-            thumb_y = bar_y + int((model.scroll_offset / content_height) * bar_height)
-            thumb_rect = pygame.Rect(bar_x, thumb_y, bar_width, thumb_height)
-            pygame.draw.rect(overlay, (200,200,200,200), thumb_rect)
+        # ScrollPanel listing
+        data = model.active_data.get(model.current_category, {})
+        items = []
+        if model.current_category == 'player':
+            for entry in data.values() if isinstance(data, dict) else []:
+                for slot in entry.get('slots', []):
+                    if slot:
+                        items.append(f"{slot.get('item')} x{slot.get('quantity')}")
+        elif model.current_category == 'monsters':
+            for mon_id, entry in data.items() if isinstance(data, dict) else []:
+                items.append(f"{mon_id}")
+                for slot in entry.get('slots', []):
+                    if slot:
+                        items.append(f"  {slot.get('item')} x{slot.get('quantity')}")
+        elif model.current_category == 'map':
+            for entry in data.values() if isinstance(data, dict) else []:
+                pos = entry.get('position', {})
+                items.append(f"{entry.get('item_id')} x{entry.get('quantity')} @({pos.get('x'):.1f},{pos.get('y'):.1f})")
+        panel_x, panel_y = 10, tab_y + 60
+        panel_w, panel_h = ow - 20, oh - panel_y
+        panel_rect = pygame.Rect(panel_x, panel_y, panel_w, panel_h)
+        self.scroll_panel.set_items(items)
+        self.scroll_panel.draw(overlay, panel_rect)
         screen.blit(overlay, (0,0))
+        return        
 
     def get_slot_at_pos(self, pos, count):
         x, y = pos
