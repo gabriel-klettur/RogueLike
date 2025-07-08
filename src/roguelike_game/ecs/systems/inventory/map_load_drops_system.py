@@ -31,12 +31,8 @@ class MapLoadDropsSystem:
         """
         Spawn new drops from inventory_map.json each frame.
         """
-        # Load latest drops from map JSON each frame
-        try:
-            with open(self.drop_manager.path, 'r', encoding='utf-8') as f:
-                drops_dict = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            return
+        # Use in-memory drop data en lugar de leer archivo
+        drops_dict = self.drop_manager._data or {}
 
         for drop_id, data in drops_dict.items():
             if drop_id in self._spawned:
@@ -80,4 +76,5 @@ class MapLoadDropsSystem:
 
             print(f"[MapLoadDropsSystem] Spawned drop '{drop_id}' item '{item_id}' at ({pos.x},{pos.y}) zone '{zone_id}' eid={eid}")
             self._spawned.add(drop_id)
+            self._loaded = True
 

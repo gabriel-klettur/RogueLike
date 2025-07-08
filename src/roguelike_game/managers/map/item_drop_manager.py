@@ -2,6 +2,14 @@ import json
 from typing import List, Dict, Union, Optional
 
 class ItemDropManager:
+    _instances = {}
+
+    def __new__(cls, path: str):
+        if path in cls._instances:
+            return cls._instances[path]
+        instance = super(ItemDropManager, cls).__new__(cls)
+        cls._instances[path] = instance
+        return instance
     """
     Gestor de drops de ítems en el mapa, persiste en un JSON.
     """
@@ -9,6 +17,9 @@ class ItemDropManager:
         """
         Inicializa gestor con la ruta a inventory_map.json.
         """
+        if getattr(self, '_initialized', False):
+            return
+        self._initialized = True
         self.path = path
         try:
             with open(self.path, 'r', encoding='utf-8') as f:
