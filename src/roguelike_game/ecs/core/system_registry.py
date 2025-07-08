@@ -57,6 +57,7 @@ from roguelike_game.ecs.systems.inventory.inventory_pickup_system import Invento
 from roguelike_game.ecs.systems.inventory.inventory_transfer_system import InventoryTransferSystem
 from roguelike_game.ecs.systems.inventory.map_load_drops_system import MapLoadDropsSystem
 from roguelike_game.ecs.systems.inventory.drop_drag_system import DropDragSystem
+from roguelike_game.ecs.systems.inventory.inventory_drag_system import InventoryDragSystem
 from roguelike_game.ecs.systems.inventory.inventory_ui_system import InventoryUISystem
 
 from roguelike_game.ecs.systems.rendering.drop_hover_system import DropHoverRenderSystem
@@ -73,7 +74,7 @@ def get_update_system_classes():
         MovementCollisionSystem,
         MeleeCombatSystem, SpellCastingSystem, ArcaneFlameSystem, SmokeSystem, SmokeEmitterSystem, SphereMagicShieldSystem, TeleportSystem, FireworkLaunchSystem, AuraSystem, ParticleSystem, ExplosionSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, LightningEmitterSystem, FireballSystem, LightningSystem, DashSystem, HitboxSystem,
         TrailSystem,
-        AnimationSystem, FlashSystem, SpawnSystem, InventoryInitSystem, DeathDropSystem, InventoryDropSystem, InventoryPickupSystem, InventoryTransferSystem,  MapLoadDropsSystem, ExpansionSystem,
+        AnimationSystem, FlashSystem, SpawnSystem, InventoryInitSystem, DeathDropSystem, InventoryDropSystem, InventoryPickupSystem, InventoryTransferSystem, InventoryDragSystem, MapLoadDropsSystem, ExpansionSystem,
     ]
 
 def get_render_system_classes():

@@ -13,6 +13,7 @@ class InventoryUISystem:
             items_path = os.path.join(os.getcwd(), 'data', 'items.json')
         self.items = load_items(items_path)
         self.visible = False
+        self.panel_rect = None
         pygame.font.init()
         self.font = pygame.font.SysFont(None, 24)
         self.icon_surfaces = {}
@@ -30,6 +31,8 @@ class InventoryUISystem:
                 self.icon_surfaces[item_id] = surf
 
     def update(self, world, screen, camera):
+        # Reset panel_rect each frame
+        self.panel_rect = None
         # Detectar toggle de inventario en el jugador
         player_eid = getattr(world, 'player_entity', None)
         if player_eid is None:
@@ -54,6 +57,8 @@ class InventoryUISystem:
         panel_x = (screen_w - panel_w) // 2
         panel_y = (screen_h - panel_h) // 2
         panel_rect = pygame.Rect(panel_x, panel_y, panel_w, panel_h)
+        # Expose panel_rect for drag systems
+        self.panel_rect = panel_rect
         # Fondo y borde
         pygame.draw.rect(screen, (50, 50, 50), panel_rect)
         pygame.draw.rect(screen, (200, 200, 200), panel_rect, 2)

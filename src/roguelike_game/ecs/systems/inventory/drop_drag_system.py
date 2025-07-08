@@ -1,6 +1,8 @@
 import os
 import pygame
 from roguelike_engine.utils.benchmark import benchmark
+from roguelike_game.ecs.systems.inventory.inventory_pickup_system import InventoryPickupSystem
+from roguelike_game.ecs.systems.inventory.inventory_ui_system import InventoryUISystem
 from roguelike_game.managers.map.item_drop_manager import ItemDropManager
 
 
@@ -28,6 +30,53 @@ class DropDragSystem:
 
         # Si no se presiona botón, finalizar drag si estaba activo
         if not mouse_buttons[0]:
+            if self.dragging_eid is None:
+                return
+            # Detectar fin de drag: caer en UI o actualizar JSON
+            ui_sys = next((s for s in getattr(world, 'render_systems', []) if isinstance(s, InventoryUISystem)), None)
+            if ui_sys and ui_sys.visible and ui_sys.panel_rect and ui_sys.panel_rect.collidepoint(mouse_x, mouse_y):
+                phys = comps['PhysicalItemComponent'][self.dragging_eid]
+                player = getattr(world, 'player_entity', None)
+                if player:
+                    inv_comp = comps.get('InventoryComponent', {}).get(player)
+                    if inv_comp:
+                        inv_comp.add(phys.item_id, phys.quantity)
+                        pickup_sys = next((s for s in getattr(world, 'update_systems', []) if isinstance(s, InventoryPickupSystem)), None)
+                        if pickup_sys:
+                            pickup_sys._persist_inventory(player, inv_comp)
+                self.drop_manager.pick_up(phys.drop_id)
+                world.remove_entity(self.dragging_eid)
+                self.dragging_eid = None
+                return
+            # Actualizar drop en JSON
+            phys = comps['PhysicalItemComponent'][self.dragging_eid]
+            pos = comps['Position'][self.dragging_eid]
+            self.drop_manager.update_drop(phys.drop_id, position=pos)
+            self.dragging_eid = None
+            return
+            if self.dragging_eid is not None:
+                # Detectar drop sobre UI para pickup drag
+                ui_sys = next((s for s in getattr(world, 'render_systems', []) if isinstance(s, InventoryUISystem)), None)
+                if ui_sys and ui_sys.visible and ui_sys.panel_rect.collidepoint(mouse_x, mouse_y):
+                    phys = comps['PhysicalItemComponent'][self.dragging_eid]
+                    player = getattr(world, 'player_entity', None)
+                    if player:
+                        inv_comp = comps.get('InventoryComponent', {}).get(player)
+                        if inv_comp:
+                            inv_comp.add(phys.item_id, phys.quantity)
+                            pickup_sys = next((s for s in getattr(world, 'update_systems', []) if isinstance(s, InventoryPickupSystem)), None)
+                            if pickup_sys:
+                                pickup_sys._persist_inventory(player, inv_comp)
+                    # Eliminar drop de mapa y mundo
+                    self.drop_manager.pick_up(phys.drop_id)
+                    world.remove_entity(self.dragging_eid)
+                    self.dragging_eid = None
+                    return
+            # Persistir en JSON
+            phys = comps['PhysicalItemComponent'][self.dragging_eid]
+            pos = comps['Position'][self.dragging_eid]
+            self.drop_manager.update_drop(phys.drop_id, position=pos)
+            self.dragging_eid = None
             if self.dragging_eid is not None:
                 # Persistir en JSON
                 phys = comps['PhysicalItemComponent'][self.dragging_eid]
