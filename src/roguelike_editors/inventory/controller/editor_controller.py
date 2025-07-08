@@ -68,13 +68,9 @@ class InventoryEditorController:
                     self.model.current_category = cat
                     return
             # Guardar default
-            if hasattr(self.view, 'save_default_rect') and self.view.save_default_rect.collidepoint(mx, my):
-                self._save_default()
-                return
+
             # Guardar active
-            if hasattr(self.view, 'save_active_rect') and self.view.save_active_rect.collidepoint(mx, my):
-                self._save_active()
-                return
+
         # Selección de entidad con flechas
         if event.type == pygame.KEYDOWN:
             # Atajo de teclado para cambiar categoría (1: Player, 2: Monsters, 3: Map)
@@ -125,10 +121,8 @@ class InventoryEditorController:
             if self.view.save_active_rect and self.view.save_active_rect.collidepoint(mx, my):
                 self._save_active()
                 return
-            if self.view.save_button_rect and self.view.save_button_rect.collidepoint(mx, my):
-                self._save_template(inv)
-            if self.view.apply_button_rect and self.view.apply_button_rect.collidepoint(mx, my):
-                self._apply_changes(inv)
+
+
 
     def draw(self, screen):
         self.view.draw(screen, self.model, self.world)

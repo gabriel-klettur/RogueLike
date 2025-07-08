@@ -57,51 +57,17 @@ class InventoryEditorView:
         instr = "Press 1:Player 2:Monsters 3:Map"
         instr_surf = self.font.render(instr, True, (200,200,200))
         overlay.blit(instr_surf, (10, tab_y + 30))
-        # Grid
+        # Item List (text view)
         inv = world.components.get('InventoryComponent', {}).get(model.selected_eid)
-        slots = inv.slots if inv else []
-        origin_x, origin_y = self.grid_origin
-        cols = min(len(slots), 10)
-        for idx, stack in enumerate(slots):
-            col = idx % cols
-            row = idx // cols
-            x = origin_x + col * (self.slot_size + self.margin)
-            y = origin_y + row * (self.slot_size + self.margin) + 30
-            rect = pygame.Rect(x, y, self.slot_size, self.slot_size)
-            pygame.draw.rect(overlay, (100,100,100), rect)
-            pygame.draw.rect(overlay, (255,255,255), rect, 2)
-            if stack:
-                item_id, qty = stack.item_id, stack.quantity
-                img = self._get_item_image(item_id)
-                if img:
-                    iw, ih = img.get_size()
-                    overlay.blit(img, (x + (self.slot_size - iw)//2, y + (self.slot_size - ih)//2))
-                qty_text = self.font.render(str(qty), True, (255,255,0))
-                overlay.blit(qty_text, (x + self.slot_size - qty_text.get_width() - 2, y + self.slot_size - qty_text.get_height() - 2))
-        # Botones centrados bajo la grilla
-        rows = (len(slots) + cols - 1) // cols if slots else 0
-        grid_height = rows * (self.slot_size + self.margin)
-        bx = origin_x
-        by = origin_y + 30 + grid_height + 20
-        # Botón guardar plantilla
-        self.save_default_rect = pygame.Rect(bx, by, *self.button_size)
-        pygame.draw.rect(overlay, (50,150,50), self.save_default_rect)
-        save_txt = self.font.render("Guardar plantilla", True, (255,255,255))
-        overlay.blit(save_txt, (bx + (self.button_size[0] - save_txt.get_width())//2, by + 5))
-        # Botón aplicar cambios
-        bx2 = bx + self.button_size[0] + 20
-        self.save_active_rect = pygame.Rect(bx2, by, *self.button_size)
-        pygame.draw.rect(overlay, (50,150,50), self.save_active_rect)
-        apply_txt = self.font.render("Aplicar cambios", True, (255,255,255))
-        overlay.blit(apply_txt, (bx2 + (self.button_size[0] - apply_txt.get_width())//2, by + 5))
-        # Dragging
-        if model.drag_item:
-            mx, my = pygame.mouse.get_pos()
-            item_id, qty = model.drag_item
-            img = self._get_item_image(item_id)
-            if img:
-                iw, ih = img.get_size()
-                overlay.blit(img, (mx - iw//2, my - ih//2))
+        items = [(stack.item_id, stack.quantity) for stack in inv.slots if stack] if inv else []
+        list_x = 10
+        list_y = tab_y + 60
+        line_height = self.font.get_linesize()
+        for idx, (item_id, qty) in enumerate(items):
+            line = f'{item_id} x{qty}'
+            surf = self.font.render(line, True, (255,255,255))
+            overlay.blit(surf, (list_x, list_y + idx * line_height))
+
         screen.blit(overlay, (0,0))
 
     def get_slot_at_pos(self, pos, count):
