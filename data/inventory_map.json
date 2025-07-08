@@ -438,5 +438,35 @@
       "x": 2718.6295031902705,
       "y": 2665.33810573267
     }
+  },
+  "d81fb91f-6f90-4744-b44a-a0095b70037a": {
+    "item_id": "gold",
+    "quantity": 0,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2960,
+      "y": 2392
+    }
+  },
+  "6a3578fd-128c-4408-b8ff-502da30d0d77": {
+    "item_id": "health_potion",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2960,
+      "y": 2392
+    }
+  },
+  "d39569b6-592b-4b5c-bc69-7fc397b1d91f": {
+    "item_id": "mana_potion",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2960,
+      "y": 2392
+    }
   }
 }
