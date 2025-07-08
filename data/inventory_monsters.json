@@ -1,40 +1,14 @@
 {
-  "7d2cbda9-7206-4064-b635-46ae48a59a65": {
-    "template_id": "11111111-2222-3333-4444-555555555555",
-    "slots": [
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "schema_version": "1.0.0"
-  },
-  "e89ffffe-0393-4344-ae99-d602f9a3b3f9": {
-    "template_id": "33333333-3333-3333-3333-333333333333",
+  "370c32b5-882c-4e35-951e-18467dfbc26d": {
+    "template_id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
     "slots": [
       {
         "item": "gold",
-        "quantity": 1
+        "quantity": 6
       },
       {
         "item": "experience_orb",
-        "quantity": 1
+        "quantity": 3
       },
       null,
       null,
@@ -57,12 +31,90 @@
     ],
     "schema_version": "1.0.0"
   },
-  "153d0748-cd25-4fa5-9315-5c68310819b5": {
+  "2fe624cf-1df1-4ebc-b5b9-5c588b743bf6": {
     "template_id": "22222222-2222-2222-2222-222222222222",
     "slots": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "d6319ca8-1117-4f8b-abae-16e03882e001": {
+    "template_id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+    "slots": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "8c834354-cd2f-477a-b1c3-d859b6e8a6e0": {
+    "template_id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+    "slots": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "fdacbb95-be1b-43a3-8025-5ac5fa9369d8": {
+    "template_id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+    "slots": [
       {
         "item": "gold",
-        "quantity": 1
+        "quantity": 4
       },
       {
         "item": "experience_orb",
@@ -89,11 +141,17 @@
     ],
     "schema_version": "1.0.0"
   },
-  "4aa20335-7872-41f0-b8d0-17687ecbeb1a": {
-    "template_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+  "a675d530-a0a1-464a-a9a4-576319277e8d": {
+    "template_id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
     "slots": [
-      null,
-      null,
+      {
+        "item": "gold",
+        "quantity": 5
+      },
+      {
+        "item": "experience_orb",
+        "quantity": 2
+      },
       null,
       null,
       null,
@@ -115,86 +173,8 @@
     ],
     "schema_version": "1.0.0"
   },
-  "1e0b40a4-4957-4edf-8a15-17ebc4da3b77": {
-    "template_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
-    "slots": [
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "schema_version": "1.0.0"
-  },
-  "b4f22fca-9b72-47cc-ac1e-dbf164784b6b": {
-    "template_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-    "slots": [
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "schema_version": "1.0.0"
-  },
-  "e760bb1c-8fb3-4852-b775-75cbeb73580b": {
-    "template_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
-    "slots": [
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "schema_version": "1.0.0"
-  },
-  "773f2105-71df-4833-af10-187cb6ff72c1": {
-    "template_id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+  "6140c829-6be5-4791-997e-16e08dee653d": {
+    "template_id": "33333333-3333-3333-3333-333333333333",
     "slots": [
       null,
       null,
