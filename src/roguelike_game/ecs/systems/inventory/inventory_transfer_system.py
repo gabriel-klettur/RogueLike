@@ -31,6 +31,7 @@ class InventoryTransferSystem:
         pass
 
     def transfer(self, world, item_id: str, quantity: int, source_eid: int, target_eid: int) -> None:
+        self.world = world
         comps = world.components
         invs = comps.get('InventoryComponent', {})
         source_inv = invs.get(source_eid)
