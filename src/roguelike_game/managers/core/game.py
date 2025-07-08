@@ -58,9 +58,10 @@ class Game:
         for event in events:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_F6:
                 # Alternar Inventory Editor
-                new_vis = not self.state.inventory_editor_state.visible
-                self.state.inventory_editor_state.visible = new_vis
+                new_vis = not self.inventory_editor.model.visible
+                self.inventory_editor.model.visible = new_vis
                 if new_vis:
+                    # Inicializar lista de entidades
                     players = list(self.inventory_editor.world.components.get('PlayerTagComponent', {}).keys())
                     npcs = list(self.inventory_editor.world.components.get('NPCTagComponent', {}).keys())
                     self.inventory_editor.model.entities = players + npcs
@@ -110,6 +111,9 @@ class Game:
 
     @benchmark(lambda self: self.perf_log, "2.TOTAL: UPDATE")
     def update(self):
+        # Pause game update when inventory editor is open
+        if self.inventory_editor.model.visible:
+            return
         update_game(
             self.state,            
             self.camera,
@@ -143,6 +147,9 @@ class Game:
 
     @benchmark(lambda self: self.perf_log, "4.2.ecs - update")
     def update_ecs(self):
+        # Pause ECS update when inventory editor is open
+        if self.inventory_editor.model.visible:
+            return
         self.ecs.update(self.clock, self.screen, self.camera)
 
     @benchmark(lambda self: self.perf_log, "4.1 ecs - render")

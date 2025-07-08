@@ -1,6 +1,7 @@
 import pygame
 import os
 import json
+from roguelike_ui.services.json_persistence import load_from_json, save_to_json
 
 from roguelike_editors.inventory.model.editor_model import InventoryEditorModel
 from roguelike_editors.inventory.view.editor_view import InventoryEditorView
@@ -17,12 +18,29 @@ class InventoryEditorController:
         self.assets = assets
         self.font = font
         self.view = InventoryEditorView(assets, font)
-        # Rutas de archivos JSON
+        # Paths por categoría
         cwd = os.getcwd()
-        self.default_player_path = os.path.join(cwd, 'data', 'defaults', 'inventory_player.json')
-        self.active_player_path = os.path.join(cwd, 'data', 'inventory_player.json')
-        self.default_monster_path = os.path.join(cwd, 'data', 'defaults', 'inventory_monsters.json')
-        self.active_monster_path = os.path.join(cwd, 'data', 'inventory_monsters.json')
+        self.paths = {
+            'player': {'default': os.path.join(cwd, 'data', 'defaults', 'inventory_player.json'), 'active': os.path.join(cwd, 'data', 'inventory_player.json')},
+            'monsters': {'default': os.path.join(cwd, 'data', 'defaults', 'inventory_monsters.json'), 'active': os.path.join(cwd, 'data', 'inventory_monsters.json')},
+            'map': {'default': os.path.join(cwd, 'data', 'defaults', 'inventory_map.json'), 'active': os.path.join(cwd, 'data', 'inventory_map.json')}
+        }
+        # Cargar datos JSON en el modelo
+        for cat, p in self.paths.items():
+            self.model.default_data[cat] = load_from_json(p['default'])
+            self.model.active_data[cat] = load_from_json(p['active'])
+
+    def _save_default(self):
+        cat = self.model.current_category
+        path = self.paths[cat]['default']
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(self.model.default_data.get(cat, {}), f, indent=2)
+
+    def _save_active(self):
+        cat = self.model.current_category
+        path = self.paths[cat]['active']
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(self.model.active_data.get(cat, {}), f, indent=2)
 
     def handle_event(self, event):
         # Debug F7
@@ -41,8 +59,34 @@ class InventoryEditorController:
             return
         if not self.model.visible:
             return
+        # Gestión de pestañas y guardado JSON
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            mx, my = event.pos
+            # Cambiar categoría
+            for rect, cat in getattr(self.view, 'tab_rects', []):
+                if rect.collidepoint(mx, my):
+                    self.model.current_category = cat
+                    return
+            # Guardar default
+            if hasattr(self.view, 'save_default_rect') and self.view.save_default_rect.collidepoint(mx, my):
+                self._save_default()
+                return
+            # Guardar active
+            if hasattr(self.view, 'save_active_rect') and self.view.save_active_rect.collidepoint(mx, my):
+                self._save_active()
+                return
         # Selección de entidad con flechas
         if event.type == pygame.KEYDOWN:
+            # Atajo de teclado para cambiar categoría (1: Player, 2: Monsters, 3: Map)
+            if event.key == pygame.K_1:
+                self.model.current_category = 'player'
+                return
+            if event.key == pygame.K_2:
+                self.model.current_category = 'monsters'
+                return
+            if event.key == pygame.K_3:
+                self.model.current_category = 'map'
+                return
             if event.key == pygame.K_LEFT and not self.model.prev_left:
                 idx = self.model.entities.index(self.model.selected_eid)
                 self.model.selected_eid = self.model.entities[(idx - 1) % len(self.model.entities)]
@@ -75,6 +119,12 @@ class InventoryEditorController:
                 self.model.drag_item = None
                 self.model.drag_slot = None
             # Botones
+            if self.view.save_default_rect and self.view.save_default_rect.collidepoint(mx, my):
+                self._save_default()
+                return
+            if self.view.save_active_rect and self.view.save_active_rect.collidepoint(mx, my):
+                self._save_active()
+                return
             if self.view.save_button_rect and self.view.save_button_rect.collidepoint(mx, my):
                 self._save_template(inv)
             if self.view.apply_button_rect and self.view.apply_button_rect.collidepoint(mx, my):
