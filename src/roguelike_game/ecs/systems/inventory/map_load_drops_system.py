@@ -31,6 +31,9 @@ class MapLoadDropsSystem:
         """
         Spawn new drops from inventory_map.json each frame.
         """
+        # Reload drop data from file to sync external changes only for custom drop paths
+        if self.drop_manager.path != self._initial_path:
+            self.drop_manager = ItemDropManager(self.drop_manager.path)
         # Use in-memory drop data en lugar de leer archivo
         drops_dict = self.drop_manager._data or {}
 

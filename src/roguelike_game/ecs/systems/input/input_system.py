@@ -28,6 +28,7 @@ class InputSystem:
         self.prev_right = {}
         self.prev_drop = {}
         self.prev_toggle = {}
+        self.prev_toggle_inventory = {}
         # Cargar configuración de teclas desde JSON
         self.config = InputConfig(config_path)
 
@@ -183,6 +184,16 @@ class InputSystem:
             else:
                 inp.drop = False
             self.prev_drop[eid] = curr_drop
+
+            # Toggle inventory display: detectar flanco ascendente
+            inv_key = self.config.get_key("toggle_inventory")
+            curr_inv = bool(keys[inv_key])
+            prev_inv = self.prev_toggle_inventory.get(eid, False)
+            if curr_inv and not prev_inv:
+                inp.toggle_inventory = True
+            else:
+                inp.toggle_inventory = False
+            self.prev_toggle_inventory[eid] = curr_inv
 
             # Control de click: desactivar cuando se arrastra un ítem
             dragging = any(isinstance(s, DropDragSystem) and s.dragging_eid is not None for s in getattr(world, 'update_systems', []))
