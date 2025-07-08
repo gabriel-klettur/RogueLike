@@ -14,8 +14,9 @@ class InventoryEditorView:
         self.margin = 5
         self.grid_origin = (50, 50)
         self.button_size = (120, 30)
-        self.save_button_rect = None
-        self.apply_button_rect = None
+        self.tab_rects = []
+        self.save_default_rect = None
+        self.save_active_rect = None
         # Cargar íconos de ítems
         cwd = os.getcwd()
         items_path = os.path.join(cwd, 'data', 'items.json')
@@ -33,6 +34,29 @@ class InventoryEditorView:
         title = f"Inv Editor - Eid {model.selected_eid}"
         text = self.font.render(title, True, (255,255,255))
         overlay.blit(text, (10,10))
+        # Tabs
+        self.tab_rects = []
+        tab_x = 10
+        tab_y = 40
+        for cat in model.categories:
+            label = cat.capitalize()
+            txt = self.font.render(label, True, (255,255,255))
+            w, h = txt.get_size()
+            padding = 10
+            rect = pygame.Rect(tab_x, tab_y, w + padding*2, h + padding//2)
+            if model.current_category == cat:
+                color = (100,100,100)
+            else:
+                color = (50,50,50)
+            pygame.draw.rect(overlay, color, rect)
+            pygame.draw.rect(overlay, (255,255,255), rect, 2)
+            overlay.blit(txt, (tab_x + padding, tab_y + (rect.height - h)//2))
+            self.tab_rects.append((rect, cat))
+            tab_x += rect.width + 5
+        # Instrucciones de navegación por teclado
+        instr = "Press 1:Player 2:Monsters 3:Map"
+        instr_surf = self.font.render(instr, True, (200,200,200))
+        overlay.blit(instr_surf, (10, tab_y + 30))
         # Grid
         inv = world.components.get('InventoryComponent', {}).get(model.selected_eid)
         slots = inv.slots if inv else []
@@ -54,17 +78,22 @@ class InventoryEditorView:
                     overlay.blit(img, (x + (self.slot_size - iw)//2, y + (self.slot_size - ih)//2))
                 qty_text = self.font.render(str(qty), True, (255,255,0))
                 overlay.blit(qty_text, (x + self.slot_size - qty_text.get_width() - 2, y + self.slot_size - qty_text.get_height() - 2))
-        # Botones
-        bx = ow - self.button_size[0] - 20
-        by = origin_y + 30
-        self.save_button_rect = pygame.Rect(bx, by, *self.button_size)
-        self.apply_button_rect = pygame.Rect(bx, by + self.button_size[1] + 10, *self.button_size)
-        pygame.draw.rect(overlay, (50,150,50), self.save_button_rect)
-        pygame.draw.rect(overlay, (50,150,50), self.apply_button_rect)
+        # Botones centrados bajo la grilla
+        rows = (len(slots) + cols - 1) // cols if slots else 0
+        grid_height = rows * (self.slot_size + self.margin)
+        bx = origin_x
+        by = origin_y + 30 + grid_height + 20
+        # Botón guardar plantilla
+        self.save_default_rect = pygame.Rect(bx, by, *self.button_size)
+        pygame.draw.rect(overlay, (50,150,50), self.save_default_rect)
         save_txt = self.font.render("Guardar plantilla", True, (255,255,255))
-        apply_txt = self.font.render("Aplicar cambios", True, (255,255,255))
         overlay.blit(save_txt, (bx + (self.button_size[0] - save_txt.get_width())//2, by + 5))
-        overlay.blit(apply_txt, (bx + (self.button_size[0] - apply_txt.get_width())//2, by + self.button_size[1] + 15))
+        # Botón aplicar cambios
+        bx2 = bx + self.button_size[0] + 20
+        self.save_active_rect = pygame.Rect(bx2, by, *self.button_size)
+        pygame.draw.rect(overlay, (50,150,50), self.save_active_rect)
+        apply_txt = self.font.render("Aplicar cambios", True, (255,255,255))
+        overlay.blit(apply_txt, (bx2 + (self.button_size[0] - apply_txt.get_width())//2, by + 5))
         # Dragging
         if model.drag_item:
             mx, my = pygame.mouse.get_pos()

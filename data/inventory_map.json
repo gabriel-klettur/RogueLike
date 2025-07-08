@@ -368,5 +368,75 @@
       "x": 1982.0049664448761,
       "y": 2197.753300285769
     }
+  },
+  "7c2b7f37-1ec8-4439-84a0-05ec569dcdb3": {
+    "item_id": "gold",
+    "quantity": 5,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2357.7021491905584,
+      "y": 2241.2709502388025
+    }
+  },
+  "50555a76-f0d3-4eb8-8e36-b102cd8596ac": {
+    "item_id": "experience_orb",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2357.7021491905584,
+      "y": 2241.2709502388025
+    }
+  },
+  "91da48e6-e1ae-4f1c-b3fd-ab3527abb129": {
+    "item_id": "gold",
+    "quantity": 0,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2192,
+      "y": 2520
+    }
+  },
+  "a0422f85-0818-4e33-a0e1-d04daf74f229": {
+    "item_id": "health_potion",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2192,
+      "y": 2520
+    }
+  },
+  "d1486b7e-13a7-490f-83bb-364bb6f1ac13": {
+    "item_id": "mana_potion",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2192,
+      "y": 2520
+    }
+  },
+  "e5418a5d-c992-4753-9a33-279d8b796533": {
+    "item_id": "gold",
+    "quantity": 3,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2718.6295031902705,
+      "y": 2665.33810573267
+    }
+  },
+  "0f16e3a1-dbae-4c50-a3c0-a45127945cdf": {
+    "item_id": "experience_orb",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2718.6295031902705,
+      "y": 2665.33810573267
+    }
   }
 }
