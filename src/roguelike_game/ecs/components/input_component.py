@@ -30,4 +30,6 @@ class InputComponent:
         self.toggle_editor: bool = False
         self.toggle_inventory: bool = False
         self.show_all_drops: bool = False
+        # UI drag state: when the inventory panel is being dragged
+        self.ui_drag: bool = False
 # Path: src/roguelike_game/ecs/components/input_component.py

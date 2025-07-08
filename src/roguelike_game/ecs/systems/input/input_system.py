@@ -7,6 +7,7 @@ import pygame
 import time
 import math
 from roguelike_game.ecs.systems.inventory.drop_drag_system import DropDragSystem
+from roguelike_game.ecs.systems.inventory.inventory_ui_system import InventoryUISystem
 
 from roguelike_game.ecs.components.ai.wants_to_cast import WantsToCastSpell
 from roguelike_engine.utils.benchmark import benchmark
@@ -195,9 +196,13 @@ class InputSystem:
                 inp.toggle_inventory = False
             self.prev_toggle_inventory[eid] = curr_inv
 
-            # Control de click: desactivar cuando se arrastra un ítem
-            dragging = any(isinstance(s, DropDragSystem) and s.dragging_eid is not None for s in getattr(world, 'update_systems', []))
+            # Control de click: desactivar cuando se arrastra un ítem o el panel de inventario
+            dragging_items = any(isinstance(s, DropDragSystem) and s.dragging_eid is not None for s in getattr(world, 'update_systems', []))
+            dragging_ui = any(isinstance(s, InventoryUISystem) and s.dragging for s in getattr(world, 'render_systems', []))
+            dragging = dragging_items or dragging_ui
+
             if dragging:
+                print(f"[DEBUG] [InputSystem] input suppressed due to UI drag (dragging_items={dragging_items}, dragging_ui={dragging_ui})")
                 inp.click = False
                 self.prev_click[eid] = False
                 curr_right = False
@@ -220,6 +225,13 @@ class InputSystem:
                 # Detectar dash (right-click) por flanco ascendente
                 curr_right = bool(pygame.mouse.get_pressed()[2])
                 prev_r = self.prev_right.get(eid, False)
+                # Suppress initial dash if right-click on inventory panel
+                if curr_right and not prev_r:
+                    for s in getattr(world, 'render_systems', []):
+                        if isinstance(s, InventoryUISystem) and s.panel_rect and s.panel_rect.collidepoint(pygame.mouse.get_pos()):
+                            curr_right = False
+                            print(f"[DEBUG] [InputSystem] suppressed initial dash on inventory panel")
+                            break
                 if curr_right and not prev_r:
                     print(f"[DEBUG][{time.time():.3f}] eid={eid} right-click -> dash")
                     world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='dash')
