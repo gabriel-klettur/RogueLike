@@ -24,3 +24,5 @@ class InventoryEditorModel:
     drag_slot: Optional[int] = None
     prev_left: bool = False
     prev_right: bool = False
+    # Scroll offset for vertical scrolling of lists
+    scroll_offset: int = 0

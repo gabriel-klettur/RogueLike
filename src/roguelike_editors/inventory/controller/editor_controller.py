@@ -59,6 +59,14 @@ class InventoryEditorController:
             return
         if not self.model.visible:
             return
+        # Vertical scroll con rueda del ratón
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 4:  # rueda arriba
+                self.model.scroll_offset -= self.font.get_linesize()
+                return
+            elif event.button == 5:  # rueda abajo
+                self.model.scroll_offset += self.font.get_linesize()
+                return
         # Gestión de pestañas y guardado JSON
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mx, my = event.pos

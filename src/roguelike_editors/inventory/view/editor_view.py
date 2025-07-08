@@ -59,8 +59,30 @@ class InventoryEditorView:
         overlay.blit(instr_surf, (10, tab_y + 30))
         # Category-specific display
         data = model.active_data.get(model.current_category, {})
-        y_offset = tab_y + 60
+        # Vertical scroll support
         line_height = self.font.get_linesize()
+        base_y = tab_y + 60
+        # Count lines to determine scroll bounds
+        num_lines = 0
+        if model.current_category == 'player':
+            for entry in data.values() if isinstance(data, dict) else []:
+                for slot in entry.get('slots', []):
+                    if slot:
+                        num_lines += 1
+        elif model.current_category == 'monsters':
+            for entry in data.values() if isinstance(data, dict) else []:
+                num_lines += 1
+                for slot in entry.get('slots', []):
+                    if slot:
+                        num_lines += 1
+        elif model.current_category == 'map':
+            for entry in data.values() if isinstance(data, dict) else []:
+                num_lines += 1
+        content_height = num_lines * line_height
+        available_height = oh - base_y
+        max_offset = max(content_height - available_height, 0)
+        model.scroll_offset = max(0, min(model.scroll_offset, max_offset))
+        y_offset = base_y - model.scroll_offset
         if model.current_category == 'player':
             # Player items
             entries = data.values() if isinstance(data, dict) else data
@@ -106,6 +128,19 @@ class InventoryEditorView:
                 overlay.blit(surf, (10, y_offset))
                 y_offset += line_height
 
+        # Draw scrollbar if content exceeds view
+        if content_height > available_height:
+            bar_width = 8
+            bar_x = ow - bar_width - 10
+            bar_y = base_y
+            bar_height = available_height
+            # Track
+            pygame.draw.rect(overlay, (80,80,80,150), pygame.Rect(bar_x, bar_y, bar_width, bar_height))
+            # Thumb
+            thumb_height = max(int(bar_height * (available_height / content_height)), line_height)
+            thumb_y = bar_y + int((model.scroll_offset / content_height) * bar_height)
+            thumb_rect = pygame.Rect(bar_x, thumb_y, bar_width, thumb_height)
+            pygame.draw.rect(overlay, (200,200,200,200), thumb_rect)
         screen.blit(overlay, (0,0))
 
     def get_slot_at_pos(self, pos, count):
