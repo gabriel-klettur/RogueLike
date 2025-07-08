@@ -165,3 +165,11 @@ logs
 
 data/saves/world_state.json
 /data/
+/data/inventory_player.json
+/data/inventory_monsters.json
+/data/inventory_map.json
+/data/items.json
+/data/items_schema.json
+/data/inventory_monsters_schema.json
+/data/inventory_player_schema.json
+/data/inventory_map_schema.json
