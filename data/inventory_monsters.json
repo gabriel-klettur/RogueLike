@@ -1,15 +1,9 @@
 {
-  "e21b0357-f2ae-4f5c-9f70-524223d88400": {
-    "template_id": "33333333-3333-3333-3333-333333333333",
+  "42c105e2-6fb7-45af-82c8-52653fc1f9e6": {
+    "template_id": "22222222-2222-2222-2222-222222222222",
     "slots": [
-      {
-        "item": "gold",
-        "quantity": 1
-      },
-      {
-        "item": "experience_orb",
-        "quantity": 1
-      },
+      null,
+      null,
       null,
       null,
       null,
@@ -31,44 +25,47 @@
     ],
     "schema_version": "1.0.0"
   },
-  "4c512b5c-b877-4941-9386-87b6b1091b6c": {
-    "template_id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+  "1eb7af0d-c0c2-4942-9d8b-d9b9f5735b23": {
+    "template_id": "33333333-3333-3333-3333-333333333333",
+    "slots": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "9afcd48d-069a-4418-98a8-b9fcf120b950": {
+    "template_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
     "slots": [
       {
         "item": "gold",
-        "quantity": 5
+        "quantity": 6
       },
       {
         "item": "experience_orb",
         "quantity": 3
       },
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "schema_version": "1.0.0"
-  },
-  "3ffb4e75-86d7-4ef1-854b-4b3307039beb": {
-    "template_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
-    "slots": [
-      null,
-      null,
-      null,
+      {
+        "item": "wood",
+        "quantity": 1
+      },
       null,
       null,
       null,
@@ -89,8 +86,8 @@
     ],
     "schema_version": "1.0.0"
   },
-  "207f23ae-fadd-4d18-899e-4c14a2a47294": {
-    "template_id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+  "bf6d9e5d-aa65-4b4b-b557-f075bcd6d798": {
+    "template_id": "33333333-3333-3333-3333-333333333333",
     "slots": [
       null,
       null,

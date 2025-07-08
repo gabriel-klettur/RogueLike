@@ -4,7 +4,7 @@
     "slots": [
       {
         "item": "gold",
-        "quantity": 0
+        "quantity": 4
       },
       {
         "item": "health_potion",
@@ -14,7 +14,10 @@
         "item": "mana_potion",
         "quantity": 2
       },
-      null,
+      {
+        "item": "experience_orb",
+        "quantity": 3
+      },
       null
     ],
     "schema_version": "1.0.0"
