@@ -50,7 +50,8 @@ class InputConfig:
                 "pause": "K_ESCAPE",
                 "toggle_item_editor": "K_F6",
                 "drop": "K_d",
-                "toggle_inventory": "K_i"
+                "toggle_inventory": "K_i",
+                "toggle_building_editor": "K_F10"
             }
             os.makedirs(os.path.dirname(self.path), exist_ok=True)
             with open(self.path, 'w', encoding='utf-8') as f:
@@ -84,6 +85,8 @@ class InputConfig:
             return pygame.K_F8
         if action == "toggle_map_editor":
             return pygame.K_F11
+        if action == "toggle_building_editor":
+            return pygame.K_F10
         # Fallback para firework launch si no está en bindings
         if action == "spell_firework_launch":
             return pygame.K_v

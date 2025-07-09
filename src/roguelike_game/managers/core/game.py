@@ -90,6 +90,15 @@ class Game:
                 # Alternar Tile Editor
                 self.tiles_editor.editor_state.active = not self.tiles_editor.editor_state.active
                 return
+
+            if event.type == pygame.KEYDOWN and event.key == self.menu.input_config.get_key('toggle_building_editor'):
+                # Alternar Building Editor
+                new_val = not self.buildings_editor.editor_state.active
+                self.buildings_editor.editor_state.active = new_val
+                self.buildings_editor.editor_state.picker_active = new_val
+                return
+
+
             if event.type == pygame.KEYDOWN and event.key == self.menu.input_config.get_key('toggle_map_editor'):
                 # Alternar Map Editor
                 self.map_editor.toggle()
@@ -108,6 +117,10 @@ class Game:
         # Si un editor está activo, solo lo capturamos a él
         if self.tiles_editor.editor_state.active:
             self.tiles_editor.handle(self.camera, self.map)
+            return
+
+        if self.buildings_editor.editor_state.active:
+            self.buildings_editor.handle(self.camera, self.buildings, events)
             return
 
         # Si no, delegamos al motor de eventos general

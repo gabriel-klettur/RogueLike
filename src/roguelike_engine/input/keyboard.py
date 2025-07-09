@@ -20,7 +20,7 @@ def handle_keyboard(event, state, camera, clock, menu, entities, tiles_editor, b
                 menu.execute_menu_option(result, state)
 
         # ---------- TEST / DEBUG ---------- #
-        elif event.key == pygame.K_F10:
+        elif event.key == menu.input_config.get_key('toggle_building_editor'):
             if hasattr(state, "editor"):
                 # alternamos el editor y también arrancamos el picker
                 new_val = not state.editor.active

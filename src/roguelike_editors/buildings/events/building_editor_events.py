@@ -28,8 +28,10 @@ class BuildingEditorEventHandler:
         self.zone_offsets = zone_offsets
 
 
-    def handle(self, camera, entities):
-        for ev in pygame.event.get():
+    def handle(self, camera, entities, events=None):
+        if events is None:
+            events = pygame.event.get()
+        for ev in events:
             if ev.type == pygame.QUIT:
                 # Persist building changes if editor active
                 if self.editor.active:

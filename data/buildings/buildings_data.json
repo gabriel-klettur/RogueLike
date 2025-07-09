@@ -818,8 +818,8 @@
     },
     {
         "zone": "Forest",
-        "rel_x": 805,
-        "rel_y": 728,
+        "rel_x": 838,
+        "rel_y": 638,
         "image_path": "assets/buildings\\vegetation\\tree_5.png",
         "solid": true,
         "scale": [
@@ -875,8 +875,8 @@
     },
     {
         "zone": "Forest",
-        "rel_x": 598,
-        "rel_y": 274,
+        "rel_x": 625,
+        "rel_y": 295,
         "image_path": "assets/buildings\\vegetation\\tree_1.PNG",
         "solid": true,
         "scale": [
@@ -894,8 +894,8 @@
     },
     {
         "zone": "Forest",
-        "rel_x": 541,
-        "rel_y": 217,
+        "rel_x": 544,
+        "rel_y": 226,
         "image_path": "assets/buildings\\vegetation\\tree_1.PNG",
         "solid": true,
         "scale": [
@@ -913,8 +913,8 @@
     },
     {
         "zone": "Forest",
-        "rel_x": 458,
-        "rel_y": 278,
+        "rel_x": 453,
+        "rel_y": 305,
         "image_path": "assets/buildings\\vegetation\\tree_1.PNG",
         "solid": true,
         "scale": [
@@ -1119,5 +1119,24 @@
         "z_bottom": 3,
         "z_top": 5,
         "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 412,
+        "rel_y": 721,
+        "image_path": "assets/buildings\\vegetation\\tree_6.png",
+        "solid": true,
+        "scale": [
+            260,
+            260
+        ],
+        "original_scale": [
+            260,
+            260
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "z": 1
     }
 ]
