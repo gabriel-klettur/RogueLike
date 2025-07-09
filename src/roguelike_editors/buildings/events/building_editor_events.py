@@ -6,10 +6,10 @@ import json
 
 from roguelike_editors.buildings.model.persistence.save_buildings_to_json import save_buildings_to_json
 from roguelike_engine.config.config import BUILDINGS_DATA_PATH, BUILDINGS_COLLISIONS_DATA_PATH
-from roguelike_engine.config.config import SCREEN_WIDTH, SCREEN_HEIGHT
+
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_editors.buildings.controller.picker.picker_events import PickerEventHandler
-from roguelike_editors.buildings.utils.zone_helpers import detect_zone_from_px
+
 
 
 logger = logging.getLogger("building_editor.events")
@@ -361,23 +361,3 @@ class BuildingEditorEventHandler:
         # N: colocar edificio
         elif ev.key == pygame.K_n:
             self.controller.placer_tool.place_building_at_mouse(entities.buildings)
-
-        # Supr: borrar edificio
-        elif ev.key == pygame.K_DELETE:
-            self.controller.delete_tool.delete_building_at_mouse(entities)
-
-    def _current_zone_and_offset(self, camera) -> tuple[str, tuple[int,int]]:
-        # centro de la pantalla en píxeles de mundo
-        cx_px = camera.offset_x + (SCREEN_WIDTH  / 2) / camera.zoom
-        cy_px = camera.offset_y + (SCREEN_HEIGHT / 2) / camera.zoom    
-        return detect_zone_from_px(cx_px, cy_px)
-
-    def _on_mouse_down(self, ev, camera, buildings):
-        mx, my = pygame.mouse.get_pos()
-        self.controller.on_mouse_down((mx, my), ev.button, camera, buildings)
-
-    def _on_mouse_up(self, ev, camera, buildings):
-        self.controller.on_mouse_up(ev.button, camera, buildings)
-
-    def _on_mouse_motion(self, ev, camera):
-        self.controller.on_mouse_motion(ev.pos, camera)
