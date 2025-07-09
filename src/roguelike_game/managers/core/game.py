@@ -1,6 +1,7 @@
 
 # Path: src/roguelike_game/game/core/game.py
 import pygame
+import roguelike_engine.config.config as config
 
 from roguelike_engine.input.events import handle_events
 from roguelike_engine.utils.benchmark import benchmark
@@ -70,6 +71,16 @@ class Game:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_F7:
                 # Alternar Item Editor
                 self.state.item_editor_state.visible = not self.state.item_editor_state.visible
+                return
+                        # Toggle Debug Overlay (F9)
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_F9:
+                config.DEBUG = not config.DEBUG
+                print(f"🧪 DEBUG {'activado' if config.DEBUG else 'desactivado'}")
+                return
+            # Toggle Entities Debug (F12)
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_F12:
+                config.DEBUG_ENTITIES = not config.DEBUG_ENTITIES
+                print(f"🧪 ENTITIES DEBUG {'activado' if config.DEBUG_ENTITIES else 'desactivado'}")
                 return
             if event.type == pygame.KEYDOWN and event.key == self.menu.input_config.get_key('toggle_tile_editor'):
                 # Alternar Tile Editor
