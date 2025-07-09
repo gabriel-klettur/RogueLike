@@ -92,11 +92,12 @@ class Game:
                 return
 
             if event.type == pygame.KEYDOWN and event.key == self.menu.input_config.get_key('toggle_building_editor'):
-                # Alternar Building Editor
-                new_val = not self.buildings_editor.editor_state.active
-                self.buildings_editor.editor_state.active = new_val
-                self.buildings_editor.editor_state.picker_active = new_val
-                return
+                # Activate Building Editor (only when inactive)
+                if not self.buildings_editor.editor_state.active:
+                    self.buildings_editor.editor_state.active = True
+                    self.buildings_editor.editor_state.picker_active = True
+                    return
+                # else, let BuildingEditorEventHandler.handle manage F10 cycling and exit
 
 
             if event.type == pygame.KEYDOWN and event.key == self.menu.input_config.get_key('toggle_map_editor'):

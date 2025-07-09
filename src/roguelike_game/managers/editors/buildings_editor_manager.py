@@ -34,8 +34,7 @@ class BuildingEditorManager:
         state.editor = self.editor_state
 
     def handle(self, camera, entities, events=None):
-        if self.editor_state.active:
-            self.handler.handle(camera, entities, events)
+        self.handler.handle(camera, entities, events)
 
     def update(self, camera):
         if self.editor_state.active:

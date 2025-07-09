@@ -61,15 +61,24 @@ class BuildingEditorEventHandler:
                 else:
                     # Already in editor: cycle to collision brush or exit
                     if self.editor.current_tool == 'select':
-                        # Enter collision brush mode
-                        self.editor.current_tool = 'collision_brush'
-                        self.editor.collision_picker_open = True
-                        # Initialize collision target to current hovered building
-                        self.editor.collision_active_building = getattr(self.editor, 'hovered_building', None)
-                        # Close asset picker to prevent accidental building placement
-                        self.editor.picker_active = False
-                        self.editor.dragging_building = False
-                        self.editor.selected_entry = None
+                         # Enter collision brush mode
+                         self.editor.current_tool = 'collision_brush'
+                         self.editor.collision_picker_open = True
+                         # Initialize collision target to current hovered building
+                         self.editor.collision_active_building = getattr(self.editor, 'hovered_building', None)
+                         # Position collision picker near target
+                         target = self.editor.collision_active_building
+                         if target:
+                             px, py = camera.apply((target.x, target.y))
+                             # Slightly above building
+                             self.editor.collision_picker_pos = (px, py - TILE_SIZE)
+                         else:
+                             self.editor.collision_picker_pos = (0, 0)
+                         # Close asset picker to prevent accidental building placement
+                         self.editor.picker_active = False
+                         self.editor.dragging_building = False
+                         self.editor.selected_entry = None
+                         print(f"🔨 Collision brush activated at {self.editor.collision_picker_pos}")
                     else:
                         # Exit editor
                         self.controller.toggle_editor()
