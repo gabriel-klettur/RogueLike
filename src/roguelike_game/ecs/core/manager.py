@@ -1,13 +1,12 @@
-
 # Path: src/roguelike_game/ecs/core/manager.py
 from .component_registry import create_empty_component_store
 from .system_registry import get_update_system_classes, get_render_system_classes
 from .spatial_index import SpatialIndex
-from .spawn_manager import SpawnNPCManager
+from roguelike_engine.utils.benchmark import benchmark
 import os
 from roguelike_game.ecs.systems.input.input_system import InputSystem
 from roguelike_game.ecs.systems.inventory.inventory_pickup_system import InventoryPickupSystem
-
+from .spawn_manager import SpawnNPCManager
 
 class ECSWorld:
     # Hook for override class (tests)
@@ -90,14 +89,23 @@ class ECSWorld:
         if self._spatial_index_dirty:
             self.spatial_index = SpatialIndex(self.map_manager, self.buildings)
             self._spatial_index_dirty = False
+        
         # Ejecutar cada sistema de update
         for system in self.update_systems:
-            system.update(self, camera)
+            name = type(system).__name__
+            @benchmark(self.perf_log, f"4.2.[UPDATE]{name}")
+            def _update_sys(sys=system):
+                sys.update(self, camera)
+            _update_sys()
 
     def render(self, screen, camera):
         # Ejecutar cada sistema de render
         for system in self.render_systems:
-            system.update(self, screen, camera)
+            name = type(system).__name__
+            @benchmark(self.perf_log, f"4.2.[RENDER]{name}")
+            def _render_sys(sys=system):
+                sys.update(self, screen, camera)
+            _render_sys()
 
     def remove_entity(self, eid):
         if eid in self.entities:

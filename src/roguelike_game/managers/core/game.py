@@ -160,14 +160,14 @@ class Game:
         self.item_editor.draw(self.screen)
         self.inventory_editor.draw(self.screen)
 
-    @benchmark(lambda self: self.perf_log, "4.2.ecs - update")
+    @benchmark(lambda self: self.perf_log, "4.2. ECS - update")
     def update_ecs(self):
         # Pause ECS update when inventory editor is open
         if self.inventory_editor.model.visible:
             return
         self.ecs.update(self.clock, self.screen, self.camera)
 
-    @benchmark(lambda self: self.perf_log, "4.1 ecs - render")
+    @benchmark(lambda self: self.perf_log, "4.1 ECS - render")
     def render_ecs(self):
         self.ecs.render(self.screen, self.camera)
 
