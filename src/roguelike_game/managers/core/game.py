@@ -55,6 +55,10 @@ class Game:
             return
         # Capturar eventos y toggles de editores
         events = pygame.event.get()
+        # Dispatch mouse events to DebugOverlay regardless of editor state
+        for ev in events:
+            if ev.type in (pygame.MOUSEWHEEL, pygame.MOUSEBUTTONDOWN):
+                self.renderer.debug_overlay.handle_event(ev)
         # Revisar toggles de editores
         for event in events:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_F6:

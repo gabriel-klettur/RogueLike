@@ -34,13 +34,10 @@ def handle_events(
     # Pre-handle editors
     if active_tiles:
         tiles_editor.handler.handle(camera, map)
-        return
     elif active_buildings:
         buildings_editor.handler.handle(camera, entities)
-        return
     elif active_map:
         map_editor.handler.handle(camera, map)
-        return
     # Cache handlers and debug panel
     
     kb = handle_keyboard
