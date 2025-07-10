@@ -4,8 +4,8 @@ Package de gestión de menú refactorizado.
 import logging
 
 from .handler import MenuHandler
-from .renderer import MenuRenderer
-from .configurator import MenuConfigurator
+from roguelike_ui.widgets.menu_renderer import MenuRenderer
+from roguelike_ui.widgets.menu_configurator import MenuConfigurator
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

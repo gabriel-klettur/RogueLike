@@ -1,6 +1,3 @@
-"""
-Configurador de botones del menú usando pygame_menu.
-"""
 import pygame
 import pygame_menu
 
@@ -51,8 +48,3 @@ class MenuConfigurator:
                     keyname = f'K_{pygame.key.name(e.key).upper()}'
                     self.input_config.set_key(action, keyname)
                     waiting = False
-
-# Usar implementación reusable de roguelike_ui
-from roguelike_ui.widgets.menu_configurator import MenuConfigurator as _UI_MenuConfigurator
-# Sobrescribir clase MenuConfigurator local con la clase reusable
-MenuConfigurator = _UI_MenuConfigurator
