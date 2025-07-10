@@ -61,6 +61,29 @@ class Game:
                 self.renderer.debug_overlay.handle_event(ev)
         # Revisar toggles de editores
         for event in events:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                self.menu.show_menu = not self.menu.show_menu
+                return
+        # Modo menú: procesar eventos de menú y no pasar al juego
+        if self.menu.show_menu:
+            for event in events:
+                if event.type == pygame.KEYDOWN:
+                    result = self.menu.handle_input(event)
+                    if result:
+                        self.menu.execute_menu_option(result, self.state)
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    mx, my = event.pos
+                    renderer = self.menu.renderer
+                    w, h = renderer.surface.get_size()
+                    sx, sy = 400, 300
+                    if sx <= mx <= sx + w and sy <= my <= sy + h:
+                        rel_y = my - sy
+                        idx = (rel_y - 40) // 50
+                        options = self.menu.handler.get_options()
+                        if 0 <= idx < len(options):
+                            self.menu.execute_menu_option(options[idx], self.state)
+            return
+        for event in events:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_F6:
                 # Alternar Inventory Editor
                 new_vis = not self.inventory_editor.model.visible

@@ -48,6 +48,6 @@ class MenuConfigurator:
         while waiting:
             for e in pygame.event.get():
                 if e.type == pygame.KEYDOWN:
-                    keyname = pygame.key.name(e.key)
+                    keyname = f'K_{pygame.key.name(e.key).upper()}'
                     self.input_config.set_key(action, keyname)
                     waiting = False

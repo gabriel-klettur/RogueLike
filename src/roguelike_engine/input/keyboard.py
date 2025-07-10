@@ -5,6 +5,10 @@ from roguelike_engine.map.events.events import handle_expand_dungeon
 
 def handle_keyboard(event, state, camera, clock, menu, entities, tiles_editor, buildings_editor, map_editor, map_manager):
     if event.type == pygame.KEYDOWN:
+        # ESC → toggle menú global
+        if event.key == pygame.K_ESCAPE:
+            menu.show_menu = not menu.show_menu
+            return
         
         if event.key == pygame.K_F3:
             handle_expand_dungeon(event, map_manager, entities)
