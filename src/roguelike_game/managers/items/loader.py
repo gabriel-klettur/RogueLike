@@ -10,7 +10,7 @@ class ItemsLoader:
     Carga ítems desde JSON junto con sus assets de iconos.
     """
     def load(self):
-        items_path = Path('data') / 'items.json'
+        items_path = Path('data') / 'items' / 'items.json'
         items = load_items(str(items_path))
         assets = {}
         for item_id, item in items.items():

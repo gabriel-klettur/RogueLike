@@ -15,9 +15,9 @@ class InventoryDropSystem:
     ECS system to handle manual inventory drop action.
     """
     def __init__(self,
-                 active_monster_path: str = os.path.join(os.getcwd(), 'data', 'inventory_monsters.json'),
-                 active_player_path: str = os.path.join(os.getcwd(), 'data', 'inventory_player.json'),
-                 drop_path: str = os.path.join(os.getcwd(), 'data', 'inventory_map.json')):
+                 active_monster_path: str = os.path.join(os.getcwd(), 'data', 'inventory', 'inventory_monsters.json'),
+                 active_player_path: str = os.path.join(os.getcwd(), 'data', 'inventory', 'inventory_player.json'),
+                 drop_path: str = os.path.join(os.getcwd(), 'data', 'inventory', 'inventory_map.json')):
         self.active_monster_path = active_monster_path
         self.active_player_path = active_player_path
         self.drop_manager = ItemDropManager(drop_path)

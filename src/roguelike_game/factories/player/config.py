@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 
 # Carga de configuración de jugadores
-env_path = Path(__file__).resolve().parents[4] / "data" / "players.json"
+env_path = Path(__file__).resolve().parents[4] / "data" / "entities" / "players.json"
 with open(env_path, encoding="utf-8") as f:
     _player_cfg = json.load(f)
 

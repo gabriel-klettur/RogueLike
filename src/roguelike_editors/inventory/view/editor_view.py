@@ -20,7 +20,7 @@ class InventoryEditorView:
         self.save_active_rect = None
         # Cargar íconos de ítems
         cwd = os.getcwd()
-        items_path = os.path.join(cwd, 'data', 'items.json')
+        items_path = os.path.join(cwd, 'data', 'items', 'items.json')
         self.items = load_items(items_path)
         self.images = {}
         self.scroll_panel = ScrollPanel(self.font, margin=self.margin)

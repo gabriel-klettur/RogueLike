@@ -12,10 +12,10 @@ class EntitiesEditorManager:
         self.game = game
         font = game.font
         # Cargar datos de jugadores y monstruos
-        players_path = Path('data') / 'players.json'
+        players_path = Path('data') / 'entities' / 'players.json'
         players_root = load_from_json(str(players_path))
         player_stats = players_root.get('PLAYER_STATS', {})
-        monsters_path = Path('data') / 'monsters.json'
+        monsters_path = Path('data') / 'entities' / 'monsters.json'
         monsters = load_from_json(str(monsters_path))
         # Cargar assets (sprites "down")
         assets = {}

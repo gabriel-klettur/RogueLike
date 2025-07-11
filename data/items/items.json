@@ -26,7 +26,7 @@
     "scale_editor": 1.0,
     "scale_map": 0.04,
     "scale_inventory": 0.05,
-    "max_stack": 999,
+    "max_stack": 99999,
     "threshold": 10,
     "z_layer": 1
   },
@@ -35,7 +35,7 @@
     "name": "Madera",
     "icon": "assets/items/wood_log_bundle.png",
     "description": "Recurso básico de madera.",
-    "stackable": true,  
+    "stackable": true,
     "scale_editor": 1.0,
     "scale_map": 0.04,
     "scale_inventory": 0.05,
@@ -68,7 +68,7 @@
     "durability": 1000,
     "damage": 15,
     "attack_speed": 1.5,
-    "range": 1,
+    "range": 3,
     "crit_chance": 0.1,
     "crit_multiplier": 1.0,
     "weight": 3.2,
@@ -98,7 +98,7 @@
     "scale_editor": 1.0,
     "scale_map": 0.04,
     "scale_inventory": 0.05,
-    "max_stack": 1,
+    "max_stack": 3,
     "z_layer": 1
   },
   "bucket_water": {
@@ -119,13 +119,13 @@
     "name": "Poción de Energía",
     "description": "Restaura energía al consumirse.",
     "icon": "assets/items/energy_potion.png",
-    "stackable": true,    
+    "stackable": true,
     "scale_editor": 1.0,
     "scale_map": 0.04,
     "scale_inventory": 0.05,
     "max_stack": 5,
     "effect": "energize_50",
-    "z_layer": 1    
+    "z_layer": 1
   },
   "explosion_potion": {
     "id": "explosion_potion",

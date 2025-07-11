@@ -45,12 +45,12 @@ class EntityEditorController:
         new_text = self.model.editing_text
         # Determinar origen JSON y entrada
         if ent_id in self.model.player_stats:
-            path = os.path.join(os.getcwd(), "data", "players.json")
+            path = os.path.join(os.getcwd(), "data", "entities", "players.json")
             root = load_from_json(path)
             data = root.get("PLAYER_STATS", {})
             entry = data.get(ent_id, {})
         else:
-            path = os.path.join(os.getcwd(), "data", "monsters.json")
+            path = os.path.join(os.getcwd(), "data", "entities", "monsters.json")
             root = load_from_json(path)
             data = root
             entry = data.get(ent_id, {})

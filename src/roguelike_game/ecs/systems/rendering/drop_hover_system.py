@@ -19,7 +19,7 @@ class DropHoverRenderSystem:
     def __init__(self, perf_log=None, items_path=None):
         self.perf_log = perf_log
         if items_path is None:
-            items_path = os.path.join(os.getcwd(), 'data', 'items.json')
+            items_path = os.path.join(os.getcwd(), 'data', 'items', 'items.json')
         self.items = load_items(items_path)
 
     @benchmark(lambda self: self.perf_log, "DropHoverRenderSystem.update")

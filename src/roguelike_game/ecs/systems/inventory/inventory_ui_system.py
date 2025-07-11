@@ -28,7 +28,7 @@ class InventoryUISystem:
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.perf_log = perf_log
         if items_path is None:
-            items_path = os.path.join(os.getcwd(), 'data', 'items.json')
+            items_path = os.path.join(os.getcwd(), 'data', 'items', 'items.json')
         self.items = load_items(items_path)
         self.visible = False
         self.panel_rect = None
