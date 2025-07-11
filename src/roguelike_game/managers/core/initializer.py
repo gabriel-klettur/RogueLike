@@ -34,7 +34,7 @@ from roguelike_game.managers.editors.inventory_editor_manager import InventoryEd
 from roguelike_engine.minimap.minimap import Minimap
 from roguelike_engine.z_layer.state import ZState
 from roguelike_game.managers.ecs import ECSManager
-from roguelike_game.ecs.components.item_models import load_items
+from roguelike_game.managers.items.loader import ItemsLoader
 
 
 class GameInitializer:
@@ -81,7 +81,7 @@ class GameInitializer:
             ("Cargando mapa"                    , partial(self._init_map)),
             ("Cargando edificios"               , partial(self._init_buildings)),
             ("Inicializando ECS"                , partial(self._init_ecs)),
-            ("Cargando catálogo de ítems"       , partial(self._load_items_data)),
+            ("Cargando catálogo de ítems"       , partial(self._init_items)),
             ("Cargando editor de ítems"         , partial(self._init_item_editor)),
             ("Cargando Z-layer"                 , partial(self._init_z_layer)),
             ("Cargando editor de edificios"     , partial(self._init_buildings_editor)),
@@ -207,32 +207,16 @@ class GameInitializer:
             p.sort_stats('tottime').print_stats(30)
         logging.info(f"[Profiling] ECS init: {elapsed:.4f}s -> {logf}")
 
-    def _load_items_data(self):
+    def _init_items(self):
         """Carga catálogo de ítems y assets de ítems para todo el juego"""
-        items_path = Path('data') / 'items.json'
-        self.game.items = load_items(str(items_path))
-        # Cargar assets de iconos
-        from roguelike_engine.utils.loader import load_image
-        self.game.item_assets = {}
-        for item_id, item in self.game.items.items():
-            icon_paths = []
-            if item.icon:
-                icon_paths = item.icon if isinstance(item.icon, list) else [item.icon]
-            else:
-                if item.icon_small:
-                    icon_paths.append(item.icon_small)
-                if item.icon_large:
-                    icon_paths.append(item.icon_large)
-            if icon_paths:
-                try:
-                    self.game.item_assets[item_id] = load_image(icon_paths[0])
-                except Exception as e:
-                    print(f"[ItemEditor] Error cargando icono {item_id}: {e}")
+        # Delegar carga de datos y assets a ItemsLoader
+        loader = ItemsLoader()
+        items, assets = loader.load()
+        self.game.items = items
+        self.game.item_assets = assets
 
 
-    def _init_item_editor(self):
-        from roguelike_game.managers.editors.items_editor_manager import ItemsEditorManager
-        # Delegar inicialización a ItemsEditorManager
+    def _init_item_editor(self):        
         self.game.item_editor = ItemsEditorManager(self.game)
 
     def _init_renderer(self):
