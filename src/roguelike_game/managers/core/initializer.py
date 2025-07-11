@@ -25,6 +25,7 @@ from roguelike_game.managers.menu import MenuManager
 from roguelike_game.managers.editors.buildings_editor_manager import BuildingEditorManager
 from roguelike_game.managers.editors.tiles_editor_manager import TilesEditorManager
 from roguelike_game.managers.editors.map_editor_manager import MapEditorManager
+from roguelike_game.managers.editors.entities_editor_manager import EntitiesEditorManager
 from roguelike_engine.minimap.minimap import Minimap
 from roguelike_engine.z_layer.state import ZState
 from roguelike_game.managers.ecs import ECSManager
@@ -81,6 +82,7 @@ class GameInitializer:
             ("Cargando editor de tiles"     , partial(self._init_tile_editor)),
             ("Cargando editor de mapa"      , partial(self._init_map_editor)),
             ("Cargando editor de inventario", partial(self._init_inventory_editor)),
+            ("Cargando editor de entidades", partial(self._init_entities_editor)),
             ("Cargando minimapa"            , partial(self._init_minimap)),
 
             ("Inicializando renderizador"   , partial(self._init_renderer)),
@@ -178,6 +180,9 @@ class GameInitializer:
         from roguelike_editors.inventory import InventoryEditor
         self.game.inventory_editor = InventoryEditor(self.game.ecs.ecs_world, self.game.item_assets, self.game.font)
         self.game.state.inventory_editor_state = self.game.inventory_editor.model
+
+    def _init_entities_editor(self):                
+        self.game.entities_editor = EntitiesEditorManager(self.game)
 
     def _init_minimap(self):
         self.game.minimap = Minimap()

@@ -84,6 +84,10 @@ class Game:
                             self.menu.execute_menu_option(options[idx], self.state)
             return
         for event in events:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_F5:
+                # Alternar Entities Editor
+                self.entities_editor.model.visible = not self.entities_editor.model.visible
+                return
             if event.type == pygame.KEYDOWN and event.key == pygame.K_F6:
                 # Alternar Inventory Editor
                 new_vis = not self.inventory_editor.model.visible
@@ -137,6 +141,10 @@ class Game:
             for event in events:
                 self.inventory_editor.handle_event(event)
             return
+        if hasattr(self, 'entities_editor') and self.entities_editor.model.visible:
+            for event in events:
+                self.entities_editor.handle_event(event)
+            return
 
         # Si un editor está activo, solo lo capturamos a él
         if self.tiles_editor.editor_state.active:
@@ -165,6 +173,8 @@ class Game:
     def update(self):
         # Pause game update when inventory editor is open
         if self.inventory_editor.model.visible:
+            return
+        if hasattr(self, 'entities_editor') and self.entities_editor.model.visible:
             return
         update_game(
             self.state,            
@@ -196,11 +206,14 @@ class Game:
         # Overlay del Item Editor
         self.item_editor.draw(self.screen)
         self.inventory_editor.draw(self.screen)
+        self.entities_editor.draw(self.screen)
 
     @benchmark(lambda self: self.perf_log, "4.2. ECS - update")
     def update_ecs(self):
         # Pause ECS update when inventory editor is open
         if self.inventory_editor.model.visible:
+            return
+        if hasattr(self, 'entities_editor') and self.entities_editor.model.visible:
             return
         self.ecs.update(self.clock, self.screen, self.camera)
 
