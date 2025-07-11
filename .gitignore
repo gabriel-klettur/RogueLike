@@ -162,13 +162,4 @@ cython_debug/
 debug_maps_generated
 debug_maps
 logs
-data/saves/world_state.json
-data/
-inventory_player.json
-inventory_monsters.json
-inventory_map.json
-items.json
-items_schema.json
-inventory_monsters_schema.json
-inventory_player_schema.json
-inventory_map_schema.json
+
