@@ -27,6 +27,7 @@ from roguelike_game.managers.editors.buildings_editor_manager import BuildingEdi
 from roguelike_game.managers.editors.tiles_editor_manager import TilesEditorManager
 from roguelike_game.managers.editors.map_editor_manager import MapEditorManager
 from roguelike_game.managers.editors.entities_editor_manager import EntitiesEditorManager
+from roguelike_game.managers.editors.spells_editor_manager import SpellsEditorManager
 from roguelike_game.managers.editors.items_editor_manager import ItemsEditorManager
 from roguelike_game.managers.editors.inventory_editor_manager import InventoryEditorManager
 from roguelike_game.managers.editors.inventory_editor_manager import InventoryEditorManager
@@ -89,6 +90,7 @@ class GameInitializer:
             ("Cargando editor de mapa"          , partial(self._init_map_editor)),
             ("Cargando editor de inventario"    , partial(self._init_inventory_editor)),
             ("Cargando editor de entidades"     , partial(self._init_entities_editor)),
+                ("Cargando editor de hechizos"      , partial(self._init_spells_editor)),
             ("Cargando minimapa"                , partial(self._init_minimap)),
 
             ("Inicializando renderizador"       , partial(self._init_renderer)),
@@ -187,6 +189,9 @@ class GameInitializer:
 
     def _init_entities_editor(self):                
         self.game.entities_editor = EntitiesEditorManager(self.game)
+
+    def _init_spells_editor(self):
+        self.game.spells_editor = SpellsEditorManager(self.game)
 
     def _init_minimap(self):
         self.game.minimap = Minimap()

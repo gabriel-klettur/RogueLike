@@ -115,3 +115,9 @@ class EntityEditorView:
                                 # caret position
                                 topleft=(bx+self.font.size(pre+model.editing_text[:model.editing_cursor])[0],by)
                                 pygame.draw.line(screen,(255,255,255),topleft,(topleft[0],topleft[1]+font_h),2)
+                elif model.focused_property:
+                    for rect,key in model.property_entries:
+                        if key==model.focused_property:
+                            hl_rect=rect.inflate(4,0)
+                            pygame.draw.rect(screen,(255,255,0),hl_rect,2)
+                            break
