@@ -5,6 +5,7 @@ from roguelike_ui.services.json_persistence import load_from_json, save_to_json
 
 from roguelike_editors.inventory.model.editor_model import InventoryEditorModel
 from roguelike_editors.inventory.view.editor_view import InventoryEditorView
+from roguelike_editors.inventory.events.item_editor_events import ItemEditorEventHandler
 
 class InventoryEditorController:
     """
