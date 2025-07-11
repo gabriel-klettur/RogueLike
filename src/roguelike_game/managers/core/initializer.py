@@ -21,12 +21,16 @@ from roguelike_game.managers.map import MapManager
 from roguelike_game.managers.buildings import BuildingsManager
 from roguelike_game.managers.z_layer import ZLayerManager
 from types import SimpleNamespace
+
 from roguelike_game.managers.menu import MenuManager
 from roguelike_game.managers.editors.buildings_editor_manager import BuildingEditorManager
 from roguelike_game.managers.editors.tiles_editor_manager import TilesEditorManager
 from roguelike_game.managers.editors.map_editor_manager import MapEditorManager
 from roguelike_game.managers.editors.entities_editor_manager import EntitiesEditorManager
+from roguelike_game.managers.editors.items_editor_manager import ItemsEditorManager
 from roguelike_game.managers.editors.inventory_editor_manager import InventoryEditorManager
+from roguelike_game.managers.editors.inventory_editor_manager import InventoryEditorManager
+        
 from roguelike_engine.minimap.minimap import Minimap
 from roguelike_engine.z_layer.state import ZState
 from roguelike_game.managers.ecs import ECSManager
@@ -73,21 +77,22 @@ class GameInitializer:
             stages.append((msg, fn))
 
         defaults = [
-            ("Inicializando estado Principal", partial(self._init_state)),
-            ("Cargando mapa"                , partial(self._init_map)),
-            ("Cargando edificios"           , partial(self._init_buildings)),
-            ("Inicializando ECS"            , partial(self._init_ecs)),
-            ("Cargando catálogo de ítems"    , partial(self._load_items)),
-            ("Cargando Z-layer"             , partial(self._init_z_layer)),
-            ("Cargando editor de edificios" , partial(self._init_buildings_editor)),
-            ("Cargando editor de tiles"     , partial(self._init_tile_editor)),
-            ("Cargando editor de mapa"      , partial(self._init_map_editor)),
-            ("Cargando editor de inventario", partial(self._init_inventory_editor)),
-            ("Cargando editor de entidades", partial(self._init_entities_editor)),
-            ("Cargando minimapa"            , partial(self._init_minimap)),
+            ("Inicializando estado Principal"   , partial(self._init_state)),
+            ("Cargando mapa"                    , partial(self._init_map)),
+            ("Cargando edificios"               , partial(self._init_buildings)),
+            ("Inicializando ECS"                , partial(self._init_ecs)),
+            ("Cargando catálogo de ítems"       , partial(self._load_items_data)),
+            ("Cargando editor de ítems"         , partial(self._init_item_editor)),
+            ("Cargando Z-layer"                 , partial(self._init_z_layer)),
+            ("Cargando editor de edificios"     , partial(self._init_buildings_editor)),
+            ("Cargando editor de tiles"         , partial(self._init_tile_editor)),
+            ("Cargando editor de mapa"          , partial(self._init_map_editor)),
+            ("Cargando editor de inventario"    , partial(self._init_inventory_editor)),
+            ("Cargando editor de entidades"     , partial(self._init_entities_editor)),
+            ("Cargando minimapa"                , partial(self._init_minimap)),
 
-            ("Inicializando renderizador"   , partial(self._init_renderer)),
-            ("Inicializando menú"           , partial(self._init_menu))            
+            ("Inicializando renderizador"       , partial(self._init_renderer)),
+            ("Inicializando menú"               , partial(self._init_menu))            
         ]
         stages.extend(defaults)
 
@@ -177,9 +182,7 @@ class GameInitializer:
     def _init_map_editor(self):
         self.game.map_editor = MapEditorManager(self.game)
 
-    def _init_inventory_editor(self):
-        from roguelike_game.managers.editors.inventory_editor_manager import InventoryEditorManager
-        # Delegar inicialización a InventoryEditorManager
+    def _init_inventory_editor(self):        
         self.game.inventory_editor = InventoryEditorManager(self.game)
 
     def _init_entities_editor(self):                
@@ -204,8 +207,8 @@ class GameInitializer:
             p.sort_stats('tottime').print_stats(30)
         logging.info(f"[Profiling] ECS init: {elapsed:.4f}s -> {logf}")
 
-    def _load_items(self):
-        """Carga catálogo de ítems, assets e instancia ItemEditor"""
+    def _load_items_data(self):
+        """Carga catálogo de ítems y assets de ítems para todo el juego"""
         items_path = Path('data') / 'items.json'
         self.game.items = load_items(str(items_path))
         # Cargar assets de iconos
@@ -225,11 +228,12 @@ class GameInitializer:
                     self.game.item_assets[item_id] = load_image(icon_paths[0])
                 except Exception as e:
                     print(f"[ItemEditor] Error cargando icono {item_id}: {e}")
-        # Instanciar editor de ítems
-        from roguelike_editors.items import ItemEditor
-        self.game.item_editor = ItemEditor(self.game.items, self.game.item_assets, self.game.font)
-        # Exponer estado del ItemEditor en game.state
-        self.game.state.item_editor_state = self.game.item_editor.model
+
+
+    def _init_item_editor(self):
+        from roguelike_game.managers.editors.items_editor_manager import ItemsEditorManager
+        # Delegar inicialización a ItemsEditorManager
+        self.game.item_editor = ItemsEditorManager(self.game)
 
     def _init_renderer(self):
         g = self.game
