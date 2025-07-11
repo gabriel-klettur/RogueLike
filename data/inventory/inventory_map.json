@@ -115,8 +115,28 @@
     "zone_id": "Lobby",
     "schema_version": "1.0.0",
     "position": {
-      "x": 1768.3046020614638,
-      "y": 2462.2027683674455
+      "x": 1760.3046020614638,
+      "y": 2490.2027683674455
+    }
+  },
+  "1bd4c069-8e16-4081-bc1b-2923db14a8d1": {
+    "item_id": "gold",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2148.0,
+      "y": 2544
+    }
+  },
+  "a5cd481b-75ff-4d4b-a9f5-80d4cefbae77": {
+    "item_id": "experience_orb",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2148.0,
+      "y": 2544
     }
   }
 }

@@ -21,8 +21,8 @@ class InventoryEditorController:
         # Paths por categoría
         cwd = os.getcwd()
         self.paths = {
-            'player': {'default': os.path.join(cwd, 'data', 'defaults', 'inventory_player.json'), 'active': os.path.join(cwd, 'data', 'inventory_player.json')},
-            'monsters': {'default': os.path.join(cwd, 'data', 'defaults', 'inventory_monsters.json'), 'active': os.path.join(cwd, 'data', 'inventory_monsters.json')},
+            'player': {'default': os.path.join(cwd, 'data', 'defaults', 'inventory_player.json'), 'active': os.path.join(cwd, 'data', 'inventory', 'inventory_player.json')},
+            'monsters': {'default': os.path.join(cwd, 'data', 'defaults', 'inventory_monsters.json'), 'active': os.path.join(cwd, 'data', 'inventory', 'inventory_monsters.json')},
             'map': {'default': os.path.join(cwd, 'data', 'defaults', 'inventory_map.json'), 'active': os.path.join(cwd, 'data', 'inventory', 'inventory_map.json')}
         }
         # Cargar datos JSON en el modelo
