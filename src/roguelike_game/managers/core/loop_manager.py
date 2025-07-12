@@ -18,7 +18,7 @@ class GameLoop:
             g.render()
 
             # ECS only si no hay ningún editor abierto y el ItemEditor no está visible
-            if not (
+            if not (g.menu.show_menu or
                 g.tiles_editor.editor_state.active or
                 g.buildings_editor.editor_state.active or
                 g.map_editor.editor_state.active or

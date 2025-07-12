@@ -1,4 +1,3 @@
-
 # Path: src/roguelike_game/game/core/game.py
 import pygame
 import roguelike_engine.config.config as config
@@ -53,18 +52,16 @@ class Game:
             pygame.event.get(pygame.QUIT)
             self.state.running = False
             return
-        # Capturar eventos y toggles de editores
+
+        # Capturar eventos
         events = pygame.event.get()
-        # Dispatch mouse events to DebugOverlay regardless of editor state
-        for ev in events:
-            if ev.type in (pygame.MOUSEWHEEL, pygame.MOUSEBUTTONDOWN):
-                self.renderer.debug_overlay.handle_event(ev)
-        # Revisar toggles de editores
+        # Siempre permitir toggle de menú con ESC
         for event in events:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 self.menu.show_menu = not self.menu.show_menu
                 return
-        # Modo menú: procesar eventos de menú y no pasar al juego
+
+        # Si el menú está abierto, solo procesar inputs de menú
         if self.menu.show_menu:
             for event in events:
                 if event.type == pygame.KEYDOWN:
@@ -73,16 +70,25 @@ class Game:
                         self.menu.execute_menu_option(result, self.state)
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     mx, my = event.pos
-                    renderer = self.menu.renderer
-                    w, h = renderer.surface.get_size()
-                    sx, sy = 400, 300
-                    if sx <= mx <= sx + w and sy <= my <= sy + h:
-                        rel_y = my - sy
+                    # Calcular posición centrada del menú
+                    screen_w, screen_h = self.screen.get_size()
+                    surf_w, surf_h = self.menu.renderer.surface.get_size()
+                    x = (screen_w - surf_w) // 2
+                    y = (screen_h - surf_h) // 2
+                    if x <= mx <= x + surf_w and y <= my <= y + surf_h:
+                        rel_y = my - y
                         idx = (rel_y - 40) // 50
                         options = self.menu.handler.get_options()
                         if 0 <= idx < len(options):
                             self.menu.execute_menu_option(options[idx], self.state)
             return
+
+        # Procesamiento normal cuando menú cerrado
+        # Dispatch mouse events a DebugOverlay
+        for ev in events:
+            if ev.type in (pygame.MOUSEWHEEL, pygame.MOUSEBUTTONDOWN):
+                self.renderer.debug_overlay.handle_event(ev)
+
         for event in events:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_F4:
                 # Alternar Spell Editor

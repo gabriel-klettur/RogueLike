@@ -21,5 +21,10 @@ class MenuRenderer:
             color = self.selected_color if i == selected else self.default_color
             text = self.font.render(option, True, color)
             self.surface.blit(text, (50, 40 + i * 50))
-        rect = screen.blit(self.surface, (400, 300))
+        # Center menu on screen
+        screen_width, screen_height = screen.get_size()
+        surface_width, surface_height = self.surface.get_size()
+        x = (screen_width - surface_width) // 2
+        y = (screen_height - surface_height) // 2
+        rect = screen.blit(self.surface, (x, y))
         return rect

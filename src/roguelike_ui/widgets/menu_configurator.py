@@ -35,7 +35,7 @@ class MenuConfigurator:
                 label = action.replace('_', ' ').title()
                 menu.add.button(
                     f'{label}: {keyname}',
-                    lambda act=action: self._prompt_key(act) or menu.disable()
+                    lambda act=action: self._prompt_key(act) or orig_disable()
                 )
             menu.add.vertical_margin(30)
             menu.add.button(
