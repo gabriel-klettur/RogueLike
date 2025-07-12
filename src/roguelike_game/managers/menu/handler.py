@@ -18,7 +18,7 @@ class MenuHandler:
         Genera la lista de opciones según el estado actual.
         """
         mode_option = "Modo local" if self.state.mode == "online" else "Modo multijugador"
-        return [mode_option, "Configurar Botones", "Salir"]
+        return ["Continuar", mode_option, "Configurar Botones", "Salir"]
 
     def handle_input(self, event):
         """

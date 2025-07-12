@@ -45,4 +45,8 @@ class MenuManager:
         """
         Ejecuta la acción seleccionada en el menú.
         """
+        # Opción 'Continuar': cerrar menú y reanudar juego
+        if selected == "Continuar":
+            self.show_menu = False
+            return
         self.handler.execute_option(selected)
