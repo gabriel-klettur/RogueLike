@@ -42,6 +42,8 @@ class MenuHandler:
             self.state.running = False
         elif selected == "Configurar Botones":
             self.configurator.configure()
+            # Borrar eventos pendientes (p.ej. ESC) para no alternar menú principal
+            pygame.event.clear(pygame.KEYDOWN)
         elif selected in ("Modo multijugador", "Modo local"):
             self._toggle_mode()
 
