@@ -50,6 +50,7 @@ from roguelike_game.ecs.systems.combat.hitbox_system import HitboxSystem
 from roguelike_game.ecs.systems.combat.spells.lightning_system import LightningSystem
 from roguelike_game.ecs.systems.debug.entities_debug_system import EntitiesDebugSystem
 from roguelike_game.ecs.systems.expansion_system import ExpansionSystem
+from roguelike_game.ecs.systems.experience_system import ExperienceSystem
 from roguelike_game.ecs.systems.inventory.inventory_init_system import InventoryInitSystem
 from roguelike_game.ecs.systems.inventory.death_drop_system import DeathDropSystem
 from roguelike_game.ecs.systems.inventory.inventory_drop_system import InventoryDropSystem
@@ -63,6 +64,7 @@ from roguelike_game.ecs.systems.inventory.inventory_ui_system import InventoryUI
 from roguelike_game.ecs.systems.rendering.drop_hover_system import DropHoverRenderSystem
 from roguelike_game.ecs.systems.rendering.grayscale_render_system import GrayscaleRenderSystem
 from roguelike_game.ecs.systems.rendering.resurrection_area_system import ResurrectionAreaSystem
+from roguelike_game.ecs.systems.rendering.experience_render_system import ExperienceRenderSystem
 
 def get_update_system_classes():
     """
@@ -74,7 +76,7 @@ def get_update_system_classes():
         MovementCollisionSystem,
         MeleeCombatSystem, SpellCastingSystem, ArcaneFlameSystem, SmokeSystem, SmokeEmitterSystem, SphereMagicShieldSystem, TeleportSystem, FireworkLaunchSystem, AuraSystem, ParticleSystem, ExplosionSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, LightningEmitterSystem, FireballSystem, LightningSystem, DashSystem, HitboxSystem,
         TrailSystem,
-        AnimationSystem, FlashSystem, SpawnSystem, InventoryInitSystem, DeathDropSystem, InventoryDropSystem, InventoryPickupSystem, InventoryTransferSystem, InventoryDragSystem, MapLoadDropsSystem, ExpansionSystem,
+        AnimationSystem, FlashSystem, SpawnSystem, InventoryInitSystem, DeathDropSystem, InventoryDropSystem, InventoryPickupSystem, InventoryTransferSystem, InventoryDragSystem, MapLoadDropsSystem, ExperienceSystem, ExpansionSystem,
     ]
 
 def get_render_system_classes():
@@ -83,7 +85,7 @@ def get_render_system_classes():
     Se añade dinámicamente SpawnDebug y DeathTimerDebug si estamos en DEBUG.
     """
     base = [
-        HealthBarSystem, NamePlateSystem,
+        HealthBarSystem, NamePlateSystem, ExperienceRenderSystem,
         FireballRenderSystem, ArcaneFlameRenderSystem, FireworkLaunchRenderSystem, SmokeRenderSystem, SmokeEmitterRenderSystem, SphereMagicShieldRenderSystem, TeleportRenderSystem, ParticleRenderSystem, LightningRenderSystem,
         DeathTimerBarSystem,
         # DropRenderSystem removed: drops rendered via RenderSystem

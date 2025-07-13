@@ -1,11 +1,65 @@
 {
-  "f0d9677a-08e9-4d2c-9731-8fd56d6c3705": {
-    "template_id": "11111111-2222-3333-4444-555555555555",
+  "ca2abdcf-0ecf-45f7-bca3-7750ce4ea130": {
+    "template_id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
     "slots": [
       {
-        "item": "wood",
-        "quantity": 1
+        "item": "gold",
+        "quantity": 5
       },
+      {
+        "item": "experience_orb",
+        "quantity": 3
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "4b4c22be-d8c0-46a9-8b43-72523c2397f9": {
+    "template_id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+    "slots": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "dddf3c30-b9f3-4ecc-bb30-68359a74cf81": {
+    "template_id": "33333333-3333-3333-3333-333333333333",
+    "slots": [
       {
         "item": "gold",
         "quantity": 2
@@ -30,12 +84,39 @@
       null,
       null,
       null,
+      null,
       null
     ],
     "schema_version": "1.0.0"
   },
-  "0bc7402f-af90-4801-a879-b82a92feddab": {
-    "template_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+  "544dfc12-576f-4382-af65-efc24ba7d140": {
+    "template_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+    "slots": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "1f0942c1-70f5-4baa-adda-9e8e0051923c": {
+    "template_id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
     "slots": [
       {
         "item": "gold",
@@ -66,17 +147,11 @@
     ],
     "schema_version": "1.0.0"
   },
-  "0773d7a5-32f6-45d7-af9d-4bda1f45938a": {
-    "template_id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+  "e6f1f238-9340-4ed4-8dac-a98f7d971ff0": {
+    "template_id": "33333333-3333-3333-3333-333333333333",
     "slots": [
-      {
-        "item": "gold",
-        "quantity": 6
-      },
-      {
-        "item": "experience_orb",
-        "quantity": 2
-      },
+      null,
+      null,
       null,
       null,
       null,
@@ -98,53 +173,44 @@
     ],
     "schema_version": "1.0.0"
   },
-  "93c810b6-685a-4b43-9596-9e152ebd599e": {
-    "template_id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+  "8c8652ec-f5ec-4f46-a725-763d46a38897": {
+    "template_id": "22222222-2222-2222-2222-222222222222",
     "slots": [
       {
         "item": "gold",
-        "quantity": 4
-      },
-      {
-        "item": "experience_orb",
-        "quantity": 3
-      },
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "schema_version": "1.0.0"
-  },
-  "bbec4cd1-5d2f-437d-b9cf-eb6828fd079d": {
-    "template_id": "11111111-2222-3333-4444-555555555555",
-    "slots": [
-      {
-        "item": "wood",
-        "quantity": 3
-      },
-      {
-        "item": "gold",
-        "quantity": 2
-      },
-      {
-        "item": "experience_orb",
         "quantity": 1
       },
+      {
+        "item": "experience_orb",
+        "quantity": 2
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "006a2abd-8f93-4a1c-bcf3-1c2282b288c1": {
+    "template_id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+    "slots": [
+      null,
+      null,
+      null,
       null,
       null,
       null,

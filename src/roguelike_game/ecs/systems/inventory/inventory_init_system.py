@@ -6,6 +6,7 @@ from roguelike_game.ecs.components.core.player_tag import PlayerTagComponent
 from roguelike_game.ecs.components.core.npc_tag import NPCTagComponent
 from roguelike_game.ecs.components.inventory_component import InventoryComponent
 from roguelike_game.ecs.components.monster_instance_component import MonsterInstanceComponent
+from roguelike_game.ecs.components.experience_component import ExperienceComponent
 
 
 class InventoryInitSystem:
@@ -92,6 +93,7 @@ class InventoryInitSystem:
                 if slot:
                     inv_comp.add(slot['item'], slot['quantity'])
             world.components['InventoryComponent'][eid] = inv_comp
+            world.components['ExperienceComponent'][eid] = ExperienceComponent()
             # Persistir
             active_players[str(eid)] = {
                 'player_id': player_id,
