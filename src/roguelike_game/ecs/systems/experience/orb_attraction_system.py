@@ -71,6 +71,10 @@ class OrbAttractionSystem:
                     exp_value = model.experience or 0
                     total_exp = qty * exp_value
                     xp_comp.xp += total_exp
+                    # Subir de nivel si es necesario
+                    while xp_comp.xp >= xp_comp.xp_to_next_level:
+                        xp_comp.xp -= xp_comp.xp_to_next_level
+                        xp_comp.level += 1
                     # Persistir XP tras absorber orbe
                     for sys in world.update_systems:
                         if isinstance(sys, ExperienceSystem):
