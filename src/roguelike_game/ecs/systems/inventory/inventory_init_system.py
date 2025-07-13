@@ -84,24 +84,36 @@ class InventoryInitSystem:
         for eid in list(player_tag_store.keys()):
             if eid in self.initialized:
                 continue
-            # Crear InventoryComponent
-            capacity = self.player_template.get('capacity', 20)
-            player_id = self.player_template.get('player_id')
-            inv_comp = InventoryComponent(capacity=capacity, player_id=player_id)
-            # Poblar slots
-            for slot in self.player_template.get('slots', []):
-                if slot:
-                    inv_comp.add(slot['item'], slot['quantity'])
+            key = str(eid)
+            # Cargar inventario persistido si existe
+            if key in active_players:
+                pdata = active_players[key]
+                # Crear InventoryComponent a partir de datos guardados
+                inv_comp = InventoryComponent(
+                    capacity=self.player_template.get('capacity', 20),
+                    player_id=pdata.get('player_id', self.player_template.get('player_id'))
+                )
+                for slot in pdata.get('slots', []):
+                    if slot:
+                        inv_comp.add(slot['item'], slot['quantity'])
+            else:
+                # Crear InventoryComponent con plantilla por defecto
+                capacity = self.player_template.get('capacity', 20)
+                player_id = self.player_template.get('player_id')
+                inv_comp = InventoryComponent(capacity=capacity, player_id=player_id)
+                for slot in self.player_template.get('slots', []):
+                    if slot:
+                        inv_comp.add(slot['item'], slot['quantity'])
+                # Persistir inicial
+                active_players[key] = {
+                    'player_id': player_id,
+                    'slots': inv_comp.serialize().get('slots'),
+                    'schema_version': self.schema_version
+                }
+                self.dirty_players = True
             world.components['InventoryComponent'][eid] = inv_comp
             world.components['ExperienceComponent'][eid] = ExperienceComponent()
-            # Persistir
-            active_players[str(eid)] = {
-                'player_id': player_id,
-                'slots': inv_comp.serialize().get('slots'),
-                'schema_version': self.schema_version
-            }
             self.initialized.add(eid)
-            self.dirty_players = True
 
         # Inicializar NPCs
         for eid in list(npc_tag_store.keys()):

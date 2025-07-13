@@ -29,16 +29,6 @@
       "y": 2080.7613259726013
     }
   },
-  "99b1baf7-47a2-48dc-a3c2-7edc75ab8c01": {
-    "item_id": "wood",
-    "quantity": 1,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2372.0803189506223,
-      "y": 1933.9587181452396
-    }
-  },
   "f91aee2d-b6fd-4bb2-9f9f-bbc552445887": {
     "item_id": "wood",
     "quantity": 2,
@@ -49,36 +39,6 @@
       "y": 2386.0
     }
   },
-  "fc9c8d46-5f35-44a6-b514-29ec3e2a0e37": {
-    "item_id": "wood",
-    "quantity": 2,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2373.2419413334665,
-      "y": 2847.639907523318
-    }
-  },
-  "721ff349-b33c-4fcd-a50b-6be7bc2e8090": {
-    "item_id": "wood",
-    "quantity": 1,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 1754.1774512462127,
-      "y": 2497.0666684841235
-    }
-  },
-  "70e6b37f-340f-4893-90d4-6230aae52f81": {
-    "item_id": "wood",
-    "quantity": 3,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 1762.8897997615843,
-      "y": 2476.585795254974
-    }
-  },
   "d9ce2550-7108-482e-8ade-62de68515100": {
     "item_id": "wood",
     "quantity": 3,
@@ -87,6 +47,26 @@
     "position": {
       "x": 2354.042386705868,
       "y": 2484.2866860416807
+    }
+  },
+  "d74be7ba-173d-4bb9-b5b9-3d3a56f54f77": {
+    "item_id": "wood",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 3091.819805153396,
+      "y": 1773.1801948466061
+    }
+  },
+  "f30dd20d-f217-4a47-834a-2e41badb07bb": {
+    "item_id": "gold",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 3053.0202501181975,
+      "y": 1893.851223558199
     }
   }
 }

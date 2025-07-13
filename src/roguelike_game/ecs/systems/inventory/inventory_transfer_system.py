@@ -7,8 +7,8 @@ from roguelike_game.ecs.components.inventory_component import InventoryComponent
 class InventoryTransferSystem:
 
     def __init__(self,
-                 active_monster_path: str = os.path.join(os.getcwd(), 'data', 'inventory_monsters.json'),
-                 active_player_path: str = os.path.join(os.getcwd(), 'data', 'inventory_player.json')):
+                 active_monster_path: str = os.path.join(os.getcwd(), 'data', 'inventory', 'inventory_monsters.json'),
+                 active_player_path: str = os.path.join(os.getcwd(), 'data', 'inventory', 'inventory_player.json')):
         self.active_monster_path = active_monster_path
         self.active_player_path = active_player_path
         self.world = None
@@ -21,8 +21,8 @@ class InventoryTransferSystem:
         ECS system to handle item transfers between entities.
         """
         def __init__(self,
-            active_monster_path: str = os.path.join(os.getcwd(), 'data', 'inventory_monsters.json'),
-            active_player_path: str = os.path.join(os.getcwd(), 'data', 'inventory_player.json')):
+            active_monster_path: str = os.path.join(os.getcwd(), 'data', 'inventory', 'inventory_monsters.json'),
+            active_player_path: str = os.path.join(os.getcwd(), 'data', 'inventory', 'inventory_player.json')):
             self.active_monster_path = active_monster_path
             self.active_player_path = active_player_path
 
