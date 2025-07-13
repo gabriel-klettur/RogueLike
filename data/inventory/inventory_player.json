@@ -4,7 +4,7 @@
     "slots": [
       {
         "item": "gold",
-        "quantity": 18
+        "quantity": 21
       },
       {
         "item": "health_potion",
@@ -16,7 +16,7 @@
       },
       {
         "item": "wood",
-        "quantity": 8
+        "quantity": 11
       },
       null
     ],

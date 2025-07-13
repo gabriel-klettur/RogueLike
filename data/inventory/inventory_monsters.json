@@ -1,15 +1,9 @@
 {
-  "22d23678-d548-4d03-aecb-77a856c82581": {
-    "template_id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+  "07fb87e1-ec8b-47fa-b70b-693ecc99d8ac": {
+    "template_id": "33333333-3333-3333-3333-333333333333",
     "slots": [
-      {
-        "item": "gold",
-        "quantity": 5
-      },
-      {
-        "item": "experience_orb",
-        "quantity": 1
-      },
+      null,
+      null,
       null,
       null,
       null,
@@ -31,8 +25,43 @@
     ],
     "schema_version": "1.0.0"
   },
-  "40b15140-19eb-4083-b8d5-746801836485": {
-    "template_id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+  "99153a6b-220a-4084-98b5-8ddda041441e": {
+    "template_id": "dddddddd-dddd-dddd-dddd-dddddddddddd",
+    "slots": [
+      {
+        "item": "iron_sword",
+        "quantity": 1
+      },
+      {
+        "item": "gold",
+        "quantity": 19
+      },
+      {
+        "item": "ancient_relic_mask",
+        "quantity": 1
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "c7c0d3b8-66ff-4093-a9c3-c4a542a9f695": {
+    "template_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
     "slots": [
       {
         "item": "gold",
@@ -63,17 +92,11 @@
     ],
     "schema_version": "1.0.0"
   },
-  "fbebd0d9-edbb-4994-837f-afe75cd23382": {
-    "template_id": "22222222-2222-2222-2222-222222222222",
+  "d80bc494-f6db-4873-a36c-3040fa9c4b60": {
+    "template_id": "11111111-2222-3333-4444-555555555555",
     "slots": [
-      {
-        "item": "gold",
-        "quantity": 1
-      },
-      {
-        "item": "experience_orb",
-        "quantity": 1
-      },
+      null,
+      null,
       null,
       null,
       null,

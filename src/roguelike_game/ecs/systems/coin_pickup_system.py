@@ -51,7 +51,7 @@ class CoinPickupSystem:
             if phys.item_id != 'gold':
                 continue
             # Debug
-            print(f"[CoinPickupSystem] Player {player_eid} recogió {phys.quantity}x {phys.item_id}")
+            
             item_pos = positions.get(eid)
             if not item_pos:
                 continue
@@ -61,6 +61,7 @@ class CoinPickupSystem:
             # Si está en rango de colisión
             if dist_sq <= TILE_SIZE * TILE_SIZE:
                 # Añadir al inventario
+                print(f"[CoinPickupSystem] Player {player_eid} recogió {phys.quantity}x {phys.item_id}")
                 inv.add(phys.item_id, phys.quantity)
                 # Persistir inventario
                 for sys in world.update_systems:
