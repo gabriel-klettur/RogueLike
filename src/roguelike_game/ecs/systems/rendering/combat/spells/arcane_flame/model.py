@@ -8,14 +8,16 @@ from roguelike_game.ecs.systems.rendering.combat.spells.arcane_flame.palette imp
 )
 
 class FirePixel:
-    """Un solo píxel de fuego, con propagación y render cache."""
-    cached_surfaces: dict[tuple[int,int,int,int], pygame.Surface] = {}
+    """Un solo píxel de fuego, con propagación y render cache determinista."""
+    # Cache surfaces per palette index
+    cached_surfaces: dict[int, pygame.Surface] = {}
 
-    def __init__(self, x: float, y: float, idx: int, palette: list[tuple[int,int,int]]):
+    def __init__(self, x: float, y: float, idx: int, palette: list[tuple[int,int,int]], rng: random.Random):
         self.x = x
         self.y = y
         self.idx = idx
         self.palette = palette
+        self.rng = rng
         self.sides: dict[str,FirePixel|None] = {}
         self.x_offset = 0.0
         self.render_color = self._generate_render_color()
@@ -24,36 +26,33 @@ class FirePixel:
         self.sides = {"top": top, "left": left, "bottom": bottom, "right": right}
 
     def _generate_render_color(self) -> tuple[int,int,int]:
-        r, g, b = self.palette[self.idx]
-        return (
-            max(0, min(255, r + random.randint(-10,10))),
-            max(0, min(255, g + random.randint(-10,10))),
-            max(0, min(255, b + random.randint(-10,10))),
-        )
+        # Deterministic base color without jitter
+        return self.palette[self.idx]
 
-    def update(self):
-        direction = random.choice(SPREAD_FROM)
+    def update(self, current_time: float):
+        # Use seeded RNG and single time for offset
+        direction = self.rng.choice(SPREAD_FROM)
         neighbor = self.sides.get(direction)
         if neighbor and neighbor.idx < self.idx:
-            self.idx = min(len(self.palette)-1, neighbor.idx + random.randint(-1,4))
+            self.idx = min(len(self.palette)-1, neighbor.idx + self.rng.randint(-1,4))
         else:
             self.idx += 1
         self.idx = max(0, min(self.idx, len(self.palette)-1))
-        self.x_offset = math.sin(time.time() * 10 + self.y) * 1.5
+        self.x_offset = math.sin(current_time * 10 + self.y) * 1.5
         self.render_color = self._generate_render_color()
 
     def render(self, screen: pygame.Surface, camera):
         if not camera.is_in_view(self.x, self.y, (CELL_SIZE, CELL_SIZE)):
             return
-        r, g, b = self.render_color
-        alpha = max(0, int(255 * (1 - self.idx / (len(self.palette)-1))))
-        key = (r, g, b, alpha)
-        if key not in FirePixel.cached_surfaces:
+        idx = self.idx
+        if idx not in FirePixel.cached_surfaces:
+            r, g, b = self.palette[idx]
+            alpha = max(0, int(255 * (1 - idx / (len(self.palette)-1))))
             surf = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)
             surf.fill((r, g, b, alpha))
-            FirePixel.cached_surfaces[key] = surf
+            FirePixel.cached_surfaces[idx] = surf
         pos = camera.apply((self.x + self.x_offset, self.y))
-        screen.blit(FirePixel.cached_surfaces[key], pos)
+        screen.blit(FirePixel.cached_surfaces[idx], pos)
 
 class ArcaneFlameModel:
     """
@@ -66,7 +65,8 @@ class ArcaneFlameModel:
         y: float,
         width: int = 256,
         height: int = 256,
-        max_duration: float = 5.0
+        max_duration: float = 5.0,
+        seed: int = 0
     ):
         self.center_x = x
         self.center_y = y
@@ -74,10 +74,13 @@ class ArcaneFlameModel:
         self.height = height
         self.max_duration = max_duration
         self.start_time = time.time()
+        self.rng = random.Random(seed)
         self.palette = self._generate_gradient(FLAME_COLOR_DEPTH, FLAME_COLOR_PALETTE)
         self.columns = width // CELL_SIZE
         self.rows = height // CELL_SIZE
         self._create_pixels()
+        # Flatten pixels for faster update
+        self.pixels_flat = [p for row in self.pixels for p in row if p]
 
     def _generate_gradient(self, size: int, stops: list[tuple[int,int,int]]) -> list[tuple[int,int,int]]:
         gradient = []
@@ -102,11 +105,11 @@ class ArcaneFlameModel:
             row_list: list[FirePixel|None] = []
             for col in range(self.columns):
                 dist = math.hypot(col-cx, row-cy)
-                if dist + random.uniform(-1,1)*2 < radius:
+                if dist + self.rng.uniform(-1,1)*2 < radius:
                     idx = 0 if row >= self.rows-2 else len(self.palette)-1
                     fx = self.center_x - self.width//2 + col*CELL_SIZE
                     fy = self.center_y - self.height//2 + row*CELL_SIZE
-                    pixel = FirePixel(fx, fy, idx, self.palette)
+                    pixel = FirePixel(fx, fy, idx, self.palette, self.rng)
                     row_list.append(pixel)
                 else:
                     row_list.append(None)
@@ -122,10 +125,10 @@ class ArcaneFlameModel:
                 p.set_sides(top=top, left=left, bottom=bottom, right=right)
 
     def update(self):
-        for row in self.pixels:
-            for p in row:
-                if p:
-                    p.update()
+        # Single time read and flat iteration
+        t = time.time()
+        for p in self.pixels_flat:
+            p.update(t)
 
     def is_finished(self) -> bool:
         return (time.time() - self.start_time) > self.max_duration
