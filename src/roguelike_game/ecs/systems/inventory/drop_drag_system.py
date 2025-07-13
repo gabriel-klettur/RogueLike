@@ -114,6 +114,12 @@ class DropDragSystem:
             return
 
         # Drag activo: actualizar posición componente
-        pos_comp = comps['Position'][self.dragging_eid]
+        # Verificar que el componente Position exista (puede haber sido eliminado)
+        pos_store = comps.get('Position', {})
+        pos_comp = pos_store.get(self.dragging_eid)
+        if not pos_comp:
+            # Cancelar drag si la entidad ya no tiene posición
+            self.dragging_eid = None
+            return
         pos_comp.x = world_x + self.offset_x
         pos_comp.y = world_y + self.offset_y
