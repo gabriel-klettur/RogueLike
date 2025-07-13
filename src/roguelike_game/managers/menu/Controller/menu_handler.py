@@ -1,6 +1,3 @@
-"""
-Módulo de manejo de entrada y ejecución de opciones del menú.
-"""
 import pygame
 
 class MenuHandler:
