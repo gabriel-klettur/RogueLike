@@ -6,6 +6,7 @@ from roguelike_engine.utils.benchmark import benchmark
 import os
 from roguelike_game.ecs.systems.input.input_system import InputSystem
 from roguelike_game.ecs.systems.inventory.inventory_pickup_system import InventoryPickupSystem
+from roguelike_game.ecs.systems.inventory.inventory_drop_system import InventoryDropSystem
 from .spawn_manager import SpawnNPCManager
 
 class ECSWorld:
@@ -56,7 +57,7 @@ class ECSWorld:
         for cls in update_classes:
             if cls is InputSystem:
                 inst = cls(self.perf_log, config_path)
-            elif cls is InventoryPickupSystem:
+            elif cls in (InventoryPickupSystem, InventoryDropSystem):
                 inst = cls()
             else:
                 inst = cls(self.perf_log)

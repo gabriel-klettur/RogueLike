@@ -112,7 +112,12 @@ class InputConfig:
                 try:
                     return getattr(pygame, name)
                 except AttributeError:
-                    pass
+                    # try lowercase variant after K_
+                    alt = "K_" + name[2:].lower()
+                    try:
+                        return getattr(pygame, alt)
+                    except AttributeError:
+                        pass
             try:
                 return pygame.key.key_code(name)
             except Exception:

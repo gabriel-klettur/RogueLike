@@ -18,6 +18,7 @@ class FiniteStateMachine:
         # Debug tracking
         self._seen_states = {initial_state}
         self._history = []
+        self.context = {}
 
     def change_state(self, new_state: State, entity):
         """

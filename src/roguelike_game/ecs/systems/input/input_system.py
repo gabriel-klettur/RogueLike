@@ -70,6 +70,7 @@ class InputSystem:
             # Movimiento en ejes X e Y
             inp.move_x = int(keys[move_right]) - int(keys[move_left])
             inp.move_y = int(keys[move_down]) - int(keys[move_up])
+            inp.attack = bool(keys[attack_key])
             #print(f"[DEBUG][{time.time():.3f}] eid={eid} move=({inp.move_x},{inp.move_y}), click={inp.click}")
             # Actualizar velocidad según MovementSpeed
             vel = world.components.get('Velocity', {}).get(eid)

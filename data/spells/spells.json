@@ -15,6 +15,7 @@
     "allow_movement": true,
     "lock_cast_direction": false,
     "automatic": true,
+    "interruptible": true,
     "automatic_cast_punish": 1.0
   },
   "iceball": {
@@ -33,6 +34,7 @@
     "allow_movement": true,
     "lock_cast_direction": false,
     "automatic": true,
+    "interruptible": true,
     "automatic_cast_punish": 2.0
   },
   "lightball": {
@@ -51,6 +53,7 @@
     "allow_movement": true,
     "lock_cast_direction": false,
     "automatic": true,
+    "interruptible": true,
     "automatic_cast_punish": 2.0
   },
   "darkball": {
@@ -69,6 +72,7 @@
     "allow_movement": true,
     "lock_cast_direction": false,
     "automatic": true,
+    "interruptible": false,
     "automatic_cast_punish": 2.0
   },
   "healing_aura": {
@@ -89,6 +93,7 @@
     "allow_movement": false,
     "lock_cast_direction": true,
     "automatic": false,
+    "interruptible": true,
     "automatic_cast_punish": 2.0
   },
   "laser_beam": {
@@ -125,6 +130,7 @@
     "allow_movement": false,
     "lock_cast_direction": true,
     "automatic": false,
+    "interruptible": true,
     "automatic_cast_punish": 2.0
   },
   "dash": {
@@ -139,6 +145,7 @@
     "allow_movement": false,
     "lock_cast_direction": true,
     "automatic": false,
+    "interruptible": true,
     "automatic_cast_punish": 2.0
   },
   "teleport": {
@@ -153,6 +160,7 @@
     "allow_movement": false,
     "lock_cast_direction": true,
     "automatic": false,
+    "interruptible": true,
     "automatic_cast_punish": 1.0
   },
   "slash": {
@@ -181,6 +189,7 @@
     "allow_movement": false,
     "lock_cast_direction": true,
     "automatic": false,
+    "interruptible": true,
     "automatic_cast_punish": 2.0
   },
   "lightning": {
@@ -192,6 +201,7 @@
     "offset": 15,
     "lifetime": 8,
     "automatic": false,
+    "interruptible": true,
     "automatic_cast_punish": 2.0
   },
   "arcane_flame": {
@@ -250,6 +260,7 @@
     "allow_movement": false,
     "lock_cast_direction": true,
     "automatic": false,
+    "interruptible": false,
     "automatic_cast_punish": 2.0
   },
   "firework_launch": {
@@ -281,6 +292,7 @@
     "allow_movement": false,
     "lock_cast_direction": true,
     "automatic": false,
+    "interruptible": false,
     "automatic_cast_punish": 1.0
   },
   "smoke": {
@@ -293,6 +305,7 @@
     "allow_movement": true,
     "lock_cast_direction": false,
     "automatic": false,
+    "interruptible": false,
     "automatic_cast_punish": 1.0
   },
   "smoke_emitter": {
@@ -310,6 +323,7 @@
     "allow_movement": true,
     "lock_cast_direction": true,
     "automatic": false,
+    "interruptible": false,
     "automatic_cast_punish": 1.0
   },
   "sphere_magic_shield": {
@@ -324,6 +338,7 @@
     "allow_movement": false,
     "lock_cast_direction": false,
     "automatic": false,
+    "interruptible": false,
     "automatic_cast_punish": 3.0
   }
 }

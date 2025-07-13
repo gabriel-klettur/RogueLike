@@ -1,8 +1,8 @@
 {
-    "move_up": "up",
-    "move_down": "down",
-    "move_left": "left",
-    "move_right": "right",
+    "move_up": "K_W",
+    "move_down": "K_S",
+    "move_left": "K_A",
+    "move_right": "K_D",
     "attack": "K_SPACE",
     "spell_lightball": "z",
     "spell_slash": "e",

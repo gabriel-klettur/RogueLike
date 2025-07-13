@@ -84,7 +84,11 @@ class SpellCastingSystem:
                 current = state_comp.fsm.current_state
                 # salto si no está en IdleState o MoveState con permiso
                 if not (isinstance(current, IdleState) or (allow_mov and isinstance(current, MoveState))):
-                    continue
+                    # en medio de cast; verificar interruptibilidad
+                    if not cfg.get('interruptible', False):
+                        # descartar intención si no es interruptible
+                        wants.pop(eid, None)
+                        continue
             # Si tiene FSM global (NPC o jugador), iniciar sub-FSM de hechizo
             if eid in npcs:
                 npc_state = npcs[eid]
