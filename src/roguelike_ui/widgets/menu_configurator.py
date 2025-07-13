@@ -3,101 +3,131 @@ import pygame_menu
 import math
 from pygame_menu.locals import ALIGN_CENTER
 
+
 class MenuConfigurator:
     """
-    Muestra interfaz para reasignar bindings y guardar.
+    Proporciona una interfaz para reasignar bindings de teclas y guardar la configuración.
     """
+    MENU_WIDTH = 600
+    MENU_HEIGHT = 400
+
     def __init__(self, input_config, screen, font):
-        self.input_config = input_config
+        self.config = input_config
         self.screen = screen
         self.font = font
+        self._needs_refresh = False
 
     def configure(self):
-        self.input_config._load()
-        # Loop para refrescar bindings o salir
+        """
+        Inicia el proceso de configuración de teclas. Carga la configuración existente y muestra el menú.
+        """
+        # Cargar configuraciones previas
+        if hasattr(self.config, 'load'):
+            self.config.load()
+        elif hasattr(self.config, '_load'):
+            self.config._load()
+
+        # Mostrar menú hasta que no se requiera refrescar
         while True:
-            # Configuración de tema con texto más pequeño y disposición en 2 columnas
-            theme = pygame_menu.themes.THEME_DARK.copy()
-            theme.title_font_size = 24
-            theme.widget_font_size = 18
-            # Calcular filas según número de botones, guardar y margen vertical
-            margin_count = 1  # vertical_margin añadido como widget extra
-            total_buttons = len(self.input_config.bindings) + 1 + margin_count
-            rows = math.ceil(total_buttons / 2)
-            menu = pygame_menu.Menu('Configurar Botones', 600, 400, theme=theme, columns=2, rows=rows)
-            # Flags para control interno
-            refresh = False
-            exit_menu = False
-            orig_disable = menu.disable
-            # Callbacks para flags
-            def set_refresh():
-                nonlocal refresh
-                refresh = True
-            def set_exit():
-                nonlocal exit_menu
-                exit_menu = True
-            # Botones de binding
-            for action, keyname in self.input_config.bindings.items():
-                label = action.replace('_', ' ').title()
-                def make_binding_cb(act):
-                    def cb():
-                        self._prompt_key(act)
-                        set_refresh()
-                        orig_disable()
-                    return cb
-                menu.add.button(f'{label}: {keyname}', make_binding_cb(action))
-            menu.add.vertical_margin(30)
-            # Guardar y volver
-            def on_save():
-                self.input_config.save()
-                set_exit()
-                orig_disable()
-            menu.add.button('Guardar y Volver', on_save, align=ALIGN_CENTER)
-            # Volver sin guardar
-            def on_cancel():
-                set_exit()
-                orig_disable()
-            menu.add.button('Volver sin Guardar', on_cancel, align=ALIGN_CENTER)
-            # Ejecutar menu
-            menu.mainloop(self.screen)
-            if refresh:
-                continue
-            else:
+            self._needs_refresh = False
+            self._show_menu()
+            if not self._needs_refresh:
                 break
-            while True:
-                events = pygame.event.get()
-                for e in events:
-                    if e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE:
-                        menu.disable()
-                # Salir si se solicitó exit (ESC o guardar)
-                if getattr(self, '_exit_bind', False):
-                    del self._exit_bind
-                    running = False
-                    break
-                try:
-                    menu.update(events)
-                    menu.draw(self.screen)
-                    pygame.display.flip()
-                except RuntimeError as e:
-                    if 'menu is not enabled' in str(e):
-                        # Refresh o exit detectado, romper loop interno
-                        break
-                    else:
-                        raise
+
+    def _show_menu(self):
+        """
+        Construye y muestra el menú de configuración.
+        """
+        theme = self._configure_theme()
+        rows = self._calculate_rows()
+        menu = pygame_menu.Menu(
+            title='Configurar Botones',
+            width=self.MENU_WIDTH,
+            height=self.MENU_HEIGHT,
+            theme=theme,
+            columns=2,
+            rows=rows
+        )
+
+        # Agregar botones para cada binding
+        self._add_binding_buttons(menu)
+        menu.add.vertical_margin(30)
+
+        # Botón para volver
+        menu.add.button('Volver', menu.disable)
+
+        # Ejecutar loop del menú hasta que se desactive y capturar ESC o Volver
+        while True:
+            events = pygame.event.get()
+            for event in events:
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                    menu.disable()
+            try:
+                menu.update(events)
+                self.screen.fill((0, 0, 0))
+                menu.draw(self.screen)
+                pygame.display.flip()
+            except RuntimeError:
+                break
+
+    def _configure_theme(self):
+        """
+        Configura y retorna el tema del menú.
+        """
+        theme = pygame_menu.themes.THEME_DARK.copy()
+        theme.title_font_size = 24
+        theme.widget_font_size = 18
+        return theme
+
+    def _calculate_rows(self):
+        """
+        Calcula el número de filas necesario para distribuir los botones en 2 columnas,
+        incluyendo espacio para el botón 'Volver' y el margen.
+        """
+        total_buttons = len(self.config.bindings) + 2  # +1 para 'Volver' +1 para vertical_margin
+        return math.ceil(total_buttons / 2)
+
+    def _add_binding_buttons(self, menu):
+        """
+        Agrega un botón por cada acción configurada en bindings.
+        """
+        for action, keyname in self.config.bindings.items():
+            label = action.replace('_', ' ').title()
+            menu.add.button(
+                f'{label}: {keyname}',
+                self._make_binding_callback(menu, action)
+            )
+
+    def _make_binding_callback(self, menu, action):
+        """
+        Genera el callback para reasignar la tecla de la acción indicada.
+        """
+        def callback():
+            self._needs_refresh = True
+            self._prompt_key(action)
+            menu.disable()
+        return callback
 
     def _prompt_key(self, action):
-        prompt = f'Presione nueva tecla para {action.replace("_"," ").title()}'
-        text = self.font.render(prompt, True, (255, 255, 255))
+        """
+        Muestra un prompt solicitando la nueva tecla para "action" y guarda la configuración.
+        """
+        prompt = f'Presione nueva tecla para {action.replace("_", " ").title()}'
+        text_surface = self.font.render(prompt, True, (255, 255, 255))
         self.screen.fill((0, 0, 0))
-        self.screen.blit(text, (50, self.screen.get_height() // 2))
+        self.screen.blit(text_surface, (50, self.screen.get_height() // 2))
         pygame.display.flip()
+
         waiting = True
         while waiting:
-            for e in pygame.event.get():
-                if e.type == pygame.KEYDOWN:
-                    if e.key == pygame.K_ESCAPE:
+            for event in pygame.event.get():
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
                         waiting = False
                         return
-                    keyname = f'K_{pygame.key.name(e.key).upper()}'
-                    self.input_config.set_key(action, keyname)
+                    # Asignar nueva tecla
+                    keyname = f'K_{pygame.key.name(event.key).upper()}'
+                    self.config.set_key(action, keyname)
+                    self.config.save()
                     waiting = False
+                    return
