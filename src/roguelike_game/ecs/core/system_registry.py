@@ -51,6 +51,7 @@ from roguelike_game.ecs.systems.combat.spells.lightning_system import LightningS
 from roguelike_game.ecs.systems.debug.entities_debug_system import EntitiesDebugSystem
 from roguelike_game.ecs.systems.expansion_system import ExpansionSystem
 from roguelike_game.ecs.systems.experience_system import ExperienceSystem
+from roguelike_game.ecs.systems.experience.orb_attraction_system import OrbAttractionSystem
 from roguelike_game.ecs.systems.inventory.inventory_init_system import InventoryInitSystem
 from roguelike_game.ecs.systems.inventory.death_drop_system import DeathDropSystem
 from roguelike_game.ecs.systems.inventory.inventory_drop_system import InventoryDropSystem
@@ -76,7 +77,7 @@ def get_update_system_classes():
         MovementCollisionSystem,
         MeleeCombatSystem, SpellCastingSystem, ArcaneFlameSystem, SmokeSystem, SmokeEmitterSystem, SphereMagicShieldSystem, TeleportSystem, FireworkLaunchSystem, AuraSystem, ParticleSystem, ExplosionSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, LightningEmitterSystem, FireballSystem, LightningSystem, DashSystem, HitboxSystem,
         TrailSystem,
-        AnimationSystem, FlashSystem, SpawnSystem, InventoryInitSystem, DeathDropSystem, InventoryDropSystem, InventoryPickupSystem, InventoryTransferSystem, InventoryDragSystem, MapLoadDropsSystem, ExperienceSystem, ExpansionSystem,
+        AnimationSystem, FlashSystem, SpawnSystem, InventoryInitSystem, DeathDropSystem, InventoryDropSystem, InventoryPickupSystem, InventoryTransferSystem, InventoryDragSystem, MapLoadDropsSystem, OrbAttractionSystem, ExperienceSystem, ExpansionSystem,
     ]
 
 def get_render_system_classes():

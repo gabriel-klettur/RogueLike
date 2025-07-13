@@ -288,5 +288,85 @@
       "x": 1959.6226324028503,
       "y": 2259.884418072213
     }
+  },
+  "a294dfb5-c281-4d83-9d30-c2c8512ee305": {
+    "item_id": "gold",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2374.2521457136254,
+      "y": 2089.3381075110897
+    }
+  },
+  "39a83bb3-4434-4d83-ba1d-20ccaa1191d9": {
+    "item_id": "experience_orb",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2374.2521457136254,
+      "y": 2089.3381075110897
+    }
+  },
+  "77359986-cf13-468d-b107-3293e52f1ef3": {
+    "item_id": "gold",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2252.274301694759,
+      "y": 2973.197170209126
+    }
+  },
+  "c140c6b1-a724-4e16-82cb-3ccf41aa8947": {
+    "item_id": "experience_orb",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2252.274301694759,
+      "y": 2973.197170209126
+    }
+  },
+  "2eef1b70-2c15-4ce3-b4d5-c3faeeffa489": {
+    "item_id": "gold",
+    "quantity": 4,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2894.8001963576025,
+      "y": 2885.962740545659
+    }
+  },
+  "64c715c9-2430-4b96-80ac-e52b112af273": {
+    "item_id": "experience_orb",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2870.8001963576025,
+      "y": 2884.962740545659
+    }
+  },
+  "a7e0b8e9-8b1c-4fdb-86d6-462178d5fd08": {
+    "item_id": "gold",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2907.25507480153,
+      "y": 2822.0341784637485
+    }
+  },
+  "76989579-3585-40c0-996a-52a18a4f18f6": {
+    "item_id": "experience_orb",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2907.25507480153,
+      "y": 2822.0341784637485
+    }
   }
 }
