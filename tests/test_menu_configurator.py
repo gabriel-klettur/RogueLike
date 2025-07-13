@@ -1,5 +1,6 @@
 import pygame
 import pytest
+import pygame_menu
 from roguelike_ui.widgets.menu_configurator import MenuConfigurator
 from roguelike_game.config.input_config import InputConfig
 
@@ -34,6 +35,7 @@ def test_make_binding_callback_sets_refresh_and_disables(init_pygame, tmp_path, 
     # Monkeypatch prompt_key to simulate user pressing new key
     def fake_prompt_key(action):
         configurator.config.set_key(action, 'K_b')
+        configurator.config.save()
     monkeypatch.setattr(configurator, '_prompt_key', fake_prompt_key)
 
     # Before callback

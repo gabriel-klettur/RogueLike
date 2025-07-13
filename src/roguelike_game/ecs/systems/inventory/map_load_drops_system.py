@@ -20,6 +20,8 @@ class MapLoadDropsSystem:
         self.perf_log = perf_log
         path = os.path.join(os.getcwd(), 'data', 'inventory', 'inventory_map.json')
         self.drop_manager = ItemDropManager(path)
+        if self.drop_manager.path != path:
+            self.drop_manager = ItemDropManager(self.drop_manager.path)
         items_path = os.path.join(os.getcwd(), 'data', 'items', 'items.json')
         self.items = load_items(items_path)
         self._initial_path = path
@@ -32,8 +34,10 @@ class MapLoadDropsSystem:
         Spawn new drops from inventory_map.json each frame.
         """
         # Reload drop data from file to sync external changes only for custom drop paths
+        if self.drop_manager.path != self._initial_path:
+            self.drop_manager = ItemDropManager(self.drop_manager.path)
         # Reload drop data from file to sync external changes
-        self.drop_manager = ItemDropManager(self.drop_manager.path)
+
         # Use in-memory drop data en lugar de leer archivo
         drops_dict = self.drop_manager._data or {}
 

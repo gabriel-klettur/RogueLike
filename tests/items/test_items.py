@@ -3,7 +3,7 @@ import pytest
 from roguelike_game.ecs.components.item_models import ItemModel, ItemStack
 
 def load_items_data():
-    with open('data/items.json', encoding='utf-8') as f:
+    with open('data/items/items.json', encoding='utf-8') as f:
         return json.load(f)
 
 def test_item_model_instantiation():
@@ -37,7 +37,7 @@ def test_item_stack_class():
 
 def test_load_items_function():
     from roguelike_game.ecs.components.item_models import load_items, ItemModel
-    items = load_items('data/items.json')
+    items = load_items('data/items/items.json')
     raw = load_items_data()
     assert isinstance(items, dict)
     assert set(items.keys()) == set(raw.keys())
@@ -76,7 +76,7 @@ def test_quest_item_model_validation():
 
 def test_load_items_instantiates_subclasses():
     from roguelike_game.ecs.components.item_models import load_items, ItemModel, ConsumableItemModel, EquipableItemModel, QuestItemModel
-    items = load_items('data/items.json')
+    items = load_items('data/items/items.json')
     # Consumable
     assert isinstance(items['health_potion'], ConsumableItemModel)
     # Equipable

@@ -24,7 +24,7 @@ class InventoryEditorSystem:
         self.active_monster_path = os.path.join(cwd, 'data', 'inventory_monsters.json')
         self.active_player_path = os.path.join(cwd, 'data', 'inventory_player.json')
         # Load item models
-        items_path = os.path.join(cwd, 'data', 'items.json')
+        items_path = os.path.join(cwd, 'data', 'items', 'items.json')
         self.items = load_items(items_path)
         # Drag state
         self.drag_item = None  # (item_id, quantity)
