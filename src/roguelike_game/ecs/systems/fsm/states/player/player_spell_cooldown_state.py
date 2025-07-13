@@ -4,6 +4,7 @@ from roguelike_game.ecs.systems.fsm.states.idle_state import IdleState
 from roguelike_game.config.spells_config import SPELLS
 import time
 import pygame
+from roguelike_game.ecs.components.magic_spell_bar_component import MagicSpellBarComponent
 
 
 class PlayerSpellCooldownState(State):
@@ -11,6 +12,14 @@ class PlayerSpellCooldownState(State):
     def enter(self, entity):
         # Iniciar temporizador de cooldown
         self.fsm.context['cooldown_start'] = time.time()
+        # Crear barra de cooldown
+        start = self.fsm.context['cooldown_start']
+        spell_key = self.fsm.context.get('spell')
+        base = SPELLS.get(spell_key, {}).get('cooldown_duration', 0)
+        punish = self.fsm.context.get('automatic_cast_punish', 1.0) if self.fsm.context.get('automatic', False) else 1.0
+        duration = base * punish
+        world = entity.world
+        world.components.setdefault('MagicSpellBarComponent', {})[entity.id] = MagicSpellBarComponent(duration=duration, start_time=start, active=True, state='cooldown')
 
     def execute(self, entity, dt):
         # Duración de cooldown con penalización si automatic

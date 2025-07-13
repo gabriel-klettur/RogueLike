@@ -1,6 +1,12 @@
 {
-  "ORIGINAL_SPRITE_SIZE": [128, 128],
-  "RENDERED_SPRITE_SIZE": [64, 64],
+  "ORIGINAL_SPRITE_SIZE": [
+    128,
+    128
+  ],
+  "RENDERED_SPRITE_SIZE": [
+    64,
+    64
+  ],
   "DEFAULT_CLASS": "dwarf",
   "DEFAULT_SCALE": 1.0,
   "DEFAULT_SPEED": 5,
@@ -47,6 +53,6 @@
       "attack": 1,
       "defense": 0,
       "death_timer_duration": 10.0
-    }   
+    }
   }
 }

@@ -50,7 +50,7 @@ class MagicSpellBarRenderSystem:
             if bar.state == 'prepare':
                 color = (255, 255, 0)
             elif bar.state == 'channel':
-                color = (255, 165, 0)
+                color = (128, 0, 128)
             else:
                 color = (128, 128, 128)
             fill_w = int(scaled_w * ratio)

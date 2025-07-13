@@ -35,8 +35,8 @@
     "zone_id": "Lobby",
     "schema_version": "1.0.0",
     "position": {
-      "x": 2354.042386705868,
-      "y": 2484.2866860416807
+      "x": 2222.042386705868,
+      "y": 2465.2866860416807
     }
   },
   "d74be7ba-173d-4bb9-b5b9-3d3a56f54f77": {
@@ -87,6 +87,66 @@
     "position": {
       "x": 2801.582010944257,
       "y": 2768.710014632405
+    }
+  },
+  "0ab5ac79-917b-4076-b35e-51cbcb5eb1e4": {
+    "item_id": "wood",
+    "quantity": 3,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 1989.0,
+      "y": 2210
+    }
+  },
+  "93273787-644a-4993-bae7-3f6d5adaaf7d": {
+    "item_id": "gold",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2347.3229520754107,
+      "y": 2525.5400910272783
+    }
+  },
+  "674e7a02-4a1b-40b1-8967-2b5872073d63": {
+    "item_id": "gold",
+    "quantity": 3,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 1431.8775479648755,
+      "y": 2471.702213171088
+    }
+  },
+  "78234bcf-4890-4673-b625-377169db3e4e": {
+    "item_id": "gold",
+    "quantity": 6,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 1968.3009625519355,
+      "y": 2291.6963630795003
+    }
+  },
+  "1c5dc4cc-424d-41c0-8a58-af7154d1f12f": {
+    "item_id": "experience_orb",
+    "quantity": 3,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 1968.3009625519355,
+      "y": 2291.6963630795003
+    }
+  },
+  "38243c53-3c95-42ad-b697-7f12b03ae30a": {
+    "item_id": "wood",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 1968.3009625519355,
+      "y": 2291.6963630795003
     }
   }
 }
