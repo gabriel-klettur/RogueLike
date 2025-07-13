@@ -124,9 +124,9 @@ class ArcaneFlameModel:
                 right = self.pixels[r][c+1] if c<self.columns-1 else None
                 p.set_sides(top=top, left=left, bottom=bottom, right=right)
 
-    def update(self):
+    def update(self, current_time=None):
         # Single time read and flat iteration
-        t = time.time()
+        t = current_time if current_time is not None else time.time()
         for p in self.pixels_flat:
             p.update(t)
 
