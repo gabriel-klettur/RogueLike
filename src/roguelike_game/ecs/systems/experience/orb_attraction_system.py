@@ -7,6 +7,7 @@ from roguelike_game.ecs.components.experience_component import ExperienceCompone
 from roguelike_game.ecs.components.core.player_tag import PlayerTagComponent
 from roguelike_game.ecs.components.item_models import load_items
 from roguelike_game.ecs.systems.experience_system import ExperienceSystem
+from roguelike_game.managers.map.item_drop_manager import ItemDropManager
 
 
 class OrbAttractionSystem:
@@ -20,6 +21,9 @@ class OrbAttractionSystem:
         self.items = load_items(items_path)
         self.attract_radius = attract_radius
         self.speed = speed
+        # Gestor de drops en mapa para persistir orbes recogidos
+        path = os.path.join(os.getcwd(), 'data', 'inventory', 'inventory_map.json')
+        self.drop_manager = ItemDropManager(path)
 
     def update(self, world, *args):
         comps = world.components
@@ -72,4 +76,6 @@ class OrbAttractionSystem:
                         if isinstance(sys, ExperienceSystem):
                             sys._persist_xp(xp_comps)
                             break
+                    # Persistir eliminación del orbe recogido
+                    self.drop_manager.pick_up(phys.drop_id)
                     world.remove_entity(eid)

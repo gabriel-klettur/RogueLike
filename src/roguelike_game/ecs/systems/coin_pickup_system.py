@@ -7,6 +7,7 @@ from roguelike_game.ecs.components.item_models import load_items
 from roguelike_game.ecs.components.core.player_tag import PlayerTagComponent
 from roguelike_game.ecs.systems.inventory.inventory_pickup_system import InventoryPickupSystem
 from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_game.managers.map.item_drop_manager import ItemDropManager
 
 
 class CoinPickupSystem:
@@ -18,6 +19,9 @@ class CoinPickupSystem:
         if items_path is None:
             items_path = os.path.join(os.getcwd(), 'data', 'items', 'items.json')
         self.items = load_items(items_path)
+        # Gestor de drops en mapa para persistir recogidas
+        path = os.path.join(os.getcwd(), 'data', 'inventory', 'inventory_map.json')
+        self.drop_manager = ItemDropManager(path)
 
     def update(self, world, *args):
         comps = world.components
@@ -63,5 +67,7 @@ class CoinPickupSystem:
                     if isinstance(sys, InventoryPickupSystem):
                         sys._persist_inventory(player_eid, inv)
                         break
+                # Persistir eliminación en inventory_map.json
+                self.drop_manager.pick_up(phys.drop_id)
                 # Eliminar entidad de moneda
                 world.remove_entity(eid)
