@@ -30,6 +30,8 @@ class InputSystem:
         self.prev_drop = {}
         self.prev_toggle = {}
         self.prev_toggle_inventory = {}
+        # Estado previo de hechizos para detección de flancos
+        self.prev_spell_keys = {}
         # Cargar configuración de teclas desde JSON
         self.config = InputConfig(config_path)
 
@@ -115,58 +117,24 @@ class InputSystem:
             inp.spell_smoke_emitter = bool(keys[se_key])
             inp.spell_sphere_magic_shield = bool(keys[sh_key])
             inp.spell_teleport = bool(keys[tp_key])
-            # Resetear flags de Q/E/X tras lectura para evitar duplicados
-            if inp.spell_healing_aura:
-                world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='healing_aura')
-                inp.spell_healing_aura = False
-            if inp.spell_slash:
-                print(f"[DEBUG][{time.time():.3f}] eid={eid} spell_slash -> slash")
-                world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='slash')
-                inp.spell_slash = False
-            if inp.spell_lightball:
-                print(f"[DEBUG][{time.time():.3f}] eid={eid} spell_lightball -> lightball")
-                world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='lightball')
-                inp.spell_lightball = False
-            if inp.spell_darkball:
-                print(f"[DEBUG][{time.time():.3f}] eid={eid} spell_darkball -> darkball")
-                world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='darkball')
-                inp.spell_darkball = False
-            if inp.spell_iceball:
-                print(f"[DEBUG][{time.time():.3f}] eid={eid} spell_iceball -> iceball")
-                world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='iceball')
-                inp.spell_iceball = False
-            if inp.spell_lightning:
-                print(f"[DEBUG][{time.time():.3f}] eid={eid} spell_lightning -> lightning")
-                world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='lightning')
-                inp.spell_lightning = False
-            if inp.spell_arcane_flame:
-                print(f"[DEBUG][{time.time():.3f}] eid={eid} spell_arcane_flame -> arcane_flame")
-                world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='arcane_flame')
-                inp.spell_arcane_flame = False
-            if inp.spell_firework_launch:
-                print(f"[DEBUG][{time.time():.3f}] eid={eid} spell_firework_launch -> firework_launch")
-                world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='firework_launch')
-                inp.spell_firework_launch = False
-            if inp.spell_smoke:
-                print(f"[DEBUG][{time.time():.3f}] eid={eid} spell_smoke -> smoke")
-                world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='smoke')
-                inp.spell_smoke = False
-            if inp.spell_smoke_emitter:
-                print(f'[DEBUG][{time.time():.3f}] eid={eid} spell_smoke_emitter -> smoke_emitter')
-                world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='smoke_emitter')
-                inp.spell_smoke_emitter = False
-    
-    
-    
-    
-            if inp.spell_sphere_magic_shield:
-                print(f"[DEBUG][{time.time():.3f}] eid={eid} spell_sphere_magic_shield -> sphere_magic_shield")
-                world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='sphere_magic_shield')
-                inp.spell_sphere_magic_shield = False
-            if inp.spell_teleport:
-                print(f"[DEBUG][{time.time():.3f}] eid={eid} spell_teleport -> teleport")
-                world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='teleport')
-                inp.spell_teleport = False
+            # Detección de eventos de hechizos: presionado, mantenido y soltado
+            spell_attrs = ['lightball','slash','healing_aura','darkball','iceball','lightning','arcane_flame','firework_launch','smoke','smoke_emitter','sphere_magic_shield','teleport']
+            for name in spell_attrs:
+                curr = getattr(inp, f'spell_{name}')
+                state = self.prev_spell_keys.get((eid,name), 0)
+                ts = time.time()
+                if curr and state == 0:
+                    print(f'[DEBUG][{ts:.3f}] eid={eid} botón presionado -> {name}')
+                    world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell=name)
+                    state = 1
+                elif curr and state == 1:
+                    print(f'[DEBUG][{ts:.3f}] eid={eid} botón mantenido apretado -> {name}')
+                    state = 2
+                elif not curr and state > 0:
+                    print(f'[DEBUG][{ts:.3f}] eid={eid} botón soltado    -> {name}')
+                    state = 0
+                self.prev_spell_keys[(eid,name)] = state
+
             # Toggle editor mode: detectar flanco ascendente
             toggle_key = self.config.get_key("toggle_item_editor")
             curr_toggle = bool(keys[toggle_key])
