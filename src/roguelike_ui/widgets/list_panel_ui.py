@@ -18,6 +18,17 @@ class ListPanelUI:
     def draw(self, surface: pygame.Surface, rect: pygame.Rect):
         self.rect = rect
         self.panel.draw(surface, rect)
+        # Highlight hovered item
+        mx, my = pygame.mouse.get_pos()
+        if self.rect.collidepoint((mx, my)):
+            line_h = self.font.get_linesize()
+            y = my - self.rect.y + self.panel.scroll_offset
+            idx = y // line_h
+            if 0 <= idx < len(self.items):
+                # calcular posición en pantalla del ítem
+                line_top = self.rect.y - self.panel.scroll_offset + idx * line_h
+                border_rect = pygame.Rect(self.rect.x, line_top, self.rect.width, line_h)
+                pygame.draw.rect(surface, (255, 255, 0), border_rect, 2)
 
     def handle_event(self, event: pygame.event.Event) -> bool:
         return self.panel.handle_event(event)
