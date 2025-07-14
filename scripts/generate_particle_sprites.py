@@ -10,9 +10,19 @@ import inspect
 from importlib import import_module
 
 # Configuración de generación de sprites
-DEFAULT_NUM_FRAMES = 16  # Número de frames para cada animación
+DEFAULT_NUM_FRAMES = 64  # Número total de frames para distribuir en max_duration
 default_SEED = 0        # Semilla para generador aleatorio
-DEFAULT_MAX_DURATION = 10.0  # Duración máxima de animación en segundos
+DEFAULT_MAX_DURATION = 3.0  # Duración por defecto de animación (s)
+
+# Duraciones por hechizo (en segundos)
+SPELL_DURATIONS = {
+    'arcane_flame': 5.0,
+    'firework_launch': 3.0,
+    'smoke': 10.0,
+    'smoke_emitter': 4.0,
+    'sphere_magic_shield': 5.0,
+    'teleport': 5.0,
+}
 
 # Headless mode
 os.environ['SDL_VIDEODRIVER'] = 'dummy'
@@ -39,7 +49,7 @@ def camel_case(snake: str) -> str:
     return ''.join(word.title() for word in snake.split('_'))
 
 
-def generate_sprites(spell_name: str, num_frames: int = DEFAULT_NUM_FRAMES, max_duration: float = DEFAULT_MAX_DURATION, seed: int = default_SEED):
+def generate_sprites(spell_name: str, num_frames: int = DEFAULT_NUM_FRAMES, seed: int = default_SEED):
     model_module = f'roguelike_game.ecs.systems.rendering.combat.spells.{spell_name}.model'
     view_module = f'roguelike_game.ecs.systems.rendering.combat.spells.{spell_name}.view'
     try:
@@ -57,6 +67,8 @@ def generate_sprites(spell_name: str, num_frames: int = DEFAULT_NUM_FRAMES, max_
     # Construir kwargs basados en nombre de parámetro
     params = list(sig.parameters.values())[1:]  # omitir self
     x0, y0 = width // 2, height // 2
+    # Duración simulada según hechizo
+    duration = SPELL_DURATIONS.get(spell_name, DEFAULT_MAX_DURATION)
     kwargs = {}
     for param in params:
         name = param.name
@@ -75,7 +87,7 @@ def generate_sprites(spell_name: str, num_frames: int = DEFAULT_NUM_FRAMES, max_
         elif name == 'height':
             kwargs[name] = height
         elif name in ('max_duration', 'duration', 'lifespan'):
-            kwargs[name] = max_duration
+            kwargs[name] = duration
         elif name == 'seed':
             kwargs[name] = seed
         elif param.default is inspect._empty:
@@ -87,10 +99,22 @@ def generate_sprites(spell_name: str, num_frames: int = DEFAULT_NUM_FRAMES, max_
     surf = pygame.Surface((width, height), pygame.SRCALPHA)
     cam = DummyCamera()
 
-    print(f"Generando {spell_name} ({num_frames} frames)")
-    has_update = hasattr(model, 'update')
+    # Calcular dt según num_frames deseados
+    duration = SPELL_DURATIONS.get(spell_name, DEFAULT_MAX_DURATION)
+    dt = duration / (num_frames-1) if num_frames > 1 else 0
+    print(f"[SIM] {spell_name}: simulando {duration}s en {num_frames} frames (dt={dt:.2f}s)")
+    exec_start = time.perf_counter()
+    start_t = getattr(model, 'start_time', time.time())
     for i in range(num_frames):
-        if has_update:
+        # Medidor de tiempo del frame
+
+        # Calcular instante para este frame
+        t = start_t + i * dt
+        print(f"[DEBUG] Frame {i+1}/{num_frames}, elapsed={i*dt:.2f}s, t={t}")
+        # Intentar update con t, sino sin args; silenciar cualquier error
+        try:
+            model.update(t)
+        except Exception:
             try:
                 model.update()
             except Exception:
@@ -101,6 +125,9 @@ def generate_sprites(spell_name: str, num_frames: int = DEFAULT_NUM_FRAMES, max_
         path = os.path.join(OUTPUT_DIR, filename)
         pygame.image.save(surf, path)
         print(f" Guardado: {path}")
+        # Tiempo real total transcurrido
+        real_elapsed = time.perf_counter() - exec_start
+        print(f"[REAL] Generación de {spell_name} completada en {real_elapsed:.2f}s")
 
 
 def main():
