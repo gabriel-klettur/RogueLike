@@ -4,7 +4,7 @@
 Detallar formato, tipos, mapeo a código y guía de extensión de los campos `params` en las instancias de ítems.
 
 ## 1. Formato de datos
-- Ubicación JSON de instancias: `data/map_items.json` o `data/levels/level_X_items.json`.
+- Ubicación JSON de instancias: `data/map_items.json` o `data/levels/level_X_items.json` (planificado).
 - Estructura típica:
 ```json
 {
@@ -20,7 +20,15 @@ Detallar formato, tipos, mapeo a código y guía de extensión de los campos `pa
   ]
 }
 ```
-- Validación: crear `data/items/item_params_schema.json` (JSON Schema) y validar al cargar.
+- Validación: validar parámetros e instancias usando los esquemas en `schemas/items/`.
+
+### Esquemas JSON implementados
+
+- `schemas/items/common.json`:
+  - `#/definitions/params` define los campos de `params`.
+  - `#/definitions/instance` define la estructura de instancias (incluye `params`).
+- `schemas/items/definitions.json`: valida `data/items/items.json` (definiciones estáticas).
+- `schemas/items/instances.json`: valida `data/inventory/inventory_map.json` (drops de ítems).
 
 ## 2. Tipos de parámetros
 - **Portal**
@@ -58,7 +66,7 @@ class HealingComponent:
 
 ## 4. Guía de extensión
 Para añadir nuevos parámetros y comportamientos:
-1. Ampliar JSON Schema (`item_params_schema.json`).
+1. Ampliar la definición `#/definitions/params` en `schemas/items/common.json` o crear nuevos esquemas en `schemas/items/`.
 2. Definir nuevo ECS Component y System.
 3. Actualizar `ItemFactory.create()` para incluir el nuevo componente.
 4. Extender el editor de ítems (UI de formulario) para editar los nuevos campos.
