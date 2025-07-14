@@ -30,6 +30,8 @@ class MapItemsUI:
         self.list_ui.draw(surface, rect)
 
     def handle_event(self, event: pygame.event.Event) -> str | None:
+        # Forward scroll/wheel events to list_ui
+        self.list_ui.handle_event(event)
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             idx = self.list_ui.get_selected(event.pos)
             if idx is not None:
