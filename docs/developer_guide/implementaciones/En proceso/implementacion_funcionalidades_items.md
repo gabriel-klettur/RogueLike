@@ -5,10 +5,10 @@
 Plan detallado para dotar de lógica de comportamiento a las instancias de ítems en ECS y editor.
 
 ## 1. Carga de definiciones
-- Usar `roguelike_game.managers.items.loader.ItemsLoader` para cargar y validar `data/items/items.json` utilizando el esquema `schemas/items/definitions.json`.
+- Usar `roguelike_game.managers.items.loader.ItemsLoader` para cargar y validar `data/items/items.json` utilizando el esquema `schemas/items/definitions.json`. [COMPLETADO]
 
 ## 2. Datos de instancias
-- Usar `data/inventory/inventory_map.json` como diccionario de instancias, validado en `MapLoadDropsSystem` contra `schemas/items/instances.json`.
+- Usar `data/inventory/inventory_map.json` como diccionario de instancias, validado en `MapLoadDropsSystem` contra `schemas/items/instances.json`. [COMPLETADO]
 - Estructura típica (clave dinámica por `instance_id`):
 ```json
 {
@@ -22,7 +22,7 @@ Plan detallado para dotar de lógica de comportamiento a las instancias de ítem
 }
 ```
 
-## 3. Componentes ECS
+## 3. Componentes ECS [COMPLETADO]
 - `ItemComponent(definition_id: str)` para toda entidad-ítem.
 - Componentes específicos según comportamiento:
   - `TeleportComponent(dest_map, dest_x, dest_y)`.
