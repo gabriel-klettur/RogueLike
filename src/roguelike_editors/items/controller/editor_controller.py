@@ -12,8 +12,11 @@ pygame.font.SysFont = _safe_sysfont
 from typing import Any, Dict
 from roguelike_editors.items.model.editor_model import ItemEditorModel
 from roguelike_editors.items.view.editor_view import ItemEditorView
+
 from roguelike_ui.widgets.text_input import TextInput
 from roguelike_ui.widgets.double_click_detector import DoubleClickDetector
+from roguelike_ui.widgets.map_items_ui import MapItemsUI
+from roguelike_ui.widgets.params_editor_ui import ParamsEditorUI
 from roguelike_ui.services.json_persistence import save_to_json
 import os
 from roguelike_editors.items.events.items_editor_events import ItemsEditorEventHandler
@@ -23,13 +26,90 @@ class ItemEditorController:
     def __init__(self, items: Dict[str, Any], assets: Dict[str, Any], font: pygame.font.Font):
         self.model = ItemEditorModel(items=items, assets=assets)
         self.view = ItemEditorView(assets, font)
+
         # Initialize text input and double-click detector
         self.text_input = TextInput(font)
         self.dc_detector = DoubleClickDetector()
         self.view.text_input = self.text_input
+        # Inicializar servicios de edición de instancias
+        # Map items list
+        inv_map_path = os.path.join(os.getcwd(), 'data', 'inventory', 'inventory_map.json')
+        self.map_ui = MapItemsUI(font, inv_map_path)
+        # Params editor
+        schema_path = os.path.join(os.getcwd(), 'schemas', 'items', 'instances.json')
+        self.params_ui = ParamsEditorUI(schema_path, font)
+        # Enlazar al view
+        self.view.map_ui = self.map_ui
+        self.view.params_ui = self.params_ui
+        # Handler de eventos inline y grid
         self.event_handler = ItemsEditorEventHandler(self)
 
     def handle_event(self, event: pygame.event.Event) -> None:
+        # Delegar entrada inline (grid, detalles, edición) al handler existente
+        self.event_handler.handle(event)
+        # Integración de lista de instancias del mapa y edición de params
+        if self.model.visible:
+            # Selección de instancia en mapa
+            inst = self.map_ui.handle_event(event)
+            if inst:
+                # cargar valores al editor de params
+                params = self.map_ui.data.get(inst, {}).get('params', {})
+                self.params_ui.load_values(params)
+                return
+            # Manejo de edición de params
+            if self.params_ui.handle_event(event):
+                try:
+                    new_params = self.params_ui.get_values()
+                    inst_id = self.map_ui.selected_instance
+                    if inst_id:
+                        # actualizar datos en memoria y persistir
+                        entry = self.map_ui.data.get(inst_id, {})
+                        entry['params'] = new_params
+                        path = os.path.join(os.getcwd(), 'data', 'inventory', 'inventory_map.json')
+                        save_to_json(path, inst_id, entry)
+                        # refrescar lista de mapa
+                        self.map_ui.load()
+                    return
+                except ValidationError as e:
+                    print(f"Params invalidos: {e}")
+                    return
+        self.event_handler.handle(event)
+        return
+        if self.model.visible:
+            # Definiciones de ítems
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                idx = self.def_panel.get_selected(event.pos)
+                if idx is not None:
+                    def_id = self.def_panel.items[idx]
+                    self.model.selected_item_id = def_id
+                    # reset instancia y params
+                    self.map_ui.selected_instance = None
+                    return
+            # Instancias en el mapa
+            inst = self.map_ui.handle_event(event)
+            if inst:
+                self.model.selected_instance_id = inst
+                params = self.map_ui.data.get(inst, {}).get('params', {})
+                # cargar valores en editor de params
+                self.params_ui.load_values(params)
+                return
+            # Edición de params
+            if self.params_ui.handle_event(event):
+                try:
+                    new_params = self.params_ui.get_values()
+                    inst_id = self.map_ui.selected_instance
+                    if inst_id:
+                        entry = self.map_ui.data.get(inst_id, {})
+                        entry['params'] = new_params
+                        # Guardar en JSON
+                        import os
+                        path = os.path.join(os.getcwd(), 'data', 'inventory', 'inventory_map.json')
+                        save_to_json(path, inst_id, entry)
+                    return
+                except ValidationError as e:
+                    print(f"Params invalidos: {e}")
+                    return
+        # flujo existente...
         self.event_handler.handle(event)
         return
         # Inline editing input
@@ -228,11 +308,11 @@ class ItemEditorController:
         self.model.editing_text = ""
         self.model.editing_cursor = 0
     def draw(self, screen: pygame.Surface) -> None:
+        # Mostrar editor de ítems original
         if not self.model.visible:
             return
-        # base rendering
         self.view.draw(screen, self.model)
-        # overlay text input when editing
+        # Overlay de edición inline
         if self.model.editing_property:
             for rect_prop, key_prop in self.model.property_entries:
                 if key_prop == self.model.editing_property:
@@ -241,7 +321,16 @@ class ItemEditorController:
                     y = rect_prop.y
                     self.text_input.draw(screen, x, y)
                     break
-
-        if not self.model.visible:
-            return
-        self.view.draw(screen, self.model)
+        # Añadir lista de instancias del mapa y editor de params debajo
+        margin = 20
+        sw, sh = screen.get_size()
+        # Panel de params en la parte inferior
+        params_h = sh // 4
+        list_h = sh // 4
+        params_rect = pygame.Rect(margin, sh - margin - params_h, sw - 2*margin, params_h)
+        # Dibujar params si hay instancia seleccionada
+        if getattr(self.map_ui, 'selected_instance', None):
+            self.params_ui.draw(screen, params_rect)
+        # Panel de lista de instancias justo encima
+        list_rect = pygame.Rect(margin, params_rect.y - margin - list_h, sw - 2*margin, list_h)
+        self.map_ui.draw(screen, list_rect)

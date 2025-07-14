@@ -34,6 +34,7 @@ class ItemEditorView:
         return text + '...'
 
     def draw(self, screen: pygame.Surface, model: Any) -> None:
+
         # Fondo semi-transparente
         overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 180))
