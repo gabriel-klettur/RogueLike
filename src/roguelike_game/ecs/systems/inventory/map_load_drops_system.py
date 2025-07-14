@@ -1,5 +1,8 @@
 import os
 import json
+import jsonschema
+from pathlib import Path
+from jsonschema import Draft7Validator, RefResolver
 from roguelike_game.managers.map.item_drop_manager import ItemDropManager
 from roguelike_game.ecs.components.physical_item_component import PhysicalItemComponent
 from roguelike_game.ecs.components.collectible_component import CollectibleComponent
@@ -19,6 +22,17 @@ class MapLoadDropsSystem:
     def __init__(self, perf_log=None):
         self.perf_log = perf_log
         path = os.path.join(os.getcwd(), 'data', 'inventory', 'inventory_map.json')
+        # Validar esquema de instancias de ítems con Draft7Validator y RefResolver
+        schema_path = os.path.join(os.getcwd(), 'schemas', 'items', 'instances.json')
+        with open(schema_path, 'r', encoding='utf-8') as sf:
+            instances_schema = json.load(sf)
+        schema_uri = Path(schema_path).resolve().as_uri()
+        resolver = RefResolver(base_uri=schema_uri, referrer=instances_schema)
+        validator = Draft7Validator(instances_schema, resolver=resolver)
+        with open(path, 'r', encoding='utf-8') as df:
+            drops_raw = json.load(df)
+        validator.validate(drops_raw)
+        # Instanciar el ItemDropManager con datos validados
         self.drop_manager = ItemDropManager(path)
         if self.drop_manager.path != path:
             self.drop_manager = ItemDropManager(self.drop_manager.path)
