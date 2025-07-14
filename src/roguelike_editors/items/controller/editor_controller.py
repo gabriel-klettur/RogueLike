@@ -52,8 +52,13 @@ class ItemEditorController:
             # Selección de instancia en mapa
             inst = self.map_ui.handle_event(event)
             if inst:
+                inst_data = self.map_ui.data.get(inst, {})
+                # Seleccionar ítem en el grid de definiciones
+                item_def = inst_data.get('item_id')
+                if item_def:
+                    self.model.selected_item_id = item_def
                 # cargar valores al editor de params
-                params = self.map_ui.data.get(inst, {}).get('params', {})
+                params = inst_data.get('params', {})
                 self.params_ui.load_values(params)
                 return
             # Manejo de edición de params
