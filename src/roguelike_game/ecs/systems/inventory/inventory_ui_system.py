@@ -41,6 +41,11 @@ class InventoryUISystem:
         self.drag_start_offset_x = 0
         self.drag_start_offset_y = 0
         self.prev_right_pressed = False
+        self.prev_left_pressed = False
+        # Detección de doble clic
+        self.last_click_slot_idx = None
+        self.last_click_time = 0
+        self.double_click_threshold = 500
         pygame.font.init()
         self.font = pygame.font.SysFont(None, 24)
         # Pre-cargar superficies de íconos
@@ -188,3 +193,38 @@ class InventoryUISystem:
         self.panel_rect = panel_rect
         self._draw_panel(screen, panel_rect)
         self._draw_slots(screen, panel_rect, slots)
+                # Manejar uso de consumibles (doble clic izquierdo en slot)
+        now = pygame.time.get_ticks()
+        left_pressed = pygame.mouse.get_pressed()[0]
+        mouse_pos = pygame.mouse.get_pos()
+        left_clicked = left_pressed and not self.prev_left_pressed
+        self.prev_left_pressed = left_pressed
+        
+        if left_clicked:
+            player_eid, inp = self._get_player_input(world)
+            if inp:
+                for idx, stack in enumerate(slots):
+                    if not stack:
+                        continue
+                    col = idx % self.GRID_COLS
+                    row = idx // self.GRID_COLS
+                    x = panel_rect.x + self.PADDING + col * (self.SLOT_SIZE + self.PADDING)
+                    y = panel_rect.y + self.PADDING + row * (self.SLOT_SIZE + self.PADDING)
+                    slot_rect = pygame.Rect(x, y, self.SLOT_SIZE, self.SLOT_SIZE)
+                    if slot_rect.collidepoint(mouse_pos):
+                        # Detección de doble clic en mismo slot
+                        last_idx = getattr(self, 'last_click_slot_idx', None)
+                        last_time = getattr(self, 'last_click_time', 0)
+                        if last_idx == idx and now - last_time <= getattr(self, 'double_click_threshold', 500):
+                            print(f"[DEBUG][InventoryUI] double click on slot {idx} item {stack.item_id}")
+                            inp.use_item = stack.item_id
+                            print(f"[DEBUG][InventoryUI] use_item set to {stack.item_id}")
+                            # Resetear estado doble clic
+                            self.last_click_slot_idx = None
+                            self.last_click_time = 0
+                        else:
+                            print(f"[DEBUG][InventoryUI] first click on slot {idx} item {stack.item_id}")
+                            self.last_click_slot_idx = idx
+                            self.last_click_time = now
+                        break
+

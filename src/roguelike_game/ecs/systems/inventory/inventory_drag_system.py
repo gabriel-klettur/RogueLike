@@ -50,26 +50,30 @@ class InventoryDragSystem:
                 inv = world.components.get('InventoryComponent', {}).get(player)
                 if inv and 0 <= idx < len(inv.slots) and inv.slots[idx]:
                     self.dragging_idx = idx
-        # Soltar drag: crear drop en mapa si cae fuera del panel
+        # Soltar drag: crear drop en mapa solo si se suelta fuera del panel
         if self.dragging_idx is not None and not mouse_pressed and self.prev_mouse:
-            inv = world.components.get('InventoryComponent', {}).get(player)
-            if inv and 0 <= self.dragging_idx < len(inv.slots):
-                stack = inv.slots[self.dragging_idx]
-                if stack:
-                    # Soltar en mapa
-                    world_x = mouse_x / camera.zoom + camera.offset_x
-                    world_y = mouse_y / camera.zoom + camera.offset_y
-                    drop_id = str(uuid.uuid4())
-                    self.drop_manager.create_drop(
-                        drop_id, stack.item_id, stack.quantity, None,
-                        position={'x': world_x, 'y': world_y}
-                    )
-                    # Remover del inventario
-                    inv.slots[self.dragging_idx] = None
-                    # Persistir inventario
-                    drop_sys = next((s for s in world.update_systems if isinstance(s, InventoryPickupSystem)), None)
-                    if drop_sys:
-                        drop_sys._persist_inventory(player, inv)
+            # Cancelar drop si el release ocurre dentro del panel (click)
+            if panel.collidepoint(mouse_x, mouse_y):
+                self.dragging_idx = None
+            else:
+                inv = world.components.get('InventoryComponent', {}).get(player)
+                if inv and 0 <= self.dragging_idx < len(inv.slots):
+                    stack = inv.slots[self.dragging_idx]
+                    if stack:
+                        # Soltar en mapa
+                        world_x = mouse_x / camera.zoom + camera.offset_x
+                        world_y = mouse_y / camera.zoom + camera.offset_y
+                        drop_id = str(uuid.uuid4())
+                        self.drop_manager.create_drop(
+                            drop_id, stack.item_id, stack.quantity, None,
+                            position={'x': world_x, 'y': world_y}
+                        )
+                        # Remover del inventario
+                        inv.slots[self.dragging_idx] = None
+                        # Persistir inventario
+                        drop_sys = next((s for s in world.update_systems if isinstance(s, InventoryPickupSystem)), None)
+                        if drop_sys:
+                            drop_sys._persist_inventory(player, inv)
             # reset drag
             self.dragging_idx = None
         self.prev_mouse = mouse_pressed

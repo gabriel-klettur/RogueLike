@@ -36,7 +36,8 @@
         "scale_editor": { "type": "number", "minimum": 0 },
         "scale_map": { "type": "number", "minimum": 0 },
         "scale_inventory": { "type": "number", "minimum": 0 },
-        "z_layer": { "type": "integer" }
+        "z_layer": { "type": "integer" },
+        "default_params": { "$ref": "#/definitions/params" }
       },
       "required": ["id", "name", "description", "stackable"],
       "additionalProperties": false,

@@ -9,114 +9,14 @@
       "y": 1880
     }
   },
-  "a61cc8c2-dfe5-4f0e-91af-94ea1bf4aac9": {
-    "item_id": "mana_potion",
-    "quantity": 2,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2224,
-      "y": 1880
-    }
-  },
-  "f91aee2d-b6fd-4bb2-9f9f-bbc552445887": {
-    "item_id": "wood",
-    "quantity": 2,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 3022.0,
-      "y": 2386.0
-    }
-  },
-  "d74be7ba-173d-4bb9-b5b9-3d3a56f54f77": {
-    "item_id": "wood",
-    "quantity": 2,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 3091.819805153396,
-      "y": 1773.1801948466061
-    }
-  },
-  "bfba89e8-1bd6-479d-a6aa-1afc2bd644f1": {
-    "item_id": "gold",
-    "quantity": 2,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 3006.0,
-      "y": 1923
-    }
-  },
-  "984a148f-9a66-4855-87ae-f969c7fd3ae2": {
-    "item_id": "experience_orb",
-    "quantity": 2,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 3006.0,
-      "y": 1923
-    }
-  },
-  "52d22cec-61dc-4ee2-871e-d3189f17f1ca": {
-    "item_id": "gold",
-    "quantity": 4,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2801.582010944257,
-      "y": 2768.710014632405
-    }
-  },
-  "743e4cfb-d251-4e9b-851b-bd1f5d25c537": {
-    "item_id": "experience_orb",
-    "quantity": 1,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2801.582010944257,
-      "y": 2768.710014632405
-    }
-  },
   "0ab5ac79-917b-4076-b35e-51cbcb5eb1e4": {
     "item_id": "wood",
     "quantity": 3,
     "zone_id": "Lobby",
     "schema_version": "1.0.0",
     "position": {
-      "x": 1989.0,
-      "y": 2210
-    }
-  },
-  "78234bcf-4890-4673-b625-377169db3e4e": {
-    "item_id": "gold",
-    "quantity": 6,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 1968.3009625519355,
-      "y": 2291.6963630795003
-    }
-  },
-  "38243c53-3c95-42ad-b697-7f12b03ae30a": {
-    "item_id": "wood",
-    "quantity": 1,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2397.3009625519353,
-      "y": 2602.6963630795003
-    }
-  },
-  "6346d7ad-9b43-4f9f-8eac-9ab6b545c102": {
-    "item_id": "gold",
-    "quantity": 2,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2425.011817854878,
-      "y": 2522.545290542314
+      "x": 1322.0,
+      "y": 2604.0
     }
   }
 }

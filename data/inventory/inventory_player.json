@@ -4,11 +4,11 @@
     "slots": [
       {
         "item": "gold",
-        "quantity": 273
+        "quantity": 277
       },
       {
         "item": "health_potion",
-        "quantity": 2
+        "quantity": 17
       },
       {
         "item": "mana_potion",

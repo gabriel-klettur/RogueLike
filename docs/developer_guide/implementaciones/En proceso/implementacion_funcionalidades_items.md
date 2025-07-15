@@ -45,7 +45,7 @@ Plan detallado para dotar de lógica de comportamiento a las instancias de ítem
 ## 6. Integración en el editor de ítems (F7)
 Para profesionalizar y reutilizar la UI actual de inventario, extraemos código de `roguelike_editors/inventory` a `roguelike_ui/widgets` y lo consumimos desde `roguelike_editors/items`:
 
-### 6.1 Extracción a `roguelike_ui/widgets`
+### 6.1 Extracción a `roguelike_ui/widgets` [COMPLETADO]
 - `ListPanelUI` (`src/roguelike_ui/widgets/list_panel_ui.py`)
   • Extraer de `roguelike_editors/inventory/view/editor_view.py`:
     - Uso de `ScrollPanel` y construcción de la lista (líneas ~64–85).
@@ -56,18 +56,18 @@ Para profesionalizar y reutilizar la UI actual de inventario, extraemos código 
 - `IconCache` (`src/roguelike_ui/widgets/icon_cache.py`)
   • Extraer `_get_item_image()` (líneas ~104–118) como cache singleton.
 
-### 6.2 Creación de `MapItemsUI`
+### 6.2 Creación de `MapItemsUI` [COMPLETADO]
 - `src/roguelike_ui/widgets/map_items_ui.py`:
   • Internamente usa `ListPanelUI` para listar instancias de `data/inventory/inventory_map.json`.
   • Emite `on_select(instance_id)` al hacer clic.
   • Permite refrescar con nuevos datos.
 
-### 6.3 Reutilización en `roguelike_editors/items`
+### 6.3 Reutilización en `roguelike_editors/items` [COMPLETADO]
 - `src/roguelike_editors/items/items_editor_view.py`:
   • Layout de dos columnas: panel de Definiciones (reutilizar `ListPanelUI`) + `MapItemsUI`.
   • Manejar selección de instancia y desplegar `ParamsEditorUI` (punto 6.4).
 
-### 6.4 `ParamsEditorUI`
+### 6.4 `ParamsEditorUI` [COMPLETADO]
 - `src/roguelike_ui/widgets/params_editor_ui.py`:
   • Formulario dinámico basado en schema JSON (`schemas/items/instances.json`).
   • Usa `text_input.TextInput` para campos de texto/número.
@@ -77,7 +77,7 @@ Para profesionalizar y reutilizar la UI actual de inventario, extraemos código 
     - `draw(surface, rect)`
     - `handle_event(ev)->bool`
 
-### 6.5 Flujo de interacción
+### 6.5 Flujo de interacción [COMPLETADO]
 1. F7 abre `ItemsEditorController`.
 2. `ItemsEditorView` instancia:
    - `DefinitionsPanelUI` (alias de `ListPanelUI`).
@@ -98,7 +98,7 @@ Beneficios:
 - Mantenible: cambiar schema actualiza ambos formularios automáticamente.
 - Profesional: UI consistente, validación robusta y clara separación de responsabilidades.
 
-## 7. Flujo de trabajo
+## 7. Flujo de trabajo  [COMPLETADO]
 1. Definir propiedades estáticas en `data/items/items.json`.
 2. Instanciar objetos en el mapa vía editor.
 3. Al cargar nivel, el loader instancia entidades con lógica.

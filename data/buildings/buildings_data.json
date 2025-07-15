@@ -780,25 +780,6 @@
     },
     {
         "zone": "Lobby",
-        "rel_x": 719,
-        "rel_y": 787,
-        "image_path": "assets/buildings\\portals\\portal.png",
-        "solid": true,
-        "scale": [
-            164,
-            239
-        ],
-        "original_scale": [
-            164,
-            239
-        ],
-        "split_ratio": 0.234,
-        "z_bottom": 3,
-        "z_top": 6,
-        "z": 3
-    },
-    {
-        "zone": "Lobby",
         "rel_x": 556,
         "rel_y": 569,
         "image_path": "assets/buildings\\vegetation\\tree_1.PNG",

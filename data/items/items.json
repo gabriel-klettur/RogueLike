@@ -53,6 +53,8 @@
     "scale_inventory": 0.05,
     "max_stack": 5,
     "effect": "heal_50",
+    "default_params": { "healing": 50 },
+
     "z_layer": 1
   },
   "iron_sword": {
