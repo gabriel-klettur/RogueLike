@@ -37,19 +37,29 @@ class ConsumeSystem:
         if inv and inv.remove(item_id, 1):
             print(f"[DEBUG][ConsumeSystem] removed 1 x {item_id}")
             model = self.items.get(item_id)
-            healing = None
-            if model and hasattr(model, 'default_params'):
-                healing = getattr(model, 'default_params').get('healing')
-            if healing is None and model and getattr(model, 'effect', '').startswith('heal_'):
-                try:
-                    healing = int(model.effect.split('_')[1])
-                except ValueError:
-                    healing = 0
-            print(f"[DEBUG][ConsumeSystem] healing amount = {healing}")
-            if healing:
-                hp_comp = components.get('Health', {}).get(player_eid)
-                if hp_comp:
-                    hp_comp.current_hp = min(hp_comp.max_hp, hp_comp.current_hp + healing)
-                print(f"[DEBUG][ConsumeSystem] new HP = {hp_comp.current_hp}/{hp_comp.max_hp}")
+            params = getattr(model, 'default_params', {}) or {}
+            for key, val in params.items():
+                if key == 'healing':
+                    hp_comp = components.get('Health', {}).get(player_eid)
+                    if hp_comp:
+                        hp_comp.current_hp = min(hp_comp.max_hp, hp_comp.current_hp + val)
+                        print(f"[DEBUG][ConsumeSystem] applied healing {val}, new HP = {hp_comp.current_hp}/{hp_comp.max_hp}")
+                elif key == 'mana':
+                    mana_comp = components.get('Mana', {}).get(player_eid)
+                    if mana_comp:
+                        mana_comp.current_mana = min(mana_comp.max_mana, mana_comp.current_mana + val)
+                        print(f"[DEBUG][ConsumeSystem] applied mana {val}, new Mana = {mana_comp.current_mana}/{mana_comp.max_mana}")
+                elif key == 'energy':
+                    energy_comp = components.get('Energy', {}).get(player_eid)
+                    if energy_comp:
+                        energy_comp.current_energy = min(energy_comp.max_energy, energy_comp.current_energy + val)
+                        print(f"[DEBUG][ConsumeSystem] applied energy {val}, new Energy = {energy_comp.current_energy}/{energy_comp.max_energy}")
+                elif key == 'hunger':
+                    hunger_comp = components.get('Hunger', {}).get(player_eid)
+                    if hunger_comp:
+                        hunger_comp.current_hunger = min(hunger_comp.max_hunger, hunger_comp.current_hunger + val)
+                        print(f"[DEBUG][ConsumeSystem] applied hunger {val}, new Hunger = {hunger_comp.current_hunger}/{hunger_comp.max_hunger}")
+                else:
+                    print(f"[DEBUG][ConsumeSystem] unknown effect param: {key}={val}")
         inp.use_item = None
         print("[DEBUG][ConsumeSystem] inp.use_item reset")

@@ -52,7 +52,7 @@
     "scale_map": 0.04,
     "scale_inventory": 0.05,
     "max_stack": 5,
-    "effect": "heal_50",
+    
     "default_params": { "healing": 50 },
 
     "z_layer": 1
@@ -126,7 +126,7 @@
     "scale_map": 0.04,
     "scale_inventory": 0.05,
     "max_stack": 5,
-    "effect": "energize_50",
+    "default_params": { "energy": 50 },
     "z_layer": 1
   },
   "explosion_potion": {
@@ -152,7 +152,7 @@
     "scale_map": 0.04,
     "scale_inventory": 0.05,
     "max_stack": 10,
-    "effect": "restore_hunger_30",
+    "default_params": { "hunger": 30 },
     "z_layer": 1
   },
   "image_item_not_found": {
@@ -185,7 +185,7 @@
     "scale_map": 0.04,
     "scale_inventory": 0.05,
     "max_stack": 6,
-    "effect": "restore_mana_50",
+    "default_params": { "mana": 50 },
     "z_layer": 1
   },
   "poison_potion": {

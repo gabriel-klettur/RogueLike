@@ -54,6 +54,8 @@
         "dest_y": { "type": "number" },
         "healing": { "type": "number" },
         "mana": { "type": "number" },
+        "energy": { "type": "number" },
+        "hunger": { "type": "number" },
         "buff_stat": { "type": "string" },
         "buff_value": { "type": "number" },
         "duration": { "type": "number" },

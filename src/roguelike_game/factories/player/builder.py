@@ -20,6 +20,9 @@ from roguelike_game.ecs.components.transform.movement_speed import MovementSpeed
 from roguelike_game.ecs.components.transform.velocity import Velocity
 from roguelike_game.ecs.components.combat.health import Health
 from roguelike_game.ecs.components.combat.combat_stats import CombatStats
+from roguelike_game.ecs.components.combat.mana import Mana
+from roguelike_game.ecs.components.combat.energy import Energy
+from roguelike_game.ecs.components.combat.hunger import Hunger
 from roguelike_game.ecs.components.combat.melee_weapon import MeleeWeapon
 from roguelike_game.ecs.components.rendering.trail_component import TrailComponent, TrailConfig
 from roguelike_game.ecs.components.fsm.npc_state import NPCState
@@ -69,6 +72,14 @@ class PlayerBuilder:
         comps["CombatStats"][eid] = CombatStats(current_hp=max_hp, max_hp=max_hp,
                                                 power=PLAYER_STATS[class_player]["attack"],
                                                 defense=PLAYER_STATS[class_player]["defense"])
+        # Inicializar maná, energía y hambre
+        max_mana = PLAYER_STATS[class_player]["max_mana"]
+        comps["Mana"][eid] = Mana(current_mana=max_mana, max_mana=max_mana)
+        max_energy = PLAYER_STATS[class_player]["max_energy"]
+        comps["Energy"][eid] = Energy(current_energy=max_energy, max_energy=max_energy)
+        # Hambre predeterminada
+        max_hunger = PLAYER_STATS[class_player].get("max_hunger", 100)
+        comps["Hunger"][eid] = Hunger(current_hunger=max_hunger, max_hunger=max_hunger)
         # Arma cuerpo a cuerpo
         comps["MeleeWeapon"][eid] = MeleeWeapon(damage=MELEE_WEAPON_CFG["damage"], cooldown=MELEE_WEAPON_CFG["cooldown"])
         # Trail visual

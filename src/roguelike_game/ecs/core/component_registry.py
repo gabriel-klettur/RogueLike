@@ -6,7 +6,7 @@ def create_empty_component_store():
     return {
         'Position': {}, 'Sprite': {}, 'Patrol': {}, 'MovementSpeed': {},
         'PatrolRoute': {}, 'NPCState': {}, 'Animator': {}, 'AnimationTimer': {},
-        'Health': {}, 'Scale': {}, 'Identity': {}, 'Velocity': {}, 'MultiCollider': {},
+        'Health': {}, 'Mana': {}, 'Energy': {}, 'Hunger': {}, 'Scale': {}, 'Identity': {}, 'Velocity': {}, 'MultiCollider': {},
         'ZLayer': {}, 'DeathTimer': {}, 'DamageConfig': {}, 'FireballComponent': {}, 'ArcaneFlameComponent': {}, 'FireworkLaunchComponent': {}, 'SmokeComponent': {},
         'SmokeEmitterComponent': {},
         'SphereMagicShieldComponent': {},
