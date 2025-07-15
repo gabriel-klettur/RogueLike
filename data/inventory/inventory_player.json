@@ -7,10 +7,6 @@
         "quantity": 277
       },
       {
-        "item": "health_potion",
-        "quantity": 15
-      },
-      {
         "item": "mana_potion",
         "quantity": 2
       },
@@ -18,7 +14,14 @@
         "item": "wood",
         "quantity": 20
       },
-      null
+      {
+        "item": "health_potion",
+        "quantity": 8
+      },
+      {
+        "item": "ancient_relic_mask",
+        "quantity": 3
+      }
     ],
     "schema_version": "1.0.0"
   }

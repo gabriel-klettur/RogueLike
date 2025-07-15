@@ -19,7 +19,10 @@ from roguelike_ui.widgets.map_items_ui import MapItemsUI
 from roguelike_ui.widgets.params_editor_ui import ParamsEditorUI
 from roguelike_ui.services.json_persistence import save_to_json
 import os
+import uuid
+from roguelike_game.managers.map.item_drop_manager import ItemDropManager
 from roguelike_editors.items.events.items_editor_events import ItemsEditorEventHandler
+from roguelike_engine.config.config_tiles import TILE_SIZE
 
 class ItemEditorController:
     """Controller para editor de ítems: maneja visibilidad y navegación."""
@@ -35,6 +38,8 @@ class ItemEditorController:
         # Map items list
         inv_map_path = os.path.join(os.getcwd(), 'data', 'inventory', 'inventory_map.json')
         self.map_ui = MapItemsUI(font, inv_map_path)
+        # Manager para persistencia de drops
+        self.drop_manager = ItemDropManager(inv_map_path)
         # Params editor
         schema_path = os.path.join(os.getcwd(), 'schemas', 'items', 'instances.json')
         self.params_ui = ParamsEditorUI(schema_path, font)
@@ -45,6 +50,21 @@ class ItemEditorController:
         self.event_handler = ItemsEditorEventHandler(self)
 
     def handle_event(self, event: pygame.event.Event) -> None:
+        # Añadir nuevo ítem al mapa con clic derecho (pies del jugador)
+        if self.model.visible and event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
+            if self.model.selected_item_id and hasattr(self, 'game') and hasattr(self.game, 'ecs'):
+                pos = self.game.ecs.ecs_world.player_position
+                if not pos:
+                    return
+                drop_id = uuid.uuid4().hex
+                # Agregar con cantidad por defecto 1 y zona nula
+                # Registrar drop en la posición exacta de los pies del jugador
+                self.drop_manager.create_drop(drop_id, self.model.selected_item_id, 1, None, position={'x': pos.x, 'y': pos.y})
+                # Refrescar lista de instancias
+                self.map_ui.load()
+                print(f"[ItemEditorController] Agregado ítem {self.model.selected_item_id} con id {drop_id} en pos jugador ({pos.x},{pos.y})")
+            return
+
         # Delegar entrada inline (grid, detalles, edición) al handler existente
         self.event_handler.handle(event)
         # Integración de lista de instancias del mapa y edición de params
@@ -80,197 +100,7 @@ class ItemEditorController:
                     return
         self.event_handler.handle(event)
         return
-        if self.model.visible:
-            # Definiciones de ítems
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                idx = self.def_panel.get_selected(event.pos)
-                if idx is not None:
-                    def_id = self.def_panel.items[idx]
-                    self.model.selected_item_id = def_id
-                    # reset instancia y params
-                    self.map_ui.selected_instance = None
-                    return
-            # Instancias en el mapa
-            inst = self.map_ui.handle_event(event)
-            if inst:
-                self.model.selected_instance_id = inst
-                params = self.map_ui.data.get(inst, {}).get('params', {})
-                # cargar valores en editor de params
-                self.params_ui.load_values(params)
-                return
-            # Edición de params
-            if self.params_ui.handle_event(event):
-                try:
-                    new_params = self.params_ui.get_values()
-                    inst_id = self.map_ui.selected_instance
-                    if inst_id:
-                        entry = self.map_ui.data.get(inst_id, {})
-                        entry['params'] = new_params
-                        # Guardar en JSON
-                        import os
-                        path = os.path.join(os.getcwd(), 'data', 'inventory', 'inventory_map.json')
-                        save_to_json(path, inst_id, entry)
-                    return
-                except ValidationError as e:
-                    print(f"Params invalidos: {e}")
-                    return
-        # flujo existente...
-        self.event_handler.handle(event)
-        return
-        # Inline editing input
-
-        if self.text_input.active:
-            if self.text_input.handle_event(event):
-                # sync model text and cursor for view
-                self.model.editing_text = self.text_input.text
-                self.model.editing_cursor = self.text_input.cursor
-                # on Enter, TextInput deactivated and commit
-                if not self.text_input.active:
-                    self._commit_edit()
-                return
-            # swallow other events when editing
-            return
-
-        if False and self.model.visible and self.model.editing_property:
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_RETURN:
-                    self._commit_edit()
-                    return
-                elif event.key == pygame.K_BACKSPACE:
-                    if self.model.editing_cursor > 0:
-                        # delete char before cursor
-                        self.model.editing_text = (self.model.editing_text[:self.model.editing_cursor-1] + self.model.editing_text[self.model.editing_cursor:])
-                        self.model.editing_cursor -= 1
-                    return
-                elif event.key == pygame.K_LEFT:
-                    # move cursor left
-                    self.model.editing_cursor = max(0, self.model.editing_cursor-1)
-                    return
-                elif event.key == pygame.K_RIGHT:
-                    # move cursor right
-                    self.model.editing_cursor = min(len(self.model.editing_text), self.model.editing_cursor+1)
-                    return
-                else:
-                    # insert character at cursor
-                    ch = event.unicode
-                    if ch:
-                        et = self.model.editing_text
-                        idx = self.model.editing_cursor
-                        self.model.editing_text = et[:idx] + ch + et[idx:]
-                        self.model.editing_cursor += len(ch)
-                    return
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                mx, my = event.pos
-                # Only commit when clicking outside editing property
-                if hasattr(self.model, 'property_entries'):
-                    for rect_prop, key_prop in self.model.property_entries:
-                        if key_prop == self.model.editing_property and rect_prop.collidepoint(mx, my):
-                            return
-                self._commit_edit()
-                return
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_F7:
-                self.model.visible = not self.model.visible
-                print(f"[DEBUG ItemEditorController] F7 pressed, visible={self.model.visible}")
-                if not self.model.visible:
-                    self.model.selected_item_id = None
-            elif self.model.visible:
-                if event.key == pygame.K_UP:
-                    self.model.scroll_index = max(0, self.model.scroll_index - 1)
-                elif event.key == pygame.K_DOWN:
-                    self.model.scroll_index = min(len(self.model.items) - 1, self.model.scroll_index + 1)
-
-        elif event.type == pygame.MOUSEBUTTONDOWN and self.model.visible and event.button == 1:
-            mx, my = event.pos
-            entries = [k for (_r, k) in getattr(self.model, 'property_entries', [])]
-            print(f"[DEBUG controller] MOUSEBUTTONDOWN clicks={getattr(event, 'clicks',1)} pos=({mx},{my}) entries={entries}")
-            
-            # Click on property: focus or edit
-            if hasattr(self.model, 'property_entries'):
-                for rect, key in self.model.property_entries:
-                    if rect.collidepoint(mx, my):
-                        # Double-click detection
-                        if getattr(event, 'clicks', 1) >= 2 or self.dc_detector.is_double_click(key):
-                            self.model.focused_property = key
-                            self.model.editing_property = key
-                            # prefill and activate text input
-                            item_id = self.model.selected_item_id or self.model.hovered_item_id
-                            item = self.model.items.get(item_id)
-                            initial = str(getattr(item, key, "")) if item else ""
-                            # preserve the existing value and cursor
-                            self.model.editing_text = initial
-                            self.model.editing_cursor = len(initial)
-                            self.text_input.activate(initial)  # caret at end by default
-                        else:
-                            self.model.focused_property = key
-                        return
-            # Si clic en panel de detalles, conservar foco/edición
-            if hasattr(self.model, 'panel_rect') and self.model.panel_rect.collidepoint(mx, my):
-                return
-            # Clic en grilla de ítems: calcular pantalla y columnas
-            screen_surf = pygame.display.get_surface()
-            if screen_surf:
-                sw, sh = screen_surf.get_size()
-            else:
-                sw, sh = None, None
-            margin = 20
-            cell_size = 64
-            text_margin = 4
-            font_h = self.view.font.get_height()
-            cell_height = cell_size + text_margin + font_h
-            # Columnas fijas: 12
-            columns = 12
-            # Seleccionar ítem en grilla
-            if mx < margin or my < margin:
-                self.model.selected_item_id = None
-            else:
-                col = (mx - margin) // (cell_size + margin)
-                row = (my - margin + self.model.scroll_index * (cell_height + margin)) // (cell_height + margin)
-                # Filtrar ítems excluyendo placeholder
-                item_ids = [i for i in self.model.items.keys() if i != "image_item_not_found"]
-                idx = row * columns + col
-                x0 = margin + col * (cell_size + margin)
-                y0 = margin + (row - self.model.scroll_index) * (cell_height + margin)
-                if 0 <= col < columns and 0 <= idx < len(item_ids) and x0 <= mx <= x0 + cell_size and y0 <= my <= y0 + cell_size:
-                    self.model.selected_item_id = item_ids[idx]
-                else:
-                    self.model.selected_item_id = None
-            # Limpiar foco y modo edición al cambiar selección
-            self.model.focused_property = None
-            self.model.editing_property = None
-        elif event.type == pygame.MOUSEMOTION and self.model.visible:
-            mx, my = event.pos
-            screen_surf = pygame.display.get_surface()
-            if screen_surf:
-                sw, sh = screen_surf.get_size()
-            else:
-                sw, sh = None, None
-            margin = 20
-            cell_size = 64
-            text_margin = 4
-            font_h = self.view.font.get_height()
-            cell_height = cell_size + text_margin + font_h
-            # Columnas fijas: 12
-            columns = 12
-            # Verificar área vertical
-            if mx < margin or my < margin:
-                self.model.hovered_item_id = None
-            else:
-                col = (mx - margin) // (cell_size + margin)
-                row = (my - margin + self.model.scroll_index * (cell_height + margin)) // (cell_height + margin)
-                # Filtrar ítems excluyendo placeholder
-                item_ids = [i for i in self.model.items.keys() if i != "image_item_not_found"]
-                idx = row * columns + col
-                x0 = margin + col * (cell_size + margin)
-                y0 = margin + (row - self.model.scroll_index) * (cell_height + margin)
-                if 0 <= col < columns and 0 <= idx < len(item_ids) and x0 <= mx <= x0 + cell_size and y0 <= my <= y0 + cell_size:
-                    self.model.hovered_item_id = item_ids[idx]
-                else:
-                    self.model.hovered_item_id = None
-
-        else:
-            # Reset hover cuando otros eventos
-            self.model.hovered_item_id = None
+        
 
     def _commit_edit(self):
         if not self.model.editing_property:

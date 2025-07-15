@@ -36,7 +36,15 @@ class InputSystem:
         self.config = InputConfig(config_path)
 
     @benchmark(lambda self: self.perf_log, "4.2.2.InputSystem.update")
-    def update(self, world, camera=None):
+    def update(self, world, *args):
+        # Suppress game clicks when Item Editor is open
+        # world.state.item_editor_state is set by ItemsEditorManager
+        if hasattr(world, 'state') and getattr(world.state, 'item_editor_state', None) and world.state.item_editor_state.visible:
+            # clear all click flags
+            for inp in world.components.get('InputComponent', {}).values():
+                inp.click = False
+            return
+
         # Recargar bindings para aplicar cambios guardados sin reiniciar
         self.config._load()
         # Obtener estado actual del teclado

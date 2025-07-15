@@ -21,8 +21,16 @@ class MapItemsUI:
             self.data = {}
         display = []
         for inst_id, inst in self.data.items():
-            pos = inst.get('position', {})
-            display.append(f"{inst_id}: {inst.get('item_id')} @({pos.get('x')},{pos.get('y')})")
+            # Mostrar posición de los pies o coordenadas de tile si falta posición
+            if 'position' in inst:
+                coords = inst['position']
+                x = coords.get('x')
+                y = coords.get('y')
+            else:
+                tile = inst.get('tile', {})
+                x = tile.get('x')
+                y = tile.get('y')
+            display.append(f"{inst_id}: {inst.get('item_id')} @({x},{y})")
         self.list_ui.set_items(display)
 
     def draw(self, surface: pygame.Surface, rect: pygame.Rect) -> None:

@@ -12,6 +12,7 @@ class ItemsEditorManager:
         font = game.font
         # Instanciar controlador
         self.controller = ItemEditorController(items, assets, font)
+        self.controller.game = game
         self.model = self.controller.model
         # Exponer estado global
         game.state.item_editor_state = self.model

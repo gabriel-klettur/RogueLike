@@ -18,5 +18,65 @@
       "x": 1322.0,
       "y": 2604.0
     }
+  },
+  "9fb1a74c073a4af8b24379fc97008047": {
+    "item_id": "wizard_staff_lvl_3",
+    "quantity": 1,
+    "zone_id": null,
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 847.0,
+      "y": 645.0
+    }
+  },
+  "947c8f940e564e4884ee1d30c1a0d8d8": {
+    "item_id": "wizard_staff_lvl_3",
+    "quantity": 1,
+    "zone_id": null,
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 822.0,
+      "y": 727.0
+    }
+  },
+  "58bbc662d1e24142b6601f0e05a1e7c8": {
+    "item_id": "iron_sword",
+    "quantity": 1,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 1012.0,
+      "y": 3062.0
+    }
+  },
+  "4a98046df3dd49fbb33f32870ca13aa4": {
+    "item_id": "wizard_staff_lvl_3",
+    "quantity": 1,
+    "zone_id": null,
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 33.08116907963188,
+      "y": 1611.7258300203102
+    }
+  },
+  "28cf2939882f4bf48800363df9df1fc5": {
+    "item_id": "health_potion",
+    "quantity": 1,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 937.0,
+      "y": 3085.0
+    }
+  },
+  "35cbc8f546de46569c2abadcac5771c2": {
+    "item_id": "wizard_staff_lvl_1",
+    "quantity": 1,
+    "zone_id": null,
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 1026.0,
+      "y": 1805.0
+    }
   }
 }
