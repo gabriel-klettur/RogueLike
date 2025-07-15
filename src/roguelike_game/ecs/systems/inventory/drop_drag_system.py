@@ -18,19 +18,29 @@ class DropDragSystem:
         self.dragging_eid = None
         self.offset_x = 0
         self.offset_y = 0
+        self.prev_mouse = False
+        self.potential_drag_eid = None
+        self.drag_press_time = None
+        self.drag_hold_threshold = 250  # ms
 
     @benchmark(lambda self: self.perf_log, "DropDragSystem.update")
     def update(self, world, camera):
         comps = world.components
         mouse_buttons = pygame.mouse.get_pressed()
+        left_pressed = mouse_buttons[0]
+        now = pygame.time.get_ticks()
         mouse_x, mouse_y = pygame.mouse.get_pos()
         # Convertir mouse screen a world coords
         world_x = mouse_x / camera.zoom + camera.offset_x
         world_y = mouse_y / camera.zoom + camera.offset_y
 
-        # Si no se presiona botón, finalizar drag si estaba activo
-        if not mouse_buttons[0]:
+        # Soltar botón: cancelar potencial o finalizar arrastre
+        if not left_pressed:
+            if self.dragging_eid is None and self.potential_drag_eid is not None:
+                self.potential_drag_eid = None
+                self.drag_press_time = None
             if self.dragging_eid is None:
+                self.prev_mouse = left_pressed
                 return
             # Detectar fin de drag: caer en UI o actualizar JSON
             ui_sys = next((s for s in getattr(world, 'render_systems', []) if isinstance(s, InventoryUISystem)), None)
@@ -86,19 +96,19 @@ class DropDragSystem:
                 self.dragging_eid = None
             return
 
-        # Si botón presionado pero sin drag activo: iniciar drag si encima de drop
+        # Si botón presionado pero sin drag activo: iniciar drag tras 0.5s de click
         if self.dragging_eid is None:
             hovered = None
             max_layer = -float('inf')
             for eid in world.get_entities_in_camera(camera, 'PhysicalItemComponent', 'Sprite', 'Position', 'ZLayer'):
-                pos = comps['Position'][eid]
+                pos2 = comps['Position'][eid]
                 sprite = comps['Sprite'][eid]
                 scale_comp = comps.get('Scale', {}).get(eid)
                 scale = scale_comp.scale if scale_comp else 1.0
                 w, h = sprite.image.get_size()
                 w = int(w * scale * camera.zoom)
                 h = int(h * scale * camera.zoom)
-                sx, sy = camera.apply((pos.x, pos.y))
+                sx, sy = camera.apply((pos2.x, pos2.y))
                 rect = pygame.Rect(sx, sy, w, h)
                 if rect.collidepoint(mouse_x, mouse_y):
                     layer = comps['ZLayer'][eid].layer
@@ -106,11 +116,16 @@ class DropDragSystem:
                         hovered = eid
                         max_layer = layer
             if hovered is not None:
-                self.dragging_eid = hovered
-                # Calcular offset entre pos y cursor (en world coords)
-                pos = comps['Position'][hovered]
-                self.offset_x = pos.x - world_x
-                self.offset_y = pos.y - world_y
+                if not self.prev_mouse and left_pressed:
+                    self.drag_press_time = now
+                    self.potential_drag_eid = hovered
+                elif self.potential_drag_eid == hovered and left_pressed and now - self.drag_press_time >= self.drag_hold_threshold:
+                    self.dragging_eid = hovered
+                    pos2 = comps['Position'][hovered]
+                    self.offset_x = pos2.x - world_x
+                    self.offset_y = pos2.y - world_y
+                    self.potential_drag_eid = None
+            self.prev_mouse = left_pressed
             return
 
         # Drag activo: actualizar posición componente

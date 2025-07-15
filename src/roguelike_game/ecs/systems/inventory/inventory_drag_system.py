@@ -18,6 +18,10 @@ class InventoryDragSystem:
         self.drop_manager = ItemDropManager(drop_path)
         self.dragging_idx = None
         self.prev_mouse = False
+        # Hold-drag support: record potential drag
+        self.drag_press_time = None
+        self.potential_drag_idx = None
+        self.drag_hold_threshold = 500  # ms
 
     @benchmark(lambda self: self.perf_log, "InventoryDragSystem.update")
     def update(self, world, camera=None):
@@ -28,6 +32,7 @@ class InventoryDragSystem:
         # Detectar ratón
         mouse_pressed = pygame.mouse.get_pressed()[0]
         mouse_x, mouse_y = pygame.mouse.get_pos()
+        now = pygame.time.get_ticks()
         # Ubicar UI de inventario
         inv_ui = next((s for s in getattr(world, 'render_systems', []) if isinstance(s, InventoryUISystem)), None)
         if not inv_ui or not inv_ui.visible or not inv_ui.panel_rect:
@@ -39,7 +44,7 @@ class InventoryDragSystem:
         cols = 5
         padding = 10
         slot_w, slot_h = 64, 64
-        # Iniciar drag al pulsar sobre un slot con item
+        # Iniciar potencial drag tras mantener presionado 0.5s
         if self.dragging_idx is None and mouse_pressed and not self.prev_mouse:
             if panel.collidepoint(mouse_x, mouse_y):
                 rel_x = mouse_x - panel.x - padding
@@ -49,9 +54,19 @@ class InventoryDragSystem:
                 idx = row * cols + col
                 inv = world.components.get('InventoryComponent', {}).get(player)
                 if inv and 0 <= idx < len(inv.slots) and inv.slots[idx]:
-                    self.dragging_idx = idx
+                    # start timing potential drag
+                    self.drag_press_time = now
+                    self.potential_drag_idx = idx
+        # Confirmar arrastre tras 0.5s de click
+        if self.dragging_idx is None and self.potential_drag_idx is not None and mouse_pressed:
+            if now - self.drag_press_time >= self.drag_hold_threshold:
+                self.dragging_idx = self.potential_drag_idx
+                self.potential_drag_idx = None
         # Soltar drag: crear drop en mapa solo si se suelta fuera del panel
         if self.dragging_idx is not None and not mouse_pressed and self.prev_mouse:
+            # reset potential drag on release before threshold
+            self.potential_drag_idx = None
+            self.drag_press_time = None
             # Cancelar drop si el release ocurre dentro del panel (click)
             if panel.collidepoint(mouse_x, mouse_y):
                 self.dragging_idx = None
