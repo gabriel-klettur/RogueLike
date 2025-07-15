@@ -4,6 +4,7 @@ import pygame
 import logging
 from roguelike_game.ecs.components.item_models import load_items
 
+
 class InventoryUISystem:
     """
     Sistema de UI para mostrar el inventario del jugador en pantalla.
@@ -192,8 +193,42 @@ class InventoryUISystem:
         panel_rect = self._compute_panel_rect(screen, len(slots))
         self.panel_rect = panel_rect
         self._draw_panel(screen, panel_rect)
-        self._draw_slots(screen, panel_rect, slots)
+        # Draw slots, hiding the dragging slot if any
+        drag_sys = next((s for s in getattr(world, 'update_systems', []) if hasattr(s, 'dragging_idx')), None)
+        drag_idx = getattr(drag_sys, 'dragging_idx', None) if drag_sys else None
+        slots_to_draw = list(slots)
+        if drag_idx is not None and 0 <= drag_idx < len(slots_to_draw):
+            slots_to_draw[drag_idx] = None
+        self._draw_slots(screen, panel_rect, slots_to_draw)
+        # Draw dragged item icon above panel
+        if drag_idx is not None:
+            stack = slots[drag_idx] if drag_idx < len(slots) else None
+            if stack:
+                surf = self.icon_surfaces.get(stack.item_id)
+                if surf:
+                    size = self.SLOT_SIZE - 10
+                    img = pygame.transform.scale(surf, (size, size))
+                    ghost = img.copy()
+                    ghost.set_alpha(150)
+                    mx, my = pygame.mouse.get_pos()
+                    screen.blit(ghost, (mx - size//2, my - size//2))
                 # Manejar uso de consumibles (doble clic izquierdo en slot)
+        # Draw ghost for map-item dragging over inventory
+        drop_sys = next((s for s in getattr(world, 'update_systems', []) if hasattr(s, 'dragging_eid')), None)
+        drop_eid = getattr(drop_sys, 'dragging_eid', None) if drop_sys else None
+        if drop_eid is not None:
+            comps2 = world.components
+            sprite_comp = comps2.get('Sprite', {}).get(drop_eid)
+            if sprite_comp:
+                img2 = sprite_comp.image
+                scale_comp2 = comps2.get('Scale', {}).get(drop_eid)
+                scale_factor2 = camera.zoom * (scale_comp2.scale if scale_comp2 else 1.0)
+                spr2 = pygame.transform.rotozoom(img2, 0, scale_factor2)
+                ghost2 = spr2.copy()
+                ghost2.set_alpha(150)
+                mx2, my2 = pygame.mouse.get_pos()
+                rect2 = ghost2.get_rect(center=(mx2, my2))
+                screen.blit(ghost2, rect2)
         now = pygame.time.get_ticks()
         left_pressed = pygame.mouse.get_pressed()[0]
         mouse_pos = pygame.mouse.get_pos()

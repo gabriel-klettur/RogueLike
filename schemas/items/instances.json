@@ -9,7 +9,7 @@
       "properties": {
         "item_id": { "type": "string" },
         "quantity": { "type": "number" },
-        "zone_id": { "type": "string" },
+        "zone_id": { "type": ["string", "null"] },
         "schema_version": { "type": "string" },
         "tile": {
           "type": "object",
