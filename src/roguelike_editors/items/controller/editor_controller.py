@@ -21,8 +21,10 @@ from roguelike_ui.services.json_persistence import save_to_json
 import os
 import uuid
 from roguelike_game.managers.map.item_drop_manager import ItemDropManager
+from roguelike_game.ecs.systems.inventory.inventory_pickup_system import InventoryPickupSystem
 from roguelike_editors.items.events.items_editor_events import ItemsEditorEventHandler
 from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_engine.map.utils import get_zone_for_tile
 
 class ItemEditorController:
     """Controller para editor de ítems: maneja visibilidad y navegación."""
@@ -58,11 +60,17 @@ class ItemEditorController:
                     return
                 drop_id = uuid.uuid4().hex
                 # Agregar con cantidad por defecto 1 y zona nula
-                # Registrar drop en la posición exacta de los pies del jugador
-                self.drop_manager.create_drop(drop_id, self.model.selected_item_id, 1, None, position={'x': pos.x, 'y': pos.y})
+                # Registrar drop en la posición y zona del jugador
+                tile_x = int(pos.x) // TILE_SIZE
+                tile_y = int(pos.y) // TILE_SIZE
+                zone_id = get_zone_for_tile(tile_x, tile_y)
+                print(f"[ItemEditorController][DEBUG] Computed tile coords ({tile_x},{tile_y}), zone '{zone_id}'")
+                self.drop_manager.create_drop(drop_id, self.model.selected_item_id, 1, zone_id, position={'x': pos.x, 'y': pos.y})
+                # Prevent immediate pickup of newly created drop
+                InventoryPickupSystem.recently_created.add(drop_id)
                 # Refrescar lista de instancias
                 self.map_ui.load()
-                print(f"[ItemEditorController] Agregado ítem {self.model.selected_item_id} con id {drop_id} en pos jugador ({pos.x},{pos.y})")
+                print(f"[ItemEditorController] Agregado ítem {self.model.selected_item_id} con id {drop_id} en pos jugador ({pos.x},{pos.y}) zone='{zone_id}'")
             return
 
         # Delegar entrada inline (grid, detalles, edición) al handler existente

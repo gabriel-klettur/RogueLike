@@ -62,6 +62,7 @@ class ItemDropManager:
         self._persist()
 
     def pick_up(self, drop_id: str) -> bool:
+        print(f"[ItemDropManager][DEBUG] pick_up called for drop {drop_id}")
         """
         Elimina el drop del mapa y devuelve True si existía.
         """

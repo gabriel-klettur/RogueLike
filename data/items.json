@@ -1,6 +1,7 @@
 {
   "wizard_staff_lvl_3": {
     "equip_slot": "weapon",
-    "durability": 750
+    "durability": 750,
+    "icon": "assets/items/wizard_staff_lvl_3.png"
   }
 }
