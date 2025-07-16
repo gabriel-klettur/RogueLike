@@ -19,18 +19,34 @@ class InventoryGridEventHandler:
             if hasattr(self.editor_view, 'add_item_rect') and self.editor_view.add_item_rect and not self.model.show_item_list and self.editor_view.add_item_rect.collidepoint(mx, my):
                 self.controller.start_add_item()
                 return True
-        # Selección de ítem de la lista
-        if self.model.show_item_list and event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-            mx, my = event.pos
-            for rect, item_id in getattr(self.editor_view, 'item_list_rects', []):
-                if rect.collidepoint(mx, my):
-                    self.controller.select_item(item_id)
+        # Manejo scroll y selección de ítem
+        if self.model.show_item_list:
+            # scroll con rueda
+            if event.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEWHEEL):
+                if self.editor_view.scroll_panel.handle_event(event):
                     return True
-            # click fuera de la lista -> cancelar selección
-            self.model.show_item_list = False
-            return True
+            if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                mx, my = event.pos
+                panel_rect = getattr(self.editor_view, 'item_list_panel_rect', None)
+                if panel_rect and panel_rect.collidepoint(mx, my):
+                    # calcular índice de ítem
+                    line_h = self.editor_view.font.get_linesize()
+                    idx = (my - panel_rect.y + self.editor_view.scroll_panel.scroll_offset) // line_h
+                    items = self.editor_view.scroll_panel.items
+                    if 0 <= idx < len(items):
+                        self.controller.select_item(items[idx])
+                else:
+                    self.model.show_item_list = False
+                return True
         # Flujo de ingreso de cantidad
         if self.model.show_quantity_input:
+            # Clic en botón 'Add to Inventory'
+            if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                mx, my = event.pos
+                btn_rect = getattr(self.editor_view, 'add_to_inventory_button_rect', None)
+                if btn_rect and btn_rect.collidepoint(mx, my):
+                    self.controller.confirm_quantity(self.model.quantity)
+                    return True
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RETURN:
                     self.controller.confirm_quantity(self.model.quantity)

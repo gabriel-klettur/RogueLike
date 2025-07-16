@@ -29,8 +29,10 @@ class InventoryEditorView:
         self.items = load_items(items_path)
         self.images = {}
         self.scroll_panel = ScrollPanel(self.font, margin=self.margin)
-        # Rects para lista de ítems en flujo Add
-        self.item_list_rects = []
+        # Paneles y botones para flujo Add Item
+        self.item_list_panel_rect = None
+        self.quantity_panel_rect = None
+        self.add_to_inventory_button_rect = None
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         # Instanciar vista de grid de inventario
         self.grid_view = InventoryGridView(
@@ -54,41 +56,38 @@ class InventoryEditorView:
         return
 
     def _draw_overlay(self, ow, oh, model):
-        # Overlay
+        # Overlay semitransparente
         overlay = pygame.Surface((ow, oh), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 180))
         # Título
         title = f"Inv Editor - Eid {model.selected_eid}"
         text = self.font.render(title, True, (255,255,255))
         overlay.blit(text, (10,10))
-        # Tabs
+        # Pestañas
         self.tab_rects = self._draw_tabs(overlay, model)
-        # ScrollPanel listing
+        # Panel izquierdo de listado
         data = model.active_data.get(model.current_category, {})
         items = self._get_items_list(data, model.current_category)
-        # Draw scroll panel on left
-        panel_x = 10
-        panel_y = 80
+        panel_x, panel_y = 10, 80
         cols = 5
         grid_w = self.slot_size * cols + self.margin * (cols - 1)
         panel_w = ow - grid_w - panel_x - 10
         panel_h = oh - panel_y - 10
         panel_rect = pygame.Rect(panel_x, panel_y, panel_w, panel_h)
+        # Dibujar listbox con scroll
         self.scroll_panel.set_items(items)
         self.scroll_panel.draw(overlay, panel_rect)
-        # Persistent highlight for selected monster
+        # Highlight permanente de monster
         if model.current_category == 'monsters' and model.selected_eid is not None:
-            items = self.scroll_panel.items
-            mon_id = str(model.selected_eid)
-            for idx, line in enumerate(items):
-                if not line.startswith(' ') and line.strip().split(' ')[0] == mon_id:
-                    line_h = self.font.get_linesize()
-                    y0 = panel_rect.y - self.scroll_panel.scroll_offset
+            line_h = self.font.get_linesize()
+            y0 = panel_rect.y - self.scroll_panel.scroll_offset
+            for idx, line in enumerate(self.scroll_panel.items):
+                if not line.startswith(' ') and line.split()[0] == str(model.selected_eid):
                     y_line = y0 + idx * line_h
-                    sel_rect = pygame.Rect(panel_rect.x, y_line, panel_rect.width, line_h)
-                    pygame.draw.rect(overlay, (255,255,0), sel_rect, 3)
+                    sel_r = pygame.Rect(panel_rect.x, y_line, panel_rect.width, line_h)
+                    pygame.draw.rect(overlay, (255,255,0), sel_r, 3)
                     break
-        # Highlight monster ID on hover
+        # Highlight on hover
         if model.current_category == 'monsters':
             mx, my = pygame.mouse.get_pos()
             if panel_rect.collidepoint(mx, my):
@@ -98,41 +97,18 @@ class InventoryEditorView:
                 if 0 <= idx < len(items) and not items[idx].startswith(' '):
                     y0 = panel_rect.y - self.scroll_panel.scroll_offset
                     y_line = y0 + idx * line_h
-                    border_rect = pygame.Rect(panel_rect.x, y_line, panel_rect.width, line_h)
-                    pygame.draw.rect(overlay, (255,255,0), border_rect, 2)
-        # Grid de inventario (solo para player y monsters)
+                    border_r = pygame.Rect(panel_rect.x, y_line, panel_rect.width, line_h)
+                    pygame.draw.rect(overlay, (255,255,0), border_r, 2)
+        # Dibujar grid y flujo Add Item
         if model.current_category in ('player', 'monsters'):
             self._draw_grid(overlay, model, panel_rect)
-            # UI para flujo Add Item
-            grid_model = model.grid_model
-            if grid_model.show_item_list:
-                # Panel de selección de ítemes
-                panel_w = 200
-                panel_h = min(len(grid_model.available_items), 10) * self.font.get_linesize() + 10
-                panel_x = panel_rect.centerx - panel_w // 2
-                panel_y = panel_rect.centery - panel_h // 2
-                panel_rect_list = pygame.Rect(panel_x, panel_y, panel_w, panel_h)
-                pygame.draw.rect(overlay, (50, 50, 50), panel_rect_list)
-                pygame.draw.rect(overlay, (255, 255, 255), panel_rect_list, 2)
-                self.item_list_rects = []
-                for idx, item_id in enumerate(grid_model.available_items):
-                    y = panel_y + 5 + idx * self.font.get_linesize()
-                    txt = self.font.render(item_id, True, (255, 255, 255))
-                    overlay.blit(txt, (panel_x + 5, y))
-                    rect = pygame.Rect(panel_x + 5, y, txt.get_width(), self.font.get_linesize())
-                    self.item_list_rects.append((rect, item_id))
-            if grid_model.show_quantity_input:
-                # Panel de input de cantidad
-                input_w = 150
-                input_h = self.font.get_linesize() + 10
-                input_x = panel_rect.centerx - input_w // 2
-                input_y = panel_rect.centery - input_h // 2
-                input_rect = pygame.Rect(input_x, input_y, input_w, input_h)
-                pygame.draw.rect(overlay, (50, 50, 50), input_rect)
-                pygame.draw.rect(overlay, (255, 255, 255), input_rect, 2)
-                qty_text = self.font.render(str(grid_model.quantity), True, (255, 255, 255))
-                overlay.blit(qty_text, (input_x + 5, input_y + 5))
+            gm = model.grid_model
+            if gm.show_item_list:
+                self._draw_item_selection_panel(overlay, gm, panel_rect)
+            if gm.show_quantity_input:
+                self._draw_quantity_input_panel(overlay, gm, panel_rect)
         return overlay
+
 
     def _draw_tabs(self, overlay, model):
         tab_rects = []
@@ -156,6 +132,62 @@ class InventoryEditorView:
             tab_rects.append((rect, cat))
             tab_x += rect.width + 5
         return tab_rects
+
+
+
+
+    def _draw_item_selection_panel(self, overlay, grid_model, base_panel_rect):
+        """
+        Dibuja el panel de selección de ítems con scroll.
+        """
+        line_h = self.font.get_linesize()
+        visible_count = min(len(grid_model.available_items), 10)
+        panel_w = 200
+        panel_h = visible_count * line_h + 2 * self.margin
+        panel_x = base_panel_rect.centerx - panel_w // 2
+        panel_y = base_panel_rect.centery - panel_h // 2
+        panel_rect = pygame.Rect(panel_x, panel_y, panel_w, panel_h)
+        pygame.draw.rect(overlay, (50, 50, 50), panel_rect)
+        pygame.draw.rect(overlay, (255, 255, 255), panel_rect, 2)
+        # ScrollPanel para ítems
+        self.scroll_panel.set_items(grid_model.available_items)
+        self.scroll_panel.draw(overlay, panel_rect)
+        self.item_list_panel_rect = panel_rect
+
+    def _draw_quantity_input_panel(self, overlay, grid_model, base_panel_rect):
+        """
+        Dibuja el panel de input de cantidad y botón Add.
+        """
+        if not self.item_list_panel_rect:
+            return
+        line_h = self.font.get_linesize()
+        panel_x = self.item_list_panel_rect.x
+        panel_w = self.item_list_panel_rect.width
+        # calcular tamaño de panel: input + margen + botón + margen
+        input_h = line_h + self.margin * 2
+        button_h = self.button_size[1]
+        panel_h = input_h + self.margin + button_h + self.margin
+        panel_y = self.item_list_panel_rect.bottom + self.margin
+        panel_rect = pygame.Rect(panel_x, panel_y, panel_w, panel_h)
+        pygame.draw.rect(overlay, (50, 50, 50), panel_rect)
+        pygame.draw.rect(overlay, (255, 255, 255), panel_rect, 2)
+        # Input cantidad
+        input_rect = pygame.Rect(panel_x + self.margin, panel_y + self.margin, panel_w - 2 * self.margin, line_h + self.margin)
+        pygame.draw.rect(overlay, (30, 30, 30), input_rect)
+        pygame.draw.rect(overlay, (255, 255, 255), input_rect, 1)
+        qty_text = self.font.render(str(grid_model.quantity), True, (255, 255, 255))
+        overlay.blit(qty_text, (input_rect.x + 5, input_rect.y + (input_rect.height - line_h) // 2))
+        # Botón Add to Inventory
+        btn_x = panel_x + self.margin
+        btn_y = input_rect.bottom + self.margin
+        btn_w = panel_w - 2 * self.margin
+        btn_h = button_h
+        btn_rect = pygame.Rect(btn_x, btn_y, btn_w, btn_h)
+        pygame.draw.rect(overlay, (100, 100, 100), btn_rect)
+        pygame.draw.rect(overlay, (255, 255, 255), btn_rect, 2)
+        text = self.font.render("Add to Inventory", True, (255, 255, 255))
+        overlay.blit(text, (btn_rect.x + (btn_w - text.get_width()) // 2, btn_rect.y + (btn_h - line_h) // 2))
+        self.add_to_inventory_button_rect = btn_rect
 
     def _get_items_list(self, data, category):
         items = []
