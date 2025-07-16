@@ -61,3 +61,10 @@ Basado en `docs/developer_guide/ER/ER_consola.md`, proponemos este plan de 7 pas
    - Conectar consola al bucle principal Pygame/ECS.
    - Realizar pruebas de usabilidad y rendimiento.
    - Ajustar configuraciones (colores, opacidad, fuente).
+
+8. **Implementar comandos faltantes**
+   - Completar implementación de todos los stubs en `src/roguelike_engine/console/commands.py`.
+   - Probar en consola cada comando registrado.
+   - Asegurar acceso a `game` para handlers de inventario y entidades.
+   - Refactorizar handlers para operaciones reales en ECS/inventario.
+   - Documentar comportamientos y excepciones por comando.

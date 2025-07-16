@@ -1,6 +1,38 @@
 {
-  "ba666a6c-6bf9-4d0e-81ed-9d5933d0d1c5": {
-    "template_id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+  "8be82d9e-4f84-4880-a12d-208ade6dc78a": {
+    "template_id": "22222222-2222-2222-2222-222222222222",
+    "slots": [
+      {
+        "item": "gold",
+        "quantity": 1
+      },
+      {
+        "item": "experience_orb",
+        "quantity": 2
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "c2a43e37-4202-4888-a804-35c1620a038a": {
+    "template_id": "33333333-3333-3333-3333-333333333333",
     "slots": [
       {
         "item": "gold",
@@ -31,39 +63,7 @@
     ],
     "schema_version": "1.0.0"
   },
-  "0a8291fe-c03b-4684-a2df-9a4465fabb55": {
-    "template_id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
-    "slots": [
-      {
-        "item": "gold",
-        "quantity": 2
-      },
-      {
-        "item": "experience_orb",
-        "quantity": 1
-      },
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "schema_version": "1.0.0"
-  },
-  "7bead695-6c9c-416a-8246-9c5f08a4b563": {
+  "fb11b965-beaf-48f9-8921-f7f1f4e71a70": {
     "template_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
     "slots": [
       {
@@ -72,7 +72,7 @@
       },
       {
         "item": "experience_orb",
-        "quantity": 2
+        "quantity": 1
       },
       null,
       null,
@@ -95,8 +95,43 @@
     ],
     "schema_version": "1.0.0"
   },
-  "c084ed8d-5378-4fff-9036-e94137ecb0ae": {
-    "template_id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+  "3a4808f1-e2a5-4878-a08f-a3968ef118b0": {
+    "template_id": "11111111-2222-3333-4444-555555555555",
+    "slots": [
+      {
+        "item": "wood",
+        "quantity": 3
+      },
+      {
+        "item": "gold",
+        "quantity": 1
+      },
+      {
+        "item": "experience_orb",
+        "quantity": 2
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "fd5ccbda-f837-4e21-b27a-6a63b2b7c50e": {
+    "template_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
     "slots": [
       {
         "item": "gold",
@@ -104,9 +139,12 @@
       },
       {
         "item": "experience_orb",
-        "quantity": 2
+        "quantity": 4
       },
-      null,
+      {
+        "item": "wood",
+        "quantity": 1
+      },
       null,
       null,
       null,
@@ -127,50 +165,21 @@
     ],
     "schema_version": "1.0.0"
   },
-  "4614b98f-b6e0-4c68-82b5-580a80ea206e": {
-    "template_id": "22222222-2222-2222-2222-222222222222",
+  "bcd5ce5c-c422-4db5-9817-95db7bb4567e": {
+    "template_id": "dddddddd-dddd-dddd-dddd-dddddddddddd",
     "slots": [
       {
-        "item": "gold",
-        "quantity": 2
-      },
-      {
-        "item": "experience_orb",
-        "quantity": 2
-      },
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "schema_version": "1.0.0"
-  },
-  "abe4521e-69da-44a8-9e66-c4f8107754ad": {
-    "template_id": "33333333-3333-3333-3333-333333333333",
-    "slots": [
-      {
-        "item": "gold",
+        "item": "iron_sword",
         "quantity": 1
       },
       {
-        "item": "experience_orb",
+        "item": "gold",
+        "quantity": 12
+      },
+      {
+        "item": "ancient_relic_mask",
         "quantity": 1
       },
-      null,
       null,
       null,
       null,

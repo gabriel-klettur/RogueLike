@@ -4,7 +4,7 @@
     "slots": [
       {
         "item": "gold",
-        "quantity": 277
+        "quantity": 327
       },
       {
         "item": "mana_potion",
@@ -15,12 +15,12 @@
         "quantity": 20
       },
       {
-        "item": "health_potion",
-        "quantity": 8
-      },
-      {
         "item": "ancient_relic_mask",
         "quantity": 3
+      },
+      {
+        "item": "health_potion",
+        "quantity": 5
       }
     ],
     "schema_version": "1.0.0"
