@@ -1,6 +1,6 @@
 import pygame
 
-class ItemEditorEventHandler:
+class InventoryEditorEventHandler:
     """
     Manejador de eventos para el editor de inventario.
     """

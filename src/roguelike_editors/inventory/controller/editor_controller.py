@@ -5,7 +5,7 @@ from roguelike_ui.services.json_persistence import load_from_json, save_to_json
 
 from roguelike_editors.inventory.model.editor_model import InventoryEditorModel
 from roguelike_editors.inventory.view.editor_view import InventoryEditorView
-from roguelike_editors.inventory.events.item_editor_events import ItemEditorEventHandler
+from roguelike_editors.inventory.events.inventory_editor_events import InventoryEditorEventHandler
 
 class InventoryEditorController:
     """
@@ -17,7 +17,7 @@ class InventoryEditorController:
         self.assets = assets
         self.font = font
         self.view = InventoryEditorView(assets, font)
-        self.event_handler = ItemEditorEventHandler(self)
+        self.event_handler = InventoryEditorEventHandler(self)
         # Paths por categoría
         cwd = os.getcwd()
         self.paths = {
