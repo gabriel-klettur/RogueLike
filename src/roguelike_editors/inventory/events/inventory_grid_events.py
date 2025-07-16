@@ -45,24 +45,38 @@ class InventoryGridEventHandler:
             if event.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEWHEEL):
                 if panel_view.scroll_panel.handle_event(event):
                     return True
+            # Consume clicks inside panel to block underlying UI
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if panel_view.panel_rect.collidepoint(event.pos):
+                    return True
             # Click selection or confirm
             if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                 mx, my = event.pos
                 panel_rect = panel_view.panel_rect
-                # Select item
-                if panel_rect.collidepoint(mx, my):
-                    line_h = self.editor_view.font.get_linesize()
-                    idx = (my - panel_rect.y + panel_view.scroll_panel.scroll_offset) // line_h
-                    items = panel_view.scroll_panel.items
-                    if 0 <= idx < len(items):
-                        self.controller.select_item(items[idx])
-                    return True
+
                 # Confirm add
                 btn_rect = panel_view.add_button_rect
                 if btn_rect and btn_rect.collidepoint(mx, my):
-                    qty = panel_model.quantity
+                    # Confirm via panel controller
+                    item, qty = self.editor_view.item_panel_controller.confirm()
+                    # Add to grid
+                    self.controller.select_item(item)
                     self.controller.confirm_quantity(qty)
                     panel_model.show_panel = False
+                    return True
+
+                # Select item in scroll list
+                scroll_rect = panel_view.scroll_panel.rect
+                if scroll_rect.collidepoint(mx, my):
+                    line_h = self.editor_view.font.get_linesize()
+                    idx = (my - scroll_rect.y + panel_view.scroll_panel.scroll_offset) // line_h
+                    items = panel_view.scroll_panel.items
+                    if 0 <= idx < len(items):
+                        self.editor_view.item_panel_controller.select_item(items[idx])
+                    return True
+
+                # Consume other clicks inside panel
+                if panel_rect.collidepoint(mx, my):
                     return True
         # Detectar click en 'Add Item'
         # Detectar click en 'Add Item'
