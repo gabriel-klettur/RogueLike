@@ -8,6 +8,8 @@ from roguelike_engine.config.config import DATA_DIR, PROJECT_ROOT
 from roguelike_editors.inventory.model.editor_model import InventoryEditorModel
 from roguelike_editors.inventory.view.editor_view import InventoryEditorView
 from roguelike_editors.inventory.events.inventory_editor_events import InventoryEditorEventHandler
+from roguelike_editors.inventory.controller.inventory_grid_controller import InventoryGridController
+from roguelike_editors.inventory.events.inventory_grid_events import InventoryGridEventHandler
 
 class InventoryEditorController:
     """
@@ -20,6 +22,9 @@ class InventoryEditorController:
         self.font = font
         self.view = InventoryEditorView(assets, font)
         self.event_handler = InventoryEditorEventHandler(self)
+        # Controller para flujo Add/Delete items
+        self.grid_controller = InventoryGridController(self)
+        self.grid_event_handler = InventoryGridEventHandler(self.grid_controller)
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         # Paths por categoría
 
@@ -91,7 +96,10 @@ class InventoryEditorController:
             self.logger.error(f"Error saving active inventory for '{cat}' to {path}: {e}")
 
     def handle_event(self, event):
-        # Delega a ItemEditorEventHandler
+        # Flujo Add/Delete en el grid
+        if self.grid_event_handler.handle(event):
+            return
+        # Delega a manejador principal
         self.event_handler.handle(event)
 
 

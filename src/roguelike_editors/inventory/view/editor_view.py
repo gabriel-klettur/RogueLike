@@ -29,6 +29,8 @@ class InventoryEditorView:
         self.items = load_items(items_path)
         self.images = {}
         self.scroll_panel = ScrollPanel(self.font, margin=self.margin)
+        # Rects para lista de ítems en flujo Add
+        self.item_list_rects = []
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         # Instanciar vista de grid de inventario
         self.grid_view = InventoryGridView(
@@ -101,6 +103,35 @@ class InventoryEditorView:
         # Grid de inventario (solo para player y monsters)
         if model.current_category in ('player', 'monsters'):
             self._draw_grid(overlay, model, panel_rect)
+            # UI para flujo Add Item
+            grid_model = model.grid_model
+            if grid_model.show_item_list:
+                # Panel de selección de ítemes
+                panel_w = 200
+                panel_h = min(len(grid_model.available_items), 10) * self.font.get_linesize() + 10
+                panel_x = panel_rect.centerx - panel_w // 2
+                panel_y = panel_rect.centery - panel_h // 2
+                panel_rect_list = pygame.Rect(panel_x, panel_y, panel_w, panel_h)
+                pygame.draw.rect(overlay, (50, 50, 50), panel_rect_list)
+                pygame.draw.rect(overlay, (255, 255, 255), panel_rect_list, 2)
+                self.item_list_rects = []
+                for idx, item_id in enumerate(grid_model.available_items):
+                    y = panel_y + 5 + idx * self.font.get_linesize()
+                    txt = self.font.render(item_id, True, (255, 255, 255))
+                    overlay.blit(txt, (panel_x + 5, y))
+                    rect = pygame.Rect(panel_x + 5, y, txt.get_width(), self.font.get_linesize())
+                    self.item_list_rects.append((rect, item_id))
+            if grid_model.show_quantity_input:
+                # Panel de input de cantidad
+                input_w = 150
+                input_h = self.font.get_linesize() + 10
+                input_x = panel_rect.centerx - input_w // 2
+                input_y = panel_rect.centery - input_h // 2
+                input_rect = pygame.Rect(input_x, input_y, input_w, input_h)
+                pygame.draw.rect(overlay, (50, 50, 50), input_rect)
+                pygame.draw.rect(overlay, (255, 255, 255), input_rect, 2)
+                qty_text = self.font.render(str(grid_model.quantity), True, (255, 255, 255))
+                overlay.blit(qty_text, (input_x + 5, input_y + 5))
         return overlay
 
     def _draw_tabs(self, overlay, model):
@@ -186,4 +217,7 @@ class InventoryEditorView:
         self.show_active_rect = rects.get('show_active')
         self.save_default_rect = rects.get('save_default')
         self.save_active_rect = rects.get('save_active')
+        # Exponer rects de Add/Delete para manejo de eventos
+        self.add_item_rect = rects.get('add_item')
+        self.delete_item_rect = rects.get('delete_item')
         return

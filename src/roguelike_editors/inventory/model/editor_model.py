@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict, Any
+from roguelike_editors.inventory.model.inventory_grid_model import InventoryGridModel
 
 @dataclass
 class InventoryEditorModel:
@@ -26,3 +27,5 @@ class InventoryEditorModel:
     prev_right: bool = False
     # Scroll offset for vertical scrolling of lists
     scroll_offset: int = 0
+    # Estado para flujo de Add/Delete items
+    grid_model: 'InventoryGridModel' = field(default_factory=lambda: InventoryGridModel())
