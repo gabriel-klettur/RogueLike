@@ -24,19 +24,31 @@ class InventoryGridView:
         Devuelve un dict con los rects:
           'show_default', 'show_active', 'save_default', 'save_active'
         """
-        # Seleccionar fuente de datos según 'Show Default' o 'Show Active'
-        source = model.default_data if model.editing_side == 'default' else model.active_data
-        data = source.get(model.current_category, {})
-        entry = data.get(str(model.selected_eid), {})
-        slots = entry.get('slots', [])
-
-        # Posicionar grid
-        grid_origin_x = panel_rect.x + panel_rect.width + self.margin
-        grid_origin_y = panel_rect.y
-        cols = 5
+        # Obtener datos de slots y posición
+        slots = self._get_slots(model)
+        grid_origin_x, grid_origin_y = self._get_grid_origin(panel_rect)
         mx, my = pygame.mouse.get_pos()
 
         # Dibujar slots
+        self._draw_slots(overlay, slots, grid_origin_x, grid_origin_y, mx, my)
+
+        # Dibujar botones Show y Save
+        rects = {}
+        rects.update(self._draw_show_buttons(overlay, slots, grid_origin_x, grid_origin_y, mx, my))
+        rects.update(self._draw_save_buttons(overlay, slots, grid_origin_x, grid_origin_y, mx, my))
+        return rects
+
+    def _get_slots(self, model):
+        source = model.default_data if model.editing_side == 'default' else model.active_data
+        data = source.get(model.current_category, {})
+        entry = data.get(str(model.selected_eid), {})
+        return entry.get('slots', [])
+
+    def _get_grid_origin(self, panel_rect):
+        return panel_rect.x + panel_rect.width + self.margin, panel_rect.y
+
+    def _draw_slots(self, overlay, slots, grid_origin_x, grid_origin_y, mx, my):
+        cols = 5
         for idx, slot in enumerate(slots):
             col = idx % cols
             row = idx // cols
@@ -63,9 +75,11 @@ class InventoryGridView:
                     bottomright=(rx + self.slot_size - 5, ry + self.slot_size - 5)
                 ))
 
-        # Botones Mostrar
+    def _draw_show_buttons(self, overlay, slots, grid_origin_x, grid_origin_y, mx, my):
+        cols = 5
         rows = (len(slots) + cols - 1) // cols
         show_y = grid_origin_y + rows * (self.slot_size + self.margin) + self.margin
+        rects = {}
         # Show Default
         self.show_default_rect = pygame.Rect(grid_origin_x, show_y, *self.button_size)
         pygame.draw.rect(overlay, (100, 100, 100), self.show_default_rect)
@@ -73,6 +87,7 @@ class InventoryGridView:
         pygame.draw.rect(overlay, border_color, self.show_default_rect, 2)
         txt_def = self.font.render("Show Default", True, (255, 255, 255))
         overlay.blit(txt_def, (grid_origin_x + 10, show_y + 5))
+        rects['show_default'] = self.show_default_rect
         # Show Active
         act_x = grid_origin_x + self.button_size[0] + 10
         self.show_active_rect = pygame.Rect(act_x, show_y, *self.button_size)
@@ -81,10 +96,16 @@ class InventoryGridView:
         pygame.draw.rect(overlay, border_color, self.show_active_rect, 2)
         txt_act = self.font.render("Show Active", True, (255, 255, 255))
         overlay.blit(txt_act, (act_x + 10, show_y + 5))
+        rects['show_active'] = self.show_active_rect
+        return rects
 
-        # Botones Guardar
+    def _draw_save_buttons(self, overlay, slots, grid_origin_x, grid_origin_y, mx, my):
+        cols = 5
+        rows = (len(slots) + cols - 1) // cols
+        save_y = grid_origin_y + rows * (self.slot_size + self.margin) + self.margin + self.button_size[1] + self.margin
+        rects = {}
         btn_x = grid_origin_x
-        btn_y = show_y + self.button_size[1] + self.margin
+        btn_y = save_y
         # Save Default
         self.save_default_rect = pygame.Rect(btn_x, btn_y, *self.button_size)
         pygame.draw.rect(overlay, (100, 100, 100), self.save_default_rect)
@@ -92,6 +113,7 @@ class InventoryGridView:
         pygame.draw.rect(overlay, border_color, self.save_default_rect, 2)
         txt_save_def = self.font.render("Save Default", True, (255, 255, 255))
         overlay.blit(txt_save_def, (btn_x + 10, btn_y + 5))
+        rects['save_default'] = self.save_default_rect
         # Save Active
         save_act_x = btn_x + self.button_size[0] + 10
         self.save_active_rect = pygame.Rect(save_act_x, btn_y, *self.button_size)
@@ -100,10 +122,5 @@ class InventoryGridView:
         pygame.draw.rect(overlay, border_color, self.save_active_rect, 2)
         txt_save_act = self.font.render("Save Active", True, (255, 255, 255))
         overlay.blit(txt_save_act, (save_act_x + 10, btn_y + 5))
-
-        return {
-            'show_default': self.show_default_rect,
-            'show_active': self.show_active_rect,
-            'save_default': self.save_default_rect,
-            'save_active': self.save_active_rect
-        }
+        rects['save_active'] = self.save_active_rect
+        return rects
