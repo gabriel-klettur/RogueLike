@@ -32,11 +32,32 @@ Basado en `docs/developer_guide/ER/ER_consola.md`, proponemos este plan de 7 pas
    - Dibujar overlay semitransparente, scrollback y prompt.
    - Integrar estilos y fuentes de `roguelike_ui`.
 
-6. **Registrar y probar comandos básicos (Modelo)**  
-   - Añadir handlers para `help`, `echo`, `spawn`, `setvar`, `getvar`, `pause`/`resume`.
+6. **Registrar y probar comandos básicos (Modelo)**  [COMPLETADO]  
+   - Añadir handlers para los siguientes comandos:  
+     1. `help`  
+     2. `echo <texto>`  
+     3. `quit`  
+     4. `add <item_id> [cantidad]`  
+     5. `remove <item_id> [cantidad]`  
+     6. `edit <item_id> <propiedad> <valor>`  
+     7. `listitems`  
+     8. `spawn <entity_type> [x] [y]`  
+     9. `kill <entity_id>`  
+     10. `teleport <entity_id> <x> <y>`  
+     11. `listentities`  
+     12. `setvar <clave> <valor>`  
+     13. `getvar <clave>`  
+     14. `listvars`  
+     15. `save [slot]`  
+     16. `load <slot>`  
+     17. `pause`  
+     18. `resume`  
+     19. `godmode [on/off]`  
+     20. `noclip [on/off]`  
+   - Validar output y manejo de errores al ejecutar cada handler.
    - Validar output y manejo de errores al ejecutar.
 
-7. **Integrar y validar en el juego**  
+7. **Integrar y validar en el juego**  [COMPLETADO]  
    - Conectar consola al bucle principal Pygame/ECS.
    - Realizar pruebas de usabilidad y rendimiento.
    - Ajustar configuraciones (colores, opacidad, fuente).
