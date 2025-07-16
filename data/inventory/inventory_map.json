@@ -1,22 +1,12 @@
 {
-  "1dac00aa501641b0a04835d22895fc46": {
-    "item_id": "wizard_staff_lvl_3",
+  "7444164aecf14868b118052424be1aa6": {
+    "item_id": "wizard_staff_lvl_2",
     "quantity": 1,
     "zone_id": "Forest",
     "schema_version": "1.0.0",
     "position": {
-      "x": 991.0,
-      "y": 2685.0
-    }
-  },
-  "ee6e91d1-f6c4-46ff-bf49-aa883dd74b53": {
-    "item_id": "potion",
-    "quantity": 2,
-    "zone_id": null,
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 633.0,
-      "y": 2694.0
+      "x": 1040,
+      "y": 2584
     }
   }
 }

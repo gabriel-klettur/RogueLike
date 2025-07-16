@@ -142,7 +142,7 @@ class ItemEditorController:
                 return
             # Guardar JSON
             from roguelike_ui.services.json_persistence import load_from_json
-            path = os.path.join(os.getcwd(), "data", "items.json")
+            path = os.path.join(os.getcwd(), "data", "items", "items.json")
             data = load_from_json(path)
             entry = data.get(item_id, {})
             entry[key] = converted
