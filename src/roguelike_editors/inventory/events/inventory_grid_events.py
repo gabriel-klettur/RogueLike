@@ -45,6 +45,11 @@ class InventoryGridEventHandler:
             if event.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEWHEEL):
                 if panel_view.scroll_panel.handle_event(event):
                     return True
+
+            # Consume hover inside panel to block underlying UI
+            if event.type == pygame.MOUSEMOTION:
+                if panel_view.panel_rect.collidepoint(event.pos):
+                    return True
             # Consume clicks inside panel to block underlying UI
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if panel_view.panel_rect.collidepoint(event.pos):

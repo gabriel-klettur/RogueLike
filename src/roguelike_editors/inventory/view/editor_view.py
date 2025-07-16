@@ -94,7 +94,7 @@ class InventoryEditorView:
                     pygame.draw.rect(overlay, (255,255,0), sel_r, 3)
                     break
         # Highlight on hover
-        if model.current_category == 'monsters':
+        if model.current_category == 'monsters' and not self.item_panel_model.show_panel:
             mx, my = pygame.mouse.get_pos()
             if panel_rect.collidepoint(mx, my):
                 line_h = self.font.get_linesize()
