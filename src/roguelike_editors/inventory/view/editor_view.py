@@ -59,6 +59,18 @@ class InventoryEditorView:
         panel_rect = pygame.Rect(panel_x, panel_y, panel_w, panel_h)
         self.scroll_panel.set_items(items)
         self.scroll_panel.draw(overlay, panel_rect)
+        # Highlight monster ID on hover
+        if model.current_category == 'monsters':
+            mx, my = pygame.mouse.get_pos()
+            if panel_rect.collidepoint(mx, my):
+                line_h = self.font.get_linesize()
+                idx = (my - panel_rect.y + self.scroll_panel.scroll_offset) // line_h
+                items = self.scroll_panel.items
+                if 0 <= idx < len(items) and not items[idx].startswith(' '):
+                    y0 = panel_rect.y - self.scroll_panel.scroll_offset
+                    y_line = y0 + idx * line_h
+                    border_rect = pygame.Rect(panel_rect.x, y_line, panel_rect.width, line_h)
+                    pygame.draw.rect(overlay, (255,255,0), border_rect, 2)
         # Grid de inventario (solo para player y monsters)
         if model.current_category in ('player', 'monsters'):
             self._draw_grid(overlay, model, panel_rect)
