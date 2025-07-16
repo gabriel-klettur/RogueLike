@@ -59,6 +59,18 @@ class InventoryEditorView:
         panel_rect = pygame.Rect(panel_x, panel_y, panel_w, panel_h)
         self.scroll_panel.set_items(items)
         self.scroll_panel.draw(overlay, panel_rect)
+        # Persistent highlight for selected monster
+        if model.current_category == 'monsters' and model.selected_eid is not None:
+            items = self.scroll_panel.items
+            mon_id = str(model.selected_eid)
+            for idx, line in enumerate(items):
+                if not line.startswith(' ') and line.strip() == mon_id:
+                    line_h = self.font.get_linesize()
+                    y0 = panel_rect.y - self.scroll_panel.scroll_offset
+                    y_line = y0 + idx * line_h
+                    sel_rect = pygame.Rect(panel_rect.x, y_line, panel_rect.width, line_h)
+                    pygame.draw.rect(overlay, (255,255,0), sel_rect, 3)
+                    break
         # Highlight monster ID on hover
         if model.current_category == 'monsters':
             mx, my = pygame.mouse.get_pos()
