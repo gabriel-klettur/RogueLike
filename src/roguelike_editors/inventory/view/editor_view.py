@@ -51,7 +51,7 @@ class InventoryEditorView:
         items = self._get_items_list(data, model.current_category)
         # Draw scroll panel on left
         panel_x = 10
-        panel_y = 60
+        panel_y = 80
         cols = 5
         grid_w = self.slot_size * cols + self.margin * (cols - 1)
         panel_w = ow - grid_w - panel_x - 10
