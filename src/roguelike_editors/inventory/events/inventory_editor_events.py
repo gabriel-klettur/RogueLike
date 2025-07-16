@@ -84,6 +84,12 @@ class InventoryEditorEventHandler:
                 self.model.drag_item = None
                 self.model.drag_slot = None
             # Botones
+            if self.view.show_default_rect and self.view.show_default_rect.collidepoint(mx, my):
+                self.model.editing_side = 'default'
+                return
+            if self.view.show_active_rect and self.view.show_active_rect.collidepoint(mx, my):
+                self.model.editing_side = 'active'
+                return
             if self.view.save_default_rect and self.view.save_default_rect.collidepoint(mx, my):
                 self.controller._save_default()
                 return

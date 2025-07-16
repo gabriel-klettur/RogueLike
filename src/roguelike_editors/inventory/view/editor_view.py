@@ -19,6 +19,9 @@ class InventoryEditorView:
         self.tab_rects = []
         self.save_default_rect = None
         self.save_active_rect = None
+        # Botones de mostrar datos (default/active)
+        self.show_default_rect = None
+        self.show_active_rect = None
         # Cargar íconos de ítems
         cwd = os.getcwd()
         items_path = os.path.join(cwd, 'data', 'items', 'items.json')
@@ -165,7 +168,9 @@ class InventoryEditorView:
 
     def _draw_grid(self, overlay, model, panel_rect):
         """Dibuja grid de inventario y botones de guardar."""
-        data = model.active_data.get(model.current_category, {})
+        # Seleccionar datos según 'Show Default' o 'Show Active'
+        source = model.default_data if model.editing_side == 'default' else model.active_data
+        data = source.get(model.current_category, {})
         entry = data.get(str(model.selected_eid), {})
         slots = entry.get('slots', [])
         # Posicionar grid junto al panel
@@ -187,9 +192,22 @@ class InventoryEditorView:
                 qty = slot.get('quantity', 0)
                 qty_surf = self.font.render(str(qty), True, (255,255,255))
                 overlay.blit(qty_surf, qty_surf.get_rect(bottomright=(rx + self.slot_size - 5, ry + self.slot_size - 5)))
+        # Botones de mostrar datos (default/active)
+        rows = (len(slots) + cols - 1) // cols
+        show_y = grid_origin_y + rows * (self.slot_size + self.margin) + self.margin
+        self.show_default_rect = pygame.Rect(grid_origin_x, show_y, *self.button_size)
+        pygame.draw.rect(overlay, (100,100,100), self.show_default_rect)
+        pygame.draw.rect(overlay, (255,255,255), self.show_default_rect, 2)
+        txt_show_def = self.font.render("Show Default", True, (255,255,255))
+        overlay.blit(txt_show_def, (grid_origin_x + 10, show_y + 5))
+        self.show_active_rect = pygame.Rect(grid_origin_x + self.button_size[0] + self.margin, show_y, *self.button_size)
+        pygame.draw.rect(overlay, (100,100,100), self.show_active_rect)
+        pygame.draw.rect(overlay, (255,255,255), self.show_active_rect, 2)
+        txt_show_act = self.font.render("Show Active", True, (255,255,255))
+        overlay.blit(txt_show_act, (grid_origin_x + self.button_size[0] + self.margin + 10, show_y + 5))
         # Botones de guardar
         btn_x = grid_origin_x
-        btn_y = grid_origin_y + ((len(slots) // cols) + 1) * (self.slot_size + self.margin) + self.margin
+        btn_y = show_y + self.button_size[1] + self.margin
         self.save_default_rect = pygame.Rect(btn_x, btn_y, *self.button_size)
         pygame.draw.rect(overlay, (100,100,100), self.save_default_rect)
         pygame.draw.rect(overlay, (255,255,255), self.save_default_rect, 2)
