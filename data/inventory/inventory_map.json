@@ -8,5 +8,15 @@
       "x": 1040,
       "y": 2584
     }
+  },
+  "74c3ef7488f74d3ca120a41107a5b8a2": {
+    "item_id": "wizard_staff_lvl_1",
+    "quantity": 1,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 1229.0,
+      "y": 2473.0
+    }
   }
 }
