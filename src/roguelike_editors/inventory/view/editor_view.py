@@ -57,50 +57,73 @@ class InventoryEditorView:
             overlay.blit(txt, (tab_x + padding, tab_y + (rect.height - h)//2))
             self.tab_rects.append((rect, cat))
             tab_x += rect.width + 5
-        # Instrucciones de navegación por teclado
-        instr = "Press 1:Player 2:Monsters 3:Map"
-        instr_surf = self.font.render(instr, True, (200,200,200))
-        overlay.blit(instr_surf, (10, tab_y + 30))
 
-        # Grid de inventario
-        inv_data = model.active_data.get(model.current_category, {})
-        inv_entry = inv_data.get(str(model.selected_eid), {})
-        slots = inv_entry.get('slots', [])
+
+        # ScrollPanel listing
+        data = model.active_data.get(model.current_category, {})
+        items = []
+        if model.current_category == 'player':
+            for entry in data.values() if isinstance(data, dict) else []:
+                for slot in entry.get('slots', []):
+                    if slot:
+                        items.append(f"{slot.get('item')} x{slot.get('quantity')}")
+        elif model.current_category == 'monsters':
+            for mon_id, entry in data.items() if isinstance(data, dict) else []:
+                items.append(f"{mon_id}")
+                for slot in entry.get('slots', []):
+                    if slot:
+                        items.append(f"  {slot.get('item')} x{slot.get('quantity')}")
+        elif model.current_category == 'map':
+            for entry in data.values() if isinstance(data, dict) else []:
+                pos = entry.get('position', {})
+                items.append(f"{entry.get('item_id')} x{entry.get('quantity')} @({pos.get('x'):.1f},{pos.get('y'):.1f})")
+        # Draw scroll panel on left
+        panel_x = 10
+        panel_y = tab_y + 60
         cols = 5
-        for idx, slot in enumerate(slots):
-            col = idx % cols
-            row = idx // cols
-            rx = self.grid_origin[0] + col * (self.slot_size + self.margin)
-            ry = self.grid_origin[1] + row * (self.slot_size + self.margin)
-            slot_rect = pygame.Rect(rx, ry, self.slot_size, self.slot_size)
-            pygame.draw.rect(overlay, (80,80,80), slot_rect)
-            pygame.draw.rect(overlay, (200,200,200), slot_rect, 1)
-            if slot:
-                img = self._get_item_image(slot.get('item'))
-                if img:
-                    overlay.blit(img, (rx + 5, ry + 5))
-                qty = slot.get('quantity', 0)
-                qty_surf = self.font.render(str(qty), True, (255,255,255))
-                overlay.blit(qty_surf, qty_surf.get_rect(bottomright=(rx + self.slot_size - 5, ry + self.slot_size - 5)))
-        # Botones de guardar
-        btn_x = self.grid_origin[0]
-        btn_y = self.grid_origin[1] + ((len(slots) // cols) + 1) * (self.slot_size + self.margin) + 10
-        self.save_default_rect = pygame.Rect(btn_x, btn_y, *self.button_size)
-        pygame.draw.rect(overlay, (100,100,100), self.save_default_rect)
-        pygame.draw.rect(overlay, (255,255,255), self.save_default_rect, 2)
-        txt_def = self.font.render("Save Default", True, (255,255,255))
-        overlay.blit(txt_def, (btn_x + 10, btn_y + 5))
-        self.save_active_rect = pygame.Rect(btn_x + self.button_size[0] + 10, btn_y, *self.button_size)
-        pygame.draw.rect(overlay, (100,100,100), self.save_active_rect)
-        pygame.draw.rect(overlay, (255,255,255), self.save_active_rect, 2)
-        txt_act = self.font.render("Save Active", True, (255,255,255))
-        overlay.blit(txt_act, (btn_x + self.button_size[0] + 20, btn_y + 5))
-        # Dibuja ítem en arrastre
-        if model.drag_item:
-            mx, my = pygame.mouse.get_pos()
-            img = self._get_item_image(model.drag_item[0])
-            if img:
-                overlay.blit(img, (mx - img.get_width()//2, my - img.get_height()//2))
+        grid_w = self.slot_size * cols + self.margin * (cols - 1)
+        panel_w = ow - grid_w - panel_x - 10
+        panel_h = oh - panel_y - 10
+        panel_rect = pygame.Rect(panel_x, panel_y, panel_w, panel_h)
+        self.scroll_panel.set_items(items)
+        self.scroll_panel.draw(overlay, panel_rect)
+
+        # Grid de inventario (solo para player y monsters)
+        if model.current_category in ('player', 'monsters'):
+            inv_entry = data.get(str(model.selected_eid), {})
+            slots = inv_entry.get('slots', [])
+            # Posicionar grid en esquina superior derecha
+            grid_origin_x = panel_x + panel_w + 10
+            grid_origin_y = panel_y
+            cols = 5
+            for idx, slot in enumerate(slots):
+                col = idx % cols
+                row = idx // cols
+                rx = grid_origin_x + col * (self.slot_size + self.margin)
+                ry = grid_origin_y + row * (self.slot_size + self.margin)
+                slot_rect = pygame.Rect(rx, ry, self.slot_size, self.slot_size)
+                pygame.draw.rect(overlay, (80,80,80), slot_rect)
+                pygame.draw.rect(overlay, (200,200,200), slot_rect, 1)
+                if slot:
+                    img = self._get_item_image(slot.get('item'))
+                    if img:
+                        overlay.blit(img, (rx + 5, ry + 5))
+                    qty = slot.get('quantity', 0)
+                    qty_surf = self.font.render(str(qty), True, (255,255,255))
+                    overlay.blit(qty_surf, qty_surf.get_rect(bottomright=(rx + self.slot_size - 5, ry + self.slot_size - 5)))
+            # Botones de guardar
+            btn_x = grid_origin_x
+            btn_y = grid_origin_y + ((len(slots) // cols) + 1) * (self.slot_size + self.margin) + 10
+            self.save_default_rect = pygame.Rect(btn_x, btn_y, *self.button_size)
+            pygame.draw.rect(overlay, (100,100,100), self.save_default_rect)
+            pygame.draw.rect(overlay, (255,255,255), self.save_default_rect, 2)
+            txt_def = self.font.render("Save Default", True, (255,255,255))
+            overlay.blit(txt_def, (btn_x + 10, btn_y + 5))
+            self.save_active_rect = pygame.Rect(btn_x + self.button_size[0] + 10, btn_y, *self.button_size)
+            pygame.draw.rect(overlay, (100,100,100), self.save_active_rect)
+            pygame.draw.rect(overlay, (255,255,255), self.save_active_rect, 2)
+            txt_act = self.font.render("Save Active", True, (255,255,255))
+            overlay.blit(txt_act, (btn_x + self.button_size[0] + 20, btn_y + 5))
         screen.blit(overlay, (0,0))
         return        
 
