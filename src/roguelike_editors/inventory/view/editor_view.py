@@ -4,6 +4,7 @@ import logging
 from roguelike_editors.inventory.model.editor_model import InventoryEditorModel
 from roguelike_game.ecs.components.item_models import load_items
 from roguelike_ui.widgets.scroll_panel import ScrollPanel
+from roguelike_editors.inventory.view.inventory_grid_view import InventoryGridView
 
 class InventoryEditorView:
     """
@@ -29,6 +30,17 @@ class InventoryEditorView:
         self.images = {}
         self.scroll_panel = ScrollPanel(self.font, margin=self.margin)
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        # Instanciar vista de grid de inventario
+        self.grid_view = InventoryGridView(
+            font=self.font,
+            slot_size=self.slot_size,
+            margin=self.margin,
+            button_size=self.button_size,
+            get_item_image_func=self._get_item_image,
+            images=self.images,
+            logger=self.logger
+        )
+        
         # Preparar subcomponentes si es necesario
 
     def draw(self, screen, model: InventoryEditorModel, world):
@@ -167,62 +179,11 @@ class InventoryEditorView:
             return None
 
     def _draw_grid(self, overlay, model, panel_rect):
-        """Dibuja grid de inventario y botones de guardar."""
-        # Seleccionar datos según 'Show Default' o 'Show Active'
-        source = model.default_data if model.editing_side == 'default' else model.active_data
-        data = source.get(model.current_category, {})
-        entry = data.get(str(model.selected_eid), {})
-        slots = entry.get('slots', [])
-        # Posicionar grid junto al panel
-        grid_origin_x = panel_rect.x + panel_rect.width + self.margin
-        grid_origin_y = panel_rect.y
-        cols = 5
-        mx, my = pygame.mouse.get_pos()
-        for idx, slot in enumerate(slots):
-            col = idx % cols
-            row = idx // cols
-            rx = grid_origin_x + col * (self.slot_size + self.margin)
-            ry = grid_origin_y + row * (self.slot_size + self.margin)
-            slot_rect = pygame.Rect(rx, ry, self.slot_size, self.slot_size)
-            pygame.draw.rect(overlay, (80,80,80), slot_rect)
-            if slot_rect.collidepoint(mx, my):
-                pygame.draw.rect(overlay, (255,255,0), slot_rect, 2)
-            else:
-                pygame.draw.rect(overlay, (200,200,200), slot_rect, 1)
-            if slot:
-                img = self._get_item_image(slot.get('item'))
-                if img:
-                    overlay.blit(img, (rx + 5, ry + 5))
-                qty = slot.get('quantity', 0)
-                qty_surf = self.font.render(str(qty), True, (255,255,255))
-                overlay.blit(qty_surf, qty_surf.get_rect(bottomright=(rx + self.slot_size - 5, ry + self.slot_size - 5)))
-        # Botones de mostrar datos (default/active)
-        rows = (len(slots) + cols - 1) // cols
-        show_y = grid_origin_y + rows * (self.slot_size + self.margin) + self.margin
-        self.show_default_rect = pygame.Rect(grid_origin_x, show_y, *self.button_size)
-        pygame.draw.rect(overlay, (100,100,100), self.show_default_rect)
-        border_color = (255,255,0) if self.show_default_rect.collidepoint(mx, my) else (255,255,255)
-        pygame.draw.rect(overlay, border_color, self.show_default_rect, 2)
-        txt_show_def = self.font.render("Show Default", True, (255,255,255))
-        overlay.blit(txt_show_def, (grid_origin_x + 10, show_y + 5))
-        self.show_active_rect = pygame.Rect(grid_origin_x + self.button_size[0] + self.margin, show_y, *self.button_size)
-        pygame.draw.rect(overlay, (100,100,100), self.show_active_rect)
-        border_color = (255,255,0) if self.show_active_rect.collidepoint(mx, my) else (255,255,255)
-        pygame.draw.rect(overlay, border_color, self.show_active_rect, 2)
-        txt_show_act = self.font.render("Show Active", True, (255,255,255))
-        overlay.blit(txt_show_act, (grid_origin_x + self.button_size[0] + self.margin + 10, show_y + 5))
-        # Botones de guardar
-        btn_x = grid_origin_x
-        btn_y = show_y + self.button_size[1] + self.margin
-        self.save_default_rect = pygame.Rect(btn_x, btn_y, *self.button_size)
-        pygame.draw.rect(overlay, (100,100,100), self.save_default_rect)
-        border_color = (255,255,0) if self.save_default_rect.collidepoint(mx, my) else (255,255,255)
-        pygame.draw.rect(overlay, border_color, self.save_default_rect, 2)
-        txt_def = self.font.render("Save Default", True, (255,255,255))
-        overlay.blit(txt_def, (btn_x + 10, btn_y + 5))
-        self.save_active_rect = pygame.Rect(btn_x + self.button_size[0] + 10, btn_y, *self.button_size)
-        pygame.draw.rect(overlay, (100,100,100), self.save_active_rect)
-        border_color = (255,255,0) if self.save_active_rect.collidepoint(mx, my) else (255,255,255)
-        pygame.draw.rect(overlay, border_color, self.save_active_rect, 2)
-        txt_act = self.font.render("Save Active", True, (255,255,255))
-        overlay.blit(txt_act, (btn_x + self.button_size[0] + 20, btn_y + 5))
+        # Delegar renderizado del grid al InventoryGridView
+        rects = self.grid_view.draw(overlay, model, panel_rect)
+        # Asignar rects para manejo de eventos
+        self.show_default_rect = rects.get('show_default')
+        self.show_active_rect = rects.get('show_active')
+        self.save_default_rect = rects.get('save_default')
+        self.save_active_rect = rects.get('save_active')
+        return
