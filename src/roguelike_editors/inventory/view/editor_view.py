@@ -67,7 +67,7 @@ class InventoryEditorView:
             items = self.scroll_panel.items
             mon_id = str(model.selected_eid)
             for idx, line in enumerate(items):
-                if not line.startswith(' ') and line.strip() == mon_id:
+                if not line.startswith(' ') and line.strip().split(' ')[0] == mon_id:
                     line_h = self.font.get_linesize()
                     y0 = panel_rect.y - self.scroll_panel.scroll_offset
                     y_line = y0 + idx * line_h
@@ -123,7 +123,7 @@ class InventoryEditorView:
                         items.append(f"{slot.get('item')} x{slot.get('quantity')}")
         elif category == 'monsters':
             for mon_id, entry in data.items() if isinstance(data, dict) else []:
-                items.append(f"{mon_id}")
+                items.append(f"{mon_id} ({entry.get('template_id', '')})")
                 for slot in entry.get('slots', []):
                     if slot:
                         items.append(f"  {slot.get('item')} x{slot.get('quantity')}")
@@ -177,6 +177,7 @@ class InventoryEditorView:
         grid_origin_x = panel_rect.x + panel_rect.width + self.margin
         grid_origin_y = panel_rect.y
         cols = 5
+        mx, my = pygame.mouse.get_pos()
         for idx, slot in enumerate(slots):
             col = idx % cols
             row = idx // cols
@@ -184,7 +185,10 @@ class InventoryEditorView:
             ry = grid_origin_y + row * (self.slot_size + self.margin)
             slot_rect = pygame.Rect(rx, ry, self.slot_size, self.slot_size)
             pygame.draw.rect(overlay, (80,80,80), slot_rect)
-            pygame.draw.rect(overlay, (200,200,200), slot_rect, 1)
+            if slot_rect.collidepoint(mx, my):
+                pygame.draw.rect(overlay, (255,255,0), slot_rect, 2)
+            else:
+                pygame.draw.rect(overlay, (200,200,200), slot_rect, 1)
             if slot:
                 img = self._get_item_image(slot.get('item'))
                 if img:
@@ -197,12 +201,14 @@ class InventoryEditorView:
         show_y = grid_origin_y + rows * (self.slot_size + self.margin) + self.margin
         self.show_default_rect = pygame.Rect(grid_origin_x, show_y, *self.button_size)
         pygame.draw.rect(overlay, (100,100,100), self.show_default_rect)
-        pygame.draw.rect(overlay, (255,255,255), self.show_default_rect, 2)
+        border_color = (255,255,0) if self.show_default_rect.collidepoint(mx, my) else (255,255,255)
+        pygame.draw.rect(overlay, border_color, self.show_default_rect, 2)
         txt_show_def = self.font.render("Show Default", True, (255,255,255))
         overlay.blit(txt_show_def, (grid_origin_x + 10, show_y + 5))
         self.show_active_rect = pygame.Rect(grid_origin_x + self.button_size[0] + self.margin, show_y, *self.button_size)
         pygame.draw.rect(overlay, (100,100,100), self.show_active_rect)
-        pygame.draw.rect(overlay, (255,255,255), self.show_active_rect, 2)
+        border_color = (255,255,0) if self.show_active_rect.collidepoint(mx, my) else (255,255,255)
+        pygame.draw.rect(overlay, border_color, self.show_active_rect, 2)
         txt_show_act = self.font.render("Show Active", True, (255,255,255))
         overlay.blit(txt_show_act, (grid_origin_x + self.button_size[0] + self.margin + 10, show_y + 5))
         # Botones de guardar
@@ -210,11 +216,13 @@ class InventoryEditorView:
         btn_y = show_y + self.button_size[1] + self.margin
         self.save_default_rect = pygame.Rect(btn_x, btn_y, *self.button_size)
         pygame.draw.rect(overlay, (100,100,100), self.save_default_rect)
-        pygame.draw.rect(overlay, (255,255,255), self.save_default_rect, 2)
+        border_color = (255,255,0) if self.save_default_rect.collidepoint(mx, my) else (255,255,255)
+        pygame.draw.rect(overlay, border_color, self.save_default_rect, 2)
         txt_def = self.font.render("Save Default", True, (255,255,255))
         overlay.blit(txt_def, (btn_x + 10, btn_y + 5))
         self.save_active_rect = pygame.Rect(btn_x + self.button_size[0] + 10, btn_y, *self.button_size)
         pygame.draw.rect(overlay, (100,100,100), self.save_active_rect)
-        pygame.draw.rect(overlay, (255,255,255), self.save_active_rect, 2)
+        border_color = (255,255,0) if self.save_active_rect.collidepoint(mx, my) else (255,255,255)
+        pygame.draw.rect(overlay, border_color, self.save_active_rect, 2)
         txt_act = self.font.render("Save Active", True, (255,255,255))
         overlay.blit(txt_act, (btn_x + self.button_size[0] + 20, btn_y + 5))

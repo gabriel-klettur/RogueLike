@@ -57,7 +57,8 @@ class InventoryEditorEventHandler:
                     line = items[idx]
                     # solo líneas de encabezado (sin indent)
                     if not line.startswith(' '):
-                        mon_id = line.strip()
+                        raw = line.strip()
+                        mon_id = raw.split(' ')[0]
                         self.model.selected_eid = mon_id
                         return
         # Mouse down
