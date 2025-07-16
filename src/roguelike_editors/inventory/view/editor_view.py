@@ -152,6 +152,15 @@ class InventoryEditorView:
         # ScrollPanel para ítems
         self.scroll_panel.set_items(grid_model.available_items)
         self.scroll_panel.draw(overlay, panel_rect)
+        # Highlight seleccionado
+        if grid_model.selected_item is not None:
+            items = self.scroll_panel.items
+            if grid_model.selected_item in items:
+                idx = items.index(grid_model.selected_item)
+                y0 = panel_rect.y - self.scroll_panel.scroll_offset
+                y_line = y0 + idx * line_h
+                sel_rect = pygame.Rect(panel_rect.x, y_line, panel_rect.width, line_h)
+                pygame.draw.rect(overlay, (255,255,0), sel_rect, 2)
         self.item_list_panel_rect = panel_rect
 
     def _draw_quantity_input_panel(self, overlay, grid_model, base_panel_rect):
@@ -183,8 +192,11 @@ class InventoryEditorView:
         btn_w = panel_w - 2 * self.margin
         btn_h = button_h
         btn_rect = pygame.Rect(btn_x, btn_y, btn_w, btn_h)
+        # Fondo del botón
         pygame.draw.rect(overlay, (100, 100, 100), btn_rect)
-        pygame.draw.rect(overlay, (255, 255, 255), btn_rect, 2)
+        # Borde con hover amarillo
+        border_color = (255, 255, 0) if btn_rect.collidepoint(pygame.mouse.get_pos()) else (255, 255, 255)
+        pygame.draw.rect(overlay, border_color, btn_rect, 2)
         text = self.font.render("Add to Inventory", True, (255, 255, 255))
         overlay.blit(text, (btn_rect.x + (btn_w - text.get_width()) // 2, btn_rect.y + (btn_h - line_h) // 2))
         self.add_to_inventory_button_rect = btn_rect
