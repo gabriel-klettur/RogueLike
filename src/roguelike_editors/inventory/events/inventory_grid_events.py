@@ -17,6 +17,18 @@ class InventoryGridEventHandler:
         panel_model = getattr(self.editor_view, 'item_panel_model', None)
         panel_view = getattr(self.editor_view, 'item_panel_view', None)
         if panel_model and panel_model.show_panel and panel_view:
+            # Input focus for quantity input
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if hasattr(panel_view, 'input_rect') and panel_view.input_rect.collidepoint(event.pos):
+                    panel_view.text_input.activate(initial_text=str(panel_model.quantity), select_all=True)
+                    return True
+            # Handle text input events
+            if panel_view.text_input.handle_event(event):
+                try:
+                    panel_model.quantity = int(panel_view.text_input.text)
+                except ValueError:
+                    panel_model.quantity = 0
+                return True
             # Drag header
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if panel_view.header_rect.collidepoint(event.pos):
