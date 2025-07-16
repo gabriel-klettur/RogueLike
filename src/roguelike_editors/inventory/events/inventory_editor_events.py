@@ -36,6 +36,21 @@ class InventoryEditorEventHandler:
                     self.model.current_category = cat
                     return            
 
+        # Selección de monstruo al hacer click en scroll panel
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            mx, my = event.pos
+            if self.model.current_category == 'monsters' and self.view.scroll_panel.rect.collidepoint(mx, my):
+                # calcular índice de ítem
+                line_h = self.view.font.get_linesize()
+                idx = (my - self.view.scroll_panel.rect.y + self.view.scroll_panel.scroll_offset) // line_h
+                items = self.view.scroll_panel.items
+                if 0 <= idx < len(items):
+                    line = items[idx]
+                    # solo líneas de encabezado (sin indent)
+                    if not line.startswith(' '):
+                        mon_id = line.strip()
+                        self.model.selected_eid = mon_id
+                        return
         # Mouse down
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mx, my = event.pos
