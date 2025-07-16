@@ -92,6 +92,8 @@ class InventoryEditorView:
                 color = (50,50,50)
             pygame.draw.rect(overlay, color, rect)
             pygame.draw.rect(overlay, (255,255,255), rect, 2)
+            if model.current_category == cat:
+                pygame.draw.rect(overlay, (255,255,0), rect, 2)
             overlay.blit(txt, (tab_x + padding, tab_y + (rect.height - h)//2))
             tab_rects.append((rect, cat))
             tab_x += rect.width + 5

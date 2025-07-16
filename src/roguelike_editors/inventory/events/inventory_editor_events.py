@@ -34,6 +34,15 @@ class InventoryEditorEventHandler:
             for rect, cat in getattr(self.view, 'tab_rects', []):
                 if rect.collidepoint(mx, my):
                     self.model.current_category = cat
+                    # Auto seleccionar entidad según pestaña
+                    if cat == 'player':
+                        players = list(self.world.components.get('PlayerTagComponent', {}).keys())
+                        self.model.entities = players
+                        self.model.selected_eid = players[0] if players else None
+                    elif cat == 'monsters':
+                        npcs = list(self.world.components.get('NPCTagComponent', {}).keys())
+                        self.model.entities = npcs
+                        self.model.selected_eid = npcs[0] if npcs else None
                     return            
 
         # Selección de monstruo al hacer click en scroll panel
