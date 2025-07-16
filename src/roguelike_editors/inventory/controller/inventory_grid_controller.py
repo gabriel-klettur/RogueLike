@@ -22,6 +22,8 @@ class InventoryGridController:
         Inicia flujo de añadir ítem: muestra lista de ítems.
         """
         self.load_available_items()
+        # Open MVC item selection panel
+        self.editor_controller.view.item_panel_controller.open(self.model.available_items)
         self.model.show_item_list = True
         self.model.show_quantity_input = False
         self.model.selected_item = None

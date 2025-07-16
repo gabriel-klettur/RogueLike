@@ -13,6 +13,46 @@ class InventoryGridEventHandler:
         """
         Retorna True si el evento fue consumido por el flujo de add/delete.
         """
+        # MVC item selection panel event handling
+        panel_model = getattr(self.editor_view, 'item_panel_model', None)
+        panel_view = getattr(self.editor_view, 'item_panel_view', None)
+        if panel_model and panel_model.show_panel and panel_view:
+            # Drag header
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if panel_view.header_rect.collidepoint(event.pos):
+                    panel_model.dragging = True
+                    panel_model.drag_start_pos = pygame.Vector2(event.pos) - panel_model.drag_offset
+                    return True
+            if event.type == pygame.MOUSEMOTION and panel_model.dragging:
+                panel_model.drag_offset = pygame.Vector2(event.pos) - panel_model.drag_start_pos
+                return True
+            if event.type == pygame.MOUSEBUTTONUP and event.button == 1 and panel_model.dragging:
+                panel_model.dragging = False
+                return True
+            # Scroll wheel
+            if event.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEWHEEL):
+                if panel_view.scroll_panel.handle_event(event):
+                    return True
+            # Click selection or confirm
+            if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                mx, my = event.pos
+                panel_rect = panel_view.panel_rect
+                # Select item
+                if panel_rect.collidepoint(mx, my):
+                    line_h = self.editor_view.font.get_linesize()
+                    idx = (my - panel_rect.y + panel_view.scroll_panel.scroll_offset) // line_h
+                    items = panel_view.scroll_panel.items
+                    if 0 <= idx < len(items):
+                        self.controller.select_item(items[idx])
+                    return True
+                # Confirm add
+                btn_rect = panel_view.add_button_rect
+                if btn_rect and btn_rect.collidepoint(mx, my):
+                    qty = panel_model.quantity
+                    self.controller.confirm_quantity(qty)
+                    panel_model.show_panel = False
+                    return True
+        # Detectar click en 'Add Item'
         # Detectar click en 'Add Item'
         if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             mx, my = event.pos
