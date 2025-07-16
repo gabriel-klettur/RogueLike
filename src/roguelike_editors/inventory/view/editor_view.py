@@ -207,4 +207,7 @@ class InventoryEditorView:
         # Exponer rects de Add/Delete para manejo de eventos
         self.add_item_rect = rects.get('add_item')
         self.delete_item_rect = rects.get('delete_item')
+        # Highlight Add Item button when panel open
+        if self.item_panel_model.show_panel:
+            pygame.draw.rect(overlay, (255,255,0), self.add_item_rect, 2)
         return

@@ -45,10 +45,32 @@ class InventoryGridView:
         return rects
 
     def _get_slots(self, model):
-        source = model.default_data if model.editing_side == 'default' else model.active_data
-        data = source.get(model.current_category, {})
-        entry = data.get(str(model.selected_eid), {})
-        return entry.get('slots', [])
+        # Return default or active inventory slots
+        if model.editing_side == 'default':
+            # Show default inventory templates
+            if model.current_category == 'player':
+                default_player = model.default_data.get('player', {})
+                return default_player.get('slots', [])
+            elif model.current_category == 'monsters':
+                # Determine template of selected monster
+                active_mon = model.active_data.get('monsters', {}).get(str(model.selected_eid), {})
+                template_id = active_mon.get('template_id')
+                for tpl_name, def_entry in model.default_data.get('monsters', {}).items():
+                    if def_entry.get('template_id') == template_id:
+                        inv_list = def_entry.get('inventory', [])
+                        # Use min quantity for default slots
+                        slots = [{'item': inv.get('item'), 'quantity': inv.get('min', 0)} for inv in inv_list]
+                        # Pad slots to match active slots length
+                        active_slots = active_mon.get('slots', [])
+                        if len(active_slots) > len(slots):
+                            slots += [None] * (len(active_slots) - len(slots))
+                        return slots
+            return []
+        else:
+            # Show active data from JSON
+            active_data = model.active_data.get(model.current_category, {})
+            entry = active_data.get(str(model.selected_eid), {})
+            return entry.get('slots', [])
 
     def _get_grid_origin(self, panel_rect):
         return panel_rect.x + panel_rect.width + self.margin, panel_rect.y
