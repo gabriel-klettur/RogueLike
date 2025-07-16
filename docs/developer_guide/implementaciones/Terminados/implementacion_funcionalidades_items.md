@@ -104,7 +104,7 @@ Beneficios:
 3. Al cargar nivel, el loader instancia entidades con lógica.
 4. Probar y ajustar comportamientos.
 
-## 8. Próximos pasos
+## 8. Próximos pasos  [COMPLETADO]
 1. Integrar `ItemsLoader` con validación de esquemas en el initializer del juego.
 2. Ajustar `ecs/systems/items/item_factory.py` para consumir `params` y añadir componentes.
 3. Implementar componentes ECS para ítems (`TeleportComponent`, `HealingComponent`, `BuffComponent`).

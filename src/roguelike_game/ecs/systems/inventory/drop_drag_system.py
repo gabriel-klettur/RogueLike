@@ -21,7 +21,7 @@ class DropDragSystem:
         self.prev_mouse = False
         self.potential_drag_eid = None
         self.drag_press_time = None
-        self.drag_hold_threshold = 250  # ms
+        self.drag_hold_threshold = 80  # ms
 
     @benchmark(lambda self: self.perf_log, "DropDragSystem.update")
     def update(self, world, camera):
