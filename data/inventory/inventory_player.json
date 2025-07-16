@@ -4,11 +4,11 @@
     "slots": [
       {
         "item": "gold",
-        "quantity": 337
+        "quantity": 338
       },
       {
         "item": "health_potion",
-        "quantity": 5
+        "quantity": 4
       },
       {
         "item": "wizard_staff_lvl_2",
