@@ -10,6 +10,8 @@ from roguelike_editors.inventory.view.editor_view import InventoryEditorView
 from roguelike_editors.inventory.events.inventory_editor_events import InventoryEditorEventHandler
 from roguelike_editors.inventory.controller.inventory_grid_controller import InventoryGridController
 from roguelike_editors.inventory.events.inventory_grid_events import InventoryGridEventHandler
+from roguelike_editors.inventory.controller.inventory_panel_controller import InventoryPanelController
+from roguelike_editors.inventory.events.inventory_panel_events import InventoryPanelEventHandler
 
 class InventoryEditorController:
     """
@@ -21,6 +23,11 @@ class InventoryEditorController:
         self.assets = assets
         self.font = font
         self.view = InventoryEditorView(assets, font)
+        # Panel MVC para listado de entidades
+        self.inventory_panel_controller = InventoryPanelController(self, self.view.inventory_panel_model)
+        # Asociar controlador a la vista
+        self.view.inventory_panel_controller = self.inventory_panel_controller
+        self.inventory_panel_event_handler = InventoryPanelEventHandler(self, self.inventory_panel_controller, self.view.inventory_panel_view, self.view.inventory_panel_model)
         self.event_handler = InventoryEditorEventHandler(self)
         # Controller para flujo Add/Delete items
         self.grid_controller = InventoryGridController(self)
@@ -96,6 +103,9 @@ class InventoryEditorController:
             self.logger.error(f"Error saving active inventory for '{cat}' to {path}: {e}")
 
     def handle_event(self, event):
+        # Panel listado events
+        if self.inventory_panel_event_handler.handle(event):
+            return
         # Flujo Add/Delete en el grid
         if self.grid_event_handler.handle(event):
             return

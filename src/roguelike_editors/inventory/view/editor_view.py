@@ -6,7 +6,9 @@ import os
 import logging
 from roguelike_editors.inventory.model.editor_model import InventoryEditorModel
 from roguelike_game.ecs.components.item_models import load_items
-from roguelike_ui.widgets.scroll_panel import ScrollPanel
+
+from roguelike_editors.inventory.model.inventory_panel_model import InventoryPanelModel
+from roguelike_editors.inventory.view.inventory_panel_view import InventoryPanelView
 from roguelike_editors.inventory.view.inventory_grid_view import InventoryGridView
 
 class InventoryEditorView:
@@ -31,7 +33,7 @@ class InventoryEditorView:
         items_path = os.path.join(cwd, 'data', 'items', 'items.json')
         self.items = load_items(items_path)
         self.images = {}
-        self.scroll_panel = ScrollPanel(self.font, margin=self.margin)
+
         # Paneles y botones para flujo Add Item
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         # Instanciar vista de grid de inventario
@@ -39,6 +41,9 @@ class InventoryEditorView:
         self.item_panel_model = ItemSelectionPanelModel()
         self.item_panel_controller = ItemSelectionPanelController(self.item_panel_model)
         self.item_panel_view = ItemSelectionPanelView(self.font, margin=self.margin, button_size=self.button_size)
+        # Panel MVC para listado de entidades
+        self.inventory_panel_model = InventoryPanelModel()
+        self.inventory_panel_view = InventoryPanelView(self.font, margin=self.margin)
 
         # Instanciar vista de grid de inventario
         self.grid_view = InventoryGridView(
@@ -69,42 +74,19 @@ class InventoryEditorView:
         title = f"Inv Editor - Eid {model.selected_eid}"
         text = self.font.render(title, True, (255,255,255))
         overlay.blit(text, (10,10))
-        # Pestañas
-        self.tab_rects = self._draw_tabs(overlay, model)
-        # Panel izquierdo de listado
-        data = model.active_data.get(model.current_category, {})
-        items = self._get_items_list(data, model.current_category)
+        # Panel izquierdo de listado (delegado a InventoryPanelView)
         panel_x, panel_y = 10, 80
         cols = 5
         grid_w = self.slot_size * cols + self.margin * (cols - 1)
         panel_w = ow - grid_w - panel_x - 10
         panel_h = oh - panel_y - 10
         panel_rect = pygame.Rect(panel_x, panel_y, panel_w, panel_h)
-        # Dibujar listbox con scroll
-        self.scroll_panel.set_items(items)
-        self.scroll_panel.draw(overlay, panel_rect)
-        # Highlight permanente de monster
-        if model.current_category == 'monsters' and model.selected_eid is not None:
-            line_h = self.font.get_linesize()
-            y0 = panel_rect.y - self.scroll_panel.scroll_offset
-            for idx, line in enumerate(self.scroll_panel.items):
-                if not line.startswith(' ') and line.split()[0] == str(model.selected_eid):
-                    y_line = y0 + idx * line_h
-                    sel_r = pygame.Rect(panel_rect.x, y_line, panel_rect.width, line_h)
-                    pygame.draw.rect(overlay, (255,255,0), sel_r, 3)
-                    break
-        # Highlight on hover
-        if model.current_category == 'monsters' and not self.item_panel_model.show_panel:
-            mx, my = pygame.mouse.get_pos()
-            if panel_rect.collidepoint(mx, my):
-                line_h = self.font.get_linesize()
-                idx = (my - panel_rect.y + self.scroll_panel.scroll_offset) // line_h
-                items = self.scroll_panel.items
-                if 0 <= idx < len(items) and not items[idx].startswith(' '):
-                    y0 = panel_rect.y - self.scroll_panel.scroll_offset
-                    y_line = y0 + idx * line_h
-                    border_r = pygame.Rect(panel_rect.x, y_line, panel_rect.width, line_h)
-                    pygame.draw.rect(overlay, (255,255,0), border_r, 2)
+        # Obtener lista de elementos para panel
+        items = self.inventory_panel_controller.get_items_list()
+        # Dibujar panel mediante MVC
+        panel_rects = self.inventory_panel_view.draw(overlay, self.inventory_panel_model, panel_rect, items)
+        # Guardar rectángulos de pestañas y panel para eventos
+        self.tab_rects = panel_rects.get('tab_rects')
         # Dibujar grid y flujo Add Item
         if model.current_category in ('player', 'monsters'):
             self._draw_grid(overlay, model, panel_rect)
@@ -117,51 +99,13 @@ class InventoryEditorView:
         return overlay
 
 
-    def _draw_tabs(self, overlay, model):
-        tab_rects = []
-        tab_x = 10
-        tab_y = 40
-        for cat in model.categories:
-            label = cat.capitalize()
-            txt = self.font.render(label, True, (255,255,255))
-            w, h = txt.get_size()
-            padding = 10
-            rect = pygame.Rect(tab_x, tab_y, w + padding*2, h + padding//2)
-            if model.current_category == cat:
-                color = (100,100,100)
-            else:
-                color = (50,50,50)
-            pygame.draw.rect(overlay, color, rect)
-            pygame.draw.rect(overlay, (255,255,255), rect, 2)
-            if model.current_category == cat:
-                pygame.draw.rect(overlay, (255,255,0), rect, 2)
-            overlay.blit(txt, (tab_x + padding, tab_y + (rect.height - h)//2))
-            tab_rects.append((rect, cat))
-            tab_x += rect.width + 5
-        return tab_rects
 
 
 
 
 
-    def _get_items_list(self, data, category):
-        items = []
-        if category == 'player':
-            for entry in data.values() if isinstance(data, dict) else []:
-                for slot in entry.get('slots', []):
-                    if slot:
-                        items.append(f"{slot.get('item')} x{slot.get('quantity')}")
-        elif category == 'monsters':
-            for mon_id, entry in data.items() if isinstance(data, dict) else []:
-                items.append(f"{mon_id} ({entry.get('template_id', '')})")
-                for slot in entry.get('slots', []):
-                    if slot:
-                        items.append(f"  {slot.get('item')} x{slot.get('quantity')}")
-        elif category == 'map':
-            for entry in data.values() if isinstance(data, dict) else []:
-                pos = entry.get('position', {})
-                items.append(f"{entry.get('item_id')} x{entry.get('quantity')} @({pos.get('x'):.1f},{pos.get('y'):.1f})")
-        return items      
+
+      
 
     def get_slot_at_pos(self, pos, count):
         x, y = pos

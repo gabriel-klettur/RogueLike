@@ -24,43 +24,9 @@ class InventoryEditorEventHandler:
             return
         if not self.model.visible:
             return
-        # Delegate scroll events a ScrollPanel
-        if self.view.scroll_panel.handle_event(event):
-            return
-        # Gestión de pestañas
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            mx, my = event.pos
-            # Cambiar categoría
-            for rect, cat in getattr(self.view, 'tab_rects', []):
-                if rect.collidepoint(mx, my):
-                    self.model.current_category = cat
-                    # Auto seleccionar entidad según pestaña
-                    if cat == 'player':
-                        players = list(self.world.components.get('PlayerTagComponent', {}).keys())
-                        self.model.entities = players
-                        self.model.selected_eid = players[0] if players else None
-                    elif cat == 'monsters':
-                        npcs = list(self.world.components.get('NPCTagComponent', {}).keys())
-                        self.model.entities = npcs
-                        self.model.selected_eid = npcs[0] if npcs else None
-                    return            
+            
 
-        # Selección de monstruo al hacer click en scroll panel
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            mx, my = event.pos
-            if self.model.current_category == 'monsters' and self.view.scroll_panel.rect.collidepoint(mx, my):
-                # calcular índice de ítem
-                line_h = self.view.font.get_linesize()
-                idx = (my - self.view.scroll_panel.rect.y + self.view.scroll_panel.scroll_offset) // line_h
-                items = self.view.scroll_panel.items
-                if 0 <= idx < len(items):
-                    line = items[idx]
-                    # solo líneas de encabezado (sin indent)
-                    if not line.startswith(' '):
-                        raw = line.strip()
-                        mon_id = raw.split(' ')[0]
-                        self.model.selected_eid = mon_id
-                        return
+
         # Mouse down
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mx, my = event.pos
