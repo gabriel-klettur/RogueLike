@@ -30,6 +30,11 @@ class InventoryEditorView:
         self.images = {}
         self.scroll_panel = ScrollPanel(self.font, margin=self.margin)
         # Paneles y botones para flujo Add Item
+        # Variables para arrastrar panel de selección de ítems
+        self.item_list_drag_offset = pygame.Vector2(0, 0)
+        self.item_list_dragging = False
+        self.item_list_drag_start_pos = pygame.Vector2(0, 0)
+        self.item_list_header_rect = None
         self.item_list_panel_rect = None
         self.quantity_panel_rect = None
         self.add_to_inventory_button_rect = None
@@ -144,11 +149,23 @@ class InventoryEditorView:
         visible_count = min(len(grid_model.available_items), 10)
         panel_w = 200
         panel_h = visible_count * line_h + 2 * self.margin
-        panel_x = base_panel_rect.centerx - panel_w // 2
-        panel_y = base_panel_rect.centery - panel_h // 2
+        panel_x = base_panel_rect.centerx - panel_w // 2 + int(self.item_list_drag_offset.x)
+        panel_y = base_panel_rect.centery - panel_h // 2 + int(self.item_list_drag_offset.y)
         panel_rect = pygame.Rect(panel_x, panel_y, panel_w, panel_h)
         pygame.draw.rect(overlay, (50, 50, 50), panel_rect)
         pygame.draw.rect(overlay, (255, 255, 255), panel_rect, 2)
+        # Render título
+        title_surf = self.font.render("Item List", True, (255,255,255))
+        # Header background
+        header_h = title_surf.get_height() + self.margin
+        header_rect = pygame.Rect(panel_x, panel_y - header_h, panel_w, header_h)
+        pygame.draw.rect(overlay, (80, 80, 80), header_rect)
+        # Dibujar título centrado
+        tx = panel_x + (panel_w - title_surf.get_width()) // 2
+        ty = panel_y - title_surf.get_height() - self.margin
+        overlay.blit(title_surf, (tx, ty))
+        # Guardar rect del header para arrastre
+        self.item_list_header_rect = header_rect
         # ScrollPanel para ítems
         self.scroll_panel.set_items(grid_model.available_items)
         self.scroll_panel.draw(overlay, panel_rect)

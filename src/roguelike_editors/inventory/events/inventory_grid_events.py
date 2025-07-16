@@ -19,6 +19,22 @@ class InventoryGridEventHandler:
             if hasattr(self.editor_view, 'add_item_rect') and self.editor_view.add_item_rect and not self.model.show_item_list and self.editor_view.add_item_rect.collidepoint(mx, my):
                 self.controller.start_add_item()
                 return True
+        # Manejo arrastre del panel de ítems
+        if self.model.show_item_list:
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                mx, my = event.pos
+                header = getattr(self.editor_view, 'item_list_header_rect', None)
+                if header and header.collidepoint(mx, my):
+                    self.editor_view.item_list_dragging = True
+                    self.editor_view.item_list_drag_start_pos = pygame.Vector2(mx, my) - self.editor_view.item_list_drag_offset
+                    return True
+            if event.type == pygame.MOUSEMOTION and getattr(self.editor_view, 'item_list_dragging', False):
+                mx, my = event.pos
+                self.editor_view.item_list_drag_offset = pygame.Vector2(mx, my) - self.editor_view.item_list_drag_start_pos
+                return True
+            if event.type == pygame.MOUSEBUTTONUP and event.button == 1 and getattr(self.editor_view, 'item_list_dragging', False):
+                self.editor_view.item_list_dragging = False
+                return True
         # Manejo scroll y selección de ítem
         if self.model.show_item_list:
             # scroll con rueda
