@@ -17,6 +17,8 @@ class InventoryGridView:
         self.show_active_rect = None
         self.save_default_rect = None
         self.save_active_rect = None
+        self.add_item_rect = None
+        self.delete_item_rect = None
 
     def draw(self, overlay, model, panel_rect):
         """
@@ -29,13 +31,17 @@ class InventoryGridView:
         grid_origin_x, grid_origin_y = self._get_grid_origin(panel_rect)
         mx, my = pygame.mouse.get_pos()
 
+        rects = {}
+
+        #Dibujar botones de Add y Remove items
+        rects.update(self._draw_manage_buttons(overlay, slots, grid_origin_x, grid_origin_y, mx, my))
+
         # Dibujar slots
         self._draw_slots(overlay, slots, grid_origin_x, grid_origin_y, mx, my)
 
-        # Dibujar botones Show y Save
-        rects = {}
+        # Dibujar botones Show y Save        
         rects.update(self._draw_show_buttons(overlay, slots, grid_origin_x, grid_origin_y, mx, my))
-        rects.update(self._draw_save_buttons(overlay, slots, grid_origin_x, grid_origin_y, mx, my))
+        rects.update(self._draw_save_buttons(overlay, slots, grid_origin_x, grid_origin_y, mx, my))        
         return rects
 
     def _get_slots(self, model):
@@ -123,4 +129,34 @@ class InventoryGridView:
         txt_save_act = self.font.render("Save Active", True, (255, 255, 255))
         overlay.blit(txt_save_act, (save_act_x + 10, btn_y + 5))
         rects['save_active'] = self.save_active_rect
+        return rects
+
+    def _draw_manage_buttons(self, overlay, slots, grid_origin_x, grid_origin_y, mx, my):
+        """
+        Dibuja los botones "Add Item" y "Delete Item" debajo de los botones de guardar.
+        Devuelve un dict con los rects: 'add_item', 'delete_item'.
+        """
+        # Position manage buttons above grid
+        cols = 5
+        manage_y = grid_origin_y - self.button_size[1] - self.margin
+        rects = {}
+
+        # Add Item
+        self.add_item_rect = pygame.Rect(grid_origin_x, manage_y, *self.button_size)
+        pygame.draw.rect(overlay, (100, 100, 100), self.add_item_rect)
+        border_color = (255, 255, 0) if self.add_item_rect.collidepoint(mx, my) else (255, 255, 255)
+        pygame.draw.rect(overlay, border_color, self.add_item_rect, 2)
+        txt_add = self.font.render("Add Item", True, (255, 255, 255))
+        overlay.blit(txt_add, (grid_origin_x + 10, manage_y + 5))
+        rects['add_item'] = self.add_item_rect
+
+        # Delete Item
+        del_x = grid_origin_x + self.button_size[0] + self.margin
+        self.delete_item_rect = pygame.Rect(del_x, manage_y, *self.button_size)
+        pygame.draw.rect(overlay, (100, 100, 100), self.delete_item_rect)
+        border_color = (255, 255, 0) if self.delete_item_rect.collidepoint(mx, my) else (255, 255, 255)
+        pygame.draw.rect(overlay, border_color, self.delete_item_rect, 2)
+        txt_del = self.font.render("Delete Item", True, (255, 255, 255))
+        overlay.blit(txt_del, (del_x + 10, manage_y + 5))
+        rects['delete_item'] = self.delete_item_rect
         return rects

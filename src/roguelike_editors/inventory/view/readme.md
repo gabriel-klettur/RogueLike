@@ -33,6 +33,16 @@ Esta documentación cubre la clase `InventoryGridView` en `inventory_grid_view.p
      - Llama a los métodos privados para dibujar slots y botones.
      - Devuelve un dict con todos los rects de los botones para su manejo de eventos.
 
+7. **_draw_manage_buttons(overlay, slots, grid_origin_x, grid_origin_y, mx, my)**
+   - Dibuja los botones "Add Item" y "Delete Item" debajo de los botones de guardar.
+   - Resalta con borde amarillo al hacer hover.
+   - Devuelve un dict con los rects: `{'add_item', 'delete_item'}`.
+   - Orquesta el flujo de renderizado:
+     - Obtiene la lista de slots.
+     - Calcula la posición del grid.
+     - Llama a los métodos privados para dibujar slots y botones.
+     - Devuelve un dict con todos los rects de los botones para su manejo de eventos.
+
 ## Uso
 
 En el `InventoryEditorView`, se instancia y utiliza así:
