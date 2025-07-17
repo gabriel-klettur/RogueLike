@@ -90,8 +90,12 @@ class InventoryEditorView:
         # Dibujar grid y flujo Add Item
         if model.current_category in ('player', 'monsters'):
             self._draw_grid(overlay, model, panel_rect)
-            # Item selection panel
-            rects = self.item_panel_view.draw(overlay, self.item_panel_model, panel_rect)
+            # Item selection panel: position just below the Save buttons of the inventory grid
+            # Use grid width and Save buttons bottom as base for panel
+            grid_origin_x = panel_rect.x + panel_rect.width + self.margin
+            save_bottom = max(self.save_default_rect.bottom, self.save_active_rect.bottom)
+            base_rect = pygame.Rect(grid_origin_x, save_bottom, grid_w, 0)
+            rects = self.item_panel_view.draw(overlay, self.item_panel_model, base_rect)
             # Save panel rects for events
             self.item_list_panel_rect = rects.get('panel_rect')
             self.item_list_header_rect = rects.get('header_rect')

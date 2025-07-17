@@ -19,13 +19,18 @@ class ItemSelectionPanelView:
             return {}
         line_h = self.font.get_linesize()
         visible = min(len(model.available_items), model.visible_count)
-        w = 200
+        # Panel width matches grid width
+        w = base_rect.width
         scroll_h = visible * line_h + 2*self.margin
         input_h = line_h + 2*self.margin
         button_h = self.button_size[1]
         panel_h = scroll_h + self.margin + input_h + self.margin + button_h + self.margin
-        x = base_rect.centerx - w//2 + int(model.drag_offset.x)
-        y = base_rect.centery - panel_h//2 + int(model.drag_offset.y)
+        # Position panel below the inventory grid
+        # Align panel left edge with grid
+        # Position panel in bottom-right corner of overlay
+        sw, sh = surface.get_size()
+        x = sw - w - self.margin + int(model.drag_offset.x)
+        y = sh - panel_h - self.margin + int(model.drag_offset.y)
         self.panel_rect = pygame.Rect(x, y, w, panel_h)
         # Panel background & border
         pygame.draw.rect(surface, (50,50,50), self.panel_rect)
