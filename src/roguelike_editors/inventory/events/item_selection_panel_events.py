@@ -11,6 +11,12 @@ class ItemSelectionPanelEventHandler:
         # Only handle when panel is shown
         if not self.model.show_panel:
             return False
+        # Close panel if click outside
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            mx, my = event.pos
+            if not self.view.panel_rect.collidepoint(mx, my) and not self.view.header_rect.collidepoint(mx, my):
+                self.controller.close()
+                return True
         # Drag header
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if self.view.header_rect.collidepoint(event.pos):

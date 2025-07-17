@@ -34,7 +34,7 @@ class ItemSelectionPanelView:
         self.panel_rect = pygame.Rect(x, y, w, panel_h)
         # Panel background & border
         pygame.draw.rect(surface, (50,50,50), self.panel_rect)
-        pygame.draw.rect(surface, (255,255,255), self.panel_rect, 2)
+        pygame.draw.rect(surface, (255,255,0), self.panel_rect, 2)
         # Header background
         title = "Item List"
         title_surf = self.font.render(title, True, (255,255,255))

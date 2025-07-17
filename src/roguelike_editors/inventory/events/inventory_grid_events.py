@@ -15,7 +15,17 @@ class InventoryGridEventHandler:
         """
         # MVC item selection panel event handling
         panel_model = getattr(self.editor_view, 'item_panel_model', None)
+        
         panel_view = getattr(self.editor_view, 'item_panel_view', None)
+        # Close MVC panel on click outside
+        # Close MVC panel on click outside (mousedown or mouseup)
+        if panel_model and panel_model.show_panel and panel_view and event.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP) and event.button == 1:
+            mx, my = event.pos
+            # If click outside the panel and header, close panel
+            if not panel_view.panel_rect.collidepoint(mx, my) and not panel_view.header_rect.collidepoint(mx, my):
+                panel_model.show_panel = False
+                self.model.show_item_list = False
+                return True
         if panel_model and panel_model.show_panel and panel_view:
             # Input focus for quantity input
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -110,7 +120,7 @@ class InventoryGridEventHandler:
         if self.model.show_item_list:
             # scroll con rueda
             if event.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEWHEEL):
-                if self.editor_view.scroll_panel.handle_event(event):
+                if panel_view.scroll_panel.handle_event(event):
                     return True
             if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                 mx, my = event.pos
@@ -118,8 +128,8 @@ class InventoryGridEventHandler:
                 if panel_rect and panel_rect.collidepoint(mx, my):
                     # calcular índice de ítem
                     line_h = self.editor_view.font.get_linesize()
-                    idx = (my - panel_rect.y + self.editor_view.scroll_panel.scroll_offset) // line_h
-                    items = self.editor_view.scroll_panel.items
+                    idx = (my - panel_rect.y + panel_view.scroll_panel.scroll_offset) // line_h
+                    items = panel_view.scroll_panel.items
                     if 0 <= idx < len(items):
                         self.controller.select_item(items[idx])
                 else:
