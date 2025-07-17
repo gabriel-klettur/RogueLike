@@ -36,6 +36,12 @@
         "min": 2,
         "max": 3,
         "chance": 1.0
+      },
+      {
+        "item": "wizard_staff_lvl_1",
+        "min": 1,
+        "max": 1,
+        "chance": 1.0
       }
     ]
   },
@@ -58,6 +64,12 @@
         "item": "wood",
         "min": 0,
         "max": 2,
+        "chance": 1.0
+      },
+      {
+        "item": "wizard_staff_lvl_1",
+        "min": 1,
+        "max": 1,
         "chance": 1.0
       }
     ]
@@ -98,6 +110,12 @@
         "item": "experience_orb",
         "min": 1,
         "max": 2,
+        "chance": 1.0
+      },
+      {
+        "item": "wizard_staff_lvl_1",
+        "min": 1,
+        "max": 1,
         "chance": 1.0
       }
     ]
@@ -178,6 +196,12 @@
         "item": "experience_orb",
         "min": 1,
         "max": 2,
+        "chance": 1.0
+      },
+      {
+        "item": "health_potion",
+        "min": 1,
+        "max": 1,
         "chance": 1.0
       }
     ]

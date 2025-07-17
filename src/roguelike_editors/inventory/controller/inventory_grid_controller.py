@@ -72,7 +72,14 @@ class InventoryGridController:
             active_map = self.editor_model.active_data.get(cat, {})
             entry = active_map.get(str(eid), {})
             slots = entry.get('slots', [])
-            slots.append({'item': self.model.selected_item, 'quantity': quantity})
+            # Insertar en primer hueco libre
+            for idx_slot, slot in enumerate(slots):
+                if slot is None:
+                    slots[idx_slot] = {'item': self.model.selected_item, 'quantity': quantity}
+                    break
+            else:
+                # Si no hay hueco, añadir al final
+                slots.append({'item': self.model.selected_item, 'quantity': quantity})
             entry['slots'] = slots
             active_map[str(eid)] = entry
             # Reset state

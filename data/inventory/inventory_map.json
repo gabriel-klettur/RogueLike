@@ -19,26 +19,6 @@
       "y": 2473.0
     }
   },
-  "1edf2f0a-26e8-490a-8740-45d247cc3562": {
-    "item_id": "gold",
-    "quantity": 4,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 1896.3883056236805,
-      "y": 2571.229321286073
-    }
-  },
-  "04c6e44d-468a-4a07-b6a6-d46c30469398": {
-    "item_id": "experience_orb",
-    "quantity": 2,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 1896.3883056236805,
-      "y": 2571.229321286073
-    }
-  },
   "82b9f8e0-57dd-4565-8a2f-42991d0dcc46": {
     "item_id": "wood",
     "quantity": 1,
@@ -97,6 +77,86 @@
     "position": {
       "x": 2936.1047520051734,
       "y": 2890.33270369208
+    }
+  },
+  "7a7fc749-6594-4b7c-98f9-93dc4fa196ce": {
+    "item_id": "wizard_staff_lvl_1",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 1947.0,
+      "y": 2435
+    }
+  },
+  "e71c4caf-1321-4cb8-957b-20c9038b708c": {
+    "item_id": "ancient_relic_mask",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2421.9040483349136,
+      "y": 2333.4862508083716
+    }
+  },
+  "d6f2e803-36a0-4185-b2ae-2c0e018d4bdc": {
+    "item_id": "gold",
+    "quantity": 5,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2980.0,
+      "y": 2434
+    }
+  },
+  "b30661a7-4914-4589-8bd8-d46af3dc0e9f": {
+    "item_id": "wizard_staff_lvl_1",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2980.0,
+      "y": 2434
+    }
+  },
+  "ed6779ad-ce42-4714-b8c9-c6465cb4eabc": {
+    "item_id": "gold",
+    "quantity": 4,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 3007.2577206366727,
+      "y": 2396.054398961439
+    }
+  },
+  "0536ec45-607c-46ff-af3d-e6e784e66955": {
+    "item_id": "wizard_staff_lvl_1",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 3007.2577206366727,
+      "y": 2396.054398961439
+    }
+  },
+  "6ffec0f7-8273-4bc3-b15d-0a8f46904883": {
+    "item_id": "wood",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2813.100691336976,
+      "y": 2588.4323274095536
+    }
+  },
+  "1fb782e8-4a81-479a-b6ee-f3a6e49241a6": {
+    "item_id": "wizard_staff_lvl_1",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2813.100691336976,
+      "y": 2588.4323274095536
     }
   }
 }
