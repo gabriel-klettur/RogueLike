@@ -27,6 +27,7 @@ class InventoryPanelController:
                 print("[InventoryPanel] Error recargando inventory_monsters.json:", e)
             # Resetear debug para nuevas impresiones de diagnóstico
             self.debug_printed = False
+            self.editor_controller.model.editing_side = 'active'
 
     def select_entity(self, eid):
         # Seleccionar entidad (actualiza modelo de panel y modelo de editor)

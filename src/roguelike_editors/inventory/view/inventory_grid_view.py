@@ -21,6 +21,8 @@ class InventoryGridView:
         self.delete_item_rect = None
 
     def draw(self, overlay, model, panel_rect):
+        # Track which side is being edited to highlight buttons
+        self.current_editing_side = model.editing_side
         """
         Dibuja grid de inventario, botones de mostrar y botones de guardar.
         Devuelve un dict con los rects:
@@ -111,7 +113,8 @@ class InventoryGridView:
         # Show Default
         self.show_default_rect = pygame.Rect(grid_origin_x, show_y, *self.button_size)
         pygame.draw.rect(overlay, (100, 100, 100), self.show_default_rect)
-        border_color = (255, 255, 0) if self.show_default_rect.collidepoint(mx, my) else (255, 255, 255)
+        # Highlight default button if selected or hovered
+        border_color = (255, 255, 0) if (self.current_editing_side == 'default' or self.show_default_rect.collidepoint(mx, my)) else (255, 255, 255)
         pygame.draw.rect(overlay, border_color, self.show_default_rect, 2)
         txt_def = self.font.render("Show Default", True, (255, 255, 255))
         overlay.blit(txt_def, (grid_origin_x + 10, show_y + 5))
@@ -120,7 +123,8 @@ class InventoryGridView:
         act_x = grid_origin_x + self.button_size[0] + 10
         self.show_active_rect = pygame.Rect(act_x, show_y, *self.button_size)
         pygame.draw.rect(overlay, (100, 100, 100), self.show_active_rect)
-        border_color = (255, 255, 0) if self.show_active_rect.collidepoint(mx, my) else (255, 255, 255)
+        # Highlight active button if selected or hovered
+        border_color = (255, 255, 0) if (self.current_editing_side == 'active' or self.show_active_rect.collidepoint(mx, my)) else (255, 255, 255)
         pygame.draw.rect(overlay, border_color, self.show_active_rect, 2)
         txt_act = self.font.render("Show Active", True, (255, 255, 255))
         overlay.blit(txt_act, (act_x + 10, show_y + 5))

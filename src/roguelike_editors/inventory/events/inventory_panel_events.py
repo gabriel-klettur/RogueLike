@@ -71,6 +71,7 @@ class InventoryPanelEventHandler:
                             temp_idx -= 1
                         eid_raw = items[temp_idx].strip().split(' ')[0]
                         self.controller.select_entity(eid_raw)
+                        self.editor_controller.model.editing_side = 'active'
                         return True
                     # Update click tracking for single-click
                     self.last_pos_click_time = now
@@ -94,6 +95,7 @@ class InventoryPanelEventHandler:
                             temp_idx -= 1
                         eid_raw = items[temp_idx].strip().split(' ')[0]
                         self.controller.select_entity(eid_raw)
+                        self.editor_controller.model.editing_side = 'active'
                         return True
                     if 0 <= idx < len(items):
                         # Encontrar inicio del grupo
@@ -103,6 +105,7 @@ class InventoryPanelEventHandler:
                         raw = items[start_idx].strip()
                         eid = raw.split(' ')[0]
                         self.controller.select_entity(eid)
+                        self.editor_controller.model.editing_side = 'active'
                         return True
                 # Bloquear clic en otras partes del panel de listado
                 return True
