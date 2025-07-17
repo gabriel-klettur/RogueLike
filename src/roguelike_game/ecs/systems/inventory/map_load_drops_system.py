@@ -31,9 +31,16 @@ class MapLoadDropsSystem:
         validator = Draft7Validator(instances_schema, resolver=resolver)
         with open(path, 'r', encoding='utf-8') as df:
             drops_raw = json.load(df)
+        # Flatten nested 'map' key if JSON is wrongly nested
+        if isinstance(drops_raw, dict) and 'map' in drops_raw:
+            drops_raw = drops_raw['map']
         validator.validate(drops_raw)
         # Instanciar el ItemDropManager con datos validados
         self.drop_manager = ItemDropManager(path)
+        # Flatten nested 'map' key in drop_manager data if present
+        if isinstance(self.drop_manager._data, dict) and 'map' in self.drop_manager._data:
+            self.drop_manager._data = self.drop_manager._data['map']
+            self.drop_manager._persist()
         if self.drop_manager.path != path:
             self.drop_manager = ItemDropManager(self.drop_manager.path)
         items_path = os.path.join(os.getcwd(), 'data', 'items', 'items.json')

@@ -1,4 +1,7 @@
 import pygame
+import json
+import os
+
 
 class InventoryGridEventHandler:
     """
@@ -85,6 +88,19 @@ class InventoryGridEventHandler:
                     # Add to grid
                     self.controller.select_item(item)
                     self.controller.confirm_quantity(qty)
+                     # Si venimos de ground tab, remover item del suelo y guardar
+                    if panel_model.current_tab == 'ground':
+                        active_map = self.controller.editor_controller.model.active_data.get('map', {})
+                        for key, entry in list(active_map.items()):
+                            if entry.get('item_id') == item and entry.get('quantity') == qty:
+                                active_map.pop(key)
+                                break
+                        # Persistir cambios de active_data a JSON
+                        # Escribir directamente inventory_map.json con la estructura correcta
+                        map_path = self.controller.editor_controller.paths['map']['active']
+                        os.makedirs(os.path.dirname(map_path), exist_ok=True)
+                        with open(map_path, 'w', encoding='utf-8') as f:
+                            json.dump(self.controller.editor_controller.model.active_data.get('map', {}), f, ensure_ascii=False, indent=2)
                     panel_model.show_panel = False
                     return True
 

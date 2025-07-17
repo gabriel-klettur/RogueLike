@@ -52,8 +52,18 @@ class InventoryEditorController:
         }
         # Cargar datos JSON en el modelo
         for cat, p in self.paths.items():
+            # Cargar default y active
             self.model.default_data[cat] = load_from_json(p['default'])
-            self.model.active_data[cat] = load_from_json(p['active'])
+            loaded_active = load_from_json(p['active'])
+            # Desanidar caso de map anidado incorrectly bajo 'map'
+            if cat == 'map' and isinstance(loaded_active, dict) and 'map' in loaded_active:
+                loaded_active = loaded_active['map']
+                # reescribir archivo para corregir formato
+                os.makedirs(os.path.dirname(p['active']), exist_ok=True)
+                with open(p['active'], 'w', encoding='utf-8') as f:
+                    json.dump(loaded_active, f, ensure_ascii=False, indent=2)
+            self.model.active_data[cat] = loaded_active
+
         # Cargar y validar esquemas JSON
         try:
             import jsonschema
