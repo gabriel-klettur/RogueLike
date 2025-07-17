@@ -41,6 +41,46 @@ class InventoryGridController:
         Confirma cantidad y añade el ítem al InventoryComponent.
         """
         eid = self.editor_model.selected_eid
+        cat = self.editor_model.current_category
+        editing_side = self.editor_model.editing_side
+        if editing_side == 'default':
+            if cat == 'player':
+                default_player = self.editor_model.default_data.get('player', {})
+                slots = default_player.get('slots', [])
+                for idx, slot in enumerate(slots):
+                    if not slot:
+                        slots[idx] = {'item': self.model.selected_item, 'quantity': quantity}
+                        break
+                default_player['slots'] = slots
+            elif cat == 'monsters':
+                active_entry = self.editor_model.active_data.get('monsters', {}).get(str(eid), {})
+                template_id = active_entry.get('template_id')
+                for tpl_name, def_entry in self.editor_model.default_data.get('monsters', {}).items():
+                    if def_entry.get('template_id') == template_id:
+                        inv_list = def_entry.get('inventory', [])
+                        inv_list.append({'item': self.model.selected_item, 'min': quantity, 'max': quantity, 'chance': 1.0})
+                        def_entry['inventory'] = inv_list
+                        break
+            # resetear estado
+            self.model.show_item_list = False
+            self.model.show_quantity_input = False
+            self.model.selected_item = None
+            self.model.quantity = 1
+            return
+        # Handle active side: update active_data
+        if editing_side == 'active':
+            active_map = self.editor_model.active_data.get(cat, {})
+            entry = active_map.get(str(eid), {})
+            slots = entry.get('slots', [])
+            slots.append({'item': self.model.selected_item, 'quantity': quantity})
+            entry['slots'] = slots
+            active_map[str(eid)] = entry
+            # Reset state
+            self.model.show_item_list = False
+            self.model.show_quantity_input = False
+            self.model.selected_item = None
+            self.model.quantity = 1
+            return
         inv_comp = self.world.components.get('InventoryComponent', {}).get(eid)
         if inv_comp and self.model.selected_item:
             # encuentra primer slot vacío
