@@ -75,11 +75,11 @@ class InventoryEditorEventHandler:
                 self.model.editing_side = 'active'
                 return
             # Save Default Button            
-            if self.view.save_default_rect and self.view.save_default_rect.collidepoint(mx, my):
-                print("[DEBUG InvEditor] Save Default button clicked")
-                self.controller._save_default()
-                return            
-            if self.view.save_active_rect and self.view.save_active_rect.collidepoint(mx, my):
-                print("[DEBUG InvEditor] Save Active button clicked")
-                self.controller._save_active()
+            # Save Button
+            if self.view.save_rect and self.view.save_rect.collidepoint(mx, my):
+                print(f"[DEBUG InvEditor] Save button clicked (side={self.model.editing_side})")
+                if self.model.editing_side == 'default':
+                    self.controller._save_default()
+                else:
+                    self.controller._save_active()
                 return

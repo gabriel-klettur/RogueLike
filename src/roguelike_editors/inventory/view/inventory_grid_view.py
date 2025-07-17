@@ -15,18 +15,19 @@ class InventoryGridView:
         # Rects de botones
         self.show_default_rect = None
         self.show_active_rect = None
-        self.save_default_rect = None
-        self.save_active_rect = None
+
         self.add_item_rect = None
         self.delete_item_rect = None
+        # Rect for unified Save button
+        self.save_rect = None
 
     def draw(self, overlay, model, panel_rect):
         # Track which side is being edited to highlight buttons
         self.current_editing_side = model.editing_side
         """
-        Dibuja grid de inventario, botones de mostrar y botones de guardar.
+        Dibuja grid de inventario, botones de mostrar y botón de guardar.
         Devuelve un dict con los rects:
-          'show_default', 'show_active', 'save_default', 'save_active'
+          'show_default', 'show_active', 'save', 'add_item', 'delete_item'
         """
         # Obtener datos de slots y posición
         slots = self._get_slots(model)
@@ -132,30 +133,27 @@ class InventoryGridView:
         return rects
 
     def _draw_save_buttons(self, overlay, slots, grid_origin_x, grid_origin_y, mx, my):
+        """
+        Dibuja un único botón de Save centrado debajo de los botones de Show.
+        Devuelve un dict con el rect: 'save'
+        """
         cols = 5
         rows = (len(slots) + cols - 1) // cols
+        # Y position: debajo de Show buttons
         save_y = grid_origin_y + rows * (self.slot_size + self.margin) + self.margin + self.button_size[1] + self.margin
-        rects = {}
+        # Botón de ancho doble (dos botones originales + margen)
+        total_width = self.button_size[0] * 2 + self.margin
         btn_x = grid_origin_x
-        btn_y = save_y
-        # Save Default
-        self.save_default_rect = pygame.Rect(btn_x, btn_y, *self.button_size)
-        pygame.draw.rect(overlay, (100, 100, 100), self.save_default_rect)
-        border_color = (255, 255, 0) if self.save_default_rect.collidepoint(mx, my) else (255, 255, 255)
-        pygame.draw.rect(overlay, border_color, self.save_default_rect, 2)
-        txt_save_def = self.font.render("Save Default", True, (255, 255, 255))
-        overlay.blit(txt_save_def, (btn_x + 10, btn_y + 5))
-        rects['save_default'] = self.save_default_rect
-        # Save Active
-        save_act_x = btn_x + self.button_size[0] + 10
-        self.save_active_rect = pygame.Rect(save_act_x, btn_y, *self.button_size)
-        pygame.draw.rect(overlay, (100, 100, 100), self.save_active_rect)
-        border_color = (255, 255, 0) if self.save_active_rect.collidepoint(mx, my) else (255, 255, 255)
-        pygame.draw.rect(overlay, border_color, self.save_active_rect, 2)
-        txt_save_act = self.font.render("Save Active", True, (255, 255, 255))
-        overlay.blit(txt_save_act, (save_act_x + 10, btn_y + 5))
-        rects['save_active'] = self.save_active_rect
-        return rects
+        # Definir rect y dibujar
+        self.save_rect = pygame.Rect(btn_x, save_y, total_width, self.button_size[1])
+        pygame.draw.rect(overlay, (100, 100, 100), self.save_rect)
+        border_color = (255, 255, 0) if self.save_rect.collidepoint(mx, my) else (255, 255, 255)
+        pygame.draw.rect(overlay, border_color, self.save_rect, 2)
+        # Texto centrado
+        txt = self.font.render("Save", True, (255, 255, 255))
+        overlay.blit(txt, (btn_x + (total_width - txt.get_width()) // 2, save_y + (self.button_size[1] - txt.get_height()) // 2))
+        return {'save': self.save_rect}
+
 
     def _draw_manage_buttons(self, overlay, slots, grid_origin_x, grid_origin_y, mx, my):
         """

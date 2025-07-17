@@ -25,6 +25,7 @@ class InventoryEditorView:
         self.tab_rects = []
         self.save_default_rect = None
         self.save_active_rect = None
+        self.save_rect = None
         # Botones de mostrar datos (default/active)
         self.show_default_rect = None
         self.show_active_rect = None
@@ -93,7 +94,8 @@ class InventoryEditorView:
             # Item selection panel: position just below the Save buttons of the inventory grid
             # Use grid width and Save buttons bottom as base for panel
             grid_origin_x = panel_rect.x + panel_rect.width + self.margin
-            save_bottom = max(self.save_default_rect.bottom, self.save_active_rect.bottom)
+            # Use unified Save button bottom
+            save_bottom = self.save_rect.bottom if self.save_rect else panel_rect.y
             base_rect = pygame.Rect(grid_origin_x, save_bottom, grid_w, 0)
             rects = self.item_panel_view.draw(overlay, self.item_panel_model, base_rect)
             # Save panel rects for events
@@ -150,8 +152,7 @@ class InventoryEditorView:
         # Asignar rects para manejo de eventos
         self.show_default_rect = rects.get('show_default')
         self.show_active_rect = rects.get('show_active')
-        self.save_default_rect = rects.get('save_default')
-        self.save_active_rect = rects.get('save_active')
+        self.save_rect = rects.get('save')
         # Exponer rects de Add/Delete para manejo de eventos
         self.add_item_rect = rects.get('add_item')
         self.delete_item_rect = rects.get('delete_item')
