@@ -43,6 +43,8 @@ class InventoryPanelEventHandler:
                     line_h = self.view.font.get_linesize()
                     idx = (my - self.view.panel_rect.y + self.view.scroll_panel.scroll_offset) // line_h
                     items = self.controller.get_items_list()
+                    if idx < 0 or idx >= len(items):
+                        return False
                     print(f"[DEBUG PanelEvent] idx={idx}, item={items[idx]!r}, clicks={getattr(event, 'clicks', None)}, event_dict={event.__dict__}")
                     # Manual double-click detection
                     now = pygame.time.get_ticks()
