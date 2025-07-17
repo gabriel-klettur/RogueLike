@@ -82,6 +82,11 @@ class InventoryPanelController:
                 tpl = entry.get('template_id', '')
                 line1 = f"{mon_id}" + (f" | Template: {tpl}" if tpl else "")
                 items.append(line1)
+                # Mostrar nombre de monstruo de plantillas predeterminadas
+                default_monsters = self.editor_controller.model.default_data.get('monsters', {})
+                template_name = next((name for name, def_entry in default_monsters.items() if def_entry.get('template_id') == tpl), None)
+                if template_name:
+                    items.append(f"  Name: {template_name}")
 
 
                 # Position
