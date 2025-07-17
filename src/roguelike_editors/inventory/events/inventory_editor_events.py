@@ -62,15 +62,23 @@ class InventoryEditorEventHandler:
                 self.model.drag_item = None
                 self.model.drag_slot = None
             # Botones
+            print(f"[DEBUG InvEditor] MouseUp at {(mx, my)}")
+            # Show Default Button            
             if self.view.show_default_rect and self.view.show_default_rect.collidepoint(mx, my):
+                print("[DEBUG InvEditor] Show Default button clicked")
                 self.model.editing_side = 'default'
                 return
+            # Show Active Button            
             if self.view.show_active_rect and self.view.show_active_rect.collidepoint(mx, my):
+                print("[DEBUG InvEditor] Show Active button clicked")
                 self.model.editing_side = 'active'
                 return
+            # Save Default Button            
             if self.view.save_default_rect and self.view.save_default_rect.collidepoint(mx, my):
+                print("[DEBUG InvEditor] Save Default button clicked")
                 self.controller._save_default()
-                return
+                return            
             if self.view.save_active_rect and self.view.save_active_rect.collidepoint(mx, my):
+                print("[DEBUG InvEditor] Save Active button clicked")
                 self.controller._save_active()
                 return
