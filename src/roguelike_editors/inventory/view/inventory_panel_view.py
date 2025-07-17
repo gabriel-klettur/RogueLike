@@ -70,6 +70,8 @@ class InventoryPanelView:
             line_h = self.font.get_linesize()
             idx = (my - self.panel_rect.y + self.scroll_panel.scroll_offset) // line_h
             if 0 <= idx < len(items):
+                y0 = self.panel_rect.y - self.scroll_panel.scroll_offset
+                # Siempre highlight grupo completo en amarillo
                 # Determinar inicio y fin de grupo
                 start_idx = idx
                 while start_idx > 0 and items[start_idx].startswith(' '):
@@ -78,8 +80,11 @@ class InventoryPanelView:
                 while end_idx < len(items) and items[end_idx].startswith(' '):
                     end_idx += 1
                 group_height = (end_idx - start_idx) * line_h
-                y0 = self.panel_rect.y - self.scroll_panel.scroll_offset
-                r = pygame.Rect(self.panel_rect.x, y0 + start_idx*line_h, self.panel_rect.width, group_height)
-                pygame.draw.rect(surface, (255, 255, 0), r, 2)
+                group_r = pygame.Rect(self.panel_rect.x, y0 + start_idx*line_h, self.panel_rect.width, group_height)
+                pygame.draw.rect(surface, (255, 255, 0), group_r, 2)
+                # Si hover sobre Pos, dibujar borde naranja en la línea de Pos
+                if items[idx].lstrip().startswith('Pos:'):
+                    pos_r = pygame.Rect(self.panel_rect.x, y0 + idx*line_h, self.panel_rect.width, line_h)
+                    pygame.draw.rect(surface, (255, 165, 0), pos_r, 2)
 
         return results
