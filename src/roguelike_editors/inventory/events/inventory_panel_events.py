@@ -29,8 +29,12 @@ class InventoryPanelEventHandler:
                     line_h = self.view.font.get_linesize()
                     idx = (my - self.view.panel_rect.y + self.view.scroll_panel.scroll_offset) // line_h
                     items = self.controller.get_items_list()
-                    if 0 <= idx < len(items) and not items[idx].startswith(' '):
-                        raw = items[idx].strip()
+                    if 0 <= idx < len(items):
+                        # Encontrar inicio del grupo
+                        start_idx = idx
+                        while start_idx > 0 and items[start_idx].startswith(' '):
+                            start_idx -= 1
+                        raw = items[start_idx].strip()
                         eid = raw.split(' ')[0]
                         self.controller.select_entity(eid)
                         return True

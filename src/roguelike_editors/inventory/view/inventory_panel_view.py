@@ -51,9 +51,16 @@ class InventoryPanelView:
         if model.current_category == 'monsters' and model.selected_eid:
             line_h = self.font.get_linesize()
             y0 = self.panel_rect.y - self.scroll_panel.scroll_offset
+            # Buscar índice de la línea raíz del grupo
             for idx, line in enumerate(items):
                 if not line.startswith(' ') and line.split()[0] == str(model.selected_eid):
-                    r = pygame.Rect(self.panel_rect.x, y0 + idx*line_h, self.panel_rect.width, line_h)
+                    start_idx = idx
+                    # Contar tamaño del grupo (líneas con indent)
+                    end_idx = start_idx + 1
+                    while end_idx < len(items) and items[end_idx].startswith(' '):
+                        end_idx += 1
+                    group_height = (end_idx - start_idx) * line_h
+                    r = pygame.Rect(self.panel_rect.x, y0 + start_idx*line_h, self.panel_rect.width, group_height)
                     pygame.draw.rect(surface, (255, 255, 0), r, 3)
                     break
 
@@ -62,9 +69,17 @@ class InventoryPanelView:
         if model.current_category == 'monsters' and self.panel_rect.collidepoint(mx, my):
             line_h = self.font.get_linesize()
             idx = (my - self.panel_rect.y + self.scroll_panel.scroll_offset) // line_h
-            if 0 <= idx < len(items) and not items[idx].startswith(' '):
+            if 0 <= idx < len(items):
+                # Determinar inicio y fin de grupo
+                start_idx = idx
+                while start_idx > 0 and items[start_idx].startswith(' '):
+                    start_idx -= 1
+                end_idx = start_idx + 1
+                while end_idx < len(items) and items[end_idx].startswith(' '):
+                    end_idx += 1
+                group_height = (end_idx - start_idx) * line_h
                 y0 = self.panel_rect.y - self.scroll_panel.scroll_offset
-                r = pygame.Rect(self.panel_rect.x, y0 + idx*line_h, self.panel_rect.width, line_h)
+                r = pygame.Rect(self.panel_rect.x, y0 + start_idx*line_h, self.panel_rect.width, group_height)
                 pygame.draw.rect(surface, (255, 255, 0), r, 2)
 
         return results
