@@ -3,6 +3,10 @@ import pygame
 class ItemSelectionPanelModel:
     def __init__(self, available_items: list[str] = None, visible_count: int = 10):
         self.available_items = available_items or []
+        # Lists for default and ground items and current tab
+        self.default_items = self.available_items.copy()
+        self.ground_items = []
+        self.current_tab = 'default'
         self.visible_count = visible_count
         self.scroll_offset = 0
         self.selected_item = None

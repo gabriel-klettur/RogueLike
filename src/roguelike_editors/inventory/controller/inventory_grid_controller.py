@@ -24,7 +24,12 @@ class InventoryGridController:
         """
         self.load_available_items()
         # Open MVC item selection panel
-        self.editor_controller.view.item_panel_controller.open(self.model.available_items)
+        # Prepare items for selection panel
+        default_items = self.model.available_items
+        active_map = self.editor_model.active_data.get('map', {})
+        ground_items = [f"{entry.get('item_id')} x{entry.get('quantity')}" for entry in active_map.values()]
+        # Open item selection panel with default and ground items
+        self.editor_controller.view.item_panel_controller.open(default_items, ground_items)
         self.model.show_item_list = True
         self.model.show_quantity_input = False
         self.model.selected_item = None

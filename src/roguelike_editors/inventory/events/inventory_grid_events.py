@@ -55,6 +55,14 @@ class InventoryGridEventHandler:
             if event.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEWHEEL):
                 if panel_view.scroll_panel.handle_event(event):
                     return True
+            # Tab click handling
+            if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                mx, my = event.pos
+                for rect, label in zip(panel_view.tab_rects, ['default', 'ground']):
+                    if rect.collidepoint(mx, my):
+                        panel_model.current_tab = label
+                        panel_view.scroll_panel.scroll_offset = 0
+                        return True
 
             # Consume hover inside panel to block underlying UI
             if event.type == pygame.MOUSEMOTION:

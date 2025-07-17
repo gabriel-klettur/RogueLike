@@ -4,8 +4,13 @@ class ItemSelectionPanelController:
     def __init__(self, model: ItemSelectionPanelModel):
         self.model = model
 
-    def open(self, items: list[str]):
-        self.model.available_items = items
+    def open(self, default_items: list[str], ground_items: list[str]):
+        # Set default and ground items
+        self.model.default_items = default_items
+        self.model.ground_items = ground_items
+        self.model.current_tab = 'default'
+        # Legacy available_items for compatibility
+        self.model.available_items = default_items
         self.model.scroll_offset = 0
         self.model.selected_item = None
         self.model.quantity = 1

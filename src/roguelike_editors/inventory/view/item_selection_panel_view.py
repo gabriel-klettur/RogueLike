@@ -18,13 +18,17 @@ class ItemSelectionPanelView:
         if not model.show_panel:
             return {}
         line_h = self.font.get_linesize()
-        visible = min(len(model.available_items), model.visible_count)
+        # Determine items based on current tab
+        items_list = model.default_items if model.current_tab == 'default' else model.ground_items
+        visible = min(len(items_list), model.visible_count)
         # Panel width matches grid width
         w = base_rect.width
         scroll_h = visible * line_h + 2*self.margin
         input_h = line_h + 2*self.margin
         button_h = self.button_size[1]
-        panel_h = scroll_h + self.margin + input_h + self.margin + button_h + self.margin
+        # Calculate panel height including tabs
+        tab_h = line_h + self.margin
+        panel_h = tab_h + scroll_h + self.margin + input_h + self.margin + button_h + self.margin
         # Position panel below the inventory grid
         # Align panel left edge with grid
         # Position panel in bottom-right corner of overlay
@@ -43,9 +47,20 @@ class ItemSelectionPanelView:
         pygame.draw.rect(surface, (80,80,80), self.header_rect)
         # Title text
         surface.blit(title_surf, (x + (w-title_surf.get_width())//2, y-title_surf.get_height()-self.margin))
+        # Tabs
+        tab_w = w // 2
+        default_tab_rect = pygame.Rect(x, y, tab_w, tab_h)
+        ground_tab_rect = pygame.Rect(x + tab_w, y, w - tab_w, tab_h)
+        self.tab_rects = [default_tab_rect, ground_tab_rect]
+        # Draw tabs
+        for rect, label in ((default_tab_rect, 'default'), (ground_tab_rect, 'ground')):
+            bg_color = (80,80,80) if model.current_tab == label else (60,60,60)
+            pygame.draw.rect(surface, bg_color, rect)
+            text_surf = self.font.render(label.capitalize(), True, (255,255,255))
+            surface.blit(text_surf, (rect.x + (rect.width-text_surf.get_width())//2, rect.y + (rect.height-text_surf.get_height())//2))
         # Scrollable list
-        scroll_rect = pygame.Rect(x, y, w, scroll_h)
-        self.scroll_panel.set_items(model.available_items)
+        scroll_rect = pygame.Rect(x, y + tab_h, w, scroll_h)
+        self.scroll_panel.set_items(items_list)
         self.scroll_panel.draw(surface, scroll_rect)
         # Hover highlight
         mx, my = pygame.mouse.get_pos()
@@ -64,7 +79,7 @@ class ItemSelectionPanelView:
             pygame.draw.rect(surface, (255,255,0), sel_rect, 2)
         # Quantity input
         in_x = x + self.margin
-        in_y = y + scroll_h + self.margin
+        in_y = y + tab_h + scroll_h + self.margin
         in_w = w - 2*self.margin
         in_h = input_h
         input_rect = pygame.Rect(in_x, in_y, in_w, in_h)
