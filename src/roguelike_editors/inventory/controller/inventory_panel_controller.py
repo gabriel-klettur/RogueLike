@@ -1,4 +1,6 @@
 from roguelike_editors.inventory.model.inventory_panel_model import InventoryPanelModel
+import os
+from roguelike_ui.services.json_persistence import load_from_json
 
 class InventoryPanelController:
     """
@@ -16,6 +18,15 @@ class InventoryPanelController:
         # Al cambiar categoría, resetear selección
         self.model.selected_eid = None
         self.editor_controller.model.current_category = category
+        # Si cambiamos a 'monsters', recargar datos activos desde JSON
+        if category == 'monsters':
+            active_path = self.editor_controller.paths['monsters']['active']
+            try:
+                self.editor_controller.model.active_data['monsters'] = load_from_json(active_path)
+            except Exception as e:
+                print("[InventoryPanel] Error recargando inventory_monsters.json:", e)
+            # Resetear debug para nuevas impresiones de diagnóstico
+            self.debug_printed = False
 
     def select_entity(self, eid):
         # Seleccionar entidad (actualiza modelo de panel y modelo de editor)
@@ -36,6 +47,9 @@ class InventoryPanelController:
             # Position & instance maps
             inst_map = self.editor_controller.world.components.get('MonsterInstanceComponent', {})
             pos_map = self.editor_controller.world.components.get('Position', {})
+            # Default template mapping
+            default_data = self.editor_controller.model.default_data.get('monsters', {})
+            template_map = {tmpl.get('template_id'): tmpl for tmpl in default_data.values()}
             if not getattr(self, 'debug_printed', False):
                 # DEBUG: dump data and component maps once per panel open
                 print(f"[DEBUG InventoryPanel] monster data keys: {list(data.keys())}")
@@ -68,28 +82,20 @@ class InventoryPanelController:
                 line1 = f"{mon_id}" + (f" | Template: {tpl}" if tpl else "")
                 items.append(line1)
 
-                # Second line: position and other metadata
-                meta_parts = []
+
+                # Position
                 pos_comp = pos_map.get(eid_int)
                 if pos_comp:
-                    meta_parts.append(f"Pos: ({pos_comp.x:.1f}, {pos_comp.y:.1f})")
+                    items.append(f"  Pos: ({pos_comp.x:.1f}, {pos_comp.y:.1f})")
                 else:
-                    # Fallback to JSON-stored position
                     pos = entry.get('position', {})
                     if pos:
-                        meta_parts.append(f"Pos: ({pos.get('x', 0):.1f}, {pos.get('y', 0):.1f})")
+                        items.append(f"  Pos: ({pos.get('x', 0):.1f}, {pos.get('y', 0):.1f})")
 
-                # Additional metadata
-                for key, value in entry.items():
-                    if key not in ('template_id', 'position', 'slots') and not key.startswith('_'):
-                        meta_parts.append(f"{key.capitalize()}: {value}")
-                if meta_parts:
-                    items.append("  " + " | ".join(meta_parts))
-
-                # Third line: slots
+                # Active items
                 slot_texts = [f"{slot.get('item')} x{slot.get('quantity')}" for slot in entry.get('slots', []) if slot]
                 if slot_texts:
-                    items.append("  Slots: " + ", ".join(slot_texts))
+                    items.append("  Items: " + ", ".join(slot_texts))
         else:
             for entry in data.values() if isinstance(data, dict) else []:
                 pos = entry.get('position', {})
