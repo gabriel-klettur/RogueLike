@@ -57,17 +57,20 @@ class InventoryPanelController:
                 if missing_pos:
                     print(f"[DEBUG InventoryPanel] mon_ids with no Position component: {missing_pos}")
                 self.debug_printed = True
-            for mon_id, entry in data.items() if isinstance(data, dict) else []:
+            for eid_int, inst_comp in inst_map.items():
+                mon_id = inst_comp.instance_id
+                entry = data.get(mon_id, {})
+                
+                    
 
                 # First line: EID and template
                 tpl = entry.get('template_id', '')
                 line1 = f"{mon_id}" + (f" | Template: {tpl}" if tpl else "")
                 items.append(line1)
+
                 # Second line: position and other metadata
                 meta_parts = []
-                # Position: compute via maps
-                eid_int = next((eid for eid, comp in inst_map.items() if getattr(comp, 'instance_id', None) == mon_id), None)
-                pos_comp = pos_map.get(eid_int) if eid_int is not None else None
+                pos_comp = pos_map.get(eid_int)
                 if pos_comp:
                     meta_parts.append(f"Pos: ({pos_comp.x:.1f}, {pos_comp.y:.1f})")
                 else:
@@ -76,11 +79,13 @@ class InventoryPanelController:
                     if pos:
                         meta_parts.append(f"Pos: ({pos.get('x', 0):.1f}, {pos.get('y', 0):.1f})")
 
+                # Additional metadata
                 for key, value in entry.items():
                     if key not in ('template_id', 'position', 'slots') and not key.startswith('_'):
                         meta_parts.append(f"{key.capitalize()}: {value}")
                 if meta_parts:
                     items.append("  " + " | ".join(meta_parts))
+
                 # Third line: slots
                 slot_texts = [f"{slot.get('item')} x{slot.get('quantity')}" for slot in entry.get('slots', []) if slot]
                 if slot_texts:
