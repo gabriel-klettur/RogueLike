@@ -96,9 +96,9 @@ class InventoryEditorController:
         path = self.paths[cat]['active']
         try:
             os.makedirs(os.path.dirname(path), exist_ok=True)
-            # Guarda cada entrada de entidad con save_to_json
-            for eid_str, entry in self.model.active_data.get(cat, {}).items():
-                save_to_json(path, eid_str, entry)
+            # Escribe todo el active_data de una vez
+            with open(path, 'w', encoding='utf-8') as f:
+                json.dump(self.model.active_data.get(cat, {}), f, indent=2)
             self.logger.info(f"Active inventory for '{cat}' saved to {path}")
         except Exception as e:
             self.logger.error(f"Error saving active inventory for '{cat}' to {path}: {e}")
