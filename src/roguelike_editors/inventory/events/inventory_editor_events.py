@@ -21,6 +21,8 @@ class InventoryEditorEventHandler:
                 npcs = list(self.world.components.get('NPCTagComponent', {}).keys())
                 self.model.entities = players + npcs
                 self.model.selected_eid = self.model.entities[0] if self.model.entities else None
+                # Reset inventory panel debug prints
+                self.controller.inventory_panel_controller.debug_printed = False
             return
         if not self.model.visible:
             return
