@@ -45,6 +45,7 @@ class DeathDropSystem:
             ty = int(pos.y // TILE_SIZE)
             zone_id = get_zone_for_tile(tx, ty)
             # Crear drops para cada ItemStack
+            print(f"[DEBUG DeathDropSystem] Dropping for eid={eid}, slots={[ (stack.item_id, stack.quantity) for stack in inv.slots if stack ]}")
             for stack in inv.slots:
                 if stack:
                     drop_id = str(uuid.uuid4())

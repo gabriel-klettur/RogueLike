@@ -43,6 +43,7 @@ class InventoryInitSystem:
         if not os.path.exists(self.active_player_path):
             with open(self.active_player_path, 'w') as f:
                 json.dump({}, f, indent=2)
+
         # Load active inventories into memory with fallback
         try:
             with open(self.active_monster_path, 'r') as f:
@@ -121,6 +122,7 @@ class InventoryInitSystem:
             if not inst:
                 continue
             iid = inst.instance_id
+            # Saltar si ya inicializado
             if iid in self.initialized:
                 continue
             if eid in self.initialized:
@@ -132,22 +134,31 @@ class InventoryInitSystem:
             if not template:
                 continue
             template_id = template.get('template_id')
-            inv_comp = InventoryComponent(player_id=template_id)
-            # Generar ítems según rangos y probabilidades
-            for entry in template.get('inventory', []):
-                if random.random() <= entry.get('chance', 1.0):
-                    qty = random.randint(entry.get('min', 1), entry.get('max', 1))
-                    if qty > 0:
-                        inv_comp.add(entry['item'], qty)
+            if iid in active_monsters:
+                # Cargar inventario activo existente
+                saved = active_monsters.get(iid, {})
+                inv_comp = InventoryComponent(player_id=saved.get('template_id', template_id))
+                for slot in saved.get('slots', []):
+                    if slot:
+                        inv_comp.add(slot['item'], slot.get('quantity', 0))
+            else:
+                # Generar ítems según rangos y probabilidades
+                inv_comp = InventoryComponent(player_id=template_id)
+                for entry in template.get('inventory', []):
+                    if random.random() <= entry.get('chance', 1.0):
+                        qty = random.randint(entry.get('min', 1), entry.get('max', 1))
+                        if qty > 0:
+                            inv_comp.add(entry['item'], qty)
+                # Persistir inventario generado
+                active_monsters[iid] = {
+                    'template_id': template_id,
+                    'slots': inv_comp.serialize().get('slots'),
+                    'schema_version': self.schema_version
+                }
+                self.dirty_monsters = True
+            # Asignar componente e inicializar marcado
             world.components['InventoryComponent'][eid] = inv_comp
-            # Persistir
-            active_monsters[iid] = {
-                'template_id': template_id,
-                'slots': inv_comp.serialize().get('slots'),
-                'schema_version': self.schema_version
-            }
             self.initialized.add(eid)
-            self.dirty_monsters = True
 
         # Remove entries for monsters no longer present
         current_npc_keys = set(inst.instance_id for eid, inst in instance_store.items() if eid in npc_tag_store)

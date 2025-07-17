@@ -36,6 +36,7 @@ class ItemDropManager:
         """
         Registra un drop en el mapa con su drop_id, zona y coordenadas de tile o posición relativa.
         """
+        print(f"[DEBUG ItemDropManager] create_drop: drop_id={drop_id}, item_id={item_id}, quantity={quantity}, zone_id={zone_id}, tile={tile}, position={position}")
         entry = {
             'item_id': item_id,
             'quantity': quantity,

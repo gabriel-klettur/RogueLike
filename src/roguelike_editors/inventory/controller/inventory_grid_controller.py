@@ -1,4 +1,5 @@
 import pygame
+from roguelike_game.ecs.components.item_models import ItemStack
 
 class InventoryGridController:
     """
@@ -43,6 +44,7 @@ class InventoryGridController:
         eid = self.editor_model.selected_eid
         cat = self.editor_model.current_category
         editing_side = self.editor_model.editing_side
+        print(f"[DEBUG InvGrid] confirm_quantity eid={eid}, cat={cat}, side={editing_side}, item={self.model.selected_item}, qty={quantity}")
         if editing_side == 'default':
             if cat == 'player':
                 default_player = self.editor_model.default_data.get('player', {})
@@ -70,8 +72,16 @@ class InventoryGridController:
         # Handle active side: update active_data
         if editing_side == 'active':
             active_map = self.editor_model.active_data.get(cat, {})
-            entry = active_map.get(str(eid), {})
+            # Determinar clave JSON: instance_id para monstruos, entity id para otros
+            if cat == 'monsters':
+                inst_comp = self.world.components.get('MonsterInstanceComponent', {}).get(eid)
+                key = inst_comp.instance_id if inst_comp else str(eid)
+            else:
+                key = str(eid)
+            entry = active_map.get(key, {})
+            print(f"[DEBUG InvGrid] active_data before for key={key}: {entry}")
             slots = entry.get('slots', [])
+            print(f"[DEBUG InvGrid] slots before modification: {slots}")
             # Insertar en primer hueco libre
             for idx_slot, slot in enumerate(slots):
                 if slot is None:
@@ -81,7 +91,25 @@ class InventoryGridController:
                 # Si no hay hueco, añadir al final
                 slots.append({'item': self.model.selected_item, 'quantity': quantity})
             entry['slots'] = slots
-            active_map[str(eid)] = entry
+            print(f"[DEBUG InvGrid] entry['slots'] updated to: {slots}")
+            active_map[key] = entry
+            # Actualizar InventoryComponent slots para que el NPC tenga el ítem al morir
+            # Map JSON key to ECS entity id for updating InventoryComponent
+            if cat == 'monsters':
+                inst_map = self.world.components.get('MonsterInstanceComponent', {})
+                numeric_eid = next((e for e, comp in inst_map.items() if comp.instance_id == key), None)
+                print(f"[DEBUG InvGrid] mapped instance_id {key} to numeric eid {numeric_eid}")
+            else:
+                numeric_eid = int(key)
+            inv_comp = self.world.components.get('InventoryComponent', {}).get(numeric_eid)
+            if inv_comp:
+                for idx_comp, slot_comp in enumerate(inv_comp.slots):
+                    if not slot_comp:
+                        inv_comp.slots[idx_comp] = ItemStack(self.model.selected_item, quantity)
+                        break
+                else:
+                    inv_comp.slots.append(ItemStack(self.model.selected_item, quantity))
+                    print(f"[DEBUG InvGrid] inv_comp.slots after update: {[ (s.item_id, s.quantity) for s in inv_comp.slots if s ]}")
             # Reset state
             self.model.show_item_list = False
             self.model.show_quantity_input = False
