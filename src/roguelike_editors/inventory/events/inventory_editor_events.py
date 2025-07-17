@@ -1,4 +1,5 @@
 import pygame
+from types import SimpleNamespace
 
 class InventoryEditorEventHandler:
     """
@@ -11,6 +12,14 @@ class InventoryEditorEventHandler:
         self.view = controller.view
 
     def handle(self, event):
+        # Recentrar cámara si estaba en enfoque de monstruo
+        if self.model.camera_focus_target is not None and event.type in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP, pygame.MOUSEMOTION, pygame.MOUSEWHEEL):
+            player_eid = self.world.player_entity
+            pos_map = self.world.components.get('Position', {})
+            if player_eid in pos_map:
+                pos = pos_map[player_eid]
+                self.controller.game.camera.update(SimpleNamespace(x=pos.x, y=pos.y))
+            self.model.camera_focus_target = None
         # Toggle editor con F6
         if event.type == pygame.KEYDOWN and event.key == pygame.K_F6:
             self.model.visible = not self.model.visible

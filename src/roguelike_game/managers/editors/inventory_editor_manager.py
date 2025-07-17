@@ -12,7 +12,7 @@ class InventoryEditorManager:
         assets = game.item_assets
         font = game.font
         # Instanciar controlador
-        self.controller = InventoryEditorController(world, assets, font)
+        self.controller = InventoryEditorController(self.game, world, assets, font)
         self.model = self.controller.model
         # Exponer estado global
         game.state.inventory_editor_state = self.model

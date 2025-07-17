@@ -17,7 +17,8 @@ class InventoryEditorController:
     """
     Controller para el editor de inventario (MVC): maneja estados y eventos.
     """
-    def __init__(self, world, assets: dict, font: pygame.font.Font):
+    def __init__(self, game, world, assets: dict, font: pygame.font.Font):
+        self.game = game
         self.model = InventoryEditorModel()
         self.world = world
         self.assets = assets

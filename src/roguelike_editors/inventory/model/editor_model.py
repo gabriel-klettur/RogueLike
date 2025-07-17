@@ -29,3 +29,5 @@ class InventoryEditorModel:
     scroll_offset: int = 0
     # Estado para flujo de Add/Delete items
     grid_model: 'InventoryGridModel' = field(default_factory=lambda: InventoryGridModel())
+    # Detached camera focus position when user double-clicks a monster
+    camera_focus_target: Optional[Any] = None
