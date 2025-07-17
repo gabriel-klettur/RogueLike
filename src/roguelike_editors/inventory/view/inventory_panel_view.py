@@ -34,8 +34,10 @@ class InventoryPanelView:
             tab_x += rect.width + 5
         results['tab_rects'] = self.tab_rects
 
-        # Dibujar fondo del panel
-        pygame.draw.rect(surface, (50, 50, 50), base_rect)
+        # Dibujar fondo semitransparente del panel
+        panel_surf = pygame.Surface((base_rect.width, base_rect.height), pygame.SRCALPHA)
+        panel_surf.fill((50, 50, 50, 150))  # color con alfa semitransparente
+        surface.blit(panel_surf, base_rect.topleft)
         pygame.draw.rect(surface, (255, 255, 255), base_rect, 2)
         self.panel_rect = base_rect
         results['panel_rect'] = self.panel_rect
