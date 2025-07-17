@@ -28,6 +28,11 @@ class InventoryPanelController:
             # Resetear debug para nuevas impresiones de diagnóstico
             self.debug_printed = False
             self.editor_controller.model.editing_side = 'active'
+            # Auto-seleccionar primer monstruo para mostrar sus items en el grid
+            monsters = self.editor_controller.model.active_data.get('monsters', {})
+            first_mon = next(iter(monsters.keys()), None)
+            if first_mon:
+                self.select_entity(first_mon)
 
     def select_entity(self, eid):
         # Seleccionar entidad (actualiza modelo de panel y modelo de editor)
