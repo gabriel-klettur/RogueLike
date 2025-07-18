@@ -1,4 +1,5 @@
 import pygame
+from roguelike_ui.widgets.text_input import TextInput
 
 class InventoryItemsPanelView:
     """
@@ -20,6 +21,8 @@ class InventoryItemsPanelView:
         self.delete_item_rect = None
         # Rect for unified Save button
         self.save_rect = None
+        # TextInput para cantidad de eliminación
+        self.delete_qty_input = TextInput(self.font)
 
     def draw(self, overlay, model, panel_rect):
         # Estado de Delete Mode para resaltar boton
@@ -46,6 +49,17 @@ class InventoryItemsPanelView:
 
         # Add/Delete below grid
         rects.update(self._draw_manage_buttons(overlay, slots, grid_origin_x, grid_origin_y, mx, my))
+        if self.delete_mode_active:
+            cols = 5
+            rows = (len(slots) + cols - 1) // cols
+            manage_y = grid_origin_y + rows * (self.slot_size + self.margin) + self.margin
+            qty_y = manage_y + self.button_size[1] + self.margin
+            label_surf = self.font.render("Quantity:", True, (255, 255, 255))
+            overlay.blit(label_surf, (grid_origin_x, qty_y))
+            input_x = grid_origin_x + label_surf.get_width() + self.margin
+            self.delete_qty_input.draw(overlay, input_x, qty_y)
+            # Guardar rect del input para eventos
+            self.delete_qty_input_rect = self.delete_qty_input.last_rect
 
         # Dibujar Save
         rects.update(self._draw_save_buttons(overlay, slots, grid_origin_x, grid_origin_y, mx, my))
@@ -150,7 +164,13 @@ class InventoryItemsPanelView:
         cols = 5
         rows = (len(slots) + cols - 1) // cols
         # Y position: debajo de Show buttons
-        save_y = grid_origin_y + rows * (self.slot_size + self.margin) + self.margin + self.button_size[1] + self.margin
+                # Base Y below grid
+        base_y = grid_origin_y + rows * (self.slot_size + self.margin) + self.margin
+        # Initial offset: below manage buttons
+        save_y = base_y + self.button_size[1] + self.margin
+        if self.delete_mode_active:
+            # shift down for quantity input row
+            save_y += self.button_size[1] + self.margin
         # Botón de ancho doble (dos botones originales + margen)
         total_width = self.button_size[0] * 2 + self.margin
         btn_x = grid_origin_x

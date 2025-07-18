@@ -16,12 +16,41 @@ class InventoryItemsPanelEventHandler:
         """
         Retorna True si el evento fue consumido por el flujo de add/delete.
         """
+        # Handle delete quantity input
+        if self.model.show_delete_mode:
+            # Click en campo de cantidad
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                dq_input = self.editor_view.grid_view.delete_qty_input
+                if hasattr(dq_input, 'last_rect') and dq_input.last_rect and dq_input.last_rect.collidepoint(event.pos):
+                    dq_input.activate(initial_text=str(self.model.delete_quantity), select_all=True)
+                    return True
+            # Handle text input events for delete quantity
+            if self.editor_view.grid_view.delete_qty_input.handle_event(event):
+                try:
+                    self.model.delete_quantity = int(self.editor_view.grid_view.delete_qty_input.text)
+                except ValueError:
+                    self.model.delete_quantity = 1
+                return True
         # Modo Delete: toggle y acción
         if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             mx, my = event.pos
             # Toggle delete mode
             if hasattr(self.editor_view, 'delete_item_rect') and self.editor_view.delete_item_rect and self.editor_view.delete_item_rect.collidepoint(mx, my):
+                # Toggle delete mode and init quantity input
                 self.model.show_delete_mode = not self.model.show_delete_mode
+                self.model.show_delete_quantity_input = self.model.show_delete_mode
+                self.model.delete_quantity = 1
+                # Prepare TextInput widget
+                dq_input = self.editor_view.grid_view.delete_qty_input
+                dq_input.text = str(self.model.delete_quantity)
+                dq_input.cursor = len(dq_input.text)
+                dq_input.selection_start = dq_input.cursor
+                dq_input.selection_end = dq_input.cursor
+                dq_input.active = False
+                return True
+            # Skip cancellation when clicking on quantity input
+            dq_rect = getattr(self.editor_view.grid_view, 'delete_qty_input_rect', None)
+            if dq_rect and dq_rect.collidepoint(mx, my):
                 return True
             if self.model.show_delete_mode:
                 # Obtener lista de slots actuales
@@ -29,9 +58,10 @@ class InventoryItemsPanelEventHandler:
                 # Calcular índice de slot dinámicamente
                 idx = self.editor_view.grid_view.get_slot_index((mx, my), self.editor_view.left_panel_rect, len(slots))
                 if idx is not None and slots[idx]:
-                    self.controller.delete_item(idx)
+                    self.controller.delete_item(idx, self.model.delete_quantity)
                 # Desactivar modo delete
                 self.model.show_delete_mode = False
+                self.model.show_delete_quantity_input = False
                 return True
         # MVC item selection panel event handling
         panel_model = getattr(self.editor_view, 'item_panel_model', None)

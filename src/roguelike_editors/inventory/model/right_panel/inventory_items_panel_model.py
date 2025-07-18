@@ -18,3 +18,7 @@ class InventoryitemsPanelModel:
     quantity: int = 1
     # Modo eliminación activa
     show_delete_mode: bool = False
+    # Mostrar input de cantidad para eliminación
+    show_delete_quantity_input: bool = False
+    # Cantidad de ítems a eliminar
+    delete_quantity: int = 1
