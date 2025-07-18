@@ -4,24 +4,21 @@
     "slots": [
       {
         "item": "gold",
-        "quantity": 443
+        "quantity": 467
       },
       {
-        "item": "health_potion",
-        "quantity": 7
+        "item": "wood",
+        "quantity": 3
       },
       {
-        "item": "wizard_staff_lvl_2",
+        "item": "ancient_relic_mask",
         "quantity": 1
       },
       {
-        "item": "wizard_staff_lvl_3",
+        "item": "iron_sword",
         "quantity": 1
       },
-      {
-        "item": "mana_potion",
-        "quantity": 2
-      }
+      null
     ],
     "schema_version": "1.0.0"
   }

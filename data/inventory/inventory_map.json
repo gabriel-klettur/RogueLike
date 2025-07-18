@@ -1,24 +1,4 @@
 {
-  "53e442b2-293c-432d-b126-87fdaec70075": {
-    "item_id": "gold",
-    "quantity": 2,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2535.927854743666,
-      "y": 2072.9125789369464
-    }
-  },
-  "36fc81c4-0fa5-4abd-844e-26996f42c926": {
-    "item_id": "wood",
-    "quantity": 3,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 1880.7863579029183,
-      "y": 2438.871371163424
-    }
-  },
   "f040a7e8-e335-40e7-afb5-ee14f0d46eae": {
     "item_id": "wood",
     "quantity": 2,
@@ -27,16 +7,6 @@
     "position": {
       "x": 1771.7498853606603,
       "y": 2519.412803612321
-    }
-  },
-  "932dd896-b736-4e9d-9b61-727b6a346090": {
-    "item_id": "health_potion",
-    "quantity": 1,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2414.976230002727,
-      "y": 2077.469799261933
     }
   },
   "bc62862c-962f-4051-b88b-0c6342c9a3f5": {
@@ -69,16 +39,6 @@
       "y": 2290.2812944411908
     }
   },
-  "74ec8304-d80f-49cf-8ebb-fdbb6307d00e": {
-    "item_id": "iron_sword",
-    "quantity": 1,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2496.7584034013926,
-      "y": 2483.3585022481375
-    }
-  },
   "5cfb0c22-93ff-4ed1-93f1-610134815443": {
     "item_id": "gold",
     "quantity": 18,
@@ -89,16 +49,6 @@
       "y": 2483.3585022481375
     }
   },
-  "27560197-229f-442a-979e-d6d08299a860": {
-    "item_id": "gold",
-    "quantity": 1,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2354.584561986027,
-      "y": 2176.026855905508
-    }
-  },
   "d18c6b26-d509-416b-b01c-3958bf146eb0": {
     "item_id": "iron_sword",
     "quantity": 1,
@@ -107,6 +57,156 @@
     "position": {
       "x": 2372.584561986027,
       "y": 2129.026855905508
+    }
+  },
+  "d528290a-11d4-46e1-84b2-2336eb76bcd4": {
+    "item_id": "gold",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2390.2143682258807,
+      "y": 2183.8583507969083
+    }
+  },
+  "046df081-e406-4c24-9a4b-e61a826b1269": {
+    "item_id": "bucket_water",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2418.2143682258807,
+      "y": 2119.8583507969083
+    }
+  },
+  "899d5d6e-2599-4b9c-bb8c-a3426ef8f650": {
+    "item_id": "wizard_staff_lvl_3",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2390.2143682258807,
+      "y": 2057.8583507969083
+    }
+  },
+  "b0c7f7b9-064e-4655-a5ac-9738e195ef1b": {
+    "item_id": "iron_ingot",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2342.2143682258807,
+      "y": 2048.8583507969083
+    }
+  },
+  "35209ba8-79cb-4a9e-9154-780111a79285": {
+    "item_id": "wood",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2394.097204160842,
+      "y": 2330.3756671195183
+    }
+  },
+  "7ce67f25-549d-49e2-85ee-95bb9ebc75b6": {
+    "item_id": "health_potion",
+    "quantity": 7,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2320,
+      "y": 2104
+    }
+  },
+  "a1b5bb46-970c-4413-b211-0026389dfe52": {
+    "item_id": "wizard_staff_lvl_2",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2320,
+      "y": 2104
+    }
+  },
+  "6cd67c0e-8fce-4239-9e97-fda193b9cc39": {
+    "item_id": "wizard_staff_lvl_3",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2320,
+      "y": 2104
+    }
+  },
+  "04cb4552-f74f-48eb-842c-f8965d67a415": {
+    "item_id": "mana_potion",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2320,
+      "y": 2104
+    }
+  },
+  "5d38c2ef-2846-410f-8ab6-1becbc8e2310": {
+    "item_id": "gold",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2288.3799478338833,
+      "y": 2447.8930551321682
+    }
+  },
+  "ea05a685-00c6-4fd5-8588-a033fa2dd0f9": {
+    "item_id": "wood",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 1978.7622759630253,
+      "y": 2497.014072867758
+    }
+  },
+  "855525ba-0a26-40ad-b3b1-69b1e593a1c4": {
+    "item_id": "energy_potion x1",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2083.7622759630253,
+      "y": 2479.014072867758
+    }
+  },
+  "e0e6c1c7-7a4d-4e85-a1e7-bd270112b88f": {
+    "item_id": "gold",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 1891.0,
+      "y": 2434
+    }
+  },
+  "8af14313-4381-4c0f-9582-701afa5c0927": {
+    "item_id": "iron_sword",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 1819.0,
+      "y": 2492.0
+    }
+  },
+  "5d473939-3830-4d6a-9002-f22c72892128": {
+    "item_id": "health_potion",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2342.5215155225796,
+      "y": 2612.9336534096647
     }
   }
 }
