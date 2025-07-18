@@ -39,16 +39,6 @@
       "y": 2483.3585022481375
     }
   },
-  "d18c6b26-d509-416b-b01c-3958bf146eb0": {
-    "item_id": "iron_sword",
-    "quantity": 1,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2372.584561986027,
-      "y": 2129.026855905508
-    }
-  },
   "d528290a-11d4-46e1-84b2-2336eb76bcd4": {
     "item_id": "gold",
     "quantity": 1,
@@ -57,16 +47,6 @@
     "position": {
       "x": 2390.2143682258807,
       "y": 2183.8583507969083
-    }
-  },
-  "b0c7f7b9-064e-4655-a5ac-9738e195ef1b": {
-    "item_id": "iron_ingot",
-    "quantity": 1,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2342.2143682258807,
-      "y": 2048.8583507969083
     }
   },
   "35209ba8-79cb-4a9e-9154-780111a79285": {
@@ -119,16 +99,6 @@
       "y": 2104
     }
   },
-  "5d38c2ef-2846-410f-8ab6-1becbc8e2310": {
-    "item_id": "gold",
-    "quantity": 2,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2288.3799478338833,
-      "y": 2447.8930551321682
-    }
-  },
   "ea05a685-00c6-4fd5-8588-a033fa2dd0f9": {
     "item_id": "wood",
     "quantity": 1,
@@ -139,16 +109,6 @@
       "y": 2497.014072867758
     }
   },
-  "855525ba-0a26-40ad-b3b1-69b1e593a1c4": {
-    "item_id": "energy_potion x1",
-    "quantity": 1,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2083.7622759630253,
-      "y": 2479.014072867758
-    }
-  },
   "e0e6c1c7-7a4d-4e85-a1e7-bd270112b88f": {
     "item_id": "gold",
     "quantity": 2,
@@ -157,16 +117,6 @@
     "position": {
       "x": 1891.0,
       "y": 2434
-    }
-  },
-  "8af14313-4381-4c0f-9582-701afa5c0927": {
-    "item_id": "iron_sword",
-    "quantity": 1,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 1819.0,
-      "y": 2492.0
     }
   },
   "5d473939-3830-4d6a-9002-f22c72892128": {
@@ -209,16 +159,6 @@
       "y": 2452.467858795944
     }
   },
-  "206ab728-9bad-4b94-9c6c-26758a700c96": {
-    "item_id": "experience_orb",
-    "quantity": 4,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 1605.7557565658028,
-      "y": 2452.467858795944
-    }
-  },
   "d5483ce6-a04a-4cbc-a846-48458797e2bf": {
     "item_id": "wood",
     "quantity": 2,
@@ -237,6 +177,96 @@
     "position": {
       "x": 1605.7557565658028,
       "y": 2452.467858795944
+    }
+  },
+  "d0ac3d23-7f21-49f4-889e-11c419f2406d": {
+    "item_id": "gold",
+    "quantity": 3,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2343.913059503689,
+      "y": 2426.323172426274
+    }
+  },
+  "d7e5527b-0da0-4618-93dc-f2859ab36798": {
+    "item_id": "gold",
+    "quantity": 5,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2426.6833057265244,
+      "y": 2814.8546678712282
+    }
+  },
+  "832c218b-0a19-40ac-a612-c07423bf3d54": {
+    "item_id": "experience_orb",
+    "quantity": 3,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2426.6833057265244,
+      "y": 2814.8546678712282
+    }
+  },
+  "062f2942-510a-4e93-b6c2-c99e57a449eb": {
+    "item_id": "iron_sword",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2426.6833057265244,
+      "y": 2814.8546678712282
+    }
+  },
+  "48769ed7-795e-4390-a905-0ee825303183": {
+    "item_id": "wood",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 1849.0,
+      "y": 2466
+    }
+  },
+  "db5ee73b-7e0f-420f-8dd3-c413f0a72ba6": {
+    "item_id": "gold",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 1849.0,
+      "y": 2466
+    }
+  },
+  "01c58577-3456-4ae5-8083-d5ac5a7d060a": {
+    "item_id": "wood",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2406.0,
+      "y": 2466
+    }
+  },
+  "85e31192-98fc-4511-969d-d395061ababd": {
+    "item_id": "gold",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2406.0,
+      "y": 2466
+    }
+  },
+  "7e31ad78-ac5d-47ce-900d-9def3d4cff56": {
+    "item_id": "iron_ingot",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2406.0,
+      "y": 2466
     }
   }
 }

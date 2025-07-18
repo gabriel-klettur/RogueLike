@@ -4,7 +4,7 @@
     "slots": [
       {
         "item": "gold",
-        "quantity": 470
+        "quantity": 480
       },
       {
         "item": "wood",
@@ -16,9 +16,12 @@
       },
       {
         "item": "iron_sword",
-        "quantity": 1
+        "quantity": 2
       },
-      null
+      {
+        "item": "energy_potion x1",
+        "quantity": 1
+      }
     ],
     "schema_version": "1.0.0"
   }

@@ -1,9 +1,9 @@
-import pygame
+
 import os
 import json
 from roguelike_game.ecs.components.item_models import ItemStack
 
-class InventoryGridController:
+class InventoryItemsPanelController:
     """
     Controlador para manejar el flujo de añadir/eliminar ítems en el grid.
     """

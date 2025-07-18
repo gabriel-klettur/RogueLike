@@ -7,10 +7,10 @@ from roguelike_engine.config.config import DATA_DIR, PROJECT_ROOT
 from roguelike_ui.services.json_persistence import load_from_json
 
 from roguelike_editors.inventory.controller.left_panel.inventory_panel_controller import InventoryPanelController
-from roguelike_editors.inventory.controller.right_panel.inventory_grid_controller import InventoryGridController
+from roguelike_editors.inventory.controller.right_panel.inventory_items_panel_controller import InventoryItemsPanelController
 
 from roguelike_editors.inventory.events.editor_events import InventoryEditorEventHandler
-from roguelike_editors.inventory.events.right_panel.inventory_grid_events import InventoryGridEventHandler
+from roguelike_editors.inventory.events.right_panel.inventory_items_panel_events import InventoryItemsPanelEventHandler
 from roguelike_editors.inventory.events.left_panel.inventory_panel_events import InventoryPanelEventHandler
 
 from roguelike_editors.inventory.model.editor_model import InventoryEditorModel
@@ -36,8 +36,8 @@ class InventoryEditorController:
         self.inventory_panel_event_handler = InventoryPanelEventHandler(self, self.inventory_panel_controller, self.view.inventory_panel_view, self.view.inventory_panel_model)
         self.event_handler = InventoryEditorEventHandler(self)
         # Controller para flujo Add/Delete items
-        self.grid_controller = InventoryGridController(self)
-        self.grid_event_handler = InventoryGridEventHandler(self.grid_controller)
+        self.grid_controller = InventoryItemsPanelController(self)
+        self.grid_event_handler = InventoryItemsPanelEventHandler(self.grid_controller)
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         # Paths por categoría
 

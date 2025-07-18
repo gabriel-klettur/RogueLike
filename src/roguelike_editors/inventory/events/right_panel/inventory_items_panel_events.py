@@ -3,7 +3,7 @@ import json
 import os
 
 
-class InventoryGridEventHandler:
+class InventoryItemsPanelEventHandler:
     """
     Manejador de eventos para flujo de añadir/eliminar ítems en el grid.
     """
