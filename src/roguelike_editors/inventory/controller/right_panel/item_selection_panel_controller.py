@@ -23,15 +23,19 @@ class ItemSelectionPanelController:
         self.model.selected_item = item
 
     def confirm(self):
-        item = self.model.selected_item
+        item_str = self.model.selected_item
         qty = self.model.quantity
-        # Si es ground tab, parsear item y cantidad del string "item xqty"
-        if getattr(self.model, 'current_tab', None) == 'ground' and isinstance(item, str) and ' x' in item:
-            parts = item.rsplit(' x', 1)
+        # Si es ground tab, quitar sufijo " xqty" y manejar cantidad por defecto
+        if getattr(self.model, 'current_tab', None) == 'ground' and isinstance(item_str, str) and ' x' in item_str:
+            parts = item_str.rsplit(' x', 1)
             item = parts[0]
-            try:
-                qty = int(parts[1])
-            except ValueError:
-                pass
+            # si no se cambió la cantidad (queda en 1), tomar toda la pila
+            if qty == 1:
+                try:
+                    qty = int(parts[1])
+                except ValueError:
+                    pass
+        else:
+            item = item_str
         self.close()
         return item, qty

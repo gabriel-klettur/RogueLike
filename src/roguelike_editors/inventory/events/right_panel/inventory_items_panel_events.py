@@ -139,11 +139,15 @@ class InventoryItemsPanelEventHandler:
                     if panel_model.current_tab == 'ground':
                         active_map = self.controller.editor_controller.model.active_data.get('map', {})
                         for key, entry in list(active_map.items()):
-                            if entry.get('item_id') == item and entry.get('quantity') == qty:
-                                active_map.pop(key)
+                            if entry.get('item_id') == item and entry.get('quantity', 0) >= qty:
+                                remaining = entry.get('quantity', 0) - qty
+                                if remaining > 0:
+                                    entry['quantity'] = remaining
+                                    active_map[key] = entry
+                                else:
+                                    active_map.pop(key)
                                 break
                         # Persistir cambios de active_data a JSON
-                        # Escribir directamente inventory_map.json con la estructura correcta
                         map_path = self.controller.editor_controller.paths['map']['active']
                         os.makedirs(os.path.dirname(map_path), exist_ok=True)
                         with open(map_path, 'w', encoding='utf-8') as f:
