@@ -132,21 +132,33 @@ class InventoryItemsPanelEventHandler:
                 if btn_rect and btn_rect.collidepoint(mx, my):
                     # Confirm via panel controller
                     item, qty = self.editor_view.item_panel_controller.confirm()
+                    # Clamp qty a la cantidad de la entrada ground seleccionada
+                    if panel_model.current_tab == 'ground':
+                        active_map = self.controller.editor_controller.model.active_data.get('map', {})
+                        keys = list(active_map.keys())
+                        if panel_model.selected_index is not None and panel_model.selected_index < len(keys):
+                            sel_key = keys[panel_model.selected_index]
+                            entry = active_map.get(sel_key, {})
+                            ground_qty = entry.get('quantity', 0)
+                            if qty > ground_qty:
+                                qty = ground_qty
                     # Add to grid
                     self.controller.select_item(item)
                     self.controller.confirm_quantity(qty)
                      # Si venimos de ground tab, remover item del suelo y guardar
                     if panel_model.current_tab == 'ground':
                         active_map = self.controller.editor_controller.model.active_data.get('map', {})
-                        for key, entry in list(active_map.items()):
-                            if entry.get('item_id') == item and entry.get('quantity', 0) >= qty:
-                                remaining = entry.get('quantity', 0) - qty
-                                if remaining > 0:
-                                    entry['quantity'] = remaining
-                                    active_map[key] = entry
-                                else:
-                                    active_map.pop(key)
-                                break
+                        # Usar índice para operar sobre la entrada exacta
+                        keys = list(active_map.keys())
+                        if panel_model.selected_index is not None and panel_model.selected_index < len(keys):
+                            sel_key = keys[panel_model.selected_index]
+                            entry = active_map.get(sel_key, {})
+                            ground_qty = entry.get('quantity', 0)
+                            if ground_qty > qty:
+                                entry['quantity'] = ground_qty - qty
+                                active_map[sel_key] = entry
+                            else:
+                                active_map.pop(sel_key)
                         # Persistir cambios de active_data a JSON
                         map_path = self.controller.editor_controller.paths['map']['active']
                         os.makedirs(os.path.dirname(map_path), exist_ok=True)
@@ -162,6 +174,7 @@ class InventoryItemsPanelEventHandler:
                     idx = (my - scroll_rect.y + panel_view.scroll_panel.scroll_offset) // line_h
                     items = panel_view.scroll_panel.items
                     if 0 <= idx < len(items):
+                        panel_model.selected_index = idx
                         self.editor_view.item_panel_controller.select_item(items[idx])
                     return True
 

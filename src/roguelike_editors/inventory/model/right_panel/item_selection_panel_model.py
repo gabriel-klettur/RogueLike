@@ -11,6 +11,8 @@ class ItemSelectionPanelModel:
         self.scroll_offset = 0
         self.selected_item = None
         self.quantity = 1
+        # Índice seleccionado en lista para ground_items
+        self.selected_index = None
         self.show_panel = False
         # Drag state
         self.drag_offset = pygame.Vector2(0, 0)

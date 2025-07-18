@@ -14,6 +14,7 @@ class ItemSelectionPanelController:
         self.model.scroll_offset = 0
         self.model.selected_item = None
         self.model.quantity = 1
+        self.model.selected_index = None
         self.model.show_panel = True
 
     def close(self):

@@ -72,8 +72,14 @@ class ItemSelectionPanelView:
                 hover_rect = pygame.Rect(x, y0 + idx*line_h, w, line_h)
                 pygame.draw.rect(surface, (255,255,0), hover_rect, 2)
         # Highlight selected
-        if model.selected_item in self.scroll_panel.items:
-            idx = self.scroll_panel.items.index(model.selected_item)
+        idx = None
+        if getattr(model, 'current_tab', None) == 'ground' and hasattr(model, 'selected_index'):
+            if model.selected_index is not None and 0 <= model.selected_index < len(self.scroll_panel.items):
+                idx = model.selected_index
+        else:
+            if model.selected_item in self.scroll_panel.items:
+                idx = self.scroll_panel.items.index(model.selected_item)
+        if idx is not None:
             y0 = scroll_rect.y - self.scroll_panel.scroll_offset
             sel_rect = pygame.Rect(x, y0 + idx*line_h, w, line_h)
             pygame.draw.rect(surface, (255,255,0), sel_rect, 2)
