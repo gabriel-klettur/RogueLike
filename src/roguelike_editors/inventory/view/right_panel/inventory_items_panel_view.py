@@ -54,12 +54,37 @@ class InventoryItemsPanelView:
             rows = (len(slots) + cols - 1) // cols
             manage_y = grid_origin_y + rows * (self.slot_size + self.margin) + self.margin
             qty_y = manage_y + self.button_size[1] + self.margin
+            # Center Quantity label & input under manage buttons
+            if self.add_item_rect and self.delete_item_rect:
+                manage_left = self.add_item_rect.x
+                manage_width = self.delete_item_rect.right - self.add_item_rect.x
+            else:
+                manage_left = grid_origin_x
+                manage_width = self.button_size[0] * 2 + self.margin
+            # Render label and input sizes
             label_surf = self.font.render("Quantity:", True, (255, 255, 255))
-            overlay.blit(label_surf, (grid_origin_x, qty_y))
-            input_x = grid_origin_x + label_surf.get_width() + self.margin
-            self.delete_qty_input.draw(overlay, input_x, qty_y)
-            # Guardar rect del input para eventos
-            self.delete_qty_input_rect = self.delete_qty_input.last_rect
+            label_w = label_surf.get_width() + 8
+            label_h = label_surf.get_height() + 4
+            text_w = self.delete_qty_input.font.size(self.delete_qty_input.text)[0]
+            input_w = max(text_w, self.button_size[0] // 4) + 8
+            total_w = label_w + self.margin + input_w
+            # Compute base X for centering
+            start_x = manage_left + (manage_width - total_w) // 2
+            # Label background & border
+            label_bg_rect = pygame.Rect(start_x - 4, qty_y - 2, label_w, label_h)
+            pygame.draw.rect(overlay, (100, 100, 100), label_bg_rect)
+            pygame.draw.rect(overlay, (255, 255, 255), label_bg_rect, 2)
+            overlay.blit(label_surf, (start_x, qty_y))
+            # Input background & border
+            input_text_x = label_bg_rect.right + self.margin
+            input_bg_rect = pygame.Rect(input_text_x - 4, qty_y - 2, input_w, label_h)
+            pygame.draw.rect(overlay, (100, 100, 100), input_bg_rect)
+            border_color = (255, 0, 0) if input_bg_rect.collidepoint(mx, my) else (255, 255, 255)
+            pygame.draw.rect(overlay, border_color, input_bg_rect, 2)
+            # Draw the text input inside the box
+            self.delete_qty_input.draw(overlay, input_text_x, qty_y)
+            # Save rect for events
+            self.delete_qty_input_rect = input_bg_rect
 
         # Dibujar Save
         rects.update(self._draw_save_buttons(overlay, slots, grid_origin_x, grid_origin_y, mx, my))
