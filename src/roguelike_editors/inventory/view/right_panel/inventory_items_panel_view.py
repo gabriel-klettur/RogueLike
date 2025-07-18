@@ -89,8 +89,14 @@ class InventoryItemsPanelView:
             ry = grid_origin_y + row * (self.slot_size + self.margin)
             slot_rect = pygame.Rect(rx, ry, self.slot_size, self.slot_size)
             pygame.draw.rect(overlay, (80, 80, 80), slot_rect)
-            # Resaltar hover
-            if slot_rect.collidepoint(mx, my):
+            # Delete-mode hover highlight
+            if self.delete_mode_active and slot_rect.collidepoint(mx, my) and slot:
+                # draw semi-transparent red fill
+                highlight = pygame.Surface((self.slot_size, self.slot_size), pygame.SRCALPHA)
+                highlight.fill((255, 0, 0, 100))
+                overlay.blit(highlight, (rx, ry))
+                pygame.draw.rect(overlay, (255, 0, 0), slot_rect, 2)
+            elif slot_rect.collidepoint(mx, my):
                 pygame.draw.rect(overlay, (255, 255, 0), slot_rect, 2)
             else:
                 pygame.draw.rect(overlay, (200, 200, 200), slot_rect, 1)
