@@ -16,3 +16,5 @@ class InventoryitemsPanelModel:
     show_quantity_input: bool = False
     # Cantidad a agregar
     quantity: int = 1
+    # Modo eliminación activa
+    show_delete_mode: bool = False

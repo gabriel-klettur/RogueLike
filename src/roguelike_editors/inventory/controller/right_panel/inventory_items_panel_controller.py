@@ -136,6 +136,56 @@ class InventoryItemsPanelController:
         self.model.selected_item = None
         self.model.quantity = 1
 
+    def delete_item(self, slot_idx):
+        """
+        Elimina el ítem del slot dado y actualiza datos y ECS.
+        """
+        eid = self.editor_model.selected_eid
+        cat = self.editor_model.current_category
+        side = self.editor_model.editing_side
+        # Acceder a slots según modo
+        if side == 'default':
+            if cat == 'player':
+                tpl = self.editor_model.default_data.get('player', {})
+                slots = tpl.get('slots', [])
+                if slot_idx < len(slots):
+                    slots[slot_idx] = None
+                    tpl['slots'] = slots
+            elif cat == 'monsters':
+                active_entry = self.editor_model.active_data.get('monsters', {}).get(str(eid), {})
+                template_id = active_entry.get('template_id')
+                for def_entry in self.editor_model.default_data.get('monsters', {}).values():
+                    if def_entry.get('template_id') == template_id:
+                        inv_list = def_entry.get('inventory', [])
+                        if slot_idx < len(inv_list):
+                            inv_list.pop(slot_idx)
+                            def_entry['inventory'] = inv_list
+                        break
+        elif side == 'active':
+            active_map = self.editor_model.active_data.get(cat, {})
+            if cat == 'monsters':
+                inst_comp = self.world.components.get('MonsterInstanceComponent', {}).get(eid)
+                key = inst_comp.instance_id if inst_comp else str(eid)
+            else:
+                key = str(eid)
+            entry = active_map.get(key, {})
+            slots = entry.get('slots', [])
+            if slot_idx < len(slots):
+                slots[slot_idx] = None
+                entry['slots'] = slots
+                active_map[key] = entry
+            # Actualizar componente ECS
+            if cat == 'monsters':
+                inst_map = self.world.components.get('MonsterInstanceComponent', {})
+                numeric_eid = next((e for e, comp in inst_map.items() if comp.instance_id == key), None)
+            else:
+                numeric_eid = int(key)
+            inv_comp = self.world.components.get('InventoryComponent', {}).get(numeric_eid)
+            if inv_comp and slot_idx < len(inv_comp.slots):
+                inv_comp.slots[slot_idx] = None
+        # Desactivar modo delete
+        self.model.show_delete_mode = False
+
     def _save_default(self):
         cat = self.editor_model.current_category
         path = self.editor_controller.paths[cat]['default']

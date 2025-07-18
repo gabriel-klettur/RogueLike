@@ -22,6 +22,8 @@ class InventoryItemsPanelView:
         self.save_rect = None
 
     def draw(self, overlay, model, panel_rect):
+        # Estado de Delete Mode para resaltar boton
+        self.delete_mode_active = model.grid_model.show_delete_mode
         # Track which side is being edited to highlight buttons
         self.current_editing_side = model.editing_side
         """
@@ -155,6 +157,24 @@ class InventoryItemsPanelView:
         return {'save': self.save_rect}
 
 
+    def get_slot_index(self, pos, panel_rect, count):
+        """
+        Retorna el índice de slot bajo la posición `pos`, o None.
+        """
+        grid_origin_x, grid_origin_y = self._get_grid_origin(panel_rect)
+        slot_size = self.slot_size
+        margin = self.margin
+        for i in range(count):
+            col = i % 5
+            row = i // 5
+            rx = grid_origin_x + col * (slot_size + margin)
+            ry = grid_origin_y + row * (slot_size + margin)
+            rect = pygame.Rect(rx, ry, slot_size, slot_size)
+            if rect.collidepoint(pos):
+                return i
+        return None
+
+    # Dibuja los botones "Add Item" y "Delete Item" debajo de los botones de guardar.
     def _draw_manage_buttons(self, overlay, slots, grid_origin_x, grid_origin_y, mx, my):
         """
         Dibuja los botones "Add Item" y "Delete Item" debajo de los botones de guardar.
@@ -177,8 +197,15 @@ class InventoryItemsPanelView:
         # Delete Item
         del_x = grid_origin_x + self.button_size[0] + self.margin
         self.delete_item_rect = pygame.Rect(del_x, manage_y, *self.button_size)
+        # Colorear borde en modo delete
+        if self.delete_mode_active:
+            border_color = (255, 0, 0)
+        elif self.delete_item_rect.collidepoint(mx, my):
+            border_color = (255, 255, 0)
+        else:
+            border_color = (255, 255, 255)
         pygame.draw.rect(overlay, (100, 100, 100), self.delete_item_rect)
-        border_color = (255, 255, 0) if self.delete_item_rect.collidepoint(mx, my) else (255, 255, 255)
+
         pygame.draw.rect(overlay, border_color, self.delete_item_rect, 2)
         txt_del = self.font.render("Delete Item", True, (255, 255, 255))
         overlay.blit(txt_del, (del_x + 10, manage_y + 5))

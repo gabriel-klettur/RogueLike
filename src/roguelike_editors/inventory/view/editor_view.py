@@ -82,6 +82,8 @@ class InventoryEditorView:
         panel_w = ow - grid_w - panel_x - 10
         panel_h = oh - panel_y - 10
         panel_rect = pygame.Rect(panel_x, panel_y, panel_w, panel_h)
+        # Guardar rectángulo del panel izquierdo para eventos de grid
+        self.left_panel_rect = panel_rect
         # Obtener lista de elementos para panel
         items = self.inventory_panel_controller.get_items_list()
         # Dibujar panel mediante MVC

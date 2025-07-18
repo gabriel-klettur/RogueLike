@@ -16,6 +16,23 @@ class InventoryItemsPanelEventHandler:
         """
         Retorna True si el evento fue consumido por el flujo de add/delete.
         """
+        # Modo Delete: toggle y acción
+        if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            mx, my = event.pos
+            # Toggle delete mode
+            if hasattr(self.editor_view, 'delete_item_rect') and self.editor_view.delete_item_rect and self.editor_view.delete_item_rect.collidepoint(mx, my):
+                self.model.show_delete_mode = not self.model.show_delete_mode
+                return True
+            if self.model.show_delete_mode:
+                # Obtener lista de slots actuales
+                slots = self.editor_view.grid_view._get_slots(self.controller.editor_controller.model)
+                # Calcular índice de slot dinámicamente
+                idx = self.editor_view.grid_view.get_slot_index((mx, my), self.editor_view.left_panel_rect, len(slots))
+                if idx is not None and slots[idx]:
+                    self.controller.delete_item(idx)
+                # Desactivar modo delete
+                self.model.show_delete_mode = False
+                return True
         # MVC item selection panel event handling
         panel_model = getattr(self.editor_view, 'item_panel_model', None)
         
