@@ -38,15 +38,17 @@ class InventoryItemsPanelView:
 
         rects = {}
 
-        #Dibujar botones de Add y Remove items
-        rects.update(self._draw_manage_buttons(overlay, slots, grid_origin_x, grid_origin_y, mx, my))
+        # Show Default/Active above grid
+        rects.update(self._draw_show_buttons(overlay, slots, grid_origin_x, grid_origin_y, mx, my))
 
         # Dibujar slots
         self._draw_slots(overlay, slots, grid_origin_x, grid_origin_y, mx, my)
 
-        # Dibujar botones Show y Save        
-        rects.update(self._draw_show_buttons(overlay, slots, grid_origin_x, grid_origin_y, mx, my))
-        rects.update(self._draw_save_buttons(overlay, slots, grid_origin_x, grid_origin_y, mx, my))        
+        # Add/Delete below grid
+        rects.update(self._draw_manage_buttons(overlay, slots, grid_origin_x, grid_origin_y, mx, my))
+
+        # Dibujar Save
+        rects.update(self._draw_save_buttons(overlay, slots, grid_origin_x, grid_origin_y, mx, my))
         return rects
 
     def _get_slots(self, model):
@@ -117,7 +119,7 @@ class InventoryItemsPanelView:
     def _draw_show_buttons(self, overlay, slots, grid_origin_x, grid_origin_y, mx, my):
         cols = 5
         rows = (len(slots) + cols - 1) // cols
-        show_y = grid_origin_y + rows * (self.slot_size + self.margin) + self.margin
+        show_y = grid_origin_y - self.button_size[1] - self.margin
         rects = {}
         # Show Default
         self.show_default_rect = pygame.Rect(grid_origin_x, show_y, *self.button_size)
@@ -186,9 +188,10 @@ class InventoryItemsPanelView:
         Dibuja los botones "Add Item" y "Delete Item" debajo de los botones de guardar.
         Devuelve un dict con los rects: 'add_item', 'delete_item'.
         """
-        # Position manage buttons above grid
+        # Position manage buttons below grid
         cols = 5
-        manage_y = grid_origin_y - self.button_size[1] - self.margin
+        rows = (len(slots) + cols - 1) // cols
+        manage_y = grid_origin_y + rows * (self.slot_size + self.margin) + self.margin
         rects = {}
 
         # Add Item
