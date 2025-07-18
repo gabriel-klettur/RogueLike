@@ -33,6 +33,11 @@ class InventoryPanelController:
             first_mon = next(iter(monsters.keys()), None)
             if first_mon:
                 self.select_entity(first_mon)
+        elif category == 'player':
+            self.editor_controller.model.editing_side = 'active'
+            player_eid = getattr(self.editor_controller.world, 'player_entity', None)
+            if player_eid is not None:
+                self.select_entity(player_eid)
 
     def select_entity(self, eid):
         # Seleccionar entidad (actualiza modelo de panel y modelo de editor)
