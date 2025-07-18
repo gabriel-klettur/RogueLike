@@ -1,14 +1,4 @@
 {
-  "5cfb0c22-93ff-4ed1-93f1-610134815443": {
-    "item_id": "gold",
-    "quantity": 18,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2496.7584034013926,
-      "y": 2483.3585022481375
-    }
-  },
   "6cd67c0e-8fce-4239-9e97-fda193b9cc39": {
     "item_id": "wizard_staff_lvl_3",
     "quantity": 1,

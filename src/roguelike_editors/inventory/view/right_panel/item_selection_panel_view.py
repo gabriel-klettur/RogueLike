@@ -86,18 +86,20 @@ class ItemSelectionPanelView:
         label_w, label_h = label_surf.get_size()
         label_y = in_y + (in_h - label_h) // 2
         surface.blit(label_surf, (in_x, label_y))
-        # Input field
+        # Input field background
         input_x = in_x + label_w + self.margin
         in_w = w - 2*self.margin - label_w - self.margin
         input_rect = pygame.Rect(input_x, in_y, in_w, in_h)
         pygame.draw.rect(surface, (30,30,30), input_rect)
-        # Hover border: yellow if hovered, white otherwise
+        # Border color: yellow on hover or if active
         mx, my = pygame.mouse.get_pos()
-        border_color = (255,255,0) if input_rect.collidepoint(mx, my) else (255,255,255)
+        border_color = (255,255,0) if input_rect.collidepoint(mx, my) or self.text_input.active else (255,255,255)
         pygame.draw.rect(surface, border_color, input_rect, 1)
-        # Quantity text
-        qty_text = self.font.render(str(model.quantity), True, (255,255,255))
-        surface.blit(qty_text, (input_x + 5, in_y + (in_h - line_h) // 2))
+        # Sync TextInput text when inactive
+        if not self.text_input.active:
+            self.text_input.text = str(model.quantity)
+        # Draw TextInput (text + blinking caret)
+        self.text_input.draw(surface, input_x + 5, in_y + (in_h - line_h) // 2)
         self.input_rect = input_rect
 
         # Add button

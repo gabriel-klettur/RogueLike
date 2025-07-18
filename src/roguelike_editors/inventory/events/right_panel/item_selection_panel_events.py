@@ -11,6 +11,18 @@ class ItemSelectionPanelEventHandler:
         # Only handle when panel is shown
         if not self.model.show_panel:
             return False
+        # Activate quantity input on click
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if hasattr(self.view, 'input_rect') and self.view.input_rect.collidepoint(event.pos):
+                self.view.text_input.activate(initial_text=str(self.model.quantity), select_all=True)
+                return True
+        # Handle text input events
+        if self.view.text_input.handle_event(event):
+            try:
+                self.model.quantity = int(self.view.text_input.text)
+            except ValueError:
+                self.model.quantity = 1
+            return True
         # Close panel if click outside
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mx, my = event.pos
