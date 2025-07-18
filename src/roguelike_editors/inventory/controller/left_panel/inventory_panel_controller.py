@@ -1,4 +1,4 @@
-from roguelike_editors.inventory.model.inventory_panel_model import InventoryPanelModel
+from roguelike_editors.inventory.model.left_panel.inventory_panel_model import InventoryPanelModel
 import os
 from roguelike_ui.services.json_persistence import load_from_json
 

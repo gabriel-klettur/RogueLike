@@ -19,16 +19,6 @@
       "y": 2491.13410818358
     }
   },
-  "a8262b67-b506-4cb2-84f6-3ef0c6d24963": {
-    "item_id": "energy_potion",
-    "quantity": 1,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2378.929198164241,
-      "y": 2290.2812944411908
-    }
-  },
   "5cfb0c22-93ff-4ed1-93f1-610134815443": {
     "item_id": "gold",
     "quantity": 18,
@@ -267,6 +257,26 @@
     "position": {
       "x": 2406.0,
       "y": 2466
+    }
+  },
+  "7fb8d4f5-be69-472d-a71d-a5bb1009ff33": {
+    "item_id": "gold",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2188.993057847086,
+      "y": 2517.450309923613
+    }
+  },
+  "1e51b806-3077-495a-9501-6b1953c40aa7": {
+    "item_id": "energy_potion",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2215.993057847086,
+      "y": 2466.450309923613
     }
   }
 }

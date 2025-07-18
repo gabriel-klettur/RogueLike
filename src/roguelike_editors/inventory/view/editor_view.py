@@ -7,7 +7,7 @@ import logging
 from roguelike_editors.inventory.model.editor_model import InventoryEditorModel
 from roguelike_game.ecs.components.item_models import load_items
 
-from roguelike_editors.inventory.model.inventory_panel_model import InventoryPanelModel
+from roguelike_editors.inventory.model.left_panel.inventory_panel_model import InventoryPanelModel
 from roguelike_editors.inventory.view.left_panel.inventory_panel_view import InventoryPanelView
 from roguelike_editors.inventory.view.right_panel.inventory_grid_view import InventoryGridView
 
