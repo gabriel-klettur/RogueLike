@@ -1,7 +1,7 @@
 import pygame
 from roguelike_ui.widgets.scroll_panel import ScrollPanel
 from roguelike_ui.widgets.text_input import TextInput
-from roguelike_editors.inventory.model.item_selection_panel_model import ItemSelectionPanelModel
+from roguelike_editors.inventory.model.right_panel.item_selection_panel_model import ItemSelectionPanelModel
 
 class ItemSelectionPanelView:
     def __init__(self, font: pygame.font.Font, margin: int = 5, button_size: tuple[int,int] = (120,30)):

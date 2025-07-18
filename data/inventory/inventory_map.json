@@ -1,14 +1,4 @@
 {
-  "f040a7e8-e335-40e7-afb5-ee14f0d46eae": {
-    "item_id": "wood",
-    "quantity": 2,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 1771.7498853606603,
-      "y": 2519.412803612321
-    }
-  },
   "bc62862c-962f-4051-b88b-0c6342c9a3f5": {
     "item_id": "gold",
     "quantity": 4,
@@ -67,26 +57,6 @@
     "position": {
       "x": 2390.2143682258807,
       "y": 2183.8583507969083
-    }
-  },
-  "046df081-e406-4c24-9a4b-e61a826b1269": {
-    "item_id": "bucket_water",
-    "quantity": 1,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2418.2143682258807,
-      "y": 2119.8583507969083
-    }
-  },
-  "899d5d6e-2599-4b9c-bb8c-a3426ef8f650": {
-    "item_id": "wizard_staff_lvl_3",
-    "quantity": 1,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2390.2143682258807,
-      "y": 2057.8583507969083
     }
   },
   "b0c7f7b9-064e-4655-a5ac-9738e195ef1b": {
@@ -227,6 +197,46 @@
     "position": {
       "x": 1546.3619782624764,
       "y": 2513.418621401464
+    }
+  },
+  "9df00f3b-bfde-4ad6-9afe-b0acf5d057a5": {
+    "item_id": "gold",
+    "quantity": 7,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 1605.7557565658028,
+      "y": 2452.467858795944
+    }
+  },
+  "206ab728-9bad-4b94-9c6c-26758a700c96": {
+    "item_id": "experience_orb",
+    "quantity": 4,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 1605.7557565658028,
+      "y": 2452.467858795944
+    }
+  },
+  "d5483ce6-a04a-4cbc-a846-48458797e2bf": {
+    "item_id": "wood",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 1605.7557565658028,
+      "y": 2452.467858795944
+    }
+  },
+  "f00e8a66-9e81-4726-a2c0-cfae7865f780": {
+    "item_id": "wizard_staff_lvl_3",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 1605.7557565658028,
+      "y": 2452.467858795944
     }
   }
 }

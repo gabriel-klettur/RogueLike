@@ -1,7 +1,7 @@
 import pygame
 from types import SimpleNamespace
 from roguelike_editors.inventory.controller.left_panel.inventory_panel_controller import InventoryPanelController
-from roguelike_editors.inventory.view.inventory_panel_view import InventoryPanelView
+from roguelike_editors.inventory.view.left_panel.inventory_panel_view import InventoryPanelView
 from roguelike_editors.inventory.model.inventory_panel_model import InventoryPanelModel
 
 class InventoryPanelEventHandler:

@@ -1,4 +1,4 @@
-from roguelike_editors.inventory.model.item_selection_panel_model import ItemSelectionPanelModel
+from roguelike_editors.inventory.model.right_panel.item_selection_panel_model import ItemSelectionPanelModel
 
 class ItemSelectionPanelController:
     def __init__(self, model: ItemSelectionPanelModel):

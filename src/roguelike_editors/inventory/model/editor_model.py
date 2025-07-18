@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict, Any
-from roguelike_editors.inventory.model.inventory_grid_model import InventoryGridModel
+from roguelike_editors.inventory.model.left_panel.inventory_grid_model import InventoryGridModel
 
 @dataclass
 class InventoryEditorModel:
