@@ -77,16 +77,27 @@ class ItemSelectionPanelView:
             y0 = scroll_rect.y - self.scroll_panel.scroll_offset
             sel_rect = pygame.Rect(x, y0 + idx*line_h, w, line_h)
             pygame.draw.rect(surface, (255,255,0), sel_rect, 2)
-        # Quantity input
+        # Quantity: label + input field
         in_x = x + self.margin
         in_y = y + tab_h + scroll_h + self.margin
-        in_w = w - 2*self.margin
         in_h = input_h
-        input_rect = pygame.Rect(in_x, in_y, in_w, in_h)
+        # Render label
+        label_surf = self.font.render("Quantity:", True, (255,255,255))
+        label_w, label_h = label_surf.get_size()
+        label_y = in_y + (in_h - label_h) // 2
+        surface.blit(label_surf, (in_x, label_y))
+        # Input field
+        input_x = in_x + label_w + self.margin
+        in_w = w - 2*self.margin - label_w - self.margin
+        input_rect = pygame.Rect(input_x, in_y, in_w, in_h)
         pygame.draw.rect(surface, (30,30,30), input_rect)
-        pygame.draw.rect(surface, (255,255,255), input_rect, 1)
+        # Hover border: yellow if hovered, white otherwise
+        mx, my = pygame.mouse.get_pos()
+        border_color = (255,255,0) if input_rect.collidepoint(mx, my) else (255,255,255)
+        pygame.draw.rect(surface, border_color, input_rect, 1)
+        # Quantity text
         qty_text = self.font.render(str(model.quantity), True, (255,255,255))
-        surface.blit(qty_text, (in_x + 5, in_y + (in_h - line_h)//2))
+        surface.blit(qty_text, (input_x + 5, in_y + (in_h - line_h) // 2))
         self.input_rect = input_rect
 
         # Add button
