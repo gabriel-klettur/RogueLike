@@ -208,5 +208,25 @@
       "x": 2342.5215155225796,
       "y": 2612.9336534096647
     }
+  },
+  "b2b79c47-7deb-43e6-9b8e-b411bb5ae5d0": {
+    "item_id": "health_potion",
+    "quantity": 1,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 1546.3619782624764,
+      "y": 2513.418621401464
+    }
+  },
+  "f9c5491d-bd00-4436-be93-6963ab270dac": {
+    "item_id": "iron_sword",
+    "quantity": 1,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 1546.3619782624764,
+      "y": 2513.418621401464
+    }
   }
 }

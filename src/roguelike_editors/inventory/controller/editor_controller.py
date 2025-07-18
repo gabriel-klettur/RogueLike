@@ -1,17 +1,22 @@
 import pygame
 import os
 import json
-from roguelike_ui.services.json_persistence import load_from_json, save_to_json
 import logging
+
 from roguelike_engine.config.config import DATA_DIR, PROJECT_ROOT
+from roguelike_ui.services.json_persistence import load_from_json
+
+from roguelike_editors.inventory.controller.left_panel.inventory_panel_controller import InventoryPanelController
+from roguelike_editors.inventory.controller.right_panel.inventory_grid_controller import InventoryGridController
+
+from roguelike_editors.inventory.events.inventory_editor_events import InventoryEditorEventHandler
+from roguelike_editors.inventory.events.inventory_grid_events import InventoryGridEventHandler
+from roguelike_editors.inventory.events.inventory_panel_events import InventoryPanelEventHandler
 
 from roguelike_editors.inventory.model.editor_model import InventoryEditorModel
+
 from roguelike_editors.inventory.view.editor_view import InventoryEditorView
-from roguelike_editors.inventory.events.inventory_editor_events import InventoryEditorEventHandler
-from roguelike_editors.inventory.controller.inventory_grid_controller import InventoryGridController
-from roguelike_editors.inventory.events.inventory_grid_events import InventoryGridEventHandler
-from roguelike_editors.inventory.controller.inventory_panel_controller import InventoryPanelController
-from roguelike_editors.inventory.events.inventory_panel_events import InventoryPanelEventHandler
+
 
 class InventoryEditorController:
     """
@@ -90,30 +95,11 @@ class InventoryEditorController:
         except ImportError:
             self.logger.warning("jsonschema package not installed; skipping schema validation")
 
-    def _save_default(self):
-        cat = self.model.current_category
-        path = self.paths[cat]['default']
-        try:
-            os.makedirs(os.path.dirname(path), exist_ok=True)
-            with open(path, 'w', encoding='utf-8') as f:
-                json.dump(self.model.default_data.get(cat, {}), f, indent=2)
-            self.logger.info(f"Default inventory for '{cat}' saved to {path}")
-        except Exception as e:
-            self.logger.error(f"Error saving default inventory for '{cat}' to {path}: {e}")
-
-    def _save_active(self):
-        cat = self.model.current_category
-        path = self.paths[cat]['active']
-        try:
-            os.makedirs(os.path.dirname(path), exist_ok=True)
-            # Escribe todo el active_data de una vez
-            with open(path, 'w', encoding='utf-8') as f:
-                json.dump(self.model.active_data.get(cat, {}), f, indent=2)
-            self.logger.info(f"Active inventory for '{cat}' saved to {path}")
-        except Exception as e:
-            self.logger.error(f"Error saving active inventory for '{cat}' to {path}: {e}")
 
     def handle_event(self, event):
+        """
+        Maneja eventos delegando a los manejadores específicos.
+        """
         # Panel listado events
         if self.inventory_panel_event_handler.handle(event):
             return
@@ -123,7 +109,8 @@ class InventoryEditorController:
         # Delega a manejador principal
         self.event_handler.handle(event)
 
-
-
     def draw(self, screen):
+        """
+        Dibuja la vista del editor.
+        """
         self.view.draw(screen, self.model, self.world)

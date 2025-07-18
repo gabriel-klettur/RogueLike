@@ -1,4 +1,6 @@
 import pygame
+import os
+import json
 from roguelike_game.ecs.components.item_models import ItemStack
 
 class InventoryGridController:
@@ -133,3 +135,25 @@ class InventoryGridController:
         self.model.show_quantity_input = False
         self.model.selected_item = None
         self.model.quantity = 1
+
+    def _save_default(self):
+        cat = self.editor_model.current_category
+        path = self.editor_controller.paths[cat]['default']
+        try:
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, 'w', encoding='utf-8') as f:
+                json.dump(self.editor_model.default_data.get(cat, {}), f, indent=2)
+            self.editor_controller.logger.info(f"Default inventory for '{cat}' saved to {path}")
+        except Exception as e:
+            self.editor_controller.logger.error(f"Error saving default inventory for '{cat}' to {path}: {e}")
+
+    def _save_active(self):
+        cat = self.editor_model.current_category
+        path = self.editor_controller.paths[cat]['active']
+        try:
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, 'w', encoding='utf-8') as f:
+                json.dump(self.editor_model.active_data.get(cat, {}), f, indent=2)
+            self.editor_controller.logger.info(f"Active inventory for '{cat}' saved to {path}")
+        except Exception as e:
+            self.editor_controller.logger.error(f"Error saving active inventory for '{cat}' to {path}: {e}")

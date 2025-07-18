@@ -1,6 +1,6 @@
 import pygame
 from roguelike_editors.inventory.model.item_selection_panel_model import ItemSelectionPanelModel
-from roguelike_editors.inventory.controller.item_selection_panel_controller import ItemSelectionPanelController
+from roguelike_editors.inventory.controller.right_panel.item_selection_panel_controller import ItemSelectionPanelController
 from roguelike_editors.inventory.view.item_selection_panel_view import ItemSelectionPanelView
 import os
 import logging

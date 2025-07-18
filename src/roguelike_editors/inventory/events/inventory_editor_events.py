@@ -80,7 +80,7 @@ class InventoryEditorEventHandler:
             if self.view.save_rect and self.view.save_rect.collidepoint(mx, my):
                 print(f"[DEBUG InvEditor] Save button clicked (side={self.model.editing_side})")
                 if self.model.editing_side == 'default':
-                    self.controller._save_default()
+                    self.controller.grid_controller._save_default()
                 else:
-                    self.controller._save_active()
+                    self.controller.grid_controller._save_active()
                 return
