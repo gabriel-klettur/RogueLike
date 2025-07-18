@@ -56,10 +56,19 @@ class InventoryItemsPanelController:
             if cat == 'player':
                 default_player = self.editor_model.default_data.get('player', {})
                 slots = default_player.get('slots', [])
-                for idx, slot in enumerate(slots):
-                    if not slot:
-                        slots[idx] = {'item': self.model.selected_item, 'quantity': quantity}
+                # Merge existing stack or insert new
+                for slot in slots:
+                    if slot and slot.get('item') == self.model.selected_item:
+                        slot['quantity'] = slot.get('quantity', 0) + quantity
                         break
+                else:
+                    # No existing, insert into empty or append
+                    for idx, slot in enumerate(slots):
+                        if not slot:
+                            slots[idx] = {'item': self.model.selected_item, 'quantity': quantity}
+                            break
+                    else:
+                        slots.append({'item': self.model.selected_item, 'quantity': quantity})
                 default_player['slots'] = slots
             elif cat == 'monsters':
                 active_entry = self.editor_model.active_data.get('monsters', {}).get(str(eid), {})
@@ -67,7 +76,15 @@ class InventoryItemsPanelController:
                 for tpl_name, def_entry in self.editor_model.default_data.get('monsters', {}).items():
                     if def_entry.get('template_id') == template_id:
                         inv_list = def_entry.get('inventory', [])
-                        inv_list.append({'item': self.model.selected_item, 'min': quantity, 'max': quantity, 'chance': 1.0})
+                        # Merge existing stack or insert new
+                        for entry in inv_list:
+                            if entry.get('item') == self.model.selected_item:
+                                entry['min'] = entry.get('min', 0) + quantity
+                                entry['max'] = entry.get('max', 0) + quantity
+                                break
+                        else:
+                            # No existing, append
+                            inv_list.append({'item': self.model.selected_item, 'min': quantity, 'max': quantity, 'chance': 1.0})
                         def_entry['inventory'] = inv_list
                         break
             # resetear estado
@@ -89,14 +106,19 @@ class InventoryItemsPanelController:
             print(f"[DEBUG InvGrid] active_data before for key={key}: {entry}")
             slots = entry.get('slots', [])
             print(f"[DEBUG InvGrid] slots before modification: {slots}")
-            # Insertar en primer hueco libre
-            for idx_slot, slot in enumerate(slots):
-                if slot is None:
-                    slots[idx_slot] = {'item': self.model.selected_item, 'quantity': quantity}
+            # Merge existing stack or insert new
+            for slot in slots:
+                if slot and slot.get('item') == self.model.selected_item:
+                    slot['quantity'] = slot.get('quantity', 0) + quantity
                     break
             else:
-                # Si no hay hueco, añadir al final
-                slots.append({'item': self.model.selected_item, 'quantity': quantity})
+                # No existing, insert into empty or append
+                for idx_slot, slot in enumerate(slots):
+                    if slot is None:
+                        slots[idx_slot] = {'item': self.model.selected_item, 'quantity': quantity}
+                        break
+                else:
+                    slots.append({'item': self.model.selected_item, 'quantity': quantity})
             entry['slots'] = slots
             print(f"[DEBUG InvGrid] entry['slots'] updated to: {slots}")
             active_map[key] = entry
@@ -110,13 +132,22 @@ class InventoryItemsPanelController:
                 numeric_eid = int(key)
             inv_comp = self.world.components.get('InventoryComponent', {}).get(numeric_eid)
             if inv_comp:
+                # Merge into existing ECS stack or insert new
+                merged = False
                 for idx_comp, slot_comp in enumerate(inv_comp.slots):
-                    if not slot_comp:
-                        inv_comp.slots[idx_comp] = ItemStack(self.model.selected_item, quantity)
+                    if slot_comp and slot_comp.item_id == self.model.selected_item:
+                        slot_comp.quantity += quantity
+                        merged = True
                         break
-                else:
-                    inv_comp.slots.append(ItemStack(self.model.selected_item, quantity))
-                    print(f"[DEBUG InvGrid] inv_comp.slots after update: {[ (s.item_id, s.quantity) for s in inv_comp.slots if s ]}")
+                if not merged:
+                    # Find first empty slot or append
+                    for idx_comp, slot_comp in enumerate(inv_comp.slots):
+                        if not slot_comp:
+                            inv_comp.slots[idx_comp] = ItemStack(self.model.selected_item, quantity)
+                            break
+                    else:
+                        inv_comp.slots.append(ItemStack(self.model.selected_item, quantity))
+                print(f"[DEBUG InvGrid] inv_comp.slots after update: {[ (s.item_id, s.quantity) for s in inv_comp.slots if s ]}")
             # Reset state
             self.model.show_item_list = False
             self.model.show_quantity_input = False
