@@ -39,16 +39,6 @@
       "y": 2183.8583507969083
     }
   },
-  "a1b5bb46-970c-4413-b211-0026389dfe52": {
-    "item_id": "wizard_staff_lvl_2",
-    "quantity": 1,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2320,
-      "y": 2104
-    }
-  },
   "6cd67c0e-8fce-4239-9e97-fda193b9cc39": {
     "item_id": "wizard_staff_lvl_3",
     "quantity": 1,
@@ -267,6 +257,26 @@
     "position": {
       "x": 1525.9306623428763,
       "y": 2547.3825618129763
+    }
+  },
+  "5ee421c8-02c1-45a8-84ef-b4754ed8fb98": {
+    "item_id": "gold",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 1655.866744192361,
+      "y": 2481.6713113144656
+    }
+  },
+  "c528f339-888d-4b6a-8491-5e7972bb712b": {
+    "item_id": "wizard_staff_lvl_2",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 1655.866744192361,
+      "y": 2481.6713113144656
     }
   }
 }
