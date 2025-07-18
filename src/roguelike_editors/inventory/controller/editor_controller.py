@@ -43,16 +43,16 @@ class InventoryEditorController:
 
         self.paths = {
             'player': {
-                'default': os.path.join(DATA_DIR, 'defaults', 'inventory_player.json'),
-                'active': os.path.join(DATA_DIR, 'inventory', 'inventory_player.json'),
+                'default': os.path.join(DATA_DIR, 'inventory', 'defaults', 'inventory_player.json'),
+                'active': os.path.join(DATA_DIR, 'inventory', 'active', 'inventory_player.json'),
             },
             'monsters': {
-                'default': os.path.join(DATA_DIR, 'defaults', 'inventory_monsters.json'),
-                'active': os.path.join(DATA_DIR, 'inventory', 'inventory_monsters.json'),
+                'default': os.path.join(DATA_DIR, 'inventory', 'defaults', 'inventory_monsters.json'),
+                'active': os.path.join(DATA_DIR, 'inventory', 'active', 'inventory_monsters.json'),
             },
             'map': {
-                'default': os.path.join(DATA_DIR, 'defaults', 'inventory_map.json'),
-                'active': os.path.join(DATA_DIR, 'inventory', 'inventory_map.json'),
+                'default': os.path.join(DATA_DIR, 'inventory', 'defaults', 'inventory_map.json'),
+                'active': os.path.join(DATA_DIR, 'inventory', 'active', 'inventory_map.json'),
             },
         }
         # Cargar datos JSON en el modelo

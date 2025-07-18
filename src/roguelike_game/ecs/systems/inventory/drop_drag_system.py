@@ -13,7 +13,7 @@ class DropDragSystem:
     """
     def __init__(self, perf_log=None):
         self.perf_log = perf_log
-        path = os.path.join(os.getcwd(), 'data', 'inventory', 'inventory_map.json')
+        path = os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_map.json')
         self.drop_manager = ItemDropManager(path)
         self.dragging_eid = None
         self.offset_x = 0

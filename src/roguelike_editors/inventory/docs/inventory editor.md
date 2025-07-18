@@ -10,8 +10,8 @@ El Inventory Editor es una herramienta in-game para inspeccionar y modificar inv
 
 - Pulsa **F6** para abrir y cerrar el editor.
 - Al abrir, carga y valida (si `jsonschema` está presente) los archivos:
-  - `data/defaults/inventory_<categoria>.json`
-  - `data/inventory/inventory_<categoria>.json`
+  - `data/inventory/defaults/inventory_<categoria>.json`
+  - `data/inventory/active/inventory_<categoria>.json`
 
 ## Panel Izquierdo
 

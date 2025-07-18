@@ -22,7 +22,7 @@ class OrbAttractionSystem:
         self.attract_radius = attract_radius
         self.speed = speed
         # Gestor de drops en mapa para persistir orbes recogidos
-        path = os.path.join(os.getcwd(), 'data', 'inventory', 'inventory_map.json')
+        path = os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_map.json')
         self.drop_manager = ItemDropManager(path)
 
     def update(self, world, *args):

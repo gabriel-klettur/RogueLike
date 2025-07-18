@@ -15,10 +15,10 @@ class InventoryInitSystem:
     y persiste el estado inicial en archivos JSON activos.
     """
     def __init__(self, perf_log=None,
-                 default_monster_path: str = 'data/defaults/inventory_monsters.json',
-                 active_monster_path: str = 'data/inventory/inventory_monsters.json',
-                 default_player_path: str = 'data/defaults/inventory_player.json',
-                 active_player_path: str = 'data/inventory/inventory_player.json',
+                 default_monster_path: str = 'data/inventory/defaults/inventory_monsters.json',
+                 active_monster_path: str = 'data/inventory/active/inventory_monsters.json',
+                 default_player_path: str = 'data/inventory/defaults/inventory_player.json',
+                 active_player_path: str = 'data/inventory/active/inventory_player.json',
                  schema_version: str = '1.0.0'):
         self.perf_log = perf_log
         self.default_monster_path = default_monster_path

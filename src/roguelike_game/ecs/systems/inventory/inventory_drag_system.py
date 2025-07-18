@@ -14,7 +14,7 @@ class InventoryDragSystem:
     def __init__(self, perf_log=None, drop_path=None):
         self.perf_log = perf_log
         if drop_path is None:
-            drop_path = os.path.join(os.getcwd(), 'data', 'inventory', 'inventory_map.json')
+            drop_path = os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_map.json')
         self.drop_manager = ItemDropManager(drop_path)
         self.dragging_idx = None
         self.prev_mouse = False

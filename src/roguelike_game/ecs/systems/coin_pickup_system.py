@@ -20,7 +20,7 @@ class CoinPickupSystem:
             items_path = os.path.join(os.getcwd(), 'data', 'items', 'items.json')
         self.items = load_items(items_path)
         # Gestor de drops en mapa para persistir recogidas
-        path = os.path.join(os.getcwd(), 'data', 'inventory', 'inventory_map.json')
+        path = os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_map.json')
         self.drop_manager = ItemDropManager(path)
 
     def update(self, world, *args):

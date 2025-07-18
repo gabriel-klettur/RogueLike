@@ -21,7 +21,7 @@ class MapLoadDropsSystem:
     """
     def __init__(self, perf_log=None):
         self.perf_log = perf_log
-        path = os.path.join(os.getcwd(), 'data', 'inventory', 'inventory_map.json')
+        path = os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_map.json')
         # Validar esquema de instancias de ítems con Draft7Validator y RefResolver
         schema_path = os.path.join(os.getcwd(), 'schemas', 'items', 'instances.json')
         with open(schema_path, 'r', encoding='utf-8') as sf:

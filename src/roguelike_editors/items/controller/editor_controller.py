@@ -38,7 +38,7 @@ class ItemEditorController:
         self.view.text_input = self.text_input
         # Inicializar servicios de edición de instancias
         # Map items list
-        inv_map_path = os.path.join(os.getcwd(), 'data', 'inventory', 'inventory_map.json')
+        inv_map_path = os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_map.json')
         self.map_ui = MapItemsUI(font, inv_map_path)
         # Manager para persistencia de drops
         self.drop_manager = ItemDropManager(inv_map_path)
@@ -98,7 +98,7 @@ class ItemEditorController:
                         # actualizar datos en memoria y persistir
                         entry = self.map_ui.data.get(inst_id, {})
                         entry['params'] = new_params
-                        path = os.path.join(os.getcwd(), 'data', 'inventory', 'inventory_map.json')
+                        path = os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_map.json')
                         save_to_json(path, inst_id, entry)
                         # refrescar lista de mapa
                         self.map_ui.load()
