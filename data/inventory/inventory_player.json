@@ -4,24 +4,15 @@
     "slots": [
       {
         "item": "gold",
-        "quantity": 492
+        "quantity": 505
       },
       {
         "item": "wood",
-        "quantity": 5
-      },
-      {
-        "item": "ancient_relic_mask",
         "quantity": 1
       },
-      {
-        "item": "iron_sword",
-        "quantity": 2
-      },
-      {
-        "item": "energy_potion x1",
-        "quantity": 1
-      }
+      null,
+      null,
+      null
     ],
     "schema_version": "1.0.0"
   }

@@ -19,29 +19,9 @@
       "y": 2483.3585022481375
     }
   },
-  "d528290a-11d4-46e1-84b2-2336eb76bcd4": {
-    "item_id": "gold",
-    "quantity": 1,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2390.2143682258807,
-      "y": 2183.8583507969083
-    }
-  },
   "6cd67c0e-8fce-4239-9e97-fda193b9cc39": {
     "item_id": "wizard_staff_lvl_3",
     "quantity": 1,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2320,
-      "y": 2104
-    }
-  },
-  "04cb4552-f74f-48eb-842c-f8965d67a415": {
-    "item_id": "mana_potion",
-    "quantity": 2,
     "zone_id": "Lobby",
     "schema_version": "1.0.0",
     "position": {
@@ -65,8 +45,8 @@
     "zone_id": "Lobby",
     "schema_version": "1.0.0",
     "position": {
-      "x": 2342.5215155225796,
-      "y": 2612.9336534096647
+      "x": 2393.5215155225796,
+      "y": 2522.9336534096647
     }
   },
   "b2b79c47-7deb-43e6-9b8e-b411bb5ae5d0": {
@@ -117,26 +97,6 @@
     "position": {
       "x": 1605.7557565658028,
       "y": 2452.467858795944
-    }
-  },
-  "d0ac3d23-7f21-49f4-889e-11c419f2406d": {
-    "item_id": "gold",
-    "quantity": 3,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2343.913059503689,
-      "y": 2426.323172426274
-    }
-  },
-  "d7e5527b-0da0-4618-93dc-f2859ab36798": {
-    "item_id": "gold",
-    "quantity": 5,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2426.6833057265244,
-      "y": 2814.8546678712282
     }
   },
   "062f2942-510a-4e93-b6c2-c99e57a449eb": {
@@ -257,6 +217,116 @@
     "position": {
       "x": 1655.866744192361,
       "y": 2481.6713113144656
+    }
+  },
+  "98beae29-4e77-4c40-ae8a-d0f9e3d169d9": {
+    "item_id": "mana_potion",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2405.2900944666703,
+      "y": 2899.640927066214
+    }
+  },
+  "89c7f393-62a1-421a-a108-625990f1f8d1": {
+    "item_id": "gold",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2443.1369811690274,
+      "y": 2844.6006291788485
+    }
+  },
+  "93d979d1-f339-4535-a886-33f49b583560": {
+    "item_id": "energy_potion x1",
+    "quantity": 1,
+    "zone_id": null,
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2466.3223304703356,
+      "y": 2583.3172798364562
+    }
+  },
+  "ab28a87a-7e62-4450-986a-bde4ac03c748": {
+    "item_id": "iron_sword",
+    "quantity": 2,
+    "zone_id": null,
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2430.3223304703356,
+      "y": 2560.3172798364562
+    }
+  },
+  "d81cdcfe-38cf-4142-8789-4359d0d75eb9": {
+    "item_id": "ancient_relic_mask",
+    "quantity": 1,
+    "zone_id": null,
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2467.3223304703356,
+      "y": 2574.3172798364562
+    }
+  },
+  "97c5f86a-3c22-4194-9771-98034cfc1b3e": {
+    "item_id": "wood",
+    "quantity": 5,
+    "zone_id": null,
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2473.3223304703356,
+      "y": 2561.3172798364562
+    }
+  },
+  "ca1c9b98-8a75-4997-bbf9-660ab0d06223": {
+    "item_id": "gold",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2335.6536446343384,
+      "y": 2691.8630183449795
+    }
+  },
+  "2a270e4a-4a04-4903-af4b-ebcc0572845a": {
+    "item_id": "wood",
+    "quantity": 3,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2444.7395654383054,
+      "y": 2220.2538010314356
+    }
+  },
+  "3d41a7a7-e665-44e8-99ff-803792b9b00e": {
+    "item_id": "gold",
+    "quantity": 3,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2444.7395654383054,
+      "y": 2220.2538010314356
+    }
+  },
+  "2a07bff3-95d7-4dd7-b522-864949da6fec": {
+    "item_id": "gold",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2406.065353495781,
+      "y": 1917.1227147075685
+    }
+  },
+  "4c56a358-f9d2-43a7-8313-ea9e60f9294c": {
+    "item_id": "health_potion",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2406.065353495781,
+      "y": 1917.1227147075685
     }
   }
 }
