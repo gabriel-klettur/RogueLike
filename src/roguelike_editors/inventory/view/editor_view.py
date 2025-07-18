@@ -9,7 +9,7 @@ from roguelike_game.ecs.components.item_models import load_items
 
 from roguelike_editors.inventory.model.left_panel.inventory_panel_model import InventoryPanelModel
 from roguelike_editors.inventory.view.left_panel.inventory_panel_view import InventoryPanelView
-from roguelike_editors.inventory.view.right_panel.inventory_grid_view import InventoryGridView
+from roguelike_editors.inventory.view.right_panel.inventory_items_panel_view import InventoryItemsPanelView
 
 class InventoryEditorView:
     """
@@ -47,7 +47,7 @@ class InventoryEditorView:
         self.inventory_panel_view = InventoryPanelView(self.font, margin=self.margin)
 
         # Instanciar vista de grid de inventario
-        self.grid_view = InventoryGridView(
+        self.grid_view = InventoryItemsPanelView(
             font=self.font,
             slot_size=self.slot_size,
             margin=self.margin,

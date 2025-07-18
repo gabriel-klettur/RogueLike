@@ -1,6 +1,6 @@
 import pygame
 
-class InventoryGridView:
+class InventoryItemsPanelView:
     """
     Clase para renderizar la cuadrícula de inventario, los botones de mostrar y guardar.
     """

@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 
 @dataclass
-class InventoryGridModel:
+class InventoryitemsPanelModel:
     """
     Modelo para gestionar el flujo de añadir y eliminar ítems en el grid.
     """

@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict, Any
-from roguelike_editors.inventory.model.right_panel.inventory_grid_model import InventoryGridModel
+from roguelike_editors.inventory.model.right_panel.inventory_items_panel_model import InventoryitemsPanelModel
 
 @dataclass
 class InventoryEditorModel:
@@ -28,6 +28,6 @@ class InventoryEditorModel:
     # Scroll offset for vertical scrolling of lists
     scroll_offset: int = 0
     # Estado para flujo de Add/Delete items
-    grid_model: 'InventoryGridModel' = field(default_factory=lambda: InventoryGridModel())
+    grid_model: 'InventoryitemsPanelModel' = field(default_factory=lambda: InventoryitemsPanelModel())
     # Detached camera focus position when user double-clicks a monster
     camera_focus_target: Optional[Any] = None

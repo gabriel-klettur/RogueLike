@@ -39,26 +39,6 @@
       "y": 2183.8583507969083
     }
   },
-  "35209ba8-79cb-4a9e-9154-780111a79285": {
-    "item_id": "wood",
-    "quantity": 2,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2394.097204160842,
-      "y": 2330.3756671195183
-    }
-  },
-  "7ce67f25-549d-49e2-85ee-95bb9ebc75b6": {
-    "item_id": "health_potion",
-    "quantity": 7,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2320,
-      "y": 2104
-    }
-  },
   "a1b5bb46-970c-4413-b211-0026389dfe52": {
     "item_id": "wizard_staff_lvl_2",
     "quantity": 1,
@@ -97,16 +77,6 @@
     "position": {
       "x": 1978.7622759630253,
       "y": 2497.014072867758
-    }
-  },
-  "e0e6c1c7-7a4d-4e85-a1e7-bd270112b88f": {
-    "item_id": "gold",
-    "quantity": 2,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 1891.0,
-      "y": 2434
     }
   },
   "5d473939-3830-4d6a-9002-f22c72892128": {
@@ -219,16 +189,6 @@
       "y": 2466
     }
   },
-  "db5ee73b-7e0f-420f-8dd3-c413f0a72ba6": {
-    "item_id": "gold",
-    "quantity": 1,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 1849.0,
-      "y": 2466
-    }
-  },
   "01c58577-3456-4ae5-8083-d5ac5a7d060a": {
     "item_id": "wood",
     "quantity": 2,
@@ -277,6 +237,36 @@
     "position": {
       "x": 2215.993057847086,
       "y": 2466.450309923613
+    }
+  },
+  "e2188d12-a1d5-4ead-8c0c-8c831dd864fb": {
+    "item_id": "wood",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 1803.9369546955377,
+      "y": 2489.4504233663038
+    }
+  },
+  "2e1e0d7f-5e0e-4f40-a74f-59500a9dfa30": {
+    "item_id": "health_potion",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 1587.9306623428763,
+      "y": 2524.3825618129763
+    }
+  },
+  "8fc0ba65-b378-4a5d-be36-99c4b7171704": {
+    "item_id": "health_potion",
+    "quantity": 7,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 1525.9306623428763,
+      "y": 2547.3825618129763
     }
   }
 }
