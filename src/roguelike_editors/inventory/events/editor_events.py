@@ -32,7 +32,7 @@ class InventoryEditorEventHandler:
                 if self.model.selected_eid is None:
                     self.model.selected_eid = self.model.entities[0] if self.model.entities else None
                 # Reset inventory panel debug prints
-                self.controller.inventory_panel_controller.debug_printed = False
+                self.controller.inventory_panel_controller.list_controller.debug_printed = False
                 self.model.editing_side = 'active'
             return
         if not self.model.visible:

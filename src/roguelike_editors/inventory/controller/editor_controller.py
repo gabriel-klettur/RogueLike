@@ -6,7 +6,7 @@ import logging
 from roguelike_engine.config.config import DATA_DIR, PROJECT_ROOT
 from roguelike_ui.services.json_persistence import load_from_json
 
-from roguelike_editors.inventory.controller.left_panel.inventory_panel_controller import InventoryPanelController
+from roguelike_editors.inventory.controller.left_panel.panel_controller import PanelController
 from roguelike_editors.inventory.controller.right_panel.inventory_items_panel_controller import InventoryItemsPanelController
 
 from roguelike_editors.inventory.events.editor_events import InventoryEditorEventHandler
@@ -30,7 +30,7 @@ class InventoryEditorController:
         self.font = font
         self.view = InventoryEditorView(assets, font)
         # Panel MVC para listado de entidades
-        self.inventory_panel_controller = InventoryPanelController(self, self.view.inventory_panel_model)
+        self.inventory_panel_controller = PanelController(self, self.view.inventory_panel_model)
         # Asociar controlador a la vista
         self.view.inventory_panel_controller = self.inventory_panel_controller
         self.inventory_panel_event_handler = InventoryPanelEventHandler(self, self.inventory_panel_controller, self.view.inventory_panel_view, self.view.inventory_panel_model)
