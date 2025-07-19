@@ -1,8 +1,8 @@
-from roguelike_editors.inventory.controller.right_panel.buttons.add_item.add_item_controller import AddItemController
-from roguelike_editors.inventory.controller.right_panel.buttons.delete.delete_controller import DeleteController
-from roguelike_editors.inventory.controller.right_panel.buttons.save.save_controller import SaveController
-from roguelike_editors.inventory.controller.right_panel.grid.grid_controller import GridController
-from roguelike_editors.inventory.controller.right_panel.tabs.tabs_controller import TabsController
+from roguelike_editors.inventory.controller.right_panel.inventory_items_panel.buttons.add_item.add_item_controller import AddItemController
+from roguelike_editors.inventory.controller.right_panel.inventory_items_panel.buttons.delete.delete_controller import DeleteController
+from roguelike_editors.inventory.controller.right_panel.inventory_items_panel.buttons.save.save_controller import SaveController
+from roguelike_editors.inventory.controller.right_panel.inventory_items_panel.grid.grid_controller import GridController
+from roguelike_editors.inventory.controller.right_panel.inventory_items_panel.tabs.tabs_controller import TabsController
 
 
 class InventoryItemsPanelController:

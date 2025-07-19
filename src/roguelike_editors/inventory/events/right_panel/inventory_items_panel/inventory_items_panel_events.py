@@ -1,8 +1,8 @@
-from roguelike_editors.inventory.events.right_panel.buttons.add_item.add_item_event_handler import AddItemEventHandler
-from roguelike_editors.inventory.events.right_panel.buttons.delete.delete_event_handler import DeleteEventHandler
-from roguelike_editors.inventory.events.right_panel.buttons.save.save_event_handler import SaveEventHandler
-from roguelike_editors.inventory.events.right_panel.grid.grid_event_handler import GridEventHandler
-from roguelike_editors.inventory.events.right_panel.tabs.tabs_event_handler import TabsEventHandler
+from roguelike_editors.inventory.events.right_panel.inventory_items_panel.buttons.add_item.add_item_event_handler import AddItemEventHandler
+from roguelike_editors.inventory.events.right_panel.inventory_items_panel.buttons.delete.delete_event_handler import DeleteEventHandler
+from roguelike_editors.inventory.events.right_panel.inventory_items_panel.buttons.save.save_event_handler import SaveEventHandler
+from roguelike_editors.inventory.events.right_panel.inventory_items_panel.grid.grid_event_handler import GridEventHandler
+from roguelike_editors.inventory.events.right_panel.inventory_items_panel.tabs.tabs_event_handler import TabsEventHandler
 
 
 class InventoryItemsPanelEventHandler:
