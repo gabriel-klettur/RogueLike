@@ -32,7 +32,7 @@ class TabsController:
         """
         Maneja la lógica específica para la categoría de monstruos.
         """
-        active_path = self.editor_controller.paths['monsters']['active']
+        active_path = self.editor_controller.data_controller.paths['monsters']['active']
         try:
             self.editor_controller.model.active_data['monsters'] = load_from_json(active_path)
         except Exception as e:
