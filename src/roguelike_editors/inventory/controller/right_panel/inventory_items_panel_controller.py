@@ -1,258 +1,49 @@
+from roguelike_editors.inventory.controller.right_panel.buttons.add_item.add_item_controller import AddItemController
+from roguelike_editors.inventory.controller.right_panel.buttons.delete.delete_controller import DeleteController
+from roguelike_editors.inventory.controller.right_panel.buttons.save.save_controller import SaveController
+from roguelike_editors.inventory.controller.right_panel.grid.grid_controller import GridController
+from roguelike_editors.inventory.controller.right_panel.tabs.tabs_controller import TabsController
 
-import os
-import json
-from roguelike_game.ecs.components.item_models import ItemStack
 
 class InventoryItemsPanelController:
     """
-    Controlador para manejar el flujo de añadir/eliminar ítems en el grid.
+    Controlador principal del panel derecho que delega en subcontroladores:
+    add_item, delete, save, grid y tabs.
     """
     def __init__(self, editor_controller):
         self.editor_controller = editor_controller
+        # Subcontroladores especializados
+        self.add_controller = AddItemController(editor_controller, self)
+        self.delete_controller = DeleteController(editor_controller, self)
+        self.save_controller = SaveController(editor_controller, self)
+        self.grid_controller = GridController(editor_controller, self)
+        self.tabs_controller = TabsController(editor_controller, self)
+        # Modelo y world
         self.model = editor_controller.model.grid_model
         self.editor_model = editor_controller.model
         self.world = editor_controller.world
 
     def load_available_items(self):
-        """
-        Carga lista de todos los ítems disponibles desde el EditorView.
-        """
-        # usa el diccionario view.items (item_id -> modelo)
-        self.model.available_items = list(self.editor_controller.view.items.keys())
+        return self.add_controller.load_available_items()
 
     def start_add_item(self):
-        """
-        Inicia flujo de añadir ítem: muestra lista de ítems.
-        """
-        self.load_available_items()
-        # Open MVC item selection panel
-        # Prepare items for selection panel
-        default_items = self.model.available_items
-        active_map = self.editor_model.active_data.get('map', {})
-        ground_items = [f"{entry.get('item_id')} x{entry.get('quantity')}" for entry in active_map.values()]
-        # Open item selection panel with default and ground items
-        self.editor_controller.view.item_panel_controller.open(default_items, ground_items)
-        self.model.show_item_list = True
-        self.model.show_quantity_input = False
-        self.model.selected_item = None
-        self.model.quantity = 1
+        return self.add_controller.start_add_item()
 
     def select_item(self, item_id):
-        """
-        Selecciona un ítem y pasa a input de cantidad.
-        """
-        self.model.selected_item = item_id
-        self.model.show_quantity_input = True
+        return self.add_controller.select_item(item_id)
 
     def confirm_quantity(self, quantity):
-        """
-        Confirma cantidad y añade el ítem al InventoryComponent.
-        """
-        eid = self.editor_model.selected_eid
-        cat = self.editor_model.current_category
-        editing_side = self.editor_model.editing_side
-        print(f"[DEBUG InvGrid] confirm_quantity eid={eid}, cat={cat}, side={editing_side}, item={self.model.selected_item}, qty={quantity}")
-        if editing_side == 'default':
-            if cat == 'player':
-                default_player = self.editor_model.default_data.get('player', {})
-                slots = default_player.get('slots', [])
-                # Merge existing stack or insert new
-                for slot in slots:
-                    if slot and slot.get('item') == self.model.selected_item:
-                        slot['quantity'] = slot.get('quantity', 0) + quantity
-                        break
-                else:
-                    # No existing, insert into empty or append
-                    for idx, slot in enumerate(slots):
-                        if not slot:
-                            slots[idx] = {'item': self.model.selected_item, 'quantity': quantity}
-                            break
-                    else:
-                        slots.append({'item': self.model.selected_item, 'quantity': quantity})
-                default_player['slots'] = slots
-            elif cat == 'monsters':
-                active_entry = self.editor_model.active_data.get('monsters', {}).get(str(eid), {})
-                template_id = active_entry.get('template_id')
-                for tpl_name, def_entry in self.editor_model.default_data.get('monsters', {}).items():
-                    if def_entry.get('template_id') == template_id:
-                        inv_list = def_entry.get('inventory', [])
-                        # Merge existing stack or insert new
-                        for entry in inv_list:
-                            if entry.get('item') == self.model.selected_item:
-                                entry['min'] = entry.get('min', 0) + quantity
-                                entry['max'] = entry.get('max', 0) + quantity
-                                break
-                        else:
-                            # No existing, append
-                            inv_list.append({'item': self.model.selected_item, 'min': quantity, 'max': quantity, 'chance': 1.0})
-                        def_entry['inventory'] = inv_list
-                        break
-            # resetear estado
-            self.model.show_item_list = False
-            self.model.show_quantity_input = False
-            self.model.selected_item = None
-            self.model.quantity = 1
-            return
-        # Handle active side: update active_data
-        if editing_side == 'active':
-            active_map = self.editor_model.active_data.get(cat, {})
-            # Determinar clave JSON: instance_id para monstruos, entity id para otros
-            if cat == 'monsters':
-                inst_comp = self.world.components.get('MonsterInstanceComponent', {}).get(eid)
-                key = inst_comp.instance_id if inst_comp else str(eid)
-            else:
-                key = str(eid)
-            entry = active_map.get(key, {})
-            print(f"[DEBUG InvGrid] active_data before for key={key}: {entry}")
-            slots = entry.get('slots', [])
-            print(f"[DEBUG InvGrid] slots before modification: {slots}")
-            # Merge existing stack or insert new
-            for slot in slots:
-                if slot and slot.get('item') == self.model.selected_item:
-                    slot['quantity'] = slot.get('quantity', 0) + quantity
-                    break
-            else:
-                # No existing, insert into empty or append
-                for idx_slot, slot in enumerate(slots):
-                    if slot is None:
-                        slots[idx_slot] = {'item': self.model.selected_item, 'quantity': quantity}
-                        break
-                else:
-                    slots.append({'item': self.model.selected_item, 'quantity': quantity})
-            entry['slots'] = slots
-            print(f"[DEBUG InvGrid] entry['slots'] updated to: {slots}")
-            active_map[key] = entry
-            # Actualizar InventoryComponent slots para que el NPC tenga el ítem al morir
-            # Map JSON key to ECS entity id for updating InventoryComponent
-            if cat == 'monsters':
-                inst_map = self.world.components.get('MonsterInstanceComponent', {})
-                numeric_eid = next((e for e, comp in inst_map.items() if comp.instance_id == key), None)
-                print(f"[DEBUG InvGrid] mapped instance_id {key} to numeric eid {numeric_eid}")
-            else:
-                numeric_eid = int(key)
-            inv_comp = self.world.components.get('InventoryComponent', {}).get(numeric_eid)
-            if inv_comp:
-                # Merge into existing ECS stack or insert new
-                merged = False
-                for idx_comp, slot_comp in enumerate(inv_comp.slots):
-                    if slot_comp and slot_comp.item_id == self.model.selected_item:
-                        slot_comp.quantity += quantity
-                        merged = True
-                        break
-                if not merged:
-                    # Find first empty slot or append
-                    for idx_comp, slot_comp in enumerate(inv_comp.slots):
-                        if not slot_comp:
-                            inv_comp.slots[idx_comp] = ItemStack(self.model.selected_item, quantity)
-                            break
-                    else:
-                        inv_comp.slots.append(ItemStack(self.model.selected_item, quantity))
-                print(f"[DEBUG InvGrid] inv_comp.slots after update: {[ (s.item_id, s.quantity) for s in inv_comp.slots if s ]}")
-            # Reset state
-            self.model.show_item_list = False
-            self.model.show_quantity_input = False
-            self.model.selected_item = None
-            self.model.quantity = 1
-            return
-        inv_comp = self.world.components.get('InventoryComponent', {}).get(eid)
-        if inv_comp and self.model.selected_item:
-            # encuentra primer slot vacío
-            for idx, slot in enumerate(inv_comp.slots):
-                if not slot:
-                    inv_comp.slots[idx] = {'item': self.model.selected_item, 'quantity': quantity}
-                    break
-        # resetear estado
-        self.model.show_item_list = False
-        self.model.show_quantity_input = False
-        self.model.selected_item = None
-        self.model.quantity = 1
+        return self.add_controller.confirm_quantity(quantity)
 
     def delete_item(self, slot_idx, quantity=None):
-        """
-        Elimina el ítem del slot dado (hasta la cantidad indicata) y actualiza datos y ECS.
-        """
-        # Determinar cantidad a eliminar
-        qty = quantity if quantity is not None else self.model.delete_quantity
-        eid = self.editor_model.selected_eid
-        cat = self.editor_model.current_category
-        side = self.editor_model.editing_side
+        return self.delete_controller.delete_item(slot_idx, quantity)
 
-        if side == 'default':
-            if cat == 'player':
-                tpl = self.editor_model.default_data.get('player', {})
-                slots = tpl.get('slots', [])
-                if slot_idx < len(slots):
-                    slot = slots[slot_idx]
-                    if slot and slot.get('quantity', 0) > qty:
-                        slot['quantity'] = slot.get('quantity', 0) - qty
-                    else:
-                        slots[slot_idx] = None
-                    tpl['slots'] = slots
-            elif cat == 'monsters':
-                # Para plantillas de monstruos removemos la entrada completa
-                active_entry = self.editor_model.active_data.get('monsters', {}).get(str(eid), {})
-                template_id = active_entry.get('template_id')
-                for def_entry in self.editor_model.default_data.get('monsters', {}).values():
-                    if def_entry.get('template_id') == template_id:
-                        inv_list = def_entry.get('inventory', [])
-                        if slot_idx < len(inv_list):
-                            inv_list.pop(slot_idx)
-                            def_entry['inventory'] = inv_list
-                        break
-        elif side == 'active':
-            active_map = self.editor_model.active_data.get(cat, {})
-            if cat == 'monsters':
-                inst_comp = self.world.components.get('MonsterInstanceComponent', {}).get(eid)
-                key = inst_comp.instance_id if inst_comp else str(eid)
-            else:
-                key = str(eid)
-            entry = active_map.get(key, {})
-            slots = entry.get('slots', [])
-            if slot_idx < len(slots):
-                slot = slots[slot_idx]
-                if slot and slot.get('quantity', 0) > qty:
-                    slot['quantity'] = slot.get('quantity', 0) - qty
-                else:
-                    slots[slot_idx] = None
-                entry['slots'] = slots
-                active_map[key] = entry
-            # Actualizar componente ECS
-            if cat == 'monsters':
-                inst_map = self.world.components.get('MonsterInstanceComponent', {})
-                numeric_eid = next((e for e, comp in inst_map.items() if comp.instance_id == key), None)
-            else:
-                numeric_eid = int(key)
-            inv_comp = self.world.components.get('InventoryComponent', {}).get(numeric_eid)
-            if inv_comp and slot_idx < len(inv_comp.slots):
-                slot_comp = inv_comp.slots[slot_idx]
-                if hasattr(slot_comp, 'quantity') and slot_comp.quantity > qty:
-                    slot_comp.quantity = slot_comp.quantity - qty
-                else:
-                    inv_comp.slots[slot_idx] = None
+    def save_default(self):
+        return self.save_controller.save_default()
 
-        # Resetear flags de modo eliminación
-        self.model.show_delete_mode = False
-        self.model.show_delete_quantity_input = False
+    def save_active(self):
+        return self.save_controller.save_active()
 
-
-    def _save_default(self):
-        cat = self.editor_model.current_category
-        path = self.editor_controller.paths[cat]['default']
-        try:
-            os.makedirs(os.path.dirname(path), exist_ok=True)
-            with open(path, 'w', encoding='utf-8') as f:
-                json.dump(self.editor_model.default_data.get(cat, {}), f, indent=2)
-            self.editor_controller.logger.info(f"Default inventory for '{cat}' saved to {path}")
-        except Exception as e:
-            self.editor_controller.logger.error(f"Error saving default inventory for '{cat}' to {path}: {e}")
-
-    def _save_active(self):
-        cat = self.editor_model.current_category
-        path = self.editor_controller.paths[cat]['active']
-        try:
-            os.makedirs(os.path.dirname(path), exist_ok=True)
-            with open(path, 'w', encoding='utf-8') as f:
-                json.dump(self.editor_model.active_data.get(cat, {}), f, indent=2)
-            self.editor_controller.logger.info(f"Active inventory for '{cat}' saved to {path}")
-        except Exception as e:
-            self.editor_controller.logger.error(f"Error saving active inventory for '{cat}' to {path}: {e}")
+    # Métodos de compatibilidad para editor_events
+    _save_default = save_default
+    _save_active = save_active
