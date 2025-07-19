@@ -1,24 +1,4 @@
 {
-  "ea05a685-00c6-4fd5-8588-a033fa2dd0f9": {
-    "item_id": "wood",
-    "quantity": 1,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 1978.7622759630253,
-      "y": 2497.014072867758
-    }
-  },
-  "f00e8a66-9e81-4726-a2c0-cfae7865f780": {
-    "item_id": "wizard_staff_lvl_3",
-    "quantity": 1,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 1605.7557565658028,
-      "y": 2452.467858795944
-    }
-  },
   "062f2942-510a-4e93-b6c2-c99e57a449eb": {
     "item_id": "iron_sword",
     "quantity": 1,

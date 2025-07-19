@@ -11,7 +11,7 @@ from roguelike_editors.inventory.controller.right_panel.inventory_items_panel_co
 
 from roguelike_editors.inventory.events.editor_events import InventoryEditorEventHandler
 from roguelike_editors.inventory.events.right_panel.inventory_items_panel_events import InventoryItemsPanelEventHandler
-from roguelike_editors.inventory.events.left_panel.inventory_panel_events import InventoryPanelEventHandler
+from roguelike_editors.inventory.events.left_panel import PanelEventHandler
 
 from roguelike_editors.inventory.model.editor_model import InventoryEditorModel
 
@@ -33,7 +33,7 @@ class InventoryEditorController:
         self.inventory_panel_controller = PanelController(self, self.view.inventory_panel_model)
         # Asociar controlador a la vista
         self.view.inventory_panel_controller = self.inventory_panel_controller
-        self.inventory_panel_event_handler = InventoryPanelEventHandler(self, self.inventory_panel_controller, self.view.inventory_panel_view, self.view.inventory_panel_model)
+        self.inventory_panel_event_handler = PanelEventHandler(self, self.inventory_panel_controller, self.view.inventory_panel_view, self.view.inventory_panel_model)
         self.event_handler = InventoryEditorEventHandler(self)
         # Controller para flujo Add/Delete items
         self.grid_controller = InventoryItemsPanelController(self)
