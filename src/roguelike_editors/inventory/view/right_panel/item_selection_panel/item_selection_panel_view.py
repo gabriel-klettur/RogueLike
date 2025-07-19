@@ -1,22 +1,70 @@
 import pygame
-from roguelike_ui.widgets.scroll_panel import ScrollPanel
-from roguelike_ui.widgets.text_input import TextInput
 from roguelike_editors.inventory.model.right_panel.item_selection_panel.item_selection_panel_model import ItemSelectionPanelModel
+from .tittle.tittle_view import TittleView
+from .tabs.tabs_view import TabsView
+from .list.list_view import ListView
+from .input.input_view import InputView
+from .button.button_view import ButtonView
 
 class ItemSelectionPanelView:
     def __init__(self, font: pygame.font.Font, margin: int = 5, button_size: tuple[int,int] = (120,30)):
         self.font = font
         self.margin = margin
         self.button_size = button_size
-        self.scroll_panel = ScrollPanel(self.font, margin=self.margin)
-        self.text_input = TextInput(self.font)
-        self.panel_rect = pygame.Rect(0,0,0,0)
-        self.header_rect = pygame.Rect(0,0,0,0)
-        self.add_button_rect = pygame.Rect(0,0,0,0)
+        self.tittle_view = TittleView(font, margin)
+        self.tabs_view = TabsView(font, margin)
+        self.list_view = ListView(font, margin)
+        self.input_view = InputView(font, margin)
+        self.button_view = ButtonView(font, margin, button_size)
 
     def draw(self, surface: pygame.Surface, model: ItemSelectionPanelModel, base_rect: pygame.Rect):
         if not model.show_panel:
             return {}
+        # Calculate sizes
+        line_h = self.font.get_linesize()
+        items = model.default_items if model.current_tab == 'default' else model.ground_items
+        visible = min(len(items), model.visible_count)
+        w = base_rect.width
+        scroll_h = visible * line_h + 2 * self.margin
+        input_h = line_h + 2 * self.margin
+        button_h = self.button_size[1]
+        tab_h = line_h + self.margin
+        panel_h = tab_h + scroll_h + self.margin + input_h + self.margin + button_h + self.margin
+        # Position panel
+        sw, sh = surface.get_size()
+        x = sw - w - self.margin + int(model.drag_offset.x)
+        y = sh - panel_h - self.margin + int(model.drag_offset.y)
+        panel_rect = pygame.Rect(x, y, w, panel_h)
+
+        rects = {}
+        rects.update(self.tittle_view.draw(surface, panel_rect))
+
+        default_tab_rect = pygame.Rect(x, y, w // 2, tab_h)
+        ground_tab_rect = pygame.Rect(x + w // 2, y, w - w // 2, tab_h)
+        rects.update(self.tabs_view.draw(surface, model.current_tab, default_tab_rect, ground_tab_rect))
+
+        scroll_rect = pygame.Rect(x, y + tab_h, w, scroll_h)
+        rects.update(self.list_view.draw(surface, items, scroll_rect, line_h, model.current_tab, model.selected_item, model.selected_index))
+
+        in_x = x + self.margin
+        in_y = y + tab_h + scroll_h + self.margin
+        # Quantity label
+        label_surf = self.font.render('Quantity:', True, (255,255,255))
+        label_w, label_h = label_surf.get_size()
+        surface.blit(label_surf, (in_x, in_y + (input_h - label_h) // 2))
+        in_w = w - 2 * self.margin - label_w - self.margin
+        input_x = in_x + label_w + self.margin
+        input_rect = pygame.Rect(input_x, in_y, in_w, input_h)
+        rects.update(self.input_view.draw(surface, model.quantity, input_rect))
+
+        btn_x = in_x
+        btn_y = in_y + input_h + self.margin
+        btn_w = in_w
+        btn_h = button_h
+        add_btn_rect = pygame.Rect(btn_x, btn_y, btn_w, btn_h)
+        rects.update(self.button_view.draw(surface, add_btn_rect))
+
+        return rects
         line_h = self.font.get_linesize()
         # Determine items based on current tab
         items_list = model.default_items if model.current_tab == 'default' else model.ground_items

@@ -100,6 +100,16 @@ class InventoryEditorView:
             save_bottom = self.save_rect.bottom if self.save_rect else panel_rect.y
             base_rect = pygame.Rect(grid_origin_x, save_bottom, grid_w, 0)
             rects = self.item_panel_view.draw(overlay, self.item_panel_model, base_rect)
+            # Propagate rects to panel view for event handlers
+            pv = self.item_panel_view
+            pv.panel_rect = rects.get('panel_rect')
+            pv.header_rect = rects.get('header_rect')
+            pv.input_rect = rects.get('input_rect')
+            pv.add_button_rect = rects.get('add_button_rect')
+            pv.tab_rects = rects.get('tab_rects')
+            # Alias subview internals for event handlers
+            pv.text_input = pv.input_view.text_input
+            pv.scroll_panel = pv.list_view.scroll_panel
             # Save panel rects for events
             self.item_list_panel_rect = rects.get('panel_rect')
             self.item_list_header_rect = rects.get('header_rect')
