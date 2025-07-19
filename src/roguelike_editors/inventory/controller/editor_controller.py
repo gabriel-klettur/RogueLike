@@ -49,18 +49,9 @@ class InventoryEditorController:
 
     def handle_event(self, event):
         """
-        Maneja eventos delegando a los manejadores específicos.
+        Maneja eventos orquestando todos los manejadores.
         """
-        # Panel listado events
-        if self.inventory_panel_event_handler.handle(event):
-            return
-        # Item selection panel events
-        if self.item_selection_event_handler.handle(event):
-            return
-        # Flujo Add/Delete en el grid
-        if self.grid_event_handler.handle(event):
-            return
-        # Delega a manejador principal
+        # Delegar completamente a InventoryEditorEventHandler
         self.event_handler.handle(event)
 
     def draw(self, screen):
