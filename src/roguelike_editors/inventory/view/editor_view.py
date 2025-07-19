@@ -9,7 +9,7 @@ from roguelike_game.ecs.components.item_models import load_items
 
 from roguelike_editors.inventory.model.left_panel.panel_model import InventoryPanelModel
 from roguelike_editors.inventory.view.left_panel import PanelView
-from roguelike_editors.inventory.view.right_panel.inventory_items_panel_view import InventoryItemsPanelView
+from roguelike_editors.inventory.view.right_panel.inventory_items_panel.inventory_items_panel_view import InventoryItemsPanelView
 
 class InventoryEditorView:
     """
