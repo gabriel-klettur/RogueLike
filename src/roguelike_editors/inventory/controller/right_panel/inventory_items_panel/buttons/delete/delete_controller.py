@@ -5,7 +5,7 @@ class DeleteController:
     def __init__(self, editor_controller, parent_controller):
         self.editor_controller = editor_controller
         self.parent = parent_controller
-        self.model = editor_controller.model.grid_model
+        self.model = parent_controller.model
         self.editor_model = editor_controller.model
         self.world = editor_controller.world
 

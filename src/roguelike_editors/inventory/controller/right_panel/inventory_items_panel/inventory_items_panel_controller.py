@@ -12,16 +12,16 @@ class InventoryItemsPanelController:
     """
     def __init__(self, editor_controller):
         self.editor_controller = editor_controller
+        self.model = editor_controller.model.items_panel_model
+        self.editor_model = editor_controller.model
+        self.world = editor_controller.world
         # Subcontroladores especializados
         self.add_controller = AddItemController(editor_controller, self)
         self.delete_controller = DeleteController(editor_controller, self)
         self.save_controller = SaveController(editor_controller, self)
         self.grid_controller = GridController(editor_controller, self)
         self.tabs_controller = TabsController(editor_controller, self)
-        # Modelo y world
-        self.model = editor_controller.model.grid_model
-        self.editor_model = editor_controller.model
-        self.world = editor_controller.world
+
 
     def load_available_items(self):
         return self.add_controller.load_available_items()
