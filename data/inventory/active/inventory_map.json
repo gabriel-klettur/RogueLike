@@ -1,14 +1,4 @@
 {
-  "062f2942-510a-4e93-b6c2-c99e57a449eb": {
-    "item_id": "iron_sword",
-    "quantity": 1,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2426.6833057265244,
-      "y": 2814.8546678712282
-    }
-  },
   "48769ed7-795e-4390-a905-0ee825303183": {
     "item_id": "wood",
     "quantity": 1,
@@ -109,16 +99,6 @@
       "y": 2561.3172798364562
     }
   },
-  "ca1c9b98-8a75-4997-bbf9-660ab0d06223": {
-    "item_id": "gold",
-    "quantity": 2,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2335.6536446343384,
-      "y": 2691.8630183449795
-    }
-  },
   "3d41a7a7-e665-44e8-99ff-803792b9b00e": {
     "item_id": "gold",
     "quantity": 1,
@@ -127,16 +107,6 @@
     "position": {
       "x": 2444.7395654383054,
       "y": 2220.2538010314356
-    }
-  },
-  "2a07bff3-95d7-4dd7-b522-864949da6fec": {
-    "item_id": "gold",
-    "quantity": 2,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2406.065353495781,
-      "y": 1917.1227147075685
     }
   }
 }

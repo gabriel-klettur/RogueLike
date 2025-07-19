@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 from roguelike_editors.inventory.controller.left_panel.panel_controller import PanelController
 from roguelike_editors.inventory.view.left_panel.inventory_panel_view import InventoryPanelView
-from roguelike_editors.inventory.model.left_panel.inventory_panel_model import InventoryPanelModel
+from roguelike_editors.inventory.model.left_panel.panel_model import InventoryPanelModel
 
 from .tabs.tabs_event_handler import TabsEventHandler
 from .list.list_event_handler import ListEventHandler

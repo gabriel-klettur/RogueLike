@@ -1,6 +1,6 @@
 import pygame
 from roguelike_ui.widgets.scroll_panel import ScrollPanel
-from roguelike_editors.inventory.model.left_panel.inventory_panel_model import InventoryPanelModel
+from roguelike_editors.inventory.model.left_panel.panel_model import InventoryPanelModel
 
 class InventoryPanelView:
     """

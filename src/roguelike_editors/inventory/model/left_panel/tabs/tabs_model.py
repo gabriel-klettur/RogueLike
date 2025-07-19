@@ -1,11 +1,11 @@
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List
+
 
 @dataclass
-class InventoryPanelModel:
+class TabsModel:
     """
-    Modelo para la vista de listado de entidades (tabs + lista scroll).
+    Modelo para las tabs del panel izquierdo: maneja categorías y categoría actual.
     """
     categories: List[str] = field(default_factory=lambda: ['player', 'monsters', 'map'])
     current_category: str = 'player'
-    selected_eid: Optional[str] = None
