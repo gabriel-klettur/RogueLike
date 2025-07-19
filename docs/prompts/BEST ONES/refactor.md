@@ -1,0 +1,1 @@
+Me gustaria refactorizar mi codigo para separar en 'list' @list  y 'tabs'  @tabs mi @inventory_panel_controller.py de forma que podamos delegar todo a 'list' y 'tabs' y poder eliminar despues de la refactorizacion @inventory_panel_controller.py .
