@@ -8,6 +8,7 @@ from roguelike_ui.services.json_persistence import load_from_json
 
 from roguelike_editors.inventory.controller.left_panel.panel_controller import PanelController
 from roguelike_editors.inventory.controller.right_panel.inventory_items_panel_controller import InventoryItemsPanelController
+from roguelike_editors.inventory.events.right_panel.item_selection_panel_events import ItemSelectionPanelEventHandler
 
 from roguelike_editors.inventory.events.editor_events import InventoryEditorEventHandler
 from roguelike_editors.inventory.events.right_panel.inventory_items_panel_events import InventoryItemsPanelEventHandler
@@ -38,6 +39,7 @@ class InventoryEditorController:
         # Controller para flujo Add/Delete items
         self.grid_controller = InventoryItemsPanelController(self)
         self.grid_event_handler = InventoryItemsPanelEventHandler(self.grid_controller)
+        self.item_selection_event_handler = ItemSelectionPanelEventHandler(self.grid_controller, self.view.item_panel_controller, self.view.item_panel_view)
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         # Paths por categoría
 
@@ -102,6 +104,9 @@ class InventoryEditorController:
         """
         # Panel listado events
         if self.inventory_panel_event_handler.handle(event):
+            return
+        # Item selection panel events
+        if self.item_selection_event_handler.handle(event):
             return
         # Flujo Add/Delete en el grid
         if self.grid_event_handler.handle(event):

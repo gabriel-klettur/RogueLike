@@ -25,18 +25,38 @@ class ItemSelectionPanelController:
 
     def confirm(self):
         item_str = self.model.selected_item
+        # cantidad deseada del input
         qty = self.model.quantity
-        # Si es ground tab, quitar sufijo " xqty" y manejar cantidad por defecto
-        if getattr(self.model, 'current_tab', None) == 'ground' and isinstance(item_str, str) and ' x' in item_str:
-            parts = item_str.rsplit(' x', 1)
-            item = parts[0]
-            # si no se cambió la cantidad (queda en 1), tomar toda la pila
+        # Ground tab: extraer base y cap al tamaño del stack
+        if self.model.current_tab == 'ground' and isinstance(item_str, str) and ' x' in item_str:
+            base, orig_str = item_str.rsplit(' x', 1)
+            try:
+                orig_qty = int(orig_str)
+            except (ValueError, IndexError):
+                orig_qty = qty
+            # default: si qty==1 tomar toda la pila, sino capear al tamaño del stack
             if qty == 1:
-                try:
-                    qty = int(parts[1])
-                except ValueError:
-                    pass
+                qty = orig_qty
+            else:
+                qty = min(qty, orig_qty)
+            item = base
         else:
             item = item_str
+        # Ground tab: restar la cantidad del ground_items
+        if self.model.current_tab == 'ground' and self.model.selected_index is not None:
+            idx = self.model.selected_index
+            orig_entry = self.model.ground_items[idx]
+            base, orig_str = orig_entry.rsplit(' x', 1)
+            try:
+                orig_qty = int(orig_str)
+            except (ValueError, IndexError):
+                orig_qty = qty
+            remaining = orig_qty - qty
+            if remaining > 0:
+                self.model.ground_items[idx] = f"{base} x{remaining}"
+            else:
+                self.model.ground_items.pop(idx)
+            self.model.selected_index = None
+        # Cerrar panel y retornar
         self.close()
         return item, qty

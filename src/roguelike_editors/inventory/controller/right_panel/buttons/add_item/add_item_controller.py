@@ -130,6 +130,19 @@ class AddItemController:
                             break
                     else:
                         inv_comp.slots.append(ItemStack(self.model.selected_item, quantity))
+            # Actualizar ground items en active_data para map
+            if cat == 'map':
+                map_data = self.editor_model.active_data.get('map', {})
+                for key_map, entry_map in list(map_data.items()):
+                    if entry_map.get('item_id') == self.model.selected_item:
+                        q0 = entry_map.get('quantity', 0)
+                        new_q = q0 - quantity
+                        if new_q > 0:
+                            entry_map['quantity'] = new_q
+                        else:
+                            map_data.pop(key_map)
+                        break
+                self.editor_model.active_data['map'] = map_data
             self.model.show_item_list = False
             self.model.show_quantity_input = False
             self.model.selected_item = None
