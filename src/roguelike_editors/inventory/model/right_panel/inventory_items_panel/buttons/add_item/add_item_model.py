@@ -2,9 +2,9 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 
 @dataclass
-class InventoryitemsPanelModel:
+class AddItemModel:
     """
-    Modelo para gestionar el flujo de añadir y eliminar ítems en el grid.
+    Modelo para gestionar el flujo de añadir ítems en el grid.
     """
     # Lista de todos los ítems disponibles (identificadores)
     available_items: List[str] = field(default_factory=list)
@@ -16,9 +16,3 @@ class InventoryitemsPanelModel:
     show_quantity_input: bool = False
     # Cantidad a agregar
     quantity: int = 1
-    # Modo eliminación activa
-    show_delete_mode: bool = False
-    # Mostrar input de cantidad para eliminación
-    show_delete_quantity_input: bool = False
-    # Cantidad de ítems a eliminar
-    delete_quantity: int = 1
