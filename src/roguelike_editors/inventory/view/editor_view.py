@@ -8,7 +8,7 @@ from roguelike_editors.inventory.model.editor_model import InventoryEditorModel
 from roguelike_game.ecs.components.item_models import load_items
 
 from roguelike_editors.inventory.model.left_panel.panel_model import InventoryPanelModel
-from roguelike_editors.inventory.view.left_panel.inventory_panel_view import InventoryPanelView
+from roguelike_editors.inventory.view.left_panel import PanelView
 from roguelike_editors.inventory.view.right_panel.inventory_items_panel_view import InventoryItemsPanelView
 
 class InventoryEditorView:
@@ -44,7 +44,7 @@ class InventoryEditorView:
         self.item_panel_view = ItemSelectionPanelView(self.font, margin=self.margin, button_size=self.button_size)
         # Panel MVC para listado de entidades
         self.inventory_panel_model = InventoryPanelModel()
-        self.inventory_panel_view = InventoryPanelView(self.font, margin=self.margin)
+        self.inventory_panel_view = PanelView(self.font, margin=self.margin)
 
         # Instanciar vista de grid de inventario
         self.grid_view = InventoryItemsPanelView(

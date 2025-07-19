@@ -2,7 +2,7 @@ import pygame
 from types import SimpleNamespace
 
 from roguelike_editors.inventory.controller.left_panel.panel_controller import PanelController
-from roguelike_editors.inventory.view.left_panel.inventory_panel_view import InventoryPanelView
+from roguelike_editors.inventory.view.left_panel import PanelView
 from roguelike_editors.inventory.model.left_panel.panel_model import InventoryPanelModel
 
 from .tabs.tabs_event_handler import TabsEventHandler
@@ -11,9 +11,12 @@ from .list.list_event_handler import ListEventHandler
 
 class PanelEventHandler:
     """
+    Usa PanelView para dibujar y manejar eventos de tabs y lista.
+    """
+    """
     Controlador de eventos para el panel izquierdo (tabs + listado) que delega a manejadores especializados.
     """
-    def __init__(self, editor_controller, controller: PanelController, view: InventoryPanelView, model: InventoryPanelModel):
+    def __init__(self, editor_controller, controller: PanelController, view: PanelView, model: InventoryPanelModel):
         self.editor_controller = editor_controller
         self.controller = controller
         self.view = view

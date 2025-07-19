@@ -19,26 +19,6 @@
       "y": 2466
     }
   },
-  "7fb8d4f5-be69-472d-a71d-a5bb1009ff33": {
-    "item_id": "gold",
-    "quantity": 1,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2188.993057847086,
-      "y": 2517.450309923613
-    }
-  },
-  "e2188d12-a1d5-4ead-8c0c-8c831dd864fb": {
-    "item_id": "wood",
-    "quantity": 2,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 1803.9369546955377,
-      "y": 2489.4504233663038
-    }
-  },
   "2e1e0d7f-5e0e-4f40-a74f-59500a9dfa30": {
     "item_id": "health_potion",
     "quantity": 1,
@@ -47,16 +27,6 @@
     "position": {
       "x": 1587.9306623428763,
       "y": 2524.3825618129763
-    }
-  },
-  "5ee421c8-02c1-45a8-84ef-b4754ed8fb98": {
-    "item_id": "gold",
-    "quantity": 2,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 1655.866744192361,
-      "y": 2481.6713113144656
     }
   },
   "c528f339-888d-4b6a-8491-5e7972bb712b": {
@@ -79,16 +49,6 @@
       "y": 2899.640927066214
     }
   },
-  "89c7f393-62a1-421a-a108-625990f1f8d1": {
-    "item_id": "gold",
-    "quantity": 2,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2443.1369811690274,
-      "y": 2844.6006291788485
-    }
-  },
   "97c5f86a-3c22-4194-9771-98034cfc1b3e": {
     "item_id": "wood",
     "quantity": 2,
@@ -97,16 +57,6 @@
     "position": {
       "x": 2473.3223304703356,
       "y": 2561.3172798364562
-    }
-  },
-  "3d41a7a7-e665-44e8-99ff-803792b9b00e": {
-    "item_id": "gold",
-    "quantity": 1,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2444.7395654383054,
-      "y": 2220.2538010314356
     }
   }
 }

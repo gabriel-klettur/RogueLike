@@ -26,7 +26,7 @@ class ListEventHandler:
                 # Solo categoría 'monsters' tiene lógica compleja
                 if self.model.current_category == 'monsters':
                     line_h = self.view.font.get_linesize()
-                    idx = (my - self.view.panel_rect.y + self.view.scroll_panel.scroll_offset) // line_h
+                    idx = (my - self.view.panel_rect.y + self.view.list_view.scroll_panel.scroll_offset) // line_h
                     items = self.controller.get_items_list()
                     if idx < 0 or idx >= len(items):
                         return False
