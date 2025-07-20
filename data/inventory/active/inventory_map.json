@@ -199,16 +199,6 @@
       "y": 2507.1235534760476
     }
   },
-  "8ac06edf-279a-478a-9e81-f57fbd6fa322": {
-    "item_id": "gold",
-    "quantity": 4,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2041.4450284595912,
-      "y": 2529.1192428607387
-    }
-  },
   "d7e49e9d-db11-4f42-922d-a545b8c144bd": {
     "item_id": "experience_orb",
     "quantity": 1,
@@ -217,16 +207,6 @@
     "position": {
       "x": 2041.4450284595912,
       "y": 2529.1192428607387
-    }
-  },
-  "677c4ecb-cc05-4085-ae3f-fdad0d7063f5": {
-    "item_id": "gold",
-    "quantity": 9,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2304.824245025474,
-      "y": 2550.272539572232
     }
   },
   "f0946542-5a0d-492b-b72c-eb64e142a89c": {
@@ -277,6 +257,26 @@
     "position": {
       "x": 2303.824245025474,
       "y": 2481.272539572232
+    }
+  },
+  "6147ce1d-10ef-422d-b028-321b97b689fd": {
+    "item_id": "gold",
+    "quantity": 3,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2339.8195298777437,
+      "y": 1971.0602144835389
+    }
+  },
+  "acfe25cc-0ebb-4118-aa80-1bf8f28fcd3a": {
+    "item_id": "experience_orb",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2339.8195298777437,
+      "y": 1971.0602144835389
     }
   }
 }
