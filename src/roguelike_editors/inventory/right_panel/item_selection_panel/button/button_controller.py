@@ -40,9 +40,15 @@ class ButtonController:
                 orig_qty = qty
             remaining = orig_qty - qty
             if remaining > 0:
+                # Update the item with remaining quantity
                 self.model.ground_items[idx] = f"{base} x{remaining}"
+                # Keep the item selected with updated text
+                self.model.selected_item = f"{base} x{remaining}"
             else:
+                # Remove the item completely
                 self.model.ground_items.pop(idx)
-            self.model.selected_index = None
+                # Clear selection since item was removed
+                self.model.selected_index = None
+                self.model.selected_item = None
 
         return item, qty

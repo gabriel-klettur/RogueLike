@@ -31,5 +31,5 @@ class ItemSelectionPanelController:
 
     def confirm(self) -> tuple[str, int]:
         item, qty = self.button_controller.confirm()
-        self.close()
+        # Don't auto-close the panel - let the user decide when to close it
         return item, qty
