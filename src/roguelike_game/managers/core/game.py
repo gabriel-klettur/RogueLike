@@ -125,12 +125,11 @@ class Game:
                 self.inventory_editor.model.visible = new_vis
                 print(f"[DEBUG][Controller] Inventory Editor new visible: {new_vis}")
                 if new_vis:
-                    print(f"[DEBUG][Controller] Loading entities list...")
-                    players = list(self.inventory_editor.world.components.get('PlayerTagComponent', {}).keys())
-                    npcs = list(self.inventory_editor.world.components.get('NPCTagComponent', {}).keys())
-                    entities = players + npcs
+                    print(f"[DEBUG][Controller] Loading JSON entities for category {self.inventory_editor.model.current_category}...")
+                    data = self.inventory_editor.model.active_data.get(self.inventory_editor.model.current_category, {})
+                    entities = list(data.keys()) if isinstance(data, dict) else []
                     self.inventory_editor.model.entities = entities
-                    print(f"[DEBUG][Controller] Entities loaded: {entities}")
+                    print(f"[DEBUG][Controller] JSON Entities loaded: {entities}")
                     prev = self.inventory_editor.model.selected_eid
                     if prev in entities:
                         selected = prev
