@@ -69,7 +69,3 @@ class DeleteController:
                     slot_comp.quantity -= qty
                 else:
                     inv_comp.slots[slot_idx] = None
-
-        # Resetear flags de modo eliminación
-        self.model.show_delete_mode = False
-        self.model.show_delete_quantity_input = False

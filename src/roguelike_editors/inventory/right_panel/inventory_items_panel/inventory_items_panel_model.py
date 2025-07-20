@@ -81,3 +81,8 @@ class InventoryitemsPanelModel:
     @delete_quantity.setter
     def delete_quantity(self, value):
         self.delete.delete_quantity = value
+    
+    # Grid model access
+    @property
+    def grid_model(self):
+        return self.grid

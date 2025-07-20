@@ -5,9 +5,11 @@ class DeleteEventHandler:
     Event handler para flujo de eliminar ítems en el grid.
     """
     def __init__(self, controller):
-        self.controller = controller
-        self.model = controller.model
+        # controller is actually InventoryItemsPanelController
+        self.controller = controller.delete_controller  # Access delete controller directly
+        self.model = controller.model.delete  # Access delete model directly
         self.view = controller.editor_controller.view
+        self.parent_controller = controller
 
     def handle(self, event):
         # Manejo de foco en input de cantidad
@@ -44,12 +46,71 @@ class DeleteEventHandler:
             if dq_rect and dq_rect.collidepoint(mx, my):
                 return True
             if self.model.show_delete_mode:
-                slots = self.view.grid_view._get_slots(self.controller.editor_controller.model)
-                idx = self.view.grid_view.get_slot_index((mx, my), self.view.left_panel_rect, len(slots))
-                if idx is not None and slots[idx]:
-                    self.controller.delete_item(idx, self.model.delete_quantity)
-                self.model.show_delete_mode = False
-                self.model.show_delete_quantity_input = False
+                print(f"[DEBUG] Delete mode active, processing click at ({mx}, {my})")
+                
+                # Get slots data using the editor controller's model
+                try:
+                    editor_model = self.controller.editor_controller.model
+                    slots = self.view.grid_view.tabs_view.get_slots_data(editor_model)
+                    print(f"[DEBUG] Got {len(slots)} slots: {slots[:3]}...")  # Show first 3 slots
+                except Exception as e:
+                    print(f"[DEBUG] Error getting slots: {e}")
+                    return True
+                
+                # Calculate slot index using the same logic as the grid view
+                try:
+                    # Get the panel rect from the left panel
+                    panel_rect = getattr(self.view, 'left_panel_rect', None)
+                    if not panel_rect:
+                        print(f"[DEBUG] No left_panel_rect found")
+                        return True
+                    
+                    # Calculate grid origin (same as in _draw_grid)
+                    grid_origin_x = panel_rect.x + panel_rect.width + self.view.margin
+                    grid_origin_y = panel_rect.y
+                    
+                    # Use 5 columns like the actual grid
+                    cols = 5
+                    slot_size = self.view.slot_size
+                    margin = self.view.margin
+                    
+                    print(f"[DEBUG] Grid calculation: origin=({grid_origin_x},{grid_origin_y}), click=({mx},{my})")
+                    
+                    idx = None
+                    for i in range(len(slots)):
+                        col = i % cols
+                        row = i // cols
+                        rx = grid_origin_x + col * (slot_size + margin)
+                        ry = grid_origin_y + row * (slot_size + margin)
+                        rect_obj = pygame.Rect(rx, ry, slot_size, slot_size)
+                        
+                        if i < 3:  # Only log first few slots to avoid spam
+                            print(f"[DEBUG] Slot {i}: rect=({rx},{ry},{slot_size},{slot_size})")
+                        
+                        if rect_obj.collidepoint(mx, my):
+                            idx = i
+                            break
+                    
+                    print(f"[DEBUG] Calculated slot index: {idx}")
+                except Exception as e:
+                    print(f"[DEBUG] Error calculating slot index: {e}")
+                    return True
+                
+                if idx is not None and idx < len(slots) and slots[idx]:
+                    print(f"[DEBUG] Deleting item at slot {idx}: {slots[idx]}")
+                    try:
+                        self.controller.delete_item(idx, self.model.delete_quantity)
+                        print(f"[DEBUG] Item deleted successfully")
+                        # Exit delete mode after successful deletion
+                        self.model.show_delete_mode = False
+                        self.model.show_delete_quantity_input = False
+                    except Exception as e:
+                        print(f"[DEBUG] Error deleting item: {e}")
+                else:
+                    print(f"[DEBUG] No valid item to delete at index {idx}")
+                    # Click outside items - exit delete mode
+                    self.model.show_delete_mode = False
+                    self.model.show_delete_quantity_input = False
                 return True
 
         return False

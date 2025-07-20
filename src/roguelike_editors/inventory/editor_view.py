@@ -130,14 +130,18 @@ class InventoryEditorView:
         origin_x, origin_y = self.grid_origin
         y0 = origin_y + 30
         cols = min(count, 10)
+        print(f"[DEBUG] get_slot_at_pos: pos=({x},{y}), origin=({origin_x},{origin_y}), y0={y0}, cols={cols}")
         for idx in range(count):
             col = idx % cols
             row = idx // cols
             rx = origin_x + col * (self.slot_size + self.margin)
             ry = y0 + row * (self.slot_size + self.margin)
             rect = pygame.Rect(rx, ry, self.slot_size, self.slot_size)
+            print(f"[DEBUG] Slot {idx}: rect=({rx},{ry},{self.slot_size},{self.slot_size})")
             if rect.collidepoint(x, y):
+                print(f"[DEBUG] Found slot {idx} at position ({x},{y})")
                 return idx
+        print(f"[DEBUG] No slot found at position ({x},{y})")
         return None
 
     def _get_item_image(self, item_id):

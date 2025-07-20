@@ -12,3 +12,5 @@ class GridModel:
     # Tamaño del grid (filas x columnas)
     grid_rows: int = 5
     grid_cols: int = 5
+    # Modo eliminación activa
+    show_delete_mode: bool = False
