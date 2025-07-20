@@ -28,10 +28,41 @@ class DataController:
         }
 
     def load_data(self):
-        # Load JSON data into model
+        print("[DEBUG][Controller] DataController.load_data start")
         for cat, p in self.paths.items():
             default_data = load_from_json(p['default'])
             self.model.default_data[cat] = default_data
+            active = load_from_json(p['active'])
+            if cat == 'map' and isinstance(active, dict) and 'map' in active:
+                active = active['map']
+                os.makedirs(os.path.dirname(p['active']), exist_ok=True)
+                with open(p['active'], 'w', encoding='utf-8') as f:
+                    json.dump(active, f, ensure_ascii=False, indent=2)
+            self.model.active_data[cat] = active
+        print(f"[DEBUG][Controller] DataController.load_data complete. Loaded categories: {list(self.model.default_data.keys())}")
+        # Validate JSON schemas if available
+        print(f"[DEBUG][Controller] Loading inventory data for category '{cat}'")
+        default_data = load_from_json(p['default'])
+        self.model.default_data[cat] = default_data
+        print(f"[DEBUG][Controller] Loaded default_data['{cat}']: {default_data}")
+        active = load_from_json(p['active'])
+        # Handle nested map data
+        if cat == 'map' and isinstance(active, dict) and 'map' in active:
+            active = active['map']
+            os.makedirs(os.path.dirname(p['active']), exist_ok=True)
+            with open(p['active'], 'w', encoding='utf-8') as f:
+                json.dump(active, f, ensure_ascii=False, indent=2)
+        self.model.active_data[cat] = active
+        print(f"[DEBUG][Controller] Loaded active_data['{cat}']: {active}")
+        print(f"[DEBUG][Controller] DataController.load_data complete. Categories loaded: {list(self.model.default_data.keys())}")
+        # Validate JSON schemas if available
+        print("[DEBUG][Controller] DataController.load_data start")
+        # Load JSON data into model
+        for cat, p in self.paths.items():
+            print(f"[DEBUG][Controller] Loading inventory data for category '{cat}'")
+            default_data = load_from_json(p['default'])
+            self.model.default_data[cat] = default_data
+            print(f"[DEBUG][Controller] Loaded default_data['{cat}']: {default_data}")
             active = load_from_json(p['active'])
             # Handle nested map data
             if cat == 'map' and isinstance(active, dict) and 'map' in active:
@@ -39,8 +70,10 @@ class DataController:
                 os.makedirs(os.path.dirname(p['active']), exist_ok=True)
                 with open(p['active'], 'w', encoding='utf-8') as f:
                     json.dump(active, f, ensure_ascii=False, indent=2)
-            self.model.active_data[cat] = active
+                    self.model.active_data[cat] = active
+            print(f"[DEBUG][Controller] Loaded active_data['{cat}']: {active}")
 
+        print(f"[DEBUG][Controller] DataController.load_data complete. Categories loaded: {list(self.model.default_data.keys())}")
         # Validate JSON schemas if available
         try:
             import jsonschema

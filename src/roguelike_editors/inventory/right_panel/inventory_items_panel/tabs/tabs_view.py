@@ -40,12 +40,15 @@ class TabsView:
         return rects
 
     def get_slots_data(self, model):
+        
         """Obtiene los datos de slots según el modelo y pestaña activa"""
         if model.editing_side == 'default':
             # Show default inventory templates
             if model.current_category == 'player':
                 default_player = model.default_data.get('player', {})
-                return default_player.get('slots', [])
+                slots = default_player.get('slots', [])
+                
+                return slots
             elif model.current_category == 'monsters':
                 # Determine template of selected monster
                 active_mon = model.active_data.get('monsters', {}).get(str(model.selected_eid), {})
@@ -59,10 +62,14 @@ class TabsView:
                         active_slots = active_mon.get('slots', [])
                         if len(active_slots) > len(slots):
                             slots += [None] * (len(active_slots) - len(slots))
+                        
                         return slots
+            
             return []
         else:
             # Show active data from JSON
             active_data = model.active_data.get(model.current_category, {})
             entry = active_data.get(str(model.selected_eid), {})
-            return entry.get('slots', [])
+            slots = entry.get('slots', [])
+            
+            return slots

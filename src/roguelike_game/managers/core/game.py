@@ -120,15 +120,26 @@ class Game:
                 self.entities_editor.model.visible = not self.entities_editor.model.visible
                 return
             if event.type == pygame.KEYDOWN and event.key == pygame.K_F6:
-                # Alternar Inventory Editor
+                print(f"[DEBUG][Controller] Toggling Inventory Editor. Old visible: {self.inventory_editor.model.visible}")
                 new_vis = not self.inventory_editor.model.visible
                 self.inventory_editor.model.visible = new_vis
+                print(f"[DEBUG][Controller] Inventory Editor new visible: {new_vis}")
                 if new_vis:
-                    # Inicializar lista de entidades
+                    print(f"[DEBUG][Controller] Loading entities list...")
                     players = list(self.inventory_editor.world.components.get('PlayerTagComponent', {}).keys())
                     npcs = list(self.inventory_editor.world.components.get('NPCTagComponent', {}).keys())
-                    self.inventory_editor.model.entities = players + npcs
-                    self.inventory_editor.model.selected_eid = self.inventory_editor.model.entities[0] if self.inventory_editor.model.entities else None
+                    entities = players + npcs
+                    self.inventory_editor.model.entities = entities
+                    print(f"[DEBUG][Controller] Entities loaded: {entities}")
+                    prev = self.inventory_editor.model.selected_eid
+                    if prev in entities:
+                        selected = prev
+                    else:
+                        selected = entities[0] if entities else None
+                    self.inventory_editor.model.selected_eid = selected
+                    print(f"[DEBUG][Controller] Selected EID: {selected}")
+                    # Llamada a volcado completo de estado del editor
+                    self.inventory_editor.debug_dump()
                 return
             if event.type == pygame.KEYDOWN and event.key == pygame.K_F7:
                 # Alternar Item Editor

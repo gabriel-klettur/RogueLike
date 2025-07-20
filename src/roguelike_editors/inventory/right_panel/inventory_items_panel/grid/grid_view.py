@@ -47,6 +47,7 @@ class GridView:
         # Draw item image
         try:
             img = self.get_item_image(slot.get('item'))
+            
             if img:
                 overlay.blit(img, (rx + 5, ry + 5))
         except Exception as e:
@@ -54,6 +55,7 @@ class GridView:
         
         # Draw quantity
         qty = slot.get('quantity', 0)
+        
         qty_surf = self.font.render(str(qty), True, (255, 255, 255))
         overlay.blit(qty_surf, qty_surf.get_rect(
             bottomright=(rx + self.slot_size - 5, ry + self.slot_size - 5)

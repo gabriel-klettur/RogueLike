@@ -54,6 +54,29 @@ class InventoryEditorController:
         # Delegar completamente a InventoryEditorEventHandler
         self.event_handler.handle(event)
 
+    def debug_dump(self):
+        """
+        [DEBUG][Controller] Volcado completo del estado del InventoryEditorController.
+        """
+        m = self.model
+        print("[DEBUG][Controller] InventoryEditorController.debug_dump:")
+        print(f"  visible: {m.visible}")
+        print(f"  entities: {m.entities}")
+        print(f"  selected_eid: {m.selected_eid}")
+        print(f"  editing_property: {m.editing_property}")
+        print(f"  editing_index: {m.editing_index}")
+        print(f"  drag_item: {m.drag_item}")
+        print(f"  drag_slot: {m.drag_slot}")
+        print(f"  scroll_offset: {m.scroll_offset}")
+        print(f"  left_panel_model: {m.left_panel_model}")
+        print(f"  items_panel_model: {m.items_panel_model}")
+        print(f"  item_selection_panel_model: {m.item_selection_panel_model}")
+        print(f"  inventory_panel_controller: {self.inventory_panel_controller}")
+        print(f"  grid_controller: {self.grid_controller}")
+        print(f"  inventory_panel_view: {self.view.inventory_panel_view}")
+        print(f"  grid_view: {self.view.grid_view}")
+        print(f"  item_panel_view: {self.view.item_panel_view}")
+
     def draw(self, screen):
         """
         Dibuja la vista del editor.

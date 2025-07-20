@@ -25,6 +25,9 @@ class InventoryItemsPanelView:
         self.save_view = SaveView(font, button_size, margin)
         self.grid_view = GridView(font, slot_size, margin, get_item_image_func, logger)
         self.tabs_view = TabsView(font, button_size, margin)
+        self._last_slots_repr = None
+        self._last_category = None
+        self._last_side = None
         
         # Rects de compatibilidad
         self.show_default_rect = None
@@ -44,6 +47,9 @@ class InventoryItemsPanelView:
         return self.delete_view.delete_qty_input_rect
 
     def draw(self, overlay, model, panel_rect):
+
+        # [DEBUG][View] InventoryItemsPanelView.draw called. Category: %s, Editing side: %s
+        # [DEBUG][View] slots_data: %s
         """
         Dibuja grid de inventario, botones de mostrar y botón de guardar.
         Delega en subvistas especializadas.
@@ -52,6 +58,12 @@ class InventoryItemsPanelView:
         """
         # Obtener datos de slots y posición
         slots = self.tabs_view.get_slots_data(model)
+        slots_repr = repr(slots)
+        if slots_repr != self._last_slots_repr or model.current_category != self._last_category or model.editing_side != self._last_side:
+            print(f"[DEBUG][View] InventoryItemsPanelView.draw new state: category={model.current_category}, side={model.editing_side}, slots={slots}")
+            self._last_slots_repr = slots_repr
+            self._last_category = model.current_category
+            self._last_side = model.editing_side
         grid_origin_x, grid_origin_y = self._get_grid_origin(panel_rect)
         mx, my = pygame.mouse.get_pos()
         

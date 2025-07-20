@@ -24,3 +24,8 @@ class InventoryEditorManager:
     def draw(self, screen: pygame.Surface) -> None:
         """Delegar renderizado."""
         self.controller.draw(screen)
+
+    def debug_dump(self):
+        """[DEBUG][Manager] Delega debug_dump al InventoryEditorController."""
+        print("[DEBUG][Manager] InventoryEditorManager.debug_dump")
+        self.controller.debug_dump()

@@ -63,6 +63,7 @@ class InventoryEditorModel:
     @current_category.setter
     def current_category(self, value: str):
         self.left_panel_model.current_category = value
+        print(f"[DEBUG][Model] InventoryEditorModel.current_category set to {value}")
 
     @property
     def selected_eid(self) -> Optional[int]:
@@ -71,6 +72,7 @@ class InventoryEditorModel:
     @selected_eid.setter
     def selected_eid(self, value: Optional[int]):
         self.left_panel_model.selected_eid = value
+        print(f"[DEBUG][Model] InventoryEditorModel.selected_eid set to {value}")
 
     @property
     def camera_focus_target(self) -> Optional[Any]:
