@@ -13,7 +13,31 @@ class TabsView:
         """Dibuja las pestañas de default/active"""
         # Esta funcionalidad ya está en buttons_view como show_buttons
         # Mantenemos por compatibilidad pero delegamos
-        pass
+        cols = 5
+        rows = (slots_count + cols - 1) // cols
+        show_y = grid_origin_y - self.button_size[1] - self.margin
+        rects = {}
+
+        # Show Default
+        show_default_rect = pygame.Rect(grid_origin_x, show_y, *self.button_size)
+        pygame.draw.rect(overlay, (100, 100, 100), show_default_rect)
+        border_color = (255, 255, 0) if (active_tab == 'default' or show_default_rect.collidepoint(mx, my)) else (255, 255, 255)
+        pygame.draw.rect(overlay, border_color, show_default_rect, 2)
+        txt_def = self.font.render("Show Default", True, (255, 255, 255))
+        overlay.blit(txt_def, (grid_origin_x + 10, show_y + 5))
+        rects['show_default'] = show_default_rect
+
+        # Show Active
+        act_x = grid_origin_x + self.button_size[0] + 10
+        show_active_rect = pygame.Rect(act_x, show_y, *self.button_size)
+        pygame.draw.rect(overlay, (100, 100, 100), show_active_rect)
+        border_color = (255, 255, 0) if (active_tab == 'active' or show_active_rect.collidepoint(mx, my)) else (255, 255, 255)
+        pygame.draw.rect(overlay, border_color, show_active_rect, 2)
+        txt_act = self.font.render("Show Active", True, (255, 255, 255))
+        overlay.blit(txt_act, (act_x + 10, show_y + 5))
+        rects['show_active'] = show_active_rect
+
+        return rects
 
     def get_slots_data(self, model):
         """Obtiene los datos de slots según el modelo y pestaña activa"""

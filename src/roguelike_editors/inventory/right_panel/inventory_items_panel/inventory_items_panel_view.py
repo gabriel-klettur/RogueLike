@@ -1,5 +1,7 @@
 import pygame
-from roguelike_editors.inventory.right_panel.inventory_items_panel.buttons.buttons_view import ButtonsView
+from roguelike_editors.inventory.right_panel.inventory_items_panel.buttons.add_item.add_item_view import AddItemView
+from roguelike_editors.inventory.right_panel.inventory_items_panel.buttons.delete.delete_view import DeleteView
+from roguelike_editors.inventory.right_panel.inventory_items_panel.buttons.save.save_view import SaveView
 from roguelike_editors.inventory.right_panel.inventory_items_panel.grid.grid_view import GridView
 from roguelike_editors.inventory.right_panel.inventory_items_panel.tabs.tabs_view import TabsView
 
@@ -18,7 +20,9 @@ class InventoryItemsPanelView:
         self.logger = logger
         
         # Subvistas especializadas
-        self.buttons_view = ButtonsView(font, button_size, margin)
+        self.add_view = AddItemView(font, button_size, margin)
+        self.delete_view = DeleteView(font, button_size, margin)
+        self.save_view = SaveView(font, button_size, margin)
         self.grid_view = GridView(font, slot_size, margin, get_item_image_func, logger)
         self.tabs_view = TabsView(font, button_size, margin)
         
@@ -33,11 +37,11 @@ class InventoryItemsPanelView:
     # Propiedades de compatibilidad para acceso directo
     @property
     def delete_qty_input(self):
-        return self.buttons_view.delete_qty_input
+        return self.delete_view.delete_qty_input
     
     @property
     def delete_qty_input_rect(self):
-        return self.buttons_view.delete_qty_input_rect
+        return self.delete_view.delete_qty_input_rect
 
     def draw(self, overlay, model, panel_rect):
         """
@@ -57,11 +61,11 @@ class InventoryItemsPanelView:
         
         rects = {}
         
-        # Show Default/Active buttons (delegado a buttons_view)
-        show_rects = self.buttons_view.draw_show_buttons(
-            overlay, grid_origin_x, grid_origin_y, mx, my, 
-            current_editing_side, len(slots)
-        )
+        # Show Default/Active buttons (delegado a tabs_view)
+        show_rects = self.tabs_view.draw_tabs(overlay, grid_origin_x, grid_origin_y, mx, my, current_editing_side, len(slots))
+        # Rects de pestañas ya retornados        
+
+        
         rects.update(show_rects)
         # Actualizar rects de compatibilidad
         self.show_default_rect = show_rects.get('show_default')
@@ -72,11 +76,12 @@ class InventoryItemsPanelView:
             overlay, slots, grid_origin_x, grid_origin_y, mx, my, delete_mode_active
         )
         
-        # Add/Delete buttons (delegado a buttons_view)
-        manage_rects = self.buttons_view.draw_manage_buttons(
-            overlay, grid_origin_x, grid_origin_y, mx, my, 
-            delete_mode_active, len(slots)
-        )
+        # Add/Delete buttons (delegado a subviews)
+        add_rects = self.add_view.draw(overlay, grid_origin_x, grid_origin_y, mx, my, len(slots))
+        del_rects = self.delete_view.draw_button(overlay, grid_origin_x, grid_origin_y, mx, my, len(slots), delete_mode_active)
+        manage_rects = {**add_rects, **del_rects}            
+
+        
         rects.update(manage_rects)
         # Actualizar rects de compatibilidad
         self.add_item_rect = manage_rects.get('add_item')
@@ -84,16 +89,16 @@ class InventoryItemsPanelView:
         
         # Delete quantity input (si está en modo delete)
         if delete_mode_active:
-            self.buttons_view.draw_delete_quantity_input(
-                overlay, grid_origin_x, grid_origin_y, mx, my, len(slots),
-                self.add_item_rect, self.delete_item_rect
-            )
+            self.delete_view.draw_input(overlay, grid_origin_x, grid_origin_y, mx, my, len(slots), self.add_item_rect, self.delete_item_rect)
+
+
+            
         
-        # Save button (delegado a buttons_view)
-        save_rects = self.buttons_view.draw_save_button(
-            overlay, grid_origin_x, grid_origin_y, mx, my, 
-            len(slots), delete_mode_active
-        )
+        # Save button (delegado a save_view)
+        save_rects = self.save_view.draw(overlay, grid_origin_x, grid_origin_y, mx, my, len(slots), delete_mode_active)
+
+
+        
         rects.update(save_rects)
         # Actualizar rect de compatibilidad
         self.save_rect = save_rects.get('save')
@@ -107,9 +112,9 @@ class InventoryItemsPanelView:
 
     # Método obsoleto - ahora delegado a grid_view.draw_slots()
 
-    # Método obsoleto - ahora delegado a buttons_view.draw_show_buttons()
 
-    # Método obsoleto - ahora delegado a buttons_view.draw_save_button()
+
+
 
 
     def get_slot_index(self, pos, panel_rect, count):
@@ -120,4 +125,4 @@ class InventoryItemsPanelView:
         grid_origin_x, grid_origin_y = self._get_grid_origin(panel_rect)
         return self.grid_view.get_slot_index(pos, grid_origin_x, grid_origin_y, count)
 
-    # Método obsoleto - ahora delegado a buttons_view.draw_manage_buttons()
+
