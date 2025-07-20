@@ -218,5 +218,65 @@
       "x": 2041.4450284595912,
       "y": 2529.1192428607387
     }
+  },
+  "677c4ecb-cc05-4085-ae3f-fdad0d7063f5": {
+    "item_id": "gold",
+    "quantity": 9,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2304.824245025474,
+      "y": 2550.272539572232
+    }
+  },
+  "f0946542-5a0d-492b-b72c-eb64e142a89c": {
+    "item_id": "iron_sword",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2342.824245025474,
+      "y": 2475.272539572232
+    }
+  },
+  "305d1deb-3a19-4c97-bcd6-fc340beb334f": {
+    "item_id": "energy_potion",
+    "quantity": 5,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2286.824245025474,
+      "y": 2477.272539572232
+    }
+  },
+  "3d5667fb-6a13-4fdb-8127-2cc8e6b5f5f2": {
+    "item_id": "wood",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2250.824245025474,
+      "y": 2483.272539572232
+    }
+  },
+  "0a552392-78ea-4dc4-9090-d5350e9ce42b": {
+    "item_id": "health_potion",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2327.824245025474,
+      "y": 2476.272539572232
+    }
+  },
+  "53cb321d-8f3e-4322-92fc-f4b98fb47cd2": {
+    "item_id": "mana_potion",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2303.824245025474,
+      "y": 2481.272539572232
+    }
   }
 }
