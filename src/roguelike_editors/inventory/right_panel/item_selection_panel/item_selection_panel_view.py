@@ -1,5 +1,5 @@
 import pygame
-from roguelike_editors.inventory.model.right_panel.item_selection_panel.item_selection_panel_model import ItemSelectionPanelModel
+from roguelike_editors.inventory.right_panel.item_selection_panel.item_selection_panel_model import ItemSelectionPanelModel
 from .tittle.tittle_view import TittleView
 from .tabs.tabs_view import TabsView
 from .list.list_view import ListView

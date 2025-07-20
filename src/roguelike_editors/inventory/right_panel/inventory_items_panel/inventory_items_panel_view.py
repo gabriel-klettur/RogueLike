@@ -1,7 +1,7 @@
 import pygame
-from roguelike_editors.inventory.view.right_panel.inventory_items_panel.buttons.buttons_view import ButtonsView
-from roguelike_editors.inventory.view.right_panel.inventory_items_panel.grid.grid_view import GridView
-from roguelike_editors.inventory.view.right_panel.inventory_items_panel.tabs.tabs_view import TabsView
+from roguelike_editors.inventory.right_panel.inventory_items_panel.buttons.buttons_view import ButtonsView
+from roguelike_editors.inventory.right_panel.inventory_items_panel.grid.grid_view import GridView
+from roguelike_editors.inventory.right_panel.inventory_items_panel.tabs.tabs_view import TabsView
 
 class InventoryItemsPanelView:
     """

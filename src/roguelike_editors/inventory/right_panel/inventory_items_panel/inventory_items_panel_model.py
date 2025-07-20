@@ -1,8 +1,8 @@
-from roguelike_editors.inventory.model.right_panel.inventory_items_panel.buttons.add_item.add_item_model import AddItemModel
-from roguelike_editors.inventory.model.right_panel.inventory_items_panel.buttons.delete.delete_model import DeleteModel
-from roguelike_editors.inventory.model.right_panel.inventory_items_panel.buttons.save.save_model import SaveModel
-from roguelike_editors.inventory.model.right_panel.inventory_items_panel.grid.grid_model import GridModel
-from roguelike_editors.inventory.model.right_panel.inventory_items_panel.tabs.tabs_model import TabsModel
+from roguelike_editors.inventory.right_panel.inventory_items_panel.buttons.add_item.add_item_model import AddItemModel
+from roguelike_editors.inventory.right_panel.inventory_items_panel.buttons.delete.delete_model import DeleteModel
+from roguelike_editors.inventory.right_panel.inventory_items_panel.buttons.save.save_model import SaveModel
+from roguelike_editors.inventory.right_panel.inventory_items_panel.grid.grid_model import GridModel
+from roguelike_editors.inventory.right_panel.inventory_items_panel.tabs.tabs_model import TabsModel
 
 class InventoryitemsPanelModel:
     """

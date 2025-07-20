@@ -1,6 +1,6 @@
 import pygame
-from .tabs import TabsView
-from .list import ListView
+from roguelike_editors.inventory.left_panel.tabs.tabs_view import TabsView
+from roguelike_editors.inventory.left_panel.list.list_view import ListView
 
 
 class PanelView:

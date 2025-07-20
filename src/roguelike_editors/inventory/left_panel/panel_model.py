@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
-from roguelike_editors.inventory.model.left_panel.tabs.tabs_model import TabsModel
-from roguelike_editors.inventory.model.left_panel.list.list_model import ListModel
+from roguelike_editors.inventory.left_panel.tabs.tabs_model import TabsModel
+from roguelike_editors.inventory.left_panel.list.list_model import ListModel
 from typing import Any, Optional
 
 

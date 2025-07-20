@@ -1,4 +1,4 @@
-from roguelike_editors.inventory.model.left_panel.panel_model import InventoryPanelModel
+from roguelike_editors.inventory.left_panel.panel_model import InventoryPanelModel
 from .tabs import TabsController
 from .list import ListController
 
