@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from roguelike_editors.inventory.model.left_panel.tabs.tabs_model import TabsModel
 from roguelike_editors.inventory.model.left_panel.list.list_model import ListModel
+from typing import Any, Optional
 
 
 @dataclass
@@ -11,6 +12,9 @@ class InventoryPanelModel:
     """
     tabs_model: TabsModel = field(default_factory=TabsModel)
     list_model: ListModel = field(default_factory=ListModel)
+
+    # Detached camera focus position when user double-clicks a monster
+    camera_focus_target: Optional[Any] = None
 
     @property
     def categories(self):
