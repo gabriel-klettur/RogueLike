@@ -1,5 +1,5 @@
 import pygame
-from roguelike_editors.inventory.controller.editor_controller import InventoryEditorController
+from roguelike_editors.inventory.editor_controller import InventoryEditorController
 
 class InventoryEditorManager:
     """

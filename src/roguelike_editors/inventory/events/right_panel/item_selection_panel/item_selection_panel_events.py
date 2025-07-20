@@ -1,5 +1,4 @@
-import pygame
-from roguelike_editors.inventory.controller.right_panel.item_selection_panel.item_selection_panel_controller import ItemSelectionPanelController
+from roguelike_editors.inventory.right_panel.item_selection_panel.item_selection_panel_controller import ItemSelectionPanelController
 from .button.button_event_handler import ButtonEventHandler
 from .input.input_event_handler import InputEventHandler
 from .list.list_event_handler import ListEventHandler

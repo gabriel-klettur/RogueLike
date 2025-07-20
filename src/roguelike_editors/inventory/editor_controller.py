@@ -7,17 +7,17 @@ from .data_controller import DataController
 from roguelike_engine.config.config import DATA_DIR, PROJECT_ROOT
 from roguelike_ui.services.json_persistence import load_from_json
 
-from roguelike_editors.inventory.controller.left_panel.panel_controller import PanelController
-from roguelike_editors.inventory.controller.right_panel.inventory_items_panel.inventory_items_panel_controller import InventoryItemsPanelController
+from roguelike_editors.inventory.left_panel.panel_controller import PanelController
+from roguelike_editors.inventory.right_panel.inventory_items_panel.inventory_items_panel_controller import InventoryItemsPanelController
 from roguelike_editors.inventory.events.right_panel.item_selection_panel.item_selection_panel_events import ItemSelectionPanelEventHandler
 
-from roguelike_editors.inventory.events.editor_events import InventoryEditorEventHandler
+from roguelike_editors.inventory.editor_events import InventoryEditorEventHandler
 from roguelike_editors.inventory.events.right_panel.inventory_items_panel.inventory_items_panel_events import InventoryItemsPanelEventHandler
 from roguelike_editors.inventory.events.left_panel import PanelEventHandler
 
-from roguelike_editors.inventory.model.editor_model import InventoryEditorModel
+from roguelike_editors.inventory.editor_model import InventoryEditorModel
 
-from roguelike_editors.inventory.view.editor_view import InventoryEditorView
+from roguelike_editors.inventory.editor_view import InventoryEditorView
 
 
 class InventoryEditorController:
