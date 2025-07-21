@@ -3,6 +3,10 @@ from roguelike_engine.map.model.layer import Layer
 
 from roguelike_editors.tiles.tiles_picker_panel.tile_picker_events import TilePickerEventHandler
 from roguelike_editors.tiles.tiles_toolbar_panel.tile_toolbar_events import TileToolbarEventHandler
+from roguelike_editors.tiles.tiles_view_panel.tiles_view_events import TilesViewPanelEventHandler
+from roguelike_editors.tiles.tiles_title.tiles_tiles_events import TilesTitleEventHandler
+from roguelike_editors.tiles.tiles_collision_panel.tiles_collision_panel_events import TilesCollisionPanelEventHandler
+from roguelike_editors.tiles.layers_panel.layers_panel_events import LayersPanelEventHandler
 
 class TileEditorEventHandler:
     """
@@ -21,6 +25,11 @@ class TileEditorEventHandler:
         self.toolbar_tool = TileToolbarEventHandler(
             toolbar_controller = controller.toolbar
         )
+        # Panel event handlers
+        self.view_panel_tool = TilesViewPanelEventHandler(controller.view_panel_controller, editor_state.view_panel_state)
+        self.title_tool = TilesTitleEventHandler(controller.title_controller, editor_state.title_state)
+        self.collision_panel_tool = TilesCollisionPanelEventHandler(controller.collision_panel_controller, editor_state.collision_panel_state)
+        self.layers_panel_tool = LayersPanelEventHandler(controller.layers_panel_controller, editor_state.layers_panel_state)
 
     def handle(self, events, camera, map):
         """Reenvía cada evento al manejador correspondiente."""
@@ -43,6 +52,15 @@ class TileEditorEventHandler:
                     self.controller.flush_brush(map)
             elif ev.type == pygame.MOUSEWHEEL:
                 self._on_mouse_wheel(ev)
+            # Delegate to panel event handlers
+            if self.editor_state.toolbar_state.view_active:
+                self.view_panel_tool.handle_event(ev, camera, map)
+            if self.editor_state.toolbar_state.layers_view_open:
+                self.layers_panel_tool.handle_event(ev, camera, map)
+            if self.editor_state.toolbar_state.collision_picker_open:
+                self.collision_panel_tool.handle_event(ev, camera, map)
+            # Always forward to title panel
+            self.title_tool.handle_event(ev)
 
     def _on_quit(self, ev):        
         self.state.running = False

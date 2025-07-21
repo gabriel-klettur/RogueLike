@@ -1,6 +1,10 @@
 from roguelike_editors.tiles.tiles_picker_panel.tile_picker_state import TilePickerState
 from roguelike_engine.map.model.layer import Layer
 from roguelike_editors.tiles.tiles_toolbar_panel.tile_toolbar_state import TileToolbarState
+from roguelike_editors.tiles.tiles_view_panel.tiles_view_state import TilesViewPanelState
+from roguelike_editors.tiles.tiles_title.tiles_tiles_states import TilesTitleState
+from roguelike_editors.tiles.tiles_collision_panel.tiles_collision_panel_states import TilesCollisionPanelState
+from roguelike_editors.tiles.layers_panel.layers_panel_states import LayersPanelState
 class TileEditorState:
     """
     Estructura mínima para el modo de edición de tiles.
@@ -20,3 +24,8 @@ class TileEditorState:
 
         # Picker state
         self.picker_state = TilePickerState()
+        # Panel states
+        self.view_panel_state = TilesViewPanelState()
+        self.title_state = TilesTitleState()
+        self.collision_panel_state = TilesCollisionPanelState()
+        self.layers_panel_state = LayersPanelState()

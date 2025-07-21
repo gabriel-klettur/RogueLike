@@ -7,6 +7,10 @@ from roguelike_engine.config.map_config import global_map_settings
 
 from roguelike_editors.tiles.tiles_picker_panel.tile_picker_controller import TilePickerController
 from roguelike_editors.tiles.tiles_toolbar_panel.tile_toolbar_controller import TileToolbarController
+from roguelike_editors.tiles.tiles_view_panel.tiles_view_controller import TilesViewPanelController
+from roguelike_editors.tiles.tiles_title.tiles_tiles_controller import TilesTitleController
+from roguelike_editors.tiles.tiles_collision_panel.tiles_collision_panel_controller import TilesCollisionPanelController
+from roguelike_editors.tiles.layers_panel.layers_panel_controller import LayersPanelController
 
 from roguelike_engine.utils.loader import load_image
 
@@ -20,6 +24,11 @@ class TileEditorController:
         self.editor  = editor_state     # instancia de TileEditorControllerState
         self.picker = TilePickerController(editor_state, picker_state)
         self.toolbar = TileToolbarController(editor_state)
+        # Panel controllers
+        self.view_panel_controller = TilesViewPanelController(self, editor_state.view_panel_state)
+        self.title_controller = TilesTitleController(editor_state, editor_state.title_state)
+        self.collision_panel_controller = TilesCollisionPanelController(editor_state, editor_state.collision_panel_state)
+        self.layers_panel_controller = LayersPanelController(editor_state, editor_state.layers_panel_state)
         # Cache for brush sprites to avoid reload on each paint
         self.brush_cache: dict[str, pygame.Surface] = {}
         # Track last painted cell to skip redundant operations
