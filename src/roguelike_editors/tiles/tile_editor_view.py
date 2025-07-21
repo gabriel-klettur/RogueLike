@@ -5,9 +5,9 @@ from roguelike_editors.tiles.tiles_editor_config import OUTLINE_CHOICE, OUTLINE_
 from roguelike_engine.utils.loader import load_image
 from roguelike_engine.map.model.layer import Layer
 
-from roguelike_editors.tiles.view.tools.tile_toolbar_view import TileToolbarView
-from roguelike_editors.tiles.view.tools.tile_picker_view import TilePickerView
-from roguelike_editors.tiles.view.tools.tile_outline_view import TileOutlineView
+from roguelike_editors.tiles.toolbar_panel.tile_toolbar_view import TileToolbarView
+from roguelike_editors.tiles.tiles_picker_panel.tile_picker_view import TilePickerView
+from roguelike_editors.tiles.tile_outline_view import TileOutlineView
 
 class TileEditorView:
     def __init__(self, controller, editor_state):

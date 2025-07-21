@@ -1,5 +1,5 @@
 # Path: src/roguelike_game/systems/editor/tiles/model/tile_editor_state.py
-from roguelike_editors.tiles.model.tools.tile_picker_state import TilePickerState
+from roguelike_editors.tiles.tiles_picker_panel.tile_picker_state import TilePickerState
 from roguelike_engine.map.model.layer import Layer
 class TileEditorState:
     """

@@ -6,8 +6,8 @@ from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.config.config_tiles import OVERLAY_CODE_MAP, DEFAULT_TILE_MAP
 from roguelike_engine.config.map_config import global_map_settings
 
-from roguelike_editors.tiles.controller.tools.tile_picker_controller import TilePickerController
-from roguelike_editors.tiles.controller.tools.tile_toolbar_controller import TileToolbarController
+from roguelike_editors.tiles.tiles_picker_panel.tile_picker_controller import TilePickerController
+from roguelike_editors.tiles.toolbar_panel.tile_toolbar_controller import TileToolbarController
 
 from roguelike_engine.utils.loader import load_image
 

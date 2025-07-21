@@ -2,7 +2,7 @@
 import pygame
 from roguelike_engine.map.model.layer import Layer
 
-from roguelike_editors.tiles.events.tools.tile_picker_events import TilePickerEventHandler
+from roguelike_editors.tiles.tiles_picker_panel.tile_picker_events import TilePickerEventHandler
 
 class TileEditorEventHandler:
     """
