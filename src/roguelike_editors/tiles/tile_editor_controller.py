@@ -75,8 +75,7 @@ class TileEditorController:
                 else:
                     if tile in map.solid_tiles:
                         map.solid_tiles.remove(tile)
-                # Debug print for collision brush
-                print(f"[DEBUG][Collision brush] at ({row},{col}): solid={solid}")
+
                 # Batch collision change and immediate update
                 zone_name, offx, offy = map.get_zone_for(row, col)
                 local_r, local_c = row - offy, col - offx
@@ -142,11 +141,11 @@ class TileEditorController:
         # 4.2) extraer subgrids de map.layers para la zona
         # Batch overlay change for later persistence
         self._pending_tile_zones.add(zone_name)
-        print(f"[Tile][Persist] Zona '{zone_name}' actualizada: capa {layer.name}, pos ({row},{col})")
+
         # Debug for brush
         local_r = row - offy
         local_c = col - offx
-        print(f"[Tile][Brush] 📝 Overlay aplicado: global ({row},{col}), local ({local_r},{local_c}) en zona '{zone_name}', capa: {layer.name}")
+
         map.view.invalidate_cache()
 
     def apply_eyedropper(self, mouse_pos, camera, map):
@@ -193,7 +192,7 @@ class TileEditorController:
             if ox <= col < ox + global_map_settings.zone_width and oy <= row < oy + global_map_settings.zone_height:
                 zone_name = zn
                 break
-        print(f"[Tile][EyeDroper] Zona '{zone_name}', capa '{layer.name}', pos ({row},{col})")
+
         map.view.invalidate_cache()
 
     def _tile_under_mouse(self, mouse_pos, camera, map):
@@ -222,8 +221,7 @@ class TileEditorController:
         self.editor.hovered_tile = (col, row)
 
         # --- 2) Si no estamos editando o el picker está abierto, salimos ---
-        # Nota: el flag en tu estado se llama `picker_open`
-        if not self.editor.active or getattr(self.editor, 'picker_open', False):
+        if not self.editor.active or self.editor.picker_state.open:
             return
 
         # --- 3) Botones del ratón ---
@@ -312,10 +310,10 @@ class TileEditorController:
 
     def flush_brush(self, map):
         """Persist pending changes after brush stroke ends."""
-        print(f"[DEBUG][TileEditorController] flush_brush called. Pending collisions: {getattr(self, '_pending_collision_zones', set())}, pending tiles: {getattr(self, '_pending_tile_zones', set())}")
+
         # Flush collision layer saves
         for zone in getattr(self, '_pending_collision_zones', []):
-            print(f"[DEBUG][TileEditorController] saving collision layer for zone '{zone}'")
+
             map.collision_manager.save(zone)
         # Flush tile overlay saves
         from roguelike_engine.config.map_config import global_map_settings
@@ -338,20 +336,20 @@ class TileEditorController:
             from roguelike_engine.map.model.overlay.factory import get_overlay_store
             store = get_overlay_store()
             raw = store.load(zone)
-            print(f"[DEBUG][TileEditorController] raw JSON overlay for zone '{zone}': {raw}")
+
         # Actualizar cache tras guardar overlays y colisiones
         try:
             map.save_cache()
-            print(f"[DEBUG][TileEditorController] map cache updated")
+
         except Exception as e:
             print(f"[ERROR][TileEditorController] failed to update map cache: {e}")
         # Refresh in-memory collision layers and invalidate view cache
         map.collision_layers = map.collision_manager.load(map)
         map.view.invalidate_cache()
-        print("[DEBUG][TileEditorController] in-memory collision layers reloaded and view cache invalidated")
+
         if hasattr(self, "ecs_world"):
             self.ecs_world.invalidate_spatial_index()
-            print("[DEBUG][TileEditorController] ECS spatial index invalidated")
+
         # Reset pending
         self._pending_collision_zones.clear()
         self._pending_tile_zones.clear()

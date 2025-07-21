@@ -125,7 +125,7 @@ class TilePickerController:
         else:
             h, w = len(map.tiles), len(map.tiles[0]) if map.tiles else 0
         local_r, local_c = row-offy, col-offx
-        print(f"[Tile][Borrar] 📝 Overlay actualizado: global ({row},{col}), local ({local_r},{local_c}) en zona '{zone_name}', capa: {self.editor_state.current_layer.name}")
+        
         self._close()
 
     def _set_default(self, map):
@@ -158,7 +158,7 @@ class TilePickerController:
         else:
             h, w = len(map.tiles), len(map.tiles[0]) if map.tiles else 0
         local_r, local_c = row-offy, col-offx
-        print(f"[Tile][Default] 📝 Overlay actualizado: global ({row},{col}), local ({local_r},{local_c}) en zona '{zone_name}', capa: {self.editor_state.current_layer.name}")
+
         self._close()
 
     def open(self):
@@ -218,7 +218,7 @@ class TilePickerController:
             pass
         # Guardar sólo la zona
         save_layers(zone_name, zone_layers)
-        print(f"[Tile][Persist] Capas guardadas: zona '{zone_name}', capa: {layer.name}, global ({row},{col})")
+
         # Actualizar in-memory de map.layers y map.tiles_by_layer
         if layer in map.layers:
             try:

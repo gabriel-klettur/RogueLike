@@ -11,4 +11,3 @@ class TilesTitleController:
     def render(self, screen):
         # Delegate rendering to panel view
         self.view.render(screen)
-        pass

@@ -1,4 +1,5 @@
 from roguelike_editors.tiles.tiles_editor_config import THUMB, PAD, COLS
+import pygame
 
 class TilePickerEventHandler:
     """
@@ -66,3 +67,25 @@ class TilePickerEventHandler:
         self.picker_state.current_choice = value
 
         return True
+
+    def handle_event(self, ev, camera=None, map=None):
+        """
+        Delegates various mouse events to picker logic.
+        """
+        # Handle clicks
+        if ev.type == pygame.MOUSEBUTTONDOWN:
+            if self.handle_click(ev.pos, ev.button, map):
+                return True
+        # Handle dragging movement
+        if ev.type == pygame.MOUSEMOTION and self.picker_state.dragging:
+            self.controller.drag(ev.pos)
+            return True
+        # Stop drag on right button release
+        if ev.type == pygame.MOUSEBUTTONUP and ev.button == 3 and self.picker_state.dragging:
+            self.controller.stop_drag()
+            return True
+        # Handle scroll wheel
+        if ev.type == pygame.MOUSEWHEEL:
+            self.controller.scroll(ev.y)
+            return True
+        return False
