@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/systems/editor/map/controllers/map_editor_controller.py
 import json
 import os
 import pygame

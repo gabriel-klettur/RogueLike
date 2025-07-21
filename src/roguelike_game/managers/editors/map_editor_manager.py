@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/game/map_editor_manager.py
 from roguelike_editors.map.state.map_editor_state import MapEditorState
 from roguelike_editors.map.controllers.map_editor_controller import MapEditorController
 from roguelike_editors.map.events.map_editor_events import MapEditorEventHandler

@@ -2,8 +2,6 @@
 Module: collision_debug_system.py
 Provides a debug system to visualize entity collision shapes when DEBUG mode is enabled.
 """
-
-# Path: src/roguelike_game/ecs/systems/physics/collision_debug_system.py
 import pygame
 from roguelike_game.ecs.utils.collider_utils import build_collider_rect
 from roguelike_engine.utils.benchmark import benchmark

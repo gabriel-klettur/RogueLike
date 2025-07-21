@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/core/manager.py
 from .component_registry import create_empty_component_store
 from .system_registry import get_update_system_classes, get_render_system_classes
 from .spatial_index import SpatialIndex

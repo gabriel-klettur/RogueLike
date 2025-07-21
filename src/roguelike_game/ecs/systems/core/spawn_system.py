@@ -3,8 +3,6 @@ Module: spawn_system.py
 Handles conversion of SpawnRequest components into actual game entities
 using the entity factory.
 """
-
-# Path: src/roguelike_game/ecs/systems/core/spawn_system.py
 from roguelike_game.factories.registry import get_factory
 from roguelike_engine.utils.benchmark import benchmark
 

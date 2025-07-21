@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/fsm/states/monster/aggro_state.py
 from roguelike_game.ecs.systems.fsm.state import State
 from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
 from roguelike_engine.config.config_tiles import TILE_SIZE

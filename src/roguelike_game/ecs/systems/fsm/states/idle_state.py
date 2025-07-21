@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/fsm/states/idle_state.py
 import time
 from roguelike_game.ecs.systems.fsm.state import State
 from roguelike_game.ecs.systems.fsm.states.death_state import DeathState

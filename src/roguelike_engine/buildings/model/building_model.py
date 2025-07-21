@@ -1,4 +1,3 @@
-# Path: src/roguelike_engine/buildings/model/building_model.py
 import os
 import types
 import pygame

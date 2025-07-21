@@ -1,4 +1,3 @@
-# Path: src/roguelike_engine/cache/file_cache.py
 import time
 import pickle
 from pathlib import Path

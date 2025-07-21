@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/game/update_manager.py
 from roguelike_engine.utils.benchmark import benchmark
 import pygame
 import types

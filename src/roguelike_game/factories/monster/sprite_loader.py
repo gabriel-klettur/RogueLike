@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/factories/monster/sprite_loader.py
 import pygame
 from typing import Dict, Any, Optional, Tuple
 from roguelike_game.ecs.components.rendering.sprite import Sprite

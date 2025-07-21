@@ -1,4 +1,3 @@
-# Path: src/roguelike_engine/map/utils.py
 from typing import Tuple, List
 from roguelike_engine.config.map_config import global_map_settings
 

@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/systems/editor/buildings/view/tools/z_tool_view.py
 import pygame
 from roguelike_editors.buildings.buildings_editor_config import Z_PANEL_W, Z_PANEL_H, Z_BTN_W, Z_BTN_H
 

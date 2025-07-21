@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/systems/rendering/fsm/states_debug_render_system.py
 import pygame
 from roguelike_game.ecs.components.fsm.npc_state import NPCState
 from roguelike_game.ecs.components.transform.scale import Scale

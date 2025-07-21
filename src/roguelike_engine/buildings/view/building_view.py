@@ -1,4 +1,3 @@
-# Path: src/roguelike_engine/buildings/view/building_view.py
 import pygame
 from roguelike_engine.utils.debug import draw_debug_rect
 

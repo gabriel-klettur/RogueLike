@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/components/rendering/animator.py
 from dataclasses import dataclass
 from typing import Dict, List, Any
 

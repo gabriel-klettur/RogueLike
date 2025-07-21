@@ -1,4 +1,3 @@
-# Path: src/roguelike_engine/world/persistence.py
 from pathlib import Path
 from typing import Any, Dict
 

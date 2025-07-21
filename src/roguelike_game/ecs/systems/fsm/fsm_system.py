@@ -1,7 +1,6 @@
 """
 Sistema ECS para actualizar la FSM de NPCs.
 """
-# Path: src/roguelike_game/ecs/systems/fsm/fsm_system.py
 from roguelike_engine.utils.benchmark import benchmark
 import roguelike_engine.config.config as config
 

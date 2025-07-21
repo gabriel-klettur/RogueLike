@@ -1,4 +1,3 @@
-# Path: src/roguelike_engine/map/controller/map_service.py
 import logging
 import random
 from typing import Optional, List, Tuple, Dict

@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/config/spells_config.py
 import json
 from pathlib import Path
 

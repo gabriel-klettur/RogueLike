@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/components/combat/npc_attack_cooldown.py
 from dataclasses import dataclass
 
 @dataclass

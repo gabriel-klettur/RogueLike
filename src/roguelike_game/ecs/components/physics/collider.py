@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/components/physics/collider.py
 import pygame
 
 class Collider:

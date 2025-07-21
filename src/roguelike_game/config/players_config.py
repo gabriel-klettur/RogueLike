@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/config/players_config.py
 from pathlib import Path
 import json
 

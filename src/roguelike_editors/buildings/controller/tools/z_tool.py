@@ -1,5 +1,4 @@
 
-# Path: src/roguelike_game/systems/editor/buildings/controller/tools/z_tool.py
 import pygame
 class ZTool:
     """

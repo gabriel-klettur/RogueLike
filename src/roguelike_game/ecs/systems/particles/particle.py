@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/systems/particles/particle.py
 # Migrated legacy Particle model into ECS folder for explosion effects
 import pygame
 import random

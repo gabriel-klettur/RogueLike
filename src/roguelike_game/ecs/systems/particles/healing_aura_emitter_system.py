@@ -1,5 +1,3 @@
-
-# Path: src/roguelike_game/ecs/systems/particles/healing_aura_emitter_system.py
 import random
 import time
 

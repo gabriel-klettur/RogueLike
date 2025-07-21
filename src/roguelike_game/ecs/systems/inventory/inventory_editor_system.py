@@ -17,7 +17,6 @@ class InventoryEditorSystem:
         self.active = False
         self.selected_eid = None
         self.entities = []
-        # Paths
         cwd = os.getcwd()
         self.default_monster_path = os.path.join(cwd, 'data', 'defaults', 'inventory_monsters.json')
         self.default_player_path = os.path.join(cwd, 'data', 'defaults', 'inventory_player.json')

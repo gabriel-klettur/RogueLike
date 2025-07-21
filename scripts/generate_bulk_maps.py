@@ -1,4 +1,3 @@
-# Path: scripts/generate_bulk_maps.py
 import sys
 import os
 import pygame

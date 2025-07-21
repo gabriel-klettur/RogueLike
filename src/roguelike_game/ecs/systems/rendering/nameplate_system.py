@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/systems/rendering/nameplate_system.py
 import pygame
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.core.identity import Identity, Faction

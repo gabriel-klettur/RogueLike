@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/systems/rendering/flash_system.py
 import time
 import pygame
 from roguelike_engine.utils.benchmark import benchmark

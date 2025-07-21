@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/fsm/states/player/player_spell_select_state.py
 from roguelike_game.ecs.systems.fsm.state import State
 from roguelike_game.ecs.systems.fsm.states.player.player_spell_cast_state import PlayerSpellCastState
 

@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/fsm/states/monster/flee_state.py
 from roguelike_game.ecs.systems.fsm.state import State
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.ecs.systems.fsm.states.death_state import DeathState

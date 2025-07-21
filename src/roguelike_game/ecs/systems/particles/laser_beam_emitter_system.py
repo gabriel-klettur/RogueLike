@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/systems/particles/laser_beam_emitter_system.py
 import random
 import time
 import pygame

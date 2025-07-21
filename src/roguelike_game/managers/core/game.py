@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/game/core/game.py
 import pygame
 import roguelike_engine.config.config as config
 

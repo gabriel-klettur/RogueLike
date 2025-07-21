@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/utils/position_utils.py
 from roguelike_game.ecs.components.transform.scale import Scale
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.rendering.sprite import Sprite

@@ -1,4 +1,3 @@
-# Path: src/roguelike_engine/cache/memory_cache.py
 import time
 from collections import OrderedDict
 from .icache import ICache

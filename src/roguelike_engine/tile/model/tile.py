@@ -1,4 +1,3 @@
-# Path: src/roguelike_engine/tile/model/tile.py
 import pygame
 from roguelike_engine.config.config_tiles import TILE_SIZE
 

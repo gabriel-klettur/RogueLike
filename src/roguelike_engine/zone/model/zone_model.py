@@ -1,4 +1,3 @@
-# Path: src/roguelike_engine/zone/model/zone_model.py
 from typing import List, Tuple, Optional
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.map.model.map_model import Map as MapModel

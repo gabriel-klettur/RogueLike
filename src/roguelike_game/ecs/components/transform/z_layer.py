@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/components/transform/z_layer.py
 import typing
 
 class ZLayer:

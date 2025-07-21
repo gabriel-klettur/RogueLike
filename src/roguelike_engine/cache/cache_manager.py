@@ -1,4 +1,3 @@
-# Path: src/roguelike_engine/cache/cache_manager.py
 from .icache import ICache
 
 class CacheManager:

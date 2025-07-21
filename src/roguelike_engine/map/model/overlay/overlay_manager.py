@@ -1,4 +1,3 @@
-# Path: src/roguelike_engine/map/model/overlay/overlay_manager.py
 from typing import Optional, List, Dict
 from .factory import get_overlay_store
 from roguelike_engine.map.model.layer import Layer

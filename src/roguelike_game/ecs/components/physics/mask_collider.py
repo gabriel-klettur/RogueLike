@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/components/physics/mask_collider.py
 import pygame
 
 typing = __import__('typing')

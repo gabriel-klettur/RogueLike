@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/systems/rendering/particles/particle_render_system.py
 import pygame
 from roguelike_engine.utils.benchmark import benchmark
 

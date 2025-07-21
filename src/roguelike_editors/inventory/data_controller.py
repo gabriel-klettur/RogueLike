@@ -11,7 +11,6 @@ class DataController:
     def __init__(self, model):
         self.model = model
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-        # Paths for default and active inventory JSON per category
         self.paths = {
             'player': {
                 'default': os.path.join(DATA_DIR, 'inventory', 'defaults', 'inventory_player.json'),

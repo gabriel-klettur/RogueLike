@@ -3,7 +3,6 @@ Sistema ECS que detecta componentes 'WantsToCastSpell' y, según corresponda,
 arranca la máquina de estados de hechizos (CastState y subestados) para NPCs
 y jugadores.
 """
-# Path: src/roguelike_game/ecs/systems/combat/spells/spell_casting_system.py
 from roguelike_game.ecs.systems.fsm.states.cast_state import CastState
 from roguelike_game.ecs.systems.fsm.states.player.player_spell_cast_state import PlayerSpellCastState
 from roguelike_game.ecs.systems.fsm.states.idle_state import IdleState

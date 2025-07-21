@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/components/combat/death_timer.py
 import time
 
 class DeathTimer:

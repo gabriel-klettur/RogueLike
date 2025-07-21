@@ -1,4 +1,3 @@
-# Path: src/roguelike_engine/config/config.py
 from pathlib import Path
 
 #! ------------------------ MAIN GAME SETTINGS ------------------------

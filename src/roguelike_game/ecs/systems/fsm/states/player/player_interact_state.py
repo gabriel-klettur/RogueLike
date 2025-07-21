@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/fsm/states/player/player_interact_state.py
 from roguelike_game.ecs.systems.fsm.state import State
 from roguelike_game.ecs.systems.fsm.states.idle_state import IdleState
 

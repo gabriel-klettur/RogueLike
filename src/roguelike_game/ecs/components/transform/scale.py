@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/components/transform/scale.py
 from dataclasses import dataclass
 
 @dataclass

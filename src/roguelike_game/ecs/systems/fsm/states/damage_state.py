@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/fsm/states/damage_state.py
 import time
 import logging
 from roguelike_game.ecs.systems.fsm.state import State

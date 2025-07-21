@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/components/abilities/aura_component.py
 import time
 
 class AuraComponent:

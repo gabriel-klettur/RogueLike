@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/systems/rendering/combat/explosions/explosion_render_system.py
 from roguelike_engine.utils.benchmark import benchmark
 
 class ExplosionRenderSystem:

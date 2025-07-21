@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/fsm/states/spell/prepare_spell_state.py
 from roguelike_game.ecs.systems.fsm.state import State
 import time
 

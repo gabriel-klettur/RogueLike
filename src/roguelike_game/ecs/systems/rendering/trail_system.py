@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/systems/rendering/trail_system.py
 import time
 from roguelike_game.ecs.components.rendering.trail_component import TrailComponent, TrailSnapshot
 from roguelike_engine.utils.benchmark import benchmark

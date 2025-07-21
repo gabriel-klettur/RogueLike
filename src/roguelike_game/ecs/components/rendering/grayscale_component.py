@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/components/rendering/grayscale_component.py
 from dataclasses import dataclass, field
 import time
 

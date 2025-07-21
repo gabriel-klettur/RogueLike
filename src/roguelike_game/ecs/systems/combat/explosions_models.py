@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/systems/combat/explosions_models.py
 import random
 import math
 from roguelike_game.ecs.systems.particles.particle import Particle

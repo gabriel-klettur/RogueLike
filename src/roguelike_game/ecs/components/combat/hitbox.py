@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/components/combat/hitbox.py
 from dataclasses import dataclass, field
 from typing import Tuple, Set
 

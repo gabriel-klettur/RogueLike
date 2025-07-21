@@ -1,6 +1,3 @@
-
-# Path: src/roguelike_game/ecs/core/spawn_manager.py
-
 import random
 import math
 

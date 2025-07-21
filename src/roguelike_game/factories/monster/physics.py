@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/factories/monster/physics.py
 import pygame
 from typing import Dict, Any, Tuple
 from roguelike_engine.config.config_tiles import TILE_SIZE

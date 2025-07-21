@@ -1,4 +1,3 @@
-# Path: src/roguelike_engine/input/mouse.py
 import pygame
 
 def handle_mouse(event, state, camera, clock, map, entities):

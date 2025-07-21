@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/fsm/state.py
 import abc
 
 class State(abc.ABC):

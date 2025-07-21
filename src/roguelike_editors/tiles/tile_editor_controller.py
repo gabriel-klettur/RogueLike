@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/systems/editor/tiles/controller/tile_editor_controller.py
 from pathlib import Path
 import pygame
 

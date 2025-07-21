@@ -3,8 +3,6 @@ Module: movement_collision_system.py
 Handles movement-based collision for entities using their 'feet' collider.
 Checks collisions against solid tiles and buildings, resolving movement per axis.
 """
-
-# Path: src/roguelike_game/ecs/systems/physics/movement_collision_system.py
 from roguelike_game.ecs.utils.collider_utils import build_collider_rect
 from roguelike_engine.utils.benchmark import benchmark
 

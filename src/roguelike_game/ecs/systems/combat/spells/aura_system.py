@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/systems/combat/spells/aura_system.py
 import math
 import time
 from roguelike_game.ecs.components.abilities.aura_component import AuraComponent

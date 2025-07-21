@@ -22,8 +22,6 @@ ICON_PATHS_TILE_TOOLBAR = {
 
 BTN_W = 100
 BTN_H = 28
-
-# Path base donde buscar
 BASE_TILE_DIR = "tiles"
 
 # Iconos especiales

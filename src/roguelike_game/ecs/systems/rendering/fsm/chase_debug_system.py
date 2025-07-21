@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/systems/rendering/fsm/chase_debug_system.py
 import pygame
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.ecs.utils.position_utils import compute_foot_tile

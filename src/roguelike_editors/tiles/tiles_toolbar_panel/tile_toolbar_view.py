@@ -1,6 +1,4 @@
 # roguelike_game/systems/editor/tiles/view/tools/tile_toolbar_view.py
-
-# Path: src/roguelike_game/systems/editor/tiles/view/tools/tile_toolbar_view.py
 import pygame
 from roguelike_editors.tiles.tiles_editor_config import TOOLS, BTN_W, BTN_H
 from roguelike_engine.map.model.layer import Layer

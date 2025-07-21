@@ -1,5 +1,3 @@
-
-# Path: src/roguelike_game/game/core/shutdown_manager.py
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.factories.player.config import RENDERED_SPRITE_SIZE
 

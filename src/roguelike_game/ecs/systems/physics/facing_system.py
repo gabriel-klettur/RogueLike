@@ -3,8 +3,6 @@ Module: facing_system.py
 Updates entity facing direction based on their Velocity component,
 applying a cooldown between direction changes to prevent flickering.
 """
-
-# Path: src/roguelike_game/ecs/systems/physics/facing_system.py
 import time
 
 from roguelike_game.ecs.components.combat.facing_cooldown import FacingCooldown

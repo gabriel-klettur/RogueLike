@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/utils/map_utils.py
 """
 Utilities for map operations extracted from MapManager.
 """

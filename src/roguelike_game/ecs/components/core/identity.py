@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/components/core/identity.py
 from dataclasses import dataclass
 from enum import Enum
 

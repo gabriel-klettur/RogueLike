@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/systems/combat/combat_system.py
 import time
 from roguelike_game.ecs.systems.combat.melee_combat_system import MeleeCombatSystem
 from roguelike_game.ecs.components.ai.wants_to_melee import WantsToMelee

@@ -1,5 +1,3 @@
-
-# Path: src/roguelike_game/game/tiles_editor_manager.py
 from roguelike_editors.tiles.tile_editor_state import TileEditorState
 from roguelike_editors.tiles.tile_editor_controller import TileEditorController
 from roguelike_editors.tiles.tile_editor_events import TileEditorEventHandler

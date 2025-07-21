@@ -1,5 +1,3 @@
-# Path: src/roguelike_game/systems/editor/tiles/model/tools/tile_toolbar_state.py
-
 import pygame
 from roguelike_engine.map.model.layer import Layer
 

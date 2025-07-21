@@ -1,4 +1,3 @@
-# Path: src/roguelike_engine/input/events.py
 import pygame
 
 from .keyboard     import handle_keyboard

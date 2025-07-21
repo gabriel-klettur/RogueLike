@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/systems/rendering/render_system.py
 import pygame
 from roguelike_game.ecs.components.transform.scale import Scale
 from roguelike_engine.config.config_z_layer import DEFAULT_Z

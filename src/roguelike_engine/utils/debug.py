@@ -1,4 +1,3 @@
-# Path: src/roguelike_engine/utils/debug.py
 import time
 import pygame
 from roguelike_engine.config.map_config import global_map_settings

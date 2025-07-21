@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/fsm/states/spell/release_spell_state.py
 from roguelike_game.ecs.systems.fsm.state import State
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.transform.velocity import Velocity

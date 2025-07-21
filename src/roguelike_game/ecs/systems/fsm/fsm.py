@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/fsm/fsm.py
 from .state import State
 import time
 import pygame

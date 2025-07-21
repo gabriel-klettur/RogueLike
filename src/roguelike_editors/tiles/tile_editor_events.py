@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/systems/editor/tiles/events/tile_editor_events.py
 import pygame
 from roguelike_engine.map.model.layer import Layer
 

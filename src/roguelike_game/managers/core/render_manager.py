@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/game/render_manager.py
 import pygame
 from roguelike_engine.utils.mouse import draw_mouse_crosshair
 from roguelike_engine.utils.benchmark import benchmark

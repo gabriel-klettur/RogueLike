@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/systems/rendering/player_debug_render_system.py
 import pygame
 from roguelike_game.ecs.utils.render_utils import draw_sprite_bbox, draw_sprite_center
 from roguelike_engine.utils.benchmark import benchmark

@@ -1,4 +1,3 @@
-# Path: src/roguelike_engine/map/model/loader/text_loader_strategy.py
 from typing import List, Optional, Tuple, Dict
 from .interfaces import MapLoader
 from .text_loader import parse_map_text

@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/systems/editor/tiles/model/tools/tile_picker_state.py
 from typing import Optional, Tuple
 import pygame
 

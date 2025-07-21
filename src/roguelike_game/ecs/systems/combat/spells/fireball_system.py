@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/systems/combat/spells/fireball_system.py
 import pygame
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.ecs.systems.fsm.fsm_system import _EntityProxy

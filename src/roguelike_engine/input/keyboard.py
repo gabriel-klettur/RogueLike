@@ -1,4 +1,3 @@
-# Path: src/roguelike_engine/input/keyboard.py
 import pygame, time
 import roguelike_engine.config.config as config
 from roguelike_engine.map.events.events import handle_expand_dungeon

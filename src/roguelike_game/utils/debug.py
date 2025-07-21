@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/utils/debug.py
 import pygame
 from collections import defaultdict
 

@@ -1,5 +1,3 @@
-
-# Path: src/roguelike_game/game/core/initializer.py
 import time
 import logging
 from pathlib import Path

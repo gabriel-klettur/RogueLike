@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/systems/editor/buildings/controller/tools/default_tool.py
 import pygame
 
 class DefaultTool:

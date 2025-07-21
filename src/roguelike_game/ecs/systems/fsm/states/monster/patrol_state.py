@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/fsm/states/monster/patrol_state.py
 import math
 from roguelike_game.ecs.systems.fsm.state import State
 from roguelike_game.ecs.systems.fsm.states.death_state import DeathState

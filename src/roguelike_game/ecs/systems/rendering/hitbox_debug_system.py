@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/systems/rendering/hitbox_debug_system.py
 import math
 import pygame
 import roguelike_engine.config.config as config

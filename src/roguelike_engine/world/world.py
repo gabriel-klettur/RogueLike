@@ -1,4 +1,3 @@
-# Path: src/roguelike_engine/world/world.py
 from typing import Dict, Optional
 from roguelike_engine.map.controller.map_controller import build_map
 from roguelike_engine.world.persistence import save_world_state, load_world_state

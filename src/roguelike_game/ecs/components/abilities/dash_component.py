@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/components/abilities/dash_component.py
 import time
 
 class DashComponent:

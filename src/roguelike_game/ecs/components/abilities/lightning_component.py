@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/components/abilities/lightning_component.py
 from roguelike_game.ecs.components.abilities.lightning_model import LightningModel
 
 class LightningComponent:

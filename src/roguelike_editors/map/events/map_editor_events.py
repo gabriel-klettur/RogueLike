@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/systems/editor/map/events/map_editor_events.py
 import pygame
 import os
 import json

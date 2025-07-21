@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/systems/editor/buildings/controller/building_editor_controller.py
 import pygame
 from roguelike_editors.buildings.controller.tools.resize_tool import ResizeTool
 from roguelike_editors.buildings.controller.tools.default_tool import DefaultTool

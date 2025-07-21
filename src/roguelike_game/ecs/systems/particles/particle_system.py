@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/systems/particles/particle_system.py
 from roguelike_engine.utils.benchmark import benchmark
 
 class ParticleSystem:

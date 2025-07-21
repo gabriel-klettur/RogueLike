@@ -2,7 +2,6 @@
 Module: input_system.py
 Sistema que traduce el estado de teclado a InputComponent y actualiza Velocity.
 """
-# Path: src/roguelike_game/ecs/systems/input/input_system.py
 import pygame
 import time
 import math
