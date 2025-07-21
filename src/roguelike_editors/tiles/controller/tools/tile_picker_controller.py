@@ -96,6 +96,8 @@ class TilePickerController:
 
     def _delete_tile(self, map):
         tile = self.editor_state.selected_tile
+        if tile is None:
+            return
         if tile:
             # Borrar sprite y overlay en la capa actual
             layer = self.editor_state.current_layer

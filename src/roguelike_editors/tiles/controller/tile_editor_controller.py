@@ -317,7 +317,7 @@ class TileEditorController:
         from roguelike_engine.config.map_config import global_map_settings
         from roguelike_engine.map.model.overlay.overlay_manager import save_layers
         for zone in getattr(self, '_pending_tile_zones', []):
-            offx, offy = map.get_zone_offset(zone)
+            offx, offy = global_map_settings.zone_offsets.get(zone, (0, 0))
             if zone != 'no_zone':
                 zh, zw = global_map_settings.zone_height, global_map_settings.zone_width
             else:
