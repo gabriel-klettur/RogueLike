@@ -18,13 +18,9 @@ class TileEditorState:
         self.current_tool = "select"   # "select" | "brush" | "eyedropper" | "view"
         self.brush_dragging = False    # para arrastrar el brush
         self.current_layer = Layer.Ground   # capa activa del editor
-
-        # Toolbar UI state
-        self.toolbar_state = TileToolbarState()
-
-        # Picker state
-        self.picker_state = TilePickerState()
-        # Panel states
+        
+        self.toolbar_state = TileToolbarState()        
+        self.picker_state = TilePickerState()        
         self.view_panel_state = TilesViewPanelState()
         self.title_state = TilesTitleState()
         self.collision_panel_state = TilesCollisionPanelState()

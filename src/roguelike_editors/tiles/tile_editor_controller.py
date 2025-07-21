@@ -11,6 +11,7 @@ from roguelike_editors.tiles.tiles_view_panel.tiles_view_controller import Tiles
 from roguelike_editors.tiles.tiles_title.tiles_tiles_controller import TilesTitleController
 from roguelike_editors.tiles.tiles_collision_panel.tiles_collision_panel_controller import TilesCollisionPanelController
 from roguelike_editors.tiles.layers_panel.layers_panel_controller import LayersPanelController
+from roguelike_editors.tiles.tile_outline_view import TileOutlineView
 
 from roguelike_engine.utils.loader import load_image
 
@@ -29,6 +30,7 @@ class TileEditorController:
         self.title_controller = TilesTitleController(editor_state, editor_state.title_state)
         self.collision_panel_controller = TilesCollisionPanelController(editor_state, editor_state.collision_panel_state)
         self.layers_panel_controller = LayersPanelController(editor_state, editor_state.layers_panel_state)
+        self.outline_view = TileOutlineView(self, editor_state)
         # Cache for brush sprites to avoid reload on each paint
         self.brush_cache: dict[str, pygame.Surface] = {}
         # Track last painted cell to skip redundant operations

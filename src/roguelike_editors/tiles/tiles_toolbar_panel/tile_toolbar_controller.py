@@ -1,5 +1,6 @@
 import pygame
 from roguelike_engine.utils.loader import load_image
+from roguelike_editors.tiles.tiles_toolbar_panel.tile_toolbar_view import TileToolbarView
 
 from roguelike_editors.tiles.tiles_editor_config import ICON_PATHS_TILE_TOOLBAR
 
@@ -31,6 +32,7 @@ class TileToolbarController:
         self.icon_rects: dict[str, pygame.Rect] = {}
         # Rects for layer dropdown items
         self.layer_option_rects: dict = {}
+        self.view = TileToolbarView(self)
 
 
     def select_tile(self, choice_path):
