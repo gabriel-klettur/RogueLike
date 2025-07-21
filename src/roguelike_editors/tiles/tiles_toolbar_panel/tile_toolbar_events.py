@@ -18,15 +18,7 @@ class TileToolbarEventHandler:
 
         ts = self.controller.editor_state.toolbar_state
 
-        # Handle layer visibility dropdown clicks
-        if ts.layers_view_open:
-            for key, rect in self.controller.layer_option_rects.items():
-                if rect.collidepoint(mouse_pos):
-                    if key == "buildings":
-                        ts.show_buildings = not ts.show_buildings
-                    else:
-                        ts.visible_layers[key] = not ts.visible_layers[key]
-                    return True
+
 
         # Handle toolbar icon clicks
         for tool, rect in self.controller.icon_rects.items():

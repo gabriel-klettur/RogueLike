@@ -34,8 +34,7 @@ class TileToolbarController:
 
         # Rects para detectar clicks
         self.icon_rects: dict[str, pygame.Rect] = {}
-        # Rects for layer dropdown items
-        self.layer_option_rects: dict = {}
+
         self.view = TileToolbarView(self)
 
     def apply_eyedropper(self, mouse_pos, camera, game_map):
