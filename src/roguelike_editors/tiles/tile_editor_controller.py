@@ -32,10 +32,8 @@ class TileEditorController:
         tile = self._tile_under_mouse(mouse_pos, camera, map)
         if tile:
             self.editor.selected_tile = tile
-            # Abrimos la paleta en el estado del picker
-            self.picker.picker_state.open = True
-            self.picker.picker_state.current_choice = None
-            self.editor.scroll_offset = 0
+            # Abrir paleta de selección de tiles
+            self.picker.open()
 
     def apply_brush(self, mouse_pos, camera, map):
         """

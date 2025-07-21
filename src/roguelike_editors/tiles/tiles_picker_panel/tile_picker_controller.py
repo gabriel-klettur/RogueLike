@@ -159,6 +159,18 @@ class TilePickerController:
         print(f"[Tile][Default] 📝 Overlay actualizado: global ({row},{col}), local ({local_r},{local_c}) en zona '{zone_name}', capa: {self.editor_state.current_layer.name}")
         self._close()
 
+    def open(self):
+        """
+        Abre el selector de tiles: reinicia estado y scroll.
+        """
+        self.picker_state.open = True
+        self.picker_state.current_choice = None
+        self.picker_state.dragging = False
+        # Reiniciar scroll en el editor
+        self.editor_state.scroll_offset = 0
+        # Recargar lista de assets
+        self._load_assets()
+
     def _close(self):
         self.picker_state.open = False
         self.picker_state.current_choice = None
