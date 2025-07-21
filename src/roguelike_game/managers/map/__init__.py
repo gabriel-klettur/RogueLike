@@ -6,6 +6,7 @@ import logging
 
 from roguelike_engine.map.model.layer import Layer
 from roguelike_engine.map.utils import calculate_dungeon_offset, get_zone_for_tile
+from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.factories.player.config import RENDERED_SPRITE_SIZE
 
@@ -104,3 +105,9 @@ class MapManager:
 
     def render(self, surface, camera) -> None:
         self.renderer.render(surface, camera, self.tiles)
+
+    def get_zone_for(self, row: int, col: int) -> tuple[str, int, int]:
+        """Return zone name and offsets for the given tile coordinates."""
+        zone = get_zone_for_tile(col, row)
+        offx, offy = global_map_settings.zone_offsets.get(zone, (0, 0))
+        return zone, offx, offy
