@@ -10,6 +10,7 @@ class TileToolbarView:
         self.toolbar = toolbar
 
     def render(self, screen):
+
         for idx, tool in enumerate(TOOLS):
             px = self.toolbar.x
             py = self.toolbar.y + idx * (self.toolbar.size + self.toolbar.padding)

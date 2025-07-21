@@ -174,6 +174,7 @@ class GameInitializer:
         )
         z.initialize(self.game.state, entities)
         self.game.zlayer = z
+        self.game.entities = entities
 
     def _init_buildings_editor(self):
         self.game.buildings_editor = BuildingEditorManager(self.game)
@@ -232,7 +233,7 @@ class GameInitializer:
             g.screen,
             g.camera,
             g.map,
-            g.buildings,
+            g.entities,
             g.buildings_editor,
             g.tiles_editor,
             g.map_editor,

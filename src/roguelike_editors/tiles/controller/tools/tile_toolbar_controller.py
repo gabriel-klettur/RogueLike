@@ -35,6 +35,9 @@ class TileToolbarController:
 
 
     def handle_click(self, mouse_pos) -> bool:
+        print(f"[TOOLBAR CTRL] handle_click called, mouse_pos={mouse_pos}, icon_rects keys={list(self.icon_rects.keys())}, layers_view_open={self.editor.layers_view_open}")
+        for tool, rect in self.icon_rects.items():
+            print(f"[TOOLBAR CTRL] rect {tool} at {rect}, collide={rect.collidepoint(mouse_pos)}")
         # Handle layer visibility dropdown clicks
         if self.editor.layers_view_open:
             for key, rect in self.layer_option_rects.items():

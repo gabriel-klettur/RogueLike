@@ -19,9 +19,9 @@ class TileEditorEventHandler:
             picker_state      = controller.picker.picker_state
         )
 
-    def handle(self, camera, map):
+    def handle(self, events, camera, map):
         """Reenvía cada evento al manejador correspondiente."""
-        for ev in pygame.event.get():
+        for ev in events:
             if ev.type == pygame.QUIT:
                 self._on_quit(ev)
             elif ev.type == pygame.KEYDOWN:
@@ -61,6 +61,7 @@ class TileEditorEventHandler:
             self.editor_state.show_buildings = not self.editor_state.show_buildings
 
     def _on_mouse_down(self, ev, camera, map):
+        print(f"[EVENT HANDLER] _on_mouse_down: button={ev.button}, pos={ev.pos}, current_tool={self.editor_state.current_tool}")
         pos = ev.pos
         # 1) Toolbar click
         if ev.button == 1 and self.controller.toolbar.handle_click(pos):

@@ -27,12 +27,12 @@ class TilesEditorManager:
 
         print("🟩 Tile-Editor ON REAL!" if active else "🟥 Tile-Editor OFF")
 
-    def handle(self, camera, game_map):
+    def handle(self, camera, game_map, events):
         """
         Enruta eventos al manejador del editor de tiles.
         """
         if self.editor_state.active:
-            self.handler.handle(camera, game_map)
+            self.handler.handle(events, camera, game_map)
 
     def update(self, camera, game_map):
         """

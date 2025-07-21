@@ -2,16 +2,16 @@
   "player": {
     "level": "global_map",
     "pos": [
-      55,
-      51
+      46,
+      55
     ]
   },
   "npcs": {},
   "levels": {
     "global_map": {
       "player_pos": [
-        55,
-        51
+        46,
+        55
       ],
       "npc_states": {}
     }

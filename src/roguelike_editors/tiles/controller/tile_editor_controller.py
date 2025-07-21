@@ -75,12 +75,12 @@ class TileEditorController:
                 if zone_name in map.collision_layers:
                     grid = map.collision_layers[zone_name]
                     # Bounds check before updating
-                    if 0 <= local_r < len(grid) and 0 <= local_c < len(grid[local_r]):
+                    if 0 <= local_r < len(grid) and 0 <= local_c < len(grid[0]):
                         grid[local_r][local_c] = self.editor.collision_choice
                         self._pending_collision_zones.add(zone_name)
                     else:
-                        print(f"[Warning] Colisión fuera de rango en zona '{zone_name}': local=({local_r},{local_c}), tamaño=({len(grid)},{len(grid[local_r]) if grid else 0})")
-            return
+                        print(f"[Warning] Colisión fuera de rango en zona '{zone_name}': local=({local_r},{local_c}), tamaño=({len(grid)},{len(grid[0])})")
+                return
 
         # 1) Encuentra el tile bajo el cursor
         tile = self._tile_under_mouse(mouse_pos, camera, map)
@@ -308,7 +308,7 @@ class TileEditorController:
         # Flush collision layer saves
         for zone in getattr(self, '_pending_collision_zones', []):
             print(f"[DEBUG][TileEditorController] saving collision layer for zone '{zone}'")
-            map.save_collision_layers(zone)
+            map.collision_manager.save(zone)
         # Flush tile overlay saves
         from roguelike_engine.config.map_config import global_map_settings
         from roguelike_engine.map.model.overlay.overlay_manager import save_layers
@@ -338,7 +338,7 @@ class TileEditorController:
         except Exception as e:
             print(f"[ERROR][TileEditorController] failed to update map cache: {e}")
         # Refresh in-memory collision layers and invalidate view cache
-        map._load_collision_layers()
+        map.collision_layers = map.collision_manager.load(map)
         map.view.invalidate_cache()
         print("[DEBUG][TileEditorController] in-memory collision layers reloaded and view cache invalidated")
         # Reset pending

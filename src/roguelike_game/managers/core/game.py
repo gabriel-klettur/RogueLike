@@ -193,7 +193,7 @@ class Game:
 
         # Si un editor está activo, solo lo capturamos a él
         if self.tiles_editor.editor_state.active:
-            self.tiles_editor.handle(self.camera, self.map)
+            self.tiles_editor.handle(self.camera, self.map, events)
             return
 
         if self.buildings_editor.editor_state.active:
