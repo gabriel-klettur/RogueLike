@@ -7,4 +7,3 @@ class TilesViewPanelEventHandler:
     def handle_event(self, ev, *args, **kwargs):
         # No interactive events for view panel
         return False
-        pass

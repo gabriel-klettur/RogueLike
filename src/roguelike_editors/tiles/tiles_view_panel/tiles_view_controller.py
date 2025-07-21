@@ -12,7 +12,6 @@ class TilesViewPanelController:
     def render(self, screen, camera, game_map):
         # Delegate rendering to panel view
         self.view.render(screen, camera, game_map)
-        pass
 
     def _tile_under_mouse(self, mouse_pos, camera, game_map):
         return self.editor_controller._tile_under_mouse(mouse_pos, camera, game_map)

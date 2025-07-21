@@ -1,22 +1,9 @@
 import pygame
 
-
-
-
-
-
-
-
-
-
 class TileEditorView:
     def __init__(self, controller, editor_state):
         self.controller = controller        
         self.editor     = editor_state
-
-
-
-        
 
     def render(self, screen, camera, map):
         if not self.editor.active:

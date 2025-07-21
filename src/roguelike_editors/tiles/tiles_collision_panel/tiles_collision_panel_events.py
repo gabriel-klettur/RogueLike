@@ -1,3 +1,5 @@
+import pygame
+
 class TilesCollisionPanelEventHandler:
     """Event handler for the Tiles Collision Panel"""
     def __init__(self, controller, state):
@@ -5,7 +7,7 @@ class TilesCollisionPanelEventHandler:
         self.state = state
 
     def handle_event(self, ev, *args, **kwargs):
-        import pygame
+
 
         toolbar_state = self.controller.editor_state.toolbar_state
         # Left click selects collision option
@@ -37,4 +39,3 @@ class TilesCollisionPanelEventHandler:
                 toolbar_state.collision_picker_dragging = False
                 return True
         return False
-        pass

@@ -1,3 +1,5 @@
+import pygame
+
 class LayersPanelEventHandler:
     """Event handler for the Layers Panel"""
     def __init__(self, controller, state):
@@ -5,7 +7,6 @@ class LayersPanelEventHandler:
         self.state = state
 
     def handle_event(self, ev, *args, **kwargs):
-        import pygame
 
         # Toggle layer visibility on click
         if ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
@@ -17,3 +18,4 @@ class LayersPanelEventHandler:
                     # sync with toolbar state
                     self.controller.editor_state.toolbar_state.visible_layers[layer] = new_val
                     break
+            return True

@@ -24,12 +24,23 @@ class TileEditorEventHandler:
         )
         self.toolbar_tool = TileToolbarEventHandler(
             toolbar_controller = controller.toolbar
+        )        
+        self.view_panel_tool = TilesViewPanelEventHandler(
+            controller.view_panel_controller,
+            editor_state.view_panel_state
         )
-        # Panel event handlers
-        self.view_panel_tool = TilesViewPanelEventHandler(controller.view_panel_controller, editor_state.view_panel_state)
-        self.title_tool = TilesTitleEventHandler(controller.title_controller, editor_state.title_state)
-        self.collision_panel_tool = TilesCollisionPanelEventHandler(controller.collision_panel_controller, editor_state.collision_panel_state)
-        self.layers_panel_tool = LayersPanelEventHandler(controller.layers_panel_controller, editor_state.layers_panel_state)
+        self.title_tool = TilesTitleEventHandler(
+            controller.title_controller,
+            editor_state.title_state
+        )
+        self.collision_panel_tool = TilesCollisionPanelEventHandler(
+            controller.collision_panel_controller,
+            editor_state.collision_panel_state
+        )
+        self.layers_panel_tool = LayersPanelEventHandler(
+            controller.layers_panel_controller,
+            editor_state.layers_panel_state
+        )
 
     def handle(self, events, camera, map):
         """Reenvía cada evento al manejador correspondiente."""
@@ -59,6 +70,8 @@ class TileEditorEventHandler:
                 self.layers_panel_tool.handle_event(ev, camera, map)
             if self.editor_state.toolbar_state.collision_picker_open:
                 self.collision_panel_tool.handle_event(ev, camera, map)
+            if self.editor_state.picker_state.open:
+                self.picker_tool.handle_event(ev, camera, map)
             # Always forward to title panel
             self.title_tool.handle_event(ev)
 
@@ -82,27 +95,13 @@ class TileEditorEventHandler:
             self.editor_state.toolbar_state.show_buildings = not self.editor_state.toolbar_state.show_buildings
 
     def _on_mouse_down(self, ev, camera, map):
-        print(f"[EVENT HANDLER] _on_mouse_down: button={ev.button}, pos={ev.pos}, current_tool={self.editor_state.current_tool}")
+        
         pos = ev.pos
         # 1) Toolbar click
         if self.toolbar_tool.handle_click(ev):
             return
 
-        # Collision picker click before brush to avoid unwanted painting
-        if self.editor_state.toolbar_state.collision_picker_open:
-            x0, y0 = self.editor_state.toolbar_state.collision_picker_pos
-            w, h = self.editor_state.toolbar_state.collision_picker_panel_size
-            if x0 <= pos[0] <= x0 + w and y0 <= pos[1] <= y0 + h:
-                if ev.button == 1:
-                    for ch, rect in self.editor_state.toolbar_state.collision_picker_rects.items():
-                        if rect.collidepoint(pos):
-                            self.editor_state.toolbar_state.collision_choice = ch
-                            return
-                elif ev.button == 3:
-                    self.editor_state.toolbar_state.collision_picker_dragging = True
-                    dx = pos[0] - x0; dy = pos[1] - y0
-                    self.editor_state.toolbar_state.collision_picker_drag_offset = (dx, dy)
-                    return
+
 
         tool = self.editor_state.current_tool
         # 2) Select
@@ -125,10 +124,7 @@ class TileEditorEventHandler:
         elif tool == "eyedropper" and ev.button == 1:
             self.controller.apply_eyedropper(pos, camera, map)
 
-        # 5) Palette drag
-        elif ev.button == 3 and self.editor_state.picker_state.open:
-            if self.picker_tool.handle_click(pos, button=3, map=map):
-                return
+
 
     def _on_mouse_motion(self, ev, camera, map):
         pos = ev.pos
@@ -136,27 +132,13 @@ class TileEditorEventHandler:
         if self.editor_state.current_tool == "brush" and self.editor_state.brush_dragging:
             if not (self.editor_state.picker_state.open and self.controller.picker.is_over(pos)):
                 self.controller.apply_brush(pos, camera, map)
-        # Palette drag
-        elif self.editor_state.picker_state.open and self.editor_state.picker_state.dragging:
-            self.controller.picker.drag(pos)
-        # Drag collision picker panel
-        if self.editor_state.toolbar_state.collision_picker_dragging:
-            mx, my = pos
-            dx, dy = self.editor_state.toolbar_state.collision_picker_drag_offset
-            self.editor_state.toolbar_state.collision_picker_pos = (mx - dx, my - dy)
-            return
+
 
     def _on_mouse_up(self, ev):
         # Release brush
         if ev.button == 1 and self.editor_state.current_tool == "brush":
             self.editor_state.brush_dragging = False
-        # Stop dragging collision picker
-        if ev.button == 3 and self.editor_state.toolbar_state.collision_picker_dragging:
-            self.editor_state.toolbar_state.collision_picker_dragging = False
-            return
-        # Stop palette drag
-        if ev.button == 3 and self.editor_state.picker_state.open:
-            self.controller.picker.stop_drag()
+
 
     def _on_mouse_wheel(self, ev):
         # Ciclar capas si estamos en modo brush
@@ -173,6 +155,3 @@ class TileEditorEventHandler:
             new_idx = (idx + (1 if ev.y > 0 else -1)) % len(layers)
             self.editor_state.current_layer = layers[new_idx]
             return
-        # Scroll en picker si está abierto
-        if self.editor_state.picker_state.open:
-            self.controller.picker.scroll(ev.y)
