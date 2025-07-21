@@ -110,7 +110,7 @@ class RendererManager:
         @benchmark(perf_log, "3.2. z_entities")
         def _bench_z_entities():
             # Skip entity rendering in collision-only mode
-            if not (self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.show_collisions and not self.tiles_editor.editor_state.show_collisions_overlay):
+            if not (self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.toolbar_state.show_collisions and not self.tiles_editor.editor_state.toolbar_state.show_collisions_overlay):
                 self._render_z_entities(state, camera, screen, entities)
         _bench_z_entities()
 
@@ -118,7 +118,7 @@ class RendererManager:
         @benchmark(perf_log, "3.4. tile_editor")
         def _bench_tile_editor():
             # Skip tile editor UI in collision-only mode
-            if not (self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.show_collisions and not self.tiles_editor.editor_state.show_collisions_overlay):
+            if not (self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.toolbar_state.show_collisions and not self.tiles_editor.editor_state.toolbar_state.show_collisions_overlay):
                 self._render_tile_editor_layer(state, screen, camera, map)
         _bench_tile_editor()
 
@@ -224,14 +224,14 @@ class RendererManager:
             self._dirty_rects.extend(dirty_rects)
             return
         # Collision-only mode: render only collision grid
-        if self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.show_collisions and not self.tiles_editor.editor_state.show_collisions_overlay:
+        if self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.toolbar_state.show_collisions and not self.tiles_editor.editor_state.toolbar_state.show_collisions_overlay:
             dirty = self._render_collisions(screen, camera, map)
             self._dirty_rects.extend(dirty)
             return
         # Layer visibility filter when tile editor is active
         editor_state = getattr(self.tiles_editor, 'editor_state', None)
-        if editor_state and editor_state.active and hasattr(editor_state, 'visible_layers'):
-            visible = editor_state.visible_layers
+        if editor_state and editor_state.active:
+            visible = editor_state.toolbar_state.visible_layers
             # Only invalidate cache on visibility change
             if visible != self._last_visible_layers:
                 self.map.view.invalidate_cache()
@@ -246,7 +246,7 @@ class RendererManager:
             dirty_rects = self.map.view.render(screen, camera, map)
         self._dirty_rects.extend(dirty_rects)
         # Overlay collision grid in overlay mode
-        if self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.show_collisions_overlay:
+        if self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.toolbar_state.show_collisions_overlay:
             dirty2 = self._render_collisions(screen, camera, map)
             self._dirty_rects.extend(dirty2)
 
@@ -271,8 +271,8 @@ class RendererManager:
         all_entities = []
         # Only render buildings if not hidden by editor or collision-only mode (NPC rendering removed; gestionado por ECS)
         editor_state = self.tiles_editor.editor_state
-        if not ((editor_state.active and not editor_state.show_buildings)
-                or (editor_state.active and editor_state.show_collisions and not editor_state.show_collisions_overlay)):
+        if not ((editor_state.active and not editor_state.toolbar_state.show_buildings)
+                or (editor_state.active and editor_state.toolbar_state.show_collisions and not editor_state.toolbar_state.show_collisions_overlay)):
             for b in entities.buildings:
                 if not camera.is_in_view(b.x, b.y, b.image.get_size()):
                     continue

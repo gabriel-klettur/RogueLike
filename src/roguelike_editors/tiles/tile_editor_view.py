@@ -24,13 +24,13 @@ class TileEditorView:
 
         self.toolbar_view.render(screen)
         # Collision brush picker has priority
-        if self.editor.collision_picker_open:
+        if self.editor.toolbar_state.collision_picker_open:
             self._render_collision_picker(screen)
         # Normal tile picker
         elif self.editor.picker_state.open:
             self.picker_view.render(screen)
 
-        if self.editor.view_active:
+        if self.editor.toolbar_state.view_active:
             self._render_view_panel(screen, camera, map)
 
         self.outline_view.render(screen, camera, map)
@@ -116,16 +116,16 @@ class TileEditorView:
         surf.fill((20, 20, 20, 235))
         # Determine panel position (drag support)
         sw, sh = screen.get_size()
-        if self.editor.collision_picker_pos is None:
+        if self.editor.toolbar_state.collision_picker_pos is None:
             pos_x = (sw - w) // 2
             pos_y = (sh - h) // 2
-            self.editor.collision_picker_pos = (pos_x, pos_y)
+            self.editor.toolbar_state.collision_picker_pos = (pos_x, pos_y)
         else:
-            pos_x, pos_y = self.editor.collision_picker_pos
+            pos_x, pos_y = self.editor.toolbar_state.collision_picker_pos
         # Store panel size for event handling
-        self.editor.collision_picker_panel_size = (w, h)
+        self.editor.toolbar_state.collision_picker_panel_size = (w, h)
         # Prepare rects
-        self.editor.collision_picker_rects.clear()
+        self.editor.toolbar_state.collision_picker_rects.clear()
         for i, (ch, label) in enumerate(options):
             x = PAD + i * (THUMB + PAD)
             y = PAD
@@ -136,10 +136,10 @@ class TileEditorView:
                                   y + (THUMB - text_surf.get_height()) // 2))
             # Hover and selection border
             abs_rect = pygame.Rect(pos_x + x, pos_y + y, THUMB, THUMB)
-            self.editor.collision_picker_rects[ch] = abs_rect
+            self.editor.toolbar_state.collision_picker_rects[ch] = abs_rect
             if abs_rect.collidepoint(mouse_pos):
                 pygame.draw.rect(surf, CLR_HOVER, (x, y, THUMB, THUMB), 3)
-            elif self.editor.collision_choice == ch:
+            elif self.editor.toolbar_state.collision_choice == ch:
                 pygame.draw.rect(surf, CLR_SELECTION, (x, y, THUMB, THUMB), 3)
             # Label below icon
             lbl_surf = label_font.render(label, True, (255, 255, 255))

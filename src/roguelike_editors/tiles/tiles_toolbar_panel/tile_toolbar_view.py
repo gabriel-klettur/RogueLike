@@ -20,12 +20,12 @@ class TileToolbarView:
             # Yellow border for active tool or collisions mode
             if tool == "view_collisions":
                 # Yellow border when collision mode (only or overlay) is active
-                color = (255, 200, 0) if (self.toolbar.editor.show_collisions or self.toolbar.editor.show_collisions_overlay) else (255, 255, 255)
+                color = (255, 200, 0) if (self.toolbar.editor.toolbar_state.show_collisions or self.toolbar.editor.toolbar_state.show_collisions_overlay) else (255, 255, 255)
             else:
                 color = (255, 200, 0) if self.toolbar.editor.current_tool == tool else (255, 255, 255)
             pygame.draw.rect(screen, color, rect, 4)
         # Render layers dropdown if open
-        if self.toolbar.editor.layers_view_open:
+        if self.toolbar.editor.toolbar_state.layers_view_open:
             idx = TOOLS.index("view_layers")
             icon_x = self.toolbar.x
             icon_y = self.toolbar.y + idx * (self.toolbar.size + self.toolbar.padding)
@@ -39,7 +39,7 @@ class TileToolbarView:
                 # background
                 pygame.draw.rect(screen, (20, 20, 20), rect)
                 # border indicates visibility
-                border = (0, 255, 0) if self.toolbar.editor.visible_layers[layer] else (255, 0, 0)
+                border = (0, 255, 0) if self.toolbar.editor.toolbar_state.visible_layers[layer] else (255, 0, 0)
                 pygame.draw.rect(screen, border, rect, 2)
                 text = font.render(layer.name, True, (255, 255, 255))
                 ty = ry + (BTN_H - text.get_height()) // 2
@@ -49,7 +49,7 @@ class TileToolbarView:
             ry = drop_y + len(Layer) * BTN_H
             rect = pygame.Rect(drop_x, ry, BTN_W, BTN_H)
             pygame.draw.rect(screen, (20, 20, 20), rect)
-            border = (128, 0, 128) if self.toolbar.editor.show_buildings else (255, 0, 0)
+            border = (128, 0, 128) if self.toolbar.editor.toolbar_state.show_buildings else (255, 0, 0)
             pygame.draw.rect(screen, border, rect, 2)
             text = font.render("Buildings", True, (255, 255, 255))
             ty = ry + (BTN_H - text.get_height()) // 2

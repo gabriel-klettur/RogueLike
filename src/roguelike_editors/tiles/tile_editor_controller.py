@@ -41,11 +41,11 @@ class TileEditorController:
         y persiste el código de overlay (quitando el prefijo "tiles/").
         """
         # Collision editing when in collision mode
-        if (self.editor.show_collisions or self.editor.show_collisions_overlay) and self.editor.collision_choice:
+        if (self.editor.toolbar_state.show_collisions or self.editor.toolbar_state.show_collisions_overlay) and self.editor.toolbar_state.collision_choice:
             tile = self._tile_under_mouse(mouse_pos, camera, map)
             if tile:
                 # Set collision state
-                solid = True if self.editor.collision_choice == '#' else False
+                solid = True if self.editor.toolbar_state.collision_choice == '#' else False
                 tile.solid = solid
                 # Update matrix
                 row = tile.y // TILE_SIZE
@@ -55,7 +55,7 @@ class TileEditorController:
                     return
                 self._last_brush_cell = (row, col)
                 try:
-                    map.matrix[row][col] = self.editor.collision_choice
+                    map.matrix[row][col] = self.editor.toolbar_state.collision_choice
                 except Exception:
                     pass
                 # Update MapManager.solid_tiles for collision
@@ -74,7 +74,7 @@ class TileEditorController:
                     grid = map.collision_layers[zone_name]
                     # Bounds check before updating
                     if 0 <= local_r < len(grid) and 0 <= local_c < len(grid[0]):
-                        grid[local_r][local_c] = self.editor.collision_choice
+                        grid[local_r][local_c] = self.editor.toolbar_state.collision_choice
                         self._pending_collision_zones.add(zone_name)
                         # Immediate collision save and refresh
                         map.collision_manager.save(zone_name)
