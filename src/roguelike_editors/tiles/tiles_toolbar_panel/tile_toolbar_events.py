@@ -16,7 +16,7 @@ class TileToolbarEventHandler:
             return False
         mouse_pos = event.pos
 
-        ts = self.controller.editor.toolbar_state
+        ts = self.controller.editor_state.toolbar_state
 
         # Handle layer visibility dropdown clicks
         if ts.layers_view_open:
@@ -47,30 +47,30 @@ class TileToolbarEventHandler:
                         ts.show_collisions_overlay = False
                     # Abrir/cerrar collision picker y cambiar a pincel de colisión
                     if ts.show_collisions or ts.show_collisions_overlay:
-                        self.controller.editor.current_tool = "brush"
+                        self.controller.editor_state.current_tool = "brush"
                         ts.collision_picker_open = True
-                        self.controller.editor.picker_state.open = False
+                        self.controller.editor_state.picker_state.open = False
                     else:
                         ts.collision_picker_open = False
                         ts.collision_choice = None
                     ts.layers_view_open = False
                 else:
-                    self.controller.editor.current_tool = tool
+                    self.controller.editor_state.current_tool = tool
 
                 if tool == "brush":
                     if ts.show_collisions or ts.show_collisions_overlay:
                         # Toggle collision picker
                         ts.collision_picker_open = not ts.collision_picker_open
                         if ts.collision_picker_open:
-                            self.controller.editor.picker_state.open = False
+                            self.controller.editor_state.picker_state.open = False
                     else:
                         # Toggle picker normal
                         ts.collision_picker_open = False
                         ts.collision_choice = None
-                        prev = self.controller.editor.picker_state.open
-                        self.controller.editor.picker_state.open = not prev
-                        if self.controller.editor.picker_state.open:
-                            self.controller.editor.scroll_offset = 0
+                        prev = self.controller.editor_state.picker_state.open
+                        self.controller.editor_state.picker_state.open = not prev
+                        if self.controller.editor_state.picker_state.open:
+                            self.controller.editor_state.scroll_offset = 0
                 return True
 
         return False

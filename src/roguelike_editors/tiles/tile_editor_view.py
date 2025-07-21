@@ -17,6 +17,7 @@ class TileEditorView:
         if self.editor.picker_state.open:
             self.controller.picker.view.render(screen)
 
+        # Tiles View Panel
         if self.editor.toolbar_state.view_active:
             self.controller.view_panel_controller.render(screen, camera, map)
             
@@ -28,4 +29,5 @@ class TileEditorView:
         if self.editor.toolbar_state.collision_picker_open:
             self.controller.collision_panel_controller.render(screen)
             
+        # Outline 
         self.controller.outline_view.render(screen, camera, map)    

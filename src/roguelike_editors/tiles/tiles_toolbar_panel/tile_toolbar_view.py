@@ -18,12 +18,12 @@ class TileToolbarView:
             # Yellow border for active tool or collisions mode
             if tool == "view_collisions":
                 # Yellow border when collision mode (only or overlay) is active
-                color = (255, 200, 0) if (self.toolbar.editor.toolbar_state.show_collisions or self.toolbar.editor.toolbar_state.show_collisions_overlay) else (255, 255, 255)
+                color = (255, 200, 0) if (self.toolbar.editor_state.toolbar_state.show_collisions or self.toolbar.editor_state.toolbar_state.show_collisions_overlay) else (255, 255, 255)
             else:
-                color = (255, 200, 0) if self.toolbar.editor.current_tool == tool else (255, 255, 255)
+                color = (255, 200, 0) if self.toolbar.editor_state.current_tool == tool else (255, 255, 255)
             pygame.draw.rect(screen, color, rect, 4)
         # Render layers dropdown if open
-        if self.toolbar.editor.toolbar_state.layers_view_open:
+        if self.toolbar.editor_state.toolbar_state.layers_view_open:
             idx = TOOLS.index("view_layers")
             icon_x = self.toolbar.x
             icon_y = self.toolbar.y + idx * (self.toolbar.size + self.toolbar.padding)
@@ -37,7 +37,7 @@ class TileToolbarView:
                 # background
                 pygame.draw.rect(screen, (20, 20, 20), rect)
                 # border indicates visibility
-                border = (0, 255, 0) if self.toolbar.editor.toolbar_state.visible_layers[layer] else (255, 0, 0)
+                border = (0, 255, 0) if self.toolbar.editor_state.toolbar_state.visible_layers[layer] else (255, 0, 0)
                 pygame.draw.rect(screen, border, rect, 2)
                 text = font.render(layer.name, True, (255, 255, 255))
                 ty = ry + (BTN_H - text.get_height()) // 2
@@ -47,14 +47,14 @@ class TileToolbarView:
             ry = drop_y + len(Layer) * BTN_H
             rect = pygame.Rect(drop_x, ry, BTN_W, BTN_H)
             pygame.draw.rect(screen, (20, 20, 20), rect)
-            border = (128, 0, 128) if self.toolbar.editor.toolbar_state.show_buildings else (255, 0, 0)
+            border = (128, 0, 128) if self.toolbar.editor_state.toolbar_state.show_buildings else (255, 0, 0)
             pygame.draw.rect(screen, border, rect, 2)
             text = font.render("Buildings", True, (255, 255, 255))
             ty = ry + (BTN_H - text.get_height()) // 2
             screen.blit(text, (drop_x + 5, ty))
             self.toolbar.layer_option_rects["buildings"] = rect
             # Collision picker UI
-            if self.toolbar.editor.toolbar_state.collision_picker_open:
+            if self.toolbar.editor_state.toolbar_state.collision_picker_open:
                 options = [("#", "Collision"), (".", "Walk")]
                 w = len(options) * (THUMB + PAD) + PAD
                 label_font = pygame.font.SysFont("Arial", 14)
@@ -64,14 +64,14 @@ class TileToolbarView:
                 surf = pygame.Surface((w, h), pygame.SRCALPHA)
                 surf.fill((20, 20, 20, 235))
                 sw, sh = screen.get_size()
-                if self.toolbar.editor.toolbar_state.collision_picker_pos is None:
+                if self.toolbar.editor_state.toolbar_state.collision_picker_pos is None:
                     pos_x = (sw - w) // 2
                     pos_y = (sh - h) // 2
-                    self.toolbar.editor.toolbar_state.collision_picker_pos = (pos_x, pos_y)
+                    self.toolbar.editor_state.toolbar_state.collision_picker_pos = (pos_x, pos_y)
                 else:
-                    pos_x, pos_y = self.toolbar.editor.toolbar_state.collision_picker_pos
-                self.toolbar.editor.toolbar_state.collision_picker_panel_size = (w, h)
-                self.toolbar.editor.toolbar_state.collision_picker_rects.clear()
+                    pos_x, pos_y = self.toolbar.editor_state.toolbar_state.collision_picker_pos
+                self.toolbar.editor_state.toolbar_state.collision_picker_panel_size = (w, h)
+                self.toolbar.editor_state.toolbar_state.collision_picker_rects.clear()
                 for i, (ch, label) in enumerate(options):
                     x = PAD + i * (THUMB + PAD)
                     y = PAD
@@ -80,10 +80,10 @@ class TileToolbarView:
                     surf.blit(text_surf, (x + (THUMB - text_surf.get_width()) // 2,
                                           y + (THUMB - text_surf.get_height()) // 2))
                     abs_rect = pygame.Rect(pos_x + x, pos_y + y, THUMB, THUMB)
-                    self.toolbar.editor.toolbar_state.collision_picker_rects[ch] = abs_rect
+                    self.toolbar.editor_state.toolbar_state.collision_picker_rects[ch] = abs_rect
                     if abs_rect.collidepoint(mouse_pos):
                         pygame.draw.rect(surf, CLR_HOVER, (x, y, THUMB, THUMB), 3)
-                    elif self.toolbar.editor.toolbar_state.collision_choice == ch:
+                    elif self.toolbar.editor_state.toolbar_state.collision_choice == ch:
                         pygame.draw.rect(surf, CLR_SELECTION, (x, y, THUMB, THUMB), 3)
                     lbl_surf = label_font.render(label, True, (255, 255, 255))
                     surf.blit(lbl_surf, (x + (THUMB - lbl_surf.get_width()) // 2,

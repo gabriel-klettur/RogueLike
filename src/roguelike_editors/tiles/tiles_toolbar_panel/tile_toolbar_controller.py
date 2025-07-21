@@ -1,5 +1,8 @@
 import pygame
+from pathlib import Path
 from roguelike_engine.utils.loader import load_image
+from roguelike_engine.config.config_tiles import TILE_SIZE, OVERLAY_CODE_MAP, DEFAULT_TILE_MAP
+from roguelike_engine.config.map_config import global_map_settings
 from roguelike_editors.tiles.tiles_toolbar_panel.tile_toolbar_view import TileToolbarView
 
 from roguelike_editors.tiles.tiles_editor_config import ICON_PATHS_TILE_TOOLBAR
@@ -13,8 +16,9 @@ class TileToolbarController:
       - view
     """
 
-    def __init__(self, editor_state):        
-        self.editor = editor_state
+    def __init__(self, editor_controller):        
+        self.editor_controller = editor_controller
+        self.editor_state = editor_controller.editor
 
         # Cargar iconos (64×64)
         self.icons = {
@@ -34,10 +38,62 @@ class TileToolbarController:
         self.layer_option_rects: dict = {}
         self.view = TileToolbarView(self)
 
+    def apply_eyedropper(self, mouse_pos, camera, game_map):
+        """Use eyedropper to pick tile sprite under cursor and set brush choice."""
+        mx, my = mouse_pos
+        world_x = mx / camera.zoom + camera.offset_x
+        world_y = my / camera.zoom + camera.offset_y
+        col = int(world_x // TILE_SIZE)
+        row = int(world_y // TILE_SIZE)
+        if not (0 <= row < len(game_map.tiles) and 0 <= col < len(game_map.tiles[0])):
+            return
+        tile = game_map.tiles[row][col]
+        code = tile.overlay_code or tile.tile_type or "#"
+        asset_name = OVERLAY_CODE_MAP.get(code) or DEFAULT_TILE_MAP.get(code) or DEFAULT_TILE_MAP.get('#')
+        if not asset_name:
+            return
+        choice_path = f"tiles/{asset_name}.png"
+        self.select_tile(choice_path)
+        sprite = load_image(choice_path, (TILE_SIZE, TILE_SIZE))
+        tile.sprite = sprite
+        tile.scaled_cache.clear()
+        tile.overlay_code = code
+        game_map.view.invalidate_cache()
+
+    def update(self, mouse_pos, camera, game_map):
+        """Handle continuous erase (right-click) and bucket fill (Shift+left) for brush tool."""
+        if self.editor_state.current_tool != "brush":
+            return
+        left, _, right = pygame.mouse.get_pressed()
+        # Erase with right click
+        if right:
+            tile = self.editor_controller._tile_under_mouse(mouse_pos, camera, game_map)
+            if tile:
+                row = tile.y // TILE_SIZE; col = tile.x // TILE_SIZE
+                try:
+                    game_map.matrix[row][col] = None
+                except Exception:
+                    pass
+            return
+        # Bucket fill with Shift + left click
+        keys = pygame.key.get_pressed()
+        if left and (keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]):
+            tile = self.editor_controller._tile_under_mouse(mouse_pos, camera, game_map)
+            selected = getattr(self.editor_state, 'selected_tile', None)
+            if tile and selected is not None:
+                row = tile.y // TILE_SIZE; col = tile.x // TILE_SIZE
+                try:
+                    target = game_map.matrix[row][col]
+                except Exception:
+                    target = None
+                if target != selected:
+                    self.editor_controller._bucket_fill(game_map, row, col, target, selected)
+            return
+
 
     def select_tile(self, choice_path):
         """
         Selecciona un tile y cambia herramienta a brush.
         """
-        self.editor.current_choice = choice_path
-        self.editor.current_tool = "brush"
+        self.editor_state.current_choice = choice_path
+        self.editor_state.current_tool = "brush"
