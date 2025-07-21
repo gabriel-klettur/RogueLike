@@ -13,6 +13,7 @@ class TilesEditorManager:
         self.controller   = TileEditorController(self.editor_state, self.editor_state.picker_state)
         self.view         = TileEditorView(self.controller, self.editor_state)
         self.handler      = TileEditorEventHandler(game.state, self.editor_state, self.controller)
+        self.controller.ecs_world = game.ecs.ecs_world
 
     def toggle(self):
         """Activa/desactiva el editor de tiles y limpia sub-estado al cerrarlo."""

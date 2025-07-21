@@ -69,7 +69,7 @@ class TileEditorController:
                         map.solid_tiles.remove(tile)
                 # Debug print for collision brush
                 print(f"[DEBUG][Collision brush] at ({row},{col}): solid={solid}")
-                # Batch collision change for later persistence
+                # Batch collision change and immediate update
                 zone_name, offx, offy = map.get_zone_for(row, col)
                 local_r, local_c = row - offy, col - offx
                 if zone_name in map.collision_layers:
@@ -78,6 +78,10 @@ class TileEditorController:
                     if 0 <= local_r < len(grid) and 0 <= local_c < len(grid[0]):
                         grid[local_r][local_c] = self.editor.collision_choice
                         self._pending_collision_zones.add(zone_name)
+                        # Immediate collision save and refresh
+                        map.collision_manager.save(zone_name)
+                        map.collision_layers = map.collision_manager.load(map)
+                        map.view.invalidate_cache()
                     else:
                         print(f"[Warning] Colisión fuera de rango en zona '{zone_name}': local=({local_r},{local_c}), tamaño=({len(grid)},{len(grid[0])})")
                 return
@@ -341,6 +345,9 @@ class TileEditorController:
         map.collision_layers = map.collision_manager.load(map)
         map.view.invalidate_cache()
         print("[DEBUG][TileEditorController] in-memory collision layers reloaded and view cache invalidated")
+        if hasattr(self, "ecs_world"):
+            self.ecs_world.invalidate_spatial_index()
+            print("[DEBUG][TileEditorController] ECS spatial index invalidated")
         # Reset pending
         self._pending_collision_zones.clear()
         self._pending_tile_zones.clear()

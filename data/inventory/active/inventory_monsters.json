@@ -1,16 +1,48 @@
 {
-  "c9394965-aba7-4b3b-83b5-1df2fe8d2997": {
+  "66561da5-5daf-4303-a584-9bef60912b94": {
+    "template_id": "33333333-3333-3333-3333-333333333333",
+    "slots": [
+      {
+        "item": "gold",
+        "quantity": 1
+      },
+      {
+        "item": "experience_orb",
+        "quantity": 1
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "a3f04c05-9dc9-4074-b1c9-aa2630899588": {
     "template_id": "11111111-2222-3333-4444-555555555555",
     "slots": [
       {
         "item": "wood",
+        "quantity": 2
+      },
+      {
+        "item": "gold",
         "quantity": 3
       },
       {
-        "item": "gold",
-        "quantity": 2
-      },
-      {
         "item": "experience_orb",
         "quantity": 2
       },
@@ -34,106 +66,7 @@
     ],
     "schema_version": "1.0.0"
   },
-  "c18e67ee-4748-42be-94eb-3344d56530b5": {
-    "template_id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
-    "slots": [
-      {
-        "item": "gold",
-        "quantity": 5
-      },
-      {
-        "item": "experience_orb",
-        "quantity": 1
-      },
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "schema_version": "1.0.0"
-  },
-  "562921e5-93e7-4dfe-87ee-0f58cbace04f": {
-    "template_id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
-    "slots": [
-      {
-        "item": "gold",
-        "quantity": 4
-      },
-      {
-        "item": "experience_orb",
-        "quantity": 1
-      },
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "schema_version": "1.0.0"
-  },
-  "e78509ef-83cb-4738-91ec-de400ecb5fb0": {
-    "template_id": "22222222-2222-2222-2222-222222222222",
-    "slots": [
-      {
-        "item": "gold",
-        "quantity": 1
-      },
-      {
-        "item": "experience_orb",
-        "quantity": 2
-      },
-      {
-        "item": "health_potion",
-        "quantity": 1
-      },
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "schema_version": "1.0.0"
-  },
-  "1a6a37c6-1b5a-4d42-ad54-76ad61c06971": {
+  "1ed32184-9b90-4196-90fd-03fb31c96950": {
     "template_id": "11111111-2222-3333-4444-555555555555",
     "slots": [
       {
@@ -142,11 +75,11 @@
       },
       {
         "item": "gold",
-        "quantity": 2
+        "quantity": 1
       },
       {
         "item": "experience_orb",
-        "quantity": 1
+        "quantity": 2
       },
       null,
       null,
@@ -168,12 +101,12 @@
     ],
     "schema_version": "1.0.0"
   },
-  "a75adceb-2cfb-4408-839e-657ac35be884": {
+  "d4f52a65-ee70-4f49-8313-29731703fd28": {
     "template_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
     "slots": [
       {
         "item": "gold",
-        "quantity": 5
+        "quantity": 4
       },
       {
         "item": "experience_orb",
