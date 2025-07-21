@@ -3,6 +3,7 @@ import pygame
 from roguelike_engine.map.model.layer import Layer
 
 from roguelike_editors.tiles.tiles_picker_panel.tile_picker_events import TilePickerEventHandler
+from roguelike_editors.tiles.tiles_toolbar_panel.tile_toolbar_events import TileToolbarEventHandler
 
 class TileEditorEventHandler:
     """
@@ -17,6 +18,9 @@ class TileEditorEventHandler:
             picker_controller = controller.picker,
             editor_state      = editor_state,
             picker_state      = controller.picker.picker_state
+        )
+        self.toolbar_tool = TileToolbarEventHandler(
+            toolbar_controller = controller.toolbar
         )
 
     def handle(self, events, camera, map):
@@ -64,7 +68,7 @@ class TileEditorEventHandler:
         print(f"[EVENT HANDLER] _on_mouse_down: button={ev.button}, pos={ev.pos}, current_tool={self.editor_state.current_tool}")
         pos = ev.pos
         # 1) Toolbar click
-        if ev.button == 1 and self.controller.toolbar.handle_click(pos):
+        if self.toolbar_tool.handle_click(ev):
             return
 
         # Collision picker click before brush to avoid unwanted painting

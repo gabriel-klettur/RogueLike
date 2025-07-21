@@ -7,7 +7,7 @@ from roguelike_engine.config.config_tiles import OVERLAY_CODE_MAP, DEFAULT_TILE_
 from roguelike_engine.config.map_config import global_map_settings
 
 from roguelike_editors.tiles.tiles_picker_panel.tile_picker_controller import TilePickerController
-from roguelike_editors.tiles.toolbar_panel.tile_toolbar_controller import TileToolbarController
+from roguelike_editors.tiles.tiles_toolbar_panel.tile_toolbar_controller import TileToolbarController
 
 from roguelike_engine.utils.loader import load_image
 
@@ -139,7 +139,6 @@ class TileEditorController:
         print(f"[Tile][Brush] 📝 Overlay aplicado: global ({row},{col}), local ({local_r},{local_c}) en zona '{zone_name}', capa: {layer.name}")
         map.view.invalidate_cache()
 
-
     def apply_eyedropper(self, mouse_pos, camera, map):
         """
         Selecciona el sprite bajo el cursor, lo aplica al tile y guarda el overlay igual que el brush.
@@ -165,8 +164,7 @@ class TileEditorController:
 
         # 4) Ruta relativa para el picker y brush (sin prefijo 'assets/')
         choice_path = f"tiles/{asset_name}.png"
-        self.editor.current_choice = choice_path
-        self.editor.current_tool = "brush"
+        self.toolbar.select_tile(choice_path)
 
         # 5) Cargar y asignar sprite al tile
         sprite = load_image(choice_path, (TILE_SIZE, TILE_SIZE))
@@ -188,7 +186,6 @@ class TileEditorController:
         print(f"[Tile][EyeDroper] Zona '{zone_name}', capa '{layer.name}', pos ({row},{col})")
         map.view.invalidate_cache()
 
-
     def _tile_under_mouse(self, mouse_pos, camera, map):
         mx, my = mouse_pos
         world_x = mx / camera.zoom + camera.offset_x
@@ -198,7 +195,6 @@ class TileEditorController:
         if 0 <= row < len(map.tiles) and 0 <= col < len(map.tiles[0]):
             return map.tiles[row][col]
         return None
-
 
     def update(self, camera, game_map):
         """
