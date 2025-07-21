@@ -22,11 +22,8 @@ class TileEditorView:
             return
 
         self.toolbar_view.render(screen)
-        # Collision brush picker has priority
-        if self.editor.toolbar_state.collision_picker_open:
-            self._render_collision_picker(screen)
         # Normal tile picker
-        elif self.editor.picker_state.open:
+        if self.editor.picker_state.open:
             self.picker_view.render(screen)
 
         if self.editor.toolbar_state.view_active:
