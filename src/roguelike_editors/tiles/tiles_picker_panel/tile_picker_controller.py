@@ -54,18 +54,18 @@ class TilePickerController:
         # Placeholder for base_dir: occupy first slot without clickable asset
         if self.current_dir == self.base_dir:
             placeholder = pygame.Surface(thumb_size, pygame.SRCALPHA)
-            self.assets.append(("", placeholder, False))
+            self.assets.append(("", placeholder, False, None))
 
         # Flecha hacia arriba
         if self.current_dir != self.base_dir:
             arrow_surf = load_image(ARROW_UP_ICON, thumb_size)
-            self.assets.append(("..", arrow_surf, True))
+            self.assets.append(("..", arrow_surf, True, None))
 
         # Subdirectorios
         for entry in sorted(self.current_dir.iterdir()):
             if entry.is_dir():
                 folder_surf = load_image(FOLDER_ICON, thumb_size)
-                self.assets.append((entry.name, folder_surf, True))
+                self.assets.append((entry.name, folder_surf, True, None))
 
         # Archivos según patrones
         seen = {}
@@ -78,8 +78,10 @@ class TilePickerController:
         for f in seen.values():
             rel_path = str(f.relative_to(Path(ASSETS_DIR)))
             try:
+                full_img = pygame.image.load(str(f))
+                orig_size = full_img.get_size()
                 surf = load_image(rel_path, thumb_size)
-                self.assets.append((rel_path, surf, False))
+                self.assets.append((rel_path, surf, False, orig_size))
             except Exception as e:
                 print(f"[TilePicker] ERROR cargando {rel_path}: {e}")
 
@@ -134,7 +136,7 @@ class TilePickerController:
             h, w = len(map.tiles), len(map.tiles[0]) if map.tiles else 0
         local_r, local_c = row-offy, col-offx
         
-        self._close()
+        # self._close() removed to keep picker open
 
     def _set_default(self, map):
         tile = self.editor_state.selected_tile
@@ -167,7 +169,7 @@ class TilePickerController:
             h, w = len(map.tiles), len(map.tiles[0]) if map.tiles else 0
         local_r, local_c = row-offy, col-offx
 
-        self._close()
+        # self._close() removed to keep picker open
 
     def open(self):
         """

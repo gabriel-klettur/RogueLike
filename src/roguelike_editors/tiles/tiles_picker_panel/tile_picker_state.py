@@ -29,3 +29,5 @@ class TilePickerState:
         self.btn_default_rect: Optional[pygame.Rect] = None
         # Close button rectangle
         self.btn_close_rect: Optional[pygame.Rect] = None
+        # Tileset checkbox state
+        self.tileset_filter: bool = False

@@ -46,17 +46,18 @@ class TilePickerEventHandler:
             self.picker_state.drag_offset = (lx, ly)
             return True
         # Cálculo de índice en la rejilla de assets
+        cols = COLS * 3
         col = (lx - PAD) // (THUMB + PAD)
         row = (ly - PAD + self.editor_state.scroll_offset) // (THUMB + PAD)
-        idx = row * COLS + col
+        idx = row * cols + col
 
         # Obtener lista actual de assets
         assets = self.controller.assets
         # Validar clic dentro de la rejilla
-        if not (0 <= col < COLS and row >= 0 and idx < len(assets)):
+        if not (0 <= col < cols and row >= 0 and idx < len(assets)): 
             return False
 
-        value, _, is_dir = assets[idx]
+        value, _, is_dir, _ = assets[idx]
         # Skip placeholder slot
         if value == "":
             return False
@@ -78,7 +79,7 @@ class TilePickerEventHandler:
                     print(f"[TilePicker] Double-click directory: '{value}'. Changing dir from {old_dir} to {new_dir}")
                     self.controller.current_dir = new_dir
                 self.controller._load_assets()
-                print(f"[TilePicker] After load, assets count: {len(self.controller.assets)}, names: {[name for name,_,_ in self.controller.assets]}")
+                print(f"[TilePicker] After load, assets count: {len(self.controller.assets)}, names: {[name for name,_,_,_ in self.controller.assets]}")
                 # Reset click tracking
                 self.last_click_time = 0
                 self.last_click_value = None
