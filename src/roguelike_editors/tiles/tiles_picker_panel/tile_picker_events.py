@@ -40,6 +40,20 @@ class TilePickerEventHandler:
         if self.picker_state.btn_close_rect and self.picker_state.btn_close_rect.collidepoint((lx, ly)):
             self.controller._close()
             return True
+        # Toggle filtro 'tileset'
+        if self.picker_state.tileset_checkbox_rect and self.picker_state.tileset_checkbox_rect.collidepoint((lx, ly)):
+            self.picker_state.tileset_filter = not self.picker_state.tileset_filter
+            # Reset input active
+            if self.picker_state.tileset_input_active:
+                self.picker_state.tileset_input_active = False
+            # Cuando se desactiva, recargar assets de directorio
+            if not self.picker_state.tileset_filter:
+                self.controller._load_assets()
+            return True
+        # Activar input de tamaño del grid
+        if self.picker_state.tileset_filter and self.picker_state.tileset_input_rect and self.picker_state.tileset_input_rect.collidepoint((lx, ly)):
+            self.picker_state.tileset_input_active = True
+            return True
         # Arrastrar ventana completa con botón derecho
         if button == 3:
             self.picker_state.dragging = True
@@ -91,6 +105,13 @@ class TilePickerEventHandler:
             return True
 
         # Selección de fichero
+        if self.picker_state.tileset_filter:
+            # Cargar grid de tiles desde imagen seleccionada
+            grid_size = self.picker_state.tileset_grid_size
+            self.controller._load_tileset_assets(value, grid_size)
+            return True
+
+        # Valor por defecto: selección única
         self.editor_state.current_choice = value
         self.picker_state.current_choice = value
 
@@ -117,5 +138,18 @@ class TilePickerEventHandler:
         # Handle scroll wheel
         if ev.type == pygame.MOUSEWHEEL:
             self.controller.scroll(ev.y)
+            return True
+        # Entrada de teclado para tamaño de grid de tileset
+        if ev.type == pygame.KEYDOWN and self.picker_state.tileset_input_active:
+            if ev.key == pygame.K_BACKSPACE:
+                self.picker_state.tileset_grid_size_text = self.picker_state.tileset_grid_size_text[:-1]
+            elif ev.unicode.isdigit():
+                self.picker_state.tileset_grid_size_text += ev.unicode
+            elif ev.key == pygame.K_RETURN:
+                try:
+                    self.picker_state.tileset_grid_size = int(self.picker_state.tileset_grid_size_text)
+                except ValueError:
+                    self.picker_state.tileset_grid_size = 0
+                self.picker_state.tileset_input_active = False
             return True
         return False

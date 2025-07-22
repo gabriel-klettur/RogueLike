@@ -85,6 +85,29 @@ class TilePickerController:
             except Exception as e:
                 print(f"[TilePicker] ERROR cargando {rel_path}: {e}")
 
+    def _load_tileset_assets(self, image_value: str, grid_size: int):
+        """
+        Generate grid tiles from a selected image tileset using given grid pixel size.
+        """
+        full_path = Path(ASSETS_DIR) / image_value
+        try:
+            full_img = pygame.image.load(str(full_path))
+        except Exception as e:
+            print(f"[TilePicker] ERROR cargando tileset {full_path}: {e}")
+            return
+        width, height = full_img.get_size()
+        thumb_size = (THUMB, THUMB)
+        # Clear existing assets and load new grid
+        self.assets.clear()
+        for y in range(0, height, grid_size):
+            for x in range(0, width, grid_size):
+                rect = pygame.Rect(x, y, grid_size, grid_size)
+                sub_surf = full_img.subsurface(rect).copy()
+                thumb = pygame.transform.scale(sub_surf, thumb_size)
+                name = f"{Path(image_value).stem}_{x}_{y}"
+                self.assets.append((name, thumb, False, (grid_size, grid_size)))
+        print(f"[TilePicker] Loaded {len(self.assets)} tiles from {image_value} using grid size {grid_size}")
+
     def is_over(self, mouse_pos) -> bool:
         if not self.picker_state.surface or not self.picker_state.pos:
             return False

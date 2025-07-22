@@ -31,3 +31,11 @@ class TilePickerState:
         self.btn_close_rect: Optional[pygame.Rect] = None
         # Tileset checkbox state
         self.tileset_filter: bool = False
+        # Tileset grid input state
+        self.tileset_grid_size_text: str = "32"
+        self.tileset_grid_size: int = int(self.tileset_grid_size_text)
+        self.tileset_input_active: bool = False
+        self.tileset_input_rect: Optional[pygame.Rect] = None
+        self.tileset_checkbox_rect: Optional[pygame.Rect] = None
+        # Botón crear tiles
+        self.btn_tileset_rect: Optional[pygame.Rect] = None

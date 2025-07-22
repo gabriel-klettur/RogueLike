@@ -137,16 +137,68 @@ class TilePickerView:
    
 
 
-        # Checkbox for tileset filter
+        # Reset del botón 'Crear tiles'
+        self.picker_state.btn_tileset_rect = None
+        # UI de filtro 'tileset' con desplazamiento dinámico
         cb_size = 16
-        x_cb = w - PAD - cb_size
         y_cb = h - PAD - cb_size
-        checkbox_rect = pygame.Rect(x_cb, y_cb, cb_size, cb_size)
-        pygame.draw.rect(self.picker_state.surface, CLR_BORDER, checkbox_rect, 1)
-        # Label for tileset checkbox
+        # Preparar textos y dimensiones
         label_surf_cb = self.label_font.render('tileset', True, CLR_BORDER)
-        label_pos_cb = (x_cb - PAD - label_surf_cb.get_width(), y_cb + (cb_size - label_surf_cb.get_height()) // 2)
-        self.picker_state.surface.blit(label_surf_cb, label_pos_cb)
+        label_w = label_surf_cb.get_width()
+        label_h = label_surf_cb.get_height()
+        grid_label_surf = self.label_font.render('tile size grid', True, CLR_BORDER)
+        grid_w = grid_label_surf.get_width()
+        grid_h = grid_label_surf.get_height()
+        input_w = 50
+        # Preparar botón 'Crear tiles'
+        btn_surf = self.label_font.render('Crear tiles', True, CLR_BORDER)
+        btn_w = btn_surf.get_width() + PAD
+        # Calcular ancho total de bloque
+        if self.picker_state.tileset_filter:
+            total_w = cb_size + PAD + label_w + PAD + grid_w + PAD + input_w + PAD + btn_w
+        else:
+            total_w = cb_size + PAD + label_w
+        start_x = w - PAD - total_w
+        # Posicionar checkbox
+        checkbox_x = start_x
+        checkbox_rect = pygame.Rect(checkbox_x, y_cb, cb_size, cb_size)
+        pygame.draw.rect(self.picker_state.surface, CLR_BORDER, checkbox_rect, 1)
+        if self.picker_state.tileset_filter:
+            pygame.draw.line(self.picker_state.surface, CLR_SELECTION, (checkbox_x+3, y_cb+3), (checkbox_x+cb_size-3, y_cb+cb_size-3), 2)
+            pygame.draw.line(self.picker_state.surface, CLR_SELECTION, (checkbox_x+3, y_cb+cb_size-3), (checkbox_x+cb_size-3, y_cb+3), 2)
+        self.picker_state.tileset_checkbox_rect = checkbox_rect
+        # Posicionar y dibujar label 'tileset'
+        label_x = checkbox_x + cb_size + PAD
+        label_y = y_cb + (cb_size - label_h) // 2
+        self.picker_state.surface.blit(label_surf_cb, (label_x, label_y))
+        # Si activo, dibujar grid_label y campo de input a la derecha
+        if self.picker_state.tileset_filter:
+            grid_x = label_x + label_w + PAD
+            grid_y = y_cb + (cb_size - grid_h) // 2
+            self.picker_state.surface.blit(grid_label_surf, (grid_x, grid_y))
+            input_x = grid_x + grid_w + PAD
+            input_rect = pygame.Rect(input_x, y_cb, input_w, cb_size)
+            pygame.draw.rect(self.picker_state.surface, (60,60,60), input_rect)
+            pygame.draw.rect(self.picker_state.surface, CLR_BORDER, input_rect, 1)
+            text_surf = self.label_font.render(self.picker_state.tileset_grid_size_text, True, CLR_BORDER)
+            text_y = y_cb + (cb_size - text_surf.get_height()) // 2
+            self.picker_state.surface.blit(text_surf, (input_x + 4, text_y))
+            self.picker_state.tileset_input_rect = input_rect
+            # Botón 'Crear tiles'
+            btn_surf = self.label_font.render('Crear tiles', True, CLR_BORDER)
+            btn_w = btn_surf.get_width() + PAD
+            btn_rect = pygame.Rect(input_x + input_w + PAD, y_cb, btn_w, cb_size)
+            pygame.draw.rect(self.picker_state.surface, (60,60,60), btn_rect)
+            pygame.draw.rect(self.picker_state.surface, CLR_BORDER, btn_rect, 1)
+            self.picker_state.btn_tileset_rect = btn_rect
+            # Texto del botón
+            btn_text_x = btn_rect.x + (btn_w - btn_surf.get_width()) // 2
+            btn_text_y = y_cb + (cb_size - btn_surf.get_height()) // 2
+            self.picker_state.surface.blit(btn_surf, (btn_text_x, btn_text_y))
+
+
+
+
         screen.blit(self.picker_state.surface, self.picker_state.pos)
 
     def _draw_button(self, rect, text):
