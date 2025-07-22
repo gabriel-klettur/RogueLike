@@ -3,6 +3,7 @@ from pathlib import Path
 from roguelike_engine.utils.loader import load_image
 from roguelike_engine.config.config_tiles import TILE_SIZE, OVERLAY_CODE_MAP, DEFAULT_TILE_MAP
 from roguelike_engine.config.map_config import global_map_settings
+from roguelike_editors.tiles.common.view import screen_to_tile
 from roguelike_editors.tiles.tiles_toolbar_panel.tile_toolbar_view import TileToolbarView
 
 from roguelike_editors.tiles.tiles_editor_config import ICON_PATHS_TILE_TOOLBAR
@@ -39,11 +40,7 @@ class TileToolbarController:
 
     def apply_eyedropper(self, mouse_pos, camera, game_map):
         """Use eyedropper to pick tile sprite under cursor and set brush choice."""
-        mx, my = mouse_pos
-        world_x = mx / camera.zoom + camera.offset_x
-        world_y = my / camera.zoom + camera.offset_y
-        col = int(world_x // TILE_SIZE)
-        row = int(world_y // TILE_SIZE)
+        col, row = screen_to_tile(mouse_pos, camera)
         if not (0 <= row < len(game_map.tiles) and 0 <= col < len(game_map.tiles[0])):
             return
         tile = game_map.tiles[row][col]
@@ -66,6 +63,7 @@ class TileToolbarController:
         left, _, right = pygame.mouse.get_pressed()
         # Erase with right click
         if right:
+            print("[DEBUG][ERASE] Using erase tool")
             tile = self.editor_controller._tile_under_mouse(mouse_pos, camera, game_map)
             if tile:
                 row = tile.y // TILE_SIZE; col = tile.x // TILE_SIZE
@@ -77,6 +75,7 @@ class TileToolbarController:
         # Bucket fill with Shift + left click
         keys = pygame.key.get_pressed()
         if left and (keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]):
+            print("[DEBUG][BUCKET] Using Bucket tool")
             tile = self.editor_controller._tile_under_mouse(mouse_pos, camera, game_map)
             selected = getattr(self.editor_state, 'selected_tile', None)
             if tile and selected is not None:

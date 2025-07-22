@@ -1,5 +1,6 @@
 import pygame
 from roguelike_engine.map.model.layer import Layer
+from roguelike_editors.tiles.common.events import cycle_enum
 
 from roguelike_editors.tiles.tiles_picker_panel.tile_picker_events import TilePickerEventHandler
 from roguelike_editors.tiles.tiles_toolbar_panel.tile_toolbar_events import TileToolbarEventHandler
@@ -143,15 +144,9 @@ class TileEditorEventHandler:
     def _on_mouse_wheel(self, ev):
         # Ciclar capas si estamos en modo brush
         if self.editor_state.current_tool == "brush":
-            layers = list(Layer)
-            idx = layers.index(self.editor_state.current_layer)
-            new_idx = (idx + (1 if ev.y > 0 else -1)) % len(layers)
-            self.editor_state.current_layer = layers[new_idx]            
+            self.editor_state.current_layer = cycle_enum(self.editor_state.current_layer, 1 if ev.y > 0 else -1, Layer)
             return
         # Cambiar layer seleccionado con rueda cuando panel de vista activo
         if self.editor_state.toolbar_state.view_active:
-            layers = list(Layer)
-            idx = layers.index(self.editor_state.current_layer)
-            new_idx = (idx + (1 if ev.y > 0 else -1)) % len(layers)
-            self.editor_state.current_layer = layers[new_idx]
+            self.editor_state.current_layer = cycle_enum(self.editor_state.current_layer, 1 if ev.y > 0 else -1, Layer)
             return
