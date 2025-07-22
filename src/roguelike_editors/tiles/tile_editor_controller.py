@@ -41,6 +41,7 @@ class TileEditorController:
         self._last_brush_cell: tuple[int,int] | None = None
         self._pending_collision_zones = set()
         self._pending_tile_zones = set()
+        self._pending_cells = []
 
     def select_tile_at(self, mouse_pos, camera, map):
         tile = self._tile_under_mouse(mouse_pos, camera, map)
@@ -50,6 +51,11 @@ class TileEditorController:
             self.picker.open()
 
     def apply_brush(self, mouse_pos, camera, map):
+        """
+        Delegates brush painting to collision or overlay panel controllers,
+        handling both collision and overlay brush logic inline.
+        Also records each painted cell for partial view updates.
+        """
         """
         Delegates brush painting to collision or overlay panel controllers,
         handling both collision and overlay brush logic inline.
@@ -96,7 +102,9 @@ class TileEditorController:
         # Mark pending tile zone for persistence
         zone_name, offx, offy = map.get_zone_for(row, col)
         self._pending_tile_zones.add(zone_name)
-        map.view.invalidate_cache()
+        # Record this cell for partial chunk update
+        self._pending_cells.append((row, col))
+        map.view.update_chunks(map, camera, [(row, col)])
 
 
 
@@ -144,14 +152,26 @@ class TileEditorController:
         Begin a new brush operation by resetting pending change trackers.
 
         Clears the sets tracking modified collision and overlay zones,
+        cell list, and resets the last brush cell state so subsequent strokes
+        start with a clean slate.
+        """
+        """
+        Begin a new brush operation by resetting pending change trackers.
+
+        Clears the sets tracking modified collision and overlay zones,
         and resets the last brush cell state so subsequent strokes
         start with a clean slate.
         """
         self._pending_collision_zones = set()
         self._pending_tile_zones = set()
+        self._pending_cells = []
         self._last_brush_cell = None
 
-    def flush_brush(self, map):
+    def flush_brush(self, map, camera):
+        """
+        Finalize brush stroke: save collision zones and defer heavy overlay writes.
+        Then trigger partial redraws of only modified chunks.
+        """
         """
         Finalize brush stroke: save collision zones immediately and
         defer heavy overlay writes to a background thread.
@@ -159,9 +179,13 @@ class TileEditorController:
         # Capture and clear pending state
         collision_zones = list(self._pending_collision_zones)
         tile_zones = list(self._pending_tile_zones)
+        cells = list(self._pending_cells)
+        # reset trackings
         self._pending_collision_zones.clear()
         self._pending_tile_zones.clear()
+        self._pending_cells.clear()
         self._last_brush_cell = None
+
 
         # Synchronously save collision changes
         for zone in collision_zones:
@@ -193,6 +217,9 @@ class TileEditorController:
         except Exception as e:
             print(f"[ERROR][TileEditorController] failed to update map cache: {e}")
         map.collision_layers = map.collision_manager.load(map)
-        map.view.invalidate_cache()
+        try:
+            map.view.update_chunks(map, camera, cells)
+        except Exception:
+            map.view.invalidate_cache()
         if hasattr(self, "ecs_world"):
             self.ecs_world.invalidate_spatial_index()

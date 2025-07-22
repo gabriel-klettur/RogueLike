@@ -53,8 +53,6 @@ class TilesCollisionPanelController:
             if 0 <= local_r < len(grid) and 0 <= local_c < len(grid[0]):
                 grid[local_r][local_c] = ts.collision_choice
                 self.editor_controller._pending_collision_zones.add(zone_name)
-                game_map.collision_manager.save(zone_name)
-                game_map.collision_layers = game_map.collision_manager.load(game_map)
-                game_map.view.invalidate_cache()
+                game_map.view.update_chunks(game_map, camera, [(row, col)])
             else:
                 print(f"[Warning] Colisión fuera de rango en zona '{zone_name}': local=({local_r},{local_c}), tamaño=({len(grid)},{len(grid[0])})")
