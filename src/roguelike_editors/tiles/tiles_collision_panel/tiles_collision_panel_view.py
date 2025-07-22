@@ -22,13 +22,22 @@ class TilesCollisionPanelView:
         surf.fill((20, 20, 20, 200))
         # Determine panel position
         toolbar_state = self.controller.editor_state.toolbar_state
-        if toolbar_state.collision_picker_pos is None:
-            sw, sh = screen.get_size()
-            pos_x = (sw - w) // 2
-            pos_y = (sh - h) // 2
+        # Dynamic positioning if not dragging
+        if not toolbar_state.collision_picker_dragging:
+            editor_ctrl = self.controller.editor_controller
+            vp_state = editor_ctrl.view_panel_controller.state
+            if hasattr(vp_state, 'pos') and hasattr(vp_state, 'size') and vp_state.pos and vp_state.size:
+                x_vp, y_vp = vp_state.pos
+                _, h_vp = vp_state.size
+                pos_x = x_vp
+                pos_y = y_vp + h_vp + PAD
+            else:
+                sw, sh = screen.get_size()
+                pos_x = (sw - w) // 2
+                pos_y = (sh - h) // 2
             toolbar_state.collision_picker_pos = (pos_x, pos_y)
-        else:
-            pos_x, pos_y = toolbar_state.collision_picker_pos
+        # Use stored position (for dragging)
+        pos_x, pos_y = toolbar_state.collision_picker_pos
         # Store panel size for event handling
         toolbar_state.collision_picker_panel_size = (w, h)
         # Prepare rects
@@ -54,4 +63,5 @@ class TilesCollisionPanelView:
             surf.blit(lbl_surf, (x + (THUMB - lbl_surf.get_width()) // 2,
                                  y + THUMB + PAD))
         # Blit panel
+        pygame.draw.rect(surf, CLR_SELECTION, surf.get_rect(), 3)
         screen.blit(surf, (pos_x, pos_y))

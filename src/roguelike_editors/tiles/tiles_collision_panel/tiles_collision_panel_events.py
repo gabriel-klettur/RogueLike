@@ -16,7 +16,6 @@ class TilesCollisionPanelEventHandler:
             for ch, rect in self.state.option_rects.items():
                 if rect.collidepoint(pos):
                     toolbar_state.collision_choice = ch
-                    toolbar_state.collision_picker_open = False
                     return True
         # Right click starts drag
         if ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 3:
