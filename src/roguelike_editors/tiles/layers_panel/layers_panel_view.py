@@ -1,6 +1,6 @@
 import pygame
 from roguelike_engine.map.model.layer import Layer
-from roguelike_editors.tiles.tiles_editor_config import BTN_W, BTN_H
+from roguelike_editors.tiles.tiles_editor_config import BTN_W, BTN_H, PAD, CLR_SELECTION
 
 class LayersPanelView:
     """View for the Layers Panel"""
@@ -12,8 +12,13 @@ class LayersPanelView:
         # Render layers panel as popup menu
 
         font = pygame.font.SysFont("Arial", 14)
-        # Panel position
-        x0, y0 = 20, 60
+        # Panel position (below Tiles View Panel & right of toolbar)
+        vp_state = self.controller.editor_state.view_panel_state
+        if hasattr(vp_state, 'pos') and hasattr(vp_state, 'size') and vp_state.pos and vp_state.size:
+            x0 = vp_state.pos[0]
+            y0 = vp_state.pos[1] + vp_state.size[1] + PAD
+        else:
+            x0, y0 = 20, 60
         # Clear previous rects
         self.state.option_rects.clear()
         # Render layer toggles
@@ -39,3 +44,5 @@ class LayersPanelView:
         ty = ry + (BTN_H - text.get_height()) // 2
         screen.blit(text, (x0 + 5, ty))
         self.state.option_rects["buildings"] = rect
+        panel_h = (len(list(Layer)) + 1) * BTN_H
+        pygame.draw.rect(screen, CLR_SELECTION, pygame.Rect(x0, y0, BTN_W, panel_h), 3)
