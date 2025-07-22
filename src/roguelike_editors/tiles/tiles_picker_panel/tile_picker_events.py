@@ -53,6 +53,8 @@ class TilePickerEventHandler:
         # Activar input de tamaño del grid
         if self.picker_state.tileset_filter and self.picker_state.tileset_input_rect and self.picker_state.tileset_input_rect.collidepoint((lx, ly)):
             self.picker_state.tileset_input_active = True
+            # Activate TextInput widget
+            self.controller.view.tileset_text_input.activate(self.picker_state.tileset_grid_size_text, True)
             return True
         # Arrastrar ventana completa con botón derecho
         if button == 3:
@@ -141,15 +143,18 @@ class TilePickerEventHandler:
             return True
         # Entrada de teclado para tamaño de grid de tileset
         if ev.type == pygame.KEYDOWN and self.picker_state.tileset_input_active:
-            if ev.key == pygame.K_BACKSPACE:
-                self.picker_state.tileset_grid_size_text = self.picker_state.tileset_grid_size_text[:-1]
-            elif ev.unicode.isdigit():
-                self.picker_state.tileset_grid_size_text += ev.unicode
-            elif ev.key == pygame.K_RETURN:
-                try:
-                    self.picker_state.tileset_grid_size = int(self.picker_state.tileset_grid_size_text)
-                except ValueError:
-                    self.picker_state.tileset_grid_size = 0
-                self.picker_state.tileset_input_active = False
-            return True
+            # Delegate to TextInput widget
+            widget = self.controller.view.tileset_text_input
+            if widget.handle_event(ev):
+                # Sync text to state
+                self.picker_state.tileset_grid_size_text = widget.text
+                # On commit (widget inactive), parse value
+                if not widget.active:
+                    try:
+                        self.picker_state.tileset_grid_size = int(self.picker_state.tileset_grid_size_text)
+                    except ValueError:
+                        self.picker_state.tileset_grid_size = 0
+                    self.picker_state.tileset_input_active = False
+                return True
+            return False
         return False

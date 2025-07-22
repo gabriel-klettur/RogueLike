@@ -1,4 +1,5 @@
 import pygame
+from roguelike_ui.widgets.text_input import TextInput
 from pathlib import Path
 from roguelike_editors.tiles.tiles_editor_config import (
     CLR_HOVER,
@@ -26,6 +27,8 @@ class TilePickerView:
         self.assets = assets
         self.icon_font = pygame.font.SysFont("Arial", 12)
         self.label_font = pygame.font.SysFont("Arial", 16)
+        # TextInput para tamaño de grid tileset
+        self.tileset_text_input = TextInput(self.label_font)
 
     def _ellipsize(self, text, font, max_width):
         ellipsis = "..."
@@ -180,9 +183,15 @@ class TilePickerView:
             input_rect = pygame.Rect(input_x, y_cb, input_w, cb_size)
             pygame.draw.rect(self.picker_state.surface, (60,60,60), input_rect)
             pygame.draw.rect(self.picker_state.surface, CLR_BORDER, input_rect, 1)
-            text_surf = self.label_font.render(self.picker_state.tileset_grid_size_text, True, CLR_BORDER)
-            text_y = y_cb + (cb_size - text_surf.get_height()) // 2
-            self.picker_state.surface.blit(text_surf, (input_x + 4, text_y))
+            # Sincronizar texto del widget y dibujar con TextInput
+            text_y = y_cb + (cb_size - self.label_font.get_height()) // 2
+            text_x = input_x + 4
+            # Actualizar widget
+            if self.picker_state.tileset_input_active:
+                self.tileset_text_input.text = self.picker_state.tileset_grid_size_text
+            # Dibujar widget
+            self.tileset_text_input.draw(self.picker_state.surface, text_x, text_y, CLR_BORDER)
+
             self.picker_state.tileset_input_rect = input_rect
             # Botón 'Crear tiles'
             btn_surf = self.label_font.render('Crear tiles', True, CLR_BORDER)
