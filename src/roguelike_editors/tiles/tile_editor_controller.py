@@ -14,6 +14,9 @@ from pathlib import Path
 from roguelike_engine.utils.loader import load_image
 from roguelike_engine.config.config_tiles import OVERLAY_CODE_MAP, DEFAULT_TILE_MAP
 from roguelike_editors.tiles.common.controller import flood_fill
+from roguelike_editors.tiles.common.view import screen_to_tile
+from roguelike_engine.config.map_config import global_map_settings
+import threading
 
 
 
@@ -150,53 +153,46 @@ class TileEditorController:
 
     def flush_brush(self, map):
         """
-        Finalize and persist all modifications made during the brush stroke.
-
-        Saves changes for each affected collision and overlay zone to disk,
-        reloads underlying data stores, updates in-memory caches and view
-        invalidations, and then clears pending trackers for the next stroke.
+        Finalize brush stroke: save collision zones immediately and
+        defer heavy overlay writes to a background thread.
         """
-
-        # Flush collision layer saves
-        for zone in getattr(self, '_pending_collision_zones', []):
-
-            map.collision_manager.save(zone)
-        # Flush tile overlay saves
-        
-        from roguelike_engine.map.model.overlay.overlay_manager import save_layers
-        for zone in getattr(self, '_pending_tile_zones', []):
-            offx, offy = global_map_settings.zone_offsets.get(zone, (0, 0))
-            if zone != 'no_zone':
-                zh, zw = global_map_settings.zone_height, global_map_settings.zone_width
-            else:
-                zh, zw = len(map.tiles), len(map.tiles[0]) if map.tiles else 0
-            zone_layers = {}
-            for l, full in map.layers.items():
-                sub = []
-                for ry in range(zh):
-                    y = offy + ry
-                    sub.append(full[y][offx:offx+zw] if 0 <= y < len(full) else [''] * zw)
-                zone_layers[l] = sub
-            save_layers(zone, zone_layers)
-            # Debug: recargar JSON justo tras guardar
-            from roguelike_engine.map.model.overlay.factory import get_overlay_store
-            store = get_overlay_store()
-            raw = store.load(zone)
-
-        # Actualizar cache tras guardar overlays y colisiones
-        try:
-            map.save_cache()
-
-        except Exception as e:
-            print(f"[ERROR][TileEditorController] failed to update map cache: {e}")
-        # Refresh in-memory collision layers and invalidate view cache
-        map.collision_layers = map.collision_manager.load(map)
-        map.view.invalidate_cache()
-
-        if hasattr(self, "ecs_world"):
-            self.ecs_world.invalidate_spatial_index()
-
-        # Reset pending
+        # Capture and clear pending state
+        collision_zones = list(self._pending_collision_zones)
+        tile_zones = list(self._pending_tile_zones)
         self._pending_collision_zones.clear()
         self._pending_tile_zones.clear()
         self._last_brush_cell = None
+
+        # Synchronously save collision changes
+        for zone in collision_zones:
+            map.collision_manager.save(zone)
+
+        # Asynchronously save overlay changes
+        def _save_overlays(zones):
+            from roguelike_engine.map.model.overlay.overlay_manager import save_layers
+            for zone in zones:
+                offx, offy = global_map_settings.zone_offsets.get(zone, (0, 0))
+                if zone != 'no_zone':
+                    zh, zw = global_map_settings.zone_height, global_map_settings.zone_width
+                else:
+                    zh = len(map.tiles)
+                    zw = len(map.tiles[0]) if map.tiles else 0
+                zone_layers = {}
+                for l, full in map.layers.items():
+                    sub = []
+                    for ry in range(zh):
+                        y = offy + ry
+                        sub.append(full[y][offx:offx+zw] if 0 <= y < len(full) else [''] * zw)
+                    zone_layers[l] = sub
+                save_layers(zone, zone_layers)
+        threading.Thread(target=_save_overlays, args=(tile_zones,), daemon=True).start()
+
+        # Update caches
+        try:
+            map.save_cache()
+        except Exception as e:
+            print(f"[ERROR][TileEditorController] failed to update map cache: {e}")
+        map.collision_layers = map.collision_manager.load(map)
+        map.view.invalidate_cache()
+        if hasattr(self, "ecs_world"):
+            self.ecs_world.invalidate_spatial_index()
