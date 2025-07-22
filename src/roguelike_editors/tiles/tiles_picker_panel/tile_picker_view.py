@@ -19,7 +19,8 @@ class TilePickerView:
     - Botones Borrar y Default para funcionalidad de overlay.
     - Muestra el nombre de la carpeta sobre cada icono de directorio.
     """
-    def __init__(self, picker_state, assets):
+    def __init__(self, controller, picker_state, assets):
+        self.controller = controller
         self.picker_state = picker_state
         self.assets = assets
         self.font = pygame.font.SysFont("Arial", 16)
@@ -79,8 +80,21 @@ class TilePickerView:
         self.picker_state.btn_close_rect = close_rect
 
         if self.picker_state.pos is None:
-            sw, sh = screen.get_size()
-            self.picker_state.pos = ((sw - w) // 2, (sh - h) // 2)
+            # Align to the right of TilesViewPanel
+            vp_state = self.controller.editor_controller.view_panel_controller.state
+            wvp, hvp = None, None
+            if hasattr(vp_state, 'pos') and hasattr(vp_state, 'size') and vp_state.pos and vp_state.size:
+                xvp, yvp = vp_state.pos
+                wvp, hvp = vp_state.size
+                margin = PAD
+                self.picker_state.pos = (xvp + wvp + margin, yvp)
+            else:
+                sw, sh = screen.get_size()
+                self.picker_state.pos = ((sw - w) // 2, (sh - h) // 2)
+   
+   
+
+
         screen.blit(self.picker_state.surface, self.picker_state.pos)
 
     def _draw_button(self, rect, text):

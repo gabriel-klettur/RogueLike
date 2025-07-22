@@ -28,7 +28,7 @@ class TileEditorController:
     """
     def __init__(self, editor_state, picker_state):        
         self.editor  = editor_state         # instancia de TileEditorControllerState
-        self.picker =                       TilePickerController(editor_state, picker_state)
+        self.picker =                       TilePickerController(self, editor_state, picker_state)
         self.toolbar =                      TileToolbarController(self)        
         self.view_panel_controller =        TilesViewPanelController(self, editor_state.view_panel_state)
         self.title_controller =             TilesTitleController(editor_state, editor_state.title_state)

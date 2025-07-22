@@ -23,8 +23,10 @@ class TilePickerController:
     Ventana flotante de selección de tiles y explorador de directorios.
     """
 
-    def __init__(self, editor_state, picker_state):        
+    def __init__(self, editor_controller, editor_state, picker_state):
+        self.editor_controller = editor_controller        
         self.editor_state = editor_state
+        self.picker_state = picker_state
         self.picker_state = picker_state
 
         # Directorio base y directorio actual para explorar
@@ -35,7 +37,7 @@ class TilePickerController:
         
         self.assets = []
         self._load_assets()
-        self.view = TilePickerView(self.picker_state, self.assets)
+        self.view = TilePickerView(self, self.picker_state, self.assets)
 
     def _load_assets(self):
         """

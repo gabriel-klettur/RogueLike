@@ -77,4 +77,6 @@ class TilesViewPanelView:
             text = font.render(label, True, (255, 255, 255))
             panel.blit(text, (margin_x, ty + TILE_SIZE + 2))
 
+        self.state.pos = (x0, y0)
+        self.state.size = (panel_w, panel_h)
         screen.blit(panel, (x0, y0))
