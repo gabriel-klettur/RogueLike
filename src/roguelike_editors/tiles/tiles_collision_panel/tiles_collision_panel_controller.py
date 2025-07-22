@@ -20,20 +20,12 @@ class TilesCollisionPanelController:
         ts = self.editor_state.toolbar_state
         if not ((ts.show_collisions or ts.show_collisions_overlay) and ts.collision_choice):
             return
-        # Find tile
-        tile = self.editor_controller._tile_under_mouse(mouse_pos, camera, game_map)
+        tile, row, col = self.editor_controller._get_brush_cell(mouse_pos, camera, game_map)
         if not tile:
             return
         # Set collision state
         solid = (ts.collision_choice == '#')
         tile.solid = solid
-        # Compute cell indices
-        row = tile.y // TILE_SIZE
-        col = tile.x // TILE_SIZE
-        # Skip duplicate
-        if self.editor_controller._last_brush_cell == (row, col):
-            return
-        self.editor_controller._last_brush_cell = (row, col)
         try:
             game_map.matrix[row][col] = ts.collision_choice
         except Exception:

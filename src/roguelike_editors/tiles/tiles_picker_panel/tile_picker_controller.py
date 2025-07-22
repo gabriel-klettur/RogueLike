@@ -45,8 +45,14 @@ class TilePickerController:
          - Archivos que casan con FILE_PATTERNS
         Cada entrada es tupla (value, surface, is_dir).
         """
+        print(f"[TilePicker] Loading assets from {self.current_dir}")
         self.assets.clear()
         thumb_size = (THUMB, THUMB)
+
+        # Placeholder for base_dir: occupy first slot without clickable asset
+        if self.current_dir == self.base_dir:
+            placeholder = pygame.Surface(thumb_size, pygame.SRCALPHA)
+            self.assets.append(("", placeholder, False))
 
         # Flecha hacia arriba
         if self.current_dir != self.base_dir:

@@ -53,13 +53,23 @@ class TilePickerEventHandler:
             return False
 
         value, _, is_dir = assets[idx]
+        # Skip placeholder slot
+        if value == "":
+            return False
+        # Ignorar clic en flecha cuando está en base_dir
+        if idx == 0 and self.controller.current_dir == self.controller.base_dir:
+            return False
         # Navegación de directorios
         if is_dir:
+            old_dir = self.controller.current_dir
             if value == "..":
+                print(f"[TilePicker] Arrow clicked. dir before: {old_dir}, parent: {old_dir.parent}")
                 self.controller.current_dir = self.controller.current_dir.parent
             else:
+                print(f"[TilePicker] Directory clicked: '{value}'. Changing dir from {old_dir} to {old_dir / value}")
                 self.controller.current_dir = self.controller.current_dir / value
             self.controller._load_assets()
+            print(f"[TilePicker] After load, assets count: {len(self.controller.assets)}, names: {[name for name,_,_ in self.controller.assets]}")
             return True
 
         # Selección de fichero

@@ -72,15 +72,9 @@ class TileEditorController:
         choice = self.editor.current_choice
         if not choice:
             return
-        tile = self._tile_under_mouse(mouse_pos, camera, map)
+        tile, row, col = self._get_brush_cell(mouse_pos, camera, map)
         if not tile:
             return
-        row = tile.y // TILE_SIZE
-        col = tile.x // TILE_SIZE
-        # Skip duplicate cell
-        if self._last_brush_cell == (row, col):
-            return
-        self._last_brush_cell = (row, col)
         # Determine code from asset path
         asset_name = Path(choice).stem
         code = next((k for k, v in OVERLAY_CODE_MAP.items() if v == asset_name), None)
@@ -127,6 +121,21 @@ class TileEditorController:
         if 0 <= row < len(map.tiles) and 0 <= col < len(map.tiles[0]):
             return map.tiles[row][col]
         return None
+
+    def _get_brush_cell(self, mouse_pos, camera, map):
+        """
+        Helper to get the tile under mouse, compute row/col,
+        skip duplicates, and update last brush cell.
+        """
+        tile = self._tile_under_mouse(mouse_pos, camera, map)
+        if not tile:
+            return None, None, None
+        row = tile.y // TILE_SIZE
+        col = tile.x // TILE_SIZE
+        if self._last_brush_cell == (row, col):
+            return None, None, None
+        self._last_brush_cell = (row, col)
+        return tile, row, col
 
     def update(self, camera, game_map):
         """
