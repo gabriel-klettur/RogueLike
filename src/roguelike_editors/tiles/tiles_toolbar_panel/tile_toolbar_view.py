@@ -16,11 +16,22 @@ class TileToolbarView:
             self.toolbar.icon_rects[tool] = rect
             screen.blit(self.toolbar.icons[tool], (px, py))
             # Yellow border for active tool or collisions mode
-            if tool == "view_collisions":
-                # Yellow border when collision mode (only or overlay) is active
-                color = (255, 200, 0) if (self.toolbar.editor_state.toolbar_state.show_collisions or self.toolbar.editor_state.toolbar_state.show_collisions_overlay) else (255, 255, 255)
+            if tool == "view":
+                # Highlight when Tiles View Panel is active
+                color = CLR_SELECTION if self.toolbar.editor_state.toolbar_state.view_active else (255, 255, 255)
+            elif tool == "view_layers":
+                # Highlight when Layers Panel is open
+                color = CLR_SELECTION if self.toolbar.editor_state.toolbar_state.layers_view_open else (255, 255, 255)
+            elif tool == "view_collisions":
+                # Highlight when collision mode is active
+                color = CLR_SELECTION if (self.toolbar.editor_state.toolbar_state.show_collisions or self.toolbar.editor_state.toolbar_state.show_collisions_overlay) else (255, 255, 255)
+            elif tool == "brush":
+                # Highlight when brush is active (overlay brush)
+                ts = self.toolbar.editor_state.toolbar_state
+                active_brush = (self.toolbar.editor_state.current_tool == "brush" and not (ts.show_collisions or ts.show_collisions_overlay))
+                color = CLR_SELECTION if active_brush else (255, 255, 255)
             else:
-                color = (255, 200, 0) if self.toolbar.editor_state.current_tool == tool else (255, 255, 255)
+                color = CLR_SELECTION if self.toolbar.editor_state.current_tool == tool else (255, 255, 255)
             pygame.draw.rect(screen, color, rect, 4)
 
         # Collision picker UI
