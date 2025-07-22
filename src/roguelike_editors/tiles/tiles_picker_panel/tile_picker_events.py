@@ -8,7 +8,10 @@ class TilePickerEventHandler:
     def __init__(self, picker_controller, editor_state, picker_state):
         self.controller = picker_controller
         self.editor_state = editor_state
-        self.picker_state = picker_state        
+        self.picker_state = picker_state
+        # Double-click tracking
+        self.last_click_time = 0
+        self.last_click_value = None        
 
     def handle_click(self, mouse_pos, button, map):
         """
@@ -21,6 +24,7 @@ class TilePickerEventHandler:
         # Coordenadas locales al picker
         lx = mouse_pos[0] - (self.picker_state.pos[0] or 0)
         ly = mouse_pos[1] - (self.picker_state.pos[1] or 0)
+        print(f"[TilePicker] Click at {mouse_pos}, local=({lx},{ly}), dir={self.controller.current_dir}")
         sw, sh = self.picker_state.surface.get_size()
         if lx < 0 or ly < 0 or lx > sw or ly > sh:
             return False
@@ -61,15 +65,28 @@ class TilePickerEventHandler:
             return False
         # Navegación de directorios
         if is_dir:
-            old_dir = self.controller.current_dir
-            if value == "..":
-                print(f"[TilePicker] Arrow clicked. dir before: {old_dir}, parent: {old_dir.parent}")
-                self.controller.current_dir = self.controller.current_dir.parent
+            # Double-click detection
+            current_time = pygame.time.get_ticks()
+            if value == self.last_click_value and current_time - self.last_click_time <= 600:
+                # Double-click: navigate
+                old_dir = self.controller.current_dir
+                if value == "..":
+                    print(f"[TilePicker] Double-click arrow: dir before {old_dir}, parent {old_dir.parent}")
+                    self.controller.current_dir = old_dir.parent
+                else:
+                    new_dir = old_dir / value
+                    print(f"[TilePicker] Double-click directory: '{value}'. Changing dir from {old_dir} to {new_dir}")
+                    self.controller.current_dir = new_dir
+                self.controller._load_assets()
+                print(f"[TilePicker] After load, assets count: {len(self.controller.assets)}, names: {[name for name,_,_ in self.controller.assets]}")
+                # Reset click tracking
+                self.last_click_time = 0
+                self.last_click_value = None
             else:
-                print(f"[TilePicker] Directory clicked: '{value}'. Changing dir from {old_dir} to {old_dir / value}")
-                self.controller.current_dir = self.controller.current_dir / value
-            self.controller._load_assets()
-            print(f"[TilePicker] After load, assets count: {len(self.controller.assets)}, names: {[name for name,_,_ in self.controller.assets]}")
+                # Single click on directory: record time
+                print(f"[TilePicker] Single click on directory '{value}'")
+                self.last_click_time = current_time
+                self.last_click_value = value
             return True
 
         # Selección de fichero
@@ -84,8 +101,10 @@ class TilePickerEventHandler:
         """
         # Handle clicks
         if ev.type == pygame.MOUSEBUTTONDOWN:
-            if self.handle_click(ev.pos, ev.button, map):
-                return True
+            # Skip left-click here; left-click handled in _on_mouse_down
+            if ev.button != 1:
+                if self.handle_click(ev.pos, ev.button, map):
+                    return True
         # Handle dragging movement
         if ev.type == pygame.MOUSEMOTION and self.picker_state.dragging:
             self.controller.drag(ev.pos)
