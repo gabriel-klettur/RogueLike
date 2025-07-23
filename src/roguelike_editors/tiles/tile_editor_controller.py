@@ -115,6 +115,8 @@ class TileEditorController:
                     zone_name, offx, offy = map.get_zone_for(r, c)
                     self._pending_tile_zones.add(zone_name)
                     self._pending_cells.append((r, c))
+        # Invalidate view cache to clear stale zoom caches
+        map.view.invalidate_cache()
         map.view.update_chunks(map, camera, self._pending_cells)
 
 
