@@ -212,15 +212,28 @@ class TilePickerView:
 
         # Initialize position if undefined
         if self.picker_state.pos is None:
-            vp_state = self.controller.editor_controller.view_panel_controller.state
-            if hasattr(vp_state, 'pos') and hasattr(vp_state, 'size') and vp_state.pos and vp_state.size:
-                xvp, yvp = vp_state.pos
-                wvp, hvp = vp_state.size
+            # In brush mode, align picker to the right of size panel
+            if self.controller.editor_state.current_tool == "brush" and self.controller.editor_controller.size_panel_controller.state.visible:
+                sp_state = self.controller.editor_controller.size_panel_controller.state
+                if sp_state.pos:
+                    xsp, ysp = sp_state.pos
+                else:
+                    toolbar = self.controller.editor_controller.toolbar
+                    xsp = toolbar.x + toolbar.size + toolbar.padding
+                    ysp = toolbar.y
                 margin = PAD
-                self.picker_state.pos = (xvp + wvp + margin, yvp)
+                self.picker_state.pos = (xsp + BTN_W + margin, ysp)
             else:
-                sw, sh = screen.get_size()
-                self.picker_state.pos = ((sw - w) // 2, (sh - h) // 2)
+                # Default: align picker beside view panel
+                vp_state = self.controller.editor_controller.view_panel_controller.state
+                if hasattr(vp_state, 'pos') and hasattr(vp_state, 'size') and vp_state.pos and vp_state.size:
+                    xvp, yvp = vp_state.pos
+                    wvp, hvp = vp_state.size
+                    margin = PAD
+                    self.picker_state.pos = (xvp + wvp + margin, yvp)
+                else:
+                    sw, sh = screen.get_size()
+                    self.picker_state.pos = ((sw - w) // 2, (sh - h) // 2)
 
         # Blit picker surface
         screen.blit(self.picker_state.surface, self.picker_state.pos)

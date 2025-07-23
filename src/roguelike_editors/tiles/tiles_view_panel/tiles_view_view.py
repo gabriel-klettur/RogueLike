@@ -77,9 +77,15 @@ class TilesViewPanelView:
         if self.state.pos:
             x0, y0 = self.state.pos
         else:
-            toolbar = self.controller.editor_controller.toolbar
-            x0 = toolbar.x + toolbar.size + toolbar.padding
-            y0 = toolbar.y
+            # On brush mode, align top-right corner
+            if self.controller.editor_state.current_tool == "brush":
+                sw, sh = screen.get_size()
+                x0 = sw - panel_w - margin_x
+                y0 = margin_y
+            else:
+                toolbar = self.controller.editor_controller.toolbar
+                x0 = toolbar.x + toolbar.size + toolbar.padding
+                y0 = toolbar.y
 
         # Create panel surface
         panel = pygame.Surface((panel_w, panel_h), pygame.SRCALPHA)
