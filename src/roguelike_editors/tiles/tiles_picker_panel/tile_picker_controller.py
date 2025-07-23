@@ -1,3 +1,9 @@
+"""
+Module: roguelike_editors.tiles.tiles_picker_panel.tile_picker_controller
+
+Provides TilePickerController to manage the floating tile picker panel,
+including asset loading, directory navigation, tile selection, and persistence of overlay data.
+"""
 import pygame
 from pathlib import Path
 
@@ -90,25 +96,43 @@ class TilePickerController:
         Generate grid tiles from a selected image tileset using given grid pixel size.
         """
         full_path = Path(ASSETS_DIR) / image_value
+        full_img = self._load_full_image(full_path, image_value)
+        if full_img is None:
+            return
+        thumb_size = (THUMB, THUMB)
+        # Slice and load tileset assets
+        self.assets = self._slice_tileset(full_img, image_value, grid_size, thumb_size)
+        print(f"[TilePicker] Loaded {len(self.assets)} tiles from {image_value} using grid size {grid_size}")
+
+    def _load_full_image(self, full_path: Path, image_value: str):
+        """
+        Carga una imagen completa, retorna Surface o None.
+        """
         try:
-            full_img = pygame.image.load(str(full_path))
+            return pygame.image.load(str(full_path))
         except Exception as e:
             print(f"[TilePicker] ERROR cargando tileset {full_path}: {e}")
-            return
+        return None
+
+    def _slice_tileset(self, full_img, image_value: str, grid_size: int, thumb_size):
+        """
+        Divide la imagen en tiles de tamaño grid_size y escala a thumb_size.
+        """
         width, height = full_img.get_size()
-        thumb_size = (THUMB, THUMB)
-        # Clear existing assets and load new grid
-        self.assets.clear()
+        assets = []
         for y in range(0, height, grid_size):
             for x in range(0, width, grid_size):
                 rect = pygame.Rect(x, y, grid_size, grid_size)
                 sub_surf = full_img.subsurface(rect).copy()
                 thumb = pygame.transform.scale(sub_surf, thumb_size)
                 name = f"{Path(image_value).stem}_{x}_{y}"
-                self.assets.append((name, thumb, False, (grid_size, grid_size)))
-        print(f"[TilePicker] Loaded {len(self.assets)} tiles from {image_value} using grid size {grid_size}")
+                assets.append((name, thumb, False, (grid_size, grid_size)))
+        return assets
 
     def is_over(self, mouse_pos) -> bool:
+        """
+        Verifica si el mouse está sobre el picker.
+        """
         if not self.picker_state.surface or not self.picker_state.pos:
             return False
         x0, y0 = self.picker_state.pos
@@ -117,6 +141,9 @@ class TilePickerController:
         return x0 <= mx <= x0 + w and y0 <= my <= y0 + h
 
     def drag(self, mouse_pos):
+        """
+        Arrastra el picker.
+        """
         if self.picker_state.dragging:
             self.picker_state.pos = (
                 mouse_pos[0] - self.picker_state.drag_offset[0],
@@ -124,12 +151,21 @@ class TilePickerController:
             )
 
     def stop_drag(self):
+        """
+        Detiene el arrastre del picker.
+        """
         self.picker_state.dragging = False
 
     def scroll(self, dy):
+        """
+        Desplaza el scroll del picker.
+        """
         self.editor_state.scroll_offset = max(0, self.editor_state.scroll_offset - dy * 30)
 
     def _delete_tile(self, map):
+        """
+        Elimina el tile seleccionado.
+        """
         tile = self.editor_state.selected_tile
         if tile is None:
             return
@@ -207,11 +243,17 @@ class TilePickerController:
         self._load_assets()
 
     def _close(self):
+        """
+        Cierra el selector de tiles.
+        """
         self.picker_state.open = False
         self.picker_state.current_choice = None
         self.picker_state.dragging = False
 
     def _persist_overlay(self, tile, code: str, map):
+        """
+        Persiste el overlay del tile seleccionado.
+        """
         # Calcular posición global del tile
         row = tile.y // TILE_SIZE
         col = tile.x // TILE_SIZE

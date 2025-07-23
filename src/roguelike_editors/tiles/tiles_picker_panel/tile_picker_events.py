@@ -1,3 +1,10 @@
+"""
+Module: roguelike_editors.tiles.tiles_picker_panel.tile_picker_events
+
+Provides TilePickerEventHandler to process user interactions in the tile picker panel,
+delgating click, drag, and input events to specialized handlers for toolbar, filters,
+dragging, and grid clicks.
+"""
 from roguelike_editors.tiles.tiles_editor_config import THUMB, PAD, COLS
 import pygame
 
@@ -43,6 +50,7 @@ class TilePickerEventHandler:
         return False
 
     def _handle_toolbar_buttons(self, lx, ly, map):
+        """Handle toolbar button interactions: delete tile, set default, and close picker."""
         # Botones Borrar / Default / Cerrar
         if self.picker_state.btn_delete_rect and self.picker_state.btn_delete_rect.collidepoint((lx, ly)):
             self.controller._delete_tile(map)
@@ -56,6 +64,7 @@ class TilePickerEventHandler:
         return False
 
     def _handle_tileset_filter_click(self, lx, ly):
+        """Toggle the tileset filter checkbox; reset input and reload assets when unchecked."""
         # Toggle filtro 'tileset'
         if self.picker_state.tileset_checkbox_rect and self.picker_state.tileset_checkbox_rect.collidepoint((lx, ly)):
             self.picker_state.tileset_filter = not self.picker_state.tileset_filter
@@ -67,6 +76,7 @@ class TilePickerEventHandler:
         return False
 
     def _handle_tileset_input_click(self, lx, ly):
+        """Activate the grid-size text input widget when clicking its bounding rectangle."""
         # Activar input de tamaño del grid
         if self.picker_state.tileset_filter and self.picker_state.tileset_input_rect and self.picker_state.tileset_input_rect.collidepoint((lx, ly)):
             self.picker_state.tileset_input_active = True
@@ -75,6 +85,7 @@ class TilePickerEventHandler:
         return False
 
     def _handle_drag_start(self, button, lx, ly):
+        """Begin dragging the picker window using the right mouse button."""
         # Arrastrar ventana completa con botón derecho
         if button == 3:
             self.picker_state.dragging = True
@@ -83,6 +94,7 @@ class TilePickerEventHandler:
         return False
 
     def _handle_grid_click(self, lx, ly, map):
+        """Process clicks on the asset grid: directory navigation, tileset loading, or tile selection."""
         cols = COLS * 3
         col = (lx - PAD) // (THUMB + PAD)
         row = (ly - PAD + self.editor_state.scroll_offset) // (THUMB + PAD)
