@@ -33,4 +33,16 @@ class TileEditorView:
             self.controller.collision_panel_controller.render(screen)
             
         # Outline 
-        self.controller.outline_view.render(screen, camera, map)    
+        self.controller.outline_view.render(screen, camera, map)
+        # Mostrar indicador de capa centrado en la parte inferior en modo brush
+        if self.editor.current_tool == "brush":
+            font = pygame.font.SysFont("Arial", 32)
+            layer_name = self.editor.current_layer.name
+            text_surf = font.render(layer_name, True, (255, 255, 0))
+            screen_w, screen_h = screen.get_size()
+            padding = 10
+            text_rect = text_surf.get_rect()
+            text_rect.midbottom = (screen_w // 2, screen_h - padding)
+            bg_rect = text_rect.inflate(8, 8)
+            pygame.draw.rect(screen, (0, 0, 0), bg_rect)
+            screen.blit(text_surf, text_rect)    

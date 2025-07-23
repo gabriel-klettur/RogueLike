@@ -176,20 +176,7 @@ class RendererManager:
                 self.camera,
                 self.map
             )
-            # Mostrar indicador de capa encima del jugador si estamos en modo brush
-            if self.tiles_editor.editor_state.current_tool == "brush":
-                player = self.entities.player
-                # Convertir coords de mundo a pantalla
-                sx = (player.x - self.camera.offset_x) * self.camera.zoom
-                sy = (player.y - self.camera.offset_y) * self.camera.zoom
-                font = pygame.font.SysFont("Arial", 14)
-                layer_name = self.tiles_editor.editor_state.current_layer.name
-                text_surf = font.render(layer_name, True, (255, 255, 255))
-                text_rect = text_surf.get_rect(center=(sx, sy - 20))
-                bg_rect = text_rect.inflate(8, 8)
-                pygame.draw.rect(self.screen, (0, 0, 0), bg_rect)
-                self.screen.blit(text_surf, text_rect)
-                self._dirty_rects.extend([bg_rect, text_rect])
+
         # Render Building Editor UI
         if self.buildings_editor.editor_state.active:
             self.buildings_editor.view.render(
