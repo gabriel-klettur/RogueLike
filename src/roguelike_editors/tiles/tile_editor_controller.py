@@ -76,10 +76,19 @@ class TileEditorController:
         if not tile:
             return
         # Determine code from asset path
-        asset_name = Path(choice).stem
-        code = next((k for k, v in OVERLAY_CODE_MAP.items() if v == asset_name), None)
+        # Build relative key: strip 'tiles/' prefix and extension
+        choice_rel = choice.replace("\\", "/")
+        if choice_rel.startswith("tiles/"):
+            choice_rel = choice_rel[len("tiles/"):]
+        key = choice_rel.rsplit(".", 1)[0]
+        # Try direct overlay mapping
+        code = key if key in OVERLAY_CODE_MAP else None
         if code is None:
-            code = next((k for k, v in DEFAULT_TILE_MAP.items() if v == asset_name), None)
+            # fallback: match mapping value
+            code = next((k for k, v in OVERLAY_CODE_MAP.items() if v == key), None)
+        if code is None:
+            # fallback: default char mapping
+            code = next((k for k, v in DEFAULT_TILE_MAP.items() if v == key), None)
         if code is None:
             return
         # Update tile object

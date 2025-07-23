@@ -150,6 +150,21 @@ class TilePickerController:
                 pygame.image.save(sub, str(out_dir / fname))
                 count += 1
         print(f"[TilePicker] Saved {count} slices to {out_dir}")
+        # Regenerate tiles.json mapping and update overlay config
+        try:
+            from scripts.generate_overlay_map import main as generate_overlay_map
+            import json
+            import roguelike_engine.config.config_tiles as ct
+            generate_overlay_map()
+            print("[TilePicker] Regenerated tiles.json mapping")
+            with open(ct.TILES_MAP_PATH, "r", encoding="utf-8") as f:
+                ct.OVERLAY_CODE_MAP = json.load(f)
+            ct.INVERSE_OVERLAY_MAP.clear()
+            for code, name in ct.OVERLAY_CODE_MAP.items():
+                ct.INVERSE_OVERLAY_MAP.setdefault(name, []).append(code)
+            print("[TilePicker] Updated overlay mapping in config_tiles")
+        except Exception as e:
+            print(f"[TilePicker] Error updating overlay mapping: {e}")
 
     def is_over(self, mouse_pos) -> bool:
         """
