@@ -11,14 +11,15 @@ class TilesViewPanelView:
         self.state = state
 
     def render(self, screen, camera, game_map):
-        # Gather panel items
         font = pygame.font.SysFont("Arial", 14)
+        # Calculate world and mouse positions
         mouse_pos = pygame.mouse.get_pos()
         wx = mouse_pos[0] / camera.zoom + camera.offset_x
         wy = mouse_pos[1] / camera.zoom + camera.offset_y
-        col = int(wx) // TILE_SIZE
-        row = int(wy) // TILE_SIZE
-        # Determine hovered layer
+        col, row = int(wx) // TILE_SIZE, int(wy) // TILE_SIZE
+
+        # Determine hovered tile and layer
+        hovered_tile = self.controller._tile_under_mouse(mouse_pos, camera, game_map)
         hovered_layer = Layer.Ground
         for layer in sorted(game_map.tiles_by_layer.keys(), key=lambda l: -l.value):
             grid = game_map.tiles_by_layer[layer]
@@ -27,62 +28,92 @@ class TilesViewPanelView:
                 if t and getattr(t, "overlay_code", ""):
                     hovered_layer = layer
                     break
+        selected_tile = self.controller.editor_state.selected_tile
+        choice_path = self.controller.editor_state.current_choice
+        choice_sprite = None
+        if choice_path:
+            choice_sprite = load_image(choice_path, (TILE_SIZE, TILE_SIZE))
 
-        items = [
-            ("Hovered", self.controller._tile_under_mouse(mouse_pos, camera, game_map), OUTLINE_HOVER),
-            ("Selected", self.controller.editor_state.selected_tile, OUTLINE_SEL),
-            ("Choice", None, OUTLINE_CHOICE),
-            ("Layer Hovered", hovered_layer, None),
-            ("Layer Selected", self.controller.editor_state.current_layer, None),
+        # Define items: sprite rows and layer rows
+        sprite_items = [
+            ("Hovered", hovered_tile.sprite if hovered_tile and hasattr(hovered_tile, 'sprite') else None, OUTLINE_HOVER),
+            ("Selected", selected_tile.sprite if selected_tile and hasattr(selected_tile, 'sprite') else None, OUTLINE_SEL),
+            ("Choice", choice_sprite, OUTLINE_CHOICE),
+        ]
+        layer_items = [
+            ("Layer Hovered", f"{hovered_layer.value}: {hovered_layer.name}"),
+            ("Layer Selected", f"{self.controller.editor_state.current_layer.value}: {self.controller.editor_state.current_layer.name}"),
         ]
 
-        # Compute dynamic panel size
-        max_text_width = 0
-        for label, tile, color in items:
-            if label.startswith("Layer"):
-                text_str = f"{label}: {tile.name}"
-            else:
-                text_str = label
-            tw, _ = font.size(text_str)
-            max_text_width = max(max_text_width, tw)
-        margin_x = 10
-        panel_w = max(TILE_SIZE, max_text_width) + margin_x * 2
-        panel_h = len(items) * (TILE_SIZE + 30)
+        # Layout settings
+        margin_x, margin_y = 12, 12
+        padding_x = 8
+        spacing_y = 6
 
-        # Render panel background (draggable override)
-        if self.state.pos is not None:
+        # Compute dynamic panel size
+        row_widths = []
+        row_heights = []
+        # Sprite rows
+        for label, sprite, outline in sprite_items:
+            tw, th = font.size(label)
+            w = TILE_SIZE + padding_x + tw
+            h = max(TILE_SIZE, th)
+            row_widths.append(w)
+            row_heights.append(h)
+        # Layer rows
+        for label, val in layer_items:
+            lw, lh = font.size(label)
+            vw, vh = font.size(val)
+            w = lw + padding_x + vw
+            h = lh + vh + spacing_y
+            row_widths.append(w)
+            row_heights.append(h)
+        content_w = max(row_widths)
+        content_h = sum(row_heights) + spacing_y * (len(row_heights) - 1)
+        panel_w = content_w + margin_x * 2
+        panel_h = content_h + margin_y * 2
+
+        # Determine panel position
+        if self.state.pos:
             x0, y0 = self.state.pos
         else:
             toolbar = self.controller.editor_controller.toolbar
-            x0 = toolbar.x + toolbar.size + 20
-            base_y = toolbar.y
-            if self.controller.editor_controller.size_panel_controller.state.visible:
-                base_y += len(self.controller.editor_controller.size_panel_controller.state.sizes) * BTN_H + toolbar.padding
-            y0 = base_y
+            x0 = toolbar.x + toolbar.size + toolbar.padding
+            y0 = toolbar.y
+
+        # Create panel surface
         panel = pygame.Surface((panel_w, panel_h), pygame.SRCALPHA)
-        panel.fill((20, 20, 20, 200))
+        panel.fill((30, 30, 30, 220))
+        # Border
+        pygame.draw.rect(panel, OUTLINE_CHOICE, panel.get_rect(), 2)
 
-        # Draw items
-        for idx, (label, tile, color) in enumerate(items):
-            ty = idx * (TILE_SIZE + 30) + 10
-            # Layer labels only text
-            if label.startswith("Layer"):
-                layer = tile
-                text = font.render(f"{label}: {layer.name}", True, (255, 255, 255))
-                panel.blit(text, (margin_x, ty + TILE_SIZE + 2))
-                continue
-            sprite = None
-            if label == "Choice" and self.controller.editor_state.current_choice:
-                sprite = load_image(self.controller.editor_state.current_choice, (TILE_SIZE, TILE_SIZE))
-            elif tile and hasattr(tile, 'sprite'):
-                sprite = tile.sprite
+        # Draw sprite rows
+        y = margin_y
+        for idx, (label, sprite, outline) in enumerate(sprite_items):
+            sx = margin_x
+            sy = y + (row_heights[idx] - TILE_SIZE) // 2
             if sprite:
-                panel.blit(sprite, ((panel_w - TILE_SIZE)//2, ty))
-            rect = pygame.Rect((panel_w - TILE_SIZE)//2, ty, TILE_SIZE, TILE_SIZE)
-            if color:
-                pygame.draw.rect(panel, color, rect, 3)
-            text = font.render(label, True, (255, 255, 255))
-            panel.blit(text, (margin_x, ty + TILE_SIZE + 2))
+                panel.blit(sprite, (sx, sy))
+            rect = pygame.Rect(sx, sy, TILE_SIZE, TILE_SIZE)
+            pygame.draw.rect(panel, outline, rect, 2)
+            # Label
+            text = font.render(label, True, (245, 245, 245))
+            tx = sx + TILE_SIZE + padding_x
+            ty = y + (row_heights[idx] - text.get_height()) // 2
+            panel.blit(text, (tx, ty))
+            y += row_heights[idx] + spacing_y
 
+        # Draw layer rows
+        for i, (label, val) in enumerate(layer_items, start=len(sprite_items)):
+            # Label
+            lbl = font.render(label, True, (245, 245, 245))
+            panel.blit(lbl, (margin_x, y))
+            y += lbl.get_height() + spacing_y // 2
+            # Value
+            vtx = font.render(val, True, OUTLINE_CHOICE)
+            panel.blit(vtx, (margin_x + padding_x, y))
+            y += vtx.get_height() + spacing_y
+
+        # Update state size and blit
         self.state.size = (panel_w, panel_h)
         screen.blit(panel, (x0, y0))
