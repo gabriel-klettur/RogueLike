@@ -17,7 +17,6 @@ class TilePickerEventHandler:
         """
         Procesa la interacción del picker según posición, botón y estado.
         """
-        # Si no está abierto, nada que hacer
         if not self.picker_state.open or self.picker_state.surface is None:
             return False
 
@@ -29,63 +28,79 @@ class TilePickerEventHandler:
         if lx < 0 or ly < 0 or lx > sw or ly > sh:
             return False
 
-        # Botones Borrar / Default
+        # Delegar a manejadores específicos
+        if self._handle_toolbar_buttons(lx, ly, map):
+            return True
+        if self._handle_tileset_filter_click(lx, ly):
+            return True
+        if self._handle_tileset_input_click(lx, ly):
+            return True
+        if self._handle_drag_start(button, lx, ly):
+            return True
+        if self._handle_grid_click(lx, ly, map):
+            return True
+
+        return False
+
+    def _handle_toolbar_buttons(self, lx, ly, map):
+        # Botones Borrar / Default / Cerrar
         if self.picker_state.btn_delete_rect and self.picker_state.btn_delete_rect.collidepoint((lx, ly)):
             self.controller._delete_tile(map)
             return True
         if self.picker_state.btn_default_rect and self.picker_state.btn_default_rect.collidepoint((lx, ly)):
             self.controller._set_default(map)
             return True
-        # Botón Cerrar
         if self.picker_state.btn_close_rect and self.picker_state.btn_close_rect.collidepoint((lx, ly)):
             self.controller._close()
             return True
+        return False
+
+    def _handle_tileset_filter_click(self, lx, ly):
         # Toggle filtro 'tileset'
         if self.picker_state.tileset_checkbox_rect and self.picker_state.tileset_checkbox_rect.collidepoint((lx, ly)):
             self.picker_state.tileset_filter = not self.picker_state.tileset_filter
-            # Reset input active
             if self.picker_state.tileset_input_active:
                 self.picker_state.tileset_input_active = False
-            # Cuando se desactiva, recargar assets de directorio
             if not self.picker_state.tileset_filter:
                 self.controller._load_assets()
             return True
+        return False
+
+    def _handle_tileset_input_click(self, lx, ly):
         # Activar input de tamaño del grid
         if self.picker_state.tileset_filter and self.picker_state.tileset_input_rect and self.picker_state.tileset_input_rect.collidepoint((lx, ly)):
             self.picker_state.tileset_input_active = True
-            # Activate TextInput widget
             self.controller.view.tileset_text_input.activate(self.picker_state.tileset_grid_size_text, True)
             return True
+        return False
+
+    def _handle_drag_start(self, button, lx, ly):
         # Arrastrar ventana completa con botón derecho
         if button == 3:
             self.picker_state.dragging = True
             self.picker_state.drag_offset = (lx, ly)
             return True
-        # Cálculo de índice en la rejilla de assets
+        return False
+
+    def _handle_grid_click(self, lx, ly, map):
         cols = COLS * 3
         col = (lx - PAD) // (THUMB + PAD)
         row = (ly - PAD + self.editor_state.scroll_offset) // (THUMB + PAD)
         idx = row * cols + col
 
-        # Obtener lista actual de assets
         assets = self.controller.assets
-        # Validar clic dentro de la rejilla
-        if not (0 <= col < cols and row >= 0 and idx < len(assets)): 
+        if not (0 <= col < cols and row >= 0 and idx < len(assets)):
             return False
 
         value, _, is_dir, _ = assets[idx]
-        # Skip placeholder slot
         if value == "":
             return False
-        # Ignorar clic en flecha cuando está en base_dir
         if idx == 0 and self.controller.current_dir == self.controller.base_dir:
             return False
-        # Navegación de directorios
+
         if is_dir:
-            # Double-click detection
             current_time = pygame.time.get_ticks()
             if value == self.last_click_value and current_time - self.last_click_time <= 600:
-                # Double-click: navigate
                 old_dir = self.controller.current_dir
                 if value == "..":
                     print(f"[TilePicker] Double-click arrow: dir before {old_dir}, parent {old_dir.parent}")
@@ -96,27 +111,21 @@ class TilePickerEventHandler:
                     self.controller.current_dir = new_dir
                 self.controller._load_assets()
                 print(f"[TilePicker] After load, assets count: {len(self.controller.assets)}, names: {[name for name,_,_,_ in self.controller.assets]}")
-                # Reset click tracking
                 self.last_click_time = 0
                 self.last_click_value = None
             else:
-                # Single click on directory: record time
                 print(f"[TilePicker] Single click on directory '{value}'")
                 self.last_click_time = current_time
                 self.last_click_value = value
             return True
 
-        # Selección de fichero
         if self.picker_state.tileset_filter:
-            # Cargar grid de tiles desde imagen seleccionada
             grid_size = self.picker_state.tileset_grid_size
             self.controller._load_tileset_assets(value, grid_size)
             return True
 
-        # Valor por defecto: selección única
         self.editor_state.current_choice = value
         self.picker_state.current_choice = value
-
         return True
 
     def handle_event(self, ev, camera=None, map=None):
