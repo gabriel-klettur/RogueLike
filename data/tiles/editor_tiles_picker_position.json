@@ -1,0 +1,27 @@
+{
+  "orders": {
+    "tiles\\ready\\grass_dirt\\tileset3_slices": [
+      "..",
+      "tiles\\ready\\grass_dirt\\tileset3_slices\\tileset3_0_0.png",
+      "tiles\\ready\\grass_dirt\\tileset3_slices\\tileset3_32_0.png",
+      "tiles\\ready\\grass_dirt\\tileset3_slices\\tileset3_64_0.png",
+      "tiles\\ready\\grass_dirt\\tileset3_slices\\tileset3_0_96.png",
+      "tiles\\ready\\grass_dirt\\tileset3_slices\\tileset3_0_64.png",
+      "tiles\\ready\\grass_dirt\\tileset3_slices\\tileset3_32_64.png",
+      "tiles\\ready\\grass_dirt\\tileset3_slices\\tileset3_64_64.png",
+      "tiles\\ready\\grass_dirt\\tileset3_slices\\tileset3_32_32.png",
+      "tiles\\ready\\grass_dirt\\tileset3_slices\\tileset3_0_32.png",
+      "tiles\\ready\\grass_dirt\\tileset3_slices\\tileset3_96_32.png",
+      "tiles\\ready\\grass_dirt\\tileset3_slices\\tileset3_128_32.png",
+      "tiles\\ready\\grass_dirt\\tileset3_slices\\tileset3_64_32.png",
+      "tiles\\ready\\grass_dirt\\tileset3_slices\\tileset3_32_96.png",
+      "tiles\\ready\\grass_dirt\\tileset3_slices\\tileset3_96_0.png",
+      "tiles\\ready\\grass_dirt\\tileset3_slices\\tileset3_128_0.png",
+      "tiles\\ready\\grass_dirt\\tileset3_slices\\tileset3_96_96.png",
+      "tiles\\ready\\grass_dirt\\tileset3_slices\\tileset3_64_96.png",
+      "tiles\\ready\\grass_dirt\\tileset3_slices\\tileset3_128_96.png",
+      "tiles\\ready\\grass_dirt\\tileset3_slices\\tileset3_96_64.png",
+      "tiles\\ready\\grass_dirt\\tileset3_slices\\tileset3_128_64.png"
+    ]
+  }
+}

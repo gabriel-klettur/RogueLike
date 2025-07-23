@@ -48,6 +48,22 @@ class TilePickerEventHandler:
             return True
         if self._handle_drag_start(button, lx, ly):
             return True
+        # Config mode: handle position swap
+        if self.picker_state.config_mode:
+            cols = COLS * 3
+            col = (lx - PAD) // (THUMB + PAD)
+            row = (ly - PAD + self.editor_state.scroll_offset) // (THUMB + PAD)
+            idx = row * cols + col
+            if 0 <= col < cols and row >= 0 and idx < len(self.controller.assets):
+                if self.picker_state.config_src_idx is None:
+                    self.picker_state.config_src_idx = idx
+                else:
+                    dst = idx
+                    src = self.picker_state.config_src_idx
+                    if src != dst:
+                        self.controller.swap_positions(src, dst)
+                    self.picker_state.config_src_idx = None
+                return True
         if self._handle_grid_click(lx, ly, map):
             return True
 
@@ -61,6 +77,11 @@ class TilePickerEventHandler:
             return True
         if self.picker_state.btn_default_rect and self.picker_state.btn_default_rect.collidepoint((lx, ly)):
             self.controller._set_default(map)
+            return True
+        if self.picker_state.btn_config_rect and self.picker_state.btn_config_rect.collidepoint((lx, ly)):
+            # Toggle configure position mode
+            self.picker_state.config_mode = not self.picker_state.config_mode
+            self.picker_state.config_src_idx = None
             return True
         if self.picker_state.btn_close_rect and self.picker_state.btn_close_rect.collidepoint((lx, ly)):
             self.controller._close()
@@ -108,6 +129,7 @@ class TilePickerEventHandler:
             new_dir = self.controller.base_dir / parent_rel / f"{stem}_slices"
             self.controller.current_dir = new_dir
             self.controller._load_assets()
+            self.controller._load_positions()
             return True
         return False
 
@@ -144,11 +166,14 @@ class TilePickerEventHandler:
                 if value == "..":
                     print(f"[TilePicker] Double-click arrow: dir before {old_dir}, parent {old_dir.parent}")
                     self.controller.current_dir = old_dir.parent
+                    self.controller._load_assets()
+                    self.controller._load_positions()
                 else:
                     new_dir = old_dir / value
                     print(f"[TilePicker] Double-click directory: '{value}'. Changing dir from {old_dir} to {new_dir}")
                     self.controller.current_dir = new_dir
-                self.controller._load_assets()
+                    self.controller._load_assets()
+                    self.controller._load_positions()
                 print(f"[TilePicker] After load, assets count: {len(self.controller.assets)}, names: {[name for name,_,_,_ in self.controller.assets]}")
                 self.last_click_time = 0
                 self.last_click_value = None

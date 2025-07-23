@@ -1,6 +1,10 @@
 import pygame
 from roguelike_ui.widgets.text_input import TextInput
 from pathlib import Path
+# Config mode border colors
+CONFIG_HOVER_COLOR = (128, 0, 128)
+CONFIG_SELECTED_COLOR = (255, 0, 0)
+
 from roguelike_editors.tiles.tiles_editor_config import (
     CLR_HOVER,
     CLR_SELECTION,
@@ -75,12 +79,23 @@ class TilePickerView:
             if rect.bottom < PAD or rect.top > h_grid:
                 continue
             self.picker_state.surface.blit(thumb, rect)
-            if rect.collidepoint((lx, ly)):
-                hovered_value = value
-                hovered_orig_size = orig_size
-                pygame.draw.rect(self.picker_state.surface, CLR_HOVER, rect, 3)
-            elif self.picker_state.current_choice == value:
-                pygame.draw.rect(self.picker_state.surface, CLR_SELECTION, rect, 3)
+            if self.picker_state.config_mode:
+                # Config mode: highlight source and hover
+                if idx == self.picker_state.config_src_idx:
+                    pygame.draw.rect(self.picker_state.surface, CONFIG_SELECTED_COLOR, rect, 3)
+                elif rect.collidepoint((lx, ly)):
+                    hovered_value = value
+                    hovered_orig_size = orig_size
+                    pygame.draw.rect(self.picker_state.surface, CONFIG_HOVER_COLOR, rect, 3)
+                elif self.picker_state.current_choice == value:
+                    pygame.draw.rect(self.picker_state.surface, CLR_SELECTION, rect, 3)
+            else:
+                if rect.collidepoint((lx, ly)):
+                    hovered_value = value
+                    hovered_orig_size = orig_size
+                    pygame.draw.rect(self.picker_state.surface, CLR_HOVER, rect, 3)
+                elif self.picker_state.current_choice == value:
+                    pygame.draw.rect(self.picker_state.surface, CLR_SELECTION, rect, 3)
             if is_dir and value != "..":
                 text = self._ellipsize(value, self.icon_font, THUMB - 4)
                 label = self.icon_font.render(text, True, (0, 0, 0))
@@ -94,13 +109,25 @@ class TilePickerView:
         self.picker_state.btn_default_rect = pygame.Rect(PAD*2 + BTN_W, PAD + h_grid, BTN_W, BTN_H)
         self._draw_button(self.picker_state.btn_delete_rect, "Borrar")
         self._draw_button(self.picker_state.btn_default_rect, "Default")
+
+        # Configurar Posición Tiles button
+        cfg_text = "Configurar Posición Tiles"
+        cfg_txt_surf = self.label_font.render(cfg_text, True, CLR_BORDER)
+        cfg_bw = cfg_txt_surf.get_width() + PAD*2
+        cfg_x = PAD*3 + BTN_W*2
+        cfg_rect = pygame.Rect(cfg_x, PAD + h_grid, cfg_bw, BTN_H)
+        self._draw_button(cfg_rect, cfg_text)
+        self.picker_state.btn_config_rect = cfg_rect
+        if self.picker_state.config_mode:
+            pygame.draw.rect(self.picker_state.surface, CLR_SELECTION, cfg_rect, 3)
         label_text = hovered_value if hovered_value else (self.picker_state.current_choice or "")
         if label_text:
             base_name = Path(label_text).name
-            max_label_width = w - (PAD * 3 + BTN_W * 2) - PAD
+            label_start_x = cfg_rect.right + PAD
+            max_label_width = w - label_start_x - PAD
             disp = self._ellipsize(base_name, self.label_font, max_label_width)
             rend = self.label_font.render(disp, True, CLR_BORDER)
-            pos = (PAD * 3 + BTN_W * 2, PAD + h_grid + BTN_H//2 - rend.get_height()//2)
+            pos = (label_start_x, PAD + h_grid + BTN_H//2 - rend.get_height()//2)
             self.picker_state.surface.blit(rend, pos)
             if not hovered_value and not hovered_orig_size and self.picker_state.current_choice:
                 for v, _, _, o in self.assets:

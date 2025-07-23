@@ -5,6 +5,7 @@ Provides TilePickerController to manage the floating tile picker panel,
 including asset loading, directory navigation, tile selection, and persistence of overlay data.
 """
 import pygame
+import json
 from pathlib import Path
 
 from roguelike_engine.utils.loader import load_image
@@ -43,7 +44,60 @@ class TilePickerController:
         
         self.assets = []
         self._load_assets()
+        self._load_positions()
         self.view = TilePickerView(self, self.picker_state, self.assets)
+
+    def _load_positions(self):
+        """Load tile order from JSON and reorder assets list."""
+        try:
+            root = Path(__file__).parents[4]
+            pos_file = root / "data" / "tiles" / "editor_tiles_picker_position.json"
+            # Load maestro JSON with per-folder orders
+            if pos_file.exists():
+                with open(pos_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                orders = data.get("orders", {})
+            else:
+                orders = {}
+            # Determine key for current tile directory
+            key = str(self.current_dir.relative_to(Path(ASSETS_DIR)))
+            order = orders.get(key, [])
+            print(f"[TilePicker] Loaded order for '{key}': {order}")
+            asset_map = {value: (value, surf, is_dir, orig) for (value, surf, is_dir, orig) in self.assets}
+            new_assets = []
+            for val in order:
+                if val in asset_map:
+                    new_assets.append(asset_map.pop(val))
+            # Append remaining assets
+            new_assets.extend(asset_map.values())
+            self.assets = new_assets
+            self.view.assets = self.assets
+        except Exception as e:
+            print(f"[TilePicker] Error loading positions: {e}")
+
+    def swap_positions(self, i, j):
+        """Swap two assets by index and persist new order to JSON."""
+        self.assets[i], self.assets[j] = self.assets[j], self.assets[i]
+        self.view.assets = self.assets
+        try:
+            root = Path(__file__).parents[4]
+            pos_file = root / "data" / "tiles" / "editor_tiles_picker_position.json"
+            # Load existing maestro JSON or init empty
+            if pos_file.exists():
+                with open(pos_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+            else:
+                data = {}
+            orders = data.get("orders", {})
+            # Determine key for current tile directory
+            key = str(self.current_dir.relative_to(Path(ASSETS_DIR)))
+            orders[key] = [value for (value, _, _, _) in self.assets]
+            print(f"[TilePicker] Saved order for '{key}': {orders[key]}")
+            data["orders"] = orders
+            with open(pos_file, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+        except Exception as e:
+            print(f"[TilePicker] Error saving positions: {e}")
 
     def _load_assets(self):
         """
@@ -312,6 +366,7 @@ class TilePickerController:
         self.editor_state.scroll_offset = 0
         # Recargar lista de assets
         self._load_assets()
+        self._load_positions()
 
     def _close(self):
         """

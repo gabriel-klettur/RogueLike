@@ -41,3 +41,8 @@ class TilePickerState:
         self.btn_tileset_rect: Optional[pygame.Rect]  = None
         # Selected tileset image for slicing via 'Crear tiles'
         self.tileset_source: Optional[str] = None
+
+        # Config button for reordering tiles
+        self.btn_config_rect: Optional[pygame.Rect] = None
+        self.config_mode: bool = False
+        self.config_src_idx: Optional[int] = None
