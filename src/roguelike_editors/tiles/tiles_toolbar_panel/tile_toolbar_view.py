@@ -9,9 +9,15 @@ class TileToolbarView:
 
     def render(self, screen):
 
+        # Panel position (draggable override or default)
+        ts = self.toolbar.editor_state.toolbar_state
+        if ts.pos is not None:
+            x0, y0 = ts.pos
+        else:
+            x0, y0 = self.toolbar.x, self.toolbar.y
         for idx, tool in enumerate(TOOLS):
-            px = self.toolbar.x
-            py = self.toolbar.y + idx * (self.toolbar.size + self.toolbar.padding)
+            px = x0
+            py = y0 + idx * (self.toolbar.size + self.toolbar.padding)
             rect = pygame.Rect(px, py, self.toolbar.size, self.toolbar.size)
             self.toolbar.icon_rects[tool] = rect
             screen.blit(self.toolbar.icons[tool], (px, py))

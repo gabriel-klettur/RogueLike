@@ -95,3 +95,17 @@ class TileToolbarController:
         """
         self.editor_state.current_choice = choice_path
         self.editor_state.current_tool = "brush"
+
+    def drag(self, mouse_pos):
+        """
+        Actualiza posición de la toolbar durante arrastre.
+        """
+        ts = self.editor_state.toolbar_state
+        if ts.dragging:
+            ts.pos = (mouse_pos[0] - ts.drag_offset[0], mouse_pos[1] - ts.drag_offset[1])
+
+    def stop_drag(self):
+        """
+        Finaliza arrastre de la toolbar.
+        """
+        self.editor_state.toolbar_state.dragging = False

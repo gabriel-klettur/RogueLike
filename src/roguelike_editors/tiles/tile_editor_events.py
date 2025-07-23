@@ -74,6 +74,8 @@ class TileEditorEventHandler:
             elif ev.type == pygame.MOUSEWHEEL:
                 self._on_mouse_wheel(ev, camera)
             # Delegate to panel event handlers
+            # Toolbar drag events
+            self.toolbar_tool.handle_event(ev)
             if self.editor_state.toolbar_state.view_active:
                 self.view_panel_tool.handle_event(ev, camera, map)
             if self.editor_state.toolbar_state.layers_view_open:

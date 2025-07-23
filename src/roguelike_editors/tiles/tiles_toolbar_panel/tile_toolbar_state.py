@@ -1,4 +1,7 @@
 import pygame
+from typing import Optional, Tuple
+
+
 from roguelike_engine.map.model.layer import Layer
 
 class TileToolbarState:
@@ -23,3 +26,9 @@ class TileToolbarState:
         self.collision_picker_dragging = False
         self.collision_picker_drag_offset = (0, 0)
         self.collision_picker_panel_size = (0, 0)
+        # Toolbar drag state
+        self.pos: Optional[Tuple[int, int]] = None
+        self.dragging: bool = False
+        self.drag_offset: Tuple[int, int] = (0, 0)
+        
+        
