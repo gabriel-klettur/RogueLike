@@ -206,18 +206,23 @@ class TilePickerController:
         tile = self.editor_state.selected_tile
         if tile is None:
             return
-        if tile:
-            # Borrar sprite y overlay en la capa actual
-            layer = self.editor_state.current_layer
-            row = tile.y // TILE_SIZE; col = tile.x // TILE_SIZE
-            grid = map.tiles_by_layer.get(layer)
-            if grid and 0 <= row < len(grid) and 0 <= col < len(grid[0]):
-                t = grid[row][col]
-                if t:
-                    t.sprite = pygame.Surface((TILE_SIZE, TILE_SIZE), pygame.SRCALPHA)
-                    t.scaled_cache.clear()
-            self._persist_overlay(tile, "", map)
-            map.view.invalidate_cache()
+        # Delete area based on selected size
+        layer = self.editor_state.current_layer
+        origin_row = tile.y // TILE_SIZE
+        origin_col = tile.x // TILE_SIZE
+        grid = map.tiles_by_layer.get(layer)
+        w, h = self.editor_controller.size_panel_state.selected_size
+        for dy in range(h):
+            for dx in range(w):
+                r = origin_row + dy
+                c = origin_col + dx
+                if grid and 0 <= r < len(grid) and 0 <= c < len(grid[0]):
+                    t = grid[r][c]
+                    if t:
+                        t.sprite = pygame.Surface((TILE_SIZE, TILE_SIZE), pygame.SRCALPHA)
+                        t.scaled_cache.clear()
+                        self._persist_overlay(t, "", map)
+        map.view.invalidate_cache()
         # Debug output for Borrar tool
         row = tile.y // TILE_SIZE; col = tile.x // TILE_SIZE
         for zn,(ox,oy) in global_map_settings.zone_offsets.items():
@@ -236,21 +241,28 @@ class TilePickerController:
 
     def _set_default(self, map):
         tile = self.editor_state.selected_tile
-        if tile:
-            # Restaurar sprite base según tipo de tile en la capa actual
-            layer = self.editor_state.current_layer
-            row = tile.y // TILE_SIZE; col = tile.x // TILE_SIZE
-            grid = map.tiles_by_layer.get(layer)
-            if grid and 0 <= row < len(grid) and 0 <= col < len(grid[0]):
-                t = grid[row][col]
-                if t:
-                    base_map = load_base_tile_images()
-                    imgs = base_map.get(t.tile_type)
-                    sprite = imgs[0] if isinstance(imgs, list) else imgs
-                    t.sprite = sprite
-                    t.scaled_cache.clear()
-            self._persist_overlay(tile, "", map)
-            map.view.invalidate_cache()
+        if tile is None:
+            return
+        # Set default area based on selected size
+        layer = self.editor_state.current_layer
+        origin_row = tile.y // TILE_SIZE
+        origin_col = tile.x // TILE_SIZE
+        grid = map.tiles_by_layer.get(layer)
+        w, h = self.editor_controller.size_panel_state.selected_size
+        base_map = load_base_tile_images()
+        for dy in range(h):
+            for dx in range(w):
+                r = origin_row + dy
+                c = origin_col + dx
+                if grid and 0 <= r < len(grid) and 0 <= c < len(grid[0]):
+                    t = grid[r][c]
+                    if t:
+                        imgs = base_map.get(t.tile_type)
+                        sprite = imgs[0] if isinstance(imgs, list) else imgs
+                        t.sprite = sprite
+                        t.scaled_cache.clear()
+                        self._persist_overlay(t, "", map)
+        map.view.invalidate_cache()
         # Debug output for Default tool
         row = tile.y // TILE_SIZE; col = tile.x // TILE_SIZE
         for zn,(ox,oy) in global_map_settings.zone_offsets.items():

@@ -110,8 +110,6 @@ class TileEditorEventHandler:
         if self.size_panel_tool.handle_event(ev):
             return
 
-
-
         tool = self.editor_state.current_tool
         # 2) Select
         if tool == "select" and ev.button == 1:

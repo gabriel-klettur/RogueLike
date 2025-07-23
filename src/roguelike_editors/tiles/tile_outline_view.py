@@ -24,8 +24,9 @@ class TileOutlineView:
         # Seleccionado
         sel = self.editor.selected_tile
         if sel:
+            w, h = self.controller.editor.size_panel_state.selected_size
             rect = pygame.Rect(
                 camera.apply((sel.x, sel.y)),
-                camera.scale((TILE_SIZE, TILE_SIZE))
+                camera.scale((TILE_SIZE * w, TILE_SIZE * h))
             )
             pygame.draw.rect(screen, OUTLINE_SEL, rect, 3)
