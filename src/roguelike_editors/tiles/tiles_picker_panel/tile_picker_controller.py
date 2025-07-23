@@ -103,6 +103,10 @@ class TilePickerController:
         # Slice and load tileset assets
         self.assets = self._slice_tileset(full_img, image_value, grid_size, thumb_size)
         print(f"[TilePicker] Loaded {len(self.assets)} tiles from {image_value} using grid size {grid_size}")
+        # Refresh view to use new assets list
+        self.view.assets = self.assets
+        # Save individual tile images to disk
+        self._save_tileset_slices(full_img, image_value, grid_size)
 
     def _load_full_image(self, full_path: Path, image_value: str):
         """
@@ -128,6 +132,24 @@ class TilePickerController:
                 name = f"{Path(image_value).stem}_{x}_{y}"
                 assets.append((name, thumb, False, (grid_size, grid_size)))
         return assets
+
+    def _save_tileset_slices(self, full_img, image_value: str, grid_size: int):
+        """Save each grid tile from a tileset image as a separate PNG file."""
+        from pathlib import Path
+        # Determine output directory next to original tileset
+        base = Path(ASSETS_DIR) / Path(image_value).parent
+        out_dir = base / f"{Path(image_value).stem}_slices"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        width, height = full_img.get_size()
+        count = 0
+        for y in range(0, height, grid_size):
+            for x in range(0, width, grid_size):
+                rect = pygame.Rect(x, y, grid_size, grid_size)
+                sub = full_img.subsurface(rect).copy()
+                fname = f"{Path(image_value).stem}_{x}_{y}.png"
+                pygame.image.save(sub, str(out_dir / fname))
+                count += 1
+        print(f"[TilePicker] Saved {count} slices to {out_dir}")
 
     def is_over(self, mouse_pos) -> bool:
         """

@@ -42,6 +42,8 @@ class TilePickerEventHandler:
             return True
         if self._handle_tileset_input_click(lx, ly):
             return True
+        if self._handle_tileset_create_click(lx, ly, map):
+            return True
         if self._handle_drag_start(button, lx, ly):
             return True
         if self._handle_grid_click(lx, ly, map):
@@ -68,8 +70,9 @@ class TilePickerEventHandler:
         # Toggle filtro 'tileset'
         if self.picker_state.tileset_checkbox_rect and self.picker_state.tileset_checkbox_rect.collidepoint((lx, ly)):
             self.picker_state.tileset_filter = not self.picker_state.tileset_filter
-            if self.picker_state.tileset_input_active:
-                self.picker_state.tileset_input_active = False
+            # Reset input and source when toggling filter
+            self.picker_state.tileset_input_active = False
+            self.picker_state.tileset_source = None
             if not self.picker_state.tileset_filter:
                 self.controller._load_assets()
             return True
@@ -81,6 +84,17 @@ class TilePickerEventHandler:
         if self.picker_state.tileset_filter and self.picker_state.tileset_input_rect and self.picker_state.tileset_input_rect.collidepoint((lx, ly)):
             self.picker_state.tileset_input_active = True
             self.controller.view.tileset_text_input.activate(self.picker_state.tileset_grid_size_text, True)
+            return True
+        return False
+
+    def _handle_tileset_create_click(self, lx, ly, map):
+        """Handle click on 'Crear tiles' button: slice selected tileset with current grid size."""
+        if self.picker_state.tileset_filter and self.picker_state.btn_tileset_rect and self.picker_state.btn_tileset_rect.collidepoint((lx, ly)):
+            source = self.picker_state.tileset_source
+            if not source:
+                return False
+            grid_size = self.picker_state.tileset_grid_size
+            self.controller._load_tileset_assets(source, grid_size)
             return True
         return False
 
@@ -132,6 +146,8 @@ class TilePickerEventHandler:
             return True
 
         if self.picker_state.tileset_filter:
+            # Slice selected tileset image into tiles
+            self.picker_state.tileset_source = value
             grid_size = self.picker_state.tileset_grid_size
             self.controller._load_tileset_assets(value, grid_size)
             return True

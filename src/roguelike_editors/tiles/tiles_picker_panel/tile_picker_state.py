@@ -38,4 +38,6 @@ class TilePickerState:
         self.tileset_input_rect: Optional[pygame.Rect] = None
         self.tileset_checkbox_rect: Optional[pygame.Rect] = None
         # Botón crear tiles
-        self.btn_tileset_rect: Optional[pygame.Rect] = None
+        self.btn_tileset_rect: Optional[pygame.Rect]  = None
+        # Selected tileset image for slicing via 'Crear tiles'
+        self.tileset_source: Optional[str] = None
