@@ -211,7 +211,7 @@ class TilePickerController:
         origin_row = tile.y // TILE_SIZE
         origin_col = tile.x // TILE_SIZE
         grid = map.tiles_by_layer.get(layer)
-        w, h = self.editor_controller.size_panel_state.selected_size
+        w, h = self.editor_state.size_panel_state.selected_size
         for dy in range(h):
             for dx in range(w):
                 r = origin_row + dy
@@ -248,7 +248,7 @@ class TilePickerController:
         origin_row = tile.y // TILE_SIZE
         origin_col = tile.x // TILE_SIZE
         grid = map.tiles_by_layer.get(layer)
-        w, h = self.editor_controller.size_panel_state.selected_size
+        w, h = self.editor_state.size_panel_state.selected_size
         base_map = load_base_tile_images()
         for dy in range(h):
             for dx in range(w):
