@@ -72,7 +72,7 @@ class TileEditorEventHandler:
                 if ev.button == 1 and self.editor_state.current_tool == "brush":
                     self.controller.flush_brush(map, camera)
             elif ev.type == pygame.MOUSEWHEEL:
-                self._on_mouse_wheel(ev)
+                self._on_mouse_wheel(ev, camera)
             # Delegate to panel event handlers
             if self.editor_state.toolbar_state.view_active:
                 self.view_panel_tool.handle_event(ev, camera, map)
@@ -167,7 +167,15 @@ class TileEditorEventHandler:
             self.panning = False
 
 
-    def _on_mouse_wheel(self, ev):
+    def _on_mouse_wheel(self, ev, camera):
+        # Zoom entero con rueda cuando botón medio presionado
+        if self.panning:
+            current = int(camera.zoom)
+            if ev.y > 0:
+                camera.zoom = current + 1
+            elif ev.y < 0:
+                camera.zoom = max(1, current - 1)
+            return
         # Ciclar capas si estamos en modo brush
         if self.editor_state.current_tool == "brush":
             self.editor_state.current_layer = cycle_enum(self.editor_state.current_layer, 1 if ev.y > 0 else -1, Layer)

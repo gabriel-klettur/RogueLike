@@ -15,18 +15,16 @@ class TileOutlineView:
         hover = self.controller._tile_under_mouse(pygame.mouse.get_pos(), camera, map)
         if hover:
             w, h = self.controller.editor.size_panel_state.selected_size
-            rect = pygame.Rect(
-                camera.apply((hover.x, hover.y)),
-                camera.scale((TILE_SIZE * w, TILE_SIZE * h))
-            )
+            x0, y0 = camera.apply((hover.x, hover.y))
+            x1, y1 = camera.apply((hover.x + TILE_SIZE * w, hover.y + TILE_SIZE * h))
+            rect = pygame.Rect(x0, y0, x1 - x0, y1 - y0)
             pygame.draw.rect(screen, OUTLINE_HOVER, rect, 3)
 
         # Seleccionado
         sel = self.editor.selected_tile
         if sel:
             w, h = self.controller.editor.size_panel_state.selected_size
-            rect = pygame.Rect(
-                camera.apply((sel.x, sel.y)),
-                camera.scale((TILE_SIZE * w, TILE_SIZE * h))
-            )
+            x0, y0 = camera.apply((sel.x, sel.y))
+            x1, y1 = camera.apply((sel.x + TILE_SIZE * w, sel.y + TILE_SIZE * h))
+            rect = pygame.Rect(x0, y0, x1 - x0, y1 - y0)
             pygame.draw.rect(screen, OUTLINE_SEL, rect, 3)
