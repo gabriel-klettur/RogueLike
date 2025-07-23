@@ -11,12 +11,13 @@ class TileOutlineView:
 
     def render(self, screen, camera, map):
         
-        # Hover
+        # Hover / brush preview
         hover = self.controller._tile_under_mouse(pygame.mouse.get_pos(), camera, map)
         if hover:
+            w, h = self.controller.editor.brush_panel_state.selected_size
             rect = pygame.Rect(
                 camera.apply((hover.x, hover.y)),
-                camera.scale((TILE_SIZE, TILE_SIZE))
+                camera.scale((TILE_SIZE * w, TILE_SIZE * h))
             )
             pygame.draw.rect(screen, OUTLINE_HOVER, rect, 3)
 
