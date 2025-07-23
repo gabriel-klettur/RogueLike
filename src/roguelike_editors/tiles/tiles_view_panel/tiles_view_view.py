@@ -49,13 +49,16 @@ class TilesViewPanelView:
         panel_w = max(TILE_SIZE, max_text_width) + margin_x * 2
         panel_h = len(items) * (TILE_SIZE + 30)
 
-        # Render panel background
-        toolbar = self.controller.editor_controller.toolbar
-        x0 = toolbar.x + toolbar.size + 20
-        base_y = toolbar.y
-        if self.controller.editor_controller.size_panel_controller.state.visible:
-            base_y += len(self.controller.editor_controller.size_panel_controller.state.sizes) * BTN_H + toolbar.padding
-        y0 = base_y
+        # Render panel background (draggable override)
+        if self.state.pos is not None:
+            x0, y0 = self.state.pos
+        else:
+            toolbar = self.controller.editor_controller.toolbar
+            x0 = toolbar.x + toolbar.size + 20
+            base_y = toolbar.y
+            if self.controller.editor_controller.size_panel_controller.state.visible:
+                base_y += len(self.controller.editor_controller.size_panel_controller.state.sizes) * BTN_H + toolbar.padding
+            y0 = base_y
         panel = pygame.Surface((panel_w, panel_h), pygame.SRCALPHA)
         panel.fill((20, 20, 20, 200))
 
@@ -81,6 +84,5 @@ class TilesViewPanelView:
             text = font.render(label, True, (255, 255, 255))
             panel.blit(text, (margin_x, ty + TILE_SIZE + 2))
 
-        self.state.pos = (x0, y0)
         self.state.size = (panel_w, panel_h)
         screen.blit(panel, (x0, y0))

@@ -110,6 +110,7 @@ class TileEditorEventHandler:
             self.editor_state.toolbar_state.show_buildings = not self.editor_state.toolbar_state.show_buildings
 
     def _on_mouse_down(self, ev, camera, map):
+
         
         # Pan camera with middle mouse
         if ev.button == 2:
@@ -149,6 +150,7 @@ class TileEditorEventHandler:
 
 
     def _on_mouse_motion(self, ev, camera, map):
+
         pos = ev.pos
         # Handle camera panning
         if self.panning:
@@ -164,6 +166,7 @@ class TileEditorEventHandler:
 
 
     def _on_mouse_up(self, ev):
+
         # Release brush
         if ev.button == 1 and self.editor_state.current_tool == "brush":
             self.editor_state.brush_dragging = False

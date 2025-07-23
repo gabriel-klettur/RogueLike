@@ -17,5 +17,18 @@ class TilesViewPanelController:
     def _tile_under_mouse(self, mouse_pos, camera, game_map):
         return self.editor_controller._tile_under_mouse(mouse_pos, camera, game_map)
 
+    def drag(self, mouse_pos):
+        """
+        Update panel position during dragging.
+        """
+        if self.state.dragging:
+            self.state.pos = (mouse_pos[0] - self.state.drag_offset[0], mouse_pos[1] - self.state.drag_offset[1])
+
+    def stop_drag(self):
+        """
+        Stop dragging the view panel.
+        """
+        self.state.dragging = False
+
 
 
