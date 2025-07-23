@@ -243,25 +243,47 @@ class TilePickerController:
         tile = self.editor_state.selected_tile
         if tile is None:
             return
-        # Set default area based on selected size
-        layer = self.editor_state.current_layer
+        # Set default across all layers based on selected size
         origin_row = tile.y // TILE_SIZE
         origin_col = tile.x // TILE_SIZE
-        grid = map.tiles_by_layer.get(layer)
         w, h = self.editor_state.size_panel_state.selected_size
         base_map = load_base_tile_images()
+        # Determine zone and offsets
+        for zn, (ox, oy) in global_map_settings.zone_offsets.items():
+            if ox <= origin_col < ox + global_map_settings.zone_width and oy <= origin_row < oy + global_map_settings.zone_height:
+                zone_name, offx, offy = zn, ox, oy
+                break
+        else:
+            zone_name, offx, offy = 'no_zone', 0, 0
+        # Load and prepare zone overlay data
+        zone_layers = load_layers(zone_name) or {}
+        if zone_name != 'no_zone':
+            zone_h, zone_w = global_map_settings.zone_height, global_map_settings.zone_width
+        else:
+            zone_h = len(map.tiles); zone_w = len(map.tiles[0]) if map.tiles else 0
+        for layer in Layer:
+            zone_layers.setdefault(layer, [['' for _ in range(zone_w)] for _ in range(zone_h)])
+        # Apply default to each layer in the area
         for dy in range(h):
             for dx in range(w):
-                r = origin_row + dy
-                c = origin_col + dx
-                if grid and 0 <= r < len(grid) and 0 <= c < len(grid[0]):
-                    t = grid[r][c]
-                    if t:
-                        imgs = base_map.get(t.tile_type)
-                        sprite = imgs[0] if isinstance(imgs, list) else imgs
-                        t.sprite = sprite
-                        t.scaled_cache.clear()
-                        self._persist_overlay(t, "", map)
+                r = origin_row + dy; c = origin_col + dx
+                local_r, local_c = r - offy, c - offx
+                for layer in map.tiles_by_layer.keys():
+                    grid = map.tiles_by_layer.get(layer)
+                    if grid and 0 <= r < len(grid) and 0 <= c < len(grid[0]):
+                        t = grid[r][c]
+                        if t:
+                            # Restore base sprite
+                            imgs = base_map.get(t.tile_type)
+                            sprite = imgs[0] if isinstance(imgs, list) else imgs
+                            t.sprite = sprite
+                            t.scaled_cache.clear()
+                            t.overlay_code = ''
+                        # Update overlay data
+                        zone_layers[layer][local_r][local_c] = ''
+                        map.layers[layer][r][c] = ''
+        # Save updated overlays
+        save_layers(zone_name, zone_layers)
         map.view.invalidate_cache()
         # Debug output for Default tool
         row = tile.y // TILE_SIZE; col = tile.x // TILE_SIZE
