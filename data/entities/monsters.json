@@ -124,7 +124,7 @@
     "death_sprite": "assets/npc/monsters/barbol/barbol_female_death.png",
     "death_scale": 0.5,
     "hp": 3000,
-    "speed": "3/0",
+    "speed": 3.0,
     "scale": 0.5,
     "faction": "EVIL",
     "aggro_range": 10,
@@ -160,7 +160,7 @@
       "damage_right": "assets/npc/monsters/barbol/barbol_1_right_damage.png"
     },
     "death_sprite": "assets/npc/monsters/barbol/barbol_female_death.png",
-    "death_scale": 0.5,
+    "death_scale": 0.4,
     "hp": 100,
     "speed": 1.0,
     "scale": 0.3,
@@ -236,7 +236,7 @@
       "damage_right": "assets/npc/monsters/barbol/barbol_1_right_damage.png"
     },
     "death_sprite": "assets/npc/monsters/barbol/barbol_female_death.png",
-    "death_scale": 0.5,
+    "death_scale": 0.4,
     "hp": 100,
     "speed": 1.0,
     "scale": 0.35,
@@ -274,7 +274,7 @@
       "damage_right": "assets/npc/monsters/barbol/barbol_1_right_damage.png"
     },
     "death_sprite": "assets/npc/monsters/barbol/barbol_female_death.png",
-    "death_scale": 0.5,
+    "death_scale": 0.4,
     "hp": 100,
     "speed": 1.0,
     "scale": 0.33,

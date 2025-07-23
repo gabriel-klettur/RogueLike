@@ -7,6 +7,8 @@ dragging, and grid clicks.
 """
 from roguelike_editors.tiles.tiles_editor_config import THUMB, PAD, COLS
 import pygame
+from pathlib import Path
+from roguelike_editors.tiles.tiles_editor_config import BASE_TILE_DIR
 
 class TilePickerEventHandler:
     """
@@ -94,7 +96,18 @@ class TilePickerEventHandler:
             if not source:
                 return False
             grid_size = self.picker_state.tileset_grid_size
+            # Slice tileset and update in-memory assets
             self.controller._load_tileset_assets(source, grid_size)
+            # After slicing, uncheck filter and reset input
+            self.picker_state.tileset_filter = False
+            self.picker_state.tileset_input_active = False
+            self.picker_state.tileset_source = None
+            # Navigate to the newly created slices folder
+            stem = Path(source).stem
+            parent_rel = Path(source).parent.relative_to(BASE_TILE_DIR)
+            new_dir = self.controller.base_dir / parent_rel / f"{stem}_slices"
+            self.controller.current_dir = new_dir
+            self.controller._load_assets()
             return True
         return False
 

@@ -12,7 +12,8 @@ from roguelike_editors.tiles.layers_panel.layers_panel_controller import LayersP
 from roguelike_editors.tiles.tile_outline_view import TileOutlineView
 from pathlib import Path
 from roguelike_engine.utils.loader import load_image
-from roguelike_engine.config.config_tiles import OVERLAY_CODE_MAP, DEFAULT_TILE_MAP
+import roguelike_engine.config.config_tiles as ct
+from roguelike_engine.config.config_tiles import DEFAULT_TILE_MAP
 from roguelike_editors.tiles.common.controller import flood_fill
 from roguelike_editors.tiles.common.view import screen_to_tile
 from roguelike_engine.config.map_config import global_map_settings
@@ -82,10 +83,10 @@ class TileEditorController:
             choice_rel = choice_rel[len("tiles/"):]
         key = choice_rel.rsplit(".", 1)[0]
         # Try direct overlay mapping
-        code = key if key in OVERLAY_CODE_MAP else None
+        code = key if key in ct.OVERLAY_CODE_MAP else None
         if code is None:
             # fallback: match mapping value
-            code = next((k for k, v in OVERLAY_CODE_MAP.items() if v == key), None)
+            code = next((k for k, v in ct.OVERLAY_CODE_MAP.items() if v == key), None)
         if code is None:
             # fallback: default char mapping
             code = next((k for k, v in DEFAULT_TILE_MAP.items() if v == key), None)
