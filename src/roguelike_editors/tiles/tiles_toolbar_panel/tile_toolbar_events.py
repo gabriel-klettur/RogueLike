@@ -56,13 +56,10 @@ class TileToolbarEventHandler:
                         if ts.collision_picker_open:
                             self.controller.editor_state.picker_state.open = False
                     else:
-                        # Toggle picker normal
-                        ts.collision_picker_open = False
-                        ts.collision_choice = None
-                        prev = self.controller.editor_state.picker_state.open
-                        self.controller.editor_state.picker_state.open = not prev
-                        if self.controller.editor_state.picker_state.open:
-                            self.controller.editor_state.scroll_offset = 0
+                        # Toggle brush size panel
+                        self.controller.editor_controller.brush_panel_controller.toggle()
+                        # Open/close tile picker panel in sync with brush panel
+                        self.controller.editor_state.picker_state.open = self.controller.editor_controller.brush_panel_controller.state.visible
                 return True
 
         return False

@@ -1,6 +1,6 @@
 import pygame
 from roguelike_engine.config.config_tiles import TILE_SIZE
-from roguelike_editors.tiles.tiles_editor_config import OUTLINE_CHOICE, OUTLINE_HOVER, OUTLINE_SEL
+from roguelike_editors.tiles.tiles_editor_config import OUTLINE_CHOICE, OUTLINE_HOVER, OUTLINE_SEL, BTN_H
 from roguelike_engine.utils.loader import load_image
 from roguelike_engine.map.model.layer import Layer
 
@@ -50,8 +50,12 @@ class TilesViewPanelView:
         panel_h = len(items) * (TILE_SIZE + 30)
 
         # Render panel background
-        x0 = self.controller.editor_controller.toolbar.x + self.controller.editor_controller.toolbar.size + 20
-        y0 = self.controller.editor_controller.toolbar.y
+        toolbar = self.controller.editor_controller.toolbar
+        x0 = toolbar.x + toolbar.size + 20
+        base_y = toolbar.y
+        if self.controller.editor_controller.brush_panel_controller.state.visible:
+            base_y += len(self.controller.editor_controller.brush_panel_controller.state.sizes) * BTN_H + toolbar.padding
+        y0 = base_y
         panel = pygame.Surface((panel_w, panel_h), pygame.SRCALPHA)
         panel.fill((20, 20, 20, 200))
 

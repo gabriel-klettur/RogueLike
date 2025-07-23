@@ -13,6 +13,9 @@ class TileEditorView:
         self.controller.title_controller.render(screen)
         
         self.controller.toolbar.view.render(screen)
+        # Render brush size panel if visible
+        if self.controller.editor.brush_panel_state.visible:
+            self.controller.brush_panel_controller.render(screen)
         # Normal tile picker
         if self.editor.picker_state.open:
             self.controller.picker.view.render(screen)

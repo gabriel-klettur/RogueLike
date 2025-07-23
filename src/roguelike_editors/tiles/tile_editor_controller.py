@@ -9,6 +9,7 @@ from roguelike_editors.tiles.tiles_view_panel.tiles_view_controller import Tiles
 from roguelike_editors.tiles.tiles_title.tiles_tiles_controller import TilesTitleController
 from roguelike_editors.tiles.tiles_collision_panel.tiles_collision_panel_controller import TilesCollisionPanelController
 from roguelike_editors.tiles.layers_panel.layers_panel_controller import LayersPanelController
+from roguelike_editors.tiles.brush_panel.brush_panel_controller import BrushPanelController
 from roguelike_editors.tiles.tile_outline_view import TileOutlineView
 from pathlib import Path
 from roguelike_engine.utils.loader import load_image
@@ -35,6 +36,7 @@ class TileEditorController:
         self.title_controller =             TilesTitleController(editor_state, editor_state.title_state)
         self.collision_panel_controller =   TilesCollisionPanelController(self, editor_state.collision_panel_state)
         self.layers_panel_controller =      LayersPanelController(editor_state, editor_state.layers_panel_state)
+        self.brush_panel_controller = BrushPanelController(self, editor_state.brush_panel_state)
         self.outline_view =                 TileOutlineView(self, editor_state)
         
         self.brush_cache: dict[str, pygame.Surface] = {}
@@ -92,23 +94,28 @@ class TileEditorController:
             code = next((k for k, v in DEFAULT_TILE_MAP.items() if v == key), None)
         if code is None:
             return
-        # Update tile object
-        tile.overlay_code = code
+        # Update tile object and paint according to brush size
+        w, h = self.editor.brush_panel_state.selected_size
         sprite = load_image(choice, (TILE_SIZE, TILE_SIZE))
-        tile.sprite = sprite
-        tile.scaled_cache.clear()
-        # Update full overlay layer data for current layer
         layer = self.editor.current_layer
-        try:
-            map.layers[layer][row][col] = code
-        except Exception:
-            pass
-        # Mark pending tile zone for persistence
-        zone_name, offx, offy = map.get_zone_for(row, col)
-        self._pending_tile_zones.add(zone_name)
-        # Record this cell for partial chunk update
-        self._pending_cells.append((row, col))
-        map.view.update_chunks(map, camera, [(row, col)])
+        # Paint rectangle of size w x h from top-left cell
+        for dy in range(h):
+            for dx in range(w):
+                r = row + dy
+                c = col + dx
+                if 0 <= r < len(map.tiles) and 0 <= c < len(map.tiles[0]):
+                    try:
+                        map.layers[layer][r][c] = code
+                    except Exception:
+                        continue
+                    t = map.tiles[r][c]
+                    t.overlay_code = code
+                    t.sprite = sprite
+                    t.scaled_cache.clear()
+                    zone_name, offx, offy = map.get_zone_for(r, c)
+                    self._pending_tile_zones.add(zone_name)
+                    self._pending_cells.append((r, c))
+        map.view.update_chunks(map, camera, self._pending_cells)
 
 
 

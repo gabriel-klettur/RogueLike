@@ -5,6 +5,7 @@ from roguelike_editors.tiles.tiles_view_panel.tiles_view_state import TilesViewP
 from roguelike_editors.tiles.tiles_title.tiles_tiles_states import TilesTitleState
 from roguelike_editors.tiles.tiles_collision_panel.tiles_collision_panel_states import TilesCollisionPanelState
 from roguelike_editors.tiles.layers_panel.layers_panel_states import LayersPanelState
+from roguelike_editors.tiles.brush_panel.brush_panel_state import BrushPanelState
 from roguelike_editors.tiles.common.state import deep_copy_state
 
 class TileEditorState:
@@ -27,6 +28,7 @@ class TileEditorState:
         self.title_state = TilesTitleState()
         self.collision_panel_state = TilesCollisionPanelState()
         self.layers_panel_state = LayersPanelState()
+        self.brush_panel_state = BrushPanelState()
 
     def clone(self):
         """
