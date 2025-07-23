@@ -80,6 +80,9 @@ class TileEditorEventHandler:
                 self.layers_panel_tool.handle_event(ev, camera, map)
             if self.editor_state.toolbar_state.collision_picker_open:
                 self.collision_panel_tool.handle_event(ev, camera, map)
+            # Size panel drag and events
+            if self.editor_state.size_panel_state.visible:
+                self.size_panel_tool.handle_event(ev)
             if self.editor_state.picker_state.open:
                 self.picker_tool.handle_event(ev, camera, map)
             # Always forward to title panel

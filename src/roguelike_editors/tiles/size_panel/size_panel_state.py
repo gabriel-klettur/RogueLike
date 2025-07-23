@@ -1,4 +1,5 @@
 import pygame
+from typing import Optional, Tuple
 
 class SizePanelState:
     """
@@ -13,6 +14,10 @@ class SizePanelState:
         self.visible = False
         # Clickable rects for each size option (index -> pygame.Rect)
         self.option_rects: dict[int, pygame.Rect] = {}
+        # Panel drag state
+        self.pos: Optional[Tuple[int, int]] = None
+        self.dragging: bool = False
+        self.drag_offset: Tuple[int, int] = (0, 0)
 
     def select(self, index: int):
         """

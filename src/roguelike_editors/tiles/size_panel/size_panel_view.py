@@ -13,10 +13,13 @@ class SizePanelView:
         if not self.state.visible:
             return
         font = pygame.font.SysFont("Arial", 14)
-        # Position to the right of toolbar panel
-        toolbar = self.controller.editor_controller.toolbar
-        x0 = toolbar.x + toolbar.size + toolbar.padding
-        y0 = toolbar.y
+        # Panel position (draggable override or right of toolbar panel)
+        if self.state.pos is not None:
+            x0, y0 = self.state.pos
+        else:
+            toolbar = self.controller.editor_controller.toolbar
+            x0 = toolbar.x + toolbar.size + toolbar.padding
+            y0 = toolbar.y
         # Clear previous rects
         self.state.option_rects.clear()
         # Render size options
