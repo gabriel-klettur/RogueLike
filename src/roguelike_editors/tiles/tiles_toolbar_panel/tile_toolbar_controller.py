@@ -3,6 +3,9 @@ from pathlib import Path
 from roguelike_engine.utils.loader import load_image
 from roguelike_engine.config.config_tiles import TILE_SIZE, OVERLAY_CODE_MAP, DEFAULT_TILE_MAP
 from roguelike_engine.config.map_config import global_map_settings
+from roguelike_engine.map.model.overlay.overlay_manager import load_layers, save_layers
+from roguelike_engine.map.model.layer import Layer
+from roguelike_engine.tile.assets import load_base_tile_images
 from roguelike_editors.tiles.common.view import screen_to_tile
 from roguelike_editors.tiles.tiles_toolbar_panel.tile_toolbar_view import TileToolbarView
 
@@ -109,3 +112,71 @@ class TileToolbarController:
         Finaliza arrastre de la toolbar.
         """
         self.editor_state.toolbar_state.dragging = False
+
+    def delete_tile(self, map):
+        """Eliminar tile seleccionado (moved from picker)"""
+        tile = self.editor_state.selected_tile
+        if tile is None:
+            return
+        layer = self.editor_state.current_layer
+        origin_row = tile.y // TILE_SIZE
+        origin_col = tile.x // TILE_SIZE
+        grid = map.tiles_by_layer.get(layer)
+        w, h = self.editor_state.size_panel_state.selected_size
+        for dy in range(h):
+            for dx in range(w):
+                r = origin_row + dy
+                c = origin_col + dx
+                if grid and 0 <= r < len(grid) and 0 <= c < len(grid[0]):
+                    t = grid[r][c]
+                    if t:
+                        t.sprite = pygame.Surface((TILE_SIZE, TILE_SIZE), pygame.SRCALPHA)
+                        t.scaled_cache.clear()
+                        self.editor_controller.picker._persist_overlay(t, "", map)
+        map.view.invalidate_cache()
+
+    def set_default(self, map):
+        """Restaurar defecto en tile seleccionado (moved from picker)"""
+        tile = self.editor_state.selected_tile
+        if tile is None:
+            return
+        origin_row = tile.y // TILE_SIZE
+        origin_col = tile.x // TILE_SIZE
+        w, h = self.editor_state.size_panel_state.selected_size
+        base_map = load_base_tile_images()
+        # Determinar zona y offsets
+        for zn, (ox, oy) in global_map_settings.zone_offsets.items():
+            if ox <= origin_col < ox + global_map_settings.zone_width and oy <= origin_row < oy + global_map_settings.zone_height:
+                zone_name, offx, offy = zn, ox, oy
+                break
+        else:
+            zone_name, offx, offy = 'no_zone', 0, 0
+        zone_layers = load_layers(zone_name) or {}
+        if zone_name != 'no_zone':
+            zone_h = global_map_settings.zone_height
+            zone_w = global_map_settings.zone_width
+        else:
+            zone_h = len(map.tiles)
+            zone_w = len(map.tiles[0]) if map.tiles else 0
+        for layer in Layer:
+            zone_layers.setdefault(layer, [['' for _ in range(zone_w)] for _ in range(zone_h)])
+        for dy in range(h):
+            for dx in range(w):
+                r = origin_row + dy
+                c = origin_col + dx
+                local_r = r - offy
+                local_c = c - offx
+                for layer in map.tiles_by_layer.keys():
+                    grid = map.tiles_by_layer.get(layer)
+                    if grid and 0 <= r < len(grid) and 0 <= c < len(grid[0]):
+                        t = grid[r][c]
+                        if t:
+                            imgs = base_map.get(t.tile_type)
+                            sprite = imgs[0] if isinstance(imgs, list) else imgs
+                            t.sprite = sprite
+                            t.scaled_cache.clear()
+                            t.overlay_code = ''
+                        zone_layers[layer][local_r][local_c] = ''
+                        map.layers[layer][r][c] = ''
+        save_layers(zone_name, zone_layers)
+        map.view.invalidate_cache()

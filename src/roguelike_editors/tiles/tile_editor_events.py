@@ -120,7 +120,7 @@ class TileEditorEventHandler:
             return
         pos = ev.pos
         # 1) Toolbar click
-        if self.toolbar_tool.handle_click(ev):
+        if self.toolbar_tool.handle_click(ev, map):
             return
         # Handle size panel clicks
         if self.size_panel_tool.handle_event(ev):

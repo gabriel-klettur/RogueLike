@@ -73,10 +73,12 @@ class TilePickerEventHandler:
         """Handle toolbar button interactions: delete tile, set default, and close picker."""
         # Botones Borrar / Default / Cerrar
         if self.picker_state.btn_delete_rect and self.picker_state.btn_delete_rect.collidepoint((lx, ly)):
-            self.controller._delete_tile(map)
+            # Delegar delete al TileToolbarController
+            self.controller.editor_controller.toolbar.delete_tile(map)
             return True
         if self.picker_state.btn_default_rect and self.picker_state.btn_default_rect.collidepoint((lx, ly)):
-            self.controller._set_default(map)
+            # Delegar default al TileToolbarController
+            self.controller.editor_controller.toolbar.set_default(map)
             return True
         if self.picker_state.btn_config_rect and self.picker_state.btn_config_rect.collidepoint((lx, ly)):
             # Toggle configure position mode

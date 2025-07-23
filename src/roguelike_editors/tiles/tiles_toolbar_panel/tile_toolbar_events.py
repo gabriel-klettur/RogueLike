@@ -8,7 +8,7 @@ class TileToolbarEventHandler:
     def __init__(self, toolbar_controller):
         self.controller = toolbar_controller
 
-    def handle_click(self, event):
+    def handle_click(self, event, map):
         """
         Procesa eventos de click en la toolbar, replicando la lógica de apply_click.
         Devuelve True si el evento fue consumido.
@@ -24,6 +24,14 @@ class TileToolbarEventHandler:
         # Handle toolbar icon clicks
         for tool, rect in self.controller.icon_rects.items():
             if rect.collidepoint(mouse_pos):
+                if tool == "delete":
+                    # Eliminar tile seleccionado
+                    self.controller.delete_tile(map)
+                    return True
+                elif tool == "default":
+                    # Restaurar defecto en tile seleccionado
+                    self.controller.set_default(map)
+                    return True
                 if tool == "view":
                     ts.view_active = not ts.view_active
                 elif tool == "view_layers":

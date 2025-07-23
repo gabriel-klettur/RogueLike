@@ -30,5 +30,8 @@ class TileToolbarState:
         self.pos: Optional[Tuple[int, int]] = None
         self.dragging: bool = False
         self.drag_offset: Tuple[int, int] = (0, 0)
+        # Rects para botones Delete y Default
+        self.btn_delete_rect: Optional[pygame.Rect] = None
+        self.btn_default_rect: Optional[pygame.Rect] = None
         
         
