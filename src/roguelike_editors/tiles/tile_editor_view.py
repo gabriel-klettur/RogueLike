@@ -34,15 +34,30 @@ class TileEditorView:
             
         # Outline 
         self.controller.outline_view.render(screen, camera, map)
-        # Mostrar indicador de capa centrado en la parte inferior en modo brush
+        # Indicator of current layer in brush mode (professional design)
         if self.editor.current_tool == "brush":
-            font = pygame.font.SysFont("Arial", 32)
-            layer_name = self.editor.current_layer.name
-            text_surf = font.render(layer_name, True, (255, 255, 0))
+            layer = self.editor.current_layer
+            label = f"{layer.value}: {layer.name}"
+            font = pygame.font.SysFont("Arial", 24, bold=True)
+            text_color = (255, 215, 0)
+            shadow_color = (0, 0, 0)
+            text_surf = font.render(label, True, text_color)
+            shadow_surf = font.render(label, True, shadow_color)
             screen_w, screen_h = screen.get_size()
-            padding = 10
-            text_rect = text_surf.get_rect()
-            text_rect.midbottom = (screen_w // 2, screen_h - padding)
-            bg_rect = text_rect.inflate(8, 8)
-            pygame.draw.rect(screen, (0, 0, 0), bg_rect)
+            padding = 20
+            text_rect = text_surf.get_rect(midbottom=(screen_w // 2, screen_h - padding))
+            # Background with semi-transparency and rounded border
+            bg_pad_x, bg_pad_y = 16, 12
+            bg_rect = text_rect.inflate(bg_pad_x, bg_pad_y)
+            bg_surf = pygame.Surface(bg_rect.size, pygame.SRCALPHA)
+            bg_surf.fill((30, 30, 30, 180))
+            pygame.draw.rect(bg_surf, text_color, bg_surf.get_rect(), 2, border_radius=8)
+            # Position and blit background
+            bg_pos = (bg_rect.left, bg_rect.top)
+            screen.blit(bg_surf, bg_pos)
+            # Shadow
+            shadow_rect = text_rect.copy()
+            shadow_rect.move_ip(2, 2)
+            screen.blit(shadow_surf, shadow_rect)
+            # Text
             screen.blit(text_surf, text_rect)    
