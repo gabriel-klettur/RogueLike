@@ -57,8 +57,8 @@ class TileToolbarEventHandler:
                             self.controller.editor_state.picker_state.open = False
                     else:
                         # Toggle brush size panel
-                        self.controller.editor_controller.brush_panel_controller.toggle()
-                        visible = self.controller.editor_controller.brush_panel_controller.state.visible
+                        self.controller.editor_controller.size_panel_controller.toggle()
+                        visible = self.controller.editor_controller.size_panel_controller.state.visible
                         # Open/close tile picker panel in sync with brush panel
                         self.controller.editor_state.picker_state.open = visible
                         # Select or deselect brush tool based on panel visibility

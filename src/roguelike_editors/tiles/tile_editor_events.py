@@ -8,7 +8,7 @@ from roguelike_editors.tiles.tiles_view_panel.tiles_view_events import TilesView
 from roguelike_editors.tiles.tiles_title.tiles_tiles_events import TilesTitleEventHandler
 from roguelike_editors.tiles.tiles_collision_panel.tiles_collision_panel_events import TilesCollisionPanelEventHandler
 from roguelike_editors.tiles.layers_panel.layers_panel_events import LayersPanelEventHandler
-from roguelike_editors.tiles.brush_panel.brush_panel_events import BrushPanelEventHandler
+from roguelike_editors.tiles.size_panel.size_panel_events import SizePanelEventHandler
 
 class TileEditorEventHandler:
     """
@@ -43,9 +43,9 @@ class TileEditorEventHandler:
             controller.layers_panel_controller,
             editor_state.layers_panel_state
         )
-        self.brush_panel_tool = BrushPanelEventHandler(
-            controller.brush_panel_controller,
-            editor_state.brush_panel_state
+        self.size_panel_tool = SizePanelEventHandler(
+            controller.size_panel_controller,
+            editor_state.size_panel_state
         )
 
     def handle(self, events, camera, map):
@@ -106,8 +106,8 @@ class TileEditorEventHandler:
         # 1) Toolbar click
         if self.toolbar_tool.handle_click(ev):
             return
-        # Handle brush panel clicks
-        if self.brush_panel_tool.handle_event(ev):
+        # Handle size panel clicks
+        if self.size_panel_tool.handle_event(ev):
             return
 
 

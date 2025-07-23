@@ -1,8 +1,8 @@
 import pygame
 
-class BrushPanelEventHandler:
+class SizePanelEventHandler:
     """
-    Event handler for the Brush Size Panel.
+    Event handler for the Size Size Panel.
     """
     def __init__(self, controller, state):
         self.controller = controller
@@ -10,7 +10,7 @@ class BrushPanelEventHandler:
 
     def handle_event(self, ev):
         """
-        Process click events on the brush size panel.
+        Process click events on the size panel.
         Returns True if the event is consumed.
         """
         if not self.state.visible:

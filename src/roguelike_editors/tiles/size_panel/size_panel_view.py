@@ -1,9 +1,9 @@
 import pygame
 from roguelike_editors.tiles.tiles_editor_config import BTN_W, BTN_H, PAD, CLR_SELECTION, CLR_BORDER
 
-class BrushPanelView:
+class SizePanelView:
     """
-    View for the Brush Size Panel.
+    View for the Size Panel.
     """
     def __init__(self, controller, state):
         self.controller = controller
@@ -23,11 +23,15 @@ class BrushPanelView:
         for i, (w, h) in enumerate(self.state.sizes):
             ry = y0 + i * BTN_H
             rect = pygame.Rect(x0, ry, BTN_W, BTN_H)
-            pygame.draw.rect(screen, (20, 20, 20), rect)
-            # Border highlight for selected
-            border_color = CLR_SELECTION if i == self.state.selected_index else CLR_BORDER
-            pygame.draw.rect(screen, border_color, rect, 2)
-            text = font.render(f"{w}x{h}", True, (255, 255, 255))
+            if i == self.state.selected_index:
+                bg_color = CLR_SELECTION
+                text_color = (0, 0, 0)
+            else:
+                bg_color = (20, 20, 20)
+                text_color = (255, 255, 255)
+            pygame.draw.rect(screen, bg_color, rect)
+            pygame.draw.rect(screen, CLR_BORDER, rect, 2)
+            text = font.render(f"{w}x{h}", True, text_color)
             ty = ry + (BTN_H - text.get_height()) // 2
             screen.blit(text, (x0 + PAD, ty))
             self.state.option_rects[i] = rect

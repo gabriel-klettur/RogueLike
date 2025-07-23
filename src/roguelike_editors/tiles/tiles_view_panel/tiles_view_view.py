@@ -53,8 +53,8 @@ class TilesViewPanelView:
         toolbar = self.controller.editor_controller.toolbar
         x0 = toolbar.x + toolbar.size + 20
         base_y = toolbar.y
-        if self.controller.editor_controller.brush_panel_controller.state.visible:
-            base_y += len(self.controller.editor_controller.brush_panel_controller.state.sizes) * BTN_H + toolbar.padding
+        if self.controller.editor_controller.size_panel_controller.state.visible:
+            base_y += len(self.controller.editor_controller.size_panel_controller.state.sizes) * BTN_H + toolbar.padding
         y0 = base_y
         panel = pygame.Surface((panel_w, panel_h), pygame.SRCALPHA)
         panel.fill((20, 20, 20, 200))

@@ -9,7 +9,7 @@ from roguelike_editors.tiles.tiles_view_panel.tiles_view_controller import Tiles
 from roguelike_editors.tiles.tiles_title.tiles_tiles_controller import TilesTitleController
 from roguelike_editors.tiles.tiles_collision_panel.tiles_collision_panel_controller import TilesCollisionPanelController
 from roguelike_editors.tiles.layers_panel.layers_panel_controller import LayersPanelController
-from roguelike_editors.tiles.brush_panel.brush_panel_controller import BrushPanelController
+from roguelike_editors.tiles.size_panel.size_panel_controller import SizePanelController
 from roguelike_editors.tiles.tile_outline_view import TileOutlineView
 from pathlib import Path
 from roguelike_engine.utils.loader import load_image
@@ -36,7 +36,7 @@ class TileEditorController:
         self.title_controller =             TilesTitleController(editor_state, editor_state.title_state)
         self.collision_panel_controller =   TilesCollisionPanelController(self, editor_state.collision_panel_state)
         self.layers_panel_controller =      LayersPanelController(editor_state, editor_state.layers_panel_state)
-        self.brush_panel_controller = BrushPanelController(self, editor_state.brush_panel_state)
+        self.size_panel_controller =        SizePanelController(self, editor_state.size_panel_state)
         self.outline_view =                 TileOutlineView(self, editor_state)
         
         self.brush_cache: dict[str, pygame.Surface] = {}
@@ -95,7 +95,7 @@ class TileEditorController:
         if code is None:
             return
         # Update tile object and paint according to brush size
-        w, h = self.editor.brush_panel_state.selected_size
+        w, h = self.editor.size_panel_state.selected_size
         sprite = load_image(choice, (TILE_SIZE, TILE_SIZE))
         layer = self.editor.current_layer
         # Paint rectangle of size w x h from top-left cell

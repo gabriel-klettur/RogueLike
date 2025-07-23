@@ -1,17 +1,17 @@
-from roguelike_editors.tiles.brush_panel.brush_panel_view import BrushPanelView
+from roguelike_editors.tiles.size_panel.size_panel_view import SizePanelView
 
-class BrushPanelController:
+class SizePanelController:
     """
-    Controller for the Brush Size Panel.
+    Controller for the Size Panel.
     """
     def __init__(self, editor_controller, state):
         self.editor_controller = editor_controller
         self.state = state
-        self.view = BrushPanelView(self, state)
+        self.view = SizePanelView(self, state)
 
     def toggle(self):
         """
-        Toggle visibility of the brush size panel.
+        Toggle visibility of the size panel.
         """
         self.state.visible = not self.state.visible
 
@@ -29,7 +29,7 @@ class BrushPanelController:
 
     def on_size_selected(self, index):
         """
-        Handle selection of brush size at given index.
+        Handle selection of size at given index.
         """
         self.state.select(index)
         # Panel remains open after selection

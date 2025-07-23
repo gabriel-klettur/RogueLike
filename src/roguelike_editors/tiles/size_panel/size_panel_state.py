@@ -1,11 +1,11 @@
 import pygame
 
-class BrushPanelState:
+class SizePanelState:
     """
-    State for the Brush Size Panel.
+    State for the Size Panel.
     """
     def __init__(self):
-        # Initializes all brush sizes (1x1 to 10x10)
+        # Initializes all sizes (1x1 to 10x10)
         self.sizes = [(i, i) for i in range(1, 11)]
         # Currently selected index in sizes
         self.selected_index = 0
@@ -24,6 +24,6 @@ class BrushPanelState:
     @property
     def selected_size(self):
         """
-        Returns the current brush size (width, height).
+        Returns the current size (width, height).
         """
         return self.sizes[self.selected_index]
