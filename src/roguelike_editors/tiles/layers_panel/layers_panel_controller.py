@@ -13,3 +13,16 @@ class LayersPanelController:
     def render(self, screen):
         # Delegate rendering to panel view
         self.view.render(screen)
+
+    def drag(self, mouse_pos):
+        """
+        Update panel position durante arrastre.
+        """
+        if self.state.dragging:
+            self.state.pos = (mouse_pos[0] - self.state.drag_offset[0], mouse_pos[1] - self.state.drag_offset[1])
+
+    def stop_drag(self):
+        """
+        Finaliza arrastre del panel.
+        """
+        self.state.dragging = False
