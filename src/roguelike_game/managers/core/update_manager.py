@@ -35,10 +35,6 @@ def update_game(
         def _update_tiles_editor():
             tiles_editor.update(camera, map)
         _update_tiles_editor()
-        # Centrar cámara en el jugador incluso con editor activo
-        eid = ecs.ecs_world.player_entity
-        pos = ecs.ecs_world.components['Position'][eid]
-        camera.update(types.SimpleNamespace(x=pos.x, y=pos.y))
         return
 
     # 2) Si el Buildings-Editor está activo, solo actualizamos él

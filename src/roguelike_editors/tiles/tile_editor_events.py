@@ -47,6 +47,10 @@ class TileEditorEventHandler:
             controller.size_panel_controller,
             editor_state.size_panel_state
         )
+        # Camera panning via middle mouse button
+        self.panning = False
+        self.pan_start = (0, 0)
+        self.pan_offset_start = (0, 0)
 
     def handle(self, events, camera, map):
         """Reenvía cada evento al manejador correspondiente."""
@@ -102,6 +106,12 @@ class TileEditorEventHandler:
 
     def _on_mouse_down(self, ev, camera, map):
         
+        # Pan camera with middle mouse
+        if ev.button == 2:
+            self.panning = True
+            self.pan_start = ev.pos
+            self.pan_offset_start = (camera.offset_x, camera.offset_y)
+            return
         pos = ev.pos
         # 1) Toolbar click
         if self.toolbar_tool.handle_click(ev):
@@ -135,6 +145,13 @@ class TileEditorEventHandler:
 
     def _on_mouse_motion(self, ev, camera, map):
         pos = ev.pos
+        # Handle camera panning
+        if self.panning:
+            dx = ev.pos[0] - self.pan_start[0]
+            dy = ev.pos[1] - self.pan_start[1]
+            camera.offset_x = self.pan_offset_start[0] - dx / camera.zoom
+            camera.offset_y = self.pan_offset_start[1] - dy / camera.zoom
+            return
         # Brush drag
         if self.editor_state.current_tool == "brush" and self.editor_state.brush_dragging:
             if not (self.editor_state.picker_state.open and self.controller.picker.is_over(pos)):
@@ -145,6 +162,9 @@ class TileEditorEventHandler:
         # Release brush
         if ev.button == 1 and self.editor_state.current_tool == "brush":
             self.editor_state.brush_dragging = False
+        # Stop camera panning
+        if ev.button == 2 and self.panning:
+            self.panning = False
 
 
     def _on_mouse_wheel(self, ev):

@@ -159,6 +159,11 @@ class TileEditorController:
         1) Actualiza el tile bajo el cursor (hover).
         2) Delegates continuous input actions to TileToolbarController.
         """
+        # Panning with middle mouse
+        dx, dy = pygame.mouse.get_rel()
+        if pygame.mouse.get_pressed()[1]:
+            camera.offset_x -= dx / camera.zoom
+            camera.offset_y -= dy / camera.zoom
         # --- 1) Hover del cursor ---
         col, row = screen_to_tile(pygame.mouse.get_pos(), camera)
         self.editor.hovered_tile = (col, row)
