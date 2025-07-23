@@ -259,16 +259,6 @@
       "y": 2480.000000000006
     }
   },
-  "9a63508c-8735-4ce8-ae6e-b25de3868f1f": {
-    "item_id": "gold",
-    "quantity": 3,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 1915.3923473062714,
-      "y": 2444.6987009854643
-    }
-  },
   "92f0b83a-2c11-4332-9764-9895f655627d": {
     "item_id": "wood",
     "quantity": 1,
@@ -319,24 +309,64 @@
       "y": 1986
     }
   },
-  "17d44cb5-c7a1-44ce-8bf9-f671ca528193": {
-    "item_id": "wood",
+  "2c3c8764-64d3-4ba3-8386-e76b55ecb03d": {
+    "item_id": "gold",
     "quantity": 1,
     "zone_id": "Lobby",
     "schema_version": "1.0.0",
     "position": {
-      "x": 2345.691595687279,
-      "y": 2089.3956802725056
+      "x": 2383.376184171033,
+      "y": 2289.8471265754006
     }
   },
-  "77aa85bf-db29-4dec-8cf3-770e9857056d": {
-    "item_id": "gold",
-    "quantity": 3,
+  "5c54b2b7-519b-4520-8efb-3437c09f69f5": {
+    "item_id": "health_potion",
+    "quantity": 1,
     "zone_id": "Lobby",
     "schema_version": "1.0.0",
     "position": {
-      "x": 2345.691595687279,
-      "y": 2089.3956802725056
+      "x": 2383.376184171033,
+      "y": 2289.8471265754006
+    }
+  },
+  "e1bdefe1-b26b-4150-a48f-16f09e1a4abe": {
+    "item_id": "gold",
+    "quantity": 5,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2783.0,
+      "y": 2883
+    }
+  },
+  "74c8f4cc-5441-4f77-ba75-d1c876f39efc": {
+    "item_id": "experience_orb",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2783.0,
+      "y": 2883
+    }
+  },
+  "d06008c2-cf93-463a-834f-ac14edbad0ad": {
+    "item_id": "gold",
+    "quantity": 4,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2328.1087201311193,
+      "y": 2977.397583208036
+    }
+  },
+  "13bc8c17-c4ac-4f44-9c36-38d2a4fafdb8": {
+    "item_id": "experience_orb",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2328.1087201311193,
+      "y": 2977.397583208036
     }
   }
 }

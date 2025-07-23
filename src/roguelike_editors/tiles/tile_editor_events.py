@@ -110,6 +110,11 @@ class TileEditorEventHandler:
             self.editor_state.toolbar_state.show_buildings = not self.editor_state.toolbar_state.show_buildings
 
     def _on_mouse_down(self, ev, camera, map):
+        # Consume clicks dentro del Tile Picker para evitar click-through al mapa
+        pos = ev.pos
+        if self.editor_state.picker_state.open and self.controller.picker.is_over(pos):
+            self.picker_tool.handle_click(pos, ev.button, map)
+            return
 
         
         # Pan camera with middle mouse

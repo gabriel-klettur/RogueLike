@@ -4,6 +4,8 @@ from pathlib import Path
 # Config mode border colors
 CONFIG_HOVER_COLOR = (128, 0, 128)
 CONFIG_SELECTED_COLOR = (255, 0, 0)
+# Tileset button hover color
+TILESET_BTN_HOVER_COLOR = (255, 255, 0)
 
 from roguelike_editors.tiles.tiles_editor_config import (
     CLR_HOVER,
@@ -105,16 +107,13 @@ class TilePickerView:
 
     def _draw_toolbar_and_labels(self, hovered_value, hovered_orig_size, w, h_grid):
         """Draw delete/default buttons and display hovered/selected labels."""
-        self.picker_state.btn_delete_rect = pygame.Rect(PAD, PAD + h_grid, BTN_W, BTN_H)
-        self.picker_state.btn_default_rect = pygame.Rect(PAD*2 + BTN_W, PAD + h_grid, BTN_W, BTN_H)
-        self._draw_button(self.picker_state.btn_delete_rect, "Borrar")
-        self._draw_button(self.picker_state.btn_default_rect, "Default")
+
 
         # Configurar Posición Tiles button
         cfg_text = "Configurar Posición Tiles"
         cfg_txt_surf = self.label_font.render(cfg_text, True, CLR_BORDER)
         cfg_bw = cfg_txt_surf.get_width() + PAD*2
-        cfg_x = PAD*3 + BTN_W*2
+        cfg_x = PAD
         cfg_rect = pygame.Rect(cfg_x, PAD + h_grid, cfg_bw, BTN_H)
         self._draw_button(cfg_rect, cfg_text)
         self.picker_state.btn_config_rect = cfg_rect
@@ -188,7 +187,14 @@ class TilePickerView:
             bx = ix + iw + PAD
             br = pygame.Rect(bx, y_cb, bw, cb)
             pygame.draw.rect(self.picker_state.surface, (60,60,60), br)
-            pygame.draw.rect(self.picker_state.surface, CLR_BORDER, br, 1)
+            # Hover effect: yellow border cuando se pasa por encima
+            mouse_pos = pygame.mouse.get_pos()
+            pos_x, pos_y = self.picker_state.pos or (0, 0)
+            local_mouse = (mouse_pos[0] - pos_x, mouse_pos[1] - pos_y)
+            if br.collidepoint(local_mouse):
+                pygame.draw.rect(self.picker_state.surface, TILESET_BTN_HOVER_COLOR, br, 2)
+            else:
+                pygame.draw.rect(self.picker_state.surface, CLR_BORDER, br, 1)
             self.picker_state.btn_tileset_rect = br
             self.picker_state.surface.blit(btn, (br.x + (bw-btn.get_width())//2, y_cb + (cb-btn.get_height())//2))
 

@@ -25,8 +25,7 @@ class TilePickerState:
 
         # Surface y botones (la View las rellena)
         self.surface: Optional[pygame.Surface] = None
-        self.btn_delete_rect: Optional[pygame.Rect]  = None
-        self.btn_default_rect: Optional[pygame.Rect] = None
+
         # Close button rectangle
         self.btn_close_rect: Optional[pygame.Rect] = None
         # Tileset checkbox state

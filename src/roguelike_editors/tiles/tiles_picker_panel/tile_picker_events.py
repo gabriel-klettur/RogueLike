@@ -71,15 +71,7 @@ class TilePickerEventHandler:
 
     def _handle_toolbar_buttons(self, lx, ly, map):
         """Handle toolbar button interactions: delete tile, set default, and close picker."""
-        # Botones Borrar / Default / Cerrar
-        if self.picker_state.btn_delete_rect and self.picker_state.btn_delete_rect.collidepoint((lx, ly)):
-            # Delegar delete al TileToolbarController
-            self.controller.editor_controller.toolbar.delete_tile(map)
-            return True
-        if self.picker_state.btn_default_rect and self.picker_state.btn_default_rect.collidepoint((lx, ly)):
-            # Delegar default al TileToolbarController
-            self.controller.editor_controller.toolbar.set_default(map)
-            return True
+
         if self.picker_state.btn_config_rect and self.picker_state.btn_config_rect.collidepoint((lx, ly)):
             # Toggle configure position mode
             self.picker_state.config_mode = not self.picker_state.config_mode
@@ -186,10 +178,8 @@ class TilePickerEventHandler:
             return True
 
         if self.picker_state.tileset_filter:
-            # Slice selected tileset image into tiles
+            # Selecciona tileset para corte; no cortar aún
             self.picker_state.tileset_source = value
-            grid_size = self.picker_state.tileset_grid_size
-            self.controller._load_tileset_assets(value, grid_size)
             return True
 
         self.editor_state.current_choice = value
@@ -200,12 +190,16 @@ class TilePickerEventHandler:
         """
         Delegates various mouse events to picker logic.
         """
-        # Handle clicks
-        if ev.type == pygame.MOUSEBUTTONDOWN:
-            # Skip left-click here; left-click handled in _on_mouse_down
-            if ev.button != 1:
-                if self.handle_click(ev.pos, ev.button, map):
-                    return True
+
+
+
+        """
+        Delegates various mouse events to picker logic.
+        """
+        # Handle non-left clicks in picker (e.g. right-click for drag)
+        if ev.type == pygame.MOUSEBUTTONDOWN and ev.button != 1:
+            if self.handle_click(ev.pos, ev.button, map):
+                return True
         # Handle dragging movement
         if ev.type == pygame.MOUSEMOTION and self.picker_state.dragging:
             self.controller.drag(ev.pos)
