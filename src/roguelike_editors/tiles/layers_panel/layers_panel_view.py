@@ -32,8 +32,10 @@ class LayersPanelView:
         for i, layer in enumerate(Layer):
             ry = y0 + i * BTN_H
             rect = pygame.Rect(x0, ry, BTN_W, BTN_H)
-            pygame.draw.rect(screen, (20, 20, 20), rect)
             visible = self.state.visible_layers.get(layer, False)
+            bg_surf = pygame.Surface((BTN_W, BTN_H), pygame.SRCALPHA)
+            bg_surf.fill((0, 255, 0, 100) if visible else (255, 0, 0, 100))
+            screen.blit(bg_surf, rect.topleft)
             border = (0, 255, 0) if visible else (255, 0, 0)
             pygame.draw.rect(screen, border, rect, 2)
             # Hover overlay for layer options
@@ -48,8 +50,10 @@ class LayersPanelView:
         # Render buildings toggle
         ry = y0 + len(list(Layer)) * BTN_H
         rect = pygame.Rect(x0, ry, BTN_W, BTN_H)
-        pygame.draw.rect(screen, (20, 20, 20), rect)
         sb = self.controller.editor_state.toolbar_state.show_buildings
+        bg_surf = pygame.Surface((BTN_W, BTN_H), pygame.SRCALPHA)
+        bg_surf.fill((0, 255, 0, 100) if sb else (255, 0, 0, 100))
+        screen.blit(bg_surf, rect.topleft)
         border = (128, 0, 128) if sb else (255, 0, 0)
         pygame.draw.rect(screen, border, rect, 2)
         # Hover overlay for building toggle
