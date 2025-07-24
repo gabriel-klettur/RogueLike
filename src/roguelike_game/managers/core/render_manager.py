@@ -223,12 +223,12 @@ class RendererManager:
             if visible != self._last_visible_layers:
                 self.map.view.invalidate_cache()
                 self._last_visible_layers = visible.copy()
-            orig = map.tiles_by_layer
-            # apply filter without modifying original
-            filtered = {layer: orig[layer] for layer in orig if visible.get(layer, True)}
-            map.tiles_by_layer = filtered
+            # Temporarily filter map layers mapping for rendering
+            orig_layers = map.layers
+            filtered_layers = {layer: orig_layers[layer] for layer in orig_layers if visible.get(layer, True)}
+            map.layers = filtered_layers
             dirty_rects = self.map.view.render(screen, camera, map)
-            map.tiles_by_layer = orig
+            map.layers = orig_layers
         else:
             dirty_rects = self.map.view.render(screen, camera, map)
         self._dirty_rects.extend(dirty_rects)
