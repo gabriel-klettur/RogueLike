@@ -190,17 +190,7 @@ class TilePickerEventHandler:
         """
         Delegates various mouse events to picker logic.
         """
-
-
-
-        """
-        Delegates various mouse events to picker logic.
-        """
-        # Handle non-left clicks in picker (e.g. right-click for drag)
-        if ev.type == pygame.MOUSEBUTTONDOWN and ev.button != 1:
-            if self.handle_click(ev.pos, ev.button, map):
-                return True
-        # Handle dragging movement
+        # Handle dragging movement (right-button drag)
         if ev.type == pygame.MOUSEMOTION and self.picker_state.dragging:
             self.controller.drag(ev.pos)
             return True
@@ -212,14 +202,12 @@ class TilePickerEventHandler:
         if ev.type == pygame.MOUSEWHEEL:
             self.controller.scroll(ev.y)
             return True
-        # Entrada de teclado para tamaño de grid de tileset
+        # Delegate to TextInput widget for tileset input
         if ev.type == pygame.KEYDOWN and self.picker_state.tileset_input_active:
-            # Delegate to TextInput widget
             widget = self.controller.view.tileset_text_input
             if widget.handle_event(ev):
                 # Sync text to state
                 self.picker_state.tileset_grid_size_text = widget.text
-                # On commit (widget inactive), parse value
                 if not widget.active:
                     try:
                         self.picker_state.tileset_grid_size = int(self.picker_state.tileset_grid_size_text)
