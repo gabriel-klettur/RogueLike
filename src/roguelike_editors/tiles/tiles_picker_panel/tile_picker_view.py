@@ -88,6 +88,10 @@ class TilePickerView:
                 elif rect.collidepoint((lx, ly)):
                     hovered_value = value
                     hovered_orig_size = orig_size
+                    # Hover overlay for config grid items
+                    hover_surf = pygame.Surface((THUMB, THUMB), pygame.SRCALPHA)
+                    hover_surf.fill((255, 255, 0, 100))
+                    self.picker_state.surface.blit(hover_surf, (rect.x, rect.y))
                     pygame.draw.rect(self.picker_state.surface, CONFIG_HOVER_COLOR, rect, 3)
                 elif self.picker_state.current_choice == value:
                     pygame.draw.rect(self.picker_state.surface, CLR_SELECTION, rect, 3)
@@ -95,6 +99,10 @@ class TilePickerView:
                 if rect.collidepoint((lx, ly)):
                     hovered_value = value
                     hovered_orig_size = orig_size
+                    # Hover overlay for grid items
+                    hover_surf = pygame.Surface((THUMB, THUMB), pygame.SRCALPHA)
+                    hover_surf.fill((255, 255, 0, 100))
+                    self.picker_state.surface.blit(hover_surf, (rect.x, rect.y))
                     pygame.draw.rect(self.picker_state.surface, CLR_HOVER, rect, 3)
                 elif self.picker_state.current_choice == value:
                     pygame.draw.rect(self.picker_state.surface, CLR_SELECTION, rect, 3)

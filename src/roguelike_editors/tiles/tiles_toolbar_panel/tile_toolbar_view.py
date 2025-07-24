@@ -8,6 +8,8 @@ class TileToolbarView:
         self.toolbar = toolbar
 
     def render(self, screen):
+        # Capture mouse for hover overlay
+        mouse_pos = pygame.mouse.get_pos()
 
         # Panel position (draggable override or default)
         ts = self.toolbar.editor_state.toolbar_state
@@ -21,6 +23,11 @@ class TileToolbarView:
             rect = pygame.Rect(px, py, self.toolbar.size, self.toolbar.size)
             self.toolbar.icon_rects[tool] = rect
             screen.blit(self.toolbar.icons[tool], (px, py))
+            # Hover overlay for toolbar icons
+            if rect.collidepoint(mouse_pos):
+                hover_surf = pygame.Surface((self.toolbar.size, self.toolbar.size), pygame.SRCALPHA)
+                hover_surf.fill((255, 255, 0, 100))
+                screen.blit(hover_surf, (px, py))
             # Yellow border for active tool or collisions mode
             if tool == "view":
                 # Highlight when Tiles View Panel is active
