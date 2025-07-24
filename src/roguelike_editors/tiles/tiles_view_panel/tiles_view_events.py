@@ -16,12 +16,16 @@ class TilesViewPanelEventHandler:
             if self.state.pos is not None:
                 x0, y0 = self.state.pos
             else:
-                toolbar = self.controller.editor_controller.toolbar
-                x0 = toolbar.x + toolbar.size + 20
-                base_y = toolbar.y
-                if self.controller.editor_controller.size_panel_controller.state.visible:
-                    base_y += len(self.controller.editor_controller.size_panel_controller.state.sizes) * BTN_H + toolbar.padding
-                y0 = base_y
+                # Cálculo acorde al render: posición top-right
+                surf = pygame.display.get_surface()
+                if not surf or not self.state.size:
+                    return False
+                sw, _ = surf.get_size()
+                panel_w, panel_h = self.state.size
+                margin_x = 12
+                margin_y = 12
+                x0 = sw - panel_w - margin_x
+                y0 = margin_y
             # Verificar tamaño del panel
             if not self.state.size:
                 return False
