@@ -63,12 +63,23 @@ class TileToolbarEventHandler:
         return False
 
     def _handle_delete(self, tool_name, map):
-        """Eliminar el tile seleccionado del mapa."""
+        """Toggle delete tool; delete selected tile."""
+        es = self.controller.editor_state
+        # Toggle delete mode
+        if es.current_tool != tool_name:
+            es.current_tool = tool_name
+        else:
+            # Press again to return to select
+            es.current_tool = "select"
+        # Perform deletion
         self.controller.delete_tile(map)
         return True
 
     def _handle_default(self, tool_name, map):
-        """Restaurar el valor por defecto del tile seleccionado."""
+        """Activate default tool; restore tile to default."""
+        es = self.controller.editor_state
+        # Activate default mode and deactivate other tools
+        es.current_tool = tool_name
         self.controller.set_default(map)
         return True
 

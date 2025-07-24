@@ -136,6 +136,15 @@ class TileEditorEventHandler:
             return
 
         tool = self.editor_state.current_tool
+        # Delete tool action: delete tile at clicked position
+        if tool == "delete" and ev.button == 1:
+            # Determine tile under mouse
+            tile = self.controller._tile_under_mouse(pos, camera, map)
+            if tile:
+                # Update selection and delete
+                self.editor_state.selected_tile = tile
+                self.controller.toolbar.delete_tile(map)
+            return
         # 2) Select
         if tool == "select" and ev.button == 1:
             if self.editor_state.picker_state.open:
