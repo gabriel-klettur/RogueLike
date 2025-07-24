@@ -67,6 +67,9 @@ class TileToolbarEventHandler:
         es = self.controller.editor_state
         # Toggle delete mode
         if es.current_tool != tool_name:
+            # Open Tiles View Panel when entering delete mode
+            self.controller.editor_state.toolbar_state.view_active = True
+            es.current_tool = tool_name
             es.current_tool = tool_name
         else:
             # Press again to return to select
