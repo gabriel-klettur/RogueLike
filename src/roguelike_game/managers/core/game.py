@@ -155,7 +155,7 @@ class Game:
                 return
             if event.type == pygame.KEYDOWN and event.key == self.menu.input_config.get_key('toggle_tile_editor'):
                 # Alternar Tile Editor
-                self.tiles_editor.editor_state.active = not self.tiles_editor.editor_state.active
+                self.tiles_editor.toggle()
                 return
 
             if event.type == pygame.KEYDOWN and event.key == self.menu.input_config.get_key('toggle_building_editor'):

@@ -18,8 +18,8 @@ class TilesEditorManager:
         active = not self.editor_state.active
         self.editor_state.active = active
 
-        # Al abrir el Tile Editor con herramienta select, mostrar panel tamaño y panel vista
-        if active and self.editor_state.current_tool == "select":
+        # Al abrir el Tile Editor, mostrar panel tamaño y panel vista
+        if active:
             self.editor_state.size_panel_state.visible = True
             self.editor_state.toolbar_state.view_active = True
 
