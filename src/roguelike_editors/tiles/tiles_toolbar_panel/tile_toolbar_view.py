@@ -47,8 +47,9 @@ class TileToolbarView:
                 color = CLR_SELECTION if self.toolbar.editor_state.current_tool == tool else (255, 255, 255)
             pygame.draw.rect(screen, color, rect, 4)
 
+
         # Collision picker UI
-        if self.toolbar.editor_state.toolbar_state.collision_picker_open:
+        if False and self.toolbar.editor_state.toolbar_state.collision_picker_open:
             options = [("#", "Collision"), (".", "Walk")]
             w = len(options) * (THUMB + PAD) + PAD
             label_font = pygame.font.SysFont("Arial", 14)

@@ -22,19 +22,26 @@ class TilesCollisionPanelView:
         surf.fill((20, 20, 20, 200))
         # Determine panel position
         toolbar_state = self.controller.editor_state.toolbar_state
-        # Dynamic positioning if not dragging
-        if not toolbar_state.collision_picker_dragging:
-            editor_ctrl = self.controller.editor_controller
-            vp_state = editor_ctrl.view_panel_controller.state
-            if hasattr(vp_state, 'pos') and hasattr(vp_state, 'size') and vp_state.pos and vp_state.size:
-                x_vp, y_vp = vp_state.pos
-                _, h_vp = vp_state.size
-                pos_x = x_vp
-                pos_y = y_vp + h_vp + PAD
+        # Initial positioning: align to the right of the toolbar's collision icon
+        if toolbar_state.collision_picker_pos is None:
+            icon_rect = self.controller.editor_controller.toolbar.icon_rects.get('view_collisions')
+            if icon_rect:
+                tb = self.controller.editor_controller.toolbar
+                pos_x = icon_rect.right + tb.padding
+                pos_y = icon_rect.y
             else:
-                sw, sh = screen.get_size()
-                pos_x = (sw - w) // 2
-                pos_y = (sh - h) // 2
+                # Fallback: position below view panel
+                editor_ctrl = self.controller.editor_controller
+                vp_state = editor_ctrl.view_panel_controller.state
+                if hasattr(vp_state, 'pos') and hasattr(vp_state, 'size') and vp_state.pos and vp_state.size:
+                    x_vp, y_vp = vp_state.pos
+                    _, h_vp = vp_state.size
+                    pos_x = x_vp
+                    pos_y = y_vp + h_vp + PAD
+                else:
+                    sw, sh = screen.get_size()
+                    pos_x = (sw - w) // 2
+                    pos_y = (sh - h) // 2
             toolbar_state.collision_picker_pos = (pos_x, pos_y)
         # Use stored position (for dragging)
         pos_x, pos_y = toolbar_state.collision_picker_pos
@@ -55,6 +62,10 @@ class TilesCollisionPanelView:
             self.state.option_rects[ch] = abs_rect
             # Hover and selection border
             if abs_rect.collidepoint(mouse_pos):
+                # Hover overlay for collision option
+                hover_surf = pygame.Surface((THUMB, THUMB), pygame.SRCALPHA)
+                hover_surf.fill((255, 255, 0, 100))
+                surf.blit(hover_surf, (x, y))
                 pygame.draw.rect(surf, CLR_HOVER, (x, y, THUMB, THUMB), 3)
             elif toolbar_state.collision_choice == ch:
                 pygame.draw.rect(surf, CLR_SELECTION, (x, y, THUMB, THUMB), 3)
@@ -64,4 +75,8 @@ class TilesCollisionPanelView:
                                  y + THUMB + PAD))
         # Blit panel
         pygame.draw.rect(surf, CLR_SELECTION, surf.get_rect(), 3)
+        # Drop shadow for collision panel
+        shadow_surf = pygame.Surface((w, h), pygame.SRCALPHA)
+        shadow_surf.fill((0, 0, 0, 100))
+        screen.blit(shadow_surf, (pos_x + 4, pos_y + 4))
         screen.blit(surf, (pos_x, pos_y))
