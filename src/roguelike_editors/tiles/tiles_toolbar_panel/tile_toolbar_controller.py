@@ -47,6 +47,9 @@ class TileToolbarController:
         if not (0 <= row < len(game_map.tiles) and 0 <= col < len(game_map.tiles[0])):
             return
         tile = game_map.tiles[row][col]
+        # Mark selected tile for eyedropper feedback
+        self.editor_state.eyedropper_flash_start = pygame.time.get_ticks()
+        self.editor_state.selected_tile = tile
         code = tile.overlay_code or tile.tile_type or "#"
         asset_name = OVERLAY_CODE_MAP.get(code) or DEFAULT_TILE_MAP.get(code) or DEFAULT_TILE_MAP.get('#')
         if not asset_name:

@@ -29,6 +29,8 @@ class TileEditorState:
         self.collision_panel_state = TilesCollisionPanelState()
         self.layers_panel_state = LayersPanelState()
         self.size_panel_state = SizePanelState()
+        # Timestamp para flash de eyedropper
+        self.eyedropper_flash_start = None
 
     def clone(self):
         """
