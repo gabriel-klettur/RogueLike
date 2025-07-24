@@ -20,7 +20,17 @@ class TilesCollisionPanelEventHandler:
         Devuelve True si el evento fue consumido.
         """
         if ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
-            return self._select_collision(ev.pos)
+            # Selección de colisión
+            if self._select_collision(ev.pos):
+                return True
+            # Consumir clicks dentro del panel para evitar propagación
+            toolbar_state = self.controller.editor_state.toolbar_state
+            pos0, pos1 = toolbar_state.collision_picker_pos or (0, 0)
+            w, h = toolbar_state.collision_picker_panel_size
+            panel_rect = pygame.Rect(pos0, pos1, w, h)
+            if panel_rect.collidepoint(ev.pos):
+                return True
+            return False
 
         if ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 3:
             return self._start_drag(ev.pos)

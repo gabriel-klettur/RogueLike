@@ -1,5 +1,8 @@
 import pygame
 from roguelike_editors.tiles.tiles_editor_config import THUMB, PAD, CLR_SELECTION, CLR_HOVER
+from roguelike_ui.panel import DraggablePanel
+from roguelike_ui.widgets.hover import draw_selection_border
+from roguelike_ui.ui_helpers import draw_highlight_rect
 
 
 class TilesCollisionPanelView:
@@ -12,29 +15,36 @@ class TilesCollisionPanelView:
         self.controller = controller
         self.state = state
         self.options = [("#", "Collision"), (".", "Walk")]
+        self.panel = DraggablePanel(1, 1, bgcolor=(20, 20, 20, 200))
 
     def render(self, screen):
         """
         Dibuja el panel completo con sombras, fondo y opciones.
         """
+        ts = self.controller.editor_state.toolbar_state
+        if not ts.collision_picker_open:
+            return
+
+        # Calcular dimensiones y ajustar panel
         w, h = self._compute_dimensions(screen)
-        pos_x, pos_y = self._compute_position(screen, w, h)
-        self._store_panel_state(pos_x, pos_y, w, h)
+        self.panel.resize(w, h)
 
-        self.state.option_rects.clear()
+        # Posicionar panel
+        pos_x, pos_y = self._ensure_panel_position(screen, w, h)
 
-        # Sombra y fondo
+        # Sombra
         self._draw_shadow(screen, pos_x, pos_y, w, h)
-        panel_surf = self._create_background_surface(w, h)
 
-        # Opciones de colisión (# y .)
-        self._render_options(panel_surf, pos_x, pos_y)
+        # Dibujar panel
+
+
+        # Dibujar opciones
+        self.state.option_rects.clear()
+        self._render_options(self.panel.surface, pos_x, pos_y)
 
         # Borde exterior
-        pygame.draw.rect(panel_surf, CLR_SELECTION, panel_surf.get_rect(), 3)
-
-        # Blit final
-        screen.blit(panel_surf, (pos_x, pos_y))
+        draw_selection_border(self.panel.surface, self.panel.surface.get_rect(), CLR_SELECTION, thickness=3)
+        screen.blit(self.panel.surface, (pos_x, pos_y))
 
     def _compute_dimensions(self, screen):
         """
@@ -84,6 +94,15 @@ class TilesCollisionPanelView:
         """
         ts = self.controller.editor_state.toolbar_state
         ts.collision_picker_panel_size = (w, h)
+
+    def _ensure_panel_position(self, screen, w, h):
+        """
+        Calcula y asigna la posición del panel usando toolbar_state o icono.
+        """
+        pos_x, pos_y = self._compute_position(screen, w, h)
+        self.panel.pos = (pos_x, pos_y)
+        self._store_panel_state(pos_x, pos_y, w, h)
+        return pos_x, pos_y
 
     def _draw_shadow(self, screen, x, y, w, h):
         """

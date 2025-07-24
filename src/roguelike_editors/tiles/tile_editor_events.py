@@ -134,6 +134,9 @@ class TileEditorEventHandler:
         # Handle size panel clicks
         if self.size_panel_tool.handle_event(ev):
             return
+        # Collision panel: interceptar clicks para evitar propagación al mapa
+        if self.editor_state.toolbar_state.collision_picker_open and self.collision_panel_tool.handle_event(ev):
+            return
 
         tool = self.editor_state.current_tool
         # Delete tool action: delete tile at clicked position
