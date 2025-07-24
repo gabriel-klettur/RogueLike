@@ -51,20 +51,8 @@ def handle_keyboard(event, state, camera, clock, menu, entities, tiles_editor, b
 
         # ---------- TILE-EDITOR (F8) --------- #
         elif event.key == pygame.K_F8:
-            # Alternamos el flag global (ya existe en state)
-            new_val = not tiles_editor.editor_state.active
-            tiles_editor.editor_state.active = new_val
-
-            # Sincronizamos el estado interno del editor
-            tiles_editor.editor_state.active = new_val            
-
-            # Al cerrar, limpiamos sub-estado
-            if not new_val:
-                state.tile_editor_state.picker_open    = False
-                state.tile_editor_state.selected_tile  = None
-                state.tile_editor_state.current_choice = None
-
-            print("🟩 Tile-Editor ON" if new_val else "🟥 Tile-Editor OFF")
+            # Alternar Tile Editor con lógica del manager
+            tiles_editor.toggle()
             return  # evitamos más atajos este frame
 
         elif event.key == pygame.K_F11:
