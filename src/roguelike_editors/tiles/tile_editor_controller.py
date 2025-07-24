@@ -1,4 +1,3 @@
-
 import pygame
 
 from roguelike_engine.config.config_tiles import TILE_SIZE
@@ -50,8 +49,6 @@ class TileEditorController:
         tile = self._tile_under_mouse(mouse_pos, camera, map)
         if tile:
             self.editor.selected_tile = tile
-            # Abrir paleta de selección de tiles
-            self.picker.open()
 
     def apply_brush(self, mouse_pos, camera, map):
         """
