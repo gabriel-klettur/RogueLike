@@ -12,16 +12,19 @@ class LayersPanelView:
         # Render layers panel as popup menu
 
         font = pygame.font.SysFont("Arial", 14)
-        # Panel position (draggable override or below Tiles View Panel & right of toolbar)
+        # Panel position (aligned with Layers button icon)
         if self.state.pos is not None:
             x0, y0 = self.state.pos
         else:
-            vp_state = self.controller.editor_state.view_panel_state
-            if hasattr(vp_state, 'pos') and hasattr(vp_state, 'size') and vp_state.pos and vp_state.size:
-                x0 = vp_state.pos[0]
-                y0 = vp_state.pos[1] + vp_state.size[1] + PAD
+            toolbar = self.controller.editor_controller.toolbar
+            icon_rect = toolbar.icon_rects.get("view_layers")
+            if icon_rect:
+                x0 = icon_rect.right + toolbar.padding
+                y0 = icon_rect.y
             else:
-                x0, y0 = 20, 60
+                # fallback next to toolbar
+                x0 = toolbar.x + toolbar.size + PAD
+                y0 = toolbar.y
         # Clear previous rects
         self.state.option_rects.clear()
         # Render layer toggles

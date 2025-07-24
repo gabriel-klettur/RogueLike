@@ -7,13 +7,20 @@ class TilesTilesView:
         self.state = state
 
     def render(self, screen):
-        # Render title panel UI
-        font = pygame.font.SysFont("Arial", 18, bold=True)
-        # background
-        text = self.state.title or "Title"
-        text_surf = font.render(text, True, (255, 255, 255))
-        x, y = 20, 10
-        padding = 5
-        bg_rect = pygame.Rect(x - padding, y - padding, text_surf.get_width() + padding * 2, text_surf.get_height() + padding * 2)
-        pygame.draw.rect(screen, (30, 30, 30), bg_rect)
-        screen.blit(text_surf, (x, y))
+        # Professional semi-transparent title panel
+        # Ensure default title
+        title_text = self.state.title or "TILES EDITOR"
+        font = pygame.font.SysFont("Arial", 24, bold=True)
+        text_surf = font.render(title_text, True, (255, 255, 255))
+        padding_x, padding_y = 12, 8
+        x, y = 10, 10
+        bg_w = text_surf.get_width() + padding_x * 2
+        bg_h = text_surf.get_height() + padding_y * 2
+        # Create semi-transparent background surface
+        bg_surf = pygame.Surface((bg_w, bg_h), pygame.SRCALPHA)
+        bg_surf.fill((0, 0, 0, 180))
+        # Draw semi-transparent border
+        pygame.draw.rect(bg_surf, (255, 255, 255, 200), bg_surf.get_rect(), 2, border_radius=6)
+        # Blit background and text
+        screen.blit(bg_surf, (x, y))
+        screen.blit(text_surf, (x + padding_x, y + padding_y))

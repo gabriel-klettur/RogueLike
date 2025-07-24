@@ -34,7 +34,7 @@ class TileEditorController:
         self.view_panel_controller =        TilesViewPanelController(self, editor_state.view_panel_state)
         self.title_controller =             TilesTitleController(editor_state, editor_state.title_state)
         self.collision_panel_controller =   TilesCollisionPanelController(self, editor_state.collision_panel_state)
-        self.layers_panel_controller =      LayersPanelController(editor_state, editor_state.layers_panel_state)
+        self.layers_panel_controller =      LayersPanelController(self, editor_state.layers_panel_state)
         self.size_panel_controller =        SizePanelController(self, editor_state.size_panel_state)
         self.outline_view =                 TileOutlineView(self, editor_state)
         

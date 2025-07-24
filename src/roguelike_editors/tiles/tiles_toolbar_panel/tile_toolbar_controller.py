@@ -32,7 +32,7 @@ class TileToolbarController:
 
         # Layout
         self.x = 10
-        self.y = 10
+        self.y = 70  # Shifted downward
         self.size = 64
         self.padding = 8
 
