@@ -12,6 +12,7 @@ class SizePanelView:
     def render(self, screen):
         if not self.state.visible:
             return
+        mouse_pos = pygame.mouse.get_pos()
         font = pygame.font.SysFont("Arial", 14)
         # Panel position (draggable override or right of toolbar panel)
         if self.state.pos is not None:
@@ -34,6 +35,11 @@ class SizePanelView:
                 text_color = (255, 255, 255)
             pygame.draw.rect(screen, bg_color, rect)
             pygame.draw.rect(screen, CLR_BORDER, rect, 2)
+            # Hover overlay for size options
+            if rect.collidepoint(mouse_pos):
+                hover_surf = pygame.Surface((BTN_W, BTN_H), pygame.SRCALPHA)
+                hover_surf.fill((255, 255, 0, 100))
+                screen.blit(hover_surf, rect.topleft)
             text = font.render(f"{w}x{h}", True, text_color)
             ty = ry + (BTN_H - text.get_height()) // 2
             screen.blit(text, (x0 + PAD, ty))

@@ -11,6 +11,7 @@ class LayersPanelView:
     def render(self, screen):
         # Render layers panel as popup menu
 
+        mouse_pos = pygame.mouse.get_pos()
         font = pygame.font.SysFont("Arial", 14)
         # Panel position (aligned with Layers button icon)
         if self.state.pos is not None:
@@ -35,6 +36,11 @@ class LayersPanelView:
             visible = self.state.visible_layers.get(layer, False)
             border = (0, 255, 0) if visible else (255, 0, 0)
             pygame.draw.rect(screen, border, rect, 2)
+            # Hover overlay for layer options
+            if rect.collidepoint(mouse_pos):
+                hover_surf = pygame.Surface((BTN_W, BTN_H), pygame.SRCALPHA)
+                hover_surf.fill((255, 255, 0, 100))
+                screen.blit(hover_surf, rect.topleft)
             text = font.render(layer.name, True, (255, 255, 255))
             ty = ry + (BTN_H - text.get_height()) // 2
             screen.blit(text, (x0 + 5, ty))
@@ -46,6 +52,11 @@ class LayersPanelView:
         sb = self.controller.editor_state.toolbar_state.show_buildings
         border = (128, 0, 128) if sb else (255, 0, 0)
         pygame.draw.rect(screen, border, rect, 2)
+        # Hover overlay for building toggle
+        if rect.collidepoint(mouse_pos):
+            hover_surf = pygame.Surface((BTN_W, BTN_H), pygame.SRCALPHA)
+            hover_surf.fill((255, 255, 0, 100))
+            screen.blit(hover_surf, rect.topleft)
         text = font.render("Buildings", True, (255, 255, 255))
         ty = ry + (BTN_H - text.get_height()) // 2
         screen.blit(text, (x0 + 5, ty))
