@@ -1,5 +1,8 @@
 import pygame
 from roguelike_editors.tiles.tiles_editor_config import BTN_W, BTN_H, PAD, CLR_SELECTION, CLR_BORDER
+from roguelike_ui.panel import DraggablePanel
+from roguelike_ui.widgets.button import Button
+from roguelike_ui.widgets.hover import draw_selection_border
 
 
 class SizePanelView:
@@ -10,6 +13,7 @@ class SizePanelView:
     def __init__(self, controller, state):
         self.controller = controller
         self.state = state
+        self.panel = DraggablePanel(BTN_W, BTN_H)
 
     def render(self, screen):
         """
@@ -21,60 +25,62 @@ class SizePanelView:
         mouse_pos = pygame.mouse.get_pos()
         font = pygame.font.SysFont("Arial", 14)
 
-        x0, y0 = self._get_panel_position()
+        # Ajustar tamaño del panel
+        panel_height = len(self.state.sizes) * BTN_H
+        self.panel.resize(BTN_W, panel_height)
+
+        # Asegurar posición del panel
+        self._ensure_panel_position()
+        x0, y0 = self.panel.pos
+
+        # Dibujar fondo del panel
+        screen.blit(self.panel.surface, self.panel.pos)
+
+        # Resetear rects clicables
         self.state.option_rects.clear()
 
-        # Render de cada opción de tamaño
-        self._render_size_options(screen, mouse_pos, font, x0, y0)
+        # Renderizar opciones de tamaño con botones
+        self._render_size_buttons(screen, mouse_pos, font, x0, y0)
 
-        # Borde exterior
-        total_height = len(self.state.sizes) * BTN_H
-        border_rect = pygame.Rect(x0, y0, BTN_W, total_height)
-        pygame.draw.rect(screen, CLR_SELECTION, border_rect, 3)
+        # Dibujar borde de selección alrededor del panel
+        border_rect = pygame.Rect(x0, y0, BTN_W, panel_height)
+        draw_selection_border(screen, border_rect, CLR_SELECTION, thickness=3)
 
-    def _get_panel_position(self):
+    def _ensure_panel_position(self):
         """
-        Calcula la posición inicial del panel (override draggable o junto a toolbar).
+        Calcula y asigna la posición inicial del panel si no existe.
         """
-        if self.state.pos is not None:
-            return self.state.pos
+        if self.state.pos is None:
+            toolbar = self.controller.editor_controller.toolbar
+            x0 = toolbar.x + toolbar.size + toolbar.padding
+            y0 = toolbar.y
+            self.state.pos = (x0, y0)
+        self.panel.pos = self.state.pos
 
-        toolbar = self.controller.editor_controller.toolbar
-        x0 = toolbar.x + toolbar.size + toolbar.padding
-        y0 = toolbar.y
-        self.state.pos = (x0, y0)
-        return x0, y0
-
-    def _render_size_options(self, screen, mouse_pos, font, x0, y0):
+    def _render_size_buttons(self, screen, mouse_pos, font, x0, y0):
         """
-        Dibuja cada botón de tamaño, aplica hover y selección.
+        Dibuja los botones de tamaño usando Button de roguelike_ui.
         """
         for idx, (w, h) in enumerate(self.state.sizes):
             rect = pygame.Rect(x0, y0 + idx * BTN_H, BTN_W, BTN_H)
             is_selected = idx == self.state.selected_index
 
-            self._draw_option_button(screen, rect, is_selected, f"{w}x{h}", mouse_pos, font)
+            # Configurar botón
+            btn = Button(
+                rect,
+                bgcolor=CLR_SELECTION if is_selected else (20, 20, 20),
+                border_color=CLR_SELECTION if is_selected else CLR_BORDER,
+                hover_color=(255, 255, 0, 100),
+                border_width=2
+            )
+            btn.is_hovered(mouse_pos)
+            btn.draw(screen)
+
+            # Texto centrado verticalmente
+            text_color = (0, 0, 0) if is_selected else (255, 255, 255)
+            text_surf = font.render(f"{w}x{h}", True, text_color)
+            text_x = rect.x + PAD
+            text_y = rect.y + (BTN_H - text_surf.get_height()) // 2
+            screen.blit(text_surf, (text_x, text_y))
+
             self.state.option_rects[idx] = rect
-
-    def _draw_option_button(self, screen, rect, selected, label, mouse_pos, font):
-        """
-        Dibuja un botón con estado seleccionado y hover overlay.
-        """
-        bg_color = CLR_SELECTION if selected else (20, 20, 20)
-        text_color = (0, 0, 0) if selected else (255, 255, 255)
-
-        # Fondo y borde
-        pygame.draw.rect(screen, bg_color, rect)
-        pygame.draw.rect(screen, CLR_BORDER, rect, 2)
-
-        # Overlay de hover
-        if rect.collidepoint(mouse_pos):
-            hover_surf = pygame.Surface((BTN_W, BTN_H), pygame.SRCALPHA)
-            hover_surf.fill((255, 255, 0, 100))
-            screen.blit(hover_surf, rect.topleft)
-
-        # Texto centrado verticalmente
-        text_surf = font.render(label, True, text_color)
-        text_x = rect.x + PAD
-        text_y = rect.y + (BTN_H - text_surf.get_height()) // 2
-        screen.blit(text_surf, (text_x, text_y))
