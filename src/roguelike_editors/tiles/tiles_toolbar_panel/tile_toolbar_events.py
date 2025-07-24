@@ -110,10 +110,13 @@ class TileToolbarEventHandler:
         return True
 
     def _handle_select(self, tool_name, map):
-        """Selecciona la herramienta indicada y cierra el selector si es "select"."""
+        """Selecciona la herramienta indicada y cierra el selector si es "select". Eyedropper mantiene Tiles View Panel."""
+        ts = self.controller.editor_state.toolbar_state
         self.controller.editor_state.current_tool = tool_name
         if tool_name == "select":
             self.controller.editor_state.picker_state.open = False
+        if tool_name == "eyedropper":
+            ts.view_active = True
         return True
 
     def _handle_brush(self, tool_name, map):

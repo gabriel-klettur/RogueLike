@@ -78,7 +78,8 @@ class TilesViewPanelView:
             x0, y0 = self.state.pos
         else:
             # On brush or select mode, align top-right corner
-            if self.controller.editor_state.current_tool in ("brush", "select"):
+            # Align in top-right for brush, select, or eyedropper modes
+            if self.controller.editor_state.current_tool in ("brush", "select", "eyedropper"): 
                 sw, sh = screen.get_size()
                 x0 = sw - panel_w - margin_x
                 y0 = margin_y
