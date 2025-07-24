@@ -125,13 +125,21 @@ class TileToolbarEventHandler:
             if ts.collision_picker_open:
                 self.controller.editor_state.picker_state.open = False
         else:
-            # Alternar panel de tamaño de pincel
-            self.controller.editor_controller.size_panel_controller.toggle()
-            visible = self.controller.editor_controller.size_panel_controller.state.visible
-            # Sincronizar picker de tiles con el estado del panel
-            self.controller.editor_state.picker_state.open = visible
-            # Mantener o deseleccionar brush según visibilidad
-            self.controller.editor_state.current_tool = "brush" if visible else "select"
+            # Si venimos de otra herramienta, inicializar brush limpiamente
+            if self.controller.editor_state.current_tool != tool_name:
+                # Activar brush y mostrar paneles
+                self.controller.editor_state.current_tool = tool_name
+                self.controller.editor_controller.size_panel_controller.show()
+                self.controller.editor_state.picker_state.open = True
+                self.controller.editor_state.toolbar_state.view_active = True
+            else:
+                # Alternar panel de tamaño de pincel
+                self.controller.editor_controller.size_panel_controller.toggle()
+                visible = self.controller.editor_controller.size_panel_controller.state.visible
+                # Sincronizar picker de tiles con el estado del panel
+                self.controller.editor_state.picker_state.open = visible
+                # Mantener brush o volver a select según visibilidad
+                self.controller.editor_state.current_tool = tool_name if visible else "select"
         return True
 
     def handle_event(self, ev):
