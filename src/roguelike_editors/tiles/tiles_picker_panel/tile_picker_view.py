@@ -123,7 +123,19 @@ class TilePickerView:
         cfg_bw = cfg_txt_surf.get_width() + PAD*2
         cfg_x = PAD
         cfg_rect = pygame.Rect(cfg_x, PAD + h_grid, cfg_bw, BTN_H)
-        self._draw_button(cfg_rect, cfg_text)
+        # Draw button background
+        pygame.draw.rect(self.picker_state.surface, (60, 60, 60), cfg_rect)
+        # Hover overlay for Configurar Posición Tiles button
+        mouse_pos = pygame.mouse.get_pos()
+        pos_x, pos_y = self.picker_state.pos or (0, 0)
+        local_mouse = (mouse_pos[0] - pos_x, mouse_pos[1] - pos_y)
+        if cfg_rect.collidepoint(local_mouse):
+            hover_surf = pygame.Surface((cfg_rect.width, cfg_rect.height), pygame.SRCALPHA)
+            hover_surf.fill((255, 255, 0, 100))
+            self.picker_state.surface.blit(hover_surf, (cfg_rect.x, cfg_rect.y))
+        # Border and text
+        pygame.draw.rect(self.picker_state.surface, CLR_BORDER, cfg_rect, 1)
+        self.picker_state.surface.blit(cfg_txt_surf, cfg_txt_surf.get_rect(center=cfg_rect.center))
         self.picker_state.btn_config_rect = cfg_rect
         if self.picker_state.config_mode:
             pygame.draw.rect(self.picker_state.surface, CLR_SELECTION, cfg_rect, 3)
@@ -173,6 +185,15 @@ class TilePickerView:
         start = w - PAD - total
         # checkbox
         cr = pygame.Rect(start, y_cb, cb, cb)
+        # Hover overlay for Tileset checkbox
+        mouse_pos = pygame.mouse.get_pos()
+        pos_x, pos_y = self.picker_state.pos or (0, 0)
+        local_mouse = (mouse_pos[0] - pos_x, mouse_pos[1] - pos_y)
+        if cr.collidepoint(local_mouse):
+            hover_surf = pygame.Surface((cr.width, cr.height), pygame.SRCALPHA)
+            hover_surf.fill((255, 255, 0, 100))
+            self.picker_state.surface.blit(hover_surf, (cr.x, cr.y))
+        # Draw checkbox border
         pygame.draw.rect(self.picker_state.surface, CLR_BORDER, cr, 1)
         if self.picker_state.tileset_filter:
             pygame.draw.line(self.picker_state.surface, CLR_SELECTION, (start+3, y_cb+3), (start+cb-3, y_cb+cb-3), 2)
