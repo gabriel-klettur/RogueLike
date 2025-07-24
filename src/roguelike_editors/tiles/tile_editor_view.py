@@ -34,8 +34,8 @@ class TileEditorView:
             
         # Outline 
         self.controller.outline_view.render(screen, camera, map)
-        # Indicator of current layer in brush mode (professional design)
-        if self.editor.current_tool == "brush":
+        # Indicator of current layer (always visible while editor active)
+        if self.editor.active:
             layer = self.editor.current_layer
             label = f"{layer.value}: {layer.name}"
             font = pygame.font.SysFont("Arial", 24, bold=True)
