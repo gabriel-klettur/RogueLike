@@ -57,6 +57,8 @@ class TileToolbarEventHandler:
                     ts.layers_view_open = False
                 else:
                     self.controller.editor_state.current_tool = tool
+                    if tool == "select":
+                        self.controller.editor_state.picker_state.open = False
 
                 if tool == "brush":
                     if ts.show_collisions or ts.show_collisions_overlay:
