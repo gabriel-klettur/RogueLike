@@ -67,7 +67,7 @@ class TileToolbarController:
             camera: Cámara usada para conversión de coordenadas.
             game_map: Instancia del mapa de juego.
         """
-        row, col = screen_to_tile(mouse_pos, camera)
+        col, row = screen_to_tile(mouse_pos, camera)
         if not self._in_bounds(row, col, game_map):
             return
         tile = game_map.tiles[row][col]

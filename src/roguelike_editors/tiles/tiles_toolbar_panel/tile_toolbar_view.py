@@ -1,86 +1,98 @@
-# roguelike_game/systems/editor/tiles/view/tools/tile_toolbar_view.py
 import pygame
 from roguelike_editors.tiles.tiles_editor_config import TOOLS, BTN_W, BTN_H, THUMB, PAD, CLR_SELECTION, CLR_HOVER
-from roguelike_engine.map.model.layer import Layer
+
 
 class TileToolbarView:
+    """
+    Vista de la barra de herramientas de tiles.
+
+    Separa responsabilidades de cálculo de posición, renderizado de iconos,
+    aplicación de hover y resaltado de herramienta activa.
+    """
     def __init__(self, toolbar):
+        """
+        Args:
+            toolbar: Controlador asociado que provee estado y assets.
+        """
         self.toolbar = toolbar
 
     def render(self, screen):
-        # Capture mouse for hover overlay
-        mouse_pos = pygame.mouse.get_pos()
+        """
+        Dibuja la toolbar en pantalla, con soporte para:
+        - Posicionamiento arrastrable.
+        - Íconos de herramientas.
+        - Overlay de hover.
+        - Borde de selección para herramienta activa.
 
-        # Panel position (draggable override or default)
+        Args:
+            screen: Superficie de pygame donde dibujar.
+        """
+        mouse_pos = pygame.mouse.get_pos()
+        x0, y0 = self._get_panel_position()
+
+        for idx, tool in enumerate(TOOLS):
+            rect = self._compute_icon_rect(x0, y0, idx)
+            self.toolbar.icon_rects[tool] = rect
+            self._draw_icon(screen, tool, rect)
+            self._draw_hover(screen, rect, mouse_pos)
+            self._draw_selection_border(screen, tool, rect)
+
+    def _get_panel_position(self) -> tuple[int, int]:
+        """
+        Obtiene la posición actual de la toolbar, priorizando
+        el estado draggable y fallback a coordenadas por defecto.
+
+        Returns:
+            Tupla (x0, y0) de la posición superior izquierda.
+        """
         ts = self.toolbar.editor_state.toolbar_state
         if ts.pos is not None:
-            x0, y0 = ts.pos
+            return ts.pos
+        return self.toolbar.x, self.toolbar.y
+
+    def _compute_icon_rect(self, x0: int, y0: int, idx: int) -> pygame.Rect:
+        """
+        Calcula el rectángulo de colisión y dibujo para el icono en la posición idx.
+        """
+        size = self.toolbar.size
+        padding = self.toolbar.padding
+        px = x0
+        py = y0 + idx * (size + padding)
+        return pygame.Rect(px, py, size, size)
+
+    def _draw_icon(self, screen, tool: str, rect: pygame.Rect):
+        """
+        Renderiza la imagen del icono de la herramienta.
+        """
+        screen.blit(self.toolbar.icons[tool], rect.topleft)
+
+    def _draw_hover(self, screen, rect: pygame.Rect, mouse_pos: tuple[int,int]):
+        """
+        Dibuja un overlay semitransparente al pasar el ratón sobre un icono.
+        """
+        if rect.collidepoint(mouse_pos):
+            hover = pygame.Surface(rect.size, pygame.SRCALPHA)
+            hover.fill((255, 255, 0, 100))
+            screen.blit(hover, rect.topleft)
+
+    def _draw_selection_border(self, screen, tool: str, rect: pygame.Rect):
+        """
+        Dibuja un borde amarillo si la herramienta está activa o tiene estado toggled.
+        """
+        state = self.toolbar.editor_state.toolbar_state
+        current = self.toolbar.editor_state.current_tool
+
+        # Determina si debe resaltarse según la herramienta
+        if tool == "view":
+            active = state.view_active
+        elif tool == "view_layers":
+            active = state.layers_view_open
+        elif tool == "view_collisions":
+            active = state.show_collisions or state.show_collisions_overlay
+        elif tool == "brush":
+            active = (current == "brush" and not (state.show_collisions or state.show_collisions_overlay))
         else:
-            x0, y0 = self.toolbar.x, self.toolbar.y
-        for idx, tool in enumerate(TOOLS):
-            px = x0
-            py = y0 + idx * (self.toolbar.size + self.toolbar.padding)
-            rect = pygame.Rect(px, py, self.toolbar.size, self.toolbar.size)
-            self.toolbar.icon_rects[tool] = rect
-            screen.blit(self.toolbar.icons[tool], (px, py))
-            # Hover overlay for toolbar icons
-            if rect.collidepoint(mouse_pos):
-                hover_surf = pygame.Surface((self.toolbar.size, self.toolbar.size), pygame.SRCALPHA)
-                hover_surf.fill((255, 255, 0, 100))
-                screen.blit(hover_surf, (px, py))
-            # Yellow border for active tool or collisions mode
-            if tool == "view":
-                # Highlight when Tiles View Panel is active
-                color = CLR_SELECTION if self.toolbar.editor_state.toolbar_state.view_active else (255, 255, 255)
-            elif tool == "view_layers":
-                # Highlight when Layers Panel is open
-                color = CLR_SELECTION if self.toolbar.editor_state.toolbar_state.layers_view_open else (255, 255, 255)
-            elif tool == "view_collisions":
-                # Highlight when collision mode is active
-                color = CLR_SELECTION if (self.toolbar.editor_state.toolbar_state.show_collisions or self.toolbar.editor_state.toolbar_state.show_collisions_overlay) else (255, 255, 255)
-            elif tool == "brush":
-                # Highlight when brush is active (overlay brush)
-                ts = self.toolbar.editor_state.toolbar_state
-                active_brush = (self.toolbar.editor_state.current_tool == "brush" and not (ts.show_collisions or ts.show_collisions_overlay))
-                color = CLR_SELECTION if active_brush else (255, 255, 255)
-            else:
-                color = CLR_SELECTION if self.toolbar.editor_state.current_tool == tool else (255, 255, 255)
-            pygame.draw.rect(screen, color, rect, 4)
+            active = (current == tool)
 
-
-        # Collision picker UI
-        if False and self.toolbar.editor_state.toolbar_state.collision_picker_open:
-            options = [("#", "Collision"), (".", "Walk")]
-            w = len(options) * (THUMB + PAD) + PAD
-            label_font = pygame.font.SysFont("Arial", 14)
-            char_font = pygame.font.SysFont("Arial", THUMB)
-            h = THUMB + PAD + label_font.get_height() + PAD
-            mouse_pos = pygame.mouse.get_pos()
-            surf = pygame.Surface((w, h), pygame.SRCALPHA)
-            surf.fill((20, 20, 20, 235))
-            sw, sh = screen.get_size()
-            if self.toolbar.editor_state.toolbar_state.collision_picker_pos is None:
-                pos_x = (sw - w) // 2
-                pos_y = (sh - h) // 2
-                self.toolbar.editor_state.toolbar_state.collision_picker_pos = (pos_x, pos_y)
-            else:
-                pos_x, pos_y = self.toolbar.editor_state.toolbar_state.collision_picker_pos
-            self.toolbar.editor_state.toolbar_state.collision_picker_panel_size = (w, h)
-            self.toolbar.editor_state.toolbar_state.collision_picker_rects.clear()
-            for i, (ch, label) in enumerate(options):
-                x = PAD + i * (THUMB + PAD)
-                y = PAD
-                color = (255, 0, 0) if ch == "#" else (200, 200, 200)
-                text_surf = char_font.render(ch, True, color)
-                surf.blit(text_surf, (x + (THUMB - text_surf.get_width()) // 2,
-                                      y + (THUMB - text_surf.get_height()) // 2))
-                abs_rect = pygame.Rect(pos_x + x, pos_y + y, THUMB, THUMB)
-                self.toolbar.editor_state.toolbar_state.collision_picker_rects[ch] = abs_rect
-                if abs_rect.collidepoint(mouse_pos):
-                    pygame.draw.rect(surf, CLR_HOVER, (x, y, THUMB, THUMB), 3)
-                elif self.toolbar.editor_state.toolbar_state.collision_choice == ch:
-                    pygame.draw.rect(surf, CLR_SELECTION, (x, y, THUMB, THUMB), 3)
-                lbl_surf = label_font.render(label, True, (255, 255, 255))
-                surf.blit(lbl_surf, (x + (THUMB - lbl_surf.get_width()) // 2,
-                                     y + THUMB + PAD))
-            screen.blit(surf, (pos_x, pos_y))
+        color = CLR_SELECTION if active else (255, 255, 255)
+        pygame.draw.rect(screen, color, rect, 4)
