@@ -213,7 +213,7 @@ class TilesViewPanelView:
         if current in ("brush", "select", "eyedropper", "delete", "default"):
             return sw - panel_w - margin, margin
         # Si no, al lado de la toolbar
-        tb = self.controller.editor_controller.toolbar
+        tb = self.controller.toolbar
         return tb.x + tb.size + tb.padding, tb.y
 
     def _create_panel_surface(self, w, h):
