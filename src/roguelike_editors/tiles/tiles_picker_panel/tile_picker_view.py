@@ -75,49 +75,44 @@ class TilePickerView:
         ly = my - py
         return lx, ly, y0
 
-    def _draw_assets_grid(self, lx, ly, y0, cols, h_grid):
-        """Draw thumbnails grid, highlight hover/selection, return hovered value and orig size."""
-        hovered_value = None
-        hovered_orig_size = None
-        for idx, (value, thumb, is_dir, orig_size) in enumerate(self.assets):
-            row, col = divmod(idx, cols)
-            x = PAD + col * (THUMB + PAD)
-            y = y0 + row * (THUMB + PAD)
-            rect = pygame.Rect(x, y, THUMB, THUMB)
-            if rect.bottom < PAD or rect.top > h_grid:
-                continue
-            self.panel.surface.blit(thumb, rect)
+    def _draw_assets_grid(self, grid):
+        """Use ScrollableGrid to draw assets, return hovered and orig size."""
+        panel_pos = self.panel.pos or (0, 0)
+
+        def draw_fn(surf, rect, asset, idx):
+            value, thumb, is_dir, orig_size = asset
+            surf.blit(thumb, rect)
+            mx, my = pygame.mouse.get_pos()
+            lx, ly = mx - panel_pos[0], my - panel_pos[1]
             if self.picker_state.config_mode:
-                # Config mode: highlight source and hover
                 if idx == self.picker_state.config_src_idx:
-                    pygame.draw.rect(self.panel.surface, CONFIG_SELECTED_COLOR, rect, 3)
+                    pygame.draw.rect(surf, CONFIG_SELECTED_COLOR, rect, 3)
                 elif rect.collidepoint((lx, ly)):
-                    hovered_value = value
-                    hovered_orig_size = orig_size
-                    # Hover overlay for config grid items
-                    hover_surf = pygame.Surface((THUMB, THUMB), pygame.SRCALPHA)
-                    hover_surf.fill((255, 255, 0, 100))
-                    self.panel.surface.blit(hover_surf, (rect.x, rect.y))
-                    pygame.draw.rect(self.panel.surface, CONFIG_HOVER_COLOR, rect, 3)
+                    s = pygame.Surface((THUMB, THUMB), pygame.SRCALPHA)
+                    s.fill((255, 255, 0, 100))
+                    surf.blit(s, rect.topleft)
+                    pygame.draw.rect(surf, CONFIG_HOVER_COLOR, rect, 3)
                 elif self.picker_state.current_choice == value:
-                    pygame.draw.rect(self.panel.surface, CLR_SELECTION, rect, 3)
+                    pygame.draw.rect(surf, CLR_SELECTION, rect, 3)
             else:
                 if rect.collidepoint((lx, ly)):
-                    hovered_value = value
-                    hovered_orig_size = orig_size
-                    # Hover overlay for grid items
-                    hover_surf = pygame.Surface((THUMB, THUMB), pygame.SRCALPHA)
-                    hover_surf.fill((255, 255, 0, 100))
-                    self.panel.surface.blit(hover_surf, (rect.x, rect.y))
-                    pygame.draw.rect(self.panel.surface, CLR_HOVER, rect, 3)
+                    s = pygame.Surface((THUMB, THUMB), pygame.SRCALPHA)
+                    s.fill((255, 255, 0, 100))
+                    surf.blit(s, rect.topleft)
+                    pygame.draw.rect(surf, CLR_HOVER, rect, 3)
                 elif self.picker_state.current_choice == value:
-                    pygame.draw.rect(self.panel.surface, CLR_SELECTION, rect, 3)
+                    pygame.draw.rect(surf, CLR_SELECTION, rect, 3)
             if is_dir and value != "..":
-                text = self._ellipsize(value, self.icon_font, THUMB - 4)
-                label = self.icon_font.render(text, True, (0, 0, 0))
-                label_rect = label.get_rect(center=(x + THUMB // 2, y + THUMB // 2))
-                self.panel.surface.blit(label, label_rect)
-        return hovered_value, hovered_orig_size
+                t = self._ellipsize(value, self.icon_font, THUMB - 4)
+                label = self.icon_font.render(t, True, (0, 0, 0))
+                surf.blit(label, label.get_rect(center=rect.center))
+
+        hovered_asset = grid.draw_items(self.panel.surface, self.assets, panel_pos, draw_fn)
+        if hovered_asset:
+            value, _, _, size = hovered_asset
+        else:
+            value, size = None, None
+        return value, size
 
     def _draw_toolbar_and_labels(self, hovered_value, hovered_orig_size, w, h_grid):
         """Draw delete/default buttons and display hovered/selected labels."""
@@ -243,9 +238,8 @@ class TilePickerView:
         self._init_panel(w, h)
         # Update state surface reference for event handling
         self.picker_state.surface = self.panel.surface
-        # Compute local coords and draw assets grid
-        lx, ly, y0 = self._get_local_coords()
-        hovered_value, hovered_orig_size = self._draw_assets_grid(lx, ly, y0, cols, h_grid)
+        # Draw assets grid via ScrollableGrid
+        hovered_value, hovered_orig_size = self._draw_assets_grid(grid)
         # Draw toolbar buttons and labels
         self._draw_toolbar_and_labels(hovered_value, hovered_orig_size, w, h_grid)
         # Draw close button
