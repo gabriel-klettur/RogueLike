@@ -8,6 +8,9 @@ from roguelike_editors.tiles.tiles_editor_config import (
 )
 from roguelike_engine.utils.loader import load_image
 from roguelike_engine.map.model.layer import Layer
+from roguelike_ui.panel import DraggablePanel
+from roguelike_ui.widgets.grid import ScrollableGrid
+from roguelike_ui.widgets.list_panel_ui import ListPanelUI
 
 
 class TilesViewPanelView:
@@ -30,6 +33,11 @@ class TilesViewPanelView:
         """
         self.controller = controller
         self.state = state
+        # Panel de vista usando roguelike_ui
+        self.panel = DraggablePanel(0, 0)
+        # Inicializar posición si existe estado
+        if self.state.pos:
+            self.panel.pos = self.state.pos
 
     def render(self, screen, camera, game_map):
         """
@@ -63,17 +71,44 @@ class TilesViewPanelView:
         x0, y0 = self._compute_panel_position(screen, panel_w, panel_h)
 
         # Dibujar panel de fondo y borde
-        panel_surf = self._create_panel_surface(panel_w, panel_h)
-        pygame.draw.rect(panel_surf, OUTLINE_CHOICE, panel_surf.get_rect(), 2)
+        # Usar panel de roguelike_ui
+        panel = self.panel
+        panel.resize(panel_w, panel_h)
+        pygame.draw.rect(panel.surface, OUTLINE_CHOICE, panel.surface.get_rect(), 2)
 
         # Renderizar filas de sprite
-        self._draw_sprite_rows(panel_surf, sprite_items, font, row_dims, x0, y0)
-        # Renderizar filas de layer
-        self._draw_layer_rows(panel_surf, layer_items, font, row_dims, x0, y0)
+        # Renderizar filas de sprite usando ScrollableGrid
+        padding = 6
+        margin_x, margin_y, spacing_y = 12, 12, 6
+        sprite_grid = ScrollableGrid(TILE_SIZE, padding, len(sprite_items), cols=1)
+        def draw_sprite_item(surf, rect, item, idx):
+            label, sprite, outline = item
+            if sprite:
+                surf.blit(sprite, rect.topleft)
+            pygame.draw.rect(surf, outline, rect, 2)
+            text = font.render(label, True, (245,245,245))
+            surf.blit(text, (rect.x + TILE_SIZE + padding, rect.y + (TILE_SIZE - text.get_height())//2))
+        sprite_grid.draw_items(panel.surface, sprite_items, (0, 0), draw_sprite_item)
+        # Renderizar filas de layer usando ListPanelUI
+        layer_labels = [f"{label}: {val}" for label, val in layer_items]
+        layer_list = ListPanelUI(font, margin=margin_x)
+        layer_list.set_items(layer_labels)
+        sprite_count = len(sprite_items)
+        sprite_heights = sum(row_dims['heights'][i] for i in range(sprite_count))
+        layer_area_y = margin_y + sprite_heights + spacing_y * sprite_count
+        layer_area_rect = pygame.Rect(margin_x, layer_area_y, panel_w - 2*margin_x, panel_h - layer_area_y - margin_y)
+        layer_list.draw(panel.surface, layer_area_rect)
 
         # Actualizar estado y blit final
         self.state.size = (panel_w, panel_h)
-        screen.blit(panel_surf, (x0, y0))
+        # Determinar posición
+        if self.state.pos:
+            panel.pos = self.state.pos
+        else:
+            panel.pos = self._compute_panel_position(screen, panel_w, panel_h)
+        # Actualizar estado y blit final
+        self.state.size = (panel_w, panel_h)
+        screen.blit(panel.surface, panel.pos)
 
     def _screen_to_world(self, mouse_pos, camera):
         """
@@ -175,7 +210,7 @@ class TilesViewPanelView:
         surf.fill((30, 30, 30, 220))
         return surf
 
-    def _draw_sprite_rows(self, panel_surf, sprite_rows, font, row_dims, screen_offset_x, screen_offset_y):
+    def _draw_sprite_rows(self, panel_surf, sprite_rows, font, row_dims):
         """
         Dibuja las filas de sprites (hovered, selected, choice).
         Cada fila muestra el sprite y su etiqueta con outline.
@@ -199,7 +234,7 @@ class TilesViewPanelView:
             panel_surf.blit(text_surf, (tx, ty))
             y += row_dims['heights'][i] + spacing_y
 
-    def _draw_layer_rows(self, panel_surf, layer_rows, font, row_dims, screen_offset_x, screen_offset_y):
+    def _draw_layer_rows(self, panel_surf, layer_rows, font, row_dims):
         """
         Dibuja las filas de layers con etiqueta y valor.
         """

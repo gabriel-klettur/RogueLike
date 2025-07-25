@@ -21,23 +21,15 @@ class TilesViewPanelEventHandler:
 
     def handle_event(self, ev, *args, **kwargs) -> bool:
         """
-        Procesa eventos de pygame para habilitar drag & drop con botón derecho.
-
-        - Inicia arrastre al presionar botón derecho sobre el panel.
-        - Mueve el panel mientras se arrastra.
-        - Finaliza arrastre al soltar el botón derecho.
-
-        Args:
-            ev: Evento de pygame recibido.
-        Returns:
-            True si el evento fue consumido, False en caso contrario.
+        Procesa eventos usando DraggablePanel para arrastre del panel de vista.
         """
-        if self._is_right_click_start(ev):
-            return self._start_drag(ev.pos)
-        if self._is_drag_motion(ev):
-            return self._perform_drag(ev.pos)
-        if self._is_right_click_end(ev):
-            return self._stop_drag()
+        panel = self.controller.view.panel
+        # Área completa del panel como zona draggable
+        header_rect = panel.surface.get_rect().move(panel.pos or (0, 0))
+        if panel.handle_event(ev, header_rect):
+            # Actualizar posición en el estado
+            self.state.pos = panel.pos
+            return True
         return False
 
     def _is_right_click_start(self, ev) -> bool:
