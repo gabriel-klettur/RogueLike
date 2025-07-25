@@ -89,15 +89,25 @@ class TilesViewPanelView:
             text = font.render(label, True, (245,245,245))
             surf.blit(text, (rect.x + TILE_SIZE + padding, rect.y + (TILE_SIZE - text.get_height())//2))
         sprite_grid.draw_items(panel.surface, sprite_items, (0, 0), draw_sprite_item)
-        # Renderizar filas de layer usando ListPanelUI
-        layer_labels = [f"{label}: {val}" for label, val in layer_items]
-        layer_list = ListPanelUI(font, margin=margin_x)
-        layer_list.set_items(layer_labels)
+        # Renderizar filas de layer manualmente con variables en negrita y color amarillo
         sprite_count = len(sprite_items)
         sprite_heights = sum(row_dims['heights'][i] for i in range(sprite_count))
         layer_area_y = margin_y + sprite_heights + spacing_y * sprite_count
-        layer_area_rect = pygame.Rect(margin_x, layer_area_y, panel_w - 2*margin_x, panel_h - layer_area_y - margin_y)
-        layer_list.draw(panel.surface, layer_area_rect)
+        x = margin_x
+        y = layer_area_y
+        label_color = (245, 245, 245)
+        value_color = (255, 255, 0)
+        bold_font = pygame.font.SysFont("Arial", 14, bold=True)
+        for label, val in layer_items:
+            # Render label
+            label_text = f"{label}:"
+            label_surf = font.render(label_text, True, label_color)
+            panel.surface.blit(label_surf, (x, y))
+            y += label_surf.get_height() + 2
+            # Render value
+            value_surf = bold_font.render(val, True, value_color)
+            panel.surface.blit(value_surf, (x, y))
+            y += value_surf.get_height() + spacing_y
 
         # Actualizar estado y blit final
         self.state.size = (panel_w, panel_h)
@@ -170,11 +180,15 @@ class TilesViewPanelView:
             h = max(TILE_SIZE, th)
             row_widths.append(w)
             row_heights.append(h)
-        # Layers
+        # Layers (labels and values stacked vertically)
         for label, val in layer_rows:
-            lw, lh = font.size(label)
+            # Measure label with colon
+            label_text = f"{label}:"
+            lw, lh = font.size(label_text)
             vw, vh = font.size(val)
-            w = lw + padding_x + vw
+            # Width is max of label and value widths
+            w = max(lw, vw)
+            # Height includes label height, value height, and spacing
             h = lh + vh + spacing_y
             row_widths.append(w)
             row_heights.append(h)
