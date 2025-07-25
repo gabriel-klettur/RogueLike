@@ -1,6 +1,6 @@
 import pygame
 from typing import Any
-from roguelike_editors.entities.model.editor_model import EntityEditorModel
+from roguelike_editors.entities.editor_model import EntityEditorModel
 
 class EntityEditorView:
     """Renderiza UI del editor de entidades: jugador y monstruos."""

@@ -2,7 +2,7 @@ import pygame
 from pathlib import Path
 from roguelike_ui.services.json_persistence import load_from_json
 from roguelike_engine.utils.loader import load_image
-from roguelike_editors.entities.controller.editor_controller import EntityEditorController
+from roguelike_editors.entities.editor_controller import EntityEditorController
 
 class EntitiesEditorManager:
     """

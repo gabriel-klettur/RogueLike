@@ -1,11 +1,11 @@
 import pygame
 pygame.font.init()
 from roguelike_ui.services.json_persistence import save_to_json, load_from_json
-from roguelike_editors.entities.model.editor_model import EntityEditorModel
-from roguelike_editors.entities.view.editor_view import EntityEditorView
+from roguelike_editors.entities.editor_model import EntityEditorModel
+from roguelike_editors.entities.editor_view import EntityEditorView
 from roguelike_ui.widgets.text_input import TextInput
 from roguelike_ui.widgets.double_click_detector import DoubleClickDetector
-from roguelike_editors.entities.events.entities_editor_events import EntitiesEditorEventHandler
+from roguelike_editors.entities.entities_editor_events import EntitiesEditorEventHandler
 import os
 
 
