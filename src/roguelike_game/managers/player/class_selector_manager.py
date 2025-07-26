@@ -1,6 +1,7 @@
 import pygame
 from roguelike_game.config.players_config import PLAYER_ASSETS
 
+
 class ClassSelectorManager:
     """
     Displays a class selection menu toggled by F2.

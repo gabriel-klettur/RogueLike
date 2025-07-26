@@ -21,7 +21,8 @@ from roguelike_game.managers.z_layer import ZLayerManager
 from types import SimpleNamespace
 
 from roguelike_game.managers.menu import MenuManager
-from roguelike_game.managers.class_selector_manager import ClassSelectorManager
+from roguelike_game.managers.player.class_selector_manager import ClassSelectorManager
+from roguelike_game.managers.player.player_manager import PlayerManager
 from roguelike_game.managers.editors.buildings_editor_manager import BuildingEditorManager
 from roguelike_game.managers.editors.tiles_editor_manager import TilesEditorManager
 from roguelike_game.managers.editors.map_editor_manager import MapEditorManager
@@ -246,3 +247,4 @@ class GameInitializer:
         g.input_config = InputConfig()
         g.menu = MenuManager(g.state, g.screen, g.input_config)
         g.class_selector = ClassSelectorManager(g.state, g.input_config, g.screen)
+        g.player_manager = PlayerManager(g.ecs.ecs_world)

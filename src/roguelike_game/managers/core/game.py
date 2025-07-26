@@ -301,44 +301,10 @@ class Game:
     @benchmark(lambda self: self.perf_log, "4.1 ECS - render")
     def render_ecs(self):
         self.ecs.render(self.screen, self.camera)
-
+    
     def change_player_class(self, new_class: str):
-        """Update player's class: reload assets and stats."""
-        ecs_world = self.ecs.ecs_world
-        eid = ecs_world.player_entity
-        comps = ecs_world.components
-        # Update tag
-        comps["PlayerTagComponent"][eid] = PlayerTagComponent(new_class)
-        # Reload sprites and animations
-        sprites = load_and_scale_sprites(new_class)
-        frame = extract_initial_frame(sprites)
-        if frame and isinstance(frame, pygame.Surface):
-            comps["Sprite"][eid] = Sprite(frame)
-        comps["Animator"][eid] = Animator(animations=build_animator_map(sprites), current_state=INITIAL_ANIMATION_STATE)
-        comps["AnimationTimer"][eid] = AnimationTimer(last_time=time.time(), interval=ANIMATION_INTERVAL)
-        # Update movement speed and reset velocity
-        comps["MovementSpeed"][eid] = MovementSpeed(PLAYER_STATS[new_class]["speed"])
-        comps["Velocity"][eid] = Velocity(0, 0)
-        # Update collider
-        if frame and isinstance(frame, pygame.Surface):
-            comps["MultiCollider"][eid] = create_body_and_feet(frame)
-        # Update stats: health, combat, mana, energy, hunger
-        stats = PLAYER_STATS[new_class]
-        max_hp = stats["max_health"]
-        comps["Health"][eid] = Health(max_hp, max_hp)
-        comps["CombatStats"][eid] = CombatStats(current_hp=max_hp, max_hp=max_hp,
-                                               power=stats["attack"], defense=stats["defense"])
-        max_mana = stats["max_mana"]
-        comps["Mana"][eid] = Mana(current_mana=max_mana, max_mana=max_mana)
-        max_energy = stats["max_energy"]
-        comps["Energy"][eid] = Energy(current_energy=max_energy, max_energy=max_energy)
-        max_hunger = stats.get("max_hunger", 100)
-        comps["Hunger"][eid] = Hunger(current_hunger=max_hunger, max_hunger=max_hunger)
-        # Update melee weapon and trail
-        comps["MeleeWeapon"][eid] = MeleeWeapon(damage=MELEE_WEAPON_CFG["damage"], cooldown=MELEE_WEAPON_CFG["cooldown"])
-        trail_params = stats.get("trail", DEFAULT_TRAIL)
-        trail_cfg = TrailConfig(interval=trail_params["interval"], life_time=trail_params["life_time"], max_trails=trail_params["max_trails"])
-        comps["TrailComponent"][eid] = TrailComponent(config=trail_cfg)
+        """Delegate to PlayerManager."""
+        self.player_manager.change_class(new_class)
 
     def run(self):
         """Arranca el bucle principal."""
