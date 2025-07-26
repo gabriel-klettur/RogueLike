@@ -136,7 +136,7 @@ class RendererManager:
         # 8) Minimap
         @benchmark(perf_log, "3.8. minimap")
         def _bench_minimap():
-            if not self.tiles_editor.editor_state.active:
+            if not self.tiles_editor.editor_state.active and not (hasattr(state, 'entities_editor_state') and state.entities_editor_state.visible):
                 self._render_minimap(screen)
         _bench_minimap()
 
