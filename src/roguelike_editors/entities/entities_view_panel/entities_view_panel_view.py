@@ -1,8 +1,7 @@
 import pygame
-from typing import Any
-from roguelike_editors.entities.editor_model import EntityEditorModel
+from roguelike_editors.entities.entities_view_panel.entities_view_panel_model import EntityViewPanelModel
 
-class EntityEditorView:
+class EntityViewPanelView:
     """Renderiza UI del editor de entidades: jugador y monstruos."""
     def __init__(self, assets: dict[str, pygame.Surface], font: pygame.font.Font):
         self.assets = assets
@@ -17,7 +16,7 @@ class EntityEditorView:
             text = text[:-1]
         return text + '...'
 
-    def draw(self, screen: pygame.Surface, model: EntityEditorModel) -> None:
+    def draw(self, screen: pygame.Surface, model: EntityViewPanelModel) -> None:
         # Fondo semi-transparente
         overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 180))

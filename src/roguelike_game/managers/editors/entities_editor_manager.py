@@ -2,11 +2,11 @@ import pygame
 from pathlib import Path
 from roguelike_ui.services.json_persistence import load_from_json
 from roguelike_engine.utils.loader import load_image
-from roguelike_editors.entities.editor_controller import EntityEditorController
+from roguelike_editors.entities.entities_view_panel.entities_view_panel_controller import EntityViewPanelController
 
 class EntitiesEditorManager:
     """
-    Manager para el editor de entidades: carga datos, assets y delega a EntityEditorController
+    Manager para el editor de entidades: carga datos, assets y delega a EntityViewPanelController
     """
     def __init__(self, game):
         self.game = game
@@ -32,7 +32,7 @@ class EntitiesEditorManager:
                 except Exception as e:
                     print(f'[EntityEditor] Error cargando sprite de monster {mid}: {e}')
         # Instanciar controlador
-        self.controller = EntityEditorController(player_stats, monsters, assets, font)
+        self.controller = EntityViewPanelController(player_stats, monsters, assets, font)
         self.model = self.controller.model
         # Exponer en el estado global
         game.state.entities_editor_state = self.model

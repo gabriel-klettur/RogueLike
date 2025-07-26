@@ -1,6 +1,4 @@
 import pygame
-import os
-from roguelike_ui.services.json_persistence import save_to_json, load_from_json
 
 class EntitiesEditorEventHandler:
     """
