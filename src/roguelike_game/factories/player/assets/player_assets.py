@@ -63,6 +63,9 @@ class PlayerAssets:
                     self.sprite_size,
                     row=0,
                     columns=5,
+
+
+                    
                     start_col=block * 5
                 )
                 # primera frame idle, resto walk

@@ -43,12 +43,57 @@
       "max_health": 120,
       "max_mana": 80,
       "max_energy": 60,
-      "scale": 1.25,
+      "scale": 0.85,
       "speed": 6,
       "trail": {
         "interval": 0.1,
         "life_time": 0.5,
         "max_trails": 10
+      },
+      "attack": 1,
+      "defense": 0,
+      "death_timer_duration": 10.0
+    },
+    "mague": {
+      "max_health": 100,
+      "max_mana": 50,
+      "max_energy": 100,
+      "scale": 1.0,
+      "speed": 5,
+      "trail": {
+        "interval": 0.1,
+        "life_time": 0.2,
+        "max_trails": 100
+      },
+      "attack": 1,
+      "defense": 0,
+      "death_timer_duration": 10.0
+    },
+    "elven": {
+      "max_health": 100,
+      "max_mana": 50,
+      "max_energy": 100,
+      "scale": 0.75,
+      "speed": 5,
+      "trail": {
+        "interval": 0.1,
+        "life_time": 0.2,
+        "max_trails": 100
+      },
+      "attack": 1,
+      "defense": 0,
+      "death_timer_duration": 10.0
+    },
+    "barbarian": {
+      "max_health": 100,
+      "max_mana": 50,
+      "max_energy": 100,
+      "scale": 1.0,
+      "speed": 5,
+      "trail": {
+        "interval": 0.1,
+        "life_time": 0.2,
+        "max_trails": 100
       },
       "attack": 1,
       "defense": 0,
