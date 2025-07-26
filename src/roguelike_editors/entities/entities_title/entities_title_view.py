@@ -14,7 +14,7 @@ class EntitiesTitleView:
         """
         self.controller = controller
         self.model = model
-        self.font = font
+        self.font = pygame.font.SysFont("Arial", 24, bold=True)
         # Configuración de posición
         self.x = 10
         self.y = 10
