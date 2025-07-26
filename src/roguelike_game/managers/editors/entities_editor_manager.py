@@ -82,6 +82,10 @@ class EntitiesEditorManager:
         self.add_remove_event_handler = EntitiesAddRemovePanelEventHandler(self, self.add_remove_model)
         self.add_remove_view = EntitiesAddRemovePanelView(self, self.add_remove_model)
         self.add_remove_controller = EntitiesAddRemovePanelController(self, self.add_remove_model, self.add_remove_view, self.add_remove_event_handler)
+        # Camera panning via middle mouse button
+        self.panning = False
+        self.pan_start = (0, 0)
+        self.pan_offset_start = (0, 0)
 
     def is_active(self, tool: str) -> bool:
         """
@@ -91,6 +95,30 @@ class EntitiesEditorManager:
 
     def handle_event(self, event: pygame.event.Event) -> None:
         """Delegar evento al controlador"""
+        # Camera panning via middle mouse button
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 2:
+            self.panning = True
+            self.pan_start = event.pos
+            self.pan_offset_start = (self.game.camera.offset_x, self.game.camera.offset_y)
+            return
+        elif event.type == pygame.MOUSEMOTION and self.panning:
+            dx = event.pos[0] - self.pan_start[0]
+            dy = event.pos[1] - self.pan_start[1]
+            self.game.camera.offset_x = self.pan_offset_start[0] - dx / self.game.camera.zoom
+            self.game.camera.offset_y = self.pan_offset_start[1] - dy / self.game.camera.zoom
+            return
+        elif event.type == pygame.MOUSEBUTTONUP and event.button == 2 and self.panning:
+            self.panning = False
+            return
+        # Handle zoom while panning
+        elif event.type == pygame.MOUSEWHEEL and self.panning:
+            current = int(self.game.camera.zoom)
+            if event.y > 0:
+                self.game.camera.zoom = current + 1
+            elif event.y < 0:
+                self.game.camera.zoom = max(1, current - 1)
+            return
+
         # Priorizar eventos del title panel
         if self.title_controller.handle_event(event):
             return
