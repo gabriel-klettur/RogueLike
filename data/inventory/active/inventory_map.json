@@ -439,26 +439,6 @@
       "y": 2123.4264729717224
     }
   },
-  "0730f728-45b3-463b-8a6a-f100d69ff2d1": {
-    "item_id": "gold",
-    "quantity": 2,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2229.9240033522947,
-      "y": 2066.493140346226
-    }
-  },
-  "aed89fd8-32b0-433f-9b58-91edbf32cfd9": {
-    "item_id": "experience_orb",
-    "quantity": 1,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2229.9240033522947,
-      "y": 2066.493140346226
-    }
-  },
   "afbbbd30-3f65-4068-ab56-2499d3f38a44": {
     "item_id": "health_potion",
     "quantity": 1,

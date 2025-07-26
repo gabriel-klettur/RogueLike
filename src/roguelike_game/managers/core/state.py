@@ -1,9 +1,17 @@
-
 class GameState:
-    def __init__(self):            
+    def __init__(self):
         self.running = True
         self.mode = "local"
 
-        
-        
-# Path: src/roguelike_game/game/state.py
+        # Player class selection state
+        self.current_player_class = None
+
+        # Editor states (models assigned during initialization)
+        self.item_editor_state = None
+        self.inventory_editor_state = None
+        self.entities_editor_state = None
+        self.spell_editor_state = None
+
+        # Building editor state alias
+        self.editor = None
+

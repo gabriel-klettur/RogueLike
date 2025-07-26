@@ -19,6 +19,11 @@ from roguelike_game.managers.map import MapManager
 from roguelike_game.managers.buildings import BuildingsManager
 from roguelike_game.managers.z_layer import ZLayerManager
 from types import SimpleNamespace
+from roguelike_engine.console.model.model import ConsoleState, CommandRegistry
+from roguelike_engine.console.controller.controller import ConsoleController
+from roguelike_engine.console.events.events import ConsoleEvents
+from roguelike_engine.console.view.view import ConsoleView
+from roguelike_engine.console.commands import register_commands
 
 from roguelike_game.managers.menu import MenuManager
 from roguelike_game.managers.player.class_selector_manager import ClassSelectorManager
@@ -152,6 +157,16 @@ class GameInitializer:
 
     def _init_state(self):
         self.game.state = GameState()
+        # Consola quake-like
+        self.game.console_state = ConsoleState()
+        self.game.command_registry = CommandRegistry()
+        register_commands(self.game.command_registry, self.game)
+        self.game.console_controller = ConsoleController(self.game.console_state, self.game.command_registry)
+        self.game.console_events = ConsoleEvents(self.game.console_controller)
+        screen_w, screen_h = self.game.screen.get_size()
+        console_h = screen_h // 3
+        console_rect = pygame.Rect(0, screen_h - console_h, screen_w, console_h)
+        self.game.console_view = ConsoleView(self.game.console_state, console_rect)
 
     def _init_map(self):
         g = self.game

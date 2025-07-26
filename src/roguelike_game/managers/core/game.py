@@ -2,11 +2,6 @@ import pygame
 import roguelike_engine.config.config as config
 
 from roguelike_game.managers.core.events import handle_events as core_handle_events
-from roguelike_engine.console.model.model import ConsoleState, CommandRegistry
-from roguelike_engine.console.controller.controller import ConsoleController
-from roguelike_engine.console.events.events import ConsoleEvents
-from roguelike_engine.console.view.view import ConsoleView
-from roguelike_engine.console.commands import register_commands
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.managers.core.update_manager import update_game
 from roguelike_game.managers.core.loop_manager import GameLoop
@@ -47,16 +42,7 @@ class Game:
         self.loop             = GameLoop(self)
         self.shutdown_manager = ShutdownManager(self)
         
-        self.console_state = ConsoleState()
-        self.command_registry = CommandRegistry()
-        register_commands(self.command_registry, self)
-        self.console_controller = ConsoleController(self.console_state, self.command_registry)
-        self.console_events = ConsoleEvents(self.console_controller)
-        # Definir rect de consola (tercio inferior)
-        screen_w, screen_h = self.screen.get_size()
-        console_h = screen_h // 3
-        console_rect = pygame.Rect(0, screen_h - console_h, screen_w, console_h)
-        self.console_view = ConsoleView(self.console_state, console_rect)
+
 
     @benchmark(lambda self: self.perf_log, "1.TOTAL: HANDLE EVENTS")
     def handle_events(self):
