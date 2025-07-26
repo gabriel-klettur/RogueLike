@@ -54,7 +54,7 @@ def handle_events(game):
         for event in events:
             result = game.class_selector.handle_input(event)
             if result:
-                game.change_player_class(result)
+                game.player_manager.change_class(result)
         return
 
     # Dispatch mouse events a DebugOverlay

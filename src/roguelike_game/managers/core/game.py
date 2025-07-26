@@ -111,10 +111,6 @@ class Game:
     def render_ecs(self):
         self.ecs.render(self.screen, self.camera)
     
-    def change_player_class(self, new_class: str):
-        """Delegate to PlayerManager."""
-        self.player_manager.change_class(new_class)
-
     def run(self):
         """Arranca el bucle principal."""
         self.loop.run()
