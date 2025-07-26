@@ -3,6 +3,7 @@ from pathlib import Path
 from roguelike_ui.services.json_persistence import load_from_json
 from roguelike_engine.utils.loader import load_image
 from roguelike_editors.entities.entities_picker_panel.entities_picker_panel_controller import EntityPickerPanelController
+from roguelike_editors.entities.entities_properties_panel.entities_properties_panel_controller import EntityPropertiesPanelController
 from roguelike_editors.entities.entities_tool_bar_panel.entities_tool_bar_panel_model import EntitiesToolBarPanelModel
 from roguelike_editors.entities.entities_tool_bar_panel.entities_tool_bar_panel_view import EntitiesToolBarPanelView
 from roguelike_editors.entities.entities_tool_bar_panel.entities_tool_bar_panel_events import EntitiesToolBarPanelEventHandler
@@ -40,6 +41,8 @@ class EntitiesEditorManager:
         # Instanciar controlador
         self.controller = EntityPickerPanelController(player_stats, monsters, assets, font)
         self.model = self.controller.model
+        # Instanciar panel de propiedades
+        self.properties_controller = EntityPropertiesPanelController(player_stats, monsters, font)
         # Exponer en el estado global
         game.state.entities_editor_state = self.model
         # Instanciar title MVC
@@ -65,6 +68,9 @@ class EntitiesEditorManager:
         # Priorizar eventos del toolbar
         if self.toolbar_controller.handle_event(event):
             return
+        # Priorizar eventos del panel de propiedades
+        if self.properties_controller.handle_event(event):
+            return
         self.controller.handle_event(event)
 
     def draw(self, screen: pygame.Surface) -> None:
@@ -76,3 +82,7 @@ class EntitiesEditorManager:
         # Renderizar toolbar y luego la vista principal
         self.toolbar_controller.render(screen)
         self.controller.draw(screen)
+        # Sincronizar selección con panel de propiedades
+        self.properties_controller.model.selected_id = self.model.selected_id
+        # Dibujar panel de propiedades
+        self.properties_controller.draw(screen)

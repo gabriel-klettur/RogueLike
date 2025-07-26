@@ -105,51 +105,5 @@ class EntityPickerPanelView:
                 y = self.y + margin + (row-scroll)*(cell_height+margin)
                 pygame.draw.rect(screen, (255,255,0), (x-2,y-2,cell_size+4,cell_size+4), 3)
 
-                # Preparar panel de propiedades
-                if active in model.player_stats:
-                    data = model.player_stats.get(active, {})
-                else:
-                    data = model.monsters.get(active, {})
-                lines = [active] + [f"{k}: {v}" for k,v in data.items() if v is not None]
-                max_w = max(self.font.size(line)[0] for line in lines)
-                pad = 10
-                panel_w = min(max_w+pad*2, sw-margin*2, 500)
-                panel_h = min(len(lines)*(font_h+2)+pad*2, sh-margin*2)
-                px = sw-panel_w-margin; py = margin
-                info_surf = pygame.Surface((panel_w,panel_h), pygame.SRCALPHA); info_surf.fill((0,0,0,200))
-                screen.blit(info_surf, (px,py))
-                model.panel_rect = pygame.Rect(px,py,panel_w,panel_h)
-                tx, ty = px+pad, py+pad
-                model.property_entries.clear()
-                for i,line in enumerate(lines):
-                    color=(255,255,0) if i==0 else (200,200,200)
-                    text = self._truncate_text(line, panel_w-pad*2)
-                    if i>0:
-                        # editable
-                        key=line.split(': ',1)[0]
-                    txt_surf = self.font.render(text, True, color)
-                    screen.blit(txt_surf,(tx,ty))
-                    if i>0:
-                        rect=pygame.Rect(tx,ty,txt_surf.get_width(),font_h)
-                        model.property_entries.append((rect,key))
-                    ty+=font_h+2
 
-                # Dibujar indicador edición
-                if model.editing_property:
-                    for rect,key in model.property_entries:
-                        if key==model.editing_property:
-                            er=rect.inflate(4,0)
-                            pygame.draw.rect(screen,(128,0,128),er,2)
-                            # blinking caret
-                            t=pygame.time.get_ticks()
-                            if (t%self.blink_interval)<(self.blink_interval//2):
-                                pre=f"{key}: "; bx=er.x; by=er.y
-                                # caret position
-                                topleft=(bx+self.font.size(pre+model.editing_text[:model.editing_cursor])[0],by)
-                                pygame.draw.line(screen,(255,255,255),topleft,(topleft[0],topleft[1]+font_h),2)
-                elif model.focused_property:
-                    for rect,key in model.property_entries:
-                        if key==model.focused_property:
-                            hl_rect=rect.inflate(4,0)
-                            pygame.draw.rect(screen,(255,255,0),hl_rect,2)
-                            break
+
