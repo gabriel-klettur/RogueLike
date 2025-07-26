@@ -8,6 +8,10 @@ from roguelike_editors.entities.entities_tool_bar_panel.entities_tool_bar_panel_
 from roguelike_editors.entities.entities_tool_bar_panel.entities_tool_bar_panel_view import EntitiesToolBarPanelView
 from roguelike_editors.entities.entities_tool_bar_panel.entities_tool_bar_panel_events import EntitiesToolBarPanelEventHandler
 from roguelike_editors.entities.entities_tool_bar_panel.entities_tool_bar_panel_controller import EntitiesToolBarPanelController
+from roguelike_editors.entities.entities_add_remove_panel.entities_add_remove_panel_model import EntitiesAddRemovePanelModel
+from roguelike_editors.entities.entities_add_remove_panel.entities_add_remove_panel_view import EntitiesAddRemovePanelView
+from roguelike_editors.entities.entities_add_remove_panel.entities_add_remove_panel_events import EntitiesAddRemovePanelEventHandler
+from roguelike_editors.entities.entities_add_remove_panel.entities_add_remove_panel_controller import EntitiesAddRemovePanelController
 from roguelike_editors.entities.entities_title.entities_title_model import EntitiesTitleModel
 from roguelike_editors.entities.entities_title.entities_title_controller import EntitiesTitleController
 
@@ -73,6 +77,11 @@ class EntitiesEditorManager:
         self.toolbar_event_handler = EntitiesToolBarPanelEventHandler(self, self.toolbar_model)
         self.toolbar_view = EntitiesToolBarPanelView(self, self.toolbar_model)
         self.toolbar_controller = EntitiesToolBarPanelController(self, self.toolbar_model, self.toolbar_view, self.toolbar_event_handler)
+        # Instanciar panel de añadir/eliminar entidades
+        self.add_remove_model = EntitiesAddRemovePanelModel()
+        self.add_remove_event_handler = EntitiesAddRemovePanelEventHandler(self, self.add_remove_model)
+        self.add_remove_view = EntitiesAddRemovePanelView(self, self.add_remove_model)
+        self.add_remove_controller = EntitiesAddRemovePanelController(self, self.add_remove_model, self.add_remove_view, self.add_remove_event_handler)
 
     def is_active(self, tool: str) -> bool:
         """
@@ -88,6 +97,9 @@ class EntitiesEditorManager:
         # Priorizar eventos del toolbar
         if self.toolbar_controller.handle_event(event):
             return
+        # Priorizar eventos del panel de añadir/eliminar entidades
+        if self.add_remove_controller.handle_event(event):
+            return
         # Priorizar eventos del panel de propiedades
         if self.properties_controller.handle_event(event):
             return
@@ -101,6 +113,7 @@ class EntitiesEditorManager:
         self.title_controller.render(screen)
         # Renderizar toolbar y luego la vista principal
         self.toolbar_controller.render(screen)
+        self.add_remove_controller.render(screen)
         self.controller.draw(screen)
         # Sincronizar selección con panel de propiedades
         self.properties_controller.model.selected_id = self.model.selected_id
