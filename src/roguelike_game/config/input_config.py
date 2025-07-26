@@ -49,6 +49,7 @@ class InputConfig:
                 "pause": "K_ESCAPE",
                 "toggle_item_editor": "K_F6",
                 "drop": "K_d",
+                "select_class": "K_F2",
                 "toggle_inventory": "K_i",
                 "toggle_building_editor": "K_F10"
             }
@@ -74,6 +75,9 @@ class InputConfig:
             self.save()
             self.bindings["spell_lightning"] = "K_r"
 
+        if "select_class" not in self.bindings:
+            self.bindings["select_class"] = "K_F2"
+            self.save()
     def get_key(self, action):
         """
         Retorna el código pygame de la tecla para una acción.
@@ -102,7 +106,8 @@ class InputConfig:
             "toggle_inventory": pygame.K_i,
             "toggle_tile_editor": pygame.K_F8,
             "toggle_building_editor": pygame.K_F10,
-            "toggle_map_editor": pygame.K_F11
+            "toggle_map_editor": pygame.K_F11,
+            "select_class": pygame.K_F2
         }
         # Intentar binding de usuario
         name = self.bindings.get(action)

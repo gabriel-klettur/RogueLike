@@ -438,5 +438,35 @@
       "x": 2958.0,
       "y": 2455
     }
+  },
+  "44a54d34-c497-4317-8540-ef1b8ba12510": {
+    "item_id": "wood",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 1780.7420056554988,
+      "y": 2433.925874683567
+    }
+  },
+  "f153fad0-423c-4b3e-8792-d79710861985": {
+    "item_id": "gold",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 1780.7420056554988,
+      "y": 2433.925874683567
+    }
+  },
+  "52bcdb61-226d-4ff6-8152-18e95c7928fa": {
+    "item_id": "experience_orb",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 1780.7420056554988,
+      "y": 2433.925874683567
+    }
   }
 }

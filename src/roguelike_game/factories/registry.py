@@ -21,7 +21,4 @@ def get_factory(name: str):
         raise KeyError(f"Factory '{name}' not found in registry.")
     return cls()
 
-# Auto-import player facade to register PlayerFactory
-import roguelike_game.factories.player.facade  # noqa: F401
-# Auto-import monster facade to register MonsterFactory
-import roguelike_game.factories.monster.facade  # noqa: F401
+

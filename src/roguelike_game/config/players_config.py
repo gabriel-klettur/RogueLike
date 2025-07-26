@@ -9,3 +9,4 @@ with open(top / "data" / "entities" / "players.json", "r", encoding="utf-8") as 
 
 # Estadísticas específicas por clase de jugador
 PLAYER_STATS = PLAYER_CFG.get("PLAYER_STATS", {})
+PLAYER_ASSETS = PLAYER_CFG.get("PLAYER_ASSETS", {})

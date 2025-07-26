@@ -54,5 +54,24 @@
       "defense": 0,
       "death_timer_duration": 10.0
     }
+  },
+  "PLAYER_ASSETS": {
+    "dwarf": "characters/dwarf/dwarf.png",
+    "valkyrie": {
+      "walking": "characters/valkyrie/valkyrie_walking.png",
+      "casting": "characters/valkyrie/valkyrie_casting.png"
+    },
+    "mague": {
+      "casting": "characters/mague/mague_casting.png",
+      "walking": "characters/mague/mague_walking.png"
+    },
+    "elven": {
+      "casting": "characters/elven/elven_casting.png",
+      "walking": "characters/elven/elven_walking.png"
+    },
+    "barbarian": {
+      "walking": "characters/barbarian/barbarian_walking.png",
+      "casting": "characters/barbarian/barbarian_casting.png"
+    }
   }
 }

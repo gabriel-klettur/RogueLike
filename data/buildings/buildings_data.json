@@ -1337,11 +1337,11 @@
         "solid": true,
         "scale": [
             153,
-            208
+            207
         ],
         "original_scale": [
             153,
-            208
+            207
         ],
         "split_ratio": 0.5,
         "z_bottom": 3,
@@ -1350,8 +1350,8 @@
     },
     {
         "zone": "Forest",
-        "rel_x": 480,
-        "rel_y": 404,
+        "rel_x": 487,
+        "rel_y": 397,
         "image_path": "assets/buildings\\vegetation\\tree_1.PNG",
         "solid": true,
         "scale": [
@@ -1364,7 +1364,7 @@
         ],
         "split_ratio": 0.663,
         "z_bottom": 1,
-        "z_top": 3,
+        "z_top": 5,
         "z": 1
     },
     {
