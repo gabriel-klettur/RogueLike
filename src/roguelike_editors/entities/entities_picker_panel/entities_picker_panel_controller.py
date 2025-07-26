@@ -1,23 +1,23 @@
 import pygame
 pygame.font.init()
 from roguelike_ui.services.json_persistence import save_to_json, load_from_json
-from roguelike_editors.entities.entities_view_panel.entities_view_panel_model import EntityViewPanelModel
-from roguelike_editors.entities.entities_view_panel.entities_view_panel_view import EntityViewPanelView
+from roguelike_editors.entities.entities_picker_panel.entities_picker_panel_model import EntityPickerPanelModel
+from roguelike_editors.entities.entities_picker_panel.entities_picker_panel_view import EntityPickerPanelView
 from roguelike_ui.widgets.text_input import TextInput
 from roguelike_ui.widgets.double_click_detector import DoubleClickDetector
-from roguelike_editors.entities.entities_view_panel.entities_view_panel_events import EntitiesEditorEventHandler
+from roguelike_editors.entities.entities_picker_panel.entities_picker_panel_events import EntitiesPickerEventHandler
 import os
 
 
-class EntityViewPanelController:
+class EntityPickerPanelController:
     """Controller para editor de entidades: jugador y monstruos."""
     def __init__(self, player_stats: dict[str, any], monsters: dict[str, any], assets: dict[str, pygame.Surface], font: pygame.font.Font):
-        self.model = EntityViewPanelModel(player_stats=player_stats, monsters=monsters, assets=assets)
-        self.view = EntityViewPanelView(assets, font)
+        self.model = EntityPickerPanelModel(player_stats=player_stats, monsters=monsters, assets=assets)
+        self.view = EntityPickerPanelView(assets, font)
         self.text_input = TextInput(font)
         self.dc_detector = DoubleClickDetector()
         self.view.text_input = self.text_input
-        self.event_handler = EntitiesEditorEventHandler(self)
+        self.event_handler = EntitiesPickerEventHandler(self)
 
     def handle_event(self, event: pygame.event.Event) -> None:
         self.event_handler.handle(event)

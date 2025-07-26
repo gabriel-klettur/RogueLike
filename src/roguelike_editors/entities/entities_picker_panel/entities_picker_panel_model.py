@@ -3,7 +3,7 @@ from typing import Dict, Any, Optional, List, Tuple
 import pygame
 
 @dataclass
-class EntityViewPanelModel:
+class EntityPickerPanelModel:
     """Estado del editor de entidades: jugador y monstruos."""
     player_stats: Dict[str, Any]
     monsters: Dict[str, Any]

@@ -1,7 +1,7 @@
 import pygame
-from roguelike_editors.entities.entities_view_panel.entities_view_panel_model import EntityViewPanelModel
+from roguelike_editors.entities.entities_picker_panel.entities_picker_panel_model import EntityPickerPanelModel
 
-class EntityViewPanelView:
+class EntityPickerPanelView:
     """Renderiza UI del editor de entidades: jugador y monstruos."""
     def __init__(self, assets: dict[str, pygame.Surface], font: pygame.font.Font):
         self.assets = assets
@@ -30,7 +30,7 @@ class EntityViewPanelView:
             text = text[:-1]
         return text + '...'
 
-    def draw(self, screen: pygame.Surface, model: EntityViewPanelModel) -> None:
+    def draw(self, screen: pygame.Surface, model: EntityPickerPanelModel) -> None:
         # Solo si está visible
         if not model.visible:
             return

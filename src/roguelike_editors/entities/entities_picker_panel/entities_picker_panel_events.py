@@ -1,6 +1,6 @@
 import pygame
 
-class EntitiesEditorEventHandler:
+class EntitiesPickerEventHandler:
     """
     Manejador de eventos para el editor de entidades.
     """
