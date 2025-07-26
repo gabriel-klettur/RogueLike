@@ -61,7 +61,7 @@
       "scale": 0.75,
       "speed": 5,
       "trail": {
-        "interval": 0.80,
+        "interval": 0.8,
         "life_time": 0.2,
         "max_trails": 100
       },
@@ -85,9 +85,9 @@
       "death_timer_duration": 10.0
     },
     "barbarian": {
-      "max_health": 100,
-      "max_mana": 50,
-      "max_energy": 100,
+      "max_health": 200,
+      "max_mana": 30,
+      "max_energy": 80,
       "scale": 1.0,
       "speed": 5,
       "trail": {

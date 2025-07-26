@@ -160,7 +160,7 @@
       "damage_right": "assets/npc/monsters/barbol/barbol_1_right_damage.png"
     },
     "death_sprite": "assets/npc/monsters/barbol/barbol_female_death.png",
-    "death_scale": 0.4,
+    "death_scale": 0.35,
     "hp": 100,
     "speed": 1.0,
     "scale": 0.3,

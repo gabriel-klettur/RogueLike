@@ -1,7 +1,7 @@
 import pygame
 from pathlib import Path
 from roguelike_ui.services.json_persistence import load_from_json
-from roguelike_engine.utils.loader import load_image
+from roguelike_engine.utils.loader import load_image, load_sprite_sheet
 from roguelike_editors.entities.entities_picker_panel.entities_picker_panel_controller import EntityPickerPanelController
 from roguelike_editors.entities.entities_properties_panel.entities_properties_panel_controller import EntityPropertiesPanelController
 from roguelike_editors.entities.entities_tool_bar_panel.entities_tool_bar_panel_model import EntitiesToolBarPanelModel
@@ -25,8 +25,28 @@ class EntitiesEditorManager:
         monsters_path = Path('data') / 'entities' / 'monsters.json'
         monsters = load_from_json(str(monsters_path))
         # Cargar assets (sprites "down")
+        # Cargar assets de jugadores desde players.json
         assets = {}
+        player_assets = players_root.get('PLAYER_ASSETS', {})
+        orig_size = tuple(players_root.get('ORIGINAL_SPRITE_SIZE', [128,128]))
         for pid in player_stats:
+            asset_info = player_assets.get(pid)
+            if asset_info:
+                try:
+                    # Elegir primer asset
+                    if isinstance(asset_info, str):
+                        path = asset_info
+                    elif isinstance(asset_info, dict):
+                        path = list(asset_info.values())[0]
+                    else:
+                        path = None
+                    if path:
+                        frames = load_sprite_sheet(path, orig_size, columns=1)
+                        assets[pid] = frames[0]
+                        continue
+                except Exception as e:
+                    print(f'[EntityEditor] Error cargando sprite sheet de player {pid}: {e}')
+            # fallback al sprite "down" clásico
             try:
                 assets[pid] = load_image(f'assets/npc/player/{pid}/{pid}_1_down.png')
             except Exception as e:

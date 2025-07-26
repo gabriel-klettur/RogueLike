@@ -26,18 +26,25 @@ class EntitiesPickerEventHandler:
 
         if event.type == pygame.MOUSEBUTTONDOWN and self.model.visible and event.button == 1:
             mx, my = event.pos
-            screen = pygame.display.get_surface()
-            sw, sh = screen.get_size() if screen else (0, 0)
-            margin = 20; cell_size = 64; tm = 4; fh = self.view.font.get_height(); ch = cell_size + tm + fh; cols = 12
-            if mx < margin or my < margin:
+            # Grid click detection with view offsets
+            ox, oy = self.view.x, self.view.y
+            margin = self.view.margin
+            cell_size = self.view.cell_size
+            tm = self.view.text_margin
+            fh = self.view.font.get_height()
+            ch = cell_size + tm + fh
+            cols = self.view.columns
+            mx_rel = mx - (ox + margin)
+            my_rel = my - (oy + margin)
+            if mx_rel < 0 or my_rel < 0:
                 self.model.selected_id = None
             else:
-                col = (mx - margin) // (cell_size + margin)
-                row = (my - margin + self.model.scroll_index * (ch + margin)) // (ch + margin)
+                col = mx_rel // (cell_size + margin)
+                row = my_rel // (ch + margin) + self.model.scroll_index
                 entity_ids = list(self.model.player_stats.keys()) + list(self.model.monsters.keys())
                 idx = row * cols + col
-                x0 = margin + col * (cell_size + margin)
-                y0 = margin + (row - self.model.scroll_index) * (ch + margin)
+                x0 = ox + margin + col * (cell_size + margin)
+                y0 = oy + margin + (row - self.model.scroll_index) * (ch + margin)
                 if 0 <= col < cols and 0 <= idx < len(entity_ids) and x0 <= mx <= x0 + cell_size and y0 <= my <= y0 + cell_size:
                     self.model.selected_id = entity_ids[idx]
                 else:
@@ -46,16 +53,25 @@ class EntitiesPickerEventHandler:
 
         if event.type == pygame.MOUSEMOTION and self.model.visible:
             mx, my = event.pos
-            margin = 20; cell_size = 64; tm = 4; fh = self.view.font.get_height(); ch = cell_size + tm + fh; cols = 12
-            if mx < margin or my < margin:
+            # Grid hover detection with view offsets
+            ox, oy = self.view.x, self.view.y
+            margin = self.view.margin
+            cell_size = self.view.cell_size
+            tm = self.view.text_margin
+            fh = self.view.font.get_height()
+            ch = cell_size + tm + fh
+            cols = self.view.columns
+            mx_rel = mx - (ox + margin)
+            my_rel = my - (oy + margin)
+            if mx_rel < 0 or my_rel < 0:
                 self.model.hovered_id = None
             else:
-                col = (mx - margin) // (cell_size + margin)
-                row = (my - margin + self.model.scroll_index * (ch + margin)) // (ch + margin)
+                col = mx_rel // (cell_size + margin)
+                row = my_rel // (ch + margin) + self.model.scroll_index
                 entity_ids = list(self.model.player_stats.keys()) + list(self.model.monsters.keys())
                 idx = row * cols + col
-                x0 = margin + col * (cell_size + margin)
-                y0 = margin + (row - self.model.scroll_index) * (ch + margin)
+                x0 = ox + margin + col * (cell_size + margin)
+                y0 = oy + margin + (row - self.model.scroll_index) * (ch + margin)
                 if 0 <= col < cols and 0 <= idx < len(entity_ids) and x0 <= mx <= x0 + cell_size and y0 <= my <= y0 + cell_size:
                     self.model.hovered_id = entity_ids[idx]
                 else:
