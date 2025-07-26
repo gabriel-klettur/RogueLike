@@ -14,3 +14,4 @@ class EntityPropertiesPanelModel:
     editing_property: Optional[str] = None
     editing_text: str = ""
     editing_cursor: int = 0
+    hovered_property: Optional[str] = None

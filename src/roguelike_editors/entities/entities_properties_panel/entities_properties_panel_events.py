@@ -38,6 +38,16 @@ class EntitiesPropertiesPanelEventHandler:
         if event.type == pygame.MOUSEBUTTONUP and self.view.draggable_panel.dragging:
             self.view.draggable_panel.handle_event(event)
             return True
+        # Hover detection en propiedades
+        if event.type == pygame.MOUSEMOTION and self.model.panel_rect and self.model.panel_rect.collidepoint(event.pos):
+            mx, my = event.pos
+            hovered = None
+            for rect, key in self.model.property_entries:
+                if rect.collidepoint(mx, my):
+                    hovered = key
+                    break
+            self.model.hovered_property = hovered
+            return True
         # Key events para cancelar edición o navegación
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE and self.model.editing_property:

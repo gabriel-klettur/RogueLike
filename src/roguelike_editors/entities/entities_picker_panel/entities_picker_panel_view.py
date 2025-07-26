@@ -1,6 +1,7 @@
 import pygame
 from roguelike_editors.entities.entities_picker_panel.entities_picker_panel_model import EntityPickerPanelModel
 from roguelike_ui.panel import DraggablePanel
+from roguelike_ui.widgets.hover import draw_hover
 
 class EntityPickerPanelView:
     """Renderiza UI del editor de entidades: jugador y monstruos."""
@@ -89,6 +90,8 @@ class EntityPickerPanelView:
             y = self.y + margin + (row-scroll)*(cell_height+margin)
             cell_rect = pygame.Rect(x, y, cell_size, cell_size)
             pygame.draw.rect(screen, (50,50,50), cell_rect)
+            if ent_id == model.hovered_id:
+                draw_hover(screen, cell_rect)
             icon = self.assets.get(ent_id)
             if icon:
                 icon_surf = pygame.transform.smoothscale(icon, (cell_size, cell_size))

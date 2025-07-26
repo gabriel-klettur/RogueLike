@@ -1,6 +1,7 @@
 import pygame
 from roguelike_editors.entities.entities_properties_panel.entities_properties_panel_model import EntityPropertiesPanelModel
 from roguelike_ui.panel import DraggablePanel
+from roguelike_ui.widgets.hover import draw_hover
 
 class EntityPropertiesPanelView:
     """Renderiza el panel de propiedades de la entidad seleccionada."""
@@ -59,11 +60,13 @@ class EntityPropertiesPanelView:
             color = (255,255,0) if i == 0 else (200,200,200)
             text = self._truncate_text(line, panel_w - pad*2)
             txt_surf = self.font.render(text, True, color)
-            screen.blit(txt_surf, (tx, ty))
             if i > 0:
                 key = line.split(': ', 1)[0]
                 rect = pygame.Rect(tx, ty, txt_surf.get_width(), font_h)
                 model.property_entries.append((rect, key))
+                if key == model.hovered_property:
+                    draw_hover(screen, rect)
+            screen.blit(txt_surf, (tx, ty))
             ty += font_h + 2
         # Indicadores de enfoque o edición
         if model.editing_property:
