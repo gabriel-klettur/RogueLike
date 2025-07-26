@@ -1,11 +1,14 @@
 import pygame
 from roguelike_editors.entities.entities_properties_panel.entities_properties_panel_model import EntityPropertiesPanelModel
+from roguelike_ui.panel import DraggablePanel
 
 class EntityPropertiesPanelView:
     """Renderiza el panel de propiedades de la entidad seleccionada."""
     def __init__(self, font: pygame.font.Font, blink_interval: int = 500):
         self.font = font
         self.blink_interval = blink_interval
+        # Panel draggable
+        self.draggable_panel = DraggablePanel(0, 0)
 
     def _truncate_text(self, text: str, max_width: int) -> str:
         if self.font.size(text)[0] <= max_width:
@@ -36,10 +39,17 @@ class EntityPropertiesPanelView:
         px = sw - panel_w - margin
         py = margin
         # Dibujar fondo semitransparente
+        # Actualizar DraggablePanel tamaño y posición
+        self.draggable_panel.resize(panel_w, panel_h)
+        if self.draggable_panel.pos is None:
+            self.draggable_panel.pos = (px, py)
+        else:
+            px, py = self.draggable_panel.pos
+        model.panel_rect = pygame.Rect(px, py, panel_w, panel_h)
         info_surf = pygame.Surface((panel_w, panel_h), pygame.SRCALPHA)
         info_surf.fill((0, 0, 0, 200))
         screen.blit(info_surf, (px, py))
-        # Actualizar rectángulo de panel
+
         model.panel_rect = pygame.Rect(px, py, panel_w, panel_h)
         # Dibujar líneas de texto y áreas clicables
         tx = px + pad

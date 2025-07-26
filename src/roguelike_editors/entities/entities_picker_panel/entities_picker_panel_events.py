@@ -10,6 +10,19 @@ class EntitiesPickerEventHandler:
         self.view = controller.view
 
     def handle(self, event: pygame.event.Event) -> None:
+        # Inicio de arrastre con botón derecho en cualquier parte del panel
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3 and self.model.visible:
+            if self.model.panel_rect and self.model.panel_rect.collidepoint(event.pos):
+                self.view.draggable_panel.handle_event(event, header_rect=self.model.panel_rect)
+                return
+        # Drag move
+        if event.type == pygame.MOUSEMOTION and self.view.draggable_panel.dragging:
+            self.view.draggable_panel.handle_event(event)
+            return
+        # Drag end
+        if event.type == pygame.MOUSEBUTTONUP and self.view.draggable_panel.dragging:
+            self.view.draggable_panel.handle_event(event)
+            return
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_F5:
                 self.model.visible = not self.model.visible

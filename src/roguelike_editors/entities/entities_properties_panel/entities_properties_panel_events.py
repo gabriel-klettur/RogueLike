@@ -26,6 +26,18 @@ class EntitiesPropertiesPanelEventHandler:
         # Solo si hay panel y es visible
         if not self.model.selected_id or not self.model.panel_rect:
             return False
+        # Drag start: botón derecho en cualquier parte del panel
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3 and self.model.panel_rect and self.model.panel_rect.collidepoint(event.pos):
+            self.view.draggable_panel.handle_event(event, header_rect=self.model.panel_rect)
+            return True
+        # Drag move
+        if event.type == pygame.MOUSEMOTION and self.view.draggable_panel.dragging:
+            self.view.draggable_panel.handle_event(event)
+            return True
+        # Drag end
+        if event.type == pygame.MOUSEBUTTONUP and self.view.draggable_panel.dragging:
+            self.view.draggable_panel.handle_event(event)
+            return True
         # Key events para cancelar edición o navegación
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE and self.model.editing_property:

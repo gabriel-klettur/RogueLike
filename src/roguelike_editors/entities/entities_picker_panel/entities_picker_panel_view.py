@@ -1,5 +1,6 @@
 import pygame
 from roguelike_editors.entities.entities_picker_panel.entities_picker_panel_model import EntityPickerPanelModel
+from roguelike_ui.panel import DraggablePanel
 
 class EntityPickerPanelView:
     """Renderiza UI del editor de entidades: jugador y monstruos."""
@@ -19,6 +20,8 @@ class EntityPickerPanelView:
         dummy = TitlePanel(text="", font=self.font, x=0, y=0)
         title_height = self.font.get_height() + dummy.padding_y * 2
         self.y = 10 + title_height           # align with Tile Picker y
+        # Panel draggable
+        self.draggable_panel = DraggablePanel(0, 0)
         # self.panel = None
 
 
@@ -44,6 +47,14 @@ class EntityPickerPanelView:
         panel_w = self.margin + used_cols * self.cell_size + (used_cols + 1) * self.margin
         # Altura según contenido
         panel_h = self.margin + rows * (cell_height + self.margin)
+        # Actualizar DraggablePanel tamaño y posición
+        self.draggable_panel.resize(panel_w, panel_h)
+        if self.draggable_panel.pos is None:
+            self.draggable_panel.pos = (self.x, self.y)
+        else:
+            self.x, self.y = self.draggable_panel.pos
+        # Asignar rect del panel para eventos y drag
+        model.panel_rect = pygame.Rect(self.x, self.y, panel_w, panel_h)
         # Fondo semitransparente y borde redondeado
         bg_surf = pygame.Surface((panel_w, panel_h), pygame.SRCALPHA)
         bg_surf.fill((0, 0, 0, 180))
