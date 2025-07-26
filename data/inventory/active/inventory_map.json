@@ -209,16 +209,6 @@
       "y": 1808.6633549024848
     }
   },
-  "513400eb-79a6-46e7-8e52-1cc6c2bca55f": {
-    "item_id": "health_potion",
-    "quantity": 1,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 1791.1737704421023,
-      "y": 2480.000000000006
-    }
-  },
   "937aa5e6-6fe5-492e-93cc-2a83797406fd": {
     "item_id": "wizard_staff_lvl_3",
     "quantity": 1,
@@ -389,16 +379,6 @@
       "y": 2455
     }
   },
-  "44a54d34-c497-4317-8540-ef1b8ba12510": {
-    "item_id": "wood",
-    "quantity": 2,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 1780.7420056554988,
-      "y": 2433.925874683567
-    }
-  },
   "fc62f902-72c7-41cd-9eca-629d2d96a28e": {
     "item_id": "gold",
     "quantity": 2,
@@ -447,6 +427,26 @@
     "position": {
       "x": 2229.9240033522947,
       "y": 2066.493140346226
+    }
+  },
+  "40aa52ca-84eb-499f-8446-d36ed4ee2cd8": {
+    "item_id": "gold",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2316.0,
+      "y": 2434
+    }
+  },
+  "8281e672-6e86-4bbf-b691-25db10a6981c": {
+    "item_id": "experience_orb",
+    "quantity": 3,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2316.0,
+      "y": 2434
     }
   }
 }
