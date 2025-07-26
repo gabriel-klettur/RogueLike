@@ -1,0 +1,103 @@
+import pygame
+from roguelike_ui.panel import DraggablePanel
+from roguelike_ui.widgets.button import Button
+
+class ToolbarState:
+    """Estado genérico para posición y arrastre de un toolbar."""
+    def __init__(self):
+        self.pos = None
+        self.dragging = False
+        self.drag_offset = (0, 0)
+
+class ToolbarView:
+    """
+    Vista genérica de toolbar con botones.
+
+    Args:
+        controller: Objeto que debe implementar is_active(tool: str) -> bool.
+        items (list[str]): Claves de herramientas.
+        icons (dict[str, pygame.Surface]): Map de clave a surface de icono.
+        x, y (int): Posición inicial del panel.
+        size (int): Tamaño de cada botón.
+        padding (int): Espacio entre botones.
+        bgcolor (tuple): Color de fondo del panel.
+        border_color (tuple): Color del borde de los botones.
+        hover_color (tuple): Color de overlay en hover.
+        selection_color (tuple): Color del borde en herramienta activa.
+        selection_border_width (int): Grosor del borde de selección.
+    """
+    def __init__(self, controller, items, icons,
+                 x, y, size, padding,
+                 bgcolor=(20, 20, 20, 235),
+                 border_color=(255, 255, 255),
+                 hover_color=(255, 255, 0, 100),
+                 selection_color=(255, 255, 0),
+                 selection_border_width=4):
+        self.controller = controller
+        self.items = items
+        self.icons = icons
+        self.x = x
+        self.y = y
+        self.size = size
+        self.padding = padding
+        self.bgcolor = bgcolor
+        self.border_color = border_color
+        self.hover_color = hover_color
+        self.selection_color = selection_color
+        self.selection_border_width = selection_border_width
+        width = size
+        height = len(items) * (size + padding) - padding
+        self.panel = DraggablePanel(width, height, bgcolor)
+        self.panel.pos = (x, y)
+        # Crear botones
+        self.buttons = {}
+        for idx, tool in enumerate(items):
+            rect = pygame.Rect(0, idx * (size + padding), size, size)
+            btn = Button(rect, bgcolor=(0, 0, 0, 0),
+                         border_color=border_color,
+                         hover_color=hover_color)
+            self.buttons[tool] = btn
+        self.icon_rects = {}
+
+    def render(self, screen):
+        """
+        Dibuja el toolbar: panel, botones, iconos, hover y selección.
+        """
+        mouse_pos = pygame.mouse.get_pos()
+        # Redimensionar panel según número de items
+        width = self.size
+        height = len(self.items) * (self.size + self.padding) - self.padding
+        self.panel.resize(width, height)
+        panel_pos = self.panel.pos or (self.x, self.y)
+        rel_mouse = (mouse_pos[0] - panel_pos[0], mouse_pos[1] - panel_pos[1])
+        # Dibujar botones e iconos
+        for idx, tool in enumerate(self.items):
+            btn = self.buttons[tool]
+            btn.rect.topleft = (0, idx * (self.size + self.padding))
+            btn.is_hovered(rel_mouse)
+            btn.draw(self.panel.surface)
+            icon_surf = self.icons[tool]
+            icon_pos = (
+                btn.rect.x + (self.size - icon_surf.get_width()) // 2,
+                btn.rect.y + (self.size - icon_surf.get_height()) // 2
+            )
+            self.panel.surface.blit(icon_surf, icon_pos)
+            self.icon_rects[tool] = btn.rect.move(panel_pos)
+        # Blitear panel
+        screen.blit(self.panel.surface, panel_pos)
+        # Hover y selección
+        for tool, btn in self.buttons.items():
+            rect = self.icon_rects[tool]
+            if btn.hover:
+                hover_surf = pygame.Surface(rect.size, pygame.SRCALPHA)
+                hover_surf.fill(self.hover_color)
+                screen.blit(hover_surf, rect.topleft)
+            if self.controller.is_active(tool):
+                pygame.draw.rect(screen, self.selection_color, rect, self.selection_border_width)
+
+    def handle_event(self, event):
+        """
+        Delegar eventos de arrastre al panel.
+        """
+        header = pygame.Rect(self.panel.pos or (self.x, self.y), self.panel.surface.get_size())
+        return self.panel.handle_event(event, header)
