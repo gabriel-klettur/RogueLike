@@ -4,9 +4,30 @@ Updates entity facing direction based on their Velocity component,
 applying a cooldown between direction changes to prevent flickering.
 """
 import time
+import math
 
 from roguelike_game.ecs.components.combat.facing_cooldown import FacingCooldown
 from roguelike_engine.utils.benchmark import benchmark
+
+def get_direction_name(dx, dy):
+    """Return one of 8 directions based on vector dx, dy."""
+    angle = math.degrees(math.atan2(-dy, dx)) % 360
+    if angle < 22.5 or angle >= 337.5:
+        return 'right'
+    elif angle < 67.5:
+        return 'up_right'
+    elif angle < 112.5:
+        return 'up'
+    elif angle < 157.5:
+        return 'up_left'
+    elif angle < 202.5:
+        return 'left'
+    elif angle < 247.5:
+        return 'down_left'
+    elif angle < 292.5:
+        return 'down'
+    else:
+        return 'down_right'
 
 class FacingSystem:
     """
@@ -55,7 +76,8 @@ class FacingSystem:
             if vx == 0 and vy == 0:
                 # Entidad quieta: elegir estado idle o base
                 if suffix_avail:
-                    base = animator.current_state.split('_')[0]
+                    # Extraer dirección completa antes del sufijo (walk/idle)
+                    base = animator.current_state.rsplit('_', 1)[0]
                     idle_key = f"{base}_idle"
                     new_state = idle_key if idle_key in animator.animations else base
                 else:
@@ -68,11 +90,8 @@ class FacingSystem:
             if now < fc.next_allowed:
                 continue
 
-            # 5) Determinar nueva dirección y animación de caminata
-            if abs(vx) > abs(vy):
-                direction = 'right' if vx > 0 else 'left'
-            else:
-                direction = 'down' if vy > 0 else 'up'
+            # 5) Determinar nueva dirección y animación de caminata (8 direcciones)
+            direction = get_direction_name(vx, vy)
             if suffix_avail:
                 key = f"{direction}_walk"
                 new_state = key if key in animator.animations else direction

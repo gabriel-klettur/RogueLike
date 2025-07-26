@@ -54,9 +54,9 @@ class PlayerAssets:
                 sprites[direction] = {'idle': idle_frames, 'walk': walk_frames}
         elif isinstance(assets_entry, dict):
             # strip 1x40 (otros)
-            directions = ['down', 'right', 'up', 'left']
-            # cada bloque de 5 columnas para cardinales: down, right, up, left
-            block_indices = [0, 2, 4, 6]
+            directions = ['down', 'down_right', 'right', 'up_right', 'up', 'up_left', 'left', 'down_left']
+            # cada bloque de 5 columnas para las 8 direcciones: down, down_right, right, up_right, up, up_left, left, down_left
+            block_indices = list(range(8))
             for direction, block in zip(directions, block_indices):
                 frames = load_sprite_sheet(
                     self.sheet_path,

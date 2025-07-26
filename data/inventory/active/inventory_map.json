@@ -1,14 +1,4 @@
 {
-  "7e31ad78-ac5d-47ce-900d-9def3d4cff56": {
-    "item_id": "iron_ingot",
-    "quantity": 1,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2406.0,
-      "y": 2466
-    }
-  },
   "97c5f86a-3c22-4194-9771-98034cfc1b3e": {
     "item_id": "wood",
     "quantity": 2,
@@ -17,16 +7,6 @@
     "position": {
       "x": 2473.3223304703356,
       "y": 2561.3172798364562
-    }
-  },
-  "630e3ef4-cd38-4268-b093-6159f3ee1dec": {
-    "item_id": "gold",
-    "quantity": 1,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2150.3403818119605,
-      "y": 2404.5675005731264
     }
   },
   "56fe2b0b-4d32-44d1-831a-c6b5eb3c9e0d": {
@@ -79,16 +59,6 @@
       "y": 2285.374140024325
     }
   },
-  "a51d8a22-3748-4cba-afb6-a4ff7a485368": {
-    "item_id": "bucket_water",
-    "quantity": 1,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2462.6233083249667,
-      "y": 2507.1235534760476
-    }
-  },
   "f0946542-5a0d-492b-b72c-eb64e142a89c": {
     "item_id": "iron_sword",
     "quantity": 1,
@@ -115,8 +85,8 @@
     "zone_id": "Lobby",
     "schema_version": "1.0.0",
     "position": {
-      "x": 2303.824245025474,
-      "y": 2481.272539572232
+      "x": 2299.2557025305514,
+      "y": 2517.841082067158
     }
   },
   "f6686a7e-37b7-46de-b559-96cff026c3b4": {
@@ -359,16 +329,6 @@
       "y": 2308.361683922313
     }
   },
-  "f644c647-04f6-4df6-881b-50f5e67492e8": {
-    "item_id": "experience_orb",
-    "quantity": 2,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 1904.4763100616517,
-      "y": 2308.361683922313
-    }
-  },
   "53d91061-0ad1-4b36-a5a6-d5b1d04086f4": {
     "item_id": "health_potion",
     "quantity": 1,
@@ -377,16 +337,6 @@
     "position": {
       "x": 1904.4763100616517,
       "y": 2308.361683922313
-    }
-  },
-  "0d07755e-8697-4804-a252-a37e4be29ad3": {
-    "item_id": "gold",
-    "quantity": 2,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2452.0,
-      "y": 2499
     }
   },
   "01b238f4-cc5d-43d1-812d-cefb8d3c242d": {
@@ -449,24 +399,74 @@
       "y": 2433.925874683567
     }
   },
-  "f153fad0-423c-4b3e-8792-d79710861985": {
+  "fc62f902-72c7-41cd-9eca-629d2d96a28e": {
     "item_id": "gold",
     "quantity": 2,
     "zone_id": "Lobby",
     "schema_version": "1.0.0",
     "position": {
-      "x": 1780.7420056554988,
-      "y": 2433.925874683567
+      "x": 2044.0,
+      "y": 2583
     }
   },
-  "52bcdb61-226d-4ff6-8152-18e95c7928fa": {
+  "01b2866a-6835-4abd-96be-4b2113abf568": {
+    "item_id": "wood",
+    "quantity": 3,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2312.2177699028452,
+      "y": 2460.155239621248
+    }
+  },
+  "09649c52-6652-4577-9aa5-201852b4f5be": {
+    "item_id": "gold",
+    "quantity": 4,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2525.3608126175823,
+      "y": 2123.4264729717224
+    }
+  },
+  "3ac242b4-dc37-44de-aa73-94fc42b4a3e6": {
     "item_id": "experience_orb",
     "quantity": 2,
     "zone_id": "Lobby",
     "schema_version": "1.0.0",
     "position": {
-      "x": 1780.7420056554988,
-      "y": 2433.925874683567
+      "x": 2525.3608126175823,
+      "y": 2123.4264729717224
+    }
+  },
+  "0730f728-45b3-463b-8a6a-f100d69ff2d1": {
+    "item_id": "gold",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2229.9240033522947,
+      "y": 2066.493140346226
+    }
+  },
+  "aed89fd8-32b0-433f-9b58-91edbf32cfd9": {
+    "item_id": "experience_orb",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2229.9240033522947,
+      "y": 2066.493140346226
+    }
+  },
+  "afbbbd30-3f65-4068-ab56-2499d3f38a44": {
+    "item_id": "health_potion",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2229.9240033522947,
+      "y": 2066.493140346226
     }
   }
 }
