@@ -1,5 +1,3 @@
-# Path: src/roguelike_engine/config/config_tiles.py
-
 import os
 import json
 from pathlib import Path

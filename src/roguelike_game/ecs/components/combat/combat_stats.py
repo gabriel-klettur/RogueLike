@@ -7,3 +7,4 @@ class CombatStats:
         self.max_hp = max_hp
         self.power = power
         self.defense = defense
+# Path: src/roguelike_game/ecs/components/combat/combat_stats.py

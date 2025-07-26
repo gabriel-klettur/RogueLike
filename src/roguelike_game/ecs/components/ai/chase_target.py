@@ -4,3 +4,4 @@ class ChaseTarget:
     """
     def __init__(self, target: int):
         self.target = target
+# Path: src/roguelike_game/ecs/components/ai/chase_target.py

@@ -1,5 +1,3 @@
-# src/roguelike_engine/buildings/model/building_model.py
-
 import os
 import types
 import pygame
@@ -49,7 +47,7 @@ class BuildingModel:
         self._collision_tile_objs: list[types.SimpleNamespace] | None = None
 
         # ── Z-layers por defecto (se pueden sobreescribir) ──
-        from roguelike_game.systems.config_z_layer import Z_LAYERS
+        from roguelike_engine.config.config_z_layer import Z_LAYERS
         self.z_bottom = z_bottom if z_bottom is not None else Z_LAYERS["building_low"]
         self.z_top    = z_top    if z_top    is not None else Z_LAYERS["building_high"]
         self.z = self.z_bottom  # compatibilidad temporal

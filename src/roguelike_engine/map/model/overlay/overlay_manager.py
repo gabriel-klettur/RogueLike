@@ -1,4 +1,3 @@
-# Path: src/roguelike_engine/map/model/overlay/overlay_manager.py
 from typing import Optional, List, Dict
 from .factory import get_overlay_store
 from roguelike_engine.map.model.layer import Layer
@@ -25,7 +24,7 @@ def load_layers(map_name: str) -> Dict[Layer, List[List[str]]]:
     """
     print(f"[DEBUG][OverlayManager] load_layers called for map '{map_name}'")
     raw = _default_store.load(map_name)
-    print(f"[DEBUG][OverlayManager] store.load raw for '{map_name}': {raw}")
+    #print(f"[DEBUG][OverlayManager] store.load raw for '{map_name}': {raw}")
     if raw is None:
         print(f"[DEBUG][OverlayManager] no overlay data for '{map_name}'")
         return {}

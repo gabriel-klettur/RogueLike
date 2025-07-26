@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Inventory Map Schema",
+  "description": "Esquema para datos persistentes de drops en el suelo, indexados por drop_id.",
+  "type": "object",
+  "additionalProperties": {
+    "type": "object",
+    "properties": {
+      "item_id": { "type": "string", "description": "Identificador del ítem" },
+      "quantity": { "type": "integer", "minimum": 1, "description": "Cantidad de ítems en el drop" },
+      "zone_id": { "type": "string", "description": "Identificador de la zona" },
+      "tile": {
+        "description": "Coordenadas de celda (enteras)",
+        "type": "object",
+        "properties": {
+          "x": { "type": "integer" },
+          "y": { "type": "integer" }
+        },
+        "required": ["x", "y"],
+        "additionalProperties": false
+      },
+      "position": {
+        "description": "Coordenadas en píxeles (flotantes)",
+        "type": "object",
+        "properties": {
+          "x": { "type": "number" },
+          "y": { "type": "number" }
+        },
+        "required": ["x", "y"],
+        "additionalProperties": false
+      },
+      "schema_version": { "type": "string", "description": "Versión del esquema JSON" }
+    },
+    "required": ["item_id", "quantity", "zone_id"],
+    "anyOf": [
+      { "required": ["tile"] },
+      { "required": ["position"] }
+    ],
+    "additionalProperties": false
+  }
+}

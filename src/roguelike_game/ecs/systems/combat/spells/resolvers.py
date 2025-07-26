@@ -10,9 +10,24 @@ import pygame
 from roguelike_game.ecs.components.particles.particle_component import ParticleComponent
 from roguelike_game.ecs.components.abilities.laser_beam_component import LaserBeamComponent
 from roguelike_game.ecs.components.abilities.dash_component import DashComponent
+from roguelike_game.ecs.components.particles.dash_emitter_component import DashEmitterComponent
 from roguelike_game.ecs.components.combat.hitbox import HitboxComponent
+from roguelike_game.ecs.components.particles.slash_emitter_component import SlashEmitterComponent
 from roguelike_game.ecs.components.abilities.lightning_component import LightningComponent
+from roguelike_game.ecs.components.abilities.arcane_flame_component import ArcaneFlameComponent
+from roguelike_game.ecs.systems.rendering.combat.spells.arcane_flame.model import ArcaneFlameModel
 import math
+from roguelike_game.ecs.components.abilities.firework_launch_component import FireworkLaunchComponent
+from roguelike_game.ecs.systems.rendering.combat.spells.firework_launch.model import FireworkLaunchModel
+from roguelike_game.ecs.systems.rendering.combat.spells.smoke.model import SmokeModel
+from roguelike_game.ecs.components.abilities.smoke_component import SmokeComponent
+from roguelike_game.ecs.systems.rendering.combat.spells.smoke_emitter.model import SmokeEmitterModel
+from roguelike_game.ecs.components.abilities.smoke_emitter_component import SmokeEmitterComponent
+from pygame.math import Vector2
+from roguelike_game.ecs.components.abilities.sphere_magic_shield_component import SphereMagicShieldComponent
+from roguelike_game.ecs.systems.rendering.combat.spells.sphere_magic_shield.model import SphereMagicShieldModel
+from roguelike_game.ecs.components.abilities.teleport_component import TeleportComponent
+from roguelike_game.ecs.systems.rendering.combat.spells.teleport.model import TeleportModel
 
 class BaseSpellResolver:
     def resolve(self, world, caster, spawn_meta, cfg, camera):
@@ -127,6 +142,13 @@ class DashResolver(BaseSpellResolver):
         speed = cfg.get('speed', 0)
         duration = cfg.get('duration', 0)
         world.components.setdefault('DashComponent', {})[caster] = DashComponent(dir_x, dir_y, speed, duration)
+        world.components.setdefault('DashEmitterComponent', {})[caster] = DashEmitterComponent(
+            count=10,
+            lifespan=15,
+            size_range=(3, 6),
+            color_choices=((200,200,255),(150,150,255),(255,255,255)),
+            speed_range=(1.0, 3.0)
+        )
 
 class SlashResolver(BaseSpellResolver):
     def resolve(self, world, caster, spawn_meta, cfg, camera):
@@ -155,28 +177,8 @@ class SlashResolver(BaseSpellResolver):
         size_min, size_max = cfg.get('size_range', [1,1])
         base_color = cfg.get('color', [255,255,255])
         speed_mult = cfg.get('speed_multiplier', 1.0)
-        # Generar partículas de slash como entidades ECS
-        for i in range(count):
-            t = (i/(count-1)) - 0.5
-            angle = math.atan2(dir_y, dir_x) + t * arc_range
-            ox = math.cos(angle) * radius
-            oy = math.sin(angle) * radius
-            scale = 1 - abs(t) * 2
-            speed = speed_mult * (1 + scale * 2)
-            size = int(size_min + (size_max - size_min) * scale)
-            color = tuple(base_color)
-            fid = world.create_entity()
-            world.components['Position'][fid] = Position(cx + ox, cy + oy)
-            world.components['ParticleComponent'][fid] = ParticleComponent(
-                math.cos(angle) * speed,
-                math.sin(angle) * speed,
-                color,
-                size,
-                lifespan
-            )
-        # Crear hitbox de slash para colisión
+        # Registrar hitbox de slash para colisión
         hb_id = world.create_entity()
-        # Ajustar posición del hitbox usando offset combinado
         real_x = cx + dir_x * offset
         real_y = cy + dir_y * offset
         world.components['Position'][hb_id] = Position(real_x, real_y)
@@ -188,6 +190,18 @@ class SlashResolver(BaseSpellResolver):
             direction=(dir_x, dir_y),
             lifespan=lifespan,
             damage=cfg.get('damage', 0),
+        )
+        # Añadir emisor de partículas de slash
+        world.components.setdefault('SlashEmitterComponent', {})[caster] = SlashEmitterComponent(
+            radius=radius,
+            arc_range=arc_range,
+            count=count,
+            lifespan=lifespan,
+            size_range=(size_min, size_max),
+            color=tuple(base_color),
+            speed_multiplier=speed_mult,
+            direction=(dir_x, dir_y),
+            offset=offset
         )
 
 class LightningResolver(BaseSpellResolver):
@@ -206,14 +220,106 @@ class LightningResolver(BaseSpellResolver):
                                    cfg.get('lifetime', 0))
         world.components.setdefault('LightningComponent', {})[caster] = comp
 
+class ArcaneFlameResolver(BaseSpellResolver):
+    def resolve(self, world, caster, spawn_meta, cfg, camera):
+        # Crear modelo legacy ArcaneFlame en posición de spawn
+        spawn_x, spawn_y = spawn_meta.get('spawn_pos', (0, 0))
+        radius = cfg.get('radius', 0)
+        width = radius * 2
+        height = radius * 2
+        duration = cfg.get('duration', 0.0)
+        model = ArcaneFlameModel(spawn_x, spawn_y, width, height, duration)
+        world.components.setdefault('ArcaneFlameComponent', {})[caster] = ArcaneFlameComponent(model)
+
+class FireworkLaunchResolver(BaseSpellResolver):
+    def resolve(self, world, caster, spawn_meta, cfg, camera):
+        # Resolver para lanzamiento de fuegos artificiales
+        pos_cmp = world.components['Position'][caster]
+        cx, cy = pos_cmp.x, pos_cmp.y
+        sprite_cmp = world.components['Sprite'].get(caster)
+        if sprite_cmp:
+            w, h = sprite_cmp.image.get_size()
+            cx += w / 2; cy += h / 2
+        mx, my = pygame.mouse.get_pos()
+        if camera:
+            zoom = getattr(camera, 'zoom', 1.0)
+            offset_x = getattr(camera, 'offset_x', 0)
+            offset_y = getattr(camera, 'offset_y', 0)
+            wx = mx / zoom + offset_x
+            wy = my / zoom + offset_y
+        else:
+            wx, wy = mx, my
+        speed = cfg.get('speed', 0)
+        model = FireworkLaunchModel(cx, cy, wx, wy, speed)
+        world.components.setdefault('FireworkLaunchComponent', {})[caster] = FireworkLaunchComponent(model)
+
+class SmokeResolver(BaseSpellResolver):
+    def resolve(self, world, caster, spawn_meta, cfg, camera):
+        # Resolver para efecto de humo
+        pos_cmp = world.components['Position'][caster]
+        cx, cy = pos_cmp.x, pos_cmp.y
+        sprite_cmp = world.components['Sprite'].get(caster)
+        if sprite_cmp:
+            w, h = sprite_cmp.image.get_size()
+            cx += w/2; cy += h/2
+        direction = spawn_meta.get('direction', (1, 0))
+        dir_vec = Vector2(direction[0], direction[1])
+        num_particles = cfg.get('particle_count', 15)
+        model = SmokeModel(cx, cy, dir_vec, num_particles)
+        world.components.setdefault('SmokeComponent', {})[caster] = SmokeComponent(model)
+
+class TeleportResolver(BaseSpellResolver):
+    def resolve(self, world, caster, spawn_meta, cfg, camera):
+        # Resolver for teleport effect
+        pos_cmp = world.components['Position'][caster]
+        cx, cy = pos_cmp.x, pos_cmp.y
+        direction = spawn_meta.get('direction', (1, 0))
+        distance = cfg.get('distance', 200)
+        end_x = cx + direction[0] * distance
+        end_y = cy + direction[1] * distance
+        lifespan = cfg.get('lifespan', 0.5)
+        model = TeleportModel((cx, cy), (end_x, end_y), lifespan=lifespan)
+        world.components.setdefault('TeleportComponent', {})[caster] = TeleportComponent(model)
+
 # Registro de resolutores por tipo de hechizo
+class SmokeEmitterResolver(BaseSpellResolver):
+    def resolve(self, world, caster, spawn_meta, cfg, camera):
+        # Resolver para emisor de humo
+        pos_cmp = world.components['Position'][caster]
+        cx, cy = pos_cmp.x, pos_cmp.y
+        sprite_cmp = world.components.get('Sprite', {}).get(caster)
+        if sprite_cmp:
+            w, h = sprite_cmp.image.get_size()
+            cx += w/2; cy += h/2
+        color = tuple(cfg.get('particle_color', (200,200,200)))
+        emit_rate = cfg.get('emit_rate', 2)
+        model = SmokeEmitterModel(cx, cy, color, emit_rate)
+        world.components.setdefault('SmokeEmitterComponent', {})[caster] = SmokeEmitterComponent(model)
+
+class SphereMagicShieldResolver(BaseSpellResolver):
+    def resolve(self, world, caster, spawn_meta, cfg, camera):
+        # Resolver for sphere magic shield spell
+        pos_cmp = world.components['Position'][caster]
+        cx, cy = pos_cmp.x, pos_cmp.y
+        model = SphereMagicShieldModel(cx, cy,
+                                       radius=cfg.get('radius', 80),
+                                       duration=cfg.get('duration', 5.0))
+        world.components.setdefault('SphereMagicShieldComponent', {})[caster] = SphereMagicShieldComponent(model)
+
 default_resolvers = {
+    'teleport': TeleportResolver(),
+    'sphere_magic_shield': SphereMagicShieldResolver(),
     'projectile': ProjectileResolver(),
     'aura': AuraResolver(),
     'beam': BeamResolver(),
     'dash': DashResolver(),
     'slash': SlashResolver(),
     'lightning': LightningResolver(),
+    'arcane_flame': ArcaneFlameResolver(),
+    'firework_launch': FireworkLaunchResolver(),
+    'smoke': SmokeResolver(),
+    'smoke_emitter': SmokeEmitterResolver(),
+    'sphere_magic_shield': SphereMagicShieldResolver(),
 }
 SPELL_RESOLVERS = default_resolvers
 

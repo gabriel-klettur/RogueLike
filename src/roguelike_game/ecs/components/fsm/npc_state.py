@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from roguelike_game.ecs.fsm.fsm import FiniteStateMachine
+from roguelike_game.ecs.systems.fsm.fsm import FiniteStateMachine
 
 @dataclass
 class NPCState:

@@ -1,14 +1,18 @@
 {
-    "move_up": "up",
-    "move_down": "down",
-    "move_left": "left",
-    "move_right": "right",
+    "move_up": "K_W",
+    "move_down": "K_S",
+    "move_left": "K_A",
+    "move_right": "K_D",
     "attack": "K_SPACE",
-    "spell_lightball": "z",
+    "spell_lightball": "K_3",
     "spell_slash": "e",
     "spell_healing_aura": "x",
     "spell_darkball": "1",
-    "spell_iceball": "9",
+    "spell_iceball": "K_2",
     "spell_lightning": "r",
-    "pause": "K_ESCAPE"
+    "pause": "K_ESCAPE",
+    "spell_arcane_flame": "K_c",
+    "toggle_item_editor": "K_F7",
+    "toggle_inventory": "K_I",
+    "select_class": "K_F2"
 }

@@ -9,3 +9,4 @@ class CameraFollowComponent:
     def __init__(self):
         # Placeholder para parámetros como offset o smoothing
         pass
+# Path: src/roguelike_game/ecs/components/core/camera_follow.py

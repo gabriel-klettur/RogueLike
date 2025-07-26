@@ -3,8 +3,7 @@ Module: spawn_system.py
 Handles conversion of SpawnRequest components into actual game entities
 using the entity factory.
 """
-
-from roguelike_game.ecs.factories.monster.monster_factory import spawn_monster
+from roguelike_game.factories.registry import get_factory
 from roguelike_engine.utils.benchmark import benchmark
 
 class SpawnSystem:
@@ -31,7 +30,7 @@ class SpawnSystem:
         for req_eid, req in requests:
             # req.prototype: identificador del tipo de NPC a generar
             # req.position: tupla (x, y) de coordenadas donde spawnar
-            spawn_monster(world, req.prototype, *req.position)
+            get_factory("monster").create(world, tile_x=req.position[0], tile_y=req.position[1], monster_type=req.prototype)
 
             # Una vez generado el NPC, eliminar la entidad de solicitud
             world.remove_entity(req_eid)

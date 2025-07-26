@@ -1,6 +1,6 @@
 ## plan de alto nivel para un ECS mínimo que te permita respawnear un NPC con el sprite barbol_1_down.png en el centro del lobby, sin librerías externas:
 
-0. Pre-requisitos 
+0. Pre-requisitos
 - Crear estructura de paquetes para el ECS:
   ```text
   src/roguelike_game/game/ecs/
@@ -25,12 +25,12 @@
   cy = lobby_y + zone_h // 2
   ```
 
-1. Definir la arquitectura ECS 
+1. Definir la arquitectura ECS
 - Entidad: un simple ID entero.
 - Componente: clases de datos puras (sin lógica), p. ej. Position, Sprite.
 - Sistema: procesos que actúan sobre entidades que tengan ciertos componentes, p. ej. RenderSystem.
 
-2. Implementación de `src/roguelike_game/game/ecs/world.py` 
+2. Implementación de `src/roguelike_game/game/ecs/world.py`
 ```python
 from .components.position import Position
 from .components.sprite import Sprite
@@ -79,7 +79,7 @@ class NPCWorld:
             system.update(self)
 ```
 
-3. Componentes mínimos 
+3. Componentes mínimos
    - `src/roguelike_game/game/ecs/components/position.py`:
 ```python
 class Position:
@@ -96,7 +96,7 @@ class Sprite:
         self.image = pygame.image.load(image_path).convert_alpha()
 ```
 
-4. Sistema de render 
+4. Sistema de render (`src/roguelike_game/game/ecs/systems/render_system.py`)
 ```python
 class RenderSystem:
     def __init__(self, screen):
@@ -109,7 +109,7 @@ class RenderSystem:
             self.screen.blit(sprite.image, (pos.x, pos.y))
 ```
 
-5. Integración en `src/roguelike_game/game/ecs_manager.py` 
+5. Integración en `src/roguelike_game/game/ecs_manager.py`
 ```python
 from .ecs.world import NPCWorld
 
@@ -125,16 +125,7 @@ class ECSManager:
         self.ecs_world.render()        
 ```
 
-6. Implementación final en `src/roguelike_game/game/game.py` y `src/roguelike_game/game/ecs_manager.py` 
-   - En `game.py`: importar `ECSManager` e instanciarlo en `_init_ECS`, añadiéndolo a `self.ecs`.
-   - En `ecs_manager.py`: actualizar métodos:
-     ```python
-     def update(self, clock, screen):
-         self.ecs_world.update()
-     def render(self, screen, camera):
-         self.ecs_world.render()
-     ```
-   - Verificar que `render_manager.py` y `update_manager.py` ejecutan `systems.render` y `systems.update` para incluir el ECS.
+6. Implementacion final en `src/roguelike_game/game/game.py`, `src/roguelike_game/game/render_manager.py` y `src/roguelike_game/game/update_manager.py`
 
 ---
 **Integración profesional del ECS como sistema**  
@@ -146,14 +137,14 @@ from roguelike_game.game.ecs_manager import ECSManager
 
 class Game:
     def _init_systems(self, perf_log):
-        self.systems = ECSManager(self.state, perf_log)
+        self.systems = SystemsManager(self.state, perf_log)
         # Crear ECS y añadirlo a la lista de sistemas
         self.ecs_manager = ECSManager(self.renderer.screen)
         self.systems.add_system(self.ecs_manager)
 ```
-- Modificar `ECSManager` para iterar sistemas:  
+- Modificar `SystemsManager` para iterar sistemas:  
 ```python
-# en ECSManager
+# en SystemsManager
 def update(self, clock, screen):
     for sys in self._systems:
         sys.update(clock, screen)

@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Inventory Monsters Schema",
+  "type": "object",
+  "additionalProperties": {
+    "type": "object",
+    "properties": {
+      "template_id": { "type": "string", "format": "uuid" },
+      "inventory": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "item": { "type": "string" },
+            "min": { "type": "integer", "minimum": 0 },
+            "max": { "type": "integer", "minimum": 0 },
+            "chance": { "type": "number", "minimum": 0, "maximum": 1 }
+          },
+          "required": ["item", "min", "max", "chance"],
+          "additionalProperties": false
+        }
+      }
+    },
+    "required": ["template_id", "inventory"],
+    "additionalProperties": false
+  }
+}

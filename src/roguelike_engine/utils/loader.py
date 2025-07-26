@@ -1,4 +1,3 @@
-# Path: src/roguelike_engine/utils/loader.py
 import pygame
 import os
 from roguelike_engine.config.config import ASSETS_DIR

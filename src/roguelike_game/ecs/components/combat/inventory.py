@@ -9,3 +9,4 @@ class InventoryComponent:
     def __init__(self):
         # Lista de IDs o instancias de ítems
         self.items: list = []
+# Path: src/roguelike_game/ecs/components/combat/inventory.py

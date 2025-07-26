@@ -1,4 +1,3 @@
-# Path: src/roguelike_engine/utils/mouse.py
 import pygame
 
 def get_direction_from_angle(angle):

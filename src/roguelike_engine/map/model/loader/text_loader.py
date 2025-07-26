@@ -1,5 +1,3 @@
-
-# Path: src/roguelike_engine/map/model/loader/text_loader.py
 from typing import List, Sequence
 
 

@@ -1,4 +1,3 @@
-# Path: src/roguelike_engine/minimap/minimap.py
 import pygame
 from typing import Tuple, Iterable
 from roguelike_engine.config.config_tiles import TILE_SIZE, TILE_COLORS

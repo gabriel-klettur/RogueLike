@@ -1,4 +1,3 @@
-# Path: src/roguelike_engine/map/model/loader/interfaces.py
 from abc import ABC, abstractmethod
 from typing import List, Optional, Tuple, Dict
 from roguelike_engine.tile.model.tile import Tile

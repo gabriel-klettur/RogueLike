@@ -16,3 +16,4 @@ class FireballComponent:
         self.spell_key = spell_key
         # Posición inicial de spawn para cálculo de rango
         self.spawn_pos = spawn_pos
+# Path: src/roguelike_game/ecs/components/abilities/fireball_component.py

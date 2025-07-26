@@ -1,1 +1,0 @@
-# Path: src/roguelike_game/systems/editor/tiles/model/tools/tile_toolbar_state.py

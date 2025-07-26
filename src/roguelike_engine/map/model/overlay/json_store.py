@@ -1,5 +1,3 @@
-# src/roguelike_engine/map/model/overlay/json_store.py
-
 import os
 import json
 from typing import Optional, List

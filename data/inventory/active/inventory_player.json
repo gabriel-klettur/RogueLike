@@ -1,0 +1,19 @@
+{
+  "1": {
+    "player_id": "22222222-2222-2222-2222-222222222222",
+    "slots": [
+      {
+        "item": "gold",
+        "quantity": 505
+      },
+      {
+        "item": "wood",
+        "quantity": 1
+      },
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  }
+}

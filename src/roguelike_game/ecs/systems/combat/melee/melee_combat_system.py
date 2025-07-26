@@ -4,12 +4,11 @@ Contains the MeleeCombatSystem which resolves melee attack intents
 and applies damage to targets based on attacker stats, weapon bonuses,
 and target defense.
 """
-
 from roguelike_game.ecs.components.combat.combat_stats import CombatStats
 from roguelike_engine.utils.benchmark import benchmark
-from roguelike_game.ecs.fsm.states.monster.chase_state import ChaseState
-from roguelike_game.ecs.fsm.states.damage_state import DamageState
-from roguelike_game.ecs.fsm.states.attack_state import AttackState
+from roguelike_game.ecs.systems.fsm.states.monster.chase_state import ChaseState
+from roguelike_game.ecs.systems.fsm.states.damage_state import DamageState
+from roguelike_game.ecs.systems.fsm.states.attack_state import AttackState
 from roguelike_game.ecs.systems.fsm.fsm_system import _EntityProxy
 
 class MeleeCombatSystem:

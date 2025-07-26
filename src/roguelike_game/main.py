@@ -4,7 +4,7 @@ from roguelike_engine.config.config import SCREEN_WIDTH, SCREEN_HEIGHT
 
 from roguelike_game.utils.debug import init_debug_log
 from roguelike_game.utils.benchmark import setup_benchmark_logger, save_benchmarks
-from roguelike_game.game.core.game import Game
+from roguelike_game.managers.core.game import Game
 from typing import Tuple, Any, Dict
 
 

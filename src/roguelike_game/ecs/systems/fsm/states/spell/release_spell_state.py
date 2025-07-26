@@ -1,0 +1,146 @@
+from roguelike_game.ecs.systems.fsm.state import State
+from roguelike_game.ecs.components.transform.position import Position
+from roguelike_game.ecs.components.transform.velocity import Velocity
+from roguelike_game.ecs.components.abilities.fireball_component import FireballComponent
+
+from roguelike_game.config.spells_config import SPELLS
+import pygame
+import math
+from roguelike_game.ecs.components.rendering.sprite import Sprite
+from roguelike_game.ecs.components.transform.scale import Scale
+from roguelike_game.ecs.components.abilities.aura_component import AuraComponent
+from roguelike_game.ecs.systems.combat.spells.resolvers import SPELL_RESOLVERS
+
+class ReleaseSpellState(State):
+    def enter(self, entity):
+        # Cargar configuración según hechizo actual
+        ctx = self.fsm.context
+        spell_key = ctx.get('spell')
+        cfg = SPELLS.get(spell_key, {})
+        spell_type = cfg.get('type')
+        if spell_type == 'sphere_magic_shield':
+            world = entity.world
+            resolver = SPELL_RESOLVERS.get('sphere_magic_shield')
+            resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
+            return
+        if spell_type == 'teleport':
+            world = entity.world
+            resolver = SPELL_RESOLVERS.get('teleport')
+            resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
+            return
+        if spell_type == 'aura':
+            world = entity.world
+            world.components.setdefault('AuraComponent', {})[entity.id] = AuraComponent(
+                cfg.get('radius', 0),
+                cfg.get('buff', {}),
+                cfg.get('duration', 0)
+            )
+            return
+        if spell_type == 'slash':
+            world = entity.world
+            # Resolver slash: crea hitbox y partículas según cfg
+            resolver = SPELL_RESOLVERS.get('slash')
+            resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
+            return
+        if spell_type == 'dash':
+            world = entity.world
+            # Resolver dash: registra DashComponent según cfg
+            resolver = SPELL_RESOLVERS.get('dash')
+            resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
+            return
+        if spell_type == 'beam':
+            world = entity.world
+            # Resolver beam: registra LaserBeamComponent según cfg
+            resolver = SPELL_RESOLVERS.get('beam')
+            resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
+            return
+        if spell_type == 'lightning':
+            world = entity.world
+            resolver = SPELL_RESOLVERS.get('lightning')
+            resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
+            return
+        if spell_type == 'arcane_flame':
+            world = entity.world
+            resolver = SPELL_RESOLVERS.get('arcane_flame')
+            resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
+            return
+        if spell_type == 'firework_launch':
+            world = entity.world
+            resolver = SPELL_RESOLVERS.get('firework_launch')
+            resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
+            return
+
+        if spell_type == 'smoke':
+            world = entity.world
+            resolver = SPELL_RESOLVERS.get('smoke')
+            resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
+            return
+        if spell_type == 'smoke_emitter':
+            world = entity.world
+            resolver = SPELL_RESOLVERS.get('smoke_emitter')
+            resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
+            return
+
+        # Evitar crear más instancias si se alcanzó el máximo en spells.json para proyectiles
+        if spell_type == 'projectile':
+            max_inst = cfg.get('max_instances', 0)
+            if max_inst:
+                active = sum(1 for comp in entity.world.components.get('FireballComponent', {}).values()
+                             if getattr(comp, 'spell_key', '') == spell_key)
+                if active >= max_inst:
+                    return
+        world = entity.world
+        # Proyectiles spawnean desde el centro del caster
+        if cfg.get('type') == 'projectile':
+            pos_cmp = world.components['Position'][entity.id]
+            sprite_cmp = world.components.get('Sprite', {}).get(entity.id)
+            if sprite_cmp:
+                w, h = sprite_cmp.image.get_size()
+                spawn_x, spawn_y = pos_cmp.x + w/2, pos_cmp.y + h/2
+            else:
+                spawn_x, spawn_y = pos_cmp.x, pos_cmp.y
+        else:
+            spawn_x, spawn_y = ctx.get('spawn_pos', (0, 0))
+        # Recalcular dirección si no lock_cast_direction
+        lock = cfg.get('lock_cast_direction', True)
+        if not lock:
+            camera = ctx.get('camera')
+            mx, my = pygame.mouse.get_pos()
+            if camera:
+                world_x = mx / camera.zoom + camera.offset_x
+                world_y = my / camera.zoom + camera.offset_y
+            else:
+                world_x, world_y = mx, my
+            dx, dy = world_x - spawn_x, world_y - spawn_y
+            length = math.hypot(dx, dy) or 1
+            dx, dy = dx/length, dy/length
+        else:
+            dx, dy = ctx.get('direction', (1, 0))
+        fid = world.create_entity()
+        # Mantener spawn_pos como centro de la fireball
+        world.components['Position'][fid] = Position(spawn_x, spawn_y)
+        speed = cfg.get('speed', 0)
+        world.components['Velocity'][fid] = Velocity(dx * speed, dy * speed)
+        world.components['FireballComponent'][fid] = FireballComponent(
+            dx * speed, dy * speed,
+            damage=cfg.get('damage', 0),
+            lifespan=cfg.get('lifespan', 0),
+            caster=entity.id,
+            spell_key=spell_key,
+            spawn_pos=(spawn_x, spawn_y)
+        )
+        # Añadir sprite y aplicar scale si existe ruta
+        sprite_path = cfg.get('sprite')
+        if sprite_path:
+            img = pygame.image.load(sprite_path).convert_alpha()
+            world.components['Sprite'][fid] = Sprite(img)
+            world.components['Scale'][fid] = Scale(scale=cfg.get('scale', 1.0))
+        ctx['fireball_id'] = fid
+
+    def execute(self, entity, dt):
+        # Transición inmediata a fase de resolución
+        from roguelike_game.ecs.systems.fsm.states.spell.resolve_spell_state import ResolveSpellState
+        self.fsm.change_state(ResolveSpellState(), entity)
+
+    def exit(self, entity):
+        pass
