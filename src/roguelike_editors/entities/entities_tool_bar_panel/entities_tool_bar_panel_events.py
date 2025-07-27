@@ -32,10 +32,6 @@ class EntitiesToolBarPanelEventHandler:
                     if self.model.active_tool == tool:
                         # Desactivar
                         self.model.active_tool = None
-                        # Ocultar panels
-                        editor = self.controller
-                        # panel position reset removed
-                        editor.controller.model.visible = False
                     else:
                         # Activar
                         self.model.active_tool = tool
