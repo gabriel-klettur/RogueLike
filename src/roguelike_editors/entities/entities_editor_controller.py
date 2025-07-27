@@ -40,6 +40,13 @@ class EntitiesEditorController:
         self.picker_controller = EntityPickerPanelController(
             self.model.player_stats, self.model.monsters, self.model.assets, self.font
         )
+        # Inicializar posición del picker panel a la derecha del add/remove panel
+        margin = 8
+        add_rem_widget = self.add_remove_view.widget
+        add_pos = add_rem_widget.panel.pos or (add_rem_widget.x, add_rem_widget.y)
+        add_w, _ = add_rem_widget.panel.surface.get_size()
+        self.picker_controller.view.x = add_pos[0] + add_w + margin
+        self.picker_controller.view.y = add_pos[1]
         # Properties
         self.properties_controller = EntityPropertiesPanelController(
             self.model.player_stats, self.model.monsters, self.font
