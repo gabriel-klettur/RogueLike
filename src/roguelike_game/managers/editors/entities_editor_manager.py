@@ -14,6 +14,9 @@ class EntitiesEditorManager:
         # Inicializar MVC
         self.model = EntitiesEditorModel(Path('data'))
         self.controller = EntitiesEditorController(self.model, font)
+        # Permitir spawn: referencia al juego para crear entidades
+        self.controller.game = self.game
+        # Permitir spawn: referencia al juego para crear entidades
         self.event_handler = EntitiesEditorEventHandler(self.model, self.controller)
         # Registrar estado global
         game.state.entities_editor_state = self.model

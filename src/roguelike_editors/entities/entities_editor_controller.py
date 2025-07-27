@@ -1,4 +1,6 @@
 import pygame
+from roguelike_game.factories.registry import get_factory
+from roguelike_engine.config.config_tiles import TILE_SIZE
 
 from pathlib import Path
 from roguelike_ui.services.json_persistence import load_from_json
@@ -124,9 +126,21 @@ class EntitiesEditorController:
                 return True
             # Completando spawn: click en mapa finaliza spawn_mode
             if self.model.spawn_mode_active and self.model.spawn_entity_type and event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
-                print(f"[DEBUG][EntitiesEditorController] Spawn finalizado, saliendo de spawn_mode")
+                etype = self.model.spawn_entity_type
+                sx, sy = event.pos
+                cam = self.game.camera
+                wx = sx / cam.zoom + cam.offset_x
+                wy = sy / cam.zoom + cam.offset_y
+                tx = int(wx // TILE_SIZE)
+                ty = int(wy // TILE_SIZE)
+                # Crear entidad en ECS
+                if etype in self.model.player_stats:
+                    get_factory("player").create(self.game.ecs.ecs_world, tile_x=tx, tile_y=ty, class_player=etype)
+                else:
+                    get_factory("monster").create(self.game.ecs.ecs_world, tile_x=tx, tile_y=ty, monster_type=etype)
+                print(f"[DEBUG][EntitiesEditorController] Entity '{etype}' spawned at tile ({tx},{ty})")
                 self.exit_spawn_mode()
-                return False
+                return True
         return False
 
     def update(self, camera, game_map=None):

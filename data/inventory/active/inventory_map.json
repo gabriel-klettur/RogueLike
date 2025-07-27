@@ -448,5 +448,35 @@
       "x": 2316.0,
       "y": 2434
     }
+  },
+  "7df32713-cde8-4448-a732-6525da011a1f": {
+    "item_id": "health_potion",
+    "quantity": 2,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 527.6116523516808,
+      "y": 2416.819805153396
+    }
+  },
+  "be54255c-6275-4b96-b972-37f232d723a2": {
+    "item_id": "mana_potion",
+    "quantity": 2,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 576.1471862576136,
+      "y": 2353.7867965644027
+    }
+  },
+  "12401f1f-6f5e-4a7a-8d8a-3e5727dcf4e0": {
+    "item_id": "gold",
+    "quantity": 4,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 1093.2650587410901,
+      "y": 2464.8780184685934
+    }
   }
 }
