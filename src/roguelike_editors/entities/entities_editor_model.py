@@ -1,4 +1,5 @@
 import pygame
+from typing import Optional
 from pathlib import Path
 from roguelike_ui.services.json_persistence import load_from_json
 from roguelike_engine.utils.loader import load_image, load_sprite_sheet
@@ -63,6 +64,9 @@ class EntitiesEditorModel:
         self.panning: bool = False
         self.pan_start: tuple[int, int] = (0, 0)
         self.pan_offset_start: tuple[float, float] = (0.0, 0.0)
+        # Spawn mode para entidades en el mapa
+        self.spawn_mode_active: bool = False  # indica si estamos en modo colocación
+        self.spawn_entity_type: Optional[str] = None  # id de entidad a colocar
 
     @property
     def visible(self) -> bool:

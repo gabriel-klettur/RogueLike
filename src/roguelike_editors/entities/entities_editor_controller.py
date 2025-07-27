@@ -55,11 +55,39 @@ class EntitiesEditorController:
         from roguelike_editors.entities.entities_editor_view import EntitiesEditorView
         self.view = EntitiesEditorView(self)
 
+    def enter_spawn_mode(self, entity_type=None):
+        """
+        Inicia modo spawn de entidades: picker parpadeante y selección inicial.
+        """
+        self.model.spawn_mode_active = True
+        self.model.spawn_entity_type = entity_type
+        # Iniciar parpadeo en picker
+        self.picker_controller.model.blink = True
+        # Mostrar picker
+        self.picker_controller.model.visible = True
+        # Reset selección previa
+        self.picker_controller.model.selected_id = None
+
+    def exit_spawn_mode(self):
+        """
+        Sale de modo spawn de entidades.
+        """
+        self.model.spawn_mode_active = False
+        self.model.spawn_entity_type = None
+        # Detener parpadeo
+        self.picker_controller.model.blink = False
+        # Restablecer cursor
+        pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
+
     def is_active(self, tool: str) -> bool:
         """Retorna True si la herramienta está activa en el toolbar."""
         return self.model.toolbar_model.active_tool == tool
 
     def handle_event(self, event: pygame.event.Event) -> bool:
+        # Debug global entities_on_map: click event recibido
+        if event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
+            print(f"[DEBUG][EntitiesEditorController] Click global en {event.pos}, spawn_mode={self.model.spawn_mode_active}, spawn_entity_type={self.model.spawn_entity_type}")
+
         """
         Delega el evento a los subcontrollers en orden de prioridad.
         Retorna True si fue consumido.
@@ -75,11 +103,26 @@ class EntitiesEditorController:
                 return True
             # Picker panel
             self.picker_controller.handle_event(event)
+            # Selección de entidad tras click en picker en modo spawn
+            if self.model.spawn_mode_active and self.model.spawn_entity_type is None and event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
+                sel = self.picker_controller.model.selected_id
+                if sel:
+                    self.model.spawn_entity_type = sel
+                    # Detener parpadeo y fijar borde
+                    self.picker_controller.model.blink = False
+                    # Cambiar cursor a crosshair
+                    pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_CROSSHAIR)
+                    return True
             # Properties panel
             # Sincronizar seleccionado
             self.properties_controller.model.selected_id = self.picker_controller.model.selected_id
             if self.properties_controller.handle_event(event):
                 return True
+            # Completando spawn: click en mapa finaliza spawn_mode
+            if self.model.spawn_mode_active and self.model.spawn_entity_type and event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
+                print(f"[DEBUG][EntitiesEditorController] Spawn finalizado, saliendo de spawn_mode")
+                self.exit_spawn_mode()
+                return False
         return False
 
     def update(self, camera, game_map=None):

@@ -92,6 +92,11 @@ class EntityPickerPanelView:
 
         # Dibujar fondo semitransparente con borde redondeado
         self._draw_panel_background(screen, panel_w, panel_h)
+        # Parpadeo de borde en modo spawn
+        if model.blink:
+            now = pygame.time.get_ticks()
+            if (now // self.blink_interval) % 2 == 0:
+                pygame.draw.rect(screen, (255, 255, 0), (self.x - 3, self.y - 3, panel_w + 6, panel_h + 6), 4)
 
         # Dibujar contenido (grid)
         self._draw_entity_grid(screen, model, entity_ids)

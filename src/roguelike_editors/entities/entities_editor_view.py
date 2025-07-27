@@ -35,4 +35,13 @@ class EntitiesEditorView:
                 pw, _ = pick_view.draggable_panel.surface.get_size()
                 prop_view.draggable_panel.pos = (px + pw + margin, py)
             c.properties_controller.draw(screen)
+        # Overlay para spawn de entidades
+        if self.controller.model.spawn_mode_active:
+            mx, my = pygame.mouse.get_pos()
+            if self.controller.model.spawn_entity_type is None:
+                msg = "Selecciona entidad en el picker"
+            else:
+                msg = f"Haz clic en el mapa para colocar '{self.controller.model.spawn_entity_type}'"
+            surf = self.controller.font.render(msg, True, (255, 255, 0))
+            screen.blit(surf, (mx + 10, my + 10))
         

@@ -20,3 +20,5 @@ class EntityPickerPanelModel:
     scroll_index: int = 0
     hovered_id: Optional[str] = None
     selected_id: Optional[str] = None
+    # Blink del picker en modo spawn
+    blink: bool = False
