@@ -28,7 +28,7 @@ class ToolbarView:
     """
     def __init__(self, controller, items, icons,
                  x, y, size, padding,
-                 bgcolor=(20, 20, 20, 235),
+                 bgcolor=(0, 0, 0, 180),
                  border_color=(255, 255, 255),
                  hover_color=(255, 255, 0, 100),
                  selection_color=(255, 255, 0),
@@ -45,8 +45,10 @@ class ToolbarView:
         self.hover_color = hover_color
         self.selection_color = selection_color
         self.selection_border_width = selection_border_width
-        width = size
-        height = len(items) * (size + padding) - padding
+        # Padding interno alrededor de íconos
+        self.edge_padding = 8
+        width = size + 2 * self.edge_padding
+        height = len(items) * (size + padding) - padding + 2 * self.edge_padding
         self.panel = DraggablePanel(width, height, bgcolor)
         self.panel.pos = (x, y)
         # Crear botones
@@ -65,15 +67,19 @@ class ToolbarView:
         """
         mouse_pos = pygame.mouse.get_pos()
         # Redimensionar panel según número de items
-        width = self.size
-        height = len(self.items) * (self.size + self.padding) - self.padding
+        width = self.size + 2 * self.edge_padding
+        height = len(self.items) * (self.size + self.padding) - self.padding + 2 * self.edge_padding
         self.panel.resize(width, height)
         panel_pos = self.panel.pos or (self.x, self.y)
-        rel_mouse = (mouse_pos[0] - panel_pos[0], mouse_pos[1] - panel_pos[1])
+        # Ajustar rel_mouse considerando padding interior
+        rel_mouse = (mouse_pos[0] - panel_pos[0] - self.edge_padding,
+                     mouse_pos[1] - panel_pos[1] - self.edge_padding)
         # Dibujar botones e iconos
         for idx, tool in enumerate(self.items):
             btn = self.buttons[tool]
-            btn.rect.topleft = (0, idx * (self.size + self.padding))
+            # Posicionar botón con padding interior
+            btn.rect.topleft = (self.edge_padding,
+                                self.edge_padding + idx * (self.size + self.padding))
             btn.is_hovered(rel_mouse)
             btn.draw(self.panel.surface)
             icon_surf = self.icons[tool]

@@ -100,10 +100,10 @@ class EntityPickerPanelView:
     # SUBRENDERIZADO
     # ----------------------------
     def _draw_panel_background(self, screen: pygame.Surface, width: int, height: int) -> None:
-        """Dibuja el fondo del panel con opacidad y borde."""
+        """Dibuja el fondo del panel con opacidad."""
         bg_surf = pygame.Surface((width, height), pygame.SRCALPHA)
         bg_surf.fill((0, 0, 0, 180))  # Fondo semitransparente
-        pygame.draw.rect(bg_surf, (255, 255, 255, 200), bg_surf.get_rect(), 2, border_radius=6)
+        
         screen.blit(bg_surf, (self.x, self.y))
 
     def _draw_entity_grid(self, screen: pygame.Surface, model: EntityPickerPanelModel, entity_ids: list[str]) -> None:
