@@ -1,0 +1,65 @@
+import pygame
+from pathlib import Path
+from roguelike_ui.services.json_persistence import load_from_json
+from roguelike_engine.utils.loader import load_image, load_sprite_sheet
+from roguelike_editors.entities.entities_title.entities_title_model import EntitiesTitleModel
+from roguelike_editors.entities.entities_tool_bar_panel.entities_tool_bar_panel_model import EntitiesToolBarPanelModel
+from roguelike_editors.entities.entities_add_remove_panel.entities_add_remove_panel_model import EntitiesAddRemovePanelModel
+from roguelike_editors.entities.entities_picker_panel.entities_picker_panel_model import EntityPickerPanelModel
+from roguelike_editors.entities.entities_properties_panel.entities_properties_panel_model import EntityPropertiesPanelModel
+
+
+class EntitiesEditorModel:
+    """
+    Modelo central del editor de entidades con estado global y submodelos.
+    """
+    def __init__(self, data_dir: Path = Path('data')):
+        # Editor global
+        self.active: bool = False
+        # Carga de datos JSON
+        players_path = data_dir / 'entities' / 'players.json'
+        players_root = load_from_json(str(players_path))
+        self.player_stats = players_root.get('PLAYER_STATS', {})
+        self.player_assets = players_root.get('PLAYER_ASSETS', {})
+        self.orig_size = tuple(players_root.get('ORIGINAL_SPRITE_SIZE', [128, 128]))
+        monsters_path = data_dir / 'entities' / 'monsters.json'
+        self.monsters = load_from_json(str(monsters_path))
+        # Carga de assets
+        self.assets: dict[str, pygame.Surface] = {}
+        # Jugadores
+        for pid in self.player_stats:
+            asset_info = self.player_assets.get(pid)
+            path = None
+            if isinstance(asset_info, str):
+                path = asset_info
+            elif isinstance(asset_info, dict):
+                path = next(iter(asset_info.values()), None)
+            if path:
+                try:
+                    frames = load_sprite_sheet(path, self.orig_size, columns=1)
+                    self.assets[pid] = frames[0]
+                    continue
+                except Exception:
+                    pass
+            try:
+                self.assets[pid] = load_image(f'assets/npc/player/{pid}/{pid}_1_down.png')
+            except Exception:
+                pass
+        # Monstruos
+        for mid, mdef in self.monsters.items():
+            path = mdef.get('sprites', {}).get('down')
+            if path:
+                try:
+                    self.assets[mid] = load_image(path)
+                except Exception:
+                    pass
+        # submodelos MVC
+        self.title_model = EntitiesTitleModel()
+        self.toolbar_model = EntitiesToolBarPanelModel()
+        self.add_remove_model = EntitiesAddRemovePanelModel()
+        self.picker_model = EntityPickerPanelModel(self.player_stats, self.monsters, self.assets)
+        self.properties_model = EntityPropertiesPanelModel(self.player_stats, self.monsters)
+        # Cámara y arrastre
+        self.panning: bool = False
+        self.pan_start: tuple[int, int] = (0, 0)
+        self.pan_offset_start: tuple[float, float] = (0.0, 0.0)

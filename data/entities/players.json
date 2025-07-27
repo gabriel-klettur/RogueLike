@@ -57,7 +57,7 @@
     "mague": {
       "max_health": 100,
       "max_mana": 50,
-      "max_energy": 100,
+      "max_energy": 200,
       "scale": 0.75,
       "speed": 5,
       "trail": {
