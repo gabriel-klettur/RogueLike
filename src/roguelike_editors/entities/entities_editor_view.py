@@ -18,11 +18,12 @@ class EntitiesEditorView:
         # Toolbar
         c.toolbar_controller.render(screen)
         active = c.model.toolbar_model.active_tool
+        widget = c.toolbar_view.widget
+        margin = 8
+        # Si se seleccionó alguna herramienta de entidades, mostrar panels
         if active in ('entities_on_map', 'entities_on_system'):
-            widget = c.toolbar_view.widget
             rect = widget.icon_rects.get('entities_on_map')
             if rect:
-                margin = 8
                 # Posicionar panel Add/Remove
                 ar_x = rect.right + margin
                 ar_y = rect.y
@@ -34,7 +35,8 @@ class EntitiesEditorView:
                 c.picker_controller.view.draggable_panel.pos = (pick_x, pick_y)
                 c.picker_controller.view.x = pick_x
                 c.picker_controller.view.y = pick_y
-        # Dibuja panels activos
-        c.add_remove_controller.render(screen)
-        c.picker_controller.draw(screen)
-        c.properties_controller.draw(screen)
+            # Dibujar panels activos
+            c.add_remove_controller.render(screen)
+            c.picker_controller.draw(screen)
+            c.properties_controller.draw(screen)
+        

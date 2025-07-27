@@ -63,3 +63,17 @@ class EntitiesEditorModel:
         self.panning: bool = False
         self.pan_start: tuple[int, int] = (0, 0)
         self.pan_offset_start: tuple[float, float] = (0.0, 0.0)
+
+    @property
+    def visible(self) -> bool:
+        """
+        Alias para compatibilidad: visible == active
+        """
+        return self.active
+
+    @visible.setter
+    def visible(self, value: bool):
+        """
+        Setter para compatibilidad: visible == active
+        """
+        self.active = value

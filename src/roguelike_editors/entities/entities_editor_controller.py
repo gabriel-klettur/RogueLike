@@ -48,6 +48,10 @@ class EntitiesEditorController:
         from roguelike_editors.entities.entities_editor_view import EntitiesEditorView
         self.view = EntitiesEditorView(self)
 
+    def is_active(self, tool: str) -> bool:
+        """Retorna True si la herramienta está activa en el toolbar."""
+        return self.model.toolbar_model.active_tool == tool
+
     def handle_event(self, event: pygame.event.Event) -> bool:
         """
         Delega el evento a los subcontrollers en orden de prioridad.

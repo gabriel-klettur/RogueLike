@@ -32,11 +32,15 @@ class EntitiesToolBarPanelEventHandler:
                     if self.model.active_tool == tool:
                         # Desactivar
                         self.model.active_tool = None
+                        # Ocultar panel Picker
+                        self.controller.picker_controller.model.visible = False
                     else:
                         # Activar
                         self.model.active_tool = tool
-                        # Mostrar panels
+                        # Mostrar editor principal
                         editor = self.controller
-                        editor.controller.model.visible = True
+                        editor.model.visible = True
+                        # Mostrar panel Picker solo en mapa
+                        editor.picker_controller.model.visible = (tool == 'entities_on_map')
                     return True
         return False
