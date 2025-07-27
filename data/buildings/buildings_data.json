@@ -1594,5 +1594,24 @@
         "z_bottom": 3,
         "z_top": 5,
         "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 153,
+        "rel_y": 698,
+        "image_path": "assets/buildings\\mine.png",
+        "solid": true,
+        "scale": [
+            204,
+            204
+        ],
+        "original_scale": [
+            204,
+            204
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "z": 1
     }
 ]
