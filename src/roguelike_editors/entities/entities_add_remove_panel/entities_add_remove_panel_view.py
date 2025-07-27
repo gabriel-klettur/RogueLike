@@ -43,21 +43,12 @@ class EntitiesAddRemovePanelView:
             x=self.x,
             y=self.y,
             size=self.size,
-            padding=self.padding
+            padding=self.padding,
+            name='EntitiesAddRemovePanel'
         )
 
     def render(self, screen):
-        # Alinear dinámicamente junto al botón 'entities_on_map'
-        toolbar_widget = self.controller.toolbar_controller.view.widget
-        map_rect = toolbar_widget.icon_rects.get('entities_on_map')
-        if map_rect:
-            margin_between = 8
-            new_x = map_rect.right + margin_between
-            new_y = map_rect.y
-            # Actualizar posición del panel
-            self.widget.panel.pos = (new_x, new_y)
-            self.x = new_x
-            self.y = new_y
+
         # Renderizar panel de añadir/eliminar
         self.widget.render(screen)
 

@@ -58,7 +58,8 @@ class EntitiesToolBarPanelView:
             x=self.x,
             y=self.y,
             size=self.size,
-            padding=self.padding
+            padding=self.padding,
+            name='EntitiesToolBarPanel'
         )
 
     def render(self, screen):

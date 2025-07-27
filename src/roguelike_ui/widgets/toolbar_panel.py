@@ -2,6 +2,8 @@ import pygame
 from roguelike_ui.panel import DraggablePanel
 from roguelike_ui.widgets.button import Button
 
+
+
 class ToolbarState:
     """Estado genérico para posición y arrastre de un toolbar."""
     def __init__(self):
@@ -32,7 +34,7 @@ class ToolbarView:
                  border_color=(255, 255, 255),
                  hover_color=(255, 255, 0, 100),
                  selection_color=(255, 255, 0),
-                 selection_border_width=4):
+                 selection_border_width=4, name=None):
         self.controller = controller
         self.items = items
         self.icons = icons
@@ -51,6 +53,8 @@ class ToolbarView:
         height = len(items) * (size + padding) - padding + 2 * self.edge_padding
         self.panel = DraggablePanel(width, height, bgcolor)
         self.panel.pos = (x, y)
+        self.name = name or self.__class__.__name__
+
         # Crear botones
         self.buttons = {}
         for idx, tool in enumerate(items):
@@ -71,6 +75,7 @@ class ToolbarView:
         height = len(self.items) * (self.size + self.padding) - self.padding + 2 * self.edge_padding
         self.panel.resize(width, height)
         panel_pos = self.panel.pos or (self.x, self.y)
+
         # Ajustar rel_mouse considerando padding interior
         rel_mouse = (mouse_pos[0] - panel_pos[0] - self.edge_padding,
                      mouse_pos[1] - panel_pos[1] - self.edge_padding)
@@ -99,6 +104,7 @@ class ToolbarView:
                 hover_surf.fill(self.hover_color)
                 screen.blit(hover_surf, rect.topleft)
             if self.controller.is_active(tool):
+
                 pygame.draw.rect(screen, self.selection_color, rect, self.selection_border_width)
 
     def handle_event(self, event):
@@ -106,4 +112,9 @@ class ToolbarView:
         Delegar eventos de arrastre al panel.
         """
         header = pygame.Rect(self.panel.pos or (self.x, self.y), self.panel.surface.get_size())
-        return self.panel.handle_event(event, header)
+        if event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 3 and header.collidepoint(event.pos):
+            print(f"[DEBUG][{self.name}][DRAG START]", event.pos)
+        res = self.panel.handle_event(event, header)
+        if event.type == pygame.MOUSEBUTTONUP and getattr(event, 'button', None) == 3:
+            print(f"[DEBUG][{self.name}][DRAG END] panel.pos", self.panel.pos)
+        return res

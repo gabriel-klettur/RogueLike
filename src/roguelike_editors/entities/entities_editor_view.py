@@ -23,18 +23,7 @@ class EntitiesEditorView:
         # Si se seleccionó alguna herramienta de entidades, mostrar panels
         if active in ('entities_on_map', 'entities_on_system'):
             rect = widget.icon_rects.get('entities_on_map')
-            if rect:
-                # Posicionar panel Add/Remove
-                ar_x = rect.right + margin
-                ar_y = rect.y
-                c.add_remove_view.widget.panel.pos = (ar_x, ar_y)
-                # Posicionar panel Picker
-                ar_w, _ = c.add_remove_view.widget.panel.surface.get_size()
-                pick_x = ar_x + ar_w + margin
-                pick_y = rect.y
-                c.picker_controller.view.draggable_panel.pos = (pick_x, pick_y)
-                c.picker_controller.view.x = pick_x
-                c.picker_controller.view.y = pick_y
+
             # Dibujar panels activos
             c.add_remove_controller.render(screen)
             c.picker_controller.draw(screen)
