@@ -85,7 +85,7 @@
       "death_timer_duration": 10.0
     },
     "barbarian": {
-      "max_health": 200,
+      "max_health": 220,
       "max_mana": 30,
       "max_energy": 80,
       "scale": 1.0,
