@@ -9,9 +9,13 @@ class EntitiesAddRemovePanelView:
     def __init__(self, controller, model):
         self.controller = controller
         self.model = model
-        # Posición inicial (igual que el toolbar principal o ajustada)
-        self.x = 10
-        self.y = 10 + 64 + 8  # posición debajo del toolbar principal
+        # Posición inicial: a la derecha del toolbar de entidades
+        toolbar_widget = self.controller.toolbar_view.widget
+        panel_pos = toolbar_widget.panel.pos or (toolbar_widget.x, toolbar_widget.y)
+        panel_w, _ = toolbar_widget.panel.surface.get_size()
+        margin = 8
+        self.x = panel_pos[0] + panel_w + margin
+        self.y = panel_pos[1]
         # Tamaño de iconos y espacio
         self.size = 64
         self.padding = 8
