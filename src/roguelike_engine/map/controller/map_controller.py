@@ -1,5 +1,3 @@
-
-# Path: src/roguelike_engine/map/controller/map_controller.py
 from typing import Optional
 
 from roguelike_engine.map.controller.map_service import MapService

@@ -1,0 +1,81 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Item Common Definitions",
+  "definitions": {
+    "item": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "stackable": { "type": "boolean" },
+        "max_stack": { "type": "integer", "minimum": 1 },
+        "icon": {
+          "anyOf": [
+            { "type": "string" },
+            { "type": "array", "items": { "type": "string" } }
+          ]
+        },
+        "icon_small": { "type": "string" },
+        "icon_large": { "type": "string" },
+        "threshold": { "type": "integer", "minimum": 1 },
+        "experience": { "type": "integer", "minimum": 0 },
+        "effect": { "type": "string" },
+        "equip_slot": { "type": "string", "enum": ["head", "body", "weapon"] },
+        "durability": { "type": "integer", "minimum": 0 },
+        "damage": { "type": "integer", "minimum": 0 },
+        "attack_speed": { "type": "number", "minimum": 0 },
+        "range": { "type": "integer", "minimum": 0 },
+        "crit_chance": { "type": "number", "minimum": 0, "maximum": 1 },
+        "crit_multiplier": { "type": "number", "minimum": 1 },
+        "weight": { "type": "number", "minimum": 0 },
+        "value": { "type": "integer", "minimum": 0 },
+        "rarity": { "type": "string", "enum": ["common", "uncommon", "rare", "epic", "legendary"] },
+        "level_requirement": { "type": "integer", "minimum": 1 },
+        "quest_id": { "type": "string", "format": "uuid" },
+        "scale_editor": { "type": "number", "minimum": 0 },
+        "scale_map": { "type": "number", "minimum": 0 },
+        "scale_inventory": { "type": "number", "minimum": 0 },
+        "z_layer": { "type": "integer" },
+        "default_params": { "$ref": "#/definitions/params" }
+      },
+      "required": ["id", "name", "description", "stackable"],
+      "additionalProperties": false,
+      "anyOf": [
+        { "required": ["icon"] },
+        { "required": ["icon_small", "icon_large"] }
+      ]
+    },
+    "params": {
+      "type": "object",
+      "properties": {
+        "dest_map": { "type": "string" },
+        "dest_x": { "type": "number" },
+        "dest_y": { "type": "number" },
+        "healing": { "type": "number" },
+        "mana": { "type": "number" },
+        "energy": { "type": "number" },
+        "hunger": { "type": "number" },
+        "buff_stat": { "type": "string" },
+        "buff_value": { "type": "number" },
+        "duration": { "type": "number" },
+        "key_id": { "type": "string" },
+        "event_id": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "instance": {
+      "type": "object",
+      "required": ["instance_id", "definition_id", "x", "y", "params", "schema_version"],
+      "properties": {
+        "instance_id": { "type": "string" },
+        "definition_id": { "type": "string" },
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "schema_version": { "type": "string" },
+        "params": { "$ref": "#/definitions/params" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

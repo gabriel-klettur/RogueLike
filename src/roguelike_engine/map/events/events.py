@@ -1,4 +1,3 @@
-# Path: src/roguelike_engine/map/events/events.py
 import random
 import pygame
 

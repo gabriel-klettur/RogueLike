@@ -1,4 +1,3 @@
-# Path: src/roguelike_game/ecs/core/component_registry.py
 
 def create_empty_component_store():
     """
@@ -7,13 +6,18 @@ def create_empty_component_store():
     return {
         'Position': {}, 'Sprite': {}, 'Patrol': {}, 'MovementSpeed': {},
         'PatrolRoute': {}, 'NPCState': {}, 'Animator': {}, 'AnimationTimer': {},
-        'Health': {}, 'Scale': {}, 'Identity': {}, 'Velocity': {}, 'MultiCollider': {},
-        'ZLayer': {}, 'DeathTimer': {}, 'DamageConfig': {}, 'FireballComponent': {},
+        'Health': {}, 'Mana': {}, 'Energy': {}, 'Hunger': {}, 'Scale': {}, 'Identity': {}, 'Velocity': {}, 'MultiCollider': {},
+        'ZLayer': {}, 'DeathTimer': {}, 'DamageConfig': {}, 'FireballComponent': {}, 'ArcaneFlameComponent': {}, 'FireworkLaunchComponent': {}, 'SmokeComponent': {},
+        'SmokeEmitterComponent': {},
+        'SphereMagicShieldComponent': {},
+        'TeleportComponent': {},
+        'ExplosionComponent': {},
         'AuraComponent': {}, 'LaserBeamComponent': {}, 'ParticleComponent': {},
         'HitboxComponent': {},
         'SpawnRequest': {}, 'CombatStats': {}, 'MeleeWeapon': {}, 'MeleeRange': {},
         'WantsToMelee': {}, 'AttackCooldown': {}, 'WantsToCastSpell': {}, 'AggroRange': {},
-        'ChaseTarget': {}, 'FacingCooldown': {}, 'InputComponent': {}, 'InventoryComponent': {},
-        'CameraFollowComponent': {}, 'PlayerTagComponent': {}, 'InCombat': {},
+        'ChaseTarget': {}, 'FacingCooldown': {}, 'InputComponent': {}, 'InventoryComponent': {}, 'PhysicalItemComponent': {}, 'CollectibleComponent': {}, 'ExperienceComponent': {},
+        'CameraFollowComponent': {}, 'PlayerTagComponent': {}, 'NPCTagComponent': {}, 'MonsterInstanceComponent': {}, 'InCombat': {},
         'FlashComponent': {}, 'TrailComponent': {}, 'GrayscaleComponent': {},
     }
+# Path: src/roguelike_game/ecs/core/component_registry.py

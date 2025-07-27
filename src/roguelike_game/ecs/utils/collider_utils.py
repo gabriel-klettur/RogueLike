@@ -1,5 +1,3 @@
-# src/roguelike_game/ecs/utils/collider_utils.py
-
 import pygame
 from roguelike_game.ecs.components.physics.collider import Collider
 from roguelike_game.ecs.components.physics.mask_collider import MaskCollider

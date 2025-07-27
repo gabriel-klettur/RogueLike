@@ -19,4 +19,19 @@ class InputComponent:
         self.spell_darkball: bool = False
         self.spell_iceball: bool = False
         self.spell_lightning: bool = False
+        self.spell_arcane_flame: bool = False
+        self.spell_firework_launch: bool = False
+        self.spell_smoke: bool = False
+        self.spell_smoke_emitter: bool = False
+        self.spell_sphere_magic_shield: bool = False
+        self.spell_teleport: bool = False
         self.click: bool = False
+        self.drop: bool = False
+        self.toggle_editor: bool = False
+        self.toggle_inventory: bool = False
+        self.show_all_drops: bool = False
+        # Uso de consumibles desde la UI
+        self.use_item = None
+        # UI drag state: when the inventory panel is being dragged
+        self.ui_drag: bool = False
+# Path: src/roguelike_game/ecs/components/input_component.py

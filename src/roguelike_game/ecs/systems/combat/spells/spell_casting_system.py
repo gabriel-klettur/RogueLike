@@ -3,10 +3,10 @@ Sistema ECS que detecta componentes 'WantsToCastSpell' y, según corresponda,
 arranca la máquina de estados de hechizos (CastState y subestados) para NPCs
 y jugadores.
 """
-from roguelike_game.ecs.fsm.states.cast_state import CastState
-from roguelike_game.ecs.fsm.states.player.player_spell_cast_state import PlayerSpellCastState
-from roguelike_game.ecs.fsm.states.idle_state import IdleState
-from roguelike_game.ecs.fsm.states.player.move_state import MoveState
+from roguelike_game.ecs.systems.fsm.states.cast_state import CastState
+from roguelike_game.ecs.systems.fsm.states.player.player_spell_cast_state import PlayerSpellCastState
+from roguelike_game.ecs.systems.fsm.states.idle_state import IdleState
+from roguelike_game.ecs.systems.fsm.states.player.move_state import MoveState
 from roguelike_game.ecs.systems.fsm.fsm_system import _EntityProxy
 
 from roguelike_engine.utils.benchmark import benchmark
@@ -83,7 +83,11 @@ class SpellCastingSystem:
                 current = state_comp.fsm.current_state
                 # salto si no está en IdleState o MoveState con permiso
                 if not (isinstance(current, IdleState) or (allow_mov and isinstance(current, MoveState))):
-                    continue
+                    # en medio de cast; verificar interruptibilidad
+                    if not cfg.get('interruptible', False):
+                        # descartar intención si no es interruptible
+                        wants.pop(eid, None)
+                        continue
             # Si tiene FSM global (NPC o jugador), iniciar sub-FSM de hechizo
             if eid in npcs:
                 npc_state = npcs[eid]

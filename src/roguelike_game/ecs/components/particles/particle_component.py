@@ -14,3 +14,4 @@ class ParticleComponent:
         self.size = size
         self.lifespan = lifespan
         self.age = 0
+# Path: src/roguelike_game/ecs/components/particles/particle_component.py

@@ -1,5 +1,26 @@
 import pygame
 from roguelike_engine.utils.benchmark import benchmark
+import math
+
+def get_direction_name(dx, dy):
+    """Return one of 8 directions based on vector dx, dy."""
+    angle = math.degrees(math.atan2(-dy, dx)) % 360
+    if angle < 22.5 or angle >= 337.5:
+        return 'right'
+    elif angle < 67.5:
+        return 'up_right'
+    elif angle < 112.5:
+        return 'up'
+    elif angle < 157.5:
+        return 'up_left'
+    elif angle < 202.5:
+        return 'left'
+    elif angle < 247.5:
+        return 'down_left'
+    elif angle < 292.5:
+        return 'down'
+    else:
+        return 'down_right'
 
 class PlayerFacingSystem:
     """
@@ -30,11 +51,8 @@ class PlayerFacingSystem:
             world_y = my / camera.zoom + camera.offset_y
             dx = world_x - pos.x
             dy = world_y - pos.y
-            # elegir dirección cardinal basada en ratón
-            if abs(dx) > abs(dy):
-                direction = 'right' if dx > 0 else 'left'
-            else:
-                direction = 'down' if dy > 0 else 'up'
+            # calcular dirección basada en ratón (8 direcciones)
+            direction = get_direction_name(dx, dy)
             # determinar estado idle o walk
             state = f"{direction}_idle" if vx == 0 and vy == 0 else f"{direction}_walk"
             # aplicar estado si existe la animación

@@ -1,4 +1,3 @@
-# Path: src/roguelike_engine/config.py
 from pathlib import Path
 
 #! ------------------------ MAIN GAME SETTINGS ------------------------
@@ -9,6 +8,8 @@ MAX_DIRTY = 50
 # Debug Mode
 DEBUG = False
 DEBUG_HITBOX = False
+DEBUG_ENTITIES = False  # Debug de entidades (FSM, IA, etc.)
+DEBUG_ENTITIES_FRAME_SKIP = 2  # dibuja overlay de entidades cada N frames
 
 # Pantalla
 SCREEN_WIDTH = 1600

@@ -1,14 +1,15 @@
 # RogueLike
 
-**Roguelike** en vista top-down desarrollado en Python y Pygame. Proporciona un motor modular (`roguelike_engine`) y la lógica de juego (`roguelike_game`) con generación procedural de mazmorras, sistema de cámara, entrada, efectos de partículas y más.
+**Roguelike** en vista *top-down* desarrollado en **Python** y **Pygame**.
+Proporciona un motor modular (`roguelike_engine`) y la lógica de juego (`roguelike_game`) con generación procedural de mazmorras, sistema de cámara, entrada, efectos de partículas y más.
 
 ---
 
 ## 📁 Estructura del Proyecto
 
-```text
+```
 RogueLike/
-├── launcher.py               # Script de arranque (entry-point)
+├── launcher.py               # Script de arranque (entry-point principal)
 ├── setup.py                  # Configuración del paquete (editable)
 ├── requirements.txt          # Dependencias externas
 └── src/
@@ -16,7 +17,7 @@ RogueLike/
     └── roguelike_game/       # Lógica de juego (entidades, mapas, main loop)
 ```
 
-Dentro de `src/`: los paquetes Python instalables con imports absolutos:
+Dentro de `src/`, se usan **imports absolutos**:
 
 ```python
 from roguelike_engine.camera.camera import Camera
@@ -27,82 +28,151 @@ from roguelike_game.game.game import Game
 
 ## 🚀 Instalación
 
-1. Clona el repositorio:
+> **⚠️ Requisitos previos:**
+>
+> * Python 3.8+
+> * pip actualizado (`python -m pip install --upgrade pip`)
+
+1. **Clona el repositorio:**
 
    ```bash
    git clone <URL_REPO>
    cd RogueLike
    ```
-2. Instala tu paquete en modo editable:
+
+2. **Crea y activa un entorno virtual:**
+
+   **Windows (PowerShell):**
+
+   ```powershell
+   python -m venv venv
+   .\venv\Scripts\Activate
+   ```
+
+   **Linux/macOS:**
+
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+
+3. **Instala tu paquete en modo editable:**
 
    ```bash
    pip install -e .
    ```
-3. Instala dependencias externas:
+
+4. **Instala las dependencias externas:**
 
    ```bash
    pip install -r requirements.txt
+   ```
+
+5. **(Opcional) Verifica la instalación:**
+
+   ```bash
+   pip list
    ```
 
 ---
 
 ## ▶️ Uso
 
-* **Desde desarrollo**:
+Puedes lanzar el juego de dos maneras:
 
-  ```bash
-  python launcher.py
-  ```
-* **Vía entry-point** (tras instalación):
+**Desde desarrollo:**
 
-  ```bash
-  roguelike
-  ```
+```bash
+python launcher.py
+```
+
+**Vía entry-point instalado:**
+
+```bash
+roguelike
+```
 
 ---
 
 ## 🛠️ Desarrollo
 
-* Layout `src/` con imports absolutos para mantener el código limpio y evitar hacks de `sys.path`.
-* Un `setup.py` define el paquete y el entry-point `roguelike`.
-* Evitar imports relativos excesivos: usar relativos solo dentro de un mismo subpaquete.
+* **Layout `src/`**: mantiene el código limpio y evita hacks de `sys.path`.
+* `setup.py` define el paquete y el **entry-point** `roguelike`.
+* **Imports absolutos** entre paquetes (`from roguelike_game...`).
+* Evita imports relativos excesivos.
 * Uso de `benchmark` para perfilar `handle_events`, `update` y `render` en modo DEBUG.
 
+---
+
+---
+
+## 🎲 Sistema de Drops
+
+El sistema `MapLoadDropsSystem` carga ítems dropeados desde `data/inventory_map.json` asignándoles los componentes:
+
+- `Position`: posición en el mundo.
+- `PhysicalItemComponent`: metadatos `item_id` y cantidad.
+- `ZLayer`: capa de renderizado.
+- `Sprite`: componente de imagen.
+- `Scale`: factor de escala.
+
+La renderización de drops se realiza con el `RenderSystem` junto al jugador y otras entidades, ordenando por `ZLayer` y posición Y. El antiguo `DropRenderSystem` ha sido eliminado.
+
+---
+
 ## 👾 FSM para NPCs
-Esta versión incluye un sistema de Máquina de Estados (FSM) para controlar el comportamiento de NPCs:
-1. Define estados personalizados heredando de `State` en `src/roguelike_game/ecs/fsm/states/`.
-2. Crea una FSM con un estado inicial: `fsm = FiniteStateMachine(IdleState())`.
-3. Asocia el componente FSM a la entidad NPC: `world.components['NPCState'][eid] = NPCState(fsm, 'Idle')`.
-4. Registra `FSMSystem()` en `world.py` tras `DeathSystem` para actualizar estados cada tick.
-5. Implementa estados: Idle, Patrol, Aggro, Attack, Flee y Death.
-6. Pruebas de integración en `tests/test_fsm_integration.py`.
+
+Esta versión incluye un sistema de **Máquina de Estados Finita (FSM)** para controlar comportamiento de NPCs:
+
+1. Define estados personalizados heredando de `State` en:
+
+   ```
+   src/roguelike_game/ecs/fsm/states/
+   ```
+2. Crea la FSM con un estado inicial:
+
+   ```python
+   fsm = FiniteStateMachine(IdleState())
+   ```
+3. Asocia la FSM a la entidad:
+
+   ```python
+   world.components['NPCState'][eid] = NPCState(fsm, 'Idle')
+   ```
+4. Registra `FSMSystem()` en `world.py` tras `DeathSystem`.
+5. Implementa estados: Idle, Patrol, Aggro, Attack, Flee, Death.
+6. Pruebas de integración en:
+
+   ```
+   tests/test_fsm_integration.py
+   ```
 7. Ajusta parámetros en `AIConfig` y perfila con `benchmark`.
 
 ---
 
 ## 🏗️ Empaquetado con PyInstaller
 
-Ejemplo de spec (`roguelike.spec`):
+Puedes generar un ejecutable:
 
-```python
-# Incluir datos estáticos:
-# datas=[('assets/**/*','assets'),('data/**/*','data')]
-a = Analysis(
-    ['src/roguelike_game/main.py'],
-    pathex=['src'],
-    datas=[
-        ('assets/**/*', 'assets'),
-        ('data/**/*',   'data'),
-    ],
-    ...
-)
-```
+1. **Ejemplo de spec (`roguelike.spec`):**
 
-Luego:
+   ```python
+   a = Analysis(
+       ['src/roguelike_game/main.py'],
+       pathex=['src'],
+       datas=[
+           ('assets/**/*', 'assets'),
+           ('data/**/*', 'data'),
+       ],
+       ...
+   )
+   ```
 
-```bash
-pyinstaller roguelike.spec --onefile
-```
+2. **Compila con:**
+
+   ```bash
+   pyinstaller roguelike.spec --onefile
+   ```
 
 ---
 
@@ -110,7 +180,7 @@ pyinstaller roguelike.spec --onefile
 
 Listado en `requirements.txt`:
 
-```text
+```
 pygame
 tcod
 pyyaml
@@ -120,6 +190,33 @@ websockets>=10.4
 aiortc>=1.9.0
 pyinstaller
 ```
+
+---
+
+## 📝 Pasos rápidos de instalación la próxima vez
+
+Cuando clones o descargues el proyecto:
+
+1. Crea un entorno virtual y actívalo.
+2. Instala dependencias y tu paquete en modo editable:
+
+   ```bash
+   pip install -e .
+   pip install -r requirements.txt
+   ```
+3. Lanza el juego:
+
+   ```bash
+   python launcher.py
+   ```
+
+   o
+
+   ```bash
+   roguelike
+   ```
+
+Con esto, evitarás problemas de importación y tendrás todo listo en minutos.
 
 ---
 

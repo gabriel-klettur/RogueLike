@@ -1,4 +1,3 @@
-# Path: src/roguelike_engine/tile/loader.py
 from typing import List, Optional
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.tile.model.tile import Tile

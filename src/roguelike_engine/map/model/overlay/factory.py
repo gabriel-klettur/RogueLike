@@ -1,5 +1,3 @@
-
-# Path: src/roguelike_engine/map/model/overlay/factory.py
 from typing import Dict
 from .interfaces import OverlayStore
 from .json_store import JsonOverlayStore

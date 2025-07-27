@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-#Path: scripts/generate_overlay_map.py
-
 import os
 import json
 from pathlib import Path

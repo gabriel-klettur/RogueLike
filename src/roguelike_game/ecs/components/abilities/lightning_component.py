@@ -1,4 +1,4 @@
-from roguelike_game.systems.effects.spells.lightning.model import LightningModel
+from roguelike_game.ecs.components.abilities.lightning_model import LightningModel
 
 class LightningComponent:
     """

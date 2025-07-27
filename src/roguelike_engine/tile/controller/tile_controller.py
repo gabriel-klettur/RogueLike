@@ -1,5 +1,3 @@
-# src/roguelike_engine/tile/controller/tile_controller.py
-
 import pygame
 from roguelike_engine.tile.model.tile import Tile
 

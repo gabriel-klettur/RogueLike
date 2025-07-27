@@ -2,7 +2,6 @@ import random
 import time
 import pygame
 from roguelike_engine.utils.benchmark import benchmark
-from roguelike_game.ecs.components.abilities.laser_beam_component import LaserBeamComponent
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.particles.particle_component import ParticleComponent
 
@@ -13,7 +12,7 @@ class LaserBeamEmitterSystem:
     def __init__(self, perf_log):
         self.perf_log = perf_log
 
-    @benchmark(lambda self: self.perf_log, "LaserBeamEmitterSystem.update")
+    @benchmark(lambda self: self.perf_log, "4.2.2. LaserBeamEmitterSystem.update")
     def update(self, world, camera=None):
         now = time.time()
         # Remove beam when middle mouse is released

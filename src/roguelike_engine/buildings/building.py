@@ -1,5 +1,3 @@
-# src/roguelike_engine/buildings/building.py
-
 import pygame
 import types
 
