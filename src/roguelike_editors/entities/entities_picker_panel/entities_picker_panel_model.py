@@ -22,3 +22,5 @@ class EntityPickerPanelModel:
     selected_id: Optional[str] = None
     # Blink del picker en modo spawn
     blink: bool = False
+    # Parpadeo de la selección
+    selection_blink: bool = False

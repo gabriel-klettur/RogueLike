@@ -185,4 +185,9 @@ class EntityPickerPanelView:
         x = self.x + self.margin + col * (self.cell_size + self.margin)
         y = self.y + self.margin + (row - scroll) * (cell_height + self.margin)
 
-        pygame.draw.rect(screen, (255, 255, 0), (x - 2, y - 2, self.cell_size + 4, self.cell_size + 4), 3)
+        if model.selection_blink:
+            now = pygame.time.get_ticks()
+            if (now // self.blink_interval) % 2 == 0:
+                pygame.draw.rect(screen, (255, 255, 0), (x - 2, y - 2, self.cell_size + 4, self.cell_size + 4), 3)
+        else:
+            pygame.draw.rect(screen, (255, 255, 0), (x - 2, y - 2, self.cell_size + 4, self.cell_size + 4), 3)

@@ -55,6 +55,13 @@ class EntitiesAddRemovePanelView:
 
         # Renderizar panel de añadir/eliminar
         self.widget.render(screen)
+        # Parpadeo de borde en 'add_entitie' si spawn mode activo
+        if self.controller.model.spawn_mode_active and self.model.active_tool == 'add_entitie':
+            rect = self.widget.icon_rects.get('add_entitie')
+            if rect:
+                now = pygame.time.get_ticks()
+                if (now // 500) % 2 == 0:
+                    pygame.draw.rect(screen, (255, 255, 0), rect.inflate(6, 6), 3)
 
     def handle_event(self, event):
         return self.widget.handle_event(event)

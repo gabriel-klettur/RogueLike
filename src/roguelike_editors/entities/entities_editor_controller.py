@@ -76,6 +76,8 @@ class EntitiesEditorController:
         self.model.spawn_entity_type = None
         # Detener parpadeo
         self.picker_controller.model.blink = False
+        # Detener parpadeo de selección
+        self.picker_controller.model.selection_blink = False
         # Restablecer cursor
         pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
 
@@ -110,6 +112,8 @@ class EntitiesEditorController:
                     self.model.spawn_entity_type = sel
                     # Detener parpadeo y fijar borde
                     self.picker_controller.model.blink = False
+                    # Iniciar parpadeo de selección
+                    self.picker_controller.model.selection_blink = True
                     # Cambiar cursor a crosshair
                     pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_CROSSHAIR)
                     return True
