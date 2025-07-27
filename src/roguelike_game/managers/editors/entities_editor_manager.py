@@ -141,9 +141,31 @@ class EntitiesEditorManager:
         self.title_controller.render(screen)
         # Renderizar toolbar y luego la vista principal
         self.toolbar_controller.render(screen)
-        self.add_remove_controller.render(screen)
-        self.controller.draw(screen)
-        # Sincronizar selección con panel de propiedades
-        self.properties_controller.model.selected_id = self.model.selected_id
-        # Dibujar panel de propiedades
-        self.properties_controller.draw(screen)
+        # Mostrar panels add/remove y picker solo si toolbar activo
+        if self.toolbar_model.active_tool in ('entities_on_map', 'entities_on_system'):
+            # Alinear panels junto al botón 'entities_on_map'
+            tw_view = self.toolbar_controller.view.widget
+            map_rect = tw_view.icon_rects.get('entities_on_map')
+            if map_rect:
+                margin = 8
+                # Calcula posición del add/remove panel
+                ar_widget = self.add_remove_controller.view.widget
+                new_ar_x = map_rect.right + margin
+                new_ar_y = map_rect.y
+                ar_widget.panel.pos = (new_ar_x, new_ar_y)
+                # Calcula posición del picker panel
+                ar_w, _ = ar_widget.panel.surface.get_size()
+                pick_view = self.controller.view
+                new_pick_x = new_ar_x + ar_w + margin
+                new_pick_y = map_rect.y
+                pick_view.draggable_panel.pos = (new_pick_x, new_pick_y)
+                pick_view.x = new_pick_x
+                pick_view.y = new_pick_y
+            # Renderizar panel de añadir/eliminar
+            self.add_remove_controller.render(screen)
+            # Renderizar panel picker
+            self.controller.draw(screen)
+            # Sincronizar selección con panel de propiedades
+            self.properties_controller.model.selected_id = self.model.selected_id
+            self.properties_controller.draw(screen)
+        return

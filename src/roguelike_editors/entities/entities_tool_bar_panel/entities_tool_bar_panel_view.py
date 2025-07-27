@@ -18,9 +18,15 @@ class EntitiesToolBarPanelView:
         """
         self.controller = controller
         self.model = model
-        # Configuración de la toolbar
-        self.x = 10
-        self.y = 10
+        # Configuración de la toolbar alineada bajo el title panel
+        title_widget = self.controller.title_controller.view.widget
+        # Posición x igual al del title panel
+        self.x = title_widget.x
+        # Calcular y justo debajo del title panel con margen de 8px
+        title_text = title_widget.text or ""
+        text_surf = title_widget.font.render(title_text, True, title_widget.text_color)
+        bg_h = text_surf.get_height() + title_widget.padding_y * 2
+        self.y = title_widget.y + bg_h + 8
         self.size = 64
         self.padding = 8
         # Crear iconos vacíos para cada herramienta
