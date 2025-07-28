@@ -8,6 +8,7 @@ class EntityPropertiesPanelModel:
     player_stats: Dict[str, Any]
     monsters: Dict[str, Any]
     selected_id: Optional[str] = None
+    hovered_entity_id: Optional[str] = None
     panel_rect: Optional[pygame.Rect] = None
     property_entries: List[Tuple[pygame.Rect, str]] = field(default_factory=list)
     focused_property: Optional[str] = None

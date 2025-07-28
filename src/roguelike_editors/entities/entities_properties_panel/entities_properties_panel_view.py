@@ -24,14 +24,16 @@ class EntityPropertiesPanelView:
     # RENDER PRINCIPAL
     # ----------------------------
     def draw(self, screen: pygame.Surface, model: EntityPropertiesPanelModel) -> None:
-        """Renderiza el panel y las propiedades si hay una entidad seleccionada."""
-        if not model.selected_id:
+        """Renderiza el panel y las propiedades si hay una entidad seleccionada o en hover."""        
+        # Mostrar información de la entidad hovered o seleccionada
+        ent_id = model.hovered_entity_id or model.selected_id
+        if not ent_id:
             return
 
         # Datos y dimensiones básicas
         sw, sh = screen.get_size()
         entity_data = self._get_entity_data(model)
-        lines = [model.selected_id] + [f"{k}: {v}" for k, v in entity_data.items() if v is not None]
+        lines = [ent_id] + [f"{k}: {v}" for k, v in entity_data.items() if v is not None]
         font_h = self.font.get_height()
 
         # Calcular tamaño del panel
@@ -67,10 +69,14 @@ class EntityPropertiesPanelView:
     # MÉTODOS PRIVADOS
     # ----------------------------
     def _get_entity_data(self, model: EntityPropertiesPanelModel) -> dict:
-        """Obtiene los datos de la entidad seleccionada."""
-        if model.selected_id in model.player_stats:
-            return model.player_stats.get(model.selected_id, {})
-        return model.monsters.get(model.selected_id, {})
+        """Obtiene los datos de la entidad seleccionada o hovered."""
+
+        ent_id = model.hovered_entity_id or model.selected_id
+        if not ent_id:
+            return {}
+        if ent_id in model.player_stats:
+            return model.player_stats.get(ent_id, {})
+        return model.monsters.get(ent_id, {})
 
     def _draw_background(self, screen: pygame.Surface, x: int, y: int, w: int, h: int) -> None:
         """Dibuja el fondo semitransparente del panel."""

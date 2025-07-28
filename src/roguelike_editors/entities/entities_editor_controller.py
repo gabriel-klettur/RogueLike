@@ -129,8 +129,11 @@ class EntitiesEditorController:
                 return True
             # Picker panel
             self.picker_controller.handle_event(event)
-            # Sincronizar seleccionado para propiedades inmediatamente
-            self.properties_controller.model.selected_id = self.picker_controller.model.selected_id
+            # Sincronizar hover y seleccionado para properties panel
+            hovered = self.picker_controller.model.hovered_id
+            selected = self.picker_controller.model.selected_id
+            self.properties_controller.model.hovered_entity_id = hovered
+            self.properties_controller.model.selected_id = selected
             # Selección de entidad tras click en picker en modo spawn
             if self.model.spawn_mode_active and self.model.spawn_entity_type is None and event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
                 sel = self.picker_controller.model.selected_id
