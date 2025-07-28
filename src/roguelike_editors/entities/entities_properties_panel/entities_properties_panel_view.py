@@ -33,14 +33,24 @@ class EntityPropertiesPanelView:
         # Datos y dimensiones básicas
         sw, sh = screen.get_size()
         entity_data = self._get_entity_data(model)
-        lines = [ent_id] + [f"{k}: {v}" for k, v in entity_data.items() if v is not None]
+        # Filtrar datos según pestaña activa
+        if model.active_tab == 'properties':
+            filtered = {k: v for k, v in entity_data.items() if not k.startswith('asset')}
+        else:
+            filtered = {k: v for k, v in entity_data.items() if k.startswith('asset')}
+        lines = [ent_id] + [f"{k}: {v}" for k, v in filtered.items() if v is not None]
         font_h = self.font.get_height()
 
-        # Calcular tamaño del panel
+        # Calcular tamaño del panel (incluye pestañas)
         pad, margin = 10, 20
         max_w = max(self.font.size(line)[0] for line in lines)
         panel_w = min(max_w + pad * 2, sw - margin * 2, 500)
-        panel_h = min(len(lines) * (font_h + 2) + pad * 2, sh - margin * 2)
+        # Altura del header de pestañas
+        tab_padding_y = 5
+        header_height = font_h + tab_padding_y * 2
+        # Altura del contenido
+        content_h = min(len(lines) * (font_h + 2) + pad * 2, sh - margin * 2 - header_height)
+        panel_h = header_height + content_h
 
         # Posición inicial (esquina superior derecha)
         px, py = sw - panel_w - margin, margin
@@ -61,8 +71,11 @@ class EntityPropertiesPanelView:
         # 1. Dibujar fondo
         self._draw_background(screen, px, py, panel_w, panel_h)
 
+        # Dibujar pestañas
+        self._draw_tabs(screen, model)
+
         # 2. Dibujar propiedades (texto + hover)
-        self._draw_properties(screen, model, lines, px, py, pad, font_h, panel_w)
+        self._draw_properties(screen, model, lines, px, py + header_height, pad, font_h, panel_w)
 
         # 3. Indicadores de edición o foco
         self._draw_editing_indicator(screen, model, font_h)
@@ -71,20 +84,78 @@ class EntityPropertiesPanelView:
     # MÉTODOS PRIVADOS
     # ----------------------------
     def _get_entity_data(self, model: EntityPropertiesPanelModel) -> dict:
-        """Obtiene los datos de la entidad seleccionada o hovered."""
+        """Obtiene los datos de la entidad seleccionada o hovered, incluyendo PLAYER_ASSETS."""
 
         ent_id = model.hovered_entity_id or model.selected_id
         if not ent_id:
             return {}
         if ent_id in model.player_stats:
-            return model.player_stats.get(ent_id, {})
-        return model.monsters.get(ent_id, {})
+            stats = model.player_stats.get(ent_id, {})
+            assets = model.player_assets.get(ent_id, {})
+            merged = dict(stats)
+            if isinstance(assets, dict):
+                for k, v in assets.items():
+                    merged[f'asset_{k}'] = v
+            else:
+                merged['asset'] = assets
+            return merged
+        elif ent_id in model.monsters:
+            monster = model.monsters.get(ent_id, {})
+            # Extraer stats (todo excepto sprites y death_sprite)
+            stats = {k: v for k, v in monster.items() if k not in ('sprites', 'death_sprite')}
+            # Extraer assets de sprites y death_sprite
+            assets = {}
+            sprites = monster.get('sprites', {})
+            if isinstance(sprites, dict):
+                for sk, sv in sprites.items():
+                    assets[f'sprite_{sk}'] = sv
+            death = monster.get('death_sprite')
+            if death is not None:
+                assets['death_sprite'] = death
+            # Combinar stats y assets prefijados
+            merged_mon = dict(stats)
+            for k, v in assets.items():
+                merged_mon[f'asset_{k}'] = v
+            return merged_mon
+        return {}
+
 
     def _draw_background(self, screen: pygame.Surface, x: int, y: int, w: int, h: int) -> None:
         """Dibuja el fondo semitransparente del panel."""
         info_surf = pygame.Surface((w, h), pygame.SRCALPHA)
         info_surf.fill((0, 0, 0, 200))
         screen.blit(info_surf, (x, y))
+
+    def _draw_tabs(self, screen: pygame.Surface, model: EntityPropertiesPanelModel) -> None:
+        """Dibuja las pestañas del panel: 'properties' y 'assets'."""
+        font_h = self.font.get_height()
+        padding_x, padding_y = 10, 5
+        x_cursor, y = model.panel_rect.x, model.panel_rect.y
+        model.tab_rects.clear()
+        mouse_pos = pygame.mouse.get_pos()
+        for label in model.tabs:
+            text_label = label.capitalize()
+            text_w, text_h = self.font.size(text_label)
+            w = text_w + padding_x * 2
+            h = text_h + padding_y * 2
+            rect = pygame.Rect(x_cursor, y, w, h)
+            model.tab_rects[label] = rect
+            is_active = (model.active_tab == label)
+            is_hover = rect.collidepoint(mouse_pos)
+            if is_active or is_hover:
+                tab_surf = pygame.Surface((w, h), pygame.SRCALPHA)
+                tab_surf.fill((255, 255, 0, 100))
+                screen.blit(tab_surf, (rect.x, rect.y))
+                pygame.draw.rect(screen, (255, 255, 0), rect, 2)
+            else:
+                default_color = (100, 100, 100)
+                pygame.draw.rect(screen, default_color, rect)
+                pygame.draw.rect(screen, (255, 255, 255), rect, 2)
+            text_surf = self.font.render(text_label, True, (0, 0, 0))
+            text_x = x_cursor + (w - text_surf.get_width()) // 2
+            text_y = y + padding_y
+            screen.blit(text_surf, (text_x, text_y))
+            x_cursor += w
 
     def _draw_properties(self, screen: pygame.Surface, model: EntityPropertiesPanelModel,
                          lines: list[str], px: int, py: int, pad: int, font_h: int, panel_w: int) -> None:

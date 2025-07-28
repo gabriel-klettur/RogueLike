@@ -32,7 +32,7 @@ class EntitiesToolBarPanelView:
         # Crear iconos vacíos para cada herramienta
         icon_paths = {
             'entities_on_map': 'assets/ui/entities_on_map_icon.png',
-            'entities_on_system': 'assets/ui/entities_on_system_icon.png',
+
             'respawns': 'assets/ui/respawn.png',
             'undo': 'assets/ui/undo.png',
             'redo': 'assets/ui/redo.png',

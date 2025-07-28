@@ -59,7 +59,7 @@ class EntitiesEditorModel:
         self.toolbar_model = EntitiesToolBarPanelModel()
         self.add_remove_model = EntitiesAddRemovePanelModel()
         self.picker_model = EntityPickerPanelModel(self.player_stats, self.monsters, self.assets)
-        self.properties_model = EntityPropertiesPanelModel(self.player_stats, self.monsters)
+        self.properties_model = EntityPropertiesPanelModel(self.player_stats, self.player_assets, self.monsters)
         # Cámara y arrastre
         self.panning: bool = False
         self.pan_start: tuple[int, int] = (0, 0)
