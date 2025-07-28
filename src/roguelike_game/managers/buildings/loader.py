@@ -1,7 +1,7 @@
 """
 Loader de edificios.
 """
-from roguelike_editors.buildings.persistence.load_buildings_from_json import load_buildings_from_json
+from roguelike_editors.buildings.utils.load_buildings_from_json import load_buildings_from_json
 
 class BuildingsLoader:
     """
