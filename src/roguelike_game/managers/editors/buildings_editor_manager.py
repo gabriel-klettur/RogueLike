@@ -1,4 +1,4 @@
-from roguelike_editors.buildings.building_editor_state import BuildingsEditorState
+from roguelike_editors.buildings.building_editor_model import BuildingsEditorModel
 from roguelike_editors.buildings.building_editor_controller import BuildingEditorController
 from roguelike_editors.buildings.building_editor_events import BuildingEditorEventHandler
 from roguelike_editors.buildings.building_editor_view import BuildingEditorView
@@ -13,7 +13,7 @@ class BuildingEditorManager:
         buildings = game.buildings.buildings
 
         # Inicialización del editor de edificios
-        self.editor_state = BuildingsEditorState()
+        self.editor_state = BuildingsEditorModel()
         self.controller   = BuildingEditorController(state, self.editor_state, buildings, game.camera)
         self.view         = BuildingEditorView(state, self.editor_state)
         

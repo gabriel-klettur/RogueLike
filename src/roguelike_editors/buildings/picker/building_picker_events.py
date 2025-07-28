@@ -4,7 +4,7 @@ from roguelike_editors.buildings.buildings_editor_config import (
     ICON_BACK, THUMB_SIZE, THUMB_PADDING, NAV_HEIGHT
 )
 
-class PickerEventHandler:
+class BuildingPickerEventHandler:
     def __init__(self, editor_state, controller, buildings):
         self.editor = editor_state
         self.ctrl = controller

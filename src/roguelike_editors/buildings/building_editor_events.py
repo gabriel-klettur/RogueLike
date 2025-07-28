@@ -7,7 +7,7 @@ from roguelike_editors.buildings.utils.save_buildings_to_json import save_buildi
 from roguelike_engine.config.config import BUILDINGS_DATA_PATH, BUILDINGS_COLLISIONS_DATA_PATH
 
 from roguelike_engine.config.config_tiles import TILE_SIZE
-from roguelike_editors.buildings.picker.picker_events import PickerEventHandler
+from roguelike_editors.buildings.picker.building_picker_events import BuildingPickerEventHandler
 
 
 
@@ -23,7 +23,7 @@ class BuildingEditorEventHandler:
         self.editor = editor_state
         self.controller = controller
         self.buildings = buildings
-        self.picker_events = PickerEventHandler(editor_state, controller.picker, buildings)
+        self.picker_events = BuildingPickerEventHandler(editor_state, controller.picker, buildings)
         self.zone_offsets = zone_offsets
 
 

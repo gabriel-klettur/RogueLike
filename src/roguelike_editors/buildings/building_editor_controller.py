@@ -9,7 +9,7 @@ from roguelike_editors.buildings.tools.default_tool.default_tool_view import Def
 
 from roguelike_editors.buildings.utils.zone_helpers import assign_zone_and_relatives
 
-from roguelike_editors.buildings.picker.picker_controller import BuildingPickerController
+from roguelike_editors.buildings.picker.building_picker_controller import BuildingPickerController
 
 class BuildingEditorController:
     """Agrupa todas las herramientas y ofrece una API de eventos de mouse."""

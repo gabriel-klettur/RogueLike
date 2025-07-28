@@ -2,7 +2,7 @@
 import os
 from dataclasses import dataclass
 from typing import List
-from roguelike_editors.buildings.building_editor_state import BuildingsEditorState
+from roguelike_editors.buildings.building_editor_model import BuildingsEditorModel
 
 @dataclass
 class DirEntry:
@@ -12,7 +12,7 @@ class DirEntry:
     is_dir: bool
 
 class BuildingPickerController:
-    def __init__(self, editor_state: BuildingsEditorState, placer_tool):
+    def __init__(self, editor_state: BuildingsEditorModel, placer_tool):
         self.editor = editor_state
         self.placer = placer_tool
         # Al iniciar, listamos el contenido de la carpeta base

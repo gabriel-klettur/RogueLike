@@ -1,4 +1,4 @@
-class BuildingsEditorState:
+class BuildingsEditorModel:
     def __init__(self):
 
         self.mode = None #! para edificios?????? buildings????? entities????? parece deprecado
