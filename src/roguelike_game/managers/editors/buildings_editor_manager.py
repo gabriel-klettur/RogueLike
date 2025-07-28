@@ -1,7 +1,7 @@
-from roguelike_editors.buildings.model.building_editor_state import BuildingsEditorState
-from roguelike_editors.buildings.controller.building_editor_controller import BuildingEditorController
-from roguelike_editors.buildings.events.building_editor_events import BuildingEditorEventHandler
-from roguelike_editors.buildings.view.building_editor_view import BuildingEditorView
+from roguelike_editors.buildings.building_editor_state import BuildingsEditorState
+from roguelike_editors.buildings.building_editor_controller import BuildingEditorController
+from roguelike_editors.buildings.building_editor_events import BuildingEditorEventHandler
+from roguelike_editors.buildings.building_editor_view import BuildingEditorView
 from roguelike_engine.config.map_config import global_map_settings
 
 class BuildingEditorManager:

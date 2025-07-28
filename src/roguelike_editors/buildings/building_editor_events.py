@@ -3,11 +3,11 @@ import logging
 import os
 import json
 
-from roguelike_editors.buildings.model.persistence.save_buildings_to_json import save_buildings_to_json
+from roguelike_editors.buildings.persistence.save_buildings_to_json import save_buildings_to_json
 from roguelike_engine.config.config import BUILDINGS_DATA_PATH, BUILDINGS_COLLISIONS_DATA_PATH
 
 from roguelike_engine.config.config_tiles import TILE_SIZE
-from roguelike_editors.buildings.controller.picker.picker_events import PickerEventHandler
+from roguelike_editors.buildings.picker.picker_events import PickerEventHandler
 
 
 

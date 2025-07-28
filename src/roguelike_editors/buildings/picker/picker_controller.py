@@ -2,7 +2,7 @@
 import os
 from dataclasses import dataclass
 from typing import List
-from roguelike_editors.buildings.model.building_editor_state import BuildingsEditorState
+from roguelike_editors.buildings.building_editor_state import BuildingsEditorState
 
 @dataclass
 class DirEntry:
