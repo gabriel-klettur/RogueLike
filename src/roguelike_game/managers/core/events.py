@@ -106,9 +106,10 @@ def handle_events(game):
             game.tiles_editor.toggle()
             return
         if event.type == pygame.KEYDOWN and event.key == game.menu.input_config.get_key('toggle_building_editor'):
-            if not game.buildings_editor.editor_state.active:
-                game.buildings_editor.editor_state.active = True
-                game.buildings_editor.editor_state.picker_active = True
+            # Toggle building editor open/close
+            new_active = not game.buildings_editor.editor_state.active
+            game.buildings_editor.editor_state.active = new_active
+            game.buildings_editor.editor_state.picker_active = new_active
             return
         if event.type == pygame.KEYDOWN and event.key == game.menu.input_config.get_key('toggle_map_editor'):
             game.map_editor.toggle()

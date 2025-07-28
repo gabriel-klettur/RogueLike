@@ -48,7 +48,7 @@ class BuildingEditorEventHandler:
                     self.editor.resizing = False
                     print("✅ Resize finalizado al soltar R")
                     # Opcional: podrías llamar aquí a una función para fijar el tamaño
-            # --- F10: Cycle building editor and collision brush ---
+            # --- F10: Toggle building editor ---
             if ev.type == pygame.KEYDOWN and ev.key == pygame.K_F10:
                 if not self.editor.active:
                     # Enter building editor in select mode
@@ -58,38 +58,17 @@ class BuildingEditorEventHandler:
                     # Initialize active building for editor mode
                     self.editor.active_building = getattr(self.editor, 'hovered_building', None)
                 else:
-                    # Already in editor: cycle to collision brush or exit
-                    if self.editor.current_tool == 'select':
-                         # Enter collision brush mode
-                         self.editor.current_tool = 'collision_brush'
-                         self.editor.collision_picker_open = True
-                         # Initialize collision target to current hovered building
-                         self.editor.collision_active_building = getattr(self.editor, 'hovered_building', None)
-                         # Position collision picker near target
-                         target = self.editor.collision_active_building
-                         if target:
-                             px, py = camera.apply((target.x, target.y))
-                             # Slightly above building
-                             self.editor.collision_picker_pos = (px, py - TILE_SIZE)
-                         else:
-                             self.editor.collision_picker_pos = (0, 0)
-                         # Close asset picker to prevent accidental building placement
-                         self.editor.picker_active = False
-                         self.editor.dragging_building = False
-                         self.editor.selected_entry = None
-                         print(f"🔨 Collision brush activated at {self.editor.collision_picker_pos}")
-                    else:
-                        # Exit editor
-                        self.controller.toggle_editor()
-                        self.editor.current_tool = 'select'
-                        self.editor.collision_picker_open = False
-                        # Save buildings data
-                        save_buildings_to_json(
-                            entities.buildings,
-                            BUILDINGS_DATA_PATH,
-                            z_state=self.state.z_state,
-                            zone_offsets=self.zone_offsets
-                        )
+                    # Exit building editor
+                    self.controller.toggle_editor()
+                    self.editor.current_tool = 'select'
+                    self.editor.collision_picker_open = False
+                    # Save buildings data
+                    save_buildings_to_json(
+                        entities.buildings,
+                        BUILDINGS_DATA_PATH,
+                        z_state=self.state.z_state,
+                        zone_offsets=self.zone_offsets
+                    )
                 return
 
             # --- Si el picker está activo, delego ahí ---
