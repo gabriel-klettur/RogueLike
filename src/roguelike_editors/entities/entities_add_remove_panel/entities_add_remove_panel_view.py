@@ -24,6 +24,7 @@ class EntitiesAddRemovePanelView:
         icon_paths = {
             'add_entitie': 'assets/ui/add_entitie.png',
             'remove_entitie': 'assets/ui/remove_entitie.png',
+            'add_entities_on_system': 'assets/ui/add_entity_on_system.png',
         }
         self.icons = {}
         for tool in self.model.tools:

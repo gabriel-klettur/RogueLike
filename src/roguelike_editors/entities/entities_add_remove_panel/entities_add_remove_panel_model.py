@@ -7,6 +7,7 @@ class EntitiesAddRemovePanelModel:
         self.tools = [
             'add_entitie',
             'remove_entitie',
+            'add_entities_on_system',
         ]
         # Herramienta activa
         self.active_tool = None
