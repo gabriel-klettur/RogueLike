@@ -1,11 +1,11 @@
 import pygame
-from roguelike_editors.buildings.tools.resize_tool import ResizeTool
-from roguelike_editors.buildings.tools.default_tool import DefaultTool
-from roguelike_editors.buildings.tools.z_tool      import ZTool
-from roguelike_editors.buildings.tools.split_tool  import SplitTool
-from roguelike_editors.buildings.tools.placer_tool  import PlacerTool
-from roguelike_editors.buildings.tools.delete_tool  import DeleteTool
-from roguelike_editors.buildings.tools.default_tool_view import DefaultToolView
+from roguelike_editors.buildings.tools.resize_tool.resize_tool import ResizeTool
+from roguelike_editors.buildings.tools.default_tool.default_tool import DefaultTool
+from roguelike_editors.buildings.tools.z_tool.z_tool      import ZTool
+from roguelike_editors.buildings.tools.split_z_tool.split_tool  import SplitTool
+from roguelike_editors.buildings.tools.placer_tool.placer_tool  import PlacerTool
+from roguelike_editors.buildings.tools.delete_tool.delete_tool  import DeleteTool
+from roguelike_editors.buildings.tools.default_tool.default_tool_view import DefaultToolView
 
 from roguelike_editors.buildings.utils.zone_helpers import assign_zone_and_relatives
 

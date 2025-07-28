@@ -1312,8 +1312,8 @@
     },
     {
         "zone": "Forest",
-        "rel_x": 362,
-        "rel_y": 560,
+        "rel_x": 374,
+        "rel_y": 572,
         "image_path": "assets/buildings\\vegetation\\tree_3.PNG",
         "solid": true,
         "scale": [
@@ -1369,8 +1369,8 @@
     },
     {
         "zone": "Forest",
-        "rel_x": 312,
-        "rel_y": 369,
+        "rel_x": 306,
+        "rel_y": 325,
         "image_path": "assets/buildings\\vegetation\\tree_10.PNG",
         "solid": true,
         "scale": [

@@ -1,6 +1,6 @@
 import pygame
 from typing import Any
-from roguelike_editors.spells.model.editor_model import SpellEditorModel
+from roguelike_editors.spells.spells_picker_panel.spells_editor_model import SpellEditorModel
 
 class SpellEditorView:
     """Render the spell editor UI."""
