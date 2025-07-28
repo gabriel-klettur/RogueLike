@@ -33,5 +33,8 @@ class EntitiesAddRemovePanelEventHandler:
                         if tool == 'add_entitie' and self.controller.model.toolbar_model.active_tool == 'entities_on_map':
                             print("[DEBUG][AddRemovePanel] Iniciando spawn mode")
                             self.controller.enter_spawn_mode()
+                        elif tool == 'remove_entitie' and self.controller.model.toolbar_model.active_tool == 'entities_on_map':
+                            print("[DEBUG][AddRemovePanel] Iniciando delete mode")
+                            self.controller.enter_delete_mode()
                         return True
         return False

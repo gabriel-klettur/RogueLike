@@ -67,6 +67,8 @@ class EntitiesEditorModel:
         # Spawn mode para entidades en el mapa
         self.spawn_mode_active: bool = False  # indica si estamos en modo colocación
         self.spawn_entity_type: Optional[str] = None  # id de entidad a colocar
+        # Delete mode para entidades en el mapa
+        self.delete_mode_active: bool = False  # indica si estamos en modo borrado
 
     @property
     def visible(self) -> bool:

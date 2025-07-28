@@ -35,6 +35,39 @@ class EntitiesEditorView:
                 pw, _ = pick_view.draggable_panel.surface.get_size()
                 prop_view.draggable_panel.pos = (px + pw + margin, py)
             c.properties_controller.draw(screen)
+        # Highlight hovered player/NPC in delete mode
+        if self.controller.model.delete_mode_active:
+            mx, my = pygame.mouse.get_pos()
+            cam = self.controller.game.camera
+            # Recorrer entidades válidas con Sprite y Position
+            ecs = self.controller.game.ecs.ecs_world
+            sprites = ecs.components.get('Sprite', {})
+            positions = ecs.components.get('Position', {})
+            scale_map = ecs.components.get('Scale', {})
+            player_tags = ecs.components.get('PlayerTagComponent', {})
+            npc_tags = ecs.components.get('NPCTagComponent', {})
+            for eid, sprite_comp in sprites.items():
+                # Filtrar solo jugadores/NPCs
+                if eid not in positions or (eid not in player_tags and eid not in npc_tags):
+                    continue
+                pos = positions[eid]
+                # Coordenadas en pantalla donde se dibuja el sprite
+                sx, sy = cam.apply((pos.x, pos.y))
+                # Calcular escala total (entidad + cámara)
+                entity_scale = getattr(scale_map.get(eid), 'scale', 1.0)
+                scale_factor = entity_scale * cam.zoom
+                # Obtener sprite escalado
+                scaled_img = pygame.transform.rotozoom(sprite_comp.image, 0, scale_factor)
+                rect = scaled_img.get_rect()
+                rect.topleft = (int(sx), int(sy))
+                if rect.collidepoint(mx, my):
+                    # Fondo semitransparente rojo
+                    overlay = pygame.Surface(rect.size, pygame.SRCALPHA)
+                    overlay.fill((255, 0, 0, 80))
+                    screen.blit(overlay, rect.topleft)
+                    # Borde rojo del asset escalado
+                    pygame.draw.rect(screen, (255, 0, 0), rect, 2)
+                    break
         # Overlay para spawn de entidades
         if self.controller.model.spawn_mode_active:
             mx, my = pygame.mouse.get_pos()
@@ -43,5 +76,11 @@ class EntitiesEditorView:
             else:
                 msg = f"Haz clic en el mapa para colocar '{self.controller.model.spawn_entity_type}'"
             surf = self.controller.font.render(msg, True, (255, 255, 0))
+            screen.blit(surf, (mx + 10, my + 10))
+        # Overlay para delete de entidades
+        if self.controller.model.delete_mode_active:
+            mx, my = pygame.mouse.get_pos()
+            msg = "Haz clic sobre la entidad para eliminarla"
+            surf = self.controller.font.render(msg, True, (255, 0, 0))
             screen.blit(surf, (mx + 10, my + 10))
         

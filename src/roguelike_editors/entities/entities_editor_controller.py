@@ -83,6 +83,22 @@ class EntitiesEditorController:
         # Restablecer cursor
         pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
 
+    def enter_delete_mode(self):
+        """
+        Entra en modo borrar entidades.
+        """
+        self.model.delete_mode_active = True
+        # Cambiar cursor a cruz
+        pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_CROSSHAIR)
+
+    def exit_delete_mode(self):
+        """
+        Sale de modo borrar entidades.
+        """
+        self.model.delete_mode_active = False
+        # Restaurar cursor flecha
+        pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
+
     def is_active(self, tool: str) -> bool:
         """Retorna True si la herramienta está activa en el toolbar."""
         return self.model.toolbar_model.active_tool == tool
@@ -124,6 +140,33 @@ class EntitiesEditorController:
             self.properties_controller.model.selected_id = self.picker_controller.model.selected_id
             if self.properties_controller.handle_event(event):
                 return True
+            # Delete entity on map in delete mode
+            if self.model.delete_mode_active and event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
+                mx, my = event.pos
+                cam = self.game.camera
+                ecs = self.game.ecs.ecs_world
+                sprites = ecs.components.get('Sprite', {})
+                positions = ecs.components.get('Position', {})
+                scale_map = ecs.components.get('Scale', {})
+                player_tags = ecs.components.get('PlayerTagComponent', {})
+                npc_tags = ecs.components.get('NPCTagComponent', {})
+                for eid, sprite_comp in sprites.items():
+                    # Solo jugadores/NPCs con posición
+                    if eid not in positions or (eid not in player_tags and eid not in npc_tags):
+                        continue
+                    pos = positions[eid]
+                    sx, sy = cam.apply((pos.x, pos.y))
+                    entity_scale = getattr(scale_map.get(eid), 'scale', 1.0)
+                    scale_factor = entity_scale * cam.zoom
+                    scaled_img = pygame.transform.rotozoom(sprite_comp.image, 0, scale_factor)
+                    rect = scaled_img.get_rect()
+                    rect.topleft = (int(sx), int(sy))
+                    if rect.collidepoint(mx, my):
+                        ecs.remove_entity(eid)
+                        ecs.invalidate_spatial_index()
+                        print(f"[DEBUG][EntitiesEditorController] Entity {eid} deleted via bbox click at ({mx},{my})")
+                        self.exit_delete_mode()
+                        return True
             # Completando spawn: click en mapa finaliza spawn_mode
             if self.model.spawn_mode_active and self.model.spawn_entity_type and event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
                 etype = self.model.spawn_entity_type

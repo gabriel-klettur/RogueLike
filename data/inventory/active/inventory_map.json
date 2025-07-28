@@ -449,16 +449,6 @@
       "y": 2434
     }
   },
-  "7df32713-cde8-4448-a732-6525da011a1f": {
-    "item_id": "health_potion",
-    "quantity": 2,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 527.6116523516808,
-      "y": 2416.819805153396
-    }
-  },
   "be54255c-6275-4b96-b972-37f232d723a2": {
     "item_id": "mana_potion",
     "quantity": 2,
@@ -477,6 +467,76 @@
     "position": {
       "x": 1093.2650587410901,
       "y": 2464.8780184685934
+    }
+  },
+  "7ae03cc6-b78a-4e48-bc33-691cec15ea31": {
+    "item_id": "wood",
+    "quantity": 1,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 541.4823227814111,
+      "y": 1916.203102167837
+    }
+  },
+  "7b78c97a-8c6c-435d-9813-b465ebfc5491": {
+    "item_id": "gold",
+    "quantity": 2,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 638.5655098667654,
+      "y": 1948.0432646108213
+    }
+  },
+  "952f6af4-193f-466e-ba29-3589f49bdfa4": {
+    "item_id": "experience_orb",
+    "quantity": 1,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 638.5655098667654,
+      "y": 1948.0432646108213
+    }
+  },
+  "ea543493-cc7e-4c2f-9e22-1bbebcafc541": {
+    "item_id": "gold",
+    "quantity": 2,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 783.560237701736,
+      "y": 2057.660644388201
+    }
+  },
+  "6b62beca-804d-43a7-9ac3-e7625cb9d220": {
+    "item_id": "experience_orb",
+    "quantity": 2,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 783.560237701736,
+      "y": 2057.660644388201
+    }
+  },
+  "e5ac6b96-2977-4fd9-83e0-7e5f12bcfc59": {
+    "item_id": "gold",
+    "quantity": 5,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 817.7993291083296,
+      "y": 2082.7860716360824
+    }
+  },
+  "648c4f66-ae4d-4a8e-8fd2-ebb2c699539c": {
+    "item_id": "experience_orb",
+    "quantity": 1,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 817.7993291083296,
+      "y": 2082.7860716360824
     }
   }
 }
