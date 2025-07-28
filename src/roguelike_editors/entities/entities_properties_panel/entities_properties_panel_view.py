@@ -51,6 +51,8 @@ class EntityPropertiesPanelView:
             self.draggable_panel.pos = (px, py)
         else:
             px, py = self.draggable_panel.pos
+        # Anchoring X to right edge of screen
+        px = sw - panel_w - margin
 
         # Actualizar rect para detección de eventos
         model.panel_rect = pygame.Rect(px, py, panel_w, panel_h)

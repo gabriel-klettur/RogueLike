@@ -20,6 +20,10 @@ class EntityPickerPanelModel:
     scroll_index: int = 0
     hovered_id: Optional[str] = None
     selected_id: Optional[str] = None
+    # Pestaña activa: 'Players' o 'Monsters'
+    active_tab: str = "Players"
+    # Rectángulos de las pestañas para detectar clicks
+    tab_rects: Dict[str, pygame.Rect] = field(default_factory=dict)
     # Blink del picker en modo spawn
     blink: bool = False
     # Parpadeo de la selección

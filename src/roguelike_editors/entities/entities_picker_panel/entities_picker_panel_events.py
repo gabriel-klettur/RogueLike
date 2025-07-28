@@ -36,7 +36,16 @@ class EntitiesPickerEventHandler:
             self._handle_keydown(event)
             return True
 
-        # Clic izquierdo para selección en el grid (solo si está dentro del panel)
+                # Clic izquierdo para selección en el grid (solo si está dentro del panel)
+        # Detectar clicks en pestañas
+        if event.type == pygame.MOUSEBUTTONDOWN and self.model.visible and event.button == 1:
+            for label, rect in self.model.tab_rects.items():
+                if rect.collidepoint(event.pos):
+                    self.model.active_tab = label
+                    self.model.scroll_index = 0
+                    self.model.hovered_id = None
+                    self.model.selected_id = None
+                    return True
         if event.type == pygame.MOUSEBUTTONDOWN and self.model.visible and event.button == 1:
             # Solo procesar si el clic está en el panel de picker
             if self.model.panel_rect and self.model.panel_rect.collidepoint(event.pos):
@@ -157,14 +166,18 @@ class EntitiesPickerEventHandler:
 
         # Ajuste relativo
         mx_rel = mx - (ox + margin)
-        my_rel = my - (oy + margin)
+        header_height = next(iter(self.model.tab_rects.values())).height if self.model.tab_rects else 0
+        my_rel = my - (oy + margin + header_height)
 
         if mx_rel < 0 or my_rel < 0:
             return None, None, None, []
 
         col = mx_rel // (cell_size + margin)
         row = my_rel // (ch + margin) + self.model.scroll_index
-        entity_ids = list(self.model.player_stats.keys()) + list(self.model.monsters.keys())
+        if self.model.active_tab == "Players":
+            entity_ids = list(self.model.player_stats.keys())
+        else:
+            entity_ids = list(self.model.monsters.keys())
         idx = row * cols + col
 
         return col, row, idx, entity_ids
@@ -180,6 +193,7 @@ class EntitiesPickerEventHandler:
         ch = cell_size + tm + fh
 
         x0 = ox + margin + col * (cell_size + margin)
-        y0 = oy + margin + (row - self.model.scroll_index) * (ch + margin)
+        header_height = next(iter(self.model.tab_rects.values())).height if self.model.tab_rects else 0
+        y0 = oy + margin + header_height + (row - self.model.scroll_index) * (ch + margin)
 
         return x0 <= mx <= x0 + cell_size and y0 <= my <= y0 + ch
