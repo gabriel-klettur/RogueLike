@@ -77,11 +77,20 @@ class EntityPickerPanelView:
         if not model.visible:
             return
 
-        # Lista completa de entidades (jugador + monstruos)
-        entity_ids = list(model.player_stats.keys()) + list(model.monsters.keys())
+                # Lista completa de entidades (jugador + monstruos)
+        if model.active_tab == "Players":
+            entity_ids = list(model.player_stats.keys())
+        else:
+            entity_ids = list(model.monsters.keys())
 
         # Tamaño dinámico del panel
-        panel_w, panel_h = self._calculate_panel_size(len(entity_ids))
+        # Tamaño dinámico de la parte de grid
+        panel_w, grid_h = self._calculate_panel_size(len(entity_ids))
+        # Altura del header de pestañas
+        tab_padding_y = 5
+        header_height = self.font.get_height() + tab_padding_y * 2
+        # Altura total del panel (header + grid)
+        panel_h = header_height + grid_h
 
         # Ajustar panel arrastrable
         self.draggable_panel.resize(panel_w, panel_h)
@@ -99,18 +108,58 @@ class EntityPickerPanelView:
 
         # Dibujar fondo semitransparente con borde redondeado
         self._draw_panel_background(screen, panel_w, panel_h)
+        # Dibujar pestañas
+        self._draw_tabs(screen, model)
         # Parpadeo de borde en modo spawn
         if model.blink:
             now = pygame.time.get_ticks()
             if (now // self.blink_interval) % 2 == 0:
                 pygame.draw.rect(screen, (255, 255, 0), (self.x - 3, self.y - 3, panel_w + 6, panel_h + 6), 4)
 
-        # Dibujar contenido (grid)
+        # Dibujar contenido (grid) bajo pestañas
+        header_height = max(rect.height for rect in model.tab_rects.values()) if model.tab_rects else 0
+        orig_y = self.y
+        self.y = orig_y + header_height
         self._draw_entity_grid(screen, model, entity_ids)
+        self.y = orig_y
 
     # ----------------------------
     # SUBRENDERIZADO
     # ----------------------------
+    def _draw_tabs(self, screen: pygame.Surface, model: EntityPickerPanelModel) -> None:
+        """Dibuja las pestañas Players/Monsters en el encabezado del panel."""
+        font_h = self.font.get_height()
+        padding_x, padding_y = 10, 5
+        x_cursor, y = self.x, self.y
+        model.tab_rects.clear()
+        mouse_pos = pygame.mouse.get_pos()
+        for label in ("Players", "Monsters"):
+            text_w, text_h = self.font.size(label)
+            w = text_w + padding_x * 2
+            h = text_h + padding_y * 2
+            rect = pygame.Rect(x_cursor, y, w, h)
+            model.tab_rects[label] = rect
+            # Estilo para pestaña seleccionada o hover
+            is_active = (model.active_tab == label)
+            is_hover = rect.collidepoint(mouse_pos)
+            if is_active or is_hover:
+                # Fondo amarillo semitransparente
+                tab_surf = pygame.Surface((w, h), pygame.SRCALPHA)
+                tab_surf.fill((255, 255, 0, 100))
+                screen.blit(tab_surf, (rect.x, rect.y))
+                # Borde amarillo
+                pygame.draw.rect(screen, (255, 255, 0), rect, 2)
+            else:
+                # Fondo gris
+                default_color = (100, 100, 100)
+                pygame.draw.rect(screen, default_color, rect)
+                pygame.draw.rect(screen, (255, 255, 255), rect, 2)
+            text_surf = self.font.render(label, True, (0, 0, 0))
+            text_x = x_cursor + (w - text_surf.get_width()) // 2
+            text_y = y + padding_y
+            screen.blit(text_surf, (text_x, text_y))
+            x_cursor += w
+
     def _draw_panel_background(self, screen: pygame.Surface, width: int, height: int) -> None:
         """Dibuja el fondo del panel con opacidad."""
         bg_surf = pygame.Surface((width, height), pygame.SRCALPHA)
@@ -126,6 +175,8 @@ class EntityPickerPanelView:
 
         total_rows = (len(entity_ids) + self.columns - 1) // self.columns
         scroll = self._calculate_scroll(model, screen_h, total_rows, cell_height)
+        header_height = next(iter(model.tab_rects.values())).height if model.tab_rects else 0
+        y_start = self.y + header_height + self.margin
 
         # Renderizado fila por fila
         for idx, ent_id in enumerate(entity_ids):
@@ -187,6 +238,8 @@ class EntityPickerPanelView:
 
     def _highlight_selected(self, screen: pygame.Surface, model: EntityPickerPanelModel, entity_ids: list[str], scroll: int, screen_h: int, cell_height: int) -> None:
         """Dibuja un rectángulo amarillo para resaltar la entidad seleccionada o hover."""
+        header_height = next(iter(model.tab_rects.values())).height if model.tab_rects else 0
+        y_start = self.y + header_height + self.margin
         active = model.selected_id or model.hovered_id
         if active not in entity_ids:
             return
