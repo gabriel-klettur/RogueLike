@@ -123,11 +123,8 @@ class EntitiesEditorController:
                 return True
             # Picker panel
             self.picker_controller.handle_event(event)
-            # Si el ratón está sobre el panel de picker, consumir el evento y no propagar al mapa
-            if hasattr(event, 'pos') and self.picker_controller.model.visible:
-                panel_rect = self.picker_controller.model.panel_rect
-                if panel_rect and panel_rect.collidepoint(event.pos):
-                    return True
+            # Sincronizar seleccionado para propiedades inmediatamente
+            self.properties_controller.model.selected_id = self.picker_controller.model.selected_id
             # Selección de entidad tras click en picker en modo spawn
             if self.model.spawn_mode_active and self.model.spawn_entity_type is None and event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
                 sel = self.picker_controller.model.selected_id
@@ -140,9 +137,12 @@ class EntitiesEditorController:
                     # Cambiar cursor a crosshair
                     pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_CROSSHAIR)
                     return True
+            # Si el ratón está sobre el panel de picker, consumir el evento y no propagar al mapa
+            if hasattr(event, 'pos') and self.picker_controller.model.visible:
+                panel_rect = self.picker_controller.model.panel_rect
+                if panel_rect and panel_rect.collidepoint(event.pos):
+                    return True
             # Properties panel
-            # Sincronizar seleccionado
-            self.properties_controller.model.selected_id = self.picker_controller.model.selected_id
             if self.properties_controller.handle_event(event):
                 return True
             # Delete entity on map in delete mode
