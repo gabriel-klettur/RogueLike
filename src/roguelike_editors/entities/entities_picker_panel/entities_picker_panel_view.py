@@ -95,7 +95,7 @@ class EntityPickerPanelView:
         # Actualizar rect global para suprimir hover DropHoverRenderSystem
         register_blocker(model.panel_rect)
         # Fondo opaco para todo el panel (oculta elementos subyacentes)
-        pygame.draw.rect(screen, (50, 50, 50), model.panel_rect)
+        # pygame.draw.rect(screen, (50, 50, 50), model.panel_rect)  # Omitido fondo opaco para usar semitransparente
 
         # Dibujar fondo semitransparente con borde redondeado
         self._draw_panel_background(screen, panel_w, panel_h)
@@ -114,7 +114,7 @@ class EntityPickerPanelView:
     def _draw_panel_background(self, screen: pygame.Surface, width: int, height: int) -> None:
         """Dibuja el fondo del panel con opacidad."""
         bg_surf = pygame.Surface((width, height), pygame.SRCALPHA)
-        bg_surf.fill((0, 0, 0, 180))  # Fondo semitransparente
+        bg_surf.fill((0, 0, 0, 200))  # Fondo semitransparente
         
         screen.blit(bg_surf, (self.x, self.y))
 

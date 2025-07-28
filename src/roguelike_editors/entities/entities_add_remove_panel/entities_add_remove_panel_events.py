@@ -29,12 +29,24 @@ class EntitiesAddRemovePanelEventHandler:
                     print(f"[DEBUG][AddRemovePanel] Tool '{tool}' rect: {rect}")
                     if rect and rect.collidepoint(pos):
                         print(f"[DEBUG][AddRemovePanel] '{tool}' presionado")
-                        self.model.active_tool = tool
+                        # Alternar modo de añadir/borrar entidades
                         if tool == 'add_entitie' and self.controller.model.toolbar_model.active_tool == 'entities_on_map':
-                            print("[DEBUG][AddRemovePanel] Iniciando spawn mode")
-                            self.controller.enter_spawn_mode()
+                            if self.controller.model.spawn_mode_active:
+                                print("[DEBUG][AddRemovePanel] Cancelando spawn mode")
+                                self.model.active_tool = None
+                                self.controller.exit_spawn_mode()
+                            else:
+                                print("[DEBUG][AddRemovePanel] Iniciando spawn mode")
+                                self.model.active_tool = tool
+                                self.controller.enter_spawn_mode()
                         elif tool == 'remove_entitie' and self.controller.model.toolbar_model.active_tool == 'entities_on_map':
-                            print("[DEBUG][AddRemovePanel] Iniciando delete mode")
-                            self.controller.enter_delete_mode()
+                            if self.controller.model.delete_mode_active:
+                                print("[DEBUG][AddRemovePanel] Cancelando delete mode")
+                                self.model.active_tool = None
+                                self.controller.exit_delete_mode()
+                            else:
+                                print("[DEBUG][AddRemovePanel] Iniciando delete mode")
+                                self.model.active_tool = tool
+                                self.controller.enter_delete_mode()
                         return True
         return False
