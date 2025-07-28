@@ -36,6 +36,6 @@ def create_patrol_components(px: int, py: int, monster_type: str, cfg: Dict[str,
     sprites = {d: [surf.copy()] for d, surf in _SPRITE_SURFACES.get(monster_type, {}).items()}
     patrol = Patrol((px, py), sprites_by_direction=sprites)
     patrol.default_sprite = sprites.get("down", [])[0]
-    movement = MovementSpeed(cfg["speed"])
+    movement = MovementSpeed(float(cfg["speed"]))
     animator = Animator(animations=sprites, current_state="down")
     return patrol, movement, animator
