@@ -3,7 +3,7 @@ import os
 from roguelike_game.config.spells_config import SPELLS
 from roguelike_ui.services.json_persistence import load_from_json
 from roguelike_engine.utils.loader import load_image
-from roguelike_editors.spells.controller.editor_controller import SpellEditorController
+from roguelike_editors.spells.spells_picker_panel.spells_editor_controller import SpellEditorController
 
 class SpellsEditorManager:
     """

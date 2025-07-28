@@ -2,11 +2,11 @@ import pygame
 pygame.font.init()
 import os
 from roguelike_ui.services.json_persistence import save_to_json, load_from_json
-from roguelike_editors.spells.model.editor_model import SpellEditorModel
-from roguelike_editors.spells.view.editor_view import SpellEditorView
+from roguelike_editors.spells.spells_picker_panel.spells_editor_model import SpellEditorModel
+from roguelike_editors.spells.spells_picker_panel.spells_editor_view import SpellEditorView
 from roguelike_ui.widgets.text_input import TextInput
 from roguelike_ui.widgets.double_click_detector import DoubleClickDetector
-from roguelike_editors.spells.events.spells_editor_events import SpellEditorEventHandler
+from roguelike_editors.spells.spells_picker_panel.spells_editor_events import SpellEditorEventHandler
 
 class SpellEditorController:
     """Controller for Spell Editor UI."""
