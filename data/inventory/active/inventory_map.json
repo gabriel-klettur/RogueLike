@@ -458,5 +458,85 @@
       "x": 1093.2650587410901,
       "y": 2464.8780184685934
     }
+  },
+  "281b9a25-3dc1-4172-a863-871323e9190f": {
+    "item_id": "health_potion",
+    "quantity": 2,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 636.3553390593277,
+      "y": 2028.4974746830571
+    }
+  },
+  "dab99d2c-c83a-43d2-a002-32fbecc8659d": {
+    "item_id": "mana_potion",
+    "quantity": 2,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 624.7867965644034,
+      "y": 1928.0710678118655
+    }
+  },
+  "00bf82ce-93a3-447b-b795-30ad78bf2738": {
+    "item_id": "mana_potion",
+    "quantity": 2,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 464.7867965644037,
+      "y": 1896.0710678118653
+    }
+  },
+  "a0e189c1-8c1e-49e1-8a61-b80e1301a17d": {
+    "item_id": "health_potion",
+    "quantity": 2,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 776.9669914110084,
+      "y": 2026.322330470337
+    }
+  },
+  "f959d600-4eab-4536-9e66-0cb7eb48f6e0": {
+    "item_id": "health_potion",
+    "quantity": 2,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 568.9669914110085,
+      "y": 2126.322330470336
+    }
+  },
+  "ded56038-74ca-4a36-aa1f-833e2961e85a": {
+    "item_id": "mana_potion",
+    "quantity": 2,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 566.895923599143,
+      "y": 2039.3984489160853
+    }
+  },
+  "9df8d7df-ac5a-4d1d-a974-25f572344b94": {
+    "item_id": "gold",
+    "quantity": 2,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 912.0118834496585,
+      "y": 1920.5429643376604
+    }
+  },
+  "ece1292f-10a4-4983-8640-ccdfbc308a5b": {
+    "item_id": "experience_orb",
+    "quantity": 3,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 912.0118834496585,
+      "y": 1920.5429643376604
+    }
   }
 }

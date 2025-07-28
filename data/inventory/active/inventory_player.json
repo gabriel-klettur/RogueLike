@@ -35,5 +35,65 @@
       null
     ],
     "schema_version": "1.0.0"
+  },
+  "64": {
+    "player_id": "22222222-2222-2222-2222-222222222222",
+    "slots": [
+      {
+        "item": "gold",
+        "quantity": 0
+      },
+      {
+        "item": "health_potion",
+        "quantity": 2
+      },
+      {
+        "item": "mana_potion",
+        "quantity": 2
+      },
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "65": {
+    "player_id": "22222222-2222-2222-2222-222222222222",
+    "slots": [
+      {
+        "item": "gold",
+        "quantity": 0
+      },
+      {
+        "item": "health_potion",
+        "quantity": 2
+      },
+      {
+        "item": "mana_potion",
+        "quantity": 2
+      },
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "66": {
+    "player_id": "22222222-2222-2222-2222-222222222222",
+    "slots": [
+      {
+        "item": "gold",
+        "quantity": 0
+      },
+      {
+        "item": "health_potion",
+        "quantity": 2
+      },
+      {
+        "item": "mana_potion",
+        "quantity": 2
+      },
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
   }
 }
