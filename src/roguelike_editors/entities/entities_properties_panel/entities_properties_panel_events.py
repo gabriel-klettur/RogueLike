@@ -46,8 +46,12 @@ class EntitiesPropertiesPanelEventHandler:
         if self._handle_key_events(event):
             return True
 
-        # 6. Clic en pestañas
+                # 6. Clic en pestañas
         if self._handle_tab_click(event):
+            return True
+
+        # 7. Clic en subtabs de assets
+        if self.model.active_tab == 'assets' and self._handle_asset_tab_click(event):
             return True
 
         # 7. Clic en propiedades (single/double click)
@@ -184,6 +188,23 @@ class EntitiesPropertiesPanelEventHandler:
                 if rect.collidepoint(pos):
                     # Cambiar pestaña y resetear estado de propiedad
                     self.model.active_tab = label
+                    self.model.focused_property = None
+                    self.model.editing_property = None
+                    self.model.hovered_property = None
+                    return True
+        return False
+
+    # ----------------------------
+    # Manejo de subtabs de assets
+    # ----------------------------
+    def _handle_asset_tab_click(self, event: pygame.event.Event) -> bool:
+        """Gestiona clics en las subtabs de assets."""
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and self.model.asset_tab_rects:
+            pos = event.pos
+            for label, rect in self.model.asset_tab_rects.items():
+                if rect.collidepoint(pos):
+                    # Cambiar subtabs y resetear estado de propiedad
+                    self.model.active_asset_tab = label
                     self.model.focused_property = None
                     self.model.editing_property = None
                     self.model.hovered_property = None
