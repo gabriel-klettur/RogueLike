@@ -10,8 +10,8 @@ def _safe_sysfont(*args, **kwargs):
 
 pygame.font.SysFont = _safe_sysfont
 from typing import Any, Dict
-from roguelike_editors.items.editor_model import ItemEditorModel
-from roguelike_editors.items.editor_view import ItemEditorView
+from roguelike_editors.items.items_picker_panel.editor_model import ItemEditorModel
+from roguelike_editors.items.items_picker_panel.editor_view import ItemEditorView
 
 from roguelike_ui.widgets.text_input import TextInput
 from roguelike_ui.widgets.double_click_detector import DoubleClickDetector
@@ -22,7 +22,7 @@ import os
 import uuid
 from roguelike_game.managers.map.item_drop_manager import ItemDropManager
 from roguelike_game.ecs.systems.inventory.inventory_pickup_system import InventoryPickupSystem
-from roguelike_editors.items.items_editor_events import ItemsEditorEventHandler
+from roguelike_editors.items.items_picker_panel.items_editor_events import ItemsEditorEventHandler
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.map.utils import get_zone_for_tile
 
