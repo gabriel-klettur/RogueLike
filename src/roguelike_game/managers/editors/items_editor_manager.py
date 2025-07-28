@@ -1,5 +1,5 @@
 import pygame
-from roguelike_editors.items.controller.editor_controller import ItemEditorController
+from roguelike_editors.items.editor_controller import ItemEditorController
 
 class ItemsEditorManager:
     """
