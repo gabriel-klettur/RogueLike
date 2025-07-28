@@ -24,8 +24,8 @@ class EntitiesToolBarPanelEventHandler:
         # Solo clicks izquierdo
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             pos = event.pos
-            # Evaluar solo herramientas de mapa o sistema
-            for tool in ('entities_on_map', 'entities_on_system'):
+            # Evaluar solo herramienta de mapa
+            for tool in ('entities_on_map',):
                 rect = self.controller.toolbar_view.widget.icon_rects.get(tool)
                 if rect and rect.collidepoint(pos):
                     # Toggle activación

@@ -10,7 +10,6 @@ class EntitiesToolBarPanelModel:
         # Claves de botones disponibles en la toolbar
         self.tools = [
             'entities_on_map',
-            'entities_on_system',
             'respawns',
             'undo',
             'redo',
