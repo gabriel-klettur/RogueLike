@@ -61,6 +61,9 @@ class EntitiesEditorController:
         """
         Inicia modo spawn de entidades: picker parpadeante y selección inicial.
         """
+        # Cancelar delete mode si está activo
+        if self.model.delete_mode_active:
+            self.exit_delete_mode()
         self.model.spawn_mode_active = True
         self.model.spawn_entity_type = entity_type
         # Iniciar parpadeo en picker
@@ -87,6 +90,9 @@ class EntitiesEditorController:
         """
         Entra en modo borrar entidades.
         """
+        # Cancelar spawn mode si está activo
+        if self.model.spawn_mode_active:
+            self.exit_spawn_mode()
         self.model.delete_mode_active = True
         # Cambiar cursor a cruz
         pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_CROSSHAIR)
