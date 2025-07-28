@@ -46,7 +46,11 @@ class EntitiesPropertiesPanelEventHandler:
         if self._handle_key_events(event):
             return True
 
-        # 6. Clic en propiedades (single/double click)
+        # 6. Clic en pestañas
+        if self._handle_tab_click(event):
+            return True
+
+        # 7. Clic en propiedades (single/double click)
         if self._handle_property_click(event):
             return True
 
@@ -168,3 +172,20 @@ class EntitiesPropertiesPanelEventHandler:
 
         # Activar input con valor actual
         self.text_input.activate(self.model.editing_text)
+
+    # ----------------------------
+    # Manejo de pestañas
+    # ----------------------------
+    def _handle_tab_click(self, event: pygame.event.Event) -> bool:
+        """Gestiona clics en las pestañas del panel."""
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and self.model.tab_rects:
+            pos = event.pos
+            for label, rect in self.model.tab_rects.items():
+                if rect.collidepoint(pos):
+                    # Cambiar pestaña y resetear estado de propiedad
+                    self.model.active_tab = label
+                    self.model.focused_property = None
+                    self.model.editing_property = None
+                    self.model.hovered_property = None
+                    return True
+        return False

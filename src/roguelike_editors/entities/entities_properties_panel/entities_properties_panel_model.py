@@ -6,6 +6,7 @@ import pygame
 class EntityPropertiesPanelModel:
     """Estado del panel de propiedades para la entidad seleccionada."""
     player_stats: Dict[str, Any]
+    player_assets: Dict[str, Any]
     monsters: Dict[str, Any]
     selected_id: Optional[str] = None
     hovered_entity_id: Optional[str] = None
@@ -16,3 +17,7 @@ class EntityPropertiesPanelModel:
     editing_text: str = ""
     editing_cursor: int = 0
     hovered_property: Optional[str] = None
+    # Pestañas del panel: 'properties' y 'assets'
+    tabs: List[str] = field(default_factory=lambda: ['properties', 'assets'])
+    active_tab: str = 'properties'
+    tab_rects: Dict[str, pygame.Rect] = field(default_factory=dict)

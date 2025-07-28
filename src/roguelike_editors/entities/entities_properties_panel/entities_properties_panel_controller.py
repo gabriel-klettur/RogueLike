@@ -15,7 +15,7 @@ class EntityPropertiesPanelController:
     - Gestionar la edición de propiedades (incluyendo validación y persistencia en JSON).
     """
 
-    def __init__(self, player_stats: dict[str, any], monsters: dict[str, any], font: pygame.font.Font):
+    def __init__(self, player_stats: dict[str, any], monsters: dict[str, any], player_assets: dict[str, any], font: pygame.font.Font):
         """
         Inicializa el controller con datos y dependencias.
 
@@ -24,7 +24,7 @@ class EntityPropertiesPanelController:
             monsters (dict): Diccionario con datos de monstruos.
             font (pygame.font.Font): Fuente para renderizado de texto.
         """
-        self.model = EntityPropertiesPanelModel(player_stats=player_stats, monsters=monsters)
+        self.model = EntityPropertiesPanelModel(player_stats=player_stats, player_assets=player_assets, monsters=monsters)
         self.view = EntityPropertiesPanelView(font)
         self.event_handler = EntitiesPropertiesPanelEventHandler(self)
 

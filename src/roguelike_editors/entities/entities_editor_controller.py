@@ -51,7 +51,7 @@ class EntitiesEditorController:
         self.picker_controller.view.y = add_pos[1]
         # Properties
         self.properties_controller = EntityPropertiesPanelController(
-            self.model.player_stats, self.model.monsters, self.font
+            self.model.player_stats, self.model.monsters, self.model.player_assets, self.font
         )
         # Vista (separa render)
         from roguelike_editors.entities.entities_editor_view import EntitiesEditorView
