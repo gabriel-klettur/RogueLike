@@ -130,20 +130,23 @@ class EntitiesPropertiesPanelEventHandler:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mx, my = event.pos
 
-            # Verificar clic dentro del panel
-            if not self.model.panel_rect.collidepoint(mx, my):
+            # Solo procesar clics dentro del panel
+            if not self.model.panel_rect or not self.model.panel_rect.collidepoint(mx, my):
                 return False
 
+            # Procesar clic en entradas
             for rect, key in self.model.property_entries:
                 if rect.collidepoint(mx, my):
-                    # Doble clic detectado
+                    # Detección de doble clic
                     if getattr(event, 'clicks', 1) >= 2 or self.dc_detector.is_double_click(key):
                         self._start_editing(key)
                         return True
-                    else:
-                        # Selección simple (enfocar propiedad)
-                        self.model.focused_property = key
-                        return True
+                    # Selección simple (enfocar propiedad)
+                    self.model.focused_property = key
+                    return True
+
+            # Clic dentro del panel pero fuera de una entrada: consumir sin más
+            return True
         return False
 
     # ----------------------------

@@ -36,10 +36,14 @@ class EntitiesPickerEventHandler:
             self._handle_keydown(event)
             return True
 
-        # Clic izquierdo para selección en el grid
+        # Clic izquierdo para selección en el grid (solo si está dentro del panel)
         if event.type == pygame.MOUSEBUTTONDOWN and self.model.visible and event.button == 1:
-            self._handle_left_click(event.pos)
-            return True
+            # Solo procesar si el clic está en el panel de picker
+            if self.model.panel_rect and self.model.panel_rect.collidepoint(event.pos):
+                self._handle_left_click(event.pos)
+                return True
+            # Dejar pasar clics fuera del panel sin consumirlos
+            return False
 
         # Movimiento del mouse para hover
         if event.type == pygame.MOUSEMOTION and self.model.visible:
