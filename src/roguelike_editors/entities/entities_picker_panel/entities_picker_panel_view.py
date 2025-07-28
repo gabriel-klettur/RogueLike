@@ -3,9 +3,12 @@ from math import ceil
 from roguelike_editors.entities.entities_picker_panel.entities_picker_panel_model import EntityPickerPanelModel
 from roguelike_ui.panel import DraggablePanel
 from roguelike_ui.widgets.hover import draw_hover
+from roguelike_ui.ui_blocker import register_blocker
 
 
 class EntityPickerPanelView:
+
+
     """
     Vista que renderiza el panel UI del editor de entidades (jugadores y monstruos).
 
@@ -89,6 +92,10 @@ class EntityPickerPanelView:
 
         # Asignar rect del panel (para eventos)
         model.panel_rect = pygame.Rect(self.x, self.y, panel_w, panel_h)
+        # Actualizar rect global para suprimir hover DropHoverRenderSystem
+        register_blocker(model.panel_rect)
+        # Fondo opaco para todo el panel (oculta elementos subyacentes)
+        pygame.draw.rect(screen, (50, 50, 50), model.panel_rect)
 
         # Dibujar fondo semitransparente con borde redondeado
         self._draw_panel_background(screen, panel_w, panel_h)
@@ -130,7 +137,7 @@ class EntityPickerPanelView:
 
             x = self.x + self.margin + col * (self.cell_size + self.margin)
             y = self.y + self.margin + (row - scroll) * (cell_height + self.margin)
-            cell_rect = pygame.Rect(x, y, self.cell_size, self.cell_size)
+            cell_rect = pygame.Rect(x, y, self.cell_size, cell_height)
 
             # Fondo celda
             pygame.draw.rect(screen, (50, 50, 50), cell_rect)
@@ -167,6 +174,16 @@ class EntityPickerPanelView:
             icon_surf = tinted
 
         screen.blit(icon_surf, (x, y))
+        # Mostrar nombre de la entidad debajo del icono
+        label = self._truncate_text(ent_id, self.cell_size)
+        text_surf = self.font.render(label, True, (255, 255, 255))
+        # Reducir tamaño del texto
+        scale_text = 0.65
+        w_t, h_t = text_surf.get_size()
+        text_surf = pygame.transform.smoothscale(text_surf, (int(w_t * scale_text), int(h_t * scale_text)))
+        text_x = x + (self.cell_size - text_surf.get_width()) // 2
+        text_y = y + self.cell_size + self.text_margin
+        screen.blit(text_surf, (text_x, text_y))
 
     def _highlight_selected(self, screen: pygame.Surface, model: EntityPickerPanelModel, entity_ids: list[str], scroll: int, screen_h: int, cell_height: int) -> None:
         """Dibuja un rectángulo amarillo para resaltar la entidad seleccionada o hover."""
@@ -188,6 +205,6 @@ class EntityPickerPanelView:
         if model.selection_blink:
             now = pygame.time.get_ticks()
             if (now // self.blink_interval) % 2 == 0:
-                pygame.draw.rect(screen, (255, 255, 0), (x - 2, y - 2, self.cell_size + 4, self.cell_size + 4), 3)
+                pygame.draw.rect(screen, (255, 255, 0), (x - 2, y - 2, self.cell_size + 4, cell_height + 4), 3)
         else:
-            pygame.draw.rect(screen, (255, 255, 0), (x - 2, y - 2, self.cell_size + 4, self.cell_size + 4), 3)
+            pygame.draw.rect(screen, (255, 255, 0), (x - 2, y - 2, self.cell_size + 4, cell_height + 4), 3)

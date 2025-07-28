@@ -1,4 +1,5 @@
 import pygame
+from roguelike_ui.ui_blocker import register_blocker
 from roguelike_ui.panel import DraggablePanel
 from roguelike_ui.widgets.button import Button
 
@@ -96,6 +97,9 @@ class ToolbarView:
             self.icon_rects[tool] = btn.rect.move(panel_pos)
         # Blitear panel
         screen.blit(self.panel.surface, panel_pos)
+        # Bloquear interacción bajo el panel
+        panel_rect = pygame.Rect(panel_pos, self.panel.surface.get_size())
+        register_blocker(panel_rect)
         # Hover y selección
         for tool, btn in self.buttons.items():
             rect = self.icon_rects[tool]

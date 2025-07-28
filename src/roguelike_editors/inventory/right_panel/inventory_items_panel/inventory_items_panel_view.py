@@ -5,6 +5,8 @@ from roguelike_editors.inventory.right_panel.inventory_items_panel.buttons.save.
 from roguelike_editors.inventory.right_panel.inventory_items_panel.grid.grid_view import GridView
 from roguelike_editors.inventory.right_panel.inventory_items_panel.tabs.tabs_view import TabsView
 
+from roguelike_ui.ui_blocker import register_blocker
+
 class InventoryItemsPanelView:
     """
     Vista principal que delega en subvistas especializadas:
@@ -47,6 +49,9 @@ class InventoryItemsPanelView:
         return self.delete_view.delete_qty_input_rect
 
     def draw(self, overlay, model, panel_rect):
+        # Bloquear interacción bajo el panel
+        if panel_rect:
+            register_blocker(panel_rect)
 
         # [DEBUG][View] InventoryItemsPanelView.draw called. Category: %s, Editing side: %s
         # [DEBUG][View] slots_data: %s

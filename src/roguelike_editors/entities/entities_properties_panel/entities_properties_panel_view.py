@@ -1,4 +1,5 @@
 import pygame
+from roguelike_ui.ui_blocker import register_blocker
 from roguelike_editors.entities.entities_properties_panel.entities_properties_panel_model import EntityPropertiesPanelModel
 from roguelike_ui.panel import DraggablePanel
 from roguelike_ui.widgets.hover import draw_hover
@@ -51,6 +52,7 @@ class EntityPropertiesPanelView:
 
         # Actualizar rect para detección de eventos
         model.panel_rect = pygame.Rect(px, py, panel_w, panel_h)
+        register_blocker(model.panel_rect)
 
         # 1. Dibujar fondo
         self._draw_background(screen, px, py, panel_w, panel_h)

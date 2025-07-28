@@ -123,6 +123,11 @@ class EntitiesEditorController:
                 return True
             # Picker panel
             self.picker_controller.handle_event(event)
+            # Si el ratón está sobre el panel de picker, consumir el evento y no propagar al mapa
+            if hasattr(event, 'pos') and self.picker_controller.model.visible:
+                panel_rect = self.picker_controller.model.panel_rect
+                if panel_rect and panel_rect.collidepoint(event.pos):
+                    return True
             # Selección de entidad tras click en picker en modo spawn
             if self.model.spawn_mode_active and self.model.spawn_entity_type is None and event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
                 sel = self.picker_controller.model.selected_id

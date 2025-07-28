@@ -5,6 +5,7 @@ from roguelike_engine.utils.debug import DebugOverlay, render_debug_overlay
 from roguelike_engine.config.config_tiles import TILE_SIZE
 import roguelike_engine.config.config as config
 from types import SimpleNamespace
+from roguelike_ui.ui_blocker import clear_blockers
 
 # Sistema de orden Z
 from roguelike_engine.z_layer.render import render_z_ordered
@@ -82,6 +83,7 @@ class RendererManager:
         def _init_and_cleaning():
             screen.fill((0, 0, 0))
             self._dirty_rects = []
+            clear_blockers()
         _init_and_cleaning()
 
         # 1) Map

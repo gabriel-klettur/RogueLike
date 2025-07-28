@@ -21,27 +21,30 @@ class EntitiesPickerEventHandler:
     # ----------------------------
     # MÉTODO PRINCIPAL
     # ----------------------------
-    def handle(self, event: pygame.event.Event) -> None:
+    def handle(self, event: pygame.event.Event) -> bool:
         """Maneja los eventos de Pygame relacionados con el panel de selección."""
+        # Solo procesar si está visible
+        if not self.model.visible:
+            return False
         
         # Manejo del arrastre del panel
         if self._handle_panel_drag(event):
-            return
+            return True
 
         # Toggle de visibilidad y navegación por teclado
         if event.type == pygame.KEYDOWN:
             self._handle_keydown(event)
-            return
+            return True
 
         # Clic izquierdo para selección en el grid
         if event.type == pygame.MOUSEBUTTONDOWN and self.model.visible and event.button == 1:
             self._handle_left_click(event.pos)
-            return
+            return True
 
         # Movimiento del mouse para hover
         if event.type == pygame.MOUSEMOTION and self.model.visible:
             self._handle_hover(event.pos)
-            return
+            return True
 
         # Si no hay hover, se resetea
         self.model.hovered_id = None
@@ -175,4 +178,4 @@ class EntitiesPickerEventHandler:
         x0 = ox + margin + col * (cell_size + margin)
         y0 = oy + margin + (row - self.model.scroll_index) * (ch + margin)
 
-        return x0 <= mx <= x0 + cell_size and y0 <= my <= y0 + cell_size
+        return x0 <= mx <= x0 + cell_size and y0 <= my <= y0 + ch
