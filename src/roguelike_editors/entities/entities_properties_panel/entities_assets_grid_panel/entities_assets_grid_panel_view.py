@@ -69,6 +69,8 @@ class AssetsGridPanelView:
                         tx = x + (cell_size - thumb.get_width()) // 2
                         ty = y + (cell_size - thumb.get_height()) // 2
                         screen.blit(thumb, (tx, ty))
+                # Draw default border for all cells
+                pygame.draw.rect(screen, (150, 150, 150), cell_rect, 1)
             else:
                 pygame.draw.rect(screen, (150, 150, 150), cell_rect, 1)
         # Mostrar ruta del asset seleccionado/hover
@@ -80,7 +82,7 @@ class AssetsGridPanelView:
                 info_x = px + pad
                 info_y = grid_y + cell_size * 3 + pad
                 screen.blit(info_surf, (info_x, info_y))
-        # Draw selected asset cell with yellow border
+        # Draw selected asset cell with yellow border on top
         if model.selected_asset_cell:
             for rect, key in model.asset_cell_entries:
                 if key == model.selected_asset_cell:
