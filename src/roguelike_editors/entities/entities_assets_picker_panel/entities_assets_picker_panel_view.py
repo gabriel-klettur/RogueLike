@@ -23,3 +23,4 @@ class EntitiesAssetsPickerPanelView:
         hovered = self.fs_view.draw(surface, (x, y))
         # capture entry rects for interaction
         self.entry_rects = self.fs_view.entry_rects
+
