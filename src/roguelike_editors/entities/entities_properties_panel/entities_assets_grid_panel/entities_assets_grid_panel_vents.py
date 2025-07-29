@@ -28,15 +28,6 @@ class AssetsGridPanelEventHandler:
         # Click en subtabs
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mx, my = event.pos
-            for label, rect in self.parent.asset_tab_rects.items():
-                if rect.collidepoint(mx, my):
-                    self.model.active_asset_tab = label
-                    self.parent.active_asset_tab = label
-                    # Reset selection
-                    self.model.hovered_asset_cell = None
-                    self.model.selected_asset_cell = None
-                    return True
-            # Click en celdas
             for rect, key in self.model.asset_cell_entries:
                 if rect.collidepoint(mx, my):
                     self.model.selected_asset_cell = key

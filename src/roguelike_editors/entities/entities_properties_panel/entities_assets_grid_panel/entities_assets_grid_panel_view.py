@@ -41,7 +41,8 @@ class AssetsGridPanelView:
             y = grid_y + row * cell_size
             cell_rect = pygame.Rect(x, y, cell_size, cell_size)
             if dir_key:
-                asset_key = f"asset_{model.active_asset_tab}_{dir_key}"
+                active_state = self.state_tabs_controller.model.active_state_tab
+                asset_key = f"asset_{active_state}_{dir_key}"
                 model.asset_cell_entries.append((cell_rect, asset_key))
                 # Hover highlight
                 if model.hovered_asset_cell == asset_key:

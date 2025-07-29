@@ -3,7 +3,7 @@ from roguelike_ui.ui_blocker import register_blocker
 from roguelike_editors.entities.entities_properties_panel.entities_properties_panel_model import EntityPropertiesPanelModel
 from roguelike_ui.panel import DraggablePanel
 from roguelike_ui.widgets.hover import draw_hover
-from roguelike_engine.utils.loader import load_image
+
 
 
 class EntityPropertiesPanelView:
@@ -40,10 +40,11 @@ class EntityPropertiesPanelView:
             filtered = {k: v for k, v in entity_data.items() if not k.startswith('asset')}
         elif model.active_tab == 'assets':
             # Filtrar por categoría de asset seleccionada
-            if model.active_asset_tab == 'add state':
+            active_state = self.state_tabs_controller.model.active_state_tab
+            if active_state == 'add state':
                 filtered = {}
             else:
-                prefix = f"asset_{model.active_asset_tab}_"
+                prefix = f"asset_{active_state}_"
                 filtered = {k: v for k, v in entity_data.items() if k.startswith(prefix)}
         else:
             filtered = {}
@@ -57,7 +58,8 @@ class EntityPropertiesPanelView:
         # Asegurar ancho mínimo para subtabs de assets vacíos
         if model.active_tab == 'assets':
             subpad_x = 8
-            subtabs_total = sum(self.font.size(label.capitalize())[0] + subpad_x * 2 for label in model.asset_tabs)
+            state_tabs = self.state_tabs_controller.model.state_tabs
+            subtabs_total = sum(self.font.size(label.capitalize())[0] + subpad_x * 2 for label in state_tabs)
             panel_w = max(panel_w, subtabs_total)
         # Altura del header de pestañas
         tab_padding_y = 5
@@ -97,7 +99,7 @@ class EntityPropertiesPanelView:
         # Dibujar pestañas
         self._draw_tabs(screen, model)
         if model.active_tab == 'assets':
-            self._draw_asset_tabs(screen, model)
+            self.state_tabs_controller.draw(screen)
 
         # 2. Dibujar contenido según pestaña
         if model.active_tab == 'properties':
@@ -192,37 +194,7 @@ class EntityPropertiesPanelView:
             screen.blit(text_surf, (text_x, text_y))
             x_cursor += w
 
-    def _draw_asset_tabs(self, screen: pygame.Surface, model: EntityPropertiesPanelModel) -> None:
-        """Dibuja subtabs de assets cuando active_tab == 'assets'."""
-        font_h = self.font.get_height()
-        padding_x, padding_y = 8, 4
-        x_cursor = model.panel_rect.x
-        # Posicionar subtabs justo debajo del header principal
-        y = model.panel_rect.y + (font_h + 5 * 2)
-        model.asset_tab_rects.clear()
-        mouse_pos = pygame.mouse.get_pos()
-        for label in model.asset_tabs:
-            text_label = label.capitalize()
-            text_w, text_h = self.font.size(text_label)
-            w = text_w + padding_x * 2
-            h = text_h + padding_y * 2
-            rect = pygame.Rect(x_cursor, y, w, h)
-            model.asset_tab_rects[label] = rect
-            is_active = (model.active_asset_tab == label)
-            is_hover = rect.collidepoint(mouse_pos)
-            if is_active or is_hover:
-                tab_surf = pygame.Surface((w, h), pygame.SRCALPHA)
-                tab_surf.fill((255, 255, 0, 80))
-                screen.blit(tab_surf, (rect.x, rect.y))
-                pygame.draw.rect(screen, (255, 255, 0), rect, 2)
-            else:
-                pygame.draw.rect(screen, (80, 80, 80), rect)
-                pygame.draw.rect(screen, (200, 200, 200), rect, 1)
-            text_surf = self.font.render(text_label, True, (0, 0, 0))
-            text_x = x_cursor + (w - text_surf.get_width()) // 2
-            text_y = y + padding_y
-            screen.blit(text_surf, (text_x, text_y))
-            x_cursor += w
+
 
     def _draw_properties(self, screen: pygame.Surface, model: EntityPropertiesPanelModel,
                          lines: list[str], px: int, py: int, pad: int, font_h: int, panel_w: int) -> None:
@@ -295,85 +267,3 @@ class EntityPropertiesPanelView:
         while self.font.size(text + '...')[0] > max_width and text:
             text = text[:-1]
         return text + '...'
-
-    def _draw_asset_grid(self, screen: pygame.Surface, model: EntityPropertiesPanelModel, entity_data: dict, px: int, py: int, pad: int, font_h: int, panel_w: int) -> None:
-        """Dibuja nombre, tint editable, grid y ruta de asset hovered/selected."""
-        # Limpiar entradas seleccionables
-        model.property_entries.clear()
-        model.asset_cell_entries.clear()
-        # Renderizar nombre de entidad
-        name_x = px + pad
-        name_y = py + pad
-        ent_id = model.hovered_entity_id or model.selected_id
-        name_surf = self.font.render(ent_id, True, (255, 255, 0))
-        screen.blit(name_surf, (name_x, name_y))
-        # Renderizar tint editable
-        tint_val = entity_data.get('tint')
-        val_str = str(tint_val) if tint_val is not None else 'None'
-        key_surf = self.font.render('tint: ', True, (255, 255, 255))
-        color = (128, 0, 128) if val_str == 'None' else (255, 255, 0)
-        val_surf = self.font.render(val_str, True, color)
-        tint_y = name_y + font_h + 2
-        screen.blit(key_surf, (name_x, tint_y))
-        screen.blit(val_surf, (name_x + key_surf.get_width(), tint_y))
-        # Registrar área clicable para tint
-        rect_tint = pygame.Rect(name_x, tint_y, key_surf.get_width() + val_surf.get_width(), font_h)
-        model.property_entries.append((rect_tint, 'tint'))
-        # Cálculo de cuadrícula tras nombre y tint
-        grid_x = px + pad
-        grid_y = tint_y + font_h + pad
-        grid_w = panel_w - pad * 2
-        cell_size = int(grid_w / 3)
-        # Orden de direcciones
-        order = ['nw', 'n', 'ne', 'w', None, 'e', 'sw', 's', 'se']
-        for idx, dir_key in enumerate(order):
-            row = idx // 3
-            col = idx % 3
-            x = grid_x + col * cell_size
-            y = grid_y + row * cell_size
-            # Definir rect de celda
-            cell_rect = pygame.Rect(x, y, cell_size, cell_size)
-            if dir_key:
-                asset_key = f'asset_{model.active_asset_tab}_{dir_key}'
-                # Registrar celda clickable
-                model.asset_cell_entries.append((cell_rect, asset_key))
-                # Hover de celdas
-                if model.hovered_asset_cell == asset_key:
-                    hover_surf = pygame.Surface((cell_size, cell_size), pygame.SRCALPHA)
-                    hover_surf.fill((255, 255, 0, 80))
-                    screen.blit(hover_surf, (x, y))
-                # Borde (selección o default)
-                border_color = (255, 255, 0) if model.selected_asset_cell == asset_key else (150, 150, 150)
-                border_width = 2 if model.selected_asset_cell == asset_key else 1
-                pygame.draw.rect(screen, border_color, cell_rect, border_width)
-                # Dibujar thumbnail
-                path = entity_data.get(asset_key)
-                if path:
-                    raw = self.thumbnail_cache.get(path)
-                    if raw is None:
-                        try:
-                            img = load_image(path)
-                            raw = pygame.transform.smoothscale(img, (cell_size - 4, cell_size - 4))
-                        except Exception:
-                            raw = None
-                        self.thumbnail_cache[path] = raw
-                    if raw:
-                        thumb = raw.copy()
-                        tint = entity_data.get('tint')
-                        if tint:
-                            c = tuple(tint) if len(tint) == 4 else (*tint, 255)
-                            thumb.fill(c, special_flags=pygame.BLEND_RGBA_MULT)
-                        tx = x + (cell_size - thumb.get_width()) // 2
-                        ty = y + (cell_size - thumb.get_height()) // 2
-                        screen.blit(thumb, (tx, ty))
-            else:
-                pygame.draw.rect(screen, (150, 150, 150), cell_rect, 1)
-        # Mostrar ruta debajo del grid
-        sel = model.hovered_asset_cell or model.selected_asset_cell
-        if sel:
-            path = entity_data.get(sel)
-            if path:
-                info_surf = self.font.render(path, True, (255, 255, 255))
-                info_x = px + pad
-                info_y = grid_y + cell_size * 3 + pad
-                screen.blit(info_surf, (info_x, info_y))

@@ -10,6 +10,8 @@ class AssetsGridPanelController:
         self.parent_model = parent_panel_model
         self.model = AssetsGridPanelModel()
         self.view = AssetsGridPanelView(font)
+        # Referencia al modelo principal para state tabs
+        self.view.parent_model = parent_panel_model
         self.event_handler = AssetsGridPanelEventHandler(self)
 
     def draw(self, screen: pygame.Surface, entity_data: dict, px: int, py: int, pad: int, font_h: int, panel_w: int) -> None:

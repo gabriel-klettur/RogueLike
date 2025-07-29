@@ -51,7 +51,11 @@ class EntitiesPropertiesPanelEventHandler:
             return True
 
 
-        # 7. Eventos de grid (subtabs y celdas)
+        # 7. Eventos de pestañas de estado (state tabs)
+        if self.model.active_tab == 'assets':
+            if self.controller.state_tabs_controller.handle_event(event):
+                return True
+        # 8. Eventos de grid (subtabs y celdas)
         if self.model.active_tab == 'assets':
             if self.controller.grid_controller.handle_event(event):
                 return True

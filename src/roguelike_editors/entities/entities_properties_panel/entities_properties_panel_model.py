@@ -21,10 +21,10 @@ class EntityPropertiesPanelModel:
     tabs: List[str] = field(default_factory=lambda: ['properties', 'assets'])
     active_tab: str = 'properties'
     tab_rects: Dict[str, pygame.Rect] = field(default_factory=dict)
-    # Subtabs para assets cuando active_tab == 'assets'
-    asset_tabs: List[str] = field(default_factory=lambda: ['idle','chase','attack','death','damage','casting','add state'])
-    active_asset_tab: str = 'idle'
-    asset_tab_rects: Dict[str, pygame.Rect] = field(default_factory=dict)
+    # Subtabs (manejado por EntitiesStateTabsController)
+    
+    
+    
     # Celdas de grid de assets (rect y key)
     asset_cell_entries: List[Tuple[pygame.Rect, str]] = field(default_factory=list)
     # Asset key hovered y seleccionado en grid
