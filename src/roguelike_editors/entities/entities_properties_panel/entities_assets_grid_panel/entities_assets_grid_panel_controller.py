@@ -5,13 +5,14 @@ from roguelike_editors.entities.entities_properties_panel.entities_assets_grid_p
 
 class AssetsGridPanelController:
     """Controller para el panel de cuadrícula de assets en el panel de propiedades."""
-    def __init__(self, parent_panel_model, font: pygame.font.Font):
-        # parent_panel_model es EntityPropertiesPanelModel para posicion y panel_rect
-        self.parent_model = parent_panel_model
+    def __init__(self, parent_controller, font: pygame.font.Font):
+        # parent_controller es EntityPropertiesPanelController
+        self.parent_controller = parent_controller
+        self.parent_model = parent_controller.model
         self.model = AssetsGridPanelModel()
         self.view = AssetsGridPanelView(font)
         # Referencia al modelo principal para state tabs
-        self.view.parent_model = parent_panel_model
+        self.view.parent_model = self.parent_model
         self.event_handler = AssetsGridPanelEventHandler(self)
 
     def draw(self, screen: pygame.Surface, entity_data: dict, px: int, py: int, pad: int, font_h: int, panel_w: int) -> None:

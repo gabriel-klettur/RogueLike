@@ -7,6 +7,7 @@ from roguelike_editors.entities.entities_properties_panel.entities_properties_pa
 from roguelike_editors.entities.entities_properties_panel.entities_assets_grid_panel.entities_assets_grid_panel_controller import AssetsGridPanelController
 from roguelike_editors.entities.entities_properties_panel.entities_state_tabs.entities_state_tabs_controller import EntitiesStateTabsController
 from roguelike_editors.entities.entities_properties_panel.entities_type_assets.entities_type_assets_controller import EntitiesTypeAssetsController
+from roguelike_editors.entities.entities_assets_picker_panel.entities_assets_picker_panel_controller import EntitiesAssetsPickerPanelController
 
 
 class EntityPropertiesPanelController:
@@ -18,7 +19,7 @@ class EntityPropertiesPanelController:
     - Gestionar la edición de propiedades (incluyendo validación y persistencia en JSON).
     """
 
-    def __init__(self, player_stats: dict[str, any], monsters: dict[str, any], player_assets: dict[str, any], font: pygame.font.Font):
+    def __init__(self, editor_controller, player_stats: dict[str, any], monsters: dict[str, any], player_assets: dict[str, any], font: pygame.font.Font):
         """
         Inicializa el controller con datos y dependencias.
 
@@ -27,10 +28,11 @@ class EntityPropertiesPanelController:
             monsters (dict): Diccionario con datos de monstruos.
             font (pygame.font.Font): Fuente para renderizado de texto.
         """
+        self.editor_controller = editor_controller
         self.model = EntityPropertiesPanelModel(player_stats=player_stats, player_assets=player_assets, monsters=monsters)
         self.view = EntityPropertiesPanelView(font)
         self.event_handler = EntitiesPropertiesPanelEventHandler(self)
-        self.grid_controller = AssetsGridPanelController(self.model, font)
+        self.grid_controller = AssetsGridPanelController(self, font)
         self.view.grid_controller = self.grid_controller
         # Controller de pestañas de tipo ('properties'/'assets')
         self.type_assets_controller = EntitiesTypeAssetsController(self.model, font)
@@ -41,6 +43,9 @@ class EntityPropertiesPanelController:
         self.view.state_tabs_controller = self.state_tabs_controller
         # Pasar controller de tabs de estado al grid view para seleccionar assets
         self.grid_controller.view.state_tabs_controller = self.state_tabs_controller
+        # Assets picker panel
+        self.assets_picker_controller = EntitiesAssetsPickerPanelController()
+        self.view.assets_picker_controller = self.assets_picker_controller
 
     # ----------------------------
     # MANEJO DE EVENTOS
@@ -55,6 +60,9 @@ class EntityPropertiesPanelController:
     def draw(self, screen: pygame.Surface) -> None:
         """Dibuja el panel y, si aplica, el input activo."""
         self.view.draw(screen, self.model)
+        # Draw assets picker if visible
+        if self.assets_picker_controller.model.visible:
+            self.assets_picker_controller.draw(screen)
 
         # Si hay propiedad en edición, renderizamos el TextInput
         if self.model.editing_property:
@@ -66,6 +74,18 @@ class EntityPropertiesPanelController:
                     self.event_handler.text_input.draw(screen, x, y)
                     break
 
+    # ----------------------------
+    def _on_asset_chosen(self, cell_key: str, path):
+        """
+        Callback when asset is chosen: update entity property and persist to JSON.
+        """
+        ent_id = self.model.selected_id
+        if not ent_id:
+            return
+        # update JSON and model
+        json_path, data, entry = self._load_entity_data(ent_id)
+        entry[cell_key] = str(path)
+        self._save_entity_data(ent_id, entry, json_path, data)
     # ----------------------------
     # COMMIT DE CAMBIOS
     # ----------------------------
