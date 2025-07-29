@@ -96,7 +96,6 @@ class EntityPropertiesPanelView:
 
         # Dibujar pestañas
         self._draw_tabs(screen, model)
-        # Dibujar subtabs de assets
         if model.active_tab == 'assets':
             self._draw_asset_tabs(screen, model)
 
@@ -105,8 +104,8 @@ class EntityPropertiesPanelView:
             self._draw_properties(screen, model, lines, px, py + primary_header + state_header, pad, font_h, panel_w)
             self._draw_editing_indicator(screen, model, font_h)
         elif model.active_tab == 'assets':
-            self._draw_asset_grid(screen, model, entity_data, px, py + primary_header + state_header, pad, font_h, panel_w)
-            self._draw_editing_indicator(screen, model, font_h)
+            # Delegar grid a grid_controller
+            self.grid_controller.draw(screen, entity_data, px, py + primary_header + state_header, pad, font_h, panel_w)
 
     # ----------------------------
     # MÉTODOS PRIVADOS
@@ -121,9 +120,14 @@ class EntityPropertiesPanelView:
             stats = model.player_stats.get(ent_id, {})
             assets = model.player_assets.get(ent_id, {})
             merged = dict(stats)
+            merged['id'] = ent_id
             if isinstance(assets, dict):
-                for k, v in assets.items():
-                    merged[f'asset_{k}'] = v
+                for state, data in assets.items():
+                    if isinstance(data, dict):
+                        for dir_key, path in data.items():
+                            merged[f'asset_{state}_{dir_key}'] = path
+                    else:
+                        merged[f'asset_{state}'] = data
             else:
                 merged['asset'] = assets
             return merged
@@ -144,6 +148,7 @@ class EntityPropertiesPanelView:
                     assets[assets_key] = path
             # Combinar stats y assets prefijados
             merged_mon = dict(stats)
+            merged_mon['id'] = ent_id
             for k, v in assets.items():
                 merged_mon[f"asset_{k}"] = v
             return merged_mon
