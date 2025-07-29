@@ -40,6 +40,8 @@ class EntitiesAssetsPickerPanelEventHandler:
                         if self.dc_detector.is_double_click(idx):
                             if self.model.on_asset_chosen:
                                 self.model.on_asset_chosen(self.model.key, path)
+
+
                         else:
                             # single-click: highlight only
                             self.model.fs_model.selected = entry[1]

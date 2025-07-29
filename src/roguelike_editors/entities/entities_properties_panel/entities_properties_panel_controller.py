@@ -1,6 +1,8 @@
 import os
 import pygame
 from roguelike_ui.services.json_persistence import save_to_json, load_from_json
+from pathlib import Path
+from roguelike_engine.config.config import ASSETS_DIR
 from roguelike_editors.entities.entities_properties_panel.entities_properties_panel_model import EntityPropertiesPanelModel
 from roguelike_editors.entities.entities_properties_panel.entities_properties_panel_view import EntityPropertiesPanelView
 from roguelike_editors.entities.entities_properties_panel.entities_properties_panel_events import EntitiesPropertiesPanelEventHandler
@@ -84,8 +86,58 @@ class EntityPropertiesPanelController:
             return
         # update JSON and model
         json_path, data, entry = self._load_entity_data(ent_id)
-        entry[cell_key] = str(path)
+        # determine state and direction from cell_key
+        # compute relative asset path
+        abs_path = Path(path).resolve()
+        assets_root = Path(ASSETS_DIR).resolve()
+        try:
+            rel = abs_path.relative_to(assets_root)
+            rel_path = f"assets/{rel.as_posix()}"
+        except ValueError:
+            rel_path = str(path).replace("\\", "/")
+
+        parts = cell_key.split("_")
+        if len(parts) == 3:
+            _, state, direction = parts
+            # ensure nested structure exists
+            sprites = entry.setdefault("sprites", {})
+            assets = sprites.setdefault("assets", {})
+            state_assets = assets.setdefault(state, {})
+            state_assets[direction] = rel_path
+        else:
+            # fallback: flat property
+            entry[cell_key] = rel_path
         self._save_entity_data(ent_id, entry, json_path, data)
+        # Refresh monster asset caches and update ECS entities immediately
+        try:
+            from roguelike_game.factories.monster.config import reload_monster_defs
+            from roguelike_game.factories.monster import cache as monster_cache
+            # Reload definitions and clear caches for this type
+            reload_monster_defs()
+            monster_cache._loaded_variants.discard(ent_id)
+            monster_cache._SPRITE_SURFACES.pop(ent_id, None)
+            monster_cache._DEATH_SURFACES.pop(ent_id, None)
+            monster_cache.load_caches_for([ent_id])
+            # Update existing ECS entities of this monster type
+            ecs_world = self.editor_controller.game.ecs.ecs_world
+            idents = ecs_world.components.get('Identity', {})
+            sprites = ecs_world.components.get('Sprite', {})
+            animators = ecs_world.components.get('Animator', {})
+            for eid, identity in idents.items():
+                if identity.name.lower() == ent_id:
+                    base_map = monster_cache._SPRITE_SURFACES.get(ent_id, {})
+                    # Update sprite image to 'down' frame
+                    down_surf = base_map.get('down')
+                    if down_surf and eid in sprites:
+                        raw = down_surf.copy() if hasattr(down_surf, 'copy') else down_surf
+                        sprites[eid].image = raw
+                    # Update animation frames
+                    if eid in animators:
+                        new_anims = {state: [surf.copy() if hasattr(surf, 'copy') else surf]
+                                     for state, surf in base_map.items()}
+                        animators[eid].animations = new_anims
+        except Exception:
+            pass
     # ----------------------------
     # COMMIT DE CAMBIOS
     # ----------------------------

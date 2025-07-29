@@ -23,4 +23,8 @@ class EntitiesAssetsPickerPanelView:
         hovered = self.fs_view.draw(surface, (x, y))
         # capture entry rects for interaction
         self.entry_rects = self.fs_view.entry_rects
+        # store panel rectangle for nested pickers
+        surf = self.fs_view.panel.surface
+        w, h = surf.get_size()
+        self.model.panel_rect = pygame.Rect(x, y, w, h)
 

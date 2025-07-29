@@ -19,3 +19,5 @@ class EntitiesAssetsPickerPanelModel:
         self.key = None
         # Callback when asset chosen: function(cell_key, path)
         self.on_asset_chosen = None
+        # rectangle of the panel for positioning nested pickers
+        self.panel_rect = None
