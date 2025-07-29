@@ -6,6 +6,8 @@ import pygame
 from pathlib import Path
 from roguelike_ui.panel import PanelSurface
 from roguelike_ui.widgets.grid import ScrollableGrid
+from roguelike_engine.utils.loader import load_image
+from roguelike_editors.tiles.tiles_editor_config import ARROW_UP_ICON, FOLDER_ICON
 
 
 class FileSystemPickerModel:
@@ -85,9 +87,24 @@ class FileSystemPickerView:
             # record entry rect in global coordinates
             self.entry_rects.append((pygame.Rect(position[0] + rect.x, position[1] + rect.y, rect.width, rect.height), entry, idx))
             name, path, is_dir = entry
-            # placeholder icon
-            color = (80, 80, 150) if is_dir else (100, 100, 100)
-            pygame.draw.rect(surf, color, rect)
+            # draw icon
+            if is_dir:
+                if name == "..":
+                    icon = load_image(ARROW_UP_ICON, (self.thumb_size, self.thumb_size))
+                else:
+                    icon = load_image(FOLDER_ICON, (self.thumb_size, self.thumb_size))
+                surf.blit(icon, rect)
+            else:
+                color = (100, 100, 100)
+                pygame.draw.rect(surf, color, rect)
+            # hover overlay
+            mx, my = pygame.mouse.get_pos()
+            lx, ly = mx - position[0], my - position[1]
+            if rect.collidepoint((lx, ly)):
+                hover_surf = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+                hover_surf.fill((255, 230, 0, 100))
+                surf.blit(hover_surf, (rect.x, rect.y))
+                pygame.draw.rect(surf, (255, 230, 0), rect, 2)
             # label below
             label = self.font.render(name, True, (255,255,255))
             surf.blit(label, (rect.x, rect.y + rect.height + 2))

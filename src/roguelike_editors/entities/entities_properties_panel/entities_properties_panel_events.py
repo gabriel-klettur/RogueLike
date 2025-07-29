@@ -29,6 +29,10 @@ class EntitiesPropertiesPanelEventHandler:
         # 1. Si hay edición activa, delegamos al TextInput
         if self._handle_active_text_edit(event):
             return True
+        # If assets picker is visible, forward event to it
+        if self.controller.assets_picker_controller.model.visible:
+            if self.controller.assets_picker_controller.handle_event(event):
+                return True
 
         # 2. Verificamos que el panel sea interactivo
         if not self.model.selected_id or not self.model.panel_rect:

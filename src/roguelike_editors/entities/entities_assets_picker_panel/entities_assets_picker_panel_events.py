@@ -1,4 +1,5 @@
 import pygame
+from roguelike_ui.widgets.double_click_detector import DoubleClickDetector
 
 
 class EntitiesAssetsPickerPanelEventHandler:
@@ -7,6 +8,7 @@ class EntitiesAssetsPickerPanelEventHandler:
         self.controller = controller
         self.model = controller.model
         self.view = controller.view
+        self.dc_detector = DoubleClickDetector()
 
     def handle(self, event: pygame.event.Event) -> bool:
         """Handle event: navigation, selection, and closing."""
@@ -27,11 +29,20 @@ class EntitiesAssetsPickerPanelEventHandler:
                 if rect.collidepoint(mx, my):
                     name, path, is_dir = entry
                     if is_dir:
-                        self.model.fs_model.navigate(idx)
+                        # navigate on double-click
+                        if self.dc_detector.is_double_click(idx):
+                            self.model.fs_model.navigate(idx)
+                        else:
+                            # single-click: highlight only
+                            self.model.fs_model.selected = entry[1]
                     else:
-                        if self.model.on_asset_chosen:
-                            self.model.on_asset_chosen(self.model.key, path)
-                        self.controller.hide()
+                        # select asset on double-click without closing panel
+                        if self.dc_detector.is_double_click(idx):
+                            if self.model.on_asset_chosen:
+                                self.model.on_asset_chosen(self.model.key, path)
+                        else:
+                            # single-click: highlight only
+                            self.model.fs_model.selected = entry[1]
                     return True
             # Click inside panel but not on entry: consume
             if panel_rect.collidepoint(mx, my):

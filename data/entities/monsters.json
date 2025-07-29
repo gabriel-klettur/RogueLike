@@ -358,7 +358,8 @@
     "spawn_padding": 3,
     "spawn_count": 10,
     "spawn_margin": 0,
-    "tint": ""
+    "tint": "",
+    "asset_idle_w": "D:\\Python\\RogueLike\\assets\\npc\\monsters\\jabato\\ChatGPT Image 28 may 2025, 09_51_17.png"
   },
   "barbol_cyan": {
     "sprites": {
