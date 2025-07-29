@@ -53,6 +53,9 @@ class EntitiesPropertiesPanelEventHandler:
         # 7. Clic en subtabs de assets
         if self.model.active_tab == 'assets' and self._handle_asset_tab_click(event):
             return True
+        # 8. Clic en celdas de assets
+        if self.model.active_tab == 'assets' and self._handle_asset_cell_click(event):
+            return True
 
         # 7. Clic en propiedades (single/double click)
         if self._handle_property_click(event):
@@ -104,15 +107,23 @@ class EntitiesPropertiesPanelEventHandler:
     # HOVER EN PROPIEDADES
     # ----------------------------
     def _handle_hover(self, event: pygame.event.Event) -> bool:
-        """Detecta si el mouse está sobre una propiedad y actualiza el hover."""
+        """Detecta hover en propiedades o celdas de assets y actualiza el modelo."""
         if event.type == pygame.MOUSEMOTION and self.model.panel_rect.collidepoint(event.pos):
             mx, my = event.pos
-            hovered = None
-            for rect, key in self.model.property_entries:
-                if rect.collidepoint(mx, my):
-                    hovered = key
-                    break
-            self.model.hovered_property = hovered
+            if self.model.active_tab == 'assets':
+                hovered = None
+                for rect, key in self.model.asset_cell_entries:
+                    if rect.collidepoint(mx, my):
+                        hovered = key
+                        break
+                self.model.hovered_asset_cell = hovered
+            else:
+                hovered = None
+                for rect, key in self.model.property_entries:
+                    if rect.collidepoint(mx, my):
+                        hovered = key
+                        break
+                self.model.hovered_property = hovered
             return True
         return False
 
@@ -160,6 +171,18 @@ class EntitiesPropertiesPanelEventHandler:
     # ----------------------------
     # INICIAR EDICIÓN DE PROPIEDAD
     # ----------------------------
+    def _handle_asset_cell_click(self, event: pygame.event.Event) -> bool:
+        """Maneja clic en celdas de la cuadrícula de assets."""
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if not self.model.panel_rect or not self.model.panel_rect.collidepoint(event.pos):
+                return False
+            mx, my = event.pos
+            for rect, key in self.model.asset_cell_entries:
+                if rect.collidepoint(mx, my):
+                    self.model.selected_asset_cell = key
+                    return True
+        return False
+
     def _start_editing(self, key: str) -> None:
         """Prepara el TextInput para editar una propiedad específica."""
         self.model.focused_property = key

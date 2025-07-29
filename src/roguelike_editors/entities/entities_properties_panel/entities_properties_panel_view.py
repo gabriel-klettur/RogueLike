@@ -70,7 +70,7 @@ class EntityPropertiesPanelView:
             grid_w = panel_w - pad * 2
             cell_size = int(grid_w / 3)
             # pad top + nombre + espaciado + tint + pad + cuadrícula + pad bottom
-            content_h = pad + font_h + 2 + font_h + pad + cell_size * 3 + pad
+            content_h = pad + font_h + 2 + font_h + pad + cell_size * 3 + pad + font_h
         else:
             content_h = min(len(lines) * (font_h + 2) + pad * 2, sh - margin * 2 - primary_header - state_header)
         panel_h = primary_header + state_header + content_h
@@ -292,31 +292,31 @@ class EntityPropertiesPanelView:
         return text + '...'
 
     def _draw_asset_grid(self, screen: pygame.Surface, model: EntityPropertiesPanelModel, entity_data: dict, px: int, py: int, pad: int, font_h: int, panel_w: int) -> None:
-        """Dibuja el nombre, tint editable y cuadrícula 3x3 de assets para el estado activo."""
-        # Limpiar áreas clicables y calcular posiciones base
+        """Dibuja nombre, tint editable, grid y ruta de asset hovered/selected."""
+        # Limpiar entradas seleccionables
         model.property_entries.clear()
+        model.asset_cell_entries.clear()
+        # Renderizar nombre de entidad
         name_x = px + pad
         name_y = py + pad
-        # Renderizar entity ID en amarillo
         ent_id = model.hovered_entity_id or model.selected_id
         name_surf = self.font.render(ent_id, True, (255, 255, 0))
         screen.blit(name_surf, (name_x, name_y))
-        # Renderizar tint editable debajo del nombre
+        # Renderizar tint editable
         tint_val = entity_data.get('tint')
         val_str = str(tint_val) if tint_val is not None else 'None'
-        key_text = 'tint: '
-        key_surf = self.font.render(key_text, True, (255, 255, 255))
+        key_surf = self.font.render('tint: ', True, (255, 255, 255))
         color = (128, 0, 128) if val_str == 'None' else (255, 255, 0)
         val_surf = self.font.render(val_str, True, color)
         tint_y = name_y + font_h + 2
         screen.blit(key_surf, (name_x, tint_y))
         screen.blit(val_surf, (name_x + key_surf.get_width(), tint_y))
         # Registrar área clicable para tint
-        rect = pygame.Rect(name_x, tint_y, key_surf.get_width() + val_surf.get_width(), font_h)
-        model.property_entries.append((rect, 'tint'))
+        rect_tint = pygame.Rect(name_x, tint_y, key_surf.get_width() + val_surf.get_width(), font_h)
+        model.property_entries.append((rect_tint, 'tint'))
         # Cálculo de cuadrícula tras nombre y tint
-        grid_y = tint_y + font_h + pad
         grid_x = px + pad
+        grid_y = tint_y + font_h + pad
         grid_w = panel_w - pad * 2
         cell_size = int(grid_w / 3)
         # Orden de direcciones
@@ -326,10 +326,23 @@ class EntityPropertiesPanelView:
             col = idx % 3
             x = grid_x + col * cell_size
             y = grid_y + row * cell_size
-            pygame.draw.rect(screen, (150, 150, 150), (x, y, cell_size, cell_size), 1)
+            # Definir rect de celda
+            cell_rect = pygame.Rect(x, y, cell_size, cell_size)
             if dir_key:
-                key = f'asset_{model.active_asset_tab}_{dir_key}'
-                path = entity_data.get(key)
+                asset_key = f'asset_{model.active_asset_tab}_{dir_key}'
+                # Registrar celda clickable
+                model.asset_cell_entries.append((cell_rect, asset_key))
+                # Hover de celdas
+                if model.hovered_asset_cell == asset_key:
+                    hover_surf = pygame.Surface((cell_size, cell_size), pygame.SRCALPHA)
+                    hover_surf.fill((255, 255, 0, 80))
+                    screen.blit(hover_surf, (x, y))
+                # Borde (selección o default)
+                border_color = (255, 255, 0) if model.selected_asset_cell == asset_key else (150, 150, 150)
+                border_width = 2 if model.selected_asset_cell == asset_key else 1
+                pygame.draw.rect(screen, border_color, cell_rect, border_width)
+                # Dibujar thumbnail
+                path = entity_data.get(asset_key)
                 if path:
                     raw = self.thumbnail_cache.get(path)
                     if raw is None:
@@ -348,3 +361,14 @@ class EntityPropertiesPanelView:
                         tx = x + (cell_size - thumb.get_width()) // 2
                         ty = y + (cell_size - thumb.get_height()) // 2
                         screen.blit(thumb, (tx, ty))
+            else:
+                pygame.draw.rect(screen, (150, 150, 150), cell_rect, 1)
+        # Mostrar ruta debajo del grid
+        sel = model.hovered_asset_cell or model.selected_asset_cell
+        if sel:
+            path = entity_data.get(sel)
+            if path:
+                info_surf = self.font.render(path, True, (255, 255, 255))
+                info_x = px + pad
+                info_y = grid_y + cell_size * 3 + pad
+                screen.blit(info_surf, (info_x, info_y))
