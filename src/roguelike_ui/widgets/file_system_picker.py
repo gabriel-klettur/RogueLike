@@ -105,22 +105,18 @@ class FileSystemPickerView:
                 hover_surf.fill((255, 230, 0, 100))
                 surf.blit(hover_surf, (rect.x, rect.y))
                 pygame.draw.rect(surf, (255, 230, 0), rect, 2)
-            # draw label: inside icon for dirs, below for files
-            if is_dir:
-                # show folder name centered, ellipsized
-                if name != "..":
-                    text = name
-                    max_w = rect.width - 4
-                    # ellipsize
-                    if self.font.size(text)[0] > max_w:
-                        while self.font.size(text + "...")[0] > max_w and len(text) > 0:
-                            text = text[:-1]
-                        text = text + "..."
-                    label = self.font.render(text, True, (0, 0, 0))
-                    surf.blit(label, label.get_rect(center=rect.center))
-            else:
-                label = self.font.render(name, True, (255,255,255))
-                surf.blit(label, (rect.x, rect.y + rect.height + 2))
+            # draw folder name centered, ellipsized
+            if is_dir and name != "..":
+                text = name
+                max_w = rect.width - 4
+                # ellipsize
+                if self.font.size(text)[0] > max_w:
+                    while self.font.size(text + "...")[0] > max_w and len(text) > 0:
+                        text = text[:-1]
+                    text = text + "..."
+                label = self.font.render(text, True, (0, 0, 0))
+                surf.blit(label, label.get_rect(center=rect.center))
+
         hovered = grid.draw_items(self.panel.surface, self.model.entries, position, draw_fn)
         # draw path label inside panel (full path for hovered entry or current directory)
         path_str = str(hovered[1]) if hovered else str(self.model.current_dir)
