@@ -10,9 +10,9 @@
       "chase_right": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
       "chase_up": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
       "damage_left": "assets/npc/monsters/barbol/barbol_1_left_damage.png",
-      "damage_right": "assets/npc/monsters/barbol/barbol_1_right_damage.png"
+      "damage_right": "assets/npc/monsters/barbol/barbol_1_right_damage.png",
+      "death": "assets/npc/monsters/barbol/barbol_female_death.png"
     },
-    "death_sprite": "assets/npc/monsters/barbol/barbol_female_death.png",
     "death_scale": 0.5,
     "hp": 100,
     "speed": 1.0,
@@ -43,9 +43,9 @@
       "chase_right": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
       "chase_up": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
       "damage_left": "assets/npc/monsters/barbol/barbol_1_left_damage.png",
-      "damage_right": "assets/npc/monsters/barbol/barbol_1_right_damage.png"
+      "damage_right": "assets/npc/monsters/barbol/barbol_1_right_damage.png",
+      "death": "assets/npc/monsters/barbol/barbol_female_death.png"
     },
-    "death_sprite": "assets/npc/monsters/barbol/barbol_female_death.png",
     "death_scale": 0.5,
     "hp": 30,
     "speed": 10.0,
@@ -81,9 +81,9 @@
       "chase_right": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
       "chase_up": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
       "damage_left": "assets/npc/monsters/barbol/barbol_1_left_damage.png",
-      "damage_right": "assets/npc/monsters/barbol/barbol_1_right_damage.png"
+      "damage_right": "assets/npc/monsters/barbol/barbol_1_right_damage.png",
+      "death": "assets/npc/monsters/barbol/barbol_female_death.png"
     },
-    "death_sprite": "assets/npc/monsters/barbol/barbol_female_death.png",
     "death_scale": 0.5,
     "hp": 100,
     "speed": 1.0,
@@ -119,9 +119,9 @@
       "chase_right": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
       "chase_up": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
       "damage_left": "assets/npc/monsters/barbol/barbol_1_left_damage.png",
-      "damage_right": "assets/npc/monsters/barbol/barbol_1_right_damage.png"
+      "damage_right": "assets/npc/monsters/barbol/barbol_1_right_damage.png",
+      "death": "assets/npc/monsters/barbol/barbol_female_death.png"
     },
-    "death_sprite": "assets/npc/monsters/barbol/barbol_female_death.png",
     "death_scale": 0.5,
     "hp": 3000,
     "speed": 3.0,
@@ -157,9 +157,9 @@
       "chase_right": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
       "chase_up": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
       "damage_left": "assets/npc/monsters/barbol/barbol_1_left_damage.png",
-      "damage_right": "assets/npc/monsters/barbol/barbol_1_right_damage.png"
+      "damage_right": "assets/npc/monsters/barbol/barbol_1_right_damage.png",
+      "death": "assets/npc/monsters/barbol/barbol_female_death.png"
     },
-    "death_sprite": "assets/npc/monsters/barbol/barbol_female_death.png",
     "death_scale": 0.35,
     "hp": 100,
     "speed": 1.0,
@@ -195,9 +195,9 @@
       "chase_right": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
       "chase_up": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
       "damage_left": "assets/npc/monsters/barbol/barbol_1_left_damage.png",
-      "damage_right": "assets/npc/monsters/barbol/barbol_1_right_damage.png"
+      "damage_right": "assets/npc/monsters/barbol/barbol_1_right_damage.png",
+      "death": "assets/npc/monsters/barbol/barbol_female_death.png"
     },
-    "death_sprite": "assets/npc/monsters/barbol/barbol_female_death.png",
     "death_scale": 0.5,
     "hp": 100,
     "speed": 1.0,
@@ -233,9 +233,9 @@
       "chase_right": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
       "chase_up": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
       "damage_left": "assets/npc/monsters/barbol/barbol_1_left_damage.png",
-      "damage_right": "assets/npc/monsters/barbol/barbol_1_right_damage.png"
+      "damage_right": "assets/npc/monsters/barbol/barbol_1_right_damage.png",
+      "death": "assets/npc/monsters/barbol/barbol_female_death.png"
     },
-    "death_sprite": "assets/npc/monsters/barbol/barbol_female_death.png",
     "death_scale": 0.4,
     "hp": 100,
     "speed": 1.0,
@@ -271,9 +271,9 @@
       "chase_right": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
       "chase_up": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
       "damage_left": "assets/npc/monsters/barbol/barbol_1_left_damage.png",
-      "damage_right": "assets/npc/monsters/barbol/barbol_1_right_damage.png"
+      "damage_right": "assets/npc/monsters/barbol/barbol_1_right_damage.png",
+      "death": "assets/npc/monsters/barbol/barbol_female_death.png"
     },
-    "death_sprite": "assets/npc/monsters/barbol/barbol_female_death.png",
     "death_scale": 0.4,
     "hp": 100,
     "speed": 1.0,
@@ -309,9 +309,9 @@
       "chase_right": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
       "chase_up": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
       "damage_left": "assets/npc/monsters/barbol/barbol_1_left_damage.png",
-      "damage_right": "assets/npc/monsters/barbol/barbol_1_right_damage.png"
+      "damage_right": "assets/npc/monsters/barbol/barbol_1_right_damage.png",
+      "death": "assets/npc/monsters/barbol/barbol_female_death.png"
     },
-    "death_sprite": "assets/npc/monsters/barbol/barbol_female_death.png",
     "death_scale": 0.5,
     "hp": 10,
     "speed": 2.0,
@@ -347,9 +347,9 @@
       "chase_right": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
       "chase_up": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
       "damage_left": "assets/npc/monsters/barbol/barbol_1_left_damage.png",
-      "damage_right": "assets/npc/monsters/barbol/barbol_1_right_damage.png"
+      "damage_right": "assets/npc/monsters/barbol/barbol_1_right_damage.png",
+      "death": "assets/npc/monsters/barbol/barbol_female_death.png"
     },
-    "death_sprite": "assets/npc/monsters/barbol/barbol_female_death.png",
     "death_scale": 0.5,
     "hp": 1000,
     "speed": "0.75",

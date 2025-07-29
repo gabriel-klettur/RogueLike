@@ -106,17 +106,17 @@ class EntityPropertiesPanelView:
             return merged
         elif ent_id in model.monsters:
             monster = model.monsters.get(ent_id, {})
-            # Extraer stats (todo excepto sprites y death_sprite)
-            stats = {k: v for k, v in monster.items() if k not in ('sprites', 'death_sprite')}
+            # Extraer stats (todo excepto sprites)
+            stats = {k: v for k, v in monster.items() if k != 'sprites'}
             # Extraer assets de sprites y death_sprite
             assets = {}
             sprites = monster.get('sprites', {})
             if isinstance(sprites, dict):
                 for sk, sv in sprites.items():
                     assets[f'sprite_{sk}'] = sv
-            death = monster.get('death_sprite')
-            if death is not None:
-                assets['death_sprite'] = death
+            
+            
+                
             # Combinar stats y assets prefijados
             merged_mon = dict(stats)
             for k, v in assets.items():

@@ -33,7 +33,7 @@ def load_caches_for(variants: Iterable[str]) -> None:
                 image.fill(tuple(tint), special_flags=pygame.BLEND_RGB_MULT)
             dir_map[direction] = image
         _SPRITE_SURFACES[mtype] = dir_map
-        death_path = cfg.get("death_sprite")
+        death_path = cfg.get("sprites", {}).get("death")
         if death_path:
             raw_death = load_image(death_path)
             death_scale = cfg["death_scale"]
