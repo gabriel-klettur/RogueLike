@@ -33,11 +33,18 @@ class EntityPropertiesPanelView:
         # Datos y dimensiones básicas
         sw, sh = screen.get_size()
         entity_data = self._get_entity_data(model)
-        # Filtrar datos según pestaña activa
+        # Filtrar datos según pestaña activa y sub-asset seleccionado
         if model.active_tab == 'properties':
             filtered = {k: v for k, v in entity_data.items() if not k.startswith('asset')}
+        elif model.active_tab == 'assets':
+            # Filtrar por categoría de asset seleccionada
+            if model.active_asset_tab == 'add state':
+                filtered = {}
+            else:
+                prefix = f"asset_{model.active_asset_tab}_"
+                filtered = {k: v for k, v in entity_data.items() if k.startswith(prefix)}
         else:
-            filtered = {k: v for k, v in entity_data.items() if k.startswith('asset')}
+            filtered = {}
         lines = [ent_id] + [f"{k}: {v}" for k, v in filtered.items() if v is not None]
         font_h = self.font.get_height()
 
