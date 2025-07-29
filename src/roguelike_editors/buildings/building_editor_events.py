@@ -7,7 +7,7 @@ from roguelike_editors.buildings.utils.save_buildings_to_json import save_buildi
 from roguelike_engine.config.config import BUILDINGS_DATA_PATH, BUILDINGS_COLLISIONS_DATA_PATH
 
 from roguelike_engine.config.config_tiles import TILE_SIZE
-from roguelike_editors.buildings.picker.building_picker_events import BuildingPickerEventHandler
+from roguelike_editors.buildings.buildings_picker.building_picker_events import BuildingPickerEventHandler
 
 
 
@@ -25,12 +25,38 @@ class BuildingEditorEventHandler:
         self.buildings = buildings
         self.picker_events = BuildingPickerEventHandler(editor_state, controller.picker, buildings)
         self.zone_offsets = zone_offsets
+        # Pan state for camera movement with middle mouse
+        self.panning = False
+        self.pan_start = (0, 0)
+        self.pan_offset_start = (0, 0)
 
 
     def handle(self, camera, entities, events=None):
+
         if events is None:
             events = pygame.event.get()
         for ev in events:
+            # Pan camera with middle mouse
+            if ev.type == pygame.MOUSEBUTTONDOWN and getattr(ev, 'button', None) == 2:
+                # Start panning
+                self.panning = True
+                self.pan_start = ev.pos
+                self.pan_offset_start = (camera.offset_x, camera.offset_y)
+                print(f"[DEBUG][BUILDINGS EDITOR] Start panning at {self.pan_start}, offset_start={self.pan_offset_start}")
+                continue
+            if ev.type == pygame.MOUSEBUTTONUP and getattr(ev, 'button', None) == 2 and self.panning:
+                # Stop panning
+                self.panning = False
+                print("[DEBUG][BUILDINGS EDITOR] Stop panning")
+                continue
+            if ev.type == pygame.MOUSEMOTION and self.panning:
+                # Apply panning motion (using relative motion)
+                rel_x, rel_y = ev.rel
+                
+                camera.offset_x -= rel_x / camera.zoom
+                camera.offset_y -= rel_y / camera.zoom
+                
+                continue
             if ev.type == pygame.QUIT:
                 # Persist building changes if editor active
                 if self.editor.active:
@@ -143,6 +169,7 @@ class BuildingEditorEventHandler:
             # --- Mouse en modo editor (handles y split) ---
             if ev.type == pygame.MOUSEBUTTONDOWN:
                 mx, my = pygame.mouse.get_pos()
+
                 # UI de collision picker
                 if self.editor.collision_picker_open:
                     x0, y0 = self.editor.collision_picker_pos or (0, 0)
@@ -181,6 +208,7 @@ class BuildingEditorEventHandler:
                 # Delegar al controlador
                 self.controller.on_mouse_down((mx, my), ev.button, camera, entities.buildings)
             elif ev.type == pygame.MOUSEBUTTONUP:
+
                 # 1) Fin drag collision picker
                 if ev.button == 3 and self.editor.collision_picker_dragging:
                     self.editor.collision_picker_dragging = False
@@ -213,6 +241,7 @@ class BuildingEditorEventHandler:
                 return
             elif ev.type == pygame.MOUSEMOTION:
                 mx, my = ev.pos
+
                 # no longer auto-clear collision_active_building on move
                 # Clear active building if mouse leaves its bounds in editor mode
                 if self.editor.current_tool == 'select':
