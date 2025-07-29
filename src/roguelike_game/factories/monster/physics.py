@@ -13,7 +13,9 @@ from roguelike_game.ecs.components.core.identity import Faction
 
 def calculate_position(tile_x: int, tile_y: int, cfg: Dict[str, Any], sprite) -> Tuple[int, int]:
     """Compute bottom-center pixel coordinates on map tile."""
-    scale_val = cfg["scale"]
+    # Leer scale desde data_assets anidado
+    data_assets = cfg.get("sprites", {}).get("data_assets", {})
+    scale_val = data_assets.get("scale", 1.0)
     orig_w, orig_h = sprite.image.get_size()
     width = int(orig_w * scale_val)
     height = int(orig_h * scale_val)
@@ -24,13 +26,18 @@ def calculate_position(tile_x: int, tile_y: int, cfg: Dict[str, Any], sprite) ->
 
 def create_physics_components(cfg: Dict[str, Any]) -> Tuple[Scale, Velocity]:
     """Create Scale and Velocity ECS components."""
-    return Scale(cfg["scale"]), Velocity(0, 0)
+    # Leer scale desde data_assets anidado
+    data_assets = cfg.get("sprites", {}).get("data_assets", {})
+    scale_val = data_assets.get("scale", 1.0)
+    return Scale(scale_val), Velocity(0, 0)
 
 
 def create_collider_components(sprite, cfg: Dict[str, Any]) -> MultiCollider:
     """Construct body and feet colliders based on sprite surface."""
     mask_surf = sprite.image
-    scale_val = cfg["scale"]
+    # Leer scale desde data_assets anidado
+    data_assets = cfg.get("sprites", {}).get("data_assets", {})
+    scale_val = data_assets.get("scale", 1.0)
     if scale_val != 1.0:
         w, h = mask_surf.get_size()
         mask_surf = pygame.transform.scale(mask_surf, (int(w*scale_val), int(h*scale_val)))

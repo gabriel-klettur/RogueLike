@@ -59,26 +59,6 @@
       "y": 2285.374140024325
     }
   },
-  "f0946542-5a0d-492b-b72c-eb64e142a89c": {
-    "item_id": "iron_sword",
-    "quantity": 1,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2342.824245025474,
-      "y": 2475.272539572232
-    }
-  },
-  "0a552392-78ea-4dc4-9090-d5350e9ce42b": {
-    "item_id": "health_potion",
-    "quantity": 2,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2327.824245025474,
-      "y": 2476.272539572232
-    }
-  },
   "53cb321d-8f3e-4322-92fc-f4b98fb47cd2": {
     "item_id": "mana_potion",
     "quantity": 2,
@@ -389,16 +369,6 @@
       "y": 2583
     }
   },
-  "01b2866a-6835-4abd-96be-4b2113abf568": {
-    "item_id": "wood",
-    "quantity": 3,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2312.2177699028452,
-      "y": 2460.155239621248
-    }
-  },
   "09649c52-6652-4577-9aa5-201852b4f5be": {
     "item_id": "gold",
     "quantity": 4,
@@ -417,26 +387,6 @@
     "position": {
       "x": 2229.9240033522947,
       "y": 2066.493140346226
-    }
-  },
-  "40aa52ca-84eb-499f-8446-d36ed4ee2cd8": {
-    "item_id": "gold",
-    "quantity": 2,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2316.0,
-      "y": 2434
-    }
-  },
-  "8281e672-6e86-4bbf-b691-25db10a6981c": {
-    "item_id": "experience_orb",
-    "quantity": 3,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2316.0,
-      "y": 2434
     }
   },
   "12401f1f-6f5e-4a7a-8d8a-3e5727dcf4e0": {
@@ -509,39 +459,9 @@
       "y": 2039.3984489160853
     }
   },
-  "9df8d7df-ac5a-4d1d-a974-25f572344b94": {
-    "item_id": "gold",
-    "quantity": 2,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 912.0118834496585,
-      "y": 1920.5429643376604
-    }
-  },
   "8bfabdaa-3b17-4aee-b193-bd209038cc24": {
     "item_id": "wood",
     "quantity": 3,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 761.4017564974805,
-      "y": 2091.408919777091
-    }
-  },
-  "c1e9a357-a9ca-4875-b25a-9d6101043011": {
-    "item_id": "gold",
-    "quantity": 1,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 761.4017564974805,
-      "y": 2091.408919777091
-    }
-  },
-  "c84836a2-bc63-4d39-8f6d-a76d438196ca": {
-    "item_id": "experience_orb",
-    "quantity": 1,
     "zone_id": "Forest",
     "schema_version": "1.0.0",
     "position": {
@@ -589,16 +509,6 @@
       "y": 2209.582870367246
     }
   },
-  "920b4df3-aeaa-4ca7-9eab-4c79e9ac259d": {
-    "item_id": "gold",
-    "quantity": 2,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2363.7095491884056,
-      "y": 2209.582870367246
-    }
-  },
   "42b254e4-87b4-4d89-a655-b0fe1a385bec": {
     "item_id": "experience_orb",
     "quantity": 2,
@@ -607,6 +517,106 @@
     "position": {
       "x": 2363.7095491884056,
       "y": 2209.582870367246
+    }
+  },
+  "2d83c74e-976b-4cc9-92d9-8a4833d8b34e": {
+    "item_id": "wood",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2419.510030671505,
+      "y": 2023.5581053634787
+    }
+  },
+  "cc1cd431-2b29-4269-b88b-4ebdaf2fa821": {
+    "item_id": "gold",
+    "quantity": 2,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2419.510030671505,
+      "y": 2023.5581053634787
+    }
+  },
+  "0f30f151-5d17-4a70-895b-f85818ffc680": {
+    "item_id": "experience_orb",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2419.510030671505,
+      "y": 2023.5581053634787
+    }
+  },
+  "947c025b-36c8-486d-937e-748a11f53473": {
+    "item_id": "gold",
+    "quantity": 5,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 1898.8278531770004,
+      "y": 2438.1913079257715
+    }
+  },
+  "094f525d-5538-4997-a119-024a51676253": {
+    "item_id": "experience_orb",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 1898.8278531770004,
+      "y": 2438.1913079257715
+    }
+  },
+  "06df3b55-8ab2-46cc-ba61-0db186b25796": {
+    "item_id": "gold",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2079.6753023574456,
+      "y": 2561.3109475786696
+    }
+  },
+  "8dd2d84c-be3e-4f5b-8b0a-0a182377165e": {
+    "item_id": "experience_orb",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2079.6753023574456,
+      "y": 2561.3109475786696
+    }
+  },
+  "667f9e95-19d9-4fba-8192-62e138af7555": {
+    "item_id": "gold",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2427.5849274712414,
+      "y": 2824.249920080049
+    }
+  },
+  "c3724710-711d-4da8-a77d-82fab50f6a4d": {
+    "item_id": "experience_orb",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2427.5849274712414,
+      "y": 2824.249920080049
+    }
+  },
+  "1674386f-f9c7-47da-8f1e-eeff67930234": {
+    "item_id": "health_potion",
+    "quantity": 1,
+    "zone_id": "Lobby",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 2427.5849274712414,
+      "y": 2824.249920080049
     }
   }
 }

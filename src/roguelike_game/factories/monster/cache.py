@@ -18,7 +18,43 @@ def load_caches_for(variants: Iterable[str]) -> None:
             continue
         cfg = MONSTER_DEFS[mtype]
         logger.debug(f"Loading sprites for: {mtype}")
-        scale_val = cfg["scale"]
+        # Leer propiedades de escala y tinte desde data_assets anidado
+        data_assets = cfg.get("sprites", {}).get("data_assets", {})
+        scale_val = data_assets.get("scale", 1.0)
+        death_scale = data_assets.get("death_scale", scale_val)
+        tint = data_assets.get("tint")
+        # Aplanar assets anidados en dir_map
+        assets = cfg.get("sprites", {}).get("assets", {})
+        dir_map: Dict[str, pygame.Surface] = {}
+        d2flat = {"s": "down", "e": "right", "n": "up", "w": "left"}
+        for cat, dirs in assets.items():
+            for dkey, path in dirs.items():
+                if not path:
+                    continue
+                # Determinar clave plana
+                if cat == "idle":
+                    key = d2flat.get(dkey, dkey)
+                    use_scale = scale_val
+                elif cat == "death":
+                    key = "death"
+                    use_scale = death_scale
+                else:
+                    key = f"{cat}_{d2flat.get(dkey, dkey)}"
+                    use_scale = scale_val
+                raw = load_image(path)
+                if use_scale != 1.0:
+                    w0, h0 = raw.get_size()
+                    image = pygame.transform.scale(raw, (int(w0 * use_scale), int(h0 * use_scale)))
+                else:
+                    image = raw
+                if tint:
+                    image.fill(tuple(tint), special_flags=pygame.BLEND_RGB_MULT)
+                dir_map[key] = image
+        _SPRITE_SURFACES[mtype] = dir_map
+        # Asignar imagen de muerte
+        _DEATH_SURFACES[mtype] = dir_map.get("death")
+        _loaded_variants.add(mtype)
+        continue
         dir_map: Dict[str, pygame.Surface] = {}
         for direction, path in cfg["sprites"].items():
             raw = load_image(path)

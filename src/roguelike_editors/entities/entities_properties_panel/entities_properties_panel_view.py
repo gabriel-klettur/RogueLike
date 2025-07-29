@@ -107,20 +107,22 @@ class EntityPropertiesPanelView:
         elif ent_id in model.monsters:
             monster = model.monsters.get(ent_id, {})
             # Extraer stats (todo excepto sprites)
+            nested = monster.get('sprites', {}) or {}
             stats = {k: v for k, v in monster.items() if k != 'sprites'}
-            # Extraer assets de sprites y death_sprite
+            # Incluir data_assets
+            data_assets = nested.get('data_assets', {})
+            for ak, av in data_assets.items():
+                stats[ak] = av
+            # Extraer assets anidados
             assets = {}
-            sprites = monster.get('sprites', {})
-            if isinstance(sprites, dict):
-                for sk, sv in sprites.items():
-                    assets[f'sprite_{sk}'] = sv
-            
-            
-                
+            for cat, dirs in nested.get('assets', {}).items():
+                for dkey, path in dirs.items():
+                    assets_key = f"{cat}_{dkey}"
+                    assets[assets_key] = path
             # Combinar stats y assets prefijados
             merged_mon = dict(stats)
             for k, v in assets.items():
-                merged_mon[f'asset_{k}'] = v
+                merged_mon[f"asset_{k}"] = v
             return merged_mon
         return {}
 
