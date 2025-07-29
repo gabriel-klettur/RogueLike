@@ -95,8 +95,13 @@ class FileSystemPickerView:
                     icon = load_image(FOLDER_ICON, (self.thumb_size, self.thumb_size))
                 surf.blit(icon, rect)
             else:
-                color = (100, 100, 100)
-                pygame.draw.rect(surf, color, rect)
+                # draw file thumbnail
+                try:
+                    img = pygame.image.load(str(path)).convert_alpha()
+                    img = pygame.transform.scale(img, (self.thumb_size, self.thumb_size))
+                    surf.blit(img, rect)
+                except Exception:
+                    pygame.draw.rect(surf, (100, 100, 100), rect)
             # hover overlay
             mx, my = pygame.mouse.get_pos()
             lx, ly = mx - position[0], my - position[1]
