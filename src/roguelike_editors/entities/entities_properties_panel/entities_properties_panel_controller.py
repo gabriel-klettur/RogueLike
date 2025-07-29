@@ -4,6 +4,7 @@ from roguelike_ui.services.json_persistence import save_to_json, load_from_json
 from roguelike_editors.entities.entities_properties_panel.entities_properties_panel_model import EntityPropertiesPanelModel
 from roguelike_editors.entities.entities_properties_panel.entities_properties_panel_view import EntityPropertiesPanelView
 from roguelike_editors.entities.entities_properties_panel.entities_properties_panel_events import EntitiesPropertiesPanelEventHandler
+from roguelike_editors.entities.entities_properties_panel.entities_assets_grid_panel.entities_assets_grid_panel_controller import AssetsGridPanelController
 
 
 class EntityPropertiesPanelController:
@@ -27,6 +28,8 @@ class EntityPropertiesPanelController:
         self.model = EntityPropertiesPanelModel(player_stats=player_stats, player_assets=player_assets, monsters=monsters)
         self.view = EntityPropertiesPanelView(font)
         self.event_handler = EntitiesPropertiesPanelEventHandler(self)
+        self.grid_controller = AssetsGridPanelController(self.model, font)
+        self.view.grid_controller = self.grid_controller
 
     # ----------------------------
     # MANEJO DE EVENTOS
