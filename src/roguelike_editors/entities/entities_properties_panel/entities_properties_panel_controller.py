@@ -6,6 +6,7 @@ from roguelike_editors.entities.entities_properties_panel.entities_properties_pa
 from roguelike_editors.entities.entities_properties_panel.entities_properties_panel_events import EntitiesPropertiesPanelEventHandler
 from roguelike_editors.entities.entities_properties_panel.entities_assets_grid_panel.entities_assets_grid_panel_controller import AssetsGridPanelController
 from roguelike_editors.entities.entities_properties_panel.entities_state_tabs.entities_state_tabs_controller import EntitiesStateTabsController
+from roguelike_editors.entities.entities_properties_panel.entities_type_assets.entities_type_assets_controller import EntitiesTypeAssetsController
 
 
 class EntityPropertiesPanelController:
@@ -31,6 +32,10 @@ class EntityPropertiesPanelController:
         self.event_handler = EntitiesPropertiesPanelEventHandler(self)
         self.grid_controller = AssetsGridPanelController(self.model, font)
         self.view.grid_controller = self.grid_controller
+        # Controller de pestañas de tipo ('properties'/'assets')
+        self.type_assets_controller = EntitiesTypeAssetsController(self.model, font)
+        self.view.type_assets_controller = self.type_assets_controller
+
         # Controller de pestañas de estado
         self.state_tabs_controller = EntitiesStateTabsController(self.model, font)
         self.view.state_tabs_controller = self.state_tabs_controller

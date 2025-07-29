@@ -46,17 +46,17 @@ class EntitiesPropertiesPanelEventHandler:
         if self._handle_key_events(event):
             return True
 
-                # 6. Clic en pestañas
-        if self._handle_tab_click(event):
+                # 6. Eventos de pestañas principales
+        if self.controller.type_assets_controller.handle_event(event):
             return True
 
 
         # 7. Eventos de pestañas de estado (state tabs)
-        if self.model.active_tab == 'assets':
+        if self.controller.type_assets_controller.model.active_type_tab == 'assets':
             if self.controller.state_tabs_controller.handle_event(event):
                 return True
         # 8. Eventos de grid (subtabs y celdas)
-        if self.model.active_tab == 'assets':
+        if self.controller.type_assets_controller.model.active_type_tab == 'assets':
             if self.controller.grid_controller.handle_event(event):
                 return True
 
@@ -112,17 +112,13 @@ class EntitiesPropertiesPanelEventHandler:
     def _handle_hover(self, event: pygame.event.Event) -> bool:
         """Detecta hover en propiedades o celdas de assets y actualiza el modelo."""
         # Skip hover handling on assets tab; let grid controller handle it
-        if self.model.active_tab == 'assets':
+        if self.controller.type_assets_controller.model.active_type_tab == 'assets':
             return False
         if event.type == pygame.MOUSEMOTION and self.model.panel_rect.collidepoint(event.pos):
             mx, my = event.pos
-            if self.model.active_tab == 'assets':
-                hovered = None
-                for rect, key in self.model.asset_cell_entries:
-                    if rect.collidepoint(mx, my):
-                        hovered = key
-                        break
-                self.model.hovered_asset_cell = hovered
+            if self.controller.type_assets_controller.model.active_type_tab == 'assets':
+                # Delegate to grid controller
+                return False
             else:
                 hovered = None
                 for rect, key in self.model.property_entries:
@@ -198,17 +194,3 @@ class EntitiesPropertiesPanelEventHandler:
     # ----------------------------
     # Manejo de pestañas
     # ----------------------------
-    def _handle_tab_click(self, event: pygame.event.Event) -> bool:
-        """Gestiona clics en las pestañas del panel."""
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and self.model.tab_rects:
-            pos = event.pos
-            for label, rect in self.model.tab_rects.items():
-                if rect.collidepoint(pos):
-                    # Cambiar pestaña y resetear estado de propiedad
-                    self.model.active_tab = label
-                    self.model.focused_property = None
-                    self.model.editing_property = None
-                    self.model.hovered_property = None
-                    return True
-        return False
-

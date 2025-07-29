@@ -17,10 +17,10 @@ class EntityPropertiesPanelModel:
     editing_text: str = ""
     editing_cursor: int = 0
     hovered_property: Optional[str] = None
-    # Pestañas del panel: 'properties' y 'assets'
-    tabs: List[str] = field(default_factory=lambda: ['properties', 'assets'])
-    active_tab: str = 'properties'
-    tab_rects: Dict[str, pygame.Rect] = field(default_factory=dict)
+    
+    
+    
+    
     # Subtabs (manejado por EntitiesStateTabsController)
     
     

@@ -49,10 +49,6 @@ class AssetsGridPanelView:
                     hover_surf = pygame.Surface((cell_size, cell_size), pygame.SRCALPHA)
                     hover_surf.fill((255, 255, 0, 80))
                     screen.blit(hover_surf, (x, y))
-                # Border
-                border_color = (255, 255, 0) if model.selected_asset_cell == asset_key else (150, 150, 150)
-                border_width = 2 if model.selected_asset_cell == asset_key else 1
-                pygame.draw.rect(screen, border_color, cell_rect, border_width)
                 # Thumbnail
                 path = entity_data.get(asset_key)
                 if path:
@@ -84,3 +80,8 @@ class AssetsGridPanelView:
                 info_x = px + pad
                 info_y = grid_y + cell_size * 3 + pad
                 screen.blit(info_surf, (info_x, info_y))
+        # Draw selected asset cell with yellow border
+        if model.selected_asset_cell:
+            for rect, key in model.asset_cell_entries:
+                if key == model.selected_asset_cell:
+                    pygame.draw.rect(screen, (255, 255, 0), rect, 2)

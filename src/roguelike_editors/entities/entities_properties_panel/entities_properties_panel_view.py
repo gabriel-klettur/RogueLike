@@ -36,9 +36,9 @@ class EntityPropertiesPanelView:
         sw, sh = screen.get_size()
         entity_data = self._get_entity_data(model)
         # Filtrar datos según pestaña activa y sub-asset seleccionado
-        if model.active_tab == 'properties':
+        if self.type_assets_controller.model.active_type_tab == 'properties':
             filtered = {k: v for k, v in entity_data.items() if not k.startswith('asset')}
-        elif model.active_tab == 'assets':
+        elif self.type_assets_controller.model.active_type_tab == 'assets':
             # Filtrar por categoría de asset seleccionada
             active_state = self.state_tabs_controller.model.active_state_tab
             if active_state == 'add state':
@@ -56,7 +56,7 @@ class EntityPropertiesPanelView:
         max_w = max(self.font.size(line)[0] for line in lines)
         panel_w = min(max_w + pad * 2, sw - margin * 2, 500)
         # Asegurar ancho mínimo para subtabs de assets vacíos
-        if model.active_tab == 'assets':
+        if self.type_assets_controller.model.active_type_tab == 'assets':
             subpad_x = 8
             state_tabs = self.state_tabs_controller.model.state_tabs
             subtabs_total = sum(self.font.size(label.capitalize())[0] + subpad_x * 2 for label in state_tabs)
@@ -65,9 +65,9 @@ class EntityPropertiesPanelView:
         tab_padding_y = 5
         primary_header = font_h + tab_padding_y * 2
         # Altura del header de subtabs de assets
-        state_header = primary_header if model.active_tab == 'assets' else 0
+        state_header = primary_header if self.type_assets_controller.model.active_type_tab == 'assets' else 0
         # Altura del contenido
-        if model.active_tab == 'assets':
+        if self.type_assets_controller.model.active_type_tab == 'assets':
             # Ajustar panel para nombre, tint y cuadrícula 3x3
             grid_w = panel_w - pad * 2
             cell_size = int(grid_w / 3)
@@ -96,16 +96,16 @@ class EntityPropertiesPanelView:
         # 1. Dibujar fondo
         self._draw_background(screen, px, py, panel_w, panel_h)
 
-        # Dibujar pestañas
-        self._draw_tabs(screen, model)
-        if model.active_tab == 'assets':
+        # Dibujar pestañas principales (properties/assets)
+        self.type_assets_controller.draw(screen)
+        if self.type_assets_controller.model.active_type_tab == 'assets':
             self.state_tabs_controller.draw(screen)
 
         # 2. Dibujar contenido según pestaña
-        if model.active_tab == 'properties':
+        if self.type_assets_controller.model.active_type_tab == 'properties':
             self._draw_properties(screen, model, lines, px, py + primary_header + state_header, pad, font_h, panel_w)
             self._draw_editing_indicator(screen, model, font_h)
-        elif model.active_tab == 'assets':
+        elif self.type_assets_controller.model.active_type_tab == 'assets':
             # Delegar grid a grid_controller
             self.grid_controller.draw(screen, entity_data, px, py + primary_header + state_header, pad, font_h, panel_w)
 
@@ -162,39 +162,6 @@ class EntityPropertiesPanelView:
         info_surf = pygame.Surface((w, h), pygame.SRCALPHA)
         info_surf.fill((0, 0, 0, 200))
         screen.blit(info_surf, (x, y))
-
-    def _draw_tabs(self, screen: pygame.Surface, model: EntityPropertiesPanelModel) -> None:
-        """Dibuja las pestañas del panel: 'properties' y 'assets'."""
-        font_h = self.font.get_height()
-        padding_x, padding_y = 10, 5
-        x_cursor, y = model.panel_rect.x, model.panel_rect.y
-        model.tab_rects.clear()
-        mouse_pos = pygame.mouse.get_pos()
-        for label in model.tabs:
-            text_label = label.capitalize()
-            text_w, text_h = self.font.size(text_label)
-            w = text_w + padding_x * 2
-            h = text_h + padding_y * 2
-            rect = pygame.Rect(x_cursor, y, w, h)
-            model.tab_rects[label] = rect
-            is_active = (model.active_tab == label)
-            is_hover = rect.collidepoint(mouse_pos)
-            if is_active or is_hover:
-                tab_surf = pygame.Surface((w, h), pygame.SRCALPHA)
-                tab_surf.fill((255, 255, 0, 100))
-                screen.blit(tab_surf, (rect.x, rect.y))
-                pygame.draw.rect(screen, (255, 255, 0), rect, 2)
-            else:
-                default_color = (100, 100, 100)
-                pygame.draw.rect(screen, default_color, rect)
-                pygame.draw.rect(screen, (255, 255, 255), rect, 2)
-            text_surf = self.font.render(text_label, True, (0, 0, 0))
-            text_x = x_cursor + (w - text_surf.get_width()) // 2
-            text_y = y + padding_y
-            screen.blit(text_surf, (text_x, text_y))
-            x_cursor += w
-
-
 
     def _draw_properties(self, screen: pygame.Surface, model: EntityPropertiesPanelModel,
                          lines: list[str], px: int, py: int, pad: int, font_h: int, panel_w: int) -> None:

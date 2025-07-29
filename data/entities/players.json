@@ -27,7 +27,7 @@
     "dwarf": {
       "max_health": 100,
       "max_mana": 50,
-      "max_energy": 100,
+      "max_energy": 80,
       "scale": 0.5,
       "speed": 5,
       "trail": {
