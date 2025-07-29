@@ -66,10 +66,11 @@ class EntityPropertiesPanelView:
         state_header = primary_header if model.active_tab == 'assets' else 0
         # Altura del contenido
         if model.active_tab == 'assets':
-            # Ajustar panel para cuadrícula 3x3
+            # Ajustar panel para nombre, tint y cuadrícula 3x3
             grid_w = panel_w - pad * 2
             cell_size = int(grid_w / 3)
-            content_h = cell_size * 3 + pad * 2
+            # pad top + nombre + espaciado + tint + pad + cuadrícula + pad bottom
+            content_h = pad + font_h + 2 + font_h + pad + cell_size * 3 + pad
         else:
             content_h = min(len(lines) * (font_h + 2) + pad * 2, sh - margin * 2 - primary_header - state_header)
         panel_h = primary_header + state_header + content_h
@@ -105,6 +106,7 @@ class EntityPropertiesPanelView:
             self._draw_editing_indicator(screen, model, font_h)
         elif model.active_tab == 'assets':
             self._draw_asset_grid(screen, model, entity_data, px, py + primary_header + state_header, pad, font_h, panel_w)
+            self._draw_editing_indicator(screen, model, font_h)
 
     # ----------------------------
     # MÉTODOS PRIVADOS
@@ -290,12 +292,33 @@ class EntityPropertiesPanelView:
         return text + '...'
 
     def _draw_asset_grid(self, screen: pygame.Surface, model: EntityPropertiesPanelModel, entity_data: dict, px: int, py: int, pad: int, font_h: int, panel_w: int) -> None:
-        """Dibuja una cuadrícula 3x3 de assets para el estado activo."""
-        # Parámetros de cuadrícula
+        """Dibuja el nombre, tint editable y cuadrícula 3x3 de assets para el estado activo."""
+        # Limpiar áreas clicables y calcular posiciones base
+        model.property_entries.clear()
+        name_x = px + pad
+        name_y = py + pad
+        # Renderizar entity ID en amarillo
+        ent_id = model.hovered_entity_id or model.selected_id
+        name_surf = self.font.render(ent_id, True, (255, 255, 0))
+        screen.blit(name_surf, (name_x, name_y))
+        # Renderizar tint editable debajo del nombre
+        tint_val = entity_data.get('tint')
+        val_str = str(tint_val) if tint_val is not None else 'None'
+        key_text = 'tint: '
+        key_surf = self.font.render(key_text, True, (255, 255, 255))
+        color = (128, 0, 128) if val_str == 'None' else (255, 255, 0)
+        val_surf = self.font.render(val_str, True, color)
+        tint_y = name_y + font_h + 2
+        screen.blit(key_surf, (name_x, tint_y))
+        screen.blit(val_surf, (name_x + key_surf.get_width(), tint_y))
+        # Registrar área clicable para tint
+        rect = pygame.Rect(name_x, tint_y, key_surf.get_width() + val_surf.get_width(), font_h)
+        model.property_entries.append((rect, 'tint'))
+        # Cálculo de cuadrícula tras nombre y tint
+        grid_y = tint_y + font_h + pad
+        grid_x = px + pad
         grid_w = panel_w - pad * 2
         cell_size = int(grid_w / 3)
-        grid_x = px + pad
-        grid_y = py + pad
         # Orden de direcciones
         order = ['nw', 'n', 'ne', 'w', None, 'e', 'sw', 's', 'se']
         for idx, dir_key in enumerate(order):
@@ -303,13 +326,11 @@ class EntityPropertiesPanelView:
             col = idx % 3
             x = grid_x + col * cell_size
             y = grid_y + row * cell_size
-            # Dibujar celda
             pygame.draw.rect(screen, (150, 150, 150), (x, y, cell_size, cell_size), 1)
             if dir_key:
                 key = f'asset_{model.active_asset_tab}_{dir_key}'
                 path = entity_data.get(key)
                 if path:
-                    # Cargar raw scaled
                     raw = self.thumbnail_cache.get(path)
                     if raw is None:
                         try:
@@ -319,13 +340,11 @@ class EntityPropertiesPanelView:
                             raw = None
                         self.thumbnail_cache[path] = raw
                     if raw:
-                        # Aplicar tint
                         thumb = raw.copy()
-                        tint_val = entity_data.get('tint')
-                        if tint_val:
-                            color = tuple(tint_val) if len(tint_val) == 4 else (*tint_val, 255)
-                            thumb.fill(color, special_flags=pygame.BLEND_RGBA_MULT)
-                        # Blit thumbnail
+                        tint = entity_data.get('tint')
+                        if tint:
+                            c = tuple(tint) if len(tint) == 4 else (*tint, 255)
+                            thumb.fill(c, special_flags=pygame.BLEND_RGBA_MULT)
                         tx = x + (cell_size - thumb.get_width()) // 2
                         ty = y + (cell_size - thumb.get_height()) // 2
                         screen.blit(thumb, (tx, ty))

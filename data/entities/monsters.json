@@ -357,7 +357,8 @@
     "feet_height_factor": 0.2,
     "spawn_padding": 3,
     "spawn_count": 10,
-    "spawn_margin": 0
+    "spawn_margin": 0,
+    "tint": ""
   },
   "barbol_cyan": {
     "sprites": {
