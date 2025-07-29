@@ -67,6 +67,8 @@ class FileSystemPickerView:
         # font for labels
         self.font = pygame.font.SysFont(None, 14)
         self.entry_rects = []
+        # cache for file thumbnails to avoid reloading each frame
+        self.thumb_cache = {}
 
     def draw(self, surface: pygame.Surface, position: tuple) -> tuple:
         """Draw panel at position, return hovered entry (name,path,is_dir)."""
@@ -95,13 +97,17 @@ class FileSystemPickerView:
                     icon = load_image(FOLDER_ICON, (self.thumb_size, self.thumb_size))
                 surf.blit(icon, rect)
             else:
-                # draw file thumbnail
-                try:
-                    img = pygame.image.load(str(path)).convert_alpha()
-                    img = pygame.transform.scale(img, (self.thumb_size, self.thumb_size))
-                    surf.blit(img, rect)
-                except Exception:
-                    pygame.draw.rect(surf, (100, 100, 100), rect)
+                # draw file thumbnail using cache
+                thumb = self.thumb_cache.get(path)
+                if not thumb:
+                    try:
+                        thumb = pygame.image.load(str(path)).convert_alpha()
+                        thumb = pygame.transform.scale(thumb, (self.thumb_size, self.thumb_size))
+                    except Exception:
+                        thumb = pygame.Surface((self.thumb_size, self.thumb_size))
+                        thumb.fill((100, 100, 100))
+                    self.thumb_cache[path] = thumb
+                surf.blit(thumb, rect)
             # hover overlay
             mx, my = pygame.mouse.get_pos()
             lx, ly = mx - position[0], my - position[1]
