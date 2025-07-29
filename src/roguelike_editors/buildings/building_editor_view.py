@@ -4,7 +4,7 @@ from roguelike_editors.buildings.tools.default_tool.default_tool_view import Def
 from roguelike_editors.buildings.tools.split_z_tool.split_tool_view   import SplitToolView
 from roguelike_editors.buildings.tools.z_tool.z_tool_view       import ZToolView
 
-from roguelike_editors.buildings.picker.building_picker_view      import PickerView
+from roguelike_editors.buildings.buildings_picker.building_picker_view      import PickerView
 from roguelike_editors.tiles.tiles_editor_config import THUMB, PAD, CLR_HOVER, CLR_SELECTION
 
 class BuildingEditorView:

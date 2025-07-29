@@ -43,10 +43,7 @@ def update_game(
         def _update_buildings_editor():
             buildings_editor.update(camera)
         _update_buildings_editor()
-        # Centrar cámara en el jugador incluso con editor activo
-        eid = ecs.ecs_world.player_entity
-        pos = ecs.ecs_world.components['Position'][eid]
-        camera.update(types.SimpleNamespace(x=pos.x, y=pos.y))
+        # No centrar cámara con editor activo para permitir panning
         return
 
     # 3) Si el Map-Editor está activo, solo actualizamos él
