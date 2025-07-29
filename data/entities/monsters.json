@@ -1,22 +1,76 @@
 {
   "barbol": {
     "sprites": {
-      "down": "assets/npc/monsters/barbol/barbol_1_down.png",
-      "left": "assets/npc/monsters/barbol/barbol_1_left.png",
-      "right": "assets/npc/monsters/barbol/barbol_1_right.png",
-      "up": "assets/npc/monsters/barbol/barbol_1_top.png",
-      "chase_down": "assets/npc/monsters/barbol/barbol_1_down_chase.png",
-      "chase_left": "assets/npc/monsters/barbol/barbol_1_left_chase.png",
-      "chase_right": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
-      "chase_up": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
-      "damage_left": "assets/npc/monsters/barbol/barbol_1_left_damage.png",
-      "damage_right": "assets/npc/monsters/barbol/barbol_1_right_damage.png",
-      "death": "assets/npc/monsters/barbol/barbol_female_death.png"
+      "assets": {
+        "idle": {
+          "s": "assets/npc/monsters/barbol/barbol_1_down.png",
+          "se": null,
+          "e": "assets/npc/monsters/barbol/barbol_1_right.png",
+          "ne": null,
+          "n": "assets/npc/monsters/barbol/barbol_1_top.png",
+          "nw": null,
+          "w": "assets/npc/monsters/barbol/barbol_1_left.png",
+          "sw": null
+        },
+        "chase": {
+          "s": "assets/npc/monsters/barbol/barbol_1_down_chase.png",
+          "se": null,
+          "e": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
+          "ne": null,
+          "n": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
+          "nw": null,
+          "w": "assets/npc/monsters/barbol/barbol_1_left_chase.png",
+          "sw": null
+        },
+        "attack": {
+          "s": null,
+          "se": null,
+          "e": null,
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": null,
+          "sw": null
+        },
+        "death": {
+          "s": "assets/npc/monsters/barbol/barbol_female_death.png",
+          "se": null,
+          "e": null,
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": null,
+          "sw": null
+        },
+        "damage": {
+          "s": null,
+          "se": null,
+          "e": "assets/npc/monsters/barbol/barbol_1_right_damage.png",
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": "assets/npc/monsters/barbol/barbol_1_left_damage.png",
+          "sw": null
+        },
+        "casting": {
+          "s": null,
+          "se": null,
+          "e": null,
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": null,
+          "sw": null
+        }
+      },
+      "data_assets": {
+        "scale": 0.35,
+        "death_scale": 0.5,
+        "tint": null
+      }
     },
-    "death_scale": 0.5,
     "hp": 100,
     "speed": 1.0,
-    "scale": 0.35,
     "faction": "EVIL",
     "aggro_range": 10,
     "melee_range": 3,
@@ -34,22 +88,80 @@
   },
   "barbol_oscuro": {
     "sprites": {
-      "down": "assets/npc/monsters/barbol/barbol_1_down.png",
-      "left": "assets/npc/monsters/barbol/barbol_1_left.png",
-      "right": "assets/npc/monsters/barbol/barbol_1_right.png",
-      "up": "assets/npc/monsters/barbol/barbol_1_top.png",
-      "chase_down": "assets/npc/monsters/barbol/barbol_1_down_chase.png",
-      "chase_left": "assets/npc/monsters/barbol/barbol_1_left_chase.png",
-      "chase_right": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
-      "chase_up": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
-      "damage_left": "assets/npc/monsters/barbol/barbol_1_left_damage.png",
-      "damage_right": "assets/npc/monsters/barbol/barbol_1_right_damage.png",
-      "death": "assets/npc/monsters/barbol/barbol_female_death.png"
+      "assets": {
+        "idle": {
+          "s": "assets/npc/monsters/barbol/barbol_1_down.png",
+          "se": null,
+          "e": "assets/npc/monsters/barbol/barbol_1_right.png",
+          "ne": null,
+          "n": "assets/npc/monsters/barbol/barbol_1_top.png",
+          "nw": null,
+          "w": "assets/npc/monsters/barbol/barbol_1_left.png",
+          "sw": null
+        },
+        "chase": {
+          "s": "assets/npc/monsters/barbol/barbol_1_down_chase.png",
+          "se": null,
+          "e": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
+          "ne": null,
+          "n": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
+          "nw": null,
+          "w": "assets/npc/monsters/barbol/barbol_1_left_chase.png",
+          "sw": null
+        },
+        "attack": {
+          "s": null,
+          "se": null,
+          "e": null,
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": null,
+          "sw": null
+        },
+        "death": {
+          "s": "assets/npc/monsters/barbol/barbol_female_death.png",
+          "se": null,
+          "e": null,
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": null,
+          "sw": null
+        },
+        "damage": {
+          "s": null,
+          "se": null,
+          "e": "assets/npc/monsters/barbol/barbol_1_right_damage.png",
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": "assets/npc/monsters/barbol/barbol_1_left_damage.png",
+          "sw": null
+        },
+        "casting": {
+          "s": null,
+          "se": null,
+          "e": null,
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": null,
+          "sw": null
+        }
+      },
+      "data_assets": {
+        "scale": 0.35,
+        "death_scale": 0.5,
+        "tint": [
+          30,
+          30,
+          30
+        ]
+      }
     },
-    "death_scale": 0.5,
     "hp": 30,
     "speed": 10.0,
-    "scale": 0.35,
     "faction": "EVIL",
     "aggro_range": 10,
     "melee_range": 3,
@@ -61,33 +173,86 @@
     "chasing_speed": 1.5,
     "feet_width_factor": 0.5,
     "feet_height_factor": 0.2,
-    "tint": [
-      30,
-      30,
-      30
-    ],
     "spawn_padding": 3,
     "spawn_count": 10,
     "spawn_margin": 0
   },
   "barbol_morado": {
     "sprites": {
-      "down": "assets/npc/monsters/barbol/barbol_1_down.png",
-      "left": "assets/npc/monsters/barbol/barbol_1_left.png",
-      "right": "assets/npc/monsters/barbol/barbol_1_right.png",
-      "up": "assets/npc/monsters/barbol/barbol_1_top.png",
-      "chase_down": "assets/npc/monsters/barbol/barbol_1_down_chase.png",
-      "chase_left": "assets/npc/monsters/barbol/barbol_1_left_chase.png",
-      "chase_right": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
-      "chase_up": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
-      "damage_left": "assets/npc/monsters/barbol/barbol_1_left_damage.png",
-      "damage_right": "assets/npc/monsters/barbol/barbol_1_right_damage.png",
-      "death": "assets/npc/monsters/barbol/barbol_female_death.png"
+      "assets": {
+        "idle": {
+          "s": "assets/npc/monsters/barbol/barbol_1_down.png",
+          "se": null,
+          "e": "assets/npc/monsters/barbol/barbol_1_right.png",
+          "ne": null,
+          "n": "assets/npc/monsters/barbol/barbol_1_top.png",
+          "nw": null,
+          "w": "assets/npc/monsters/barbol/barbol_1_left.png",
+          "sw": null
+        },
+        "chase": {
+          "s": "assets/npc/monsters/barbol/barbol_1_down_chase.png",
+          "se": null,
+          "e": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
+          "ne": null,
+          "n": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
+          "nw": null,
+          "w": "assets/npc/monsters/barbol/barbol_1_left_chase.png",
+          "sw": null
+        },
+        "attack": {
+          "s": null,
+          "se": null,
+          "e": null,
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": null,
+          "sw": null
+        },
+        "death": {
+          "s": "assets/npc/monsters/barbol/barbol_female_death.png",
+          "se": null,
+          "e": null,
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": null,
+          "sw": null
+        },
+        "damage": {
+          "s": null,
+          "se": null,
+          "e": "assets/npc/monsters/barbol/barbol_1_right_damage.png",
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": "assets/npc/monsters/barbol/barbol_1_left_damage.png",
+          "sw": null
+        },
+        "casting": {
+          "s": null,
+          "se": null,
+          "e": null,
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": null,
+          "sw": null
+        }
+      },
+      "data_assets": {
+        "scale": 0.35,
+        "death_scale": 0.5,
+        "tint": [
+          128,
+          0,
+          128
+        ]
+      }
     },
-    "death_scale": 0.5,
     "hp": 100,
     "speed": 1.0,
-    "scale": 0.35,
     "faction": "EVIL",
     "aggro_range": 10,
     "melee_range": 3,
@@ -99,33 +264,86 @@
     "chasing_speed": 1.5,
     "feet_width_factor": 0.5,
     "feet_height_factor": 0.2,
-    "tint": [
-      128,
-      0,
-      128
-    ],
     "spawn_padding": 3,
     "spawn_count": 10,
     "spawn_margin": 0
   },
   "barbol_boss": {
     "sprites": {
-      "down": "assets/npc/monsters/barbol/barbol_1_down.png",
-      "left": "assets/npc/monsters/barbol/barbol_1_left.png",
-      "right": "assets/npc/monsters/barbol/barbol_1_right.png",
-      "up": "assets/npc/monsters/barbol/barbol_1_top.png",
-      "chase_down": "assets/npc/monsters/barbol/barbol_1_down_chase.png",
-      "chase_left": "assets/npc/monsters/barbol/barbol_1_left_chase.png",
-      "chase_right": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
-      "chase_up": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
-      "damage_left": "assets/npc/monsters/barbol/barbol_1_left_damage.png",
-      "damage_right": "assets/npc/monsters/barbol/barbol_1_right_damage.png",
-      "death": "assets/npc/monsters/barbol/barbol_female_death.png"
+      "assets": {
+        "idle": {
+          "s": "assets/npc/monsters/barbol/barbol_1_down.png",
+          "se": null,
+          "e": "assets/npc/monsters/barbol/barbol_1_right.png",
+          "ne": null,
+          "n": "assets/npc/monsters/barbol/barbol_1_top.png",
+          "nw": null,
+          "w": "assets/npc/monsters/barbol/barbol_1_left.png",
+          "sw": null
+        },
+        "chase": {
+          "s": "assets/npc/monsters/barbol/barbol_1_down_chase.png",
+          "se": null,
+          "e": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
+          "ne": null,
+          "n": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
+          "nw": null,
+          "w": "assets/npc/monsters/barbol/barbol_1_left_chase.png",
+          "sw": null
+        },
+        "attack": {
+          "s": null,
+          "se": null,
+          "e": null,
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": null,
+          "sw": null
+        },
+        "death": {
+          "s": "assets/npc/monsters/barbol/barbol_female_death.png",
+          "se": null,
+          "e": null,
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": null,
+          "sw": null
+        },
+        "damage": {
+          "s": null,
+          "se": null,
+          "e": "assets/npc/monsters/barbol/barbol_1_right_damage.png",
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": "assets/npc/monsters/barbol/barbol_1_left_damage.png",
+          "sw": null
+        },
+        "casting": {
+          "s": null,
+          "se": null,
+          "e": null,
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": null,
+          "sw": null
+        }
+      },
+      "data_assets": {
+        "scale": 0.5,
+        "death_scale": 0.5,
+        "tint": [
+          255,
+          0,
+          0
+        ]
+      }
     },
-    "death_scale": 0.5,
     "hp": 3000,
     "speed": 3.0,
-    "scale": 0.5,
     "faction": "EVIL",
     "aggro_range": 10,
     "melee_range": 3,
@@ -137,33 +355,86 @@
     "chasing_speed": 1.5,
     "feet_width_factor": 0.5,
     "feet_height_factor": 0.2,
-    "tint": [
-      255,
-      0,
-      0
-    ],
     "spawn_padding": 3,
     "spawn_count": 10,
     "spawn_margin": 0
   },
   "barbol_cyan": {
     "sprites": {
-      "down": "assets/npc/monsters/barbol/barbol_1_down.png",
-      "left": "assets/npc/monsters/barbol/barbol_1_left.png",
-      "right": "assets/npc/monsters/barbol/barbol_1_right.png",
-      "up": "assets/npc/monsters/barbol/barbol_1_top.png",
-      "chase_down": "assets/npc/monsters/barbol/barbol_1_down_chase.png",
-      "chase_left": "assets/npc/monsters/barbol/barbol_1_left_chase.png",
-      "chase_right": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
-      "chase_up": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
-      "damage_left": "assets/npc/monsters/barbol/barbol_1_left_damage.png",
-      "damage_right": "assets/npc/monsters/barbol/barbol_1_right_damage.png",
-      "death": "assets/npc/monsters/barbol/barbol_female_death.png"
+      "assets": {
+        "idle": {
+          "s": "assets/npc/monsters/barbol/barbol_1_down.png",
+          "se": null,
+          "e": "assets/npc/monsters/barbol/barbol_1_right.png",
+          "ne": null,
+          "n": "assets/npc/monsters/barbol/barbol_1_top.png",
+          "nw": null,
+          "w": "assets/npc/monsters/barbol/barbol_1_left.png",
+          "sw": null
+        },
+        "chase": {
+          "s": "assets/npc/monsters/barbol/barbol_1_down_chase.png",
+          "se": null,
+          "e": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
+          "ne": null,
+          "n": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
+          "nw": null,
+          "w": "assets/npc/monsters/barbol/barbol_1_left_chase.png",
+          "sw": null
+        },
+        "attack": {
+          "s": null,
+          "se": null,
+          "e": null,
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": null,
+          "sw": null
+        },
+        "death": {
+          "s": "assets/npc/monsters/barbol/barbol_female_death.png",
+          "se": null,
+          "e": null,
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": null,
+          "sw": null
+        },
+        "damage": {
+          "s": null,
+          "se": null,
+          "e": "assets/npc/monsters/barbol/barbol_1_right_damage.png",
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": "assets/npc/monsters/barbol/barbol_1_left_damage.png",
+          "sw": null
+        },
+        "casting": {
+          "s": null,
+          "se": null,
+          "e": null,
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": null,
+          "sw": null
+        }
+      },
+      "data_assets": {
+        "scale": 0.3,
+        "death_scale": 0.35,
+        "tint": [
+          0,
+          255,
+          255
+        ]
+      }
     },
-    "death_scale": 0.35,
     "hp": 100,
     "speed": 1.0,
-    "scale": 0.3,
     "faction": "EVIL",
     "aggro_range": 11,
     "melee_range": 3,
@@ -175,33 +446,86 @@
     "chasing_speed": 1.5,
     "feet_width_factor": 0.5,
     "feet_height_factor": 0.2,
-    "tint": [
-      0,
-      255,
-      255
-    ],
     "spawn_padding": 3,
     "spawn_count": 10,
     "spawn_margin": 0
   },
   "barbol_gris": {
     "sprites": {
-      "down": "assets/npc/monsters/barbol/barbol_1_down.png",
-      "left": "assets/npc/monsters/barbol/barbol_1_left.png",
-      "right": "assets/npc/monsters/barbol/barbol_1_right.png",
-      "up": "assets/npc/monsters/barbol/barbol_1_top.png",
-      "chase_down": "assets/npc/monsters/barbol/barbol_1_down_chase.png",
-      "chase_left": "assets/npc/monsters/barbol/barbol_1_left_chase.png",
-      "chase_right": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
-      "chase_up": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
-      "damage_left": "assets/npc/monsters/barbol/barbol_1_left_damage.png",
-      "damage_right": "assets/npc/monsters/barbol/barbol_1_right_damage.png",
-      "death": "assets/npc/monsters/barbol/barbol_female_death.png"
+      "assets": {
+        "idle": {
+          "s": "assets/npc/monsters/barbol/barbol_1_down.png",
+          "se": null,
+          "e": "assets/npc/monsters/barbol/barbol_1_right.png",
+          "ne": null,
+          "n": "assets/npc/monsters/barbol/barbol_1_top.png",
+          "nw": null,
+          "w": "assets/npc/monsters/barbol/barbol_1_left.png",
+          "sw": null
+        },
+        "chase": {
+          "s": "assets/npc/monsters/barbol/barbol_1_down_chase.png",
+          "se": null,
+          "e": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
+          "ne": null,
+          "n": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
+          "nw": null,
+          "w": "assets/npc/monsters/barbol/barbol_1_left_chase.png",
+          "sw": null
+        },
+        "attack": {
+          "s": null,
+          "se": null,
+          "e": null,
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": null,
+          "sw": null
+        },
+        "death": {
+          "s": "assets/npc/monsters/barbol/barbol_female_death.png",
+          "se": null,
+          "e": null,
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": null,
+          "sw": null
+        },
+        "damage": {
+          "s": null,
+          "se": null,
+          "e": "assets/npc/monsters/barbol/barbol_1_right_damage.png",
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": "assets/npc/monsters/barbol/barbol_1_left_damage.png",
+          "sw": null
+        },
+        "casting": {
+          "s": null,
+          "se": null,
+          "e": null,
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": null,
+          "sw": null
+        }
+      },
+      "data_assets": {
+        "scale": 0.4,
+        "death_scale": 0.5,
+        "tint": [
+          150,
+          150,
+          150
+        ]
+      }
     },
-    "death_scale": 0.5,
     "hp": 100,
     "speed": 1.0,
-    "scale": 0.4,
     "faction": "EVIL",
     "aggro_range": 10,
     "melee_range": 3,
@@ -213,33 +537,86 @@
     "chasing_speed": 1.5,
     "feet_width_factor": 0.5,
     "feet_height_factor": 0.2,
-    "tint": [
-      150,
-      150,
-      150
-    ],
     "spawn_padding": 3,
     "spawn_count": 10,
     "spawn_margin": 0
   },
   "barbol_musgo": {
     "sprites": {
-      "down": "assets/npc/monsters/barbol/barbol_1_down.png",
-      "left": "assets/npc/monsters/barbol/barbol_1_left.png",
-      "right": "assets/npc/monsters/barbol/barbol_1_right.png",
-      "up": "assets/npc/monsters/barbol/barbol_1_top.png",
-      "chase_down": "assets/npc/monsters/barbol/barbol_1_down_chase.png",
-      "chase_left": "assets/npc/monsters/barbol/barbol_1_left_chase.png",
-      "chase_right": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
-      "chase_up": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
-      "damage_left": "assets/npc/monsters/barbol/barbol_1_left_damage.png",
-      "damage_right": "assets/npc/monsters/barbol/barbol_1_right_damage.png",
-      "death": "assets/npc/monsters/barbol/barbol_female_death.png"
+      "assets": {
+        "idle": {
+          "s": "assets/npc/monsters/barbol/barbol_1_down.png",
+          "se": null,
+          "e": "assets/npc/monsters/barbol/barbol_1_right.png",
+          "ne": null,
+          "n": "assets/npc/monsters/barbol/barbol_1_top.png",
+          "nw": null,
+          "w": "assets/npc/monsters/barbol/barbol_1_left.png",
+          "sw": null
+        },
+        "chase": {
+          "s": "assets/npc/monsters/barbol/barbol_1_down_chase.png",
+          "se": null,
+          "e": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
+          "ne": null,
+          "n": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
+          "nw": null,
+          "w": "assets/npc/monsters/barbol/barbol_1_left_chase.png",
+          "sw": null
+        },
+        "attack": {
+          "s": null,
+          "se": null,
+          "e": null,
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": null,
+          "sw": null
+        },
+        "death": {
+          "s": "assets/npc/monsters/barbol/barbol_female_death.png",
+          "se": null,
+          "e": null,
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": null,
+          "sw": null
+        },
+        "damage": {
+          "s": null,
+          "se": null,
+          "e": "assets/npc/monsters/barbol/barbol_1_right_damage.png",
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": "assets/npc/monsters/barbol/barbol_1_left_damage.png",
+          "sw": null
+        },
+        "casting": {
+          "s": null,
+          "se": null,
+          "e": null,
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": null,
+          "sw": null
+        }
+      },
+      "data_assets": {
+        "scale": 0.35,
+        "death_scale": 0.4,
+        "tint": [
+          34,
+          139,
+          34
+        ]
+      }
     },
-    "death_scale": 0.4,
     "hp": 100,
     "speed": 1.0,
-    "scale": 0.35,
     "faction": "EVIL",
     "aggro_range": 10,
     "melee_range": 3,
@@ -251,33 +628,86 @@
     "chasing_speed": 1.5,
     "feet_width_factor": 0.5,
     "feet_height_factor": 0.2,
-    "tint": [
-      34,
-      139,
-      34
-    ],
     "spawn_padding": 3,
     "spawn_count": 10,
     "spawn_margin": 0
   },
   "barbol_amarillo": {
     "sprites": {
-      "down": "assets/npc/monsters/barbol/barbol_1_down.png",
-      "left": "assets/npc/monsters/barbol/barbol_1_left.png",
-      "right": "assets/npc/monsters/barbol/barbol_1_right.png",
-      "up": "assets/npc/monsters/barbol/barbol_1_top.png",
-      "chase_down": "assets/npc/monsters/barbol/barbol_1_down_chase.png",
-      "chase_left": "assets/npc/monsters/barbol/barbol_1_left_chase.png",
-      "chase_right": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
-      "chase_up": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
-      "damage_left": "assets/npc/monsters/barbol/barbol_1_left_damage.png",
-      "damage_right": "assets/npc/monsters/barbol/barbol_1_right_damage.png",
-      "death": "assets/npc/monsters/barbol/barbol_female_death.png"
+      "assets": {
+        "idle": {
+          "s": "assets/npc/monsters/barbol/barbol_1_down.png",
+          "se": null,
+          "e": "assets/npc/monsters/barbol/barbol_1_right.png",
+          "ne": null,
+          "n": "assets/npc/monsters/barbol/barbol_1_top.png",
+          "nw": null,
+          "w": "assets/npc/monsters/barbol/barbol_1_left.png",
+          "sw": null
+        },
+        "chase": {
+          "s": "assets/npc/monsters/barbol/barbol_1_down_chase.png",
+          "se": null,
+          "e": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
+          "ne": null,
+          "n": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
+          "nw": null,
+          "w": "assets/npc/monsters/barbol/barbol_1_left_chase.png",
+          "sw": null
+        },
+        "attack": {
+          "s": null,
+          "se": null,
+          "e": null,
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": null,
+          "sw": null
+        },
+        "death": {
+          "s": "assets/npc/monsters/barbol/barbol_female_death.png",
+          "se": null,
+          "e": null,
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": null,
+          "sw": null
+        },
+        "damage": {
+          "s": null,
+          "se": null,
+          "e": "assets/npc/monsters/barbol/barbol_1_right_damage.png",
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": "assets/npc/monsters/barbol/barbol_1_left_damage.png",
+          "sw": null
+        },
+        "casting": {
+          "s": null,
+          "se": null,
+          "e": null,
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": null,
+          "sw": null
+        }
+      },
+      "data_assets": {
+        "scale": 0.33,
+        "death_scale": 0.4,
+        "tint": [
+          255,
+          215,
+          0
+        ]
+      }
     },
-    "death_scale": 0.4,
     "hp": 100,
     "speed": 1.0,
-    "scale": 0.33,
     "faction": "EVIL",
     "aggro_range": 10,
     "melee_range": 3,
@@ -289,33 +719,86 @@
     "chasing_speed": 1.5,
     "feet_width_factor": 0.5,
     "feet_height_factor": 0.2,
-    "tint": [
-      255,
-      215,
-      0
-    ],
     "spawn_padding": 3,
     "spawn_count": 10,
     "spawn_margin": 0
   },
   "barbol_baby": {
     "sprites": {
-      "down": "assets/npc/monsters/barbol/barbol_1_down.png",
-      "left": "assets/npc/monsters/barbol/barbol_1_left.png",
-      "right": "assets/npc/monsters/barbol/barbol_1_right.png",
-      "up": "assets/npc/monsters/barbol/barbol_1_top.png",
-      "chase_down": "assets/npc/monsters/barbol/barbol_1_down_chase.png",
-      "chase_left": "assets/npc/monsters/barbol/barbol_1_left_chase.png",
-      "chase_right": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
-      "chase_up": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
-      "damage_left": "assets/npc/monsters/barbol/barbol_1_left_damage.png",
-      "damage_right": "assets/npc/monsters/barbol/barbol_1_right_damage.png",
-      "death": "assets/npc/monsters/barbol/barbol_female_death.png"
+      "assets": {
+        "idle": {
+          "s": "assets/npc/monsters/barbol/barbol_1_down.png",
+          "se": null,
+          "e": "assets/npc/monsters/barbol/barbol_1_right.png",
+          "ne": null,
+          "n": "assets/npc/monsters/barbol/barbol_1_top.png",
+          "nw": null,
+          "w": "assets/npc/monsters/barbol/barbol_1_left.png",
+          "sw": null
+        },
+        "chase": {
+          "s": "assets/npc/monsters/barbol/barbol_1_down_chase.png",
+          "se": null,
+          "e": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
+          "ne": null,
+          "n": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
+          "nw": null,
+          "w": "assets/npc/monsters/barbol/barbol_1_left_chase.png",
+          "sw": null
+        },
+        "attack": {
+          "s": null,
+          "se": null,
+          "e": null,
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": null,
+          "sw": null
+        },
+        "death": {
+          "s": "assets/npc/monsters/barbol/barbol_female_death.png",
+          "se": null,
+          "e": null,
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": null,
+          "sw": null
+        },
+        "damage": {
+          "s": null,
+          "se": null,
+          "e": "assets/npc/monsters/barbol/barbol_1_right_damage.png",
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": "assets/npc/monsters/barbol/barbol_1_left_damage.png",
+          "sw": null
+        },
+        "casting": {
+          "s": null,
+          "se": null,
+          "e": null,
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": null,
+          "sw": null
+        }
+      },
+      "data_assets": {
+        "scale": 0.2,
+        "death_scale": 0.5,
+        "tint": [
+          255,
+          182,
+          193
+        ]
+      }
     },
-    "death_scale": 0.5,
     "hp": 10,
     "speed": 2.0,
-    "scale": 0.2,
     "faction": "EVIL",
     "aggro_range": 10,
     "melee_range": 3,
@@ -327,33 +810,86 @@
     "chasing_speed": 1.5,
     "feet_width_factor": 0.5,
     "feet_height_factor": 0.2,
-    "tint": [
-      255,
-      182,
-      193
-    ],
     "spawn_padding": 3,
     "spawn_count": 10,
     "spawn_margin": 0
   },
   "barbol_gigante": {
     "sprites": {
-      "down": "assets/npc/monsters/barbol/barbol_1_down.png",
-      "left": "assets/npc/monsters/barbol/barbol_1_left.png",
-      "right": "assets/npc/monsters/barbol/barbol_1_right.png",
-      "up": "assets/npc/monsters/barbol/barbol_1_top.png",
-      "chase_down": "assets/npc/monsters/barbol/barbol_1_down_chase.png",
-      "chase_left": "assets/npc/monsters/barbol/barbol_1_left_chase.png",
-      "chase_right": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
-      "chase_up": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
-      "damage_left": "assets/npc/monsters/barbol/barbol_1_left_damage.png",
-      "damage_right": "assets/npc/monsters/barbol/barbol_1_right_damage.png",
-      "death": "assets/npc/monsters/barbol/barbol_female_death.png"
+      "assets": {
+        "idle": {
+          "s": "assets/npc/monsters/barbol/barbol_1_down.png",
+          "se": null,
+          "e": "assets/npc/monsters/barbol/barbol_1_right.png",
+          "ne": null,
+          "n": "assets/npc/monsters/barbol/barbol_1_top.png",
+          "nw": null,
+          "w": "assets/npc/monsters/barbol/barbol_1_left.png",
+          "sw": null
+        },
+        "chase": {
+          "s": "assets/npc/monsters/barbol/barbol_1_down_chase.png",
+          "se": null,
+          "e": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
+          "ne": null,
+          "n": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
+          "nw": null,
+          "w": "assets/npc/monsters/barbol/barbol_1_left_chase.png",
+          "sw": null
+        },
+        "attack": {
+          "s": null,
+          "se": null,
+          "e": null,
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": null,
+          "sw": null
+        },
+        "death": {
+          "s": "assets/npc/monsters/barbol/barbol_female_death.png",
+          "se": null,
+          "e": null,
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": null,
+          "sw": null
+        },
+        "damage": {
+          "s": null,
+          "se": null,
+          "e": "assets/npc/monsters/barbol/barbol_1_right_damage.png",
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": "assets/npc/monsters/barbol/barbol_1_left_damage.png",
+          "sw": null
+        },
+        "casting": {
+          "s": null,
+          "se": null,
+          "e": null,
+          "ne": null,
+          "n": null,
+          "nw": null,
+          "w": null,
+          "sw": null
+        }
+      },
+      "data_assets": {
+        "scale": 0.8,
+        "death_scale": 0.5,
+        "tint": [
+          200,
+          200,
+          200
+        ]
+      }
     },
-    "death_scale": 0.5,
     "hp": 1000,
     "speed": "0.75",
-    "scale": 0.8,
     "faction": "EVIL",
     "aggro_range": 10,
     "melee_range": 3,
@@ -365,11 +901,6 @@
     "chasing_speed": 1.5,
     "feet_width_factor": 0.5,
     "feet_height_factor": 0.2,
-    "tint": [
-      200,
-      200,
-      200
-    ],
     "spawn_padding": 3,
     "spawn_count": 10,
     "spawn_margin": 0
