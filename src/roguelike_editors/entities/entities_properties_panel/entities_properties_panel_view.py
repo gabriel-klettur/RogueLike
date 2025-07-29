@@ -3,6 +3,7 @@ from roguelike_ui.ui_blocker import register_blocker
 from roguelike_editors.entities.entities_properties_panel.entities_properties_panel_model import EntityPropertiesPanelModel
 from roguelike_ui.panel import DraggablePanel
 from roguelike_ui.widgets.hover import draw_hover
+from roguelike_engine.utils.loader import load_image
 
 
 class EntityPropertiesPanelView:
@@ -19,6 +20,7 @@ class EntityPropertiesPanelView:
         self.font = font
         self.blink_interval = blink_interval
         self.draggable_panel = DraggablePanel(0, 0)
+        self.thumbnail_cache: dict[str, pygame.Surface|None] = {}
 
     # ----------------------------
     # RENDER PRINCIPAL
@@ -63,7 +65,13 @@ class EntityPropertiesPanelView:
         # Altura del header de subtabs de assets
         state_header = primary_header if model.active_tab == 'assets' else 0
         # Altura del contenido
-        content_h = min(len(lines) * (font_h + 2) + pad * 2, sh - margin * 2 - primary_header - state_header)
+        if model.active_tab == 'assets':
+            # Ajustar panel para cuadrícula 3x3
+            grid_w = panel_w - pad * 2
+            cell_size = int(grid_w / 3)
+            content_h = cell_size * 3 + pad * 2
+        else:
+            content_h = min(len(lines) * (font_h + 2) + pad * 2, sh - margin * 2 - primary_header - state_header)
         panel_h = primary_header + state_header + content_h
 
         # Posición inicial (esquina superior derecha)
@@ -91,11 +99,12 @@ class EntityPropertiesPanelView:
         if model.active_tab == 'assets':
             self._draw_asset_tabs(screen, model)
 
-        # 2. Dibujar propiedades (texto + hover)
-        self._draw_properties(screen, model, lines, px, py + primary_header + state_header, pad, font_h, panel_w)
-
-        # 3. Indicadores de edición o foco
-        self._draw_editing_indicator(screen, model, font_h)
+        # 2. Dibujar contenido según pestaña
+        if model.active_tab == 'properties':
+            self._draw_properties(screen, model, lines, px, py + primary_header + state_header, pad, font_h, panel_w)
+            self._draw_editing_indicator(screen, model, font_h)
+        elif model.active_tab == 'assets':
+            self._draw_asset_grid(screen, model, entity_data, px, py + primary_header + state_header, pad, font_h, panel_w)
 
     # ----------------------------
     # MÉTODOS PRIVADOS
@@ -279,3 +288,44 @@ class EntityPropertiesPanelView:
         while self.font.size(text + '...')[0] > max_width and text:
             text = text[:-1]
         return text + '...'
+
+    def _draw_asset_grid(self, screen: pygame.Surface, model: EntityPropertiesPanelModel, entity_data: dict, px: int, py: int, pad: int, font_h: int, panel_w: int) -> None:
+        """Dibuja una cuadrícula 3x3 de assets para el estado activo."""
+        # Parámetros de cuadrícula
+        grid_w = panel_w - pad * 2
+        cell_size = int(grid_w / 3)
+        grid_x = px + pad
+        grid_y = py + pad
+        # Orden de direcciones
+        order = ['nw', 'n', 'ne', 'w', None, 'e', 'sw', 's', 'se']
+        for idx, dir_key in enumerate(order):
+            row = idx // 3
+            col = idx % 3
+            x = grid_x + col * cell_size
+            y = grid_y + row * cell_size
+            # Dibujar celda
+            pygame.draw.rect(screen, (150, 150, 150), (x, y, cell_size, cell_size), 1)
+            if dir_key:
+                key = f'asset_{model.active_asset_tab}_{dir_key}'
+                path = entity_data.get(key)
+                if path:
+                    # Cargar raw scaled
+                    raw = self.thumbnail_cache.get(path)
+                    if raw is None:
+                        try:
+                            img = load_image(path)
+                            raw = pygame.transform.smoothscale(img, (cell_size - 4, cell_size - 4))
+                        except Exception:
+                            raw = None
+                        self.thumbnail_cache[path] = raw
+                    if raw:
+                        # Aplicar tint
+                        thumb = raw.copy()
+                        tint_val = entity_data.get('tint')
+                        if tint_val:
+                            color = tuple(tint_val) if len(tint_val) == 4 else (*tint_val, 255)
+                            thumb.fill(color, special_flags=pygame.BLEND_RGBA_MULT)
+                        # Blit thumbnail
+                        tx = x + (cell_size - thumb.get_width()) // 2
+                        ty = y + (cell_size - thumb.get_height()) // 2
+                        screen.blit(thumb, (tx, ty))
