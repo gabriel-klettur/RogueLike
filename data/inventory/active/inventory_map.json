@@ -429,16 +429,6 @@
       "y": 1896.0710678118653
     }
   },
-  "a0e189c1-8c1e-49e1-8a61-b80e1301a17d": {
-    "item_id": "health_potion",
-    "quantity": 2,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 776.9669914110084,
-      "y": 2026.322330470337
-    }
-  },
   "f959d600-4eab-4536-9e66-0cb7eb48f6e0": {
     "item_id": "health_potion",
     "quantity": 2,
@@ -457,16 +447,6 @@
     "position": {
       "x": 566.895923599143,
       "y": 2039.3984489160853
-    }
-  },
-  "8bfabdaa-3b17-4aee-b193-bd209038cc24": {
-    "item_id": "wood",
-    "quantity": 3,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 761.4017564974805,
-      "y": 2091.408919777091
     }
   },
   "a33a9559-b9b7-452d-ad5d-393e08f4b88c": {

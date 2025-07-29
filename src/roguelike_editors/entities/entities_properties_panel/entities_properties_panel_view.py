@@ -45,13 +45,18 @@ class EntityPropertiesPanelView:
                 filtered = {k: v for k, v in entity_data.items() if k.startswith(prefix)}
         else:
             filtered = {}
-        lines = [ent_id] + [f"{k}: {v}" for k, v in filtered.items() if v is not None]
+        lines = [ent_id] + [f"{k}: {v}" for k, v in filtered.items()]
         font_h = self.font.get_height()
 
         # Calcular tamaño del panel (incluye pestañas y subtabs)
         pad, margin = 10, 20
         max_w = max(self.font.size(line)[0] for line in lines)
         panel_w = min(max_w + pad * 2, sw - margin * 2, 500)
+        # Asegurar ancho mínimo para subtabs de assets vacíos
+        if model.active_tab == 'assets':
+            subpad_x = 8
+            subtabs_total = sum(self.font.size(label.capitalize())[0] + subpad_x * 2 for label in model.asset_tabs)
+            panel_w = max(panel_w, subtabs_total)
         # Altura del header de pestañas
         tab_padding_y = 5
         primary_header = font_h + tab_padding_y * 2
@@ -210,22 +215,32 @@ class EntityPropertiesPanelView:
         model.property_entries.clear()
 
         for i, line in enumerate(lines):
-            # Primer línea (ID) en amarillo, resto en gris
-            color = (255, 255, 0) if i == 0 else (200, 200, 200)
-            text = self._truncate_text(line, panel_w - pad * 2)
-            txt_surf = self.font.render(text, True, color)
-
-            # Registrar área clicable (excepto ID)
-            if i > 0:
-                key = line.split(': ', 1)[0]
-                rect = pygame.Rect(tx, ty, txt_surf.get_width(), font_h)
-                model.property_entries.append((rect, key))
-
-                # Hover visual
-                if key == model.hovered_property:
-                    draw_hover(screen, rect)
-
-            screen.blit(txt_surf, (tx, ty))
+            # ID: línea de encabezado
+            if i == 0:
+                text = self._truncate_text(line, panel_w - pad * 2)
+                txt_surf = self.font.render(text, True, (255, 255, 0))
+                screen.blit(txt_surf, (tx, ty))
+                ty += font_h + 2
+                continue
+            # Separar clave y valor
+            parts = line.split(': ', 1)
+            key = parts[0]
+            val_str = parts[1] if len(parts) > 1 else ''
+            # Renderizar clave en blanco
+            key_text = f'{key}: '
+            key_surf = self.font.render(self._truncate_text(key_text, panel_w - pad * 2), True, (255, 255, 255))
+            # Renderizar valor en color según contenido
+            color = (128, 0, 128) if val_str == 'None' else (255, 255, 0)
+            val_surf = self.font.render(self._truncate_text(val_str, panel_w - pad * 2 - key_surf.get_width()), True, color)
+            # Registrar área clicable
+            rect = pygame.Rect(tx, ty, key_surf.get_width() + val_surf.get_width(), font_h)
+            model.property_entries.append((rect, key))
+            # Hover visual
+            if key == model.hovered_property:
+                draw_hover(screen, rect)
+            # Dibujar clave y valor
+            screen.blit(key_surf, (tx, ty))
+            screen.blit(val_surf, (tx + key_surf.get_width(), ty))
             ty += font_h + 2
 
     def _draw_editing_indicator(self, screen: pygame.Surface, model: EntityPropertiesPanelModel, font_h: int) -> None:
