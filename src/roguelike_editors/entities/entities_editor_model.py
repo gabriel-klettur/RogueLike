@@ -48,7 +48,9 @@ class EntitiesEditorModel:
                 pass
         # Monstruos
         for mid, mdef in self.monsters.items():
-            path = mdef.get('sprites', {}).get('down')
+            nested = mdef.get('sprites', {}) or {}
+            idle_assets = nested.get('assets', {}).get('idle', {})
+            path = idle_assets.get('s')
             if path:
                 try:
                     self.assets[mid] = load_image(path)

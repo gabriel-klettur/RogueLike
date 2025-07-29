@@ -214,7 +214,9 @@ class EntityPickerPanelView:
         # Aplicar tint si existe
         tint = None
         if ent_id in model.monsters:
-            tint = model.monsters.get(ent_id, {}).get("tint")
+            nested = model.monsters.get(ent_id, {}).get("sprites", {}) or {}
+            data_assets = nested.get("data_assets", {}) or {}
+            tint = data_assets.get("tint")
         elif ent_id in model.player_stats:
             tint = model.player_stats.get(ent_id, {}).get("tint")
 
