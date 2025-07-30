@@ -294,7 +294,7 @@
         "attack": {
           "s": null,
           "se": null,
-          "e": null,
+          "e": "assets/npc/monsters/barbol/barbol_2_right_attack.png",
           "ne": null,
           "n": null,
           "nw": null,

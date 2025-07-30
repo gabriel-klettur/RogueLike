@@ -45,7 +45,12 @@ class AssetsGridPanelView:
                 asset_key = f"asset_{active_state}_{dir_key}"
                 model.asset_cell_entries.append((cell_rect, asset_key))
                 # Hover highlight
-                if model.hovered_asset_cell == asset_key:
+                if self.set_ot_assets_tab_controller.model.active_sub_tab == 'asset set':
+                    if model.hovered_asset_cell is not None:
+                        hover_surf = pygame.Surface((cell_size, cell_size), pygame.SRCALPHA)
+                        hover_surf.fill((255, 255, 0, 80))
+                        screen.blit(hover_surf, (x, y))
+                elif model.hovered_asset_cell == asset_key:
                     hover_surf = pygame.Surface((cell_size, cell_size), pygame.SRCALPHA)
                     hover_surf.fill((255, 255, 0, 80))
                     screen.blit(hover_surf, (x, y))
