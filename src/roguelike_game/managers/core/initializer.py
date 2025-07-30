@@ -44,6 +44,33 @@ from roguelike_game.managers.items.loader import ItemsLoader
 
 
 class GameInitializer:
+
+    @classmethod
+    def create_and_initialize(
+        cls,
+        game,
+        screen,
+        perf_log=None,
+        map_name: str = None,
+        loading_bg: str | None = None,
+        extra_stages: list[tuple] | None = None,
+        extra_systems_stages: list[tuple] | None = None
+    ) -> "GameInitializer":
+        """
+        Fábrica estática que construye y ejecuta la inicialización completa.
+        """
+        inst = cls(
+            game=game,
+            screen=screen,
+            perf_log=perf_log,
+            map_name=map_name,
+            loading_bg=loading_bg,
+            extra_stages=extra_stages,
+            extra_systems_stages=extra_systems_stages
+        )
+        inst.initialize()
+        return inst
+
     def __init__(self, game, screen, perf_log, map_name, loading_bg,
                  extra_stages, extra_systems_stages):
         self.game                   = game
@@ -95,7 +122,7 @@ class GameInitializer:
             ("Cargando editor de mapa"          , partial(self._init_map_editor)),
             ("Cargando editor de inventario"    , partial(self._init_inventory_editor)),
             ("Cargando editor de entidades"     , partial(self._init_entities_editor)),
-                ("Cargando editor de hechizos"      , partial(self._init_spells_editor)),
+            ("Cargando editor de hechizos"      , partial(self._init_spells_editor)),
             ("Cargando minimapa"                , partial(self._init_minimap)),
 
             ("Inicializando renderizador"       , partial(self._init_renderer)),
