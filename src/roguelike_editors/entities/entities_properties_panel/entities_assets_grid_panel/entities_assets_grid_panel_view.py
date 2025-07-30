@@ -82,8 +82,14 @@ class AssetsGridPanelView:
                 info_x = px + pad
                 info_y = grid_y + cell_size * 3 + pad
                 screen.blit(info_surf, (info_x, info_y))
-        # Draw selected asset cell with yellow border on top
+        # Draw selected asset cells
         if model.selected_asset_cell:
-            for rect, key in model.asset_cell_entries:
-                if key == model.selected_asset_cell:
+            # Asset Set: highlight all cells
+            if self.set_ot_assets_tab_controller.model.active_sub_tab == 'asset set':
+                for rect, key in model.asset_cell_entries:
                     pygame.draw.rect(screen, (255, 255, 0), rect, 2)
+            else:
+                # Asset By Asset: highlight single cell
+                for rect, key in model.asset_cell_entries:
+                    if key == model.selected_asset_cell:
+                        pygame.draw.rect(screen, (255, 255, 0), rect, 2)
