@@ -59,7 +59,11 @@ class EntitiesPropertiesPanelEventHandler:
         if self.controller.type_assets_controller.model.active_type_tab == 'assets':
             if self.controller.state_tabs_controller.handle_event(event):
                 return True
-        # 8. Eventos de grid (subtabs y celdas)
+        # 8. Eventos de subtabs de assets (asset set / asset by asset)
+        if self.controller.type_assets_controller.model.active_type_tab == 'assets':
+            if self.controller.set_ot_assets_tab_controller.handle_event(event):
+                return True
+        # 9. Eventos de grid (subtabs y celdas)
         if self.controller.type_assets_controller.model.active_type_tab == 'assets':
             if self.controller.grid_controller.handle_event(event):
                 return True

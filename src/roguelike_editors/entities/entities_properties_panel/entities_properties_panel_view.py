@@ -66,6 +66,7 @@ class EntityPropertiesPanelView:
         primary_header = font_h + tab_padding_y * 2
         # Altura del header de subtabs de assets
         state_header = primary_header if self.type_assets_controller.model.active_type_tab == 'assets' else 0
+        sub_header = state_header
         # Altura del contenido
         if self.type_assets_controller.model.active_type_tab == 'assets':
             # Ajustar panel para nombre, tint y cuadrícula 3x3
@@ -75,7 +76,7 @@ class EntityPropertiesPanelView:
             content_h = pad + font_h + 2 + font_h + pad + cell_size * 3 + pad + font_h
         else:
             content_h = min(len(lines) * (font_h + 2) + pad * 2, sh - margin * 2 - primary_header - state_header)
-        panel_h = primary_header + state_header + content_h
+        panel_h = primary_header + state_header + sub_header + content_h
 
         # Posición inicial (esquina superior derecha)
         px, py = sw - panel_w - margin, margin
@@ -100,6 +101,7 @@ class EntityPropertiesPanelView:
         self.type_assets_controller.draw(screen)
         if self.type_assets_controller.model.active_type_tab == 'assets':
             self.state_tabs_controller.draw(screen)
+            self.set_ot_assets_tab_controller.draw(screen)
 
         # 2. Dibujar contenido según pestaña
         if self.type_assets_controller.model.active_type_tab == 'properties':
@@ -107,7 +109,7 @@ class EntityPropertiesPanelView:
             self._draw_editing_indicator(screen, model, font_h)
         elif self.type_assets_controller.model.active_type_tab == 'assets':
             # Delegar grid a grid_controller
-            self.grid_controller.draw(screen, entity_data, px, py + primary_header + state_header, pad, font_h, panel_w)
+            self.grid_controller.draw(screen, entity_data, px, py + primary_header + state_header + sub_header, pad, font_h, panel_w)
 
     # ----------------------------
     # MÉTODOS PRIVADOS

@@ -9,6 +9,7 @@ from roguelike_editors.entities.entities_properties_panel.entities_properties_pa
 from roguelike_editors.entities.entities_properties_panel.entities_assets_grid_panel.entities_assets_grid_panel_controller import AssetsGridPanelController
 from roguelike_editors.entities.entities_properties_panel.entities_state_tabs.entities_state_tabs_controller import EntitiesStateTabsController
 from roguelike_editors.entities.entities_properties_panel.entities_type_assets.entities_type_assets_controller import EntitiesTypeAssetsController
+from roguelike_editors.entities.entities_properties_panel.entities_set_ot_assets_tab.entities_set_ot_assets_tab_controller import EntitiesSetOtAssetsTabController
 from roguelike_editors.entities.entities_assets_picker_panel.entities_assets_picker_panel_controller import EntitiesAssetsPickerPanelController
 
 
@@ -45,6 +46,10 @@ class EntityPropertiesPanelController:
         self.view.state_tabs_controller = self.state_tabs_controller
         # Pasar controller de tabs de estado al grid view para seleccionar assets
         self.grid_controller.view.state_tabs_controller = self.state_tabs_controller
+        # Controller de subtabs de asset set / asset by asset
+        self.set_ot_assets_tab_controller = EntitiesSetOtAssetsTabController(self.model, font)
+        self.view.set_ot_assets_tab_controller = self.set_ot_assets_tab_controller
+        self.grid_controller.view.set_ot_assets_tab_controller = self.set_ot_assets_tab_controller
         # Assets picker panel
         self.assets_picker_controller = EntitiesAssetsPickerPanelController()
         self.view.assets_picker_controller = self.assets_picker_controller
