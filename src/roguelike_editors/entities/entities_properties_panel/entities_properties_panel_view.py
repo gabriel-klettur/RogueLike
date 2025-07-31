@@ -122,18 +122,25 @@ class EntityPropertiesPanelView:
             return {}
         if ent_id in model.player_stats:
             stats = model.player_stats.get(ent_id, {})
-            assets = model.player_assets.get(ent_id, {})
+            # Flatten sprites_set assets for player
+            sprites = model.player_assets.get(ent_id, {}).get('sets', {}).get('sprites_set', {})
             merged = dict(stats)
             merged['id'] = ent_id
-            if isinstance(assets, dict):
-                for state, data in assets.items():
-                    if isinstance(data, dict):
-                        for dir_key, path in data.items():
-                            merged[f'asset_{state}_{dir_key}'] = path
-                    else:
-                        merged[f'asset_{state}'] = data
-            else:
-                merged['asset'] = assets
+            # Map 'walking' to 'chase' UI state
+            state_map = {'walking': 'chase'}
+            # Map grid directions to sprite sheet directions
+            dir_map = {
+                'nw': 'up_left', 'n': 'up', 'ne': 'up_right',
+                'w': 'left', 'e': 'right', 'sw': 'down_left',
+                's': 'down', 'se': 'down_right'
+            }
+            for state, paths in sprites.items():
+                if not paths:
+                    continue
+                ui_state = state_map.get(state, state)
+                sheet_path = paths[0]
+                for dir_key, sprite_dir in dir_map.items():
+                    merged[f'asset_{ui_state}_{dir_key}'] = sheet_path
             return merged
         elif ent_id in model.monsters:
             monster = model.monsters.get(ent_id, {})

@@ -54,26 +54,39 @@ class AssetsGridPanelView:
                     hover_surf = pygame.Surface((cell_size, cell_size), pygame.SRCALPHA)
                     hover_surf.fill((255, 255, 0, 80))
                     screen.blit(hover_surf, (x, y))
-                # Thumbnail
-                path = entity_data.get(asset_key)
-                if path:
-                    raw = self.thumbnail_cache.get(path)
-                    if raw is None:
-                        try:
-                            img = load_image(path)
-                            raw = pygame.transform.smoothscale(img, (cell_size - 4, cell_size - 4))
-                        except Exception:
-                            raw = None
-                        self.thumbnail_cache[path] = raw
-                    if raw:
-                        thumb = raw.copy()
+                # Animated or static thumbnail
+                anim = model.animators.get(asset_key)
+                if anim:
+                    frame = anim.next_frame()
+                    if frame:
+                        thumb_img = pygame.transform.smoothscale(frame, (cell_size - 4, cell_size - 4))
                         tint = entity_data.get('tint')
                         if tint:
                             c = tuple(tint) if len(tint) == 4 else (*tint, 255)
-                            thumb.fill(c, special_flags=pygame.BLEND_RGBA_MULT)
-                        tx = x + (cell_size - thumb.get_width()) // 2
-                        ty = y + (cell_size - thumb.get_height()) // 2
-                        screen.blit(thumb, (tx, ty))
+                            thumb_img.fill(c, special_flags=pygame.BLEND_RGBA_MULT)
+                        tx = x + (cell_size - thumb_img.get_width()) // 2
+                        ty = y + (cell_size - thumb_img.get_height()) // 2
+                        screen.blit(thumb_img, (tx, ty))
+                else:
+                    path = entity_data.get(asset_key)
+                    if path:
+                        raw = self.thumbnail_cache.get(path)
+                        if raw is None:
+                            try:
+                                img = load_image(path)
+                                raw = pygame.transform.smoothscale(img, (cell_size - 4, cell_size - 4))
+                            except Exception:
+                                raw = None
+                            self.thumbnail_cache[path] = raw
+                        if raw:
+                            thumb = raw.copy()
+                            tint = entity_data.get('tint')
+                            if tint:
+                                c = tuple(tint) if len(tint) == 4 else (*tint, 255)
+                                thumb.fill(c, special_flags=pygame.BLEND_RGBA_MULT)
+                            tx = x + (cell_size - thumb.get_width()) // 2
+                            ty = y + (cell_size - thumb.get_height()) // 2
+                            screen.blit(thumb, (tx, ty))
                 # Draw default border for all cells
                 pygame.draw.rect(screen, (150, 150, 150), cell_rect, 1)
             else:

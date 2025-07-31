@@ -3,6 +3,7 @@ from typing import Optional
 from pathlib import Path
 from roguelike_ui.services.json_persistence import load_from_json
 from roguelike_engine.utils.loader import load_image, load_sprite_sheet
+from roguelike_game.config.players_config import PLAYER_ASSETS
 from roguelike_editors.entities.entities_title.entities_title_model import EntitiesTitleModel
 from roguelike_editors.entities.entities_tool_bar_panel.entities_tool_bar_panel_model import EntitiesToolBarPanelModel
 from roguelike_editors.entities.entities_add_remove_panel.entities_add_remove_panel_model import EntitiesAddRemovePanelModel
@@ -24,9 +25,9 @@ class EntitiesEditorModel:
         classes = players_root.get('players', {}).get('classes', {})
         # Guardar configuración de clases para cargar sprites idle
         self.classes = classes
+        # Cargar assets completos desde config
+        self.player_assets = PLAYER_ASSETS
         self.player_stats = {cls: cfg.get('stats', {}) for cls, cfg in classes.items()}
-        # Para el editor, usar solo la sección 'no-sets' de los assets
-        self.player_assets = {cls: cfg.get('assets', {}).get('no-sets', {}) for cls, cfg in classes.items()}
         self.orig_size = tuple(players_root.get('ORIGINAL_SPRITE_SIZE', [128, 128]))
         monsters_path = data_dir / 'entities' / 'monsters.json'
         self.monsters = load_from_json(str(monsters_path))

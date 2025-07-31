@@ -1,19 +1,48 @@
 {
-  "5a61715c-8a6c-4a2c-97dd-ecf7cfa6207c": {
-    "template_id": "11111111-2222-3333-4444-555555555555",
+  "d117a34c-e673-4ec4-8141-02f4bdc5a8e4": {
+    "template_id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
     "slots": [
       {
-        "item": "wood",
+        "item": "gold",
+        "quantity": 5
+      },
+      {
+        "item": "experience_orb",
+        "quantity": 1
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "aa23d24d-ff06-4be7-ba3d-f6104b03d3c6": {
+    "template_id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+    "slots": [
+      {
+        "item": "gold",
+        "quantity": 6
+      },
+      {
+        "item": "experience_orb",
         "quantity": 3
       },
-      {
-        "item": "gold",
-        "quantity": 1
-      },
-      {
-        "item": "experience_orb",
-        "quantity": 2
-      },
+      null,
       null,
       null,
       null,
@@ -34,16 +63,12 @@
     ],
     "schema_version": "1.0.0"
   },
-  "203b2474-31bb-4db5-adde-b3ffde25bdb0": {
-    "template_id": "11111111-2222-3333-4444-555555555555",
+  "3095ee40-6346-4c68-98cd-1600ded9c124": {
+    "template_id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
     "slots": [
       {
-        "item": "wood",
-        "quantity": 1
-      },
-      {
         "item": "gold",
-        "quantity": 3
+        "quantity": 4
       },
       {
         "item": "experience_orb",
@@ -65,81 +90,12 @@
       null,
       null,
       null,
-      null
-    ],
-    "schema_version": "1.0.0"
-  },
-  "bbf45c1a-13db-4de8-85bf-8ced5a53548f": {
-    "template_id": "11111111-2222-3333-4444-555555555555",
-    "slots": [
-      {
-        "item": "wood",
-        "quantity": 2
-      },
-      {
-        "item": "gold",
-        "quantity": 2
-      },
-      {
-        "item": "experience_orb",
-        "quantity": 2
-      },
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
       null,
       null
     ],
     "schema_version": "1.0.0"
   },
-  "2c55479b-85e6-47b8-ab90-d47ce50bdc0f": {
-    "template_id": "11111111-2222-3333-4444-555555555555",
-    "slots": [
-      {
-        "item": "wood",
-        "quantity": 2
-      },
-      {
-        "item": "gold",
-        "quantity": 1
-      },
-      {
-        "item": "experience_orb",
-        "quantity": 1
-      },
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "schema_version": "1.0.0"
-  },
-  "6e851d96-0a31-443d-8fd9-f05938912c77": {
+  "c32a9794-9e61-44f0-8328-e95e4d80b236": {
     "template_id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
     "slots": [
       {
@@ -148,7 +104,7 @@
       },
       {
         "item": "experience_orb",
-        "quantity": 2
+        "quantity": 1
       },
       null,
       null,
@@ -171,12 +127,114 @@
     ],
     "schema_version": "1.0.0"
   },
-  "67d212fc-b7ca-4a32-8612-9cc644d3fb10": {
-    "template_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+  "608a0837-fcbd-4e78-8923-ab030fea4c49": {
+    "template_id": "11111111-2222-3333-4444-555555555555",
+    "slots": [
+      {
+        "item": "wood",
+        "quantity": 2
+      },
+      {
+        "item": "gold",
+        "quantity": 2
+      },
+      {
+        "item": "experience_orb",
+        "quantity": 1
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "15bd4533-1005-4b02-a1df-c5567326b7ac": {
+    "template_id": "11111111-2222-3333-4444-555555555555",
+    "slots": [
+      {
+        "item": "wood",
+        "quantity": 3
+      },
+      {
+        "item": "gold",
+        "quantity": 1
+      },
+      {
+        "item": "experience_orb",
+        "quantity": 2
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "1cfeff97-3071-4fc1-a56c-d245f4ad0536": {
+    "template_id": "33333333-3333-3333-3333-333333333333",
     "slots": [
       {
         "item": "gold",
-        "quantity": 3
+        "quantity": 2
+      },
+      {
+        "item": "experience_orb",
+        "quantity": 1
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "707eaad1-5e24-4747-b8aa-da36aa84f503": {
+    "template_id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+    "slots": [
+      {
+        "item": "gold",
+        "quantity": 4
       },
       {
         "item": "experience_orb",

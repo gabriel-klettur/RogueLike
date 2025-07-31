@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import List, Tuple, Dict, Optional
 import pygame
+from roguelike_game.ecs.components.rendering.animator import Animator
 
 @dataclass
 class AssetsGridPanelModel:
@@ -12,3 +13,7 @@ class AssetsGridPanelModel:
     # Celda hovered y seleccionada
     hovered_asset_cell: Optional[str] = None
     selected_asset_cell: Optional[str] = None  # Add selected asset cell property
+    # Preview animation: animators per dir_key
+    animators: Dict[str, Animator] = field(default_factory=dict)
+    last_entity_id: Optional[str] = None
+    last_state_tab: Optional[str] = None  # Add selected asset cell property
