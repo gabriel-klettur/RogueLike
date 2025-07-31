@@ -11,7 +11,8 @@ def load_and_scale_sprites(class_player: str) -> dict[str, dict[str, list[pygame
     Carga y escala sprites según configuración.
     """
     sprites_dict, _ = PlayerAssets(class_player, ORIGINAL_SPRITE_SIZE).get_sprites()
-    scale_factor = PLAYER_STATS[class_player]["scale"]
+    # Usar DEFAULT_SCALE del JSON raíz
+    scale_factor = DEFAULT_SCALE
     if scale_factor != DEFAULT_SCALE:
         for direction, anims in sprites_dict.items():
             for state, frames in anims.items():

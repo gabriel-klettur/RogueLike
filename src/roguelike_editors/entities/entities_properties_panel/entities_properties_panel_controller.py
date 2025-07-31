@@ -1,4 +1,5 @@
 import os
+import json
 import pygame
 from roguelike_ui.services.json_persistence import save_to_json, load_from_json
 from pathlib import Path
@@ -182,9 +183,12 @@ class EntityPropertiesPanelController:
             (path, data, entry): Ruta al archivo, diccionario raíz, y la entrada de la entidad.
         """
         if ent_id in self.model.player_stats:
-            path = os.path.join(os.getcwd(), "data", "entities", "players.json")
+            # Ruta al nuevo JSON de jugadores
+            path = os.path.join(os.getcwd(), "data", "entities", "new_players.json")
             root = load_from_json(path)
-            data = root.get("PLAYER_STATS", {})
+            # Extraer clases y datos de jugadores
+            classes = root.get("players", {}).get("classes", {})
+            data = classes
         else:
             path = os.path.join(os.getcwd(), "data", "entities", "monsters.json")
             data = load_from_json(path)
@@ -197,8 +201,12 @@ class EntityPropertiesPanelController:
         Persiste los cambios en el archivo JSON correspondiente y actualiza el modelo.
         """
         if ent_id in self.model.player_stats:
-            data[ent_id] = entry
-            save_to_json(path, "PLAYER_STATS", data)
+            # Guardar en JSON anidado de jugadores
+            full = path
+            root = load_from_json(full)
+            root.setdefault("players", {}).setdefault("classes", {})[ent_id] = entry
+            with open(full, "w", encoding="utf-8") as f:
+                json.dump(root, f, ensure_ascii=False, indent=2)
             self.model.player_stats[ent_id] = entry
         else:
             save_to_json(path, ent_id, entry)

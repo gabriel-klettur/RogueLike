@@ -18,10 +18,13 @@ class EntitiesEditorModel:
         # Editor global
         self.active: bool = False
         # Carga de datos JSON
-        players_path = data_dir / 'entities' / 'players.json'
+        players_path = data_dir / 'entities' / 'new_players.json'
         players_root = load_from_json(str(players_path))
-        self.player_stats = players_root.get('PLAYER_STATS', {})
-        self.player_assets = players_root.get('PLAYER_ASSETS', {})
+        # Extraer clases de jugador anidadas
+        classes = players_root.get('players', {}).get('classes', {})
+        self.player_stats = {cls: cfg.get('stats', {}) for cls, cfg in classes.items()}
+        # Para el editor, usar solo la sección 'no-sets' de los assets
+        self.player_assets = {cls: cfg.get('assets', {}).get('no-sets', {}) for cls, cfg in classes.items()}
         self.orig_size = tuple(players_root.get('ORIGINAL_SPRITE_SIZE', [128, 128]))
         monsters_path = data_dir / 'entities' / 'monsters.json'
         self.monsters = load_from_json(str(monsters_path))

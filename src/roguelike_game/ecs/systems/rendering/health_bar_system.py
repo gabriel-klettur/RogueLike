@@ -44,7 +44,9 @@ class HealthBarSystem:
             # 3) Obtener componentes necesarios
             pos: Position = world.components['Position'][eid]
             health: Health = world.components['Health'][eid]
-            sprite: Sprite = world.components['Sprite'][eid]
+            sprite = world.components['Sprite'].get(eid)
+            if sprite is None:
+                continue
             scale_comp: Scale = world.components['Scale'].get(eid)
 
             # 4) Calcular ancho de la barra basado en el ancho del sprite y su escala

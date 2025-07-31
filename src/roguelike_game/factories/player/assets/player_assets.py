@@ -1,4 +1,4 @@
-from roguelike_engine.utils.loader import load_sprite_sheet
+from roguelike_engine.utils.loader import load_sprite_sheet, load_image
 from roguelike_game.config.players_config import PLAYER_ASSETS
 
 class PlayerAssets:
@@ -30,6 +30,34 @@ class PlayerAssets:
         """
         # Determinar grid o strip según configuración
         assets_entry = PLAYER_ASSETS.get(self.class_player)
+        
+        # Nuevo formato: 'sets' con sprite sheets por estado
+        if isinstance(assets_entry, dict) and 'sets' in assets_entry:
+            sprites: dict[str, dict[str, list]] = {}
+            # Direcciones básicas (8 direcciones)
+            directions = ['down','down_right','right','up_right','up','up_left','left','down_left']
+            # Inicializar mapa de estados por dirección
+            for direction in directions:
+                sprites[direction] = {}
+            # Procesar cada estado de animación
+            for state, paths in assets_entry['sets'].get('sprites_set', {}).items():
+                if not paths:
+                    continue
+                key = 'walk' if state == 'walking' else state
+                sheet_path = paths[0]
+                # Determinar columnas a partir del ancho del sheet
+                # Eliminamos detección dinámica de columnas; siempre 5 frames por dirección
+                # Cortar frames para cada dirección
+                for direction, block in zip(directions, range(len(directions))):
+                    frames = load_sprite_sheet(
+                        sheet_path,
+                        self.sprite_size,
+                        row=0,
+                        columns=(5 if key=='walk' else 1),
+                        start_col=block*5
+                    )
+                    sprites[direction][key] = frames
+            return sprites, self.sprite_size
         sprites: dict[str, dict[str, list]] = {}
         if isinstance(assets_entry, str):
             # grid 4x5 (dwarf)

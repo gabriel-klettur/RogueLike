@@ -294,7 +294,7 @@
         "attack": {
           "s": null,
           "se": null,
-          "e": null,
+          "e": "assets/npc/monsters/barbol/barbol_2_right_attack.png",
           "ne": null,
           "n": null,
           "nw": null,
@@ -358,7 +358,7 @@
     "spawn_padding": 3,
     "spawn_count": 10,
     "spawn_margin": 0,
-    "tint": ""    
+    "tint": ""
   },
   "barbol_cyan": {
     "sprites": {

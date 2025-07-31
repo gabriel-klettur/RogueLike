@@ -42,11 +42,11 @@
           "sets": {
             "sprites_set": {
               "idle": ["characters/dwarf/dwarf_idle.png"],
-              "walking": ["characters/dwarf/dwarf_walk.png"],
-              "casting": ["characters/dwarf/dwarf_cast.png"],
-              "attack": ["characters/dwarf/dwarf_attack.png"],
-              "damage": ["characters/dwarf/dwarf_damage.png"],
-              "death": ["characters/dwarf/dwarf_death.png"]
+              "walking": ["characters/dwarf/dwarf_walking.png"],
+              "casting": [],
+              "attack": [],
+              "damage": [],
+              "death": []
             },
             "sprites_data_set": {
               "scale_idle": 0.5,
@@ -144,10 +144,10 @@
             "sprites_set": {
               "idle": ["characters/valkyrie/valkyrie_idle.png"],
               "walking": ["characters/valkyrie/valkyrie_walking.png"],
-              "casting": ["characters/valkyrie/valkyrie_casting.png"],
-              "attack": ["characters/valkyrie/valkyrie_attack.png"],
-              "damage": ["characters/valkyrie/valkyrie_damage.png"],
-              "death": ["characters/valkyrie/valkyrie_death.png"]
+              "casting": [],
+              "attack": [],
+              "damage": [],
+              "death": []
             },
             "sprites_data": {
               "scale_idle": 0.5,
@@ -245,10 +245,10 @@
             "sprites_set": {
               "idle": ["characters/mague/mague_idle.png"],
               "walking": ["characters/mague/mague_walking.png"],
-              "casting": ["characters/mague/mague_casting.png"],
-              "attack": ["characters/mague/mague_attack.png"],
-              "damage": ["characters/mague/mague_damage.png"],
-              "death": ["characters/mague/mague_death.png"]
+              "casting": [],
+              "attack": [],
+              "damage": [],
+              "death": []
             },
             "sprites_data": {
               "scale_idle": 0.5,
@@ -346,10 +346,10 @@
             "sprites_set": {
               "idle": ["characters/elven/elven_idle.png"],
               "walking": ["characters/elven/elven_walking.png"],
-              "casting": ["characters/elven/elven_casting.png"],
-              "attack": ["characters/elven/elven_attack.png"],
-              "damage": ["characters/elven/elven_damage.png"],
-              "death": ["characters/elven/elven_death.png"]
+              "casting": [],
+              "attack": [],
+              "damage": [],
+              "death": []
             },
             "sprites_data": {
               "scale_idle": 0.5,
@@ -447,10 +447,10 @@
             "sprites_set": {
               "idle": ["characters/barbarian/barbarian_idle.png"],
               "walking": ["characters/barbarian/barbarian_walking.png"],
-              "casting": ["characters/barbarian/barbarian_casting.png"],
-              "attack": ["characters/barbarian/barbarian_attack.png"],
-              "damage": ["characters/barbarian/barbarian_damage.png"],
-              "death": ["characters/barbarian/barbarian_death.png"]
+              "casting": [],
+              "attack": [],
+              "damage": [],
+              "death": []
             },
             "sprites_data": {
               "scale_idle": 0.5,

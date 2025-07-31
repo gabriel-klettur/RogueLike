@@ -21,7 +21,7 @@ class DeathState(State):
         pt = world.components.get('PlayerTagComponent', {}).get(eid)
         cls_name = getattr(pt, 'class_name', None)
         if cls_name in PLAYER_STATS:
-            duration = PLAYER_STATS[cls_name].get('death_timer_duration', 60.0)
+            duration = PLAYER_STATS[cls_name].get('basic_death_timer_duration', 60.0)
         else:
             duration = 60.0
         world.components['DeathTimer'][eid] = DeathTimer(time.time(), duration)

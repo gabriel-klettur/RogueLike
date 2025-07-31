@@ -2,8 +2,8 @@ import json
 import copy
 from pathlib import Path
 
-# Carga de configuración de jugadores
-env_path = Path(__file__).resolve().parents[4] / "data" / "entities" / "players.json"
+# Carga de configuración de jugadores en nuevo formato
+env_path = Path(__file__).resolve().parents[4] / "data" / "entities" / "new_players.json"
 with open(env_path, encoding="utf-8") as f:
     _player_cfg = json.load(f)
 
@@ -11,13 +11,11 @@ with open(env_path, encoding="utf-8") as f:
 ORIGINAL_SPRITE_SIZE = tuple(_player_cfg["ORIGINAL_SPRITE_SIZE"])
 RENDERED_SPRITE_SIZE = tuple(_player_cfg["RENDERED_SPRITE_SIZE"])
 
-# Estadísticas y valores de configuración
-PLAYER_STATS = _player_cfg["PLAYER_STATS"]
-DEFAULT_CLASS = _player_cfg["DEFAULT_CLASS"]
-# Generate default stats for asset-only classes
-for cls in _player_cfg.get("PLAYER_ASSETS", {}).keys():
-    if cls not in PLAYER_STATS:
-        PLAYER_STATS[cls] = copy.deepcopy(PLAYER_STATS.get(DEFAULT_CLASS, {}))
+# Extraer clases de jugador
+_CLASSES = _player_cfg.get("players", {}).get("classes", {})
+PLAYER_STATS = {cls: cfg.get("stats", {}) for cls, cfg in _CLASSES.items()}
+PLAYER_ASSETS = {cls: cfg.get("assets", {}) for cls, cfg in _CLASSES.items()}
+DEFAULT_CLASS = _player_cfg.get("DEFAULT_CLASS", "")
 DEFAULT_SCALE = _player_cfg["DEFAULT_SCALE"]
 DEFAULT_SPEED = _player_cfg["DEFAULT_SPEED"]
 ANIMATION_INTERVAL = _player_cfg["ANIMATION_INTERVAL"]

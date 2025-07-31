@@ -52,7 +52,7 @@ class PlayerManager:
         )
         # Update movement speed and reset velocity
         comps["MovementSpeed"][eid] = MovementSpeed(
-            PLAYER_STATS[new_class]["speed"]
+            PLAYER_STATS[new_class]["basic_speed"]
         )
         comps["Velocity"][eid] = Velocity(0, 0)
         # Update collider
@@ -60,17 +60,17 @@ class PlayerManager:
             comps["MultiCollider"][eid] = create_body_and_feet(frame)
         # Update stats: health, combat, mana, energy, hunger
         stats = PLAYER_STATS[new_class]
-        max_hp = stats["max_health"]
+        max_hp = stats["max_strength"]
         comps["Health"][eid] = Health(max_hp, max_hp)
         comps["CombatStats"][eid] = CombatStats(
             current_hp=max_hp,
             max_hp=max_hp,
-            power=stats["attack"],
-            defense=stats["defense"]
+            power=stats["basic_attack"],
+            defense=stats["basic_armor"]
         )
-        max_mana = stats["max_mana"]
+        max_mana = stats["max_intelligence"]
         comps["Mana"][eid] = Mana(current_mana=max_mana, max_mana=max_mana)
-        max_energy = stats["max_energy"]
+        max_energy = stats["max_dexterity"]
         comps["Energy"][eid] = Energy(
             current_energy=max_energy,
             max_energy=max_energy
@@ -85,7 +85,7 @@ class PlayerManager:
             damage=MELEE_WEAPON_CFG["damage"],
             cooldown=MELEE_WEAPON_CFG["cooldown"]
         )
-        trail_params = stats.get("trail", DEFAULT_TRAIL)
+        trail_params = stats.get("basic_trail", DEFAULT_TRAIL)
         trail_cfg = TrailConfig(
             interval=trail_params["interval"],
             life_time=trail_params["life_time"],
