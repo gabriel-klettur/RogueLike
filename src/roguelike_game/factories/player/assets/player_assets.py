@@ -53,33 +53,11 @@ class PlayerAssets:
                         sheet_path,
                         self.sprite_size,
                         row=0,
-                        columns=(5 if key=='walk' else 1),
+                        columns=(5 if key in ('walk','idle') else 1),
                         start_col=block*5
                     )
                     sprites[direction][key] = frames
             return sprites, self.sprite_size
-        sprites: dict[str, dict[str, list]] = {}
-        if isinstance(assets_entry, str):
-            # grid 4x5 (dwarf)
-            directions = ['down', 'right', 'up', 'left']
-            for row_idx, direction in enumerate(directions):
-                # idle: 1 frame en col 0
-                idle_frames = load_sprite_sheet(
-                    self.sheet_path,
-                    self.sprite_size,
-                    row=row_idx,
-                    columns=1,
-                    start_col=0
-                )
-                # walk: 4 frames cols 1-4
-                walk_frames = load_sprite_sheet(
-                    self.sheet_path,
-                    self.sprite_size,
-                    row=row_idx,
-                    columns=4,
-                    start_col=1
-                )
-                sprites[direction] = {'idle': idle_frames, 'walk': walk_frames}
         elif isinstance(assets_entry, dict):
             # strip 1x40 (otros)
             directions = ['down', 'down_right', 'right', 'up_right', 'up', 'up_left', 'left', 'down_left']
@@ -90,10 +68,7 @@ class PlayerAssets:
                     self.sheet_path,
                     self.sprite_size,
                     row=0,
-                    columns=5,
-
-
-                    
+                    columns=5,            
                     start_col=block * 5
                 )
                 # primera frame idle, resto walk
