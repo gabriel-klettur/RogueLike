@@ -1,5 +1,5 @@
 import pygame
-from roguelike_engine.utils.debug import draw_debug_rect
+from roguelike_engine.debuger.debug import draw_debug_rect
 
 class BuildingView:
     """

@@ -1,4 +1,4 @@
-from roguelike_engine.buildings.view.building_view import BuildingView
+from roguelike_engine.buildings.building_view import BuildingView
 
 class BuildingController:
     """
