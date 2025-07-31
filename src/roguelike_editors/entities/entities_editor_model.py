@@ -22,6 +22,8 @@ class EntitiesEditorModel:
         players_root = load_from_json(str(players_path))
         # Extraer clases de jugador anidadas
         classes = players_root.get('players', {}).get('classes', {})
+        # Guardar configuración de clases para cargar sprites idle
+        self.classes = classes
         self.player_stats = {cls: cfg.get('stats', {}) for cls, cfg in classes.items()}
         # Para el editor, usar solo la sección 'no-sets' de los assets
         self.player_assets = {cls: cfg.get('assets', {}).get('no-sets', {}) for cls, cfg in classes.items()}
@@ -32,6 +34,18 @@ class EntitiesEditorModel:
         self.assets: dict[str, pygame.Surface] = {}
         # Jugadores
         for pid in self.player_stats:
+            # Cargar primer frame de idle de new_players.json
+            cfg = self.classes.get(pid, {})
+            idle_list = cfg.get('assets', {}).get('sets', {}).get('sprites_set', {}).get('idle', [])
+            if idle_list:
+                path = idle_list[0]
+                try:
+                    frames = load_sprite_sheet(path, self.orig_size, columns=1)
+                    self.assets[pid] = frames[0]
+                    continue
+                except Exception:
+                    pass
+            # Fallback: assets no-sets o recurso por defecto
             asset_info = self.player_assets.get(pid)
             path = None
             if isinstance(asset_info, str):
