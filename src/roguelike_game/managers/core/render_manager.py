@@ -1,7 +1,7 @@
 import pygame
 from roguelike_engine.utils.mouse import draw_mouse_crosshair
 from roguelike_engine.utils.benchmark import benchmark
-from roguelike_engine.utils.debug import DebugOverlay, render_debug_overlay
+from roguelike_engine.debuger.debug import DebugOverlay, render_debug_overlay
 from roguelike_engine.config.config_tiles import TILE_SIZE
 import roguelike_engine.config.config as config
 from types import SimpleNamespace
