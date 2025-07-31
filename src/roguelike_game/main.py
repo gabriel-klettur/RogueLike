@@ -2,10 +2,12 @@ import pygame
 from roguelike_engine.utils.loader import load_image
 from roguelike_engine.config.config import SCREEN_WIDTH, SCREEN_HEIGHT
 
-from roguelike_game.utils.debug import init_debug_log
 from roguelike_game.utils.benchmark import setup_benchmark_logger, save_benchmarks
 from roguelike_game.managers.core.game import Game
-from typing import Tuple, Any, Dict
+from typing import Tuple, Any, Dict, DefaultDict, List
+from collections import defaultdict
+
+
 
 
 def init_pygame() -> None:
@@ -37,7 +39,10 @@ def init_performance_tools() -> Tuple[Dict[str, list], Any]:
         performance_log: diccionario para acumular tiempos
         bench_logger: logger de benchmarks para excepciones
     """
-    performance_log = init_debug_log()
+        
+    PerformanceLog = DefaultDict[str, List[Any]]    
+    performance_log: PerformanceLog = defaultdict(list)
+
     bench_logger = setup_benchmark_logger()
     return performance_log, bench_logger
 
