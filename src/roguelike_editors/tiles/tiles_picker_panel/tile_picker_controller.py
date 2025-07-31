@@ -14,7 +14,6 @@ from roguelike_engine.map.model.overlay.overlay_manager import load_layers, save
 from roguelike_engine.map.model.layer import Layer
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_editors.tiles.tiles_picker_panel.tile_picker_view import TilePickerView
-from roguelike_engine.tile.assets import load_base_tile_images
 from roguelike_engine.config.map_config import global_map_settings
 
 from roguelike_editors.tiles.tiles_editor_config import (

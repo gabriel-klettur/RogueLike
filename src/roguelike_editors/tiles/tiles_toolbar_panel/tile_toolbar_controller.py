@@ -1,11 +1,8 @@
 import pygame
-from pathlib import Path
 from roguelike_engine.utils.loader import load_image
 from roguelike_engine.config.config_tiles import TILE_SIZE, OVERLAY_CODE_MAP, DEFAULT_TILE_MAP
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.map.model.overlay.overlay_manager import load_layers, save_layers
-from roguelike_engine.map.model.layer import Layer
-from roguelike_engine.tile.assets import load_base_tile_images
 from roguelike_editors.tiles.common.view import screen_to_tile
 from roguelike_editors.tiles.tiles_toolbar_panel.tile_toolbar_view import TileToolbarView
 from roguelike_editors.tiles.tiles_editor_config import ICON_PATHS_TILE_TOOLBAR

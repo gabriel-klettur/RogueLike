@@ -3,7 +3,8 @@ import math
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.map.model.map_model import Map as MapModel
 from roguelike_engine.map.model.layer import Layer
-from roguelike_engine.tile.assets import get_sprite_for_tile
+from roguelike_engine.tile.utils.loader import get_sprite_for_tile
+
 
 # Cache scaled sprites per (sprite, zoom)
 _SCALED_CACHE: dict[tuple[pygame.Surface, float], pygame.Surface] = {}
@@ -127,8 +128,7 @@ class ChunkedMapView:
                     if x >= len(row_str):
                         continue
                     key = (row_str[x], code)
-                    if key not in sprite_map:
-                        from roguelike_engine.tile.assets import get_sprite_for_tile
+                    if key not in sprite_map:                        
                         sprite_map[key] = get_sprite_for_tile(row_str[x], code)
         # Rebuild each affected chunk
         for row, col in set(cells):

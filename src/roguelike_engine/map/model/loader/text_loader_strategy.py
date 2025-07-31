@@ -1,7 +1,7 @@
 from typing import List, Optional, Tuple, Dict
 from .interfaces import MapLoader
 from .text_loader import parse_map_text
-from roguelike_engine.tile.loader import load_tiles_from_text
+from roguelike_engine.tile.utils.loader import load_tiles_from_text
 from roguelike_engine.tile.model.tile import Tile
 from roguelike_engine.map.model.overlay.overlay_manager import load_layers
 from roguelike_engine.map.model.layer import Layer

@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from typing import List, Optional, Dict
 from roguelike_engine.tile.model.tile import Tile
 from roguelike_engine.map.model.layer import Layer
-from roguelike_engine.tile.loader import load_tiles_from_text
+from roguelike_engine.tile.utils.loader import load_tiles_from_text
 
 @dataclass
 class Map:

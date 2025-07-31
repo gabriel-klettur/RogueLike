@@ -6,7 +6,7 @@ from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.config.config import DATA_DIR, ASSETS_DIR
 from roguelike_engine.map.model.layer import Layer
-from roguelike_engine.tile.assets import get_sprite_for_tile
+from roguelike_engine.tile.utils.loader import load_tiles_from_text
 from roguelike_editors.buildings.utils.save_buildings_to_json import save_buildings_to_json
 from roguelike_engine.map.model.overlay.overlay_manager import load_layers, save_layers
 from roguelike_game.ecs.core.spatial_index import SpatialIndex

@@ -31,4 +31,3 @@ class Camera:
         screen_x, screen_y = self.apply((x, y))
         w, h = self.scale(size)
         return -w < screen_x < self.screen_width and -h < screen_y < self.screen_height
-# Path: src/roguelike_engine/camera/camera.py
