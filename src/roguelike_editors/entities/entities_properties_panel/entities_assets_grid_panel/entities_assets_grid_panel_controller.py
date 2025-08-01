@@ -40,7 +40,9 @@ class AssetsGridPanelController:
             self.model.animators.clear()
             from roguelike_game.ecs.components.rendering.animator import Animator
             for grid_dir, sprite_dir in dir_map.items():
-                frames = sprites_dict.get(sprite_dir, {}).get(internal_state, [])
+                raw_frames = sprites_dict.get(sprite_dir, {}).get(internal_state, [])
+                # Ignorar siempre el primer frame
+                frames = raw_frames[1:] if len(raw_frames) > 1 else []
                 if frames:
                     asset_key = f"asset_{state}_{grid_dir}"
                     # animations dict for Animator requires list key same as state
