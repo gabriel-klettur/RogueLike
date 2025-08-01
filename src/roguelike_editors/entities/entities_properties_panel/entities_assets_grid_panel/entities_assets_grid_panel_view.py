@@ -158,8 +158,18 @@ class AssetsGridPanelView:
                 if sub_tab == 'asset set':
                     self._draw_set_thumb(screen, model, entity_data, rect, asset_key, cell_size)
                 else:
-                    # Render no-set paths using merged entity_data
-                    path = entity_data.get(asset_key)
+                    # Render no-set paths: use direct mapping for players, fallback for monsters
+                    ent_id = self.parent_model.hovered_entity_id or self.parent_model.selected_id
+                    if ent_id in self.parent_model.player_stats:
+                        player_assets = self.parent_model.player_assets.get(ent_id, {})
+                        no_sets = player_assets.get('no-sets', {})
+                        # Map UI state back to JSON state key
+                        state_map_rev = {'chase': 'walking'}
+                        json_state = state_map_rev.get(active_state, active_state)
+                        dirs = no_sets.get(json_state, {})
+                        path = dirs.get(dir_key)
+                    else:
+                        path = entity_data.get(asset_key)
                     if not path:
                         inner = rect.inflate(-2, -2)
                         pygame.draw.rect(screen, (0, 0, 0), inner)
