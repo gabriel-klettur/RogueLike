@@ -1,5 +1,6 @@
 import pygame
 import time
+import logging
 
 from roguelike_editors.entities.entities_properties_panel.entities_assets_grid_panel.entities_assets_grid_panel_model import AssetsGridPanelModel
 from roguelike_editors.entities.entities_properties_panel.entities_assets_grid_panel.entities_assets_grid_panel_view import AssetsGridPanelView
@@ -26,7 +27,9 @@ class AssetsGridPanelController:
         # Initialize or update animators when entity or state tab changes
         ent_id = self.parent_model.selected_id
         state = self.parent_controller.state_tabs_controller.model.active_state_tab
+
         if ent_id and (ent_id != self.model.last_entity_id or state != self.model.last_state_tab):
+            logging.debug(f"[DEBUG][GridController] Rebuilding animators for ent_id={ent_id}, state={state}")
             # Rebuild animators
             from roguelike_game.factories.player.loader import load_and_scale_sprites
             # Load all sprites scaled

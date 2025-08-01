@@ -27,4 +27,13 @@ class EntitiesAssetsPickerPanelView:
         surf = self.fs_view.panel.surface
         w, h = surf.get_size()
         self.model.panel_rect = pygame.Rect(x, y, w, h)
+        # Draw error message if present
+        if self.model.error_message:
+            # Render error label in bottom-right
+            font = pygame.font.SysFont(None, 20)
+            text_surf = font.render(self.model.error_message, True, (255, 0, 0))
+            err_rect = text_surf.get_rect()
+            err_x = self.model.panel_rect.right - err_rect.width - 5
+            err_y = self.model.panel_rect.bottom - err_rect.height - 5
+            surface.blit(text_surf, (err_x, err_y))
 

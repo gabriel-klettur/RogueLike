@@ -349,16 +349,6 @@
       "y": 2066.493140346226
     }
   },
-  "f959d600-4eab-4536-9e66-0cb7eb48f6e0": {
-    "item_id": "health_potion",
-    "quantity": 2,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 568.9669914110085,
-      "y": 2126.322330470336
-    }
-  },
   "a33a9559-b9b7-452d-ad5d-393e08f4b88c": {
     "item_id": "wood",
     "quantity": 3,

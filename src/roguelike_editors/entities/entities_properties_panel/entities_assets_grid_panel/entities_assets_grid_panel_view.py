@@ -125,16 +125,10 @@ class AssetsGridPanelView:
         # Log once when state or sub_tab changes
         if active_state != self._last_active_state or sub_tab != self._last_sub_tab:
             logging.debug(f"[DEBUG][PROPERTIES PANEL][GRID] active_state={active_state}, sub_tab={sub_tab}")
-            ent_id = entity_data.get('id')
-            # Obtain original no-set mapping from model
-            no_sets_parent = self.parent_model.player_assets.get(ent_id, {}).get('assets', {}).get('no-sets', {})
             for dir_key in self._ORDER:
                 if dir_key:
                     asset_key = f"asset_{active_state}_{dir_key}"
-                    if sub_tab == 'asset set':
-                        value = entity_data.get(asset_key)
-                    else:
-                        value = no_sets_parent.get(active_state, {}).get(dir_key)
+                    value = entity_data.get(asset_key)
                     logging.debug(f"[DEBUG][PROPERTIES PANEL][GRID] asset_key={asset_key}, value={value}")
             self._last_active_state = active_state
             self._last_sub_tab = sub_tab
@@ -164,10 +158,8 @@ class AssetsGridPanelView:
                 if sub_tab == 'asset set':
                     self._draw_set_thumb(screen, model, entity_data, rect, asset_key, cell_size)
                 else:
-                    # Render no-set paths (original values)
-                    ent_id = entity_data.get('id')
-                    no_sets_map = self.parent_model.player_assets.get(ent_id, {}).get('assets', {}).get('no-sets', {}).get(active_state, {})
-                    path = no_sets_map.get(dir_key)
+                    # Render no-set paths using merged entity_data
+                    path = entity_data.get(asset_key)
                     if not path:
                         inner = rect.inflate(-2, -2)
                         pygame.draw.rect(screen, (0, 0, 0), inner)

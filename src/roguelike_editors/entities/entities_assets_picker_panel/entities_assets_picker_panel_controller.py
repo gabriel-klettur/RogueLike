@@ -12,6 +12,9 @@ class EntitiesAssetsPickerPanelController:
         self.event_handler = EntitiesAssetsPickerPanelEventHandler(self)
 
     def show(self, key: str, x: int, y: int, width: int, callback):
+        # Clear previous errors
+        self.model.error_message = None
+        self.model.error_timestamp = 0.0
         """
         Muestra el picker bajo la celda de assets.
         """
@@ -27,6 +30,9 @@ class EntitiesAssetsPickerPanelController:
         self.model.fs_model.load_entries()
 
     def hide(self):
+        # Clear errors on hide
+        self.model.error_message = None
+        self.model.error_timestamp = 0.0
         """Oculta el picker."""
         self.model.visible = False
 

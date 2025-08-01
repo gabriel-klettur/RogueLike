@@ -48,7 +48,7 @@
           "sets": {
             "sprites_set": {
               "idle": [
-                "characters/dwarf/dwarf_idle.png"
+                "assets/characters/dwarf/dwarf_idle.png"
               ],
               "walk": [
                 "characters/dwarf/dwarf_walking.png"
@@ -139,13 +139,6 @@
               "nw": null,
               "w": null,
               "sw": null
-            }
-          }
-        },
-        "sprites": {
-          "assets": {
-            "idle": {
-              "w": "assets/items/ancient_relic_mask.png"
             }
           }
         }

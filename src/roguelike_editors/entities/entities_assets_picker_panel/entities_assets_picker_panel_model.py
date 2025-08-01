@@ -1,6 +1,7 @@
 import pygame
 from roguelike_ui.widgets.file_system_picker import FileSystemPickerModel
 from roguelike_engine.config.config import ASSETS_DIR
+from typing import Optional
 
 
 class EntitiesAssetsPickerPanelModel:
@@ -21,3 +22,6 @@ class EntitiesAssetsPickerPanelModel:
         self.on_asset_chosen = None
         # rectangle of the panel for positioning nested pickers
         self.panel_rect = None
+        # Error message and timestamp for invalid selections
+        self.error_message: Optional[str] = None
+        self.error_timestamp: float = 0.0

@@ -1,6 +1,7 @@
 import os
 import json
 import pygame
+import logging
 from roguelike_ui.services.json_persistence import save_to_json, load_from_json
 from pathlib import Path
 from roguelike_engine.config.config import ASSETS_DIR
@@ -84,6 +85,7 @@ class EntityPropertiesPanelController:
 
     # ----------------------------
     def _on_asset_chosen(self, cell_key: str, path):
+        logging.debug(f"[DEBUG][PropertiesPanel] _on_asset_chosen called with cell_key={cell_key}, path={path}")
         """
         Callback when asset is chosen: update entity property and persist to JSON.
         """
@@ -101,49 +103,98 @@ class EntityPropertiesPanelController:
             rel_path = f"assets/{rel.as_posix()}"
         except ValueError:
             rel_path = str(path).replace("\\", "/")
+        logging.debug(f"[DEBUG][PropertiesPanel] Computed rel_path={rel_path} for cell_key={cell_key}")
 
         parts = cell_key.split("_")
-        if len(parts) == 3:
+        # only asset grid updates supported
+        if len(parts) == 3 and parts[0] == 'asset':
             _, state, direction = parts
-            # ensure nested structure exists
-            sprites = entry.setdefault("sprites", {})
-            assets = sprites.setdefault("assets", {})
-            state_assets = assets.setdefault(state, {})
-            state_assets[direction] = rel_path
+            sub_tab = self.set_ot_assets_tab_controller.model.active_sub_tab
+            if ent_id in self.model.player_stats:
+                assets_entry = entry.setdefault("assets", {})
+                no_sets = assets_entry.setdefault("no-sets", {})
+                sets = assets_entry.setdefault("sets", {})
+                sprites_set = sets.setdefault("sprites_set", {})
+                if sub_tab == 'asset set':
+                    # update sprite sheet for this state for player
+                    sprites_set[state] = [rel_path]
+                else:
+                    # update individual direction in no-sets for player
+                    state_no_set = no_sets.setdefault(state, {})
+                    state_no_set[direction] = rel_path
+                # remove old erroneous sprites node for player
+                entry.pop("sprites", None)
+            elif ent_id in self.model.monsters:
+                sprites = entry.setdefault("sprites", {})
+                nested_assets = sprites.setdefault("assets", {})
+                if sub_tab == 'asset set':
+                    # update all directions for monster using sheet path
+                    dirs = nested_assets.setdefault(state, {})
+                    for dkey in dirs:
+                        dirs[dkey] = rel_path
+                else:
+                    state_dict = nested_assets.setdefault(state, {})
+                    state_dict[direction] = rel_path
+            # persist changes
+            self._save_entity_data(ent_id, entry, json_path, data)
         else:
-            # fallback: flat property
-            entry[cell_key] = rel_path
-        self._save_entity_data(ent_id, entry, json_path, data)
-        # Refresh monster asset caches and update ECS entities immediately
+            logging.error(f"[ERROR][PropertiesPanel] Invalid asset key for update: {cell_key}")
+            return
+        logging.debug(f"[DEBUG][PropertiesPanel] JSON saved for ent_id={ent_id}, cell_key={cell_key}")
+        logging.debug(f"[DEBUG][PropertiesPanel] Saving entry and updating in-memory model for ent_id={ent_id}")
+        # Update in-memory player_assets and reload config
+        if ent_id in self.model.player_stats:
+            self.model.player_assets[ent_id] = entry.get("assets", {})
+            try:
+                import importlib
+                import roguelike_game.config.players_config as pc
+                importlib.reload(pc)
+            except Exception:
+                pass
+        logging.debug(f"[DEBUG][PropertiesPanel] Hiding assets picker panel")
+        # Hide picker panel on success
+        self.assets_picker_controller.hide()
+        # Reset grid animators to force reload
+        logging.debug(f"[DEBUG][PropertiesPanel] Resetting grid controller cache (last_entity_id and last_state_tab)")
+        self.grid_controller.model.last_entity_id = None
+        self.grid_controller.model.last_state_tab = None
+        # Force immediate redraw of properties panel to reflect new asset
         try:
-            from roguelike_game.factories.monster.config import reload_monster_defs
-            from roguelike_game.factories.monster import cache as monster_cache
-            # Reload definitions and clear caches for this type
-            reload_monster_defs()
-            monster_cache._loaded_variants.discard(ent_id)
-            monster_cache._SPRITE_SURFACES.pop(ent_id, None)
-            monster_cache._DEATH_SURFACES.pop(ent_id, None)
-            monster_cache.load_caches_for([ent_id])
-            # Update existing ECS entities of this monster type
-            ecs_world = self.editor_controller.game.ecs.ecs_world
-            idents = ecs_world.components.get('Identity', {})
-            sprites = ecs_world.components.get('Sprite', {})
-            animators = ecs_world.components.get('Animator', {})
-            for eid, identity in idents.items():
-                if identity.name.lower() == ent_id:
-                    base_map = monster_cache._SPRITE_SURFACES.get(ent_id, {})
-                    # Update sprite image to 'down' frame
-                    down_surf = base_map.get('down')
-                    if down_surf and eid in sprites:
-                        raw = down_surf.copy() if hasattr(down_surf, 'copy') else down_surf
-                        sprites[eid].image = raw
-                    # Update animation frames
-                    if eid in animators:
-                        new_anims = {state: [surf.copy() if hasattr(surf, 'copy') else surf]
-                                     for state, surf in base_map.items()}
-                        animators[eid].animations = new_anims
+            self.editor_controller.render(self.editor_controller.game.screen)
         except Exception:
             pass
+        # Refresh monster asset caches and update ECS entities immediately (only for monsters)
+        if ent_id not in self.model.player_stats:
+            try:
+                from roguelike_game.factories.monster.config import reload_monster_defs
+                from roguelike_game.factories.monster import cache as monster_cache
+                # Reload definitions and clear caches for this type
+                reload_monster_defs()
+                monster_cache._loaded_variants.discard(ent_id)
+                monster_cache._SPRITE_SURFACES.pop(ent_id, None)
+                monster_cache._DEATH_SURFACES.pop(ent_id, None)
+                monster_cache.load_caches_for([ent_id])
+                logging.debug(f"[DEBUG][PropertiesPanel] Monster defs reloaded and cache cleared for ent_id={ent_id}")
+            except Exception as e:
+                logging.error(f"[ERROR][PropertiesPanel] Error reloading monster caches for ent_id={ent_id}: {e}")
+                # Update existing ECS entities of this monster type
+                ecs_world = self.editor_controller.game.ecs.ecs_world
+                idents = ecs_world.components.get('Identity', {})
+                sprites = ecs_world.components.get('Sprite', {})
+                animators = ecs_world.components.get('Animator', {})
+                for eid, identity in idents.items():
+                    if identity.name.lower() == ent_id:
+                        base_map = monster_cache._SPRITE_SURFACES.get(ent_id, {})
+                        # Update sprite image to 'down' frame
+                        down_surf = base_map.get('down')
+                        if down_surf and eid in sprites:
+                            raw = down_surf.copy() if hasattr(down_surf, 'copy') else down_surf
+                            sprites[eid].image = raw
+                        # Update animation frames
+                        if eid in animators:
+                            new_anims = {state: [surf.copy() if hasattr(surf, 'copy') else surf]
+                                         for state, surf in base_map.items()}
+                            animators[eid].animations = new_anims
     # ----------------------------
     # COMMIT DE CAMBIOS
     # ----------------------------
@@ -207,7 +258,7 @@ class EntityPropertiesPanelController:
             root.setdefault("players", {}).setdefault("classes", {})[ent_id] = entry
             with open(full, "w", encoding="utf-8") as f:
                 json.dump(root, f, ensure_ascii=False, indent=2)
-            self.model.player_stats[ent_id] = entry
+
         else:
             save_to_json(path, ent_id, entry)
             self.model.monsters[ent_id] = entry

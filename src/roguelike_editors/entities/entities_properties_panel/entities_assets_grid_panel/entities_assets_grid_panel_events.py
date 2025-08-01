@@ -23,12 +23,12 @@ class AssetsGridPanelEventHandler:
                         print(f"Double-click detected for asset cell {key}")
                         prop_ctrl = self.controller.parent_controller
                         editor_ctrl = prop_ctrl.editor_controller
-                        picker_ctrl = editor_ctrl.picker_controller
-                        panel_rect = picker_ctrl.model.panel_rect
-                        if panel_rect:
-                            x0, y0, w0 = panel_rect.x, panel_rect.bottom, panel_rect.width
+                        # Position assets picker under the entities picker panel
+                        picker_rect = editor_ctrl.picker_controller.model.panel_rect
+                        if picker_rect:
+                            x0, y0, w0 = picker_rect.x, picker_rect.bottom, picker_rect.width
                         else:
-                            x0, y0, w0 = 0, 0, 0
+                            x0, y0, w0 = rect.x, rect.bottom, rect.width
                         print(f"Opening assets picker for cell {key} at {(x0, y0)} width {w0}")
                         prop_ctrl.assets_picker_controller.show(key, x0, y0, w0, prop_ctrl._on_asset_chosen)
                         return True
@@ -68,12 +68,12 @@ class AssetsGridPanelEventHandler:
                     print(f"Double-click detected for asset cell {key}")
                     prop_ctrl = self.controller.parent_controller
                     editor_ctrl = prop_ctrl.editor_controller
-                    picker_ctrl = editor_ctrl.picker_controller
-                    panel_rect = picker_ctrl.model.panel_rect
-                    if panel_rect:
-                        x0, y0, w0 = panel_rect.x, panel_rect.bottom, panel_rect.width
+                    # Position assets picker under the entities picker panel
+                    picker_rect = editor_ctrl.picker_controller.model.panel_rect
+                    if picker_rect:
+                        x0, y0, w0 = picker_rect.x, picker_rect.bottom, picker_rect.width
                     else:
-                        x0, y0, w0 = 0, 0, 0
+                        x0, y0, w0 = rect.x, rect.bottom, rect.width
                     print(f"Showing assets picker for cell {key} at {(x0, y0)} size {w0}")
                     prop_ctrl.assets_picker_controller.show(key, x0, y0, w0, prop_ctrl._on_asset_chosen)
                 clicked = True
