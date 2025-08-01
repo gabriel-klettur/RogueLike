@@ -57,7 +57,7 @@ class AssetsGridPanelView:
                 # Animated or static thumbnail
                 anim = model.animators.get(asset_key)
                 if anim:
-                    frame = anim.next_frame()
+                    frame = model.last_frames.get(asset_key)
                     if frame:
                         thumb_img = pygame.transform.smoothscale(frame, (cell_size - 4, cell_size - 4))
                         tint = entity_data.get('tint')

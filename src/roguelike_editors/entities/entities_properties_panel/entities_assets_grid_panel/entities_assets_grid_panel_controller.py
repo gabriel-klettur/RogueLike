@@ -35,6 +35,8 @@ class AssetsGridPanelController:
                 's': 'down', 'se': 'down_right'
             }
             # Create animators per asset_key
+            self.model.timers.clear()
+            self.model.last_frames.clear()
             self.model.animators.clear()
             from roguelike_game.ecs.components.rendering.animator import Animator
             for grid_dir, sprite_dir in dir_map.items():
@@ -47,6 +49,22 @@ class AssetsGridPanelController:
             # track last
             self.model.last_entity_id = ent_id
             self.model.last_state_tab = state
+
+        import time
+        from roguelike_game.ecs.components.rendering.animation_timer import AnimationTimer
+        from roguelike_game.factories.player.config import ANIMATION_INTERVAL
+        now = time.time()
+        for key, anim in self.model.animators.items():
+            timer = self.model.timers.get(key)
+            if timer is None:
+                timer = AnimationTimer(last_time=now, interval=ANIMATION_INTERVAL)
+                self.model.timers[key] = timer
+                frame = anim.next_frame()
+                self.model.last_frames[key] = frame
+            elif now - timer.last_time >= timer.interval:
+                timer.last_time = now
+                frame = anim.next_frame()
+                self.model.last_frames[key] = frame
         # Delegate actual drawing
         self.view.draw(screen, self.model, entity_data, px, py, pad, font_h, panel_w)
         
