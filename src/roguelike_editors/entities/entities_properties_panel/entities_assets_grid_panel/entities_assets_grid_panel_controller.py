@@ -1,7 +1,13 @@
 import pygame
+import time
+
 from roguelike_editors.entities.entities_properties_panel.entities_assets_grid_panel.entities_assets_grid_panel_model import AssetsGridPanelModel
 from roguelike_editors.entities.entities_properties_panel.entities_assets_grid_panel.entities_assets_grid_panel_view import AssetsGridPanelView
 from roguelike_editors.entities.entities_properties_panel.entities_assets_grid_panel.entities_assets_grid_panel_events import AssetsGridPanelEventHandler
+
+from roguelike_game.ecs.components.rendering.animator import Animator
+from roguelike_game.ecs.components.rendering.animation_timer import AnimationTimer
+from roguelike_game.factories.player.config import ANIMATION_INTERVAL
 
 class AssetsGridPanelController:
     """Controller para el panel de cuadrícula de assets en el panel de propiedades."""
@@ -38,7 +44,7 @@ class AssetsGridPanelController:
             self.model.timers.clear()
             self.model.last_frames.clear()
             self.model.animators.clear()
-            from roguelike_game.ecs.components.rendering.animator import Animator
+            
             for grid_dir, sprite_dir in dir_map.items():
                 raw_frames = sprites_dict.get(sprite_dir, {}).get(internal_state, [])
                 # Ignorar siempre el primer frame
@@ -52,9 +58,6 @@ class AssetsGridPanelController:
             self.model.last_entity_id = ent_id
             self.model.last_state_tab = state
 
-        import time
-        from roguelike_game.ecs.components.rendering.animation_timer import AnimationTimer
-        from roguelike_game.factories.player.config import ANIMATION_INTERVAL
         now = time.time()
         for key, anim in self.model.animators.items():
             timer = self.model.timers.get(key)

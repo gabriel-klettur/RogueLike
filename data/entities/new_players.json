@@ -1,6 +1,12 @@
 {
-  "ORIGINAL_SPRITE_SIZE": [128, 128],
-  "RENDERED_SPRITE_SIZE": [64, 64],
+  "ORIGINAL_SPRITE_SIZE": [
+    128,
+    128
+  ],
+  "RENDERED_SPRITE_SIZE": [
+    64,
+    64
+  ],
   "DEFAULT_CLASS": "dwarf",
   "DEFAULT_SCALE": 1.0,
   "DEFAULT_SPEED": 5,
@@ -17,7 +23,6 @@
     "damage": 1,
     "cooldown": 1.0
   },
-
   "players": {
     "classes": {
       "dwarf": {
@@ -42,8 +47,12 @@
           "active_set": "sets",
           "sets": {
             "sprites_set": {
-              "idle": ["characters/dwarf/dwarf_idle.png"],
-              "walk": ["characters/dwarf/dwarf_walking.png"],
+              "idle": [
+                "characters/dwarf/dwarf_idle.png"
+              ],
+              "walk": [
+                "characters/dwarf/dwarf_walking.png"
+              ],
               "chase": [],
               "cast ": [],
               "attack": [],
@@ -60,35 +69,35 @@
               "scale_death": 0.5
             }
           },
-          "no-sets":{
+          "no-sets": {
             "idle": {
-              "s":  null,
+              "s": null,
               "se": null,
-              "e":  null,
+              "e": null,
               "ne": null,
-              "n":  null,
+              "n": null,
               "nw": null,
-              "w":  null,
+              "w": null,
               "sw": null
             },
             "walk": {
-              "s":  null,
+              "s": null,
               "se": null,
-              "e":  null,
+              "e": null,
               "ne": null,
-              "n":  null,
+              "n": null,
               "nw": null,
-              "w":  null,
+              "w": null,
               "sw": null
             },
             "chase": {
-              "s":  null,
+              "s": null,
               "se": null,
-              "e":  null,
+              "e": null,
               "ne": null,
-              "n":  null,
+              "n": null,
               "nw": null,
-              "w":  null,
+              "w": null,
               "sw": null
             },
             "attack": {
@@ -132,6 +141,13 @@
               "sw": null
             }
           }
+        },
+        "sprites": {
+          "assets": {
+            "idle": {
+              "w": "assets/items/ancient_relic_mask.png"
+            }
+          }
         }
       },
       "valkyrie": {
@@ -155,8 +171,12 @@
         "assets": {
           "sets": {
             "sprites_set": {
-              "idle": ["characters/valkyrie/valkyrie_idle.png"],
-              "walk": ["characters/valkyrie/valkyrie_walking.png"],
+              "idle": [
+                "characters/valkyrie/valkyrie_idle.png"
+              ],
+              "walk": [
+                "characters/valkyrie/valkyrie_walking.png"
+              ],
               "chase": [],
               "cast": [],
               "attack": [],
@@ -173,35 +193,35 @@
               "scale_death": 0.5
             }
           },
-          "no-sets":{
+          "no-sets": {
             "idle": {
-              "s":  null,
+              "s": null,
               "se": null,
-              "e":  null,
+              "e": null,
               "ne": null,
-              "n":  null,
+              "n": null,
               "nw": null,
-              "w":  null,
+              "w": null,
               "sw": null
             },
             "walk": {
-              "s":  null,
+              "s": null,
               "se": null,
-              "e":  null,
+              "e": null,
               "ne": null,
-              "n":  null,
+              "n": null,
               "nw": null,
-              "w":  null,
+              "w": null,
               "sw": null
             },
             "chase": {
-              "s":  null,
+              "s": null,
               "se": null,
-              "e":  null,
+              "e": null,
               "ne": null,
-              "n":  null,
+              "n": null,
               "nw": null,
-              "w":  null,
+              "w": null,
               "sw": null
             },
             "attack": {
@@ -269,8 +289,12 @@
           "active_set": "sets",
           "sets": {
             "sprites_set": {
-              "idle": ["characters/mague/mague_idle.png"],
-              "walk": ["characters/mague/mague_walking.png"],
+              "idle": [
+                "characters/mague/mague_idle.png"
+              ],
+              "walk": [
+                "characters/mague/mague_walking.png"
+              ],
               "chase": [],
               "cast": [],
               "attack": [],
@@ -287,25 +311,25 @@
               "scale_death": 0.5
             }
           },
-          "no-sets":{
+          "no-sets": {
             "idle": {
-              "s":  null,
+              "s": null,
               "se": null,
-              "e":  null,
+              "e": null,
               "ne": null,
-              "n":  null,
+              "n": null,
               "nw": null,
-              "w":  null,
+              "w": null,
               "sw": null
             },
             "chase": {
-              "s":  null,
+              "s": null,
               "se": null,
-              "e":  null,
+              "e": null,
               "ne": null,
-              "n":  null,
+              "n": null,
               "nw": null,
-              "w":  null,
+              "w": null,
               "sw": null
             },
             "attack": {
@@ -371,10 +395,14 @@
         },
         "assets": {
           "active_set": "sets",
-          "sets": {            
+          "sets": {
             "sprites_set": {
-              "idle": ["characters/elven/elven_idle.png"],
-              "walk": ["characters/elven/elven_walking.png"],
+              "idle": [
+                "characters/elven/elven_idle.png"
+              ],
+              "walk": [
+                "characters/elven/elven_walking.png"
+              ],
               "chase": [],
               "cast": [],
               "attack": [],
@@ -391,35 +419,35 @@
               "scale_death": 0.5
             }
           },
-          "no-sets":{
+          "no-sets": {
             "idle": {
-              "s":  null,
+              "s": null,
               "se": null,
-              "e":  null,
+              "e": null,
               "ne": null,
-              "n":  null,
+              "n": null,
               "nw": null,
-              "w":  null,
+              "w": null,
               "sw": null
             },
             "walk": {
-              "s":  null,
+              "s": null,
               "se": null,
-              "e":  null,
+              "e": null,
               "ne": null,
-              "n":  null,
+              "n": null,
               "nw": null,
-              "w":  null,
+              "w": null,
               "sw": null
             },
             "chase": {
-              "s":  null,
+              "s": null,
               "se": null,
-              "e":  null,
+              "e": null,
               "ne": null,
-              "n":  null,
+              "n": null,
               "nw": null,
-              "w":  null,
+              "w": null,
               "sw": null
             },
             "attack": {
@@ -487,8 +515,12 @@
           "active_set": "sets",
           "sets": {
             "sprites_set": {
-              "idle": ["characters/barbarian/barbarian_idle.png"],
-              "walk": ["characters/barbarian/barbarian_walking.png"],
+              "idle": [
+                "characters/barbarian/barbarian_idle.png"
+              ],
+              "walk": [
+                "characters/barbarian/barbarian_walking.png"
+              ],
               "chase": [],
               "cast": [],
               "attack": [],
@@ -504,108 +536,108 @@
               "scale_damage": 0.5,
               "scale_death": 0.5
             },
-          "no-sets":{
-            "idle": {
-              "s":  null,
-              "se": null,
-              "e":  null,
-              "ne": null,
-              "n":  null,
-              "nw": null,
-              "w":  null,
-              "sw": null
-            },
-            "walk": {
-              "s":  null,
-              "se": null,
-              "e":  null,
-              "ne": null,
-              "n":  null,
-              "nw": null,
-              "w":  null,
-              "sw": null
-            },
-            "chase": {
-              "s":  null,
-              "se": null,
-              "e":  null,
-              "ne": null,
-              "n":  null,
-              "nw": null,
-              "w":  null,
-              "sw": null
-            },
-            "attack": {
-              "s": null,
-              "se": null,
-              "e": null,
-              "ne": null,
-              "n": null,
-              "nw": null,
-              "w": null,
-              "sw": null
-            },
-            "death": {
-              "s": null,
-              "se": null,
-              "e": null,
-              "ne": null,
-              "n": null,
-              "nw": null,
-              "w": null,
-              "sw": null
-            },
-            "damage": {
-              "s": null,
-              "se": null,
-              "e": null,
-              "ne": null,
-              "n": null,
-              "nw": null,
-              "w": null,
-              "sw": null
-            },
-            "cast": {
-              "s": null,
-              "se": null,
-              "e": null,
-              "ne": null,
-              "n": null,
-              "nw": null,
-              "w": null,
-              "sw": null
+            "no-sets": {
+              "idle": {
+                "s": null,
+                "se": null,
+                "e": null,
+                "ne": null,
+                "n": null,
+                "nw": null,
+                "w": null,
+                "sw": null
+              },
+              "walk": {
+                "s": null,
+                "se": null,
+                "e": null,
+                "ne": null,
+                "n": null,
+                "nw": null,
+                "w": null,
+                "sw": null
+              },
+              "chase": {
+                "s": null,
+                "se": null,
+                "e": null,
+                "ne": null,
+                "n": null,
+                "nw": null,
+                "w": null,
+                "sw": null
+              },
+              "attack": {
+                "s": null,
+                "se": null,
+                "e": null,
+                "ne": null,
+                "n": null,
+                "nw": null,
+                "w": null,
+                "sw": null
+              },
+              "death": {
+                "s": null,
+                "se": null,
+                "e": null,
+                "ne": null,
+                "n": null,
+                "nw": null,
+                "w": null,
+                "sw": null
+              },
+              "damage": {
+                "s": null,
+                "se": null,
+                "e": null,
+                "ne": null,
+                "n": null,
+                "nw": null,
+                "w": null,
+                "sw": null
+              },
+              "cast": {
+                "s": null,
+                "se": null,
+                "e": null,
+                "ne": null,
+                "n": null,
+                "nw": null,
+                "w": null,
+                "sw": null
+              }
             }
-          }
           },
-          "no-sets":{
+          "no-sets": {
             "idle": {
-              "s":  null,
+              "s": null,
               "se": null,
-              "e":  null,
+              "e": null,
               "ne": null,
-              "n":  null,
+              "n": null,
               "nw": null,
-              "w":  null,
+              "w": null,
               "sw": null
             },
             "walk": {
-              "s":  null,
+              "s": null,
               "se": null,
-              "e":  null,
+              "e": null,
               "ne": null,
-              "n":  null,
+              "n": null,
               "nw": null,
-              "w":  null,
+              "w": null,
               "sw": null
             },
             "chase": {
-              "s":  null,
+              "s": null,
               "se": null,
-              "e":  null,
+              "e": null,
               "ne": null,
-              "n":  null,
+              "n": null,
               "nw": null,
-              "w":  null,
+              "w": null,
               "sw": null
             },
             "attack": {
