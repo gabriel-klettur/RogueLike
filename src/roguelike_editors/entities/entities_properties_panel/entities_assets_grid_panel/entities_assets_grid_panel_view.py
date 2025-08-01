@@ -54,20 +54,42 @@ class AssetsGridPanelView:
                     hover_surf = pygame.Surface((cell_size, cell_size), pygame.SRCALPHA)
                     hover_surf.fill((255, 255, 0, 80))
                     screen.blit(hover_surf, (x, y))
-                # Animated or static thumbnail
-                anim = model.animators.get(asset_key)
-                if anim:
-                    frame = model.last_frames.get(asset_key)
-                    if frame:
-                        thumb_img = pygame.transform.smoothscale(frame, (cell_size - 4, cell_size - 4))
-                        tint = entity_data.get('tint')
-                        if tint:
-                            c = tuple(tint) if len(tint) == 4 else (*tint, 255)
-                            thumb_img.fill(c, special_flags=pygame.BLEND_RGBA_MULT)
-                        tx = x + (cell_size - thumb_img.get_width()) // 2
-                        ty = y + (cell_size - thumb_img.get_height()) // 2
-                        screen.blit(thumb_img, (tx, ty))
-                else:
+                # Thumbnail según sub-tab de assets
+                sub_tab = self.set_ot_assets_tab_controller.model.active_sub_tab
+                if sub_tab == 'asset set':
+                    anim = model.animators.get(asset_key)
+                    if anim:
+                        frame = model.last_frames.get(asset_key)
+                        if frame:
+                            thumb_img = pygame.transform.smoothscale(frame, (cell_size - 4, cell_size - 4))
+                            tint = entity_data.get('tint')
+                            if tint:
+                                c = tuple(tint) if len(tint) == 4 else (*tint, 255)
+                                thumb_img.fill(c, special_flags=pygame.BLEND_RGBA_MULT)
+                            tx = x + (cell_size - thumb_img.get_width()) // 2
+                            ty = y + (cell_size - thumb_img.get_height()) // 2
+                            screen.blit(thumb_img, (tx, ty))
+                    else:
+                        path = entity_data.get(asset_key)
+                        if path:
+                            raw = self.thumbnail_cache.get(path)
+                            if raw is None:
+                                try:
+                                    img = load_image(path)
+                                    raw = pygame.transform.smoothscale(img, (cell_size - 4, cell_size - 4))
+                                except Exception:
+                                    raw = None
+                                self.thumbnail_cache[path] = raw
+                            if raw:
+                                thumb = raw.copy()
+                                tint = entity_data.get('tint')
+                                if tint:
+                                    c = tuple(tint) if len(tint) == 4 else (*tint, 255)
+                                    thumb.fill(c, special_flags=pygame.BLEND_RGBA_MULT)
+                                tx = x + (cell_size - thumb.get_width()) // 2
+                                ty = y + (cell_size - thumb.get_height()) // 2
+                                screen.blit(thumb, (tx, ty))
+                elif sub_tab == 'no-set':
                     path = entity_data.get(asset_key)
                     if path:
                         raw = self.thumbnail_cache.get(path)
@@ -87,6 +109,11 @@ class AssetsGridPanelView:
                             tx = x + (cell_size - thumb.get_width()) // 2
                             ty = y + (cell_size - thumb.get_height()) // 2
                             screen.blit(thumb, (tx, ty))
+                    else:
+                        # Celdas vacías: limpiar interior
+                        inner = cell_rect.inflate(-2, -2)
+                        pygame.draw.rect(screen, (0, 0, 0), inner)
+
                 # Draw default border for all cells
                 pygame.draw.rect(screen, (150, 150, 150), cell_rect, 1)
             else:
@@ -94,9 +121,12 @@ class AssetsGridPanelView:
         # Mostrar ruta del asset seleccionado/hover
         sel = model.hovered_asset_cell or model.selected_asset_cell
         if sel:
+            sub_tab = self.set_ot_assets_tab_controller.model.active_sub_tab
             path = entity_data.get(sel)
-            if path:
-                info_surf = self.font.render(path, True, (255, 255, 0))
+            # Solo mostrar label si no es asset_by_asset con path None
+            if not (sub_tab == 'no-set' and path is None):
+                text = str(path) if path is not None else 'None'
+                info_surf = self.font.render(text, True, (255, 255, 0))
                 info_x = px + pad
                 info_y = grid_y + cell_size * 3 + pad
                 screen.blit(info_surf, (info_x, info_y))
@@ -107,7 +137,7 @@ class AssetsGridPanelView:
                 for rect, key in model.asset_cell_entries:
                     pygame.draw.rect(screen, (255, 255, 0), rect, 2)
             else:
-                # Asset By Asset: highlight single cell
+                # No-Set: highlight single cell
                 for rect, key in model.asset_cell_entries:
                     if key == model.selected_asset_cell:
                         pygame.draw.rect(screen, (255, 255, 0), rect, 2)

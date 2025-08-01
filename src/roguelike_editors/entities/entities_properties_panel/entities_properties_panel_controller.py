@@ -47,7 +47,7 @@ class EntityPropertiesPanelController:
         self.view.state_tabs_controller = self.state_tabs_controller
         # Pasar controller de tabs de estado al grid view para seleccionar assets
         self.grid_controller.view.state_tabs_controller = self.state_tabs_controller
-        # Controller de subtabs de asset set / asset by asset
+        # Controller de subtabs de asset set / no-set
         self.set_ot_assets_tab_controller = EntitiesSetOtAssetsTabController(self.model, font)
         self.view.set_ot_assets_tab_controller = self.set_ot_assets_tab_controller
         self.grid_controller.view.set_ot_assets_tab_controller = self.set_ot_assets_tab_controller
