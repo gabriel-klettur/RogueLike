@@ -128,7 +128,17 @@ class AssetsGridPanelView:
             for dir_key in self._ORDER:
                 if dir_key:
                     asset_key = f"asset_{active_state}_{dir_key}"
-                    value = entity_data.get(asset_key)
+                    # Determine value: direct no-sets for players on 'no-set', else merged entity_data
+                    ent_id = self.parent_model.hovered_entity_id or self.parent_model.selected_id
+                    if sub_tab == 'no-set' and ent_id in self.parent_model.player_stats:
+                        player_assets = self.parent_model.player_assets.get(ent_id, {})
+                        no_sets = player_assets.get('no-sets', {})
+                        state_map_rev = {'chase': 'walking'}
+                        json_state = state_map_rev.get(active_state, active_state)
+                        dirs = no_sets.get(json_state, {})
+                        value = dirs.get(dir_key)
+                    else:
+                        value = entity_data.get(asset_key)
                     logging.debug(f"[DEBUG][PROPERTIES PANEL][GRID] asset_key={asset_key}, value={value}")
             self._last_active_state = active_state
             self._last_sub_tab = sub_tab
