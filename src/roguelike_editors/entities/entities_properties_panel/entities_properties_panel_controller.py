@@ -13,6 +13,11 @@ from roguelike_editors.entities.entities_properties_panel.entities_state_tabs.en
 from roguelike_editors.entities.entities_properties_panel.entities_type_assets.entities_type_assets_controller import EntitiesTypeAssetsController
 from roguelike_editors.entities.entities_properties_panel.entities_set_ot_assets_tab.entities_set_ot_assets_tab_controller import EntitiesSetOtAssetsTabController
 from roguelike_editors.entities.entities_assets_picker_panel.entities_assets_picker_panel_controller import EntitiesAssetsPickerPanelController
+import importlib
+import roguelike_game.config.players_config as pc
+from roguelike_game.factories.player.loader import load_and_scale_sprites, extract_initial_frame, build_animator_map
+from roguelike_game.factories.monster.config import reload_monster_defs
+from roguelike_game.factories.monster import cache as monster_cache
 
 
 class EntityPropertiesPanelController:
@@ -145,12 +150,29 @@ class EntityPropertiesPanelController:
         # Update in-memory player_assets and reload config
         if ent_id in self.model.player_stats:
             self.model.player_assets[ent_id] = entry.get("assets", {})
-            try:
-                import importlib
-                import roguelike_game.config.players_config as pc
+            try:                
                 importlib.reload(pc)
             except Exception:
                 pass
+            # Update existing ECS player entities
+            try:                
+                ecs_world = self.editor_controller.game.ecs.ecs_world
+                player_tags = ecs_world.components.get('PlayerTagComponent', {})
+                sprites_comp = ecs_world.components.get('Sprite', {})
+                animators = ecs_world.components.get('Animator', {})
+                sprites_dict = load_and_scale_sprites(ent_id)
+                initial_frame = extract_initial_frame(sprites_dict)
+                anim_map = build_animator_map(sprites_dict)
+                for eid, tag in player_tags.items():
+                    if tag.class_name == ent_id:
+                        if initial_frame and eid in sprites_comp:
+                            img = initial_frame.copy() if hasattr(initial_frame, 'copy') else initial_frame
+                            sprites_comp[eid].image = img
+                        if eid in animators:
+                            animators[eid].animations = anim_map
+                logging.debug(f"[DEBUG][PropertiesPanel] Player ECS entities updated for class {ent_id}")
+            except Exception as e:
+                logging.error(f"[ERROR][PropertiesPanel] Error updating player ECS entities for class {ent_id}: {e}")
         logging.debug(f"[DEBUG][PropertiesPanel] Hiding assets picker panel")
         # Hide picker panel on success
         self.assets_picker_controller.hide()
@@ -165,9 +187,7 @@ class EntityPropertiesPanelController:
             pass
         # Refresh monster asset caches and update ECS entities immediately (only for monsters)
         if ent_id not in self.model.player_stats:
-            try:
-                from roguelike_game.factories.monster.config import reload_monster_defs
-                from roguelike_game.factories.monster import cache as monster_cache
+            try:                
                 # Reload definitions and clear caches for this type
                 reload_monster_defs()
                 monster_cache._loaded_variants.discard(ent_id)
