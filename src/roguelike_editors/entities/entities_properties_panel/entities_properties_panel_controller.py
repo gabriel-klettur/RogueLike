@@ -218,6 +218,43 @@ class EntityPropertiesPanelController:
     # ----------------------------
     # COMMIT DE CAMBIOS
     # ----------------------------
+    def _on_active_set_toggled(self, ent_id: str) -> None:
+        """
+        Maneja el cambio de active_set para jugadores: recarga configuración, actualiza grid y ECS.
+        """
+        logging.debug(f"[DEBUG][PropertiesPanel] Active set toggled for ent_id={ent_id}")
+        try:
+            importlib.reload(pc)
+        except Exception:
+            pass
+        # Reset grid cache to force rebuild on next draw
+        self.grid_controller.model.last_entity_id = None
+        self.grid_controller.model.last_state_tab = None
+        # Update ECS player entities with new assets
+        try:
+            ecs_world = self.editor_controller.game.ecs.ecs_world
+            player_tags = ecs_world.components.get('PlayerTagComponent', {})
+            sprites_comp = ecs_world.components.get('Sprite', {})
+            animators = ecs_world.components.get('Animator', {})
+            sprites_dict = load_and_scale_sprites(ent_id)
+            initial_frame = extract_initial_frame(sprites_dict)
+            anim_map = build_animator_map(sprites_dict)
+            for eid, tag in player_tags.items():
+                if tag.class_name == ent_id:
+                    if initial_frame and eid in sprites_comp:
+                        img = initial_frame.copy() if hasattr(initial_frame, 'copy') else initial_frame
+                        sprites_comp[eid].image = img
+                    if eid in animators:
+                        animators[eid].animations = anim_map
+            logging.debug(f"[DEBUG][PropertiesPanel] Player ECS entities updated for class {ent_id} after active_set toggle")
+        except Exception as e:
+            logging.error(f"[ERROR][PropertiesPanel] Error updating player ECS entities on active_set toggle for class {ent_id}: {e}")
+        # Redraw properties panel UI
+        try:
+            self.editor_controller.render(self.editor_controller.game.screen)
+        except Exception:
+            pass
+
     def _commit_edit(self) -> None:
         """
         Aplica los cambios editados en la propiedad seleccionada y los persiste en JSON.

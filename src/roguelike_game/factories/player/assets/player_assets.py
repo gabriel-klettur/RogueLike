@@ -1,5 +1,6 @@
 from roguelike_engine.utils.loader import load_sprite_sheet, load_image
-from roguelike_game.config.players_config import PLAYER_ASSETS
+import importlib
+import roguelike_game.config.players_config as players_config
 import pygame
 
 class PlayerAssets:
@@ -10,7 +11,8 @@ class PlayerAssets:
         self.class_player = class_player
         self.sprite_size = sprite_size
         # Ruta a los assets definida en players.json
-        assets_entry = PLAYER_ASSETS.get(class_player)
+        importlib.reload(players_config)
+        assets_entry = players_config.PLAYER_ASSETS.get(class_player)
         if isinstance(assets_entry, str):
             self.sheet_path = assets_entry
         elif isinstance(assets_entry, dict):
@@ -30,7 +32,8 @@ class PlayerAssets:
         junto con el tamaño de cada sprite.
         """
         # Determinar grid o strip según configuración y active_set
-        assets_entry = PLAYER_ASSETS.get(self.class_player)
+        importlib.reload(players_config)
+        assets_entry = players_config.PLAYER_ASSETS.get(self.class_player)
         active = assets_entry.get("active_set", "sets") if isinstance(assets_entry, dict) else "sets"
         # Definir direcciones del juego
         directions = ['down','down_right','right','up_right','up','up_left','left','down_left']

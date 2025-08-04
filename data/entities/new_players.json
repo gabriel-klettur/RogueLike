@@ -44,7 +44,7 @@
           "basic_death_timer_duration": 10.0
         },
         "assets": {
-          "active_set": "no-sets",
+          "active_set": "sets",
           "sets": {
             "sprites_set": {
               "idle": [

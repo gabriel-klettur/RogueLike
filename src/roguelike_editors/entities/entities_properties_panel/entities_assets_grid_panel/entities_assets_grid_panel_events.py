@@ -45,6 +45,7 @@ class AssetsGridPanelEventHandler:
                     prop_ctrl._save_entity_data(ent_id, entry, path, data)
                     # Actualizar modelo en memoria
                     prop_ctrl.model.player_assets[ent_id]['active_set'] = new
+                    prop_ctrl._on_active_set_toggled(ent_id)
                 return True
             # Primero, verificar double-click para abrir picker
             if self._process_cell_double_click(event):
