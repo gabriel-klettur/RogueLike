@@ -73,7 +73,8 @@ class EntityPropertiesPanelView:
             grid_w = panel_w - pad * 2
             cell_size = int(grid_w / 3)
             # pad top + nombre + espaciado + tint + pad + cuadrícula + pad bottom
-            content_h = pad + font_h + 2 + font_h + pad + cell_size * 3 + pad + font_h
+            # pad top + nombre + espaciado + tint + pad + cuadrícula + pad + info + pad + combobox
+            content_h = pad + font_h + 2 + font_h + pad + cell_size * 3 + pad + font_h + pad + font_h
         else:
             content_h = min(len(lines) * (font_h + 2) + pad * 2, sh - margin * 2 - primary_header - state_header)
         panel_h = primary_header + state_header + sub_header + content_h
