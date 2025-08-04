@@ -44,12 +44,10 @@ class PlayerManager:
         if frame and isinstance(frame, pygame.Surface):
             img = frame
         else:
-            # Placeholder semitransparente púrpura
-            size = ORIGINAL_SPRITE_SIZE
-            placeholder = pygame.Surface(size, pygame.SRCALPHA)
-            placeholder.fill((128, 0, 128, 100))
-            pygame.draw.rect(placeholder, (128, 0, 128), placeholder.get_rect(), 2)
-            img = placeholder
+                # Transparent placeholder (invisible)
+                size = ORIGINAL_SPRITE_SIZE
+                placeholder = pygame.Surface(size, pygame.SRCALPHA)
+                img = placeholder
         comps["Sprite"][eid] = Sprite(img)
         comps["Animator"][eid] = Animator(
             animations=build_animator_map(sprites),
