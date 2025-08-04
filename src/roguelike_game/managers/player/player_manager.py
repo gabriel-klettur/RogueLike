@@ -5,7 +5,7 @@ from roguelike_game.factories.player.loader import (
 )
 from roguelike_game.factories.player.config import (
     PLAYER_STATS, ANIMATION_INTERVAL, INITIAL_ANIMATION_STATE,
-    MELEE_WEAPON_CFG, DEFAULT_TRAIL
+    MELEE_WEAPON_CFG, DEFAULT_TRAIL, ORIGINAL_SPRITE_SIZE
 )
 from roguelike_game.ecs.components.rendering.sprite import Sprite
 from roguelike_game.ecs.components.rendering.animator import Animator
@@ -40,8 +40,17 @@ class PlayerManager:
         # Reload sprites and animations
         sprites = load_and_scale_sprites(new_class)
         frame = extract_initial_frame(sprites)
+        # Asignar sprite: frame válido o placeholder
         if frame and isinstance(frame, pygame.Surface):
-            comps["Sprite"][eid] = Sprite(frame)
+            img = frame
+        else:
+            # Placeholder semitransparente púrpura
+            size = ORIGINAL_SPRITE_SIZE
+            placeholder = pygame.Surface(size, pygame.SRCALPHA)
+            placeholder.fill((128, 0, 128, 100))
+            pygame.draw.rect(placeholder, (128, 0, 128), placeholder.get_rect(), 2)
+            img = placeholder
+        comps["Sprite"][eid] = Sprite(img)
         comps["Animator"][eid] = Animator(
             animations=build_animator_map(sprites),
             current_state=INITIAL_ANIMATION_STATE
@@ -56,8 +65,8 @@ class PlayerManager:
         )
         comps["Velocity"][eid] = Velocity(0, 0)
         # Update collider
-        if frame and isinstance(frame, pygame.Surface):
-            comps["MultiCollider"][eid] = create_body_and_feet(frame)
+        # Crear collider basado en sprite (frame o placeholder)
+        comps["MultiCollider"][eid] = create_body_and_feet(img)
         # Update stats: health, combat, mana, energy, hunger
         stats = PLAYER_STATS[new_class]
         max_hp = stats["max_strength"]

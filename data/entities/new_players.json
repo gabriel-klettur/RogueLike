@@ -44,7 +44,7 @@
           "basic_death_timer_duration": 10.0
         },
         "assets": {
-          "active_set": "sets",
+          "active_set": "no-sets",
           "sets": {
             "sprites_set": {
               "idle": [
@@ -71,34 +71,34 @@
           },
           "no-sets": {
             "idle": {
-              "s": null,
-              "se": null,
-              "e": null,
-              "ne": null,
-              "n": null,
-              "nw": null,
+              "s": "assets/items/ChatGPT Image Jul 25, 2025, 05_14_20 PM.png",
+              "se": "assets/items/ChatGPT Image Jul 25, 2025, 10_38_33 AM.png",
+              "e": "assets/items/exp_orb_1.png",
+              "ne": "assets/items/ChatGPT Image Jul 25, 2025, 04_18_18 PM.png",
+              "n": "assets/items/backpack_close.png",
+              "nw": "assets/items/wizard_staff_lvl_1.png",
               "w": "assets/items/ChatGPT Image Jul 25, 2025, 03_51_51 PM.png",
-              "sw": null
+              "sw": "assets/items/ChatGPT Image Jul 25, 2025, 10_42_17 AM.png"
             },
             "walk": {
-              "s": null,
-              "se": null,
-              "e": null,
-              "ne": null,
-              "n": null,
-              "nw": null,
-              "w": null,
-              "sw": null
+              "s": "assets/items/ChatGPT Image Jul 25, 2025, 05_14_20 PM.png",
+              "se": "assets/items/ChatGPT Image Jul 25, 2025, 10_38_33 AM.png",
+              "e": "assets/items/exp_orb_1.png",
+              "ne": "assets/items/ChatGPT Image Jul 25, 2025, 04_18_18 PM.png",
+              "n": "assets/items/backpack_close.png",
+              "nw": "assets/items/wizard_staff_lvl_1.png",
+              "w": "assets/items/ChatGPT Image Jul 25, 2025, 03_51_51 PM.png",
+              "sw": "assets/items/ChatGPT Image Jul 25, 2025, 10_42_17 AM.png"
             },
             "chase": {
-              "s": null,
-              "se": null,
-              "e": null,
-              "ne": null,
-              "n": null,
-              "nw": null,
-              "w": null,
-              "sw": null
+              "s": "assets/items/ChatGPT Image Jul 25, 2025, 05_14_20 PM.png",
+              "se": "assets/items/ChatGPT Image Jul 25, 2025, 10_38_33 AM.png",
+              "e": "assets/items/exp_orb_1.png",
+              "ne": "assets/items/ChatGPT Image Jul 25, 2025, 04_18_18 PM.png",
+              "n": "assets/items/backpack_close.png",
+              "nw": "assets/items/wizard_staff_lvl_1.png",
+              "w": "assets/items/ChatGPT Image Jul 25, 2025, 03_51_51 PM.png",
+              "sw": "assets/items/ChatGPT Image Jul 25, 2025, 10_42_17 AM.png"
             },
             "attack": {
               "s": null,
@@ -163,6 +163,7 @@
         },
         "assets": {
           "sets": {
+            "active_set": "sets",
             "sprites_set": {
               "idle": [
                 "characters/valkyrie/valkyrie_idle.png"
@@ -176,7 +177,7 @@
               "damage": [],
               "death": []
             },
-            "sprites_data": {
+            "sprites_data_set": {
               "scale_idle": 0.5,
               "scale_walk": 0.5,
               "scale_chase": 0.5,
@@ -294,7 +295,7 @@
               "damage": [],
               "death": []
             },
-            "sprites_data": {
+            "sprites_data_set": {
               "scale_idle": 0.5,
               "scale_walk": 0.5,
               "scale_chase": 0.5,
@@ -402,7 +403,7 @@
               "damage": [],
               "death": []
             },
-            "sprites_data": {
+            "sprites_data_set": {
               "scale_idle": 0.5,
               "scale_walk": 0.5,
               "scale_chase": 0.5,
@@ -520,7 +521,7 @@
               "damage": [],
               "death": []
             },
-            "sprites_data": {
+            "sprites_data_set": {
               "scale_idle": 0.5,
               "scale_walk": 0.5,
               "scale_chase": 0.5,

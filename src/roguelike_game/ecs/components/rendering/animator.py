@@ -31,6 +31,9 @@ class Animator:
         frames = self.animations.get(self.current_state, [])
         if not frames:
             return None
+        # Si solo hay un frame, siempre retornarlo (sin animación)
+        if len(frames) < 2:
+            return frames[0]
         # Idle special: hold first frame for 1 seconds, then loop remaining frames
         if self.current_state.endswith('_idle'):
             if self.frame_idx == 0:
