@@ -1,42 +1,10 @@
 {
-  "fd815206-9908-4ca0-b5c2-8b37c5d3644b": {
-    "template_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-    "slots": [
-      {
-        "item": "gold",
-        "quantity": 2
-      },
-      {
-        "item": "experience_orb",
-        "quantity": 1
-      },
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "schema_version": "1.0.0"
-  },
-  "1e7003a3-264e-47eb-bfcf-f3770751228f": {
+  "dddafda4-2a8c-4da6-820c-c50548639dcb": {
     "template_id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
     "slots": [
       {
         "item": "gold",
-        "quantity": 5
+        "quantity": 6
       },
       {
         "item": "experience_orb",
@@ -63,12 +31,82 @@
     ],
     "schema_version": "1.0.0"
   },
-  "12776cf5-216e-4e2a-86a7-a9605e7d9a28": {
+  "a66da35f-7ece-429f-a7d9-3e4dd335ec63": {
+    "template_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+    "slots": [
+      {
+        "item": "gold",
+        "quantity": 7
+      },
+      {
+        "item": "experience_orb",
+        "quantity": 4
+      },
+      {
+        "item": "wood",
+        "quantity": 2
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "56f879f0-0f4c-4af9-b517-39d569477ce4": {
+    "template_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+    "slots": [
+      {
+        "item": "gold",
+        "quantity": 7
+      },
+      {
+        "item": "experience_orb",
+        "quantity": 3
+      },
+      {
+        "item": "wood",
+        "quantity": 1
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "b53cb6c1-29d7-4490-a8a3-b7601c3a7449": {
     "template_id": "33333333-3333-3333-3333-333333333333",
     "slots": [
       {
         "item": "gold",
-        "quantity": 1
+        "quantity": 2
       },
       {
         "item": "experience_orb",
@@ -95,8 +133,8 @@
     ],
     "schema_version": "1.0.0"
   },
-  "18895cf7-a9f5-4647-93a5-468e5d7ea9cc": {
-    "template_id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+  "8b390082-5f5b-431d-9dfe-413eaeafdb30": {
+    "template_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
     "slots": [
       {
         "item": "gold",
@@ -104,6 +142,10 @@
       },
       {
         "item": "experience_orb",
+        "quantity": 3
+      },
+      {
+        "item": "wood",
         "quantity": 2
       },
       null,
@@ -122,56 +164,20 @@
       null,
       null,
       null,
-      null,
       null
     ],
     "schema_version": "1.0.0"
   },
-  "1b3fdf00-5ed6-407f-ac1b-e1151580f36f": {
-    "template_id": "22222222-2222-2222-2222-222222222222",
+  "5fe59329-7fb6-40a8-b2fc-8c5a4e1b4669": {
+    "template_id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
     "slots": [
       {
         "item": "gold",
-        "quantity": 1
-      },
-      {
-        "item": "experience_orb",
-        "quantity": 1
-      },
-      {
-        "item": "health_potion",
-        "quantity": 1
-      },
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "schema_version": "1.0.0"
-  },
-  "87520124-6450-4623-b565-c335bd2c5486": {
-    "template_id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
-    "slots": [
-      {
-        "item": "gold",
-        "quantity": 6
-      },
-      {
-        "item": "experience_orb",
         "quantity": 3
+      },
+      {
+        "item": "experience_orb",
+        "quantity": 2
       },
       null,
       null,

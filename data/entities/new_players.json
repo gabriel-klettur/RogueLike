@@ -139,6 +139,11 @@
               "nw": null,
               "w": null,
               "sw": null
+            },
+            "sprites_data_no-set": {
+              "scale": 0.35,
+              "death_scale": 0.5,
+              "tint": null
             }
           }
         }
@@ -257,6 +262,11 @@
               "nw": null,
               "w": null,
               "sw": null
+            },
+            "sprites_data_no-set": {
+              "scale": 0.35,
+              "death_scale": 0.5,
+              "tint": null
             }
           }
         }
@@ -365,6 +375,11 @@
               "nw": null,
               "w": null,
               "sw": null
+            },
+            "sprites_data_no-set": {
+              "scale": 0.35,
+              "death_scale": 0.5,
+              "tint": null
             }
           }
         }
@@ -483,6 +498,11 @@
               "nw": null,
               "w": null,
               "sw": null
+            },
+            "sprites_data_no-set": {
+              "scale": 0.35,
+              "death_scale": 0.5,
+              "tint": null
             }
           }
         }
@@ -673,6 +693,11 @@
               "nw": null,
               "w": null,
               "sw": null
+            },
+            "sprites_data_no-set": {
+              "scale": 0.35,
+              "death_scale": 0.5,
+              "tint": null
             }
           }
         }
