@@ -124,7 +124,24 @@ class AssetsGridPanelController:
         )
 
         # Carga de sprites calibrados para la entidad
-        sprites = load_and_scale_sprites(entity_id)
+        if entity_id in self.parent_model.player_stats:
+            sprites = load_and_scale_sprites(entity_id)
+        else:
+            from roguelike_game.factories.monster.cache import load_caches_for, _SPRITE_SURFACES
+            load_caches_for([entity_id])
+            raw_map = _SPRITE_SURFACES.get(entity_id, {})
+            sprites = {}
+            for flat_key, surf in raw_map.items():
+                if not surf:
+                    continue
+                parts = flat_key.split('_', 1)
+                if len(parts) == 2:
+                    state_name, dir_code = parts
+                else:
+                    state_name = 'idle'
+                    dir_code = parts[0]
+                sprite_dir = _DIR_TO_SPRITE.get(dir_code, dir_code)
+                sprites.setdefault(sprite_dir, {}).setdefault(state_name, []).append(surf)
 
         internal_state = _STATE_MAP.get(state, state)
 

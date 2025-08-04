@@ -13,8 +13,12 @@ from roguelike_game.ecs.components.core.identity import Faction
 
 def calculate_position(tile_x: int, tile_y: int, cfg: Dict[str, Any], sprite) -> Tuple[int, int]:
     """Compute bottom-center pixel coordinates on map tile."""
-    # Leer scale desde data_assets anidado
-    data_assets = cfg.get("sprites", {}).get("data_assets", {})
+    # Read asset metadata from JSON
+    cfg_assets = cfg.get("assets", {})
+    active_set = cfg_assets.get("active_set", "")
+    active_assets = cfg_assets.get(active_set, {})
+    data_block_key = f"sprites_data_{active_set}"
+    data_assets = active_assets.get(data_block_key, {})
     scale_val = data_assets.get("scale", 1.0)
     orig_w, orig_h = sprite.image.get_size()
     width = int(orig_w * scale_val)
@@ -26,8 +30,12 @@ def calculate_position(tile_x: int, tile_y: int, cfg: Dict[str, Any], sprite) ->
 
 def create_physics_components(cfg: Dict[str, Any]) -> Tuple[Scale, Velocity]:
     """Create Scale and Velocity ECS components."""
-    # Leer scale desde data_assets anidado
-    data_assets = cfg.get("sprites", {}).get("data_assets", {})
+    # Read asset metadata from JSON
+    cfg_assets = cfg.get("assets", {})
+    active_set = cfg_assets.get("active_set", "")
+    active_assets = cfg_assets.get(active_set, {})
+    data_block_key = f"sprites_data_{active_set}"
+    data_assets = active_assets.get(data_block_key, {})
     scale_val = data_assets.get("scale", 1.0)
     return Scale(scale_val), Velocity(0, 0)
 
@@ -35,16 +43,20 @@ def create_physics_components(cfg: Dict[str, Any]) -> Tuple[Scale, Velocity]:
 def create_collider_components(sprite, cfg: Dict[str, Any]) -> MultiCollider:
     """Construct body and feet colliders based on sprite surface."""
     mask_surf = sprite.image
-    # Leer scale desde data_assets anidado
-    data_assets = cfg.get("sprites", {}).get("data_assets", {})
+    # Read asset metadata from JSON
+    cfg_assets = cfg.get("assets", {})
+    active_set = cfg_assets.get("active_set", "")
+    active_assets = cfg_assets.get(active_set, {})
+    data_block_key = f"sprites_data_{active_set}"
+    data_assets = active_assets.get(data_block_key, {})
     scale_val = data_assets.get("scale", 1.0)
     if scale_val != 1.0:
         w, h = mask_surf.get_size()
         mask_surf = pygame.transform.scale(mask_surf, (int(w*scale_val), int(h*scale_val)))
     body = MaskCollider(pygame.mask.from_surface(mask_surf), 0, 0)
     w, h = mask_surf.get_size()
-    width_factor = cfg["feet_width_factor"]
-    height_factor = cfg["feet_height_factor"]
+    width_factor = cfg.get("stats", {}).get("feet_width_factor", 1.0)
+    height_factor = cfg.get("stats", {}).get("feet_height_factor", 1.0)
     feet_w = int(w * width_factor)
     feet_h = int(h * height_factor)
     offset_x = (w - feet_w) // 2

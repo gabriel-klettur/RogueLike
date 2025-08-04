@@ -18,16 +18,21 @@ def load_caches_for(variants: Iterable[str]) -> None:
             continue
         cfg = MONSTER_DEFS[mtype]
         logger.debug(f"Loading sprites for: {mtype}")
-        # Leer propiedades de escala y tinte desde data_assets anidado
-        data_assets = cfg.get("sprites", {}).get("data_assets", {})
+        # Read asset configuration from JSON
+        cfg_assets = cfg.get("assets", {})
+        active_set = cfg_assets.get("active_set", "")
+        active_assets = cfg_assets.get(active_set, {})
+        # Extract metadata
+        data_block_key = f"sprites_data_{active_set.rstrip('s')}"
+        data_assets = active_assets.get(data_block_key, {})
         scale_val = data_assets.get("scale", 1.0)
         death_scale = data_assets.get("death_scale", scale_val)
         tint = data_assets.get("tint")
-        # Aplanar assets anidados en dir_map
-        assets = cfg.get("sprites", {}).get("assets", {})
+        # Flatten asset entries (exclude metadata)
+        assets_map = {k: v for k, v in active_assets.items() if k != data_block_key}
         dir_map: Dict[str, pygame.Surface] = {}
         d2flat = {"s": "down", "e": "right", "n": "up", "w": "left"}
-        for cat, dirs in assets.items():
+        for cat, dirs in assets_map.items():
             for dkey, path in dirs.items():
                 if not path:
                     continue
