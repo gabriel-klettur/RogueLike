@@ -71,6 +71,22 @@ class AssetsGridPanelView:
         self._draw_selected_path(
             screen, model, entity_data, px, pad, grid_y, cell_size
         )
+        # 6. Label y combobox "Activo"
+        active_label_y = grid_y + cell_size * self._GRID_COLS + pad + font_h + pad
+        # Label
+        label_surf = self.font.render("Activo: ", True, self._KEY_COLOR)
+        screen.blit(label_surf, (px + pad, active_label_y))
+        # Valor actual
+        current = entity_data.get("active_set", "sets")
+        value_surf = self.font.render(current, True, self._TEXT_COLOR)
+        value_x = px + pad + label_surf.get_width()
+        # Dibujar valor
+        screen.blit(value_surf, (value_x + pad//2, active_label_y))
+        # Combobox
+        combo_rect = pygame.Rect(value_x, active_label_y, value_surf.get_width() + pad, font_h)
+        pygame.draw.rect(screen, self._BORDER_COLOR, combo_rect, 1)
+        # Guardar rect para eventos
+        model.active_set_rect = combo_rect
 
     def _draw_entity_name(
         self,

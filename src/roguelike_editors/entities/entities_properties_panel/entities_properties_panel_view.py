@@ -128,6 +128,8 @@ class EntityPropertiesPanelView:
             no_sets = player_assets.get('no-sets', {})
             merged = dict(stats)
             merged['id'] = ent_id
+            # Valor de active_set para combobox
+            merged['active_set'] = player_assets.get('active_set', 'sets')
             # Map 'walking' to 'chase' UI state
             state_map = {'walking': 'chase'}
             # Map grid directions to sprite sheet directions

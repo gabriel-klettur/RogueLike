@@ -29,6 +29,23 @@ class AssetsGridPanelEventHandler:
             return self._handle_hover(event)
 
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            # Detección de click en combobox "Activo"
+            rect = getattr(self.model, 'active_set_rect', None)
+            if rect and rect.collidepoint(event.pos):
+                # Toggle entre 'sets' y 'no-sets'
+                prop_ctrl = self.controller.parent_controller
+                ent_id = prop_ctrl.model.selected_id
+                if ent_id and ent_id in prop_ctrl.model.player_stats:
+                    # Cargar y actualizar JSON
+                    path, data, entry = prop_ctrl._load_entity_data(ent_id)
+                    assets = entry.setdefault('assets', {})
+                    curr = assets.get('active_set', 'sets')
+                    new = 'no-sets' if curr == 'sets' else 'sets'
+                    assets['active_set'] = new
+                    prop_ctrl._save_entity_data(ent_id, entry, path, data)
+                    # Actualizar modelo en memoria
+                    prop_ctrl.model.player_assets[ent_id]['active_set'] = new
+                return True
             # Primero, verificar double-click para abrir picker
             if self._process_cell_double_click(event):
                 return True

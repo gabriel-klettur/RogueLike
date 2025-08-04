@@ -21,4 +21,6 @@ class AssetsGridPanelModel:
     # Último frame renderizado por asset_key
     last_frames: Dict[str, pygame.Surface] = field(default_factory=dict)
     last_entity_id: Optional[str] = None
-    last_state_tab: Optional[str] = None  # Add selected asset cell property
+    last_state_tab: Optional[str] = None
+    # Rect del combobox "Activo" para detectar clicks
+    active_set_rect: Optional[pygame.Rect] = None  # Add selected asset cell property
