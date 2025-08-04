@@ -1,81 +1,174 @@
-import pygame
-import time
 import logging
+import time
+from typing import Optional, Dict
+
+import pygame
 
 from roguelike_editors.entities.entities_properties_panel.entities_assets_grid_panel.entities_assets_grid_panel_model import AssetsGridPanelModel
 from roguelike_editors.entities.entities_properties_panel.entities_assets_grid_panel.entities_assets_grid_panel_view import AssetsGridPanelView
 from roguelike_editors.entities.entities_properties_panel.entities_assets_grid_panel.entities_assets_grid_panel_events import AssetsGridPanelEventHandler
-
 from roguelike_game.ecs.components.rendering.animator import Animator
 from roguelike_game.ecs.components.rendering.animation_timer import AnimationTimer
+from roguelike_game.factories.player.loader import load_and_scale_sprites
 from roguelike_game.factories.player.config import ANIMATION_INTERVAL
 
+# Mapeos constantes para estados y direcciones
+_STATE_MAP: Dict[str, str] = {
+    'chase': 'walk',  # El estado 'chase' se representa internamente como 'walk'
+}
+
+_DIR_TO_SPRITE: Dict[str, str] = {
+    'nw': 'up_left',
+    'n': 'up',
+    'ne': 'up_right',
+    'w': 'left',
+    'e': 'right',
+    'sw': 'down_left',
+    's': 'down',
+    'se': 'down_right',
+}
+
+
 class AssetsGridPanelController:
-    """Controller para el panel de cuadrícula de assets en el panel de propiedades."""
-    def __init__(self, parent_controller, font: pygame.font.Font):
-        # parent_controller es EntityPropertiesPanelController
+    """
+    Controlador del panel de cuadrícula de assets en el panel de propiedades.
+
+    Gestiona la creación y actualización de animadores para cada asset, basado
+    en la entidad seleccionada y la pestaña de estado activa.
+    """
+
+    def __init__(
+        self,
+        parent_controller,  # EntityPropertiesPanelController
+        font: pygame.font.Font
+    ) -> None:
+        # Referencias a controladores y modelos superiores
         self.parent_controller = parent_controller
         self.parent_model = parent_controller.model
+
+        # Modelo y vista propios
         self.model = AssetsGridPanelModel()
         self.view = AssetsGridPanelView(font)
-        # Referencia al modelo principal para state tabs
         self.view.parent_model = self.parent_model
+
+        # Manejador de eventos para el grid
         self.event_handler = AssetsGridPanelEventHandler(self)
 
-    def draw(self, screen: pygame.Surface, entity_data: dict, px: int, py: int, pad: int, font_h: int, panel_w: int) -> None:
-        """Dibuja subtabs y grid de assets usando model y view."""
-        # Initialize or update animators when entity or state tab changes
+    def draw(
+        self,
+        screen: pygame.Surface,
+        entity_data: dict,
+        px: int,
+        py: int,
+        pad: int,
+        font_h: int,
+        panel_w: int,
+    ) -> None:
+        """
+        Dibuja las subpestañas y la cuadrícula de assets.
+
+        1. Verifica si cambió la entidad o la pestaña de estado para reconstruir animadores.
+        2. Actualiza los fotogramas actuales de cada animador según su temporizador.
+        3. Delegar el renderizado final a la vista.
+        """
         ent_id = self.parent_model.selected_id
-        state = self.parent_controller.state_tabs_controller.model.active_state_tab
+        active_state = (
+            self.parent_controller.state_tabs_controller.model.active_state_tab
+        )
 
-        if ent_id and (ent_id != self.model.last_entity_id or state != self.model.last_state_tab):
-            logging.debug(f"[DEBUG][GridController] Rebuilding animators for ent_id={ent_id}, state={state}")
-            # Rebuild animators
-            from roguelike_game.factories.player.loader import load_and_scale_sprites
-            # Load all sprites scaled
-            sprites_dict = load_and_scale_sprites(ent_id)
-            # Map UI state to internal state
-            state_map = {'chase': 'walk'}
-            internal_state = state_map.get(state, state)
-            # Direction mapping
-            dir_map = {
-                'nw': 'up_left', 'n': 'up', 'ne': 'up_right',
-                'w': 'left', 'e': 'right', 'sw': 'down_left',
-                's': 'down', 'se': 'down_right'
-            }
-            # Create animators per asset_key
-            self.model.timers.clear()
-            self.model.last_frames.clear()
-            self.model.animators.clear()
-            
-            for grid_dir, sprite_dir in dir_map.items():
-                raw_frames = sprites_dict.get(sprite_dir, {}).get(internal_state, [])
-                # Ignorar siempre el primer frame
-                frames = raw_frames[1:] if len(raw_frames) > 1 else []
-                if frames:
-                    asset_key = f"asset_{state}_{grid_dir}"
-                    # animations dict for Animator requires list key same as state
-                    anim = Animator(animations={internal_state: frames}, current_state=internal_state)
-                    self.model.animators[asset_key] = anim
-            # track last
-            self.model.last_entity_id = ent_id
-            self.model.last_state_tab = state
+        if self._should_rebuild(ent_id, active_state):
+            self._rebuild_animators(ent_id, active_state)
 
+        self._update_frames()
+
+        # Delegación del dibujo a la vista
+        self.view.draw(screen, self.model, entity_data, px, py, pad, font_h, panel_w)
+
+    def handle_event(self, event: pygame.event.Event) -> bool:
+        """
+        Envía el evento al manejador de eventos del grid.
+
+        :return: True si el evento fue procesado, False en caso contrario.
+        """
+        return self.event_handler.handle(event)
+
+    def _should_rebuild(
+        self,
+        entity_id: Optional[int],
+        state: str,
+    ) -> bool:
+        """
+        Comprueba si es necesario reconstruir los animadores.
+        Se produce cuando cambia la entidad seleccionada o la pestaña de estado.
+        """
+        return (
+            entity_id is not None
+            and (
+                entity_id != getattr(self.model, 'last_entity_id', None)
+                or state != getattr(self.model, 'last_state_tab', None)
+            )
+        )
+
+    def _rebuild_animators(self, entity_id: int, state: str) -> None:
+        """
+        Reconstruye todos los animadores para la entidad y estado indicados.
+
+        1. Carga los sprites escalados.
+        2. Traduce el estado de UI a estado interno.
+        3. Crea un Animator por cada dirección válida.
+        4. Reinicia temporizadores y fotogramas anteriores.
+        """
+        logging.debug(
+            f"[DEBUG][AssetsGridPanel] Reconstruyendo animadores: "
+            f"entity_id={entity_id}, state={state}"
+        )
+
+        # Carga de sprites calibrados para la entidad
+        sprites = load_and_scale_sprites(entity_id)
+
+        internal_state = _STATE_MAP.get(state, state)
+
+        # Limpieza de datos previos
+        self.model.animators.clear()
+        self.model.timers.clear()
+        self.model.last_frames.clear()
+
+        # Creación de animadores en base a cada dirección disponible
+        for grid_dir, sprite_dir in _DIR_TO_SPRITE.items():
+            raw_frames = sprites.get(sprite_dir, {}).get(internal_state, [])
+            frames = raw_frames[1:] if len(raw_frames) > 1 else []
+            if not frames:
+                continue
+
+            asset_key = f"asset_{state}_{grid_dir}"
+            animator = Animator(
+                animations={internal_state: frames},
+                current_state=internal_state,
+            )
+            self.model.animators[asset_key] = animator
+
+        # Almacenamiento de estado para comparaciones futuras
+        self.model.last_entity_id = entity_id
+        self.model.last_state_tab = state
+
+    def _update_frames(self) -> None:
+        """
+        Avanza y almacena el fotograma actual de cada animador
+        basado en su temporizador individual.
+        """
         now = time.time()
-        for key, anim in self.model.animators.items():
+
+        for key, animator in self.model.animators.items():
             timer = self.model.timers.get(key)
+
             if timer is None:
+                # Primera ejecución para este animador
                 timer = AnimationTimer(last_time=now, interval=ANIMATION_INTERVAL)
                 self.model.timers[key] = timer
-                frame = anim.next_frame()
+                frame = animator.next_frame()
                 self.model.last_frames[key] = frame
-            elif now - timer.last_time >= timer.interval:
+            elif (now - timer.last_time) >= timer.interval:
+                # Tiempo de avanzar fotograma
                 timer.last_time = now
-                frame = anim.next_frame()
+                frame = animator.next_frame()
                 self.model.last_frames[key] = frame
-        # Delegate actual drawing
-        self.view.draw(screen, self.model, entity_data, px, py, pad, font_h, panel_w)
-        
-    def handle_event(self, event: pygame.event.Event) -> bool:
-        """Delegación de eventos relacionados al grid."""
-        return self.event_handler.handle(event)

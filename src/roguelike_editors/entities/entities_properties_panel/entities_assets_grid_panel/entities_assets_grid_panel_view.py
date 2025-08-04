@@ -1,16 +1,22 @@
-import pygame
 import logging
 from typing import Dict, List, Optional, Tuple
 
+import pygame
 from roguelike_engine.utils.loader import load_image
 from roguelike_ui.widgets.hover import draw_hover
+
 from roguelike_editors.entities.entities_properties_panel.entities_assets_grid_panel.entities_assets_grid_panel_model import (
     AssetsGridPanelModel,
 )
 
 
 class AssetsGridPanelView:
-    """Vista de cuadrícula de assets para el panel de propiedades."""
+    """
+    Vista de cuadrícula de assets para el panel de propiedades.
+
+    Dibuja el nombre de la entidad, tint, grid de thumbnails,
+    resaltado de hover y selección, y muestra la ruta activa.
+    """
 
     # Configuración de layout y colores
     _ORDER: List[Optional[str]] = ['nw', 'n', 'ne', 'w', None, 'e', 'sw', 's', 'se']
@@ -20,17 +26,18 @@ class AssetsGridPanelView:
     _TEXT_COLOR: Tuple[int, int, int] = (255, 255, 0)
     _KEY_COLOR: Tuple[int, int, int] = (255, 255, 255)
     _NONE_TINT_COLOR: Tuple[int, int, int] = (128, 0, 128)
+    _STATE_MAP_REV: Dict[str, str] = {'chase': 'walking'}
 
     def __init__(self, font: pygame.font.Font) -> None:
         """Inicializa la vista con la fuente y la caché de thumbnails."""
         self.font = font
         self.thumbnail_cache: Dict[str, Optional[pygame.Surface]] = {}
-        # Track last active state and sub_tab for one-time logging
         self._last_active_state: Optional[str] = None
         self._last_sub_tab: Optional[str] = None
         # Atributos externos esperados:
-        # - state_tabs_controller
-        # - set_ot_assets_tab_controller
+        # - self.parent_model: AssetsGridPanelModel de nivel superior
+        # - self.state_tabs_controller
+        # - self.set_ot_assets_tab_controller
 
     def draw(
         self,
@@ -41,7 +48,7 @@ class AssetsGridPanelView:
         py: int,
         pad: int,
         font_h: int,
-        panel_w: int
+        panel_w: int,
     ) -> None:
         """Dibuja el panel completo: nombre, tint, grid de thumbnails, hover y selección."""
         model.asset_cell_entries.clear()
@@ -49,17 +56,21 @@ class AssetsGridPanelView:
         # 1. Nombre de la entidad
         name_y = self._draw_entity_name(screen, entity_data, px, py, pad)
 
-        # 2. Clave y valor de tint
+        # 2. Tint de la entidad
         tint_y = self._draw_tint(screen, entity_data, px, name_y + font_h + 2, pad)
 
         # 3. Grid: posición y tamaño de celda
-        grid_x, grid_y, cell_size = self._compute_grid(px, pad, tint_y + font_h + pad, panel_w)
+        grid_x, grid_y, cell_size = self._compute_grid(
+            px, pad, tint_y + font_h + pad, panel_w
+        )
 
         # 4. Dibujar celdas
         self._draw_cells(screen, model, entity_data, grid_x, grid_y, cell_size)
 
         # 5. Ruta y highlight activos
-        self._draw_selected_path(screen, model, entity_data, px, pad, grid_y, cell_size)
+        self._draw_selected_path(
+            screen, model, entity_data, px, pad, grid_y, cell_size
+        )
 
     def _draw_entity_name(
         self,
@@ -67,11 +78,11 @@ class AssetsGridPanelView:
         entity_data: dict,
         px: int,
         py: int,
-        pad: int
+        pad: int,
     ) -> int:
         """Dibuja el ID o nombre de la entidad y devuelve la coordenada Y donde quedó."""
-        ent_id = entity_data.get('id') or entity_data.get('name') or ''
-        surf = self.font.render(ent_id, True, self._TEXT_COLOR)
+        label = entity_data.get('id') or entity_data.get('name') or ''
+        surf = self.font.render(label, True, self._TEXT_COLOR)
         x, y = px + pad, py + pad
         screen.blit(surf, (x, y))
         return y
@@ -82,7 +93,7 @@ class AssetsGridPanelView:
         entity_data: dict,
         x_base: int,
         y: int,
-        pad: int
+        pad: int,
     ) -> int:
         """Dibuja 'tint:' y su valor coloreado; devuelve la coordenada Y."""
         tint = entity_data.get('tint')
@@ -100,7 +111,7 @@ class AssetsGridPanelView:
         px: int,
         pad: int,
         start_y: int,
-        panel_w: int
+        panel_w: int,
     ) -> Tuple[int, int, int]:
         """Calcula y devuelve (grid_x, grid_y, cell_size)."""
         grid_x = px + pad
@@ -116,7 +127,7 @@ class AssetsGridPanelView:
         entity_data: dict,
         grid_x: int,
         grid_y: int,
-        cell_size: int
+        cell_size: int,
     ) -> None:
         """Dibuja cada celda, aplica hover y thumbnails según sub-tab."""
         active_state = self.state_tabs_controller.model.active_state_tab
@@ -124,25 +135,29 @@ class AssetsGridPanelView:
 
         # Log once when state or sub_tab changes
         if active_state != self._last_active_state or sub_tab != self._last_sub_tab:
-            logging.debug(f"[DEBUG][PROPERTIES PANEL][GRID] active_state={active_state}, sub_tab={sub_tab}")
+            logging.debug(
+                f"[DEBUG][PROPERTIES PANEL][GRID] "
+                f"active_state={active_state}, sub_tab={sub_tab}"
+            )
             for dir_key in self._ORDER:
-                if dir_key:
-                    asset_key = f"asset_{active_state}_{dir_key}"
-                    # Determine value: direct no-sets for players on 'no-set', else merged entity_data
-                    ent_id = self.parent_model.hovered_entity_id or self.parent_model.selected_id
-                    if sub_tab == 'no-set' and ent_id in self.parent_model.player_stats:
-                        player_assets = self.parent_model.player_assets.get(ent_id, {})
-                        no_sets = player_assets.get('no-sets', {})
-                        state_map_rev = {'chase': 'walking'}
-                        json_state = state_map_rev.get(active_state, active_state)
-                        dirs = no_sets.get(json_state, {})
-                        value = dirs.get(dir_key)
-                    else:
-                        value = entity_data.get(asset_key)
-                    logging.debug(f"[DEBUG][PROPERTIES PANEL][GRID] asset_key={asset_key}, value={value}")
+                if not dir_key:
+                    continue
+                asset_key = f"asset_{active_state}_{dir_key}"
+                ent_id = (
+                    self.parent_model.hovered_entity_id
+                    or self.parent_model.selected_id
+                )
+                if sub_tab == 'no-set' and ent_id in self.parent_model.player_stats:
+                    player_assets = self.parent_model.player_assets.get(ent_id, {})
+                    no_sets = player_assets.get('no-sets', {})
+                    json_state = self._STATE_MAP_REV.get(active_state, active_state)
+                    dirs = no_sets.get(json_state, {})
+                    value = dirs.get(dir_key)
+                else:
+                    value = entity_data.get(asset_key)
+                logging.debug(f"[DEBUG][GRID] asset_key={asset_key}, value={value}")
             self._last_active_state = active_state
             self._last_sub_tab = sub_tab
-
 
         for idx, dir_key in enumerate(self._ORDER):
             row, col = divmod(idx, self._GRID_COLS)
@@ -150,36 +165,40 @@ class AssetsGridPanelView:
                 grid_x + col * cell_size,
                 grid_y + row * cell_size,
                 cell_size,
-                cell_size
+                cell_size,
             )
 
             if dir_key:
                 asset_key = f"asset_{active_state}_{dir_key}"
                 model.asset_cell_entries.append((rect, asset_key))
 
-
                 # Hover highlight: toda la grilla o solo hovered
-                if (sub_tab == 'asset set' and model.hovered_asset_cell) or model.hovered_asset_cell == asset_key:
+                if (sub_tab == 'asset set' and model.hovered_asset_cell) or (
+                    model.hovered_asset_cell == asset_key
+                ):
                     hover = pygame.Surface((cell_size, cell_size), pygame.SRCALPHA)
                     hover.fill(self._HOVER_COLOR)
                     screen.blit(hover, (rect.x, rect.y))
 
                 # Dibujar thumbnail: animación o ruta
                 if sub_tab == 'asset set':
-                    self._draw_set_thumb(screen, model, entity_data, rect, asset_key, cell_size)
+                    self._draw_set_thumb(
+                        screen, model, entity_data, rect, asset_key, cell_size
+                    )
                 else:
-                    # Render no-set paths: use direct mapping for players, fallback for monsters
-                    ent_id = self.parent_model.hovered_entity_id or self.parent_model.selected_id
-                    if ent_id in self.parent_model.player_stats:
+                    ent_id = (
+                        self.parent_model.hovered_entity_id
+                        or self.parent_model.selected_id
+                    )
+                    if sub_tab == 'no-set' and ent_id in self.parent_model.player_stats:
                         player_assets = self.parent_model.player_assets.get(ent_id, {})
                         no_sets = player_assets.get('no-sets', {})
-                        # Map UI state back to JSON state key
-                        state_map_rev = {'chase': 'walking'}
-                        json_state = state_map_rev.get(active_state, active_state)
+                        json_state = self._STATE_MAP_REV.get(active_state, active_state)
                         dirs = no_sets.get(json_state, {})
                         path = dirs.get(dir_key)
                     else:
                         path = entity_data.get(asset_key)
+
                     if not path:
                         inner = rect.inflate(-2, -2)
                         pygame.draw.rect(screen, (0, 0, 0), inner)
@@ -188,14 +207,17 @@ class AssetsGridPanelView:
                         if raw is None:
                             try:
                                 img = load_image(path)
-                                raw = pygame.transform.smoothscale(img, (cell_size - 4, cell_size - 4))
+                                raw = pygame.transform.smoothscale(
+                                    img, (cell_size - 4, cell_size - 4)
+                                )
                             except Exception:
                                 raw = None
                             self.thumbnail_cache[path] = raw
                         if raw:
-                            self._blit_tinted(screen, rect, raw, entity_data.get('tint'))
+                            self._blit_tinted(
+                                screen, rect, raw, entity_data.get('tint')
+                            )
 
-            # Borde de celda
             pygame.draw.rect(screen, self._BORDER_COLOR, rect, 1)
 
     def _draw_set_thumb(
@@ -205,7 +227,7 @@ class AssetsGridPanelView:
         entity_data: dict,
         rect: pygame.Rect,
         key: str,
-        cell_size: int
+        size: int,
     ) -> None:
         """Dibuja animación si existe; si no, cae a thumbnail por ruta."""
         anim = model.animators.get(key)
@@ -213,8 +235,7 @@ class AssetsGridPanelView:
         if anim and frame:
             self._blit_tinted(screen, rect, frame, entity_data.get('tint'))
         else:
-            # Fallback a thumbnail de ruta
-            self._draw_path_thumb(screen, entity_data, rect, key, cell_size)
+            self._draw_path_thumb(screen, entity_data, rect, key, size)
 
     def _draw_path_thumb(
         self,
@@ -222,20 +243,19 @@ class AssetsGridPanelView:
         entity_data: dict,
         rect: pygame.Rect,
         key: str,
-        cell_size: int
+        size: int,
     ) -> None:
         """Carga/cacha imagen de ruta, aplica tint, o limpia si no hay asset."""
         path = entity_data.get(key)
         if not path:
-            inner = rect.inflate(-2, -2)
-            pygame.draw.rect(screen, (0, 0, 0), inner)
+            pygame.draw.rect(screen, (0, 0, 0), rect.inflate(-2, -2))
             return
 
         raw = self.thumbnail_cache.get(path)
         if raw is None:
             try:
                 img = load_image(path)
-                raw = pygame.transform.smoothscale(img, (cell_size - 4, cell_size - 4))
+                raw = pygame.transform.smoothscale(img, (size - 4, size - 4))
             except Exception:
                 raw = None
             self.thumbnail_cache[path] = raw
@@ -248,7 +268,7 @@ class AssetsGridPanelView:
         screen: pygame.Surface,
         rect: pygame.Rect,
         image: pygame.Surface,
-        tint: Optional[Tuple[int, ...]]
+        tint: Optional[Tuple[int, ...]],
     ) -> None:
         """Aplica tint al surface y lo centra dentro del rect."""
         thumb = image.copy()
@@ -267,7 +287,7 @@ class AssetsGridPanelView:
         px: int,
         pad: int,
         grid_y: int,
-        cell_size: int
+        cell_size: int,
     ) -> None:
         """Muestra ruta del asset hovered/seleccionado y aplica highlight final."""
         sel = model.hovered_asset_cell or model.selected_asset_cell
