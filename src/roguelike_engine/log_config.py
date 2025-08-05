@@ -1,5 +1,6 @@
 """
 Centralized logging configuration for the RogueLike project.
+Adds colorized console output and optional rotating file logging.
 """
 
 import logging
@@ -7,14 +8,36 @@ import logging.config
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
+# ANSI color codes
+RESET = "\033[0m"
+COLOR_TIME = "\033[36m"      # Cyan
+COLOR_LEVEL = "\033[33m"     # Yellow
+COLOR_NAME = "\033[35m"      # Magenta
+COLOR_MSG = "\033[37m"       # White
+
+class ColorFormatter(logging.Formatter):
+    """
+    Custom formatter to add colors to log output in console.
+    """
+    def format(self, record):
+        log_fmt = (
+            f"{COLOR_TIME}[%(asctime)s]{RESET}"
+            f"{COLOR_LEVEL}[%(levelname)s]{RESET}"
+            f"{COLOR_NAME}[%(name)s]{RESET}: "
+            f"{COLOR_MSG}%(message)s{RESET}"
+        )
+        formatter = logging.Formatter(log_fmt, datefmt="%H:%M:%S")
+        return formatter.format(record)
+
 
 def init_logging(config_path: str = None, level: str = "INFO", logfile: str = None) -> None:
     """
     Initialize logging for the application.
 
     If `config_path` is provided and points to a valid file, load logging
-    configuration from it. Otherwise, configure basic logging with a console
-    handler and, optionally, a rotating file handler.
+    configuration from it. Otherwise, configure basic logging with:
+    - Colorized console output.
+    - Optional rotating file handler.
 
     Args:
         config_path: Optional path to a logging configuration file.
@@ -26,31 +49,27 @@ def init_logging(config_path: str = None, level: str = "INFO", logfile: str = No
     else:
         handlers = []
 
-        # Custom format: only time (HH:MM:SS), level, module, message
-        fmt = "[%(asctime)s][%(levelname)s][%(name)s]: %(message)s"
-        datefmt = "%H:%M:%S"  # Only time, no date
+        # Console handler with colors
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(ColorFormatter())
+        handlers.append(console_handler)
 
-        # Rotating file handler if logfile provided
+        # Rotating file handler (without colors)
         if logfile:
             log_path = Path(logfile)
-            # Ensure directory exists
             log_path.parent.mkdir(parents=True, exist_ok=True)
-            handlers.append(
-                RotatingFileHandler(
-                    filename=str(log_path),
-                    maxBytes=10 * 1024 * 1024,  # 10 MB per file
-                    backupCount=5,              # Keep 5 backups
-                    encoding='utf-8'
-                )
+            file_handler = RotatingFileHandler(
+                filename=str(log_path),
+                maxBytes=10 * 1024 * 1024,  # 10 MB per file
+                backupCount=5,              # Keep 5 backups
+                encoding='utf-8'
             )
-
-        # Always log to console as well
-        handlers.append(logging.StreamHandler())
+            file_fmt = "[%(asctime)s][%(levelname)s][%(name)s]: %(message)s"
+            file_handler.setFormatter(logging.Formatter(file_fmt, datefmt="%H:%M:%S"))
+            handlers.append(file_handler)
 
         # Configure root logger
         logging.basicConfig(
             level=getattr(logging, level.upper(), logging.INFO),
-            format=fmt,
-            datefmt=datefmt,
             handlers=handlers,
         )
