@@ -1,4 +1,8 @@
 import pygame
+import logging
+from roguelike_engine.utils.loader import load_image
+from roguelike_engine.utils.loader import load_image
+from roguelike_game.factories.monster.config import MONSTER_DEFS
 from math import ceil
 from roguelike_editors.entities.entities_picker_panel.entities_picker_panel_model import EntityPickerPanelModel
 from roguelike_ui.panel import DraggablePanel
@@ -22,6 +26,9 @@ class EntityPickerPanelView:
         self.assets = assets
         self.font = font
         self.blink_interval = 500
+        self._picker_logged = False
+        self._last_active_tab = None
+        self._center_pixel_logged = set()
 
         # Configuración visual del panel
         self.margin = 20
@@ -75,14 +82,25 @@ class EntityPickerPanelView:
     def draw(self, screen: pygame.Surface, model: EntityPickerPanelModel) -> None:
         """Dibuja el panel completo si está visible."""
         if not model.visible:
+            self._picker_logged = False
             return
 
-                # Lista completa de entidades (jugador + monstruos)
+        # Lista completa de entidades (jugador + monstruos)
         if model.active_tab == "Players":
             entity_ids = list(model.player_stats.keys())
         else:
             entity_ids = list(model.monsters.keys())
 
+        # Reset debug flag on tab change
+        if self._last_active_tab != model.active_tab:
+            self._picker_logged = False
+            self._last_active_tab = model.active_tab
+
+
+        if model.visible and not self._picker_logged:
+            for ent_id in entity_ids:
+                logging.debug(f"[DEBUG][Picker] ent_id={ent_id}")
+            self._picker_logged = True
         # Tamaño dinámico del panel
         # Tamaño dinámico de la parte de grid
         panel_w, grid_h = self._calculate_panel_size(len(entity_ids))
@@ -204,28 +222,20 @@ class EntityPickerPanelView:
         self._highlight_selected(screen, model, entity_ids, scroll, screen_h, cell_height)
 
     def _draw_entity_icon(self, screen: pygame.Surface, ent_id: str, x: int, y: int, model: EntityPickerPanelModel) -> None:
-        """Renderiza el icono de la entidad, aplicando tint si existe."""
         icon = self.assets.get(ent_id)
+        """Renderiza el icono de la entidad, aplicando tint si existe."""
+
         if not icon:
             return
-
+        # Escalar icono al tamaño de celda
         icon_surf = pygame.transform.smoothscale(icon, (self.cell_size, self.cell_size))
+        if ent_id not in self._center_pixel_logged:
+            center = (self.cell_size // 2, self.cell_size // 2)
+            center_pixel = icon_surf.get_at(center)
+            logging.debug(f'[TINT][PickerView] ent_id={ent_id} original_asset_size={icon.get_size()} scaled_asset_size={icon_surf.get_size()} center_pixel={center_pixel}')
+            self._center_pixel_logged.add(ent_id)
 
-        # Aplicar tint si existe
-        tint = None
-        if ent_id in model.monsters:
-            nested = model.monsters.get(ent_id, {}).get("sprites", {}) or {}
-            data_assets = nested.get("data_assets", {}) or {}
-            tint = data_assets.get("tint")
-        elif ent_id in model.player_stats:
-            tint = model.player_stats.get(ent_id, {}).get("tint")
-
-        if tint:
-            color = tuple(tint) if len(tint) == 4 else (*tint, 255)
-            tinted = icon_surf.copy()
-            tinted.fill(color, special_flags=pygame.BLEND_RGBA_MULT)
-            icon_surf = tinted
-
+        # Dibujar icono
         screen.blit(icon_surf, (x, y))
         # Mostrar nombre de la entidad debajo del icono
         label = self._truncate_text(ent_id, self.cell_size)

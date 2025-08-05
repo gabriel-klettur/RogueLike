@@ -19,6 +19,10 @@ def create_sprite_component(monster_type: str) -> Tuple[Sprite, Optional[pygame.
         frame = raw_frame.copy()
     else:
         frame = raw_frame
+    # Crop transparent borders to tight sprite frame
+    bbox = frame.get_bounding_rect()
+    if bbox.width and bbox.height:
+        frame = frame.subsurface(bbox).copy()
     try:
         sprite = Sprite(frame)
     except Exception:

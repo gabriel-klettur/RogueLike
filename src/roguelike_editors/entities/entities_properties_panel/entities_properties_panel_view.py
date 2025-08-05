@@ -154,24 +154,31 @@ class EntityPropertiesPanelView:
             return merged
         elif ent_id in model.monsters:
             monster = model.monsters.get(ent_id, {})
-            # Extraer stats (todo excepto sprites)
-            nested = monster.get('sprites', {}) or {}
-            stats = {k: v for k, v in monster.items() if k != 'sprites'}
-            # Incluir data_assets
-            data_assets = nested.get('data_assets', {})
-            for ak, av in data_assets.items():
-                stats[ak] = av
-            # Extraer assets anidados
-            assets = {}
-            for cat, dirs in nested.get('assets', {}).items():
-                for dkey, path in dirs.items():
-                    assets_key = f"{cat}_{dkey}"
-                    assets[assets_key] = path
-            # Combinar stats y assets prefijados
+            stats = monster.get('stats', {})
+            assets_def = monster.get('assets', {})
             merged_mon = dict(stats)
             merged_mon['id'] = ent_id
-            for k, v in assets.items():
-                merged_mon[f"asset_{k}"] = v
+            # Respect active_set and include in merged data
+            active_set = assets_def.get('active_set', 'no-sets')
+            merged_mon['active_set'] = active_set
+            # Extract tint based on active_set
+            if active_set == 'no-sets':
+                tint = assets_def.get('no-sets', {}).get('sprites_data_no-set', {}).get('tint')
+            else:
+                tint = assets_def.get('sets', {}).get('sprites_data_set', {}).get('tint')
+            merged_mon['tint'] = tint
+            # Flatten assets for the active_set group
+            if active_set == 'no-sets':
+                asset_group = assets_def.get('no-sets', {})
+            else:
+                asset_group = assets_def.get('sets', {}).get('sprites_set', {})
+            for state, dirs in asset_group.items():
+                for dir_key, path in dirs.items():
+                    merged_mon[f"asset_{state}_{dir_key}"] = path
+            # Also flatten scales from sprites_data_set
+            set_data = assets_def.get('sets', {}).get('sprites_data_set', {})
+            for key, value in set_data.items():
+                merged_mon[key] = value
             return merged_mon
         return {}
 

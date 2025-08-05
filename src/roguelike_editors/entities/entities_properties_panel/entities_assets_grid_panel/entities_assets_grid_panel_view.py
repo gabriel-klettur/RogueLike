@@ -288,8 +288,10 @@ class AssetsGridPanelView:
     ) -> None:
         """Aplica tint al surface y lo centra dentro del rect."""
         thumb = image.copy()
+        logging.debug(f"[TINT][Editor Grid] raw tint={tint} rect={rect}")
         if tint:
             c = tuple(tint) if len(tint) in (3, 4) else (*tint, 255)
+            logging.debug(f"[TINT][Editor Grid] applying tint c={c} rect={rect}")
             thumb.fill(c, special_flags=pygame.BLEND_RGBA_MULT)
         tx = rect.x + (rect.width - thumb.get_width()) // 2
         ty = rect.y + (rect.height - thumb.get_height()) // 2

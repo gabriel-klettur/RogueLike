@@ -3,6 +3,8 @@ from typing import Optional
 from pathlib import Path
 from roguelike_ui.services.json_persistence import load_from_json
 from roguelike_engine.utils.loader import load_image, load_sprite_sheet
+from roguelike_game.factories.monster.sprite_loader import create_sprite_component
+
 from roguelike_game.config.players_config import PLAYER_ASSETS
 from roguelike_editors.entities.entities_title.entities_title_model import EntitiesTitleModel
 from roguelike_editors.entities.entities_tool_bar_panel.entities_tool_bar_panel_model import EntitiesToolBarPanelModel
@@ -29,8 +31,10 @@ class EntitiesEditorModel:
         self.player_assets = PLAYER_ASSETS
         self.player_stats = {cls: cfg.get('stats', {}) for cls, cfg in classes.items()}
         self.orig_size = tuple(players_root.get('ORIGINAL_SPRITE_SIZE', [128, 128]))
-        monsters_path = data_dir / 'entities' / 'monsters.json'
-        self.monsters = load_from_json(str(monsters_path))
+        monsters_path = data_dir / 'entities' / 'new_monsters.json'
+        monsters_root = load_from_json(str(monsters_path))
+        # Only extract nested monster classes
+        self.monsters = monsters_root.get('monsters', {}).get('classes', {})
         # Carga de assets
         self.assets: dict[str, pygame.Surface] = {}
         # Jugadores
@@ -64,16 +68,14 @@ class EntitiesEditorModel:
                 self.assets[pid] = load_image(f'assets/npc/player/{pid}/{pid}_1_down.png')
             except Exception:
                 pass
-        # Monstruos
-        for mid, mdef in self.monsters.items():
-            nested = mdef.get('sprites', {}) or {}
-            idle_assets = nested.get('assets', {}).get('idle', {})
-            path = idle_assets.get('s')
-            if path:
-                try:
-                    self.assets[mid] = load_image(path)
-                except Exception:
-                    pass
+                # Monstruos: cargar imagenes de idle y aplicar tint desde JSON
+        # Monstruos: cargar sprites tinted con factory
+        for mid in self.monsters.keys():
+            try:
+                sprite, _ = create_sprite_component(mid)
+                self.assets[mid] = sprite.image
+            except Exception:
+                pass
         # submodelos MVC
         self.title_model = EntitiesTitleModel()
         self.toolbar_model = EntitiesToolBarPanelModel()

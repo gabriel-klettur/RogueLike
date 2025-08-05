@@ -298,7 +298,7 @@ class EntityPropertiesPanelController:
             classes = root.get("players", {}).get("classes", {})
             data = classes
         else:
-            path = os.path.join(os.getcwd(), "data", "entities", "monsters.json")
+            path = os.path.join(os.getcwd(), "data", "entities", "new_monsters.json")
             data = load_from_json(path)
 
         entry = data.get(ent_id, {})

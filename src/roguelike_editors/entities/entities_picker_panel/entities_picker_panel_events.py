@@ -1,4 +1,5 @@
 import pygame
+import logging
 
 
 class EntitiesPickerEventHandler:
@@ -45,6 +46,7 @@ class EntitiesPickerEventHandler:
                     self.model.scroll_index = 0
                     self.model.hovered_id = None
                     self.model.selected_id = None
+                    self.view._picker_logged = False
                     return True
         if event.type == pygame.MOUSEBUTTONDOWN and self.model.visible and event.button == 1:
             # Solo procesar si el clic está en el panel de picker
@@ -99,6 +101,16 @@ class EntitiesPickerEventHandler:
             # Mostrar/ocultar panel
             self.model.visible = not self.model.visible
             self.model.selected_id = None
+            if self.model.visible:
+                # DEBUG on panel open
+                for ent_id, mdef in self.model.monsters.items():
+                    assets_def = mdef.get('assets', {})
+                    active_set = assets_def.get('active_set', 'no-sets')
+                    if active_set == 'no-sets':
+                        tint = assets_def.get('no-sets', {}).get('sprites_data_no-set', {}).get('tint')
+                    else:
+                        tint = assets_def.get('sets', {}).get('sprites_data_set', {}).get('tint')
+                    logging.debug(f"[DEBUG][Picker OPEN] ent_id={ent_id} active_set={active_set} tint={tint}")
             return
 
         if not self.model.visible:

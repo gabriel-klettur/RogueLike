@@ -63,7 +63,8 @@
               "scale_cast": 0.5,
               "scale_attack": 0.5,
               "scale_damage": 0.5,
-              "scale_death": 0.5
+              "scale_death": 0.5,
+              "tint": null
             }
           },
           "no-sets": {
@@ -179,7 +180,8 @@
               "scale_cast": 0.5,
               "scale_attack": 0.5,
               "scale_damage": 0.5,
-              "scale_death": 0.5
+              "scale_death": 0.5,
+              "tint": null
             }
           },
           "no-sets": {
@@ -300,7 +302,8 @@
               "scale_cast": 0.5,
               "scale_attack": 0.5,
               "scale_damage": 0.5,
-              "scale_death": 0.5
+              "scale_death": 0.5,
+              "tint": null
             }
           },
           "no-sets": {
@@ -420,7 +423,8 @@
               "scale_cast": 0.5,
               "scale_attack": 0.5,
               "scale_damage": 0.5,
-              "scale_death": 0.5
+              "scale_death": 0.5,
+              "tint": null
             }
           },
           "no-sets": {
@@ -541,7 +545,8 @@
               "scale_cast": 0.5,
               "scale_attack": 0.5,
               "scale_damage": 0.5,
-              "scale_death": 0.5
+              "scale_death": 0.5,
+              "tint": null
             }
           },
           "no-sets": {
@@ -661,7 +666,8 @@
               "scale_cast": 0.5,
               "scale_attack": 0.5,
               "scale_damage": 0.5,
-              "scale_death": 0.5
+              "scale_death": 0.5,
+              "tint": null
             }
           },
           "no-sets": {
@@ -781,7 +787,8 @@
               "scale_cast": 0.5,
               "scale_attack": 0.5,
               "scale_damage": 0.5,
-              "scale_death": 0.5
+              "scale_death": 0.5,
+              "tint": null
             }
           },
           "no-sets": {
@@ -901,7 +908,8 @@
               "scale_cast": 0.5,
               "scale_attack": 0.5,
               "scale_damage": 0.5,
-              "scale_death": 0.5
+              "scale_death": 0.5,
+              "tint": null
             }
           },
           "no-sets": {
@@ -1021,7 +1029,8 @@
               "scale_cast": 0.5,
               "scale_attack": 0.5,
               "scale_damage": 0.5,
-              "scale_death": 0.5
+              "scale_death": 0.5,
+              "tint": null
             }
           },
           "no-sets": {
@@ -1141,7 +1150,8 @@
               "scale_cast": 0.5,
               "scale_attack": 0.5,
               "scale_damage": 0.5,
-              "scale_death": 0.5
+              "scale_death": 0.5,
+              "tint": null
             }
           },
           "no-sets": {
