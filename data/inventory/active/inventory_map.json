@@ -9,16 +9,6 @@
       "y": 1527
     }
   },
-  "f9f30dad-3286-482d-bebd-d982466ca422": {
-    "item_id": "experience_orb",
-    "quantity": 2,
-    "zone_id": "no zone",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 529,
-      "y": 1527
-    }
-  },
   "3c5ec640-9bc5-4a77-a1c3-af58ae08c7dd": {
     "item_id": "gold",
     "quantity": 5,

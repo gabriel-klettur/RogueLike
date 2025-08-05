@@ -34,6 +34,7 @@ class AssetsGridPanelView:
         self.thumbnail_cache: Dict[str, Optional[pygame.Surface]] = {}
         self._last_active_state: Optional[str] = None
         self._last_sub_tab: Optional[str] = None
+        self._tint_logged_once: bool = False
         # Atributos externos esperados:
         # - self.parent_model: AssetsGridPanelModel de nivel superior
         # - self.state_tabs_controller
@@ -52,6 +53,7 @@ class AssetsGridPanelView:
     ) -> None:
         """Dibuja el panel completo: nombre, tint, grid de thumbnails, hover y selección."""
         model.asset_cell_entries.clear()
+        logging.debug(f"[TINT][Editor Grid] draw assets grid: tint={entity_data.get('tint')}")
 
         # 1. Nombre de la entidad
         name_y = self._draw_entity_name(screen, entity_data, px, py, pad)
@@ -287,11 +289,13 @@ class AssetsGridPanelView:
         tint: Optional[Tuple[int, ...]],
     ) -> None:
         """Aplica tint al surface y lo centra dentro del rect."""
+        logging.debug(f"[TINT][Editor Grid] rect={rect} tint={tint}")
+        
         thumb = image.copy()
-        logging.debug(f"[TINT][Editor Grid] raw tint={tint} rect={rect}")
+
         if tint:
             c = tuple(tint) if len(tint) in (3, 4) else (*tint, 255)
-            logging.debug(f"[TINT][Editor Grid] applying tint c={c} rect={rect}")
+            
             thumb.fill(c, special_flags=pygame.BLEND_RGBA_MULT)
         tx = rect.x + (rect.width - thumb.get_width()) // 2
         ty = rect.y + (rect.height - thumb.get_height()) // 2
