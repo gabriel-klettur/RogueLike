@@ -3,6 +3,8 @@ import json
 from typing import Dict, Tuple, Optional
 from roguelike_engine.config.config import BUILDINGS_DATA_PATH
 from roguelike_engine.z_layer.persistence import inject_z_into_json
+import logging
+logger = logging.getLogger(__name__)
 
 def save_buildings_to_json(
     buildings,
@@ -40,14 +42,14 @@ def save_buildings_to_json(
             data.append(building_data)
 
         except Exception as e:
-            print(f"⚠️ Error al procesar un edificio: {e}")
+            logger.error(f"⚠️ Error al procesar un edificio: {e}")
 
     if not data:
-        print("⚠️ No se encontraron edificios válidos para guardar.")
+        logger.warning("⚠️ No se encontraron edificios válidos para guardar.")
         return
 
     os.makedirs(os.path.dirname(target), exist_ok=True)
     with open(target, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=4)
 
-    print(f"✅ {len(data)} edificios guardados en {target}")
+    logger.info(f"✅ {len(data)} edificios guardados en {target}")

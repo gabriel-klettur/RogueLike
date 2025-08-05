@@ -12,6 +12,9 @@ from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.ecs.components.spawn.spawn_request import SpawnRequest
 from typing import Any
 
+import logging
+logger = logging.getLogger(__name__)
+
 # Extra padding para seguridad de spawn en tiles
 SPAWN_PADDING_EXTRA = 1
 
@@ -57,7 +60,7 @@ class SpawnNPCManager:
         # 3) Spawn en LOBBY
         positions = find_spawn_positions(self.map_manager, self.buildings, lobby_offset,
                                          zone_size, neighbor_padding=neighbor_padding, sample_count=10)
-        print(f"[SpawnManager][Spawn] Lobby: candidatos={len(positions)}")
+        logger.debug(f"[SpawnManager][Spawn] Lobby: candidatos={len(positions)}")
         for tx, ty in positions:
             variant = random.choice(barbol_variants)
             cfg_var = MONSTER_DEFS[variant]
@@ -96,7 +99,7 @@ class SpawnNPCManager:
 
         empty_positions = find_spawn_positions(self.map_manager, self.buildings, empty_offset,
                                                zone_size, neighbor_padding=neighbor_padding, sample_count=100)
-        print(f"[SpawnManager][Spawn] Empty Left: candidatos={len(empty_positions)}")
+        logger.debug(f"[SpawnManager][Spawn] Empty Left: candidatos={len(empty_positions)}")
         for tx, ty in empty_positions:
             variant = random.choice(barbol_variants)
             cfg_var = MONSTER_DEFS[variant]

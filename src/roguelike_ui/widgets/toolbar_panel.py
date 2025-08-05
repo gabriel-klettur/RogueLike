@@ -3,7 +3,8 @@ from roguelike_ui.ui_blocker import register_blocker
 from roguelike_ui.panel import DraggablePanel
 from roguelike_ui.widgets.button import Button
 
-
+import logging
+logger = logging.getLogger(__name__)
 
 class ToolbarState:
     """Estado genérico para posición y arrastre de un toolbar."""
@@ -117,8 +118,8 @@ class ToolbarView:
         """
         header = pygame.Rect(self.panel.pos or (self.x, self.y), self.panel.surface.get_size())
         if event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 3 and header.collidepoint(event.pos):
-            print(f"[DEBUG][{self.name}][DRAG START]", event.pos)
+            logger.debug(f"[DEBUG][{self.name}][DRAG START]", event.pos)
         res = self.panel.handle_event(event, header)
         if event.type == pygame.MOUSEBUTTONUP and getattr(event, 'button', None) == 3:
-            print(f"[DEBUG][{self.name}][DRAG END] panel.pos", self.panel.pos)
+            logger.debug(f"[DEBUG][{self.name}][DRAG END] panel.pos", self.panel.pos)
         return res

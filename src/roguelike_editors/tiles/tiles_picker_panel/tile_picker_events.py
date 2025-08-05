@@ -9,6 +9,8 @@ from roguelike_editors.tiles.tiles_editor_config import THUMB, PAD, COLS
 import pygame
 from pathlib import Path
 from roguelike_editors.tiles.tiles_editor_config import BASE_TILE_DIR
+import logging
+logger = logging.getLogger(__name__)
 
 class TilePickerEventHandler:
     """
@@ -32,7 +34,7 @@ class TilePickerEventHandler:
         # Coordenadas locales al picker
         lx = mouse_pos[0] - (self.picker_state.pos[0] or 0)
         ly = mouse_pos[1] - (self.picker_state.pos[1] or 0)
-        print(f"[TilePicker] Click at {mouse_pos}, local=({lx},{ly}), dir={self.controller.current_dir}")
+        logger.debug(f"[TilePicker] Click at {mouse_pos}, local=({lx},{ly}), dir={self.controller.current_dir}")
         sw, sh = self.picker_state.surface.get_size()
         if lx < 0 or ly < 0 or lx > sw or ly > sh:
             return False
@@ -158,21 +160,21 @@ class TilePickerEventHandler:
             if value == self.last_click_value and current_time - self.last_click_time <= 600:
                 old_dir = self.controller.current_dir
                 if value == "..":
-                    print(f"[TilePicker] Double-click arrow: dir before {old_dir}, parent {old_dir.parent}")
+                    logger.debug(f"[TilePicker] Double-click arrow: dir before {old_dir}, parent {old_dir.parent}")
                     self.controller.current_dir = old_dir.parent
                     self.controller._load_assets()
                     self.controller._load_positions()
                 else:
                     new_dir = old_dir / value
-                    print(f"[TilePicker] Double-click directory: '{value}'. Changing dir from {old_dir} to {new_dir}")
+                    logger.debug(f"[TilePicker] Double-click directory: '{value}'. Changing dir from {old_dir} to {new_dir}")
                     self.controller.current_dir = new_dir
                     self.controller._load_assets()
                     self.controller._load_positions()
-                print(f"[TilePicker] After load, assets count: {len(self.controller.assets)}, names: {[name for name,_,_,_ in self.controller.assets]}")
+                logger.debug(f"[TilePicker] After load, assets count: {len(self.controller.assets)}, names: {[name for name,_,_,_ in self.controller.assets]}")
                 self.last_click_time = 0
                 self.last_click_value = None
             else:
-                print(f"[TilePicker] Single click on directory '{value}'")
+                logger.debug(f"[TilePicker] Single click on directory '{value}'")
                 self.last_click_time = current_time
                 self.last_click_value = value
             return True

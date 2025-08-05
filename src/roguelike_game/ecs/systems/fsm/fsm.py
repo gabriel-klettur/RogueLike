@@ -3,6 +3,9 @@ import time
 import pygame
 import math
 
+import logging
+logger = logging.getLogger(__name__)
+
 class FiniteStateMachine:
     """
     Maneja transiciones de estado para una entidad.
@@ -34,15 +37,15 @@ class FiniteStateMachine:
         now = time.time()
         if old_state_name == 'PrepareSpellState':
             elapsed = now - ctx.get('prepare_start', now)
-            print(f"[FSM DEBUG] Eid={entity.id} state {old_state_name} -> {new_state_name} (prepare {elapsed:.2f}s spell={spell})")
+            logger.debug(f"[FSM DEBUG] Eid={entity.id} state {old_state_name} -> {new_state_name} (prepare {elapsed:.2f}s spell={spell})")
         elif old_state_name == 'ChannelSpellState':
             elapsed = now - ctx.get('channel_start', now)
-            print(f"[FSM DEBUG] Eid={entity.id} state {old_state_name} -> {new_state_name} (channel {elapsed:.2f}s spell={spell})")
+            logger.debug(f"[FSM DEBUG] Eid={entity.id} state {old_state_name} -> {new_state_name} (channel {elapsed:.2f}s spell={spell})")
         elif old_state_name in ('CooldownState','PlayerSpellCooldownState'):
             elapsed = now - ctx.get('cooldown_start', now)
-            print(f"[FSM DEBUG] Eid={entity.id} state {old_state_name} -> {new_state_name} (cooldown {elapsed:.2f}s spell={spell})")
+            logger.debug(f"[FSM DEBUG] Eid={entity.id} state {old_state_name} -> {new_state_name} (cooldown {elapsed:.2f}s spell={spell})")
         else:
-            print(f"[FSM DEBUG] Eid={entity.id} state {old_state_name} -> {new_state_name}")
+            logger.debug(f"[FSM DEBUG] Eid={entity.id} state {old_state_name} -> {new_state_name}")
         self.current_state.exit(entity)
         self.current_state = new_state
         new_state.fsm = self

@@ -24,6 +24,9 @@ from roguelike_editors.tiles.tiles_editor_config import (
     THUMB
 )
 
+import logging
+logger = logging.getLogger(__name__)
+
 class TilePickerController:
     """
     Ventana flotante de selección de tiles y explorador de directorios.
@@ -61,7 +64,7 @@ class TilePickerController:
             # Determine key for current tile directory
             key = str(self.current_dir.relative_to(Path(ASSETS_DIR)))
             order = orders.get(key, [])
-            print(f"[TilePicker] Loaded order for '{key}': {order}")
+            logger.debug(f"[TilePicker] Loaded order for '{key}': {order}")
             asset_map = {value: (value, surf, is_dir, orig) for (value, surf, is_dir, orig) in self.assets}
             new_assets = []
             for val in order:
@@ -72,7 +75,7 @@ class TilePickerController:
             self.assets = new_assets
             self.view.assets = self.assets
         except Exception as e:
-            print(f"[TilePicker] Error loading positions: {e}")
+            logger.error(f"[TilePicker] Error loading positions: {e}")
 
     def swap_positions(self, i, j):
         """Swap two assets by index and persist new order to JSON."""
@@ -91,12 +94,12 @@ class TilePickerController:
             # Determine key for current tile directory
             key = str(self.current_dir.relative_to(Path(ASSETS_DIR)))
             orders[key] = [value for (value, _, _, _) in self.assets]
-            print(f"[TilePicker] Saved order for '{key}': {orders[key]}")
+            logger.debug(f"[TilePicker] Saved order for '{key}': {orders[key]}")
             data["orders"] = orders
             with open(pos_file, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
         except Exception as e:
-            print(f"[TilePicker] Error saving positions: {e}")
+            logger.error(f"[TilePicker] Error saving positions: {e}")
 
     def _load_assets(self):
         """
@@ -106,7 +109,7 @@ class TilePickerController:
          - Archivos que casan con FILE_PATTERNS
         Cada entrada es tupla (value, surface, is_dir).
         """
-        print(f"[TilePicker] Loading assets from {self.current_dir}")
+        logger.debug(f"[TilePicker] Loading assets from {self.current_dir}")
         self.assets.clear()
         thumb_size = (THUMB, THUMB)
 
@@ -142,7 +145,7 @@ class TilePickerController:
                 surf = load_image(rel_path, thumb_size)
                 self.assets.append((rel_path, surf, False, orig_size))
             except Exception as e:
-                print(f"[TilePicker] ERROR cargando {rel_path}: {e}")
+                logger.error(f"[TilePicker] ERROR cargando {rel_path}: {e}")
 
     def _load_tileset_assets(self, image_value: str, grid_size: int):
         """
@@ -155,7 +158,7 @@ class TilePickerController:
         thumb_size = (THUMB, THUMB)
         # Slice and load tileset assets
         self.assets = self._slice_tileset(full_img, image_value, grid_size, thumb_size)
-        print(f"[TilePicker] Loaded {len(self.assets)} tiles from {image_value} using grid size {grid_size}")
+        logger.debug(f"[TilePicker] Loaded {len(self.assets)} tiles from {image_value} using grid size {grid_size}")
         # Refresh view to use new assets list
         self.view.assets = self.assets
         # Save individual tile images to disk
@@ -168,7 +171,7 @@ class TilePickerController:
         try:
             return pygame.image.load(str(full_path))
         except Exception as e:
-            print(f"[TilePicker] ERROR cargando tileset {full_path}: {e}")
+            logger.error(f"[TilePicker] ERROR cargando tileset {full_path}: {e}")
         return None
 
     def _slice_tileset(self, full_img, image_value: str, grid_size: int, thumb_size):
@@ -202,22 +205,22 @@ class TilePickerController:
                 fname = f"{Path(image_value).stem}_{x}_{y}.png"
                 pygame.image.save(sub, str(out_dir / fname))
                 count += 1
-        print(f"[TilePicker] Saved {count} slices to {out_dir}")
+        logger.debug(f"[TilePicker] Saved {count} slices to {out_dir}")
         # Regenerate tiles.json mapping and update overlay config
         try:
             from scripts.generate_overlay_map import main as generate_overlay_map
             import json
             import roguelike_engine.config.config_tiles as ct
             generate_overlay_map()
-            print("[TilePicker] Regenerated tiles.json mapping")
+            logger.debug("[TilePicker] Regenerated tiles.json mapping")
             with open(ct.TILES_MAP_PATH, "r", encoding="utf-8") as f:
                 ct.OVERLAY_CODE_MAP = json.load(f)
             ct.INVERSE_OVERLAY_MAP.clear()
             for code, name in ct.OVERLAY_CODE_MAP.items():
                 ct.INVERSE_OVERLAY_MAP.setdefault(name, []).append(code)
-            print("[TilePicker] Updated overlay mapping in config_tiles")
+            logger.debug("[TilePicker] Updated overlay mapping in config_tiles")
         except Exception as e:
-            print(f"[TilePicker] Error updating overlay mapping: {e}")
+            logger.error(f"[TilePicker] Error updating overlay mapping: {e}")
 
     def is_over(self, mouse_pos) -> bool:
         """

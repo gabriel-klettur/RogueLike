@@ -1,6 +1,8 @@
 
 
 import pygame
+import logging
+logger = logging.getLogger(__name__)
 
 class DeleteTool:
     def __init__(self, state, editor_state, camera):
@@ -17,8 +19,8 @@ class DeleteTool:
         for b in reversed(entities.buildings):
             if b.rect.collidepoint(world_x, world_y):
                 entities.buildings.remove(b)
-                print(f"❌ Edificio eliminado en ({int(world_x)}, {int(world_y)})")                
+                logger.info(f"❌ Edificio eliminado en ({int(world_x)}, {int(world_y)})")                
 
                 return
 
-        print("🕳️ No se encontró edificio para eliminar")
+        logger.info("🕳️ No se encontró edificio para eliminar")

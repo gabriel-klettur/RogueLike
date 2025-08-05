@@ -5,6 +5,8 @@ from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.utils.loader import load_image
 from typing import Dict, Tuple, Optional
+import logging
+logger = logging.getLogger(__name__)
 
 # Cache for building images: key = (image_path, scale)
 _BUILDING_IMAGE_CACHE: Dict[Tuple[str, Optional[Tuple[int,int]]], pygame.Surface] = {}
@@ -142,7 +144,7 @@ class BuildingModel:
             w, h = self.original_scale
             self.resize(w, h)
         else:
-            print("⚠️ No se encontró escala original para este edificio.")
+            logger.warning("⚠️ No se encontró escala original para este edificio.")
 
     # ───────────── Colisiones (collision_map + collision_tiles) ─────────────
     @property

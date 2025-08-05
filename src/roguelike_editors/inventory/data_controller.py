@@ -3,6 +3,8 @@ import json
 import logging
 from roguelike_engine.config.config import DATA_DIR, PROJECT_ROOT
 from roguelike_ui.services.json_persistence import load_from_json
+import logging
+logger = logging.getLogger(__name__)
 
 class DataController:
     """
@@ -27,7 +29,7 @@ class DataController:
         }
 
     def load_data(self):
-        print("[DEBUG][Controller] DataController.load_data start")
+        logger.debug("[DEBUG][Controller] DataController.load_data start")
         for cat, p in self.paths.items():
             default_data = load_from_json(p['default'])
             self.model.default_data[cat] = default_data
@@ -38,12 +40,12 @@ class DataController:
                 with open(p['active'], 'w', encoding='utf-8') as f:
                     json.dump(active, f, ensure_ascii=False, indent=2)
             self.model.active_data[cat] = active
-        print(f"[DEBUG][Controller] DataController.load_data complete. Loaded categories: {list(self.model.default_data.keys())}")
+        logger.debug(f"[DEBUG][Controller] DataController.load_data complete. Loaded categories: {list(self.model.default_data.keys())}")
         # Validate JSON schemas if available
-        print(f"[DEBUG][Controller] Loading inventory data for category '{cat}'")
+        logger.debug(f"[DEBUG][Controller] Loading inventory data for category '{cat}'")
         default_data = load_from_json(p['default'])
         self.model.default_data[cat] = default_data
-        print(f"[DEBUG][Controller] Loaded default_data['{cat}']: {default_data}")
+        logger.debug(f"[DEBUG][Controller] Loaded default_data['{cat}']: {default_data}")
         active = load_from_json(p['active'])
         # Handle nested map data
         if cat == 'map' and isinstance(active, dict) and 'map' in active:
@@ -52,16 +54,16 @@ class DataController:
             with open(p['active'], 'w', encoding='utf-8') as f:
                 json.dump(active, f, ensure_ascii=False, indent=2)
         self.model.active_data[cat] = active
-        print(f"[DEBUG][Controller] Loaded active_data['{cat}']: {active}")
-        print(f"[DEBUG][Controller] DataController.load_data complete. Categories loaded: {list(self.model.default_data.keys())}")
+        logger.debug(f"[DEBUG][Controller] Loaded active_data['{cat}']: {active}")
+        logger.debug(f"[DEBUG][Controller] DataController.load_data complete. Categories loaded: {list(self.model.default_data.keys())}")
         # Validate JSON schemas if available
-        print("[DEBUG][Controller] DataController.load_data start")
+        logger.debug("[DEBUG][Controller] DataController.load_data start")
         # Load JSON data into model
         for cat, p in self.paths.items():
-            print(f"[DEBUG][Controller] Loading inventory data for category '{cat}'")
+            logger.debug(f"[DEBUG][Controller] Loading inventory data for category '{cat}'")
             default_data = load_from_json(p['default'])
             self.model.default_data[cat] = default_data
-            print(f"[DEBUG][Controller] Loaded default_data['{cat}']: {default_data}")
+            logger.debug(f"[DEBUG][Controller] Loaded default_data['{cat}']: {default_data}")
             active = load_from_json(p['active'])
             # Handle nested map data
             if cat == 'map' and isinstance(active, dict) and 'map' in active:
@@ -70,9 +72,9 @@ class DataController:
                 with open(p['active'], 'w', encoding='utf-8') as f:
                     json.dump(active, f, ensure_ascii=False, indent=2)
                     self.model.active_data[cat] = active
-            print(f"[DEBUG][Controller] Loaded active_data['{cat}']: {active}")
+            logger.debug(f"[DEBUG][Controller] Loaded active_data['{cat}']: {active}")
 
-        print(f"[DEBUG][Controller] DataController.load_data complete. Categories loaded: {list(self.model.default_data.keys())}")
+        logger.debug(f"[DEBUG][Controller] DataController.load_data complete. Categories loaded: {list(self.model.default_data.keys())}")
         # Validate JSON schemas if available
         try:
             import jsonschema

@@ -1,7 +1,9 @@
-import os
 import pygame
 from roguelike_engine.utils.loader import load_image
 import roguelike_engine.config.config as config
+
+import logging
+logger = logging.getLogger(__name__)
 
 class LoadingScreen:
     def __init__(self, screen: pygame.Surface, bg_filename: str | None = None, bg_color: tuple[int, int, int] = (0, 0, 0)):
@@ -14,7 +16,7 @@ class LoadingScreen:
                 bg_raw = load_image(bg_filename)
                 self.bg = pygame.transform.scale(bg_raw, (self.w, self.h))
             except Exception as e:
-                print(f"[Warning] No se pudo cargar {bg_filename}: {e}")
+                logger.warning(f"[Warning] No se pudo cargar {bg_filename}: {e}")
                 self.bg = None
                 self.bg_color = bg_color
         else:

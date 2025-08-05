@@ -1,5 +1,7 @@
 import json
 from pathlib import Path
+import logging
+logger = logging.getLogger(__name__)
 
 def main():
     # Ruta al JSON de monstruos
@@ -18,7 +20,7 @@ def main():
 
     # Escribir JSON actualizado
     path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
-    print("JSON migrado: death_sprite → sprites['death'] en monsters.json")
+    logger.info("JSON migrado: death_sprite → sprites['death'] en monsters.json")
 
 if __name__ == "__main__":
     main()

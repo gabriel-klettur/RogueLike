@@ -6,7 +6,8 @@ from roguelike_editors.entities.entities_picker_panel.entities_picker_panel_view
 
 
 from roguelike_editors.entities.entities_picker_panel.entities_picker_panel_events import EntitiesPickerEventHandler
-
+import logging
+logger = logging.getLogger(__name__)
 
 
 class EntityPickerPanelController:
@@ -20,7 +21,7 @@ class EntityPickerPanelController:
     def handle_event(self, event: pygame.event.Event) -> None:
         # Debug picker: evento recibido
         if event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
-            print(f"[DEBUG][PickerController] Click en picker en {event.pos}, blink={self.model.blink}, selected_id={self.model.selected_id}")
+            logger.debug(f"[DEBUG][PickerController] Click en picker en {event.pos}, blink={self.model.blink}, selected_id={self.model.selected_id}")
         self.event_handler.handle(event)
 
     def draw(self, screen: pygame.Surface) -> None:

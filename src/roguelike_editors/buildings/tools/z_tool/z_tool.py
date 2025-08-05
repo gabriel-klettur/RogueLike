@@ -1,5 +1,8 @@
 
 import pygame
+import logging
+logger = logging.getLogger(__name__)
+
 class ZTool:
     """
     Panel flotante para editar la capa Z de un edificio.
@@ -38,8 +41,8 @@ class ZTool:
         if self.target == "bottom":
             building.z_bottom = max(0, building.z_bottom + delta)
             self.state.z_state.set(building, building.z_bottom)
-            print(f"⬇️  Z‑bottom nuevo: {building.z_bottom}")
+            logger.info(f"⬇️  Z‑bottom nuevo: {building.z_bottom}")
         else:
             building.z_top = max(0, building.z_top + delta)
-            print(f"⬆️  Z‑top nuevo: {building.z_top}")
+            logger.info(f"⬆️  Z‑top nuevo: {building.z_top}")
     

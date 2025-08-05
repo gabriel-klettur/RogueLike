@@ -5,8 +5,10 @@ from pathlib import Path
 from roguelike_game.ecs.components.item_models import load_items
 from roguelike_engine.utils.loader import load_image
 import json
-import jsonschema
 from jsonschema import Draft7Validator, RefResolver
+
+import logging
+logger = logging.getLogger(__name__)
 
 class ItemsLoader:
     """
@@ -41,5 +43,5 @@ class ItemsLoader:
                 try:
                     assets[item_id] = load_image(icon_paths[0])
                 except Exception as e:
-                    print(f"[ItemsLoader] Error cargando icono {item_id}: {e}")
+                    logger.error(f"Error cargando icono {item_id}: {e}")
         return items, assets

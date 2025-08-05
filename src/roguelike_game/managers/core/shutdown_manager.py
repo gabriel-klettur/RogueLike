@@ -1,6 +1,9 @@
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.factories.player.config import RENDERED_SPRITE_SIZE
 
+import logging
+logger = logging.getLogger(__name__)
+
 class ShutdownManager:
     """
     Se encarga de todo lo necesario antes de cerrar el juego:
@@ -39,4 +42,4 @@ class ShutdownManager:
             g.world.save_world()
 
         except Exception as exc:
-            print(f"[WARN] No se pudo guardar al cerrar: {exc}")
+            logger.warning(f"No se pudo guardar al cerrar: {exc}")

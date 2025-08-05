@@ -3,6 +3,8 @@ import os
 from dataclasses import dataclass
 from typing import List
 from roguelike_editors.buildings.building_editor_model import BuildingsEditorModel
+import logging
+logger = logging.getLogger(__name__)
 
 @dataclass
 class DirEntry:
@@ -60,7 +62,7 @@ class BuildingPickerController:
     def close_picker(self):
         """Cerrar solo el panel de selección, sin desactivar el editor."""
         self.editor.picker_active = False
-        print("📂 Building Picker CLOSED")
+        logger.info("📂 Building Picker CLOSED")
 
     def place_building(self, mouse_pos, camera, buildings):
         """

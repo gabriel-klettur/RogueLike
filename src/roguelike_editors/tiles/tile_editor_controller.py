@@ -10,7 +10,7 @@ from roguelike_editors.tiles.tiles_collision_panel.tiles_collision_panel_control
 from roguelike_editors.tiles.layers_panel.layers_panel_controller import LayersPanelController
 from roguelike_editors.tiles.size_panel.size_panel_controller import SizePanelController
 from roguelike_editors.tiles.tile_outline_view import TileOutlineView
-from pathlib import Path
+
 from roguelike_engine.utils.loader import load_image
 import roguelike_engine.config.config_tiles as ct
 from roguelike_engine.config.config_tiles import DEFAULT_TILE_MAP
@@ -19,7 +19,8 @@ from roguelike_editors.tiles.common.view import screen_to_tile
 from roguelike_engine.config.map_config import global_map_settings
 import threading
 
-
+import logging
+logger = logging.getLogger(__name__)
 
 class TileEditorController:
     """
@@ -245,7 +246,7 @@ class TileEditorController:
         try:
             map.save_cache()
         except Exception as e:
-            print(f"[ERROR][TileEditorController] failed to update map cache: {e}")
+            logger.error(f"[ERROR][TileEditorController] failed to update map cache: {e}")
         map.collision_layers = map.collision_manager.load(map)
         try:
             map.view.update_chunks(map, camera, cells)

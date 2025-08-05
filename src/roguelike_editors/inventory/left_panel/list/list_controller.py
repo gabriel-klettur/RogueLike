@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 class ListController:
     """
     Controlador para el manejo de la lista de elementos del panel izquierdo.
@@ -111,12 +114,12 @@ class ListController:
         Imprime información de debug para los monstruos.
         """
         # DEBUG: dump data and component maps once per panel open
-        print(f"[DEBUG ListController] monster data keys: {list(data.keys())}")
-        print(f"[DEBUG ListController] Position entity ids: {list(pos_map.keys())}")
-        print(f"[DEBUG ListController] MonsterInstance entity ids: {list(inst_map.keys())}")
+        logger.debug(f"[DEBUG ListController] monster data keys: {list(data.keys())}")
+        logger.debug(f"[DEBUG ListController] Position entity ids: {list(pos_map.keys())}")
+        logger.debug(f"[DEBUG ListController] MonsterInstance entity ids: {list(inst_map.keys())}")
         
         for mon_id, entry in data.items() if isinstance(data, dict) else []:
-            print(f"[ListController] Monster Eid={mon_id}: {entry}")
+            logger.debug(f"[ListController] Monster Eid={mon_id}: {entry}")
         
         # DEBUG: mapping summary
         missing_inst = []
@@ -130,6 +133,6 @@ class ListController:
                 missing_pos.append(mon_id)
         
         if missing_inst:
-            print(f"[DEBUG ListController] mon_ids with no ECS instance: {missing_inst}")
+            logger.debug(f"[DEBUG ListController] mon_ids with no ECS instance: {missing_inst}")
         if missing_pos:
-            print(f"[DEBUG ListController] mon_ids with no Position component: {missing_pos}")
+            logger.debug(f"[DEBUG ListController] mon_ids with no Position component: {missing_pos}")

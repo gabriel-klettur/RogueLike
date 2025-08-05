@@ -7,6 +7,9 @@ from roguelike_engine.map.utils import get_zone_for_tile
 from roguelike_engine.config.map_config import global_map_settings
 from types import SimpleNamespace
 
+import logging
+logger = logging.getLogger(__name__)
+
 class MapEditorManager:
     """
     Manager para el Map Editor, análogo a TilesEditorManager y BuildingEditorManager.
@@ -45,7 +48,7 @@ class MapEditorManager:
             self.editor_state.selected_zone = None
             self.editor_state.hidden_zones.clear()
             self.editor_state.dragging = None
-        print(" Map Editor ON" if active else " Map Editor OFF")
+        logger.debug(" Map Editor ON" if active else " Map Editor OFF")
 
     def handle(self, camera, map_manager):
         if self.editor_state.active:

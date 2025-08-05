@@ -4,8 +4,9 @@ import pygame
 
 from roguelike_game.ecs.components.item_models import load_items
 from roguelike_game.ecs.components.item_models import ItemStack
-from roguelike_game.ecs.components.inventory_component import InventoryComponent
-from roguelike_game.ecs.components.input_component import InputComponent
+
+import logging
+logger = logging.getLogger(__name__)
 
 class InventoryEditorSystem:
     """
@@ -51,14 +52,14 @@ class InventoryEditorSystem:
             if getattr(inp, 'toggle_editor', False):
                 self.active = not self.active
                 if self.active:
-                    print("[InventoryEditorOpened]")
+                    logger.debug("[InventoryEditorOpened]")
                     # Initialize entity list and selection
                     players = list(world.components.get('PlayerTagComponent', {}).keys())
                     npcs = list(world.components.get('NPCTagComponent', {}).keys())
                     self.entities = players + npcs
                     self.selected_eid = self.entities[0] if self.entities else None
                 else:
-                    print("[InventoryEditorClosed]")
+                    logger.debug("[InventoryEditorClosed]")
                 inp.toggle_editor = False
         if not self.active or self.selected_eid is None:
             return
@@ -88,7 +89,7 @@ class InventoryEditorSystem:
                     self.drag_item = (stack.item_id, stack.quantity)
                     self.drag_slot = slot_idx
                     inv.slots[slot_idx] = None
-                    print("[InventoryChanged]")
+                    logger.debug("[InventoryChanged]")
         else:
             if self.drag_item is not None:
                 slot_idx = self._get_slot_at_pos(mouse_pos, len(inv.slots))
@@ -98,16 +99,16 @@ class InventoryEditorSystem:
                     inv.slots[self.drag_slot] = ItemStack(self.drag_item[0], self.drag_item[1])
                 self.drag_item = None
                 self.drag_slot = None
-                print("[InventoryChanged]")
+                logger.debug("[InventoryChanged]")
         # Button clicks
         if not mouse_pressed:
             mx, my = mouse_pos
             if self.save_button_rect and self.save_button_rect.collidepoint(mx, my):
                 self._save_template(inv)
-                print("[InventoryEditorSaved]")
+                logger.debug("[InventoryEditorSaved]")
             if self.apply_button_rect and self.apply_button_rect.collidepoint(mx, my):
                 self._apply_changes(inv)
-                print("[InventoryEditorApplied]")
+                logger.debug("[InventoryEditorApplied]")
 
     def render(self, world, surface, camera=None):
         if not self.active:

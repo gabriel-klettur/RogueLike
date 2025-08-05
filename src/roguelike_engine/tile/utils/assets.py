@@ -1,10 +1,11 @@
-import os
 import random
 import pygame
 
-from roguelike_engine.config.config import ASSETS_DIR
 from roguelike_engine.config.config_tiles import TILE_SIZE, OVERLAY_CODE_MAP, DEFAULT_TILE_MAP
 from roguelike_engine.utils.loader import load_image
+
+import logging
+logger = logging.getLogger(__name__)
 
 # Caché de imágenes para evitar recargas constantes desde disco
 _BASE_TILE_IMAGES_CACHE: dict[str, list[pygame.Surface] | pygame.Surface] | None = None
@@ -63,14 +64,14 @@ def get_sprite_for_tile(char: str, overlay_code: str | None = None) -> pygame.Su
         return _SPRITE_CACHE[key]
 
     sprite: pygame.Surface | None = None
-    print(f"[DEBUG][AssetLoader] get_sprite_for_tile called with char={char!r}, overlay_code={overlay_code!r}")
+    logger.debug(f"[DEBUG][AssetLoader] get_sprite_for_tile called with char={char!r}, overlay_code={overlay_code!r}")
     # 1) Si hay código de overlay
     if overlay_code:
         name = OVERLAY_CODE_MAP.get(overlay_code)
         if name:
-            print(f"[DEBUG][AssetLoader] overlay_code {overlay_code!r} mapped to asset {name!r}")
+            logger.debug(f"[DEBUG][AssetLoader] overlay_code {overlay_code!r} mapped to asset {name!r}")
         else:
-            print(f"[DEBUG][AssetLoader] overlay_code {overlay_code!r} NOT in OVERLAY_CODE_MAP")
+            logger.debug(f"[DEBUG][AssetLoader] overlay_code {overlay_code!r} NOT in OVERLAY_CODE_MAP")
         if name:
             sprite = load_image(f"tiles/{name}.png", (TILE_SIZE, TILE_SIZE))
 

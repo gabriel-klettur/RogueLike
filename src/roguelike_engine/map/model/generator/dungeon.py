@@ -5,6 +5,9 @@ from .interfaces import MapGenerator
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.map.utils import intersect, center_of
 
+import logging
+logger = logging.getLogger(__name__)
+
 class DungeonGenerator(MapGenerator):
     """
     Generador de dungeon procedural basado en habitaciones y túneles.
@@ -30,7 +33,7 @@ class DungeonGenerator(MapGenerator):
         else:
             max_allowed = max_rooms
 
-        print(f"[Dungeon] Generación iniciada. Intentos permitidos: {max_rooms}, límite real de habitaciones: {max_allowed}")
+        logger.debug(f"[Dungeon] Generación iniciada. Intentos permitidos: {max_rooms}, límite real de habitaciones: {max_allowed}")
 
         map_ = [["#" for _ in range(width)] for _ in range(height)]
         rooms: List[Tuple[int,int,int,int]] = []
@@ -45,7 +48,7 @@ class DungeonGenerator(MapGenerator):
             new_room = (x, y, x + w, y + h)
 
             if any(intersect(r, new_room) for r in rooms):
-                #print(f"  ▸ Intento {attempts}: habitación colisiona, descartada.")
+                #logger.debug(f"  ▸ Intento {attempts}: habitación colisiona, descartada.")
                 continue
 
             if avoid_zone and not (
@@ -54,14 +57,14 @@ class DungeonGenerator(MapGenerator):
                 new_room[3] < avoid_zone[1] or
                 new_room[1] > avoid_zone[3]
             ):
-                #print(f"  ▸ Intento {attempts}: dentro de zona evitada, descartada.")
+                #logger.debug(f"  ▸ Intento {attempts}: dentro de zona evitada, descartada.")
                 continue
 
             # Pintar habitación (slice optimized)
             for yy in range(y, y + h):
                 map_[yy][x:x + w] = ["O"] * w
 
-            #print(f"  ✅ Intento {attempts}: habitación creada en {(x,y)} tamaño {(w,h)} (Total habitaciones: {len(rooms)+1}).")
+            #logger.debug(f"  ✅ Intento {attempts}: habitación creada en {(x,y)} tamaño {(w,h)} (Total habitaciones: {len(rooms)+1}).")
 
             # Conectar con la anterior si existe
             if rooms:
@@ -76,7 +79,7 @@ class DungeonGenerator(MapGenerator):
 
             rooms.append(new_room)
 
-        print(f"[Dungeon] Generación finalizada: {len(rooms)} habitaciones creadas en {attempts} intentos.")
+        logger.debug(f"[Dungeon] Generación finalizada: {len(rooms)} habitaciones creadas en {attempts} intentos.")
 
         metadata = {"rooms": rooms}
         return map_, metadata

@@ -1,4 +1,6 @@
 import pygame
+import logging
+logger = logging.getLogger(__name__)
 
 class EntitiesAddRemovePanelEventHandler:
     """
@@ -16,7 +18,7 @@ class EntitiesAddRemovePanelEventHandler:
         if event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
             pos = event.pos
             # Debug click en panel add/remove
-            print(f"[DEBUG][AddRemovePanel] Click izquierdo en {pos}")
+            logger.debug(f"[DEBUG][AddRemovePanel] Click izquierdo en {pos}")
             # Obtener widget de panel
             panel_widget = None
             try:
@@ -26,26 +28,26 @@ class EntitiesAddRemovePanelEventHandler:
             if panel_widget:
                 for tool in self.model.tools:
                     rect = panel_widget.icon_rects.get(tool)
-                    print(f"[DEBUG][AddRemovePanel] Tool '{tool}' rect: {rect}")
+                    logger.debug(f"[DEBUG][AddRemovePanel] Tool '{tool}' rect: {rect}")
                     if rect and rect.collidepoint(pos):
-                        print(f"[DEBUG][AddRemovePanel] '{tool}' presionado")
+                        logger.debug(f"[DEBUG][AddRemovePanel] '{tool}' presionado")
                         # Alternar modo de añadir/borrar entidades
                         if tool == 'add_entitie' and self.controller.model.toolbar_model.active_tool == 'entities_on_map':
                             if self.controller.model.spawn_mode_active:
-                                print("[DEBUG][AddRemovePanel] Cancelando spawn mode")
+                                logger.debug("[DEBUG][AddRemovePanel] Cancelando spawn mode")
                                 self.model.active_tool = None
                                 self.controller.exit_spawn_mode()
                             else:
-                                print("[DEBUG][AddRemovePanel] Iniciando spawn mode")
+                                logger.debug("[DEBUG][AddRemovePanel] Iniciando spawn mode")
                                 self.model.active_tool = tool
                                 self.controller.enter_spawn_mode()
                         elif tool == 'remove_entitie' and self.controller.model.toolbar_model.active_tool == 'entities_on_map':
                             if self.controller.model.delete_mode_active:
-                                print("[DEBUG][AddRemovePanel] Cancelando delete mode")
+                                logger.debug("[DEBUG][AddRemovePanel] Cancelando delete mode")
                                 self.model.active_tool = None
                                 self.controller.exit_delete_mode()
                             else:
-                                print("[DEBUG][AddRemovePanel] Iniciando delete mode")
+                                logger.debug("[DEBUG][AddRemovePanel] Iniciando delete mode")
                                 self.model.active_tool = tool
                                 self.controller.enter_delete_mode()
                         return True

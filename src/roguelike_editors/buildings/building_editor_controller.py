@@ -10,6 +10,8 @@ from roguelike_editors.buildings.tools.default_tool.default_tool_view import Def
 from roguelike_editors.buildings.utils.zone_helpers import assign_zone_and_relatives
 
 from roguelike_editors.buildings.buildings_picker.building_picker_controller import BuildingPickerController
+import logging
+logger = logging.getLogger(__name__)
 
 class BuildingEditorController:
     """Agrupa todas las herramientas y ofrece una API de eventos de mouse."""
@@ -93,9 +95,9 @@ class BuildingEditorController:
     def on_mouse_up(self, button, camera, buildings):
         # 1) Finalizar resize / split (igual que antes)
         if self.editor.resizing:
-            print("✅ Resize terminado.")
+            logger.info("✅ Resize terminado.")
         if self.editor.split_dragging:
-            print("✅ Split ratio fijado:", round(self.editor.selected_building.split_ratio, 2))
+            logger.info("✅ Split ratio fijado:", round(self.editor.selected_building.split_ratio, 2))
 
         # Guarda el building para recalcularlo
         building = self.editor.selected_building
@@ -159,18 +161,18 @@ class BuildingEditorController:
         """Activa/desactiva los handles del Building Editor, sin tocar el picker."""
         new_val = not self.editor.active
         self.editor.active = new_val
-        print("🟩 Building Editor ON" if new_val else "🟥 Building Editor OFF")
+        logger.info("🟩 Building Editor ON" if new_val else "🟥 Building Editor OFF")
 
     def toggle_picker(self):
         """Activa/desactiva solo el picker (listado de assets)."""
         new_val = not self.editor.picker_active
         self.editor.picker_active = new_val
-        print("📂 Building Picker ON" if new_val else "📂 Building Picker OFF")
+        logger.info("📂 Building Picker ON" if new_val else "📂 Building Picker OFF")
 
 
     # ======================== LÓGICA PRIVADA ======================== #
     def _delete_building(self, building, buildings):
-        print(f"❌ Eliminando edificio: {building} en index {buildings.index(building)}")
+        logger.info(f"❌ Eliminando edificio: {building} en index {buildings.index(building)}")
         # Elimina el edificio y lo guarda para undo
         if not hasattr(self.editor, 'undo_stack'):
             self.editor.undo_stack = []
@@ -188,14 +190,14 @@ class BuildingEditorController:
         self.editor.resizing = True
         self.editor.resize_origin = mouse_start
         self.editor.initial_size = building.image.get_size()
-        print(f"🔧 Resize de {building.image_path} iniciado")
+        logger.info(f"🔧 Resize de {building.image_path} iniciado")
 
     def _start_drag(self, building, world_x, world_y):
         self.editor.selected_building = building
         self.editor.dragging = True
         self.editor.offset_x = world_x - building.x
         self.editor.offset_y = world_y - building.y
-        print(f"🏗️ Arrastre de {building.image_path} iniciado")
+        logger.info(f"🏗️ Arrastre de {building.image_path} iniciado")
         assign_zone_and_relatives(self.editor.selected_building)
 
     # ======================== ACTUALIZACIÓN ========================= #

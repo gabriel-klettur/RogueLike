@@ -1,5 +1,7 @@
 import json
 from pathlib import Path
+import logging
+logger = logging.getLogger(__name__)
 
 # Script para transformar new_monsters.json al formato estándar (similar a new_players.json)
 ROOT = Path(__file__).resolve().parent
@@ -30,4 +32,4 @@ new = {
 with open(INPUT, 'w', encoding='utf-8') as f:
     json.dump(new, f, indent=2)
 
-print(f"Transformado new_monsters.json: {INPUT}")
+logger.info(f"Transformado new_monsters.json: {INPUT}")

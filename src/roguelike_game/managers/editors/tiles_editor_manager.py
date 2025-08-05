@@ -3,6 +3,9 @@ from roguelike_editors.tiles.tile_editor_controller import TileEditorController
 from roguelike_editors.tiles.tile_editor_events import TileEditorEventHandler
 from roguelike_editors.tiles.tile_editor_view import TileEditorView
 
+import logging
+logger = logging.getLogger(__name__)
+
 class TilesEditorManager:
     def __init__(self, game):
         
@@ -29,7 +32,7 @@ class TilesEditorManager:
             self.editor_state.selected_tile     = None
             self.editor_state.current_choice    = None
 
-        print("🟩 Tile-Editor ON REAL!" if active else "🟥 Tile-Editor OFF")
+        logger.debug("🟩 Tile-Editor ON REAL!" if active else "🟥 Tile-Editor OFF")
 
     def handle(self, camera, game_map, events):
         """

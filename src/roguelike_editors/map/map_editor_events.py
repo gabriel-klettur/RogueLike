@@ -1,6 +1,8 @@
 import pygame
 import os
 import json
+import logging
+logger = logging.getLogger(__name__)
 from pygame.locals import *
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
@@ -165,7 +167,7 @@ class MapEditorEventHandler:
                 grid[ly][lx] = t.overlay_code
         layers[Layer.Ground] = grid
         save_layers(zone, layers)
-        print(f"DEBUG: persisted overlay for zone {zone}")
+        logger.debug(f"DEBUG: persisted overlay for zone {zone}")
         self.map_manager.view.invalidate_cache()
 
     def _handle_clear_colliders_execution(self):
@@ -184,9 +186,9 @@ class MapEditorEventHandler:
         try:
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(grid, f, indent=2)
-            print(f"DEBUG [MapEditorEventHandler] cleared colliders for zone {zone}")
+            logger.debug(f"DEBUG [MapEditorEventHandler] cleared colliders for zone {zone}")
         except Exception as e:
-            print(f"DEBUG [MapEditorEventHandler] failed to clear colliders for zone {zone}: {e}")
+            logger.debug(f"DEBUG [MapEditorEventHandler] failed to clear colliders for zone {zone}: {e}")
         self.map_manager.reload_map()
         self.manager.game.ecs.ecs_world.spatial_index = SpatialIndex(
             self.map_manager, self.manager.game.buildings.buildings
@@ -208,9 +210,9 @@ class MapEditorEventHandler:
         try:
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(grid, f, indent=2)
-            print(f"DEBUG [MapEditorEventHandler] painted colliders for zone {zone}")
+            logger.debug(f"DEBUG [MapEditorEventHandler] painted colliders for zone {zone}")
         except Exception as e:
-            print(f"DEBUG [MapEditorEventHandler] failed to paint colliders for zone {zone}: {e}")
+            logger.debug(f"DEBUG [MapEditorEventHandler] failed to paint colliders for zone {zone}: {e}")
         self.map_manager.reload_map()
         self.manager.game.ecs.ecs_world.spatial_index = SpatialIndex(
             self.map_manager, self.manager.game.buildings.buildings
@@ -255,18 +257,18 @@ class MapEditorEventHandler:
         if ev.key == pygame.K_RETURN:
             old_zone = self.state.renaming_zone
             new_name = self.state.rename_input.strip()
-            print(f"DEBUG: renaming {old_zone} -> {new_name}")
+            logger.debug(f"DEBUG: renaming {old_zone} -> {new_name}")
             self.controller.rename_zone(old_zone, new_name)
             for b in self.manager.game.buildings.buildings:
                 if getattr(b, "zone", None) == old_zone:
                     b.zone = new_name
-                    print(f"DEBUG: building {b} zone updated from {old_zone} to {new_name}")
+                    logger.debug(f"DEBUG: building {b} zone updated from {old_zone} to {new_name}")
             save_buildings_to_json(
                 self.manager.game.buildings.buildings,
                 z_state=self.manager.game.z_state,
                 zone_offsets=global_map_settings.zone_offsets,
             )
-            print("DEBUG: persisted buildings_data.json")
+            logger.debug("DEBUG: persisted buildings_data.json")
             self.state.selected_zone = new_name
             self.state.renaming_zone = None
             self.state.rename_input = ""
@@ -287,18 +289,18 @@ class MapEditorEventHandler:
         if self.state.rename_accept_rect and self.state.rename_accept_rect.collidepoint(ev.pos):
             old_zone = self.state.renaming_zone
             new_name = self.state.rename_input.strip()
-            print(f"DEBUG: accept rename {old_zone} -> {new_name}")
+            logger.debug(f"DEBUG: accept rename {old_zone} -> {new_name}")
             self.controller.rename_zone(old_zone, new_name)
             for b in self.manager.game.buildings.buildings:
                 if getattr(b, "zone", None) == old_zone:
                     b.zone = new_name
-                    print(f"DEBUG: building {b} zone updated from {old_zone} to {new_name}")
+                    logger.debug(f"DEBUG: building {b} zone updated from {old_zone} to {new_name}")
             save_buildings_to_json(
                 self.manager.game.buildings.buildings,
                 z_state=self.manager.game.z_state,
                 zone_offsets=global_map_settings.zone_offsets,
             )
-            print("DEBUG: persisted buildings_data.json")
+            logger.debug("DEBUG: persisted buildings_data.json")
             self.state.selected_zone = new_name
         self.state.renaming_zone = None
         self.state.rename_input = ""
@@ -350,13 +352,13 @@ class MapEditorEventHandler:
         if self.state.confirm_paint_tiles:
             zone = self.state.pending_paint_tiles_zone
             if self.state.confirm_paint_yes_rect and self.state.confirm_paint_yes_rect.collidepoint(ev.pos):
-                print(f"DEBUG: scheduling paint tiles for zone {zone}")
+                logger.debug(f"DEBUG: scheduling paint tiles for zone {zone}")
                 self.state.begin_async_tool("paint_tiles", zone, self.map_manager.tiles_by_zone.get(zone, []))
                 self.state.reset_paint_tiles_dialog()
                 self.state.tile_code = "floor"
                 return True
             if self.state.confirm_paint_no_rect and self.state.confirm_paint_no_rect.collidepoint(ev.pos):
-                print("DEBUG: canceled paint tiles")
+                logger.debug("DEBUG: canceled paint tiles")
                 self.state.reset_paint_tiles_dialog()
                 return True
 
@@ -429,7 +431,7 @@ class MapEditorEventHandler:
                     self.state.pending_paint_tiles_zone = zn
                     self.state.confirm_paint_tiles = True
                     self.state.paint_tiles_mode = False
-                    print(f"DEBUG: paint_tiles_mode: pending zone {zn}, asking confirmation")
+                    logger.debug(f"DEBUG: paint_tiles_mode: pending zone {zn}, asking confirmation")
                     return True
 
         # Modo: Vaciar colliders

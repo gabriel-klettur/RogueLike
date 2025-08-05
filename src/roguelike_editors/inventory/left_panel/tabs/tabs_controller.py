@@ -1,5 +1,6 @@
 from roguelike_ui.services.json_persistence import load_from_json
-
+import logging
+logger = logging.getLogger(__name__)
 
 class TabsController:
     """
@@ -36,7 +37,7 @@ class TabsController:
         try:
             self.editor_controller.model.active_data['monsters'] = load_from_json(active_path)
         except Exception as e:
-            print("[TabsController] Error recargando inventory_monsters.json:", e)
+            logger.error("[TabsController] Error recargando inventory_monsters.json:", e)
         
         # Resetear debug para nuevas impresiones de diagnóstico
         # Delegar al list_controller que maneja el debug

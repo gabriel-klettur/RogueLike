@@ -3,6 +3,8 @@ import pygame
 pygame.font.init()
 # Wrap SysFont to ensure font module is initialized on each call
 _orig_sysfont = pygame.font.SysFont
+import logging
+logger = logging.getLogger(__name__)
 
 def _safe_sysfont(*args, **kwargs):
     pygame.font.init()
@@ -64,13 +66,13 @@ class ItemEditorController:
                 tile_x = int(pos.x) // TILE_SIZE
                 tile_y = int(pos.y) // TILE_SIZE
                 zone_id = get_zone_for_tile(tile_x, tile_y)
-                print(f"[ItemEditorController][DEBUG] Computed tile coords ({tile_x},{tile_y}), zone '{zone_id}'")
+                logger.debug(f"[ItemEditorController][DEBUG] Computed tile coords ({tile_x},{tile_y}), zone '{zone_id}'")
                 self.drop_manager.create_drop(drop_id, self.model.selected_item_id, 1, zone_id, position={'x': pos.x, 'y': pos.y})
                 # Prevent immediate pickup of newly created drop
                 InventoryPickupSystem.recently_created.add(drop_id)
                 # Refrescar lista de instancias
                 self.map_ui.load()
-                print(f"[ItemEditorController] Agregado ítem {self.model.selected_item_id} con id {drop_id} en pos jugador ({pos.x},{pos.y}) zone='{zone_id}'")
+                logger.debug(f"[ItemEditorController] Agregado ítem {self.model.selected_item_id} con id {drop_id} en pos jugador ({pos.x},{pos.y}) zone='{zone_id}'")
             return
 
         # Delegar entrada inline (grid, detalles, edición) al handler existente
@@ -104,7 +106,7 @@ class ItemEditorController:
                         self.map_ui.load()
                     return
                 except ValidationError as e:
-                    print(f"Params invalidos: {e}")
+                    logger.error(f"Params invalidos: {e}")
                     return
         self.event_handler.handle(event)
         return
@@ -133,7 +135,7 @@ class ItemEditorController:
             try:
                 setattr(item, key, converted)
             except Exception as e:
-                print(f"[ItemEditor] Invalid assignment for {key}: '{converted}', error: {e}")
+                logger.error(f"[ItemEditor] Invalid assignment for {key}: '{converted}', error: {e}")
                 # cleanup on invalid input
                 self.text_input.deactivate()
                 self.model.editing_property = None

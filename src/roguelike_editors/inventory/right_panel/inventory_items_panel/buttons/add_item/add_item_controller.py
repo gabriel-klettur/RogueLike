@@ -1,8 +1,6 @@
-import os
-import json
-from types import SimpleNamespace
+import logging
+logger = logging.getLogger(__name__)
 from roguelike_game.ecs.components.item_models import ItemStack
-
 
 class AddItemController:
     """
@@ -49,7 +47,7 @@ class AddItemController:
         eid = self.editor_model.selected_eid
         cat = self.editor_model.current_category
         editing_side = self.editor_model.editing_side
-        print(f"[DEBUG InvGrid] confirm_quantity eid={eid}, cat={cat}, side={editing_side}, item={self.model.selected_item}, qty={quantity}")
+        logger.debug(f"[DEBUG InvGrid] confirm_quantity eid={eid}, cat={cat}, side={editing_side}, item={self.model.selected_item}, qty={quantity}")
         # Default side: JSON default templates
         if editing_side == 'default':
             if cat == 'player':

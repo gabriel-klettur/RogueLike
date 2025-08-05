@@ -1,5 +1,7 @@
 
 import pygame
+import logging
+logger = logging.getLogger(__name__)
 
 from roguelike_editors.buildings.utils.zone_helpers import assign_zone_and_relatives
 from roguelike_engine.config.config_tiles import TILE_SIZE
@@ -33,7 +35,7 @@ class PlacerTool:
         new_building.collision_map = [["." for _ in range(w)] for _ in range(h)]
 
         buildings.append(new_building)
-        print(f"➕ Edificio agregado en ({int(world_x)}, {int(world_y)}) [zona={new_building.zone}, rel=({new_building.rel_x},{new_building.rel_y})]")
+        logger.info(f"➕ Edificio agregado en ({int(world_x)}, {int(world_y)}) [zona={new_building.zone}, rel=({new_building.rel_x},{new_building.rel_y})]")
 
     def place_building_at_path(self, buildings, world_x, world_y, image_path):
         """Nuevo: crea y coloca un building usando la ruta de asset indicada."""
@@ -52,4 +54,4 @@ class PlacerTool:
         new_building.collision_map = [["." for _ in range(w)] for _ in range(h)]
 
         buildings.append(new_building)
-        print(f"➕ Edificio '{image_path}' colocado en ({int(world_x)}, {int(world_y)}) [zona={new_building.zone}, rel=({new_building.rel_x},{new_building.rel_y})]")
+        logger.info(f"➕ Edificio '{image_path}' colocado en ({int(world_x)}, {int(world_y)}) [zona={new_building.zone}, rel=({new_building.rel_x},{new_building.rel_y})]")

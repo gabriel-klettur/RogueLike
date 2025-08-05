@@ -8,6 +8,9 @@ from roguelike_game.ecs.systems.inventory.inventory_pickup_system import Invento
 from roguelike_game.ecs.systems.inventory.inventory_drop_system import InventoryDropSystem
 from .spawn_manager import SpawnNPCManager
 
+import logging
+logger = logging.getLogger(__name__)
+
 class ECSWorld:
     # Hook for override class (tests)
     ECSWorld = None
@@ -62,8 +65,8 @@ class ECSWorld:
                 inst = cls(self.perf_log)
             self.update_systems.append(inst)
         self.render_systems = [cls(self.perf_log) for cls in render_classes]
-        print(f"[ECSWorld] Update systems: {[type(s).__name__ for s in self.update_systems]}")
-        print(f"[ECSWorld] Render systems: {[type(s).__name__ for s in self.render_systems]}")
+        logger.debug(f"[ECSWorld] Update systems: {[type(s).__name__ for s in self.update_systems]}")
+        logger.debug(f"[ECSWorld] Render systems: {[type(s).__name__ for s in self.render_systems]}")
 
     def create_entity(self):
         eid = self.next_entity_id

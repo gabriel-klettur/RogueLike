@@ -1,6 +1,7 @@
 import pygame
-import os
-from roguelike_ui.services.json_persistence import save_to_json
+
+import logging
+logger = logging.getLogger(__name__)
 
 class ItemsEditorEventHandler:
     """
@@ -24,45 +25,11 @@ class ItemsEditorEventHandler:
                 return
             return
 
-        # Edición de propiedades (bloque inactivo)
-        if False and self.model.visible and self.model.editing_property:
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_RETURN:
-                    self.controller._commit_edit()
-                    return
-                elif event.key == pygame.K_BACKSPACE:
-                    if self.model.editing_cursor > 0:
-                        self.model.editing_text = (self.model.editing_text[:self.model.editing_cursor-1] + self.model.editing_text[self.model.editing_cursor:])
-                        self.model.editing_cursor -= 1
-                    return
-                elif event.key == pygame.K_LEFT:
-                    self.model.editing_cursor = max(0, self.model.editing_cursor-1)
-                    return
-                elif event.key == pygame.K_RIGHT:
-                    self.model.editing_cursor = min(len(self.model.editing_text), self.model.editing_cursor+1)
-                    return
-                else:
-                    ch = event.unicode
-                    if ch:
-                        et = self.model.editing_text
-                        idx = self.model.editing_cursor
-                        self.model.editing_text = et[:idx] + ch + et[idx:]
-                        self.model.editing_cursor += len(ch)
-                    return
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                mx, my = event.pos
-                if hasattr(self.model, 'property_entries'):
-                    for rect_prop, key_prop in self.model.property_entries:
-                        if key_prop == self.model.editing_property and rect_prop.collidepoint(mx, my):
-                            return
-                self.controller._commit_edit()
-                return
-
         # Teclas de toggle y navegación
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_F7:
                 self.model.visible = not self.model.visible
-                print(f"[DEBUG ItemEditorController] F7 pressed, visible={self.model.visible}")
+                logger.debug(f"[DEBUG ItemEditorController] F7 pressed, visible={self.model.visible}")
                 if not self.model.visible:
                     self.model.selected_item_id = None
             elif self.model.visible:
@@ -75,7 +42,7 @@ class ItemsEditorEventHandler:
         elif event.type == pygame.MOUSEBUTTONDOWN and self.model.visible and event.button == 1:
             mx, my = event.pos
             entries = [k for (_r, k) in getattr(self.model, 'property_entries', [])]
-            print(f"[DEBUG controller] MOUSEBUTTONDOWN clicks={getattr(event, 'clicks',1)} pos=({mx},{my}) entries={entries}")
+            logger.debug(f"[DEBUG controller] MOUSEBUTTONDOWN clicks={getattr(event, 'clicks',1)} pos=({mx},{my}) entries={entries}")
 
             # Clic en propiedad: focus o edición
             if hasattr(self.model, 'property_entries'):

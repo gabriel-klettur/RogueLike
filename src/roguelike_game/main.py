@@ -8,8 +8,6 @@ from typing import Tuple, Any, Dict, DefaultDict, List
 from collections import defaultdict
 
 
-
-
 def init_pygame() -> None:
     """Inicializa Pygame y hace visible el cursor."""
     pygame.init()

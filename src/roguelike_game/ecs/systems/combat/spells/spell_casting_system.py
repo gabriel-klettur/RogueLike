@@ -14,6 +14,9 @@ import math
 from roguelike_game.config.spells_config import SPELLS
 import pygame
 
+import logging
+logger = logging.getLogger(__name__)
+
 class SpellCastingSystem:
     """
     Sistema que procesa intenciones de hechizo registradas en el ECS:
@@ -47,7 +50,7 @@ class SpellCastingSystem:
         wants = world.components.get('WantsToCastSpell', {})
         npcs = world.components.get('NPCState', {})
 
-        #print(f"[SpellCastingSystem] Inicio update: {len(wants)} intenciones detectadas.")
+        #logger.debug(f"[SpellCastingSystem] Inicio update: {len(wants)} intenciones detectadas.")
 
         # Iterar sobre una copia de las llaves, porque vamos a eliminar intenciones mientras iteramos
         for eid in list(wants.keys()):
@@ -123,10 +126,10 @@ class SpellCastingSystem:
                     new_state.spell_fsm.context['spell'] = intent.spell
                     new_state.spell_fsm.context['automatic'] = cfg.get('automatic', False)
                     new_state.spell_fsm.context['automatic_cast_punish'] = cfg.get('automatic_cast_punish', 1.0)
-                print(f"[SpellCastingSystem] Entidad {eid} inicia hechizo '{intent.spell}' via FSM.")
+                logger.debug(f"[SpellCastingSystem] Entidad {eid} inicia hechizo '{intent.spell}' via FSM.")
                 npc_state.fsm.change_state(new_state, proxy)
             # Limpiar intención
             wants.pop(eid, None)
-            print(f"[SpellCastingSystem] Intención de hechizo de entidad {eid} eliminada.\n")
+            logger.debug(f"[SpellCastingSystem] Intención de hechizo de entidad {eid} eliminada.\n")
 
         # Nota: pulse la FSM de hechizo (prepare/channel/release/cooldown) en CastState y subestados

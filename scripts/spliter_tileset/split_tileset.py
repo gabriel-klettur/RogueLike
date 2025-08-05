@@ -2,6 +2,8 @@
 import os
 import argparse
 from PIL import Image, ImageDraw, ImageFont
+import logging
+logger = logging.getLogger(__name__)
 
 def slice_tileset(image_path: str, cols: int, rows: int, output_prefix: str):
     """
@@ -78,7 +80,7 @@ def draw_grid_overlay(image_path: str, cols: int, rows: int, output_prefix: str)
     result = Image.alpha_composite(img, overlay)
     out_path = f"{output_prefix}_grid.png"
     result.convert("RGB").save(out_path)
-    print(f"Grid overlay saved as: {out_path}")
+    logger.info(f"Grid overlay saved as: {out_path}")
 
 
 def main():
@@ -98,7 +100,7 @@ def main():
     draw_grid_overlay(args.image_path, args.cols, args.rows, base)
 
     total = args.cols * args.rows
-    print(f"¡Hecho! Se han generado {total} imágenes en '{base}_tiles/' y el grid en '{base}_grid.png'.")
+    logger.info(f"¡Hecho! Se han generado {total} imágenes en '{base}_tiles/' y el grid en '{base}_grid.png'.")
 
 if __name__ == "__main__":
     main()

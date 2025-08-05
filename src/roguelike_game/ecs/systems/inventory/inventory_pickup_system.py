@@ -3,13 +3,10 @@ import json
 
 from roguelike_game.managers.map.item_drop_manager import ItemDropManager
 from roguelike_game.ecs.components.inventory_component import InventoryComponent
-from roguelike_game.ecs.components.physical_item_component import PhysicalItemComponent
-from roguelike_game.ecs.components.collectible_component import CollectibleComponent
-from roguelike_game.ecs.components.input_component import InputComponent
-from roguelike_game.ecs.components.transform.position import Position
-from roguelike_game.ecs.components.monster_instance_component import MonsterInstanceComponent
 from roguelike_engine.config.config_tiles import TILE_SIZE
 
+import logging
+logger = logging.getLogger(__name__)
 
 class InventoryPickupSystem:
     # Drop IDs to ignore temporarily (editor-created)
@@ -73,7 +70,7 @@ class InventoryPickupSystem:
                     # Persist actor inventory
                     self._persist_inventory(eid, inv)
                     # Remove drop from map
-                    print(f"[InventoryPickupSystem][DEBUG] pick_up for drop {phys.drop_id} at drop_pos=({drop_pos.x},{drop_pos.y}), player_pos=({player_pos.x},{player_pos.y}), dx={dx}, dy={dy}")
+                    logger.debug(f"[InventoryPickupSystem][DEBUG] pick_up for drop {phys.drop_id} at drop_pos=({drop_pos.x},{drop_pos.y}), player_pos=({player_pos.x},{player_pos.y}), dx={dx}, dy={dy}")
                     self.drop_manager.pick_up(phys.drop_id)
                     # Remove entity
                     world.remove_entity(drop_eid)

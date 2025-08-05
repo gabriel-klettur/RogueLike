@@ -3,6 +3,8 @@ from typing import List, Optional, Dict, Any
 from roguelike_editors.inventory.right_panel.inventory_items_panel.inventory_items_panel_model import InventoryitemsPanelModel
 from roguelike_editors.inventory.left_panel.panel_model import InventoryPanelModel
 from roguelike_editors.inventory.right_panel.item_selection_panel.item_selection_panel_model import ItemSelectionPanelModel
+import logging
+logger = logging.getLogger(__name__)
 
 @dataclass
 class InventoryEditorModel:
@@ -63,7 +65,7 @@ class InventoryEditorModel:
     @current_category.setter
     def current_category(self, value: str):
         self.left_panel_model.current_category = value
-        print(f"[DEBUG][Model] InventoryEditorModel.current_category set to {value}")
+        logger.debug(f"[DEBUG][Model] InventoryEditorModel.current_category set to {value}")
 
     @property
     def selected_eid(self) -> Optional[int]:
@@ -72,7 +74,7 @@ class InventoryEditorModel:
     @selected_eid.setter
     def selected_eid(self, value: Optional[int]):
         self.left_panel_model.selected_eid = value
-        print(f"[DEBUG][Model] InventoryEditorModel.selected_eid set to {value}")
+        logger.debug(f"[DEBUG][Model] InventoryEditorModel.selected_eid set to {value}")
 
     @property
     def camera_focus_target(self) -> Optional[Any]:

@@ -6,6 +6,8 @@ import pygame
 import roguelike_engine.config.config as config
 from roguelike_engine.input.events import handle_events as engine_handle_events
 
+import logging
+logger = logging.getLogger(__name__)
 
 def handle_events(game):
     # Procesar QUIT antes que nada
@@ -73,22 +75,22 @@ def handle_events(game):
             game.entities_editor.model.visible = not game.entities_editor.model.visible
             return
         if event.type == pygame.KEYDOWN and event.key == pygame.K_F6:
-            print(f"[DEBUG][Controller] Toggling Inventory Editor. Old visible: {game.inventory_editor.model.visible}")
+            logger.debug(f"[Controller] Toggling Inventory Editor. Old visible: {game.inventory_editor.model.visible}")
             new_vis = not game.inventory_editor.model.visible
             game.inventory_editor.model.visible = new_vis
             if new_vis:
-                print(f"[DEBUG][Controller] Loading JSON entities for category {game.inventory_editor.model.current_category}...")
+                logger.debug(f"[Controller] Loading JSON entities for category {game.inventory_editor.model.current_category}...")
                 data = game.inventory_editor.model.active_data.get(game.inventory_editor.model.current_category, {})
                 entities = list(data.keys()) if isinstance(data, dict) else []
                 game.inventory_editor.model.entities = entities
-                print(f"[DEBUG][Controller] JSON Entities loaded: {entities}")
+                logger.debug(f"[Controller] JSON Entities loaded: {entities}")
                 prev = game.inventory_editor.model.selected_eid
                 if prev in entities:
                     selected = prev
                 else:
                     selected = entities[0] if entities else None
                 game.inventory_editor.model.selected_eid = selected
-                print(f"[DEBUG][Controller] Selected EID: {selected}")
+                logger.debug(f"[Controller] Selected EID: {selected}")
                 game.inventory_editor.debug_dump()
             return
         if event.type == pygame.KEYDOWN and event.key == pygame.K_F7:
@@ -96,11 +98,11 @@ def handle_events(game):
             return
         if event.type == pygame.KEYDOWN and event.key == pygame.K_F9:
             config.DEBUG = not config.DEBUG
-            print(f"🧪 DEBUG {'activado' if config.DEBUG else 'desactivado'}")
+            logger.debug(f"🧪 DEBUG {'activado' if config.DEBUG else 'desactivado'}")
             return
         if event.type == pygame.KEYDOWN and event.key == pygame.K_F12:
             config.DEBUG_ENTITIES = not config.DEBUG_ENTITIES
-            print(f"🧪 ENTITIES DEBUG {'activado' if config.DEBUG_ENTITIES else 'desactivado'}")
+            logger.debug(f"🧪 ENTITIES DEBUG {'activado' if config.DEBUG_ENTITIES else 'desactivado'}")
             return
         if event.type == pygame.KEYDOWN and event.key == game.menu.input_config.get_key('toggle_tile_editor'):
             game.tiles_editor.toggle()

@@ -42,6 +42,8 @@ from roguelike_engine.z_layer.state import ZState
 from roguelike_game.managers.ecs import ECSManager
 from roguelike_game.managers.items.loader import ItemsLoader
 
+import logging
+logger = logging.getLogger(__name__)
 
 class GameInitializer:
 
@@ -88,13 +90,11 @@ class GameInitializer:
         self.stage_log_path = logs_dir / f'stage_times_{ts}.log'
         with open(self.stage_log_path, 'w', encoding='utf-8') as f:
             f.write(f"[{datetime.now().isoformat()}] Inicio de inicialización\n")
-        logging.basicConfig(
-            filename=str(self.stage_log_path),
-            filemode='a',
-            format='%(asctime)s %(message)s',
-            datefmt='[%Y-%m-%dT%H:%M:%S]',
-            level=logging.INFO
-        )
+        # Añadir FileHandler para log de etapas
+        fh = logging.FileHandler(self.stage_log_path, mode='a', encoding='utf-8')
+        fh.setLevel(logging.INFO)
+        fh.setFormatter(logging.Formatter('%(asctime)s %(message)s', datefmt='[%Y-%m-%dT%H:%M:%S]'))
+        logging.getLogger().addHandler(fh)
 
     def initialize(self):
         self.game.loader = LoadingScreen(self.screen, self.loading_bg)
@@ -169,7 +169,7 @@ class GameInitializer:
         try:
             self.game.world.load_world()
         except Exception as e:
-            print(f"[GameInitializer] Error al cargar mundo: {e}")
+            logger.error(f"Error al cargar mundo: {e}")
 
     def _handle_deferred_levels(self):
         g = self.game

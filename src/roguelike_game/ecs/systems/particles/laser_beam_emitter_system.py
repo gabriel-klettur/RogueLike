@@ -5,6 +5,9 @@ from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.particles.particle_component import ParticleComponent
 
+import logging
+logger = logging.getLogger(__name__)
+
 class LaserBeamEmitterSystem:
     """
     Sistema ECS que emite partículas y aplica daño para cada entidad con LaserBeamComponent.
@@ -22,7 +25,7 @@ class LaserBeamEmitterSystem:
         # Debug beam presence
         beam_count = len(world.components.get('LaserBeamComponent', {}))
         if beam_count:
-            print(f"[DEBUG][LaserBeamEmitter] frame={now:.3f} beams={beam_count}")
+            logger.debug(f"[LaserBeamEmitter] frame={now:.3f} beams={beam_count}")
         to_remove = []
         for caster, beam in list(world.components.get('LaserBeamComponent', {}).items()):
             # dynamic thickness from beam.scale

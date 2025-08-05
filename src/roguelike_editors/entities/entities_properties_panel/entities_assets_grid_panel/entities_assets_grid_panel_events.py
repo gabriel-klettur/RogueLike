@@ -2,6 +2,8 @@ import pygame
 from typing import Optional
 
 from roguelike_ui.widgets.double_click_detector import DoubleClickDetector
+import logging
+logger = logging.getLogger(__name__)
 
 class AssetsGridPanelEventHandler:
     """
@@ -90,7 +92,7 @@ class AssetsGridPanelEventHandler:
             if rect.collidepoint(mx, my):
                 # Actualizar selección en el modelo
                 self.model.selected_asset_cell = key
-                print(f"Clicked asset cell {key}")  # noqa: T001
+                logger.debug(f"Clicked asset cell {key}")
                 return True
         return False
 
@@ -107,7 +109,7 @@ class AssetsGridPanelEventHandler:
         mx, my = event.pos
         for rect, key in entries:
             if rect.collidepoint(mx, my) and self.dc_detector.is_double_click(key):
-                print(f"Double-click detected for asset cell {key}")  # noqa: T001
+                logger.debug(f"Double-click detected for asset cell {key}")
                 self._open_assets_picker(key, rect)
                 return True
         return False
@@ -130,7 +132,7 @@ class AssetsGridPanelEventHandler:
         else:
             x0, y0, width = rect.x, rect.bottom, rect.width
 
-        print(f"Opening assets picker for cell {key} at ({x0}, {y0}) width {width}")  # noqa: T001
+        logger.debug(f"Opening assets picker for cell {key} at ({x0}, {y0}) width {width}")
         prop_ctrl.assets_picker_controller.show(
             key, x0, y0, width, prop_ctrl._on_asset_chosen
         )

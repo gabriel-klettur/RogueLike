@@ -3,6 +3,8 @@ import json
 
 from roguelike_game.ecs.components.inventory_component import InventoryComponent
 
+import logging
+logger = logging.getLogger(__name__)
 
 class InventoryTransferSystem:
 
@@ -52,7 +54,7 @@ class InventoryTransferSystem:
         self._persist_inventory(source_eid, source_inv)
         self._persist_inventory(target_eid, target_inv)
         # Dispatch event (for UI/logs)
-        print(f"[TransferEvent] Transferred {quantity}x{item_id} from eid={source_eid} to eid={target_eid}")
+        logger.debug(f"[TransferEvent] Transferred {quantity}x{item_id} from eid={source_eid} to eid={target_eid}")
 
     def _persist_inventory(self, eid: int, inv: InventoryComponent) -> None:
         inst = self.world.components.get('MonsterInstanceComponent', {}).get(eid)

@@ -6,6 +6,9 @@ from roguelike_engine.z_layer.persistence import extract_z_from_json
 
 from roguelike_engine.buildings.building import Building
 
+import logging
+logger = logging.getLogger(__name__)
+
 def load_buildings_from_json(
     z_state=None
 ) -> List:
@@ -14,7 +17,7 @@ def load_buildings_from_json(
     - Si `z_state` se proporciona, inyecta la capa Z.
     """
     if not os.path.exists(BUILDINGS_DATA_PATH):
-        print(f"⚠️ Archivo no encontrado: {BUILDINGS_DATA_PATH}")
+        logger.warning(f"⚠️ Archivo no encontrado: {BUILDINGS_DATA_PATH}")
         return []
 
     # Cargar colisiones de buildings
@@ -28,14 +31,14 @@ def load_buildings_from_json(
         try:
             data = json.load(f)
         except json.JSONDecodeError as e:
-            print(f"❌ Error al leer JSON: {e}")
+            logger.error(f"❌ Error al leer JSON: {e}")
             return []
 
     buildings: List[Building] = []
 
     for entry in data:
         try:
-            #print(f"📥 Entrada cruda desde JSON: {entry}")
+            #logger.debug(f"📥 Entrada cruda desde JSON: {entry}")
 
             b = Building(
                 rel_x=entry.get("rel_x", 0),
@@ -73,7 +76,7 @@ def load_buildings_from_json(
             buildings.append(b)
 
         except Exception as e:
-            print(f"⚠️ Error al crear edificio desde entrada JSON: {e}")
+            logger.error(f"⚠️ Error al crear edificio desde entrada JSON: {e}")
 
-    print(f"[Buildings][Cargando Edificios] {len(buildings)} edificios cargados desde: [{BUILDINGS_DATA_PATH}]")
+    logger.info(f"[Buildings][Cargando Edificios] {len(buildings)} edificios cargados desde: [{BUILDINGS_DATA_PATH}]")
     return buildings

@@ -1,6 +1,8 @@
 import json
 import os
 import pygame
+import logging
+logger = logging.getLogger(__name__)
 
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config import DATA_DIR
@@ -97,7 +99,7 @@ class MapEditorController:
         self.map_manager.reload_map()
         self.state.selected_zone = new_name
 
-        print(f"DEBUG [Controller.add_zone] Added zone {new_name} at offset ({offx}, {offy})")
+        logger.debug(f"DEBUG [Controller.add_zone] Added zone {new_name} at offset ({offx}, {offy})")
 
     def delete_zone(self) -> None:
         """
@@ -128,7 +130,7 @@ class MapEditorController:
         self.map_manager.reload_map()
         self.state.selected_zone = None
 
-        print(f"DEBUG [Controller.delete_zone] Removed zone {sel}")
+        logger.debug(f"DEBUG [Controller.delete_zone] Removed zone {sel}")
 
     def rename_zone(self, old_name: str, new_name: str) -> None:
         """
@@ -139,10 +141,10 @@ class MapEditorController:
         """
         old = old_name.strip()
         new = new_name.strip()
-        print(f"DEBUG [Controller.rename_zone] called with old_name={old!r}, new_name={new!r}")
+        logger.debug(f"DEBUG [Controller.rename_zone] called with old_name={old!r}, new_name={new!r}")
 
         if not old or not new or old == new:
-            print("DEBUG [Controller.rename_zone] abort: invalid or same name")
+            logger.debug("DEBUG [Controller.rename_zone] abort: invalid or same name")
             return
 
         # Forzar uso de JSON y obtener offsets actuales
@@ -150,14 +152,14 @@ class MapEditorController:
         offsets = dict(global_map_settings.zone_offsets)
 
         if old not in offsets or new in offsets:
-            print("DEBUG [Controller.rename_zone] abort: old_name not in offsets or new_name exists")
+            logger.debug("DEBUG [Controller.rename_zone] abort: old_name not in offsets or new_name exists")
             return
 
         # 1. Actualizar JSON de zones
         offsets[new] = offsets.pop(old)
         json_path = os.path.join(DATA_DIR, "zones", "zones.json")
         self._save_json(json_path, offsets)
-        print(f"DEBUG [Controller.rename_zone] saved zones.json at {json_path}")
+        logger.debug(f"DEBUG [Controller.rename_zone] saved zones.json at {json_path}")
 
         # 2. Renombrar archivos de colisiones y overlays
         self._rename_zone_file("collisions", old, new, "[Controller.rename_zone]")
@@ -173,7 +175,7 @@ class MapEditorController:
             tile.zone = new
         self.map_manager.tiles_by_zone[new] = tiles
 
-        print(f"DEBUG [Controller.rename_zone] Completed rename from {old} to {new}")
+        logger.debug(f"DEBUG [Controller.rename_zone] Completed rename from {old} to {new}")
 
     def save_zones(self) -> None:
         """
@@ -227,9 +229,9 @@ class MapEditorController:
         if os.path.isfile(file_path):
             try:
                 os.remove(file_path)
-                print(f"DEBUG {debug_tag} Removed file {file_path}")
+                logger.debug(f"DEBUG {debug_tag} Removed file {file_path}")
             except Exception as e:
-                print(f"DEBUG {debug_tag} failed to remove file {file_path}: {e}")
+                logger.debug(f"DEBUG {debug_tag} failed to remove file {file_path}: {e}")
 
     def _rename_zone_file(self, subdir: str, old: str, new: str, debug_tag: str = "", suffix: str = ".json") -> None:
         """
@@ -243,9 +245,9 @@ class MapEditorController:
         if os.path.exists(old_file):
             try:
                 os.rename(old_file, new_file)
-                print(f"DEBUG {debug_tag} Renamed file {old_file} -> {new_file}")
+                logger.debug(f"DEBUG {debug_tag} Renamed file {old_file} -> {new_file}")
             except Exception as e:
-                print(f"DEBUG {debug_tag} Failed to rename file {old_file}: {e}")
+                logger.debug(f"DEBUG {debug_tag} Failed to rename file {old_file}: {e}")
 
     def _generate_unique_zone_key(self, base: str, offsets: dict) -> str:
         """
@@ -308,33 +310,33 @@ class MapToolbarController:
         # 1. Toggle dropdown layers view
         if self.icon_rect and self.icon_rect.collidepoint(mouse_pos):
             self.editor.layers_view_open = not self.editor.layers_view_open
-            print(f"[DEBUG][Toolbar] layers_view_open -> {self.editor.layers_view_open}")
+            logger.debug(f"[DEBUG][Toolbar] layers_view_open -> {self.editor.layers_view_open}")
             return True
 
         # 2. Botones secuenciales: add_zone, delete_zone, paint_tiles, clear_colliders, paint_colliders
         if self.add_rect and self.add_rect.collidepoint(mouse_pos):
             self._toggle_mode("add_zone_mode", disable=["delete_zone_mode"])
-            print(f"[DEBUG][Toolbar] add_zone_mode -> {self.editor.add_zone_mode}")
+            logger.debug(f"[DEBUG][Toolbar] add_zone_mode -> {self.editor.add_zone_mode}")
             return True
 
         if self.delete_rect and self.delete_rect.collidepoint(mouse_pos):
             self._toggle_mode("delete_zone_mode", disable=["add_zone_mode"])
-            print(f"[DEBUG][Toolbar] delete_zone_mode -> {self.editor.delete_zone_mode}")
+            logger.debug(f"[DEBUG][Toolbar] delete_zone_mode -> {self.editor.delete_zone_mode}")
             return True
 
         if self.paint_tiles_rect and self.paint_tiles_rect.collidepoint(mouse_pos):
             self._toggle_mode("paint_tiles_mode", disable=["add_zone_mode", "delete_zone_mode", "clear_colliders_mode", "paint_colliders_mode"])
-            print(f"[DEBUG][Toolbar] paint_tiles_mode -> {self.editor.paint_tiles_mode}")
+            logger.debug(f"[DEBUG][Toolbar] paint_tiles_mode -> {self.editor.paint_tiles_mode}")
             return True
 
         if self.clear_colliders_rect and self.clear_colliders_rect.collidepoint(mouse_pos):
             self._toggle_mode("clear_colliders_mode", disable=["add_zone_mode", "delete_zone_mode", "paint_tiles_mode", "paint_colliders_mode"])
-            print(f"[DEBUG][Toolbar] clear_colliders_mode -> {self.editor.clear_colliders_mode}")
+            logger.debug(f"[DEBUG][Toolbar] clear_colliders_mode -> {self.editor.clear_colliders_mode}")
             return True
 
         if self.paint_colliders_rect and self.paint_colliders_rect.collidepoint(mouse_pos):
             self._toggle_mode("paint_colliders_mode", disable=["add_zone_mode", "delete_zone_mode", "paint_tiles_mode", "clear_colliders_mode"])
-            print(f"[DEBUG][Toolbar] paint_colliders_mode -> {self.editor.paint_colliders_mode}")
+            logger.debug(f"[DEBUG][Toolbar] paint_colliders_mode -> {self.editor.paint_colliders_mode}")
             return True
 
         # 3. Procesar clic dentro del dropdown de visibilidad de capas
@@ -368,23 +370,23 @@ class MapToolbarController:
             for layer in self.editor.visible_layers:
                 self.editor.visible_layers[layer] = True
             self.editor.show_buildings = True
-            print("[DEBUG][Layer View] show_all: all layers visible")
+            logger.debug("[DEBUG][Layer View] show_all: all layers visible")
 
         elif key == "hide_all":
             for layer in self.editor.visible_layers:
                 self.editor.visible_layers[layer] = False
             self.editor.show_buildings = False
-            print("[DEBUG][Layer View] hide_all: all layers hidden")
+            logger.debug("[DEBUG][Layer View] hide_all: all layers hidden")
 
         elif isinstance(key, Layer):
             vl = self.editor.visible_layers
             vl[key] = not vl[key]
-            print(f"[DEBUG][Layer View] {key.name}: {'visible' if vl[key] else 'hidden'}")
+            logger.debug(f"[DEBUG][Layer View] {key.name}: {'visible' if vl[key] else 'hidden'}")
 
         elif key == "buildings":
             self.editor.show_buildings = not self.editor.show_buildings
-            print(f"[DEBUG][Layer View] buildings: {'visible' if self.editor.show_buildings else 'hidden'}")
+            logger.debug(f"[DEBUG][Layer View] buildings: {'visible' if self.editor.show_buildings else 'hidden'}")
 
         elif key == "colliders":
             self.editor.show_colliders = not self.editor.show_colliders
-            print(f"[DEBUG][Layer View] colliders: {'visible' if self.editor.show_colliders else 'hidden'}")
+            logger.debug(f"[DEBUG][Layer View] colliders: {'visible' if self.editor.show_colliders else 'hidden'}")

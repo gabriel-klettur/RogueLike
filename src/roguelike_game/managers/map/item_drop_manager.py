@@ -1,5 +1,8 @@
 import json
-from typing import List, Dict, Union, Optional
+from typing import List, Dict, Union
+
+import logging
+logger = logging.getLogger(__name__)
 
 class ItemDropManager:
     _instances = {}
@@ -36,7 +39,7 @@ class ItemDropManager:
         """
         Registra un drop en el mapa con su drop_id, zona y coordenadas de tile o posición relativa.
         """
-        print(f"[DEBUG ItemDropManager] create_drop: drop_id={drop_id}, item_id={item_id}, quantity={quantity}, zone_id={zone_id}, tile={tile}, position={position}")
+        logger.debug(f"[DEBUG ItemDropManager] create_drop: drop_id={drop_id}, item_id={item_id}, quantity={quantity}, zone_id={zone_id}, tile={tile}, position={position}")
         entry = {
             'item_id': item_id,
             'quantity': quantity,
@@ -63,7 +66,7 @@ class ItemDropManager:
         self._persist()
 
     def pick_up(self, drop_id: str) -> bool:
-        print(f"[ItemDropManager][DEBUG] pick_up called for drop {drop_id}")
+        logger.debug(f"[ItemDropManager][DEBUG] pick_up called for drop {drop_id}")
         """
         Elimina el drop del mapa y devuelve True si existía.
         """

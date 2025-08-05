@@ -6,6 +6,8 @@ from roguelike_editors.inventory.right_panel.inventory_items_panel.grid.grid_vie
 from roguelike_editors.inventory.right_panel.inventory_items_panel.tabs.tabs_view import TabsView
 
 from roguelike_ui.ui_blocker import register_blocker
+import logging
+logger = logging.getLogger(__name__)
 
 class InventoryItemsPanelView:
     """
@@ -65,7 +67,7 @@ class InventoryItemsPanelView:
         slots = self.tabs_view.get_slots_data(model)
         slots_repr = repr(slots)
         if slots_repr != self._last_slots_repr or model.current_category != self._last_category or model.editing_side != self._last_side:
-            print(f"[DEBUG][View] InventoryItemsPanelView.draw new state: category={model.current_category}, side={model.editing_side}, slots={slots}")
+            logger.debug(f"[DEBUG][View] InventoryItemsPanelView.draw new state: category={model.current_category}, side={model.editing_side}, slots={slots}")
             self._last_slots_repr = slots_repr
             self._last_category = model.current_category
             self._last_side = model.editing_side

@@ -6,6 +6,9 @@ import json
 from roguelike_engine.config.config import DATA_DIR
 from roguelike_engine.config.map_config import global_map_settings
 
+import logging
+logger = logging.getLogger(__name__)
+
 class CollisionManager:
     """
     Carga y gestiona colisiones de zonas.
@@ -29,7 +32,7 @@ class CollisionManager:
                 try:
                     data = json.loads(file_path.read_text(encoding='utf-8'))
                 except Exception as e:
-                    print(f"[Warning] No se pudo leer colisiones para zona {zone}: {e}")
+                    logger.warning(f"No se pudo leer colisiones para zona {zone}: {e}")
             if data is None:
                 offx, offy = global_map_settings.zone_offsets.get(zone, (0,0))
                 width = global_map_settings.zone_width
@@ -42,7 +45,7 @@ class CollisionManager:
                     try:
                         file_path.write_text(json.dumps(data), encoding='utf-8')
                     except Exception as e:
-                        print(f"[Warning] No se pudo escribir colisiones para zona {zone}: {e}")
+                        logger.warning(f"No se pudo escribir colisiones para zona {zone}: {e}")
 
             self.collision_layers[zone] = data
             # Aplicar a tiles
@@ -75,7 +78,7 @@ class CollisionManager:
         try:
             file_path.write_text(json.dumps(data), encoding='utf-8')
         except Exception as e:
-            print(f"[Warning] No se pudo guardar colisiones para zona {zone_name}: {e}")
+            logger.warning(f"No se pudo guardar colisiones para zona {zone_name}: {e}")
 
     def is_walkable(self, x: int, y: int) -> bool:
         """

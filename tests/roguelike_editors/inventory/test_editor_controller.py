@@ -1,8 +1,10 @@
-import pytest
 from types import SimpleNamespace
 import roguelike_editors.inventory.editor_controller as ec_mod
 from roguelike_editors.inventory.editor_controller import InventoryEditorController
 from roguelike_editors.inventory.editor_model import InventoryEditorModel
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 def test_init_calls_load_data(monkeypatch):

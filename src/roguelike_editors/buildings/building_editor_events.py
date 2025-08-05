@@ -42,12 +42,12 @@ class BuildingEditorEventHandler:
                 self.panning = True
                 self.pan_start = ev.pos
                 self.pan_offset_start = (camera.offset_x, camera.offset_y)
-                print(f"[DEBUG][BUILDINGS EDITOR] Start panning at {self.pan_start}, offset_start={self.pan_offset_start}")
+                logger.info(f"[DEBUG][BUILDINGS EDITOR] Start panning at {self.pan_start}, offset_start={self.pan_offset_start}")
                 continue
             if ev.type == pygame.MOUSEBUTTONUP and getattr(ev, 'button', None) == 2 and self.panning:
                 # Stop panning
                 self.panning = False
-                print("[DEBUG][BUILDINGS EDITOR] Stop panning")
+                logger.info("[DEBUG][BUILDINGS EDITOR] Stop panning")
                 continue
             if ev.type == pygame.MOUSEMOTION and self.panning:
                 # Apply panning motion (using relative motion)
@@ -72,7 +72,7 @@ class BuildingEditorEventHandler:
             if ev.type == pygame.KEYUP and ev.key == pygame.K_r:
                 if self.editor.resizing:
                     self.editor.resizing = False
-                    print("✅ Resize finalizado al soltar R")
+                    logger.info("✅ Resize finalizado al soltar R")
                     # Opcional: podrías llamar aquí a una función para fijar el tamaño
             # --- F10: Toggle building editor ---
             if ev.type == pygame.KEYDOWN and ev.key == pygame.K_F10:
@@ -129,14 +129,14 @@ class BuildingEditorEventHandler:
                 # D → reset (default) sobre hovered_building
                 if ev.key == pygame.K_d and self.editor.hovered_building:
                     self.controller.default_tool.apply_reset(self.editor.hovered_building)
-                    print("🔄 Reset (default) aplicado con D sobre hovered_building")
+                    logger.info("🔄 Reset (default) aplicado con D sobre hovered_building")
                     return
 
                 # R → iniciar resize sobre hovered_building (al presionar)
                 if ev.key == pygame.K_r and self.editor.hovered_building:
                     mx, my = pygame.mouse.get_pos()
                     self.controller._start_resize(self.editor.hovered_building, (mx, my))
-                    print("🔧 Resize iniciado con R sobre hovered_building")
+                    logger.info("🔧 Resize iniciado con R sobre hovered_building")
                     return
 
                 # Ctrl+Z → undo eliminación de edificio
@@ -227,7 +227,7 @@ class BuildingEditorEventHandler:
                     os.makedirs(os.path.dirname(BUILDINGS_COLLISIONS_DATA_PATH), exist_ok=True)
                     with open(BUILDINGS_COLLISIONS_DATA_PATH, 'w', encoding='utf-8') as cf:
                         json.dump(data, cf, indent=4)
-                    print(f"✅ Colisiones guardadas en {BUILDINGS_COLLISIONS_DATA_PATH}")
+                    logger.info(f"✅ Colisiones guardadas en {BUILDINGS_COLLISIONS_DATA_PATH}")
                     return
                 # 3) Delegar al controlador y guardar cambios de posición/tamaño
                 self.controller.on_mouse_up(ev.button, camera, entities.buildings)
