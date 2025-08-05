@@ -43,8 +43,8 @@ class TilePickerController:
         
         self.assets = []
         self._load_assets()
-        self._load_positions()
         self.view = TilePickerView(self, self.picker_state, self.assets)
+        self._load_positions()
 
     def _load_positions(self):
         """Load tile order from JSON and reorder assets list."""
