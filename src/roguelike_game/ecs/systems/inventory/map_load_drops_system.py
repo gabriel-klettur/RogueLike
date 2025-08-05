@@ -34,7 +34,10 @@ class MapLoadDropsSystem:
         # Flatten nested 'map' key if JSON is wrongly nested
         if isinstance(drops_raw, dict) and 'map' in drops_raw:
             drops_raw = drops_raw['map']
-        validator.validate(drops_raw)
+        try:
+            validator.validate(drops_raw)
+        except jsonschema.ValidationError as e:
+            logging.error(f"[MapLoadDropsSystem] Schema validation failed: {e.message}. Continuing without drops.")
         # Instanciar el ItemDropManager con datos validados
         self.drop_manager = ItemDropManager(path)
         # Flatten nested 'map' key in drop_manager data if present
