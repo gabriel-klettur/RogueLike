@@ -43,7 +43,7 @@
           "spawn_padding": 3,
           "spawn_count": 10,
           "spawn_margin": 0
-        },        
+        },
         "assets": {
           "active_set": "no-sets",
           "sets": {
@@ -57,13 +57,13 @@
               "death": []
             },
             "sprites_data_set": {
-              "scale_idle": 0.25,
-              "scale_walk": 0.25,
-              "scale_chase": 0.25,
-              "scale_cast": 0.25,
-              "scale_attack": 0.25,
-              "scale_damage": 0.25,
-              "scale_death": 0.25,
+              "scale_idle": 0.15,
+              "scale_walk": 0.15,
+              "scale_chase": 0.15,
+              "scale_cast": 0.15,
+              "scale_attack": 0.15,
+              "scale_damage": 0.15,
+              "scale_death": 0.55,
               "tint": null
             }
           },
@@ -139,18 +139,17 @@
               "sw": null
             },
             "sprites_data_no-set": {
-              "scale_idle": 0.25,
-              "scale_walk": 0.25,
-              "scale_chase": 0.25,
-              "scale_cast": 0.25,
-              "scale_attack": 0.25,
-              "scale_damage": 0.25,
-              "scale_death": 0.25,
-              "death_scale": 0.25,
+              "scale_idle": 0.15,
+              "scale_walk": 0.15,
+              "scale_chase": 0.15,
+              "scale_cast": 0.15,
+              "scale_attack": 0.15,
+              "scale_damage": 0.15,
+              "scale_death": 0.175,
               "tint": null
             }
           }
-        }        
+        }
       },
       "barbol_oscuro": {
         "stats": {
@@ -184,13 +183,13 @@
               "death": []
             },
             "sprites_data_set": {
-              "scale_idle": 0.5,
-              "scale_walk": 0.5,
-              "scale_chase": 0.5,
-              "scale_cast": 0.5,
-              "scale_attack": 0.5,
-              "scale_damage": 0.5,
-              "scale_death": 0.5,
+              "scale_idle": 0.15,
+              "scale_walk": 0.15,
+              "scale_chase": 0.15,
+              "scale_cast": 0.15,
+              "scale_attack": 0.15,
+              "scale_damage": 0.15,
+              "scale_death": 0.175,
               "tint": null
             }
           },
@@ -266,14 +265,13 @@
               "sw": null
             },
             "sprites_data_no-set": {
-              "scale_idle": 0.5,
-              "scale_walk": 0.5,
-              "scale_chase": 0.5,
-              "scale_cast": 0.5,
-              "scale_attack": 0.5,
-              "scale_damage": 0.5,
-              "scale_death": 0.5,              
-              "death_scale": 0.5,
+              "scale_idle": 0.15,
+              "scale_walk": 0.15,
+              "scale_chase": 0.15,
+              "scale_cast": 0.15,
+              "scale_attack": 0.15,
+              "scale_damage": 0.15,
+              "scale_death": 0.175,
               "tint": [
                 30,
                 30,
@@ -282,10 +280,9 @@
             }
           }
         }
-        
       },
       "barbol_morado": {
-        "stats": {  
+        "stats": {
           "hp": 100,
           "speed": 1.0,
           "faction": "EVIL",
@@ -316,13 +313,13 @@
               "death": []
             },
             "sprites_data_set": {
-              "scale_idle": 0.5,
-              "scale_walk": 0.5,
-              "scale_chase": 0.5,
-              "scale_cast": 0.5,
-              "scale_attack": 0.5,
-              "scale_damage": 0.5,
-              "scale_death": 0.5,
+              "scale_idle": 0.15,
+              "scale_walk": 0.15,
+              "scale_chase": 0.15,
+              "scale_cast": 0.15,
+              "scale_attack": 0.15,
+              "scale_damage": 0.15,
+              "scale_death": 0.175,
               "tint": null
             }
           },
@@ -398,21 +395,20 @@
               "sw": null
             },
             "sprites_data_no-set": {
-              "scale_idle": 0.5,
-              "scale_walk": 0.5,
-              "scale_chase": 0.5,
-              "scale_cast": 0.5,
-              "scale_attack": 0.5,
-              "scale_damage": 0.5,
-              "scale_death": 0.5,
-              "death_scale": 0.5,
+              "scale_idle": 0.15,
+              "scale_walk": 0.15,
+              "scale_chase": 0.15,
+              "scale_cast": 0.15,
+              "scale_attack": 0.15,
+              "scale_damage": 0.15,
+              "scale_death": 0.175,
               "tint": [
                 128,
                 0,
                 128
               ]
             }
-          }          
+          }
         }
       },
       "barbol_boss": {
@@ -432,7 +428,7 @@
           "feet_height_factor": 0.2,
           "spawn_padding": 3,
           "spawn_count": 10,
-          "spawn_margin": 0          
+          "spawn_margin": 0
         },
         "assets": {
           "active_set": "no-sets",
@@ -447,13 +443,13 @@
               "death": []
             },
             "sprites_data_set": {
-              "scale_idle": 0.5,
-              "scale_walk": 0.5,
-              "scale_chase": 0.5,
-              "scale_cast": 0.5,
-              "scale_attack": 0.5,
-              "scale_damage": 0.5,
-              "scale_death": 0.5,
+              "scale_idle": 0.35,
+              "scale_walk": 0.35,
+              "scale_chase": 0.35,
+              "scale_cast": 0.35,
+              "scale_attack": 0.35,
+              "scale_damage": 0.35,
+              "scale_death": 0.4,
               "tint": null
             }
           },
@@ -529,23 +525,21 @@
               "sw": null
             },
             "sprites_data_no-set": {
-              "scale_idle": 0.5,
-              "scale_walk": 0.5,
-              "scale_chase": 0.5,
-              "scale_cast": 0.5,
-              "scale_attack": 0.5,
-              "scale_damage": 0.5,
-              "scale_death": 0.5,
-              "death_scale": 0.5,
+              "scale_idle": 0.35,
+              "scale_walk": 0.35,
+              "scale_chase": 0.35,
+              "scale_cast": 0.35,
+              "scale_attack": 0.35,
+              "scale_damage": 0.35,
+              "scale_death": 0.38,
               "tint": [
                 255,
                 0,
                 0
               ]
             }
-          }         
+          }
         }
-        
       },
       "barbol_cyan": {
         "stats": {
@@ -579,13 +573,13 @@
               "death": []
             },
             "sprites_data_set": {
-              "scale_idle": 0.5,
-              "scale_walk": 0.5,
-              "scale_chase": 0.5,
-              "scale_cast": 0.5,
-              "scale_attack": 0.5,
-              "scale_damage": 0.5,
-              "scale_death": 0.5,
+              "scale_idle": 0.15,
+              "scale_walk": 0.15,
+              "scale_chase": 0.15,
+              "scale_cast": 0.15,
+              "scale_attack": 0.15,
+              "scale_damage": 0.15,
+              "scale_death": 0.175,
               "tint": null
             }
           },
@@ -661,14 +655,13 @@
               "sw": null
             },
             "sprites_data_no-set": {
-              "scale_idle": 0.5,
-              "scale_walk": 0.5,
-              "scale_chase": 0.5,
-              "scale_cast": 0.5,
-              "scale_attack": 0.5,
-              "scale_damage": 0.5,
-              "scale_death": 0.5,
-              "death_scale": 0.35,
+              "scale_idle": 0.15,
+              "scale_walk": 0.15,
+              "scale_chase": 0.15,
+              "scale_cast": 0.15,
+              "scale_attack": 0.15,
+              "scale_damage": 0.15,
+              "scale_death": 0.175,
               "tint": [
                 0,
                 255,
@@ -676,7 +669,7 @@
               ]
             }
           }
-        }       
+        }
       },
       "barbol_gris": {
         "stats": {
@@ -710,13 +703,13 @@
               "death": []
             },
             "sprites_data_set": {
-              "scale_idle": 0.5,
-              "scale_walk": 0.5,
-              "scale_chase": 0.5,
-              "scale_cast": 0.5,
-              "scale_attack": 0.5,
-              "scale_damage": 0.5,
-              "scale_death": 0.5,
+              "scale_idle": 0.15,
+              "scale_walk": 0.15,
+              "scale_chase": 0.15,
+              "scale_cast": 0.15,
+              "scale_attack": 0.15,
+              "scale_damage": 0.15,
+              "scale_death": 0.175,
               "tint": null
             }
           },
@@ -792,14 +785,13 @@
               "sw": null
             },
             "sprites_data_no-set": {
-              "scale_idle": 0.5,
-              "scale_walk": 0.5,
-              "scale_chase": 0.5,
-              "scale_cast": 0.5,
-              "scale_attack": 0.5,
-              "scale_damage": 0.5,
-              "scale_death": 0.5,
-              "death_scale": 0.5,
+              "scale_idle": 0.15,
+              "scale_walk": 0.15,
+              "scale_chase": 0.15,
+              "scale_cast": 0.15,
+              "scale_attack": 0.15,
+              "scale_damage": 0.15,
+              "scale_death": 0.175,
               "tint": [
                 150,
                 150,
@@ -807,7 +799,7 @@
               ]
             }
           }
-        }        
+        }
       },
       "barbol_musgo": {
         "stats": {
@@ -841,13 +833,13 @@
               "death": []
             },
             "sprites_data_set": {
-              "scale_idle": 0.5,
-              "scale_walk": 0.5,
-              "scale_chase": 0.5,
-              "scale_cast": 0.5,
-              "scale_attack": 0.5,
-              "scale_damage": 0.5,
-              "scale_death": 0.5,
+              "scale_idle": 0.15,
+              "scale_walk": 0.15,
+              "scale_chase": 0.15,
+              "scale_cast": 0.15,
+              "scale_attack": 0.15,
+              "scale_damage": 0.15,
+              "scale_death": 0.175,
               "tint": null
             }
           },
@@ -923,14 +915,13 @@
               "sw": null
             },
             "sprites_data_no-set": {
-              "scale_idle": 0.5,
-              "scale_walk": 0.5,
-              "scale_chase": 0.5,
-              "scale_cast": 0.5,
-              "scale_attack": 0.5,
-              "scale_damage": 0.5,
-              "scale_death": 0.5,
-              "death_scale": 0.4,
+              "scale_idle": 0.15,
+              "scale_walk": 0.15,
+              "scale_chase": 0.15,
+              "scale_cast": 0.15,
+              "scale_attack": 0.15,
+              "scale_damage": 0.15,
+              "scale_death": 0.175,
               "tint": [
                 34,
                 139,
@@ -938,7 +929,7 @@
               ]
             }
           }
-        }        
+        }
       },
       "barbol_amarillo": {
         "stats": {
@@ -972,13 +963,13 @@
               "death": []
             },
             "sprites_data_set": {
-              "scale_idle": 0.5,
-              "scale_walk": 0.5,
-              "scale_chase": 0.5,
-              "scale_cast": 0.5,
-              "scale_attack": 0.5,
-              "scale_damage": 0.5,
-              "scale_death": 0.5,
+              "scale_idle": 0.15,
+              "scale_walk": 0.15,
+              "scale_chase": 0.15,
+              "scale_cast": 0.15,
+              "scale_attack": 0.15,
+              "scale_damage": 0.15,
+              "scale_death": 0.175,
               "tint": null
             }
           },
@@ -1054,14 +1045,13 @@
               "sw": null
             },
             "sprites_data_no-set": {
-              "scale_idle": 0.5,
-              "scale_walk": 0.5,
-              "scale_chase": 0.5,
-              "scale_cast": 0.5,
-              "scale_attack": 0.5,
-              "scale_damage": 0.5,
-              "scale_death": 0.5,
-              "death_scale": 0.4,
+              "scale_idle": 0.15,
+              "scale_walk": 0.15,
+              "scale_chase": 0.15,
+              "scale_cast": 0.15,
+              "scale_attack": 0.15,
+              "scale_damage": 0.15,
+              "scale_death": 0.175,
               "tint": [
                 255,
                 215,
@@ -1069,7 +1059,7 @@
               ]
             }
           }
-        }        
+        }
       },
       "barbol_baby": {
         "stats": {
@@ -1103,13 +1093,13 @@
               "death": []
             },
             "sprites_data_set": {
-              "scale_idle": 0.5,
-              "scale_walk": 0.5,
-              "scale_chase": 0.5,
-              "scale_cast": 0.5,
-              "scale_attack": 0.5,
-              "scale_damage": 0.5,
-              "scale_death": 0.5,
+              "scale_idle": 0.05,
+              "scale_walk": 0.05,
+              "scale_chase": 0.05,
+              "scale_cast": 0.05,
+              "scale_attack": 0.05,
+              "scale_damage": 0.05,
+              "scale_death": 0.1,
               "tint": null
             }
           },
@@ -1185,14 +1175,13 @@
               "sw": null
             },
             "sprites_data_no-set": {
-              "scale_idle": 0.5,
-              "scale_walk": 0.5,
-              "scale_chase": 0.5,
-              "scale_cast": 0.5,
-              "scale_attack": 0.5,
-              "scale_damage": 0.5,
-              "scale_death": 0.5,
-              "death_scale": 0.5,
+              "scale_idle": 0.05,
+              "scale_walk": 0.05,
+              "scale_chase": 0.05,
+              "scale_cast": 0.05,
+              "scale_attack": 0.05,
+              "scale_damage": 0.05,
+              "scale_death": 0.1,
               "tint": [
                 255,
                 182,
@@ -1240,7 +1229,7 @@
               "scale_cast": 0.5,
               "scale_attack": 0.5,
               "scale_damage": 0.5,
-              "scale_death": 0.5,
+              "scale_death": 0.55,
               "tint": null
             }
           },
@@ -1322,8 +1311,7 @@
               "scale_cast": 0.5,
               "scale_attack": 0.5,
               "scale_damage": 0.5,
-              "scale_death": 0.5,
-              "death_scale": 0.5,
+              "scale_death": 0.55,
               "tint": [
                 200,
                 200,
@@ -1331,7 +1319,14 @@
               ]
             }
           }
-        }        
+        }
+      }
+    }
+  },
+  "barbol_boss": {
+    "sprites": {
+      "assets": {
+        "idle": {}
       }
     }
   }

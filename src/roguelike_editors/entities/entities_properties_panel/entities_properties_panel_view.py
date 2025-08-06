@@ -67,16 +67,19 @@ class EntityPropertiesPanelView:
         # Altura del header de subtabs de assets
         state_header = primary_header if self.type_assets_controller.model.active_type_tab == 'assets' else 0
         sub_header = state_header
-        # Altura del contenido
+        # Altura del contenido con padding al fondo
+        bottom_padding = 200
+        # Altura máxima del contenido para no sobrepasar la pantalla
+        max_content_h = sh - margin - bottom_padding - primary_header - state_header - sub_header
         if self.type_assets_controller.model.active_type_tab == 'assets':
             # Ajustar panel para nombre, tint y cuadrícula 3x3
             grid_w = panel_w - pad * 2
             cell_size = int(grid_w / 3)
-            # pad top + nombre + espaciado + tint + pad + cuadrícula + pad bottom
-            # pad top + nombre + espaciado + tint + pad + cuadrícula + pad + info + pad + combobox
-            content_h = pad + font_h + 2 + font_h + pad + cell_size * 3 + pad + font_h + pad + font_h
+            orig_content_h = pad + font_h + 2 + font_h + pad + cell_size * 3 + pad + font_h + pad + font_h
+            content_h = min(orig_content_h, max_content_h)
         else:
-            content_h = min(len(lines) * (font_h + 2) + pad * 2, sh - margin * 2 - primary_header - state_header)
+            orig_content_h = len(lines) * (font_h + 2) + pad * 2
+            content_h = min(orig_content_h, max_content_h)
         panel_h = primary_header + state_header + sub_header + content_h
 
         # Posición inicial (esquina superior derecha)
@@ -129,7 +132,11 @@ class EntityPropertiesPanelView:
             self._draw_editing_indicator(screen, model, font_h)
         elif self.type_assets_controller.model.active_type_tab == 'assets':
             # Delegar grid a grid_controller
+            # Clip contenido de grid para no salir del panel
+            screen.set_clip(pygame.Rect(px + pad, py + primary_header + state_header + sub_header + pad, panel_w - pad*2, content_h - pad*2))
             self.grid_controller.draw(screen, entity_data, px, py + primary_header + state_header + sub_header, pad, font_h, panel_w)
+            # Restaurar recorte tras dibujar grid
+            screen.set_clip(None)
 
     # ----------------------------
     # MÉTODOS PRIVADOS
@@ -229,6 +236,10 @@ class EntityPropertiesPanelView:
     def _draw_properties(self, screen: pygame.Surface, model: EntityPropertiesPanelModel,
                          lines: list[str], px: int, py: int, pad: int, font_h: int, panel_w: int) -> None:
         """Renderiza las propiedades, maneja hover y actualiza las áreas clicables."""
+        # Configurar recorte para no dibujar fuera del área de contenido
+        content_start_y = py + pad
+        prev_clip = screen.get_clip()
+        screen.set_clip(pygame.Rect(px + pad, content_start_y, panel_w - pad*2, model.available_height))
         tx = px + pad
         ty = py + pad - model.scroll_offset
         model.property_entries.clear()
@@ -261,6 +272,11 @@ class EntityPropertiesPanelView:
             screen.blit(key_surf, (tx, ty))
             screen.blit(val_surf, (tx + key_surf.get_width(), ty))
             ty += font_h + 2
+
+
+
+        # Restaurar recorte tras dibujar propiedades
+        screen.set_clip(None)
 
     def _draw_editing_indicator(self, screen: pygame.Surface, model: EntityPropertiesPanelModel, font_h: int) -> None:
         """Dibuja los indicadores de edición activa o foco."""
