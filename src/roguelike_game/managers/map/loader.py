@@ -49,10 +49,10 @@ class MapLoader:
                 with open(cache_file, 'rb') as f:
                     result = pickle.load(f)
                 t1 = time.perf_counter()
-                logger.info(f" Loaded cache in {t1-t0:.4f}s")
+                logger.info(f"Loaded cache in {t1-t0:.4f}s")
                 return result
             except Exception as e:
-                logger.warning(f" Cache load failed: {e}")
+                logger.warning(f"Cache load failed: {e}")
                 cache_file.unlink(missing_ok=True)
 
         # Generar mapa
