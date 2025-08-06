@@ -2,6 +2,9 @@ import pygame
 import logging
 from roguelike_ui.widgets.double_click_detector import DoubleClickDetector
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 class EntitiesAssetsPickerPanelEventHandler:
     """Event handler para el picker de assets de entidades."""
@@ -20,7 +23,7 @@ class EntitiesAssetsPickerPanelEventHandler:
         # Mouse click
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mx, my = event.pos
-            logging.debug(f" Click at pos={mx},{my}, selected={self.model.fs_model.selected}")
+            logger.debug(f" Click at pos={mx},{my}, selected={self.model.fs_model.selected}")
             # Determine panel rect
             x, y = self.model.pos
             surf = self.view.fs_view.panel.surface
@@ -41,7 +44,7 @@ class EntitiesAssetsPickerPanelEventHandler:
                         # select asset on double-click without closing panel
                         if self.dc_detector.is_double_click(idx):
                             if self.model.on_asset_chosen:
-                                logging.debug(f" Invoking on_asset_chosen callback for key={self.model.key}, path={path}")
+                                logger.debug(f" Invoking on_asset_chosen callback for key={self.model.key}, path={path}")
                                 self.model.on_asset_chosen(self.model.key, path)
 
 

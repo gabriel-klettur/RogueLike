@@ -13,92 +13,82 @@ _loaded_variants: set[str] = set()
 
 def load_caches_for(variants: Iterable[str]) -> None:
     """Load and cache sprite and death surfaces for specified monster types."""
-    global _loaded_variants
+
     for mtype in variants:
         if mtype in _loaded_variants:
             continue
         cfg = MONSTER_DEFS[mtype]
-        logger.debug(f"Loading sprites for: {mtype}")
-        # Read asset configuration from JSON
+        # Determine active set (default to no-sets)
         cfg_assets = cfg.get("assets", {})
-        active_set = cfg_assets.get("active_set", "")
-        active_assets = cfg_assets.get(active_set, {})
-        # Extract metadata
-        data_block_key = f"sprites_data_{active_set.rstrip('s')}"
-        data_assets = active_assets.get(data_block_key, {})
-        scale_val = data_assets.get("scale", 1.0)
-        death_scale = data_assets.get("death_scale", scale_val)
+        active_set = cfg_assets.get("active_set", "no-sets")
+        # Select assets and metadata groups
+        if active_set == "sets":
+            group = cfg_assets.get("sets", {})
+            assets_group = group.get("sprites_set", {})
+            data_assets = group.get("sprites_data_set", {})
+        else:
+            group = cfg_assets.get("no-sets", {})
+            assets_group = {k: v for k, v in group.items() if k != "sprites_data_no-set"}
+            data_assets = group.get("sprites_data_no-set", {})
+        # Fallback scales and tint
+        default_scale = data_assets.get("scale", 1.0)
+        default_death_scale = data_assets.get("death_scale", default_scale)
         tint = data_assets.get("tint")
-        logger.debug(f" mtype={mtype} tint(data_assets)={tint}")
-        # Flatten asset entries (exclude metadata)
-        assets_map = {k: v for k, v in active_assets.items() if k != data_block_key}
         dir_map: Dict[str, pygame.Surface] = {}
-        d2flat = {"s": "down", "e": "right", "n": "up", "w": "left"}
-        for cat, dirs in assets_map.items():
-            for dkey, path in dirs.items():
-                if not path:
+        # Mapping directions
+        dir_names = {
+            "s": "down", "e": "right", "n": "up", "w": "left",
+            "se": "down_right", "ne": "up_right", "sw": "down_left", "nw": "up_left"
+        }
+        # Flatten assets
+        for state, entry in assets_group.items():
+            # 'sets' provides list of sheet paths
+            if active_set == "sets":
+                if not isinstance(entry, list) or not entry:
                     continue
-                # Determinar clave plana
-                if cat == "idle":
-                    key = d2flat.get(dkey, dkey)
-                    use_scale = data_assets.get("scale_idle", 1.0)
-                elif cat == "death":
-                    key = "death"
-                    use_scale = data_assets.get("scale_death", 1.0)
-                else:
-                    key = f"{cat}_{d2flat.get(dkey, dkey)}"
-                    use_scale = data_assets.get(f"scale_{cat}", 1.0)
-                raw = load_image(path)
-                if use_scale != 1.0:
-                    w0, h0 = raw.get_size()
-                    image = pygame.transform.scale(raw, (int(w0 * use_scale), int(h0 * use_scale)))
-                else:
-                    image = raw
-                if tint:
-                    image.fill(tuple(tint), special_flags=pygame.BLEND_RGB_MULT)
-                dir_map[key] = image
+                sheet = entry[0]
+                for dkey, name in dir_names.items():
+                    raw = load_image(sheet)
+                    scale_key = f"scale_{state}"
+                    use_scale = data_assets.get(scale_key, default_scale)
+                    if use_scale != 1.0:
+                        w0, h0 = raw.get_size()
+                        image = pygame.transform.scale(raw, (int(w0 * use_scale), int(h0 * use_scale)))
+                    else:
+                        image = raw
+                    if tint:
+                        image.fill(tuple(tint), special_flags=pygame.BLEND_RGB_MULT)
+                    dir_map[f"{state}_{name}"] = image
+            # 'no-sets' provides dict of directions
+            else:
+                if not isinstance(entry, dict):
+                    continue
+                for dkey, path in entry.items():
+                    if not path:
+                        continue
+                    raw = load_image(path)
+                    if state == "idle":
+                        key = dir_names.get(dkey, dkey)
+                        use_scale = data_assets.get("scale_idle", default_scale)
+                    elif state == "death":
+                        key = "death"
+                        use_scale = data_assets.get("scale_death", default_death_scale)
+                    else:
+                        key = f"{state}_{dir_names.get(dkey, dkey)}"
+                        use_scale = data_assets.get(f"scale_{state}", default_scale)
+                    if use_scale != 1.0:
+                        w0, h0 = raw.get_size()
+                        image = pygame.transform.scale(raw, (int(w0 * use_scale), int(h0 * use_scale)))
+                    else:
+                        image = raw
+                    if tint:
+                        image.fill(tuple(tint), special_flags=pygame.BLEND_RGB_MULT)
+                    dir_map[key] = image
         _SPRITE_SURFACES[mtype] = dir_map
-        # Asignar imagen de muerte
         _DEATH_SURFACES[mtype] = dir_map.get("death")
         _loaded_variants.add(mtype)
-        # Debug loaded sprite center pixel for direction 'down'
-        down_img = dir_map.get("down")
-        if down_img:
-            cpx, cpy = down_img.get_width()//2, down_img.get_height()//2
-            logger.debug(f" mtype={mtype} post_scale down size={down_img.get_size()} center_pixel={down_img.get_at((cpx,cpy))}")
-        continue
-        dir_map: Dict[str, pygame.Surface] = {}
-        for direction, path in cfg["sprites"].items():
-            raw = load_image(path)
-            # Scale raw surface in memory instead of reloading
-            if scale_val != 1.0:
-                w0, h0 = raw.get_size()
-                image = pygame.transform.scale(raw, (int(w0*scale_val), int(h0*scale_val)))
-            else:
-                image = raw
-            tint = cfg.get("tint")
-            logger.debug(f" mtype={mtype} tint(cfg)={tint}")
-            if tint:
-                image.fill(tuple(tint), special_flags=pygame.BLEND_RGB_MULT)
-            dir_map[direction] = image
-        _SPRITE_SURFACES[mtype] = dir_map
-        death_path = cfg.get("sprites", {}).get("death")
-        if death_path:
-            raw_death = load_image(death_path)
-            death_scale = cfg["death_scale"]
-            if death_scale != 1.0:
-                w0, h0 = raw_death.get_size()
-                death_img = pygame.transform.scale(raw_death, (int(w0*death_scale), int(h0*death_scale)))
-            else:
-                death_img = raw_death
-            tint = cfg.get("tint")
-            logger.debug(f" mtype={mtype} tint(cfg)={tint}")
-            if tint and death_img:
-                death_img.fill(tuple(tint), special_flags=pygame.BLEND_RGB_MULT)
-            _DEATH_SURFACES[mtype] = death_img
-        else:
-            _DEATH_SURFACES[mtype] = None
-        _loaded_variants.add(mtype)
+
+
 
 def _load_caches_once() -> None:
     """Load all monster caches."""

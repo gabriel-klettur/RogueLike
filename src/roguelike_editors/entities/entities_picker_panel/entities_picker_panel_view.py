@@ -1,14 +1,13 @@
 import pygame
 import logging
-from roguelike_engine.utils.loader import load_image
-from roguelike_engine.utils.loader import load_image
-from roguelike_game.factories.monster.config import MONSTER_DEFS
 from math import ceil
 from roguelike_editors.entities.entities_picker_panel.entities_picker_panel_model import EntityPickerPanelModel
 from roguelike_ui.panel import DraggablePanel
 from roguelike_ui.widgets.hover import draw_hover
 from roguelike_ui.ui_blocker import register_blocker
 
+import logging
+logger = logging.getLogger(__name__)
 
 class EntityPickerPanelView:
 
@@ -99,7 +98,7 @@ class EntityPickerPanelView:
 
         if model.visible and not self._picker_logged:
             for ent_id in entity_ids:
-                logging.debug(f"[DEBUG][Picker] ent_id={ent_id}")
+                logger.debug(f" ent_id={ent_id}")
             self._picker_logged = True
         # Tamaño dinámico del panel
         # Tamaño dinámico de la parte de grid
@@ -232,7 +231,7 @@ class EntityPickerPanelView:
         if ent_id not in self._center_pixel_logged:
             center = (self.cell_size // 2, self.cell_size // 2)
             center_pixel = icon_surf.get_at(center)
-            logging.debug(f'[TINT][PickerView] ent_id={ent_id} original_asset_size={icon.get_size()} scaled_asset_size={icon_surf.get_size()} center_pixel={center_pixel}')
+            logger.debug(f' ent_id={ent_id} original_asset_size={icon.get_size()} scaled_asset_size={icon_surf.get_size()} center_pixel={center_pixel}')
             self._center_pixel_logged.add(ent_id)
 
         # Dibujar icono

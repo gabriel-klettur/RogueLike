@@ -106,6 +106,25 @@ class EntityPropertiesPanelView:
 
         # 2. Dibujar contenido según pestaña
         if self.type_assets_controller.model.active_type_tab == 'properties':
+            # Compute scroll metrics
+            model.total_lines_height = len(lines) * (font_h + 2)
+            model.available_height = content_h - pad * 2
+            model.max_scroll = max(0, model.total_lines_height - model.available_height)
+            model.scroll_offset = min(max(model.scroll_offset, 0), model.max_scroll)
+            # Draw scrollbar
+            scrollbar_width = 8
+            bar_x = px + panel_w - scrollbar_width - pad // 2
+            bar_y = py + primary_header + state_header + pad
+            bar_h = model.available_height
+            if model.total_lines_height:
+                thumb_h = max(20, int(bar_h * (model.available_height / model.total_lines_height)))
+                thumb_y = bar_y + int((model.scroll_offset / (model.max_scroll or 1)) * (bar_h - thumb_h))
+            else:
+                thumb_h = bar_h
+                thumb_y = bar_y
+            pygame.draw.rect(screen, (50, 50, 50), (bar_x, bar_y, scrollbar_width, bar_h))
+            pygame.draw.rect(screen, (200, 200, 200), (bar_x, thumb_y, scrollbar_width, thumb_h))
+            # Draw properties with scroll
             self._draw_properties(screen, model, lines, px, py + primary_header + state_header, pad, font_h, panel_w)
             self._draw_editing_indicator(screen, model, font_h)
         elif self.type_assets_controller.model.active_type_tab == 'assets':
@@ -158,27 +177,45 @@ class EntityPropertiesPanelView:
             assets_def = monster.get('assets', {})
             merged_mon = dict(stats)
             merged_mon['id'] = ent_id
-            # Respect active_set and include in merged data
+            # Active_set for combobox
             active_set = assets_def.get('active_set', 'no-sets')
             merged_mon['active_set'] = active_set
-            # Extract tint based on active_set
-            if active_set == 'no-sets':
-                tint = assets_def.get('no-sets', {}).get('sprites_data_no-set', {}).get('tint')
-            else:
-                tint = assets_def.get('sets', {}).get('sprites_data_set', {}).get('tint')
-            merged_mon['tint'] = tint
-            # Flatten assets for the active_set group
-            if active_set == 'no-sets':
-                asset_group = assets_def.get('no-sets', {})
-            else:
-                asset_group = assets_def.get('sets', {}).get('sprites_set', {})
-            for state, dirs in asset_group.items():
+
+            # Flatten 'no-sets' assets first (individual direction assets)
+            no_sets = assets_def.get('no-sets', {})
+            for state, dirs in no_sets.items():
+                if state == 'sprites_data_no-set':
+                    continue
                 for dir_key, path in dirs.items():
                     merged_mon[f"asset_{state}_{dir_key}"] = path
-            # Also flatten scales from sprites_data_set
-            set_data = assets_def.get('sets', {}).get('sprites_data_set', {})
-            for key, value in set_data.items():
-                merged_mon[key] = value
+
+            # Flatten 'sets' assets (override no-sets for asset set)
+            sets_group = assets_def.get('sets', {}).get('sprites_set', {})
+            dir_map = {
+                'nw': 'up_left', 'n': 'up', 'ne': 'up_right',
+                'w': 'left', 'e': 'right', 'sw': 'down_left',
+                's': 'down', 'se': 'down_right'
+            }
+            for state, paths in sets_group.items():
+                if paths:
+                    sheet_path = paths[0]
+                    for dir_key in dir_map:
+                        merged_mon[f"asset_{state}_{dir_key}"] = sheet_path
+
+            # Extract and flatten metadata (scales, tint) with origin prefixes
+            data_no = assets_def.get('no-sets', {}).get('sprites_data_no-set', {})
+            data_set = assets_def.get('sets', {}).get('sprites_data_set', {})
+            # Prefix keys for clarity
+            for key, value in data_no.items():
+                merged_mon[f'no-set_{key}'] = value
+            for key, value in data_set.items():
+                merged_mon[f'set_{key}'] = value
+
+            # Determine tint for rendering based on active_set (used in assets grid tinting)
+            tint_value = (data_no.get('tint') if active_set == 'no-sets'
+                          else data_set.get('tint'))
+            merged_mon['tint'] = tint_value
+
             return merged_mon
         return {}
 
@@ -192,7 +229,8 @@ class EntityPropertiesPanelView:
     def _draw_properties(self, screen: pygame.Surface, model: EntityPropertiesPanelModel,
                          lines: list[str], px: int, py: int, pad: int, font_h: int, panel_w: int) -> None:
         """Renderiza las propiedades, maneja hover y actualiza las áreas clicables."""
-        tx, ty = px + pad, py + pad
+        tx = px + pad
+        ty = py + pad - model.scroll_offset
         model.property_entries.clear()
 
         for i, line in enumerate(lines):

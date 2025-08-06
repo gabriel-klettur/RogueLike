@@ -72,6 +72,22 @@ class EntitiesPropertiesPanelEventHandler:
         if self._handle_property_click(event):
             return True
 
+        # Scroll wheel support for properties panel
+        if self.controller.type_assets_controller.model.active_type_tab == 'properties':
+            # Mouse wheel scroll up/down
+            if event.type == pygame.MOUSEBUTTONDOWN and self.model.panel_rect and self.model.panel_rect.collidepoint(event.pos):
+                if event.button == 4:
+                    self.model.scroll_offset = max(0, self.model.scroll_offset - (self.view.font.get_height() + 2))
+                    return True
+                elif event.button == 5:
+                    self.model.scroll_offset = min(self.model.max_scroll, self.model.scroll_offset + (self.view.font.get_height() + 2))
+                    return True
+            elif event.type == pygame.MOUSEWHEEL:
+                # event.y positive means scroll up
+                delta = (self.view.font.get_height() + 2) * event.y
+                self.model.scroll_offset = min(self.model.max_scroll, max(0, self.model.scroll_offset - delta))
+                return True
+
         return False
 
     # ----------------------------
