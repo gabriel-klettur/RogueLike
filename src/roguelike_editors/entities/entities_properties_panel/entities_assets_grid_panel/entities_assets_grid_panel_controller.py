@@ -12,6 +12,9 @@ from roguelike_game.ecs.components.rendering.animation_timer import AnimationTim
 from roguelike_game.factories.player.loader import load_and_scale_sprites
 from roguelike_game.factories.player.config import ANIMATION_INTERVAL
 
+import logging
+logger = logging.getLogger(__name__)
+
 # Mapeos constantes para estados y direcciones
 _STATE_MAP: Dict[str, str] = {
     'chase': 'walk',  # El estado 'chase' se representa internamente como 'walk'
@@ -118,7 +121,7 @@ class AssetsGridPanelController:
         3. Crea un Animator por cada dirección válida.
         4. Reinicia temporizadores y fotogramas anteriores.
         """
-        logging.debug(
+        logger.debug(
             f"[DEBUG][AssetsGridPanel] Reconstruyendo animadores: "
             f"entity_id={entity_id}, state={state}"
         )

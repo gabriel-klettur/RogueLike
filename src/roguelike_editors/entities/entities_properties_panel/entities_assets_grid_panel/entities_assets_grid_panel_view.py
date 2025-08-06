@@ -3,11 +3,13 @@ from typing import Dict, List, Optional, Tuple
 
 import pygame
 from roguelike_engine.utils.loader import load_image
-from roguelike_ui.widgets.hover import draw_hover
 
 from roguelike_editors.entities.entities_properties_panel.entities_assets_grid_panel.entities_assets_grid_panel_model import (
     AssetsGridPanelModel,
 )
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 class AssetsGridPanelView:
@@ -53,7 +55,7 @@ class AssetsGridPanelView:
     ) -> None:
         """Dibuja el panel completo: nombre, tint, grid de thumbnails, hover y selección."""
         model.asset_cell_entries.clear()
-        logging.debug(f"[TINT][Editor Grid] draw assets grid: tint={entity_data.get('tint')}")
+        logger.debug(f" draw assets grid: tint={entity_data.get('tint')}")
 
         # 1. Nombre de la entidad
         name_y = self._draw_entity_name(screen, entity_data, px, py, pad)
@@ -153,7 +155,7 @@ class AssetsGridPanelView:
 
         # Log once when state or sub_tab changes
         if active_state != self._last_active_state or sub_tab != self._last_sub_tab:
-            logging.debug(
+            logger.debug(
                 f"[DEBUG][PROPERTIES PANEL][GRID] "
                 f"active_state={active_state}, sub_tab={sub_tab}"
             )
@@ -173,7 +175,7 @@ class AssetsGridPanelView:
                     value = dirs.get(dir_key)
                 else:
                     value = entity_data.get(asset_key)
-                logging.debug(f"[DEBUG][GRID] asset_key={asset_key}, value={value}")
+                logger.debug(f"[DEBUG][GRID] asset_key={asset_key}, value={value}")
             self._last_active_state = active_state
             self._last_sub_tab = sub_tab
 
@@ -289,7 +291,7 @@ class AssetsGridPanelView:
         tint: Optional[Tuple[int, ...]],
     ) -> None:
         """Aplica tint al surface y lo centra dentro del rect."""
-        logging.debug(f"[TINT][Editor Grid] rect={rect} tint={tint}")
+        logger.debug(f" rect={rect} tint={tint}")
         
         thumb = image.copy()
 

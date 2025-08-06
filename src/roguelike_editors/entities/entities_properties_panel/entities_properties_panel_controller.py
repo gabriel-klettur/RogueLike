@@ -19,6 +19,10 @@ from roguelike_game.factories.player.loader import load_and_scale_sprites, extra
 from roguelike_game.factories.monster.config import reload_monster_defs
 from roguelike_game.factories.monster import cache as monster_cache
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 
 class EntityPropertiesPanelController:
     """
@@ -90,7 +94,7 @@ class EntityPropertiesPanelController:
 
     # ----------------------------
     def _on_asset_chosen(self, cell_key: str, path):
-        logging.debug(f" _on_asset_chosen called with cell_key={cell_key}, path={path}")
+        logger.debug(f" _on_asset_chosen called with cell_key={cell_key}, path={path}")
         """
         Callback when asset is chosen: update entity property and persist to JSON.
         """
@@ -108,7 +112,7 @@ class EntityPropertiesPanelController:
             rel_path = f"assets/{rel.as_posix()}"
         except ValueError:
             rel_path = str(path).replace("\\", "/")
-        logging.debug(f" Computed rel_path={rel_path} for cell_key={cell_key}")
+        logger.debug(f" Computed rel_path={rel_path} for cell_key={cell_key}")
 
         parts = cell_key.split("_")
         # only asset grid updates supported
@@ -145,8 +149,8 @@ class EntityPropertiesPanelController:
         else:
             logging.error(f"[ERROR][PropertiesPanel] Invalid asset key for update: {cell_key}")
             return
-        logging.debug(f" JSON saved for ent_id={ent_id}, cell_key={cell_key}")
-        logging.debug(f" Saving entry and updating in-memory model for ent_id={ent_id}")
+        logger.debug(f" JSON saved for ent_id={ent_id}, cell_key={cell_key}")
+        logger.debug(f" Saving entry and updating in-memory model for ent_id={ent_id}")
         # Update in-memory player_assets and reload config
         if ent_id in self.model.player_stats:
             self.model.player_assets[ent_id] = entry.get("assets", {})
@@ -170,14 +174,14 @@ class EntityPropertiesPanelController:
                             sprites_comp[eid].image = img
                         if eid in animators:
                             animators[eid].animations = anim_map
-                logging.debug(f" Player ECS entities updated for class {ent_id}")
+                logger.debug(f" Player ECS entities updated for class {ent_id}")
             except Exception as e:
                 logging.error(f"[ERROR][PropertiesPanel] Error updating player ECS entities for class {ent_id}: {e}")
-        logging.debug(f" Hiding assets picker panel")
+        logger.debug(f" Hiding assets picker panel")
         # Hide picker panel on success
         self.assets_picker_controller.hide()
         # Reset grid animators to force reload
-        logging.debug(f" Resetting grid controller cache (last_entity_id and last_state_tab)")
+        logger.debug(f" Resetting grid controller cache (last_entity_id and last_state_tab)")
         self.grid_controller.model.last_entity_id = None
         self.grid_controller.model.last_state_tab = None
         # Force immediate redraw of properties panel to reflect new asset
@@ -194,7 +198,7 @@ class EntityPropertiesPanelController:
                 monster_cache._SPRITE_SURFACES.pop(ent_id, None)
                 monster_cache._DEATH_SURFACES.pop(ent_id, None)
                 monster_cache.load_caches_for([ent_id])
-                logging.debug(f" Monster defs reloaded and cache cleared for ent_id={ent_id}")
+                logger.debug(f" Monster defs reloaded and cache cleared for ent_id={ent_id}")
             except Exception as e:
                 logging.error(f"[ERROR][PropertiesPanel] Error reloading monster caches for ent_id={ent_id}: {e}")
                 # Update existing ECS entities of this monster type
@@ -222,7 +226,7 @@ class EntityPropertiesPanelController:
         """
         Maneja el cambio de active_set para jugadores: recarga configuración, actualiza grid y ECS.
         """
-        logging.debug(f" Active set toggled for ent_id={ent_id}")
+        logger.debug(f" Active set toggled for ent_id={ent_id}")
         try:
             importlib.reload(pc)
         except Exception:
@@ -246,7 +250,7 @@ class EntityPropertiesPanelController:
                         sprites_comp[eid].image = img
                     if eid in animators:
                         animators[eid].animations = anim_map
-            logging.debug(f" Player ECS entities updated for class {ent_id} after active_set toggle")
+            logger.debug(f" Player ECS entities updated for class {ent_id} after active_set toggle")
         except Exception as e:
             logging.error(f"[ERROR][PropertiesPanel] Error updating player ECS entities on active_set toggle for class {ent_id}: {e}")
         # Redraw properties panel UI
