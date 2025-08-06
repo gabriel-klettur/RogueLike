@@ -14,6 +14,9 @@ COLOR_TIME = "\033[36m"      # Cyan
 COLOR_LEVEL = "\033[33m"     # Yellow
 COLOR_NAME = "\033[35m"      # Magenta
 COLOR_MSG = "\033[37m"       # White
+COLOR_WARNING = "\033[38;5;214m"  # Orange
+COLOR_ERROR = "\033[31m"          # Red
+COLOR_CRITICAL = "\033[31m"       # Red
 
 class ColorFormatter(logging.Formatter):
     """
@@ -22,6 +25,12 @@ class ColorFormatter(logging.Formatter):
     def format(self, record):
         # Formatear timestamp
         asctime = self.formatTime(record, datefmt="%H:%M:%S")
+        # Override: full line orange for WARNING, red for ERROR/CRITICAL
+        raw = f"[{asctime}][{record.levelname}][{record.name}]: {record.getMessage()}"
+        if record.levelno == logging.WARNING:
+            return f"{COLOR_WARNING}{raw}{RESET}"
+        if record.levelno >= logging.ERROR:
+            return f"{COLOR_ERROR}{raw}{RESET}"
         # Timestamp en cyan
         time_part  = f"{COLOR_TIME}[{asctime}]{RESET}"
         # Nivel siempre en amarillo
