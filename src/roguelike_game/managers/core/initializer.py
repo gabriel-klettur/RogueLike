@@ -144,7 +144,7 @@ class GameInitializer:
             base = getattr(fn, 'func', fn)
             name = getattr(base, '__qualname__',
                            getattr(base, '__name__', str(base)))
-            logging.info(f"[{name}]: {msg}: {elapsed:.4f}s")
+            logger.info(f"[{name}]: {msg}: {elapsed:.4f}s")
 
             if msg == "Cargando estado de mundo":
                 self._handle_deferred_levels()

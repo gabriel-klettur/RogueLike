@@ -55,7 +55,7 @@ class AssetsGridPanelView:
     ) -> None:
         """Dibuja el panel completo: nombre, tint, grid de thumbnails, hover y selección."""
         model.asset_cell_entries.clear()
-        logger.debug(f" draw assets grid: tint={entity_data.get('tint')}")
+        # logger.debug(f" draw assets grid: tint={entity_data.get('tint')}")
 
         # 1. Nombre de la entidad
         name_y = self._draw_entity_name(screen, entity_data, px, py, pad)
@@ -291,7 +291,7 @@ class AssetsGridPanelView:
         tint: Optional[Tuple[int, ...]],
     ) -> None:
         """Aplica tint al surface y lo centra dentro del rect."""
-        logger.debug(f" rect={rect} tint={tint}")
+        # logger.debug(f" rect={rect} tint={tint}")
         
         thumb = image.copy()
 
