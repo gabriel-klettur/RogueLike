@@ -71,7 +71,7 @@ class Map:
         self.name = state['name']
         # Reconstruct computed properties
         from roguelike_engine.map.model.layer import Layer
-        from roguelike_engine.tile.loader import load_tiles_from_text
+        from roguelike_engine.tile.utils.loader import load_tiles_from_text
         self.tiles_by_layer = {
             layer: load_tiles_from_text(self.matrix, codes)
             for layer, codes in self.layers.items()
