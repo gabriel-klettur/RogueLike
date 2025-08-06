@@ -197,6 +197,7 @@ class TilePickerView:
             if hovered_idx is not None:
                 v, _, _, sz = self.assets[hovered_idx]
                 return v, sz
+            return None, None
         else:
             # hover outline
             if hovered_idx is not None:
@@ -395,10 +396,7 @@ class TilePickerView:
             getattr(self.picker_state, 'tileset_filter', None),
             self.picker_state.pos
         )
-        if self.static_panel_surf is not None and state == self._last_state:
-            # Blit cached surface (skip full redraw of static elements)
-            self.panel.pos = self.picker_state.pos
-            screen.blit(self.static_panel_surf, self.panel.pos)
+
         # fall through to dynamic overlay redraw
         # Update state surface reference for event handling
         self.picker_state.surface = self.panel.surface

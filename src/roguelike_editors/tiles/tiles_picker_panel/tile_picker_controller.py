@@ -81,6 +81,11 @@ class TilePickerController:
         """Swap two assets by index and persist new order to JSON."""
         self.assets[i], self.assets[j] = self.assets[j], self.assets[i]
         self.view.assets = self.assets
+        # Invalidate static grid cache after swap so the view rebuilds with new order
+        if hasattr(self.view, 'assets_cache_surf'):
+            del self.view.assets_cache_surf
+        if hasattr(self.view, 'assets_cache_size'):
+            del self.view.assets_cache_size
         try:
             root = Path(__file__).parents[4]
             pos_file = root / "data" / "tiles" / "editor_tiles_picker_position.json"
