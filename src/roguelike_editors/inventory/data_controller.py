@@ -94,11 +94,17 @@ class DataController:
                     self.logger.warning(f"Default data for '{c}' invalid: {ve}")
             # Validate active_data entries
             for c, entries in self.model.active_data.items():
-                if isinstance(entries, dict):
+                schema = schemas.get(c, {})
+                if c == 'map' and isinstance(entries, dict):
+                    try:
+                        jsonschema.validate(entries, schema)
+                    except Exception as ve:
+                        self.logger.warning(f'Active data for "{c}" invalid: {ve}')
+                elif isinstance(entries, dict):
                     for key, entry in entries.items():
                         try:
-                            jsonschema.validate(entry, schemas.get(c, {}))
+                            jsonschema.validate(entry, schema)
                         except Exception as ve:
-                            self.logger.warning(f"Active entry '{key}' for '{c}' invalid: {ve}")
+                            self.logger.warning(f'Active entry "{key}" for "{c}" invalid: {ve}')
         except ImportError:
             self.logger.warning("jsonschema not installed; skipping schema validation")
