@@ -2,6 +2,7 @@ import roguelike_engine.config.config as config
 from roguelike_engine.map.events.events import handle_expand_dungeon
 import logging
 logger = logging.getLogger(__name__)
+import pygame
 
 def handle_keyboard(event, state, camera, clock, menu, entities, tiles_editor, buildings_editor, map_editor, map_manager):
     if event.type == pygame.KEYDOWN:
