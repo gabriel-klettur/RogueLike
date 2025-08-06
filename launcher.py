@@ -1,6 +1,8 @@
 import sys
 import os
 
+os.system('cls' if os.name == 'nt' else 'clear')    #TODO Limpiamos la terminal mediante (clear), antes de ejecutar el main
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 from roguelike_engine.log_config import init_logging
