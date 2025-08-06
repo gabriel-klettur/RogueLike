@@ -7,15 +7,20 @@ from roguelike_game.managers.core.game import Game
 from typing import Tuple, Any, Dict, DefaultDict, List
 from collections import defaultdict
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 def init_pygame() -> None:
     """Inicializa Pygame y hace visible el cursor."""
+    logger.info("Initializing Pygame...")
     pygame.init()
     pygame.mouse.set_visible(True)
 
 
 def create_screen() -> pygame.Surface:
     """Configura el modo de pantalla con flags HWSURFACE, DOUBLEBUF y RESIZABLE."""
+    logger.info("Creating screen...")
     return pygame.display.set_mode(
         (SCREEN_WIDTH, SCREEN_HEIGHT),
         pygame.HWSURFACE | pygame.DOUBLEBUF | pygame.RESIZABLE
@@ -24,6 +29,7 @@ def create_screen() -> pygame.Surface:
 
 def configure_window(icon_path: str, title: str) -> None:
     """Carga y establece el icono y el título de la ventana."""
+    logger.info("Configuring window...")
     icon = load_image(icon_path)
     pygame.display.set_icon(icon)
     pygame.display.set_caption(title)
@@ -37,7 +43,7 @@ def init_performance_tools() -> Tuple[Dict[str, list], Any]:
         performance_log: diccionario para acumular tiempos
         bench_logger: logger de benchmarks para excepciones
     """
-        
+    logger.info("Initializing performance tools...")        
     PerformanceLog = DefaultDict[str, List[Any]]    
     performance_log: PerformanceLog = defaultdict(list)
 
@@ -55,6 +61,7 @@ def create_game(screen: pygame.Surface,
     Raises:
         RuntimeError si no se inicializa correctamente el estado.
     """
+    logger.info("Creating game...")
     game = Game(
         screen=screen,
         perf_log=performance_log,
@@ -73,6 +80,7 @@ def run_game_loop(game: Game,
     Ejecuta el bucle principal `game.run()`, captura excepciones para el logger
     y en el `finally` cierra el juego, guarda benchmarks y sale de Pygame.
     """
+    logger.info("Running game loop...")
     try:
         game.run()
     except Exception:
@@ -80,11 +88,16 @@ def run_game_loop(game: Game,
         raise
     finally:
         game.shutdown()
+        logger.info("Shutting down game...")
         save_benchmarks(performance_log)
+        logger.info("Saving benchmarks...")
         pygame.quit()
-
+        logger.info("Quitting Pygame...")
 
 def main() -> None:
+
+    logger.info("Starting Roguelike...")
+    
     """Punto de entrada: orquesta todos los pasos de inicialización y ejecución."""
     init_pygame()
     screen = create_screen()

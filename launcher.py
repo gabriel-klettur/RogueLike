@@ -9,7 +9,12 @@ from roguelike_engine.log_config import init_logging
 # Initialize logging: console and rotating file handler
 init_logging(level="DEBUG", logfile="logs/roguelike.log")
 
+import logging
 from roguelike_game.main import main
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        logging.warning("SALIENDO MEDIANTE CTRL+C")
+        sys.exit(0)
