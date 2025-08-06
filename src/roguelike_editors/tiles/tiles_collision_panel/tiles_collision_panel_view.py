@@ -17,6 +17,26 @@ class TilesCollisionPanelView:
         self.options = [("#", "Collision"), (".", "Walk")]
         self.panel = DraggablePanel(1, 1, bgcolor=(20, 20, 20, 200))
 
+        # Cache fonts and static surfaces to optimize rendering
+        self.label_font = pygame.font.SysFont("Arial", 14)
+        self.char_font = pygame.font.SysFont("Arial", THUMB)
+        # Pre-render static text surfaces
+        self.char_surfaces = {}
+        for ch, label in self.options:
+            color = (255, 0, 0) if ch == "#" else (200, 200, 200)
+            self.char_surfaces[ch] = self.char_font.render(ch, True, color)
+        self.label_surfaces = {ch: self.label_font.render(lbl, True, (255, 255, 255)) for ch, lbl in self.options}
+        # Precomputed hover overlay
+        self.hover_surface = pygame.Surface((THUMB, THUMB), pygame.SRCALPHA)
+        self.hover_surface.fill((255, 255, 0, 100))
+        # Precompute panel dimensions and static surfaces
+        self.dims = self._compute_dimensions(None)
+        self.panel.resize(*self.dims)
+        w, h = self.dims
+        self.background = self._create_background_surface(w, h)
+        self.shadow = pygame.Surface((w, h), pygame.SRCALPHA)
+        self.shadow.fill((0, 0, 0, 100))
+
     def render(self, screen):
         """
         Dibuja el panel completo con sombras, fondo y opciones.
@@ -108,9 +128,8 @@ class TilesCollisionPanelView:
         """
         Dibuja sombra bajo el panel.
         """
-        shadow = pygame.Surface((w, h), pygame.SRCALPHA)
-        shadow.fill((0, 0, 0, 100))
-        screen.blit(shadow, (x + 4, y + 4))
+        # Use cached shadow surface
+        screen.blit(self.shadow, (x + 4, y + 4))
 
     def _create_background_surface(self, w, h):
         """
@@ -124,8 +143,7 @@ class TilesCollisionPanelView:
         """
         Dibuja los iconos de opción y sus etiquetas, manejando hover y selección.
         """
-        label_font = pygame.font.SysFont("Arial", 14)
-        char_font = pygame.font.SysFont("Arial", THUMB)
+
         mouse_pos = pygame.mouse.get_pos()
 
         for idx, (ch, label) in enumerate(self.options):
@@ -133,7 +151,7 @@ class TilesCollisionPanelView:
             y = PAD
             # Render caracter
             color = (255, 0, 0) if ch == "#" else (200, 200, 200)
-            text = char_font.render(ch, True, color)
+            text = self.char_surfaces[ch]
             surf.blit(text, (x + (THUMB - text.get_width()) // 2,
                              y + (THUMB - text.get_height()) // 2))
 
@@ -142,15 +160,13 @@ class TilesCollisionPanelView:
 
             # Hover overlay
             if abs_rect.collidepoint(mouse_pos):
-                hover = pygame.Surface((THUMB, THUMB), pygame.SRCALPHA)
-                hover.fill((255, 255, 0, 100))
-                surf.blit(hover, (x, y))
+                surf.blit(self.hover_surface, (x, y))
                 pygame.draw.rect(surf, CLR_HOVER, (x, y, THUMB, THUMB), 3)
             # Selection border
             elif self.controller.editor_state.toolbar_state.collision_choice == ch:
                 pygame.draw.rect(surf, CLR_SELECTION, (x, y, THUMB, THUMB), 3)
 
             # Label
-            lbl = label_font.render(label, True, (255, 255, 255))
+            lbl = self.label_surfaces[ch]
             surf.blit(lbl, (x + (THUMB - lbl.get_width()) // 2,
                             y + THUMB + PAD))

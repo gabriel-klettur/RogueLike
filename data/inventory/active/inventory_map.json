@@ -1,14 +1,4 @@
 {
-  "1901a114-12ed-4264-a7c4-9cd06949b85c": {
-    "item_id": "gold",
-    "quantity": 3,
-    "zone_id": "no zone",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 529,
-      "y": 1527
-    }
-  },
   "3c5ec640-9bc5-4a77-a1c3-af58ae08c7dd": {
     "item_id": "gold",
     "quantity": 5,
