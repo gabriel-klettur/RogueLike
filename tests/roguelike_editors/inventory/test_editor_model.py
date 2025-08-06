@@ -4,6 +4,7 @@ from roguelike_editors.inventory.editor_model import InventoryEditorModel
 from roguelike_editors.inventory.left_panel.panel_model import InventoryPanelModel
 from roguelike_editors.inventory.right_panel.inventory_items_panel.inventory_items_panel_model import InventoryitemsPanelModel
 from roguelike_editors.inventory.right_panel.item_selection_panel.item_selection_panel_model import ItemSelectionPanelModel
+import roguelike_editors.inventory.editor_model as model_mod
 
 
 def test_default_values():
@@ -48,7 +49,7 @@ def test_categories_property():
 def test_current_category_property_prints(monkeypatch):
     model = InventoryEditorModel()
     calls = []
-    monkeypatch.setattr('builtins.print', lambda *args, **kwargs: calls.append(args))
+    monkeypatch.setattr(model_mod.logger, 'debug', lambda msg: calls.append(msg))
     model.current_category = 'x'
     assert model.left_panel_model.current_category == 'x'
     assert any('InventoryEditorModel.current_category set to x' in arg for call in calls for arg in call)
@@ -57,7 +58,7 @@ def test_current_category_property_prints(monkeypatch):
 def test_selected_eid_property_prints(monkeypatch):
     model = InventoryEditorModel()
     calls = []
-    monkeypatch.setattr('builtins.print', lambda *args, **kwargs: calls.append(args))
+    monkeypatch.setattr(model_mod.logger, 'debug', lambda msg: calls.append(msg))
     model.selected_eid = 5
     assert model.left_panel_model.selected_eid == 5
     assert any('InventoryEditorModel.selected_eid set to 5' in arg for call in calls for arg in call)
