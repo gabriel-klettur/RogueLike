@@ -35,6 +35,13 @@ class TilesViewPanelView:
         self.state = state
         # Panel de vista usando roguelike_ui
         self.panel = DraggablePanel(0, 0)
+        # Cache fonts and layout constants for view panel
+        self.font = pygame.font.SysFont("Arial", 14)
+        self.bold_font = pygame.font.SysFont("Arial", 14, bold=True)
+        self.padding = 6
+        self.margin_x = 12
+        self.margin_y = 12
+        self.spacing_y = 6
         # Inicializar posición si existe estado
         if self.state.pos:
             self.panel.pos = self.state.pos
@@ -66,8 +73,9 @@ class TilesViewPanelView:
         ]
 
         # Calcular dimensiones y posición del panel
-        font = pygame.font.SysFont("Arial", 14)
-        panel_w, panel_h, row_dims = self._compute_panel_size(sprite_items, layer_items, font)
+        panel_w, panel_h, row_dims = self._compute_panel_size(sprite_items, layer_items, self.font)
+
+        panel_w, panel_h, row_dims = self._compute_panel_size(sprite_items, layer_items, self.font)
         x0, y0 = self._compute_panel_position(screen, panel_w, panel_h)
 
         # Dibujar panel de fondo y borde
@@ -78,7 +86,7 @@ class TilesViewPanelView:
 
         # Renderizar filas de sprite
         # Renderizar filas de sprite usando ScrollableGrid
-        padding = 6
+        padding = self.padding
         margin_x, margin_y, spacing_y = 12, 12, 6
         sprite_grid = ScrollableGrid(TILE_SIZE, padding, len(sprite_items), cols=1)
         def draw_sprite_item(surf, rect, item, idx):
@@ -86,7 +94,7 @@ class TilesViewPanelView:
             if sprite:
                 surf.blit(sprite, rect.topleft)
             pygame.draw.rect(surf, outline, rect, 2)
-            text = font.render(label, True, (245,245,245))
+            text = self.font.render(label, True, (245,245,245))
             surf.blit(text, (rect.x + TILE_SIZE + padding, rect.y + (TILE_SIZE - text.get_height())//2))
         sprite_grid.draw_items(panel.surface, sprite_items, (0, 0), draw_sprite_item)
         # Renderizar filas de layer manualmente con variables en negrita y color amarillo
@@ -96,16 +104,16 @@ class TilesViewPanelView:
         x = margin_x
         y = layer_area_y
         label_color = (245, 245, 245)
-        value_color = (255, 255, 0)
-        bold_font = pygame.font.SysFont("Arial", 14, bold=True)
+        value_color = (255, 255, 0)  # reuse constant if desired
+        bold_font = self.bold_font
         for label, val in layer_items:
             # Render label
             label_text = f"{label}:"
-            label_surf = font.render(label_text, True, label_color)
+            label_surf = self.font.render(label_text, True, label_color)
             panel.surface.blit(label_surf, (x, y))
             y += label_surf.get_height() + 2
             # Render value
-            value_surf = bold_font.render(val, True, value_color)
+            value_surf = self.bold_font.render(val, True, value_color)
             panel.surface.blit(value_surf, (x, y))
             y += value_surf.get_height() + spacing_y
 

@@ -35,6 +35,9 @@ class TilePickerView:
         self.assets = assets
         self.icon_font = pygame.font.SysFont("Arial", 12)
         self.label_font = pygame.font.SysFont("Arial", 16)
+        # Hover overlay surface for tile grid cells
+        self.hover_surface = pygame.Surface((THUMB, THUMB), pygame.SRCALPHA)
+        self.hover_surface.fill((255, 255, 0, 100))
         # TextInput para tamaño de grid tileset
         self.tileset_text_input = TextInput(self.label_font)
         # Panel draggable
@@ -88,17 +91,13 @@ class TilePickerView:
                 if idx == self.picker_state.config_src_idx:
                     pygame.draw.rect(surf, CONFIG_SELECTED_COLOR, rect, 3)
                 elif rect.collidepoint((lx, ly)):
-                    s = pygame.Surface((THUMB, THUMB), pygame.SRCALPHA)
-                    s.fill((255, 255, 0, 100))
-                    surf.blit(s, rect.topleft)
+                    surf.blit(self.hover_surface, rect.topleft)
                     pygame.draw.rect(surf, CONFIG_HOVER_COLOR, rect, 3)
                 elif self.picker_state.current_choice == value:
                     pygame.draw.rect(surf, CLR_SELECTION, rect, 3)
             else:
                 if rect.collidepoint((lx, ly)):
-                    s = pygame.Surface((THUMB, THUMB), pygame.SRCALPHA)
-                    s.fill((255, 255, 0, 100))
-                    surf.blit(s, rect.topleft)
+                    surf.blit(self.hover_surface, rect.topleft)
                     pygame.draw.rect(surf, CLR_HOVER, rect, 3)
                 elif self.picker_state.current_choice == value:
                     pygame.draw.rect(surf, CLR_SELECTION, rect, 3)
