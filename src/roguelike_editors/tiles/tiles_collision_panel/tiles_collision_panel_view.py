@@ -17,6 +17,10 @@ class TilesCollisionPanelView:
         self.options = [("#", "Collision"), (".", "Walk")]
         self.panel = DraggablePanel(1, 1, bgcolor=(20, 20, 20, 200))
 
+        # Ensure font module initialized
+        if not pygame.font.get_init():
+            pygame.font.init()
+
         # Cache fonts and static surfaces to optimize rendering
         self.label_font = pygame.font.SysFont("Arial", 14)
         self.char_font = pygame.font.SysFont("Arial", THUMB)

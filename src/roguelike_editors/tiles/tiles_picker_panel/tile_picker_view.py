@@ -42,7 +42,9 @@ class TilePickerView:
         # Hover overlay surface for tile grid cells
         self.hover_surface = pygame.Surface((THUMB, THUMB), pygame.SRCALPHA)
         self.hover_surface.fill((255, 255, 0, 100))
-        self.hover_surface = self.hover_surface.convert_alpha()
+        # Only convert_alpha if a display surface exists
+        if pygame.display.get_surface():
+            self.hover_surface = self.hover_surface.convert_alpha()
         self.hover_surface = pygame.Surface((THUMB, THUMB), pygame.SRCALPHA)
         self.hover_surface.fill((255, 255, 0, 100))
         # TextInput para tamaño de grid tileset
@@ -63,10 +65,14 @@ class TilePickerView:
         # Hover overlays
         self.config_hover_surf = pygame.Surface((self.cfg_bw, BTN_H), pygame.SRCALPHA)
         self.config_hover_surf.fill((255, 255, 0, 100))
-        self.config_hover_surf = self.config_hover_surf.convert_alpha()
+        # Only convert_alpha if a display surface exists
+        if pygame.display.get_surface():
+            self.config_hover_surf = self.config_hover_surf.convert_alpha()
         self.checkbox_hover_surf = pygame.Surface((16, 16), pygame.SRCALPHA)
         self.checkbox_hover_surf.fill((255, 255, 0, 100))
-        self.checkbox_hover_surf = self.checkbox_hover_surf.convert_alpha()
+        # Only convert_alpha if a display surface exists
+        if pygame.display.get_surface():
+            self.checkbox_hover_surf = self.checkbox_hover_surf.convert_alpha()
         # Cache directory label surfaces and pre-render asset name and size surfaces
 
         self.asset_name_surfs = {}
