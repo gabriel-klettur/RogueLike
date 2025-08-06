@@ -296,9 +296,10 @@ class AssetsGridPanelView:
         thumb = image.copy()
 
         if tint:
-            c = tuple(tint) if len(tint) in (3, 4) else (*tint, 255)
+            # Ensure integer RGB tuple for tint and use RGB_MULT for proper color multiplication
+            c = tuple(int(v) for v in tint[:3])
             
-            thumb.fill(c, special_flags=pygame.BLEND_RGBA_MULT)
+            thumb.fill(c, special_flags=pygame.BLEND_RGB_MULT)
         tx = rect.x + (rect.width - thumb.get_width()) // 2
         ty = rect.y + (rect.height - thumb.get_height()) // 2
         screen.blit(thumb, (tx, ty))

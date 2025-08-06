@@ -64,6 +64,8 @@ class EntityPropertiesPanelController:
         # Assets picker panel
         self.assets_picker_controller = EntitiesAssetsPickerPanelController()
         self.view.assets_picker_controller = self.assets_picker_controller
+        # Track last main tab to initialize asset sub-tabs
+        self._last_active_type_tab = self.type_assets_controller.model.active_type_tab
 
     # ----------------------------
     # MANEJO DE EVENTOS
@@ -77,6 +79,15 @@ class EntityPropertiesPanelController:
     # ----------------------------
     def draw(self, screen: pygame.Surface) -> None:
         """Dibuja el panel y, si aplica, el input activo."""
+        # Initialize asset sub-tab on first opening of assets
+        current_type = self.type_assets_controller.model.active_type_tab
+        if current_type == 'assets' and self._last_active_type_tab != 'assets':
+            entity_data = self.view._get_entity_data(self.model)
+            active_set = entity_data.get('active_set', 'sets')
+            desired = 'asset set' if active_set == 'sets' else 'no-set'
+            self.set_ot_assets_tab_controller.model.active_sub_tab = desired
+        # Update last active_type_tab
+        self._last_active_type_tab = current_type
         self.view.draw(screen, self.model)
         # Draw assets picker if visible
         if self.assets_picker_controller.model.visible:

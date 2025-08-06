@@ -158,27 +158,42 @@ class EntityPropertiesPanelView:
             assets_def = monster.get('assets', {})
             merged_mon = dict(stats)
             merged_mon['id'] = ent_id
-            # Respect active_set and include in merged data
+            # Active_set for combobox
             active_set = assets_def.get('active_set', 'no-sets')
             merged_mon['active_set'] = active_set
-            # Extract tint based on active_set
-            if active_set == 'no-sets':
-                tint = assets_def.get('no-sets', {}).get('sprites_data_no-set', {}).get('tint')
-            else:
-                tint = assets_def.get('sets', {}).get('sprites_data_set', {}).get('tint')
-            merged_mon['tint'] = tint
-            # Flatten assets for the active_set group
-            if active_set == 'no-sets':
-                asset_group = assets_def.get('no-sets', {})
-            else:
-                asset_group = assets_def.get('sets', {}).get('sprites_set', {})
-            for state, dirs in asset_group.items():
+
+            # Flatten 'no-sets' assets first (individual direction assets)
+            no_sets = assets_def.get('no-sets', {})
+            for state, dirs in no_sets.items():
+                if state == 'sprites_data_no-set':
+                    continue
                 for dir_key, path in dirs.items():
                     merged_mon[f"asset_{state}_{dir_key}"] = path
-            # Also flatten scales from sprites_data_set
-            set_data = assets_def.get('sets', {}).get('sprites_data_set', {})
-            for key, value in set_data.items():
+
+            # Flatten 'sets' assets (override no-sets for asset set)
+            sets_group = assets_def.get('sets', {}).get('sprites_set', {})
+            dir_map = {
+                'nw': 'up_left', 'n': 'up', 'ne': 'up_right',
+                'w': 'left', 'e': 'right', 'sw': 'down_left',
+                's': 'down', 'se': 'down_right'
+            }
+            for state, paths in sets_group.items():
+                if paths:
+                    sheet_path = paths[0]
+                    for dir_key in dir_map:
+                        merged_mon[f"asset_{state}_{dir_key}"] = sheet_path
+
+            # Extract and flatten metadata (scales, tint)
+            data_no = assets_def.get('no-sets', {}).get('sprites_data_no-set', {})
+            data_set = assets_def.get('sets', {}).get('sprites_data_set', {})
+            for key, value in {**data_no, **data_set}.items():
                 merged_mon[key] = value
+
+            # Determine tint for rendering based on active_set
+            tint = (data_no.get('tint') if active_set == 'no-sets'
+                    else data_set.get('tint'))
+            merged_mon['tint'] = tint
+
             return merged_mon
         return {}
 
