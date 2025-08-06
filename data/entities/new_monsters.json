@@ -78,6 +78,16 @@
               "w": "assets/npc/monsters/barbol/barbol_1_left.png",
               "sw": null
             },
+            "walk": {
+              "s": "assets/npc/monsters/barbol/barbol_1_down_chase.png",
+              "se": null,
+              "e": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
+              "ne": null,
+              "n": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
+              "nw": null,
+              "w": "assets/npc/monsters/barbol/barbol_1_left_chase.png",
+              "sw": null
+            },
             "chase": {
               "s": "assets/npc/monsters/barbol/barbol_1_down_chase.png",
               "se": null,
@@ -205,6 +215,16 @@
               "w": "assets/npc/monsters/barbol/barbol_1_left_chase.png",
               "sw": null
             },
+            "walk": {
+              "s": "assets/npc/monsters/barbol/barbol_1_down_chase.png",
+              "se": null,
+              "e": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
+              "ne": null,
+              "n": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
+              "nw": null,
+              "w": "assets/npc/monsters/barbol/barbol_1_left_chase.png",
+              "sw": null
+            },
             "attack": {
               "s": null,
               "se": null,
@@ -315,6 +335,16 @@
               "n": "assets/npc/monsters/barbol/barbol_1_top.png",
               "nw": null,
               "w": "assets/npc/monsters/barbol/barbol_1_left.png",
+              "sw": null
+            },
+            "walk": {
+              "s": "assets/npc/monsters/barbol/barbol_1_down_chase.png",
+              "se": null,
+              "e": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
+              "ne": null,
+              "n": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
+              "nw": null,
+              "w": "assets/npc/monsters/barbol/barbol_1_left_chase.png",
               "sw": null
             },
             "chase": {
@@ -448,6 +478,16 @@
               "w": "assets/npc/monsters/barbol/barbol_1_left_chase.png",
               "sw": null
             },
+            "walk": {
+              "s": "assets/npc/monsters/barbol/barbol_1_down_chase.png",
+              "se": null,
+              "e": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
+              "ne": null,
+              "n": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
+              "nw": null,
+              "w": "assets/npc/monsters/barbol/barbol_1_left_chase.png",
+              "sw": null
+            },
             "attack": {
               "s": null,
               "se": null,
@@ -558,6 +598,16 @@
               "n": "assets/npc/monsters/barbol/barbol_1_top.png",
               "nw": null,
               "w": "assets/npc/monsters/barbol/barbol_1_left.png",
+              "sw": null
+            },
+            "walk": {
+              "s": "assets/npc/monsters/barbol/barbol_1_down_chase.png",
+              "se": null,
+              "e": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
+              "ne": null,
+              "n": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
+              "nw": null,
+              "w": "assets/npc/monsters/barbol/barbol_1_left_chase.png",
               "sw": null
             },
             "chase": {
@@ -681,6 +731,16 @@
               "w": "assets/npc/monsters/barbol/barbol_1_left.png",
               "sw": null
             },
+            "walk": {
+              "s": "assets/npc/monsters/barbol/barbol_1_down_chase.png",
+              "se": null,
+              "e": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
+              "ne": null,
+              "n": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
+              "nw": null,
+              "w": "assets/npc/monsters/barbol/barbol_1_left_chase.png",
+              "sw": null
+            },
             "chase": {
               "s": "assets/npc/monsters/barbol/barbol_1_down_chase.png",
               "se": null,
@@ -800,6 +860,16 @@
               "n": "assets/npc/monsters/barbol/barbol_1_top.png",
               "nw": null,
               "w": "assets/npc/monsters/barbol/barbol_1_left.png",
+              "sw": null
+            },
+            "walk": {
+              "s": "assets/npc/monsters/barbol/barbol_1_down_chase.png",
+              "se": null,
+              "e": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
+              "ne": null,
+              "n": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
+              "nw": null,
+              "w": "assets/npc/monsters/barbol/barbol_1_left_chase.png",
               "sw": null
             },
             "chase": {
@@ -923,6 +993,16 @@
               "w": "assets/npc/monsters/barbol/barbol_1_left.png",
               "sw": null
             },
+            "walk": {
+              "s": "assets/npc/monsters/barbol/barbol_1_down_chase.png",
+              "se": null,
+              "e": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
+              "ne": null,
+              "n": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
+              "nw": null,
+              "w": "assets/npc/monsters/barbol/barbol_1_left_chase.png",
+              "sw": null
+            },
             "chase": {
               "s": "assets/npc/monsters/barbol/barbol_1_down_chase.png",
               "se": null,
@@ -1044,6 +1124,16 @@
               "w": "assets/npc/monsters/barbol/barbol_1_left.png",
               "sw": null
             },
+            "walk": {
+              "s": "assets/npc/monsters/barbol/barbol_1_down_chase.png",
+              "se": null,
+              "e": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
+              "ne": null,
+              "n": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
+              "nw": null,
+              "w": "assets/npc/monsters/barbol/barbol_1_left_chase.png",
+              "sw": null
+            },
             "chase": {
               "s": "assets/npc/monsters/barbol/barbol_1_down_chase.png",
               "se": null,
@@ -1163,6 +1253,16 @@
               "n": "assets/npc/monsters/barbol/barbol_1_top.png",
               "nw": null,
               "w": "assets/npc/monsters/barbol/barbol_1_left.png",
+              "sw": null
+            },
+            "walk": {
+              "s": "assets/npc/monsters/barbol/barbol_1_down_chase.png",
+              "se": null,
+              "e": "assets/npc/monsters/barbol/barbol_1_right_chase.png",
+              "ne": null,
+              "n": "assets/npc/monsters/barbol/barbol_1_top_chase.png",
+              "nw": null,
+              "w": "assets/npc/monsters/barbol/barbol_1_left_chase.png",
               "sw": null
             },
             "chase": {
