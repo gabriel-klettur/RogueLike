@@ -42,12 +42,12 @@ class BuildingEditorEventHandler:
                 self.panning = True
                 self.pan_start = ev.pos
                 self.pan_offset_start = (camera.offset_x, camera.offset_y)
-                logger.info(f"[DEBUG][BUILDINGS EDITOR] Start panning at {self.pan_start}, offset_start={self.pan_offset_start}")
+                logger.info(f" EDITOR] Start panning at {self.pan_start}, offset_start={self.pan_offset_start}")
                 continue
             if ev.type == pygame.MOUSEBUTTONUP and getattr(ev, 'button', None) == 2 and self.panning:
                 # Stop panning
                 self.panning = False
-                logger.info("[DEBUG][BUILDINGS EDITOR] Stop panning")
+                logger.info(" EDITOR] Stop panning")
                 continue
             if ev.type == pygame.MOUSEMOTION and self.panning:
                 # Apply panning motion (using relative motion)

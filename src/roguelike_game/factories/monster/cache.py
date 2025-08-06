@@ -29,7 +29,7 @@ def load_caches_for(variants: Iterable[str]) -> None:
         scale_val = data_assets.get("scale", 1.0)
         death_scale = data_assets.get("death_scale", scale_val)
         tint = data_assets.get("tint")
-        logger.debug(f"[TINT][Cache] mtype={mtype} tint(data_assets)={tint}")
+        logger.debug(f" mtype={mtype} tint(data_assets)={tint}")
         # Flatten asset entries (exclude metadata)
         assets_map = {k: v for k, v in active_assets.items() if k != data_block_key}
         dir_map: Dict[str, pygame.Surface] = {}
@@ -65,7 +65,7 @@ def load_caches_for(variants: Iterable[str]) -> None:
         down_img = dir_map.get("down")
         if down_img:
             cpx, cpy = down_img.get_width()//2, down_img.get_height()//2
-            logger.debug(f"[TINT][Cache] mtype={mtype} post_scale down size={down_img.get_size()} center_pixel={down_img.get_at((cpx,cpy))}")
+            logger.debug(f" mtype={mtype} post_scale down size={down_img.get_size()} center_pixel={down_img.get_at((cpx,cpy))}")
         continue
         dir_map: Dict[str, pygame.Surface] = {}
         for direction, path in cfg["sprites"].items():
@@ -77,7 +77,7 @@ def load_caches_for(variants: Iterable[str]) -> None:
             else:
                 image = raw
             tint = cfg.get("tint")
-            logger.debug(f"[TINT][Cache] mtype={mtype} tint(cfg)={tint}")
+            logger.debug(f" mtype={mtype} tint(cfg)={tint}")
             if tint:
                 image.fill(tuple(tint), special_flags=pygame.BLEND_RGB_MULT)
             dir_map[direction] = image
@@ -92,7 +92,7 @@ def load_caches_for(variants: Iterable[str]) -> None:
             else:
                 death_img = raw_death
             tint = cfg.get("tint")
-            logger.debug(f"[TINT][Cache] mtype={mtype} tint(cfg)={tint}")
+            logger.debug(f" mtype={mtype} tint(cfg)={tint}")
             if tint and death_img:
                 death_img.fill(tuple(tint), special_flags=pygame.BLEND_RGB_MULT)
             _DEATH_SURFACES[mtype] = death_img

@@ -16,13 +16,13 @@ def center_of(room):
     return (x1 + x2) // 2, (y1 + y2) // 2
 
 def find_closest_room_center(source_x, source_y, dungeon_rooms):
-    logger.debug(f"[Dungeon] Buscando sala más cercana desde ({source_x}, {source_y})")
+    logger.debug(f" Buscando sala más cercana desde ({source_x}, {source_y})")
     min_dist = float("inf")
     closest_center = None
     for i, room in enumerate(dungeon_rooms):
         cx, cy = center_of(room)
         dist = abs(cx - source_x) + abs(cy - source_y)
-        logger.debug(f"[Dungeon]  Sala {i}: centro=({cx},{cy}), dist={dist}")
+        logger.debug(f"  Sala {i}: centro=({cx},{cy}), dist={dist}")
         if dist < min_dist:
             min_dist = dist
             closest_center = (cx, cy)

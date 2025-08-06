@@ -20,7 +20,7 @@ class EntitiesAssetsPickerPanelEventHandler:
         # Mouse click
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mx, my = event.pos
-            logging.debug(f"[DEBUG][AssetsPicker] Click at pos={mx},{my}, selected={self.model.fs_model.selected}")
+            logging.debug(f" Click at pos={mx},{my}, selected={self.model.fs_model.selected}")
             # Determine panel rect
             x, y = self.model.pos
             surf = self.view.fs_view.panel.surface
@@ -41,7 +41,7 @@ class EntitiesAssetsPickerPanelEventHandler:
                         # select asset on double-click without closing panel
                         if self.dc_detector.is_double_click(idx):
                             if self.model.on_asset_chosen:
-                                logging.debug(f"[DEBUG][AssetsPicker] Invoking on_asset_chosen callback for key={self.model.key}, path={path}")
+                                logging.debug(f" Invoking on_asset_chosen callback for key={self.model.key}, path={path}")
                                 self.model.on_asset_chosen(self.model.key, path)
 
 

@@ -1,8 +1,6 @@
 import sys
 import os
 
-
-
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 from roguelike_engine.log_config import init_logging

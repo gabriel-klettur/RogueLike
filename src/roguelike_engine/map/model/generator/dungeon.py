@@ -33,7 +33,7 @@ class DungeonGenerator(MapGenerator):
         else:
             max_allowed = max_rooms
 
-        logger.debug(f"[Dungeon] Generación iniciada. Intentos permitidos: {max_rooms}, límite real de habitaciones: {max_allowed}")
+        logger.debug(f" Generación iniciada. Intentos permitidos: {max_rooms}, límite real de habitaciones: {max_allowed}")
 
         map_ = [["#" for _ in range(width)] for _ in range(height)]
         rooms: List[Tuple[int,int,int,int]] = []
@@ -79,7 +79,7 @@ class DungeonGenerator(MapGenerator):
 
             rooms.append(new_room)
 
-        logger.debug(f"[Dungeon] Generación finalizada: {len(rooms)} habitaciones creadas en {attempts} intentos.")
+        logger.debug(f" Generación finalizada: {len(rooms)} habitaciones creadas en {attempts} intentos.")
 
         metadata = {"rooms": rooms}
         return map_, metadata

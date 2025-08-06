@@ -40,7 +40,7 @@ class MapLoadDropsSystem:
         try:
             validator.validate(drops_raw)
         except jsonschema.ValidationError as e:
-            logging.error(f"[MapLoadDropsSystem] Schema validation failed: {e.message}. Continuing without drops.")
+            logging.error(f" Schema validation failed: {e.message}. Continuing without drops.")
         # Instanciar el ItemDropManager con datos validados
         self.drop_manager = ItemDropManager(path)
         # Flatten nested 'map' key in drop_manager data if present
@@ -108,7 +108,7 @@ class MapLoadDropsSystem:
                     world.components['Sprite'][eid] = Sprite(icon)
                     world.components['Scale'][eid] = Scale(getattr(model, 'scale_map', 1.0))
 
-            logger.debug(f"[MapLoadDropsSystem] Spawned drop '{drop_id}' item '{item_id}' at ({pos.x},{pos.y}) zone '{zone_id}' eid={eid}")
+            logger.debug(f" Spawned drop '{drop_id}' item '{item_id}' at ({pos.x},{pos.y}) zone '{zone_id}' eid={eid}")
             self._spawned.add(drop_id)
             self._loaded = True
 

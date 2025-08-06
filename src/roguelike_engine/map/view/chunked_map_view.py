@@ -23,7 +23,7 @@ class ChunkedMapView:
         self.chunks_by_zoom: dict[float, dict[tuple[int,int], pygame.Surface]] = {}
 
     def _build_chunk_surfaces(self, map_model: MapModel, zoom: float):
-        logger.debug(f"[DEBUG][ChunkedMapView] _build_chunk_surfaces called for zoom {zoom}")
+        logger.debug(f" _build_chunk_surfaces called for zoom {zoom}")
         """
         Pre-dibuja cada chunk (bloque de tiles) en una surface escalada
         y la guarda en self.chunks_by_zoom[zoom].
@@ -56,7 +56,7 @@ class ChunkedMapView:
 
         # Debug: imprimir claves sin sprite en sprite_map
         missing = [k for k, s in sprite_map.items() if s is None]
-        logger.debug(f"[DEBUG][ChunkedMapView] claves sin sprite: {missing}")
+        logger.debug(f" claves sin sprite: {missing}")
         layers_ordered = sorted(map_model.layers.keys(), key=lambda l: l.value)
         for cy in range(n_chunks_y):
             for cx in range(n_chunks_x):
@@ -82,7 +82,7 @@ class ChunkedMapView:
                                 continue
                             sprite = sprite_map.get((char, code))
                             if sprite is None:
-                                logger.debug(f"[DEBUG][ChunkedMapView] sin sprite para tile ({ty},{tx}) char={char}, code={code}")
+                                logger.debug(f" sin sprite para tile ({ty},{tx}) char={char}, code={code}")
                             if not sprite:
                                 continue
                             # scaled cache
@@ -102,7 +102,7 @@ class ChunkedMapView:
         self.chunks_by_zoom[zoom] = chunk_dict
 
     def invalidate_cache(self):
-        logger.debug(f"[DEBUG][ChunkedMapView] invalidate_cache called")
+        logger.debug(f" invalidate_cache called")
         """Forzar reconstrucción de todos los chunks en el próximo render."""
         self.chunks_by_zoom.clear()
 
@@ -171,7 +171,7 @@ class ChunkedMapView:
         camera,
         map_model: MapModel
     ) -> list[pygame.Rect]:
-        #logger.debug(f"[DEBUG][ChunkedMapView] render called for zoom {round(camera.zoom*10)/10.0}, cache keys: {list(self.chunks_by_zoom.keys())}")
+        #logger.debug(f" render called for zoom {round(camera.zoom*10)/10.0}, cache keys: {list(self.chunks_by_zoom.keys())}")
         """
         Dibuja únicamente los chunks visibles según la cámara,
         devolviendo la lista de dirty rects.

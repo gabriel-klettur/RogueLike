@@ -54,10 +54,10 @@ class InventoryEditorController:
 
     def debug_dump(self):
         """
-        [DEBUG][Controller] Volcado completo del estado del InventoryEditorController.
+         Volcado completo del estado del InventoryEditorController.
         """
         m = self.model
-        logger.debug("[DEBUG][Controller] InventoryEditorController.debug_dump:")
+        logger.debug(" InventoryEditorController.debug_dump:")
         logger.debug(f"  visible: {m.visible}")
         logger.debug(f"  entities: {m.entities}")
         logger.debug(f"  selected_eid: {m.selected_eid}")

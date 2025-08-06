@@ -110,7 +110,7 @@ class EntitiesPickerEventHandler:
                         tint = assets_def.get('no-sets', {}).get('sprites_data_no-set', {}).get('tint')
                     else:
                         tint = assets_def.get('sets', {}).get('sprites_data_set', {}).get('tint')
-                    logging.debug(f"[DEBUG][Picker OPEN] ent_id={ent_id} active_set={active_set} tint={tint}")
+                    logging.debug(f" ent_id={ent_id} active_set={active_set} tint={tint}")
             return
 
         if not self.model.visible:

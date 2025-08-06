@@ -24,7 +24,7 @@ class EntitiesEditorEventHandler:
         for ev in events:
             # Debug left click global
             if ev.type == pygame.MOUSEBUTTONDOWN and getattr(ev, 'button', None) == 1:
-                logger.debug(f"[DEBUG][EntitiesEditorEventHandler] Left click en {ev.pos}, spawn_mode={self.model.spawn_mode_active}, spawn_entity_type={self.model.spawn_entity_type}")
+                logger.debug(f" Left click en {ev.pos}, spawn_mode={self.model.spawn_mode_active}, spawn_entity_type={self.model.spawn_entity_type}")
             # Toggle del editor con F6
             if ev.type == pygame.KEYDOWN and ev.key == pygame.K_F6:
                 self.model.active = not self.model.active

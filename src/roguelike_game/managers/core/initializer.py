@@ -144,7 +144,7 @@ class GameInitializer:
             base = getattr(fn, 'func', fn)
             name = getattr(base, '__qualname__',
                            getattr(base, '__name__', str(base)))
-            logging.info(f"[StageDetail] {msg}: {elapsed:.4f}s [{name}]")
+            logging.info(f" {msg}: {elapsed:.4f}s [{name}]")
 
             if msg == "Cargando estado de mundo":
                 self._handle_deferred_levels()
@@ -253,7 +253,7 @@ class GameInitializer:
         with open(logf, 'w') as pf:
             p = pstats.Stats(pr, stream=pf)
             p.sort_stats('tottime').print_stats(30)
-        logging.info(f"[Profiling] ECS init: {elapsed:.4f}s -> {logf}")
+        logging.info(f" ECS init: {elapsed:.4f}s -> {logf}")
 
     def _init_items(self):
         """Carga catálogo de ítems y assets de ítems para todo el juego"""

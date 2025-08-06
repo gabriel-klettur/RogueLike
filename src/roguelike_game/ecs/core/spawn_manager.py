@@ -60,7 +60,7 @@ class SpawnNPCManager:
         # 3) Spawn en LOBBY
         positions = find_spawn_positions(self.map_manager, self.buildings, lobby_offset,
                                          zone_size, neighbor_padding=neighbor_padding, sample_count=10)
-        logger.debug(f"[SpawnManager][Spawn] Lobby: candidatos={len(positions)}")
+        logger.debug(f" Lobby: candidatos={len(positions)}")
         for tx, ty in positions:
             variant = random.choice(barbol_variants)
             cfg_var = MONSTER_DEFS[variant]
@@ -99,7 +99,7 @@ class SpawnNPCManager:
 
         empty_positions = find_spawn_positions(self.map_manager, self.buildings, empty_offset,
                                                zone_size, neighbor_padding=neighbor_padding, sample_count=100)
-        logger.debug(f"[SpawnManager][Spawn] Empty Left: candidatos={len(empty_positions)}")
+        logger.debug(f" Empty Left: candidatos={len(empty_positions)}")
         for tx, ty in empty_positions:
             variant = random.choice(barbol_variants)
             cfg_var = MONSTER_DEFS[variant]

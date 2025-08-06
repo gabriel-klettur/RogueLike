@@ -30,7 +30,7 @@ def main():
     os.makedirs(OUTPUT.parent, exist_ok=True)
     with open(OUTPUT, 'w', encoding='utf-8') as out:
         json.dump(mapping, out, ensure_ascii=False, indent=2)
-    logger.info(f'[Tiles][Generate Tiles Dictionary] Wrote tiles dictionary to {OUTPUT}')
+    logger.info(f' Wrote tiles dictionary to {OUTPUT}')
 
 if __name__ == '__main__':
     main()

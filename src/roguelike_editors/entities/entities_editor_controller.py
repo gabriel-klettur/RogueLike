@@ -113,7 +113,7 @@ class EntitiesEditorController:
     def handle_event(self, event: pygame.event.Event) -> bool:
         # Debug global entities_on_map: click event recibido
         if event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
-            logger.debug(f"[DEBUG][EntitiesEditorController] Click global en {event.pos}, spawn_mode={self.model.spawn_mode_active}, spawn_entity_type={self.model.spawn_entity_type}")
+            logger.debug(f" Click global en {event.pos}, spawn_mode={self.model.spawn_mode_active}, spawn_entity_type={self.model.spawn_entity_type}")
 
         """
         Delega el evento a los subcontrollers en orden de prioridad.
@@ -179,7 +179,7 @@ class EntitiesEditorController:
                     if rect.collidepoint(mx, my):
                         ecs.remove_entity(eid)
                         ecs.invalidate_spatial_index()
-                        logger.debug(f"[DEBUG][EntitiesEditorController] Entity {eid} deleted via bbox click at ({mx},{my})")
+                        logger.debug(f" Entity {eid} deleted via bbox click at ({mx},{my})")
                         self.exit_delete_mode()
                         return True
             # Completando spawn: click en mapa finaliza spawn_mode
@@ -196,7 +196,7 @@ class EntitiesEditorController:
                     get_factory("player").create(self.game.ecs.ecs_world, tile_x=tx, tile_y=ty, class_player=etype)
                 else:
                     get_factory("monster").create(self.game.ecs.ecs_world, tile_x=tx, tile_y=ty, monster_type=etype)
-                logger.debug(f"[DEBUG][EntitiesEditorController] Entity '{etype}' spawned at tile ({tx},{ty})")
+                logger.debug(f" Entity '{etype}' spawned at tile ({tx},{ty})")
                 self.exit_spawn_mode()
                 return True
         return False

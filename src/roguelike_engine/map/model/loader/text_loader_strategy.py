@@ -24,7 +24,7 @@ class TextMapLoader(MapLoader):
         map_data: List[str],
         map_name: str
     ) -> Tuple[List[List[str]], Dict[Layer, List[List[Tile]]], Dict[Layer, List[List[str]]]]:
-        logger.debug(f"[DEBUG][TextMapLoader] load called for map '{map_name}', size={len(map_data)}x{(len(map_data[0]) if map_data else 0)}")
+        logger.debug(f" load called for map '{map_name}', size={len(map_data)}x{(len(map_data[0]) if map_data else 0)}")
         # 0) (Re)generar el mapping de overlay codes → asset names (solo una vez)
         global _overlay_map_generated
         if not _overlay_map_generated:
@@ -36,7 +36,7 @@ class TextMapLoader(MapLoader):
 
         # 2) Cargar todas las capas (nuevo o legacy)
         raw_layers = load_layers(map_name)
-        logger.debug(f"[DEBUG][TextMapLoader] raw_layers for '{map_name}': {[ (layer.name, len(grid)) for layer,grid in raw_layers.items() ]}")
+        logger.debug(f" raw_layers for '{map_name}': {[ (layer.name, len(grid)) for layer,grid in raw_layers.items() ]}")
         height = len(map_data)
         width = len(map_data[0]) if height > 0 else 0
         # Si no hay capas, inicializar Ground vacío
@@ -64,9 +64,9 @@ class TextMapLoader(MapLoader):
             logger.debug(f"[TextMapLoader] Adaptando capas para '{map_name}' a {width}x{height}")
         # Merge overlays por zona en cada capa existente o nueva
         for zone_name, (off_x, off_y) in global_map_settings.zone_offsets.items():
-            logger.debug(f"[DEBUG][TextMapLoader] merging zone '{zone_name}' overlay")
+            logger.debug(f" merging zone '{zone_name}' overlay")
             zone_layers = load_layers(zone_name)
-            logger.debug(f"[DEBUG][TextMapLoader] zone_layers for '{zone_name}': {[ (layer.name, len(grid)) for layer,grid in zone_layers.items() ]}")
+            logger.debug(f" zone_layers for '{zone_name}': {[ (layer.name, len(grid)) for layer,grid in zone_layers.items() ]}")
             if not zone_layers:
                 continue
             for layer, zgrid in zone_layers.items():
