@@ -17,6 +17,11 @@ class EntityPropertiesPanelModel:
     editing_text: str = ""
     editing_cursor: int = 0
     hovered_property: Optional[str] = None
+    # Scroll support for properties list
+    scroll_offset: int = 0
+    max_scroll: int = 0
+    total_lines_height: int = 0
+    available_height: int = 0
     
     
     
