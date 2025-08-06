@@ -45,8 +45,6 @@ class TilePickerView:
         # Only convert_alpha if a display surface exists
         if pygame.display.get_surface():
             self.hover_surface = self.hover_surface.convert_alpha()
-        self.hover_surface = pygame.Surface((THUMB, THUMB), pygame.SRCALPHA)
-        self.hover_surface.fill((255, 255, 0, 100))
         # TextInput para tamaño de grid tileset
         self.tileset_text_input = TextInput(self.label_font)
         # Panel draggable
@@ -398,10 +396,10 @@ class TilePickerView:
             self.picker_state.pos
         )
         if self.static_panel_surf is not None and state == self._last_state:
-            # Blit cached surface and return
+            # Blit cached surface (skip full redraw of static elements)
             self.panel.pos = self.picker_state.pos
             screen.blit(self.static_panel_surf, self.panel.pos)
-            return
+        # fall through to dynamic overlay redraw
         # Update state surface reference for event handling
         self.picker_state.surface = self.panel.surface
         # Draw assets grid via ScrollableGrid
