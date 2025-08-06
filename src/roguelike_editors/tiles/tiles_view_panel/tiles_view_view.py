@@ -42,6 +42,21 @@ class TilesViewPanelView:
         self.margin_x = 12
         self.margin_y = 12
         self.spacing_y = 6
+
+        # Caches para optimización de render
+        self._label_surf_cache = {}
+        self._value_surf_cache = {}
+        self._sprite_label_surf_cache = {
+            "Hovered": self.font.render("Hovered", True, (245,245,245)),
+            "Selected": self.font.render("Selected", True, (245,245,245)),
+            "Choice": self.font.render("Choice", True, (245,245,245)),
+        }
+        # Precomputar dimensiones del panel
+        placeholder_items = [("Hovered", None, None), ("Selected", None, None), ("Choice", None, None)]
+        placeholder_layers = [("Layer Hovered", ""), ("Layer Selected", "")]
+        self._panel_w, self._panel_h, self._row_dims = self._compute_panel_size(placeholder_items, placeholder_layers, self.font)
+        # Precompute sprite grid for reuse
+        self._sprite_grid = ScrollableGrid(TILE_SIZE, self.padding, len(self._sprite_label_surf_cache), cols=1)
         # Inicializar posición si existe estado
         if self.state.pos:
             self.panel.pos = self.state.pos
@@ -73,9 +88,9 @@ class TilesViewPanelView:
         ]
 
         # Calcular dimensiones y posición del panel
-        panel_w, panel_h, row_dims = self._compute_panel_size(sprite_items, layer_items, self.font)
+        panel_w, panel_h, row_dims = self._panel_w, self._panel_h, self._row_dims
 
-        panel_w, panel_h, row_dims = self._compute_panel_size(sprite_items, layer_items, self.font)
+        panel_w, panel_h, row_dims = self._panel_w, self._panel_h, self._row_dims
         x0, y0 = self._compute_panel_position(screen, panel_w, panel_h)
 
         # Dibujar panel de fondo y borde
@@ -88,13 +103,13 @@ class TilesViewPanelView:
         # Renderizar filas de sprite usando ScrollableGrid
         padding = self.padding
         margin_x, margin_y, spacing_y = 12, 12, 6
-        sprite_grid = ScrollableGrid(TILE_SIZE, padding, len(sprite_items), cols=1)
+        sprite_grid = self._sprite_grid
         def draw_sprite_item(surf, rect, item, idx):
             label, sprite, outline = item
             if sprite:
                 surf.blit(sprite, rect.topleft)
             pygame.draw.rect(surf, outline, rect, 2)
-            text = self.font.render(label, True, (245,245,245))
+            text = self._sprite_label_surf_cache[label]
             surf.blit(text, (rect.x + TILE_SIZE + padding, rect.y + (TILE_SIZE - text.get_height())//2))
         sprite_grid.draw_items(panel.surface, sprite_items, (0, 0), draw_sprite_item)
         # Renderizar filas de layer manualmente con variables en negrita y color amarillo
@@ -109,11 +124,15 @@ class TilesViewPanelView:
         for label, val in layer_items:
             # Render label
             label_text = f"{label}:"
-            label_surf = self.font.render(label_text, True, label_color)
+            if label_text not in self._label_surf_cache:
+                self._label_surf_cache[label_text] = self.font.render(label_text, True, label_color)
+            label_surf = self._label_surf_cache[label_text]
             panel.surface.blit(label_surf, (x, y))
             y += label_surf.get_height() + 2
             # Render value
-            value_surf = self.bold_font.render(val, True, value_color)
+            if val not in self._value_surf_cache:
+                self._value_surf_cache[val] = self.bold_font.render(val, True, value_color)
+            value_surf = self._value_surf_cache[val]
             panel.surface.blit(value_surf, (x, y))
             y += value_surf.get_height() + spacing_y
 

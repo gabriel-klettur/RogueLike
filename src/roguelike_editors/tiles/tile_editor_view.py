@@ -27,6 +27,7 @@ class TileEditorView:
         # Normal tile picker
         if self.editor.picker_state.open:
             self.controller.picker.view.render(screen)
+            return
 
         # Tiles View Panel
         if self.editor.toolbar_state.view_active:
