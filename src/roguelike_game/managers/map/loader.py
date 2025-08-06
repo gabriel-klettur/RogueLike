@@ -49,10 +49,10 @@ class MapLoader:
                 with open(cache_file, 'rb') as f:
                     result = pickle.load(f)
                 t1 = time.perf_counter()
-                logger.info(f" Loaded cache in {t1-t0:.4f}s")
+                logger.info(f"Loaded cache in {t1-t0:.4f}s")
                 return result
             except Exception as e:
-                logger.warning(f" Cache load failed: {e}")
+                logger.warning(f"Cache load failed: {e}")
                 cache_file.unlink(missing_ok=True)
 
         # Generar mapa
@@ -62,7 +62,7 @@ class MapLoader:
         result = build_map(map_name)
         t1 = time.perf_counter()
         profile.disable()
-        logger.info(f" Built map in {t1-t0:.4f}s")
+        logger.info(f"Built map in {t1-t0:.4f}s")
 
         # Guardar cache
         try:
@@ -78,6 +78,6 @@ class MapLoader:
         with open(profile_log, 'w') as pf:
             stats = pstats.Stats(profile, stream=pf)
             stats.sort_stats('tottime').print_stats(30)
-        logger.info(f" Profile stats saved to {profile_log}")
+        logger.info(f"Profile stats saved to {profile_log}")
 
         return result

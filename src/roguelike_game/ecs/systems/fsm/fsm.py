@@ -37,15 +37,15 @@ class FiniteStateMachine:
         now = time.time()
         if old_state_name == 'PrepareSpellState':
             elapsed = now - ctx.get('prepare_start', now)
-            logger.debug(f"[FSM DEBUG] Eid={entity.id} state {old_state_name} -> {new_state_name} (prepare {elapsed:.2f}s spell={spell})")
+            logger.debug(f" Eid={entity.id} state {old_state_name} -> {new_state_name} (prepare {elapsed:.2f}s spell={spell})")
         elif old_state_name == 'ChannelSpellState':
             elapsed = now - ctx.get('channel_start', now)
-            logger.debug(f"[FSM DEBUG] Eid={entity.id} state {old_state_name} -> {new_state_name} (channel {elapsed:.2f}s spell={spell})")
+            logger.debug(f" Eid={entity.id} state {old_state_name} -> {new_state_name} (channel {elapsed:.2f}s spell={spell})")
         elif old_state_name in ('CooldownState','PlayerSpellCooldownState'):
             elapsed = now - ctx.get('cooldown_start', now)
-            logger.debug(f"[FSM DEBUG] Eid={entity.id} state {old_state_name} -> {new_state_name} (cooldown {elapsed:.2f}s spell={spell})")
+            logger.debug(f" Eid={entity.id} state {old_state_name} -> {new_state_name} (cooldown {elapsed:.2f}s spell={spell})")
         else:
-            logger.debug(f"[FSM DEBUG] Eid={entity.id} state {old_state_name} -> {new_state_name}")
+            logger.debug(f" Eid={entity.id} state {old_state_name} -> {new_state_name}")
         self.current_state.exit(entity)
         self.current_state = new_state
         new_state.fsm = self
