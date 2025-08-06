@@ -20,14 +20,21 @@ class ColorFormatter(logging.Formatter):
     Custom formatter to add colors to log output in console.
     """
     def format(self, record):
-        log_fmt = (
-            f"{COLOR_TIME}[%(asctime)s]{RESET}"
-            f"{COLOR_LEVEL}[%(levelname)s]{RESET}"
-            f"{COLOR_NAME}[%(name)s]{RESET}: "
-            f"{COLOR_MSG}%(message)s{RESET}"
-        )
-        formatter = logging.Formatter(log_fmt, datefmt="%H:%M:%S")
-        return formatter.format(record)
+        # Formatear timestamp
+        asctime = self.formatTime(record, datefmt="%H:%M:%S")
+        # Timestamp en cyan
+        time_part  = f"{COLOR_TIME}[{asctime}]{RESET}"
+        # Nivel siempre en amarillo
+        level_part = f"{COLOR_LEVEL}[{record.levelname}]{RESET}"
+        # Mensaje siempre en blanco
+        msg_part   = f"{COLOR_MSG}{record.getMessage()}{RESET}"
+        if record.levelno == logging.INFO:
+            # Para INFO: nombre de logger y función tras nivel            
+            return f"{time_part}{level_part}: {msg_part}"
+        # Otros niveles: incluir nombre del logger
+        name_part  = f"{COLOR_NAME}[{record.name}]{RESET}"
+        return f"{time_part}{level_part}{name_part}: {msg_part}"
+
 
 
 def init_logging(config_path: str = None, level: str = "INFO", logfile: str = None) -> None:

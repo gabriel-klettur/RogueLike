@@ -50,7 +50,7 @@ class SpellCastingSystem:
         wants = world.components.get('WantsToCastSpell', {})
         npcs = world.components.get('NPCState', {})
 
-        #logger.debug(f"[SpellCastingSystem] Inicio update: {len(wants)} intenciones detectadas.")
+        #logger.debug(f" Inicio update: {len(wants)} intenciones detectadas.")
 
         # Iterar sobre una copia de las llaves, porque vamos a eliminar intenciones mientras iteramos
         for eid in list(wants.keys()):
@@ -126,10 +126,10 @@ class SpellCastingSystem:
                     new_state.spell_fsm.context['spell'] = intent.spell
                     new_state.spell_fsm.context['automatic'] = cfg.get('automatic', False)
                     new_state.spell_fsm.context['automatic_cast_punish'] = cfg.get('automatic_cast_punish', 1.0)
-                logger.debug(f"[SpellCastingSystem] Entidad {eid} inicia hechizo '{intent.spell}' via FSM.")
+                logger.debug(f" Entidad {eid} inicia hechizo '{intent.spell}' via FSM.")
                 npc_state.fsm.change_state(new_state, proxy)
             # Limpiar intención
             wants.pop(eid, None)
-            logger.debug(f"[SpellCastingSystem] Intención de hechizo de entidad {eid} eliminada.\n")
+            logger.debug(f" Intención de hechizo de entidad {eid} eliminada.\n")
 
         # Nota: pulse la FSM de hechizo (prepare/channel/release/cooldown) en CastState y subestados

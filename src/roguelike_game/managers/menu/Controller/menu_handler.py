@@ -53,9 +53,9 @@ class MenuHandler:
         """
         if self.state.mode == "local":
             self.state.mode = "online"
-            logger.info(" Conectando al servidor...")
+            logger.info("Conectando al servidor...")
             # self.state.network.connect()
         else:
             self.state.mode = "local"
-            logger.info(" Cambiando a modo local...")
+            logger.info("Cambiando a modo local...")
             # self.state.network.disconnect()
