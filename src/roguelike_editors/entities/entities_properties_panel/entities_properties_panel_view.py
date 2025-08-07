@@ -68,7 +68,7 @@ class EntityPropertiesPanelView:
         state_header = primary_header if self.type_assets_controller.model.active_type_tab == 'assets' else 0
         sub_header = state_header
         # Altura del contenido con padding al fondo
-        bottom_padding = 200
+        bottom_padding = 100
         # Altura máxima del contenido para no sobrepasar la pantalla
         max_content_h = sh - margin - bottom_padding - primary_header - state_header - sub_header
         if self.type_assets_controller.model.active_type_tab == 'assets':

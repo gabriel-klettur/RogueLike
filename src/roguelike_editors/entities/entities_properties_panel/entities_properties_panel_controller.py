@@ -145,16 +145,19 @@ class EntityPropertiesPanelController:
                 # remove old erroneous sprites node for player
                 entry.pop("sprites", None)
             elif ent_id in self.model.monsters:
-                sprites = entry.setdefault("sprites", {})
-                nested_assets = sprites.setdefault("assets", {})
+                assets_entry = entry.setdefault("assets", {})
+                no_sets = assets_entry.setdefault("no-sets", {})
+                sets = assets_entry.setdefault("sets", {})
+                sprites_set = sets.setdefault("sprites_set", {})
                 if sub_tab == 'asset set':
-                    # update all directions for monster using sheet path
-                    dirs = nested_assets.setdefault(state, {})
-                    for dkey in dirs:
-                        dirs[dkey] = rel_path
+                    # update sprite sheet for this state for monster
+                    sprites_set[state] = [rel_path]
                 else:
-                    state_dict = nested_assets.setdefault(state, {})
-                    state_dict[direction] = rel_path
+                    # update individual direction in no-sets for monster
+                    state_no_set = no_sets.setdefault(state, {})
+                    state_no_set[direction] = rel_path
+                # remove old erroneous sprites node for monster
+                entry.pop("sprites", None)
             # persist changes
             self._save_entity_data(ent_id, entry, json_path, data)
         else:
@@ -284,16 +287,106 @@ class EntityPropertiesPanelController:
         # Cargar datos desde JSON correspondiente (jugador o monstruo)
         path, data, entry = self._load_entity_data(ent_id)
 
-        # Conversión del valor editado al tipo original
-        old_val = entry.get(key)
-        converted = self._convert_value(new_text, old_val)
-
-        # Actualizar en memoria y persistir en JSON
-        entry[key] = converted
+        # Conversión del valor editado al tipo original y actualización adecuada
+        if ent_id in self.model.player_stats:
+            # Propiedad genérica para jugadores
+            old_val = entry.get(key)
+            converted = self._convert_value(new_text, old_val)
+            entry[key] = converted
+        elif ent_id in self.model.monsters:
+            # Estadística anidada para monstruos
+            stats = entry.setdefault('stats', {})
+            old_val = stats.get(key)
+            converted = self._convert_value(new_text, old_val)
+            stats[key] = converted
+        else:
+            # Fallback genérico
+            old_val = entry.get(key)
+            converted = self._convert_value(new_text, old_val)
+            entry[key] = converted
+        # Persistir cambios en JSON
         self._save_entity_data(ent_id, entry, path, data)
+        # Reload monster definitions and clear sprite caches for updated stats
+        if ent_id in self.model.monsters:
+            reload_monster_defs()
+            monster_cache._loaded_variants.discard(ent_id)
+            monster_cache._SPRITE_SURFACES.pop(ent_id, None)
+            monster_cache._DEATH_SURFACES.pop(ent_id, None)
 
         # Reset de estado de edición
         self._reset_edit_state()
+
+        # Propagate stat changes to in-memory model and ECS world
+        if ent_id in self.model.player_stats:
+            # Update in-memory model
+            self.model.player_stats[ent_id][key] = converted
+            try:
+                ecs_world = self.editor_controller.game.ecs.ecs_world
+                player_tags = ecs_world.components.get('PlayerTagComponent', {})
+                health_comps = ecs_world.components.get('Health', {})
+                combat_comps = ecs_world.components.get('CombatStats', {})
+                speed_comps = ecs_world.components.get('MovementSpeed', {})
+                for eid, tag in player_tags.items():
+                    if tag.class_name == ent_id:
+                        if key == 'max_strength':
+                            hc = health_comps.get(eid)
+                            cc = combat_comps.get(eid)
+                            if hc:
+                                hc.max_hp = converted
+                                hc.current_hp = converted
+                            if cc:
+                                cc.max_hp = converted
+                                cc.current_hp = converted
+                        elif key == 'basic_attack':
+                            cc = combat_comps.get(eid)
+                            if cc:
+                                cc.power = converted
+                        elif key == 'basic_armor':
+                            cc = combat_comps.get(eid)
+                            if cc:
+                                cc.defense = converted
+                        elif key == 'basic_speed':
+                            sc = speed_comps.get(eid)
+                            if sc:
+                                sc.speed = converted
+                logger.debug(f'[PropertiesPanel] Player ECS stats updated for class {ent_id}')
+            except Exception as e:
+                logging.error(f'[ERROR][PropertiesPanel] Error updating player ECS stats for class {ent_id}: {e}')
+        elif ent_id in self.model.monsters:
+            # Update in-memory model
+            self.model.monsters.setdefault(ent_id, {}).setdefault('stats', {})[key] = converted
+            try:
+                ecs_world = self.editor_controller.game.ecs.ecs_world
+                idents = ecs_world.components.get('Identity', {})
+                health_comps = ecs_world.components.get('Health', {})
+                combat_comps = ecs_world.components.get('CombatStats', {})
+                speed_comps = ecs_world.components.get('MovementSpeed', {})
+                for eid, identity in idents.items():
+                    if identity.name.lower() == ent_id:
+                        if key == 'hp':
+                            hc = health_comps.get(eid)
+                            cc = combat_comps.get(eid)
+                            if hc:
+                                hc.max_hp = converted
+                                hc.current_hp = converted
+                            if cc:
+                                cc.max_hp = converted
+                                cc.current_hp = converted
+                        elif key == 'power':
+                            cc = combat_comps.get(eid)
+                            if cc:
+                                cc.power = converted
+                        elif key == 'defense':
+                            cc = combat_comps.get(eid)
+                            if cc:
+                                cc.defense = converted
+                        elif key == 'speed':
+                            sc = speed_comps.get(eid)
+                            if sc:
+                                sc.speed = float(converted)
+                logger.debug(f'[PropertiesPanel] Monster ECS stats updated for type {ent_id}')
+            except Exception as e:
+                logging.error(f'[ERROR][PropertiesPanel] Error updating monster ECS stats for type {ent_id}: {e}')
 
     # ----------------------------
     # UTILIDADES PRIVADAS
@@ -314,9 +407,11 @@ class EntityPropertiesPanelController:
             data = classes
         else:
             path = os.path.join(os.getcwd(), "data", "entities", "new_monsters.json")
-            data = load_from_json(path)
+            # Load full JSON and navigate to nested classes for monsters
+            root = load_from_json(path)
+            data = root.setdefault("monsters", {}).setdefault("classes", {})
 
-        entry = data.get(ent_id, {})
+        entry = data.setdefault(ent_id, {})
         return path, data, entry
 
     def _save_entity_data(self, ent_id: str, entry: dict, path: str, data: dict) -> None:
@@ -332,7 +427,12 @@ class EntityPropertiesPanelController:
                 json.dump(root, f, ensure_ascii=False, indent=2)
 
         else:
-            save_to_json(path, ent_id, entry)
+            # Persist changes in nested monsters.classes
+            full = path
+            root = load_from_json(full)
+            root.setdefault("monsters", {}).setdefault("classes", {})[ent_id] = entry
+            with open(full, "w", encoding="utf-8") as f:
+                json.dump(root, f, ensure_ascii=False, indent=2)
             self.model.monsters[ent_id] = entry
 
     def _convert_value(self, new_text: str, old_val: any) -> any:
@@ -341,15 +441,22 @@ class EntityPropertiesPanelController:
         Si falla la conversión, se mantiene como string.
         """
         try:
+            # Convert booleans when original was bool
             if isinstance(old_val, bool):
                 return new_text.lower() in ("true", "1", "yes")
-            elif isinstance(old_val, int):
+            # Try integer conversion
+            try:
                 return int(new_text)
-            elif isinstance(old_val, float):
+            except ValueError:
+                pass
+            # Try float conversion
+            try:
                 return float(new_text)
-            else:
-                return new_text
-        except ValueError:
+            except ValueError:
+                pass
+            # Fallback to string
+            return new_text
+        except Exception:
             return new_text
 
     def _reset_edit_state(self) -> None:
