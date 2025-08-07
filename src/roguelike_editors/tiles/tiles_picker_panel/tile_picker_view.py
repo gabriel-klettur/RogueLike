@@ -45,6 +45,13 @@ class TilePickerView:
         # Only convert_alpha if a display surface exists
         if pygame.display.get_surface():
             self.hover_surface = self.hover_surface.convert_alpha()
+        # Selection overlay surface for tile grid cells
+        self.selection_overlay = pygame.Surface((THUMB, THUMB), pygame.SRCALPHA)
+        self.selection_overlay.fill((*CLR_SELECTION, 100))
+        # Only convert_alpha if a display surface exists
+        if pygame.display.get_surface():
+            self.selection_overlay = self.selection_overlay.convert_alpha()
+
         # TextInput para tamaño de grid tileset
         self.tileset_text_input = TextInput(self.label_font)
         # Panel draggable

@@ -47,8 +47,25 @@
       "tiles\\ready\\grass_rock\\tileset4_slices\\tileset4_64_64.png"
     ],
     "tiles": [
-      "b",
-      "a"
+      "",
+      "dungeon",
+      "multi_tiles",
+      "ready",
+      "tileset_1",
+      "tiles\\dungeon_1.png",
+      "tiles\\dungeon_2.png",
+      "tiles\\dungeon_3.png",
+      "tiles\\floor.png",
+      "tiles\\dungeon_c_2.png",
+      "tiles\\dungeon_c_1.png",
+      "tiles\\floor_1.png",
+      "tiles\\floor_2.png",
+      "tiles\\floor_3.png",
+      "tiles\\floor_4.png",
+      "tiles\\floor_5.png",
+      "tiles\\floor_6.png",
+      "tiles\\floor_7.png",
+      "tiles\\wall.PNG"
     ],
     "tiles\\ready\\sand_grass\\tileset2_slices": [
       "..",
