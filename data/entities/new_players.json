@@ -509,7 +509,7 @@
       },
       "barbarian": {
         "stats": {
-          "max_strength": 100,
+          "max_strength": 150,
           "max_intelligence": 25,
           "max_dexterity": 100,
           "initial_strength": 45,

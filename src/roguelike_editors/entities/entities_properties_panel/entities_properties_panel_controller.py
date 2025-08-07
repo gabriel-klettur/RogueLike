@@ -287,12 +287,24 @@ class EntityPropertiesPanelController:
         # Cargar datos desde JSON correspondiente (jugador o monstruo)
         path, data, entry = self._load_entity_data(ent_id)
 
-        # Conversión del valor editado al tipo original
-        old_val = entry.get(key)
-        converted = self._convert_value(new_text, old_val)
-
-        # Actualizar en memoria y persistir en JSON
-        entry[key] = converted
+        # Conversión del valor editado al tipo original y actualización adecuada
+        if ent_id in self.model.player_stats:
+            # Propiedad genérica para jugadores
+            old_val = entry.get(key)
+            converted = self._convert_value(new_text, old_val)
+            entry[key] = converted
+        elif ent_id in self.model.monsters:
+            # Estadística anidada para monstruos
+            stats = entry.setdefault('stats', {})
+            old_val = stats.get(key)
+            converted = self._convert_value(new_text, old_val)
+            stats[key] = converted
+        else:
+            # Fallback genérico
+            old_val = entry.get(key)
+            converted = self._convert_value(new_text, old_val)
+            entry[key] = converted
+        # Persistir cambios en JSON
         self._save_entity_data(ent_id, entry, path, data)
 
         # Reset de estado de edición
@@ -321,7 +333,7 @@ class EntityPropertiesPanelController:
             root = load_from_json(path)
             data = root.setdefault("monsters", {}).setdefault("classes", {})
 
-        entry = data.get(ent_id, {})
+        entry = data.setdefault(ent_id, {})
         return path, data, entry
 
     def _save_entity_data(self, ent_id: str, entry: dict, path: str, data: dict) -> None:
@@ -351,15 +363,22 @@ class EntityPropertiesPanelController:
         Si falla la conversión, se mantiene como string.
         """
         try:
+            # Convert booleans when original was bool
             if isinstance(old_val, bool):
                 return new_text.lower() in ("true", "1", "yes")
-            elif isinstance(old_val, int):
+            # Try integer conversion
+            try:
                 return int(new_text)
-            elif isinstance(old_val, float):
+            except ValueError:
+                pass
+            # Try float conversion
+            try:
                 return float(new_text)
-            else:
-                return new_text
-        except ValueError:
+            except ValueError:
+                pass
+            # Fallback to string
+            return new_text
+        except Exception:
             return new_text
 
     def _reset_edit_state(self) -> None:
