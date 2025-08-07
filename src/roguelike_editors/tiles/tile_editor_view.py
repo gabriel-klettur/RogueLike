@@ -20,13 +20,19 @@ class TileEditorView:
             pygame.mouse.set_visible(True)
             return
 
-                # Custom brush cursor: hide OS cursor only when hovering over map tiles in brush mode
+
+
+        # Cursor visibility: hide only when drawing on map in brush mode and no panels are open
         mouse_pos = pygame.mouse.get_pos()
-        if self.editor.current_tool == "brush":
-            if self.controller._tile_under_mouse(mouse_pos, camera, map):
-                pygame.mouse.set_visible(False)
-            else:
-                pygame.mouse.set_visible(True)
+        panels_open = (
+            self.editor.picker_state.open
+            or self.editor.size_panel_state.visible
+            or self.editor.toolbar_state.view_active
+            or self.editor.toolbar_state.layers_view_open
+            or self.editor.toolbar_state.collision_picker_open
+        )
+        if self.editor.current_tool == "brush" and self.controller._tile_under_mouse(mouse_pos, camera, map) and not panels_open:
+            pygame.mouse.set_visible(False)
         else:
             pygame.mouse.set_visible(True)
 
@@ -54,7 +60,6 @@ class TileEditorView:
         # Normal tile picker
         if self.editor.picker_state.open:
             self.controller.picker.view.render(screen)
-            return
 
         # Tiles View Panel
         if self.editor.toolbar_state.view_active:
