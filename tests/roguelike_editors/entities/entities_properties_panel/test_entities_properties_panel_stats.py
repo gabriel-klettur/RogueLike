@@ -48,3 +48,25 @@ def test_monster_stat_edit_updates_stats_nested(controller):
     assert 'stats' in entry, "Entry should contain 'stats' key"
     assert entry['stats']['hp'] == 250, "hp should be updated to 250 in nested stats"
     assert 'hp' not in entry, "Top-level hp key should not be set"
+
+def test_commit_edit_triggers_reload_and_cache_clear(monkeypatch, controller):
+    calls = []
+    # Spy on reload_monster_defs
+    monkeypatch.setattr(epc_mod, 'reload_monster_defs', lambda: calls.append(True))
+    # Seed cache entries
+    mc_mod._loaded_variants.add('mon1')
+    mc_mod._SPRITE_SURFACES['mon1'] = object()
+    mc_mod._DEATH_SURFACES['mon1'] = object()
+    # Simulate editing hp
+    controller.model.editing_property = 'hp'
+    controller.model.editing_text = '777'
+    # Stub save to no-op
+    controller._save_entity_data = lambda *args, **kwargs: None
+    # Execute commit
+    controller._commit_edit()
+    # Verify reload called once
+    assert calls == [True], "reload_monster_defs should be called exactly once"
+    # Verify cache entries are cleared
+    assert 'mon1' not in mc_mod._loaded_variants
+    assert 'mon1' not in mc_mod._SPRITE_SURFACES
+    assert 'mon1' not in mc_mod._DEATH_SURFACES
