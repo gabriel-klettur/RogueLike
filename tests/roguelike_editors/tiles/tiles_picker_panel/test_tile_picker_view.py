@@ -42,6 +42,7 @@ def test_init(setup_view):
     assert hasattr(view, 'assets')
     assert view.panel.pos == (10, 10)
     assert hasattr(view, 'tileset_text_input')
+    assert hasattr(view, 'selection_overlay')
 
 
 def test_ellipsize(setup_view):
