@@ -1,4 +1,6 @@
 import pygame
+from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_editors.tiles.tiles_editor_config import OUTLINE_HOVER
 
 class TileEditorView:
     def __init__(self, controller, editor_state):
@@ -15,7 +17,32 @@ class TileEditorView:
 
     def render(self, screen, camera, map):
         if not self.editor.active:
+            pygame.mouse.set_visible(True)
             return
+
+                # Custom brush cursor: hide OS cursor only when hovering over map tiles in brush mode
+        mouse_pos = pygame.mouse.get_pos()
+        if self.editor.current_tool == "brush":
+            if self.controller._tile_under_mouse(mouse_pos, camera, map):
+                pygame.mouse.set_visible(False)
+            else:
+                pygame.mouse.set_visible(True)
+        else:
+            pygame.mouse.set_visible(True)
+
+
+        # Brush preview rectangle (semi-transparent fill + border)
+        if self.editor.current_tool == "brush":
+            hp = self.controller._tile_under_mouse(pygame.mouse.get_pos(), camera, map)
+            if hp:
+                w, h = self.editor.size_panel_state.selected_size
+                x0, y0 = camera.apply((hp.x, hp.y))
+                x1, y1 = camera.apply((hp.x + TILE_SIZE * w, hp.y + TILE_SIZE * h))
+                rect = pygame.Rect(x0, y0, x1 - x0, y1 - y0)
+                fill_surf = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+                fill_surf.fill((*OUTLINE_HOVER, 80))
+                screen.blit(fill_surf, rect.topleft)
+                pygame.draw.rect(screen, OUTLINE_HOVER, rect, 3)
 
         # Render title panel
         self.controller.title_controller.render(screen)
