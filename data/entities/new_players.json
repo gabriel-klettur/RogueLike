@@ -700,7 +700,8 @@
               "tint": null
             }
           }
-        }
+        },
+        "max_strength": 150
       }
     }
   }

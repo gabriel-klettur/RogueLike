@@ -306,9 +306,87 @@ class EntityPropertiesPanelController:
             entry[key] = converted
         # Persistir cambios en JSON
         self._save_entity_data(ent_id, entry, path, data)
+        # Reload monster definitions and clear sprite caches for updated stats
+        if ent_id in self.model.monsters:
+            reload_monster_defs()
+            monster_cache._loaded_variants.discard(ent_id)
+            monster_cache._SPRITE_SURFACES.pop(ent_id, None)
+            monster_cache._DEATH_SURFACES.pop(ent_id, None)
 
         # Reset de estado de edición
         self._reset_edit_state()
+
+        # Propagate stat changes to in-memory model and ECS world
+        if ent_id in self.model.player_stats:
+            # Update in-memory model
+            self.model.player_stats[ent_id][key] = converted
+            try:
+                ecs_world = self.editor_controller.game.ecs.ecs_world
+                player_tags = ecs_world.components.get('PlayerTagComponent', {})
+                health_comps = ecs_world.components.get('Health', {})
+                combat_comps = ecs_world.components.get('CombatStats', {})
+                speed_comps = ecs_world.components.get('MovementSpeed', {})
+                for eid, tag in player_tags.items():
+                    if tag.class_name == ent_id:
+                        if key == 'max_strength':
+                            hc = health_comps.get(eid)
+                            cc = combat_comps.get(eid)
+                            if hc:
+                                hc.max_hp = converted
+                                hc.current_hp = converted
+                            if cc:
+                                cc.max_hp = converted
+                                cc.current_hp = converted
+                        elif key == 'basic_attack':
+                            cc = combat_comps.get(eid)
+                            if cc:
+                                cc.power = converted
+                        elif key == 'basic_armor':
+                            cc = combat_comps.get(eid)
+                            if cc:
+                                cc.defense = converted
+                        elif key == 'basic_speed':
+                            sc = speed_comps.get(eid)
+                            if sc:
+                                sc.speed = converted
+                logger.debug(f'[PropertiesPanel] Player ECS stats updated for class {ent_id}')
+            except Exception as e:
+                logging.error(f'[ERROR][PropertiesPanel] Error updating player ECS stats for class {ent_id}: {e}')
+        elif ent_id in self.model.monsters:
+            # Update in-memory model
+            self.model.monsters.setdefault(ent_id, {}).setdefault('stats', {})[key] = converted
+            try:
+                ecs_world = self.editor_controller.game.ecs.ecs_world
+                idents = ecs_world.components.get('Identity', {})
+                health_comps = ecs_world.components.get('Health', {})
+                combat_comps = ecs_world.components.get('CombatStats', {})
+                speed_comps = ecs_world.components.get('MovementSpeed', {})
+                for eid, identity in idents.items():
+                    if identity.name.lower() == ent_id:
+                        if key == 'hp':
+                            hc = health_comps.get(eid)
+                            cc = combat_comps.get(eid)
+                            if hc:
+                                hc.max_hp = converted
+                                hc.current_hp = converted
+                            if cc:
+                                cc.max_hp = converted
+                                cc.current_hp = converted
+                        elif key == 'power':
+                            cc = combat_comps.get(eid)
+                            if cc:
+                                cc.power = converted
+                        elif key == 'defense':
+                            cc = combat_comps.get(eid)
+                            if cc:
+                                cc.defense = converted
+                        elif key == 'speed':
+                            sc = speed_comps.get(eid)
+                            if sc:
+                                sc.speed = float(converted)
+                logger.debug(f'[PropertiesPanel] Monster ECS stats updated for type {ent_id}')
+            except Exception as e:
+                logging.error(f'[ERROR][PropertiesPanel] Error updating monster ECS stats for type {ent_id}: {e}')
 
     # ----------------------------
     # UTILIDADES PRIVADAS
