@@ -145,16 +145,19 @@ class EntityPropertiesPanelController:
                 # remove old erroneous sprites node for player
                 entry.pop("sprites", None)
             elif ent_id in self.model.monsters:
-                sprites = entry.setdefault("sprites", {})
-                nested_assets = sprites.setdefault("assets", {})
+                assets_entry = entry.setdefault("assets", {})
+                no_sets = assets_entry.setdefault("no-sets", {})
+                sets = assets_entry.setdefault("sets", {})
+                sprites_set = sets.setdefault("sprites_set", {})
                 if sub_tab == 'asset set':
-                    # update all directions for monster using sheet path
-                    dirs = nested_assets.setdefault(state, {})
-                    for dkey in dirs:
-                        dirs[dkey] = rel_path
+                    # update sprite sheet for this state for monster
+                    sprites_set[state] = [rel_path]
                 else:
-                    state_dict = nested_assets.setdefault(state, {})
-                    state_dict[direction] = rel_path
+                    # update individual direction in no-sets for monster
+                    state_no_set = no_sets.setdefault(state, {})
+                    state_no_set[direction] = rel_path
+                # remove old erroneous sprites node for monster
+                entry.pop("sprites", None)
             # persist changes
             self._save_entity_data(ent_id, entry, json_path, data)
         else:
@@ -314,7 +317,9 @@ class EntityPropertiesPanelController:
             data = classes
         else:
             path = os.path.join(os.getcwd(), "data", "entities", "new_monsters.json")
-            data = load_from_json(path)
+            # Load full JSON and navigate to nested classes for monsters
+            root = load_from_json(path)
+            data = root.setdefault("monsters", {}).setdefault("classes", {})
 
         entry = data.get(ent_id, {})
         return path, data, entry
@@ -332,7 +337,12 @@ class EntityPropertiesPanelController:
                 json.dump(root, f, ensure_ascii=False, indent=2)
 
         else:
-            save_to_json(path, ent_id, entry)
+            # Persist changes in nested monsters.classes
+            full = path
+            root = load_from_json(full)
+            root.setdefault("monsters", {}).setdefault("classes", {})[ent_id] = entry
+            with open(full, "w", encoding="utf-8") as f:
+                json.dump(root, f, ensure_ascii=False, indent=2)
             self.model.monsters[ent_id] = entry
 
     def _convert_value(self, new_text: str, old_val: any) -> any:
