@@ -12,6 +12,10 @@ class InventoryEditorModel:
     Model for the Inventory Editor MVC.
     """
     visible: bool = False
+    # When True, inventory overlay is visually hidden but remains event-active (used for press-and-hold on Pos)
+    overlay_hidden_while_hold: bool = False
+    # Internal state: user is holding mouse on a 'Pos:' line to focus camera on a monster
+    holding_pos_focus: bool = False
     # Categories and selection delegated to left_panel_model
     # categories and current_category are accessed via left_panel_model
     # JSON data: default templates and active inventories

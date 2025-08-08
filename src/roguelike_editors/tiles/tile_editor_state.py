@@ -20,6 +20,8 @@ class TileEditorState:
         
         self.current_tool = "select"   # "select" | "brush" | "eyedropper" | "view"
         self.brush_dragging = False    # para arrastrar el brush
+        self.default_dragging = False  # para arrastrar la herramienta default
+        self.delete_dragging = False   # para arrastrar la herramienta delete
         self.current_layer = Layer.Ground   # capa activa del editor
         
         self.toolbar_state = TileToolbarState()        
