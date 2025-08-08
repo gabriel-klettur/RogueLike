@@ -12,6 +12,16 @@ class EntitiesTypeAssetsController:
         self.view = EntitiesTypeAssetsView(font)
         self.event_handler = EntitiesTypeAssetsEventHandler(self)
 
+    def reset_parent_ui_state(self) -> None:
+        """Clear transient selection/editing state in the parent model.
+
+        This is called when switching the main type tab to avoid stale UI state.
+        """
+        pm = self.model.parent_model
+        pm.focused_property = None
+        pm.editing_property = None
+        pm.hovered_property = None
+
     def draw(self, screen: pygame.Surface) -> None:
         """Delegates drawing of main tabs."""
         self.view.draw(screen, self.model)

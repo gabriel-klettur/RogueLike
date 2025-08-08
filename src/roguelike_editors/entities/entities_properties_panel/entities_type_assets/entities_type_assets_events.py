@@ -1,6 +1,7 @@
 import pygame
 
 from roguelike_editors.entities.entities_properties_panel.entities_type_assets.entities_type_assets_model import EntitiesTypeAssetsModel
+from roguelike_editors.entities.entities_properties_panel.services.state_tabs_helpers import hit_test_state_tab
 
 class EntitiesTypeAssetsEventHandler:
     """Handles clicks on main 'properties'/'assets' tabs."""
@@ -13,15 +14,11 @@ class EntitiesTypeAssetsEventHandler:
             panel_rect = self.model.parent_model.panel_rect
             if not panel_rect or not panel_rect.collidepoint(event.pos):
                 return False
-            mx, my = event.pos
-            for label, rect in self.model.type_tab_rects.items():
-                if rect.collidepoint(mx, my):
-                    # Cambiar pestaña principal
-                    self.model.active_type_tab = label
-                    # Reset parent model state
-                    pm = self.model.parent_model
-                    pm.focused_property = None
-                    pm.editing_property = None
-                    pm.hovered_property = None
-                    return True
+            label = hit_test_state_tab(self.model.type_tab_rects, event.pos)
+            if label is None:
+                return False
+            # Change main tab and clear parent transient UI state
+            self.model.active_type_tab = label
+            self.controller.reset_parent_ui_state()
+            return True
         return False
