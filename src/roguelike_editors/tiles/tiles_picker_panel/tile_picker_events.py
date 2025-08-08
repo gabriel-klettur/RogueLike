@@ -138,7 +138,7 @@ class TilePickerEventHandler:
             return True
         return False
 
-    def _handle_grid_click(self, lx, ly, map, button):
+    def _handle_grid_click(self, lx, ly, map, button=1):
         """Process clicks on the asset grid: directory navigation, tileset loading, or tile selection."""
         cols = COLS * 3
         col = (lx - PAD) // (THUMB + PAD)

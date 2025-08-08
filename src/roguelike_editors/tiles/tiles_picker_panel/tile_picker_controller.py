@@ -378,8 +378,8 @@ class TilePickerController:
         """
         Desplaza el scroll del picker.
         """
-        # Actualiza el scroll del estado del picker (no el editor principal)
-        self.picker_state.scroll_offset = max(0, self.picker_state.scroll_offset - dy * 30)
+        # Actualiza el scroll del editor (fuente de verdad para eventos/pruebas)
+        self.editor_state.scroll_offset = max(0, self.editor_state.scroll_offset - dy * 30)
 
     def open(self):
         """
@@ -389,7 +389,7 @@ class TilePickerController:
         self.picker_state.current_choice = None
         self.picker_state.dragging = False
         # Reiniciar scroll en el editor
-        self.picker_state.scroll_offset = 0
+        self.editor_state.scroll_offset = 0
         # Recargar lista de assets
         self._load_assets()
         self._load_positions()
