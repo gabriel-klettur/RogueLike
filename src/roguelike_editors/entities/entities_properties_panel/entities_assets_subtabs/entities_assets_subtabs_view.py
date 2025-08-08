@@ -1,7 +1,13 @@
 import pygame
+from roguelike_editors.entities.entities_properties_panel.services.assets_constants import (
+    SUBTAB_SET,
+    SUBTAB_NO_SET,
+)
 
-class EntitiesSetOtAssetsTabView:
-    """View for drawing the 'Asset Set' and 'Asset by Asset' subtabs."""
+
+class EntitiesAssetsSubTabsView:
+    """View for drawing the Assets sub-tabs (Set / No-Set)."""
+
     def __init__(self, font: pygame.font.Font):
         self.font = font
 

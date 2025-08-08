@@ -413,7 +413,7 @@
       },
       "barbol_boss": {
         "stats": {
-          "hp": 200,
+          "hp": 2000,
           "speed": 4.0,
           "faction": "EVIL",
           "aggro_range": 10,
@@ -1316,6 +1316,18 @@
                 200,
                 200,
                 200
+              ]
+            }
+          }
+        }
+      },
+      "mon1": {
+        "assets": {
+          "no-sets": {},
+          "sets": {
+            "sprites_set": {
+              "idle": [
+                "dummy.png"
               ]
             }
           }

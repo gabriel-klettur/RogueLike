@@ -11,7 +11,12 @@ from roguelike_editors.entities.entities_properties_panel.entities_properties_pa
 from roguelike_editors.entities.entities_properties_panel.entities_assets_grid_panel.entities_assets_grid_panel_controller import AssetsGridPanelController
 from roguelike_editors.entities.entities_properties_panel.entities_state_tabs.entities_state_tabs_controller import EntitiesStateTabsController
 from roguelike_editors.entities.entities_properties_panel.entities_type_assets.entities_type_assets_controller import EntitiesTypeAssetsController
-from roguelike_editors.entities.entities_properties_panel.entities_set_ot_assets_tab.entities_set_ot_assets_tab_controller import EntitiesSetOtAssetsTabController
+from roguelike_editors.entities.entities_properties_panel.entities_assets_subtabs.entities_assets_subtabs_controller import EntitiesAssetsSubTabsController
+from roguelike_editors.entities.entities_properties_panel.services.assets_constants import (
+    TYPE_TAB_ASSETS,
+    SUBTAB_SET,
+    SUBTAB_NO_SET,
+)
 from roguelike_editors.entities.entities_assets_picker_panel.entities_assets_picker_panel_controller import EntitiesAssetsPickerPanelController
 import importlib
 import roguelike_game.config.players_config as pc
@@ -68,9 +73,9 @@ class EntityPropertiesPanelController:
         # Pasar controller de tabs de estado al grid view para seleccionar assets
         self.grid_controller.view.state_tabs_controller = self.state_tabs_controller
         # Controller de subtabs de asset set / no-set
-        self.set_ot_assets_tab_controller = EntitiesSetOtAssetsTabController(self.model, font)
-        self.view.set_ot_assets_tab_controller = self.set_ot_assets_tab_controller
-        self.grid_controller.view.set_ot_assets_tab_controller = self.set_ot_assets_tab_controller
+        self.assets_subtabs_controller = EntitiesAssetsSubTabsController(self.model, font)
+        self.view.assets_subtabs_controller = self.assets_subtabs_controller
+        self.grid_controller.view.assets_subtabs_controller = self.assets_subtabs_controller
         # Assets picker panel
         self.assets_picker_controller = EntitiesAssetsPickerPanelController()
         self.view.assets_picker_controller = self.assets_picker_controller
@@ -91,11 +96,11 @@ class EntityPropertiesPanelController:
         """Dibuja el panel y, si aplica, el input activo."""
         # Initialize asset sub-tab on first opening of assets
         current_type = self.type_assets_controller.model.active_type_tab
-        if current_type == 'assets' and self._last_active_type_tab != 'assets':
+        if current_type == TYPE_TAB_ASSETS and self._last_active_type_tab != TYPE_TAB_ASSETS:
             entity_data = self.view._get_entity_data(self.model)
             active_set = entity_data.get('active_set', 'sets')
-            desired = 'asset set' if active_set == 'sets' else 'no-set'
-            self.set_ot_assets_tab_controller.model.active_sub_tab = desired
+            desired = SUBTAB_SET if active_set == 'sets' else SUBTAB_NO_SET
+            self.assets_subtabs_controller.model.active_sub_tab = desired
         # Update last active_type_tab
         self._last_active_type_tab = current_type
         self.view.draw(screen, self.model)
@@ -139,13 +144,13 @@ class EntityPropertiesPanelController:
         # only asset grid updates supported
         if len(parts) == 3 and parts[0] == 'asset':
             _, state, direction = parts
-            sub_tab = self.set_ot_assets_tab_controller.model.active_sub_tab
+            sub_tab = self.assets_subtabs_controller.model.active_sub_tab
             if ent_id in self.model.player_stats:
                 assets_entry = entry.setdefault("assets", {})
                 no_sets = assets_entry.setdefault("no-sets", {})
                 sets = assets_entry.setdefault("sets", {})
                 sprites_set = sets.setdefault("sprites_set", {})
-                if sub_tab == 'asset set':
+                if sub_tab == SUBTAB_SET:
                     # update sprite sheet for this state for player
                     sprites_set[state] = [rel_path]
                 else:
@@ -159,7 +164,7 @@ class EntityPropertiesPanelController:
                 no_sets = assets_entry.setdefault("no-sets", {})
                 sets = assets_entry.setdefault("sets", {})
                 sprites_set = sets.setdefault("sprites_set", {})
-                if sub_tab == 'asset set':
+                if sub_tab == SUBTAB_SET:
                     # update sprite sheet for this state for monster
                     sprites_set[state] = [rel_path]
                 else:

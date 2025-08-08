@@ -1,7 +1,13 @@
 import pygame
+from roguelike_editors.entities.entities_properties_panel.services.assets_constants import (
+    SUBTAB_SET,
+    SUBTAB_NO_SET,
+)
 
-class EntitiesSetOtAssetsTabEventHandler:
-    """Event handler for the 'Asset Set' and 'Asset by Asset' subtabs."""
+
+class EntitiesAssetsSubTabsEventHandler:
+    """Event handler for the Assets sub-tabs (Set / No-Set)."""
+
     def __init__(self, controller):
         self.controller = controller
         self.model = controller.model

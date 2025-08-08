@@ -49,7 +49,7 @@ class AssetsGridPanelView:
         # Atributos externos esperados:
         # - self.parent_model: AssetsGridPanelModel de nivel superior
         # - self.state_tabs_controller
-        # - self.set_ot_assets_tab_controller
+        # - self.assets_subtabs_controller
 
     def draw(
         self,
@@ -160,7 +160,7 @@ class AssetsGridPanelView:
     ) -> None:
         """Dibuja cada celda, aplica hover y thumbnails según sub-tab."""
         active_state = self.state_tabs_controller.model.active_state_tab
-        sub_tab = self.set_ot_assets_tab_controller.model.active_sub_tab
+        sub_tab = self.assets_subtabs_controller.model.active_sub_tab
 
         # Log once when state or sub_tab changes
         if active_state != self._last_active_state or sub_tab != self._last_sub_tab:
@@ -328,7 +328,7 @@ class AssetsGridPanelView:
         if not sel:
             return
 
-        sub_tab = self.set_ot_assets_tab_controller.model.active_sub_tab
+        sub_tab = self.assets_subtabs_controller.model.active_sub_tab
         # Resolver la ruta de la misma forma que para las celdas
         path: Optional[str]
         if sel.startswith('asset_'):
@@ -363,7 +363,7 @@ class AssetsGridPanelView:
         screen.blit(info_surf, (info_x, info_y))
 
         if model.selected_asset_cell:
-            if sub_tab == 'asset set':
+            if sub_tab == SUBTAB_SET:
                 for rect, _ in model.asset_cell_entries:
                     pygame.draw.rect(screen, self._TEXT_COLOR, rect, 2)
             else:

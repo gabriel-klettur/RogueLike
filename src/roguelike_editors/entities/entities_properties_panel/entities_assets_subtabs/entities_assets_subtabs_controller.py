@@ -1,15 +1,17 @@
 import pygame
-from .entities_set_ot_assets_tab_model import EntitiesSetOtAssetsTabModel
-from .entities_set_ot_assets_tab_view import EntitiesSetOtAssetsTabView
-from .entities_set_ot_assets_tab_events import EntitiesSetOtAssetsTabEventHandler
+from .entities_assets_subtabs_model import EntitiesAssetsSubTabsModel
+from .entities_assets_subtabs_view import EntitiesAssetsSubTabsView
+from .entities_assets_subtabs_events import EntitiesAssetsSubTabsEventHandler
 
-class EntitiesSetOtAssetsTabController:
-    """Controller for the 'Asset Set' and 'Asset by Asset' subtabs."""
+
+class EntitiesAssetsSubTabsController:
+    """Controller for the Assets sub-tabs (Set / No-Set)."""
+
     def __init__(self, parent_model, font: pygame.font.Font):
         self.parent_model = parent_model
-        self.model = EntitiesSetOtAssetsTabModel()
-        self.view = EntitiesSetOtAssetsTabView(font)
-        self.event_handler = EntitiesSetOtAssetsTabEventHandler(self)
+        self.model = EntitiesAssetsSubTabsModel()
+        self.view = EntitiesAssetsSubTabsView(font)
+        self.event_handler = EntitiesAssetsSubTabsEventHandler(self)
 
     def draw(self, screen: pygame.Surface) -> None:
         """Draw the asset sub-tabs under the state tabs."""

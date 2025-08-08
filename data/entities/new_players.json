@@ -146,7 +146,8 @@
               "tint": null
             }
           }
-        }
+        },
+        "max_strength": 1000
       },
       "valkyrie": {
         "stats": {

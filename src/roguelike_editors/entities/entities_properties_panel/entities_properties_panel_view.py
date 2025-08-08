@@ -122,7 +122,7 @@ class EntityPropertiesPanelView:
         self.type_assets_controller.draw(screen)
         if self.type_assets_controller.model.active_type_tab == TYPE_TAB_ASSETS:
             self.state_tabs_controller.draw(screen)
-            self.set_ot_assets_tab_controller.draw(screen)
+            self.assets_subtabs_controller.draw(screen)
 
         # 2. Dibujar contenido según pestaña
         if self.type_assets_controller.model.active_type_tab == TYPE_TAB_PROPERTIES:

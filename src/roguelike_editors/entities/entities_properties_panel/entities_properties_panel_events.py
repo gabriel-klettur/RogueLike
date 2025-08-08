@@ -65,7 +65,7 @@ class EntitiesPropertiesPanelEventHandler:
                 return True
         # 8. Eventos de subtabs de assets (asset set / no-set)
         if self.controller.type_assets_controller.model.active_type_tab == TYPE_TAB_ASSETS:
-            if self.controller.set_ot_assets_tab_controller.handle_event(event):
+            if self.controller.assets_subtabs_controller.handle_event(event):
                 return True
         # 9. Eventos de grid (subtabs y celdas)
         if self.controller.type_assets_controller.model.active_type_tab == TYPE_TAB_ASSETS:
@@ -140,11 +140,11 @@ class EntitiesPropertiesPanelEventHandler:
     def _handle_hover(self, event: pygame.event.Event) -> bool:
         """Detecta hover en propiedades o celdas de assets y actualiza el modelo."""
         # Skip hover handling on assets tab; let grid controller handle it
-        if self.controller.type_assets_controller.model.active_type_tab == 'assets':
+        if self.controller.type_assets_controller.model.active_type_tab == TYPE_TAB_ASSETS:
             return False
         if event.type == pygame.MOUSEMOTION and self.model.panel_rect.collidepoint(event.pos):
             mx, my = event.pos
-            if self.controller.type_assets_controller.model.active_type_tab == 'assets':
+            if self.controller.type_assets_controller.model.active_type_tab == TYPE_TAB_ASSETS:
                 # Delegate to grid controller
                 return False
             else:

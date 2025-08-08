@@ -3,6 +3,10 @@ import pygame
 from types import SimpleNamespace
 
 from roguelike_editors.entities.entities_properties_panel.entities_properties_panel_controller import EntityPropertiesPanelController
+from roguelike_editors.entities.entities_properties_panel.services.assets_constants import (
+    SUBTAB_SET,
+    SUBTAB_NO_SET,
+)
 
 # Initialize pygame font module for tests
 pygame.font.init()
@@ -31,7 +35,7 @@ def controller():
 
 def test_monster_asset_set_updates_assets_structure(controller):
     # Simulate 'asset set' sub-tab
-    controller.set_ot_assets_tab_controller.model.active_sub_tab = 'asset set'
+    controller.assets_subtabs_controller.model.active_sub_tab = SUBTAB_SET
     captured = {}
 
     # Stub save to capture entry
@@ -55,7 +59,7 @@ def test_monster_asset_set_updates_assets_structure(controller):
 
 def test_monster_asset_no_set_updates_assets_structure(controller):
     # Simulate 'no-set' sub-tab
-    controller.set_ot_assets_tab_controller.model.active_sub_tab = 'no-set'
+    controller.assets_subtabs_controller.model.active_sub_tab = SUBTAB_NO_SET
     captured = {}
 
     # Stub save to capture entry

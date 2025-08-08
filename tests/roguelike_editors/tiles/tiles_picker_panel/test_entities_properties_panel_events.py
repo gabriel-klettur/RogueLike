@@ -26,7 +26,7 @@ class DummyController:
         # type_assets_controller with active tab
         self.type_assets_controller = type('TAC', (), {'model': type('M', (), {'active_type_tab': 'properties'}), 'handle_event': lambda self, e: False})()
         self.state_tabs_controller = type('STC', (), {'handle_event': lambda self, e: False})()
-        self.set_ot_assets_tab_controller = type('SOTAC', (), {'handle_event': lambda self, e: False})()
+        self.assets_subtabs_controller = type('SOTAC', (), {'handle_event': lambda self, e: False})()
         self.grid_controller = type('GC', (), {'handle_event': lambda self, e: False})()
 
 
