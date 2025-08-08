@@ -1,4 +1,5 @@
 import pygame
+from roguelike_editors.common.ui.panels import draw_translucent_panel
 from roguelike_editors.inventory.right_panel.item_selection_panel.item_selection_panel_model import ItemSelectionPanelModel
 from roguelike_editors.inventory.right_panel.item_selection_panel.item_selection_panel_controller import ItemSelectionPanelController
 from roguelike_editors.inventory.right_panel.item_selection_panel.item_selection_panel_view import ItemSelectionPanelView
@@ -75,7 +76,7 @@ class InventoryEditorView:
     def _draw_ui(self, screen: pygame.Surface, model: InventoryEditorModel):
         ow, oh = screen.get_size()
         # 1) Título: responsabilidad del módulo inventory_title
-        #    Renderiza y devuelve el rect exacto para alinear paneles debajo.
+        #    Renderiza y devuelve el recto exacto para alinear paneles debajo.
         title_rect = self.title_controller.render(screen)
         # 1.1) Tabs del panel izquierdo: ubicarlas justo bajo el título
         tabs_gap = 12
@@ -98,6 +99,16 @@ class InventoryEditorView:
         panel_w = ow - grid_w - panel_x - 10
         panel_h = oh - panel_y - 10
         panel_rect = pygame.Rect(panel_x, panel_y, panel_w, panel_h)
+        # 2.1) Fondo translúcido detrás de la barra de tabs (ancho del panel izquierdo)
+        tabs_bg_rect = pygame.Rect(panel_x, tabs_y - 6, panel_w, tabs_h + 12)
+        draw_translucent_panel(
+            screen,
+            tabs_bg_rect,
+            bg_rgba=(24, 26, 32, 170),
+            border_rgba=(255, 255, 255, 30),
+            radius=8,
+            shadow=True,
+        )
         # Guardar rectángulo del panel izquierdo para eventos de grid
         self.left_panel_rect = panel_rect
         # Obtener lista de elementos para panel
@@ -109,6 +120,20 @@ class InventoryEditorView:
 
         # 3) Panel derecho: grid + flujo Add Item
         if model.current_category in ('player', 'monsters'):
+            # 3.0) Fondo translúcido del panel derecho (ocupa grid + item selection panel)
+            right_x = panel_rect.x + panel_rect.width + self.margin
+            right_y = content_top
+            right_w = grid_w
+            right_h = oh - content_top - 10
+            right_bg_rect = pygame.Rect(right_x, right_y, right_w, right_h)
+            draw_translucent_panel(
+                screen,
+                right_bg_rect,
+                bg_rgba=(24, 26, 32, 170),
+                border_rgba=(255, 255, 255, 30),
+                radius=8,
+                shadow=True,
+            )
             self._draw_grid(screen, model, panel_rect)
             # Item selection panel: debajo del botón Save del grid
             grid_origin_x = panel_rect.x + panel_rect.width + self.margin

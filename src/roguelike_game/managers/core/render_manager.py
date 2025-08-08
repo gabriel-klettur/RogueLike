@@ -138,7 +138,11 @@ class RendererManager:
         # 8) Minimap
         @benchmark(perf_log, "3.8. minimap")
         def _bench_minimap():
-            if not self.tiles_editor.editor_state.active and not (hasattr(state, 'entities_editor_state') and state.entities_editor_state.visible):
+            if (
+                not self.tiles_editor.editor_state.active
+                and not (hasattr(state, 'entities_editor_state') and state.entities_editor_state.visible)
+                and not (hasattr(state, 'inventory_editor_state') and getattr(state.inventory_editor_state, 'visible', False))
+            ):
                 self._render_minimap(screen)
         _bench_minimap()
 
@@ -325,8 +329,11 @@ class RendererManager:
         # Cachea el overlay de ayuda para evitar renderizado de texto cada frame
         screen = self.screen
         size = screen.get_size()
-        # Ocultar la leyenda de comandos cuando el Entities Editor está visible
+        # Ocultar la leyenda de comandos cuando un editor de superposición está visible
+        # (Entities Editor, Inventory Editor, etc.)
         if hasattr(state, 'entities_editor_state') and getattr(state.entities_editor_state, 'visible', False):
+            return
+        if hasattr(state, 'inventory_editor_state') and getattr(state.inventory_editor_state, 'visible', False):
             return
         if self.map_editor.editor_state.active:
             mode = 'map'
