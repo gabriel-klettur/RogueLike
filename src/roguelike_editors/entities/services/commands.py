@@ -110,7 +110,16 @@ class EditPropertyCommand(Command):
             # update in-memory
             self.controller.model.monsters.setdefault(self.ent_id, {}).setdefault('stats', {})[self.key] = value
             # refresh monster defs/sprites and ECS updates
-            reload_monster_defs()
+            try:
+                from roguelike_editors.entities.entities_properties_panel import entities_properties_panel_controller as epc_mod
+                epc_mod.reload_monster_defs()
+            except Exception:
+                # Fallback to direct factory reload if controller module isn't available
+                try:
+                    from roguelike_game.factories.monster.config import reload_monster_defs as _reload_defs
+                    _reload_defs()
+                except Exception:
+                    pass
             monster_cache._loaded_variants.discard(self.ent_id)
             monster_cache._SPRITE_SURFACES.pop(self.ent_id, None)
             monster_cache._DEATH_SURFACES.pop(self.ent_id, None)

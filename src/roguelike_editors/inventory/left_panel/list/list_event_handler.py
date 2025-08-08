@@ -32,7 +32,7 @@ class ListEventHandler:
                     items = self.controller.get_items_list()
                     if idx < 0 or idx >= len(items):
                         return False
-                    # Un solo click sobre 'Pos:' inicia press-and-hold
+                    # Click sobre 'Pos:' soporta doble clic (salto instantáneo) o press-and-hold
                     line_text = items[idx].lstrip()
                     if line_text.startswith('Pos:'):
                         coord_text = items[idx].strip().split('Pos:')[1].strip()
@@ -42,20 +42,36 @@ class ListEventHandler:
                         except (ValueError, IndexError):
                             x = y = None
                         if x is not None:
-                            # Centrar cámara en el monstruo seleccionado
-                            target = SimpleNamespace(x=x, y=y)
-                            self.editor_controller.game.camera.update(target)
-                            # Ocultar overlay mientras se mantiene presionado
-                            self.editor_controller.model.overlay_hidden_while_hold = True
-                            self.editor_controller.model.holding_pos_focus = True
-                            # Seleccionar entidad del grupo
+                            now = pygame.time.get_ticks()
+                            is_double = (idx == self.last_pos_click_idx) and (now - self.last_pos_click_time <= self.double_click_ms)
+                            # Seleccionar entidad del grupo (línea raíz previa)
                             temp_idx = idx
                             while temp_idx > 0 and items[temp_idx].startswith(' '):
                                 temp_idx -= 1
                             eid_raw = items[temp_idx].strip().split(' ')[0]
                             self.controller.select_entity(eid_raw)
                             self.editor_controller.model.editing_side = 'active'
-                            return True
+
+                            if is_double:
+                                # Doble clic: fijar objetivo de cámara persistente
+                                target = SimpleNamespace(x=x, y=y)
+                                # Guardar en el modelo para que tests puedan asertar
+                                setattr(self.model, 'camera_focus_target', target)
+                                self.editor_controller.game.camera.update(target)
+                                # No activar press-and-hold en doble clic
+                                self.last_pos_click_time = 0
+                                self.last_pos_click_idx = -1
+                                return True
+                            else:
+                                # Un solo clic: iniciar press-and-hold
+                                target = SimpleNamespace(x=x, y=y)
+                                self.editor_controller.game.camera.update(target)
+                                self.editor_controller.model.overlay_hidden_while_hold = True
+                                self.editor_controller.model.holding_pos_focus = True
+                                # Registrar para posible doble clic
+                                self.last_pos_click_time = now
+                                self.last_pos_click_idx = idx
+                                return True
                     # Selección simple
                     if 0 <= idx < len(items):
                         start_idx = idx
