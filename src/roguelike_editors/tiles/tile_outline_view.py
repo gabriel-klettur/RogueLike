@@ -31,8 +31,8 @@ class TileOutlineView:
             game_map: Mapa actual (se usa para `_tile_under_mouse`).
         """
 
-        # Hover / brush preview (solo en modo brush)
-        if self.editor.current_tool == "brush":
+        # Hover / brush preview (brush, delete y default)
+        if self.editor.current_tool in ("brush", "delete", "default"):
             hover = self.controller._tile_under_mouse(pygame.mouse.get_pos(), camera, game_map)
             if hover:
                 rect = self._compute_rect(hover, camera)

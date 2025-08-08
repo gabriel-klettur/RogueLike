@@ -31,14 +31,14 @@ class TileEditorView:
             or self.editor.toolbar_state.layers_view_open
             or self.editor.toolbar_state.collision_picker_open
         )
-        if self.editor.current_tool == "brush" and self.controller._tile_under_mouse(mouse_pos, camera, map) and not panels_open:
+        if self.editor.current_tool in ("brush", "delete", "default") and self.controller._tile_under_mouse(mouse_pos, camera, map) and not panels_open:
             pygame.mouse.set_visible(False)
         else:
             pygame.mouse.set_visible(True)
 
 
         # Brush preview rectangle (semi-transparent fill + border)
-        if self.editor.current_tool == "brush":
+        if self.editor.current_tool in ("brush", "delete", "default"):
             hp = self.controller._tile_under_mouse(pygame.mouse.get_pos(), camera, map)
             if hp:
                 w, h = self.editor.size_panel_state.selected_size
