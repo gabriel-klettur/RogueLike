@@ -257,6 +257,10 @@ class TileEditorController:
         self._pending_cells_set.clear()
         self._last_brush_cell = None
 
+        # If nothing changed during this stroke, do not touch caches or layers
+        if not collision_zones and not tile_zones and not cells:
+            return
+
 
         # Synchronously save collision changes
         for zone in collision_zones:

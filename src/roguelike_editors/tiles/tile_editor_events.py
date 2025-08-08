@@ -67,10 +67,14 @@ class TileEditorEventHandler:
             elif ev.type == pygame.MOUSEMOTION:
                 self._on_mouse_motion(ev, camera, map)
             elif ev.type == pygame.MOUSEBUTTONUP:
-                self._on_mouse_up(ev)
-                # Batch brush flush
-                if ev.button == 1 and self.editor_state.current_tool == "brush":
+                # Batch brush flush must occur before resetting brush_dragging
+                if (
+                    ev.button == 1
+                    and self.editor_state.current_tool == "brush"
+                    and self.editor_state.brush_dragging
+                ):
                     self.controller.flush_brush(map, camera)
+                self._on_mouse_up(ev)
             elif ev.type == pygame.MOUSEWHEEL:
                 self._on_mouse_wheel(ev, camera)
             # Delegate to panel event handlers
