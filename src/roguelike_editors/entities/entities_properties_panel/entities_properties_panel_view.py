@@ -122,19 +122,16 @@ class EntityPropertiesPanelView:
             model.available_height = content_h - pad * 2
             model.max_scroll = max(0, model.total_lines_height - model.available_height)
             model.scroll_offset = min(max(model.scroll_offset, 0), model.max_scroll)
-            # Draw scrollbar
-            scrollbar_width = self.SCROLLBAR_WIDTH
-            bar_x = px + panel_w - scrollbar_width - pad // 2
-            bar_y = py + primary_header + state_header + pad
-            bar_h = model.available_height
-            if model.total_lines_height:
-                thumb_h = max(20, int(bar_h * (model.available_height / model.total_lines_height)))
-                thumb_y = bar_y + int((model.scroll_offset / (model.max_scroll or 1)) * (bar_h - thumb_h))
-            else:
-                thumb_h = bar_h
-                thumb_y = bar_y
-            pygame.draw.rect(screen, (50, 50, 50), (bar_x, bar_y, scrollbar_width, bar_h))
-            pygame.draw.rect(screen, (200, 200, 200), (bar_x, thumb_y, scrollbar_width, thumb_h))
+            # Draw scrollbar only if there is overflow
+            if model.max_scroll > 0:
+                scrollbar_width = self.SCROLLBAR_WIDTH
+                bar_x = px + panel_w - scrollbar_width - pad // 2
+                bar_y = py + primary_header + state_header + pad
+                bar_h = model.available_height
+                thumb_h = max(20, int(bar_h * (model.available_height / model.total_lines_height))) if model.total_lines_height else bar_h
+                thumb_y = bar_y + int((model.scroll_offset / model.max_scroll) * (bar_h - thumb_h)) if model.max_scroll else bar_y
+                pygame.draw.rect(screen, (50, 50, 50), (bar_x, bar_y, scrollbar_width, bar_h))
+                pygame.draw.rect(screen, (200, 200, 200), (bar_x, thumb_y, scrollbar_width, thumb_h))
             # Draw properties with scroll
             self._draw_properties(screen, model, lines, px, py + primary_header + state_header, pad, font_h, panel_w)
             self._draw_editing_indicator(screen, model, font_h)
@@ -152,19 +149,16 @@ class EntityPropertiesPanelView:
             model.assets_max_scroll = max(0, model.assets_total_height - model.assets_available_height)
             model.assets_scroll_offset = min(max(model.assets_scroll_offset, 0), model.assets_max_scroll)
 
-            # Dibujar scrollbar de assets
-            scrollbar_width = self.SCROLLBAR_WIDTH
-            bar_x = px + panel_w - scrollbar_width - pad // 2
-            bar_y = py + primary_header + state_header + sub_header + pad
-            bar_h = model.assets_available_height
-            if model.assets_total_height:
-                thumb_h = max(20, int(bar_h * (model.assets_available_height / model.assets_total_height)))
-                thumb_y = bar_y + int((model.assets_scroll_offset / (model.assets_max_scroll or 1)) * (bar_h - thumb_h))
-            else:
-                thumb_h = bar_h
-                thumb_y = bar_y
-            pygame.draw.rect(screen, (50, 50, 50), (bar_x, bar_y, scrollbar_width, bar_h))
-            pygame.draw.rect(screen, (200, 200, 200), (bar_x, thumb_y, scrollbar_width, thumb_h))
+            # Dibujar scrollbar de assets solo si hay overflow
+            if model.assets_max_scroll > 0:
+                scrollbar_width = self.SCROLLBAR_WIDTH
+                bar_x = px + panel_w - scrollbar_width - pad // 2
+                bar_y = py + primary_header + state_header + sub_header + pad
+                bar_h = model.assets_available_height
+                thumb_h = max(20, int(bar_h * (model.assets_available_height / model.assets_total_height))) if model.assets_total_height else bar_h
+                thumb_y = bar_y + int((model.assets_scroll_offset / model.assets_max_scroll) * (bar_h - thumb_h)) if model.assets_max_scroll else bar_y
+                pygame.draw.rect(screen, (50, 50, 50), (bar_x, bar_y, scrollbar_width, bar_h))
+                pygame.draw.rect(screen, (200, 200, 200), (bar_x, thumb_y, scrollbar_width, thumb_h))
 
             # Clip contenido y aplicar desplazamiento vertical
             content_clip = pygame.Rect(
