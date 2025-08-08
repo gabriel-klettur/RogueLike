@@ -42,4 +42,6 @@ HOVER_ALPHA = 60
 EYEDROPPER_BLINK_DURATION_MS = 3000
 # Intervalo del parpadeo del eyedropper en milisegundos
 EYEDROPPER_BLINK_INTERVAL_MS = 300
+# Throttle para actualizaciones parciales de chunks durante el brush (ms)
+BRUSH_UPDATE_THROTTLE_MS = 16
 # Path: src/roguelike_game/systems/editor/tiles/tiles_editor_config.py

@@ -12,6 +12,7 @@ from roguelike_editors.tiles.size_panel.size_panel_controller import SizePanelCo
 from roguelike_editors.tiles.tile_outline_view import TileOutlineView
 
 from roguelike_engine.utils.loader import load_image
+from roguelike_editors.tiles.tiles_editor_config import BRUSH_UPDATE_THROTTLE_MS
 import roguelike_engine.config.config_tiles as ct
 from roguelike_engine.config.config_tiles import DEFAULT_TILE_MAP
 from roguelike_editors.tiles.common.controller import flood_fill
@@ -44,11 +45,14 @@ class TileEditorController:
         self._code_cache: dict[str, str] = {}
         # Track whether we already updated chunks during this stroke
         self._did_partial_updates: bool = False
+        # Throttle timer for chunk updates (ms since pygame init)
+        self._last_chunk_update_ms: int = 0
         
         self._last_brush_cell: tuple[int,int] | None = None
         self._pending_collision_zones = set()
         self._pending_tile_zones = set()
         self._pending_cells = []
+        self._pending_cells_set: set[tuple[int, int]] = set()
 
     def select_tile_at(self, mouse_pos, camera, map):
         tile = self._tile_under_mouse(mouse_pos, camera, map)
@@ -108,7 +112,8 @@ class TileEditorController:
             self.brush_cache[choice] = sprite
         layer = self.editor.current_layer
         # Paint rectangle of size w x h from top-left cell
-        changed_cells = []
+        changed_cells: list[tuple[int, int]] = []
+        t0 = pygame.time.get_ticks()
         for dy in range(h):
             for dx in range(w):
                 r = row + dy
@@ -126,17 +131,30 @@ class TileEditorController:
                     zone_name, offx, offy = map.get_zone_for(r, c)
                     self._pending_tile_zones.add(zone_name)
                     cell = (r, c)
-                    self._pending_cells.append(cell)
+                    if cell not in self._pending_cells_set:
+                        self._pending_cells.append(cell)
+                        self._pending_cells_set.add(cell)
                     changed_cells.append(cell)
+        t1 = pygame.time.get_ticks()
         # Update only changed chunks for this brush step (avoid full cache invalidation)
         if changed_cells:
+            # Deduplicate cells and throttle updates to at most once per interval
+            now = pygame.time.get_ticks()
+            if now - self._last_chunk_update_ms >= BRUSH_UPDATE_THROTTLE_MS:
+                unique_cells = list(set(changed_cells))
+                try:
+                    map.view.update_chunks(map, camera, unique_cells)
+                    self._did_partial_updates = True
+                    self._last_chunk_update_ms = now
+                except Exception:
+                    # Fallback to full invalidation only if partial update fails
+                    map.view.invalidate_cache()
+                    self._did_partial_updates = False
+            # Debug perf log for brush inner loop
             try:
-                map.view.update_chunks(map, camera, changed_cells)
-                self._did_partial_updates = True
+                logger.debug(f"[Brush] loop_ms={t1 - t0} cells={len(changed_cells)} throttled={(now - self._last_chunk_update_ms) < BRUSH_UPDATE_THROTTLE_MS}")
             except Exception:
-                # Fallback to full invalidation only if partial update fails
-                map.view.invalidate_cache()
-                self._did_partial_updates = False
+                pass
 
     def apply_eyedropper(self, mouse_pos, camera, map):
         """
@@ -214,8 +232,10 @@ class TileEditorController:
         self._pending_collision_zones = set()
         self._pending_tile_zones = set()
         self._pending_cells = []
+        self._pending_cells_set = set()
         self._last_brush_cell = None
         self._did_partial_updates = False
+        self._last_chunk_update_ms = 0
 
     def flush_brush(self, map, camera):
         """
@@ -234,6 +254,7 @@ class TileEditorController:
         self._pending_collision_zones.clear()
         self._pending_tile_zones.clear()
         self._pending_cells.clear()
+        self._pending_cells_set.clear()
         self._last_brush_cell = None
 
 
