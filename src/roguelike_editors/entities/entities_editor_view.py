@@ -1,5 +1,6 @@
 import pygame
 from roguelike_editors.entities.services.entity_lookup import find_clickable_entity_rect_at
+from roguelike_editors.entities.services.constants import ENTITIES_TOOLS, UI_MARGIN
 
 class EntitiesEditorView:
     """
@@ -19,9 +20,9 @@ class EntitiesEditorView:
         # Toolbar
         c.toolbar_controller.render(screen)
         active = c.model.toolbar_model.active_tool
-        margin = 8
+        margin = UI_MARGIN
         # Si se seleccionó alguna herramienta de entidades, mostrar panels
-        if active in ('entities_on_map', 'entities_on_system'):
+        if active in ENTITIES_TOOLS:
             # Dibujar panels activos
             c.add_remove_controller.render(screen)
             c.picker_controller.draw(screen)

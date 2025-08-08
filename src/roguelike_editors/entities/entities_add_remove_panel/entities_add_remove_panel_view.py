@@ -1,6 +1,12 @@
 import pygame
 from roguelike_ui.widgets.toolbar_panel import ToolbarView
 from roguelike_engine.utils.loader import load_image
+from roguelike_editors.entities.services.constants import (
+    UI_MARGIN,
+    ADD_ENTITIE,
+    REMOVE_ENTITIE,
+    ADD_ENTITIES_ON_SYSTEM,
+)
 
 class EntitiesAddRemovePanelView:
     """
@@ -13,7 +19,7 @@ class EntitiesAddRemovePanelView:
         toolbar_widget = self.controller.toolbar_view.widget
         panel_pos = toolbar_widget.panel.pos or (toolbar_widget.x, toolbar_widget.y)
         panel_w, _ = toolbar_widget.panel.surface.get_size()
-        margin = 8
+        margin = UI_MARGIN
         self.x = panel_pos[0] + panel_w + margin
         self.y = panel_pos[1]
         # Tamaño de iconos y espacio
@@ -22,9 +28,9 @@ class EntitiesAddRemovePanelView:
 
         # Rutas de los iconos
         icon_paths = {
-            'add_entitie': 'assets/ui/add_entitie.png',
-            'remove_entitie': 'assets/ui/remove_entitie.png',
-            'add_entities_on_system': 'assets/ui/add_entity_on_system.png',
+            ADD_ENTITIE: 'assets/ui/add_entitie.png',
+            REMOVE_ENTITIE: 'assets/ui/remove_entitie.png',
+            ADD_ENTITIES_ON_SYSTEM: 'assets/ui/add_entity_on_system.png',
         }
         self.icons = {}
         for tool in self.model.tools:
@@ -59,12 +65,12 @@ class EntitiesAddRemovePanelView:
         # Parpadeo de borde en 'add_entitie' o 'remove_entitie' si mode activo
         now = pygame.time.get_ticks()
         if (now // 500) % 2 == 0:
-            if self.controller.model.spawn_mode_active and self.model.active_tool == 'add_entitie':
-                rect = self.widget.icon_rects.get('add_entitie')
+            if self.controller.model.spawn_mode_active and self.model.active_tool == ADD_ENTITIE:
+                rect = self.widget.icon_rects.get(ADD_ENTITIE)
                 if rect:
                     pygame.draw.rect(screen, (255, 255, 0), rect.inflate(6, 6), 3)
-            if self.controller.model.delete_mode_active and self.model.active_tool == 'remove_entitie':
-                rect = self.widget.icon_rects.get('remove_entitie')
+            if self.controller.model.delete_mode_active and self.model.active_tool == REMOVE_ENTITIE:
+                rect = self.widget.icon_rects.get(REMOVE_ENTITIE)
                 if rect:
                     pygame.draw.rect(screen, (255, 0, 0), rect.inflate(6, 6), 3)
 

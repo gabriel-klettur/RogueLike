@@ -1,6 +1,7 @@
 import pygame
 import logging
 logger = logging.getLogger(__name__)
+from roguelike_editors.entities.services.constants import ENTITIES_TOOL_ON_MAP
 
 class EntitiesAddRemovePanelEventHandler:
     """
@@ -32,7 +33,7 @@ class EntitiesAddRemovePanelEventHandler:
                     if rect and rect.collidepoint(pos):
                         logger.debug(f" '{tool}' presionado")
                         # Alternar modo de añadir/borrar entidades
-                        if tool == 'add_entitie' and self.controller.model.toolbar_model.active_tool == 'entities_on_map':
+                        if tool == 'add_entitie' and self.controller.model.toolbar_model.active_tool == ENTITIES_TOOL_ON_MAP:
                             if self.controller.model.spawn_mode_active:
                                 logger.debug(" Cancelando spawn mode")
                                 self.model.active_tool = None
@@ -41,7 +42,7 @@ class EntitiesAddRemovePanelEventHandler:
                                 logger.debug(" Iniciando spawn mode")
                                 self.model.active_tool = tool
                                 self.controller.enter_spawn_mode()
-                        elif tool == 'remove_entitie' and self.controller.model.toolbar_model.active_tool == 'entities_on_map':
+                        elif tool == 'remove_entitie' and self.controller.model.toolbar_model.active_tool == ENTITIES_TOOL_ON_MAP:
                             if self.controller.model.delete_mode_active:
                                 logger.debug(" Cancelando delete mode")
                                 self.model.active_tool = None

@@ -5,6 +5,7 @@ Vista para la toolbar de entidades (stub).
 import pygame
 from roguelike_ui.widgets.toolbar_panel import ToolbarView
 from roguelike_engine.utils.loader import load_image
+from roguelike_editors.entities.services.constants import ENTITIES_TOOL_ON_MAP, UI_MARGIN
 
 class EntitiesToolBarPanelView:
     """
@@ -26,12 +27,12 @@ class EntitiesToolBarPanelView:
         title_text = title_widget.text or ""
         text_surf = title_widget.font.render(title_text, True, title_widget.text_color)
         bg_h = text_surf.get_height() + title_widget.padding_y * 2
-        self.y = title_widget.y + bg_h + 8
+        self.y = title_widget.y + bg_h + UI_MARGIN
         self.size = 64
         self.padding = 8
         # Crear iconos vacíos para cada herramienta
         icon_paths = {
-            'entities_on_map': 'assets/ui/entities_on_map_icon.png',
+            ENTITIES_TOOL_ON_MAP: 'assets/ui/entities_on_map_icon.png',
 
             'respawns': 'assets/ui/respawn.png',
             'undo': 'assets/ui/undo.png',

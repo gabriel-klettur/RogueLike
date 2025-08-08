@@ -7,6 +7,7 @@ from roguelike_editors.entities.services.ui_helpers import hide_assets_picker_an
 from roguelike_editors.entities.services.camera_helpers import screen_to_tile
 from roguelike_editors.entities.services.entity_lookup import find_clickable_entity_at
 from roguelike_editors.entities.services.spawn_services import spawn_entity
+from roguelike_editors.entities.services.constants import ENTITIES_TOOLS, UI_MARGIN
 
 from roguelike_editors.entities.entities_editor_model import EntitiesEditorModel
 from roguelike_editors.entities.entities_title.entities_title_controller import EntitiesTitleController
@@ -46,7 +47,7 @@ class EntitiesEditorController:
             self.model.player_stats, self.model.monsters, self.model.assets, self.font
         )
         # Inicializar posición del picker panel a la derecha del add/remove panel
-        margin = 8
+        margin = UI_MARGIN
         add_rem_widget = self.add_remove_view.widget
         add_pos = add_rem_widget.panel.pos or (add_rem_widget.x, add_rem_widget.y)
         add_w, _ = add_rem_widget.panel.surface.get_size()
@@ -130,7 +131,7 @@ class EntitiesEditorController:
         if self.toolbar_controller.handle_event(event):
             return True
         active = self.model.toolbar_model.active_tool
-        if active in ('entities_on_map', 'entities_on_system'):
+        if active in ENTITIES_TOOLS:
             # Add/Remove panel
             if self.add_remove_controller.handle_event(event):
                 return True
