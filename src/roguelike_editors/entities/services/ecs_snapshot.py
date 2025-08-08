@@ -12,11 +12,21 @@ def snapshot_entity(world, eid: int) -> EntitySnapshot:
     """
     Take a deep snapshot of the given entity's components.
     """
+    def _safe_copy(value: Any) -> Any:
+        try:
+            return copy.deepcopy(value)
+        except Exception:
+            try:
+                return copy.copy(value)
+            except Exception:
+                # As a last resort, keep reference; sufficient for undo/redo of delete
+                return value
+
     comps = world.components
     captured: Dict[str, Any] = {}
     for cname, store in comps.items():
         if eid in store:
-            captured[cname] = copy.deepcopy(store[eid])
+            captured[cname] = _safe_copy(store[eid])
     return EntitySnapshot(eid, captured)
 
 
@@ -37,7 +47,14 @@ def restore_entity(world, snap: EntitySnapshot) -> int:
         store = world.components.get(cname)
         if store is None:
             continue
-        store[eid] = copy.deepcopy(cmp)
+        # Use safe copy on restore to avoid issues if original snapshot held unpicklable members
+        try:
+            store[eid] = copy.deepcopy(cmp)
+        except Exception:
+            try:
+                store[eid] = copy.copy(cmp)
+            except Exception:
+                store[eid] = cmp
     # Spatial index may need rebuild
     if hasattr(world, 'invalidate_spatial_index'):
         world.invalidate_spatial_index()
