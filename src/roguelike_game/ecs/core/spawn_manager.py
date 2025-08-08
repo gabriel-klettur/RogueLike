@@ -44,13 +44,23 @@ class SpawnNPCManager:
         # Precompute prototipos de sprite y colliders
         proto_sprites: dict[str, Any] = {}
         proto_colliders: dict[str, Any] = {}
+        from roguelike_game.factories.monster.sprite_loader import create_sprite_component
         for variant in barbol_variants:
             cfg_var = MONSTER_DEFS[variant]
-            raw_surf = _SPRITE_SURFACES[variant].get("down")
-            dummy = type("Proto", (), {})()
-            dummy.image = raw_surf
+            # Crear un sprite seguro (usa placeholder si no hay assets)
+            try:
+                sprite, _ = create_sprite_component(variant)
+                dummy = type("Proto", (), {})()
+                dummy.image = getattr(sprite, 'image', None)
+            except Exception:
+                import pygame
+                dummy = type("Proto", (), {})()
+                ph = pygame.Surface((16, 16), pygame.SRCALPHA)
+                ph.fill((0, 0, 0, 255))
+                dummy.image = ph
             proto_sprites[variant] = dummy
             proto_colliders[variant] = create_collider_components(dummy, cfg_var)
+
         # Calcular padding de spawn según collider de pies de la variante base
         feet = proto_colliders.get("barbol").colliders.get("feet")
         radius = max(feet.width, feet.height) / 2

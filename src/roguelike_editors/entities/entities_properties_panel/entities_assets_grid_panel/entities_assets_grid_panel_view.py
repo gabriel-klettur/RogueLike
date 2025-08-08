@@ -246,6 +246,9 @@ class AssetsGridPanelView:
                             self._blit_tinted(
                                 screen, rect, raw, entity_data.get('tint')
                             )
+                        else:
+                            inner = rect.inflate(-2, -2)
+                            pygame.draw.rect(screen, (0, 0, 0), inner)
 
             pygame.draw.rect(screen, self._BORDER_COLOR, rect, 1)
 

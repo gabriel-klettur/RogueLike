@@ -20,7 +20,11 @@ def calculate_position(tile_x: int, tile_y: int, cfg: Dict[str, Any], sprite) ->
     data_block_key = f"sprites_data_{active_set}"
     data_assets = active_assets.get(data_block_key, {})
     scale_val = data_assets.get("scale", 1.0)
-    orig_w, orig_h = sprite.image.get_size()
+    img = getattr(sprite, 'image', None)
+    if not isinstance(img, pygame.Surface):
+        img = pygame.Surface((16, 16), pygame.SRCALPHA)
+        img.fill((0, 0, 0, 255))
+    orig_w, orig_h = img.get_size()
     width = int(orig_w * scale_val)
     height = int(orig_h * scale_val)
     px = tile_x * TILE_SIZE + (TILE_SIZE // 2) - (width // 2)
@@ -42,7 +46,10 @@ def create_physics_components(cfg: Dict[str, Any]) -> Tuple[Scale, Velocity]:
 
 def create_collider_components(sprite, cfg: Dict[str, Any]) -> MultiCollider:
     """Construct body and feet colliders based on sprite surface."""
-    mask_surf = sprite.image
+    mask_surf = getattr(sprite, 'image', None)
+    if not isinstance(mask_surf, pygame.Surface):
+        mask_surf = pygame.Surface((16, 16), pygame.SRCALPHA)
+        mask_surf.fill((0, 0, 0, 255))
     # Read asset metadata from JSON
     cfg_assets = cfg.get("assets", {})
     active_set = cfg_assets.get("active_set", "")

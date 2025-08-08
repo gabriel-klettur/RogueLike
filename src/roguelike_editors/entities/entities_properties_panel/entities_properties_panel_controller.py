@@ -217,23 +217,32 @@ class EntityPropertiesPanelController:
     # ----------------------------
     def _on_active_set_toggled(self, ent_id: str) -> None:
         """
-        Maneja el cambio de active_set para jugadores: recarga configuración, actualiza grid y ECS.
+        Maneja el cambio de active_set para jugadores y monstruos: recarga/actualiza grid y ECS.
         """
         logger.debug(f" Active set toggled for ent_id={ent_id}")
-        try:
-            importlib.reload(pc)
-        except Exception:
-            pass
         # Reset grid cache to force rebuild on next draw
         self.grid_controller.model.last_entity_id = None
         self.grid_controller.model.last_state_tab = None
-        # Update ECS player entities with new assets via service
-        try:
-            ecs_world = self.editor_controller.game.ecs.ecs_world
-            update_player_assets(ecs_world, ent_id)
-            logger.debug(f" Player ECS entities updated for class {ent_id} after active_set toggle")
-        except Exception as e:
-            logging.error(f"[ERROR][PropertiesPanel] Error updating player ECS entities on active_set toggle for class {ent_id}: {e}")
+        if ent_id in self.model.player_stats:
+            # Players: recargar config y actualizar ECS de jugadores
+            try:
+                importlib.reload(pc)
+            except Exception:
+                pass
+            try:
+                ecs_world = self.editor_controller.game.ecs.ecs_world
+                update_player_assets(ecs_world, ent_id)
+                logger.debug(f" Player ECS entities updated for class {ent_id} after active_set toggle")
+            except Exception as e:
+                logging.error(f"[ERROR][PropertiesPanel] Error updating player ECS entities on active_set toggle for class {ent_id}: {e}")
+        else:
+            # Monsters: recargar definiciones/cachés y actualizar ECS de monstruos
+            try:
+                ecs_world = self.editor_controller.game.ecs.ecs_world
+                update_monster_assets(ecs_world, ent_id)
+                logger.debug(f" Monster ECS entities updated for type {ent_id} after active_set toggle")
+            except Exception as e:
+                logging.error(f"[ERROR][PropertiesPanel] Error updating monster ECS entities on active_set toggle for type {ent_id}: {e}")
         # Redraw properties panel UI
         try:
             self.editor_controller.render(self.editor_controller.game.screen)

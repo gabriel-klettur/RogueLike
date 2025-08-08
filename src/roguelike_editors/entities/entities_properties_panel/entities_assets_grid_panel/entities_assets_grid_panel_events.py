@@ -34,19 +34,25 @@ class AssetsGridPanelEventHandler:
             # Detección de click en combobox "Activo"
             rect = getattr(self.model, 'active_set_rect', None)
             if rect and rect.collidepoint(event.pos):
-                # Toggle entre 'sets' y 'no-sets'
+                # Toggle entre 'sets' y 'no-sets' (Players y Monstruos)
                 prop_ctrl = self.controller.parent_controller
                 ent_id = prop_ctrl.model.selected_id
-                if ent_id and ent_id in prop_ctrl.model.player_stats:
+                if ent_id:
                     # Cargar y actualizar JSON
                     path, data, entry = prop_ctrl._load_entity_data(ent_id)
                     assets = entry.setdefault('assets', {})
-                    curr = assets.get('active_set', 'sets')
+                    # Por convención: players -> default 'sets'; monsters -> default 'no-sets'
+                    default_active = 'sets' if ent_id in prop_ctrl.model.player_stats else 'no-sets'
+                    curr = assets.get('active_set', default_active)
                     new = 'no-sets' if curr == 'sets' else 'sets'
                     assets['active_set'] = new
                     prop_ctrl._save_entity_data(ent_id, entry, path, data)
                     # Actualizar modelo en memoria
-                    prop_ctrl.model.player_assets[ent_id]['active_set'] = new
+                    if ent_id in prop_ctrl.model.player_stats:
+                        prop_ctrl.model.player_assets.setdefault(ent_id, {})['active_set'] = new
+                    else:
+                        prop_ctrl.model.monsters.setdefault(ent_id, {}).setdefault('assets', {})['active_set'] = new
+                    # Notificar al controlador para refrescar grid/ECS
                     prop_ctrl._on_active_set_toggled(ent_id)
                 return True
             # Primero, verificar double-click para abrir picker

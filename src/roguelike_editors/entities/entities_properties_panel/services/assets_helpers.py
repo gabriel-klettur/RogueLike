@@ -3,7 +3,7 @@ Helpers for building asset keys and resolving asset paths for the Assets Grid.
 """
 from typing import Optional
 
-from .assets_constants import SUBTAB_NO_SET
+from .assets_constants import SUBTAB_NO_SET, SUBTAB_SET
 from .assets_maps import ui_state_to_nosets_json
 
 
@@ -26,8 +26,12 @@ def resolve_asset_path(
 
     - For SUBTAB_NO_SET and player entities, read from model.player_assets[entity]['no-sets']
       using the json-state name (e.g., 'chase' -> 'walking').
+    - For SUBTAB_SET, do not resolve to a path (animation preview uses frames, not a path).
     - Otherwise, read from the entity's own properties using the UI key 'asset_{state}_{dir}'.
     """
+    # Never resolve a path for the Asset-Set subtab; rendering relies on built animators.
+    if active_sub_tab == SUBTAB_SET:
+        return None
     if (
         active_sub_tab == SUBTAB_NO_SET
         and entity_id is not None
