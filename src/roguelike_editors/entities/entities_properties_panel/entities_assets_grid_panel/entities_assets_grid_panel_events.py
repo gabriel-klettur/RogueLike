@@ -139,6 +139,8 @@ class AssetsGridPanelEventHandler:
             x0, y0, width = rect.x, rect.bottom, rect.width
 
         logger.debug(f"Opening assets picker for cell {key} at ({x0}, {y0}) width {width}")
+        # Provide label text: hovered entity id or selected one from Entities Picker
+        label_provider = lambda: (picker_model.hovered_id or picker_model.selected_id or "")
         prop_ctrl.assets_picker_controller.show(
-            key, x0, y0, width, prop_ctrl._on_asset_chosen
+            key, x0, y0, width, prop_ctrl._on_asset_chosen, label_provider
         )

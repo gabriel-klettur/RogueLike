@@ -11,7 +11,7 @@ class EntitiesAssetsPickerPanelController:
         self.view = EntitiesAssetsPickerPanelView(self.model)
         self.event_handler = EntitiesAssetsPickerPanelEventHandler(self)
 
-    def show(self, key: str, x: int, y: int, width: int, callback):
+    def show(self, key: str, x: int, y: int, width: int, callback, label_provider=None):
         # Clear previous errors
         self.model.error_message = None
         self.model.error_timestamp = 0.0
@@ -22,6 +22,7 @@ class EntitiesAssetsPickerPanelController:
         self.model.pos = (x, y)
         self.model.width = width
         self.model.on_asset_chosen = callback
+        self.model.label_provider = label_provider
         self.model.visible = True
         # Reiniciar FS model
         # Reset to model's root Path
@@ -34,6 +35,7 @@ class EntitiesAssetsPickerPanelController:
         self.model.error_message = None
         self.model.error_timestamp = 0.0
         """Oculta el picker."""
+        self.model.label_provider = None
         self.model.visible = False
 
     def draw(self, screen: pygame.Surface):

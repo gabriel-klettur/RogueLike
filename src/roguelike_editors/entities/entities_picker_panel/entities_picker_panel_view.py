@@ -106,8 +106,11 @@ class EntityPickerPanelView:
         # Altura del header de pestañas
         tab_padding_y = 5
         header_height = self.font.get_height() + tab_padding_y * 2
-        # Altura total del panel (header + grid)
-        panel_h = header_height + grid_h
+        # Altura del footer (etiqueta centrada con nombre de entidad)
+        footer_font = self.font
+        footer_h = footer_font.get_height() + 10
+        # Altura total del panel (header + grid + footer)
+        panel_h = header_height + grid_h + footer_h
 
         # Ajustar panel arrastrable
         self.draggable_panel.resize(panel_w, panel_h)
@@ -138,6 +141,21 @@ class EntityPickerPanelView:
         orig_y = self.y
         self.y = orig_y + header_height
         self._draw_entity_grid(screen, model, entity_ids)
+        # Dibujar footer con etiqueta centrada (hovered o selected)
+        # Use orig_y because self.y was temporarily offset by header_height
+        footer_y = orig_y + header_height + grid_h
+        # Fondo del footer (semi-transparente)
+        footer_bg = pygame.Surface((panel_w, footer_h), pygame.SRCALPHA)
+        footer_bg.fill((0, 0, 0, 220))
+        screen.blit(footer_bg, (self.x, footer_y))
+        # Texto del footer
+        label_text = model.hovered_id or model.selected_id or ""
+        if label_text:
+            pretty = label_text.replace("_", " ").title()
+            text_surf = footer_font.render(pretty, True, (255, 230, 0))
+            tx = self.x + (panel_w - text_surf.get_width()) // 2
+            ty = footer_y + (footer_h - text_surf.get_height()) // 2
+            screen.blit(text_surf, (tx, ty))
         self.y = orig_y
 
     # ----------------------------
@@ -226,16 +244,34 @@ class EntityPickerPanelView:
 
         if not icon:
             return
-        # Escalar icono al tamaño de celda
-        icon_surf = pygame.transform.smoothscale(icon, (self.cell_size, self.cell_size))
+        # Escalar icono manteniendo relación de aspecto para que NO se vea perfectamente cuadrado
+        orig_w, orig_h = icon.get_size()
+        pad = 6  # padding interno para que no toque los bordes
+        max_w = self.cell_size - 2 * pad
+        max_h = self.cell_size - 2 * pad
+        if orig_w == 0 or orig_h == 0:
+            return
+        scale = min(max_w / orig_w, max_h / orig_h)
+        new_w = max(1, int(orig_w * scale))
+        new_h = max(1, int(orig_h * scale))
+        icon_surf = pygame.transform.smoothscale(icon, (new_w, new_h))
         if ent_id not in self._center_pixel_logged:
             center = (self.cell_size // 2, self.cell_size // 2)
             center_pixel = icon_surf.get_at(center)
             logger.debug(f' ent_id={ent_id} original_asset_size={icon.get_size()} scaled_asset_size={icon_surf.get_size()} center_pixel={center_pixel}')
             self._center_pixel_logged.add(ent_id)
 
+        # Posicionar icono: bottom-align dentro de la celda, centrado horizontal
+        dest_x = x + (self.cell_size - new_w) // 2
+        dest_y = y + (self.cell_size - new_h - pad)  # anclado abajo dejando pad
+
+        # Sombra sutil para dar profundidad profesional
+        shadow_surf = pygame.Surface((new_w, new_h), pygame.SRCALPHA)
+        shadow_surf.fill((0, 0, 0, 80))
+        screen.blit(shadow_surf, (dest_x + 2, dest_y + 2))
+
         # Dibujar icono
-        screen.blit(icon_surf, (x, y))
+        screen.blit(icon_surf, (dest_x, dest_y))
         # Mostrar nombre de la entidad debajo del icono
         label = self._truncate_text(ent_id, self.cell_size)
         text_surf = self.font.render(label, True, (255, 255, 255))

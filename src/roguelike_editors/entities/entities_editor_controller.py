@@ -1,10 +1,13 @@
 import pygame
-from roguelike_game.factories.registry import get_factory
 from roguelike_engine.config.config_tiles import TILE_SIZE
 
 import logging
 logger = logging.getLogger(__name__)
-from roguelike_ui.services.json_persistence import load_from_json
+from roguelike_editors.entities.services.ui_helpers import hide_assets_picker_and_clear_properties
+from roguelike_editors.entities.services.camera_helpers import screen_to_tile
+from roguelike_editors.entities.services.entity_lookup import find_clickable_entity_at
+from roguelike_editors.entities.services.spawn_services import spawn_entity
+from roguelike_editors.entities.services.constants import ENTITIES_TOOLS, UI_MARGIN
 
 from roguelike_editors.entities.entities_editor_model import EntitiesEditorModel
 from roguelike_editors.entities.entities_title.entities_title_controller import EntitiesTitleController
@@ -44,7 +47,7 @@ class EntitiesEditorController:
             self.model.player_stats, self.model.monsters, self.model.assets, self.font
         )
         # Inicializar posición del picker panel a la derecha del add/remove panel
-        margin = 8
+        margin = UI_MARGIN
         add_rem_widget = self.add_remove_view.widget
         add_pos = add_rem_widget.panel.pos or (add_rem_widget.x, add_rem_widget.y)
         add_w, _ = add_rem_widget.panel.surface.get_size()
@@ -73,6 +76,8 @@ class EntitiesEditorController:
         self.picker_controller.model.visible = True
         # Reset selección previa
         self.picker_controller.model.selected_id = None
+        # Cerrar Assets Picker y limpiar estado del panel de propiedades durante spawn
+        hide_assets_picker_and_clear_properties(self.properties_controller)
 
     def exit_spawn_mode(self):
         """
@@ -97,6 +102,8 @@ class EntitiesEditorController:
         self.model.delete_mode_active = True
         # Cambiar cursor a cruz
         pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_CROSSHAIR)
+        # Cerrar Assets Picker y limpiar estado del panel de propiedades durante delete
+        hide_assets_picker_and_clear_properties(self.properties_controller)
 
     def exit_delete_mode(self):
         """
@@ -124,7 +131,7 @@ class EntitiesEditorController:
         if self.toolbar_controller.handle_event(event):
             return True
         active = self.model.toolbar_model.active_tool
-        if active in ('entities_on_map', 'entities_on_system'):
+        if active in ENTITIES_TOOLS:
             # Add/Remove panel
             if self.add_remove_controller.handle_event(event):
                 return True
@@ -133,8 +140,13 @@ class EntitiesEditorController:
             # Sincronizar hover y seleccionado para properties panel
             hovered = self.picker_controller.model.hovered_id
             selected = self.picker_controller.model.selected_id
-            self.properties_controller.model.hovered_entity_id = hovered
-            self.properties_controller.model.selected_id = selected
+            if not (self.model.delete_mode_active or self.model.spawn_mode_active):
+                self.properties_controller.model.hovered_entity_id = hovered
+                self.properties_controller.model.selected_id = selected
+            else:
+                # Mantener cerrado el panel de propiedades durante delete/spawn
+                self.properties_controller.model.hovered_entity_id = None
+                self.properties_controller.model.selected_id = None
             # Selección de entidad tras click en picker en modo spawn
             if self.model.spawn_mode_active and self.model.spawn_entity_type is None and event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
                 sel = self.picker_controller.model.selected_id
@@ -152,50 +164,28 @@ class EntitiesEditorController:
                 panel_rect = self.picker_controller.model.panel_rect
                 if panel_rect and panel_rect.collidepoint(event.pos):
                     return True
-            # Properties panel
-            if self.properties_controller.handle_event(event):
-                return True
+            # Properties panel (solo interactivo si no estamos en delete/spawn)
+            if not (self.model.delete_mode_active or self.model.spawn_mode_active):
+                if self.properties_controller.handle_event(event):
+                    return True
             # Delete entity on map in delete mode
             if self.model.delete_mode_active and event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
                 mx, my = event.pos
-                cam = self.game.camera
-                ecs = self.game.ecs.ecs_world
-                sprites = ecs.components.get('Sprite', {})
-                positions = ecs.components.get('Position', {})
-                scale_map = ecs.components.get('Scale', {})
-                player_tags = ecs.components.get('PlayerTagComponent', {})
-                npc_tags = ecs.components.get('NPCTagComponent', {})
-                for eid, sprite_comp in sprites.items():
-                    # Solo jugadores/NPCs con posición
-                    if eid not in positions or (eid not in player_tags and eid not in npc_tags):
-                        continue
-                    pos = positions[eid]
-                    sx, sy = cam.apply((pos.x, pos.y))
-                    entity_scale = getattr(scale_map.get(eid), 'scale', 1.0)
-                    scale_factor = entity_scale * cam.zoom
-                    scaled_img = pygame.transform.rotozoom(sprite_comp.image, 0, scale_factor)
-                    rect = scaled_img.get_rect()
-                    rect.topleft = (int(sx), int(sy))
-                    if rect.collidepoint(mx, my):
-                        ecs.remove_entity(eid)
-                        ecs.invalidate_spatial_index()
-                        logger.debug(f" Entity {eid} deleted via bbox click at ({mx},{my})")
-                        self.exit_delete_mode()
-                        return True
+                eid = find_clickable_entity_at(self.game, mx, my)
+                if eid is not None:
+                    ecs = self.game.ecs.ecs_world
+                    ecs.remove_entity(eid)
+                    ecs.invalidate_spatial_index()
+                    logger.debug(f" Entity {eid} deleted via bbox click at ({mx},{my})")
+                    self.exit_delete_mode()
+                    return True
             # Completando spawn: click en mapa finaliza spawn_mode
             if self.model.spawn_mode_active and self.model.spawn_entity_type and event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
                 etype = self.model.spawn_entity_type
                 sx, sy = event.pos
-                cam = self.game.camera
-                wx = sx / cam.zoom + cam.offset_x
-                wy = sy / cam.zoom + cam.offset_y
-                tx = int(wx // TILE_SIZE)
-                ty = int(wy // TILE_SIZE)
-                # Crear entidad en ECS
-                if etype in self.model.player_stats:
-                    get_factory("player").create(self.game.ecs.ecs_world, tile_x=tx, tile_y=ty, class_player=etype)
-                else:
-                    get_factory("monster").create(self.game.ecs.ecs_world, tile_x=tx, tile_y=ty, monster_type=etype)
+                tx, ty = screen_to_tile(self.game.camera, sx, sy, TILE_SIZE)
+                # Crear entidad en ECS mediante servicio
+                spawn_entity(self.game, etype, tx, ty, self.model.player_stats)
                 logger.debug(f" Entity '{etype}' spawned at tile ({tx},{ty})")
                 self.exit_spawn_mode()
                 return True

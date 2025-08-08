@@ -26,6 +26,8 @@ class EntitiesAssetsPickerPanelView:
         # store panel rectangle for nested pickers
         surf = self.fs_view.panel.surface
         w, h = surf.get_size()
+        # Removed overlay so the file system picker's path label remains visible
+        # Update panel rect without footer (no entity name here)
         self.model.panel_rect = pygame.Rect(x, y, w, h)
         # Draw error message if present
         if self.model.error_message:

@@ -3,6 +3,7 @@ Manejador de eventos para la toolbar de entidades (stub).
 """
 
 import pygame
+from roguelike_editors.entities.services.constants import ENTITIES_TOOL_ON_MAP
 
 class EntitiesToolBarPanelEventHandler:
     """
@@ -25,7 +26,7 @@ class EntitiesToolBarPanelEventHandler:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             pos = event.pos
             # Evaluar solo herramienta de mapa
-            for tool in ('entities_on_map',):
+            for tool in (ENTITIES_TOOL_ON_MAP,):
                 rect = self.controller.toolbar_view.widget.icon_rects.get(tool)
                 if rect and rect.collidepoint(pos):
                     # Toggle activación
@@ -41,6 +42,6 @@ class EntitiesToolBarPanelEventHandler:
                         editor = self.controller
                         editor.model.visible = True
                         # Mostrar panel Picker solo en mapa
-                        editor.picker_controller.model.visible = (tool == 'entities_on_map')
+                        editor.picker_controller.model.visible = (tool == ENTITIES_TOOL_ON_MAP)
                     return True
         return False

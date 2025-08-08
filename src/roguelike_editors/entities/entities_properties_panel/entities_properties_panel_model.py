@@ -28,12 +28,15 @@ class EntityPropertiesPanelModel:
     max_scroll: int = 0
     total_lines_height: int = 0
     available_height: int = 0
-    
+    # Scroll support for assets tab (separate state to keep uniform UX)
+    assets_scroll_offset: int = 0
+    assets_max_scroll: int = 0
+    assets_total_height: int = 0
+    assets_available_height: int = 0
     
     
     
     # Subtabs (manejado por EntitiesStateTabsController)
-    
     
     
     # Celdas de grid de assets (rect y key)

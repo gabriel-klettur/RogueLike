@@ -2,6 +2,8 @@
 Modelo para la toolbar de entidades (stub).
 """
 
+from roguelike_editors.entities.services.constants import ENTITIES_TOOL_ON_MAP
+
 class EntitiesToolBarPanelModel:
     """
     Modelo de datos para la toolbar de entidades.
@@ -9,7 +11,7 @@ class EntitiesToolBarPanelModel:
     def __init__(self):
         # Claves de botones disponibles en la toolbar
         self.tools = [
-            'entities_on_map',
+            ENTITIES_TOOL_ON_MAP,
             'respawns',
             'undo',
             'redo',

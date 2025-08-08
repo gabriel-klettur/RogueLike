@@ -24,11 +24,14 @@ class EntitiesAssetsPickerPanelEventHandler:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mx, my = event.pos
             logger.debug(f" Click at pos={mx},{my}, selected={self.model.fs_model.selected}")
-            # Determine panel rect
-            x, y = self.model.pos
-            surf = self.view.fs_view.panel.surface
-            w, h = surf.get_size()
-            panel_rect = pygame.Rect(x, y, w, h)
+            # Determine panel rect (include footer if available)
+            if self.model.panel_rect is not None:
+                panel_rect = self.model.panel_rect
+            else:
+                x, y = self.model.pos
+                surf = self.view.fs_view.panel.surface
+                w, h = surf.get_size()
+                panel_rect = pygame.Rect(x, y, w, h)
             # Check entries first
             for rect, entry, idx in self.view.entry_rects:
                 if rect.collidepoint(mx, my):
