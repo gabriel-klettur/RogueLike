@@ -9,13 +9,20 @@ class TabsView:
         self.font = font
         self.margin = margin
         self.tab_rects = []
+        # Posición base configurable (por defecto como antes)
+        self.base_x = 10
+        self.base_y = 40
+
+    def set_base_pos(self, x: int, y: int):
+        self.base_x = x
+        self.base_y = y
 
     def draw(self, surface: pygame.Surface, model) -> list:
         """
         Dibuja las pestañas y devuelve la lista de rects con su categoría.
         """
         self.tab_rects = []
-        tab_x, tab_y = 10, 40
+        tab_x, tab_y = self.base_x, self.base_y
         for cat in model.categories:
             label = cat.capitalize()
             surf = self.font.render(label, True, (255, 255, 255))

@@ -16,6 +16,8 @@ from roguelike_editors.inventory.left_panel.panel_event_handler import PanelEven
 from roguelike_editors.inventory.editor_model import InventoryEditorModel
 
 from roguelike_editors.inventory.editor_view import InventoryEditorView
+from roguelike_editors.inventory.inventory_title.inventory_title_controller import InventoryTitleController
+from roguelike_editors.inventory.inventory_title.inventory_title_model import InventoryTitleModel
 
 
 class InventoryEditorController:
@@ -29,6 +31,11 @@ class InventoryEditorController:
         self.assets = assets
         self.font = font
         self.view = InventoryEditorView(assets, font)
+        # Título del editor (MVC)
+        self.title_model = InventoryTitleModel()
+        self.title_controller = InventoryTitleController(self, self.title_model, self.font)
+        # Asociar title controller a la vista para que renderice y obtenga el rect
+        self.view.title_controller = self.title_controller
         # Panel MVC para listado de entidades
         self.inventory_panel_controller = PanelController(self, self.view.inventory_panel_model)
         # Asociar controlador a la vista
