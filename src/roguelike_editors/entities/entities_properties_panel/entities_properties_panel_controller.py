@@ -36,6 +36,7 @@ from roguelike_editors.entities.entities_properties_panel.services.entity_proper
 from roguelike_editors.entities.services.commands import (
     EditPropertyCommand,
     SetAssetCommand,
+    RenameEntityCommand,
 )
 
 import logging
@@ -180,7 +181,15 @@ class EntityPropertiesPanelController:
         ent_id = self.model.selected_id
         key = self.model.editing_property
         new_text = self.model.editing_text
-        # Push undoable property edit command
+        # Special-case: renaming the entity id (only for monsters)
+        if key == 'id' and ent_id not in self.model.player_stats:
+            new_id = new_text.strip()
+            if new_id and new_id != ent_id:
+                self.editor_controller.history.push(RenameEntityCommand(self, ent_id, new_id))
+            # Clear edit state regardless
+            self._reset_edit_state()
+            return
+        # Default: push undoable property edit command
         self.editor_controller.history.push(EditPropertyCommand(self, ent_id, key, new_text))
 
     # ----------------------------

@@ -7,7 +7,7 @@ from roguelike_editors.entities.services.ui_helpers import hide_assets_picker_an
 from roguelike_editors.entities.services.camera_helpers import screen_to_tile
 from roguelike_editors.entities.services.entity_lookup import find_clickable_entity_at
 from roguelike_editors.entities.services.spawn_services import spawn_entity
-from roguelike_editors.entities.services.constants import ENTITIES_TOOLS, UI_MARGIN
+from roguelike_editors.entities.services.constants import ENTITIES_TOOLS, UI_MARGIN, ADD_ENTITIES_ON_SYSTEM
 from roguelike_editors.entities.services.history import HistoryManager
 from roguelike_editors.entities.services.commands import (
     SpawnEntityCommand,
@@ -67,6 +67,75 @@ class EntitiesEditorController:
         # Vista (separa render)
         from roguelike_editors.entities.entities_editor_view import EntitiesEditorView
         self.view = EntitiesEditorView(self)
+
+    def open_new_monster_properties(self) -> None:
+        """
+        Create a new blank monster class entry in-memory and open the Properties Panel
+        for editing its fields (including assigning a new id).
+        """
+        # Ensure we are not in spawn/delete modes
+        if self.model.spawn_mode_active:
+            self.exit_spawn_mode()
+        if self.model.delete_mode_active:
+            self.exit_delete_mode()
+
+        # Generate a unique temporary id
+        base = 'new_monster'
+        new_id = base
+        idx = 2
+        while new_id in self.model.monsters or new_id in self.model.player_stats:
+            new_id = f"{base}_{idx}"
+            idx += 1
+
+        # Prepare a blank monster template (stats empty, assets None/defaults)
+        directions = ['s', 'se', 'e', 'ne', 'n', 'nw', 'w', 'sw']
+        states = ['idle', 'walk', 'chase', 'cast', 'attack', 'damage', 'death']
+        def empty_dirs():
+            return {d: None for d in directions}
+        no_sets = {st: empty_dirs() for st in states}
+        no_sets['sprites_data_no-set'] = {
+            'scale_idle': None,
+            'scale_walk': None,
+            'scale_chase': None,
+            'scale_cast': None,
+            'scale_attack': None,
+            'scale_damage': None,
+            'scale_death': None,
+            'tint': None,
+        }
+        sets = {
+            'sprites_set': {st: [] for st in states},
+            'sprites_data_set': {
+                'scale_idle': None,
+                'scale_walk': None,
+                'scale_chase': None,
+                'scale_cast': None,
+                'scale_attack': None,
+                'scale_damage': None,
+                'scale_death': None,
+                'tint': None,
+            }
+        }
+        self.model.monsters[new_id] = {
+            'stats': {},
+            'assets': {
+                'active_set': 'no-sets',
+                'sets': sets,
+                'no-sets': no_sets,
+            }
+        }
+
+        # Select the new entity in the properties panel and make it visible
+        self.properties_controller.model.hovered_entity_id = None
+        self.properties_controller.model.selected_id = new_id
+        # Ensure picker is visible and not blinking (not in spawn)
+        self.picker_controller.model.visible = True
+        self.picker_controller.model.blink = False
+        # Redraw to reflect the panel opening
+        try:
+            self.render(self.game.screen)
+        except Exception:
+            pass
 
     def enter_spawn_mode(self, entity_type=None):
         """
@@ -158,9 +227,16 @@ class EntitiesEditorController:
             # Sincronizar hover y seleccionado para properties panel
             hovered = self.picker_controller.model.hovered_id
             selected = self.picker_controller.model.selected_id
+            in_add_system_mode = (self.model.add_remove_model.active_tool == ADD_ENTITIES_ON_SYSTEM)
             if not (self.model.delete_mode_active or self.model.spawn_mode_active):
-                self.properties_controller.model.hovered_entity_id = hovered
-                self.properties_controller.model.selected_id = selected
+                if not in_add_system_mode:
+                    # Modo normal: sincronizar con Picker
+                    self.properties_controller.model.hovered_entity_id = hovered
+                    self.properties_controller.model.selected_id = selected
+                else:
+                    # Modo "Add Entity on System": preservar selección del Properties Panel
+                    # Evitar que el picker reemplace la selección del nuevo entity temporal
+                    self.properties_controller.model.hovered_entity_id = None
             else:
                 # Mantener cerrado el panel de propiedades durante delete/spawn
                 self.properties_controller.model.hovered_entity_id = None

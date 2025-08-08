@@ -6,6 +6,7 @@ from roguelike_editors.entities.services.constants import (
     ADD_ENTITIE,
     REMOVE_ENTITIE,
     ADD_ENTITIES_ON_SYSTEM,
+    CONFIRM_ADD_ENTITY_ON_SYSTEM,
 )
 
 class EntitiesAddRemovePanelView:
@@ -31,6 +32,7 @@ class EntitiesAddRemovePanelView:
             ADD_ENTITIE: 'assets/ui/add_entitie.png',
             REMOVE_ENTITIE: 'assets/ui/remove_entitie.png',
             ADD_ENTITIES_ON_SYSTEM: 'assets/ui/add_entity_on_system.png',
+            CONFIRM_ADD_ENTITY_ON_SYSTEM: 'assets/ui/confirm_add_entity_on_system.png',
         }
         self.icons = {}
         for tool in self.model.tools:
@@ -73,6 +75,19 @@ class EntitiesAddRemovePanelView:
                 rect = self.widget.icon_rects.get(REMOVE_ENTITIE)
                 if rect:
                     pygame.draw.rect(screen, (255, 0, 0), rect.inflate(6, 6), 3)
+            # Parpadeo de borde amarillo para 'Add Entity on System'
+            if self.model.active_tool == ADD_ENTITIES_ON_SYSTEM:
+                rect = self.widget.icon_rects.get(ADD_ENTITIES_ON_SYSTEM)
+                if rect:
+                    pygame.draw.rect(screen, (255, 255, 0), rect.inflate(6, 6), 3)
+
+        # Fondo semitransparente verde cuando 'Add Entity on System' está activo
+        if self.model.active_tool == ADD_ENTITIES_ON_SYSTEM:
+            rect = self.widget.icon_rects.get(ADD_ENTITIES_ON_SYSTEM)
+            if rect:
+                overlay = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+                overlay.fill((0, 255, 0, 60))  # verde con alpha
+                screen.blit(overlay, (rect.x, rect.y))
 
     def handle_event(self, event):
         return self.widget.handle_event(event)

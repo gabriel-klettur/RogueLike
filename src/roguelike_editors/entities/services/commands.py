@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Optional, Tuple, Any
 import os
 import copy
+import json
 
 from roguelike_engine.config.config import ASSETS_DIR
 from roguelike_editors.entities.services.history import Command
@@ -22,6 +23,7 @@ from roguelike_editors.entities.entities_properties_panel.services.ecs_update_se
 )
 from roguelike_game.factories.monster.config import reload_monster_defs
 from roguelike_game.factories.monster import cache as monster_cache
+from roguelike_ui.services.json_persistence import load_from_json
 
 
 def _abs_to_rel_asset_path(path: str) -> str:
@@ -270,3 +272,52 @@ class ToggleActiveSetCommand(Command):
     def undo(self) -> None:
         if self._old_active is not None:
             self._set_active(self._old_active)
+
+
+@dataclass
+class RenameEntityCommand(Command):
+    controller: Any  # EntityPropertiesPanelController
+    old_id: str
+    new_id: str
+    description: str = "Rename monster class"
+    _saved_entry: Any = None
+
+    def _persist_rename(self, src_id: str, dst_id: str) -> None:
+        # Only monsters are supported here
+        path, data, entry = load_entity_data(src_id, self.controller.model.player_stats, self.controller.model.monsters)
+        root = load_from_json(path)
+        classes = root.setdefault('monsters', {}).setdefault('classes', {})
+        # Move entry in JSON tree
+        classes[dst_id] = entry
+        classes.pop(src_id, None)
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(root, f, ensure_ascii=False, indent=2)
+
+    def apply(self) -> None:
+        if not self.old_id or not self.new_id or self.old_id == self.new_id:
+            return
+        # Disallow conflicts
+        if self.new_id in self.controller.model.player_stats or self.new_id in self.controller.model.monsters:
+            # Conflict: do nothing
+            return
+        # Save current entry for undo
+        _, _, entry = load_entity_data(self.old_id, self.controller.model.player_stats, self.controller.model.monsters)
+        self._saved_entry = copy.deepcopy(entry)
+        # Persist to JSON
+        self._persist_rename(self.old_id, self.new_id)
+        # Update in-memory dict
+        monsters = self.controller.model.monsters
+        monsters[self.new_id] = monsters.pop(self.old_id, self._saved_entry)
+        # Update selection in UI
+        self.controller.model.selected_id = self.new_id
+
+    def undo(self) -> None:
+        if not self._saved_entry:
+            return
+        # Persist back
+        self._persist_rename(self.new_id, self.old_id)
+        # Update in-memory dict
+        monsters = self.controller.model.monsters
+        monsters[self.old_id] = monsters.pop(self.new_id, self._saved_entry)
+        # Restore selection
+        self.controller.model.selected_id = self.old_id
