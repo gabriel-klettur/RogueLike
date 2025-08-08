@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 from roguelike_editors.inventory.left_panel.panel_model import InventoryPanelModel
 from roguelike_editors.inventory.left_panel.panel_view import PanelView
 from roguelike_editors.inventory.right_panel.inventory_items_panel.inventory_items_panel_view import InventoryItemsPanelView
+# Title rendering is delegated to inventory_title controller
 
 class InventoryEditorView:
     """
@@ -57,6 +58,8 @@ class InventoryEditorView:
             images=self.images,
             logger=self.logger
         )
+        # El título se renderiza vía self.title_controller (inyectado por el controller)
+        # self.title_controller: InventoryTitleController
         
         # Preparar subcomponentes si es necesario
 
@@ -66,21 +69,30 @@ class InventoryEditorView:
         # Allow hiding the overlay while keeping event handling active (press-and-hold on Pos)
         if getattr(model, 'overlay_hidden_while_hold', False):
             return
-        ow, oh = screen.get_size()
-        overlay = self._draw_overlay(ow, oh, model)
-        screen.blit(overlay, (0,0))
+        self._draw_ui(screen, model)
         return
 
-    def _draw_overlay(self, ow, oh, model):
-        # Overlay semitransparente
-        overlay = pygame.Surface((ow, oh), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 180))
-        # Título
-        title = f"Inv Editor - Eid {model.selected_eid}"
-        text = self.font.render(title, True, (255,255,255))
-        overlay.blit(text, (10,10))
-        # Panel izquierdo de listado (delegado a InventoryPanelView)
-        panel_x, panel_y = 10, 80
+    def _draw_ui(self, screen: pygame.Surface, model: InventoryEditorModel):
+        ow, oh = screen.get_size()
+        # 1) Título: responsabilidad del módulo inventory_title
+        #    Renderiza y devuelve el rect exacto para alinear paneles debajo.
+        title_rect = self.title_controller.render(screen)
+        # 1.1) Tabs del panel izquierdo: ubicarlas justo bajo el título
+        tabs_gap = 12
+        tabs_x = 10
+        tabs_y = title_rect.bottom + tabs_gap
+        # Informar a TabsView su posición base configurable
+        self.inventory_panel_view.tabs_view.set_base_pos(tabs_x, tabs_y)
+        # Altura exacta de tabs (coherente con TabsView: h + padding//2, padding=10)
+        tab_sample_surf = self.inventory_panel_view.tabs_view.font.render("Player", True, (255, 255, 255))
+        tab_text_h = tab_sample_surf.get_height()
+        tabs_h = tab_text_h + 5
+        # 1.2) Paneles comienzan debajo de los tabs (agregar gap adicional)
+        content_top = tabs_y + tabs_h + 12
+
+        # 2) Panel izquierdo (delegado a InventoryPanelView)
+        panel_x = 10
+        panel_y = content_top
         cols = 5
         grid_w = self.slot_size * cols + self.margin * (cols - 1)
         panel_w = ow - grid_w - panel_x - 10
@@ -90,35 +102,34 @@ class InventoryEditorView:
         self.left_panel_rect = panel_rect
         # Obtener lista de elementos para panel
         items = self.inventory_panel_controller.get_items_list()
-        # Dibujar panel mediante MVC
-        panel_rects = self.inventory_panel_view.draw(overlay, self.inventory_panel_model, panel_rect, items)
+        # Dibujar panel mediante MVC sobre la pantalla directamente
+        panel_rects = self.inventory_panel_view.draw(screen, self.inventory_panel_model, panel_rect, items)
         # Guardar rectángulos de pestañas y panel para eventos
         self.tab_rects = panel_rects.get('tab_rects')
-        # Dibujar grid y flujo Add Item
+
+        # 3) Panel derecho: grid + flujo Add Item
         if model.current_category in ('player', 'monsters'):
-            self._draw_grid(overlay, model, panel_rect)
-            # Item selection panel: position just below the Save buttons of the inventory grid
-            # Use grid width and Save buttons bottom as base for panel
+            self._draw_grid(screen, model, panel_rect)
+            # Item selection panel: debajo del botón Save del grid
             grid_origin_x = panel_rect.x + panel_rect.width + self.margin
-            # Use unified Save button bottom
             save_bottom = self.save_rect.bottom if self.save_rect else panel_rect.y
             base_rect = pygame.Rect(grid_origin_x, save_bottom, grid_w, 0)
-            rects = self.item_panel_view.draw(overlay, self.item_panel_model, base_rect)
-            # Propagate rects to panel view for event handlers
+            rects = self.item_panel_view.draw(screen, self.item_panel_model, base_rect)
+            # Propagar rects a la vista para handlers
             pv = self.item_panel_view
             pv.panel_rect = rects.get('panel_rect')
             pv.header_rect = rects.get('header_rect')
             pv.input_rect = rects.get('input_rect')
             pv.add_button_rect = rects.get('add_button_rect')
             pv.tab_rects = rects.get('tab_rects')
-            # Alias subview internals for event handlers
+            # Alias subview internals para handlers
             pv.text_input = pv.input_view.text_input
             pv.scroll_panel = pv.list_view.scroll_panel
-            # Save panel rects for events
+            # Guardar rects para eventos
             self.item_list_panel_rect = rects.get('panel_rect')
             self.item_list_header_rect = rects.get('header_rect')
             self.add_to_inventory_button_rect = rects.get('add_button_rect')
-        return overlay
+        return
 
 
 
