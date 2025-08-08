@@ -325,6 +325,9 @@ class RendererManager:
         # Cachea el overlay de ayuda para evitar renderizado de texto cada frame
         screen = self.screen
         size = screen.get_size()
+        # Ocultar la leyenda de comandos cuando el Entities Editor está visible
+        if hasattr(state, 'entities_editor_state') and getattr(state.entities_editor_state, 'visible', False):
+            return
         if self.map_editor.editor_state.active:
             mode = 'map'
         elif self.buildings_editor.editor_state.active:
@@ -364,7 +367,7 @@ class RendererManager:
                 ]
             else:
                 lines = ["Normal Mode:", "ESC: Menu", "[IN DUNGEON] Red area expand dungeon", "F8:Tiles Editor", "F9: Debug Mode","F10: Buildings Editor",
-                         "F11: Map Editor", "F12: Entities Editor",                         
+                         "F11: Map Editor", "F5: Entities Editor",                         
                          "E: Slash","X: Healing", "Mouse left: Fire Ball", "Mouse right: Slash",
                          "Mouse middle: Laser Beam"
                          ]
