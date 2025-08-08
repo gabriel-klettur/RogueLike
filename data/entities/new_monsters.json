@@ -1334,12 +1334,5 @@
         }
       }
     }
-  },
-  "barbol_boss": {
-    "sprites": {
-      "assets": {
-        "idle": {}
-      }
-    }
   }
 }

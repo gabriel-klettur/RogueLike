@@ -1,6 +1,8 @@
 import pytest
 import pygame
 from types import SimpleNamespace
+import json
+from pathlib import Path
 
 from roguelike_editors.entities.entities_properties_panel.entities_properties_panel_controller import EntityPropertiesPanelController
 
@@ -13,6 +15,11 @@ epc_mod.reload_monster_defs = lambda: None
 import roguelike_game.factories.monster.cache as mc_mod
 mc_mod.load_caches_for = lambda variants: None
 
+def _load_monsters_fixture() -> dict:
+    tests_dir = Path(__file__).resolve().parents[3]
+    with open(tests_dir / 'fixtures' / 'monsters' / 'mon1.json', 'r', encoding='utf-8') as f:
+        return json.load(f)
+
 @pytest.fixture
 def controller():
     # Dummy editor controller with minimal render and game.screen
@@ -21,7 +28,7 @@ def controller():
     ctrl = EntityPropertiesPanelController(
         editor_controller,
         player_stats={},
-        monsters={'mon1': {}},
+        monsters=_load_monsters_fixture(),
         player_assets={},
         font=None
     )
@@ -35,10 +42,15 @@ def test_monster_stat_edit_updates_stats_nested(controller):
     controller.model.editing_text = '250'
     captured = {}
 
-    # Stub save to capture entry
-    def fake_save(ent_id, entry, path, data):
-        captured['entry'] = entry.copy()
+    # Stub save to capture entry (module-level save uses 5 args)
+    def fake_save(*args, **kwargs):
+        entry = kwargs.get('entry')
+        if entry is None and len(args) >= 2:
+            entry = args[1]
+        captured['entry'] = (entry or {}).copy()
 
+    # Capture via controller module-level save function
+    epc_mod.save_entity_data = fake_save
     controller._save_entity_data = fake_save
     # Execute commit_edit
     controller._commit_edit()
@@ -61,6 +73,7 @@ def test_commit_edit_triggers_reload_and_cache_clear(monkeypatch, controller):
     controller.model.editing_property = 'hp'
     controller.model.editing_text = '777'
     # Stub save to no-op
+    epc_mod.save_entity_data = lambda *args, **kwargs: None
     controller._save_entity_data = lambda *args, **kwargs: None
     # Execute commit
     controller._commit_edit()
