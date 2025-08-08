@@ -7,6 +7,17 @@ from roguelike_engine.utils.loader import load_image
 from roguelike_editors.entities.entities_properties_panel.entities_assets_grid_panel.entities_assets_grid_panel_model import (
     AssetsGridPanelModel,
 )
+from roguelike_editors.entities.entities_properties_panel.services.assets_constants import (
+    SUBTAB_SET,
+    SUBTAB_NO_SET,
+)
+from roguelike_editors.entities.entities_properties_panel.services.assets_maps import (
+    GRID_ORDER_3X3 as _ORDER,
+)
+from roguelike_editors.entities.entities_properties_panel.services.assets_helpers import (
+    build_asset_key,
+    resolve_asset_path,
+)
 
 import logging
 logger = logging.getLogger(__name__)
@@ -21,14 +32,12 @@ class AssetsGridPanelView:
     """
 
     # Configuración de layout y colores
-    _ORDER: List[Optional[str]] = ['nw', 'n', 'ne', 'w', None, 'e', 'sw', 's', 'se']
     _GRID_COLS: int = 3
     _BORDER_COLOR: Tuple[int, int, int] = (150, 150, 150)
     _HOVER_COLOR: Tuple[int, int, int, int] = (255, 255, 0, 80)
     _TEXT_COLOR: Tuple[int, int, int] = (255, 255, 0)
     _KEY_COLOR: Tuple[int, int, int] = (255, 255, 255)
     _NONE_TINT_COLOR: Tuple[int, int, int] = (128, 0, 128)
-    _STATE_MAP_REV: Dict[str, str] = {'chase': 'walking'}
 
     def __init__(self, font: pygame.font.Font) -> None:
         """Inicializa la vista con la fuente y la caché de thumbnails."""
@@ -159,27 +168,27 @@ class AssetsGridPanelView:
                 f"[DEBUG][PROPERTIES PANEL][GRID] "
                 f"active_state={active_state}, sub_tab={sub_tab}"
             )
-            for dir_key in self._ORDER:
+            for dir_key in _ORDER:
                 if not dir_key:
                     continue
-                asset_key = f"asset_{active_state}_{dir_key}"
+                asset_key = build_asset_key(active_state, dir_key)
                 ent_id = (
                     self.parent_model.hovered_entity_id
                     or self.parent_model.selected_id
                 )
-                if sub_tab == 'no-set' and ent_id in self.parent_model.player_stats:
-                    player_assets = self.parent_model.player_assets.get(ent_id, {})
-                    no_sets = player_assets.get('no-sets', {})
-                    json_state = self._STATE_MAP_REV.get(active_state, active_state)
-                    dirs = no_sets.get(json_state, {})
-                    value = dirs.get(dir_key)
-                else:
-                    value = entity_data.get(asset_key)
+                value = resolve_asset_path(
+                    ent_id,
+                    self.parent_model,
+                    entity_data,
+                    active_state,
+                    dir_key,
+                    sub_tab,
+                )
                 logger.debug(f"[DEBUG][GRID] asset_key={asset_key}, value={value}")
             self._last_active_state = active_state
             self._last_sub_tab = sub_tab
 
-        for idx, dir_key in enumerate(self._ORDER):
+        for idx, dir_key in enumerate(_ORDER):
             row, col = divmod(idx, self._GRID_COLS)
             rect = pygame.Rect(
                 grid_x + col * cell_size,
@@ -189,11 +198,11 @@ class AssetsGridPanelView:
             )
 
             if dir_key:
-                asset_key = f"asset_{active_state}_{dir_key}"
+                asset_key = build_asset_key(active_state, dir_key)
                 model.asset_cell_entries.append((rect, asset_key))
 
                 # Hover highlight: toda la grilla o solo hovered
-                if (sub_tab == 'asset set' and model.hovered_asset_cell) or (
+                if (sub_tab == SUBTAB_SET and model.hovered_asset_cell) or (
                     model.hovered_asset_cell == asset_key
                 ):
                     hover = pygame.Surface((cell_size, cell_size), pygame.SRCALPHA)
@@ -201,7 +210,7 @@ class AssetsGridPanelView:
                     screen.blit(hover, (rect.x, rect.y))
 
                 # Dibujar thumbnail: animación o ruta
-                if sub_tab == 'asset set':
+                if sub_tab == SUBTAB_SET:
                     self._draw_set_thumb(
                         screen, model, entity_data, rect, asset_key, cell_size
                     )
@@ -210,14 +219,14 @@ class AssetsGridPanelView:
                         self.parent_model.hovered_entity_id
                         or self.parent_model.selected_id
                     )
-                    if sub_tab == 'no-set' and ent_id in self.parent_model.player_stats:
-                        player_assets = self.parent_model.player_assets.get(ent_id, {})
-                        no_sets = player_assets.get('no-sets', {})
-                        json_state = self._STATE_MAP_REV.get(active_state, active_state)
-                        dirs = no_sets.get(json_state, {})
-                        path = dirs.get(dir_key)
-                    else:
-                        path = entity_data.get(asset_key)
+                    path = resolve_asset_path(
+                        ent_id,
+                        self.parent_model,
+                        entity_data,
+                        active_state,
+                        dir_key,
+                        sub_tab,
+                    )
 
                     if not path:
                         inner = rect.inflate(-2, -2)
@@ -320,11 +329,34 @@ class AssetsGridPanelView:
             return
 
         sub_tab = self.set_ot_assets_tab_controller.model.active_sub_tab
-        path = entity_data.get(sel)
-        if sub_tab == 'no-set' and path is None:
-            return
-
-        info = str(path) if path is not None else 'None'
+        # Resolver la ruta de la misma forma que para las celdas
+        path: Optional[str]
+        if sel.startswith('asset_'):
+            try:
+                _, ui_state, dir_key = sel.split('_', 2)
+            except ValueError:
+                # Fallback si el formato no es el esperado
+                path = entity_data.get(sel)
+            else:
+                ent_id = (
+                    self.parent_model.hovered_entity_id
+                    or self.parent_model.selected_id
+                )
+                path = resolve_asset_path(
+                    ent_id,
+                    self.parent_model,
+                    entity_data,
+                    ui_state,
+                    dir_key,
+                    sub_tab,
+                )
+        else:
+            path = entity_data.get(sel)
+        # Mostrar placeholder específico cuando no hay asignación en no-sets
+        if sub_tab == SUBTAB_NO_SET and path is None:
+            info = 'No asignado en no-sets'
+        else:
+            info = str(path) if path is not None else 'None'
         info_surf = self.font.render(info, True, self._TEXT_COLOR)
         info_x = px + pad
         info_y = grid_y + cell_size * self._GRID_COLS + pad

@@ -7,6 +7,10 @@ import pygame
 from roguelike_editors.entities.entities_properties_panel.entities_assets_grid_panel.entities_assets_grid_panel_model import AssetsGridPanelModel
 from roguelike_editors.entities.entities_properties_panel.entities_assets_grid_panel.entities_assets_grid_panel_view import AssetsGridPanelView
 from roguelike_editors.entities.entities_properties_panel.entities_assets_grid_panel.entities_assets_grid_panel_events import AssetsGridPanelEventHandler
+from roguelike_editors.entities.entities_properties_panel.services.assets_maps import (
+    DIR_MAP as _DIR_TO_SPRITE,
+    ui_state_to_internal,
+)
 from roguelike_game.ecs.components.rendering.animator import Animator
 from roguelike_game.ecs.components.rendering.animation_timer import AnimationTimer
 from roguelike_game.factories.player.loader import load_and_scale_sprites
@@ -14,22 +18,6 @@ from roguelike_game.factories.player.config import ANIMATION_INTERVAL
 
 import logging
 logger = logging.getLogger(__name__)
-
-# Mapeos constantes para estados y direcciones
-_STATE_MAP: Dict[str, str] = {
-    'chase': 'walk',  # El estado 'chase' se representa internamente como 'walk'
-}
-
-_DIR_TO_SPRITE: Dict[str, str] = {
-    'nw': 'up_left',
-    'n': 'up',
-    'ne': 'up_right',
-    'w': 'left',
-    'e': 'right',
-    'sw': 'down_left',
-    's': 'down',
-    'se': 'down_right',
-}
 
 
 class AssetsGridPanelController:
@@ -146,7 +134,7 @@ class AssetsGridPanelController:
                 sprite_dir = _DIR_TO_SPRITE.get(dir_code, dir_code)
                 sprites.setdefault(sprite_dir, {}).setdefault(state_name, []).append(surf)
 
-        internal_state = _STATE_MAP.get(state, state)
+        internal_state = ui_state_to_internal(state)
 
         # Limpieza de datos previos
         self.model.animators.clear()
