@@ -76,21 +76,36 @@ class EntitiesPropertiesPanelEventHandler:
         if self._handle_property_click(event):
             return True
 
-        # Scroll wheel support for properties panel
-        if self.controller.type_assets_controller.model.active_type_tab == TYPE_TAB_PROPERTIES:
-            # Mouse wheel scroll up/down
-            if event.type == pygame.MOUSEBUTTONDOWN and self.model.panel_rect and self.model.panel_rect.collidepoint(event.pos):
-                if event.button == 4:
-                    self.model.scroll_offset = max(0, self.model.scroll_offset - (self.view.font.get_height() + 2))
+        # Scroll wheel support
+        if self.model.panel_rect:
+            # PROPERTIES tab
+            if self.controller.type_assets_controller.model.active_type_tab == TYPE_TAB_PROPERTIES:
+                if event.type == pygame.MOUSEBUTTONDOWN and self.model.panel_rect.collidepoint(getattr(event, 'pos', (0, 0))):
+                    if event.button == 4:
+                        self.model.scroll_offset = max(0, self.model.scroll_offset - (self.view.font.get_height() + 2))
+                        return True
+                    elif event.button == 5:
+                        self.model.scroll_offset = min(self.model.max_scroll, self.model.scroll_offset + (self.view.font.get_height() + 2))
+                        return True
+                elif event.type == pygame.MOUSEWHEEL:
+                    delta = (self.view.font.get_height() + 2) * event.y
+                    self.model.scroll_offset = min(self.model.max_scroll, max(0, self.model.scroll_offset - delta))
                     return True
-                elif event.button == 5:
-                    self.model.scroll_offset = min(self.model.max_scroll, self.model.scroll_offset + (self.view.font.get_height() + 2))
+            # ASSETS tab
+            elif self.controller.type_assets_controller.model.active_type_tab == TYPE_TAB_ASSETS:
+                if event.type == pygame.MOUSEBUTTONDOWN and self.model.panel_rect.collidepoint(getattr(event, 'pos', (0, 0))):
+                    step = max(10, self.view.font.get_height() + 2)
+                    if event.button == 4:
+                        self.model.assets_scroll_offset = max(0, self.model.assets_scroll_offset - step)
+                        return True
+                    elif event.button == 5:
+                        self.model.assets_scroll_offset = min(self.model.assets_max_scroll, self.model.assets_scroll_offset + step)
+                        return True
+                elif event.type == pygame.MOUSEWHEEL:
+                    step = max(10, self.view.font.get_height() + 2)
+                    delta = step * event.y
+                    self.model.assets_scroll_offset = min(self.model.assets_max_scroll, max(0, self.model.assets_scroll_offset - delta))
                     return True
-            elif event.type == pygame.MOUSEWHEEL:
-                # event.y positive means scroll up
-                delta = (self.view.font.get_height() + 2) * event.y
-                self.model.scroll_offset = min(self.model.max_scroll, max(0, self.model.scroll_offset - delta))
-                return True
 
         return False
 

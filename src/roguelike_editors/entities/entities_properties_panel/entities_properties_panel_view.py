@@ -36,6 +36,7 @@ class EntityPropertiesPanelView:
         self.MARGIN = 20
         self.SCROLLBAR_WIDTH = 8
         self.MAX_PANEL_W = 500
+        self.DEFAULT_PANEL_H = 520  # Fixed target height for uniform UX
         self.TAB_PADDING_Y = 5
         self.SUBPAD_X = 8
 
@@ -84,19 +85,9 @@ class EntityPropertiesPanelView:
         # Altura del header de subtabs de assets
         state_header = primary_header if self.type_assets_controller.model.active_type_tab == TYPE_TAB_ASSETS else 0
         sub_header = state_header
-        # Altura del contenido con padding al fondo
-        bottom_padding = 0
-        # Altura máxima del contenido para no sobrepasar la pantalla
-        max_content_h = sh - margin - bottom_padding - primary_header - state_header - sub_header
-        if self.type_assets_controller.model.active_type_tab == TYPE_TAB_ASSETS:
-            # Ajustar panel para nombre, tint y cuadrícula 3x3
-            grid_w = panel_w - pad * 2
-            cell_size = int(grid_w / 3)
-            orig_content_h = pad + font_h + 2 + font_h + pad + cell_size * 3 + pad + font_h + pad + font_h
-            content_h = min(orig_content_h, max_content_h)
-        else:
-            orig_content_h = len(lines) * (font_h + 2) + pad * 2
-            content_h = min(orig_content_h, max_content_h)
+        # Altura fija del panel (uniforme entre pestañas)
+        panel_h_target = min(self.DEFAULT_PANEL_H, sh - margin * 2)
+        content_h = max(40, panel_h_target - (primary_header + state_header + sub_header))
         panel_h = primary_header + state_header + sub_header + content_h
 
         # Posición inicial (esquina superior derecha)
@@ -148,10 +139,50 @@ class EntityPropertiesPanelView:
             self._draw_properties(screen, model, lines, px, py + primary_header + state_header, pad, font_h, panel_w)
             self._draw_editing_indicator(screen, model, font_h)
         elif self.type_assets_controller.model.active_type_tab == TYPE_TAB_ASSETS:
-            # Delegar grid a grid_controller
-            # Clip contenido de grid para no salir del panel
-            screen.set_clip(pygame.Rect(px + pad, py + primary_header + state_header + sub_header + pad, panel_w - pad*2, content_h - pad*2))
-            self.grid_controller.draw(screen, entity_data, px, py + primary_header + state_header + sub_header, pad, font_h, panel_w)
+            # Calcular métricas de scroll para Assets
+            grid_w = panel_w - pad * 2
+            cell_size = int(grid_w / 3)
+            model.assets_total_height = (
+                pad + font_h + 2 + font_h +  # nombre + tint
+                pad + cell_size * 3 +        # grilla 3x3
+                pad + font_h +               # info ruta
+                pad + font_h                 # combo "Activo"
+            )
+            model.assets_available_height = content_h - pad * 2
+            model.assets_max_scroll = max(0, model.assets_total_height - model.assets_available_height)
+            model.assets_scroll_offset = min(max(model.assets_scroll_offset, 0), model.assets_max_scroll)
+
+            # Dibujar scrollbar de assets
+            scrollbar_width = self.SCROLLBAR_WIDTH
+            bar_x = px + panel_w - scrollbar_width - pad // 2
+            bar_y = py + primary_header + state_header + sub_header + pad
+            bar_h = model.assets_available_height
+            if model.assets_total_height:
+                thumb_h = max(20, int(bar_h * (model.assets_available_height / model.assets_total_height)))
+                thumb_y = bar_y + int((model.assets_scroll_offset / (model.assets_max_scroll or 1)) * (bar_h - thumb_h))
+            else:
+                thumb_h = bar_h
+                thumb_y = bar_y
+            pygame.draw.rect(screen, (50, 50, 50), (bar_x, bar_y, scrollbar_width, bar_h))
+            pygame.draw.rect(screen, (200, 200, 200), (bar_x, thumb_y, scrollbar_width, thumb_h))
+
+            # Clip contenido y aplicar desplazamiento vertical
+            content_clip = pygame.Rect(
+                px + pad,
+                py + primary_header + state_header + sub_header + pad,
+                panel_w - pad * 2,
+                content_h - pad * 2,
+            )
+            screen.set_clip(content_clip)
+            self.grid_controller.draw(
+                screen,
+                entity_data,
+                px,
+                py + primary_header + state_header + sub_header - model.assets_scroll_offset,
+                pad,
+                font_h,
+                panel_w,
+            )
             # Restaurar recorte tras dibujar grid
             screen.set_clip(None)
 
