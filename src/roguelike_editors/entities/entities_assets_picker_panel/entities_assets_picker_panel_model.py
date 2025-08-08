@@ -1,7 +1,7 @@
 import pygame
 from roguelike_ui.widgets.file_system_picker import FileSystemPickerModel
 from roguelike_engine.config.config import ASSETS_DIR
-from typing import Optional
+from typing import Optional, Callable
 
 
 class EntitiesAssetsPickerPanelModel:
@@ -25,3 +25,6 @@ class EntitiesAssetsPickerPanelModel:
         # Error message and timestamp for invalid selections
         self.error_message: Optional[str] = None
         self.error_timestamp: float = 0.0
+        # Optional provider for bottom label text (e.g., hovered/selected entity id)
+        # Signature: () -> str
+        self.label_provider: Optional[Callable[[], str]] = None

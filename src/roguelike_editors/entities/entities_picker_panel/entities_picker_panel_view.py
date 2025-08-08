@@ -106,8 +106,11 @@ class EntityPickerPanelView:
         # Altura del header de pestañas
         tab_padding_y = 5
         header_height = self.font.get_height() + tab_padding_y * 2
-        # Altura total del panel (header + grid)
-        panel_h = header_height + grid_h
+        # Altura del footer (etiqueta centrada con nombre de entidad)
+        footer_font = self.font
+        footer_h = footer_font.get_height() + 10
+        # Altura total del panel (header + grid + footer)
+        panel_h = header_height + grid_h + footer_h
 
         # Ajustar panel arrastrable
         self.draggable_panel.resize(panel_w, panel_h)
@@ -138,6 +141,21 @@ class EntityPickerPanelView:
         orig_y = self.y
         self.y = orig_y + header_height
         self._draw_entity_grid(screen, model, entity_ids)
+        # Dibujar footer con etiqueta centrada (hovered o selected)
+        # Use orig_y because self.y was temporarily offset by header_height
+        footer_y = orig_y + header_height + grid_h
+        # Fondo del footer (semi-transparente)
+        footer_bg = pygame.Surface((panel_w, footer_h), pygame.SRCALPHA)
+        footer_bg.fill((0, 0, 0, 220))
+        screen.blit(footer_bg, (self.x, footer_y))
+        # Texto del footer
+        label_text = model.hovered_id or model.selected_id or ""
+        if label_text:
+            pretty = label_text.replace("_", " ").title()
+            text_surf = footer_font.render(pretty, True, (255, 230, 0))
+            tx = self.x + (panel_w - text_surf.get_width()) // 2
+            ty = footer_y + (footer_h - text_surf.get_height()) // 2
+            screen.blit(text_surf, (tx, ty))
         self.y = orig_y
 
     # ----------------------------
