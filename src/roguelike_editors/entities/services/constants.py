@@ -3,8 +3,7 @@
 
 # Toolbar tool keys for Entities editor panels visibility
 ENTITIES_TOOL_ON_MAP = 'entities_on_map'
-ENTITIES_TOOL_ON_SYSTEM = 'entities_on_system'
-ENTITIES_TOOLS = (ENTITIES_TOOL_ON_MAP, ENTITIES_TOOL_ON_SYSTEM)
+ENTITIES_TOOLS = (ENTITIES_TOOL_ON_MAP,)
 
 # UI spacing
 UI_MARGIN = 8

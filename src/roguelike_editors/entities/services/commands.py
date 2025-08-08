@@ -1,0 +1,272 @@
+from __future__ import annotations
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Optional, Tuple, Any
+import os
+import copy
+
+from roguelike_engine.config.config import ASSETS_DIR
+from roguelike_editors.entities.services.history import Command
+from roguelike_editors.entities.services.ecs_snapshot import snapshot_entity, restore_entity
+from roguelike_editors.entities.services.spawn_services import spawn_entity
+from roguelike_editors.entities.entities_properties_panel.services.entity_properties_service import (
+    load_entity_data,
+    save_entity_data,
+    convert_value,
+)
+from roguelike_editors.entities.entities_properties_panel.services.ecs_update_service import (
+    update_player_assets,
+    update_monster_assets,
+    update_player_stats,
+    update_monster_stats,
+)
+from roguelike_game.factories.monster.config import reload_monster_defs
+from roguelike_game.factories.monster import cache as monster_cache
+
+
+def _abs_to_rel_asset_path(path: str) -> str:
+    abs_path = Path(path).resolve()
+    assets_root = Path(ASSETS_DIR).resolve()
+    try:
+        rel = abs_path.relative_to(assets_root)
+        return f"assets/{rel.as_posix()}"
+    except ValueError:
+        return str(path).replace("\\", "/")
+
+
+@dataclass
+class SpawnEntityCommand(Command):
+    controller: Any
+    etype: str
+    tx: int
+    ty: int
+    description: str = "Spawn entity"
+    eid: Optional[int] = None
+
+    def apply(self) -> None:
+        game = self.controller.game
+        eid = spawn_entity(game, self.etype, self.tx, self.ty, self.controller.model.player_stats)
+        self.eid = eid
+        world = game.ecs.ecs_world
+        if hasattr(world, 'invalidate_spatial_index'):
+            world.invalidate_spatial_index()
+
+    def undo(self) -> None:
+        if self.eid is None:
+            return
+        world = self.controller.game.ecs.ecs_world
+        world.remove_entity(self.eid)
+        if hasattr(world, 'invalidate_spatial_index'):
+            world.invalidate_spatial_index()
+
+
+@dataclass
+class DeleteEntityCommand(Command):
+    controller: Any
+    eid: int
+    description: str = "Delete entity"
+    _snapshot: Any = None
+
+    def apply(self) -> None:
+        world = self.controller.game.ecs.ecs_world
+        self._snapshot = snapshot_entity(world, self.eid)
+        world.remove_entity(self.eid)
+        if hasattr(world, 'invalidate_spatial_index'):
+            world.invalidate_spatial_index()
+
+    def undo(self) -> None:
+        world = self.controller.game.ecs.ecs_world
+        if self._snapshot is not None:
+            restore_entity(world, self._snapshot)
+            if hasattr(world, 'invalidate_spatial_index'):
+                world.invalidate_spatial_index()
+
+
+@dataclass
+class EditPropertyCommand(Command):
+    controller: Any
+    ent_id: str
+    key: str
+    new_text: str
+    description: str = "Edit property"
+    _old_value: Any = None
+    _new_value: Any = None
+
+    def _write_value(self, value: Any) -> None:
+        # controller is EntityPropertiesPanelController
+        path, data, entry = load_entity_data(self.ent_id, self.controller.model.player_stats, self.controller.model.monsters)
+        if self.ent_id in self.controller.model.player_stats:
+            entry[self.key] = value
+            # persist and update in-memory
+            save_entity_data(self.ent_id, entry, path, self.controller.model.player_stats, self.controller.model.monsters)
+            self.controller.model.player_stats[self.ent_id][self.key] = value
+            # propagate to ECS
+            ecs_world = self.controller.editor_controller.game.ecs.ecs_world
+            update_player_stats(ecs_world, self.ent_id, self.key, value)
+        else:
+            stats = entry.setdefault('stats', {})
+            stats[self.key] = value
+            save_entity_data(self.ent_id, entry, path, self.controller.model.player_stats, self.controller.model.monsters)
+            # update in-memory
+            self.controller.model.monsters.setdefault(self.ent_id, {}).setdefault('stats', {})[self.key] = value
+            # refresh monster defs/sprites and ECS updates
+            try:
+                from roguelike_editors.entities.entities_properties_panel import entities_properties_panel_controller as epc_mod
+                epc_mod.reload_monster_defs()
+            except Exception:
+                # Fallback to direct factory reload if controller module isn't available
+                try:
+                    from roguelike_game.factories.monster.config import reload_monster_defs as _reload_defs
+                    _reload_defs()
+                except Exception:
+                    pass
+            monster_cache._loaded_variants.discard(self.ent_id)
+            monster_cache._SPRITE_SURFACES.pop(self.ent_id, None)
+            monster_cache._DEATH_SURFACES.pop(self.ent_id, None)
+            ecs_world = self.controller.editor_controller.game.ecs.ecs_world
+            update_monster_stats(ecs_world, self.ent_id, self.key, value)
+
+    def apply(self) -> None:
+        path, data, entry = load_entity_data(self.ent_id, self.controller.model.player_stats, self.controller.model.monsters)
+        if self.ent_id in self.controller.model.player_stats:
+            self._old_value = copy.deepcopy(entry.get(self.key))
+        else:
+            self._old_value = copy.deepcopy(entry.setdefault('stats', {}).get(self.key))
+        # Type-aware conversion
+        self._new_value = convert_value(self.new_text, self._old_value)
+        self._write_value(self._new_value)
+        # Clear edit state in UI
+        self.controller._reset_edit_state()
+
+    def undo(self) -> None:
+        self._write_value(self._old_value)
+
+
+@dataclass
+class SetAssetCommand(Command):
+    controller: Any
+    ent_id: str
+    cell_key: str  # e.g., 'asset_idle_down'
+    new_path: str  # absolute or relative; will be normalized
+    description: str = "Set asset"
+    _old_value: Any = None
+
+    def _get_current_value(self, entry: dict) -> Any:
+        parts = self.cell_key.split("_")
+        if len(parts) != 3 or parts[0] != 'asset':
+            return None
+        _, state, direction = parts
+        assets = entry.setdefault('assets', {})
+        default_active = 'sets' if self.ent_id in self.controller.model.player_stats else 'no-sets'
+        active = assets.get('active_set', default_active)
+        if active == 'sets':
+            sprites_set = assets.setdefault('sets', {}).setdefault('sprites_set', {})
+            return copy.deepcopy(sprites_set.get(state))  # usually list like [path]
+        else:
+            no_sets = assets.setdefault('no-sets', {})
+            return copy.deepcopy(no_sets.setdefault(state, {}).get(direction))
+
+    def _write_value(self, entry: dict, rel_path: str) -> None:
+        parts = self.cell_key.split("_")
+        _, state, direction = parts
+        assets = entry.setdefault('assets', {})
+        default_active = 'sets' if self.ent_id in self.controller.model.player_stats else 'no-sets'
+        active = assets.get('active_set', default_active)
+        if active == 'sets':
+            sprites_set = assets.setdefault('sets', {}).setdefault('sprites_set', {})
+            sprites_set[state] = [rel_path]
+        else:
+            no_sets = assets.setdefault('no-sets', {})
+            state_no_set = no_sets.setdefault(state, {})
+            state_no_set[direction] = rel_path
+        # Remove legacy key if present
+        entry.pop('sprites', None)
+
+    def _persist_and_update(self, entry: dict, path: str) -> None:
+        save_entity_data(self.ent_id, entry, path, self.controller.model.player_stats, self.controller.model.monsters)
+        ecs_world = self.controller.editor_controller.game.ecs.ecs_world
+        if self.ent_id in self.controller.model.player_stats:
+            # Update in-memory player assets mirror
+            self.controller.model.player_assets[self.ent_id] = entry.get('assets', {})
+            update_player_assets(ecs_world, self.ent_id)
+        else:
+            # Refresh monster ECS
+            update_monster_assets(ecs_world, self.ent_id)
+
+        # UI tweaks similar to controller flow
+        self.controller.assets_picker_controller.hide()
+        self.controller.grid_controller.model.last_entity_id = None
+        self.controller.grid_controller.model.last_state_tab = None
+        try:
+            self.controller.editor_controller.render(self.controller.editor_controller.game.screen)
+        except Exception:
+            pass
+
+    def apply(self) -> None:
+        path, data, entry = load_entity_data(self.ent_id, self.controller.model.player_stats, self.controller.model.monsters)
+        self._old_value = self._get_current_value(entry)
+        rel = _abs_to_rel_asset_path(self.new_path)
+        self._write_value(entry, rel)
+        self._persist_and_update(entry, path)
+
+    def undo(self) -> None:
+        path, data, entry = load_entity_data(self.ent_id, self.controller.model.player_stats, self.controller.model.monsters)
+        # Restore previous value
+        parts = self.cell_key.split("_")
+        if len(parts) != 3 or parts[0] != 'asset':
+            return
+        _, state, direction = parts
+        assets = entry.setdefault('assets', {})
+        default_active = 'sets' if self.ent_id in self.controller.model.player_stats else 'no-sets'
+        active = assets.get('active_set', default_active)
+        if active == 'sets':
+            sprites_set = assets.setdefault('sets', {}).setdefault('sprites_set', {})
+            sprites_set[state] = copy.deepcopy(self._old_value) if self._old_value is not None else []
+        else:
+            no_sets = assets.setdefault('no-sets', {})
+            state_no_set = no_sets.setdefault(state, {})
+            if self._old_value is None:
+                state_no_set.pop(direction, None)
+            else:
+                state_no_set[direction] = self._old_value
+        save_entity_data(self.ent_id, entry, path, self.controller.model.player_stats, self.controller.model.monsters)
+        ecs_world = self.controller.editor_controller.game.ecs.ecs_world
+        if self.ent_id in self.controller.model.player_stats:
+            self.controller.model.player_assets[self.ent_id] = entry.get('assets', {})
+            update_player_assets(ecs_world, self.ent_id)
+        else:
+            update_monster_assets(ecs_world, self.ent_id)
+
+
+@dataclass
+class ToggleActiveSetCommand(Command):
+    controller: Any
+    ent_id: str
+    description: str = "Toggle active asset set"
+    _old_active: Optional[str] = None
+
+    def _set_active(self, target: str) -> None:
+        path, data, entry = load_entity_data(self.ent_id, self.controller.model.player_stats, self.controller.model.monsters)
+        assets = entry.setdefault('assets', {})
+        assets['active_set'] = target
+        save_entity_data(self.ent_id, entry, path, self.controller.model.player_stats, self.controller.model.monsters)
+        # Update in-memory mirrors
+        if self.ent_id in self.controller.model.player_stats:
+            self.controller.model.player_assets.setdefault(self.ent_id, {})['active_set'] = target
+        else:
+            self.controller.model.monsters.setdefault(self.ent_id, {}).setdefault('assets', {})['active_set'] = target
+        # Notify controller (refresh grid/ECS)
+        self.controller._on_active_set_toggled(self.ent_id)
+
+    def apply(self) -> None:
+        path, data, entry = load_entity_data(self.ent_id, self.controller.model.player_stats, self.controller.model.monsters)
+        assets = entry.setdefault('assets', {})
+        default_active = 'sets' if self.ent_id in self.controller.model.player_stats else 'no-sets'
+        curr = assets.get('active_set', default_active)
+        self._old_active = curr
+        new_val = 'no-sets' if curr == 'sets' else 'sets'
+        self._set_active(new_val)
+
+    def undo(self) -> None:
+        if self._old_active is not None:
+            self._set_active(self._old_active)

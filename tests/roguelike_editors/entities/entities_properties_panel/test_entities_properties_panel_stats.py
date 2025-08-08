@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 
 from roguelike_editors.entities.entities_properties_panel.entities_properties_panel_controller import EntityPropertiesPanelController
+from roguelike_editors.entities.services.history import HistoryManager
+import roguelike_editors.entities.services.commands as cmd_mod
 
 # Initialize pygame font module for tests
 pygame.font.init()
@@ -22,8 +24,10 @@ def _load_monsters_fixture() -> dict:
 
 @pytest.fixture
 def controller():
-    # Dummy editor controller with minimal render and game.screen
-    editor_controller = SimpleNamespace(game=SimpleNamespace(screen=None), render=lambda screen: None)
+    # Dummy editor controller with minimal render, game.screen and ecs, plus history for commands
+    ecs_world = SimpleNamespace()
+    game = SimpleNamespace(screen=None, ecs=SimpleNamespace(ecs_world=ecs_world))
+    editor_controller = SimpleNamespace(game=game, render=lambda screen: None, history=HistoryManager())
     # Initialize controller with no player_stats and one monster entry
     ctrl = EntityPropertiesPanelController(
         editor_controller,
@@ -49,9 +53,13 @@ def test_monster_stat_edit_updates_stats_nested(controller):
             entry = args[1]
         captured['entry'] = (entry or {}).copy()
 
-    # Capture via controller module-level save function
+    # Capture via controller module-level save function and commands module
     epc_mod.save_entity_data = fake_save
+    cmd_mod.save_entity_data = fake_save
     controller._save_entity_data = fake_save
+    # Stub commands ECS/stat updates
+    cmd_mod.update_player_stats = lambda *args, **kwargs: None
+    cmd_mod.update_monster_stats = lambda *args, **kwargs: None
     # Execute commit_edit
     controller._commit_edit()
 

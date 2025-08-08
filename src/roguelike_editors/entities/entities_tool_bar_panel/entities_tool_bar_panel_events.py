@@ -25,23 +25,37 @@ class EntitiesToolBarPanelEventHandler:
         # Solo clicks izquierdo
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             pos = event.pos
-            # Evaluar solo herramienta de mapa
-            for tool in (ENTITIES_TOOL_ON_MAP,):
-                rect = self.controller.toolbar_view.widget.icon_rects.get(tool)
-                if rect and rect.collidepoint(pos):
-                    # Toggle activación
-                    if self.model.active_tool == tool:
-                        # Desactivar
-                        self.model.active_tool = None
-                        # Ocultar panel Picker
-                        self.controller.picker_controller.model.visible = False
-                    else:
-                        # Activar
-                        self.model.active_tool = tool
-                        # Mostrar editor principal
-                        editor = self.controller
-                        editor.model.visible = True
-                        # Mostrar panel Picker solo en mapa
-                        editor.picker_controller.model.visible = (tool == ENTITIES_TOOL_ON_MAP)
-                    return True
+            icon_rects = self.controller.toolbar_view.widget.icon_rects
+            # Undo
+            rect = icon_rects.get('undo')
+            if rect and rect.collidepoint(pos):
+                # Ejecutar undo si hay disponible
+                if getattr(self.controller.history, 'undo', None):
+                    self.controller.history.undo()
+                return True
+            # Redo
+            rect = icon_rects.get('redo')
+            if rect and rect.collidepoint(pos):
+                if getattr(self.controller.history, 'redo', None):
+                    self.controller.history.redo()
+                return True
+            # Evaluar herramienta de mapa
+            rect = icon_rects.get(ENTITIES_TOOL_ON_MAP)
+            if rect and rect.collidepoint(pos):
+                tool = ENTITIES_TOOL_ON_MAP
+                # Toggle activación
+                if self.model.active_tool == tool:
+                    # Desactivar
+                    self.model.active_tool = None
+                    # Ocultar panel Picker
+                    self.controller.picker_controller.model.visible = False
+                else:
+                    # Activar
+                    self.model.active_tool = tool
+                    # Mostrar editor principal
+                    editor = self.controller
+                    editor.model.visible = True
+                    # Mostrar panel Picker solo en mapa
+                    editor.picker_controller.model.visible = True
+                return True
         return False
