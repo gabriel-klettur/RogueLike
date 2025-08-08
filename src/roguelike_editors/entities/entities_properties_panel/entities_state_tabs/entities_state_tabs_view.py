@@ -18,7 +18,7 @@ class EntitiesStateTabsView:
         model.state_tab_rects.clear()
 
         for label in model.state_tabs:
-            text_label = label.capitalize()
+            text_label = label.title()
             text_w, text_h = self.font.size(text_label)
             w = text_w + padding_x * 2
             h = text_h + padding_y * 2

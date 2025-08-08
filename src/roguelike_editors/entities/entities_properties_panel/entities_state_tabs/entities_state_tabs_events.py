@@ -1,4 +1,7 @@
 import pygame
+from roguelike_editors.entities.entities_properties_panel.services.state_tabs_helpers import (
+    hit_test_state_tab,
+)
 
 class EntitiesStateTabsEventHandler:
     """Manejador de eventos para las pestañas de estado de la entidad."""
@@ -13,11 +16,10 @@ class EntitiesStateTabsEventHandler:
             # Solo si clic dentro del panel
             if not self.parent.panel_rect or not self.parent.panel_rect.collidepoint(event.pos):
                 return False
-            mx, my = event.pos
-            for label, rect in self.model.state_tab_rects.items():
-                if rect.collidepoint(mx, my):
-                    # Actualizar pestaña activa
-                    self.model.active_state_tab = label
-                    
-                    return True
+            # Detectar pestaña bajo el cursor
+            hit_label = hit_test_state_tab(self.model.state_tab_rects, event.pos)
+            if hit_label is not None:
+                # Actualizar pestaña activa
+                self.model.active_state_tab = hit_label
+                return True
         return False
