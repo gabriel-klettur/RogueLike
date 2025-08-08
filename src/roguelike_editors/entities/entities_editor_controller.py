@@ -8,6 +8,11 @@ from roguelike_editors.entities.services.camera_helpers import screen_to_tile
 from roguelike_editors.entities.services.entity_lookup import find_clickable_entity_at
 from roguelike_editors.entities.services.spawn_services import spawn_entity
 from roguelike_editors.entities.services.constants import ENTITIES_TOOLS, UI_MARGIN
+from roguelike_editors.entities.services.history import HistoryManager
+from roguelike_editors.entities.services.commands import (
+    SpawnEntityCommand,
+    DeleteEntityCommand,
+)
 
 from roguelike_editors.entities.entities_editor_model import EntitiesEditorModel
 from roguelike_editors.entities.entities_title.entities_title_controller import EntitiesTitleController
@@ -28,6 +33,8 @@ class EntitiesEditorController:
     def __init__(self, model: EntitiesEditorModel, font: pygame.font.Font):
         self.model = model
         self.font = font
+        # History manager for undo/redo
+        self.history = HistoryManager()
         # Título
         self.title_controller = EntitiesTitleController(self, self.model.title_model, self.font)
         # Toolbar
@@ -126,6 +133,17 @@ class EntitiesEditorController:
         Delega el evento a los subcontrollers en orden de prioridad.
         Retorna True si fue consumido.
         """
+        # Global shortcuts: Undo/Redo
+        if event.type == pygame.KEYDOWN:
+            mods = pygame.key.get_mods()
+            if mods & pygame.KMOD_CTRL and event.key == pygame.K_z:
+                if self.history.undo():
+                    logger.debug(" Undo executed")
+                return True
+            if mods & pygame.KMOD_CTRL and (event.key == pygame.K_y or (mods & pygame.KMOD_SHIFT and event.key == pygame.K_z)):
+                if self.history.redo():
+                    logger.debug(" Redo executed")
+                return True
         if self.title_controller.handle_event(event):
             return True
         if self.toolbar_controller.handle_event(event):
@@ -173,10 +191,9 @@ class EntitiesEditorController:
                 mx, my = event.pos
                 eid = find_clickable_entity_at(self.game, mx, my)
                 if eid is not None:
-                    ecs = self.game.ecs.ecs_world
-                    ecs.remove_entity(eid)
-                    ecs.invalidate_spatial_index()
-                    logger.debug(f" Entity {eid} deleted via bbox click at ({mx},{my})")
+                    # Push undoable delete command
+                    self.history.push(DeleteEntityCommand(self, eid))
+                    logger.debug(f" Entity {eid} delete command queued via click at ({mx},{my})")
                     self.exit_delete_mode()
                     return True
             # Completando spawn: click en mapa finaliza spawn_mode
@@ -185,8 +202,8 @@ class EntitiesEditorController:
                 sx, sy = event.pos
                 tx, ty = screen_to_tile(self.game.camera, sx, sy, TILE_SIZE)
                 # Crear entidad en ECS mediante servicio
-                spawn_entity(self.game, etype, tx, ty, self.model.player_stats)
-                logger.debug(f" Entity '{etype}' spawned at tile ({tx},{ty})")
+                self.history.push(SpawnEntityCommand(self, etype, tx, ty))
+                logger.debug(f" Spawn command for '{etype}' at tile ({tx},{ty}) queued")
                 self.exit_spawn_mode()
                 return True
         return False

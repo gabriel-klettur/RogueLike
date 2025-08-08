@@ -3,6 +3,7 @@ from typing import Optional
 
 from roguelike_ui.widgets.double_click_detector import DoubleClickDetector
 import logging
+from roguelike_editors.entities.services.commands import ToggleActiveSetCommand
 logger = logging.getLogger(__name__)
 
 class AssetsGridPanelEventHandler:
@@ -34,26 +35,11 @@ class AssetsGridPanelEventHandler:
             # Detección de click en combobox "Activo"
             rect = getattr(self.model, 'active_set_rect', None)
             if rect and rect.collidepoint(event.pos):
-                # Toggle entre 'sets' y 'no-sets' (Players y Monstruos)
+                # Toggle entre 'sets' y 'no-sets' usando comando undoable
                 prop_ctrl = self.controller.parent_controller
                 ent_id = prop_ctrl.model.selected_id
                 if ent_id:
-                    # Cargar y actualizar JSON
-                    path, data, entry = prop_ctrl._load_entity_data(ent_id)
-                    assets = entry.setdefault('assets', {})
-                    # Por convención: players -> default 'sets'; monsters -> default 'no-sets'
-                    default_active = 'sets' if ent_id in prop_ctrl.model.player_stats else 'no-sets'
-                    curr = assets.get('active_set', default_active)
-                    new = 'no-sets' if curr == 'sets' else 'sets'
-                    assets['active_set'] = new
-                    prop_ctrl._save_entity_data(ent_id, entry, path, data)
-                    # Actualizar modelo en memoria
-                    if ent_id in prop_ctrl.model.player_stats:
-                        prop_ctrl.model.player_assets.setdefault(ent_id, {})['active_set'] = new
-                    else:
-                        prop_ctrl.model.monsters.setdefault(ent_id, {}).setdefault('assets', {})['active_set'] = new
-                    # Notificar al controlador para refrescar grid/ECS
-                    prop_ctrl._on_active_set_toggled(ent_id)
+                    prop_ctrl.editor_controller.history.push(ToggleActiveSetCommand(prop_ctrl, ent_id))
                 return True
             # Primero, verificar double-click para abrir picker
             if self._process_cell_double_click(event):

@@ -33,6 +33,10 @@ from roguelike_editors.entities.entities_properties_panel.services.entity_proper
     save_entity_data,
     convert_value,
 )
+from roguelike_editors.entities.services.commands import (
+    EditPropertyCommand,
+    SetAssetCommand,
+)
 
 import logging
 logger = logging.getLogger(__name__)
@@ -122,96 +126,13 @@ class EntityPropertiesPanelController:
     def _on_asset_chosen(self, cell_key: str, path):
         logger.debug(f" _on_asset_chosen called with cell_key={cell_key}, path={path}")
         """
-        Callback when asset is chosen: update entity property and persist to JSON.
+        Callback when asset is chosen: push undoable SetAssetCommand.
         """
         ent_id = self.model.selected_id
         if not ent_id:
             return
-        # update JSON and model
-        json_path, data, entry = load_entity_data(ent_id, self.model.player_stats, self.model.monsters)
-        # determine state and direction from cell_key
-        # compute relative asset path
-        abs_path = Path(path).resolve()
-        assets_root = Path(ASSETS_DIR).resolve()
-        try:
-            rel = abs_path.relative_to(assets_root)
-            rel_path = f"assets/{rel.as_posix()}"
-        except ValueError:
-            rel_path = str(path).replace("\\", "/")
-        logger.debug(f" Computed rel_path={rel_path} for cell_key={cell_key}")
-
-        parts = cell_key.split("_")
-        # only asset grid updates supported
-        if len(parts) == 3 and parts[0] == 'asset':
-            _, state, direction = parts
-            sub_tab = self.assets_subtabs_controller.model.active_sub_tab
-            if ent_id in self.model.player_stats:
-                assets_entry = entry.setdefault("assets", {})
-                no_sets = assets_entry.setdefault("no-sets", {})
-                sets = assets_entry.setdefault("sets", {})
-                sprites_set = sets.setdefault("sprites_set", {})
-                if sub_tab == SUBTAB_SET:
-                    # update sprite sheet for this state for player
-                    sprites_set[state] = [rel_path]
-                else:
-                    # update individual direction in no-sets for player
-                    state_no_set = no_sets.setdefault(state, {})
-                    state_no_set[direction] = rel_path
-                # remove old erroneous sprites node for player
-                entry.pop("sprites", None)
-            elif ent_id in self.model.monsters:
-                assets_entry = entry.setdefault("assets", {})
-                no_sets = assets_entry.setdefault("no-sets", {})
-                sets = assets_entry.setdefault("sets", {})
-                sprites_set = sets.setdefault("sprites_set", {})
-                if sub_tab == SUBTAB_SET:
-                    # update sprite sheet for this state for monster
-                    sprites_set[state] = [rel_path]
-                else:
-                    # update individual direction in no-sets for monster
-                    state_no_set = no_sets.setdefault(state, {})
-                    state_no_set[direction] = rel_path
-                # remove old erroneous sprites node for monster
-                entry.pop("sprites", None)
-            # persist changes
-            save_entity_data(ent_id, entry, json_path, self.model.player_stats, self.model.monsters)
-        else:
-            logging.error(f"[ERROR][PropertiesPanel] Invalid asset key for update: {cell_key}")
-            return
-        logger.debug(f" JSON saved for ent_id={ent_id}, cell_key={cell_key}")
-        logger.debug(f" Saving entry and updating in-memory model for ent_id={ent_id}")
-        # Update in-memory player_assets and reload config
-        if ent_id in self.model.player_stats:
-            self.model.player_assets[ent_id] = entry.get("assets", {})
-            try:
-                importlib.reload(pc)
-            except Exception:
-                pass
-            # Update existing ECS player entities via service
-            try:
-                ecs_world = self.editor_controller.game.ecs.ecs_world
-                update_player_assets(ecs_world, ent_id)
-            except Exception as e:
-                logging.error(f"[ERROR][PropertiesPanel] Error updating player ECS entities for class {ent_id}: {e}")
-        logger.debug(f" Hiding assets picker panel")
-        # Hide picker panel on success
-        self.assets_picker_controller.hide()
-        # Reset grid animators to force reload
-        logger.debug(f" Resetting grid controller cache (last_entity_id and last_state_tab)")
-        self.grid_controller.model.last_entity_id = None
-        self.grid_controller.model.last_state_tab = None
-        # Force immediate redraw of properties panel to reflect new asset
-        try:
-            self.editor_controller.render(self.editor_controller.game.screen)
-        except Exception:
-            pass
-        # Refresh monster asset caches and update ECS entities immediately (only for monsters)
-        if ent_id not in self.model.player_stats:
-            try:
-                ecs_world = self.editor_controller.game.ecs.ecs_world
-                update_monster_assets(ecs_world, ent_id)
-            except Exception as e:
-                logging.error(f"[ERROR][PropertiesPanel] Error updating monster assets for ent_id={ent_id}: {e}")
+        # Push command into editor history
+        self.editor_controller.history.push(SetAssetCommand(self, ent_id, cell_key, path))
     # ----------------------------
     # COMMIT DE CAMBIOS
     # ----------------------------
@@ -259,56 +180,8 @@ class EntityPropertiesPanelController:
         ent_id = self.model.selected_id
         key = self.model.editing_property
         new_text = self.model.editing_text
-
-        # Cargar datos desde JSON correspondiente (jugador o monstruo)
-        path, data, entry = load_entity_data(ent_id, self.model.player_stats, self.model.monsters)
-
-        # Conversión del valor editado al tipo original y actualización adecuada
-        if ent_id in self.model.player_stats:
-            # Propiedad genérica para jugadores
-            old_val = entry.get(key)
-            converted = convert_value(new_text, old_val)
-            entry[key] = converted
-        elif ent_id in self.model.monsters:
-            # Estadística anidada para monstruos
-            stats = entry.setdefault('stats', {})
-            old_val = stats.get(key)
-            converted = convert_value(new_text, old_val)
-            stats[key] = converted
-        else:
-            # Fallback genérico
-            old_val = entry.get(key)
-            converted = convert_value(new_text, old_val)
-            entry[key] = converted
-        # Persistir cambios en JSON
-        save_entity_data(ent_id, entry, path, self.model.player_stats, self.model.monsters)
-        # Reload monster definitions and clear sprite caches for updated stats
-        if ent_id in self.model.monsters:
-            reload_monster_defs()
-            monster_cache._loaded_variants.discard(ent_id)
-            monster_cache._SPRITE_SURFACES.pop(ent_id, None)
-            monster_cache._DEATH_SURFACES.pop(ent_id, None)
-
-        # Reset de estado de edición
-        self._reset_edit_state()
-
-        # Propagate stat changes to in-memory model and ECS world
-        if ent_id in self.model.player_stats:
-            # Update in-memory model
-            self.model.player_stats[ent_id][key] = converted
-            try:
-                ecs_world = self.editor_controller.game.ecs.ecs_world
-                update_player_stats(ecs_world, ent_id, key, converted)
-            except Exception as e:
-                logging.error(f'[ERROR][PropertiesPanel] Error updating player ECS stats for class {ent_id}: {e}')
-        elif ent_id in self.model.monsters:
-            # Update in-memory model
-            self.model.monsters.setdefault(ent_id, {}).setdefault('stats', {})[key] = converted
-            try:
-                ecs_world = self.editor_controller.game.ecs.ecs_world
-                update_monster_stats(ecs_world, ent_id, key, converted)
-            except Exception as e:
-                logging.error(f'[ERROR][PropertiesPanel] Error updating monster ECS stats for type {ent_id}: {e}')
+        # Push undoable property edit command
+        self.editor_controller.history.push(EditPropertyCommand(self, ent_id, key, new_text))
 
     # ----------------------------
     # UTILIDADES PRIVADAS
