@@ -18,7 +18,9 @@ class ListEventHandler:
 
     def handle(self, event):
         """
-        Maneja clicks en la lista, incluyendo selección y doble-click en Pos.
+        Maneja clicks en la lista. Para 'monsters', un solo click sobre 'Pos:' inicia un
+        "press-and-hold": se oculta el Inventory Editor, centra la cámara en el monstruo
+        mientras se mantenga presionado, y al soltar se restaura el estado.
         """
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mx, my = event.pos
@@ -30,10 +32,9 @@ class ListEventHandler:
                     items = self.controller.get_items_list()
                     if idx < 0 or idx >= len(items):
                         return False
-                    # Debug prints
-                    now = pygame.time.get_ticks()
-                    # Detección manual de doble-click en Pos
-                    if idx == self.last_pos_click_idx and (now - self.last_pos_click_time) <= self.double_click_ms and items[idx].lstrip().startswith('Pos:'):
+                    # Un solo click sobre 'Pos:' inicia press-and-hold
+                    line_text = items[idx].lstrip()
+                    if line_text.startswith('Pos:'):
                         coord_text = items[idx].strip().split('Pos:')[1].strip()
                         coords = coord_text.strip('()').split(',')
                         try:
@@ -41,23 +42,20 @@ class ListEventHandler:
                         except (ValueError, IndexError):
                             x = y = None
                         if x is not None:
+                            # Centrar cámara en el monstruo seleccionado
                             target = SimpleNamespace(x=x, y=y)
                             self.editor_controller.game.camera.update(target)
-                            self.editor_controller.model.camera_focus_target = target
-                        # Reset click tracking
-                        self.last_pos_click_time = 0
-                        self.last_pos_click_idx = -1
-                        # Seleccionar entidad del grupo
-                        temp_idx = idx
-                        while temp_idx > 0 and items[temp_idx].startswith(' '):
-                            temp_idx -= 1
-                        eid_raw = items[temp_idx].strip().split(' ')[0]
-                        self.controller.select_entity(eid_raw)
-                        self.editor_controller.model.editing_side = 'active'
-                        return True
-                    # Actualizar tracking de click
-                    self.last_pos_click_time = now
-                    self.last_pos_click_idx = idx
+                            # Ocultar overlay mientras se mantiene presionado
+                            self.editor_controller.model.overlay_hidden_while_hold = True
+                            self.editor_controller.model.holding_pos_focus = True
+                            # Seleccionar entidad del grupo
+                            temp_idx = idx
+                            while temp_idx > 0 and items[temp_idx].startswith(' '):
+                                temp_idx -= 1
+                            eid_raw = items[temp_idx].strip().split(' ')[0]
+                            self.controller.select_entity(eid_raw)
+                            self.editor_controller.model.editing_side = 'active'
+                            return True
                     # Selección simple
                     if 0 <= idx < len(items):
                         start_idx = idx
@@ -69,5 +67,18 @@ class ListEventHandler:
                         self.editor_controller.model.editing_side = 'active'
                         return True
                 # Bloquear clic dentro del panel de listado
+                return True
+        # Al soltar el click izquierdo, restaurar overlay y cámara si veníamos de press-and-hold
+        if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            if self.editor_controller.model.holding_pos_focus:
+                # Mostrar nuevamente el overlay
+                self.editor_controller.model.overlay_hidden_while_hold = False
+                self.editor_controller.model.holding_pos_focus = False
+                # Volver a centrar la cámara en el jugador (normalidad)
+                player_eid = getattr(self.editor_controller.world, 'player_entity', None)
+                pos_map = self.editor_controller.world.components.get('Position', {})
+                if player_eid in pos_map:
+                    pos = pos_map[player_eid]
+                    self.editor_controller.game.camera.update(SimpleNamespace(x=pos.x, y=pos.y))
                 return True
         return False

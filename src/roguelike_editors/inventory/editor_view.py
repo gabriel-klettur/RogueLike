@@ -63,6 +63,9 @@ class InventoryEditorView:
     def draw(self, screen, model: InventoryEditorModel, world):
         if not model.visible:
             return
+        # Allow hiding the overlay while keeping event handling active (press-and-hold on Pos)
+        if getattr(model, 'overlay_hidden_while_hold', False):
+            return
         ow, oh = screen.get_size()
         overlay = self._draw_overlay(ow, oh, model)
         screen.blit(overlay, (0,0))
