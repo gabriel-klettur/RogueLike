@@ -233,12 +233,6 @@ class TileEditorEventHandler:
         # Release delete drag
         if ev.button == 1 and self.editor_state.current_tool == "delete":
             self.editor_state.delete_dragging = False
-        # Flush batched changes once per drag end for painting tools
-        if ev.button == 1 and self.editor_state.current_tool in ("brush", "default", "delete"):
-            try:
-                self.controller.flush_brush(map, camera)
-            except Exception:
-                pass
         # Stop camera panning
         if ev.button == 2 and self.panning:
             self.panning = False

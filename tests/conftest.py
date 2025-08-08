@@ -1,6 +1,12 @@
 import os
+import sys
 import pygame
 import pytest
+
+# Ensure absolute imports from src/ work without editable install
+SRC_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, "src"))
+if SRC_PATH not in sys.path:
+    sys.path.insert(0, SRC_PATH)
 
 @pytest.fixture(scope="session", autouse=True)
 def pygame_headless():
