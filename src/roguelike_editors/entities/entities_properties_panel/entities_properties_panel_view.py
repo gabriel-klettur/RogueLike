@@ -3,6 +3,16 @@ from roguelike_ui.ui_blocker import register_blocker
 from roguelike_editors.entities.entities_properties_panel.entities_properties_panel_model import EntityPropertiesPanelModel
 from roguelike_ui.panel import DraggablePanel
 from roguelike_ui.widgets.hover import draw_hover
+from roguelike_editors.entities.entities_properties_panel.services.assets_constants import (
+    TYPE_TAB_PROPERTIES,
+    TYPE_TAB_ASSETS,
+    SUBTAB_SET,
+    SUBTAB_NO_SET,
+    STATE_ADD,
+)
+from roguelike_editors.entities.entities_properties_panel.services.entity_flatten import (
+    flatten_entity_data,
+)
 
 
 
@@ -21,6 +31,13 @@ class EntityPropertiesPanelView:
         self.blink_interval = blink_interval
         self.draggable_panel = DraggablePanel(0, 0)
         self.thumbnail_cache: dict[str, pygame.Surface|None] = {}
+        # UI constants (avoid magic numbers in rendering code)
+        self.PAD = 10
+        self.MARGIN = 20
+        self.SCROLLBAR_WIDTH = 8
+        self.MAX_PANEL_W = 500
+        self.TAB_PADDING_Y = 5
+        self.SUBPAD_X = 8
 
     # ----------------------------
     # RENDER PRINCIPAL
@@ -36,12 +53,12 @@ class EntityPropertiesPanelView:
         sw, sh = screen.get_size()
         entity_data = self._get_entity_data(model)
         # Filtrar datos según pestaña activa y sub-asset seleccionado
-        if self.type_assets_controller.model.active_type_tab == 'properties':
+        if self.type_assets_controller.model.active_type_tab == TYPE_TAB_PROPERTIES:
             filtered = {k: v for k, v in entity_data.items() if not k.startswith('asset')}
-        elif self.type_assets_controller.model.active_type_tab == 'assets':
+        elif self.type_assets_controller.model.active_type_tab == TYPE_TAB_ASSETS:
             # Filtrar por categoría de asset seleccionada
             active_state = self.state_tabs_controller.model.active_state_tab
-            if active_state == 'add state':
+            if active_state == STATE_ADD:
                 filtered = {}
             else:
                 prefix = f"asset_{active_state}_"
@@ -52,26 +69,26 @@ class EntityPropertiesPanelView:
         font_h = self.font.get_height()
 
         # Calcular tamaño del panel (incluye pestañas y subtabs)
-        pad, margin = 10, 20
+        pad, margin = self.PAD, self.MARGIN
         max_w = max(self.font.size(line)[0] for line in lines)
-        panel_w = min(max_w + pad * 2, sw - margin * 2, 500)
+        panel_w = min(max_w + pad * 2, sw - margin * 2, self.MAX_PANEL_W)
         # Asegurar ancho mínimo para subtabs de assets vacíos
-        if self.type_assets_controller.model.active_type_tab == 'assets':
-            subpad_x = 8
+        if self.type_assets_controller.model.active_type_tab == TYPE_TAB_ASSETS:
+            subpad_x = self.SUBPAD_X
             state_tabs = self.state_tabs_controller.model.state_tabs
             subtabs_total = sum(self.font.size(label.capitalize())[0] + subpad_x * 2 for label in state_tabs)
             panel_w = max(panel_w, subtabs_total)
         # Altura del header de pestañas
-        tab_padding_y = 5
+        tab_padding_y = self.TAB_PADDING_Y
         primary_header = font_h + tab_padding_y * 2
         # Altura del header de subtabs de assets
-        state_header = primary_header if self.type_assets_controller.model.active_type_tab == 'assets' else 0
+        state_header = primary_header if self.type_assets_controller.model.active_type_tab == TYPE_TAB_ASSETS else 0
         sub_header = state_header
         # Altura del contenido con padding al fondo
-        bottom_padding = 100
+        bottom_padding = 0
         # Altura máxima del contenido para no sobrepasar la pantalla
         max_content_h = sh - margin - bottom_padding - primary_header - state_header - sub_header
-        if self.type_assets_controller.model.active_type_tab == 'assets':
+        if self.type_assets_controller.model.active_type_tab == TYPE_TAB_ASSETS:
             # Ajustar panel para nombre, tint y cuadrícula 3x3
             grid_w = panel_w - pad * 2
             cell_size = int(grid_w / 3)
@@ -103,19 +120,19 @@ class EntityPropertiesPanelView:
 
         # Dibujar pestañas principales (properties/assets)
         self.type_assets_controller.draw(screen)
-        if self.type_assets_controller.model.active_type_tab == 'assets':
+        if self.type_assets_controller.model.active_type_tab == TYPE_TAB_ASSETS:
             self.state_tabs_controller.draw(screen)
             self.set_ot_assets_tab_controller.draw(screen)
 
         # 2. Dibujar contenido según pestaña
-        if self.type_assets_controller.model.active_type_tab == 'properties':
+        if self.type_assets_controller.model.active_type_tab == TYPE_TAB_PROPERTIES:
             # Compute scroll metrics
             model.total_lines_height = len(lines) * (font_h + 2)
             model.available_height = content_h - pad * 2
             model.max_scroll = max(0, model.total_lines_height - model.available_height)
             model.scroll_offset = min(max(model.scroll_offset, 0), model.max_scroll)
             # Draw scrollbar
-            scrollbar_width = 8
+            scrollbar_width = self.SCROLLBAR_WIDTH
             bar_x = px + panel_w - scrollbar_width - pad // 2
             bar_y = py + primary_header + state_header + pad
             bar_h = model.available_height
@@ -130,7 +147,7 @@ class EntityPropertiesPanelView:
             # Draw properties with scroll
             self._draw_properties(screen, model, lines, px, py + primary_header + state_header, pad, font_h, panel_w)
             self._draw_editing_indicator(screen, model, font_h)
-        elif self.type_assets_controller.model.active_type_tab == 'assets':
+        elif self.type_assets_controller.model.active_type_tab == TYPE_TAB_ASSETS:
             # Delegar grid a grid_controller
             # Clip contenido de grid para no salir del panel
             screen.set_clip(pygame.Rect(px + pad, py + primary_header + state_header + sub_header + pad, panel_w - pad*2, content_h - pad*2))
@@ -142,90 +159,13 @@ class EntityPropertiesPanelView:
     # MÉTODOS PRIVADOS
     # ----------------------------
     def _get_entity_data(self, model: EntityPropertiesPanelModel) -> dict:
-        """Obtiene los datos de la entidad seleccionada o hovered, incluyendo PLAYER_ASSETS."""
+        """Obtiene los datos aplanados de la entidad seleccionada o hovered.
 
+        Delegado a services.entity_flatten.flatten_entity_data para mantener la vista
+        desacoplada de la estructura JSON interna.
+        """
         ent_id = model.hovered_entity_id or model.selected_id
-        if not ent_id:
-            return {}
-        if ent_id in model.player_stats:
-            stats = model.player_stats.get(ent_id, {})
-            # Flatten sprites_set and no-sets assets for player
-            player_assets = model.player_assets.get(ent_id, {})
-            sets = player_assets.get('sets', {}).get('sprites_set', {})
-            no_sets = player_assets.get('no-sets', {})
-            merged = dict(stats)
-            merged['id'] = ent_id
-            # Valor de active_set para combobox
-            merged['active_set'] = player_assets.get('active_set', 'sets')
-            # Map 'walking' to 'chase' UI state
-            state_map = {'walking': 'chase'}
-            # Map grid directions to sprite sheet directions
-            dir_map = {
-                'nw': 'up_left', 'n': 'up', 'ne': 'up_right',
-                'w': 'left', 'e': 'right', 'sw': 'down_left',
-                's': 'down', 'se': 'down_right'
-            }
-                        # Flatten no-sets first (initial asset_by_asset values)
-            for state, dirs in no_sets.items():
-                ui_state = state_map.get(state, state)
-                for dir_key, path in dirs.items():
-                    merged[f'asset_{ui_state}_{dir_key}'] = path
-            # Flatten sets (override no-sets for asset set)
-            for state, paths in sets.items():
-                if paths:
-                    ui_state = state_map.get(state, state)
-                    sheet_path = paths[0]
-                    for dir_key, sprite_dir in dir_map.items():
-                        merged[f'asset_{ui_state}_{dir_key}'] = sheet_path
-            return merged
-        elif ent_id in model.monsters:
-            monster = model.monsters.get(ent_id, {})
-            stats = monster.get('stats', {})
-            assets_def = monster.get('assets', {})
-            merged_mon = dict(stats)
-            merged_mon['id'] = ent_id
-            # Active_set for combobox
-            active_set = assets_def.get('active_set', 'no-sets')
-            merged_mon['active_set'] = active_set
-
-            # Flatten 'no-sets' assets first (individual direction assets)
-            no_sets = assets_def.get('no-sets', {})
-            for state, dirs in no_sets.items():
-                if state == 'sprites_data_no-set':
-                    continue
-                for dir_key, path in dirs.items():
-                    merged_mon[f"asset_{state}_{dir_key}"] = path
-
-            # Flatten 'sets' assets (override no-sets for asset set)
-            sets_group = assets_def.get('sets', {}).get('sprites_set', {})
-            dir_map = {
-                'nw': 'up_left', 'n': 'up', 'ne': 'up_right',
-                'w': 'left', 'e': 'right', 'sw': 'down_left',
-                's': 'down', 'se': 'down_right'
-            }
-            for state, paths in sets_group.items():
-                if paths:
-                    sheet_path = paths[0]
-                    for dir_key in dir_map:
-                        merged_mon[f"asset_{state}_{dir_key}"] = sheet_path
-
-            # Extract and flatten metadata (scales, tint) with origin prefixes
-            data_no = assets_def.get('no-sets', {}).get('sprites_data_no-set', {})
-            data_set = assets_def.get('sets', {}).get('sprites_data_set', {})
-            # Prefix keys for clarity
-            for key, value in data_no.items():
-                merged_mon[f'no-set_{key}'] = value
-            for key, value in data_set.items():
-                merged_mon[f'set_{key}'] = value
-
-            # Determine tint for rendering based on active_set (used in assets grid tinting)
-            tint_value = (data_no.get('tint') if active_set == 'no-sets'
-                          else data_set.get('tint'))
-            merged_mon['tint'] = tint_value
-
-            return merged_mon
-        return {}
-
+        return flatten_entity_data(model.player_stats, model.player_assets, model.monsters, ent_id)
 
     def _draw_background(self, screen: pygame.Surface, x: int, y: int, w: int, h: int) -> None:
         """Dibuja el fondo semitransparente del panel."""

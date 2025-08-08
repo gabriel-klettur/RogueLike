@@ -18,35 +18,5 @@
       "x": 145,
       "y": 1303
     }
-  },
-  "6a408301-4145-4952-b240-6e5ae3222583": {
-    "item_id": "iron_sword",
-    "quantity": 1,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 588.2693599376364,
-      "y": 1735.1582492475595
-    }
-  },
-  "74c5d211-ec98-4804-b429-dfbc47f7f960": {
-    "item_id": "gold",
-    "quantity": 18,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 588.2693599376364,
-      "y": 1735.1582492475595
-    }
-  },
-  "d1197a0a-4fe7-457d-ac48-d82fa875a204": {
-    "item_id": "iron_sword",
-    "quantity": 1,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 496.619107141897,
-      "y": 1759.8616888300016
-    }
   }
 }

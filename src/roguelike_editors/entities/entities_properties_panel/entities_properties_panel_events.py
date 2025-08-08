@@ -2,6 +2,10 @@ import pygame
 from roguelike_ui.widgets.text_input import TextInput
 from roguelike_ui.widgets.double_click_detector import DoubleClickDetector
 from roguelike_editors.entities.entities_properties_panel.entities_properties_panel_model import EntityPropertiesPanelModel
+from roguelike_editors.entities.entities_properties_panel.services.assets_constants import (
+    TYPE_TAB_ASSETS,
+    TYPE_TAB_PROPERTIES,
+)
 
 
 class EntitiesPropertiesPanelEventHandler:
@@ -56,15 +60,15 @@ class EntitiesPropertiesPanelEventHandler:
 
 
         # 7. Eventos de pestañas de estado (state tabs)
-        if self.controller.type_assets_controller.model.active_type_tab == 'assets':
+        if self.controller.type_assets_controller.model.active_type_tab == TYPE_TAB_ASSETS:
             if self.controller.state_tabs_controller.handle_event(event):
                 return True
         # 8. Eventos de subtabs de assets (asset set / no-set)
-        if self.controller.type_assets_controller.model.active_type_tab == 'assets':
+        if self.controller.type_assets_controller.model.active_type_tab == TYPE_TAB_ASSETS:
             if self.controller.set_ot_assets_tab_controller.handle_event(event):
                 return True
         # 9. Eventos de grid (subtabs y celdas)
-        if self.controller.type_assets_controller.model.active_type_tab == 'assets':
+        if self.controller.type_assets_controller.model.active_type_tab == TYPE_TAB_ASSETS:
             if self.controller.grid_controller.handle_event(event):
                 return True
 
@@ -73,7 +77,7 @@ class EntitiesPropertiesPanelEventHandler:
             return True
 
         # Scroll wheel support for properties panel
-        if self.controller.type_assets_controller.model.active_type_tab == 'properties':
+        if self.controller.type_assets_controller.model.active_type_tab == TYPE_TAB_PROPERTIES:
             # Mouse wheel scroll up/down
             if event.type == pygame.MOUSEBUTTONDOWN and self.model.panel_rect and self.model.panel_rect.collidepoint(event.pos):
                 if event.button == 4:

@@ -2,16 +2,22 @@ from dataclasses import dataclass, field
 from typing import Dict, Any, Optional, List, Tuple
 import pygame
 
+# Type aliases for clarity
+RectEntry = Tuple[pygame.Rect, str]
+
 @dataclass
 class EntityPropertiesPanelModel:
     """Estado del panel de propiedades para la entidad seleccionada."""
     player_stats: Dict[str, Any]
     player_assets: Dict[str, Any]
     monsters: Dict[str, Any]
+    # Data selection
     selected_id: Optional[str] = None
     hovered_entity_id: Optional[str] = None
+    
+    # UI geometry and interactive entries
     panel_rect: Optional[pygame.Rect] = None
-    property_entries: List[Tuple[pygame.Rect, str]] = field(default_factory=list)
+    property_entries: List[RectEntry] = field(default_factory=list)
     focused_property: Optional[str] = None
     editing_property: Optional[str] = None
     editing_text: str = ""
@@ -31,7 +37,7 @@ class EntityPropertiesPanelModel:
     
     
     # Celdas de grid de assets (rect y key)
-    asset_cell_entries: List[Tuple[pygame.Rect, str]] = field(default_factory=list)
+    asset_cell_entries: List[RectEntry] = field(default_factory=list)
     # Asset key hovered y seleccionado en grid
     hovered_asset_cell: Optional[str] = None
     selected_asset_cell: Optional[str] = None

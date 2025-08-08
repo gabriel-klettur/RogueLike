@@ -15,9 +15,19 @@ from roguelike_editors.entities.entities_properties_panel.entities_set_ot_assets
 from roguelike_editors.entities.entities_assets_picker_panel.entities_assets_picker_panel_controller import EntitiesAssetsPickerPanelController
 import importlib
 import roguelike_game.config.players_config as pc
-from roguelike_game.factories.player.loader import load_and_scale_sprites, extract_initial_frame, build_animator_map
 from roguelike_game.factories.monster.config import reload_monster_defs
 from roguelike_game.factories.monster import cache as monster_cache
+from roguelike_editors.entities.entities_properties_panel.services.ecs_update_service import (
+    update_player_assets,
+    update_monster_assets,
+    update_player_stats,
+    update_monster_stats,
+)
+from roguelike_editors.entities.entities_properties_panel.services.entity_properties_service import (
+    load_entity_data,
+    save_entity_data,
+    convert_value,
+)
 
 import logging
 logger = logging.getLogger(__name__)
@@ -113,7 +123,7 @@ class EntityPropertiesPanelController:
         if not ent_id:
             return
         # update JSON and model
-        json_path, data, entry = self._load_entity_data(ent_id)
+        json_path, data, entry = load_entity_data(ent_id, self.model.player_stats, self.model.monsters)
         # determine state and direction from cell_key
         # compute relative asset path
         abs_path = Path(path).resolve()
@@ -159,7 +169,7 @@ class EntityPropertiesPanelController:
                 # remove old erroneous sprites node for monster
                 entry.pop("sprites", None)
             # persist changes
-            self._save_entity_data(ent_id, entry, json_path, data)
+            save_entity_data(ent_id, entry, json_path, self.model.player_stats, self.model.monsters)
         else:
             logging.error(f"[ERROR][PropertiesPanel] Invalid asset key for update: {cell_key}")
             return
@@ -168,27 +178,14 @@ class EntityPropertiesPanelController:
         # Update in-memory player_assets and reload config
         if ent_id in self.model.player_stats:
             self.model.player_assets[ent_id] = entry.get("assets", {})
-            try:                
+            try:
                 importlib.reload(pc)
             except Exception:
                 pass
-            # Update existing ECS player entities
-            try:                
+            # Update existing ECS player entities via service
+            try:
                 ecs_world = self.editor_controller.game.ecs.ecs_world
-                player_tags = ecs_world.components.get('PlayerTagComponent', {})
-                sprites_comp = ecs_world.components.get('Sprite', {})
-                animators = ecs_world.components.get('Animator', {})
-                sprites_dict = load_and_scale_sprites(ent_id)
-                initial_frame = extract_initial_frame(sprites_dict)
-                anim_map = build_animator_map(sprites_dict)
-                for eid, tag in player_tags.items():
-                    if tag.class_name == ent_id:
-                        if initial_frame and eid in sprites_comp:
-                            img = initial_frame.copy() if hasattr(initial_frame, 'copy') else initial_frame
-                            sprites_comp[eid].image = img
-                        if eid in animators:
-                            animators[eid].animations = anim_map
-                logger.debug(f" Player ECS entities updated for class {ent_id}")
+                update_player_assets(ecs_world, ent_id)
             except Exception as e:
                 logging.error(f"[ERROR][PropertiesPanel] Error updating player ECS entities for class {ent_id}: {e}")
         logger.debug(f" Hiding assets picker panel")
@@ -205,34 +202,11 @@ class EntityPropertiesPanelController:
             pass
         # Refresh monster asset caches and update ECS entities immediately (only for monsters)
         if ent_id not in self.model.player_stats:
-            try:                
-                # Reload definitions and clear caches for this type
-                reload_monster_defs()
-                monster_cache._loaded_variants.discard(ent_id)
-                monster_cache._SPRITE_SURFACES.pop(ent_id, None)
-                monster_cache._DEATH_SURFACES.pop(ent_id, None)
-                monster_cache.load_caches_for([ent_id])
-                logger.debug(f" Monster defs reloaded and cache cleared for ent_id={ent_id}")
-            except Exception as e:
-                logging.error(f"[ERROR][PropertiesPanel] Error reloading monster caches for ent_id={ent_id}: {e}")
-                # Update existing ECS entities of this monster type
+            try:
                 ecs_world = self.editor_controller.game.ecs.ecs_world
-                idents = ecs_world.components.get('Identity', {})
-                sprites = ecs_world.components.get('Sprite', {})
-                animators = ecs_world.components.get('Animator', {})
-                for eid, identity in idents.items():
-                    if identity.name.lower() == ent_id:
-                        base_map = monster_cache._SPRITE_SURFACES.get(ent_id, {})
-                        # Update sprite image to 'down' frame
-                        down_surf = base_map.get('down')
-                        if down_surf and eid in sprites:
-                            raw = down_surf.copy() if hasattr(down_surf, 'copy') else down_surf
-                            sprites[eid].image = raw
-                        # Update animation frames
-                        if eid in animators:
-                            new_anims = {state: [surf.copy() if hasattr(surf, 'copy') else surf]
-                                         for state, surf in base_map.items()}
-                            animators[eid].animations = new_anims
+                update_monster_assets(ecs_world, ent_id)
+            except Exception as e:
+                logging.error(f"[ERROR][PropertiesPanel] Error updating monster assets for ent_id={ent_id}: {e}")
     # ----------------------------
     # COMMIT DE CAMBIOS
     # ----------------------------
@@ -248,22 +222,10 @@ class EntityPropertiesPanelController:
         # Reset grid cache to force rebuild on next draw
         self.grid_controller.model.last_entity_id = None
         self.grid_controller.model.last_state_tab = None
-        # Update ECS player entities with new assets
+        # Update ECS player entities with new assets via service
         try:
             ecs_world = self.editor_controller.game.ecs.ecs_world
-            player_tags = ecs_world.components.get('PlayerTagComponent', {})
-            sprites_comp = ecs_world.components.get('Sprite', {})
-            animators = ecs_world.components.get('Animator', {})
-            sprites_dict = load_and_scale_sprites(ent_id)
-            initial_frame = extract_initial_frame(sprites_dict)
-            anim_map = build_animator_map(sprites_dict)
-            for eid, tag in player_tags.items():
-                if tag.class_name == ent_id:
-                    if initial_frame and eid in sprites_comp:
-                        img = initial_frame.copy() if hasattr(initial_frame, 'copy') else initial_frame
-                        sprites_comp[eid].image = img
-                    if eid in animators:
-                        animators[eid].animations = anim_map
+            update_player_assets(ecs_world, ent_id)
             logger.debug(f" Player ECS entities updated for class {ent_id} after active_set toggle")
         except Exception as e:
             logging.error(f"[ERROR][PropertiesPanel] Error updating player ECS entities on active_set toggle for class {ent_id}: {e}")
@@ -285,27 +247,27 @@ class EntityPropertiesPanelController:
         new_text = self.model.editing_text
 
         # Cargar datos desde JSON correspondiente (jugador o monstruo)
-        path, data, entry = self._load_entity_data(ent_id)
+        path, data, entry = load_entity_data(ent_id, self.model.player_stats, self.model.monsters)
 
         # Conversión del valor editado al tipo original y actualización adecuada
         if ent_id in self.model.player_stats:
             # Propiedad genérica para jugadores
             old_val = entry.get(key)
-            converted = self._convert_value(new_text, old_val)
+            converted = convert_value(new_text, old_val)
             entry[key] = converted
         elif ent_id in self.model.monsters:
             # Estadística anidada para monstruos
             stats = entry.setdefault('stats', {})
             old_val = stats.get(key)
-            converted = self._convert_value(new_text, old_val)
+            converted = convert_value(new_text, old_val)
             stats[key] = converted
         else:
             # Fallback genérico
             old_val = entry.get(key)
-            converted = self._convert_value(new_text, old_val)
+            converted = convert_value(new_text, old_val)
             entry[key] = converted
         # Persistir cambios en JSON
-        self._save_entity_data(ent_id, entry, path, data)
+        save_entity_data(ent_id, entry, path, self.model.player_stats, self.model.monsters)
         # Reload monster definitions and clear sprite caches for updated stats
         if ent_id in self.model.monsters:
             reload_monster_defs()
@@ -322,34 +284,7 @@ class EntityPropertiesPanelController:
             self.model.player_stats[ent_id][key] = converted
             try:
                 ecs_world = self.editor_controller.game.ecs.ecs_world
-                player_tags = ecs_world.components.get('PlayerTagComponent', {})
-                health_comps = ecs_world.components.get('Health', {})
-                combat_comps = ecs_world.components.get('CombatStats', {})
-                speed_comps = ecs_world.components.get('MovementSpeed', {})
-                for eid, tag in player_tags.items():
-                    if tag.class_name == ent_id:
-                        if key == 'max_strength':
-                            hc = health_comps.get(eid)
-                            cc = combat_comps.get(eid)
-                            if hc:
-                                hc.max_hp = converted
-                                hc.current_hp = converted
-                            if cc:
-                                cc.max_hp = converted
-                                cc.current_hp = converted
-                        elif key == 'basic_attack':
-                            cc = combat_comps.get(eid)
-                            if cc:
-                                cc.power = converted
-                        elif key == 'basic_armor':
-                            cc = combat_comps.get(eid)
-                            if cc:
-                                cc.defense = converted
-                        elif key == 'basic_speed':
-                            sc = speed_comps.get(eid)
-                            if sc:
-                                sc.speed = converted
-                logger.debug(f'[PropertiesPanel] Player ECS stats updated for class {ent_id}')
+                update_player_stats(ecs_world, ent_id, key, converted)
             except Exception as e:
                 logging.error(f'[ERROR][PropertiesPanel] Error updating player ECS stats for class {ent_id}: {e}')
         elif ent_id in self.model.monsters:
@@ -357,34 +292,7 @@ class EntityPropertiesPanelController:
             self.model.monsters.setdefault(ent_id, {}).setdefault('stats', {})[key] = converted
             try:
                 ecs_world = self.editor_controller.game.ecs.ecs_world
-                idents = ecs_world.components.get('Identity', {})
-                health_comps = ecs_world.components.get('Health', {})
-                combat_comps = ecs_world.components.get('CombatStats', {})
-                speed_comps = ecs_world.components.get('MovementSpeed', {})
-                for eid, identity in idents.items():
-                    if identity.name.lower() == ent_id:
-                        if key == 'hp':
-                            hc = health_comps.get(eid)
-                            cc = combat_comps.get(eid)
-                            if hc:
-                                hc.max_hp = converted
-                                hc.current_hp = converted
-                            if cc:
-                                cc.max_hp = converted
-                                cc.current_hp = converted
-                        elif key == 'power':
-                            cc = combat_comps.get(eid)
-                            if cc:
-                                cc.power = converted
-                        elif key == 'defense':
-                            cc = combat_comps.get(eid)
-                            if cc:
-                                cc.defense = converted
-                        elif key == 'speed':
-                            sc = speed_comps.get(eid)
-                            if sc:
-                                sc.speed = float(converted)
-                logger.debug(f'[PropertiesPanel] Monster ECS stats updated for type {ent_id}')
+                update_monster_stats(ecs_world, ent_id, key, converted)
             except Exception as e:
                 logging.error(f'[ERROR][PropertiesPanel] Error updating monster ECS stats for type {ent_id}: {e}')
 
@@ -398,41 +306,17 @@ class EntityPropertiesPanelController:
         Returns:
             (path, data, entry): Ruta al archivo, diccionario raíz, y la entrada de la entidad.
         """
-        if ent_id in self.model.player_stats:
-            # Ruta al nuevo JSON de jugadores
-            path = os.path.join(os.getcwd(), "data", "entities", "new_players.json")
-            root = load_from_json(path)
-            # Extraer clases y datos de jugadores
-            classes = root.get("players", {}).get("classes", {})
-            data = classes
-        else:
-            path = os.path.join(os.getcwd(), "data", "entities", "new_monsters.json")
-            # Load full JSON and navigate to nested classes for monsters
-            root = load_from_json(path)
-            data = root.setdefault("monsters", {}).setdefault("classes", {})
-
-        entry = data.setdefault(ent_id, {})
-        return path, data, entry
+        # Delegar al servicio centralizado
+        return load_entity_data(ent_id, self.model.player_stats, self.model.monsters)
 
     def _save_entity_data(self, ent_id: str, entry: dict, path: str, data: dict) -> None:
         """
         Persiste los cambios en el archivo JSON correspondiente y actualiza el modelo.
         """
-        if ent_id in self.model.player_stats:
-            # Guardar en JSON anidado de jugadores
-            full = path
-            root = load_from_json(full)
-            root.setdefault("players", {}).setdefault("classes", {})[ent_id] = entry
-            with open(full, "w", encoding="utf-8") as f:
-                json.dump(root, f, ensure_ascii=False, indent=2)
-
-        else:
-            # Persist changes in nested monsters.classes
-            full = path
-            root = load_from_json(full)
-            root.setdefault("monsters", {}).setdefault("classes", {})[ent_id] = entry
-            with open(full, "w", encoding="utf-8") as f:
-                json.dump(root, f, ensure_ascii=False, indent=2)
+        # Delegar al servicio centralizado
+        save_entity_data(ent_id, entry, path, self.model.player_stats, self.model.monsters)
+        if ent_id not in self.model.player_stats:
+            # Mantener sincronizado el caché de modelo de monstruos
             self.model.monsters[ent_id] = entry
 
     def _convert_value(self, new_text: str, old_val: any) -> any:
@@ -440,24 +324,7 @@ class EntityPropertiesPanelController:
         Convierte el valor ingresado al tipo original (bool, int, float, str).
         Si falla la conversión, se mantiene como string.
         """
-        try:
-            # Convert booleans when original was bool
-            if isinstance(old_val, bool):
-                return new_text.lower() in ("true", "1", "yes")
-            # Try integer conversion
-            try:
-                return int(new_text)
-            except ValueError:
-                pass
-            # Try float conversion
-            try:
-                return float(new_text)
-            except ValueError:
-                pass
-            # Fallback to string
-            return new_text
-        except Exception:
-            return new_text
+        return convert_value(new_text, old_val)
 
     def _reset_edit_state(self) -> None:
         """Limpia las variables relacionadas con la edición."""

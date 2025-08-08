@@ -268,7 +268,8 @@
               "death_scale": 0.5,
               "tint": null
             }
-          }
+          },
+          "active_set": "sets"
         }
       },
       "mague": {
