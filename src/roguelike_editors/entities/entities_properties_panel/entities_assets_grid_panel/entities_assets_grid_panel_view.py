@@ -258,13 +258,19 @@ class AssetsGridPanelView:
         key: str,
         size: int,
     ) -> None:
-        """Dibuja animación si existe; si no, cae a thumbnail por ruta."""
+        """Dibuja animación para Asset-Set; si no hay frames, pinta la celda en negro.
+
+        Importante: no hacer fallback a rutas aplanadas (no-sets). En la subpestaña
+        'Asset-Set' sólo deben mostrarse sprites de set; si no existen, la celda
+        debe quedar vacía (negra).
+        """
         anim = model.animators.get(key)
         frame = model.last_frames.get(key)
         if anim and frame:
             self._blit_tinted(screen, rect, frame, entity_data.get('tint'))
         else:
-            self._draw_path_thumb(screen, entity_data, rect, key, size)
+            inner = rect.inflate(-2, -2)
+            pygame.draw.rect(screen, (0, 0, 0), inner)
 
     def _draw_path_thumb(
         self,
