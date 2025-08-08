@@ -152,6 +152,13 @@ class TileEditorEventHandler:
                 self.editor_state.selected_tile = tile
                 self.controller.toolbar.delete_tile(map)
             return
+        # Default tool action: restore area to default at clicked position
+        if tool == "default" and ev.button == 1:
+            tile = self.controller._tile_under_mouse(pos, camera, map)
+            if tile:
+                self.editor_state.selected_tile = tile
+                self.controller.toolbar.set_default(map)
+            return
         # 2) Select
         if tool == "select" and ev.button == 1:
             if self.editor_state.picker_state.open:

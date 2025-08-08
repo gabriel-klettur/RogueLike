@@ -79,11 +79,18 @@ class TileToolbarEventHandler:
         return True
 
     def _handle_default(self, tool_name, map):
-        """Activate default tool; restore tile to default."""
+        """Toggle default tool; apply immediately if there's a selected tile, else wait for map click."""
         es = self.controller.editor_state
-        # Activate default mode and deactivate other tools
-        es.current_tool = tool_name
-        self.controller.set_default(map)
+        # Toggle default mode
+        if es.current_tool != tool_name:
+            es.toolbar_state.view_active = True
+            es.current_tool = tool_name
+            # If a tile is already selected, apply immediately (consistency with Delete)
+            if es.selected_tile is not None:
+                self.controller.set_default(map)
+        else:
+            # Press again to return to select
+            es.current_tool = "select"
         return True
 
     def _handle_view(self, tool_name, map):

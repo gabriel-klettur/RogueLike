@@ -3,6 +3,7 @@ from roguelike_engine.utils.loader import load_image
 from roguelike_engine.config.config_tiles import TILE_SIZE, OVERLAY_CODE_MAP, DEFAULT_TILE_MAP
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.map.model.overlay.overlay_manager import load_layers, save_layers
+from roguelike_engine.tile.utils.assets import load_base_tile_images
 from roguelike_editors.tiles.common.view import screen_to_tile
 from roguelike_editors.tiles.tiles_toolbar_panel.tile_toolbar_view import TileToolbarView
 from roguelike_editors.tiles.tiles_editor_config import ICON_PATHS_TILE_TOOLBAR
@@ -259,6 +260,8 @@ class TileToolbarController:
         w, h = self.editor_state.size_panel_state.selected_size
         max_r = len(game_map.tiles)
         max_c = len(game_map.tiles[0])
+        zone_w = global_map_settings.zone_width
+        zone_h = global_map_settings.zone_height
         for dy in range(h):
             for dx in range(w):
                 r, c = origin_row + dy, origin_col + dx
@@ -268,14 +271,29 @@ class TileToolbarController:
                     t = grid[r][c] if grid else None
                     if t:
                         default_imgs = base_map.get(t.tile_type)
-                        sprite = default_imgs[0] if isinstance(default_imgs, list) else default_imgs
-                        t.sprite = sprite
-                        t.scaled_cache.clear()
+                        sprite = None
+                        if default_imgs is not None:
+                            sprite = default_imgs[0] if isinstance(default_imgs, list) else default_imgs
+                        else:
+                            # Fallback a DEFAULT_TILE_MAP si no hay entrada en base_map
+                            variant = DEFAULT_TILE_MAP.get(t.tile_type)
+                            if variant:
+                                sprite = load_image(f"tiles/{variant}.png", (TILE_SIZE, TILE_SIZE))
+                        # Asignar sprite sólo si lo resolvimos
+                        if sprite is not None:
+                            t.sprite = sprite
+                            t.scaled_cache.clear()
+                        # Limpiar overlay code
                         t.overlay_code = ''
+                        # Actualizar capa en memoria para el renderer
+                        codes_grid = game_map.layers.get(self.editor_state.current_layer)
+                        if codes_grid and 0 <= r < len(codes_grid) and 0 <= c < len(codes_grid[0]):
+                            codes_grid[r][c] = ''
+                # Escribir overlay sólo si (local_r, local_c) cae dentro de la zona
+                if 0 <= local_r < zone_h and 0 <= local_c < zone_w:
                     zone_layers.setdefault(
                         self.editor_state.current_layer,
-                        [[ '' for _ in range(global_map_settings.zone_width)] for _ in range(global_map_settings.zone_height)]
+                        [[ '' for _ in range(zone_w)] for _ in range(zone_h)]
                     )
                     zone_layers[self.editor_state.current_layer][local_r][local_c] = ''
-        # Actualiza las capas del mapa con los datos restaurados
-        game_map.layers = zone_layers
+        # No reemplazar game_map.layers completo (para evitar desajuste con tamaño del mapa)
