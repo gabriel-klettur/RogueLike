@@ -1,4 +1,5 @@
 import pygame
+from roguelike_editors.entities.services.entity_lookup import find_clickable_entity_rect_at
 
 class EntitiesEditorView:
     """
@@ -18,12 +19,9 @@ class EntitiesEditorView:
         # Toolbar
         c.toolbar_controller.render(screen)
         active = c.model.toolbar_model.active_tool
-        widget = c.toolbar_view.widget
         margin = 8
         # Si se seleccionó alguna herramienta de entidades, mostrar panels
         if active in ('entities_on_map', 'entities_on_system'):
-            rect = widget.icon_rects.get('entities_on_map')
-
             # Dibujar panels activos
             c.add_remove_controller.render(screen)
             c.picker_controller.draw(screen)
@@ -40,36 +38,14 @@ class EntitiesEditorView:
         # Highlight hovered player/NPC in delete mode
         if self.controller.model.delete_mode_active:
             mx, my = pygame.mouse.get_pos()
-            cam = self.controller.game.camera
-            # Recorrer entidades válidas con Sprite y Position
-            ecs = self.controller.game.ecs.ecs_world
-            sprites = ecs.components.get('Sprite', {})
-            positions = ecs.components.get('Position', {})
-            scale_map = ecs.components.get('Scale', {})
-            player_tags = ecs.components.get('PlayerTagComponent', {})
-            npc_tags = ecs.components.get('NPCTagComponent', {})
-            for eid, sprite_comp in sprites.items():
-                # Filtrar solo jugadores/NPCs
-                if eid not in positions or (eid not in player_tags and eid not in npc_tags):
-                    continue
-                pos = positions[eid]
-                # Coordenadas en pantalla donde se dibuja el sprite
-                sx, sy = cam.apply((pos.x, pos.y))
-                # Calcular escala total (entidad + cámara)
-                entity_scale = getattr(scale_map.get(eid), 'scale', 1.0)
-                scale_factor = entity_scale * cam.zoom
-                # Obtener sprite escalado
-                scaled_img = pygame.transform.rotozoom(sprite_comp.image, 0, scale_factor)
-                rect = scaled_img.get_rect()
-                rect.topleft = (int(sx), int(sy))
-                if rect.collidepoint(mx, my):
-                    # Fondo semitransparente rojo
-                    overlay = pygame.Surface(rect.size, pygame.SRCALPHA)
-                    overlay.fill((255, 0, 0, 80))
-                    screen.blit(overlay, rect.topleft)
-                    # Borde rojo del asset escalado
-                    pygame.draw.rect(screen, (255, 0, 0), rect, 2)
-                    break
+            _, rect = find_clickable_entity_rect_at(self.controller.game, mx, my)
+            if rect is not None:
+                # Fondo semitransparente rojo
+                overlay = pygame.Surface(rect.size, pygame.SRCALPHA)
+                overlay.fill((255, 0, 0, 80))
+                screen.blit(overlay, rect.topleft)
+                # Borde rojo del asset escalado
+                pygame.draw.rect(screen, (255, 0, 0), rect, 2)
         # Overlay para spawn de entidades
         if self.controller.model.spawn_mode_active:
             mx, my = pygame.mouse.get_pos()
