@@ -27,14 +27,16 @@ class EntitiesEditorView:
             # Dibujar panels activos
             c.add_remove_controller.render(screen)
             c.picker_controller.draw(screen)
-            # Inicializar posición del panel Properties a la derecha del Picker
-            prop_view = c.properties_controller.view
-            if prop_view.draggable_panel.pos is None:
-                pick_view = c.picker_controller.view
-                px, py = pick_view.x, pick_view.y
-                pw, _ = pick_view.draggable_panel.surface.get_size()
-                prop_view.draggable_panel.pos = (px + pw + margin, py)
-            c.properties_controller.draw(screen)
+            # Dibujar Properties solo si no estamos en delete/spawn
+            if not (c.model.delete_mode_active or c.model.spawn_mode_active):
+                # Inicializar posición del panel Properties a la derecha del Picker
+                prop_view = c.properties_controller.view
+                if prop_view.draggable_panel.pos is None:
+                    pick_view = c.picker_controller.view
+                    px, py = pick_view.x, pick_view.y
+                    pw, _ = pick_view.draggable_panel.surface.get_size()
+                    prop_view.draggable_panel.pos = (px + pw + margin, py)
+                c.properties_controller.draw(screen)
         # Highlight hovered player/NPC in delete mode
         if self.controller.model.delete_mode_active:
             mx, my = pygame.mouse.get_pos()

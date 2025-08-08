@@ -73,6 +73,23 @@ class EntitiesEditorController:
         self.picker_controller.model.visible = True
         # Reset selección previa
         self.picker_controller.model.selected_id = None
+        # Cerrar Assets Picker y Panel de Propiedades mientras se usa 'add entity'
+        try:
+            # Ocultar el assets picker si estuviera abierto
+            self.properties_controller.assets_picker_controller.hide()
+        except Exception:
+            pass
+        try:
+            # Limpiar estado del panel de propiedades para que no se dibuje ni bloquee eventos
+            pm = self.properties_controller.model
+            pm.editing_property = None
+            pm.focused_property = None
+            pm.hovered_property = None
+            pm.panel_rect = None
+            pm.selected_id = None
+            pm.hovered_entity_id = None
+        except Exception:
+            pass
 
     def exit_spawn_mode(self):
         """
@@ -97,6 +114,23 @@ class EntitiesEditorController:
         self.model.delete_mode_active = True
         # Cambiar cursor a cruz
         pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_CROSSHAIR)
+        # Cerrar Assets Picker y Panel de Propiedades mientras se usa 'remove entity'
+        try:
+            # Ocultar el assets picker si estuviera abierto
+            self.properties_controller.assets_picker_controller.hide()
+        except Exception:
+            pass
+        try:
+            # Limpiar estado del panel de propiedades para que no se dibuje ni bloquee eventos
+            pm = self.properties_controller.model
+            pm.editing_property = None
+            pm.focused_property = None
+            pm.hovered_property = None
+            pm.panel_rect = None
+            pm.selected_id = None
+            pm.hovered_entity_id = None
+        except Exception:
+            pass
 
     def exit_delete_mode(self):
         """
@@ -133,8 +167,13 @@ class EntitiesEditorController:
             # Sincronizar hover y seleccionado para properties panel
             hovered = self.picker_controller.model.hovered_id
             selected = self.picker_controller.model.selected_id
-            self.properties_controller.model.hovered_entity_id = hovered
-            self.properties_controller.model.selected_id = selected
+            if not (self.model.delete_mode_active or self.model.spawn_mode_active):
+                self.properties_controller.model.hovered_entity_id = hovered
+                self.properties_controller.model.selected_id = selected
+            else:
+                # Mantener cerrado el panel de propiedades durante delete/spawn
+                self.properties_controller.model.hovered_entity_id = None
+                self.properties_controller.model.selected_id = None
             # Selección de entidad tras click en picker en modo spawn
             if self.model.spawn_mode_active and self.model.spawn_entity_type is None and event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
                 sel = self.picker_controller.model.selected_id
@@ -152,9 +191,10 @@ class EntitiesEditorController:
                 panel_rect = self.picker_controller.model.panel_rect
                 if panel_rect and panel_rect.collidepoint(event.pos):
                     return True
-            # Properties panel
-            if self.properties_controller.handle_event(event):
-                return True
+            # Properties panel (solo interactivo si no estamos en delete/spawn)
+            if not (self.model.delete_mode_active or self.model.spawn_mode_active):
+                if self.properties_controller.handle_event(event):
+                    return True
             # Delete entity on map in delete mode
             if self.model.delete_mode_active and event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
                 mx, my = event.pos
