@@ -7,6 +7,8 @@ including asset loading, directory navigation, tile selection, and persistence o
 import pygame
 import json
 from pathlib import Path
+from typing import Dict, Tuple, Deque, Optional
+from collections import deque
 
 from roguelike_engine.utils.loader import load_image
 from roguelike_engine.config.config import ASSETS_DIR
@@ -41,6 +43,28 @@ class TilePickerController:
         # Directorio base y directorio actual para explorar
         self.base_dir = Path(ASSETS_DIR) / BASE_TILE_DIR
         self.current_dir = self.base_dir
+
+        # Caches para mejorar el rendimiento al abrir el picker
+        # - Miniaturas por ruta relativa (value) -> Surface optimizada
+        # - Tamaños originales por ruta relativa -> (w, h)
+        self._thumb_cache: Dict[str, pygame.Surface] = {}
+        self._orig_size_cache: Dict[str, Tuple[int, int]] = {}
+        # Iconos reutilizables (evita recargar por cada carpeta)
+        thumb_size = (THUMB, THUMB)
+        try:
+            self._folder_icon = load_image(FOLDER_ICON, thumb_size)
+            self._arrow_icon = load_image(ARROW_UP_ICON, thumb_size)
+        except Exception:
+            # En caso de fallo de carga, usar superficies vacías para no romper la UI
+            self._folder_icon = pygame.Surface(thumb_size, pygame.SRCALPHA)
+            self._arrow_icon = pygame.Surface(thumb_size, pygame.SRCALPHA)
+
+        # Cola de miniaturas pendientes (carga incremental)
+        self._thumb_queue: Deque[str] = deque()
+        # Directorio de caché en disco para miniaturas
+        root = Path(__file__).parents[4]
+        self._thumb_cache_dir: Path = root / "data" / "cache" / "thumbs"
+        self._thumb_cache_dir.mkdir(parents=True, exist_ok=True)
 
         # Lista de entradas (valor, Surface, is_dir)
         
@@ -125,14 +149,14 @@ class TilePickerController:
 
         # Flecha hacia arriba
         if self.current_dir != self.base_dir:
-            arrow_surf = load_image(ARROW_UP_ICON, thumb_size)
-            self.assets.append(("..", arrow_surf, True, None))
+            # Reutiliza icono cacheado
+            self.assets.append(("..", self._arrow_icon, True, None))
 
         # Subdirectorios
         for entry in sorted(self.current_dir.iterdir()):
             if entry.is_dir():
-                folder_surf = load_image(FOLDER_ICON, thumb_size)
-                self.assets.append((entry.name, folder_surf, True, None))
+                # Reutiliza icono cacheado
+                self.assets.append((entry.name, self._folder_icon, True, None))
 
         # Archivos según patrones
         seen = {}
@@ -145,12 +169,108 @@ class TilePickerController:
         for f in seen.values():
             rel_path = str(f.relative_to(Path(ASSETS_DIR)))
             try:
-                full_img = pygame.image.load(str(f))
-                orig_size = full_img.get_size()
-                surf = load_image(rel_path, thumb_size)
-                self.assets.append((rel_path, surf, False, orig_size))
+                # 1) Si ya está en memoria, usarla
+                if rel_path in self._thumb_cache:
+                    thumb = self._thumb_cache[rel_path]
+                    orig_size = self._orig_size_cache.get(rel_path)
+                    self.assets.append((rel_path, thumb, False, orig_size))
+                    continue
+
+                # 2) Intentar usar caché en disco (si existe y está fresca por mtime)
+                disk_thumb, meta_size = self._get_disk_thumb(rel_path, f, thumb_size)
+                if disk_thumb is not None:
+                    self._thumb_cache[rel_path] = disk_thumb
+                    if meta_size:
+                        self._orig_size_cache[rel_path] = meta_size
+                    self.assets.append((rel_path, disk_thumb, False, meta_size))
+                    continue
+
+                # 3) Si no hay miniatura, insertar placeholder y encolar para carga incremental
+                placeholder = pygame.Surface(thumb_size, pygame.SRCALPHA)
+                placeholder.fill((40, 40, 40))
+                pygame.draw.rect(placeholder, (90, 90, 90), placeholder.get_rect(), 1)
+                self.assets.append((rel_path, placeholder, False, None))
+                self._thumb_queue.append(rel_path)
             except Exception as e:
                 logger.error(f" ERROR cargando {rel_path}: {e}")
+
+    def _disk_thumb_key(self, rel_path: str, src_file: Path) -> str:
+        """Genera un nombre de archivo único por ruta + tamaño + mtime."""
+        safe = rel_path.replace("\\", "/").replace("/", "__")
+        try:
+            mtime = int(src_file.stat().st_mtime)
+        except Exception:
+            mtime = 0
+        return f"{safe}_{THUMB}x{THUMB}_{mtime}"
+
+    def _get_disk_thumb(self, rel_path: str, src_file: Path, thumb_size) -> Tuple[Optional[pygame.Surface], Optional[Tuple[int, int]]]:
+        """Devuelve (thumb_surface, orig_size) si existe en caché de disco y es válida; si no, (None, None)."""
+        key = self._disk_thumb_key(rel_path, src_file)
+        png_path = self._thumb_cache_dir / f"{key}.png"
+        meta_path = self._thumb_cache_dir / f"{key}.json"
+        if png_path.exists():
+            try:
+                surf = pygame.image.load(str(png_path)).convert_alpha()
+                orig_size = None
+                if meta_path.exists():
+                    with open(meta_path, "r", encoding="utf-8") as mf:
+                        md = json.load(mf)
+                        w, h = md.get("w"), md.get("h")
+                        if isinstance(w, int) and isinstance(h, int):
+                            orig_size = (w, h)
+                return surf, orig_size
+            except Exception as e:
+                logger.debug(f" Disk thumb not usable for {rel_path}: {e}")
+        return None, None
+
+    def process_thumb_queue(self, max_items: int = 8):
+        """Carga incrementalmente miniaturas pendientes para no bloquear el hilo principal."""
+        if not self._thumb_queue:
+            return
+        processed = 0
+        thumb_size = (THUMB, THUMB)
+        while self._thumb_queue and processed < max_items:
+            rel_path = self._thumb_queue.popleft()
+            src_file = Path(ASSETS_DIR) / rel_path
+            if not src_file.exists():
+                continue
+            try:
+                full_img = pygame.image.load(str(src_file)).convert_alpha()
+                orig_size = full_img.get_size()
+                thumb = pygame.transform.scale(full_img, thumb_size).convert_alpha()
+                # Guardar en memoria
+                self._thumb_cache[rel_path] = thumb
+                self._orig_size_cache[rel_path] = orig_size
+                # Guardar en disco + metadatos
+                key = self._disk_thumb_key(rel_path, src_file)
+                png_path = self._thumb_cache_dir / f"{key}.png"
+                meta_path = self._thumb_cache_dir / f"{key}.json"
+                try:
+                    pygame.image.save(thumb, str(png_path))
+                    with open(meta_path, "w", encoding="utf-8") as mf:
+                        json.dump({"w": orig_size[0], "h": orig_size[1]}, mf)
+                except Exception as e:
+                    logger.debug(f" Could not persist disk thumb for {rel_path}: {e}")
+                # Actualizar entrada en self.assets (puede haber cambiado el orden tras _load_positions)
+                for i, (v, _, is_dir, _) in enumerate(self.assets):
+                    if v == rel_path and not is_dir:
+                        self.assets[i] = (rel_path, thumb, False, orig_size)
+                        break
+                processed += 1
+            except Exception as e:
+                logger.debug(f" Error generating thumb for {rel_path}: {e}")
+        # Invalida la caché de la vista si se procesó algo para forzar el re-render del grid
+        if processed and hasattr(self, 'view'):
+            if hasattr(self.view, 'assets_cache_surf'):
+                try:
+                    del self.view.assets_cache_surf
+                except Exception:
+                    pass
+            if hasattr(self.view, 'assets_cache_size'):
+                try:
+                    del self.view.assets_cache_size
+                except Exception:
+                    pass
 
     def _load_tileset_assets(self, image_value: str, grid_size: int):
         """
@@ -258,11 +378,8 @@ class TilePickerController:
         """
         Desplaza el scroll del picker.
         """
-        self.editor_state.scroll_offset = max(0, self.editor_state.scroll_offset - dy * 30)
-
-
-
-
+        # Actualiza el scroll del estado del picker (no el editor principal)
+        self.picker_state.scroll_offset = max(0, self.picker_state.scroll_offset - dy * 30)
 
     def open(self):
         """
@@ -272,10 +389,15 @@ class TilePickerController:
         self.picker_state.current_choice = None
         self.picker_state.dragging = False
         # Reiniciar scroll en el editor
-        self.editor_state.scroll_offset = 0
+        self.picker_state.scroll_offset = 0
         # Recargar lista de assets
         self._load_assets()
         self._load_positions()
+        # Invalida la caché de la cuadrícula estática para forzar reconstrucción con los nuevos assets
+        if hasattr(self.view, 'assets_cache_surf'):
+            del self.view.assets_cache_surf
+        if hasattr(self.view, 'assets_cache_size'):
+            del self.view.assets_cache_size
 
     def _close(self):
         """
