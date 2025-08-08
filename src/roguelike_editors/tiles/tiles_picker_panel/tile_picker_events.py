@@ -66,7 +66,7 @@ class TilePickerEventHandler:
                         self.controller.swap_positions(src, dst)
                     self.picker_state.config_src_idx = None
                 return True
-        if self._handle_grid_click(lx, ly, map):
+        if self._handle_grid_click(lx, ly, map, button):
             return True
 
         return False
@@ -138,7 +138,7 @@ class TilePickerEventHandler:
             return True
         return False
 
-    def _handle_grid_click(self, lx, ly, map):
+    def _handle_grid_click(self, lx, ly, map, button=1):
         """Process clicks on the asset grid: directory navigation, tileset loading, or tile selection."""
         cols = COLS * 3
         col = (lx - PAD) // (THUMB + PAD)
@@ -156,8 +156,13 @@ class TilePickerEventHandler:
             return False
 
         if is_dir:
+            # Only respond to left-button clicks for directory interactions
+            if button != 1:
+                logger.debug(" Ignoring non-left click on directory entry")
+                return True
             current_time = pygame.time.get_ticks()
-            if value == self.last_click_value and current_time - self.last_click_time <= 600:
+            # Increase the double-click window to be more tolerant under load
+            if value == self.last_click_value and current_time - self.last_click_time <= 900:
                 old_dir = self.controller.current_dir
                 if value == "..":
                     logger.debug(f" Double-click arrow: dir before {old_dir}, parent {old_dir.parent}")

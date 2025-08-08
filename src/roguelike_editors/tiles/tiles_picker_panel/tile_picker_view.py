@@ -78,28 +78,18 @@ class TilePickerView:
         # Only convert_alpha if a display surface exists
         if pygame.display.get_surface():
             self.checkbox_hover_surf = self.checkbox_hover_surf.convert_alpha()
-        # Cache directory label surfaces and pre-render asset name and size surfaces
-
+        # Lazy caches (on-demand)
         self.asset_name_surfs = {}
         self.asset_size_surfs = {}
+        self.dir_label_surfs = {}
+        self.max_label_width = None
+
         # Compute max label width for toolbar
         grid_init = ScrollableGrid(THUMB, PAD, len(self.assets), 0, cols=COLS*3)
         _, _, w0, h_grid0 = grid_init.compute()
         label_start_x = PAD + self.cfg_bw + PAD
         max_width = w0 - label_start_x - PAD
         self.max_label_width = max_width
-        for value, thumb, is_dir, orig_size in self.assets:
-            name = Path(value).name
-            disp = self._ellipsize(name, self.label_font, self.max_label_width)
-            self.asset_name_surfs[value] = self.label_font.render(disp, True, CLR_BORDER)
-            if orig_size is not None:
-                size_text = f"{orig_size[0]}x{orig_size[1]}"
-                self.asset_size_surfs[orig_size] = self.label_font.render(size_text, True, CLR_SELECTION)
-        self.dir_label_surfs = {}
-        for value, thumb, is_dir, orig_size in self.assets:
-            if is_dir and value != "..":
-                t = self._ellipsize(value, self.icon_font, THUMB - 4)
-                self.dir_label_surfs[value] = self.icon_font.render(t, True, (0, 0, 0))
 
     def _ellipsize(self, text, font, max_width):
         ellipsis = "..."
@@ -139,41 +129,25 @@ class TilePickerView:
         return lx, ly, y0
 
     def _draw_assets_grid(self, grid):
+        """Draw only visible grid items (virtualized) and return hovered info."""
         cols, rows, w, h_grid = grid.compute()
         cell_size, cell_pad = THUMB, PAD
-        # Build/update static cache surface
-        if not hasattr(self, 'assets_cache_surf') or self.assets_cache_size != (cols, rows):
-            total_h = rows * (cell_size + cell_pad)
-            # Create and optimize the static grid surface
-            self.assets_cache_surf = pygame.Surface((w, total_h), pygame.SRCALPHA).convert_alpha()
-            for idx, (value, thumb, is_dir, orig_size) in enumerate(self.assets):
-                col_idx = idx % cols
-                row_idx = idx // cols
-                x0 = col_idx * (cell_size + cell_pad)
-                y0 = row_idx * (cell_size + cell_pad)
-                self.assets_cache_surf.blit(thumb, (x0, y0))
-                if is_dir and value != '..':
-                    label = self.dir_label_surfs.get(value)
-                    if label:
-                        self.assets_cache_surf.blit(label, label.get_rect(center=(x0 + cell_size//2, y0 + cell_size//2)))
-            self.assets_cache_size = (cols, rows)
-        # Draw static grid
         surf = self.panel.surface
         scroll = self.picker_state.scroll_offset
-        surf.blit(self.assets_cache_surf, (0, 0), area=pygame.Rect(0, scroll, w, h_grid))
-        # Compute dynamic overlay indices
+
+        # Determine hovered index based on local mouse
         mx, my = pygame.mouse.get_pos()
         px, py = self.panel.pos or (0, 0)
         lx, ly = mx - px, my - py
-        y_grid = ly + scroll
         hovered_idx = None
-        if 0 <= lx < w and 0 <= y_grid < self.assets_cache_surf.get_height():
+        if 0 <= lx < w and 0 <= ly < h_grid:
             col_c = lx // (cell_size + cell_pad)
-            row_c = y_grid // (cell_size + cell_pad)
+            row_c = (ly + scroll) // (cell_size + cell_pad)
             idx = row_c * cols + col_c
             if 0 <= idx < len(self.assets):
                 hovered_idx = idx
-        # Find selected index
+
+        # Selected index
         current = self.picker_state.current_choice
         selected_idx = None
         if current:
@@ -181,85 +155,60 @@ class TilePickerView:
                 if v == current:
                     selected_idx = i
                     break
-        # Draw overlays
+
+        # Visible rows range
+        first_row = max(0, scroll // (cell_size + cell_pad))
+        last_row = min(rows - 1, (scroll + h_grid - 1) // (cell_size + cell_pad))
+
+        hovered_val, hovered_sz = None, None
+
+        for row in range(first_row, last_row + 1):
+            y = row * (cell_size + cell_pad) - scroll
+            for col in range(cols):
+                idx = row * cols + col
+                if idx >= len(self.assets):
+                    break
+                x = col * (cell_size + cell_pad)
+                value, thumb, is_dir, orig_size = self.assets[idx]
+                # Draw thumb
+                surf.blit(thumb, (x, y))
+                # Directory label (lazy)
+                if is_dir and value != "..":
+                    label = self.dir_label_surfs.get(value)
+                    if label is None:
+                        t = self._ellipsize(value, self.icon_font, THUMB - 4)
+                        label = self.icon_font.render(t, True, (0, 0, 0))
+                        self.dir_label_surfs[value] = label
+                    surf.blit(label, label.get_rect(center=(x + cell_size//2, y + cell_size//2)))
+
+                # Overlays
+                if self.picker_state.config_mode:
+                    src = self.picker_state.config_src_idx
+                    if src is not None and idx == src:
+                        rect = pygame.Rect(x, y, cell_size, cell_size)
+                        pygame.draw.rect(surf, CONFIG_SELECTED_COLOR, rect, 3)
+                    elif hovered_idx is not None and idx == hovered_idx:
+                        rect = pygame.Rect(x, y, cell_size, cell_size)
+                        surf.blit(self.hover_surface, (x, y))
+                        pygame.draw.rect(surf, CONFIG_HOVER_COLOR, rect, 3)
+                    elif selected_idx is not None and idx == selected_idx:
+                        surf.blit(self.selection_overlay, (x, y))
+                else:
+                    if hovered_idx is not None and idx == hovered_idx:
+                        rect = pygame.Rect(x, y, cell_size, cell_size)
+                        surf.blit(self.hover_surface, (x, y))
+                        pygame.draw.rect(surf, CLR_HOVER, rect, 3)
+                        hovered_val, hovered_sz = value, orig_size
+                    if selected_idx is not None and idx == selected_idx:
+                        surf.blit(self.selection_overlay, (x, y))
+
         if self.picker_state.config_mode:
-            src = self.picker_state.config_src_idx
-            # selected source outline
-            if src is not None:
-                cs = src % cols; rs = src // cols
-                rect = pygame.Rect(cs*(cell_size+cell_pad), rs*(cell_size+cell_pad)-scroll, cell_size, cell_size)
-                pygame.draw.rect(surf, CONFIG_SELECTED_COLOR, rect, 3)
-            # hover outline
-            if hovered_idx is not None and hovered_idx != src:
-                cs = hovered_idx % cols; rs = hovered_idx // cols
-                rect = pygame.Rect(cs*(cell_size+cell_pad), rs*(cell_size+cell_pad)-scroll, cell_size, cell_size)
-                surf.blit(self.hover_surface, rect.topleft)
-                pygame.draw.rect(surf, CONFIG_HOVER_COLOR, rect, 3)
-            # current choice outline
-            if selected_idx is not None and selected_idx != src:
-                cs = selected_idx % cols; rs = selected_idx // cols
-                rect = pygame.Rect(cs*(cell_size+cell_pad), rs*(cell_size+cell_pad)-scroll, cell_size, cell_size)
-                surf.blit(self.selection_overlay, rect.topleft)
-            # return hovered info
-            if hovered_idx is not None:
+            if hovered_idx is not None and 0 <= hovered_idx < len(self.assets):
                 v, _, _, sz = self.assets[hovered_idx]
                 return v, sz
             return None, None
         else:
-            # hover outline
-            if hovered_idx is not None:
-                cs = hovered_idx % cols; rs = hovered_idx // cols
-                rect = pygame.Rect(cs*(cell_size+cell_pad), rs*(cell_size+cell_pad)-scroll, cell_size, cell_size)
-                surf.blit(self.hover_surface, rect.topleft)
-                pygame.draw.rect(surf, CLR_HOVER, rect, 3)
-                v, _, _, sz = self.assets[hovered_idx]
-                hovered_val, hovered_sz = v, sz
-            else:
-                hovered_val, hovered_sz = None, None
-            # selection outline
-            if selected_idx is not None:
-                cs = selected_idx % cols; rs = selected_idx // cols
-                rect = pygame.Rect(cs*(cell_size+cell_pad), rs*(cell_size+cell_pad)-scroll, cell_size, cell_size)
-                surf.blit(self.selection_overlay, rect.topleft)
             return hovered_val, hovered_sz
-        """Use ScrollableGrid to draw assets, return hovered and orig size."""
-        panel_pos = self.panel.pos or (0, 0)
-        # Precompute mouse and state for draw_fn
-        mouse_pos = pygame.mouse.get_pos()
-        local_mouse = (mouse_pos[0] - panel_pos[0], mouse_pos[1] - panel_pos[1])
-        config_mode = self.picker_state.config_mode
-        config_src_idx = self.picker_state.config_src_idx
-        current_choice = self.picker_state.current_choice
-
-        def draw_fn(surf, rect, asset, idx):
-            value, thumb, is_dir, orig_size = asset
-            surf.blit(thumb, rect)
-
-            if config_mode:
-                if idx == self.picker_state.config_src_idx:
-                    pygame.draw.rect(surf, CONFIG_SELECTED_COLOR, rect, 3)
-                elif rect.collidepoint(local_mouse):
-                    surf.blit(self.hover_surface, rect.topleft)
-                    pygame.draw.rect(surf, CONFIG_HOVER_COLOR, rect, 3)
-                elif current_choice == value:
-                    surf.blit(self.selection_overlay, rect.topleft)
-            else:
-                if rect.collidepoint(local_mouse):
-                    surf.blit(self.hover_surface, rect.topleft)
-                    pygame.draw.rect(surf, CLR_HOVER, rect, 3)
-                elif current_choice == value:
-                    surf.blit(self.selection_overlay, rect.topleft)
-            if is_dir and value != "..":
-                label = self.dir_label_surfs.get(value)
-                if label:
-                    surf.blit(label, label.get_rect(center=rect.center))
-
-        hovered_asset = grid.draw_items(self.panel.surface, self.assets, panel_pos, draw_fn)
-        if hovered_asset:
-            value, _, _, size = hovered_asset
-        else:
-            value, size = None, None
-        return value, size
 
     def _draw_toolbar_and_labels(self, hovered_value, hovered_orig_size, w, h_grid):
         """Draw delete/default buttons and display hovered/selected labels."""
@@ -279,15 +228,30 @@ class TilePickerView:
         y_center = PAD + h_grid + BTN_H//2
         # Determine which asset to display
         key_value = hovered_value or self.picker_state.current_choice
-        name_surf = self.asset_name_surfs.get(key_value)
-        if name_surf:
+        if key_value:
+            # Compute name surface lazily
+            name_surf = self.asset_name_surfs.get(key_value)
+            if name_surf is None:
+                base_name = Path(key_value).name if not any(a for a in self.assets if a[0] == key_value and a[2]) else key_value
+                max_label_width = w - (cfg_rect.right + PAD) - PAD
+                disp = self._ellipsize(base_name, self.label_font, max_label_width)
+                name_surf = self.label_font.render(disp, True, CLR_BORDER)
+                self.asset_name_surfs[key_value] = name_surf
             pos = (label_start_x, y_center - name_surf.get_height()//2)
             self.panel.surface.blit(name_surf, pos)
-            # Draw size
+            # Draw size (on-demand cache)
             size = hovered_orig_size or next((o for v, _, _, o in self.assets if v == key_value), None)
-            size_surf = self.asset_size_surfs.get(size)
-            if size_surf:
-                self.panel.surface.blit(size_surf, (pos[0] + name_surf.get_width() + PAD, pos[1]))
+            if size:
+                size_surf = self.asset_size_surfs.get(size)
+                if size_surf is None:
+                    try:
+                        size_text = f"{size[0]}x{size[1]}"
+                        size_surf = self.label_font.render(size_text, True, CLR_SELECTION)
+                        self.asset_size_surfs[size] = size_surf
+                    except Exception:
+                        size_surf = None
+                if size_surf:
+                    self.panel.surface.blit(size_surf, (pos[0] + name_surf.get_width() + PAD, pos[1]))
         # Else: no asset name to draw
         mouse_pos = pygame.mouse.get_pos()
         pos_x, pos_y = self.picker_state.pos or (0, 0)
@@ -300,24 +264,7 @@ class TilePickerView:
         self.picker_state.btn_config_rect = cfg_rect
         if self.picker_state.config_mode:
             pygame.draw.rect(self.panel.surface, CLR_SELECTION, cfg_rect, 3)
-        label_text = hovered_value if hovered_value else (self.picker_state.current_choice or "")
-        if label_text:
-            base_name = Path(label_text).name
-            label_start_x = cfg_rect.right + PAD
-            max_label_width = w - label_start_x - PAD
-            disp = self._ellipsize(base_name, self.label_font, max_label_width)
-            rend = self.label_font.render(disp, True, CLR_BORDER)
-            pos = (label_start_x, PAD + h_grid + BTN_H//2 - rend.get_height()//2)
-            self.panel.surface.blit(rend, pos)
-            if not hovered_value and not hovered_orig_size and self.picker_state.current_choice:
-                for v, _, _, o in self.assets:
-                    if v == self.picker_state.current_choice:
-                        hovered_orig_size = o
-                        break
-            if hovered_orig_size:
-                text = f"{hovered_orig_size[0]}x{hovered_orig_size[1]}"
-                dr = self.label_font.render(text, True, CLR_SELECTION)
-                self.panel.surface.blit(dr, (pos[0] + rend.get_width() + PAD, pos[1]))
+        # (Removed duplicate label block; handled above lazily)
 
     def _draw_close_button(self, w):
         """Draw top-right close button and set its rect."""
@@ -394,6 +341,17 @@ class TilePickerView:
         # Compute layout and initialize picker surface
         grid, cols, rows, w, h_grid, h = self._compute_layout()
         self._init_panel(w, h)
+        # Clear panel background each frame (virtualized grid draws partial area)
+        try:
+            self.panel.surface.fill(self.panel.bgcolor)
+        except Exception:
+            self.panel.surface.fill((20, 20, 20, 235))
+        # Carga incremental de miniaturas para evitar bloqueos largos al abrir
+        try:
+            self.controller.process_thumb_queue(max_items=8)
+        except Exception:
+            pass
+
         # Skip full redraw if state unchanged
         state = (
             self.picker_state.scroll_offset,
