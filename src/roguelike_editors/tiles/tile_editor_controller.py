@@ -40,6 +40,10 @@ class TileEditorController:
         self.outline_view =                 TileOutlineView(self, editor_state)
         
         self.brush_cache: dict[str, pygame.Surface] = {}
+        # Cache to avoid recomputing overlay code mapping for the same choice path
+        self._code_cache: dict[str, str] = {}
+        # Track whether we already updated chunks during this stroke
+        self._did_partial_updates: bool = False
         
         self._last_brush_cell: tuple[int,int] | None = None
         self._pending_collision_zones = set()
@@ -62,6 +66,7 @@ class TileEditorController:
         handling both collision and overlay brush logic inline.
         """
         ts = self.editor.toolbar_state
+
         # Collision brush
         if (ts.show_collisions or ts.show_collisions_overlay) and ts.collision_choice:
             return self.collision_panel_controller.apply_brush(mouse_pos, camera, map)
@@ -76,49 +81,62 @@ class TileEditorController:
         tile, row, col = self._get_brush_cell(mouse_pos, camera, map)
         if not tile:
             return
-        # Determine code from asset path
-        # Build relative key: strip 'tiles/' prefix and extension
-        choice_rel = choice.replace("\\", "/")
-        if choice_rel.startswith("tiles/"):
-            choice_rel = choice_rel[len("tiles/"):]
-        key = choice_rel.rsplit(".", 1)[0]
-        # Try direct overlay mapping
-        code = key if key in ct.OVERLAY_CODE_MAP else None
+        # Determine code from asset path (cached)
+        code = self._code_cache.get(choice)
         if code is None:
-            # fallback: match mapping value
-            code = next((k for k, v in ct.OVERLAY_CODE_MAP.items() if v == key), None)
-        if code is None:
-            # fallback: default char mapping
-            code = next((k for k, v in DEFAULT_TILE_MAP.items() if v == key), None)
-        if code is None:
-            return
+            choice_rel = choice.replace("\\", "/")
+            if choice_rel.startswith("tiles/"):
+                choice_rel = choice_rel[len("tiles/"):]
+            key = choice_rel.rsplit(".", 1)[0]
+            # Try direct overlay mapping
+            code = key if key in ct.OVERLAY_CODE_MAP else None
+            if code is None:
+                # fallback: match mapping value
+                code = next((k for k, v in ct.OVERLAY_CODE_MAP.items() if v == key), None)
+            if code is None:
+                # fallback: default char mapping
+                code = next((k for k, v in DEFAULT_TILE_MAP.items() if v == key), None)
+            if code is None:
+                return
+            self._code_cache[choice] = code
         # Update tile object and paint according to brush size
         w, h = self.editor.size_panel_state.selected_size
-        sprite = load_image(choice, (TILE_SIZE, TILE_SIZE))
+        # Cache brush sprite at TILE_SIZE to avoid reloading every frame
+        sprite = self.brush_cache.get(choice)
+        if sprite is None:
+            sprite = load_image(choice, (TILE_SIZE, TILE_SIZE))
+            self.brush_cache[choice] = sprite
         layer = self.editor.current_layer
         # Paint rectangle of size w x h from top-left cell
+        changed_cells = []
         for dy in range(h):
             for dx in range(w):
                 r = row + dy
                 c = col + dx
                 if 0 <= r < len(map.tiles) and 0 <= c < len(map.tiles[0]):
-                    try:
-                        map.layers[layer][r][c] = code
-                    except Exception:
-                        continue
+                    # Skip if tile already has same overlay code (no-op)
                     t = map.tiles[r][c]
+                    if getattr(t, 'overlay_code', None) == code:
+                        continue
+                    # Write overlay code to layers structure
+                    map.layers[layer][r][c] = code
                     t.overlay_code = code
                     t.sprite = sprite
                     t.scaled_cache.clear()
                     zone_name, offx, offy = map.get_zone_for(r, c)
                     self._pending_tile_zones.add(zone_name)
-                    self._pending_cells.append((r, c))
-        # Invalidate view cache to clear stale zoom caches
-        map.view.invalidate_cache()
-        map.view.update_chunks(map, camera, self._pending_cells)
-
-
-
+                    cell = (r, c)
+                    self._pending_cells.append(cell)
+                    changed_cells.append(cell)
+        # Update only changed chunks for this brush step (avoid full cache invalidation)
+        if changed_cells:
+            try:
+                map.view.update_chunks(map, camera, changed_cells)
+                self._did_partial_updates = True
+            except Exception:
+                # Fallback to full invalidation only if partial update fails
+                map.view.invalidate_cache()
+                self._did_partial_updates = False
 
     def apply_eyedropper(self, mouse_pos, camera, map):
         """
@@ -197,6 +215,7 @@ class TileEditorController:
         self._pending_tile_zones = set()
         self._pending_cells = []
         self._last_brush_cell = None
+        self._did_partial_updates = False
 
     def flush_brush(self, map, camera):
         """
@@ -249,7 +268,8 @@ class TileEditorController:
             logger.error(f"[ERROR][TileEditorController] failed to update map cache: {e}")
         map.collision_layers = map.collision_manager.load(map)
         try:
-            map.view.update_chunks(map, camera, cells)
+            if not self._did_partial_updates and cells:
+                map.view.update_chunks(map, camera, cells)
         except Exception:
             map.view.invalidate_cache()
         if hasattr(self, "ecs_world"):
