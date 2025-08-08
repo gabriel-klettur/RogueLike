@@ -111,6 +111,7 @@ class TileEditorController:
             sprite = load_image(choice, (TILE_SIZE, TILE_SIZE))
             self.brush_cache[choice] = sprite
         layer = self.editor.current_layer
+        codes_grid = map.layers.get(layer)
         # Paint rectangle of size w x h from top-left cell
         changed_cells: list[tuple[int, int]] = []
         t0 = pygame.time.get_ticks()
@@ -119,10 +120,16 @@ class TileEditorController:
                 r = row + dy
                 c = col + dx
                 if 0 <= r < len(map.tiles) and 0 <= c < len(map.tiles[0]):
-                    # Skip if tile already has same overlay code (no-op)
-                    t = map.tiles[r][c]
-                    if getattr(t, 'overlay_code', None) == code:
+                    # Skip if current layer grid already has the same code (true no-op)
+                    existing = None
+                    try:
+                        if codes_grid and 0 <= r < len(codes_grid) and 0 <= c < len(codes_grid[0]):
+                            existing = codes_grid[r][c]
+                    except Exception:
+                        existing = None
+                    if existing == code:
                         continue
+                    t = map.tiles[r][c]
                     # Write overlay code to layers structure
                     map.layers[layer][r][c] = code
                     t.overlay_code = code

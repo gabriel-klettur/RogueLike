@@ -67,14 +67,16 @@ class TileEditorEventHandler:
             elif ev.type == pygame.MOUSEMOTION:
                 self._on_mouse_motion(ev, camera, map)
             elif ev.type == pygame.MOUSEBUTTONUP:
-                # Batch brush flush must occur before resetting brush_dragging
-                if (
-                    ev.button == 1
-                    and self.editor_state.current_tool == "brush"
-                    and self.editor_state.brush_dragging
-                ):
-                    self.controller.flush_brush(map, camera)
-                self._on_mouse_up(ev)
+                # Batch flush for brush/default/delete before resetting flags
+                if ev.button == 1:
+                    tool = self.editor_state.current_tool
+                    if tool == "brush" and self.editor_state.brush_dragging:
+                        self.controller.flush_brush(map, camera)
+                    if tool == "default" and getattr(self.editor_state, 'default_dragging', False):
+                        self.controller.flush_brush(map, camera)
+                    if tool == "delete" and getattr(self.editor_state, 'delete_dragging', False):
+                        self.controller.flush_brush(map, camera)
+                self._on_mouse_up(ev, camera, map)
             elif ev.type == pygame.MOUSEWHEEL:
                 self._on_mouse_wheel(ev, camera)
             # Delegate to panel event handlers
@@ -103,6 +105,8 @@ class TileEditorEventHandler:
             self.editor_state.selected_tile = None
             self.editor_state.picker_state.open = False
             self.editor_state.brush_dragging = False
+            self.editor_state.default_dragging = False
+            self.editor_state.delete_dragging = False
         elif ev.key == pygame.K_F8:
             new_val = not self.editor_state.active
             self.editor_state.active = new_val            
@@ -133,7 +137,7 @@ class TileEditorEventHandler:
             return
         pos = ev.pos
         # 1) Toolbar click
-        if self.toolbar_tool.handle_click(ev, map):
+        if self.toolbar_tool.handle_click(ev, map, camera):
             return
         # Handle size panel clicks
         if self.size_panel_tool.handle_event(ev):
@@ -143,21 +147,26 @@ class TileEditorEventHandler:
             return
 
         tool = self.editor_state.current_tool
-        # Delete tool action: delete tile at clicked position
+        # Delete tool action: start drag and apply delete
         if tool == "delete" and ev.button == 1:
-            # Determine tile under mouse
             tile = self.controller._tile_under_mouse(pos, camera, map)
             if tile:
-                # Update selection and delete
                 self.editor_state.selected_tile = tile
-                self.controller.toolbar.delete_tile(map)
+                # start a batched operation
+                self.controller.start_brush()
+                self.controller.toolbar.delete_tile(map, camera)
+                self.editor_state.delete_dragging = True
             return
-        # Default tool action: restore area to default at clicked position
+        # Default tool action: restore area to default at clicked position and start drag
         if tool == "default" and ev.button == 1:
             tile = self.controller._tile_under_mouse(pos, camera, map)
             if tile:
                 self.editor_state.selected_tile = tile
-                self.controller.toolbar.set_default(map)
+                # start a batched operation
+                self.controller.start_brush()
+                self.controller.toolbar.set_default(map, camera)
+                # Start drag for default tool
+                self.editor_state.default_dragging = True
             return
         # 2) Select
         if tool == "select" and ev.button == 1:
@@ -172,6 +181,8 @@ class TileEditorEventHandler:
             if self.editor_state.picker_state.open and self.controller.picker.is_over(pos):
                 if self.picker_tool.handle_click(pos, button=1, map=map):
                     return
+            # Start a new brush stroke to reset throttle and pending sets
+            self.controller.start_brush()
             self.editor_state.brush_dragging = True
             self.controller.apply_brush(pos, camera, map)
 
@@ -195,13 +206,39 @@ class TileEditorEventHandler:
         if self.editor_state.current_tool == "brush" and self.editor_state.brush_dragging:
             if not (self.editor_state.picker_state.open and self.controller.picker.is_over(pos)):
                 self.controller.apply_brush(pos, camera, map)
+        # Default drag (apply default continuously while dragging)
+        if self.editor_state.current_tool == "default" and getattr(self.editor_state, 'default_dragging', False):
+            if not (self.editor_state.picker_state.open and self.controller.picker.is_over(pos)):
+                tile = self.controller._tile_under_mouse(pos, camera, map)
+                if tile:
+                    self.editor_state.selected_tile = tile
+                    self.controller.toolbar.set_default(map, camera)
+        # Delete drag (apply delete continuously while dragging)
+        if self.editor_state.current_tool == "delete" and getattr(self.editor_state, 'delete_dragging', False):
+            if not (self.editor_state.picker_state.open and self.controller.picker.is_over(pos)):
+                tile = self.controller._tile_under_mouse(pos, camera, map)
+                if tile:
+                    self.editor_state.selected_tile = tile
+                    self.controller.toolbar.delete_tile(map, camera)
 
 
-    def _on_mouse_up(self, ev):
+    def _on_mouse_up(self, ev, camera, map):
 
         # Release brush
         if ev.button == 1 and self.editor_state.current_tool == "brush":
             self.editor_state.brush_dragging = False
+        # Release default drag
+        if ev.button == 1 and self.editor_state.current_tool == "default":
+            self.editor_state.default_dragging = False
+        # Release delete drag
+        if ev.button == 1 and self.editor_state.current_tool == "delete":
+            self.editor_state.delete_dragging = False
+        # Flush batched changes once per drag end for painting tools
+        if ev.button == 1 and self.editor_state.current_tool in ("brush", "default", "delete"):
+            try:
+                self.controller.flush_brush(map, camera)
+            except Exception:
+                pass
         # Stop camera panning
         if ev.button == 2 and self.panning:
             self.panning = False
