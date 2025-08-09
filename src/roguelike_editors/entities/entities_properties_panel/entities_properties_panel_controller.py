@@ -147,6 +147,13 @@ class EntityPropertiesPanelController:
             # Actualización en memoria para assets
             # Normalizamos ruta relativa como hace SetAssetCommand en persistencia; aquí podemos almacenar la ruta tal cual
             # Estructura destino: entry['assets'] con active_set 'no-sets' por defecto en monstruos nuevos
+            # Convertir cualquier PathLike a str y normalizar separadores para evitar problemas de serialización
+            try:
+                path_str = os.fspath(path)
+            except Exception:
+                path_str = path
+            if isinstance(path_str, str):
+                path_str = path_str.replace('\\\\', '/').replace('\\', '/')
             if ent_id in self.model.player_stats:
                 # Players: mantener espejo en player_assets
                 assets = self.model.player_assets.setdefault(ent_id, {})
@@ -165,10 +172,10 @@ class EntityPropertiesPanelController:
                 _, state, direction = parts
                 if active == 'sets':
                     sprites_set = assets.setdefault('sets', {}).setdefault('sprites_set', {})
-                    sprites_set[state] = [path]
+                    sprites_set[state] = [path_str]
                 else:
                     no_sets = assets.setdefault('no-sets', {})
-                    no_sets.setdefault(state, {})[direction] = path
+                    no_sets.setdefault(state, {})[direction] = path_str
                 # limpiar legado si existiera
                 assets.pop('sprites', None)
             # UI refresh ligera
@@ -238,67 +245,122 @@ class EntityPropertiesPanelController:
             in_add_system_mode = False
 
         if in_add_system_mode:
-            # Actualizar solo en memoria
+            # Actualizar solo en memoria (ramifica por tipo Player/Monster)
+            is_selector = getattr(self.model, 'show_add_system_selector', False)
+            sel_type = getattr(self.model, 'add_system_entity_type', 'Monster')
+            target_is_player = (ent_id in self.model.player_stats) or (is_selector and sel_type == 'Player')
+
             if key == 'id':
                 new_id = new_text.strip() or ent_id
-                if new_id and new_id != ent_id:
-                    # Mover la entrada temporal en el diccionario de monstruos
-                    entry = self.model.monsters.pop(ent_id, None)
-                    if entry is None:
-                        entry = {'stats': {}, 'assets': {'active_set': 'no-sets', 'sets': {}, 'no-sets': {}}}
+                if target_is_player:
+                    if new_id and new_id != ent_id:
+                        # Mover entrada en player_stats y reflejar assets si existen
+                        p_stats = self.model.player_stats.pop(ent_id, None)
+                        if p_stats is None:
+                            p_stats = {}
+                        self.model.player_stats[new_id] = p_stats
+                        # Renombrar assets espejo si existen
+                        if isinstance(self.model.player_assets, dict) and ent_id in self.model.player_assets:
+                            self.model.player_assets[new_id] = self.model.player_assets.pop(ent_id)
+                    # Actualizar selección y salir
+                    self.model.selected_id = new_id
+                    self._reset_edit_state()
+                    return
                 else:
-                    entry = self.model.monsters.get(ent_id)
-                    if entry is None:
-                        entry = {'stats': {}, 'assets': {'active_set': 'no-sets', 'sets': {}, 'no-sets': {}}}
-                # Marcar como pendiente hasta confirmar
-                if isinstance(entry, dict):
-                    entry['__pending__'] = True
-                self.model.monsters[new_id] = entry
-                self.model.selected_id = new_id
+                    # Monstruo temporal
+                    if new_id and new_id != ent_id:
+                        entry = self.model.monsters.pop(ent_id, None)
+                        if entry is None:
+                            entry = {'stats': {}, 'assets': {'active_set': 'no-sets', 'sets': {}, 'no-sets': {}}}
+                    else:
+                        entry = self.model.monsters.get(ent_id)
+                        if entry is None:
+                            entry = {'stats': {}, 'assets': {'active_set': 'no-sets', 'sets': {}, 'no-sets': {}}}
+                    # Marcar como pendiente hasta confirmar
+                    if isinstance(entry, dict):
+                        entry['__pending__'] = True
+                    self.model.monsters[new_id] = entry
+                    self.model.selected_id = new_id
+                    self._reset_edit_state()
+                    return
+
+            # Otras propiedades: escribir en stats de Player o Monster (soporta claves con puntos)
+            if target_is_player:
+                stats = self.model.player_stats.setdefault(ent_id, {})
+                # Inferir tipo desde valor actual si existe
+                old_val = None
+                if '.' in key:
+                    parts = key.split('.')
+                    cur = stats
+                    for i, p in enumerate(parts):
+                        if not isinstance(cur, dict):
+                            cur = None
+                            break
+                        if i == len(parts) - 1:
+                            old_val = cur.get(p)
+                        else:
+                            cur = cur.get(p, {})
+                else:
+                    old_val = stats.get(key)
+                new_val = convert_value(new_text, old_val)
+                # Set nested value
+                if '.' in key:
+                    parts = key.split('.')
+                    cur = stats
+                    for i, p in enumerate(parts):
+                        if i == len(parts) - 1:
+                            cur[p] = new_val
+                        else:
+                            nxt = cur.get(p)
+                            if not isinstance(nxt, dict):
+                                nxt = {}
+                                cur[p] = nxt
+                            cur = nxt
+                else:
+                    stats[key] = new_val
                 self._reset_edit_state()
                 return
-
-            # Otras propiedades: escribir en monsters[ent_id]['stats'] (soporta claves con puntos)
-            m_entry = self.model.monsters.setdefault(ent_id, {})
-            # Marcar como pendiente mientras esté en modo add-system
-            if isinstance(m_entry, dict):
-                m_entry['__pending__'] = True
-            stats = m_entry.setdefault('stats', {})
-            # Inferir tipo desde valor actual si existe
-            old_val = None
-            # Navegar nested para obtener old_val si aplica
-            if '.' in key:
-                parts = key.split('.')
-                cur = stats
-                for i, p in enumerate(parts):
-                    if not isinstance(cur, dict):
-                        cur = None
-                        break
-                    if i == len(parts) - 1:
-                        old_val = cur.get(p)
-                    else:
-                        cur = cur.get(p, {})
             else:
-                old_val = stats.get(key)
-            new_val = self._convert_value(new_text, old_val)
-            # Set nested value
-            if '.' in key:
-                parts = key.split('.')
-                cur = stats
-                for i, p in enumerate(parts):
-                    if i == len(parts) - 1:
-                        cur[p] = new_val
-                    else:
-                        nxt = cur.get(p)
-                        if not isinstance(nxt, dict):
-                            nxt = {}
-                            cur[p] = nxt
-                        cur = nxt
-            else:
-                stats[key] = new_val
-            # No persistir; solo limpiar estado de edición
-            self._reset_edit_state()
-            return
+                m_entry = self.model.monsters.setdefault(ent_id, {})
+                # Marcar como pendiente mientras esté en modo add-system
+                if isinstance(m_entry, dict):
+                    m_entry['__pending__'] = True
+                stats = m_entry.setdefault('stats', {})
+                # Inferir tipo desde valor actual si existe
+                old_val = None
+                # Navegar nested para obtener old_val si aplica
+                if '.' in key:
+                    parts = key.split('.')
+                    cur = stats
+                    for i, p in enumerate(parts):
+                        if not isinstance(cur, dict):
+                            cur = None
+                            break
+                        if i == len(parts) - 1:
+                            old_val = cur.get(p)
+                        else:
+                            cur = cur.get(p, {})
+                else:
+                    old_val = stats.get(key)
+                new_val = convert_value(new_text, old_val)
+                # Set nested value
+                if '.' in key:
+                    parts = key.split('.')
+                    cur = stats
+                    for i, p in enumerate(parts):
+                        if i == len(parts) - 1:
+                            cur[p] = new_val
+                        else:
+                            nxt = cur.get(p)
+                            if not isinstance(nxt, dict):
+                                nxt = {}
+                                cur[p] = nxt
+                            cur = nxt
+                else:
+                    stats[key] = new_val
+                # No persistir; solo limpiar estado de edición
+                self._reset_edit_state()
+                return
         # Special-case: renaming the entity id (players or monsters)
         if key == 'id':
             new_id = new_text.strip()
@@ -319,24 +381,45 @@ class EntityPropertiesPanelController:
         if not sel_id:
             return
         try:
-            path, data, entry = load_entity_data(sel_id, self.model.player_stats, self.model.monsters)
-            # Mezclar entrada temporal en memoria si existe
-            cur = self.model.monsters.get(sel_id)
-            if cur is not None:
-                entry.update(cur)
-                # Eliminar flag de pendiente antes de guardar
-                if isinstance(entry, dict):
-                    entry.pop('__pending__', None)
-                if isinstance(cur, dict):
-                    cur.pop('__pending__', None)
-            save_entity_data(sel_id, entry, path, self.model.player_stats, self.model.monsters)
-            logger.debug(f"Entidad '{sel_id}' confirmada y guardada en JSON")
-            # Recargar definiciones de monstruos para habilitar spawn inmediato
-            try:
-                reload_monster_defs()
-                logger.debug("Definiciones de monstruos recargadas tras confirmar")
-            except Exception as e:
-                logger.error(f"[WARN][PropertiesPanel] No se pudieron recargar definiciones de monstruos: {e}")
+            # Determinar tipo por pertenencia
+            is_player = sel_id in self.model.player_stats
+            if is_player:
+                # Componer entrada de jugador desde estados en memoria (stats + assets)
+                p_stats = self.model.player_stats.get(sel_id, {})
+                p_assets = self.model.player_assets.get(sel_id, {}) if isinstance(self.model.player_assets, dict) else {}
+                entry = {
+                    'stats': p_stats,
+                    'assets': p_assets,
+                }
+                path, _, _ = load_entity_data(sel_id, self.model.player_stats, self.model.monsters)
+                save_entity_data(sel_id, entry, path, self.model.player_stats, self.model.monsters)
+                logger.debug(f"Player class '{sel_id}' confirmed and saved to JSON")
+                # Limpiar posible entrada temporal de monstruo con el mismo id
+                try:
+                    temp = self.model.monsters.get(sel_id)
+                    if isinstance(temp, dict) and temp.get('__pending__'):
+                        self.model.monsters.pop(sel_id, None)
+                except Exception:
+                    pass
+            else:
+                path, data, entry = load_entity_data(sel_id, self.model.player_stats, self.model.monsters)
+                # Mezclar entrada temporal en memoria si existe (monstruo)
+                cur = self.model.monsters.get(sel_id)
+                if cur is not None:
+                    entry.update(cur)
+                    # Eliminar flag de pendiente antes de guardar
+                    if isinstance(entry, dict):
+                        entry.pop('__pending__', None)
+                    if isinstance(cur, dict):
+                        cur.pop('__pending__', None)
+                save_entity_data(sel_id, entry, path, self.model.player_stats, self.model.monsters)
+                logger.debug(f"Monster type '{sel_id}' confirmed and saved to JSON")
+                # Recargar definiciones de monstruos para habilitar spawn inmediato
+                try:
+                    reload_monster_defs()
+                    logger.debug("Definiciones de monstruos recargadas tras confirmar")
+                except Exception as e:
+                    logger.error(f"[WARN][PropertiesPanel] No se pudieron recargar definiciones de monstruos: {e}")
         except Exception as e:
             logger.error(f"[ERROR][PropertiesPanel] Error al confirmar entidad '{sel_id}': {e}")
         # Salir del modo 'add_entities_on_system' y ocultar selector/botón en UI

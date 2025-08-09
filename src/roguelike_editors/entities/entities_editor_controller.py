@@ -12,6 +12,7 @@ from roguelike_editors.entities.services.history import HistoryManager
 from roguelike_editors.entities.services.commands import (
     SpawnEntityCommand,
     DeleteEntityCommand,
+    DeleteEntityDefinitionCommand,
 )
 
 from roguelike_editors.entities.entities_editor_model import EntitiesEditorModel
@@ -94,31 +95,50 @@ class EntitiesEditorController:
             return {d: None for d in directions}
         no_sets = {st: empty_dirs() for st in states}
         no_sets['sprites_data_no-set'] = {
-            'scale_idle': None,
-            'scale_walk': None,
-            'scale_chase': None,
-            'scale_cast': None,
-            'scale_attack': None,
-            'scale_damage': None,
-            'scale_death': None,
+            'scale_idle': 0.5,
+            'scale_walk': 0.5,
+            'scale_chase': 0.5,
+            'scale_cast': 0.5,
+            'scale_attack': 0.5,
+            'scale_damage': 0.5,
+            'scale_death': 0.55,
             'tint': None,
         }
         sets = {
             'sprites_set': {st: [] for st in states},
             'sprites_data_set': {
-                'scale_idle': None,
-                'scale_walk': None,
-                'scale_chase': None,
-                'scale_cast': None,
-                'scale_attack': None,
-                'scale_damage': None,
-                'scale_death': None,
+                'scale_idle': 0.5,
+                'scale_walk': 0.5,
+                'scale_chase': 0.5,
+                'scale_cast': 0.5,
+                'scale_attack': 0.5,
+                'scale_damage': 0.5,
+                'scale_death': 0.55,
                 'tint': None,
             }
         }
+        # Default stats for new monster created via 'Add Entities on System'
+        default_stats = {
+            'hp': 1,
+            'speed': 1.0,
+            'faction': 'EVIL',
+            'aggro_range': 10,
+            'melee_range': 5,
+            'melee_damage': 1,
+            'melee_cooldown': 1.0,
+            'defense': 1,
+            'power': 1,
+            'damage_duration': 0.5,
+            'chasing_speed': 1.0,
+            'feet_width_factor': 0.5,
+            'feet_height_factor': 0.5,
+            'spawn_padding': 5,
+            'spawn_count': 10,
+            'spawn_margin': 0,
+        }
         self.model.monsters[new_id] = {
             '__pending__': True,  # ocultar en picker hasta confirmar
-            'stats': {},
+            'stats': default_stats,
             'assets': {
                 'active_set': 'no-sets',
                 'sets': sets,
@@ -225,6 +245,17 @@ class EntitiesEditorController:
                 return True
             # Picker panel
             self.picker_controller.handle_event(event)
+            # If in delete mode and click occurred inside picker, delete the definition
+            if self.model.delete_mode_active and event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
+                panel_rect = self.picker_controller.model.panel_rect
+                if panel_rect and panel_rect.collidepoint(getattr(event, 'pos', (0, 0))):
+                    sel = self.picker_controller.model.selected_id or self.picker_controller.model.hovered_id
+                    if sel:
+                        # Push undoable delete-definition command using the properties controller as command controller
+                        self.history.push(DeleteEntityDefinitionCommand(self.properties_controller, sel))
+                        logger.debug(f" Delete-definition command for '{sel}' queued via picker click")
+                        self.exit_delete_mode()
+                        return True
             # Sincronizar hover y seleccionado para properties panel
             hovered = self.picker_controller.model.hovered_id
             selected = self.picker_controller.model.selected_id

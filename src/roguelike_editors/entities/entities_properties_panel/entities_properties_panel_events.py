@@ -55,7 +55,40 @@ class EntitiesPropertiesPanelEventHandler:
             if getattr(self.model, 'show_add_system_selector', False) and rect and rect.collidepoint(getattr(event, 'pos', (0, 0))):
                 # Toggle entre 'Monster' y 'Player'
                 cur = getattr(self.model, 'add_system_entity_type', 'Monster')
-                self.model.add_system_entity_type = 'Player' if cur == 'Monster' else 'Monster'
+                new_type = 'Player' if cur == 'Monster' else 'Monster'
+                self.model.add_system_entity_type = new_type
+                # Al cambiar a 'Player' durante Add-Entities-On-System, inicializar stats por defecto
+                try:
+                    ent_id = self.model.selected_id
+                    if ent_id:
+                        if new_type == 'Player':
+                            # Solo crear si aún no existe
+                            if ent_id not in self.model.player_stats:
+                                default_stats = {
+                                    'max_strength': 100,
+                                    'max_intelligence': 100,
+                                    'max_dexterity': 100,
+                                    'initial_strength': 10,
+                                    'initial_intelligence': 10,
+                                    'initial_dexterity': 10,
+                                    'basic_speed': 1,
+                                    'basic_attack': 1,
+                                    'basic_armor': 1,
+                                    'basic_trail': {
+                                        'interval': 0.1,
+                                        'life_time': 0.2,
+                                        'max_trails': 100,
+                                    },
+                                    'basic_death_timer_duration': 10.0,
+                                }
+                                self.model.player_stats[ent_id] = default_stats
+                        else:
+                            # Si volvemos a Monster y aún no existe en monstruos, no hacemos nada aquí;
+                            # open_new_monster_properties() ya creó la entrada pendiente con sus defaults.
+                            pass
+                except Exception:
+                    # Evitar que un error rompa la interacción del selector
+                    pass
                 return True
             # Click en botón Confirm
             c_rect = getattr(self.model, 'confirm_button_rect', None)

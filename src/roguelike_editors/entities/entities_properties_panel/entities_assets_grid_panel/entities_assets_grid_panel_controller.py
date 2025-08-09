@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import Optional, Dict
+from typing import Any, Dict, Optional
 
 import pygame
 
@@ -16,22 +16,23 @@ from roguelike_game.ecs.components.rendering.animation_timer import AnimationTim
 from roguelike_game.factories.player.loader import load_and_scale_sprites
 from roguelike_game.factories.player.config import ANIMATION_INTERVAL
 
-import logging
 logger = logging.getLogger(__name__)
 
 
 class AssetsGridPanelController:
     """
-    Controlador del panel de cuadrícula de assets en el panel de propiedades.
+    Controlador del panel de cuadrícula de assets dentro del panel de propiedades.
 
-    Gestiona la creación y actualización de animadores para cada asset, basado
-    en la entidad seleccionada y la pestaña de estado activa.
+    Responsabilidades:
+    - Detectar cambios de entidad o pestaña de estado y reconstruir animadores.
+    - Avanzar fotogramas de animación mediante temporizadores.
+    - Delegar el pintado a la vista.
     """
 
     def __init__(
         self,
-        parent_controller,  # EntityPropertiesPanelController
-        font: pygame.font.Font
+        parent_controller: Any,  # EntityPropertiesPanelController
+        font: pygame.font.Font,
     ) -> None:
         # Referencias a controladores y modelos superiores
         self.parent_controller = parent_controller
@@ -58,9 +59,9 @@ class AssetsGridPanelController:
         """
         Dibuja las subpestañas y la cuadrícula de assets.
 
-        1. Verifica si cambió la entidad o la pestaña de estado para reconstruir animadores.
-        2. Actualiza los fotogramas actuales de cada animador según su temporizador.
-        3. Delegar el renderizado final a la vista.
+        1) Reconstruye animadores si cambió la entidad o el estado activo.
+        2) Actualiza fotogramas en base a temporizadores.
+        3) Delegación del renderizado a la vista.
         """
         ent_id = self.parent_model.selected_id
         active_state = (
@@ -85,7 +86,7 @@ class AssetsGridPanelController:
 
     def _should_rebuild(
         self,
-        entity_id: Optional[int],
+        entity_id: Optional[str],
         state: str,
     ) -> bool:
         """
@@ -100,14 +101,14 @@ class AssetsGridPanelController:
             )
         )
 
-    def _rebuild_animators(self, entity_id: int, state: str) -> None:
+    def _rebuild_animators(self, entity_id: str, state: str) -> None:
         """
         Reconstruye todos los animadores para la entidad y estado indicados.
 
-        1. Carga los sprites escalados.
-        2. Traduce el estado de UI a estado interno.
-        3. Crea un Animator por cada dirección válida.
-        4. Reinicia temporizadores y fotogramas anteriores.
+        1) Carga los sprites (jugador/monstruo) respetando la lógica de 'pendiente'.
+        2) Traduce el estado de UI a estado interno.
+        3) Crea un Animator por cada dirección válida.
+        4) Reinicia temporizadores y fotogramas anteriores.
         """
         logger.debug(
             f"[DEBUG][AssetsGridPanel] Reconstruyendo animadores: "
@@ -116,23 +117,9 @@ class AssetsGridPanelController:
 
         # Carga de sprites calibrados para la entidad
         if entity_id in self.parent_model.player_stats:
-            sprites = load_and_scale_sprites(entity_id)
+            sprites: Dict[str, Dict[str, list]] = self._load_player_sprites(entity_id)
         else:
-            from roguelike_game.factories.monster.cache import load_caches_for, _SPRITE_SURFACES
-            load_caches_for([entity_id])
-            raw_map = _SPRITE_SURFACES.get(entity_id, {})
-            sprites = {}
-            for flat_key, surf in raw_map.items():
-                if not surf:
-                    continue
-                parts = flat_key.split('_', 1)
-                if len(parts) == 2:
-                    state_name, dir_code = parts
-                else:
-                    state_name = 'idle'
-                    dir_code = parts[0]
-                sprite_dir = _DIR_TO_SPRITE.get(dir_code, dir_code)
-                sprites.setdefault(sprite_dir, {}).setdefault(state_name, []).append(surf)
+            sprites = self._load_monster_sprites(entity_id)
 
         internal_state = ui_state_to_internal(state)
 
@@ -158,6 +145,49 @@ class AssetsGridPanelController:
         # Almacenamiento de estado para comparaciones futuras
         self.model.last_entity_id = entity_id
         self.model.last_state_tab = state
+
+    def _is_pending_monster(self, entity_id: str) -> bool:
+        """Devuelve True si el monstruo seleccionado está marcado como '__pending__'."""
+        try:
+            m_entry = (
+                self.parent_model.monsters.get(entity_id)
+                if isinstance(self.parent_model.monsters, dict)
+                else None
+            )
+            return bool(isinstance(m_entry, dict) and m_entry.get('__pending__'))
+        except Exception:
+            return False
+
+    def _load_player_sprites(self, entity_id: str) -> Dict[str, Dict[str, list]]:
+        """Carga y escala sprites para jugador."""
+        return load_and_scale_sprites(entity_id)
+
+    def _load_monster_sprites(self, entity_id: str) -> Dict[str, Dict[str, list]]:
+        """
+        Carga sprites de monstruo desde la caché runtime del juego.
+        Si la entidad es nueva y está en estado '__pending__', no toca la caché y
+        devuelve un mapeo vacío para que la grilla muestre zonas de drop.
+        """
+        if self._is_pending_monster(entity_id):
+            # No hay sprites precargados aún; mantenemos vacío para que la grilla muestre drop targets
+            return {}
+
+        from roguelike_game.factories.monster.cache import load_caches_for, _SPRITE_SURFACES
+        load_caches_for([entity_id])
+        raw_map = _SPRITE_SURFACES.get(entity_id, {})
+        sprites: Dict[str, Dict[str, list]] = {}
+        for flat_key, surf in raw_map.items():
+            if not surf:
+                continue
+            parts = flat_key.split('_', 1)
+            if len(parts) == 2:
+                state_name, dir_code = parts
+            else:
+                state_name = 'idle'
+                dir_code = parts[0]
+            sprite_dir = _DIR_TO_SPRITE.get(dir_code, dir_code)
+            sprites.setdefault(sprite_dir, {}).setdefault(state_name, []).append(surf)
+        return sprites
 
     def _update_frames(self) -> None:
         """

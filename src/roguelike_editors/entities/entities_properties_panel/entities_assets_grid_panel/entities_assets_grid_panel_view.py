@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import pygame
 from roguelike_engine.utils.loader import load_image
@@ -19,7 +19,6 @@ from roguelike_editors.entities.entities_properties_panel.services.assets_helper
     resolve_asset_path,
 )
 
-import logging
 logger = logging.getLogger(__name__)
 
 
@@ -51,11 +50,23 @@ class AssetsGridPanelView:
         # - self.state_tabs_controller
         # - self.assets_subtabs_controller
 
+    def _current_entity_id(self) -> Optional[str]:
+        """Devuelve el id actual (hovered o seleccionado) de la entidad en el panel."""
+        pm = getattr(self, 'parent_model', None)
+        if pm is None:
+            return None
+        return pm.hovered_entity_id or pm.selected_id
+
+    def _draw_inner_black(self, screen: pygame.Surface, rect: pygame.Rect) -> None:
+        """Rellena de negro el interior de una celda con un margen de 1px."""
+        inner = rect.inflate(-2, -2)
+        pygame.draw.rect(screen, (0, 0, 0), inner)
+
     def draw(
         self,
         screen: pygame.Surface,
         model: AssetsGridPanelModel,
-        entity_data: dict,
+        entity_data: Dict[str, Any],
         px: int,
         py: int,
         pad: int,
@@ -87,8 +98,7 @@ class AssetsGridPanelView:
         # 6. Label y combobox "Activo"
         active_label_y = grid_y + cell_size * self._GRID_COLS + pad + font_h + pad
         # Label
-        label_surf = self.font.render("Activo: ", True, self._KEY_COLOR)
-        screen.blit(label_surf, (px + pad, active_label_y))
+        label_surf = self._render_text(screen, "Activo: ", self._KEY_COLOR, (px + pad, active_label_y))
         # Valor actual
         current = entity_data.get("active_set", "sets")
         value_surf = self.font.render(current, True, self._TEXT_COLOR)
@@ -101,25 +111,39 @@ class AssetsGridPanelView:
         # Guardar rect para eventos
         model.active_set_rect = combo_rect
 
+    def _render_text(
+        self,
+        screen: pygame.Surface,
+        text: str,
+        color: Tuple[int, int, int],
+        pos: Tuple[int, int],
+    ) -> pygame.Surface:
+        """Renderiza texto con la fuente de la vista y lo blitea. Devuelve el surface.
+
+        Útil para unificar render+blit en llamadas cortas.
+        """
+        surf = self.font.render(text, True, color)
+        screen.blit(surf, pos)
+        return surf
+
     def _draw_entity_name(
         self,
         screen: pygame.Surface,
-        entity_data: dict,
+        entity_data: Dict[str, Any],
         px: int,
         py: int,
         pad: int,
     ) -> int:
         """Dibuja el ID o nombre de la entidad y devuelve la coordenada Y donde quedó."""
         label = entity_data.get('id') or entity_data.get('name') or ''
-        surf = self.font.render(label, True, self._TEXT_COLOR)
         x, y = px + pad, py + pad
-        screen.blit(surf, (x, y))
+        self._render_text(screen, label, self._TEXT_COLOR, (x, y))
         return y
 
     def _draw_tint(
         self,
         screen: pygame.Surface,
-        entity_data: dict,
+        entity_data: Dict[str, Any],
         x_base: int,
         y: int,
         pad: int,
@@ -127,12 +151,10 @@ class AssetsGridPanelView:
         """Dibuja 'tint:' y su valor coloreado; devuelve la coordenada Y."""
         tint = entity_data.get('tint')
         val_str = str(tint) if tint is not None else 'None'
-        key_surf = self.font.render('tint: ', True, self._KEY_COLOR)
         color = self._NONE_TINT_COLOR if tint is None else self._TEXT_COLOR
-        val_surf = self.font.render(val_str, True, color)
         x = x_base + pad
-        screen.blit(key_surf, (x, y))
-        screen.blit(val_surf, (x + key_surf.get_width(), y))
+        key_surf = self._render_text(screen, 'tint: ', self._KEY_COLOR, (x, y))
+        self._render_text(screen, val_str, color, (x + key_surf.get_width(), y))
         return y
 
     def _compute_grid(
@@ -153,7 +175,7 @@ class AssetsGridPanelView:
         self,
         screen: pygame.Surface,
         model: AssetsGridPanelModel,
-        entity_data: dict,
+        entity_data: Dict[str, Any],
         grid_x: int,
         grid_y: int,
         cell_size: int,
@@ -215,10 +237,7 @@ class AssetsGridPanelView:
                         screen, model, entity_data, rect, asset_key, cell_size
                     )
                 else:
-                    ent_id = (
-                        self.parent_model.hovered_entity_id
-                        or self.parent_model.selected_id
-                    )
+                    ent_id = self._current_entity_id()
                     path = resolve_asset_path(
                         ent_id,
                         self.parent_model,
@@ -229,8 +248,7 @@ class AssetsGridPanelView:
                     )
 
                     if not path:
-                        inner = rect.inflate(-2, -2)
-                        pygame.draw.rect(screen, (0, 0, 0), inner)
+                        self._draw_inner_black(screen, rect)
                     else:
                         raw = self.thumbnail_cache.get(path)
                         if raw is None:
@@ -247,8 +265,7 @@ class AssetsGridPanelView:
                                 screen, rect, raw, entity_data.get('tint')
                             )
                         else:
-                            inner = rect.inflate(-2, -2)
-                            pygame.draw.rect(screen, (0, 0, 0), inner)
+                            self._draw_inner_black(screen, rect)
 
             pygame.draw.rect(screen, self._BORDER_COLOR, rect, 1)
 
@@ -256,7 +273,7 @@ class AssetsGridPanelView:
         self,
         screen: pygame.Surface,
         model: AssetsGridPanelModel,
-        entity_data: dict,
+        entity_data: Dict[str, Any],
         rect: pygame.Rect,
         key: str,
         size: int,
@@ -272,13 +289,12 @@ class AssetsGridPanelView:
         if anim and frame:
             self._blit_tinted(screen, rect, frame, entity_data.get('tint'))
         else:
-            inner = rect.inflate(-2, -2)
-            pygame.draw.rect(screen, (0, 0, 0), inner)
+            self._draw_inner_black(screen, rect)
 
     def _draw_path_thumb(
         self,
         screen: pygame.Surface,
-        entity_data: dict,
+        entity_data: Dict[str, Any],
         rect: pygame.Rect,
         key: str,
         size: int,
@@ -286,7 +302,7 @@ class AssetsGridPanelView:
         """Carga/cacha imagen de ruta, aplica tint, o limpia si no hay asset."""
         path = entity_data.get(key)
         if not path:
-            pygame.draw.rect(screen, (0, 0, 0), rect.inflate(-2, -2))
+            self._draw_inner_black(screen, rect)
             return
 
         raw = self.thumbnail_cache.get(path)
@@ -326,7 +342,7 @@ class AssetsGridPanelView:
         self,
         screen: pygame.Surface,
         model: AssetsGridPanelModel,
-        entity_data: dict,
+        entity_data: Dict[str, Any],
         px: int,
         pad: int,
         grid_y: int,
@@ -347,10 +363,7 @@ class AssetsGridPanelView:
                 # Fallback si el formato no es el esperado
                 path = entity_data.get(sel)
             else:
-                ent_id = (
-                    self.parent_model.hovered_entity_id
-                    or self.parent_model.selected_id
-                )
+                ent_id = self._current_entity_id()
                 path = resolve_asset_path(
                     ent_id,
                     self.parent_model,
@@ -366,10 +379,9 @@ class AssetsGridPanelView:
             info = 'No asignado en no-sets'
         else:
             info = str(path) if path is not None else 'None'
-        info_surf = self.font.render(info, True, self._TEXT_COLOR)
         info_x = px + pad
         info_y = grid_y + cell_size * self._GRID_COLS + pad
-        screen.blit(info_surf, (info_x, info_y))
+        self._render_text(screen, info, self._TEXT_COLOR, (info_x, info_y))
 
         if model.selected_asset_cell:
             if sub_tab == SUBTAB_SET:
