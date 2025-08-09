@@ -63,14 +63,14 @@
         "image_path": "assets/buildings/vegetation/tree_3.png",
         "solid": true,
         "scale": [
-            190,
-            241
+            189,
+            239
         ],
         "original_scale": [
-            190,
-            241
+            189,
+            239
         ],
-        "split_ratio": 0.701,
+        "split_ratio": 0.664,
         "z_bottom": 4,
         "z_top": 6,
         "z": 4
@@ -248,8 +248,8 @@
     },
     {
         "zone": "Lobby",
-        "rel_x": 142,
-        "rel_y": 184,
+        "rel_x": 136,
+        "rel_y": 122,
         "image_path": "assets/buildings/shops/magic_tower.png",
         "solid": true,
         "scale": [

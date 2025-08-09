@@ -82,6 +82,7 @@ class DataController:
             schemas = {}
             for cat_name, fname in [('player', 'InventoryPlayerSchema.json'),
                                      ('monsters', 'InventoryMonstersSchema.json'),
+                                     ('monsters_active', 'InventoryMonstersActiveSchema.json'),
                                      ('map', 'InventoryMapSchema.json')]:
                 path = os.path.join(schemas_dir, fname)
                 with open(path, encoding='utf-8') as sf:
@@ -103,7 +104,8 @@ class DataController:
                 elif isinstance(entries, dict):
                     for key, entry in entries.items():
                         try:
-                            jsonschema.validate(entry, schema)
+                            entry_schema = schemas.get('monsters_active', {}) if c == 'monsters' else schema
+                            jsonschema.validate(entry, entry_schema)
                         except Exception as ve:
                             self.logger.warning(f'Active entry "{key}" for "{c}" invalid: {ve}')
         except ImportError:
