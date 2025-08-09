@@ -49,3 +49,5 @@ class EntityPropertiesPanelModel:
     show_add_system_selector: bool = False
     add_system_entity_type: str = "Monster"
     entity_type_rect: Optional[pygame.Rect] = None
+    # Botón de confirmación (visible solo en modo 'Add Entities on System')
+    confirm_button_rect: Optional[pygame.Rect] = None

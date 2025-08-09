@@ -5,18 +5,8 @@
     "zone_id": "no zone",
     "schema_version": "1.0.0",
     "position": {
-      "x": 145,
-      "y": 1303
-    }
-  },
-  "f4d88619-71da-4f26-b7e5-b7813473d155": {
-    "item_id": "experience_orb",
-    "quantity": 2,
-    "zone_id": "no zone",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 145,
-      "y": 1303
+      "x": 242.0,
+      "y": 1619.0
     }
   },
   "9f01d749-1fb5-4a6f-ae6f-b6e4d5fcf42d": {
@@ -47,16 +37,6 @@
     "position": {
       "x": 2430.4688905982953,
       "y": 2027.3796668210439
-    }
-  },
-  "7d016bbc-0292-42e5-b653-81f939f28428": {
-    "item_id": "gold",
-    "quantity": 4,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 456.30837820968804,
-      "y": 1873.8937334495831
     }
   }
 }

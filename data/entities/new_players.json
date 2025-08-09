@@ -7,7 +7,7 @@
     64,
     64
   ],
-  "DEFAULT_CLASS": "dwarf_2",
+  "DEFAULT_CLASS": "dwarf",
   "DEFAULT_SCALE": 1.0,
   "DEFAULT_SPEED": 5,
   "DEFAULT_TRAIL": {
@@ -25,7 +25,7 @@
   },
   "players": {
     "classes": {
-      "dwarf_2": {
+      "dwarf": {
         "stats": {
           "max_strength": 100,
           "max_intelligence": 35,

@@ -88,7 +88,8 @@ class EntityPickerPanelView:
         if model.active_tab == "Players":
             entity_ids = list(model.player_stats.keys())
         else:
-            entity_ids = list(model.monsters.keys())
+            # Ocultar entradas de monstruos marcadas como pendientes (no confirmadas)
+            entity_ids = [mid for mid, m in model.monsters.items() if not (isinstance(m, dict) and m.get('__pending__'))]
 
         # Reset debug flag on tab change
         if self._last_active_tab != model.active_tab:

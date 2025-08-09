@@ -46,7 +46,7 @@ class EntitiesPropertiesPanelEventHandler:
         if self._handle_drag_events(event):
             return True
 
-        # 3.5. Click en selector 'Type of Entity' (solo en modo Add Entities on System)
+        # 3.5. Click en selector 'Type of Entity' y botón Confirm (solo en modo Add Entities on System)
         if (
             self.controller.type_assets_controller.model.active_type_tab == TYPE_TAB_PROPERTIES
             and event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1
@@ -56,6 +56,11 @@ class EntitiesPropertiesPanelEventHandler:
                 # Toggle entre 'Monster' y 'Player'
                 cur = getattr(self.model, 'add_system_entity_type', 'Monster')
                 self.model.add_system_entity_type = 'Player' if cur == 'Monster' else 'Monster'
+                return True
+            # Click en botón Confirm
+            c_rect = getattr(self.model, 'confirm_button_rect', None)
+            if getattr(self.model, 'show_add_system_selector', False) and c_rect and c_rect.collidepoint(getattr(event, 'pos', (0, 0))):
+                self.controller.confirm_add_entity_on_system()
                 return True
 
         # 4. Hover sobre propiedades

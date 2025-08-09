@@ -41,6 +41,7 @@ from roguelike_editors.entities.services.commands import (
     SetAssetCommand,
     RenameEntityCommand,
 )
+from roguelike_editors.entities.services.constants import ADD_ENTITIES_ON_SYSTEM
 
 import logging
 logger = logging.getLogger(__name__)
@@ -136,7 +137,50 @@ class EntityPropertiesPanelController:
         ent_id = self.model.selected_id
         if not ent_id:
             return
-        # Push command into editor history
+        # Si estamos en modo 'Add Entities on System', no persistir aún: actualizar solo en memoria
+        in_add_system_mode = False
+        try:
+            in_add_system_mode = (self.editor_controller.model.add_remove_model.active_tool == ADD_ENTITIES_ON_SYSTEM)
+        except Exception:
+            in_add_system_mode = False
+        if in_add_system_mode:
+            # Actualización en memoria para assets
+            # Normalizamos ruta relativa como hace SetAssetCommand en persistencia; aquí podemos almacenar la ruta tal cual
+            # Estructura destino: entry['assets'] con active_set 'no-sets' por defecto en monstruos nuevos
+            if ent_id in self.model.player_stats:
+                # Players: mantener espejo en player_assets
+                assets = self.model.player_assets.setdefault(ent_id, {})
+                default_active = assets.get('active_set', 'sets')
+                active = assets.get('active_set', default_active)
+            else:
+                m_entry = self.model.monsters.setdefault(ent_id, {})
+                # Marcar como pendiente para que el picker lo oculte hasta confirmar
+                if isinstance(m_entry, dict):
+                    m_entry['__pending__'] = True
+                assets = m_entry.setdefault('assets', {})
+                default_active = 'no-sets'
+                active = assets.get('active_set', default_active)
+            parts = cell_key.split('_')
+            if len(parts) == 3 and parts[0] == 'asset':
+                _, state, direction = parts
+                if active == 'sets':
+                    sprites_set = assets.setdefault('sets', {}).setdefault('sprites_set', {})
+                    sprites_set[state] = [path]
+                else:
+                    no_sets = assets.setdefault('no-sets', {})
+                    no_sets.setdefault(state, {})[direction] = path
+                # limpiar legado si existiera
+                assets.pop('sprites', None)
+            # UI refresh ligera
+            self.assets_picker_controller.hide()
+            self.grid_controller.model.last_entity_id = None
+            self.grid_controller.model.last_state_tab = None
+            try:
+                self.editor_controller.render(self.editor_controller.game.screen)
+            except Exception:
+                pass
+            return
+        # Fuera de add-mode: Push command into editor history
         self.editor_controller.history.push(SetAssetCommand(self, ent_id, cell_key, path))
     # ----------------------------
     # COMMIT DE CAMBIOS
@@ -177,7 +221,8 @@ class EntityPropertiesPanelController:
 
     def _commit_edit(self) -> None:
         """
-        Aplica los cambios editados en la propiedad seleccionada y los persiste en JSON.
+        Aplica los cambios editados en la propiedad seleccionada.
+        En modo 'Add Entities on System' solo actualiza en memoria; fuera de ese modo, persiste vía comandos.
         """
         if not self.model.editing_property or not self.model.selected_id:
             return
@@ -185,6 +230,75 @@ class EntityPropertiesPanelController:
         ent_id = self.model.selected_id
         key = self.model.editing_property
         new_text = self.model.editing_text
+        # Detectar modo Add-Entities-On-System
+        in_add_system_mode = False
+        try:
+            in_add_system_mode = (self.editor_controller.model.add_remove_model.active_tool == ADD_ENTITIES_ON_SYSTEM)
+        except Exception:
+            in_add_system_mode = False
+
+        if in_add_system_mode:
+            # Actualizar solo en memoria
+            if key == 'id':
+                new_id = new_text.strip() or ent_id
+                if new_id and new_id != ent_id:
+                    # Mover la entrada temporal en el diccionario de monstruos
+                    entry = self.model.monsters.pop(ent_id, None)
+                    if entry is None:
+                        entry = {'stats': {}, 'assets': {'active_set': 'no-sets', 'sets': {}, 'no-sets': {}}}
+                else:
+                    entry = self.model.monsters.get(ent_id)
+                    if entry is None:
+                        entry = {'stats': {}, 'assets': {'active_set': 'no-sets', 'sets': {}, 'no-sets': {}}}
+                # Marcar como pendiente hasta confirmar
+                if isinstance(entry, dict):
+                    entry['__pending__'] = True
+                self.model.monsters[new_id] = entry
+                self.model.selected_id = new_id
+                self._reset_edit_state()
+                return
+
+            # Otras propiedades: escribir en monsters[ent_id]['stats'] (soporta claves con puntos)
+            m_entry = self.model.monsters.setdefault(ent_id, {})
+            # Marcar como pendiente mientras esté en modo add-system
+            if isinstance(m_entry, dict):
+                m_entry['__pending__'] = True
+            stats = m_entry.setdefault('stats', {})
+            # Inferir tipo desde valor actual si existe
+            old_val = None
+            # Navegar nested para obtener old_val si aplica
+            if '.' in key:
+                parts = key.split('.')
+                cur = stats
+                for i, p in enumerate(parts):
+                    if not isinstance(cur, dict):
+                        cur = None
+                        break
+                    if i == len(parts) - 1:
+                        old_val = cur.get(p)
+                    else:
+                        cur = cur.get(p, {})
+            else:
+                old_val = stats.get(key)
+            new_val = self._convert_value(new_text, old_val)
+            # Set nested value
+            if '.' in key:
+                parts = key.split('.')
+                cur = stats
+                for i, p in enumerate(parts):
+                    if i == len(parts) - 1:
+                        cur[p] = new_val
+                    else:
+                        nxt = cur.get(p)
+                        if not isinstance(nxt, dict):
+                            nxt = {}
+                            cur[p] = nxt
+                        cur = nxt
+            else:
+                stats[key] = new_val
+            # No persistir; solo limpiar estado de edición
+            self._reset_edit_state()
+            return
         # Special-case: renaming the entity id (players or monsters)
         if key == 'id':
             new_id = new_text.strip()
@@ -195,6 +309,53 @@ class EntityPropertiesPanelController:
             return
         # Default: push undoable property edit command
         self.editor_controller.history.push(EditPropertyCommand(self, ent_id, key, new_text))
+
+    # ----------------------------
+    # CONFIRMAR AÑADIR ENTIDAD AL SISTEMA
+    # ----------------------------
+    def confirm_add_entity_on_system(self) -> None:
+        """Persiste la entidad actualmente seleccionada y sale del modo de añadir en sistema."""
+        sel_id = getattr(self.model, 'selected_id', None)
+        if not sel_id:
+            return
+        try:
+            path, data, entry = load_entity_data(sel_id, self.model.player_stats, self.model.monsters)
+            # Mezclar entrada temporal en memoria si existe
+            cur = self.model.monsters.get(sel_id)
+            if cur is not None:
+                entry.update(cur)
+                # Eliminar flag de pendiente antes de guardar
+                if isinstance(entry, dict):
+                    entry.pop('__pending__', None)
+                if isinstance(cur, dict):
+                    cur.pop('__pending__', None)
+            save_entity_data(sel_id, entry, path, self.model.player_stats, self.model.monsters)
+            logger.debug(f"Entidad '{sel_id}' confirmada y guardada en JSON")
+            # Recargar definiciones de monstruos para habilitar spawn inmediato
+            try:
+                reload_monster_defs()
+                logger.debug("Definiciones de monstruos recargadas tras confirmar")
+            except Exception as e:
+                logger.error(f"[WARN][PropertiesPanel] No se pudieron recargar definiciones de monstruos: {e}")
+        except Exception as e:
+            logger.error(f"[ERROR][PropertiesPanel] Error al confirmar entidad '{sel_id}': {e}")
+        # Salir del modo 'add_entities_on_system' y ocultar selector/botón en UI
+        try:
+            arm = self.editor_controller.model.add_remove_model
+            if getattr(arm, 'active_tool', None) == ADD_ENTITIES_ON_SYSTEM:
+                arm.active_tool = None
+            # Ocultar controles del selector
+            self.model.show_add_system_selector = False
+            self.model.entity_type_rect = None
+            if hasattr(self.model, 'confirm_button_rect'):
+                self.model.confirm_button_rect = None
+        except Exception:
+            pass
+        # Redibujar UI
+        try:
+            self.editor_controller.render(self.editor_controller.game.screen)
+        except Exception:
+            pass
 
     # ----------------------------
     # UTILIDADES PRIVADAS

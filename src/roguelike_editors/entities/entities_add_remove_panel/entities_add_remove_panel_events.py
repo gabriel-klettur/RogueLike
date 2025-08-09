@@ -1,11 +1,7 @@
 import pygame
 import logging
 logger = logging.getLogger(__name__)
-from roguelike_editors.entities.services.constants import ENTITIES_TOOL_ON_MAP, CONFIRM_ADD_ENTITY_ON_SYSTEM
-from roguelike_editors.entities.entities_properties_panel.services.entity_properties_service import (
-    load_entity_data,
-    save_entity_data,
-)
+from roguelike_editors.entities.services.constants import ENTITIES_TOOL_ON_MAP
 
 class EntitiesAddRemovePanelEventHandler:
     """
@@ -96,29 +92,5 @@ class EntitiesAddRemovePanelEventHandler:
                                     pp_model.add_system_entity_type = 'Monster'
                                 except Exception as e:
                                     logger.error(f" Error opening new monster properties: {e}")
-                        elif tool == CONFIRM_ADD_ENTITY_ON_SYSTEM:
-                            # Confirmar: persistir entidad seleccionada y salir del modo
-                            sel_id = getattr(self.controller.properties_controller.model, 'selected_id', None)
-                            if sel_id:
-                                try:
-                                    path, data, entry = load_entity_data(sel_id, self.controller.model.player_stats, self.controller.model.monsters)
-                                    # Si no hay cambios previos, aseguramos guardar la entrada actual (en memoria)
-                                    cur = self.controller.model.monsters.get(sel_id)
-                                    if cur is not None:
-                                        entry.update(cur)
-                                    save_entity_data(sel_id, entry, path, self.controller.model.player_stats, self.controller.model.monsters)
-                                    logger.debug(f" Entidad '{sel_id}' confirmada y guardada en JSON")
-                                except Exception as e:
-                                    logger.error(f" Error al confirmar y guardar entidad '{sel_id}': {e}")
-                            # Salir del modo de añadir en cualquier caso
-                            if self.model.active_tool == 'add_entities_on_system':
-                                self.model.active_tool = None
-                                # Ocultar selector en Properties Panel
-                                try:
-                                    pp_model = self.controller.properties_controller.model
-                                    pp_model.show_add_system_selector = False
-                                    pp_model.entity_type_rect = None
-                                except Exception:
-                                    pass
                         return True
         return False

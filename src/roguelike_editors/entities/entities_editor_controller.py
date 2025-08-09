@@ -117,6 +117,7 @@ class EntitiesEditorController:
             }
         }
         self.model.monsters[new_id] = {
+            '__pending__': True,  # ocultar en picker hasta confirmar
             'stats': {},
             'assets': {
                 'active_set': 'no-sets',

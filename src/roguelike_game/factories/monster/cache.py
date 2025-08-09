@@ -11,6 +11,18 @@ _SPRITE_SURFACES: Dict[str, Dict[str, pygame.Surface]] = {}
 _DEATH_SURFACES: Dict[str, Optional[pygame.Surface]] = {}
 _loaded_variants: set[str] = set()
 
+def _norm_scale(value, fallback: float) -> float:
+    """Return a numeric scale. If value is None or invalid, use fallback; if fallback is None, use 1.0."""
+    if fallback is None:
+        fallback = 1.0
+    if value is None:
+        return float(fallback)
+    try:
+        return float(value)
+    except Exception:
+        return float(fallback)
+
+
 def load_caches_for(variants: Iterable[str]) -> None:
     """Load and cache sprite and death surfaces for specified monster types."""
 
@@ -30,9 +42,9 @@ def load_caches_for(variants: Iterable[str]) -> None:
             group = cfg_assets.get("no-sets", {})
             assets_group = {k: v for k, v in group.items() if k != "sprites_data_no-set"}
             data_assets = group.get("sprites_data_no-set", {})
-        # Fallback scales and tint
-        default_scale = data_assets.get("scale", 1.0)
-        default_death_scale = data_assets.get("death_scale", default_scale)
+        # Fallback scales and tint (normalize Nones and invalids)
+        default_scale = _norm_scale(data_assets.get("scale", 1.0), 1.0)
+        default_death_scale = _norm_scale(data_assets.get("death_scale", default_scale), default_scale)
         tint = data_assets.get("tint")
         dir_map: Dict[str, pygame.Surface] = {}
         # Mapping directions
@@ -50,7 +62,7 @@ def load_caches_for(variants: Iterable[str]) -> None:
                 for dkey, name in dir_names.items():
                     raw = load_image(sheet)
                     scale_key = f"scale_{state}"
-                    use_scale = data_assets.get(scale_key, default_scale)
+                    use_scale = _norm_scale(data_assets.get(scale_key, default_scale), default_scale)
                     if use_scale != 1.0:
                         w0, h0 = raw.get_size()
                         image = pygame.transform.scale(raw, (int(w0 * use_scale), int(h0 * use_scale)))
@@ -69,13 +81,13 @@ def load_caches_for(variants: Iterable[str]) -> None:
                     raw = load_image(path)
                     if state == "idle":
                         key = dir_names.get(dkey, dkey)
-                        use_scale = data_assets.get("scale_idle", default_scale)
+                        use_scale = _norm_scale(data_assets.get("scale_idle", default_scale), default_scale)
                     elif state == "death":
                         key = "death"
-                        use_scale = data_assets.get("scale_death", default_death_scale)
+                        use_scale = _norm_scale(data_assets.get("scale_death", default_death_scale), default_death_scale)
                     else:
                         key = f"{state}_{dir_names.get(dkey, dkey)}"
-                        use_scale = data_assets.get(f"scale_{state}", default_scale)
+                        use_scale = _norm_scale(data_assets.get(f"scale_{state}", default_scale), default_scale)
                     if use_scale != 1.0:
                         w0, h0 = raw.get_size()
                         image = pygame.transform.scale(raw, (int(w0 * use_scale), int(h0 * use_scale)))

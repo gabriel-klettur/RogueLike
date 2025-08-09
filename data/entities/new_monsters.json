@@ -1320,6 +1320,132 @@
             }
           }
         }
+      },
+      "new_monster": {
+        "stats": {
+          "hp": null,
+          "speed": null,
+          "faction": null,
+          "aggro_range": null,
+          "melee_range": null,
+          "melee_damage": null,
+          "melee_cooldown": null,
+          "defense": null,
+          "power": null,
+          "damage_duration": null,
+          "chasing_speed": null,
+          "feet_width_factor": null,
+          "feet_height_factor": null,
+          "spawn_padding": null,
+          "spawn_count": null,
+          "spawn_margin": null
+        },
+        "assets": {
+          "active_set": "no-sets",
+          "sets": {
+            "sprites_set": {
+              "idle": [],
+              "walk": [],
+              "chase": [],
+              "cast": [],
+              "attack": [],
+              "damage": [],
+              "death": []
+            },
+            "sprites_data_set": {
+              "scale_idle": null,
+              "scale_walk": null,
+              "scale_chase": null,
+              "scale_cast": null,
+              "scale_attack": null,
+              "scale_damage": null,
+              "scale_death": null,
+              "tint": null
+            }
+          },
+          "no-sets": {
+            "idle": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "walk": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "chase": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "cast": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "attack": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "damage": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "death": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "sprites_data_no-set": {
+              "scale_idle": null,
+              "scale_walk": null,
+              "scale_chase": null,
+              "scale_cast": null,
+              "scale_attack": null,
+              "scale_damage": null,
+              "scale_death": null,
+              "tint": null
+            }
+          }
+        }
       }
     }
   }

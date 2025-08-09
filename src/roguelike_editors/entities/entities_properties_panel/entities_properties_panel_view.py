@@ -141,6 +141,8 @@ class EntityPropertiesPanelView:
             sel_consumed_h = 0
             # Reset rect por defecto
             model.entity_type_rect = None
+            # Reset confirm rect por defecto
+            model.confirm_button_rect = None
             if getattr(model, 'show_add_system_selector', False):
                 sel_consumed_h = self._draw_entity_type_selector(
                     screen,
@@ -154,7 +156,10 @@ class EntityPropertiesPanelView:
             # Compute scroll metrics con altura disponible ajustada
             content_y0 = py + primary_header + state_header + sel_consumed_h
             model.total_lines_height = len(lines) * (font_h + 2)
-            model.available_height = max(0, content_h - pad * 2 - sel_consumed_h)
+            # Reservar espacio para el botón de confirmación cuando esté visible en modo Add-System
+            confirm_visible = getattr(model, 'show_add_system_selector', False)
+            confirm_h = (font_h + 10) if confirm_visible else 0
+            model.available_height = max(0, content_h - pad * 2 - sel_consumed_h - confirm_h)
             model.max_scroll = max(0, model.total_lines_height - model.available_height)
             model.scroll_offset = min(max(model.scroll_offset, 0), model.max_scroll)
             # Draw scrollbar only if there is overflow
@@ -170,6 +175,9 @@ class EntityPropertiesPanelView:
             # Draw properties with scroll bajo el selector
             self._draw_properties(screen, model, lines, px, content_y0, pad, font_h, panel_w)
             self._draw_editing_indicator(screen, model, font_h)
+            # Dibujar botón Confirm al fondo del panel cuando se está añadiendo una entidad al sistema
+            if confirm_visible:
+                self._draw_confirm_button(screen, model, px, py, panel_w, panel_h, pad, font_h)
         elif self.type_assets_controller.model.active_type_tab == TYPE_TAB_ASSETS:
             # Calcular métricas de scroll para Assets
             grid_w = panel_w - pad * 2
@@ -413,3 +421,23 @@ class EntityPropertiesPanelView:
         # Altura consumida (label + margen inferior)
         consumed_h = max(label_surf.get_height(), rect.h) + pad
         return consumed_h
+
+    def _draw_confirm_button(self, screen: pygame.Surface, model: EntityPropertiesPanelModel,
+                              px: int, py: int, panel_w: int, panel_h: int, pad: int, font_h: int) -> None:
+        """Dibuja el botón de confirmación en la parte inferior del panel y guarda su rect en el modelo."""
+        btn_text = "Confirm"
+        text_surf = self.font.render(btn_text, True, (255, 255, 255))
+        btn_h = font_h + 6
+        btn_w = panel_w - pad * 2
+        btn_x = px + pad
+        btn_y = py + panel_h - pad - btn_h
+        rect = pygame.Rect(btn_x, btn_y, btn_w, btn_h)
+        # Fondo verde y borde
+        pygame.draw.rect(screen, (0, 140, 0), rect)
+        pygame.draw.rect(screen, (255, 255, 255), rect, 2)
+        # Texto centrado
+        tx = rect.x + (rect.w - text_surf.get_width()) // 2
+        ty = rect.y + (rect.h - text_surf.get_height()) // 2
+        screen.blit(text_surf, (tx, ty))
+        # Guardar rect
+        model.confirm_button_rect = rect
