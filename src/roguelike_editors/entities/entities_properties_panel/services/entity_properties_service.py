@@ -38,6 +38,9 @@ def save_entity_data(ent_id: str, entry: dict, path: str, player_stats: dict, mo
     if ent_id in player_stats:
         full = path
         root = load_from_json(full)
+        # Sanitizar stats antes de completar el esqueleto
+        entry = dict(entry or {})
+        entry['stats'] = _sanitize_stats(entry.get('stats', {}))
         # Asegurar esqueleto completo para jugadores (persistir nulls explícitos)
         entry = ensure_player_skeleton(entry)
         root.setdefault("players", {}).setdefault("classes", {})[ent_id] = entry
@@ -46,6 +49,9 @@ def save_entity_data(ent_id: str, entry: dict, path: str, player_stats: dict, mo
     else:
         full = path
         root = load_from_json(full)
+        # Sanitizar stats antes de completar el esqueleto
+        entry = dict(entry or {})
+        entry['stats'] = _sanitize_stats(entry.get('stats', {}))
         # Asegurar esqueleto completo para monstruos (persistir nulls explícitos)
         entry = ensure_monster_skeleton(entry)
         root.setdefault("monsters", {}).setdefault("classes", {})[ent_id] = entry
@@ -61,6 +67,8 @@ def convert_value(new_text: str, old_val: Any) -> Any:
     """
     try:
         s = (new_text or "").strip()
+        # Eliminar caracteres de control no imprimibles (p.ej. \x7f)
+        s = "".join(ch for ch in s if ch.isprintable())
         low = s.lower()
         # Common nulls
         if low in ("none", "null", ""):
@@ -77,9 +85,28 @@ def convert_value(new_text: str, old_val: Any) -> Any:
             return float(s)
         except ValueError:
             pass
-        return new_text
+        return s
     except Exception:
         return new_text
+
+
+def _sanitize_scalar(val: Any) -> Any:
+    """Limpia cadenas de control y convierte números si es posible."""
+    if isinstance(val, str):
+        return convert_value(val, None)
+    return val
+
+
+def _sanitize_stats(node: Any) -> Any:
+    """Recorre recursivamente el diccionario de stats para limpiar cadenas y forzar números."""
+    if isinstance(node, dict):
+        out = {}
+        for k, v in node.items():
+            out[k] = _sanitize_stats(v)
+        return out
+    if isinstance(node, list):
+        return [_sanitize_stats(v) for v in node]
+    return _sanitize_scalar(node)
 
 
 def ensure_monster_skeleton(entry: Dict[str, Any]) -> Dict[str, Any]:
@@ -132,7 +159,8 @@ def ensure_monster_skeleton(entry: Dict[str, Any]) -> Dict[str, Any]:
             no_sets[st] = {d: None for d in directions}
     meta_no = no_sets.setdefault('sprites_data_no-set', {})
     for st in states:
-        meta_no.setdefault(f'scale_{st}', None)
+        default_scale = 0.55 if st == 'death' else 0.5
+        meta_no.setdefault(f'scale_{st}', default_scale)
     meta_no.setdefault('tint', None)
 
     # sets
@@ -145,7 +173,8 @@ def ensure_monster_skeleton(entry: Dict[str, Any]) -> Dict[str, Any]:
             sheets[st] = []
     meta_set = sets.setdefault('sprites_data_set', {})
     for st in states:
-        meta_set.setdefault(f'scale_{st}', None)
+        default_scale = 0.55 if st == 'death' else 0.5
+        meta_set.setdefault(f'scale_{st}', default_scale)
     meta_set.setdefault('tint', None)
 
     return entry
@@ -192,7 +221,8 @@ def ensure_player_skeleton(entry: Dict[str, Any]) -> Dict[str, Any]:
             no_sets[st] = {d: None for d in directions}
     meta_no = no_sets.setdefault('sprites_data_no-set', {})
     for st in states:
-        meta_no.setdefault(f'scale_{st}', None)
+        default_scale = 0.55 if st == 'death' else 0.5
+        meta_no.setdefault(f'scale_{st}', default_scale)
     meta_no.setdefault('tint', None)
 
     # sets
@@ -204,7 +234,8 @@ def ensure_player_skeleton(entry: Dict[str, Any]) -> Dict[str, Any]:
             sheets[st] = []
     meta_set = sets.setdefault('sprites_data_set', {})
     for st in states:
-        meta_set.setdefault(f'scale_{st}', None)
+        default_scale = 0.55 if st == 'death' else 0.5
+        meta_set.setdefault(f'scale_{st}', default_scale)
     meta_set.setdefault('tint', None)
 
     return entry

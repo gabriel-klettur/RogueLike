@@ -94,31 +94,50 @@ class EntitiesEditorController:
             return {d: None for d in directions}
         no_sets = {st: empty_dirs() for st in states}
         no_sets['sprites_data_no-set'] = {
-            'scale_idle': None,
-            'scale_walk': None,
-            'scale_chase': None,
-            'scale_cast': None,
-            'scale_attack': None,
-            'scale_damage': None,
-            'scale_death': None,
+            'scale_idle': 0.5,
+            'scale_walk': 0.5,
+            'scale_chase': 0.5,
+            'scale_cast': 0.5,
+            'scale_attack': 0.5,
+            'scale_damage': 0.5,
+            'scale_death': 0.55,
             'tint': None,
         }
         sets = {
             'sprites_set': {st: [] for st in states},
             'sprites_data_set': {
-                'scale_idle': None,
-                'scale_walk': None,
-                'scale_chase': None,
-                'scale_cast': None,
-                'scale_attack': None,
-                'scale_damage': None,
-                'scale_death': None,
+                'scale_idle': 0.5,
+                'scale_walk': 0.5,
+                'scale_chase': 0.5,
+                'scale_cast': 0.5,
+                'scale_attack': 0.5,
+                'scale_damage': 0.5,
+                'scale_death': 0.55,
                 'tint': None,
             }
         }
+        # Default stats for new monster created via 'Add Entities on System'
+        default_stats = {
+            'hp': 1,
+            'speed': 1.0,
+            'faction': 'EVIL',
+            'aggro_range': 10,
+            'melee_range': 5,
+            'melee_damage': 1,
+            'melee_cooldown': 1.0,
+            'defense': 1,
+            'power': 1,
+            'damage_duration': 0.5,
+            'chasing_speed': 1.0,
+            'feet_width_factor': 0.5,
+            'feet_height_factor': 0.5,
+            'spawn_padding': 5,
+            'spawn_count': 10,
+            'spawn_margin': 0,
+        }
         self.model.monsters[new_id] = {
             '__pending__': True,  # ocultar en picker hasta confirmar
-            'stats': {},
+            'stats': default_stats,
             'assets': {
                 'active_set': 'no-sets',
                 'sets': sets,
