@@ -10,32 +10,43 @@ class TabsView:
         self.margin = margin
 
     def draw_tabs(self, overlay, grid_origin_x, grid_origin_y, mx, my, active_tab, slots_count):
-        """Dibuja las pestañas de default/active"""
-        # Esta funcionalidad ya está en buttons_view como show_buttons
-        # Mantenemos por compatibilidad pero delegamos
-        cols = 5
-        rows = (slots_count + cols - 1) // cols
-        show_y = grid_origin_y - self.button_size[1] - self.margin
+        """Dibuja las pestañas de default/active con el mismo estilo que las del panel izquierdo."""
+        # Coordenada Y: encima del grid
+        show_y = grid_origin_y - max(self.button_size[1], 24) - self.margin
         rects = {}
 
-        # Show Default
-        show_default_rect = pygame.Rect(grid_origin_x, show_y, *self.button_size)
-        pygame.draw.rect(overlay, (100, 100, 100), show_default_rect)
-        border_color = (255, 255, 0) if (active_tab == 'default' or show_default_rect.collidepoint(mx, my)) else (255, 255, 255)
-        pygame.draw.rect(overlay, border_color, show_default_rect, 2)
-        txt_def = self.font.render("Show Default", True, (255, 255, 255))
-        overlay.blit(txt_def, (grid_origin_x + 10, show_y + 5))
-        rects['show_default'] = show_default_rect
+        # Estilo alineado con left_panel.tabs.tabs_view
+        padding = 10
+        tab_gap = 5
+        tab_x = grid_origin_x
 
-        # Show Active
-        act_x = grid_origin_x + self.button_size[0] + 10
-        show_active_rect = pygame.Rect(act_x, show_y, *self.button_size)
-        pygame.draw.rect(overlay, (100, 100, 100), show_active_rect)
-        border_color = (255, 255, 0) if (active_tab == 'active' or show_active_rect.collidepoint(mx, my)) else (255, 255, 255)
-        pygame.draw.rect(overlay, border_color, show_active_rect, 2)
+        # Texto y medidas dinámicas
+        txt_def = self.font.render("Show Default", True, (255, 255, 255))
+        w_def, h_def = txt_def.get_size()
+        def_rect = pygame.Rect(tab_x, show_y, w_def + padding * 2, h_def + padding // 2)
+        # Relleno según activo
+        def_fill = (100, 100, 100) if active_tab == 'default' else (50, 50, 50)
+        pygame.draw.rect(overlay, def_fill, def_rect)
+        # Borde blanco y, si activo, remarcar en amarillo (como en las pestañas izquierdas)
+        pygame.draw.rect(overlay, (255, 255, 255), def_rect, 2)
+        if active_tab == 'default':
+            pygame.draw.rect(overlay, (255, 255, 0), def_rect, 2)
+        # Texto centrado verticalmente con padding horizontal
+        overlay.blit(txt_def, (def_rect.x + padding, def_rect.y + (def_rect.height - h_def) // 2))
+        rects['show_default'] = def_rect
+
+        # Siguiente pestaña
+        tab_x += def_rect.width + tab_gap
         txt_act = self.font.render("Show Active", True, (255, 255, 255))
-        overlay.blit(txt_act, (act_x + 10, show_y + 5))
-        rects['show_active'] = show_active_rect
+        w_act, h_act = txt_act.get_size()
+        act_rect = pygame.Rect(tab_x, show_y, w_act + padding * 2, h_act + padding // 2)
+        act_fill = (100, 100, 100) if active_tab == 'active' else (50, 50, 50)
+        pygame.draw.rect(overlay, act_fill, act_rect)
+        pygame.draw.rect(overlay, (255, 255, 255), act_rect, 2)
+        if active_tab == 'active':
+            pygame.draw.rect(overlay, (255, 255, 0), act_rect, 2)
+        overlay.blit(txt_act, (act_rect.x + padding, act_rect.y + (act_rect.height - h_act) // 2))
+        rects['show_active'] = act_rect
 
         return rects
 
