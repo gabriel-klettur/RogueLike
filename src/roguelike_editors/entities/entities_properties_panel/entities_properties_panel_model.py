@@ -44,3 +44,8 @@ class EntityPropertiesPanelModel:
     # Asset key hovered y seleccionado en grid
     hovered_asset_cell: Optional[str] = None
     selected_asset_cell: Optional[str] = None
+
+    # Selector de tipo de entidad (visible cuando se usa 'add_entities_on_system')
+    show_add_system_selector: bool = False
+    add_system_entity_type: str = "Monster"
+    entity_type_rect: Optional[pygame.Rect] = None

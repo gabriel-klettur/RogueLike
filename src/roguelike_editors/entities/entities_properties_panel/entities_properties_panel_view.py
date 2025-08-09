@@ -117,23 +117,38 @@ class EntityPropertiesPanelView:
 
         # 2. Dibujar contenido según pestaña
         if self.type_assets_controller.model.active_type_tab == TYPE_TAB_PROPERTIES:
-            # Compute scroll metrics
+            # Dibujar selector de tipo de entidad (arriba del área scrollable)
+            sel_consumed_h = 0
+            # Reset rect por defecto
+            model.entity_type_rect = None
+            if getattr(model, 'show_add_system_selector', False):
+                sel_consumed_h = self._draw_entity_type_selector(
+                    screen,
+                    model,
+                    px,
+                    py + primary_header + state_header,
+                    pad,
+                    font_h,
+                    panel_w,
+                )
+            # Compute scroll metrics con altura disponible ajustada
+            content_y0 = py + primary_header + state_header + sel_consumed_h
             model.total_lines_height = len(lines) * (font_h + 2)
-            model.available_height = content_h - pad * 2
+            model.available_height = max(0, content_h - pad * 2 - sel_consumed_h)
             model.max_scroll = max(0, model.total_lines_height - model.available_height)
             model.scroll_offset = min(max(model.scroll_offset, 0), model.max_scroll)
             # Draw scrollbar only if there is overflow
-            if model.max_scroll > 0:
+            if model.max_scroll > 0 and model.available_height > 0:
                 scrollbar_width = self.SCROLLBAR_WIDTH
                 bar_x = px + panel_w - scrollbar_width - pad // 2
-                bar_y = py + primary_header + state_header + pad
+                bar_y = content_y0 + pad
                 bar_h = model.available_height
                 thumb_h = max(20, int(bar_h * (model.available_height / model.total_lines_height))) if model.total_lines_height else bar_h
                 thumb_y = bar_y + int((model.scroll_offset / model.max_scroll) * (bar_h - thumb_h)) if model.max_scroll else bar_y
                 pygame.draw.rect(screen, (50, 50, 50), (bar_x, bar_y, scrollbar_width, bar_h))
                 pygame.draw.rect(screen, (200, 200, 200), (bar_x, thumb_y, scrollbar_width, thumb_h))
-            # Draw properties with scroll
-            self._draw_properties(screen, model, lines, px, py + primary_header + state_header, pad, font_h, panel_w)
+            # Draw properties with scroll bajo el selector
+            self._draw_properties(screen, model, lines, px, content_y0, pad, font_h, panel_w)
             self._draw_editing_indicator(screen, model, font_h)
         elif self.type_assets_controller.model.active_type_tab == TYPE_TAB_ASSETS:
             # Calcular métricas de scroll para Assets
@@ -279,3 +294,38 @@ class EntityPropertiesPanelView:
         while self.font.size(text + '...')[0] > max_width and text:
             text = text[:-1]
         return text + '...'
+
+    def _draw_entity_type_selector(self, screen: pygame.Surface, model: EntityPropertiesPanelModel,
+                                   px: int, py: int, pad: int, font_h: int, panel_w: int) -> int:
+        """Dibuja el label y combobox 'Type of Entity' en la parte superior del panel Properties.
+
+        Retorna la altura consumida para ajustar el área scrollable inferior.
+        """
+        tx = px + pad
+        ty = py + pad
+        # Label
+        label = "Type of Entity"
+        label_surf = self.font.render(label, True, (255, 255, 255))
+        screen.blit(label_surf, (tx, ty))
+        # Combobox
+        value = getattr(model, 'add_system_entity_type', 'Monster')
+        value_text = str(value)
+        value_surf = self.font.render(value_text, True, (0, 0, 0))
+        cb_pad_x = 8
+        cb_w = max(120, value_surf.get_width() + cb_pad_x * 2)
+        cb_h = font_h + 6
+        cb_x = tx + label_surf.get_width() + pad
+        cb_y = ty - 2
+        rect = pygame.Rect(cb_x, cb_y, min(cb_w, panel_w - (cb_x - px) - pad), cb_h)
+        # Fondo y borde
+        pygame.draw.rect(screen, (200, 200, 200), rect)
+        pygame.draw.rect(screen, (255, 255, 255), rect, 2)
+        # Texto centrado
+        text_x = rect.x + (rect.w - value_surf.get_width()) // 2
+        text_y = rect.y + (rect.h - value_surf.get_height()) // 2
+        screen.blit(value_surf, (text_x, text_y))
+        # Guardar rect para eventos
+        model.entity_type_rect = rect
+        # Altura consumida (label + margen inferior)
+        consumed_h = max(label_surf.get_height(), rect.h) + pad
+        return consumed_h
