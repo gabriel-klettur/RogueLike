@@ -41,6 +41,12 @@ class EntitiesAddRemovePanelEventHandler:
                             # Si veníamos de 'add_entities_on_system', salir de ese modo
                             if self.model.active_tool == 'add_entities_on_system':
                                 self.model.active_tool = None
+                                try:
+                                    pp_model = self.controller.properties_controller.model
+                                    pp_model.show_add_system_selector = False
+                                    pp_model.entity_type_rect = None
+                                except Exception:
+                                    pass
                             if self.controller.model.spawn_mode_active:
                                 logger.debug(" Cancelando spawn mode")
                                 self.model.active_tool = None
@@ -53,6 +59,12 @@ class EntitiesAddRemovePanelEventHandler:
                             # Si veníamos de 'add_entities_on_system', salir de ese modo
                             if self.model.active_tool == 'add_entities_on_system':
                                 self.model.active_tool = None
+                                try:
+                                    pp_model = self.controller.properties_controller.model
+                                    pp_model.show_add_system_selector = False
+                                    pp_model.entity_type_rect = None
+                                except Exception:
+                                    pass
                             if self.controller.model.delete_mode_active:
                                 logger.debug(" Cancelando delete mode")
                                 self.model.active_tool = None
@@ -66,11 +78,22 @@ class EntitiesAddRemovePanelEventHandler:
                             if self.model.active_tool == 'add_entities_on_system':
                                 logger.debug(" Cerrando modo 'Add Entity on System'")
                                 self.model.active_tool = None
+                                # Ocultar selector en Properties Panel
+                                try:
+                                    pp_model = self.controller.properties_controller.model
+                                    pp_model.show_add_system_selector = False
+                                    pp_model.entity_type_rect = None
+                                except Exception:
+                                    pass
                             else:
                                 logger.debug(" Opening Properties Panel to add new monster class")
                                 self.model.active_tool = tool
                                 try:
                                     self.controller.open_new_monster_properties()
+                                    # Mostrar selector en Properties Panel, por defecto 'Monster'
+                                    pp_model = self.controller.properties_controller.model
+                                    pp_model.show_add_system_selector = True
+                                    pp_model.add_system_entity_type = 'Monster'
                                 except Exception as e:
                                     logger.error(f" Error opening new monster properties: {e}")
                         elif tool == CONFIRM_ADD_ENTITY_ON_SYSTEM:
@@ -90,5 +113,12 @@ class EntitiesAddRemovePanelEventHandler:
                             # Salir del modo de añadir en cualquier caso
                             if self.model.active_tool == 'add_entities_on_system':
                                 self.model.active_tool = None
+                                # Ocultar selector en Properties Panel
+                                try:
+                                    pp_model = self.controller.properties_controller.model
+                                    pp_model.show_add_system_selector = False
+                                    pp_model.entity_type_rect = None
+                                except Exception:
+                                    pass
                         return True
         return False
