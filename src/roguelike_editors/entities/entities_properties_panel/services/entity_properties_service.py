@@ -41,6 +41,8 @@ def save_entity_data(ent_id: str, entry: dict, path: str, player_stats: dict, mo
         # Sanitizar stats antes de completar el esqueleto
         entry = dict(entry or {})
         entry['stats'] = _sanitize_stats(entry.get('stats', {}))
+        # Sanitizar assets (convertir PathLike a str) antes de completar el esqueleto
+        entry['assets'] = _sanitize_assets(entry.get('assets', {}))
         # Asegurar esqueleto completo para jugadores (persistir nulls explícitos)
         entry = ensure_player_skeleton(entry)
         root.setdefault("players", {}).setdefault("classes", {})[ent_id] = entry
@@ -52,6 +54,8 @@ def save_entity_data(ent_id: str, entry: dict, path: str, player_stats: dict, mo
         # Sanitizar stats antes de completar el esqueleto
         entry = dict(entry or {})
         entry['stats'] = _sanitize_stats(entry.get('stats', {}))
+        # Sanitizar assets (convertir PathLike a str) antes de completar el esqueleto
+        entry['assets'] = _sanitize_assets(entry.get('assets', {}))
         # Asegurar esqueleto completo para monstruos (persistir nulls explícitos)
         entry = ensure_monster_skeleton(entry)
         root.setdefault("monsters", {}).setdefault("classes", {})[ent_id] = entry
@@ -107,6 +111,34 @@ def _sanitize_stats(node: Any) -> Any:
     if isinstance(node, list):
         return [_sanitize_stats(v) for v in node]
     return _sanitize_scalar(node)
+
+
+def _sanitize_assets(node: Any) -> Any:
+    """Convierte rutas PathLike a str y normaliza separadores para JSON.
+    Soporta estructuras dict/list anidadas para assets (sets/no-sets).
+    """
+    try:
+        import os as _os
+        _fspath = _os.fspath
+        _PathLike = _os.PathLike
+    except Exception:
+        _fspath = None
+        _PathLike = ()
+
+    if isinstance(node, dict):
+        return {k: _sanitize_assets(v) for k, v in node.items()}
+    if isinstance(node, list):
+        return [_sanitize_assets(v) for v in node]
+    # PathLike -> string
+    try:
+        if _fspath and isinstance(node, _PathLike):
+            return _fspath(node).replace('\\', '/')
+    except Exception:
+        pass
+    # Cadenas: normalizar separadores
+    if isinstance(node, str):
+        return node.replace('\\', '/')
+    return node
 
 
 def ensure_monster_skeleton(entry: Dict[str, Any]) -> Dict[str, Any]:

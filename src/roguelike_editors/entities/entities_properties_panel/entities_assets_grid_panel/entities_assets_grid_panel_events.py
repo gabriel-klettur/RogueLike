@@ -1,5 +1,5 @@
 import pygame
-from typing import Optional
+from typing import Any, Optional, Tuple
 
 from roguelike_ui.widgets.double_click_detector import DoubleClickDetector
 import logging
@@ -15,11 +15,22 @@ class AssetsGridPanelEventHandler:
     para mostrar el selector de assets cuando corresponda.
     """
 
-    def __init__(self, controller) -> None:
+    def __init__(self, controller: Any) -> None:
         self.controller = controller
         self.model = controller.model
         self.view = controller.view
         self.dc_detector = DoubleClickDetector()
+
+    def _find_cell_key_at_pos(self, pos: Tuple[int, int]) -> Optional[str]:
+        """Devuelve la clave de la celda bajo el cursor, o None si no hay celda."""
+        entries = getattr(self.model, 'asset_cell_entries', None)
+        if not entries:
+            return None
+        mx, my = pos
+        for rect, key in entries:
+            if rect.collidepoint(mx, my):
+                return key
+        return None
 
     def handle(self, event: pygame.event.Event) -> bool:
         """
@@ -55,19 +66,9 @@ class AssetsGridPanelEventHandler:
 
         :return: True si alguna celda está en hover.
         """
-        entries = getattr(self.model, 'asset_cell_entries', None)
-        if not entries:
-            return False
-
-        mx, my = event.pos
-        hovered: Optional[str] = None
-        for rect, key in entries:
-            if rect.collidepoint(mx, my):
-                hovered = key
-                break
-
-        self.model.hovered_asset_cell = hovered
-        return hovered is not None
+        key = self._find_cell_key_at_pos(event.pos)
+        self.model.hovered_asset_cell = key
+        return key is not None
 
     def _process_cell_click(self, event: pygame.event.Event) -> bool:
         """
@@ -75,18 +76,13 @@ class AssetsGridPanelEventHandler:
 
         :return: True si se hizo click sobre una celda.
         """
-        entries = getattr(self.model, 'asset_cell_entries', None)
-        if not entries:
+        key = self._find_cell_key_at_pos(event.pos)
+        if key is None:
             return False
-
-        mx, my = event.pos
-        for rect, key in entries:
-            if rect.collidepoint(mx, my):
-                # Actualizar selección en el modelo
-                self.model.selected_asset_cell = key
-                logger.debug(f"Clicked asset cell {key}")
-                return True
-        return False
+        # Actualizar selección en el modelo
+        self.model.selected_asset_cell = key
+        logger.debug(f"Clicked asset cell {key}")
+        return True
 
     def _process_cell_double_click(self, event: pygame.event.Event) -> bool:
         """
@@ -97,7 +93,6 @@ class AssetsGridPanelEventHandler:
         entries = getattr(self.model, 'asset_cell_entries', None)
         if not entries:
             return False
-
         mx, my = event.pos
         for rect, key in entries:
             if rect.collidepoint(mx, my) and self.dc_detector.is_double_click(key):

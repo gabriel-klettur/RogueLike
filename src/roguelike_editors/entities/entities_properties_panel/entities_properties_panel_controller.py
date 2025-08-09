@@ -147,6 +147,13 @@ class EntityPropertiesPanelController:
             # Actualización en memoria para assets
             # Normalizamos ruta relativa como hace SetAssetCommand en persistencia; aquí podemos almacenar la ruta tal cual
             # Estructura destino: entry['assets'] con active_set 'no-sets' por defecto en monstruos nuevos
+            # Convertir cualquier PathLike a str y normalizar separadores para evitar problemas de serialización
+            try:
+                path_str = os.fspath(path)
+            except Exception:
+                path_str = path
+            if isinstance(path_str, str):
+                path_str = path_str.replace('\\\\', '/').replace('\\', '/')
             if ent_id in self.model.player_stats:
                 # Players: mantener espejo en player_assets
                 assets = self.model.player_assets.setdefault(ent_id, {})
@@ -165,10 +172,10 @@ class EntityPropertiesPanelController:
                 _, state, direction = parts
                 if active == 'sets':
                     sprites_set = assets.setdefault('sets', {}).setdefault('sprites_set', {})
-                    sprites_set[state] = [path]
+                    sprites_set[state] = [path_str]
                 else:
                     no_sets = assets.setdefault('no-sets', {})
-                    no_sets.setdefault(state, {})[direction] = path
+                    no_sets.setdefault(state, {})[direction] = path_str
                 # limpiar legado si existiera
                 assets.pop('sprites', None)
             # UI refresh ligera
