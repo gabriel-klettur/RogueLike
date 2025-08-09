@@ -61,12 +61,23 @@ class TabsView:
                 if isinstance(classes, dict) and classes:
                     sel_cls = getattr(model, 'selected_default_player_class', None)
                     if sel_cls in classes:
-                        return classes[sel_cls].get('slots', []) or []
-                    # Fallback: first available class
-                    first_tpl = next(iter(classes.values()))
-                    return first_tpl.get('slots', []) or []
+                        tpl = classes[sel_cls] or {}
+                    else:
+                        # Fallback: first available class
+                        tpl = next(iter(classes.values())) or {}
+                    # Slots y padding a capacidad (opcional)
+                    slots = tpl.get('slots', []) or []
+                    cap = tpl.get('capacity')
+                    if isinstance(cap, int) and cap > 0:
+                        if len(slots) < cap:
+                            slots = slots + [None] * (cap - len(slots))
+                        # Si hay más slots que capacidad, no recortar para no ocultar datos
+                    return slots
                 # Legacy single-template fallback
-                slots = default_player.get('slots', [])
+                slots = default_player.get('slots', []) or []
+                cap = default_player.get('capacity')
+                if isinstance(cap, int) and cap > 0 and len(slots) < cap:
+                    slots = slots + [None] * (cap - len(slots))
                 return slots
             elif model.current_category == 'monsters':
                 # Prefer explicit selection from left list (template_id)

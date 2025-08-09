@@ -58,6 +58,7 @@ class AddItemController:
                     target_cls = sel_cls if sel_cls in classes else next(iter(classes.keys()))
                     tpl = classes.get(target_cls, {})
                     slots = tpl.get('slots', []) or []
+                    cap = tpl.get('capacity')
                     for slot in slots:
                         if slot and slot.get('item') == self.model.selected_item:
                             slot['quantity'] = slot.get('quantity', 0) + quantity
@@ -68,12 +69,17 @@ class AddItemController:
                                 slots[idx] = {'item': self.model.selected_item, 'quantity': quantity}
                                 break
                         else:
-                            slots.append({'item': self.model.selected_item, 'quantity': quantity})
+                            # Si hay capacidad definida, no excederla
+                            if isinstance(cap, int) and cap > 0 and len(slots) >= cap:
+                                logger.debug(f"[DEBUG InvGrid] capacidad alcanzada para clase {target_cls}: {cap}")
+                            else:
+                                slots.append({'item': self.model.selected_item, 'quantity': quantity})
                     tpl['slots'] = slots
                     classes[target_cls] = tpl
                     default_player['classes'] = classes
                 else:
                     slots = default_player.get('slots', [])
+                    cap = default_player.get('capacity')
                     for slot in slots:
                         if slot and slot.get('item') == self.model.selected_item:
                             slot['quantity'] = slot.get('quantity', 0) + quantity
@@ -84,7 +90,10 @@ class AddItemController:
                                 slots[idx] = {'item': self.model.selected_item, 'quantity': quantity}
                                 break
                         else:
-                            slots.append({'item': self.model.selected_item, 'quantity': quantity})
+                            if isinstance(cap, int) and cap > 0 and len(slots) >= cap:
+                                logger.debug(f"[DEBUG InvGrid] capacidad alcanzada (legacy player): {cap}")
+                            else:
+                                slots.append({'item': self.model.selected_item, 'quantity': quantity})
                     default_player['slots'] = slots
             elif cat == 'monsters':
                 # Determine target template_id: prefer explicit selection from left list

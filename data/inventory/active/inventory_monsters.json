@@ -1,16 +1,19 @@
 {
-  "1bd6485b-3585-48dc-b586-7c4cdc958322": {
-    "template_id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+  "6fde3b48-b02a-4de4-88e8-b233598764c7": {
+    "template_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
     "slots": [
       {
         "item": "gold",
-        "quantity": 2
+        "quantity": 6
       },
       {
         "item": "experience_orb",
-        "quantity": 3
+        "quantity": 4
       },
-      null,
+      {
+        "item": "wood",
+        "quantity": 1
+      },
       null,
       null,
       null,

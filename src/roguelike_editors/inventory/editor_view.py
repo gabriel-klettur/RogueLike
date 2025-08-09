@@ -122,7 +122,9 @@ class InventoryEditorView:
         # Obtener lista de elementos para panel
         items = self.inventory_panel_controller.get_items_list()
         # Dibujar panel mediante MVC sobre la pantalla directamente
-        panel_rects = self.inventory_panel_view.draw(screen, self.inventory_panel_model, panel_rect, items)
+        # IMPORTANTE: pasar el InventoryEditorModel completo para que la ListView
+        # pueda acceder a editing_side y selected_default_player_class, etc.
+        panel_rects = self.inventory_panel_view.draw(screen, model, panel_rect, items)
         # Guardar rectángulos de pestañas y panel para eventos
         self.tab_rects = panel_rects.get('tab_rects')
 
@@ -161,6 +163,9 @@ class InventoryEditorView:
             # Guardar rects para eventos
             self.item_list_panel_rect = rects.get('panel_rect')
             self.item_list_header_rect = rects.get('header_rect')
+            # Exponer el scroll panel para el handler de Add Item
+            # AddItemEventHandler espera self.view.item_list_scroll_panel para manejar scroll/selección
+            self.item_list_scroll_panel = pv.scroll_panel
             self.add_to_inventory_button_rect = rects.get('add_button_rect')
         return
 
