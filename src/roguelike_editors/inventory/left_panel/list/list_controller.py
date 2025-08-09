@@ -21,16 +21,25 @@ class ListController:
     
     def get_items_list(self):
         """
-        Construir lista de elementos para la categoría actual usando active_data.
+        Construir lista de elementos para la categoría actual usando active_data o default_data
+        según el lado de edición seleccionado.
         """
         ed_model = self.editor_controller.model
-        data = ed_model.active_data.get(self.panel_model.current_category, {})
+        category = self.panel_model.current_category
+        use_default = ed_model.editing_side == 'default' and category in ('player', 'monsters')
+        # Seleccionar fuente de datos
+        if use_default and category == 'player':
+            # Normalizar a un dict de una sola entrada para reutilizar _get_player_items
+            default_player = ed_model.default_data.get('player', {})
+            data = {'default': default_player}
+        else:
+            data = ed_model.active_data.get(category, {})
         
         items = []
-        if self.panel_model.current_category == 'player':
+        if category == 'player':
             items = self._get_player_items(data)
-        elif self.panel_model.current_category == 'monsters':
-            items = self._get_monsters_items(data)
+        elif category == 'monsters':
+            items = self._get_monsters_items(data, use_default)
         else:
             items = self._get_other_items(data)
         
@@ -47,7 +56,7 @@ class ListController:
                     items.append(f"{slot.get('item')} x{slot.get('quantity')}")
         return items
     
-    def _get_monsters_items(self, data):
+    def _get_monsters_items(self, data, use_default=False):
         """
         Obtiene los items de los monstruos.
         """
@@ -90,9 +99,15 @@ class ListController:
                 if pos:
                     items.append(f"  Pos: ({pos.get('x', 0):.1f}, {pos.get('y', 0):.1f})")
             
-            # Active items
-            slot_texts = [f"{slot.get('item')} x{slot.get('quantity')}" 
-                         for slot in entry.get('slots', []) if slot]
+            # Items: activos o por defecto según use_default
+            if use_default:
+                # Buscar plantilla y mostrar inventario por defecto (min)
+                tpl_entry = template_map.get(tpl)
+                inv_list = tpl_entry.get('inventory', []) if tpl_entry else []
+                slot_texts = [f"{e.get('item')} x{e.get('min', 0)}" for e in inv_list]
+            else:
+                slot_texts = [f"{slot.get('item')} x{slot.get('quantity')}" 
+                              for slot in entry.get('slots', []) if slot]
             if slot_texts:
                 items.append("  Items: " + ", ".join(slot_texts))
         
