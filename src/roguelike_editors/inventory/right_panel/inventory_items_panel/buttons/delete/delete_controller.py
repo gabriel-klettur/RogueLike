@@ -30,15 +30,28 @@ class DeleteController:
                         slots[slot_idx] = None
                     tpl['slots'] = slots
             elif cat == 'monsters':
-                active_entry = self.editor_model.active_data.get('monsters', {}).get(str(eid), {})
-                template_id = active_entry.get('template_id')
-                for def_entry in self.editor_model.default_data.get('monsters', {}).values():
-                    if def_entry.get('template_id') == template_id:
-                        inv_list = def_entry.get('inventory', [])
-                        if slot_idx < len(inv_list):
-                            inv_list.pop(slot_idx)
-                            def_entry['inventory'] = inv_list
-                        break
+                # Determine target template_id: prefer explicit selection from left list
+                sel_tid = getattr(self.editor_model, 'selected_default_template_id', None)
+                template_id = sel_tid
+                if not template_id:
+                    active_entry = self.editor_model.active_data.get('monsters', {}).get(str(eid), {})
+                    template_id = active_entry.get('template_id')
+                if template_id:
+                    for def_entry in self.editor_model.default_data.get('monsters', {}).values():
+                        if def_entry.get('template_id') == template_id:
+                            inv_list = def_entry.get('inventory', [])
+                            if slot_idx < len(inv_list):
+                                inv = inv_list[slot_idx]
+                                # Reduce min/max by qty; if zero or below, remove
+                                new_min = max(0, inv.get('min', 0) - qty)
+                                new_max = max(0, inv.get('max', 0) - qty)
+                                if new_min == 0 and new_max == 0:
+                                    inv_list.pop(slot_idx)
+                                else:
+                                    inv['min'] = new_min
+                                    inv['max'] = max(new_min, new_max)
+                                def_entry['inventory'] = inv_list
+                            break
         elif side == 'active':
             active_map = self.editor_model.active_data.get(cat, {})
             if cat == 'monsters':

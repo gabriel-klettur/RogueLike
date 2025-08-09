@@ -61,19 +61,21 @@ class TabsView:
                 
                 return slots
             elif model.current_category == 'monsters':
-                # Determine template of selected monster
+                # Prefer explicit selection from left list (template_id)
+                sel_tid = getattr(model, 'selected_default_template_id', None)
+                if sel_tid:
+                    for def_entry in model.default_data.get('monsters', {}).values():
+                        if def_entry.get('template_id') == sel_tid:
+                            inv_list = def_entry.get('inventory', [])
+                            slots = [{'item': inv.get('item'), 'quantity': inv.get('min', 0)} for inv in inv_list]
+                            return slots
+                # Fallback: use template of selected active monster (if any)
                 active_mon = model.active_data.get('monsters', {}).get(str(model.selected_eid), {})
                 template_id = active_mon.get('template_id')
-                for tpl_name, def_entry in model.default_data.get('monsters', {}).items():
+                for def_entry in model.default_data.get('monsters', {}).values():
                     if def_entry.get('template_id') == template_id:
                         inv_list = def_entry.get('inventory', [])
-                        # Use min quantity for default slots
                         slots = [{'item': inv.get('item'), 'quantity': inv.get('min', 0)} for inv in inv_list]
-                        # Pad slots to match active slots length
-                        active_slots = active_mon.get('slots', [])
-                        if len(active_slots) > len(slots):
-                            slots += [None] * (len(active_slots) - len(slots))
-                        
                         return slots
             
             return []

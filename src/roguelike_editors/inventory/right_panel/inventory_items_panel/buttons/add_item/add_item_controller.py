@@ -66,20 +66,27 @@ class AddItemController:
                         slots.append({'item': self.model.selected_item, 'quantity': quantity})
                 default_player['slots'] = slots
             elif cat == 'monsters':
-                active_entry = self.editor_model.active_data.get('monsters', {}).get(str(eid), {})
-                template_id = active_entry.get('template_id')
-                for tpl_name, def_entry in self.editor_model.default_data.get('monsters', {}).items():
-                    if def_entry.get('template_id') == template_id:
-                        inv_list = def_entry.get('inventory', [])
-                        for entry in inv_list:
-                            if entry.get('item') == self.model.selected_item:
-                                entry['min'] = entry.get('min', 0) + quantity
-                                entry['max'] = entry.get('max', 0) + quantity
-                                break
-                        else:
-                            inv_list.append({'item': self.model.selected_item, 'min': quantity, 'max': quantity, 'chance': 1.0})
-                        def_entry['inventory'] = inv_list
-                        break
+                # Determine target template_id: prefer explicit selection from left list
+                sel_tid = getattr(self.editor_model, 'selected_default_template_id', None)
+                template_id = None
+                if sel_tid:
+                    template_id = sel_tid
+                else:
+                    active_entry = self.editor_model.active_data.get('monsters', {}).get(str(eid), {})
+                    template_id = active_entry.get('template_id')
+                if template_id:
+                    for def_entry in self.editor_model.default_data.get('monsters', {}).values():
+                        if def_entry.get('template_id') == template_id:
+                            inv_list = def_entry.get('inventory', [])
+                            for entry in inv_list:
+                                if entry.get('item') == self.model.selected_item:
+                                    entry['min'] = entry.get('min', 0) + quantity
+                                    entry['max'] = entry.get('max', 0) + quantity
+                                    break
+                            else:
+                                inv_list.append({'item': self.model.selected_item, 'min': quantity, 'max': quantity, 'chance': 1.0})
+                            def_entry['inventory'] = inv_list
+                            break
             self.model.show_item_list = False
             self.model.show_quantity_input = False
             self.model.selected_item = None
