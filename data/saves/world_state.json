@@ -3,7 +3,7 @@
     "level": "global_map",
     "pos": [
       24,
-      64
+      59
     ]
   },
   "npcs": {},
@@ -11,7 +11,7 @@
     "global_map": {
       "player_pos": [
         24,
-        64
+        59
       ],
       "npc_states": {}
     }

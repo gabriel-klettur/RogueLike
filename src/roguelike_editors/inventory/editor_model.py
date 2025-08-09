@@ -27,6 +27,8 @@ class InventoryEditorModel:
     
     # Selected default monster template (by template_id) for editing in 'Show Default'
     selected_default_template_id: Optional[str] = None
+    # Selected default player class for editing in 'Show Default'
+    selected_default_player_class: Optional[str] = None
     
     # Live inventory drag/drop and selection
     entities: Optional[List[int]] = None
@@ -55,6 +57,7 @@ class InventoryEditorModel:
         # Clear template selection when leaving default side
         if value != 'default':
             self.selected_default_template_id = None
+            self.selected_default_player_class = None
 
     @property
     def grid_model(self) -> InventoryitemsPanelModel:
@@ -79,6 +82,9 @@ class InventoryEditorModel:
         # Clear template selection when leaving monsters category
         if value != 'monsters':
             self.selected_default_template_id = None
+        # Clear player class selection when leaving player category
+        if value != 'player':
+            self.selected_default_player_class = None
 
     @property
     def selected_eid(self) -> Optional[int]:

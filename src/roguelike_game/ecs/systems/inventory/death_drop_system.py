@@ -15,8 +15,8 @@ class DeathDropSystem:
     Sistema ECS que maneja el dropeo de ítems al morir NPCs o Player.
     """
     def __init__(self, perf_log=None,
-                 active_monster_path: str = os.path.join(os.getcwd(), 'data', 'inventory', 'inventory_monsters.json'),
-                 active_player_path: str = os.path.join(os.getcwd(), 'data', 'inventory', 'inventory_player.json'),
+                 active_monster_path: str = os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_monsters.json'),
+                 active_player_path: str = os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_player.json'),
                  drop_path: str = os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_map.json')):
         self.perf_log = perf_log
         self.active_monster_path = active_monster_path

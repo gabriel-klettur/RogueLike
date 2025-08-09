@@ -51,20 +51,41 @@ class AddItemController:
         # Default side: JSON default templates
         if editing_side == 'default':
             if cat == 'player':
-                default_player = self.editor_model.default_data.get('player', {})
-                slots = default_player.get('slots', [])
-                for slot in slots:
-                    if slot and slot.get('item') == self.model.selected_item:
-                        slot['quantity'] = slot.get('quantity', 0) + quantity
-                        break
-                else:
-                    for idx, slot in enumerate(slots):
-                        if not slot:
-                            slots[idx] = {'item': self.model.selected_item, 'quantity': quantity}
+                default_player = self.editor_model.default_data.get('player', {}) or {}
+                classes = default_player.get('classes')
+                if isinstance(classes, dict) and classes:
+                    sel_cls = getattr(self.editor_model, 'selected_default_player_class', None)
+                    target_cls = sel_cls if sel_cls in classes else next(iter(classes.keys()))
+                    tpl = classes.get(target_cls, {})
+                    slots = tpl.get('slots', []) or []
+                    for slot in slots:
+                        if slot and slot.get('item') == self.model.selected_item:
+                            slot['quantity'] = slot.get('quantity', 0) + quantity
                             break
                     else:
-                        slots.append({'item': self.model.selected_item, 'quantity': quantity})
-                default_player['slots'] = slots
+                        for idx, slot in enumerate(slots):
+                            if not slot:
+                                slots[idx] = {'item': self.model.selected_item, 'quantity': quantity}
+                                break
+                        else:
+                            slots.append({'item': self.model.selected_item, 'quantity': quantity})
+                    tpl['slots'] = slots
+                    classes[target_cls] = tpl
+                    default_player['classes'] = classes
+                else:
+                    slots = default_player.get('slots', [])
+                    for slot in slots:
+                        if slot and slot.get('item') == self.model.selected_item:
+                            slot['quantity'] = slot.get('quantity', 0) + quantity
+                            break
+                    else:
+                        for idx, slot in enumerate(slots):
+                            if not slot:
+                                slots[idx] = {'item': self.model.selected_item, 'quantity': quantity}
+                                break
+                        else:
+                            slots.append({'item': self.model.selected_item, 'quantity': quantity})
+                    default_player['slots'] = slots
             elif cat == 'monsters':
                 # Determine target template_id: prefer explicit selection from left list
                 sel_tid = getattr(self.editor_model, 'selected_default_template_id', None)

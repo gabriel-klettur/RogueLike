@@ -67,24 +67,39 @@ class ListController:
 
     def _get_player_template_items(self, default_player: dict):
         """
-        Construye una lista con el template por defecto del Player desde defaults
-        (inventory_player.json), similar al formato de grupo de monstruos.
-        - Línea raíz: "Player | Template: <player_id>"
-        - Línea items: "  Items: <item> x<quantity>, ..."
+        Construye una lista con los templates por defecto del Player desde defaults
+        (inventory_player.json).
+        - Si hay 'classes':
+          - Línea raíz por clase: "Class: <name> | Capacity: <cap>"
+          - Línea items: "  Items: <item> x<quantity>, ..."
+        - Si es formato legacy (sin 'classes'):
+          - Línea raíz: "Player | Template: <player_id>"
+          - Línea items: "  Items: <item> x<quantity>, ..."
         """
         items = []
         if not isinstance(default_player, dict) or not default_player:
             return items
-        pid = default_player.get('player_id', '')
-        items.append(f"Player | Template: {pid}")
-        slots = default_player.get('slots', []) or []
-        slot_texts = [f"{s.get('item')} x{s.get('quantity', 0)}" for s in slots if s]
-        if slot_texts:
-            items.append("  Items: " + ", ".join(slot_texts))
-        # Info extra opcional: capacidad
-        cap = default_player.get('capacity')
-        if isinstance(cap, int):
-            items.append(f"  Capacity: {cap}")
+        classes = default_player.get('classes')
+        if isinstance(classes, dict) and classes:
+            for cls_name, tpl in classes.items():
+                cap = tpl.get('capacity')
+                cap_txt = f" | Capacity: {cap}" if isinstance(cap, int) else ""
+                items.append(f"Class: {cls_name}{cap_txt}")
+                slots = tpl.get('slots', []) or []
+                slot_texts = [f"{s.get('item')} x{s.get('quantity', 0)}" for s in slots if s]
+                if slot_texts:
+                    items.append("  Items: " + ", ".join(slot_texts))
+        else:
+            pid = default_player.get('player_id', '')
+            items.append(f"Player | Template: {pid}")
+            slots = default_player.get('slots', []) or []
+            slot_texts = [f"{s.get('item')} x{s.get('quantity', 0)}" for s in slots if s]
+            if slot_texts:
+                items.append("  Items: " + ", ".join(slot_texts))
+            # Info extra opcional: capacidad
+            cap = default_player.get('capacity')
+            if isinstance(cap, int):
+                items.append(f"  Capacity: {cap}")
         return items
     
     def _get_player_items(self, data):

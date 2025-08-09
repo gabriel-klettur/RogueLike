@@ -18,45 +18,5 @@
       "x": 145,
       "y": 1303
     }
-  },
-  "9f01d749-1fb5-4a6f-ae6f-b6e4d5fcf42d": {
-    "item_id": "gold",
-    "quantity": 6,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2430.4688905982953,
-      "y": 2027.3796668210439
-    }
-  },
-  "ca9eb131-bda4-4530-b4fa-a06e7ed13244": {
-    "item_id": "experience_orb",
-    "quantity": 4,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2430.4688905982953,
-      "y": 2027.3796668210439
-    }
-  },
-  "8b1a0400-4860-4de9-94f9-7d141a0aa200": {
-    "item_id": "wizard_staff_lvl_3",
-    "quantity": 1,
-    "zone_id": "Lobby",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 2430.4688905982953,
-      "y": 2027.3796668210439
-    }
-  },
-  "7d016bbc-0292-42e5-b653-81f939f28428": {
-    "item_id": "gold",
-    "quantity": 4,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 456.30837820968804,
-      "y": 1873.8937334495831
-    }
   }
 }

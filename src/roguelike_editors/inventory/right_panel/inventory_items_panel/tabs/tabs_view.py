@@ -56,9 +56,17 @@ class TabsView:
         if model.editing_side == 'default':
             # Show default inventory templates
             if model.current_category == 'player':
-                default_player = model.default_data.get('player', {})
+                default_player = model.default_data.get('player', {}) or {}
+                classes = default_player.get('classes')
+                if isinstance(classes, dict) and classes:
+                    sel_cls = getattr(model, 'selected_default_player_class', None)
+                    if sel_cls in classes:
+                        return classes[sel_cls].get('slots', []) or []
+                    # Fallback: first available class
+                    first_tpl = next(iter(classes.values()))
+                    return first_tpl.get('slots', []) or []
+                # Legacy single-template fallback
                 slots = default_player.get('slots', [])
-                
                 return slots
             elif model.current_category == 'monsters':
                 # Prefer explicit selection from left list (template_id)
@@ -83,6 +91,11 @@ class TabsView:
             # Show active data from JSON
             active_data = model.active_data.get(model.current_category, {})
             entry = active_data.get(str(model.selected_eid), {})
+            # Fallback for legacy single-entry player active JSON
+            if not entry and model.current_category == 'player' and isinstance(active_data, dict) and active_data:
+                try:
+                    entry = next(iter(active_data.values())) or {}
+                except Exception:
+                    entry = {}
             slots = entry.get('slots', [])
-            
             return slots

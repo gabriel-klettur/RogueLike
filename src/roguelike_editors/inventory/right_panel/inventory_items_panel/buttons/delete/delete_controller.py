@@ -20,15 +20,31 @@ class DeleteController:
 
         if side == 'default':
             if cat == 'player':
-                tpl = self.editor_model.default_data.get('player', {})
-                slots = tpl.get('slots', [])
-                if slot_idx < len(slots):
-                    slot = slots[slot_idx]
-                    if slot and slot.get('quantity', 0) > qty:
-                        slot['quantity'] -= qty
-                    else:
-                        slots[slot_idx] = None
-                    tpl['slots'] = slots
+                tpl = self.editor_model.default_data.get('player', {}) or {}
+                classes = tpl.get('classes')
+                if isinstance(classes, dict) and classes:
+                    sel_cls = getattr(self.editor_model, 'selected_default_player_class', None)
+                    target_cls = sel_cls if sel_cls in classes else next(iter(classes.keys()))
+                    cls_tpl = classes.get(target_cls, {})
+                    slots = cls_tpl.get('slots', []) or []
+                    if slot_idx < len(slots):
+                        slot = slots[slot_idx]
+                        if slot and slot.get('quantity', 0) > qty:
+                            slot['quantity'] -= qty
+                        else:
+                            slots[slot_idx] = None
+                        cls_tpl['slots'] = slots
+                        classes[target_cls] = cls_tpl
+                        tpl['classes'] = classes
+                else:
+                    slots = tpl.get('slots', [])
+                    if slot_idx < len(slots):
+                        slot = slots[slot_idx]
+                        if slot and slot.get('quantity', 0) > qty:
+                            slot['quantity'] -= qty
+                        else:
+                            slots[slot_idx] = None
+                        tpl['slots'] = slots
             elif cat == 'monsters':
                 # Determine target template_id: prefer explicit selection from left list
                 sel_tid = getattr(self.editor_model, 'selected_default_template_id', None)
