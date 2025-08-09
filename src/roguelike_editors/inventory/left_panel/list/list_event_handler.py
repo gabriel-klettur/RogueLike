@@ -27,6 +27,9 @@ class ListEventHandler:
             if self.view.panel_rect.collidepoint(mx, my):
                 # Solo categoría 'monsters' tiene lógica compleja
                 if self.model.current_category == 'monsters':
+                    # En modo 'Show Default' mostramos plantillas; ignorar clicks
+                    if getattr(self.editor_controller.model, 'editing_side', 'active') == 'default':
+                        return True
                     line_h = self.view.font.get_linesize()
                     idx = (my - self.view.panel_rect.y + self.view.list_view.scroll_panel.scroll_offset) // line_h
                     items = self.controller.get_items_list()

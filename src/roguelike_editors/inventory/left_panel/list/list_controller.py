@@ -27,22 +27,64 @@ class ListController:
         ed_model = self.editor_controller.model
         category = self.panel_model.current_category
         use_default = ed_model.editing_side == 'default' and category in ('player', 'monsters')
-        # Seleccionar fuente de datos
+        # Mostrar PLANTILLAS (templates) completas cuando está seleccionada la vista Default
+        if use_default and category == 'monsters':
+            default_monsters = ed_model.default_data.get('monsters', {}) or {}
+            return self._get_monster_templates_items(default_monsters)
         if use_default and category == 'player':
-            # Normalizar a un dict de una sola entrada para reutilizar _get_player_items
-            default_player = ed_model.default_data.get('player', {})
-            data = {'default': default_player}
-        else:
-            data = ed_model.active_data.get(category, {})
-        
-        items = []
+            default_player = ed_model.default_data.get('player', {}) or {}
+            return self._get_player_template_items(default_player)
+
+        # Caso normal: datos activos
+        data = ed_model.active_data.get(category, {})
         if category == 'player':
             items = self._get_player_items(data)
         elif category == 'monsters':
-            items = self._get_monsters_items(data, use_default)
+            items = self._get_monsters_items(data, use_default=False)
         else:
             items = self._get_other_items(data)
-        
+
+        return items
+
+    def _get_monster_templates_items(self, default_monsters: dict):
+        """
+        Construye una lista de TODOS los templates de monstruos desde defaults
+        (inventory_monsters.json), en un formato similar al listado activo:
+        - Línea raíz: "<nombre_template> | Template: <template_id>"
+        - Línea items: "  Items: <item> x<min>, ..."
+        """
+        items = []
+        if not isinstance(default_monsters, dict):
+            return items
+        for name, entry in default_monsters.items():
+            tpl = (entry or {}).get('template_id', '')
+            items.append(f"{name} | Template: {tpl}")
+            inv_list = (entry or {}).get('inventory', []) or []
+            slot_texts = [f"{e.get('item')} x{e.get('min', 0)}" for e in inv_list]
+            if slot_texts:
+                items.append("  Items: " + ", ".join(slot_texts))
+        return items
+
+    def _get_player_template_items(self, default_player: dict):
+        """
+        Construye una lista con el template por defecto del Player desde defaults
+        (inventory_player.json), similar al formato de grupo de monstruos.
+        - Línea raíz: "Player | Template: <player_id>"
+        - Línea items: "  Items: <item> x<quantity>, ..."
+        """
+        items = []
+        if not isinstance(default_player, dict) or not default_player:
+            return items
+        pid = default_player.get('player_id', '')
+        items.append(f"Player | Template: {pid}")
+        slots = default_player.get('slots', []) or []
+        slot_texts = [f"{s.get('item')} x{s.get('quantity', 0)}" for s in slots if s]
+        if slot_texts:
+            items.append("  Items: " + ", ".join(slot_texts))
+        # Info extra opcional: capacidad
+        cap = default_player.get('capacity')
+        if isinstance(cap, int):
+            items.append(f"  Capacity: {cap}")
         return items
     
     def _get_player_items(self, data):
