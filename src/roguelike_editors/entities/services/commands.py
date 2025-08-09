@@ -94,23 +94,63 @@ class EditPropertyCommand(Command):
     _old_value: Any = None
     _new_value: Any = None
 
+    def _get_nested(self, root: dict, dotted: str) -> Any:
+        parts = dotted.split('.')
+        cur = root
+        for i, p in enumerate(parts):
+            if not isinstance(cur, dict):
+                return None
+            if i == len(parts) - 1:
+                return cur.get(p)
+            cur = cur.get(p, {})
+
+    def _set_nested(self, root: dict, dotted: str, value: Any) -> None:
+        parts = dotted.split('.')
+        cur = root
+        for i, p in enumerate(parts):
+            if i == len(parts) - 1:
+                cur[p] = value
+            else:
+                nxt = cur.get(p)
+                if not isinstance(nxt, dict):
+                    nxt = {}
+                    cur[p] = nxt
+                cur = nxt
+
     def _write_value(self, value: Any) -> None:
         # controller is EntityPropertiesPanelController
         path, data, entry = load_entity_data(self.ent_id, self.controller.model.player_stats, self.controller.model.monsters)
         if self.ent_id in self.controller.model.player_stats:
-            entry[self.key] = value
+            stats = entry.setdefault('stats', {})
+            if '.' in self.key:
+                self._set_nested(stats, self.key, value)
+            else:
+                stats[self.key] = value
             # persist and update in-memory
             save_entity_data(self.ent_id, entry, path, self.controller.model.player_stats, self.controller.model.monsters)
-            self.controller.model.player_stats[self.ent_id][self.key] = value
+            # update in-memory mirror
+            dst = self.controller.model.player_stats.setdefault(self.ent_id, {})
+            if '.' in self.key:
+                self._set_nested(dst, self.key, value)
+            else:
+                dst[self.key] = value
             # propagate to ECS
             ecs_world = self.controller.editor_controller.game.ecs.ecs_world
             update_player_stats(ecs_world, self.ent_id, self.key, value)
         else:
             stats = entry.setdefault('stats', {})
-            stats[self.key] = value
+            if '.' in self.key:
+                self._set_nested(stats, self.key, value)
+            else:
+                stats[self.key] = value
             save_entity_data(self.ent_id, entry, path, self.controller.model.player_stats, self.controller.model.monsters)
             # update in-memory
-            self.controller.model.monsters.setdefault(self.ent_id, {}).setdefault('stats', {})[self.key] = value
+            m = self.controller.model.monsters.setdefault(self.ent_id, {})
+            dst = m.setdefault('stats', {})
+            if '.' in self.key:
+                self._set_nested(dst, self.key, value)
+            else:
+                dst[self.key] = value
             # refresh monster defs/sprites and ECS updates
             try:
                 from roguelike_editors.entities.entities_properties_panel import entities_properties_panel_controller as epc_mod
@@ -130,10 +170,11 @@ class EditPropertyCommand(Command):
 
     def apply(self) -> None:
         path, data, entry = load_entity_data(self.ent_id, self.controller.model.player_stats, self.controller.model.monsters)
-        if self.ent_id in self.controller.model.player_stats:
-            self._old_value = copy.deepcopy(entry.get(self.key))
+        stats = entry.setdefault('stats', {})
+        if '.' in self.key:
+            self._old_value = copy.deepcopy(self._get_nested(stats, self.key))
         else:
-            self._old_value = copy.deepcopy(entry.setdefault('stats', {}).get(self.key))
+            self._old_value = copy.deepcopy(stats.get(self.key))
         # Type-aware conversion
         self._new_value = convert_value(self.new_text, self._old_value)
         self._write_value(self._new_value)
@@ -283,13 +324,19 @@ class RenameEntityCommand(Command):
     _saved_entry: Any = None
 
     def _persist_rename(self, src_id: str, dst_id: str) -> None:
-        # Only monsters are supported here
-        path, data, entry = load_entity_data(src_id, self.controller.model.player_stats, self.controller.model.monsters)
+        # Generic: resolve source file and section by membership
+        path, _, entry = load_entity_data(src_id, self.controller.model.player_stats, self.controller.model.monsters)
         root = load_from_json(path)
-        classes = root.setdefault('monsters', {}).setdefault('classes', {})
-        # Move entry in JSON tree
-        classes[dst_id] = entry
-        classes.pop(src_id, None)
+        section = 'players' if src_id in self.controller.model.player_stats else 'monsters'
+        classes = root.setdefault(section, {}).setdefault('classes', {})
+        # Rebuild dict to preserve insertion order while replacing the key in-place
+        new_classes = {}
+        for k, v in classes.items():
+            if k == src_id:
+                new_classes[dst_id] = entry
+            else:
+                new_classes[k] = v
+        root.setdefault(section, {})['classes'] = new_classes
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(root, f, ensure_ascii=False, indent=2)
 
@@ -305,19 +352,94 @@ class RenameEntityCommand(Command):
         self._saved_entry = copy.deepcopy(entry)
         # Persist to JSON
         self._persist_rename(self.old_id, self.new_id)
-        # Update in-memory dict
+        # Update in-memory dict preserving order (replace key in place)
         monsters = self.controller.model.monsters
-        monsters[self.new_id] = monsters.pop(self.old_id, self._saved_entry)
+        new_order = {}
+        for k, v in monsters.items():
+            if k == self.old_id:
+                new_order[self.new_id] = v
+            else:
+                new_order[k] = v
+        monsters.clear()
+        monsters.update(new_order)
+        # Re-key assets dict so picker keeps the same icon under the new id
+        try:
+            assets = self.controller.editor_controller.model.assets
+            if self.old_id in assets:
+                assets[self.new_id] = assets.pop(self.old_id)
+        except Exception:
+            pass
+        # Sync picker selection/hover if pointing to the renamed id
+        try:
+            picker_model = self.controller.editor_controller.picker_controller.model
+            if picker_model.selected_id == self.old_id:
+                picker_model.selected_id = self.new_id
+            if picker_model.hovered_id == self.old_id:
+                picker_model.hovered_id = self.new_id
+        except Exception:
+            pass
         # Update selection in UI
         self.controller.model.selected_id = self.new_id
+        # Reload monster definitions/caches so new id is recognized by animators and lookups
+        try:
+            from roguelike_game.factories.monster.config import reload_monster_defs
+            from roguelike_game.factories.monster import cache as monster_cache
+            reload_monster_defs()
+            monster_cache.load_caches_for([self.new_id])
+        except Exception:
+            pass
+        # Reset grid caches to rebuild animators under new id and redraw UI
+        try:
+            self.controller.grid_controller.model.last_entity_id = None
+            self.controller.grid_controller.model.last_state_tab = None
+            self.controller.editor_controller.render(self.controller.editor_controller.game.screen)
+        except Exception:
+            pass
 
     def undo(self) -> None:
         if not self._saved_entry:
             return
         # Persist back
         self._persist_rename(self.new_id, self.old_id)
-        # Update in-memory dict
+        # Update in-memory dict preserving order back
         monsters = self.controller.model.monsters
-        monsters[self.old_id] = monsters.pop(self.new_id, self._saved_entry)
+        new_order = {}
+        for k, v in monsters.items():
+            if k == self.new_id:
+                new_order[self.old_id] = v
+            else:
+                new_order[k] = v
+        monsters.clear()
+        monsters.update(new_order)
+        # Re-key assets back
+        try:
+            assets = self.controller.editor_controller.model.assets
+            if self.new_id in assets:
+                assets[self.old_id] = assets.pop(self.new_id)
+        except Exception:
+            pass
+        # Sync picker selection/hover back
+        try:
+            picker_model = self.controller.editor_controller.picker_controller.model
+            if picker_model.selected_id == self.new_id:
+                picker_model.selected_id = self.old_id
+            if picker_model.hovered_id == self.new_id:
+                picker_model.hovered_id = self.old_id
+        except Exception:
+            pass
         # Restore selection
         self.controller.model.selected_id = self.old_id
+        # Reload monster definitions/caches back to old id and refresh UI
+        try:
+            from roguelike_game.factories.monster.config import reload_monster_defs
+            from roguelike_game.factories.monster import cache as monster_cache
+            reload_monster_defs()
+            monster_cache.load_caches_for([self.old_id])
+        except Exception:
+            pass
+        try:
+            self.controller.grid_controller.model.last_entity_id = None
+            self.controller.grid_controller.model.last_state_tab = None
+            self.controller.editor_controller.render(self.controller.editor_controller.game.screen)
+        except Exception:
+            pass

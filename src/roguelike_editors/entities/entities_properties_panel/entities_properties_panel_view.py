@@ -13,6 +13,10 @@ from roguelike_editors.entities.entities_properties_panel.services.assets_consta
 from roguelike_editors.entities.entities_properties_panel.services.entity_flatten import (
     flatten_entity_data,
 )
+from roguelike_editors.entities.entities_properties_panel.services.stats_templates import (
+    PLAYER_STATS_TEMPLATE,
+    MONSTER_STATS_TEMPLATE,
+)
 
 
 
@@ -36,6 +40,7 @@ class EntityPropertiesPanelView:
         self.MARGIN = 20
         self.SCROLLBAR_WIDTH = 8
         self.MAX_PANEL_W = 500
+        self.DEFAULT_PANEL_W = 460
         self.DEFAULT_PANEL_H = 520  # Fixed target height for uniform UX
         self.TAB_PADDING_Y = 5
         self.SUBPAD_X = 8
@@ -52,27 +57,47 @@ class EntityPropertiesPanelView:
 
         # Datos y dimensiones básicas
         sw, sh = screen.get_size()
-        entity_data = self._get_entity_data(model)
-        # Filtrar datos según pestaña activa y sub-asset seleccionado
+        # Elegir fuente de datos según pestaña activa: stats para Properties, flatten para Assets
         if self.type_assets_controller.model.active_type_tab == TYPE_TAB_PROPERTIES:
-            filtered = {k: v for k, v in entity_data.items() if not k.startswith('asset')}
+            entity_data = self._get_entity_stats_data(model)
+            filtered = dict(entity_data)
         elif self.type_assets_controller.model.active_type_tab == TYPE_TAB_ASSETS:
+            ent_id_for_assets = model.hovered_entity_id or model.selected_id
+            flattened = flatten_entity_data(model.player_stats, model.player_assets, model.monsters, ent_id_for_assets)
             # Filtrar por categoría de asset seleccionada
             active_state = self.state_tabs_controller.model.active_state_tab
             if active_state == STATE_ADD:
                 filtered = {}
             else:
                 prefix = f"asset_{active_state}_"
-                filtered = {k: v for k, v in entity_data.items() if k.startswith(prefix)}
+                filtered = {k: v for k, v in flattened.items() if k.startswith(prefix)}
+            # Datos completos para el grid y cabeceras
+            entity_data = flattened
         else:
             filtered = {}
-        lines = [ent_id] + [f"{k}: {v}" for k, v in filtered.items()]
+            entity_data = {}
+        # Build lines for Properties tab without redundant non-editable id for monsters.
+        is_props = self.type_assets_controller.model.active_type_tab == TYPE_TAB_PROPERTIES
+        try:
+            is_monster = ent_id not in model.player_stats
+        except Exception:
+            is_monster = True
+        lines: list[str] = []
+        if is_props and is_monster:
+            # Only show editable 'id' property, omit the non-editable header id
+            lines.append(f"id: {ent_id}")
+        else:
+            # Keep header for players or other contexts
+            lines.append(ent_id)
+        lines += [f"{k}: {v}" for k, v in filtered.items()]
         font_h = self.font.get_height()
 
         # Calcular tamaño del panel (incluye pestañas y subtabs)
         pad, margin = self.PAD, self.MARGIN
         max_w = max(self.font.size(line)[0] for line in lines)
-        panel_w = min(max_w + pad * 2, sw - margin * 2, self.MAX_PANEL_W)
+        content_w = max_w + pad * 2
+        # Ancho predefinido profesional con límites de pantalla
+        panel_w = min(sw - margin * 2, max(self.DEFAULT_PANEL_W, min(content_w, self.MAX_PANEL_W)))
         # Asegurar ancho mínimo para subtabs de assets vacíos
         if self.type_assets_controller.model.active_type_tab == TYPE_TAB_ASSETS:
             subpad_x = self.SUBPAD_X
@@ -205,6 +230,19 @@ class EntityPropertiesPanelView:
         desacoplada de la estructura JSON interna.
         """
         ent_id = model.hovered_entity_id or model.selected_id
+        # En modo "Add Entities on System" con selector visible, mostrar SOLO las propiedades
+        # de la sección 'stats' según el tipo elegido (Player/Monster).
+        if getattr(model, 'show_add_system_selector', False):
+            sel_type = getattr(model, 'add_system_entity_type', 'Monster')
+            if sel_type == 'Player':
+                # Para jugadores, los stats del modelo ya están disponibles a nivel de clase
+                # en model.player_stats[ent_id]. Si no existe, devolver dict vacío.
+                return dict(model.player_stats.get(ent_id, {}))
+            else:
+                # Para monstruos, los stats viven dentro de la entrada de monstruo.
+                monster = model.monsters.get(ent_id, {}) if model.monsters else {}
+                return dict(monster.get('stats', {}))
+        # Comportamiento normal: aplanar toda la entidad (stats + assets en claves 'asset_*')
         return flatten_entity_data(model.player_stats, model.player_assets, model.monsters, ent_id)
 
     def _draw_background(self, screen: pygame.Surface, x: int, y: int, w: int, h: int) -> None:
@@ -212,6 +250,54 @@ class EntityPropertiesPanelView:
         info_surf = pygame.Surface((w, h), pygame.SRCALPHA)
         info_surf.fill((0, 0, 0, 200))
         screen.blit(info_surf, (x, y))
+
+    def _get_entity_stats_data(self, model: EntityPropertiesPanelModel) -> dict:
+        """Retorna sólo los 'stats' según el selector 'Type of Entity',
+        fusionando con una plantilla de claves esperadas y aplanando
+        anidados simples (p. ej., 'basic_trail.interval').
+
+        - Player: plantilla PLAYER_STATS_TEMPLATE + stats jugador
+        - Monster: plantilla MONSTER_STATS_TEMPLATE + stats monstruo
+        """
+        def _flatten(d: dict) -> dict:
+            flat: dict = {}
+            for k, v in d.items():
+                if isinstance(v, dict):
+                    for sk, sv in v.items():
+                        flat[f"{k}.{sk}"] = sv
+                else:
+                    flat[k] = v
+            return flat
+
+        ent_id = model.hovered_entity_id or model.selected_id
+        if getattr(model, 'show_add_system_selector', False):
+            sel_type = getattr(model, 'add_system_entity_type', 'Monster')
+        else:
+            # Inferir tipo por pertenencia del id
+            sel_type = 'Player' if ent_id in model.player_stats else 'Monster'
+        if sel_type == 'Player':
+            tmpl = PLAYER_STATS_TEMPLATE
+            src = model.player_stats.get(ent_id, {})
+        else:
+            tmpl = MONSTER_STATS_TEMPLATE
+            src = (model.monsters.get(ent_id, {}) or {}).get('stats', {})
+
+        # Deep-ish merge (1 nivel) y aplanado
+        merged: dict = {}
+        # copiar plantilla
+        for k, v in tmpl.items():
+            if isinstance(v, dict):
+                merged[k] = dict(v)
+            else:
+                merged[k] = v
+        # sobreescribir con valores reales
+        for k, v in src.items():
+            if isinstance(v, dict) and isinstance(merged.get(k), dict):
+                merged[k].update(v)
+            else:
+                merged[k] = v
+
+        return _flatten(merged)
 
     def _draw_properties(self, screen: pygame.Surface, model: EntityPropertiesPanelModel,
                          lines: list[str], px: int, py: int, pad: int, font_h: int, panel_w: int) -> None:
@@ -225,8 +311,9 @@ class EntityPropertiesPanelView:
         model.property_entries.clear()
 
         for i, line in enumerate(lines):
-            # ID: línea de encabezado
-            if i == 0:
+            # Línea de encabezado sólo si no es par clave:valor
+            is_header = (i == 0) and (': ' not in line)
+            if is_header:
                 text = self._truncate_text(line, panel_w - pad * 2)
                 txt_surf = self.font.render(text, True, (255, 255, 0))
                 screen.blit(txt_surf, (tx, ty))
@@ -234,8 +321,10 @@ class EntityPropertiesPanelView:
                 continue
             # Separar clave y valor
             parts = line.split(': ', 1)
-            key = parts[0]
-            val_str = parts[1] if len(parts) > 1 else ''
+            if len(parts) != 2:
+                # Si no tiene formato clave: valor, omitir
+                continue
+            key, val_str = parts[0], parts[1]
             # Renderizar clave en blanco
             key_text = f'{key}: '
             key_surf = self.font.render(self._truncate_text(key_text, panel_w - pad * 2), True, (255, 255, 255))

@@ -46,14 +46,13 @@ class EntitiesPropertiesPanelEventHandler:
         if self._handle_drag_events(event):
             return True
 
-        # 3.5. Click en selector 'Type of Entity' (solo en pestaña Properties)
+        # 3.5. Click en selector 'Type of Entity' (solo en modo Add Entities on System)
         if (
-            getattr(self.model, 'show_add_system_selector', False)
-            and self.controller.type_assets_controller.model.active_type_tab == TYPE_TAB_PROPERTIES
+            self.controller.type_assets_controller.model.active_type_tab == TYPE_TAB_PROPERTIES
             and event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1
         ):
             rect = getattr(self.model, 'entity_type_rect', None)
-            if rect and rect.collidepoint(getattr(event, 'pos', (0, 0))):
+            if getattr(self.model, 'show_add_system_selector', False) and rect and rect.collidepoint(getattr(event, 'pos', (0, 0))):
                 # Toggle entre 'Monster' y 'Player'
                 cur = getattr(self.model, 'add_system_entity_type', 'Monster')
                 self.model.add_system_entity_type = 'Player' if cur == 'Monster' else 'Monster'
@@ -236,7 +235,10 @@ class EntitiesPropertiesPanelEventHandler:
         self.model.editing_property = key
 
         # Obtener valor actual
-        if self.model.selected_id in self.model.player_stats:
+        if key == 'id':
+            # Renombrar: usar el id actual como valor inicial
+            val = self.model.selected_id or ""
+        elif self.model.selected_id in self.model.player_stats:
             val = self.model.player_stats[self.model.selected_id].get(key, "")
         else:
             val = self.model.monsters[self.model.selected_id].get(key, "")

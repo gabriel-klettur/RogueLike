@@ -33,6 +33,9 @@ from roguelike_editors.entities.entities_properties_panel.services.entity_proper
     save_entity_data,
     convert_value,
 )
+from roguelike_editors.entities.entities_properties_panel.services.entity_flatten import (
+    flatten_entity_data,
+)
 from roguelike_editors.entities.services.commands import (
     EditPropertyCommand,
     SetAssetCommand,
@@ -102,8 +105,9 @@ class EntityPropertiesPanelController:
         # Initialize asset sub-tab on first opening of assets
         current_type = self.type_assets_controller.model.active_type_tab
         if current_type == TYPE_TAB_ASSETS and self._last_active_type_tab != TYPE_TAB_ASSETS:
-            entity_data = self.view._get_entity_data(self.model)
-            active_set = entity_data.get('active_set', 'sets')
+            ent_id = self.model.hovered_entity_id or self.model.selected_id
+            flattened = flatten_entity_data(self.model.player_stats, self.model.player_assets, self.model.monsters, ent_id)
+            active_set = flattened.get('active_set', 'sets')
             desired = SUBTAB_SET if active_set == 'sets' else SUBTAB_NO_SET
             self.assets_subtabs_controller.model.active_sub_tab = desired
         # Update last active_type_tab

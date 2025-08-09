@@ -55,14 +55,21 @@ def convert_value(new_text: str, old_val: Any) -> Any:
     Fallback to string if conversion fails.
     """
     try:
+        s = (new_text or "").strip()
+        low = s.lower()
+        # Common nulls
+        if low in ("none", "null", ""):
+            return None
+        # Preserve bool edits if previous type was bool
         if isinstance(old_val, bool):
-            return new_text.strip().lower() in ("true", "1", "yes", "y", "t")
+            return low in ("true", "1", "yes", "y", "t")
+        # Numeric guess
         try:
-            return int(new_text)
+            return int(s)
         except ValueError:
             pass
         try:
-            return float(new_text)
+            return float(s)
         except ValueError:
             pass
         return new_text

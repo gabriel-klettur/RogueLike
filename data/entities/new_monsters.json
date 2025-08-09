@@ -803,7 +803,7 @@
       },
       "barbol_musgo": {
         "stats": {
-          "hp": 100,
+          "hp": 300,
           "speed": 1.0,
           "faction": "EVIL",
           "aggro_range": 10,
@@ -931,7 +931,7 @@
           }
         }
       },
-      "barbol_amarillo": {
+      "barbol_amarillo_4": {
         "stats": {
           "hp": 100,
           "speed": 1.0,
@@ -1320,7 +1320,7 @@
             }
           }
         }
-      }      
+      }
     }
   }
 }
