@@ -1,12 +1,10 @@
 import time
 import pygame
+import importlib
 from roguelike_game.factories.player.loader import (
     load_and_scale_sprites, extract_initial_frame, build_animator_map
 )
-from roguelike_game.factories.player.config import (
-    PLAYER_STATS, ANIMATION_INTERVAL, INITIAL_ANIMATION_STATE,
-    MELEE_WEAPON_CFG, DEFAULT_TRAIL, ORIGINAL_SPRITE_SIZE
-)
+import roguelike_game.factories.player.config as player_cfg
 from roguelike_game.ecs.components.rendering.sprite import Sprite
 from roguelike_game.ecs.components.rendering.animator import Animator
 from roguelike_game.ecs.components.rendering.animation_timer import AnimationTimer
@@ -32,6 +30,8 @@ class PlayerManager:
 
     def change_class(self, new_class: str):
         """Update player's class: reload assets and stats."""
+        # Reload player config so classes/stats reflect latest JSON after editor renames
+        importlib.reload(player_cfg)
         ecs_world = self.ecs_world
         eid = ecs_world.player_entity
         comps = ecs_world.components
@@ -45,28 +45,28 @@ class PlayerManager:
             img = frame
         else:
                 # Transparent placeholder (invisible)
-                size = ORIGINAL_SPRITE_SIZE
+                size = player_cfg.ORIGINAL_SPRITE_SIZE
                 placeholder = pygame.Surface(size, pygame.SRCALPHA)
                 img = placeholder
         comps["Sprite"][eid] = Sprite(img)
         comps["Animator"][eid] = Animator(
             animations=build_animator_map(sprites),
-            current_state=INITIAL_ANIMATION_STATE
+            current_state=player_cfg.INITIAL_ANIMATION_STATE
         )
         comps["AnimationTimer"][eid] = AnimationTimer(
             last_time=time.time(),
-            interval=ANIMATION_INTERVAL
+            interval=player_cfg.ANIMATION_INTERVAL
         )
         # Update movement speed and reset velocity
         comps["MovementSpeed"][eid] = MovementSpeed(
-            PLAYER_STATS[new_class]["basic_speed"]
+            player_cfg.PLAYER_STATS[new_class]["basic_speed"]
         )
         comps["Velocity"][eid] = Velocity(0, 0)
         # Update collider
         # Crear collider basado en sprite (frame o placeholder)
         comps["MultiCollider"][eid] = create_body_and_feet(img)
         # Update stats: health, combat, mana, energy, hunger
-        stats = PLAYER_STATS[new_class]
+        stats = player_cfg.PLAYER_STATS[new_class]
         max_hp = stats["max_strength"]
         comps["Health"][eid] = Health(max_hp, max_hp)
         comps["CombatStats"][eid] = CombatStats(
@@ -89,10 +89,10 @@ class PlayerManager:
         )
         # Update melee weapon and trail
         comps["MeleeWeapon"][eid] = MeleeWeapon(
-            damage=MELEE_WEAPON_CFG["damage"],
-            cooldown=MELEE_WEAPON_CFG["cooldown"]
+            damage=player_cfg.MELEE_WEAPON_CFG["damage"],
+            cooldown=player_cfg.MELEE_WEAPON_CFG["cooldown"]
         )
-        trail_params = stats.get("basic_trail", DEFAULT_TRAIL)
+        trail_params = stats.get("basic_trail", player_cfg.DEFAULT_TRAIL)
         trail_cfg = TrailConfig(
             interval=trail_params["interval"],
             life_time=trail_params["life_time"],

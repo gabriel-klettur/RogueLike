@@ -76,18 +76,13 @@ class EntityPropertiesPanelView:
         else:
             filtered = {}
             entity_data = {}
-        # Build lines for Properties tab without redundant non-editable id for monsters.
+        # Build lines for Properties tab: show editable 'id' for both players and monsters.
         is_props = self.type_assets_controller.model.active_type_tab == TYPE_TAB_PROPERTIES
-        try:
-            is_monster = ent_id not in model.player_stats
-        except Exception:
-            is_monster = True
         lines: list[str] = []
-        if is_props and is_monster:
-            # Only show editable 'id' property, omit the non-editable header id
+        if is_props:
             lines.append(f"id: {ent_id}")
         else:
-            # Keep header for players or other contexts
+            # Non-properties contexts may keep a simple header
             lines.append(ent_id)
         lines += [f"{k}: {v}" for k, v in filtered.items()]
         font_h = self.font.get_height()

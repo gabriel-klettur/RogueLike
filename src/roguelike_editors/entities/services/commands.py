@@ -320,7 +320,7 @@ class RenameEntityCommand(Command):
     controller: Any  # EntityPropertiesPanelController
     old_id: str
     new_id: str
-    description: str = "Rename monster class"
+    description: str = "Rename entity id"
     _saved_entry: Any = None
 
     def _persist_rename(self, src_id: str, dst_id: str) -> None:
@@ -337,6 +337,13 @@ class RenameEntityCommand(Command):
             else:
                 new_classes[k] = v
         root.setdefault(section, {})['classes'] = new_classes
+        # If renaming a player class, also update DEFAULT_CLASS if it pointed to the old id
+        if section == 'players':
+            try:
+                if root.get('DEFAULT_CLASS') == src_id:
+                    root['DEFAULT_CLASS'] = dst_id
+            except Exception:
+                pass
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(root, f, ensure_ascii=False, indent=2)
 
@@ -352,21 +359,38 @@ class RenameEntityCommand(Command):
         self._saved_entry = copy.deepcopy(entry)
         # Persist to JSON
         self._persist_rename(self.old_id, self.new_id)
-        # Update in-memory dict preserving order (replace key in place)
-        monsters = self.controller.model.monsters
+        # Update in-memory dict preserving order (replace key in place) for players or monsters
+        is_player = self.old_id in self.controller.model.player_stats
+        target = self.controller.model.player_stats if is_player else self.controller.model.monsters
         new_order = {}
-        for k, v in monsters.items():
+        for k, v in target.items():
             if k == self.old_id:
                 new_order[self.new_id] = v
             else:
                 new_order[k] = v
-        monsters.clear()
-        monsters.update(new_order)
+        target.clear()
+        target.update(new_order)
+        # If player, also re-key editor model 'classes' dict and player_assets mapping
+        try:
+            if is_player:
+                classes = self.controller.editor_controller.model.classes
+                if self.old_id in classes:
+                    classes[self.new_id] = classes.pop(self.old_id)
+        except Exception:
+            pass
         # Re-key assets dict so picker keeps the same icon under the new id
         try:
             assets = self.controller.editor_controller.model.assets
             if self.old_id in assets:
                 assets[self.new_id] = assets.pop(self.old_id)
+        except Exception:
+            pass
+        # Re-key player_assets mapping if applicable
+        try:
+            if is_player:
+                p_assets = self.controller.model.player_assets
+                if self.old_id in p_assets:
+                    p_assets[self.new_id] = p_assets.pop(self.old_id)
         except Exception:
             pass
         # Sync picker selection/hover if pointing to the renamed id
@@ -380,14 +404,15 @@ class RenameEntityCommand(Command):
             pass
         # Update selection in UI
         self.controller.model.selected_id = self.new_id
-        # Reload monster definitions/caches so new id is recognized by animators and lookups
-        try:
-            from roguelike_game.factories.monster.config import reload_monster_defs
-            from roguelike_game.factories.monster import cache as monster_cache
-            reload_monster_defs()
-            monster_cache.load_caches_for([self.new_id])
-        except Exception:
-            pass
+        # Reload monster definitions/caches so new id is recognized by animators and lookups (monsters only)
+        if not is_player:
+            try:
+                from roguelike_game.factories.monster.config import reload_monster_defs
+                from roguelike_game.factories.monster import cache as monster_cache
+                reload_monster_defs()
+                monster_cache.load_caches_for([self.new_id])
+            except Exception:
+                pass
         # Reset grid caches to rebuild animators under new id and redraw UI
         try:
             self.controller.grid_controller.model.last_entity_id = None
@@ -401,21 +426,38 @@ class RenameEntityCommand(Command):
             return
         # Persist back
         self._persist_rename(self.new_id, self.old_id)
-        # Update in-memory dict preserving order back
-        monsters = self.controller.model.monsters
+        # Update in-memory dict preserving order back (players or monsters)
+        is_player = self.new_id in self.controller.model.player_stats
+        target = self.controller.model.player_stats if is_player else self.controller.model.monsters
         new_order = {}
-        for k, v in monsters.items():
+        for k, v in target.items():
             if k == self.new_id:
                 new_order[self.old_id] = v
             else:
                 new_order[k] = v
-        monsters.clear()
-        monsters.update(new_order)
+        target.clear()
+        target.update(new_order)
+        # If player, also re-key editor model 'classes' dict and player_assets back
+        try:
+            if is_player:
+                classes = self.controller.editor_controller.model.classes
+                if self.new_id in classes:
+                    classes[self.old_id] = classes.pop(self.new_id)
+        except Exception:
+            pass
         # Re-key assets back
         try:
             assets = self.controller.editor_controller.model.assets
             if self.new_id in assets:
                 assets[self.old_id] = assets.pop(self.new_id)
+        except Exception:
+            pass
+        # Re-key player_assets back if applicable
+        try:
+            if is_player:
+                p_assets = self.controller.model.player_assets
+                if self.new_id in p_assets:
+                    p_assets[self.old_id] = p_assets.pop(self.new_id)
         except Exception:
             pass
         # Sync picker selection/hover back
@@ -429,14 +471,15 @@ class RenameEntityCommand(Command):
             pass
         # Restore selection
         self.controller.model.selected_id = self.old_id
-        # Reload monster definitions/caches back to old id and refresh UI
-        try:
-            from roguelike_game.factories.monster.config import reload_monster_defs
-            from roguelike_game.factories.monster import cache as monster_cache
-            reload_monster_defs()
-            monster_cache.load_caches_for([self.old_id])
-        except Exception:
-            pass
+        # Reload monster definitions/caches back to old id and refresh UI (monsters only)
+        if not is_player:
+            try:
+                from roguelike_game.factories.monster.config import reload_monster_defs
+                from roguelike_game.factories.monster import cache as monster_cache
+                reload_monster_defs()
+                monster_cache.load_caches_for([self.old_id])
+            except Exception:
+                pass
         try:
             self.controller.grid_controller.model.last_entity_id = None
             self.controller.grid_controller.model.last_state_tab = None

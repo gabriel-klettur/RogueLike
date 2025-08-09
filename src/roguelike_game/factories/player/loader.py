@@ -2,18 +2,21 @@
 Carga y prepara sprites para el jugador.
 """
 import pygame
+import importlib
 from roguelike_game.factories.player.assets.player_assets import PlayerAssets
-from roguelike_game.factories.player.config import ORIGINAL_SPRITE_SIZE, PLAYER_STATS, DEFAULT_SCALE
+import roguelike_game.factories.player.config as player_cfg
 
 
 def load_and_scale_sprites(class_player: str) -> dict[str, dict[str, list[pygame.Surface]]]:
     """
     Carga y escala sprites según configuración.
     """
-    sprites_dict, _ = PlayerAssets(class_player, ORIGINAL_SPRITE_SIZE).get_sprites()
+    # Reload player config each time to reflect editor changes
+    importlib.reload(player_cfg)
+    sprites_dict, _ = PlayerAssets(class_player, player_cfg.ORIGINAL_SPRITE_SIZE).get_sprites()
     # Usar DEFAULT_SCALE del JSON raíz
-    scale_factor = DEFAULT_SCALE
-    if scale_factor != DEFAULT_SCALE:
+    scale_factor = player_cfg.DEFAULT_SCALE
+    if scale_factor != player_cfg.DEFAULT_SCALE:
         for direction, anims in sprites_dict.items():
             for state, frames in anims.items():
                 sprites_dict[direction][state] = [pygame.transform.scale(
