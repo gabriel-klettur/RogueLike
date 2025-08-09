@@ -80,15 +80,9 @@ class InventoryItemsPanelView:
         
         rects = {}
         
-        # Show Default/Active buttons (delegado a tabs_view)
-        show_rects = self.tabs_view.draw_tabs(overlay, grid_origin_x, grid_origin_y, mx, my, current_editing_side, len(slots))
-        # Rects de pestañas ya retornados        
-
-        
-        rects.update(show_rects)
-        # Actualizar rects de compatibilidad
-        self.show_default_rect = show_rects.get('show_default')
-        self.show_active_rect = show_rects.get('show_active')
+        # Las pestañas Show Default/Active se han movido al panel izquierdo; no se dibujan aquí.
+        self.show_default_rect = None
+        self.show_active_rect = None
         
         # Grid de slots (delegado a grid_view)
         self.grid_view.draw_slots(

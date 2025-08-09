@@ -17,8 +17,18 @@ class TabsEventHandler:
         """
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mx, my = event.pos
-            for rect, cat in self.view.tab_rects:
+            for rect, tag in self.view.tab_rects:
                 if rect.collidepoint(mx, my):
-                    self.controller.change_category(cat)
+                    # Tabs secundarias para alternar lado de edición
+                    if tag == 'show_default':
+                        # Cambiar a edición de defaults
+                        self.editor_controller.model.editing_side = 'default'
+                        return True
+                    if tag == 'show_active':
+                        # Cambiar a edición de activos
+                        self.editor_controller.model.editing_side = 'active'
+                        return True
+                    # Tabs normales de categoría
+                    self.controller.change_category(tag)
                     return True
         return False

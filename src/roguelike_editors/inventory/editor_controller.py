@@ -50,6 +50,8 @@ class InventoryEditorController:
         # Load inventory JSON data via DataController
         self.data_controller = DataController(self.model)
         self.data_controller.load_data()
+        # Exponer rutas de JSON para controladores hijos (p.ej., SaveController)
+        self.paths = self.data_controller.paths
 
 
     def handle_event(self, event):

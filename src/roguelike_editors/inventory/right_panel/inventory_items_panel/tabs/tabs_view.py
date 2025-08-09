@@ -56,24 +56,34 @@ class TabsView:
         if model.editing_side == 'default':
             # Show default inventory templates
             if model.current_category == 'player':
-                default_player = model.default_data.get('player', {})
+                default_player = model.default_data.get('player', {}) or {}
+                classes = default_player.get('classes')
+                if isinstance(classes, dict) and classes:
+                    sel_cls = getattr(model, 'selected_default_player_class', None)
+                    if sel_cls in classes:
+                        return classes[sel_cls].get('slots', []) or []
+                    # Fallback: first available class
+                    first_tpl = next(iter(classes.values()))
+                    return first_tpl.get('slots', []) or []
+                # Legacy single-template fallback
                 slots = default_player.get('slots', [])
-                
                 return slots
             elif model.current_category == 'monsters':
-                # Determine template of selected monster
+                # Prefer explicit selection from left list (template_id)
+                sel_tid = getattr(model, 'selected_default_template_id', None)
+                if sel_tid:
+                    for def_entry in model.default_data.get('monsters', {}).values():
+                        if def_entry.get('template_id') == sel_tid:
+                            inv_list = def_entry.get('inventory', [])
+                            slots = [{'item': inv.get('item'), 'quantity': inv.get('min', 0)} for inv in inv_list]
+                            return slots
+                # Fallback: use template of selected active monster (if any)
                 active_mon = model.active_data.get('monsters', {}).get(str(model.selected_eid), {})
                 template_id = active_mon.get('template_id')
-                for tpl_name, def_entry in model.default_data.get('monsters', {}).items():
+                for def_entry in model.default_data.get('monsters', {}).values():
                     if def_entry.get('template_id') == template_id:
                         inv_list = def_entry.get('inventory', [])
-                        # Use min quantity for default slots
                         slots = [{'item': inv.get('item'), 'quantity': inv.get('min', 0)} for inv in inv_list]
-                        # Pad slots to match active slots length
-                        active_slots = active_mon.get('slots', [])
-                        if len(active_slots) > len(slots):
-                            slots += [None] * (len(active_slots) - len(slots))
-                        
                         return slots
             
             return []
@@ -81,6 +91,11 @@ class TabsView:
             # Show active data from JSON
             active_data = model.active_data.get(model.current_category, {})
             entry = active_data.get(str(model.selected_eid), {})
+            # Fallback for legacy single-entry player active JSON
+            if not entry and model.current_category == 'player' and isinstance(active_data, dict) and active_data:
+                try:
+                    entry = next(iter(active_data.values())) or {}
+                except Exception:
+                    entry = {}
             slots = entry.get('slots', [])
-            
             return slots

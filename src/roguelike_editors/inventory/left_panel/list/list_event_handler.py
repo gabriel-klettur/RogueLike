@@ -27,6 +27,26 @@ class ListEventHandler:
             if self.view.panel_rect.collidepoint(mx, my):
                 # Solo categoría 'monsters' tiene lógica compleja
                 if self.model.current_category == 'monsters':
+                    # En modo 'Show Default' mostramos plantillas; permitir seleccionar template
+                    if getattr(self.editor_controller.model, 'editing_side', 'active') == 'default':
+                        line_h = self.view.font.get_linesize()
+                        idx = (my - self.view.panel_rect.y + self.view.list_view.scroll_panel.scroll_offset) // line_h
+                        items = self.controller.get_items_list()
+                        if idx < 0 or idx >= len(items):
+                            return True
+                        # Identificar la línea raíz (no indentada) del grupo clicado
+                        start_idx = idx
+                        while start_idx > 0 and items[start_idx].startswith(' '):
+                            start_idx -= 1
+                        root = items[start_idx].strip()
+                        # Extraer Template ID y guardarlo en el modelo
+                        if 'Template:' in root:
+                            try:
+                                tid = root.split('Template:')[1].strip()
+                                self.editor_controller.model.selected_default_template_id = tid
+                            except Exception:
+                                pass
+                        return True
                     line_h = self.view.font.get_linesize()
                     idx = (my - self.view.panel_rect.y + self.view.list_view.scroll_panel.scroll_offset) // line_h
                     items = self.controller.get_items_list()
@@ -81,6 +101,29 @@ class ListEventHandler:
                         eid = raw.split(' ')[0]
                         self.controller.select_entity(eid)
                         self.editor_controller.model.editing_side = 'active'
+                        return True
+                elif self.model.current_category == 'player':
+                    # En modo 'Show Default' y categoría player, permitir seleccionar la clase
+                    if getattr(self.editor_controller.model, 'editing_side', 'active') == 'default':
+                        line_h = self.view.font.get_linesize()
+                        idx = (my - self.view.panel_rect.y + self.view.list_view.scroll_panel.scroll_offset) // line_h
+                        items = self.controller.get_items_list()
+                        if idx < 0 or idx >= len(items):
+                            return True
+                        # Identificar la línea raíz del grupo clicado
+                        start_idx = idx
+                        while start_idx > 0 and items[start_idx].startswith(' '):
+                            start_idx -= 1
+                        root = items[start_idx].strip()
+                        if root.startswith('Class:'):
+                            try:
+                                cls_name = root.split('Class:')[1].strip()
+                                # Si hay separadores adicionales ej. "Class: name | Capacity: N"
+                                if '|' in cls_name:
+                                    cls_name = cls_name.split('|')[0].strip()
+                                self.editor_controller.model.selected_default_player_class = cls_name
+                            except Exception:
+                                pass
                         return True
                 # Bloquear clic dentro del panel de listado
                 return True

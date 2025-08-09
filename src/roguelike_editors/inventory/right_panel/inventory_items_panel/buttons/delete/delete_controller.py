@@ -20,25 +20,54 @@ class DeleteController:
 
         if side == 'default':
             if cat == 'player':
-                tpl = self.editor_model.default_data.get('player', {})
-                slots = tpl.get('slots', [])
-                if slot_idx < len(slots):
-                    slot = slots[slot_idx]
-                    if slot and slot.get('quantity', 0) > qty:
-                        slot['quantity'] -= qty
-                    else:
-                        slots[slot_idx] = None
-                    tpl['slots'] = slots
+                tpl = self.editor_model.default_data.get('player', {}) or {}
+                classes = tpl.get('classes')
+                if isinstance(classes, dict) and classes:
+                    sel_cls = getattr(self.editor_model, 'selected_default_player_class', None)
+                    target_cls = sel_cls if sel_cls in classes else next(iter(classes.keys()))
+                    cls_tpl = classes.get(target_cls, {})
+                    slots = cls_tpl.get('slots', []) or []
+                    if slot_idx < len(slots):
+                        slot = slots[slot_idx]
+                        if slot and slot.get('quantity', 0) > qty:
+                            slot['quantity'] -= qty
+                        else:
+                            slots[slot_idx] = None
+                        cls_tpl['slots'] = slots
+                        classes[target_cls] = cls_tpl
+                        tpl['classes'] = classes
+                else:
+                    slots = tpl.get('slots', [])
+                    if slot_idx < len(slots):
+                        slot = slots[slot_idx]
+                        if slot and slot.get('quantity', 0) > qty:
+                            slot['quantity'] -= qty
+                        else:
+                            slots[slot_idx] = None
+                        tpl['slots'] = slots
             elif cat == 'monsters':
-                active_entry = self.editor_model.active_data.get('monsters', {}).get(str(eid), {})
-                template_id = active_entry.get('template_id')
-                for def_entry in self.editor_model.default_data.get('monsters', {}).values():
-                    if def_entry.get('template_id') == template_id:
-                        inv_list = def_entry.get('inventory', [])
-                        if slot_idx < len(inv_list):
-                            inv_list.pop(slot_idx)
-                            def_entry['inventory'] = inv_list
-                        break
+                # Determine target template_id: prefer explicit selection from left list
+                sel_tid = getattr(self.editor_model, 'selected_default_template_id', None)
+                template_id = sel_tid
+                if not template_id:
+                    active_entry = self.editor_model.active_data.get('monsters', {}).get(str(eid), {})
+                    template_id = active_entry.get('template_id')
+                if template_id:
+                    for def_entry in self.editor_model.default_data.get('monsters', {}).values():
+                        if def_entry.get('template_id') == template_id:
+                            inv_list = def_entry.get('inventory', [])
+                            if slot_idx < len(inv_list):
+                                inv = inv_list[slot_idx]
+                                # Reduce min/max by qty; if zero or below, remove
+                                new_min = max(0, inv.get('min', 0) - qty)
+                                new_max = max(0, inv.get('max', 0) - qty)
+                                if new_min == 0 and new_max == 0:
+                                    inv_list.pop(slot_idx)
+                                else:
+                                    inv['min'] = new_min
+                                    inv['max'] = max(new_min, new_max)
+                                def_entry['inventory'] = inv_list
+                            break
         elif side == 'active':
             active_map = self.editor_model.active_data.get(cat, {})
             if cat == 'monsters':

@@ -21,8 +21,8 @@ class InventoryEditorSystem:
         cwd = os.getcwd()
         self.default_monster_path = os.path.join(cwd, 'data', 'defaults', 'inventory_monsters.json')
         self.default_player_path = os.path.join(cwd, 'data', 'defaults', 'inventory_player.json')
-        self.active_monster_path = os.path.join(cwd, 'data', 'inventory', 'inventory_monsters.json')
-        self.active_player_path = os.path.join(cwd, 'data', 'inventory', 'inventory_player.json')
+        self.active_monster_path = os.path.join(cwd, 'data', 'inventory', 'active', 'inventory_monsters.json')
+        self.active_player_path = os.path.join(cwd, 'data', 'inventory', 'active', 'inventory_player.json')
         # Load item models
         items_path = os.path.join(cwd, 'data', 'items', 'items.json')
         self.items = load_items(items_path)

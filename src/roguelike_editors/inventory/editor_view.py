@@ -70,10 +70,10 @@ class InventoryEditorView:
         # Allow hiding the overlay while keeping event handling active (press-and-hold on Pos)
         if getattr(model, 'overlay_hidden_while_hold', False):
             return
-        self._draw_ui(screen, model)
+        self._draw_ui(screen, model, world)
         return
 
-    def _draw_ui(self, screen: pygame.Surface, model: InventoryEditorModel):
+    def _draw_ui(self, screen: pygame.Surface, model: InventoryEditorModel, world):
         ow, oh = screen.get_size()
         # 1) Título: responsabilidad del módulo inventory_title
         #    Renderiza y devuelve el recto exacto para alinear paneles debajo.
@@ -84,6 +84,9 @@ class InventoryEditorView:
         tabs_y = title_rect.bottom + tabs_gap
         # Informar a TabsView su posición base configurable
         self.inventory_panel_view.tabs_view.set_base_pos(tabs_x, tabs_y)
+        # Configurar pestañas secundarias (Show Default/Active) en el panel izquierdo
+        show_side = model.current_category in ('player', 'monsters')
+        self.inventory_panel_view.tabs_view.set_side_tabs(model.editing_side, show_side)
         # Altura exacta de tabs (coherente con TabsView: h + padding//2, padding=10)
         tab_sample_surf = self.inventory_panel_view.tabs_view.font.render("Player", True, (255, 255, 255))
         tab_text_h = tab_sample_surf.get_height()
@@ -109,8 +112,13 @@ class InventoryEditorView:
             radius=8,
             shadow=True,
         )
+        # Alinear pestañas secundarias al borde derecho del panel izquierdo
+        self.inventory_panel_view.tabs_view.set_right_edge(panel_rect.right)
         # Guardar rectángulo del panel izquierdo para eventos de grid
         self.left_panel_rect = panel_rect
+        # Sincronizar inventario activo del Player desde ECS para reflejar cambios en vivo
+        if model.editing_side == 'active' and model.current_category == 'player':
+            self._sync_active_player_from_ecs(model, world)
         # Obtener lista de elementos para panel
         items = self.inventory_panel_controller.get_items_list()
         # Dibujar panel mediante MVC sobre la pantalla directamente
@@ -156,15 +164,6 @@ class InventoryEditorView:
             self.add_to_inventory_button_rect = rects.get('add_button_rect')
         return
 
-
-
-
-
-
-
-
-      
-
     def get_slot_at_pos(self, pos, count):
         x, y = pos
         origin_x, origin_y = self.grid_origin
@@ -183,6 +182,87 @@ class InventoryEditorView:
                 return idx
         logger.debug(f"[DEBUG] No slot found at position ({x},{y})")
         return None
+
+    def _sync_active_player_from_ecs(self, model: InventoryEditorModel, world):
+        """Sincroniza model.active_data['player'] desde el InventoryComponent del ECS.
+        Esto permite que los ítems nuevos obtenidos por el jugador se reflejen inmediatamente
+        en el Editor (lista izquierda y grid derecho) cuando está en Show Active.
+        """
+        try:
+            # Determinar el EID del jugador y resolverlo contra el mapa de componentes
+            raw_eid = model.selected_eid if model.selected_eid is not None else getattr(world, 'player_entity', None)
+            inv_map = getattr(world, 'components', {}).get('InventoryComponent', {}) or {}
+            if raw_eid is None and not inv_map:
+                return
+            update_key = None
+            inv_comp = None
+            # Intentar con int/str según corresponda
+            if raw_eid is not None:
+                cand_keys = []
+                if isinstance(raw_eid, int):
+                    cand_keys.append(raw_eid)
+                    cand_keys.append(str(raw_eid))
+                elif isinstance(raw_eid, str):
+                    cand_keys.append(raw_eid)
+                    if raw_eid.isdigit():
+                        try:
+                            cand_keys.append(int(raw_eid))
+                        except Exception:
+                            pass
+                # Probar claves candidatas
+                for k in cand_keys:
+                    if k in inv_map:
+                        inv_comp = inv_map[k]
+                        update_key = str(k if not isinstance(k, str) or k.isdigit() else k)
+                        break
+            # Fallback: world.player_entity
+            if inv_comp is None:
+                peid = getattr(world, 'player_entity', None)
+                if peid in inv_map:
+                    inv_comp = inv_map[peid]
+                    update_key = str(peid)
+            # Fallback: si hay un único inventario en el mapa, usarlo
+            if inv_comp is None and isinstance(inv_map, dict) and len(inv_map) == 1:
+                only_key = next(iter(inv_map.keys()))
+                inv_comp = inv_map[only_key]
+                update_key = str(only_key)
+            if inv_comp is None:
+                return
+            # Construir representación tipo JSON de los slots
+            slots_json = []
+            for s in getattr(inv_comp, 'slots', []) or []:
+                if not s:
+                    slots_json.append(None)
+                else:
+                    item_id = getattr(s, 'item_id', None) or getattr(s, 'item', None)
+                    qty = getattr(s, 'quantity', 0)
+                    slots_json.append({'item': item_id, 'quantity': qty})
+            # Volcar en active_data del modelo con compatibilidad legacy
+            if not isinstance(model.active_data.get('player'), dict):
+                model.active_data['player'] = {}
+            pmap = model.active_data['player']
+            target_key = update_key or str(raw_eid)
+            if target_key in pmap:
+                # Normal path: actualizar por clave encontrada
+                entry = pmap.get(target_key, {})
+                entry['slots'] = slots_json
+                pmap[target_key] = entry
+            else:
+                # Legacy: si hay una única entrada y no coincide con eid, actualizar esa
+                if isinstance(pmap, dict) and len(pmap) == 1:
+                    only_key = next(iter(pmap.keys()))
+                    entry = pmap.get(only_key, {}) or {}
+                    entry['slots'] = slots_json
+                    pmap[only_key] = entry
+                else:
+                    # No hay entradas o hay varias: crear/actualizar por la clave resuelta
+                    pmap[target_key] = {'slots': slots_json}
+        except Exception as e:
+            # No interrumpir el render; solo loguear
+            try:
+                self.logger.warning(f"[InventoryEditorView] Player ECS sync failed: {e}")
+            except Exception:
+                pass
 
     def _get_item_image(self, item_id):
         if item_id in self.images:

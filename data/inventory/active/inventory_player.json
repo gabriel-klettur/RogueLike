@@ -5,16 +5,16 @@
     "slots": [
       {
         "item": "gold",
-        "quantity": 505
+        "quantity": 509
       },
       {
         "item": "wood",
-        "quantity": 1
+        "quantity": 2
       },
       null,
       null,
       null
     ],
     "schema_version": "1.0.0"
-  }  
+  }
 }
