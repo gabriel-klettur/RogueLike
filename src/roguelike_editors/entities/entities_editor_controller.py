@@ -12,6 +12,7 @@ from roguelike_editors.entities.services.history import HistoryManager
 from roguelike_editors.entities.services.commands import (
     SpawnEntityCommand,
     DeleteEntityCommand,
+    DeleteEntityDefinitionCommand,
 )
 
 from roguelike_editors.entities.entities_editor_model import EntitiesEditorModel
@@ -244,6 +245,17 @@ class EntitiesEditorController:
                 return True
             # Picker panel
             self.picker_controller.handle_event(event)
+            # If in delete mode and click occurred inside picker, delete the definition
+            if self.model.delete_mode_active and event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
+                panel_rect = self.picker_controller.model.panel_rect
+                if panel_rect and panel_rect.collidepoint(getattr(event, 'pos', (0, 0))):
+                    sel = self.picker_controller.model.selected_id or self.picker_controller.model.hovered_id
+                    if sel:
+                        # Push undoable delete-definition command using the properties controller as command controller
+                        self.history.push(DeleteEntityDefinitionCommand(self.properties_controller, sel))
+                        logger.debug(f" Delete-definition command for '{sel}' queued via picker click")
+                        self.exit_delete_mode()
+                        return True
             # Sincronizar hover y seleccionado para properties panel
             hovered = self.picker_controller.model.hovered_id
             selected = self.picker_controller.model.selected_id
