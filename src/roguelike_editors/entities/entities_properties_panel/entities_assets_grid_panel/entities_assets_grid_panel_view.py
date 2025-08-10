@@ -250,6 +250,14 @@ class AssetsGridPanelView:
                     if not path:
                         self._draw_inner_black(screen, rect)
                     else:
+                        try:
+                            import os
+                            if model.hovered_asset_cell == asset_key or model.selected_asset_cell == asset_key:
+                                logger.debug(
+                                    f"[ASSETS GRID][NO-SET] key={asset_key} path='{path}' abs={os.path.isabs(path)} exists={os.path.isfile(path)}"
+                                )
+                        except Exception:
+                            pass
                         raw = self.thumbnail_cache.get(path)
                         if raw is None:
                             try:
@@ -257,7 +265,10 @@ class AssetsGridPanelView:
                                 raw = pygame.transform.smoothscale(
                                     img, (cell_size - 4, cell_size - 4)
                                 )
-                            except Exception:
+                            except Exception as e:
+                                logger.exception(
+                                    f"[ASSETS GRID] Error cargando thumbnail path='{path}': {e}"
+                                )
                                 raw = None
                             self.thumbnail_cache[path] = raw
                         if raw:
@@ -289,7 +300,43 @@ class AssetsGridPanelView:
         if anim and frame:
             self._blit_tinted(screen, rect, frame, entity_data.get('tint'))
         else:
-            self._draw_inner_black(screen, rect)
+            # Fallback de vista SOLO para monstruos pendientes (no confirmados):
+            # mostrar el sheet asignado como vista previa si existe, ya que
+            # la caché runtime aún no tiene frames construidos.
+            is_pending = False
+            try:
+                ent_id = self._current_entity_id()
+                m_entry = (
+                    self.parent_model.monsters.get(ent_id)
+                    if isinstance(self.parent_model.monsters, dict)
+                    else None
+                )
+                is_pending = bool(isinstance(m_entry, dict) and m_entry.get('__pending__'))
+            except Exception:
+                is_pending = False
+
+            if is_pending:
+                path = entity_data.get(key)
+                if path:
+                    raw = self.thumbnail_cache.get(path)
+                    if raw is None:
+                        try:
+                            img = load_image(path)
+                            raw = pygame.transform.smoothscale(img, (size - 4, size - 4))
+                        except Exception as e:
+                            logger.exception(
+                                f"[ASSETS GRID] Error cargando thumbnail (pending SET) path='{path}': {e}"
+                            )
+                            raw = None
+                        self.thumbnail_cache[path] = raw
+                    if raw:
+                        self._blit_tinted(screen, rect, raw, entity_data.get('tint'))
+                    else:
+                        self._draw_inner_black(screen, rect)
+                else:
+                    self._draw_inner_black(screen, rect)
+            else:
+                self._draw_inner_black(screen, rect)
 
     def _draw_path_thumb(
         self,

@@ -27,7 +27,7 @@
     "classes": {
       "dwarf": {
         "stats": {
-          "max_strength": 100,
+          "max_strength": 200,
           "max_intelligence": 35,
           "max_dexterity": 90,
           "initial_strength": 45,
@@ -57,7 +57,8 @@
               "cast ": [],
               "attack": [],
               "damage": [],
-              "death": []
+              "death": [],
+              "cast": []
             },
             "sprites_data_set": {
               "scale_idle": 0.5,
@@ -66,7 +67,8 @@
               "scale_cast": 0.5,
               "scale_attack": 0.5,
               "scale_damage": 0.5,
-              "scale_death": 0.5
+              "scale_death": 0.5,
+              "tint": null
             }
           },
           "no-sets": {
@@ -143,7 +145,14 @@
             "sprites_data_no-set": {
               "scale": 0.35,
               "death_scale": 0.5,
-              "tint": null
+              "tint": null,
+              "scale_idle": 0.5,
+              "scale_walk": 0.5,
+              "scale_chase": 0.5,
+              "scale_cast": 0.5,
+              "scale_attack": 0.5,
+              "scale_damage": 0.5,
+              "scale_death": 0.55
             }
           }
         },

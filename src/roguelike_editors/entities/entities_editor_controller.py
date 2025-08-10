@@ -149,8 +149,7 @@ class EntitiesEditorController:
         # Select the new entity in the properties panel and make it visible
         self.properties_controller.model.hovered_entity_id = None
         self.properties_controller.model.selected_id = new_id
-        # Ensure picker is visible and not blinking (not in spawn)
-        self.picker_controller.model.visible = True
+        # Ensure picker is not blinking (not in spawn). Visibility handled by active mode.
         self.picker_controller.model.blink = False
         # Redraw to reflect the panel opening
         try:
@@ -209,6 +208,38 @@ class EntitiesEditorController:
         self.model.delete_mode_active = False
         # Restaurar cursor flecha
         pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
+
+    def enter_add_entities_on_system_mode(self) -> None:
+        """Hide picker and expand Properties panel to occupy picker's space."""
+        # Hide picker panel
+        self.picker_controller.model.visible = False
+        # Expand properties panel into picker's space
+        pp_model = self.properties_controller.model
+        pp_view = self.properties_controller.view
+        # Save current drag position to restore later
+        if getattr(pp_model, 'saved_drag_pos', None) is None:
+            pp_model.saved_drag_pos = pp_view.draggable_panel.pos
+        # Compute left anchor from picker position
+        left_x = self.picker_controller.view.x
+        top_y = self.picker_controller.view.y
+        pp_model.expand_into_picker_space = True
+        pp_model.panel_left_x_override = left_x
+        # Place panel starting at picker's x,y
+        pp_view.draggable_panel.pos = (left_x, top_y)
+
+    def exit_add_entities_on_system_mode(self) -> None:
+        """Restore picker visibility and Properties panel layout."""
+        # Show picker again
+        self.picker_controller.model.visible = True
+        # Restore properties panel layout
+        pp_model = self.properties_controller.model
+        pp_view = self.properties_controller.view
+        pp_model.expand_into_picker_space = False
+        pp_model.panel_left_x_override = None
+        # Restore previous draggable position if stored
+        if getattr(pp_model, 'saved_drag_pos', None) is not None:
+            pp_view.draggable_panel.pos = pp_model.saved_drag_pos
+            pp_model.saved_drag_pos = None
 
     def is_active(self, tool: str) -> bool:
         """Retorna True si la herramienta está activa en el toolbar."""

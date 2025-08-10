@@ -1,10 +1,8 @@
 import os
-import json
 import pygame
 import logging
-from roguelike_ui.services.json_persistence import save_to_json, load_from_json
-from pathlib import Path
-from roguelike_engine.config.config import ASSETS_DIR
+
+
 from roguelike_editors.entities.entities_properties_panel.entities_properties_panel_model import EntityPropertiesPanelModel
 from roguelike_editors.entities.entities_properties_panel.entities_properties_panel_view import EntityPropertiesPanelView
 from roguelike_editors.entities.entities_properties_panel.entities_properties_panel_events import EntitiesPropertiesPanelEventHandler
@@ -21,12 +19,9 @@ from roguelike_editors.entities.entities_assets_picker_panel.entities_assets_pic
 import importlib
 import roguelike_game.config.players_config as pc
 from roguelike_game.factories.monster.config import reload_monster_defs
-from roguelike_game.factories.monster import cache as monster_cache
 from roguelike_editors.entities.entities_properties_panel.services.ecs_update_service import (
     update_player_assets,
-    update_monster_assets,
-    update_player_stats,
-    update_monster_stats,
+    update_monster_assets    
 )
 from roguelike_editors.entities.entities_properties_panel.services.entity_properties_service import (
     load_entity_data,
@@ -182,6 +177,11 @@ class EntityPropertiesPanelController:
             self.assets_picker_controller.hide()
             self.grid_controller.model.last_entity_id = None
             self.grid_controller.model.last_state_tab = None
+            # Limpiar caché de thumbnails para forzar recarga de imágenes
+            try:
+                self.grid_controller.view.thumbnail_cache.clear()
+            except Exception:
+                pass
             try:
                 self.editor_controller.render(self.editor_controller.game.screen)
             except Exception:
@@ -200,6 +200,11 @@ class EntityPropertiesPanelController:
         # Reset grid cache to force rebuild on next draw
         self.grid_controller.model.last_entity_id = None
         self.grid_controller.model.last_state_tab = None
+        # Clear thumbnails cache so new set/no-set visuals refresh immediately
+        try:
+            self.grid_controller.view.thumbnail_cache.clear()
+        except Exception:
+            pass
         if ent_id in self.model.player_stats:
             # Players: recargar config y actualizar ECS de jugadores
             try:
@@ -432,6 +437,11 @@ class EntityPropertiesPanelController:
             self.model.entity_type_rect = None
             if hasattr(self.model, 'confirm_button_rect'):
                 self.model.confirm_button_rect = None
+            # Restaurar layout (mostrar picker y posición original del Properties)
+            try:
+                self.editor_controller.exit_add_entities_on_system_mode()
+            except Exception:
+                pass
         except Exception:
             pass
         # Redibujar UI

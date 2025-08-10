@@ -93,6 +93,9 @@ class EntityPropertiesPanelView:
         content_w = max_w + pad * 2
         # Ancho predefinido profesional con límites de pantalla
         panel_w = min(sw - margin * 2, max(self.DEFAULT_PANEL_W, min(content_w, self.MAX_PANEL_W)))
+        # En modo add-on-system, mantener el ancho original; solo cambiaremos la posición más abajo
+        if getattr(model, 'expand_into_picker_space', False):
+            pass
         # Asegurar ancho mínimo para subtabs de assets vacíos
         if self.type_assets_controller.model.active_type_tab == TYPE_TAB_ASSETS:
             subpad_x = self.SUBPAD_X
@@ -110,8 +113,16 @@ class EntityPropertiesPanelView:
         content_h = max(40, panel_h_target - (primary_header + state_header + sub_header))
         panel_h = primary_header + state_header + sub_header + content_h
 
-        # Posición inicial (esquina superior derecha)
-        px, py = sw - panel_w - margin, margin
+        # Posición inicial (esquina superior derecha o anclaje izquierdo override)
+        if getattr(model, 'expand_into_picker_space', False):
+            # Intentar usar override de X (posición guardada por el controller)
+            if self.draggable_panel.pos is not None:
+                px, py = self.draggable_panel.pos
+            else:
+                px = model.panel_left_x_override if model.panel_left_x_override is not None else (sw - panel_w - margin)
+                py = margin
+        else:
+            px, py = sw - panel_w - margin, margin
 
         # Ajustar panel draggable
         self.draggable_panel.resize(panel_w, panel_h)
@@ -119,8 +130,9 @@ class EntityPropertiesPanelView:
             self.draggable_panel.pos = (px, py)
         else:
             px, py = self.draggable_panel.pos
-        # Anchoring X to right edge of screen
-        px = sw - panel_w - margin
+        # Anchor a la derecha solo en modo normal; en modo expandido respetar X calculada/arrastrada
+        if not getattr(model, 'expand_into_picker_space', False):
+            px = sw - panel_w - margin
 
         # Actualizar rect para detección de eventos
         model.panel_rect = pygame.Rect(px, py, panel_w, panel_h)

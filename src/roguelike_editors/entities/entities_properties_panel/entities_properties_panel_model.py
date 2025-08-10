@@ -51,3 +51,11 @@ class EntityPropertiesPanelModel:
     entity_type_rect: Optional[pygame.Rect] = None
     # Botón de confirmación (visible solo en modo 'Add Entities on System')
     confirm_button_rect: Optional[pygame.Rect] = None
+    
+    # Layout override flags for ADD_ENTITIES_ON_SYSTEM mode
+    # When active, the properties panel should expand into the area usually used by the picker.
+    expand_into_picker_space: bool = False
+    # Left X coordinate to anchor the panel when expanding (typically the picker's X)
+    panel_left_x_override: Optional[int] = None
+    # Previous draggable position to restore when exiting the mode
+    saved_drag_pos: Optional[Tuple[int, int]] = None

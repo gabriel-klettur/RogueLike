@@ -1,7 +1,9 @@
 import pygame
 import os
+import logging
 from roguelike_engine.config.config import ASSETS_DIR
 _IMAGE_CACHE = {}
+logger = logging.getLogger(__name__)
 
 def load_image(path: str, scale=None) -> pygame.Surface:
     """
@@ -12,12 +14,31 @@ def load_image(path: str, scale=None) -> pygame.Surface:
       - "assets/ui/restore_icon.png"
     """
     # Normalizar separadores
-    rel = path.replace("\\", "/")
-    # Si el usuario pasó "assets/...", lo quitamos
-    if rel.startswith("assets/"):
-        rel = rel[len("assets/"):]
-    # Construimos la ruta absoluta
-    full_path = os.path.join(ASSETS_DIR, *rel.split("/"))
+    rel = path.replace("\\", "/").strip()
+    # Soportar rutas absolutas del sistema de archivos (p.ej. D:/.../assets/..)
+    if os.path.isabs(rel):
+        if os.path.isfile(rel):
+            full_path = rel
+        else:
+            # Intentar re-mapear si el path contiene "/assets/" dentro
+            lower = rel.lower()
+            marker = "/assets/"
+            if marker in lower:
+                idx = lower.index(marker) + len(marker)
+                rel2 = rel[idx:]
+                full_path = os.path.join(ASSETS_DIR, *rel2.split("/"))
+                logger.debug(
+                    f"[loader.load_image] Remapeando ruta absoluta inexistente '{rel}' -> '{full_path}'"
+                )
+            else:
+                # Ultimo recurso: usar tal cual (fallará más abajo y lo veremos en logs)
+                full_path = rel
+    else:
+        # Si el usuario pasó "assets/...", lo quitamos
+        if rel.startswith("assets/"):
+            rel = rel[len("assets/") :]
+        # Construimos la ruta absoluta relativa a ASSETS_DIR
+        full_path = os.path.join(ASSETS_DIR, *rel.split("/"))
 
     # Cache images to avoid redundant I/O
     key = (full_path, scale)
@@ -25,6 +46,7 @@ def load_image(path: str, scale=None) -> pygame.Surface:
         return _IMAGE_CACHE[key]
 
     if not os.path.isfile(full_path):
+        logger.error(f"[loader.load_image] Imagen no encontrada: '{full_path}' (desde path='{path}')")
         raise FileNotFoundError(f"Imagen no encontrada: {full_path}")
 
     img = pygame.image.load(full_path).convert_alpha()
