@@ -16,12 +16,7 @@ class ItemPickerPanelEventHandler:
     def handle(self, event: pygame.event.Event) -> None:
         # Teclas de toggle y navegación
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_F7:
-                self.model.visible = not self.model.visible
-                logger.debug(f"[DEBUG ItemEditorController] F7 pressed, visible={self.model.visible}")
-                if not self.model.visible:
-                    self.model.selected_item_id = None
-            elif self.model.visible:
+            if self.model.visible:
                 # Delegar teclas al PickerPanel (mueve selección, Enter abre)
                 self.controller.picker.handle_event(event, self.controller.picker_state)
 
@@ -29,16 +24,11 @@ class ItemPickerPanelEventHandler:
         elif event.type == pygame.MOUSEBUTTONDOWN and self.model.visible and event.button == 1:
             mx, my = event.pos
             logger.debug(f"[DEBUG items_picker] MOUSEBUTTONDOWN clicks={getattr(event, 'clicks',1)} pos=({mx},{my})")
-            # Si clic en el panel de propiedades, no tocar selección del grid
-            prop_rect = getattr(self.controller.properties_panel.model, 'panel_rect', None)
-            if prop_rect and prop_rect.collidepoint(mx, my):
-                return
             # Delegar click al PickerPanel
             self.controller.picker.handle_event(event, self.controller.picker_state)
             # Si el click fue fuera del panel y del info panel, limpiar selección
             if not self.controller.picker_state.rect.collidepoint(mx, my):
-                if not prop_rect or not prop_rect.collidepoint(mx, my):
-                    self.model.selected_item_id = None
+                self.model.selected_item_id = None
 
         elif event.type == pygame.MOUSEMOTION and self.model.visible:
             # Delegar hover/drag al PickerPanel

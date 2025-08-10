@@ -37,6 +37,15 @@ class ItemsPropertiesPanelController:
         self._selected_id = selected_id
         self._hovered_id = hovered_id
 
+    def update_context(self, items: Dict[str, Any], selected_id: Optional[str], hovered_id: Optional[str]):
+        """Actualiza en un solo paso los ítems y los ids activos.
+
+        Esto reduce llamadas duplicadas desde el Picker.
+        """
+        self._items = items
+        self._selected_id = selected_id
+        self._hovered_id = hovered_id
+
     # ---- Bucle de UI ----
     def handle_event(self, event: pygame.event.Event) -> None:
         self.event_handler.handle(event)
@@ -53,6 +62,45 @@ class ItemsPropertiesPanelController:
                     y = rect_prop.y
                     self.text_input.draw(screen, x, y)
                     break
+
+    def start_inline_edit(self, prop_key: Optional[str] = None) -> None:
+        """Inicia edición inline para la propiedad indicada o la primera disponible.
+
+        Si no se provee prop_key, se selecciona la primera clave válida del ítem activo
+        (excluyendo 'name' y 'description' y valores None) para que coincida
+        con lo que realmente se muestra en la vista.
+        """
+        active_id = self._selected_id or self._hovered_id
+        if not active_id or active_id not in self._items:
+            return
+        item = self._items.get(active_id)
+        if item is None:
+            return
+        # Obtener datos similares a la vista
+        if hasattr(item, 'model_dump'):
+            data = item.model_dump()
+        else:
+            try:
+                data = item.dict()
+            except Exception:
+                data = vars(item)
+        # Determinar propiedad destino
+        key_to_edit: Optional[str] = prop_key
+        if key_to_edit is None:
+            for k, v in data.items():
+                if k in ("name", "description") or v is None:
+                    continue
+                key_to_edit = k
+                break
+        if not key_to_edit:
+            return
+        # Configurar modelo y TextInput
+        self.model.focused_property = key_to_edit
+        self.model.editing_property = key_to_edit
+        initial = str(getattr(item, key_to_edit, ""))
+        self.model.editing_text = initial
+        self.model.editing_cursor = len(initial)
+        self.text_input.activate(initial)
 
     # ---- Persistencia de cambios ----
     def commit_edit(self):

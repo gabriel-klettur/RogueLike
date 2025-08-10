@@ -87,6 +87,7 @@ class PickerPanel:
         grid_bg_color: Optional[Color] = None,
         draw_panel_bg: bool = True,
         allow_dragging: bool = True,
+        max_columns: Optional[int] = None,
         draw_overlays: bool = True,
     ) -> None:
         self.cell_w, self.cell_h = cell_size
@@ -99,6 +100,7 @@ class PickerPanel:
         self.grid_bg_color = grid_bg_color
         self.draw_panel_bg = draw_panel_bg
         self.allow_dragging = allow_dragging
+        self.max_columns = max_columns
         self.draw_overlays = draw_overlays
 
         # Callbacks
@@ -136,6 +138,8 @@ class PickerPanel:
             return 1
         # Place as many columns as fit with padding between cells
         cols = max(1, (area_w + pad) // (cw + pad))
+        if self.max_columns:
+            cols = min(cols, self.max_columns)
         return cols
 
     def _compute_layout(self, state: PickerPanelState) -> None:

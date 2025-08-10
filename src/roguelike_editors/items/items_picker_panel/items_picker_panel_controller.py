@@ -50,13 +50,24 @@ class ItemPickerPanelController:
         self.view.map_ui = self.map_ui
         self.view.params_ui = self.params_ui
 
-        # --- Properties Panel (separado del picker) ---
-        self.properties_panel = ItemsPropertiesPanelController(items, font)
+        # --- Hooks for orchestration (set by ItemsEditorController) ---
+        # on_select_id(id: str) -> None
+        # on_open_id(id: str) -> None
+        self.on_select_id = None
+        self.on_open_id = None
+        # Back-compat internal properties panel (used only if no orchestrator is attached)
+        self._internal_properties = ItemsPropertiesPanelController(items, font)
 
         # Reusable Picker Panel setup
         # State rect will be positioned each frame by the view
         self.picker_state = PickerPanelState(rect=pygame.Rect(0, 0, 0, 0))
-        self.picker = PickerPanel(cell_size=(64, 64), draw_panel_bg=False, grid_bg_color=None, allow_dragging=False)
+        self.picker = PickerPanel(
+            cell_size=(64, 64),
+            draw_panel_bg=False,
+            grid_bg_color=None,
+            allow_dragging=False,
+            max_columns=12,
+        )
 
         def _get_item_ids() -> list[str]:
             # Excluir placeholder de imagen faltante y mantener orden estable
@@ -83,15 +94,33 @@ class ItemPickerPanelController:
             item_ids = self._get_item_ids()
             if 0 <= index < len(item_ids):
                 self.model.selected_item_id = item_ids[index]
+                # Notify orchestrator
+                if self.on_select_id is not None:
+                    try:
+                        self.on_select_id(self.model.selected_item_id)
+                    except Exception:
+                        logger.exception("on_select_id callback failed")
 
         self.picker.on_select = _on_select
-        # Abrir (doble clic) hace lo mismo que seleccionar por ahora
-        self.picker.on_open = _on_select
+        # Abrir (doble clic) notifica al orquestador para iniciar edición inline en propiedades
+        def _on_open(index: int) -> None:
+            _on_select(index)
+            if self.on_open_id is not None and self.model.selected_item_id:
+                try:
+                    self.on_open_id(self.model.selected_item_id)
+                except Exception:
+                    logger.exception("on_open_id callback failed")
+            elif self._internal_properties and self.model.selected_item_id:
+                # Back-compat path: open inline edit on internal panel
+                self._internal_properties.update_context(self.model.items, self.model.selected_item_id, self.model.hovered_item_id)
+                self._internal_properties.start_inline_edit()
+
+        self.picker.on_open = _on_open
 
         # Expose picker to the view for rendering and layout
         self.view.picker = self.picker
         self.view.picker_state = self.picker_state
-        # Handler de eventos inline y grid
+        # Handler de eventos del grid
         self.event_handler = ItemPickerPanelEventHandler(self)
 
     def handle_event(self, event: pygame.event.Event) -> None:
@@ -116,12 +145,14 @@ class ItemPickerPanelController:
                 logger.debug(f"[ItemEditorController] Agregado ítem {self.model.selected_item_id} con id {drop_id} en pos jugador ({pos.x},{pos.y}) zone='{zone_id}'")
             return
 
-        # Delegar primero a panel de propiedades (captura edición de texto y clics en propiedades)
-        if self.model.visible:
-            # Vincular ids activos para correcto contexto
-            self.properties_panel.set_active_ids(self.model.selected_item_id, self.model.hovered_item_id)
-            self.properties_panel.set_items(self.model.items)
-            self.properties_panel.handle_event(event)
+        # Si existe panel de propiedades interno y clic cae sobre él, manejar ahí y no seguir
+        if self.model.visible and hasattr(event, 'pos') and self._internal_properties:
+            panel_rect = getattr(self._internal_properties.model, 'panel_rect', None)
+            if panel_rect and panel_rect.collidepoint(*event.pos):
+                # Mantener contexto actualizado
+                self._internal_properties.update_context(self.model.items, self.model.selected_item_id, self.model.hovered_item_id)
+                self._internal_properties.handle_event(event)
+                return
 
         # Delegar entrada del picker (navegación/selección)
         self.event_handler.handle(event)
@@ -135,6 +166,11 @@ class ItemPickerPanelController:
                 item_def = inst_data.get('item_id')
                 if item_def:
                     self.model.selected_item_id = item_def
+                    if self.on_select_id is not None:
+                        try:
+                            self.on_select_id(item_def)
+                        except Exception:
+                            logger.exception("on_select_id callback failed from map_ui selection")
                 # cargar valores al editor de params
                 params = inst_data.get('params', {})
                 self.params_ui.load_values(params)
@@ -162,10 +198,10 @@ class ItemPickerPanelController:
         if not self.model.visible:
             return
         self.view.draw(screen, self.model)
-        # Dibujar panel de propiedades a la derecha
-        self.properties_panel.set_active_ids(self.model.selected_item_id, self.model.hovered_item_id)
-        self.properties_panel.set_items(self.model.items)
-        self.properties_panel.draw(screen, getattr(self.view, 'title_rect', None))
+        # Dibujar panel de propiedades interno si no hay orquestador enganchado
+        if self._internal_properties and not (self.on_select_id or self.on_open_id):
+            self._internal_properties.update_context(self.model.items, self.model.selected_item_id, self.model.hovered_item_id)
+            self._internal_properties.draw(screen, getattr(self.view, 'title_rect', None))
         # Añadir lista de instancias del mapa y editor de params debajo
         margin = 20
         sw, sh = screen.get_size()
