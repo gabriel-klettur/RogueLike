@@ -1,5 +1,5 @@
 import pygame
-from roguelike_editors.items.items_picker_panel.editor_controller import ItemEditorController
+from roguelike_editors.items.items_picker_panel.items_picker_panel_controller import ItemPickerPanelController
 
 class ItemsEditorManager:
     """
@@ -11,7 +11,7 @@ class ItemsEditorManager:
         assets = game.item_assets
         font = game.font
         # Instanciar controlador
-        self.controller = ItemEditorController(items, assets, font)
+        self.controller = ItemPickerPanelController(items, assets, font)
         self.controller.game = game
         self.model = self.controller.model
         # Exponer estado global

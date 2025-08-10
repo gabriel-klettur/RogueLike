@@ -12,32 +12,31 @@ def _safe_sysfont(*args, **kwargs):
 
 pygame.font.SysFont = _safe_sysfont
 from typing import Any, Dict
-from roguelike_editors.items.items_picker_panel.editor_model import ItemEditorModel
-from roguelike_editors.items.items_picker_panel.editor_view import ItemEditorView
+from roguelike_editors.items.items_picker_panel.items_picker_panel_model import ItemPickerPanelModel
+from roguelike_editors.items.items_picker_panel.items_picker_panel_view import ItemPickerPanelView
 
-from roguelike_ui.widgets.text_input import TextInput
-from roguelike_ui.widgets.double_click_detector import DoubleClickDetector
 from roguelike_ui.widgets.map_items_ui import MapItemsUI
 from roguelike_ui.widgets.params_editor_ui import ParamsEditorUI
 from roguelike_ui.services.json_persistence import save_to_json
+from roguelike_ui.widgets.picker_panel import PickerPanel, PickerPanelState
+from roguelike_editors.items.items_properties_panel.items_properties_panel_controller import (
+    ItemsPropertiesPanelController,
+)
 import os
 import uuid
 from roguelike_game.managers.map.item_drop_manager import ItemDropManager
 from roguelike_game.ecs.systems.inventory.inventory_pickup_system import InventoryPickupSystem
-from roguelike_editors.items.items_picker_panel.items_editor_events import ItemsEditorEventHandler
+from roguelike_editors.items.items_picker_panel.items_picker_panel_events import ItemPickerPanelEventHandler
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.map.utils import get_zone_for_tile
 
-class ItemEditorController:
+class ItemPickerPanelController:
     """Controller para editor de ítems: maneja visibilidad y navegación."""
     def __init__(self, items: Dict[str, Any], assets: Dict[str, Any], font: pygame.font.Font):
-        self.model = ItemEditorModel(items=items, assets=assets)
-        self.view = ItemEditorView(assets, font)
+        self.model = ItemPickerPanelModel(items=items, assets=assets)
+        self.view = ItemPickerPanelView(assets, font)
 
-        # Initialize text input and double-click detector
-        self.text_input = TextInput(font)
-        self.dc_detector = DoubleClickDetector()
-        self.view.text_input = self.text_input
+        # Text input y double-click ahora son gestionados por el panel de propiedades
         # Inicializar servicios de edición de instancias
         # Map items list
         inv_map_path = os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_map.json')
@@ -50,8 +49,50 @@ class ItemEditorController:
         # Enlazar al view
         self.view.map_ui = self.map_ui
         self.view.params_ui = self.params_ui
+
+        # --- Properties Panel (separado del picker) ---
+        self.properties_panel = ItemsPropertiesPanelController(items, font)
+
+        # Reusable Picker Panel setup
+        # State rect will be positioned each frame by the view
+        self.picker_state = PickerPanelState(rect=pygame.Rect(0, 0, 0, 0))
+        self.picker = PickerPanel(cell_size=(64, 64), draw_panel_bg=False, grid_bg_color=None, allow_dragging=False)
+
+        def _get_item_ids() -> list[str]:
+            # Excluir placeholder de imagen faltante y mantener orden estable
+            return [i for i in self.model.items.keys() if i != "image_item_not_found"]
+
+        self._get_item_ids = _get_item_ids  # store for reuse in callbacks
+
+        self.picker.set_item_count(lambda: len(self._get_item_ids()))
+
+        def _draw_item(surface: pygame.Surface, rect: pygame.Rect, index: int, selected: bool, hovered: bool) -> None:
+            # Fondo de celda y icono escalado
+            pygame.draw.rect(surface, (50, 50, 50), rect)
+            item_ids = self._get_item_ids()
+            if 0 <= index < len(item_ids):
+                item_id = item_ids[index]
+                icon = self.view.assets.get(item_id)
+                if icon:
+                    icon_surf = pygame.transform.smoothscale(icon, (rect.w, rect.h))
+                    surface.blit(icon_surf, rect.topleft)
+
+        self.picker.set_draw_item(_draw_item)
+
+        def _on_select(index: int) -> None:
+            item_ids = self._get_item_ids()
+            if 0 <= index < len(item_ids):
+                self.model.selected_item_id = item_ids[index]
+
+        self.picker.on_select = _on_select
+        # Abrir (doble clic) hace lo mismo que seleccionar por ahora
+        self.picker.on_open = _on_select
+
+        # Expose picker to the view for rendering and layout
+        self.view.picker = self.picker
+        self.view.picker_state = self.picker_state
         # Handler de eventos inline y grid
-        self.event_handler = ItemsEditorEventHandler(self)
+        self.event_handler = ItemPickerPanelEventHandler(self)
 
     def handle_event(self, event: pygame.event.Event) -> None:
         # Añadir nuevo ítem al mapa con clic derecho (pies del jugador)
@@ -75,7 +116,14 @@ class ItemEditorController:
                 logger.debug(f"[ItemEditorController] Agregado ítem {self.model.selected_item_id} con id {drop_id} en pos jugador ({pos.x},{pos.y}) zone='{zone_id}'")
             return
 
-        # Delegar entrada inline (grid, detalles, edición) al handler existente
+        # Delegar primero a panel de propiedades (captura edición de texto y clics en propiedades)
+        if self.model.visible:
+            # Vincular ids activos para correcto contexto
+            self.properties_panel.set_active_ids(self.model.selected_item_id, self.model.hovered_item_id)
+            self.properties_panel.set_items(self.model.items)
+            self.properties_panel.handle_event(event)
+
+        # Delegar entrada del picker (navegación/selección)
         self.event_handler.handle(event)
         # Integración de lista de instancias del mapa y edición de params
         if self.model.visible:
@@ -105,67 +153,19 @@ class ItemEditorController:
                         # refrescar lista de mapa
                         self.map_ui.load()
                     return
-                except ValidationError as e:
+                except Exception as e:
                     logger.error(f"Params invalidos: {e}")
                     return
-        self.event_handler.handle(event)
         return
-        
-
-    def _commit_edit(self):
-        if not self.model.editing_property:
-            return
-        item_id = self.model.selected_item_id or self.model.hovered_item_id
-        if item_id and item_id in self.model.items:
-            item = self.model.items[item_id]
-            key = self.model.editing_property
-            new_text = self.model.editing_text
-            old_val = getattr(item, key, None)
-            try:
-                if isinstance(old_val, bool):
-                    converted = new_text.lower() in ("true", "1", "yes")
-                elif isinstance(old_val, int):
-                    converted = int(new_text)
-                elif isinstance(old_val, float):
-                    converted = float(new_text)
-                else:
-                    converted = new_text
-            except ValueError:
-                converted = new_text
-            try:
-                setattr(item, key, converted)
-            except Exception as e:
-                logger.error(f"[ItemEditor] Invalid assignment for {key}: '{converted}', error: {e}")
-                # cleanup on invalid input
-                self.text_input.deactivate()
-                self.model.editing_property = None
-                self.model.editing_text = ""
-                self.model.editing_cursor = 0
-                return
-            # Guardar JSON
-            from roguelike_ui.services.json_persistence import load_from_json
-            path = os.path.join(os.getcwd(), "data", "items", "items.json")
-            data = load_from_json(path)
-            entry = data.get(item_id, {})
-            entry[key] = converted
-            save_to_json(path, item_id, entry)
-        self.model.editing_property = None
-        self.model.editing_text = ""
-        self.model.editing_cursor = 0
     def draw(self, screen: pygame.Surface) -> None:
         # Mostrar editor de ítems original
         if not self.model.visible:
             return
         self.view.draw(screen, self.model)
-        # Overlay de edición inline
-        if self.model.editing_property:
-            for rect_prop, key_prop in self.model.property_entries:
-                if key_prop == self.model.editing_property:
-                    prefix = f"{key_prop}: "
-                    x = rect_prop.x + self.view.font.size(prefix)[0]
-                    y = rect_prop.y
-                    self.text_input.draw(screen, x, y)
-                    break
+        # Dibujar panel de propiedades a la derecha
+        self.properties_panel.set_active_ids(self.model.selected_item_id, self.model.hovered_item_id)
+        self.properties_panel.set_items(self.model.items)
+        self.properties_panel.draw(screen, getattr(self.view, 'title_rect', None))
         # Añadir lista de instancias del mapa y editor de params debajo
         margin = 20
         sw, sh = screen.get_size()
