@@ -71,6 +71,28 @@ class ListView:
                     pos_r = pygame.Rect(self.panel_rect.x, y0 + idx * line_h, self.panel_rect.width, line_h)
                     pygame.draw.rect(surface, (255, 165, 0), pos_r, 2)
 
+        # Hover para Map: resaltar la línea bajo el ratón
+        if model.current_category == 'map' and self.panel_rect.collidepoint(mx, my):
+            line_h = self.font.get_linesize()
+            idx = (my - self.panel_rect.y + self.scroll_panel.scroll_offset) // line_h
+            if 0 <= idx < len(items):
+                y0 = self.panel_rect.y - self.scroll_panel.scroll_offset
+                line_r = pygame.Rect(self.panel_rect.x, y0 + idx * line_h, self.panel_rect.width, line_h)
+                pygame.draw.rect(surface, (255, 255, 0), line_r, 2)
+                # Si la línea incluye una posición @(...), dibujar borde naranja solo alrededor de las coordenadas
+                text = items[idx]
+                if '@(' in text and ')' in text:
+                    start = text.find('@(')
+                    end = text.find(')', start)
+                    if end != -1:
+                        prefix = text[:start]
+                        coords = text[start:end+1]
+                        text_x = self.panel_rect.x + self.scroll_panel.margin
+                        prefix_w = self.font.size(prefix)[0]
+                        coords_w = self.font.size(coords)[0]
+                        pos_r = pygame.Rect(text_x + prefix_w, y0 + idx * line_h, max(coords_w, 1), line_h)
+                        pygame.draw.rect(surface, (255, 165, 0), pos_r, 2)
+
         # ---------------------------------------------
         # Player + Show Default: hover y selección fija
         # ---------------------------------------------
