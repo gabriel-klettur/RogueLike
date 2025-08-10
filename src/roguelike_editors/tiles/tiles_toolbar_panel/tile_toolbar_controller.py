@@ -16,7 +16,6 @@ class TileToolbarController:
     Provee funcionalidades para:
       - Carga y renderización de iconos de herramientas.
       - Selección de herramienta (select, brush, eyedropper, bucket, erase).
-      - Gestión de arrastre (drag & drop) de la barra.
       - Operaciones de borrado y restauración de tiles en el mapa.
     """
     def __init__(self, editor_controller):
@@ -48,6 +47,23 @@ class TileToolbarController:
             tool: load_image(path, (self.size, self.size))
             for tool, path in ICON_PATHS_TILE_TOOLBAR.items()
         }
+
+    def is_active(self, tool: str) -> bool:
+        """
+        Indica si una herramienta debe mostrarse activa en el ToolbarView.
+        Replica la lógica previa de resaltado del `TileToolbarView` específico.
+        """
+        state = self.editor_state.toolbar_state
+        current = self.editor_state.current_tool
+        if tool == "view":
+            return bool(state.view_active)
+        if tool == "view_layers":
+            return bool(state.layers_view_open)
+        if tool == "view_collisions":
+            return bool(state.show_collisions or state.show_collisions_overlay)
+        if tool == "brush":
+            return bool(current == "brush" and not (state.show_collisions or state.show_collisions_overlay))
+        return bool(current == tool)
 
     def apply_eyedropper(self, mouse_pos, camera, game_map):
         """
@@ -134,22 +150,7 @@ class TileToolbarController:
         self.editor_state.current_choice = choice_path
         self.editor_state.current_tool = "brush"
 
-    def drag(self, mouse_pos):
-        """
-        Actualiza la posición de la barra de herramientas durante un arrastre.
-        Sólo se mueve si el estado 'dragging' está activo.
-        Args:
-            mouse_pos: Posición actual del ratón.
-        """
-        ts = self.editor_state.toolbar_state
-        if ts.dragging:
-            ts.pos = (mouse_pos[0] - ts.drag_offset[0], mouse_pos[1] - ts.drag_offset[1])
-
-    def stop_drag(self):
-        """
-        Finaliza el arrastre de la barra, desactivando el flag correspondiente.
-        """
-        self.editor_state.toolbar_state.dragging = False
+    
 
     def delete_tile(self, game_map, camera):
         """
