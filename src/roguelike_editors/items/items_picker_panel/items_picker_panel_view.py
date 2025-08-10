@@ -1,4 +1,5 @@
 import pygame
+import logging
 from typing import Any, Dict
 from roguelike_editors.items.items_title_panel.items_title_view import ItemsTitleView
 
@@ -45,14 +46,18 @@ class ItemPickerPanelView:
         if self.picker and self.picker_state:
             sw, sh = screen.get_size()
             margin = 20
-            # Reservar espacio inferior para panel de lista y params (mismo cálculo que controller)
-            params_h = sh // 4
-            list_h = sh // 4
-            reserve_h = params_h + list_h + 2 * margin
+            # Reservar espacio inferior exacto si el orquestador lo proporciona
+            reserve_h = getattr(self, '_reserved_bottom_h', None)
+            if reserve_h is None:
+                # Fallback: aproximación por fracciones si no fue inyectado
+                params_h = sh // 4
+                list_h = sh // 4
+                reserve_h = params_h + list_h + 2 * margin
             grid_top = max(margin, (self.title_rect.bottom + 10) if self.title_rect else margin)
             grid_h = max(0, sh - grid_top - margin - reserve_h)
             self.picker_state.visible = True
             self.picker_state.rect = pygame.Rect(margin, grid_top, max(0, sw - 2 * margin), grid_h)
+            logging.getLogger(__name__).debug(f"[ItemPickerPanelView] grid_rect={self.picker_state.rect} reserve_h={reserve_h} title_bottom={(self.title_rect.bottom if self.title_rect else None)}")
             # Sincronizar selección del modelo hacia el panel (si existe)
             # para mantener resalte cuando seleccionamos desde otras UI (map_ui)
             if getattr(model, 'selected_item_id', None) is not None:
@@ -63,6 +68,9 @@ class ItemPickerPanelView:
                     pass
             # Renderizar la grilla
             self.picker.render(screen, self.picker_state)
+            # Debug border to verify visibility
+            if self.picker_state.rect.h > 0 and self.picker_state.rect.w > 0:
+                pygame.draw.rect(screen, (0, 128, 255), self.picker_state.rect, 3)
             # Mapear hover del panel hacia el modelo para info panel
             if self.picker_state.hovered_index is not None:
                 item_ids = [i for i in model.items.keys() if i != "image_item_not_found"]
