@@ -38,5 +38,25 @@
       "x": 2430.4688905982953,
       "y": 2027.3796668210439
     }
+  },
+  "60964d7a-1e02-467d-b1fa-10c7d63f78e5": {
+    "item_id": "gold",
+    "quantity": 4,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 888,
+      "y": 2098
+    }
+  },
+  "408b79c1-6963-40fa-b094-45f4f331b156": {
+    "item_id": "experience_orb",
+    "quantity": 1,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 888,
+      "y": 2098
+    }
   }
 }

@@ -26,7 +26,7 @@ class ListController:
         """
         ed_model = self.editor_controller.model
         category = self.panel_model.current_category
-        use_default = ed_model.editing_side == 'default' and category in ('player', 'monsters')
+        use_default = getattr(ed_model, 'editing_side', 'active') == 'default' and category in ('player', 'monsters')
         # Mostrar PLANTILLAS (templates) completas cuando está seleccionada la vista Default
         if use_default and category == 'monsters':
             default_monsters = ed_model.default_data.get('monsters', {}) or {}

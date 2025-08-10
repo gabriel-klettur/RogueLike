@@ -9,27 +9,38 @@ class InventoryTitleView:
     def __init__(self, controller, model, font: pygame.font.Font):
         self.controller = controller
         self.model = model
-        # Usar Arial 24 bold como en otros editores
-        self.font = pygame.font.SysFont("Arial", 24, bold=True)
+        # Usar la fuente proporcionada; evitar crear SysFont aquí para no requerir pygame.font.init() en __init__
+        self.font = font
         # Posición estándar
         self.x = 10
         self.y = 10
-        # Widget reutilizable
-        self.widget = TitlePanel(
-            text=self.model.title,
-            font=self.font,
-            x=self.x,
-            y=self.y
-        )
+        # Crear el widget perezosamente en render()
+        self.widget = None
 
     def render(self, screen: pygame.Surface) -> pygame.Rect:
         """
         Renderiza el título y devuelve el rect (x, y, w, h) del panel de título
         para que el layout de los paneles quede perfectamente alineado debajo.
         """
-        # Actualizar texto dinámicamente
+        # Asegurar font y widget perezosamente
+        use_font = self.font
+        if use_font is None or not hasattr(use_font, 'render'):
+            # Inicializar fuente por defecto solo en tiempo de render
+            if not pygame.font.get_init():
+                pygame.font.init()
+            use_font = pygame.font.SysFont("Arial", 24, bold=True)
+            self.font = use_font
+        if self.widget is None:
+            self.widget = TitlePanel(
+                text=self.model.title,
+                font=use_font,
+                x=self.x,
+                y=self.y
+            )
+        else:
+            self.widget.font = use_font
+        # Actualizar texto dinámicamente y pintar
         self.widget.text = self.model.title
-        # Pintar
         self.widget.render(screen)
         # Calcular rect del fondo del título para layout
         text_surf = self.font.render(self.widget.text or "", True, (255, 255, 255))

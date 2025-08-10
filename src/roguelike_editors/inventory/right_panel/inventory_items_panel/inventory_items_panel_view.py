@@ -58,10 +58,10 @@ class InventoryItemsPanelView:
         # [DEBUG][View] InventoryItemsPanelView.draw called. Category: %s, Editing side: %s
         # [DEBUG][View] slots_data: %s
         """
-        Dibuja grid de inventario, botones de mostrar y botón de guardar.
+        Dibuja grid de inventario, botones de gestión y botón de guardar.
         Delega en subvistas especializadas.
         Devuelve un dict con los rects:
-          'show_default', 'show_active', 'save', 'add_item', 'delete_item'
+          'save', 'add_item', 'delete_item'
         """
         # Obtener datos de slots y posición
         slots = self.tabs_view.get_slots_data(model)
@@ -79,8 +79,7 @@ class InventoryItemsPanelView:
         current_editing_side = model.editing_side
         
         rects = {}
-        
-        # Las pestañas Show Default/Active se han movido al panel izquierdo; no se dibujan aquí.
+        # Ya no se dibujan pestañas en el panel derecho; las pestañas de lado activo se gestionan en el panel izquierdo
         self.show_default_rect = None
         self.show_active_rect = None
         

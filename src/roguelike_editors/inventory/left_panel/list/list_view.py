@@ -71,4 +71,72 @@ class ListView:
                     pos_r = pygame.Rect(self.panel_rect.x, y0 + idx * line_h, self.panel_rect.width, line_h)
                     pygame.draw.rect(surface, (255, 165, 0), pos_r, 2)
 
+        # Hover para Map: resaltar la línea bajo el ratón
+        if model.current_category == 'map' and self.panel_rect.collidepoint(mx, my):
+            line_h = self.font.get_linesize()
+            idx = (my - self.panel_rect.y + self.scroll_panel.scroll_offset) // line_h
+            if 0 <= idx < len(items):
+                y0 = self.panel_rect.y - self.scroll_panel.scroll_offset
+                line_r = pygame.Rect(self.panel_rect.x, y0 + idx * line_h, self.panel_rect.width, line_h)
+                pygame.draw.rect(surface, (255, 255, 0), line_r, 2)
+                # Si la línea incluye una posición @(...), dibujar borde naranja solo alrededor de las coordenadas
+                text = items[idx]
+                if '@(' in text and ')' in text:
+                    start = text.find('@(')
+                    end = text.find(')', start)
+                    if end != -1:
+                        prefix = text[:start]
+                        coords = text[start:end+1]
+                        text_x = self.panel_rect.x + self.scroll_panel.margin
+                        prefix_w = self.font.size(prefix)[0]
+                        coords_w = self.font.size(coords)[0]
+                        pos_r = pygame.Rect(text_x + prefix_w, y0 + idx * line_h, max(coords_w, 1), line_h)
+                        pygame.draw.rect(surface, (255, 165, 0), pos_r, 2)
+
+        # ---------------------------------------------
+        # Player + Show Default: hover y selección fija
+        # ---------------------------------------------
+        # Resaltar selección fija (clase) si existe
+        if model.current_category == 'player' and getattr(model, 'editing_side', 'active') == 'default':
+            line_h = self.font.get_linesize()
+            y0 = self.panel_rect.y - self.scroll_panel.scroll_offset
+            selected_cls = getattr(model, 'selected_default_player_class', None)
+            if selected_cls:
+                # Buscar el grupo raíz cuya línea empiece por "Class: <name>"
+                for idx, line in enumerate(items):
+                    if not line.startswith(' '):
+                        root = line.strip()
+                        if root.startswith('Class:'):
+                            # Extraer nombre de clase y normalizar (hasta '|')
+                            try:
+                                cls_name = root.split('Class:')[1].strip()
+                                if '|' in cls_name:
+                                    cls_name = cls_name.split('|')[0].strip()
+                            except Exception:
+                                cls_name = None
+                            if cls_name == selected_cls:
+                                # Medir altura del grupo (hasta la siguiente raíz)
+                                end_idx = idx + 1
+                                while end_idx < len(items) and items[end_idx].startswith(' '):
+                                    end_idx += 1
+                                group_height = (end_idx - idx) * line_h
+                                r = pygame.Rect(self.panel_rect.x, y0 + idx * line_h, self.panel_rect.width, group_height)
+                                pygame.draw.rect(surface, (255, 255, 0), r, 3)
+                                break
+
+            # Resaltar hover del grupo bajo el ratón
+            if self.panel_rect.collidepoint(mx, my):
+                idx = (my - self.panel_rect.y + self.scroll_panel.scroll_offset) // line_h
+                if 0 <= idx < len(items):
+                    # Determinar inicio del grupo (línea raíz no indentada)
+                    start_idx = idx
+                    while start_idx > 0 and items[start_idx].startswith(' '):
+                        start_idx -= 1
+                    end_idx = start_idx + 1
+                    while end_idx < len(items) and items[end_idx].startswith(' '):
+                        end_idx += 1
+                    group_height = (end_idx - start_idx) * line_h
+                    group_r = pygame.Rect(self.panel_rect.x, y0 + start_idx * line_h, self.panel_rect.width, group_height)
+                    pygame.draw.rect(surface, (255, 255, 0), group_r, 2)
+
         return results

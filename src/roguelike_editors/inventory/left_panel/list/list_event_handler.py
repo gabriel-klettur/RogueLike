@@ -125,6 +125,27 @@ class ListEventHandler:
                             except Exception:
                                 pass
                         return True
+                elif self.model.current_category == 'map':
+                    # Click en línea con posición @(<x>,<y>): centrar cámara mientras se mantenga el click
+                    line_h = self.view.font.get_linesize()
+                    idx = (my - self.view.panel_rect.y + self.view.list_view.scroll_panel.scroll_offset) // line_h
+                    items = self.controller.get_items_list()
+                    if 0 <= idx < len(items):
+                        line_text = items[idx]
+                        if '@(' in line_text and ')' in line_text:
+                            try:
+                                coords_txt = line_text.split('@(')[1].split(')')[0]
+                                xs, ys = coords_txt.split(',')
+                                x, y = float(xs.strip()), float(ys.strip())
+                                target = SimpleNamespace(x=x, y=y)
+                                self.editor_controller.game.camera.update(target)
+                                self.editor_controller.model.overlay_hidden_while_hold = True
+                                self.editor_controller.model.holding_pos_focus = True
+                                return True
+                            except Exception:
+                                # Si no se puede parsear, ignorar
+                                pass
+                    return True
                 # Bloquear clic dentro del panel de listado
                 return True
         # Al soltar el click izquierdo, restaurar overlay y cámara si veníamos de press-and-hold
