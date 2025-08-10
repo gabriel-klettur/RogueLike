@@ -59,14 +59,14 @@
       "y": 2098
     }
   },
-  "f9cb5d16706e4e408cd1b91d7aaf489f": {
-    "item_id": "iron_sword",
+  "311aa15b9b6f4d0c9bdc7812fb4f9935": {
+    "item_id": "energy_potion",
     "quantity": 1,
     "zone_id": "Forest",
     "schema_version": "1.0.0",
     "position": {
-      "x": 464,
-      "y": 2840
+      "x": 462.0,
+      "y": 2661.0
     }
   }
 }

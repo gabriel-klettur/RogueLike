@@ -1,5 +1,7 @@
 import pygame
 from typing import Any
+from roguelike_game.ecs.systems.inventory.inventory_ui_system import InventoryUISystem
+from roguelike_game.ecs.systems.inventory.inventory_pickup_system import InventoryPickupSystem
 import logging
 logger = logging.getLogger(__name__)
 
@@ -21,6 +23,19 @@ class ItemsEditorEvents:
 
         if not model.visible:
             return False
+
+        # Toolbars primero (permitir clicks/drag sobre ellos antes que otros paneles)
+        try:
+            itb = getattr(controller, 'items_toolbar_controller', None)
+            if itb and itb.handle_event(event):
+                return True
+            arm_visible = getattr(getattr(controller, 'items_add_remove_model', None), 'visible', False)
+            if arm_visible:
+                iar = getattr(controller, 'items_add_remove_controller', None)
+                if iar and iar.handle_event(event):
+                    return True
+        except Exception:
+            logger.exception("[ItemsEditorEvents] toolbar routing failed")
 
         # Si estamos en modo press-and-hold, ocultamos paneles y sólo atendemos el mouseup para restaurar
         if getattr(model, 'holding_pos_focus', False):
@@ -74,6 +89,82 @@ class ItemsEditorEvents:
             inst_list_rect, inst_params_rect = controller.instances_controller.get_layout_rects()
         except Exception:
             inst_list_rect = inst_params_rect = None
+
+        # --- Modo borrar/spawn: manejar clics específicos antes del enrutado estándar ---
+        if hasattr(event, 'type') and event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
+            mx, my = getattr(event, 'pos', (0, 0))
+            over_picker = bool(picker_rect and picker_rect.collidepoint(mx, my))
+            over_props = bool(props_rect and props_rect.collidepoint(mx, my))
+            over_instances = bool((inst_list_rect and inst_list_rect.collidepoint(mx, my)) or (inst_params_rect and inst_params_rect.collidepoint(mx, my)))
+            # Delete mode: eliminar drop del mapa si clic fuera del picker/props/instancias
+            if getattr(model, 'delete_mode_active', False):
+                if over_picker:
+                    # No soportamos borrar definiciones de ítems desde el picker; consumir
+                    return True
+                if not over_props and not over_instances:
+                    if controller.delete_drop_at_screen_pos(mx, my):
+                        # Salir de modo borrar y limpiar tool activa
+                        controller.exit_delete_mode()
+                        arm = getattr(controller, 'items_add_remove_model', None)
+                        if arm is not None:
+                            arm.active_tool = None
+                    return True
+            # Spawn mode
+            if getattr(model, 'spawn_mode_active', False):
+                # Si aún no hay ítem seleccionado para spawn, permitir selección desde el picker
+                if model.spawn_item_id is None:
+                    if over_picker:
+                        # Delega al picker para actualizar selección
+                        controller.picker_controller.handle_event(event)
+                        sel = getattr(controller.picker_controller.model, 'selected_item_id', None)
+                        if sel:
+                            model.spawn_item_id = sel
+                            try:
+                                pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_CROSSHAIR)
+                            except Exception:
+                                pass
+                        return True
+                    # Clic fuera del picker sin selección previa: no hacer nada aún
+                    return True
+                else:
+                    # Ya hay ítem elegido: primero, si el inventario UI está visible y el clic cae adentro, añadir al inventario
+                    try:
+                        world = getattr(getattr(controller, 'game', None), 'ecs', None)
+                        world = getattr(world, 'ecs_world', None)
+                        ui_sys = next((s for s in getattr(world, 'render_systems', []) if isinstance(s, InventoryUISystem)), None) if world else None
+                    except Exception:
+                        world = None
+                        ui_sys = None
+                    if world and ui_sys and ui_sys.visible and ui_sys.panel_rect and ui_sys.panel_rect.collidepoint(mx, my):
+                        # Añadir al inventario del jugador y persistir
+                        try:
+                            comps = world.components
+                            player = getattr(world, 'player_entity', None)
+                            inv_comp = comps.get('InventoryComponent', {}).get(player) if player else None
+                            if inv_comp:
+                                inv_comp.add(model.spawn_item_id, 1)
+                                pickup_sys = next((s for s in getattr(world, 'update_systems', []) if isinstance(s, InventoryPickupSystem)), None)
+                                if pickup_sys:
+                                    pickup_sys._persist_inventory(player, inv_comp)
+                                # Salir de modo spawn y limpiar tool
+                                controller.exit_spawn_mode()
+                                arm = getattr(controller, 'items_add_remove_model', None)
+                                if arm is not None:
+                                    arm.active_tool = None
+                                return True
+                        except Exception:
+                            logger.exception("[ItemsEditorEvents] add to inventory failed")
+                        return True
+                    # Si no fue inventario, y clic fuera de picker/props/instancias, spawnear en mapa
+                    if not over_picker and not over_props and not over_instances:
+                        if controller.spawn_item_at_screen_pos(mx, my):
+                            controller.exit_spawn_mode()
+                            arm = getattr(controller, 'items_add_remove_model', None)
+                            if arm is not None:
+                                arm.active_tool = None
+                        return True
+                    # Consumir clics dentro del picker/otros paneles durante spawn
+                    return True
 
         if hasattr(event, 'pos') and isinstance(getattr(event, 'pos'), (tuple, list)):
             mx, my = event.pos

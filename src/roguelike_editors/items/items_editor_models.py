@@ -22,3 +22,9 @@ class ItemsEditorModel:
     # Estado de enfoque de cámara mientras se mantiene presionado sobre una coordenada
     holding_pos_focus: bool = False
 
+    # Modos de edición (agregar/borrar en mapa)
+    spawn_mode_active: bool = False
+    delete_mode_active: bool = False
+    # Ítem seleccionado para spawn (se define tras seleccionar en el picker)
+    spawn_item_id: Optional[str] = None
+
