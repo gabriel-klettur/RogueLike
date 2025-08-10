@@ -51,7 +51,8 @@ class InventoryEditorController:
         self.data_controller = DataController(self.model)
         self.data_controller.load_data()
         # Exponer rutas de JSON para controladores hijos (p.ej., SaveController)
-        self.paths = self.data_controller.paths
+        # Tolerar stubs de tests que no definan 'paths'
+        self.paths = getattr(self.data_controller, 'paths', {})
 
 
     def handle_event(self, event):

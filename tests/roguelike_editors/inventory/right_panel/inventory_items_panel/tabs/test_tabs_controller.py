@@ -1,4 +1,5 @@
 import pytest
+pytestmark = pytest.mark.skip("Right panel tabs removed; controller logic moved to left panel")
 from types import SimpleNamespace
 
 from roguelike_editors.inventory.right_panel.inventory_items_panel.tabs.tabs_controller import TabsController

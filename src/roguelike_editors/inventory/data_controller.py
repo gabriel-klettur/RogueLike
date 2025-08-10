@@ -102,6 +102,9 @@ class DataController:
             return
         if 'classes' in player_defaults and isinstance(player_defaults['classes'], dict) and player_defaults['classes']:
             return  # already migrated
+        # Only migrate when legacy keys are present; otherwise respect loaded structure
+        if 'capacity' not in player_defaults and 'slots' not in player_defaults:
+            return
         # legacy structure expected keys
         capacity = player_defaults.get('capacity', 0)
         slots = player_defaults.get('slots', []) or []

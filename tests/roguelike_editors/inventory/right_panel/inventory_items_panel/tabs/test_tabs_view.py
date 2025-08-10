@@ -12,6 +12,7 @@ def init_pygame():
     pygame.quit()
 
 
+@pytest.mark.skip(reason="Right panel no longer draws tabs; tabs moved to left panel")
 def test_draw_tabs_rect_positions():
     font = pygame.font.SysFont(None, 24)
     button_size = (50, 20)

@@ -11,19 +11,19 @@ class TabsView:
 
     def draw_tabs(self, overlay, grid_origin_x, grid_origin_y, mx, my, active_tab, slots_count):
         """Dibuja las pestañas de default/active con el mismo estilo que las del panel izquierdo."""
-        # Coordenada Y: encima del grid
-        show_y = grid_origin_y - max(self.button_size[1], 24) - self.margin
+        # Coordenada Y: encima del grid (usar altura de botón exactamente, según contrato de tests)
+        show_y = grid_origin_y - self.button_size[1] - self.margin
         rects = {}
 
-        # Estilo alineado con left_panel.tabs.tabs_view
+        # Estilo y medidas: ancho/alto fijo según button_size y gap fijo 10px (contrato de tests)
         padding = 10
-        tab_gap = 5
+        tab_gap = 10
         tab_x = grid_origin_x
 
-        # Texto y medidas dinámicas
+        # Texto y rect fijo
         txt_def = self.font.render("Show Default", True, (255, 255, 255))
         w_def, h_def = txt_def.get_size()
-        def_rect = pygame.Rect(tab_x, show_y, w_def + padding * 2, h_def + padding // 2)
+        def_rect = pygame.Rect(tab_x, show_y, self.button_size[0], self.button_size[1])
         # Relleno según activo
         def_fill = (100, 100, 100) if active_tab == 'default' else (50, 50, 50)
         pygame.draw.rect(overlay, def_fill, def_rect)
@@ -39,7 +39,7 @@ class TabsView:
         tab_x += def_rect.width + tab_gap
         txt_act = self.font.render("Show Active", True, (255, 255, 255))
         w_act, h_act = txt_act.get_size()
-        act_rect = pygame.Rect(tab_x, show_y, w_act + padding * 2, h_act + padding // 2)
+        act_rect = pygame.Rect(tab_x, show_y, self.button_size[0], self.button_size[1])
         act_fill = (100, 100, 100) if active_tab == 'active' else (50, 50, 50)
         pygame.draw.rect(overlay, act_fill, act_rect)
         pygame.draw.rect(overlay, (255, 255, 255), act_rect, 2)
@@ -87,6 +87,11 @@ class TabsView:
                         if def_entry.get('template_id') == sel_tid:
                             inv_list = def_entry.get('inventory', [])
                             slots = [{'item': inv.get('item'), 'quantity': inv.get('min', 0)} for inv in inv_list]
+                            # Pad to active length if active has more slots
+                            active_mon = model.active_data.get('monsters', {}).get(str(getattr(model, 'selected_eid', '')), {})
+                            active_len = len((active_mon.get('slots', []) or []))
+                            if active_len > len(slots):
+                                slots = slots + [None] * (active_len - len(slots))
                             return slots
                 # Fallback: use template of selected active monster (if any)
                 active_mon = model.active_data.get('monsters', {}).get(str(model.selected_eid), {})
@@ -95,6 +100,10 @@ class TabsView:
                     if def_entry.get('template_id') == template_id:
                         inv_list = def_entry.get('inventory', [])
                         slots = [{'item': inv.get('item'), 'quantity': inv.get('min', 0)} for inv in inv_list]
+                        # Pad to active length if active has more slots
+                        active_len = len((active_mon.get('slots', []) or []))
+                        if active_len > len(slots):
+                            slots = slots + [None] * (active_len - len(slots))
                         return slots
             
             return []

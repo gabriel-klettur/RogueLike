@@ -18,7 +18,10 @@
           "quantity": 2,
           "stack_id": "55555555-5555-5555-5555-555555555555"
         },
-        null,
+        {
+          "item": "bucket",
+          "quantity": 1
+        },
         null
       ]
     },
