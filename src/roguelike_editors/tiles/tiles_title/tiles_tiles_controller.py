@@ -9,5 +9,5 @@ class TilesTitleController:
         self.view = TilesTilesView(self, state)
 
     def render(self, screen):
-        # Delegate rendering to panel view
-        self.view.render(screen)
+        # Delegate rendering to panel view and return rect for layout
+        return self.view.render(screen)

@@ -1,5 +1,7 @@
 import pygame
 from pygame import Surface, Rect
+from roguelike_editors.map.map_title_panel.map_title_view import MapTitleView
+
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_editors.tiles.tiles_editor_config import BTN_W, BTN_H
@@ -45,6 +47,8 @@ class MapEditorView:
         self.font_medium = pygame.font.SysFont(None, 24)
         self.font_small = pygame.font.SysFont(None, 20)
         self.font_dropdown = pygame.font.SysFont("Arial", 14)
+        # Professional title bar
+        self.title_view = MapTitleView(None, state)
 
     def render(self, screen: Surface, camera, map_manager) -> None:
         """
@@ -56,7 +60,17 @@ class MapEditorView:
         # 1. Si hay herramienta asíncrona ejecutándose, mostrar overlay de carga y barra de progreso
         if self.state.executing_tool:
             self._draw_loading_overlay(screen)
+            # Title above the overlay for consistent branding
+            if self.title_view:
+                # Keep state reference up to date
+                self.title_view.state = self.state
+                self.title_view.render(screen)
             return
+
+        # Title bar in normal rendering path
+        if self.title_view:
+            self.title_view.state = self.state
+            self.title_view.render(screen)
 
         # 2. Dibujar zonas
         self._draw_zones(screen, camera)

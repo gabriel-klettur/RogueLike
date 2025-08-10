@@ -50,8 +50,8 @@ class TileEditorView:
                 screen.blit(fill_surf, rect.topleft)
                 pygame.draw.rect(screen, OUTLINE_HOVER, rect, 3)
 
-        # Render title panel
-        self.controller.title_controller.render(screen)
+        # Render title panel (returns rect for layout parity)
+        title_rect = self.controller.title_controller.render(screen)
         
         self.controller.toolbar.view.render(screen)
         # Render brush size panel if visible

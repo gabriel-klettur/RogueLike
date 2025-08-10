@@ -1,5 +1,6 @@
 import pygame
 from roguelike_editors.buildings.tools.default_tool.default_tool_view import DefaultToolView
+from roguelike_editors.buildings.buildings_title_panel.buildings_title_view import BuildingsTitleView
 
 from roguelike_editors.buildings.tools.split_z_tool.split_tool_view   import SplitToolView
 from roguelike_editors.buildings.tools.z_tool.z_tool_view       import ZToolView
@@ -18,6 +19,8 @@ class BuildingEditorView:
         self.z_top_view    = ZToolView(state, editor_state, target="top")
                 
         self.picker_view = PickerView(editor_state)
+        # Professional title bar (top-left)
+        self.title_view = BuildingsTitleView(None, editor_state)
 
     def _render_building_collision_overlay(self, screen, camera, building):
         from roguelike_engine.config.config_tiles import TILE_SIZE
@@ -73,6 +76,9 @@ class BuildingEditorView:
     def render(self, screen, camera, buildings):
         if not self.editor.active:
             return
+
+        # Title bar always visible when editor is active
+        self.title_view.render(screen)
 
         # Collision brush mode: persist active collision building until exit or scroll
         if self.editor.current_tool == 'collision_brush':

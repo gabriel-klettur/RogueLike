@@ -1,5 +1,6 @@
 import pygame
 from typing import Any, Dict
+from roguelike_editors.items.items_title_panel.items_title_view import ItemsTitleView
 
 class ItemEditorView:
     """
@@ -16,6 +17,8 @@ class ItemEditorView:
         self.last_debug_mode = None
         # Intervalo de parpadeo del cursor en ms
         self.blink_interval = 500
+        # Professional title bar (lazy state binding)
+        self.title_view: ItemsTitleView | None = None
 
     def _wrap_text(self, text: str, max_width: int) -> list[str]:
         """
@@ -75,9 +78,12 @@ class ItemEditorView:
         font_h = self.font.get_height()
         cell_height = cell_size + text_margin + font_h
         sw, sh = screen.get_size()
+        # Layout top offset to avoid overlapping the title bar
+        title_rect = getattr(self, 'title_rect', None)
+        grid_top = max(margin, (title_rect.bottom + 10) if title_rect else margin)
         columns = 12
         # Número de filas visibles en la altura disponible
-        visible_rows = max(1, (sh - 2*margin) // (cell_height + margin))
+        visible_rows = max(1, (sh - grid_top - margin) // (cell_height + margin))
         # Excluir placeholder de imagen faltante
         item_ids = [i for i in model.items.keys() if i != "image_item_not_found"]
         total_rows = (len(item_ids) + columns - 1) // columns
@@ -90,7 +96,7 @@ class ItemEditorView:
             if row < scroll or row >= scroll + visible_rows:
                 continue
             x = margin + col * (cell_size + margin)
-            y = margin + (row - scroll) * (cell_height + margin)
+            y = grid_top + (row - scroll) * (cell_height + margin)
             # Fondo de la celda
             cell_rect = pygame.Rect(x, y, cell_size, cell_size)
             pygame.draw.rect(screen, (50, 50, 50), cell_rect)
@@ -113,8 +119,10 @@ class ItemEditorView:
         font_h = self.font.get_height()
         cell_height = cell_size + text_margin + font_h
         sw, sh = screen.get_size()
+        title_rect = getattr(self, 'title_rect', None)
+        grid_top = max(margin, (title_rect.bottom + 10) if title_rect else margin)
         columns = 12
-        visible_rows = max(1, (sh - 2*margin) // (cell_height + margin))
+        visible_rows = max(1, (sh - grid_top - margin) // (cell_height + margin))
         item_ids = [i for i in model.items.keys() if i != "image_item_not_found"]
         total_rows = (len(item_ids) + columns - 1) // columns
         scroll = max(0, min(model.scroll_index, total_rows - visible_rows))
@@ -126,7 +134,7 @@ class ItemEditorView:
             row = idx_h // columns
             if scroll <= row < scroll + visible_rows:
                 x = margin + col * (cell_size + margin)
-                y = margin + (row - scroll) * (cell_height + margin)
+                y = grid_top + (row - scroll) * (cell_height + margin)
                 highlight_rect = pygame.Rect(x-2, y-2, cell_size+4, cell_size+4)
                 pygame.draw.rect(screen, (255, 255, 0), highlight_rect, 3)
 
@@ -139,6 +147,9 @@ class ItemEditorView:
         """
         margin = 20
         sw, sh = screen.get_size()
+        # Respect title height for top placement
+        title_rect = getattr(self, 'title_rect', None)
+        top_y = max(margin, (title_rect.bottom + 10) if title_rect else margin)
         active_id = model.selected_item_id or model.hovered_item_id
         if not active_id or active_id not in model.items:
             return
@@ -169,7 +180,7 @@ class ItemEditorView:
         panel_w = min(max_text_w + panel_padding*2, sw - margin*2, 500)
         panel_h = min(len(lines)*(font_h + 2) + panel_padding*2, sh - margin*2)
         panel_x = sw - panel_w - margin
-        panel_y = margin
+        panel_y = top_y
         # Crea superficie semitransparente para el panel
         info_surf = pygame.Surface((panel_w, panel_h), pygame.SRCALPHA)
         info_surf.fill((0, 0, 0, 200))
@@ -280,7 +291,14 @@ class ItemEditorView:
         """
         if not model.visible:
             return
+        # Dim background first
         self._draw_overlay(screen)
+        # Ensure title view is bound to current state and render title at top-left above overlay
+        if self.title_view is None:
+            self.title_view = ItemsTitleView(None, model)
+        else:
+            self.title_view.state = model
+        self.title_rect = self.title_view.render(screen)
         self._draw_grid(screen, model)
         self._draw_highlight(screen, model)
         self._draw_info_panel(screen, model)
