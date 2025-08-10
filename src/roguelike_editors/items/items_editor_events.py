@@ -1,5 +1,7 @@
 import pygame
 from typing import Any
+import logging
+logger = logging.getLogger(__name__)
 
 
 class ItemsEditorEvents:
@@ -24,6 +26,22 @@ class ItemsEditorEvents:
         props = controller.properties_controller
         if getattr(props, 'text_input', None) and props.text_input.active:
             props.handle_event(event)
+            return True
+
+        # Enrutado de rueda del ratón: si el ratón está sobre propiedades, scroll allí
+        if event.type == pygame.MOUSEWHEEL:
+            props_rect = getattr(props.model, 'panel_rect', None)
+            mx, my = pygame.mouse.get_pos()
+            if props_rect:
+                over_props = props_rect.collidepoint(mx, my)
+                logger.debug(f"[ItemsEditorEvents] MOUSEWHEEL pos=({mx},{my}) over_props={over_props} props_rect={props_rect}")
+                if over_props:
+                    props.handle_event(event)
+                    return True
+            else:
+                logger.debug("[ItemsEditorEvents] MOUSEWHEEL without props.panel_rect; routing to picker")
+            controller.picker_controller.handle_event(event)
+            logger.debug("[ItemsEditorEvents] MOUSEWHEEL routed to picker")
             return True
 
         # Hit-test por orden z: propiedades encima del picker

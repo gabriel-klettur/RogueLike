@@ -23,7 +23,60 @@ class ItemsPropertiesPanelEventHandler:
                 if not self.text_input.active:
                     self.controller.commit_edit()
                 return
-            return
+            # Si el TextInput no consumió el evento, dejamos continuar (para permitir scroll, etc.)
+
+        # Scroll con rueda del ratón cuando el cursor está sobre el panel
+        if event.type == pygame.MOUSEWHEEL:
+            panel = getattr(self.model, 'panel_rect', None)
+            if panel:
+                mx, my = pygame.mouse.get_pos()
+                if panel.collidepoint(mx, my):
+                    content_h = getattr(self.model, 'content_height', 0)
+                    # Viewport alto basado en padding fijo de la vista (10px por lado)
+                    view_h = max(0, panel.h - 20)
+                    # Si aún no conocemos el alto de contenido (antes del primer draw), no reseteamos;
+                    # dejamos acumular scroll y se normalizará tras el draw.
+                    if content_h > 0 and content_h <= view_h:
+                        logger.debug(f"[ItemsPropertiesPanel] wheel ignored (no overflow) content_h={content_h} view_h={view_h}")
+                        self.model.scroll_y = 0
+                        return
+                    max_scroll = max(0, content_h - view_h) if content_h > 0 else None
+                    # Sensibilidad: media altura de línea por tick
+                    line_h = max(1, self.view.font.get_height() + 2)
+                    delta = -event.y * (line_h * 3 // 2)
+                    new_scroll = self.model.scroll_y + delta
+                    logger.debug(f"[ItemsPropertiesPanel] wheel pos=({mx},{my}) y={event.y} line_h={line_h} delta={delta} prev={self.model.scroll_y} max_scroll={max_scroll}")
+                    if max_scroll is None:
+                        self.model.scroll_y = max(0, new_scroll)
+                    else:
+                        self.model.scroll_y = max(0, min(new_scroll, max_scroll))
+                    logger.debug(f"[ItemsPropertiesPanel] wheel applied scroll_y={self.model.scroll_y}")
+                    return
+
+        # Soporte para ruedas antiguas como botones 4/5
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button in (4, 5):
+            panel = getattr(self.model, 'panel_rect', None)
+            if panel:
+                mx, my = pygame.mouse.get_pos()
+                if panel.collidepoint(mx, my):
+                    content_h = getattr(self.model, 'content_height', 0)
+                    view_h = max(0, panel.h - 20)
+                    if content_h > 0 and content_h <= view_h:
+                        logger.debug(f"[ItemsPropertiesPanel] btn4/5 ignored (no overflow) content_h={content_h} view_h={view_h}")
+                        self.model.scroll_y = 0
+                        return
+                    max_scroll = max(0, content_h - view_h) if content_h > 0 else None
+                    line_h = max(1, self.view.font.get_height() + 2)
+                    wheel_y = 1 if event.button == 4 else -1
+                    delta = -wheel_y * (line_h * 3 // 2)
+                    new_scroll = self.model.scroll_y + delta
+                    logger.debug(f"[ItemsPropertiesPanel] btn4/5 pos=({mx},{my}) btn={event.button} line_h={line_h} delta={delta} prev={self.model.scroll_y} max_scroll={max_scroll}")
+                    if max_scroll is None:
+                        self.model.scroll_y = max(0, new_scroll)
+                    else:
+                        self.model.scroll_y = max(0, min(new_scroll, max_scroll))
+                    logger.debug(f"[ItemsPropertiesPanel] btn4/5 applied scroll_y={self.model.scroll_y}")
+                    return
 
         # Clicks del ratón sobre propiedades
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:

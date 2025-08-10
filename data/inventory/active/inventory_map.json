@@ -58,5 +58,15 @@
       "x": 888,
       "y": 2098
     }
+  },
+  "f9cb5d16706e4e408cd1b91d7aaf489f": {
+    "item_id": "iron_sword",
+    "quantity": 1,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 464,
+      "y": 2840
+    }
   }
 }
