@@ -1,5 +1,8 @@
 import pygame
 
+import logging
+logger = logging.getLogger(__name__)
+
 class MenuHandler:
     """
     Gestiona las opciones del menú, la navegación y la ejecución de acciones.
@@ -50,9 +53,9 @@ class MenuHandler:
         """
         if self.state.mode == "local":
             self.state.mode = "online"
-            print(" Conectando al servidor...")
+            logger.info("Conectando al servidor...")
             # self.state.network.connect()
         else:
             self.state.mode = "local"
-            print(" Cambiando a modo local...")
+            logger.info("Cambiando a modo local...")
             # self.state.network.disconnect()

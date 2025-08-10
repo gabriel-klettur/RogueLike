@@ -49,12 +49,12 @@ def test_draw_updates_rects_and_returns_keys(setup_view):
     )
     panel_rect = pygame.Rect(0, 0, 100, 100)
     rects = view.draw(overlay, model, panel_rect)
-    # expect keys
-    expected = {'show_default', 'show_active', 'add_item', 'delete_item', 'save'}
+    # expect only management and save keys (tabs moved to left panel)
+    expected = {'add_item', 'delete_item', 'save'}
     assert expected.issubset(rects.keys())
-    # compatibility attributes updated
-    assert view.show_default_rect == rects['show_default']
-    assert view.show_active_rect == rects['show_active']
+    # tabs rects are no longer drawn on right panel
+    assert view.show_default_rect is None
+    assert view.show_active_rect is None
     assert view.add_item_rect == rects['add_item']
     assert view.delete_item_rect == rects['delete_item']
     assert view.save_rect == rects['save']

@@ -2,7 +2,6 @@ from roguelike_editors.inventory.right_panel.inventory_items_panel.buttons.add_i
 from roguelike_editors.inventory.right_panel.inventory_items_panel.buttons.delete.delete_event_handler import DeleteEventHandler
 from roguelike_editors.inventory.right_panel.inventory_items_panel.buttons.save.save_event_handler import SaveEventHandler
 from roguelike_editors.inventory.right_panel.inventory_items_panel.grid.grid_event_handler import GridEventHandler
-from roguelike_editors.inventory.right_panel.inventory_items_panel.tabs.tabs_event_handler import TabsEventHandler
 
 
 class InventoryItemsPanelEventHandler:
@@ -18,7 +17,6 @@ class InventoryItemsPanelEventHandler:
             DeleteEventHandler(grid_controller),
             SaveEventHandler(grid_controller),
             GridEventHandler(grid_controller),
-            TabsEventHandler(grid_controller),
         ]
 
     def handle(self, event):

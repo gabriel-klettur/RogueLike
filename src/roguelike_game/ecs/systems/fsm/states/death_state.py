@@ -8,6 +8,9 @@ import time
 import json
 import os
 
+import logging
+logger = logging.getLogger(__name__)
+
 class DeathState(State):
     """
     Estado Death: gestiona temporizador y eliminación de entidad muerta.
@@ -16,12 +19,12 @@ class DeathState(State):
         """Registra temporizador."""
         world = entity.world
         eid = entity.id
-        print(f"[DeathState.enter] eid={eid}, is_player={eid in world.components.get('PlayerTagComponent', {})}")
+        logger.debug(f"[DeathState.enter] eid={eid}, is_player={eid in world.components.get('PlayerTagComponent', {})}")
         # Iniciar temporizador según configuración de players.json
         pt = world.components.get('PlayerTagComponent', {}).get(eid)
         cls_name = getattr(pt, 'class_name', None)
         if cls_name in PLAYER_STATS:
-            duration = PLAYER_STATS[cls_name].get('death_timer_duration', 60.0)
+            duration = PLAYER_STATS[cls_name].get('basic_death_timer_duration', 60.0)
         else:
             duration = 60.0
         world.components['DeathTimer'][eid] = DeathTimer(time.time(), duration)
@@ -52,12 +55,12 @@ class DeathState(State):
                 world.remove_entity(nid)
                 # Limpiar inventario activo para este monstruo
                 try:
-                    with open(os.path.join(os.getcwd(), 'data', 'inventory', 'inventory_monsters.json'), 'r') as f:
+                    with open(os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_monsters.json'), 'r') as f:
                         inv = json.load(f)
                 except (json.JSONDecodeError, FileNotFoundError):
                     inv = {}
                 inv.pop(str(nid), None)
-                with open(os.path.join(os.getcwd(), 'data', 'inventory', 'inventory_monsters.json'), 'w') as f:
+                with open(os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_monsters.json'), 'w') as f:
                     json.dump(inv, f, indent=2)
         # Lógica de resurrección: si está en lobby 3x3 y en gris, revivir
         if nid in comps.get('PlayerTagComponent', {}) and nid in comps.get('GrayscaleComponent', {}):
@@ -82,21 +85,21 @@ class DeathState(State):
                     if npc_state:
                         from roguelike_game.ecs.systems.fsm.states.idle_state import IdleState
                         npc_state.fsm.change_state(IdleState(), entity)
-                    print(f"[DeathState.execute] eid={nid} revived in lobby")
+                    logger.debug(f"[DeathState.execute] eid={nid} revived in lobby")
         # Debug logs: solo una vez cada segundo
         if now - dt_cmp.last_log_time >= 1.0:
             if elapsed >= duration:
-                print(f"[DeathState.execute] Timer expired for eid={nid}")
+                logger.debug(f"[DeathState.execute] Timer expired for eid={nid}")
                 if nid in comps.get('PlayerTagComponent', {}):
-                    print(f"[DeathState.execute] eid={nid} is Player -> grayscaling once")
+                    logger.debug(f"[DeathState.execute] eid={nid} is Player -> grayscaling once")
                 else:
-                    print(f"[DeathState.execute] eid={nid} removed from world")
+                    logger.debug(f"[DeathState.execute] eid={nid} removed from world")
             else:
-                print(f"[DeathState.execute] eid={nid}, elapsed={elapsed:.2f}/{duration} - waiting")
+                logger.debug(f"[DeathState.execute] eid={nid}, elapsed={elapsed:.2f}/{duration} - waiting")
             dt_cmp.last_log_time = now
 
 
     def exit(self, entity):
         """Limpia si fuera necesario."""
-        print(f"[DeathState.exit] eid={entity.id}")
+        logger.debug(f"[DeathState.exit] eid={entity.id}")
         pass

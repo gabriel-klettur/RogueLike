@@ -9,6 +9,7 @@ from roguelike_game.ecs.components.physical_item_component import PhysicalItemCo
 from roguelike_game.ecs.components.collectible_component import CollectibleComponent
 from roguelike_game.ecs.components.item_models import load_items
 from roguelike_ui.ui_helpers import draw_highlight_rect, draw_tooltip
+from roguelike_ui.ui_blocker import is_blocked
 
 
 class DropHoverRenderSystem:
@@ -24,6 +25,11 @@ class DropHoverRenderSystem:
 
     @benchmark(lambda self: self.perf_log, "DropHoverRenderSystem.update")
     def update(self, world, screen, camera):
+        # Bloqueo genérico para cualquier panel UI
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+        if is_blocked(mouse_x, mouse_y):
+            return
+        
         # Destacar todos los drops según flag show_all_drops en InputComponent
         show_all = False
         for inp in world.components.get('InputComponent', {}).values():

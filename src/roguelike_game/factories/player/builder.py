@@ -59,7 +59,7 @@ class PlayerBuilder:
         comps["Animator"][eid] = Animator(animations=build_animator_map(sprites), current_state=INITIAL_ANIMATION_STATE)
         comps["AnimationTimer"][eid] = AnimationTimer(last_time=time.time(), interval=ANIMATION_INTERVAL)
         # Movimiento
-        speed_value = PLAYER_STATS[class_player]["speed"]
+        speed_value = PLAYER_STATS[class_player]["basic_speed"]
         comps["MovementSpeed"][eid] = MovementSpeed(speed_value)
         comps["Velocity"][eid] = Velocity(0, 0)
         # Colisiones
@@ -67,15 +67,15 @@ class PlayerBuilder:
         if frame and isinstance(frame, pygame.Surface):
             comps["MultiCollider"][eid] = create_body_and_feet(frame)
         # Salud y combate
-        max_hp = PLAYER_STATS[class_player]["max_health"]
+        max_hp = PLAYER_STATS[class_player]["max_strength"]
         comps["Health"][eid] = Health(max_hp, max_hp)
         comps["CombatStats"][eid] = CombatStats(current_hp=max_hp, max_hp=max_hp,
-                                                power=PLAYER_STATS[class_player]["attack"],
-                                                defense=PLAYER_STATS[class_player]["defense"])
+                                                power=PLAYER_STATS[class_player]["basic_attack"],
+                                                defense=PLAYER_STATS[class_player]["basic_armor"])
         # Inicializar maná, energía y hambre
-        max_mana = PLAYER_STATS[class_player]["max_mana"]
+        max_mana = PLAYER_STATS[class_player]["max_intelligence"]
         comps["Mana"][eid] = Mana(current_mana=max_mana, max_mana=max_mana)
-        max_energy = PLAYER_STATS[class_player]["max_energy"]
+        max_energy = PLAYER_STATS[class_player]["max_dexterity"]
         comps["Energy"][eid] = Energy(current_energy=max_energy, max_energy=max_energy)
         # Hambre predeterminada
         max_hunger = PLAYER_STATS[class_player].get("max_hunger", 100)
@@ -83,7 +83,7 @@ class PlayerBuilder:
         # Arma cuerpo a cuerpo
         comps["MeleeWeapon"][eid] = MeleeWeapon(damage=MELEE_WEAPON_CFG["damage"], cooldown=MELEE_WEAPON_CFG["cooldown"])
         # Trail visual
-        trail_params = PLAYER_STATS[class_player].get("trail", DEFAULT_TRAIL)
+        trail_params = PLAYER_STATS[class_player].get("basic_trail", DEFAULT_TRAIL)
         trail_cfg = TrailConfig(interval=trail_params["interval"], life_time=trail_params["life_time"], max_trails=trail_params["max_trails"])
         comps["TrailComponent"][eid] = TrailComponent(config=trail_cfg)
         # FSM

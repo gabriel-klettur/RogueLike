@@ -33,5 +33,5 @@ class TileToolbarState:
         # Rects para botones Delete y Default
         self.btn_delete_rect: Optional[pygame.Rect] = None
         self.btn_default_rect: Optional[pygame.Rect] = None
-        
-        
+        # Estado auxiliar: si ya aplicamos "default" desde la última activación
+        self.default_applied_since_activation: bool = False

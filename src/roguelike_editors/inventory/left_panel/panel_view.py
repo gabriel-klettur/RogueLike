@@ -1,4 +1,5 @@
 import pygame
+from roguelike_ui.ui_blocker import register_blocker
 from roguelike_editors.inventory.left_panel.tabs.tabs_view import TabsView
 from roguelike_editors.inventory.left_panel.list.list_view import ListView
 
@@ -27,6 +28,10 @@ class PanelView:
         # Dibujar lista y highlights
         list_results = self.list_view.draw(surface, model, base_rect, items)
         results.update(list_results)
+        # Bloquear interacción bajo el panel
+        panel_rect = results.get('panel_rect')
+        if panel_rect:
+            register_blocker(panel_rect)
         # Actualizar panel_rect para compatibilidad
         self.panel_rect = list_results.get('panel_rect')
         return results

@@ -4,6 +4,8 @@ import pygame
 import logging
 from roguelike_game.ecs.components.item_models import load_items
 
+import logging
+logger = logging.getLogger(__name__)
 
 class InventoryUISystem:
     """
@@ -251,14 +253,14 @@ class InventoryUISystem:
                         last_idx = getattr(self, 'last_click_slot_idx', None)
                         last_time = getattr(self, 'last_click_time', 0)
                         if last_idx == idx and now - last_time <= getattr(self, 'double_click_threshold', 500):
-                            print(f"[DEBUG][InventoryUI] double click on slot {idx} item {stack.item_id}")
+                            logger.debug(f"[DEBUG][InventoryUI] double click on slot {idx} item {stack.item_id}")
                             inp.use_item = stack.item_id
-                            print(f"[DEBUG][InventoryUI] use_item set to {stack.item_id}")
+                            logger.debug(f"[DEBUG][InventoryUI] use_item set to {stack.item_id}")
                             # Resetear estado doble clic
                             self.last_click_slot_idx = None
                             self.last_click_time = 0
                         else:
-                            print(f"[DEBUG][InventoryUI] first click on slot {idx} item {stack.item_id}")
+                            logger.debug(f"[DEBUG][InventoryUI] first click on slot {idx} item {stack.item_id}")
                             self.last_click_slot_idx = idx
                             self.last_click_time = now
                         break

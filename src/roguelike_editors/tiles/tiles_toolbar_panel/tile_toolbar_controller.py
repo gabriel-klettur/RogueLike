@@ -1,14 +1,12 @@
 import pygame
-from pathlib import Path
 from roguelike_engine.utils.loader import load_image
-from roguelike_engine.config.config_tiles import TILE_SIZE, OVERLAY_CODE_MAP, DEFAULT_TILE_MAP
+from roguelike_engine.config.config_tiles import TILE_SIZE, OVERLAY_CODE_MAP, DEFAULT_TILE_MAP, INVERSE_OVERLAY_MAP
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.map.model.overlay.overlay_manager import load_layers, save_layers
-from roguelike_engine.map.model.layer import Layer
-from roguelike_engine.tile.assets import load_base_tile_images
+from roguelike_engine.tile.utils.assets import load_base_tile_images
 from roguelike_editors.tiles.common.view import screen_to_tile
 from roguelike_editors.tiles.tiles_toolbar_panel.tile_toolbar_view import TileToolbarView
-from roguelike_editors.tiles.tiles_editor_config import ICON_PATHS_TILE_TOOLBAR
+from roguelike_editors.tiles.tiles_editor_config import ICON_PATHS_TILE_TOOLBAR, BRUSH_UPDATE_THROTTLE_MS
 
 
 class TileToolbarController:
@@ -71,9 +69,34 @@ class TileToolbarController:
         if not self._in_bounds(row, col, game_map):
             return
         tile = game_map.tiles[row][col]
+        # If sampling an overlay (non-empty), align the brush layer with EXACT layer that holds that code.
+        # If sampling a base/default tile (no overlay), keep current layer unchanged.
+        code_here = getattr(tile, 'overlay_code', '') or ''
+        if code_here:
+            try:
+                for lname, grid in game_map.layers.items():
+                    if 0 <= row < len(grid) and 0 <= col < len(grid[0]) and grid[row][col] == code_here:
+                        self.editor_state.current_layer = lname
+                        break
+            except Exception:
+                pass
         self._flash_eyedropper(tile)
-        code = tile.overlay_code or tile.tile_type or "#"
-        asset_name = OVERLAY_CODE_MAP.get(code) or DEFAULT_TILE_MAP.get(code) or DEFAULT_TILE_MAP.get('#')
+        code = tile.overlay_code or None
+        if code is not None and code != '':
+            # Overlay present: resolve directly to overlay asset name
+            asset_name = OVERLAY_CODE_MAP.get(code)
+        else:
+            # No overlay: derive base asset then try to map to an overlay variant
+            base_char = tile.tile_type or '#'
+            base_asset = DEFAULT_TILE_MAP.get(base_char) or DEFAULT_TILE_MAP.get('#')
+            # Try to find at least one overlay code that uses the same asset name
+            candidates = INVERSE_OVERLAY_MAP.get(base_asset, [])
+            if candidates:
+                # Prefer the first candidate's asset name
+                asset_name = OVERLAY_CODE_MAP.get(candidates[0], base_asset)
+            else:
+                # No overlay variant exists for this base asset; nothing useful to pick for brush
+                return
         if not asset_name:
             return
         self._select_and_load(asset_name, tile, game_map)
@@ -128,35 +151,60 @@ class TileToolbarController:
         """
         self.editor_state.toolbar_state.dragging = False
 
-    def delete_tile(self, game_map):
+    def delete_tile(self, game_map, camera):
         """
         Elimina el sprite de los tiles en la región actualmente seleccionada.
         Recorre la región según el tamaño del brush y limpia cada sprite.
         Args:
             game_map: Mapa de juego donde se aplicará el borrado.
+            camera: Cámara del juego para conversión de coordenadas.
         """
         tile = self.editor_state.selected_tile
         if tile is None:
             return
-        self._clear_tiles_in_region(tile, game_map)
-        game_map.view.invalidate_cache()
+        changed = self._clear_tiles_in_region(tile, game_map)
+        # Throttled partial chunk updates for feedback during drag
+        if changed:
+            now = pygame.time.get_ticks()
+            last = getattr(self.editor_controller, "_last_chunk_update_ms", 0)
+            if now - last >= BRUSH_UPDATE_THROTTLE_MS:
+                try:
+                    game_map.view.update_chunks(game_map, camera, list(set(changed)))
+                    self.editor_controller._did_partial_updates = True
+                    self.editor_controller._last_chunk_update_ms = now
+                except Exception:
+                    game_map.view.invalidate_cache()
+                    self.editor_controller._did_partial_updates = False
 
-    def set_default(self, game_map):
+    def set_default(self, game_map, camera):
         """
         Restaura la región seleccionada al estado por defecto y guarda cambios de overlay.
         Determina la zona geográfica, recarga mapas base y aplica sprite por defecto.
         Args:
             game_map: Mapa de juego donde se aplicará la restauración.
+            camera: Cámara del juego para conversión de coordenadas.
         """
         tile = self.editor_state.selected_tile
         if tile is None:
             return
-        zone_name, offx, offy = self._determine_zone(tile)
-        zone_layers = load_layers(zone_name) or {}
-        base_map = load_base_tile_images()
-        self._reset_region(tile, game_map, zone_layers, base_map, offx, offy)
-        save_layers(zone_name, zone_layers)
-        game_map.view.invalidate_cache()
+        # Cache base map once per session to avoid reloading on every drag step
+        base_map = getattr(self, "_base_map_cache", None)
+        if base_map is None:
+            base_map = load_base_tile_images()
+            self._base_map_cache = base_map
+        changed = self._reset_region_in_memory(tile, game_map, base_map, camera)
+        # Throttled partial chunk updates for feedback during drag
+        if changed:
+            now = pygame.time.get_ticks()
+            last = getattr(self.editor_controller, "_last_chunk_update_ms", 0)
+            if now - last >= BRUSH_UPDATE_THROTTLE_MS:
+                try:
+                    game_map.view.update_chunks(game_map, camera, list(set(changed)))
+                    self.editor_controller._did_partial_updates = True
+                    self.editor_controller._last_chunk_update_ms = now
+                except Exception:
+                    game_map.view.invalidate_cache()
+                    self.editor_controller._did_partial_updates = False
 
     # --- Métodos auxiliares privados ---
     def _in_bounds(self, row, col, game_map) -> bool:
@@ -229,6 +277,7 @@ class TileToolbarController:
         origin_row, origin_col = tile.y // TILE_SIZE, tile.x // TILE_SIZE
         w, h = self.editor_state.size_panel_state.selected_size
         grid = game_map.tiles_by_layer.get(layer)
+        changed_cells = []
         for dy in range(h):
             for dx in range(w):
                 r, c = origin_row + dy, origin_col + dx
@@ -237,7 +286,20 @@ class TileToolbarController:
                     if t:
                         t.sprite = pygame.Surface((TILE_SIZE, TILE_SIZE), pygame.SRCALPHA)
                         t.scaled_cache.clear()
-                        self.editor_controller.picker._persist_overlay(t, "", game_map)
+                        # Update overlay in-memory
+                        t.overlay_code = ''
+                        codes_grid = game_map.layers.get(layer)
+                        if codes_grid and 0 <= r < len(codes_grid) and 0 <= c < len(codes_grid[0]):
+                            codes_grid[r][c] = ''
+                        # Track pending zones/cells for batched persistence and partial redraws
+                        zone_name, _, _ = game_map.get_zone_for(r, c)
+                        self.editor_controller._pending_tile_zones.add(zone_name)
+                        cell = (r, c)
+                        if cell not in self.editor_controller._pending_cells_set:
+                            self.editor_controller._pending_cells.append(cell)
+                            self.editor_controller._pending_cells_set.add(cell)
+                        changed_cells.append(cell)
+        return changed_cells
 
     def _determine_zone(self, tile) -> tuple[str, int, int]:
         """
@@ -253,32 +315,46 @@ class TileToolbarController:
                 return name, ox, oy
         return 'no_zone', 0, 0
 
-    def _reset_region(self, tile, game_map, zone_layers, base_map, offx, offy):
+    def _reset_region_in_memory(self, tile, game_map, base_map, camera):
         """
-        Restaura sprites y overlay de una región específica al estado por defecto.
-        Modifica tanto los tiles en pantalla como los datos de overlay en disco.
+        Restaura sprites y overlay de una región al estado por defecto SOLO en memoria,
+        sin guardar ni invalidar caché. Marca zonas/celdas para persistencia diferida.
         """
         origin_row, origin_col = tile.y // TILE_SIZE, tile.x // TILE_SIZE
         w, h = self.editor_state.size_panel_state.selected_size
         max_r = len(game_map.tiles)
         max_c = len(game_map.tiles[0])
+        changed_cells = []
+        layer = self.editor_state.current_layer
         for dy in range(h):
             for dx in range(w):
                 r, c = origin_row + dy, origin_col + dx
-                local_r, local_c = r - offy, c - offx
                 if 0 <= r < max_r and 0 <= c < max_c:
-                    grid = game_map.tiles_by_layer.get(self.editor_state.current_layer)
+                    grid = game_map.tiles_by_layer.get(layer)
                     t = grid[r][c] if grid else None
                     if t:
                         default_imgs = base_map.get(t.tile_type)
-                        sprite = default_imgs[0] if isinstance(default_imgs, list) else default_imgs
-                        t.sprite = sprite
-                        t.scaled_cache.clear()
+                        sprite = None
+                        if default_imgs is not None:
+                            sprite = default_imgs[0] if isinstance(default_imgs, list) else default_imgs
+                        else:
+                            # Fallback a DEFAULT_TILE_MAP si no hay entrada en base_map
+                            variant = DEFAULT_TILE_MAP.get(t.tile_type)
+                            if variant:
+                                sprite = load_image(f"tiles/{variant}.png", (TILE_SIZE, TILE_SIZE))
+                        if sprite is not None:
+                            t.sprite = sprite
+                            t.scaled_cache.clear()
                         t.overlay_code = ''
-                    zone_layers.setdefault(
-                        self.editor_state.current_layer,
-                        [[ '' for _ in range(global_map_settings.zone_width)] for _ in range(global_map_settings.zone_height)]
-                    )
-                    zone_layers[self.editor_state.current_layer][local_r][local_c] = ''
-        # Actualiza las capas del mapa con los datos restaurados
-        game_map.layers = zone_layers
+                        codes_grid = game_map.layers.get(layer)
+                        if codes_grid and 0 <= r < len(codes_grid) and 0 <= c < len(codes_grid[0]):
+                            codes_grid[r][c] = ''
+                        # Track pending zones/cells
+                        zone_name, _, _ = game_map.get_zone_for(r, c)
+                        self.editor_controller._pending_tile_zones.add(zone_name)
+                        cell = (r, c)
+                        if cell not in self.editor_controller._pending_cells_set:
+                            self.editor_controller._pending_cells.append(cell)
+                            self.editor_controller._pending_cells_set.add(cell)
+                        changed_cells.append(cell)
+        return changed_cells

@@ -8,6 +8,8 @@ import time
 import pygame
 import inspect
 from importlib import import_module
+import logging
+logger = logging.getLogger(__name__)
 
 # Configuración de generación de sprites
 DEFAULT_NUM_FRAMES = 64  # Número total de frames para distribuir en max_duration
@@ -56,7 +58,7 @@ def generate_sprites(spell_name: str, num_frames: int = DEFAULT_NUM_FRAMES, seed
         mmod = import_module(model_module)
         vmod = import_module(view_module)
     except ModuleNotFoundError:
-        print(f"Skipping {spell_name}: módulos no encontrados.")
+        logger.error(f"Skipping {spell_name}: módulos no encontrados.")
         return
     ModelClass = getattr(mmod, camel_case(spell_name) + 'Model')
     ViewClass = getattr(vmod, camel_case(spell_name) + 'View')
@@ -91,7 +93,7 @@ def generate_sprites(spell_name: str, num_frames: int = DEFAULT_NUM_FRAMES, seed
         elif name == 'seed':
             kwargs[name] = seed
         elif param.default is inspect._empty:
-            print(f"Warning: parámetro inesperado {name} para {spell_name}, usando semilla")
+            logger.warning(f"Warning: parámetro inesperado {name} para {spell_name}, usando semilla")
             kwargs[name] = seed
         # else: parámetro opcional con valor por defecto
     model = ModelClass(**kwargs)
@@ -102,7 +104,7 @@ def generate_sprites(spell_name: str, num_frames: int = DEFAULT_NUM_FRAMES, seed
     # Calcular dt según num_frames deseados
     duration = SPELL_DURATIONS.get(spell_name, DEFAULT_MAX_DURATION)
     dt = duration / (num_frames-1) if num_frames > 1 else 0
-    print(f"[SIM] {spell_name}: simulando {duration}s en {num_frames} frames (dt={dt:.2f}s)")
+    logger.info(f"[SIM] {spell_name}: simulando {duration}s en {num_frames} frames (dt={dt:.2f}s)")
     exec_start = time.perf_counter()
     start_t = getattr(model, 'start_time', time.time())
     for i in range(num_frames):
@@ -110,7 +112,7 @@ def generate_sprites(spell_name: str, num_frames: int = DEFAULT_NUM_FRAMES, seed
 
         # Calcular instante para este frame
         t = start_t + i * dt
-        print(f"[DEBUG] Frame {i+1}/{num_frames}, elapsed={i*dt:.2f}s, t={t}")
+        logger.debug(f"[DEBUG] Frame {i+1}/{num_frames}, elapsed={i*dt:.2f}s, t={t}")
         # Intentar update con t, sino sin args; silenciar cualquier error
         try:
             model.update(t)
@@ -124,10 +126,10 @@ def generate_sprites(spell_name: str, num_frames: int = DEFAULT_NUM_FRAMES, seed
         filename = f"{spell_name}_{i}.png"
         path = os.path.join(OUTPUT_DIR, filename)
         pygame.image.save(surf, path)
-        print(f" Guardado: {path}")
+        logger.info(f" Guardado: {path}")
         # Tiempo real total transcurrido
         real_elapsed = time.perf_counter() - exec_start
-        print(f"[REAL] Generación de {spell_name} completada en {real_elapsed:.2f}s")
+        logger.info(f"[REAL] Generación de {spell_name} completada en {real_elapsed:.2f}s")
 
 
 def main():

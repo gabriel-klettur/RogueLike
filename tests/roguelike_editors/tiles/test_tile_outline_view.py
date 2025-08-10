@@ -36,6 +36,7 @@ def setup_outline(monkeypatch):
 
 def test_hover_draw(monkeypatch, setup_outline):
     view, controller, editor_state, camera, screen, tile = setup_outline
+    editor_state.current_tool = 'brush'
     calls = []
     monkeypatch.setattr(pygame.draw, 'rect', lambda surf, color, rect, width=0, **kwargs: calls.append((color, rect)))
     view.render(screen, camera, None)
@@ -54,3 +55,11 @@ def test_selected_draw(monkeypatch, setup_outline):
     view.render(screen, camera, None)
     # At least one draw uses selection color
     assert any(call[0] == OUTLINE_SEL for call in calls)
+
+def test_no_hover_without_brush(monkeypatch, setup_outline):
+    view, controller, editor_state, camera, screen, tile = setup_outline
+    assert editor_state.current_tool != 'brush'
+    calls = []
+    monkeypatch.setattr(pygame.draw, 'rect', lambda surf, color, rect, width=0, **kwargs: calls.append((color, rect)))
+    view.render(screen, camera, None)
+    assert not any(call[0] == OUTLINE_HOVER for call in calls)

@@ -104,6 +104,27 @@ roguelike
 
 ---
 
+## 🧪 Pruebas
+
+Las pruebas usan `pytest` y configuran Pygame en modo headless mediante `tests/conftest.py` (drivers `SDL_VIDEODRIVER`/`SDL_AUDIODRIVER` en `dummy`).
+
+Pasos recomendados:
+
+1. Instalar el paquete en editable y dependencias (si no lo hiciste):
+
+   ```bash
+   pip install -e .
+   pip install -r requirements.txt
+   ```
+
+2. Ejecutar las pruebas del editor de tiles (toolbar):
+
+   ```bash
+   pytest -q tests/roguelike_editors/tiles/test_tiles_toolbar_panel.py
+   ```
+
+Esto cubre las herramientas de `tiles_toolbar_panel` (`select`, `brush`, `eyedropper`, `view`, `view_layers`, `view_collisions`, `delete`, `default`), incluyendo toggles de UI y flujos de batch para `delete/default`.
+
 ---
 
 ## 🎲 Sistema de Drops

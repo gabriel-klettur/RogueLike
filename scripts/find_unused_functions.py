@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 import ast, os, sys
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 if len(sys.argv) != 2:
-    print("Uso: python find_unused_functions.py <directorio_raiz>")
+    logger.error("Uso: python find_unused_functions.py <directorio_raiz>")
     sys.exit(1)
 
 root_dir = sys.argv[1]
@@ -39,8 +43,8 @@ for name, locations in defs.items():
             unused.append(f"{path}:{lineno} -> {name}")
 
 if unused:
-    print("Funciones definidas pero no utilizadas:")
+    logger.info("Funciones definidas pero no utilizadas:")
     for line in sorted(unused):
-        print(line)
+        logger.info(line)
 else:
-    print("No se encontraron funciones no utilizadas.")
+    logger.info("No se encontraron funciones no utilizadas.")

@@ -3,7 +3,10 @@ import os
 from roguelike_game.config.spells_config import SPELLS
 from roguelike_ui.services.json_persistence import load_from_json
 from roguelike_engine.utils.loader import load_image
-from roguelike_editors.spells.controller.editor_controller import SpellEditorController
+from roguelike_editors.spells.spells_picker_panel.spells_editor_controller import SpellEditorController
+
+import logging
+logger = logging.getLogger(__name__)
 
 class SpellsEditorManager:
     """
@@ -25,7 +28,7 @@ class SpellsEditorManager:
                 try:
                     assets[sid] = load_image(sprite_path)
                 except Exception as e:
-                    print(f"[SpellsEditor] Error loading sprite for spell {sid}: {e}")
+                    logger.error(f"Error loading sprite for spell {sid}: {e}")
         font = game.font
         self.controller = SpellEditorController(spells, assets, font)
         self.model = self.controller.model

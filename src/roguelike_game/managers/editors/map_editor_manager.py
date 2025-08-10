@@ -1,11 +1,14 @@
-from roguelike_editors.map.state.map_editor_state import MapEditorState
-from roguelike_editors.map.controllers.map_editor_controller import MapEditorController
-from roguelike_editors.map.events.map_editor_events import MapEditorEventHandler
-from roguelike_editors.map.views.map_editor_view import MapEditorView
+from roguelike_editors.map.map_editor_state import MapEditorState
+from roguelike_editors.map.map_editor_controller import MapEditorController
+from roguelike_editors.map.map_editor_events import MapEditorEventHandler
+from roguelike_editors.map.map_editor_view import MapEditorView
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.map.utils import get_zone_for_tile
 from roguelike_engine.config.map_config import global_map_settings
 from types import SimpleNamespace
+
+import logging
+logger = logging.getLogger(__name__)
 
 class MapEditorManager:
     """
@@ -45,7 +48,7 @@ class MapEditorManager:
             self.editor_state.selected_zone = None
             self.editor_state.hidden_zones.clear()
             self.editor_state.dragging = None
-        print(" Map Editor ON" if active else " Map Editor OFF")
+        logger.debug(" Map Editor ON" if active else " Map Editor OFF")
 
     def handle(self, camera, map_manager):
         if self.editor_state.active:

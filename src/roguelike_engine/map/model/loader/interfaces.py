@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional, Tuple, Dict
-from roguelike_engine.tile.model.tile import Tile
+from roguelike_engine.tile.model.tile_model import Tile
 from roguelike_engine.map.model.layer import Layer
 
 class MapLoader(ABC):

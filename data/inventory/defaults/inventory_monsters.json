@@ -4,14 +4,26 @@
     "inventory": [
       {
         "item": "gold",
-        "min": 1,
-        "max": 5,
+        "min": 2,
+        "max": 6,
         "chance": 1.0
       },
       {
         "item": "experience_orb",
         "min": 1,
         "max": 2,
+        "chance": 1.0
+      },
+      {
+        "item": "wood",
+        "min": 1,
+        "max": 1,
+        "chance": 1.0
+      },
+      {
+        "item": "bucket",
+        "min": 1,
+        "max": 1,
         "chance": 1.0
       }
     ]

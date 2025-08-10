@@ -10,6 +10,8 @@ from pathlib import Path
 from roguelike_engine.config.config import DATA_DIR
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.map.model.overlay.overlay_manager import load_layers, save_layers
+import logging
+logger = logging.getLogger(__name__)
 
 
 def main():
@@ -18,10 +20,10 @@ def main():
     for zone in zones:
         layers = load_layers(zone)
         if not layers:
-            print(f"⚠️ No se encontró overlay para zona '{zone}', se omite.")
+            logger.warning(f"⚠️ No se encontró overlay para zona '{zone}', se omite.")
             continue
         save_layers(zone, layers)
-        print(f"✅ Overlay de zona '{zone}' migrado a formato por capas.")
+        logger.info(f"✅ Overlay de zona '{zone}' migrado a formato por capas.")
 
 
 if __name__ == '__main__':

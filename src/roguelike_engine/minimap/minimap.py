@@ -1,7 +1,7 @@
 import pygame
 from typing import Tuple, Iterable
 from roguelike_engine.config.config_tiles import TILE_SIZE, TILE_COLORS
-from roguelike_engine.tile.model.tile import Tile
+from roguelike_engine.tile.model.tile_model import Tile
 
 
 from roguelike_engine.config.config_minimap import (

@@ -5,6 +5,10 @@ from roguelike_editors.inventory.right_panel.inventory_items_panel.buttons.save.
 from roguelike_editors.inventory.right_panel.inventory_items_panel.grid.grid_view import GridView
 from roguelike_editors.inventory.right_panel.inventory_items_panel.tabs.tabs_view import TabsView
 
+from roguelike_ui.ui_blocker import register_blocker
+import logging
+logger = logging.getLogger(__name__)
+
 class InventoryItemsPanelView:
     """
     Vista principal que delega en subvistas especializadas:
@@ -47,20 +51,23 @@ class InventoryItemsPanelView:
         return self.delete_view.delete_qty_input_rect
 
     def draw(self, overlay, model, panel_rect):
+        # Bloquear interacción bajo el panel
+        if panel_rect:
+            register_blocker(panel_rect)
 
         # [DEBUG][View] InventoryItemsPanelView.draw called. Category: %s, Editing side: %s
         # [DEBUG][View] slots_data: %s
         """
-        Dibuja grid de inventario, botones de mostrar y botón de guardar.
+        Dibuja grid de inventario, botones de gestión y botón de guardar.
         Delega en subvistas especializadas.
         Devuelve un dict con los rects:
-          'show_default', 'show_active', 'save', 'add_item', 'delete_item'
+          'save', 'add_item', 'delete_item'
         """
         # Obtener datos de slots y posición
         slots = self.tabs_view.get_slots_data(model)
         slots_repr = repr(slots)
         if slots_repr != self._last_slots_repr or model.current_category != self._last_category or model.editing_side != self._last_side:
-            print(f"[DEBUG][View] InventoryItemsPanelView.draw new state: category={model.current_category}, side={model.editing_side}, slots={slots}")
+            logger.debug(f"[DEBUG][View] InventoryItemsPanelView.draw new state: category={model.current_category}, side={model.editing_side}, slots={slots}")
             self._last_slots_repr = slots_repr
             self._last_category = model.current_category
             self._last_side = model.editing_side
@@ -72,16 +79,9 @@ class InventoryItemsPanelView:
         current_editing_side = model.editing_side
         
         rects = {}
-        
-        # Show Default/Active buttons (delegado a tabs_view)
-        show_rects = self.tabs_view.draw_tabs(overlay, grid_origin_x, grid_origin_y, mx, my, current_editing_side, len(slots))
-        # Rects de pestañas ya retornados        
-
-        
-        rects.update(show_rects)
-        # Actualizar rects de compatibilidad
-        self.show_default_rect = show_rects.get('show_default')
-        self.show_active_rect = show_rects.get('show_active')
+        # Ya no se dibujan pestañas en el panel derecho; las pestañas de lado activo se gestionan en el panel izquierdo
+        self.show_default_rect = None
+        self.show_active_rect = None
         
         # Grid de slots (delegado a grid_view)
         self.grid_view.draw_slots(

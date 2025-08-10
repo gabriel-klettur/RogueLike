@@ -1,6 +1,9 @@
 import pygame
 from roguelike_editors.inventory.editor_controller import InventoryEditorController
 
+import logging
+logger = logging.getLogger(__name__)
+
 class InventoryEditorManager:
     """
     Manager para el editor de inventario: delega a InventoryEditorController.
@@ -27,5 +30,5 @@ class InventoryEditorManager:
 
     def debug_dump(self):
         """[DEBUG][Manager] Delega debug_dump al InventoryEditorController."""
-        print("[DEBUG][Manager] InventoryEditorManager.debug_dump")
+        logger.debug("[DEBUG][Manager] InventoryEditorManager.debug_dump")
         self.controller.debug_dump()

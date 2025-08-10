@@ -1,4 +1,5 @@
 import pygame
+from roguelike_ui.ui_blocker import register_blocker
 from roguelike_editors.inventory.right_panel.item_selection_panel.item_selection_panel_model import ItemSelectionPanelModel
 from .tittle.tittle_view import TittleView
 from .tabs.tabs_view import TabsView
@@ -35,6 +36,7 @@ class ItemSelectionPanelView:
         x = sw - w - self.margin + int(model.drag_offset.x)
         y = sh - panel_h - self.margin + int(model.drag_offset.y)
         panel_rect = pygame.Rect(x, y, w, panel_h)
+        register_blocker(panel_rect)
 
         rects = {}
         rects.update(self.tittle_view.draw(surface, panel_rect))

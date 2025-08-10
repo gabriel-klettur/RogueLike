@@ -1,10 +1,11 @@
 import math
-import random
 import time
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.particles.particle_component import ParticleComponent
-from roguelike_game.ecs.components.particles.slash_emitter_component import SlashEmitterComponent
+
+import logging
+logger = logging.getLogger(__name__)
 
 class SlashEmitterSystem:
     """
@@ -19,7 +20,7 @@ class SlashEmitterSystem:
         now = time.time()
         emitters = world.components.get('SlashEmitterComponent', {})
         for caster, emitter in list(emitters.items()):
-            print(f"[DEBUG][{time.time():.3f}][SlashEmitterSystem] caster={caster} count={emitter.count}")
+            logger.debug(f"[SlashEmitterSystem] caster={caster} count={emitter.count}")
             pos_cmp = world.components.get('Position', {}).get(caster)
             if not pos_cmp:
                 continue

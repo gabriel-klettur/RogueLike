@@ -6,18 +6,17 @@ from roguelike_engine.map.utils import get_zone_for_tile
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.managers.map.item_drop_manager import ItemDropManager
 from roguelike_game.ecs.components.inventory_component import InventoryComponent
-from roguelike_game.ecs.components.transform.position import Position
-from roguelike_game.ecs.components.monster_instance_component import MonsterInstanceComponent
-from roguelike_game.ecs.components.combat.death_timer import DeathTimer
 
+import logging
+logger = logging.getLogger(__name__)
 
 class DeathDropSystem:
     """
     Sistema ECS que maneja el dropeo de ítems al morir NPCs o Player.
     """
     def __init__(self, perf_log=None,
-                 active_monster_path: str = os.path.join(os.getcwd(), 'data', 'inventory', 'inventory_monsters.json'),
-                 active_player_path: str = os.path.join(os.getcwd(), 'data', 'inventory', 'inventory_player.json'),
+                 active_monster_path: str = os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_monsters.json'),
+                 active_player_path: str = os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_player.json'),
                  drop_path: str = os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_map.json')):
         self.perf_log = perf_log
         self.active_monster_path = active_monster_path
@@ -45,7 +44,7 @@ class DeathDropSystem:
             ty = int(pos.y // TILE_SIZE)
             zone_id = get_zone_for_tile(tx, ty)
             # Crear drops para cada ItemStack
-            print(f"[DEBUG DeathDropSystem] Dropping for eid={eid}, slots={[ (stack.item_id, stack.quantity) for stack in inv.slots if stack ]}")
+            logger.debug(f"[DEBUG DeathDropSystem] Dropping for eid={eid}, slots={[ (stack.item_id, stack.quantity) for stack in inv.slots if stack ]}")
             for stack in inv.slots:
                 if stack:
                     drop_id = str(uuid.uuid4())
