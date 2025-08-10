@@ -34,6 +34,11 @@ class ItemsEditorController:
         self.events = ItemsEditorEvents()
         self.view = ItemsEditorView()
 
+        # Debug snapshots to avoid log spam
+        self._last_inst_list_rect: pygame.Rect | None = None
+        self._last_inst_params_rect: pygame.Rect | None = None
+        self._last_reserved_h: int | None = None
+
         # Callbacks unificados de selección
         def _set_selected_item(item_id: str) -> None:
             # Actualizar SSOT del editor y del picker para resaltar en la grilla
@@ -115,7 +120,14 @@ class ItemsEditorController:
         self.properties_controller.draw(screen, title_rect)
         # Finalmente, panel de instancias del mapa + params
         list_rect, params_rect = inst_list_rect, inst_params_rect
-        logging.getLogger(__name__).debug(f"[ItemsEditorController.draw] instances visible={self.instances_controller.model.visible} list_rect={list_rect} params_rect={params_rect} reserved_h={reserve_h}")
+        # Log only when rects or reserved height change
+        if (self._last_inst_list_rect != list_rect) or (self._last_inst_params_rect != params_rect) or (self._last_reserved_h != reserve_h):
+            logging.getLogger(__name__).debug(
+                f"[ItemsEditorController.draw] instances visible={self.instances_controller.model.visible} list_rect={list_rect} params_rect={params_rect} reserved_h={reserve_h}"
+            )
+            self._last_inst_list_rect = list_rect.copy() if list_rect else None
+            self._last_inst_params_rect = params_rect.copy() if params_rect else None
+            self._last_reserved_h = reserve_h
         self.instances_controller.draw(screen)
 
     # --- Visibilidad ---

@@ -18,6 +18,9 @@ class ItemPickerPanelView:
         # PickerPanel bridge (injected by controller)
         self.picker = None
         self.picker_state = None
+        # Debug snapshots to avoid log spam
+        self._last_grid_rect = None
+        self._last_reserved_h = None
 
     # ===== Métodos de dibujo modularizados =====
     def _draw_overlay(self, screen: pygame.Surface) -> None:
@@ -57,7 +60,20 @@ class ItemPickerPanelView:
             grid_h = max(0, sh - grid_top - margin - reserve_h)
             self.picker_state.visible = True
             self.picker_state.rect = pygame.Rect(margin, grid_top, max(0, sw - 2 * margin), grid_h)
-            logging.getLogger(__name__).debug(f"[ItemPickerPanelView] grid_rect={self.picker_state.rect} reserve_h={reserve_h} title_bottom={(self.title_rect.bottom if self.title_rect else None)}")
+            # Log only when values change
+            try:
+                rect_changed = (self._last_grid_rect != self.picker_state.rect)
+                reserve_changed = (self._last_reserved_h != reserve_h)
+            except Exception:
+                rect_changed = True
+                reserve_changed = True
+            if rect_changed or reserve_changed:
+                logging.getLogger(__name__).debug(
+                    f"[ItemPickerPanelView] grid_rect={self.picker_state.rect} reserve_h={reserve_h} title_bottom={(self.title_rect.bottom if self.title_rect else None)}"
+                )
+                # Store snapshots
+                self._last_grid_rect = self.picker_state.rect.copy()
+                self._last_reserved_h = reserve_h
             # Sincronizar selección del modelo hacia el panel (si existe)
             # para mantener resalte cuando seleccionamos desde otras UI (map_ui)
             if getattr(model, 'selected_item_id', None) is not None:

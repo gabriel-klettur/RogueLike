@@ -20,6 +20,8 @@ class ItemsInstancesPanelController:
         self.model = ItemsInstancesPanelModel()
         self.view = ItemsInstancesPanelView()
         self.events = ItemsInstancesPanelEvents()
+        # Snapshot to throttle logs
+        self._last_visible: bool | None = None
 
         # Crear UIs
         inv_map_path = os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_map.json')
@@ -42,9 +44,12 @@ class ItemsInstancesPanelController:
         return self.events.handle_event(self, event)
 
     def draw(self, screen: pygame.Surface) -> None:
+        # Log visibility transitions only
+        if self._last_visible != self.model.visible:
+            logging.getLogger(__name__).debug(f"[ItemsInstancesPanelController.draw] visible={self.model.visible}")
+            self._last_visible = self.model.visible
         if not self.model.visible:
             return
-        logging.getLogger(__name__).debug("[ItemsInstancesPanelController.draw] drawing instances panel")
         self.view.draw(screen, self.model, self.map_ui, self.params_ui)
 
     # --- Layout helpers ---

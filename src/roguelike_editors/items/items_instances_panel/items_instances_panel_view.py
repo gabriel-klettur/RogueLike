@@ -12,7 +12,10 @@ class ItemsInstancesPanelView:
     - Editor de parámetros de la instancia seleccionada
     """
     def __init__(self) -> None:
-        pass
+        # Snapshots to throttle logging
+        self._last_list_rect: pygame.Rect | None = None
+        self._last_params_rect: pygame.Rect | None = None
+        self._last_visible: bool | None = None
 
     def layout(self, screen: pygame.Surface, model: ItemsInstancesPanelModel) -> None:
         sw, sh = screen.get_size()
@@ -23,8 +26,13 @@ class ItemsInstancesPanelView:
         list_rect = pygame.Rect(margin, params_rect.y - margin - list_h, sw - 2 * margin, list_h)
         model.params_rect = params_rect
         model.list_rect = list_rect
-        # Debug
-        logging.getLogger(__name__).debug(f"[InstancesPanelView.layout] sw={sw} sh={sh} list_rect={list_rect} params_rect={params_rect}")
+        # Debug only when rects change
+        if (self._last_list_rect != list_rect) or (self._last_params_rect != params_rect):
+            logging.getLogger(__name__).debug(
+                f"[InstancesPanelView.layout] sw={sw} sh={sh} list_rect={list_rect} params_rect={params_rect}"
+            )
+            self._last_list_rect = list_rect.copy()
+            self._last_params_rect = params_rect.copy()
 
     def draw(self, screen: pygame.Surface, model: ItemsInstancesPanelModel, map_ui: Any, params_ui: Any) -> None:
         if not model.visible:
@@ -34,7 +42,12 @@ class ItemsInstancesPanelView:
         # Dibujar fondos semitransparentes y bordes para visibilidad
         list_rect = model.list_rect
         params_rect = model.params_rect
-        logging.getLogger(__name__).debug(f"[InstancesPanelView.draw] visible={model.visible} list_rect={list_rect} params_rect={params_rect}")
+        # Log only when visibility or rects change
+        if (self._last_visible != model.visible) or (self._last_list_rect != list_rect) or (self._last_params_rect != params_rect):
+            logging.getLogger(__name__).debug(
+                f"[InstancesPanelView.draw] visible={model.visible} list_rect={list_rect} params_rect={params_rect}"
+            )
+            self._last_visible = model.visible
         if list_rect:
             bg = pygame.Surface(list_rect.size, pygame.SRCALPHA)
             bg.fill((20, 20, 20, 180))
