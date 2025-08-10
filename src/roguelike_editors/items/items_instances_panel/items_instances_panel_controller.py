@@ -31,6 +31,9 @@ class ItemsInstancesPanelController:
 
         # Callback para notificar selección de item por id (hacia el orquestador)
         self.on_select_item_id: Optional[Callable[[str], None]] = None
+        # Callbacks para enfoque de cámara mientras se mantiene presionado
+        self.on_start_hold_focus: Optional[Callable[[float, float], None]] = None
+        self.on_end_hold_focus: Optional[Callable[[], None]] = None
 
     # --- API pública ---
     def reload_data(self) -> None:

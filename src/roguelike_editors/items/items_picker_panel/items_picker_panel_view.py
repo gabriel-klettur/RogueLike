@@ -37,8 +37,7 @@ class ItemPickerPanelView:
         """
         if not model.visible:
             return
-        # Dim background first
-        self._draw_overlay(screen)
+        # Nota: Se elimina el overlay global para no oscurecer todo el editor
         # Ensure title view is bound to current state and render title at top-left above overlay
         if self.title_view is None:
             self.title_view = ItemsTitleView(None, model)
@@ -59,7 +58,20 @@ class ItemPickerPanelView:
             grid_top = max(margin, (self.title_rect.bottom + 10) if self.title_rect else margin)
             grid_h = max(0, sh - grid_top - margin - reserve_h)
             self.picker_state.visible = True
-            self.picker_state.rect = pygame.Rect(margin, grid_top, max(0, sw - 2 * margin), grid_h)
+            # Calcular ancho profesional/estético basado en celdas del PickerPanel
+            cw = getattr(self.picker, 'cell_w', 64)
+            pad = getattr(self.picker, 'padding', 8)
+            panel_m = getattr(self.picker, 'margin', 8)
+            max_cols = getattr(self.picker, 'max_columns', None)
+            # Ancho disponible descontando márgenes externos e internos del panel
+            avail_w = max(0, sw - 2 * margin - 2 * panel_m)
+            cols_fit = max(1, (avail_w + pad) // (cw + pad))
+            if max_cols:
+                cols_fit = min(cols_fit, max_cols)
+            grid_area_w = cols_fit * cw + max(0, (cols_fit - 1) * pad)
+            panel_w = grid_area_w + 2 * panel_m
+            rect_w = min(panel_w, max(0, sw - 2 * margin))
+            self.picker_state.rect = pygame.Rect(margin, grid_top, rect_w, grid_h)
             # Log only when values change
             try:
                 rect_changed = (self._last_grid_rect != self.picker_state.rect)
@@ -74,6 +86,12 @@ class ItemPickerPanelView:
                 # Store snapshots
                 self._last_grid_rect = self.picker_state.rect.copy()
                 self._last_reserved_h = reserve_h
+            # Fondo semitransparente del panel (solo detrás del picker)
+            panel_rect = self.picker_state.rect
+            if panel_rect and panel_rect.w > 0 and panel_rect.h > 0:
+                bg = pygame.Surface(panel_rect.size, pygame.SRCALPHA)
+                bg.fill((20, 20, 20, 180))
+                screen.blit(bg, panel_rect.topleft)
             # Sincronizar selección del modelo hacia el panel (si existe)
             # para mantener resalte cuando seleccionamos desde otras UI (map_ui)
             if getattr(model, 'selected_item_id', None) is not None:
@@ -84,9 +102,6 @@ class ItemPickerPanelView:
                     pass
             # Renderizar la grilla
             self.picker.render(screen, self.picker_state)
-            # Debug border to verify visibility
-            if self.picker_state.rect.h > 0 and self.picker_state.rect.w > 0:
-                pygame.draw.rect(screen, (0, 128, 255), self.picker_state.rect, 3)
             # Mapear hover del panel hacia el modelo para info panel
             if self.picker_state.hovered_index is not None:
                 item_ids = [i for i in model.items.keys() if i != "image_item_not_found"]

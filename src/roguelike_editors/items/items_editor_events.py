@@ -22,6 +22,21 @@ class ItemsEditorEvents:
         if not model.visible:
             return False
 
+        # Si estamos en modo press-and-hold, ocultamos paneles y sólo atendemos el mouseup para restaurar
+        if getattr(model, 'holding_pos_focus', False):
+            if event.type == pygame.MOUSEBUTTONUP and getattr(event, 'button', None) == 1:
+                try:
+                    cb = getattr(controller.instances_controller, 'on_end_hold_focus', None)
+                    if cb:
+                        cb()
+                except Exception:
+                    logger.exception("[ItemsEditorEvents] on_end_hold_focus failed")
+                finally:
+                    model.holding_pos_focus = False
+                return True
+            # Consumir el resto de eventos mientras se mantiene presionado
+            return True
+
         # Si el panel de propiedades está editando texto, priorizarlo
         props = controller.properties_controller
         if getattr(props, 'text_input', None) and props.text_input.active:

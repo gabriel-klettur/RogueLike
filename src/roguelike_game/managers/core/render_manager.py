@@ -142,6 +142,7 @@ class RendererManager:
                 not self.tiles_editor.editor_state.active
                 and not (hasattr(state, 'entities_editor_state') and state.entities_editor_state.visible)
                 and not (hasattr(state, 'inventory_editor_state') and getattr(state.inventory_editor_state, 'visible', False))
+                and not (hasattr(state, 'item_editor_state') and getattr(state.item_editor_state, 'visible', False))
             ):
                 self._render_minimap(screen)
         _bench_minimap()
@@ -334,6 +335,8 @@ class RendererManager:
         if hasattr(state, 'entities_editor_state') and getattr(state.entities_editor_state, 'visible', False):
             return
         if hasattr(state, 'inventory_editor_state') and getattr(state.inventory_editor_state, 'visible', False):
+            return
+        if hasattr(state, 'item_editor_state') and getattr(state.item_editor_state, 'visible', False):
             return
         if self.map_editor.editor_state.active:
             mode = 'map'

@@ -28,13 +28,28 @@ class ItemsInstancesPanelEvents:
                     controller.on_select_item_id(item_def)
                 except Exception:
                     logger.exception("on_select_item_id callback failed from map_ui selection")
+            # Si es click izquierdo, iniciar enfoque de cámara mientras se mantenga presionado
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                try:
+                    # Preferir posición absoluta si existe, si no, usar tile
+                    if 'position' in inst_data and isinstance(inst_data['position'], dict):
+                        x = float(inst_data['position'].get('x'))
+                        y = float(inst_data['position'].get('y'))
+                    else:
+                        tile = inst_data.get('tile', {})
+                        x = float(tile.get('x'))
+                        y = float(tile.get('y'))
+                    if controller.on_start_hold_focus and x is not None and y is not None:
+                        controller.on_start_hold_focus(x, y)
+                except Exception:
+                    logger.exception("Failed to start hold focus from map_ui click")
             # cargar valores al editor de params
             params = inst_data.get('params', {})
             controller.params_ui.load_values(params)
             return True
 
-        # 2) Delegar al editor de parámetros
-        if controller.params_ui.handle_event(event):
+        # 2) Delegar al editor de parámetros (solo si existe panel de params)
+        if getattr(controller.model, 'params_rect', None) is not None and controller.params_ui.handle_event(event):
             try:
                 new_params = controller.params_ui.get_values()
                 inst_id = controller.map_ui.selected_instance

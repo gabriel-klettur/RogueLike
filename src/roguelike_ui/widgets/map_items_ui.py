@@ -36,6 +36,27 @@ class MapItemsUI:
     def draw(self, surface: pygame.Surface, rect: pygame.Rect) -> None:
         self.load()
         self.list_ui.draw(surface, rect)
+        # Dibujar borde naranja alrededor de las coordenadas @(...)
+        mx, my = pygame.mouse.get_pos()
+        idx = self.list_ui.get_selected((mx, my))
+        if idx is not None and 0 <= idx < len(self.list_ui.items):
+            text = self.list_ui.items[idx]
+            if '@(' in text and ')' in text:
+                try:
+                    start = text.find('@(')
+                    end = text.find(')', start)
+                    if end != -1:
+                        prefix = text[:start]
+                        coords = text[start:end+1]
+                        line_h = self.font.get_linesize()
+                        y0 = self.list_ui.rect.y - self.list_ui.panel.scroll_offset
+                        text_x = self.list_ui.rect.x + self.list_ui.panel.margin
+                        prefix_w = self.font.size(prefix)[0]
+                        coords_w = self.font.size(coords)[0]
+                        pos_r = pygame.Rect(text_x + prefix_w, y0 + idx * line_h, max(coords_w, 1), line_h)
+                        pygame.draw.rect(surface, (255, 165, 0), pos_r, 2)
+                except Exception:
+                    pass
 
     def handle_event(self, event: pygame.event.Event) -> str | None:
         # Forward scroll/wheel events to list_ui

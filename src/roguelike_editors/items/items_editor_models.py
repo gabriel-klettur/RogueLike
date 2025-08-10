@@ -19,3 +19,6 @@ class ItemsEditorModel:
     # Título (para TitleBar)
     title: str = "ITEMS EDITOR"
 
+    # Estado de enfoque de cámara mientras se mantiene presionado sobre una coordenada
+    holding_pos_focus: bool = False
+

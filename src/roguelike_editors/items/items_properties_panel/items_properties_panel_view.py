@@ -45,19 +45,11 @@ class ItemsPropertiesPanelView:
         margin = 20
         sw, sh = screen.get_size()
         if not active_item_id or active_item_id not in items:
-            # Aún dibujamos el panel vacío (tamaño fijo) para consistencia
-            top_y = max(margin, (title_rect.bottom + 10) if title_rect else margin)
-            panel_w = self.panel_w
-            panel_h = self.panel_h if (top_y + self.panel_h + margin) <= sh else max(80, sh - top_y - margin)
-            panel_x = sw - panel_w - margin
-            panel_y = top_y
-            info_surf = pygame.Surface((panel_w, panel_h), pygame.SRCALPHA)
-            info_surf.fill((0, 0, 0, 200))
-            screen.blit(info_surf, (panel_x, panel_y))
-            model.panel_rect = pygame.Rect(panel_x, panel_y, panel_w, panel_h)
+            # Sin ítem activo: ocultar completamente el panel
+            model.panel_rect = None
             model.property_entries = []
             model.content_height = 0
-            model.content_view_rect = pygame.Rect(panel_x+10, panel_y+10, panel_w-20, panel_h-20)
+            model.content_view_rect = None
             return
 
         top_y = max(margin, (title_rect.bottom + 10) if title_rect else margin)

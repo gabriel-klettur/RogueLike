@@ -1,6 +1,7 @@
 import pygame
 import logging
 from typing import Any, Dict, Optional
+from types import SimpleNamespace
 
 from .items_editor_models import ItemsEditorModel
 from .items_editor_events import ItemsEditorEvents
@@ -58,6 +59,31 @@ class ItemsEditorController:
         self.picker_controller.on_open_id = _on_open_id
         self.instances_controller.on_select_item_id = _set_selected_item
 
+        # Press-and-hold focus from instances list
+        def _start_hold_focus(x: float, y: float) -> None:
+            if not hasattr(self, 'game'):
+                return
+            try:
+                self.game.camera.update(SimpleNamespace(x=x, y=y))
+                self.model.holding_pos_focus = True
+            except Exception:
+                logging.getLogger(__name__).exception("[ItemsEditorController] start_hold_focus failed")
+
+        def _end_hold_focus() -> None:
+            if not hasattr(self, 'game'):
+                self.model.holding_pos_focus = False
+                return
+            try:
+                pos = getattr(self.game.ecs.ecs_world, 'player_position', None)
+                if pos is not None:
+                    self.game.camera.update(SimpleNamespace(x=pos.x, y=pos.y))
+                self.model.holding_pos_focus = False
+            except Exception:
+                logging.getLogger(__name__).exception("[ItemsEditorController] end_hold_focus failed")
+
+        self.instances_controller.on_start_hold_focus = _start_hold_focus
+        self.instances_controller.on_end_hold_focus = _end_hold_focus
+
         # Delegar spawn RMB desde el picker hacia aquí
         def _spawn_at_player(item_id: str) -> None:
             if not hasattr(self, 'game') or not hasattr(self.game, 'ecs'):
@@ -91,6 +117,9 @@ class ItemsEditorController:
     def draw(self, screen: pygame.Surface) -> None:
         if not self.model.visible:
             return
+        # Ocultar todos los paneles mientras se mantiene presionado para centrar cámara
+        if getattr(self.model, 'holding_pos_focus', False):
+            return
         # Asegurar visibilidad de subpaneles si la visibilidad global cambió externamente (F7)
         self.picker_controller.model.visible = True
         self.instances_controller.model.visible = True
@@ -100,14 +129,14 @@ class ItemsEditorController:
         except Exception:
             inst_list_rect = inst_params_rect = None
         reserve_h = None
-        if inst_list_rect and inst_params_rect:
-            margin = self.instances_controller.model.margin
-            reserve_h = inst_list_rect.h + inst_params_rect.h + 2 * margin
+        margin = self.instances_controller.model.margin if hasattr(self.instances_controller, 'model') else 20
+        if inst_list_rect:
+            # Solo reservamos la altura de la lista inferior + margen de separación
+            reserve_h = inst_list_rect.h + margin
         else:
-            # Fallback aproximado
+            # Fallback aproximado: sólo una franja inferior (25% pantalla) + margen
             sw, sh = screen.get_size()
-            margin = 20
-            reserve_h = (sh // 4) + (sh // 4) + 2 * margin
+            reserve_h = (sh // 4) + margin
         # Inyectar en la vista del picker para su layout
         setattr(self.picker_controller.view, '_reserved_bottom_h', reserve_h)
         # Primero, dibujar picker (incluye overlay y título)
@@ -152,6 +181,8 @@ class ItemsEditorController:
     # --- Integraciones auxiliares ---
     def set_game(self, game: Any) -> None:
         """Permite a features del picker (RMB spawn) acceder al juego."""
+        self.game = game
         self.picker_controller.game = game
-        # El InstancesPanel no requiere acceso directo al juego
+        # El InstancesPanel ahora puede solicitar enfoque de cámara
+        self.instances_controller.game = game
 
