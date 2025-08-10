@@ -1,5 +1,7 @@
-from roguelike_engine.utils.loader import load_sprite_sheet
-from roguelike_game.config.players_config import PLAYER_ASSETS
+from roguelike_engine.utils.loader import load_sprite_sheet, load_image
+import importlib
+import roguelike_game.config.players_config as players_config
+import pygame
 
 class PlayerAssets:
     """
@@ -9,7 +11,8 @@ class PlayerAssets:
         self.class_player = class_player
         self.sprite_size = sprite_size
         # Ruta a los assets definida en players.json
-        assets_entry = PLAYER_ASSETS.get(class_player)
+        importlib.reload(players_config)
+        assets_entry = players_config.PLAYER_ASSETS.get(class_player)
         if isinstance(assets_entry, str):
             self.sheet_path = assets_entry
         elif isinstance(assets_entry, dict):
@@ -28,50 +31,69 @@ class PlayerAssets:
             }
         junto con el tamaño de cada sprite.
         """
-        # Determinar grid o strip según configuración
-        assets_entry = PLAYER_ASSETS.get(self.class_player)
-        sprites: dict[str, dict[str, list]] = {}
-        if isinstance(assets_entry, str):
-            # grid 4x5 (dwarf)
-            directions = ['down', 'right', 'up', 'left']
-            for row_idx, direction in enumerate(directions):
-                # idle: 1 frame en col 0
-                idle_frames = load_sprite_sheet(
-                    self.sheet_path,
-                    self.sprite_size,
-                    row=row_idx,
-                    columns=1,
-                    start_col=0
-                )
-                # walk: 4 frames cols 1-4
-                walk_frames = load_sprite_sheet(
-                    self.sheet_path,
-                    self.sprite_size,
-                    row=row_idx,
-                    columns=4,
-                    start_col=1
-                )
-                sprites[direction] = {'idle': idle_frames, 'walk': walk_frames}
+        # Determinar grid o strip según configuración y active_set
+        importlib.reload(players_config)
+        assets_entry = players_config.PLAYER_ASSETS.get(self.class_player)
+        active = assets_entry.get("active_set", "sets") if isinstance(assets_entry, dict) else "sets"
+        # Definir direcciones del juego
+        directions = ['down','down_right','right','up_right','up','up_left','left','down_left']
+        
+        if active == "no-sets" and isinstance(assets_entry, dict):
+            sprites: dict[str, dict[str, list]] = {d: {} for d in directions}
+            # Mapeo direcciones JSON -> direcciones internas
+            dir_map = {
+                's':'down','se':'down_right','e':'right','ne':'up_right',
+                'n':'up','nw':'up_left','w':'left','sw':'down_left'
+            }
+            # Cargar sprites individuales
+            for state, dirs in assets_entry.get('no-sets', {}).items():
+                for dir_code, path in dirs.items():
+                    eng_dir = dir_map.get(dir_code)
+                    if eng_dir and path:
+                        img = load_image(path)
+                        frame = pygame.transform.scale(img, self.sprite_size)
+                        sprites[eng_dir][state] = [frame]
+            return sprites, self.sprite_size
+        
+        elif isinstance(assets_entry, dict) and 'sets' in assets_entry:
+            sprites: dict[str, dict[str, list]] = {}
+            # Direcciones básicas (8 direcciones)
+            for direction in directions:
+                sprites[direction] = {}
+            # Procesar cada estado de animación con hoja de sprites
+            for state, paths in assets_entry['sets'].get('sprites_set', {}).items():
+                if not paths:
+                    continue
+                key = 'walk' if state == 'walking' else state
+                sheet_path = paths[0]
+                # Cortar frames para cada dirección
+                for direction, block in zip(directions, range(len(directions))):
+                    frames = load_sprite_sheet(
+                        sheet_path,
+                        self.sprite_size,
+                        row=0,
+                        columns=(5 if key in ('walk','idle') else 1),
+                        start_col=block*5
+                    )
+                    sprites[direction][key] = frames
+            return sprites, self.sprite_size
+        
         elif isinstance(assets_entry, dict):
+            sprites: dict[str, dict[str, list]] = {}
             # strip 1x40 (otros)
-            directions = ['down', 'down_right', 'right', 'up_right', 'up', 'up_left', 'left', 'down_left']
-            # cada bloque de 5 columnas para las 8 direcciones: down, down_right, right, up_right, up, up_left, left, down_left
-            block_indices = list(range(8))
-            for direction, block in zip(directions, block_indices):
+            for direction, block in zip(directions, range(len(directions))):
                 frames = load_sprite_sheet(
                     self.sheet_path,
                     self.sprite_size,
                     row=0,
-                    columns=5,
-
-
-                    
+                    columns=5,            
                     start_col=block * 5
                 )
-                # primera frame idle, resto walk
                 idle = [frames[0]]
                 walk = frames[1:]
                 sprites[direction] = {'idle': idle, 'walk': walk}
+        
         else:
             raise KeyError(f"No asset configurado para clase {self.class_player}")
+        
         return sprites, self.sprite_size

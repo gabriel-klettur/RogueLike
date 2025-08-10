@@ -3,7 +3,7 @@ from .interfaces import MapLoader
 from .text_loader_strategy import TextMapLoader
 # from .json_loader_strategy import JsonMapLoader    # futuro
 
-_LOADERS: Dict[str, type[MapLoader]] = {
+_LOADERS: Dict[str, type] = {
     "text": TextMapLoader,
     # "json": JsonMapLoader,
 }

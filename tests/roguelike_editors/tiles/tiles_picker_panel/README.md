@@ -37,6 +37,18 @@ This directory contains `pytest` test suites for the `tiles_picker_panel` module
   - `_get_local_coords` calculates local mouse position and y-offset
   - `render` no-op when picker is closed
 
+## test_entities_assets_grid_panel_events.py
+- Verifies hover and click handling in `AssetsGridPanelEventHandler`:
+  - `MOUSEMOTION` sets and clears `hovered_asset_cell`.
+  - `MOUSEBUTTONDOWN` sets `selected_asset_cell`.
+  - Unrelated events return False.
+
+## test_entities_properties_panel_events.py
+- Verifies hover handling in `EntitiesPropertiesPanelEventHandler`:
+  - `MOUSEMOTION` sets `hovered_property` when active tab is 'properties'.
+  - Hover ignored on 'assets' tab.
+  - Unrelated events return False.
+
 ---
 
 Run tests with:

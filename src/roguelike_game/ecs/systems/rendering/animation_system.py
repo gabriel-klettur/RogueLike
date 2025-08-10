@@ -4,6 +4,7 @@ Module: animation_system.py
 Updates entity animations by advancing frames and applying the current frame to the Sprite component.
 """
 import time
+import pygame
 from roguelike_engine.utils.benchmark import benchmark
 
 class AnimationSystem:
@@ -46,6 +47,16 @@ class AnimationSystem:
                 timer.last_time = now
             # Obtener el siguiente frame de animación
             frame = animator.next_frame()
-            # Si hay un frame válido y la entidad tiene Sprite, aplicarlo
-            if frame and eid in sprite_map:
-                sprite_map[eid].image = frame
+            # Actualizar Sprite incluso sin frame
+            if eid in sprite_map:
+                if frame:
+                    # Frame válido: aplicarlo
+                    sprite_map[eid].image = frame
+                else:
+                    # Placeholder semi-transparente con borde morado
+                    size = sprite_map[eid].image.get_size()
+                    placeholder = pygame.Surface(size, pygame.SRCALPHA)
+                    placeholder.fill((128, 0, 128, 100))
+                    border_color = (128, 0, 128)
+                    pygame.draw.rect(placeholder, border_color, placeholder.get_rect(), 2)
+                    sprite_map[eid].image = placeholder

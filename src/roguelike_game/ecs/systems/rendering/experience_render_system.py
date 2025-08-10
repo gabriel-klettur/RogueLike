@@ -13,6 +13,10 @@ class ExperienceRenderSystem:
         self.font = pygame.font.SysFont(None, 20)
 
     def update(self, world, screen, camera):
+        # Ocultar barra de experiencia si el Entities Editor está activo
+        state = getattr(world, 'state', None)
+        if state and getattr(state, 'entities_editor_state', None) and state.entities_editor_state.visible:
+            return
         # Buscar el jugador con ExperienceComponent
         xp_comps = world.components.get('ExperienceComponent', {})
         tags = world.components.get('PlayerTagComponent', {})

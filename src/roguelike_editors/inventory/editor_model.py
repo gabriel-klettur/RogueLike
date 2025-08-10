@@ -3,6 +3,8 @@ from typing import List, Optional, Dict, Any
 from roguelike_editors.inventory.right_panel.inventory_items_panel.inventory_items_panel_model import InventoryitemsPanelModel
 from roguelike_editors.inventory.left_panel.panel_model import InventoryPanelModel
 from roguelike_editors.inventory.right_panel.item_selection_panel.item_selection_panel_model import ItemSelectionPanelModel
+import logging
+logger = logging.getLogger(__name__)
 
 @dataclass
 class InventoryEditorModel:
@@ -10,6 +12,10 @@ class InventoryEditorModel:
     Model for the Inventory Editor MVC.
     """
     visible: bool = False
+    # When True, inventory overlay is visually hidden but remains event-active (used for press-and-hold on Pos)
+    overlay_hidden_while_hold: bool = False
+    # Internal state: user is holding mouse on a 'Pos:' line to focus camera on a monster
+    holding_pos_focus: bool = False
     # Categories and selection delegated to left_panel_model
     # categories and current_category are accessed via left_panel_model
     # JSON data: default templates and active inventories
@@ -18,6 +24,11 @@ class InventoryEditorModel:
     # Editing state delegated to items_panel_model.tabs.active_tab
     editing_property: Optional[str] = None
     editing_index: Optional[int] = None
+    
+    # Selected default monster template (by template_id) for editing in 'Show Default'
+    selected_default_template_id: Optional[str] = None
+    # Selected default player class for editing in 'Show Default'
+    selected_default_player_class: Optional[str] = None
     
     # Live inventory drag/drop and selection
     entities: Optional[List[int]] = None
@@ -43,6 +54,10 @@ class InventoryEditorModel:
     @editing_side.setter
     def editing_side(self, value: str):
         self.items_panel_model.tabs.active_tab = value
+        # Clear template selection when leaving default side
+        if value != 'default':
+            self.selected_default_template_id = None
+            self.selected_default_player_class = None
 
     @property
     def grid_model(self) -> InventoryitemsPanelModel:
@@ -63,7 +78,13 @@ class InventoryEditorModel:
     @current_category.setter
     def current_category(self, value: str):
         self.left_panel_model.current_category = value
-        print(f"[DEBUG][Model] InventoryEditorModel.current_category set to {value}")
+        logger.debug(f"[DEBUG][Model] InventoryEditorModel.current_category set to {value}")
+        # Clear template selection when leaving monsters category
+        if value != 'monsters':
+            self.selected_default_template_id = None
+        # Clear player class selection when leaving player category
+        if value != 'player':
+            self.selected_default_player_class = None
 
     @property
     def selected_eid(self) -> Optional[int]:
@@ -72,7 +93,7 @@ class InventoryEditorModel:
     @selected_eid.setter
     def selected_eid(self, value: Optional[int]):
         self.left_panel_model.selected_eid = value
-        print(f"[DEBUG][Model] InventoryEditorModel.selected_eid set to {value}")
+        logger.debug(f"[DEBUG][Model] InventoryEditorModel.selected_eid set to {value}")
 
     @property
     def camera_focus_target(self) -> Optional[Any]:

@@ -5,6 +5,9 @@ import time
 import pygame
 from roguelike_game.ecs.components.magic_spell_bar_component import MagicSpellBarComponent
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 class PlayerSpellCooldownState(State):
     """Wrapper para cooldown de hechizo del jugador."""
@@ -30,7 +33,7 @@ class PlayerSpellCooldownState(State):
         if elapsed >= duration:
             # Debug del cooldown
             spell_key = self.fsm.context.get('spell', '')
-            print(f"[FSM DEBUG] Eid={entity.id} state PlayerSpellCooldownState -> IdleState (cooldown {elapsed:.2f}s spell={spell_key})")
+            logger.debug(f" Eid={entity.id} state PlayerSpellCooldownState -> IdleState (cooldown {elapsed:.2f}s spell={spell_key})")
             # Recast automático: si automatic y botón sigue presionado, reiniciar la sub-FSM a PrepareSpellState
             if self.fsm.context.get('automatic', False) and pygame.mouse.get_pressed()[0]:                
                 from roguelike_game.ecs.systems.fsm.states.spell.prepare_spell_state import PrepareSpellState

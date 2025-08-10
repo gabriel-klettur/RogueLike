@@ -32,4 +32,16 @@ FOLDER_ICON   = "assets/objects/folder_win.png"
 
 # Patrones de ficheros que nos interesan
 FILE_PATTERNS = ["*.png", "*.PNG", "*.webp", "*.WEBP"]
+
+# --------- Editor rendering constants (avoid magic numbers) ---------
+# Grosor de los rectángulos de contorno en vistas
+OUTLINE_WIDTH = 3
+# Opacidad del relleno hover (0-255)
+HOVER_ALPHA = 60
+# Duración del parpadeo del eyedropper en milisegundos
+EYEDROPPER_BLINK_DURATION_MS = 3000
+# Intervalo del parpadeo del eyedropper en milisegundos
+EYEDROPPER_BLINK_INTERVAL_MS = 300
+# Throttle para actualizaciones parciales de chunks durante el brush (ms)
+BRUSH_UPDATE_THROTTLE_MS = 16
 # Path: src/roguelike_game/systems/editor/tiles/tiles_editor_config.py

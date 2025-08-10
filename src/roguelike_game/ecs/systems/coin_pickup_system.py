@@ -1,14 +1,11 @@
 import os
-from roguelike_game.ecs.components.physical_item_component import PhysicalItemComponent
-from roguelike_game.ecs.components.collectible_component import CollectibleComponent
-from roguelike_game.ecs.components.transform.position import Position
-from roguelike_game.ecs.components.inventory_component import InventoryComponent
 from roguelike_game.ecs.components.item_models import load_items
-from roguelike_game.ecs.components.core.player_tag import PlayerTagComponent
 from roguelike_game.ecs.systems.inventory.inventory_pickup_system import InventoryPickupSystem
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.managers.map.item_drop_manager import ItemDropManager
 
+import logging
+logger = logging.getLogger(__name__)
 
 class CoinPickupSystem:
     """
@@ -61,7 +58,7 @@ class CoinPickupSystem:
             # Si está en rango de colisión
             if dist_sq <= TILE_SIZE * TILE_SIZE:
                 # Añadir al inventario
-                print(f"[CoinPickupSystem] Player {player_eid} recogió {phys.quantity}x {phys.item_id}")
+                logger.debug(f"[CoinPickupSystem] Player {player_eid} recogió {phys.quantity}x {phys.item_id}")
                 inv.add(phys.item_id, phys.quantity)
                 # Persistir inventario
                 for sys in world.update_systems:

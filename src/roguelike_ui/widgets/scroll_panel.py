@@ -13,9 +13,7 @@ class ScrollPanel:
         self.rect = pygame.Rect(0, 0, 0, 0)
 
     def set_items(self, items: list):
-        # Only reset scroll_offset when items change
-        if items != getattr(self, 'items', None):
-            self.scroll_offset = 0
+        # Preserve scroll position; we'll clamp in draw when we know the viewport height
         self.items = items
 
     def handle_event(self, event: pygame.event.Event) -> bool:
@@ -55,6 +53,11 @@ class ScrollPanel:
         # clip to panel
         surface.set_clip(panel_rect)
         line_h = self.font.get_linesize()
+        # Clamp scroll offset to content size to avoid overscroll when items change
+        content_h = len(self.items) * line_h
+        max_off = max(content_h - panel_rect.height, 0)
+        if self.scroll_offset > max_off:
+            self.scroll_offset = max_off
         y = panel_rect.y - self.scroll_offset
         # draw each line
         for line in self.items:

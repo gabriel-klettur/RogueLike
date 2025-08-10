@@ -63,14 +63,14 @@
         "image_path": "assets/buildings/vegetation/tree_3.png",
         "solid": true,
         "scale": [
-            190,
-            241
+            189,
+            239
         ],
         "original_scale": [
-            190,
-            241
+            189,
+            239
         ],
-        "split_ratio": 0.701,
+        "split_ratio": 0.664,
         "z_bottom": 4,
         "z_top": 6,
         "z": 4
@@ -248,8 +248,8 @@
     },
     {
         "zone": "Lobby",
-        "rel_x": 142,
-        "rel_y": 184,
+        "rel_x": 136,
+        "rel_y": 122,
         "image_path": "assets/buildings/shops/magic_tower.png",
         "solid": true,
         "scale": [
@@ -1312,8 +1312,8 @@
     },
     {
         "zone": "Forest",
-        "rel_x": 596,
-        "rel_y": 242,
+        "rel_x": 374,
+        "rel_y": 572,
         "image_path": "assets/buildings\\vegetation\\tree_3.PNG",
         "solid": true,
         "scale": [
@@ -1324,15 +1324,15 @@
             184,
             235
         ],
-        "split_ratio": 0.5,
+        "split_ratio": 0.685,
         "z_bottom": 3,
-        "z_top": 5,
+        "z_top": 6,
         "z": 3
     },
     {
         "zone": "Forest",
-        "rel_x": 596,
-        "rel_y": 375,
+        "rel_x": 246,
+        "rel_y": 472,
         "image_path": "assets/buildings\\vegetation\\tree_1.PNG",
         "solid": true,
         "scale": [
@@ -1350,8 +1350,8 @@
     },
     {
         "zone": "Forest",
-        "rel_x": 487,
-        "rel_y": 397,
+        "rel_x": 416,
+        "rel_y": 434,
         "image_path": "assets/buildings\\vegetation\\tree_1.PNG",
         "solid": true,
         "scale": [
@@ -1369,8 +1369,8 @@
     },
     {
         "zone": "Forest",
-        "rel_x": 312,
-        "rel_y": 369,
+        "rel_x": 306,
+        "rel_y": 325,
         "image_path": "assets/buildings\\vegetation\\tree_10.PNG",
         "solid": true,
         "scale": [
@@ -1464,8 +1464,8 @@
     },
     {
         "zone": "Forest",
-        "rel_x": 864,
-        "rel_y": 333,
+        "rel_x": 681,
+        "rel_y": 738,
         "image_path": "assets/buildings\\vegetation\\tree_3.PNG",
         "solid": true,
         "scale": [
@@ -1593,6 +1593,44 @@
         "split_ratio": 0.671,
         "z_bottom": 3,
         "z_top": 5,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 153,
+        "rel_y": 698,
+        "image_path": "assets/buildings\\mine.png",
+        "solid": true,
+        "scale": [
+            204,
+            204
+        ],
+        "original_scale": [
+            204,
+            204
+        ],
+        "split_ratio": 0.275,
+        "z_bottom": 3,
+        "z_top": 5,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 36,
+        "rel_y": 389,
+        "image_path": "assets/buildings\\vegetation\\tree_9.PNG",
+        "solid": true,
+        "scale": [
+            251,
+            324
+        ],
+        "original_scale": [
+            251,
+            324
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 6,
         "z": 3
     }
 ]

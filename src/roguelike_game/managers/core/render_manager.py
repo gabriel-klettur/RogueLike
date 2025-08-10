@@ -1,10 +1,11 @@
 import pygame
 from roguelike_engine.utils.mouse import draw_mouse_crosshair
 from roguelike_engine.utils.benchmark import benchmark
-from roguelike_engine.utils.debug import DebugOverlay, render_debug_overlay
+from roguelike_engine.debuger.debug import DebugOverlay, render_debug_overlay
 from roguelike_engine.config.config_tiles import TILE_SIZE
 import roguelike_engine.config.config as config
 from types import SimpleNamespace
+from roguelike_ui.ui_blocker import clear_blockers
 
 # Sistema de orden Z
 from roguelike_engine.z_layer.render import render_z_ordered
@@ -82,6 +83,7 @@ class RendererManager:
         def _init_and_cleaning():
             screen.fill((0, 0, 0))
             self._dirty_rects = []
+            clear_blockers()
         _init_and_cleaning()
 
         # 1) Map
@@ -136,7 +138,11 @@ class RendererManager:
         # 8) Minimap
         @benchmark(perf_log, "3.8. minimap")
         def _bench_minimap():
-            if not self.tiles_editor.editor_state.active:
+            if (
+                not self.tiles_editor.editor_state.active
+                and not (hasattr(state, 'entities_editor_state') and state.entities_editor_state.visible)
+                and not (hasattr(state, 'inventory_editor_state') and getattr(state.inventory_editor_state, 'visible', False))
+            ):
                 self._render_minimap(screen)
         _bench_minimap()
 
@@ -323,6 +329,12 @@ class RendererManager:
         # Cachea el overlay de ayuda para evitar renderizado de texto cada frame
         screen = self.screen
         size = screen.get_size()
+        # Ocultar la leyenda de comandos cuando un editor de superposición está visible
+        # (Entities Editor, Inventory Editor, etc.)
+        if hasattr(state, 'entities_editor_state') and getattr(state.entities_editor_state, 'visible', False):
+            return
+        if hasattr(state, 'inventory_editor_state') and getattr(state.inventory_editor_state, 'visible', False):
+            return
         if self.map_editor.editor_state.active:
             mode = 'map'
         elif self.buildings_editor.editor_state.active:
@@ -362,7 +374,7 @@ class RendererManager:
                 ]
             else:
                 lines = ["Normal Mode:", "ESC: Menu", "[IN DUNGEON] Red area expand dungeon", "F8:Tiles Editor", "F9: Debug Mode","F10: Buildings Editor",
-                         "F11: Map Editor", "F12: Entities Editor",                         
+                         "F11: Map Editor", "F5: Entities Editor",                         
                          "E: Slash","X: Healing", "Mouse left: Fire Ball", "Mouse right: Slash",
                          "Mouse middle: Laser Beam"
                          ]

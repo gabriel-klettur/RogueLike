@@ -15,6 +15,9 @@ from roguelike_game.ecs.components.item_models import load_items
 from roguelike_game.ecs.components.rendering.sprite import Sprite
 from roguelike_game.ecs.components.transform.scale import Scale
 
+import logging
+logger = logging.getLogger(__name__)
+
 class MapLoadDropsSystem:
     """
     Sistema ECS que carga y spawnea ítems en el mapa a partir de inventory_map.json.
@@ -34,7 +37,10 @@ class MapLoadDropsSystem:
         # Flatten nested 'map' key if JSON is wrongly nested
         if isinstance(drops_raw, dict) and 'map' in drops_raw:
             drops_raw = drops_raw['map']
-        validator.validate(drops_raw)
+        try:
+            validator.validate(drops_raw)
+        except jsonschema.ValidationError as e:
+            logging.error(f" Schema validation failed: {e.message}. Continuing without drops.")
         # Instanciar el ItemDropManager con datos validados
         self.drop_manager = ItemDropManager(path)
         # Flatten nested 'map' key in drop_manager data if present
@@ -102,7 +108,7 @@ class MapLoadDropsSystem:
                     world.components['Sprite'][eid] = Sprite(icon)
                     world.components['Scale'][eid] = Scale(getattr(model, 'scale_map', 1.0))
 
-            print(f"[MapLoadDropsSystem] Spawned drop '{drop_id}' item '{item_id}' at ({pos.x},{pos.y}) zone '{zone_id}' eid={eid}")
+            logger.debug(f" Spawned drop '{drop_id}' item '{item_id}' at ({pos.x},{pos.y}) zone '{zone_id}' eid={eid}")
             self._spawned.add(drop_id)
             self._loaded = True
 

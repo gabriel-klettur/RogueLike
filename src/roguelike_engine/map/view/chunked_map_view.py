@@ -3,7 +3,10 @@ import math
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.map.model.map_model import Map as MapModel
 from roguelike_engine.map.model.layer import Layer
-from roguelike_engine.tile.assets import get_sprite_for_tile
+from roguelike_engine.tile.utils.loader import get_sprite_for_tile
+
+import logging
+logger = logging.getLogger(__name__)
 
 # Cache scaled sprites per (sprite, zoom)
 _SCALED_CACHE: dict[tuple[pygame.Surface, float], pygame.Surface] = {}
@@ -20,7 +23,7 @@ class ChunkedMapView:
         self.chunks_by_zoom: dict[float, dict[tuple[int,int], pygame.Surface]] = {}
 
     def _build_chunk_surfaces(self, map_model: MapModel, zoom: float):
-        print(f"[DEBUG][ChunkedMapView] _build_chunk_surfaces called for zoom {zoom}")
+        logger.debug(f" _build_chunk_surfaces called for zoom {zoom}")
         """
         Pre-dibuja cada chunk (bloque de tiles) en una surface escalada
         y la guarda en self.chunks_by_zoom[zoom].
@@ -53,7 +56,7 @@ class ChunkedMapView:
 
         # Debug: imprimir claves sin sprite en sprite_map
         missing = [k for k, s in sprite_map.items() if s is None]
-        print(f"[DEBUG][ChunkedMapView] claves sin sprite: {missing}")
+        logger.debug(f" claves sin sprite: {missing}")
         layers_ordered = sorted(map_model.layers.keys(), key=lambda l: l.value)
         for cy in range(n_chunks_y):
             for cx in range(n_chunks_x):
@@ -79,7 +82,7 @@ class ChunkedMapView:
                                 continue
                             sprite = sprite_map.get((char, code))
                             if sprite is None:
-                                print(f"[DEBUG][ChunkedMapView] sin sprite para tile ({ty},{tx}) char={char}, code={code}")
+                                logger.debug(f" sin sprite para tile ({ty},{tx}) char={char}, code={code}")
                             if not sprite:
                                 continue
                             # scaled cache
@@ -99,7 +102,7 @@ class ChunkedMapView:
         self.chunks_by_zoom[zoom] = chunk_dict
 
     def invalidate_cache(self):
-        print(f"[DEBUG][ChunkedMapView] invalidate_cache called")
+        logger.debug(f" invalidate_cache called")
         """Forzar reconstrucción de todos los chunks en el próximo render."""
         self.chunks_by_zoom.clear()
 
@@ -127,8 +130,7 @@ class ChunkedMapView:
                     if x >= len(row_str):
                         continue
                     key = (row_str[x], code)
-                    if key not in sprite_map:
-                        from roguelike_engine.tile.assets import get_sprite_for_tile
+                    if key not in sprite_map:                        
                         sprite_map[key] = get_sprite_for_tile(row_str[x], code)
         # Rebuild each affected chunk
         for row, col in set(cells):
@@ -169,7 +171,7 @@ class ChunkedMapView:
         camera,
         map_model: MapModel
     ) -> list[pygame.Rect]:
-        #print(f"[DEBUG][ChunkedMapView] render called for zoom {round(camera.zoom*10)/10.0}, cache keys: {list(self.chunks_by_zoom.keys())}")
+        #logger.debug(f" render called for zoom {round(camera.zoom*10)/10.0}, cache keys: {list(self.chunks_by_zoom.keys())}")
         """
         Dibuja únicamente los chunks visibles según la cámara,
         devolviendo la lista de dirty rects.

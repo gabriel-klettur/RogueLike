@@ -36,6 +36,7 @@ class MonsterBuilder:
 
     def build(self, x: int, y: int, monster_type: str) -> int:
         world = self.world
+
         _load_caches_once()
         cfg = MONSTER_DEFS[monster_type]
         eid = world.create_entity()

@@ -42,6 +42,24 @@ def test_swap_positions_updates_assets_and_view(setup_controller):
     assert controller.view.assets == controller.assets
 
 
+def test_swap_positions_invalidates_cache(setup_controller, monkeypatch):
+    controller, *_ = setup_controller
+    # Prepare assets and fake cache attributes
+    controller.assets = [('a', None, False, None), ('b', None, False, None)]
+    controller.view.assets = controller.assets
+    controller.view.assets_cache_surf = object()
+    controller.view.assets_cache_size = (2, 1)
+    # Prevent actual file I/O
+    import builtins, io, json
+    monkeypatch.setattr(builtins, 'open', lambda *args, **kwargs: io.StringIO())
+    monkeypatch.setattr(json, 'dump', lambda *args, **kwargs: None)
+    # Perform swap
+    controller.swap_positions(0, 1)
+    # Cache attributes should be removed
+    assert not hasattr(controller.view, 'assets_cache_surf')
+    assert not hasattr(controller.view, 'assets_cache_size')
+
+
 def test_is_over_true_and_false(setup_controller):
     controller, *_ = setup_controller
     # Setup picker_state surface and pos
