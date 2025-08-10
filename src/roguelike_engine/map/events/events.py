@@ -4,6 +4,9 @@ import pygame
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
 
+import logging
+logger = logging.getLogger(__name__)
+
 # ─── Helpers ─────────────────────────────────────────────────────────────
 
 def _next_zone_key(base='extra_dungeon') -> tuple[str, str]:
@@ -91,5 +94,5 @@ def handle_expand_dungeon(event, map_manager, entities) -> bool:
         entities.player.x = new_tx * TILE_SIZE + sub_x
         entities.player.y = new_ty * TILE_SIZE + sub_y
 
-    print(f"🗺️ Añadida zona '{new_key}' conectada a '{parent_key}' y recargando mapa...")
+    logger.debug(f"🗺️ Añadida zona '{new_key}' conectada a '{parent_key}' y recargando mapa...")
     return True

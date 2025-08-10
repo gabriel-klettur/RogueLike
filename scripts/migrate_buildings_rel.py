@@ -4,6 +4,8 @@ import os
 from roguelike_engine.config.config import BUILDINGS_DATA_PATH
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.config.map_config import global_map_settings
+import logging
+logger = logging.getLogger(__name__)
 
 def migrate():
     # 1) Leer datos actuales
@@ -38,7 +40,7 @@ def migrate():
     with open(BUILDINGS_DATA_PATH, 'w', encoding='utf-8') as f:
         json.dump(new_data, f, ensure_ascii=False, indent=4)
 
-    print(f"Migración completada. Backup del original en: {backup}")
+    logger.info(f"Migración completada. Backup del original en: {backup}")
 
 if __name__ == "__main__":
     migrate()

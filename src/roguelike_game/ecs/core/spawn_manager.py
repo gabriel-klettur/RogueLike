@@ -12,6 +12,9 @@ from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.ecs.components.spawn.spawn_request import SpawnRequest
 from typing import Any
 
+import logging
+logger = logging.getLogger(__name__)
+
 # Extra padding para seguridad de spawn en tiles
 SPAWN_PADDING_EXTRA = 1
 
@@ -41,13 +44,23 @@ class SpawnNPCManager:
         # Precompute prototipos de sprite y colliders
         proto_sprites: dict[str, Any] = {}
         proto_colliders: dict[str, Any] = {}
+        from roguelike_game.factories.monster.sprite_loader import create_sprite_component
         for variant in barbol_variants:
             cfg_var = MONSTER_DEFS[variant]
-            raw_surf = _SPRITE_SURFACES[variant].get("down")
-            dummy = type("Proto", (), {})()
-            dummy.image = raw_surf
+            # Crear un sprite seguro (usa placeholder si no hay assets)
+            try:
+                sprite, _ = create_sprite_component(variant)
+                dummy = type("Proto", (), {})()
+                dummy.image = getattr(sprite, 'image', None)
+            except Exception:
+                import pygame
+                dummy = type("Proto", (), {})()
+                ph = pygame.Surface((16, 16), pygame.SRCALPHA)
+                ph.fill((0, 0, 0, 255))
+                dummy.image = ph
             proto_sprites[variant] = dummy
             proto_colliders[variant] = create_collider_components(dummy, cfg_var)
+
         # Calcular padding de spawn según collider de pies de la variante base
         feet = proto_colliders.get("barbol").colliders.get("feet")
         radius = max(feet.width, feet.height) / 2
@@ -57,7 +70,7 @@ class SpawnNPCManager:
         # 3) Spawn en LOBBY
         positions = find_spawn_positions(self.map_manager, self.buildings, lobby_offset,
                                          zone_size, neighbor_padding=neighbor_padding, sample_count=10)
-        print(f"[SpawnManager][Spawn] Lobby: candidatos={len(positions)}")
+        logger.debug(f" Lobby: candidatos={len(positions)}")
         for tx, ty in positions:
             variant = random.choice(barbol_variants)
             cfg_var = MONSTER_DEFS[variant]
@@ -96,7 +109,7 @@ class SpawnNPCManager:
 
         empty_positions = find_spawn_positions(self.map_manager, self.buildings, empty_offset,
                                                zone_size, neighbor_padding=neighbor_padding, sample_count=100)
-        print(f"[SpawnManager][Spawn] Empty Left: candidatos={len(empty_positions)}")
+        logger.debug(f" Empty Left: candidatos={len(empty_positions)}")
         for tx, ty in empty_positions:
             variant = random.choice(barbol_variants)
             cfg_var = MONSTER_DEFS[variant]

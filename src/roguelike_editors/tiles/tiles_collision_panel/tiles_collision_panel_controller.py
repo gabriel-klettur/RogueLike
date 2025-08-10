@@ -1,6 +1,8 @@
 from roguelike_editors.tiles.tiles_collision_panel.tiles_collision_panel_view import TilesCollisionPanelView
-import pygame
-from roguelike_engine.config.config_tiles import TILE_SIZE
+
+import logging
+logger = logging.getLogger(__name__)
+
 
 class TilesCollisionPanelController:
     """Controller for the Tiles Collision Panel"""
@@ -58,7 +60,7 @@ class TilesCollisionPanelController:
                         grid[local_r][local_c] = ts.collision_choice
                         self.editor_controller._pending_collision_zones.add(zone_name)
                     else:
-                        print(f"[Warning] Colisión fuera de rango en zona '{zone_name}': local=({local_r},{local_c}), tamaño=({len(grid)},{len(grid[0])})")
+                        logger.warning(f"Colisión fuera de rango en zona '{zone_name}': local=({local_r},{local_c}), tamaño=({len(grid)},{len(grid[0])})")
         # Update view for all painted cells
         if cells:
             game_map.view.update_chunks(game_map, camera, cells)

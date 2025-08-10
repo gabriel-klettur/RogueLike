@@ -42,8 +42,37 @@ from roguelike_engine.z_layer.state import ZState
 from roguelike_game.managers.ecs import ECSManager
 from roguelike_game.managers.items.loader import ItemsLoader
 
+import logging
+logger = logging.getLogger(__name__)
 
 class GameInitializer:
+
+    @classmethod
+    def create_and_initialize(
+        cls,
+        game,
+        screen,
+        perf_log=None,
+        map_name: str = None,
+        loading_bg: str | None = None,
+        extra_stages: list[tuple] | None = None,
+        extra_systems_stages: list[tuple] | None = None
+    ) -> "GameInitializer":
+        """
+        Fábrica estática que construye y ejecuta la inicialización completa.
+        """
+        inst = cls(
+            game=game,
+            screen=screen,
+            perf_log=perf_log,
+            map_name=map_name,
+            loading_bg=loading_bg,
+            extra_stages=extra_stages,
+            extra_systems_stages=extra_systems_stages
+        )
+        inst.initialize()
+        return inst
+
     def __init__(self, game, screen, perf_log, map_name, loading_bg,
                  extra_stages, extra_systems_stages):
         self.game                   = game
@@ -61,13 +90,11 @@ class GameInitializer:
         self.stage_log_path = logs_dir / f'stage_times_{ts}.log'
         with open(self.stage_log_path, 'w', encoding='utf-8') as f:
             f.write(f"[{datetime.now().isoformat()}] Inicio de inicialización\n")
-        logging.basicConfig(
-            filename=str(self.stage_log_path),
-            filemode='a',
-            format='%(asctime)s %(message)s',
-            datefmt='[%Y-%m-%dT%H:%M:%S]',
-            level=logging.INFO
-        )
+        # Añadir FileHandler para log de etapas
+        fh = logging.FileHandler(self.stage_log_path, mode='a', encoding='utf-8')
+        fh.setLevel(logging.INFO)
+        fh.setFormatter(logging.Formatter('%(asctime)s %(message)s', datefmt='[%Y-%m-%dT%H:%M:%S]'))
+        logging.getLogger().addHandler(fh)
 
     def initialize(self):
         self.game.loader = LoadingScreen(self.screen, self.loading_bg)
@@ -95,7 +122,7 @@ class GameInitializer:
             ("Cargando editor de mapa"          , partial(self._init_map_editor)),
             ("Cargando editor de inventario"    , partial(self._init_inventory_editor)),
             ("Cargando editor de entidades"     , partial(self._init_entities_editor)),
-                ("Cargando editor de hechizos"      , partial(self._init_spells_editor)),
+            ("Cargando editor de hechizos"      , partial(self._init_spells_editor)),
             ("Cargando minimapa"                , partial(self._init_minimap)),
 
             ("Inicializando renderizador"       , partial(self._init_renderer)),
@@ -117,7 +144,7 @@ class GameInitializer:
             base = getattr(fn, 'func', fn)
             name = getattr(base, '__qualname__',
                            getattr(base, '__name__', str(base)))
-            logging.info(f"[StageDetail] {msg}: {elapsed:.4f}s [{name}]")
+            logger.info(f"[{name}]: {msg}: {elapsed:.4f}s")
 
             if msg == "Cargando estado de mundo":
                 self._handle_deferred_levels()
@@ -142,7 +169,7 @@ class GameInitializer:
         try:
             self.game.world.load_world()
         except Exception as e:
-            print(f"[GameInitializer] Error al cargar mundo: {e}")
+            logger.error(f"Error al cargar mundo: {e}")
 
     def _handle_deferred_levels(self):
         g = self.game
@@ -215,18 +242,15 @@ class GameInitializer:
     def _init_ecs(self):
         g = self.game
         pr = cProfile.Profile()
-        pr.enable()
-        t0 = time.perf_counter()
+        pr.enable()        
         g.ecs = ECSManager(self.screen, g.map, g.buildings, self.perf_log)
-        g.ecs.ecs_world.state = g.state
-        elapsed = time.perf_counter() - t0
+        g.ecs.ecs_world.state = g.state        
         pr.disable()
-
         logf = Path('logs') / f'ecs_init_profile_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log'
         with open(logf, 'w') as pf:
             p = pstats.Stats(pr, stream=pf)
             p.sort_stats('tottime').print_stats(30)
-        logging.info(f"[Profiling] ECS init: {elapsed:.4f}s -> {logf}")
+        
 
     def _init_items(self):
         """Carga catálogo de ítems y assets de ítems para todo el juego"""

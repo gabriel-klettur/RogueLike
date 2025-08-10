@@ -1,5 +1,6 @@
 import pygame
-from roguelike_game.config.players_config import PLAYER_ASSETS
+import importlib
+import roguelike_game.config.players_config as players_config
 
 
 class ClassSelectorManager:
@@ -10,12 +11,28 @@ class ClassSelectorManager:
         self.state = state
         self.input_config = input_config
         self.screen = screen
-        # Options from configuration keys
-        self.options = list(PLAYER_ASSETS.keys())
+        # Options from configuration keys (refreshed from JSON)
+        self.options = []
+        self.refresh_options()
         self.selected = 0
         self.show = False
         self.font = pygame.font.SysFont("Arial", font_size)
         self.padding = 10
+
+    def refresh_options(self):
+        """Reload players_config and refresh available class options."""
+        try:
+            importlib.reload(players_config)
+            opts = list(players_config.PLAYER_ASSETS.keys())
+            self.options = opts
+            # Clamp selected index
+            if self.options:
+                self.selected %= len(self.options)
+            else:
+                self.selected = 0
+        except Exception:
+            # In case of transient JSON edits, keep previous options
+            pass
 
     def handle_input(self, event):
         # Handle mouse click on class options
@@ -55,6 +72,8 @@ class ClassSelectorManager:
         return None
 
     def draw(self):
+        # Ensure options reflect latest JSON when the selector is visible
+        self.refresh_options()
         # Semi-transparent overlay
         overlay = pygame.Surface(self.screen.get_size(), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 128))

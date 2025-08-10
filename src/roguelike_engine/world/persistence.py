@@ -1,6 +1,9 @@
 from pathlib import Path
 from typing import Any, Dict
 
+import logging
+logger = logging.getLogger(__name__)
+
 # Usa orjson si está disponible para acelerar parsing
 try:
     import orjson as _json
@@ -39,5 +42,5 @@ def load_world_state(path: str) -> Dict[str, Any]:
         return _json.loads(raw)
     except Exception as e:
         # Error en parsing JSON, ignorar y retornar estado vacío
-        print(f"[persistence] Error cargando estado mundial JSON en {load_path}: {e}")
+        logger.warning(f"[persistence] Error cargando estado mundial JSON en {load_path}: {e}")
         return {}

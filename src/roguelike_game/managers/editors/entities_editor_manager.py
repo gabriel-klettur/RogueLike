@@ -1,46 +1,42 @@
 import pygame
 from pathlib import Path
-from roguelike_ui.services.json_persistence import load_from_json
-from roguelike_engine.utils.loader import load_image
-from roguelike_editors.entities.editor_controller import EntityEditorController
+from roguelike_editors.entities.entities_editor_model import EntitiesEditorModel
+from roguelike_editors.entities.entities_editor_controller import EntitiesEditorController
+from roguelike_editors.entities.entities_editor_events import EntitiesEditorEventHandler
 
 class EntitiesEditorManager:
     """
-    Manager para el editor de entidades: carga datos, assets y delega a EntityEditorController
+    Manager para el editor de entidades: orquesta todo el MVC.
     """
     def __init__(self, game):
         self.game = game
         font = game.font
-        # Cargar datos de jugadores y monstruos
-        players_path = Path('data') / 'entities' / 'players.json'
-        players_root = load_from_json(str(players_path))
-        player_stats = players_root.get('PLAYER_STATS', {})
-        monsters_path = Path('data') / 'entities' / 'monsters.json'
-        monsters = load_from_json(str(monsters_path))
-        # Cargar assets (sprites "down")
-        assets = {}
-        for pid in player_stats:
-            try:
-                assets[pid] = load_image(f'assets/npc/player/{pid}/{pid}_1_down.png')
-            except Exception as e:
-                print(f'[EntityEditor] Error cargando sprite de player {pid}: {e}')
-        for mid, mdef in monsters.items():
-            path = mdef.get('sprites', {}).get('down')
-            if path:
-                try:
-                    assets[mid] = load_image(path)
-                except Exception as e:
-                    print(f'[EntityEditor] Error cargando sprite de monster {mid}: {e}')
-        # Instanciar controlador
-        self.controller = EntityEditorController(player_stats, monsters, assets, font)
-        self.model = self.controller.model
-        # Exponer en el estado global
+        # Inicializar MVC
+        self.model = EntitiesEditorModel(Path('data'))
+        self.controller = EntitiesEditorController(self.model, font)
+        # Permitir spawn: referencia al juego para crear entidades
+        self.controller.game = self.game
+        # Permitir spawn: referencia al juego para crear entidades
+        self.event_handler = EntitiesEditorEventHandler(self.model, self.controller)
+        # Registrar estado global
         game.state.entities_editor_state = self.model
 
     def handle_event(self, event: pygame.event.Event) -> None:
-        """Delegar evento al controlador"""
-        self.controller.handle_event(event)
+        """
+        Delegar eventos al handler MVC (incluye toggle F6/Esc y panning).
+        """
+        self.event_handler.handle([event], self.game.camera, getattr(self.game, 'map', None))
+
+    def update(self, camera, game_map=None) -> None:
+        """
+        Actualizar controlador si el editor está activo.
+        """
+        if self.model.active:
+            self.controller.update(camera, game_map)
 
     def draw(self, screen: pygame.Surface) -> None:
-        """Delegar renderizado"""
-        self.controller.draw(screen)
+        """
+        Renderizar editor si está activo.
+        """
+        if self.model.active:
+            self.controller.render(screen)

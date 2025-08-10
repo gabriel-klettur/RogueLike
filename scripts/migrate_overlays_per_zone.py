@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import json
 from pathlib import Path
+import logging
+logger = logging.getLogger(__name__)
 
 from roguelike_engine.config.config import DATA_DIR
 from roguelike_engine.config.map_config import global_map_settings
@@ -9,7 +11,7 @@ def main():
     # Ruta al overlay global actual
     global_path = Path(DATA_DIR) / "tiles" / "tiles.json"
     if not global_path.is_file():
-        print(f"⚠️ No se encontró tiles.json: {global_path}")
+        logger.error(f"⚠️ No se encontró tiles.json: {global_path}")
         return
 
     # Cargar matriz completa
@@ -27,7 +29,7 @@ def main():
         sub = [ row[ox:ox + w] for row in overlay[oy:oy + h] ]
         out = zones_dir / f"{zone}.overlay.json"
         out.write_text(json.dumps(sub, ensure_ascii=False, indent=2), encoding="utf-8")
-        print(f"✅ Overlay de zona '{zone}' escrito en {out}")
+        logger.info(f"✅ Overlay de zona '{zone}' escrito en {out}")
 
 if __name__ == "__main__":
     main()

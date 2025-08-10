@@ -9,6 +9,11 @@ from roguelike_game.managers.core.shutdown_manager import ShutdownManager
 from roguelike_game.managers.core.initializer import GameInitializer
 
 class Game:
+    
+    #!---------------------------------------------------------------------------------------------------------------------
+    #!-------------------------------------------------- INICIALIZACION ---------------------------------------------------
+    #!---------------------------------------------------------------------------------------------------------------------
+    
     def __init__(
         self,
         screen,
@@ -27,7 +32,7 @@ class Game:
         self.extra_systems_stages= extra_systems_stages or []
 
         # 2) Inicialización completa        
-        self.initializer = GameInitializer(
+        self.initializer = GameInitializer.create_and_initialize(
             game=self,
             screen=screen,
             perf_log=perf_log,
@@ -35,14 +40,15 @@ class Game:
             loading_bg=loading_bg,
             extra_stages=self.extra_stages,
             extra_systems_stages=self.extra_systems_stages
-        )
-        self.initializer.initialize()
+        )        
 
         # 3) Bucle principal y gestor de cierre        
         self.loop             = GameLoop(self)
         self.shutdown_manager = ShutdownManager(self)
         
-
+    #!---------------------------------------------------------------------------------------------------------------------
+    #!-------------------------------------------------- LOOP PRINCIPAL ---------------------------------------------------
+    #!---------------------------------------------------------------------------------------------------------------------
 
     @benchmark(lambda self: self.perf_log, "1.TOTAL: HANDLE EVENTS")
     def handle_events(self):
@@ -50,8 +56,7 @@ class Game:
         return
  
     @benchmark(lambda self: self.perf_log, "2.TOTAL: UPDATE")
-    def update(self):
-        # Pause game update when inventory editor is open
+    def update(self):        
         if self.inventory_editor.model.visible:
             return
         if hasattr(self, 'entities_editor') and self.entities_editor.model.visible:
@@ -96,6 +101,10 @@ class Game:
         # Render consola
         self.console_view.render(self.screen)
 
+    #!---------------------------------------------------------------------------------------------------------------------
+    #!-------------------------------------------------- LOOP ECS ---------------------------------------------------------
+    #!---------------------------------------------------------------------------------------------------------------------
+
     @benchmark(lambda self: self.perf_log, "4.2. ECS - update")
     def update_ecs(self):
         # Pause ECS update when inventory editor is open
@@ -111,13 +120,23 @@ class Game:
     def render_ecs(self):
         self.ecs.render(self.screen, self.camera)
     
+    #!---------------------------------------------------------------------------------------------------------------------
+    #!-------------------------------------------------- BUCLE PRINCIPAL --------------------------------------------------
+    #!---------------------------------------------------------------------------------------------------------------------
+    
     def run(self):
         """Arranca el bucle principal."""
         self.loop.run()
 
+
+    #!---------------------------------------------------------------------------------------------------------------------
+    #!-------------------------------------------------- SHUTDOWN ---------------------------------------------------------
+    #!---------------------------------------------------------------------------------------------------------------------
+
     def shutdown(self):
         """Guarda todo y cierra."""
         self.shutdown_manager.shutdown()
+
 
 
 # Si ejecutas este módulo directamente:

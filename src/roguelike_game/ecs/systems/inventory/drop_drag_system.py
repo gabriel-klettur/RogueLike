@@ -5,6 +5,8 @@ from roguelike_game.ecs.systems.inventory.inventory_pickup_system import Invento
 from roguelike_game.ecs.systems.inventory.inventory_ui_system import InventoryUISystem
 from roguelike_game.managers.map.item_drop_manager import ItemDropManager
 
+import logging
+logger = logging.getLogger(__name__)
 
 class DropDragSystem:
     """
@@ -62,7 +64,7 @@ class DropDragSystem:
             # Actualizar drop en JSON
             phys = comps['PhysicalItemComponent'][self.dragging_eid]
             pos = comps['Position'][self.dragging_eid]
-            print(f"[DropDragSystem][DEBUG] Updating drop {phys.drop_id} to position ({pos.x:.2f},{pos.y:.2f})")
+            logger.debug(f"[DropDragSystem][DEBUG] Updating drop {phys.drop_id} to position ({pos.x:.2f},{pos.y:.2f})")
             self.drop_manager.update_drop(phys.drop_id, position=pos)
             self.dragging_eid = None
             return            

@@ -3,6 +3,8 @@
 import os
 import json
 from pathlib import Path
+import logging
+logger = logging.getLogger(__name__)
 
 # 1) Definimos la raíz del proyecto y rutas
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -28,7 +30,7 @@ def main():
     os.makedirs(OUTPUT.parent, exist_ok=True)
     with open(OUTPUT, 'w', encoding='utf-8') as out:
         json.dump(mapping, out, ensure_ascii=False, indent=2)
-    print(f'[Tiles][Generate Tiles Dictionary] Wrote tiles dictionary to {OUTPUT}')
+    logger.info(f' Wrote tiles dictionary to {OUTPUT}')
 
 if __name__ == '__main__':
     main()

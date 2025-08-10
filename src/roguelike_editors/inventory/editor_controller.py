@@ -1,11 +1,9 @@
 import pygame
-import os
-import json
 import logging
+logger = logging.getLogger(__name__)
 from .data_controller import DataController
 
-from roguelike_engine.config.config import DATA_DIR, PROJECT_ROOT
-from roguelike_ui.services.json_persistence import load_from_json
+
 
 from roguelike_editors.inventory.left_panel.panel_controller import PanelController
 from roguelike_editors.inventory.right_panel.inventory_items_panel.inventory_items_panel_controller import InventoryItemsPanelController
@@ -18,6 +16,8 @@ from roguelike_editors.inventory.left_panel.panel_event_handler import PanelEven
 from roguelike_editors.inventory.editor_model import InventoryEditorModel
 
 from roguelike_editors.inventory.editor_view import InventoryEditorView
+from roguelike_editors.inventory.inventory_title.inventory_title_controller import InventoryTitleController
+from roguelike_editors.inventory.inventory_title.inventory_title_model import InventoryTitleModel
 
 
 class InventoryEditorController:
@@ -31,6 +31,11 @@ class InventoryEditorController:
         self.assets = assets
         self.font = font
         self.view = InventoryEditorView(assets, font)
+        # Título del editor (MVC)
+        self.title_model = InventoryTitleModel()
+        self.title_controller = InventoryTitleController(self, self.title_model, self.font)
+        # Asociar title controller a la vista para que renderice y obtenga el rect
+        self.view.title_controller = self.title_controller
         # Panel MVC para listado de entidades
         self.inventory_panel_controller = PanelController(self, self.view.inventory_panel_model)
         # Asociar controlador a la vista
@@ -45,6 +50,9 @@ class InventoryEditorController:
         # Load inventory JSON data via DataController
         self.data_controller = DataController(self.model)
         self.data_controller.load_data()
+        # Exponer rutas de JSON para controladores hijos (p.ej., SaveController)
+        # Tolerar stubs de tests que no definan 'paths'
+        self.paths = getattr(self.data_controller, 'paths', {})
 
 
     def handle_event(self, event):
@@ -56,26 +64,26 @@ class InventoryEditorController:
 
     def debug_dump(self):
         """
-        [DEBUG][Controller] Volcado completo del estado del InventoryEditorController.
+         Volcado completo del estado del InventoryEditorController.
         """
         m = self.model
-        print("[DEBUG][Controller] InventoryEditorController.debug_dump:")
-        print(f"  visible: {m.visible}")
-        print(f"  entities: {m.entities}")
-        print(f"  selected_eid: {m.selected_eid}")
-        print(f"  editing_property: {m.editing_property}")
-        print(f"  editing_index: {m.editing_index}")
-        print(f"  drag_item: {m.drag_item}")
-        print(f"  drag_slot: {m.drag_slot}")
-        print(f"  scroll_offset: {m.scroll_offset}")
-        print(f"  left_panel_model: {m.left_panel_model}")
-        print(f"  items_panel_model: {m.items_panel_model}")
-        print(f"  item_selection_panel_model: {m.item_selection_panel_model}")
-        print(f"  inventory_panel_controller: {self.inventory_panel_controller}")
-        print(f"  grid_controller: {self.grid_controller}")
-        print(f"  inventory_panel_view: {self.view.inventory_panel_view}")
-        print(f"  grid_view: {self.view.grid_view}")
-        print(f"  item_panel_view: {self.view.item_panel_view}")
+        logger.debug(" InventoryEditorController.debug_dump:")
+        logger.debug(f"  visible: {m.visible}")
+        logger.debug(f"  entities: {m.entities}")
+        logger.debug(f"  selected_eid: {m.selected_eid}")
+        logger.debug(f"  editing_property: {m.editing_property}")
+        logger.debug(f"  editing_index: {m.editing_index}")
+        logger.debug(f"  drag_item: {m.drag_item}")
+        logger.debug(f"  drag_slot: {m.drag_slot}")
+        logger.debug(f"  scroll_offset: {m.scroll_offset}")
+        logger.debug(f"  left_panel_model: {m.left_panel_model}")
+        logger.debug(f"  items_panel_model: {m.items_panel_model}")
+        logger.debug(f"  item_selection_panel_model: {m.item_selection_panel_model}")
+        logger.debug(f"  inventory_panel_controller: {self.inventory_panel_controller}")
+        logger.debug(f"  grid_controller: {self.grid_controller}")
+        logger.debug(f"  inventory_panel_view: {self.view.inventory_panel_view}")
+        logger.debug(f"  grid_view: {self.view.grid_view}")
+        logger.debug(f"  item_panel_view: {self.view.item_panel_view}")
 
     def draw(self, screen):
         """

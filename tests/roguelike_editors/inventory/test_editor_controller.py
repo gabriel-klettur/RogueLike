@@ -1,8 +1,10 @@
-import pytest
 from types import SimpleNamespace
 import roguelike_editors.inventory.editor_controller as ec_mod
 from roguelike_editors.inventory.editor_controller import InventoryEditorController
 from roguelike_editors.inventory.editor_model import InventoryEditorModel
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 def test_init_calls_load_data(monkeypatch):
@@ -63,7 +65,7 @@ def test_debug_dump_prints(monkeypatch):
         grid_controller='gc',
         view=SimpleNamespace(inventory_panel_view='ipv', grid_view='gv', item_panel_view='ipv2'))
     logs = []
-    monkeypatch.setattr('builtins.print', lambda *args, **kwargs: logs.append(' '.join(str(a) for a in args)))
+    monkeypatch.setattr(ec_mod.logger, 'debug', lambda msg: logs.append(msg))
     InventoryEditorController.debug_dump(ctrl)
     assert any('InventoryEditorController.debug_dump' in line for line in logs)
     assert any('visible: True' in line for line in logs)

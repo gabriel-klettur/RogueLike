@@ -4,6 +4,9 @@ from roguelike_game.ecs.systems.fsm.state import State
 from roguelike_game.ecs.components.transform.velocity import Velocity
 from roguelike_game.ecs.components.rendering.flash_component import FlashComponent
 
+import logging
+logger = logging.getLogger(__name__)
+
 class DamageState(State):
     """
     Estado de impacto: muestra sprite de daño y pausa breve, luego transita al siguiente estado.
@@ -19,7 +22,7 @@ class DamageState(State):
         world = entity.world
         # Detener movimiento
         world.components['Velocity'][eid] = Velocity(0, 0)
-        print(f"[DamageState] Entity {eid} stopped for damage; from_left={self.from_left}")
+        logger.debug(f"[DamageState] Entity {eid} stopped for damage; from_left={self.from_left}")
         # Aplicar flash blanco
         damage_cfg = world.components['DamageConfig'][eid]
         world.components.setdefault('FlashComponent', {})[eid] = FlashComponent((255,255,255), damage_cfg.duration)
@@ -40,13 +43,13 @@ class DamageState(State):
         elapsed = time.time() - self.start_time
         damage_cfg = entity.world.components['DamageConfig'][entity.id]
         if elapsed >= damage_cfg.duration:
-            print(f"[DamageState] Entity {entity.id} switching to next state after {elapsed:.2f}s")
+            logger.debug(f"[DamageState] Entity {entity.id} switching to next state after {elapsed:.2f}s")
             entity.world.components['NPCState'][entity.id].fsm.change_state(self.next_state, entity)
 
     def exit(self, entity):
         eid = entity.id
         world = entity.world
-        print(f"[DamageState] Entity {eid} exiting damage state")
+        logger.debug(f"[DamageState] Entity {eid} exiting damage state")
         # Clear any remaining flash
         world.components.get('FlashComponent', {}).pop(eid, None)
         # Restore animation state before damage

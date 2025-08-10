@@ -1,0 +1,719 @@
+{
+  "ORIGINAL_SPRITE_SIZE": [
+    128,
+    128
+  ],
+  "RENDERED_SPRITE_SIZE": [
+    64,
+    64
+  ],
+  "DEFAULT_CLASS": "dwarf",
+  "DEFAULT_SCALE": 1.0,
+  "DEFAULT_SPEED": 5,
+  "DEFAULT_TRAIL": {
+    "interval": 0.1,
+    "life_time": 0.5,
+    "max_trails": 10
+  },
+  "FEET_WIDTH_DIVISOR": 2,
+  "FEET_HEIGHT_DIVISOR": 4,
+  "ANIMATION_INTERVAL": 0.15,
+  "INITIAL_ANIMATION_STATE": "down_idle",
+  "MELEE_WEAPON": {
+    "damage": 1,
+    "cooldown": 1.0
+  },
+  "players": {
+    "classes": {
+      "dwarf": {
+        "stats": {
+          "max_strength": 200,
+          "max_intelligence": 35,
+          "max_dexterity": 90,
+          "initial_strength": 45,
+          "initial_intelligence": 45,
+          "initial_dexterity": 45,
+          "basic_speed": 4,
+          "basic_attack": 1,
+          "basic_armor": 5,
+          "basic_trail": {
+            "interval": 0.1,
+            "life_time": 0.2,
+            "max_trails": 100
+          },
+          "basic_death_timer_duration": 10.0
+        },
+        "assets": {
+          "active_set": "sets",
+          "sets": {
+            "sprites_set": {
+              "idle": [
+                "assets/characters/dwarf/dwarf_idle.png"
+              ],
+              "walk": [
+                "characters/dwarf/dwarf_walking.png"
+              ],
+              "chase": [],
+              "cast ": [],
+              "attack": [],
+              "damage": [],
+              "death": [],
+              "cast": []
+            },
+            "sprites_data_set": {
+              "scale_idle": 0.5,
+              "scale_walk": 0.5,
+              "scale_chase": 0.5,
+              "scale_cast": 0.5,
+              "scale_attack": 0.5,
+              "scale_damage": 0.5,
+              "scale_death": 0.5,
+              "tint": null
+            }
+          },
+          "no-sets": {
+            "idle": {
+              "s": "assets/items/ChatGPT Image Jul 25, 2025, 05_14_20 PM.png",
+              "se": "assets/items/ChatGPT Image Jul 25, 2025, 10_38_33 AM.png",
+              "e": "assets/items/exp_orb_1.png",
+              "ne": "assets/items/ChatGPT Image Jul 25, 2025, 04_18_18 PM.png",
+              "n": "assets/items/backpack_close.png",
+              "nw": "assets/items/wizard_staff_lvl_1.png",
+              "w": "assets/items/ChatGPT Image Jul 25, 2025, 03_51_51 PM.png",
+              "sw": "assets/items/ChatGPT Image Jul 25, 2025, 10_42_17 AM.png"
+            },
+            "walk": {
+              "s": "assets/items/ChatGPT Image Jul 25, 2025, 05_14_20 PM.png",
+              "se": "assets/items/ChatGPT Image Jul 25, 2025, 10_38_33 AM.png",
+              "e": "assets/items/exp_orb_1.png",
+              "ne": "assets/items/ChatGPT Image Jul 25, 2025, 04_18_18 PM.png",
+              "n": "assets/items/backpack_close.png",
+              "nw": "assets/items/wizard_staff_lvl_1.png",
+              "w": "assets/items/ChatGPT Image Jul 25, 2025, 03_51_51 PM.png",
+              "sw": "assets/items/ChatGPT Image Jul 25, 2025, 10_42_17 AM.png"
+            },
+            "chase": {
+              "s": "assets/items/ChatGPT Image Jul 25, 2025, 05_14_20 PM.png",
+              "se": "assets/items/ChatGPT Image Jul 25, 2025, 10_38_33 AM.png",
+              "e": "assets/items/exp_orb_1.png",
+              "ne": "assets/items/ChatGPT Image Jul 25, 2025, 04_18_18 PM.png",
+              "n": "assets/items/backpack_close.png",
+              "nw": "assets/items/wizard_staff_lvl_1.png",
+              "w": "assets/items/ChatGPT Image Jul 25, 2025, 03_51_51 PM.png",
+              "sw": "assets/items/ChatGPT Image Jul 25, 2025, 10_42_17 AM.png"
+            },
+            "attack": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "death": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "damage": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "cast": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "sprites_data_no-set": {
+              "scale": 0.35,
+              "death_scale": 0.5,
+              "tint": null,
+              "scale_idle": 0.5,
+              "scale_walk": 0.5,
+              "scale_chase": 0.5,
+              "scale_cast": 0.5,
+              "scale_attack": 0.5,
+              "scale_damage": 0.5,
+              "scale_death": 0.55
+            }
+          }
+        },
+        "max_strength": 1000
+      },
+      "valkyrie": {
+        "stats": {
+          "max_strength": 90,
+          "max_intelligence": 35,
+          "max_dexterity": 100,
+          "initial_strength": 45,
+          "initial_intelligence": 45,
+          "initial_dexterity": 45,
+          "basic_speed": 7,
+          "basic_attack": 2,
+          "basic_armor": 1,
+          "basic_trail": {
+            "interval": 0.1,
+            "life_time": 0.5,
+            "max_trails": 50
+          },
+          "basic_death_timer_duration": 8.0
+        },
+        "assets": {
+          "sets": {
+            "active_set": "sets",
+            "sprites_set": {
+              "idle": [
+                "characters/valkyrie/valkyrie_idle.png"
+              ],
+              "walk": [
+                "characters/valkyrie/valkyrie_walking.png"
+              ],
+              "chase": [],
+              "cast": [],
+              "attack": [],
+              "damage": [],
+              "death": []
+            },
+            "sprites_data_set": {
+              "scale_idle": 0.5,
+              "scale_walk": 0.5,
+              "scale_chase": 0.5,
+              "scale_cast": 0.5,
+              "scale_attack": 0.5,
+              "scale_damage": 0.5,
+              "scale_death": 0.5
+            }
+          },
+          "no-sets": {
+            "idle": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "walk": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "chase": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "attack": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "death": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "damage": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "cast": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "sprites_data_no-set": {
+              "scale": 0.35,
+              "death_scale": 0.5,
+              "tint": null
+            }
+          },
+          "active_set": "sets"
+        }
+      },
+      "mague": {
+        "stats": {
+          "max_strength": 100,
+          "max_intelligence": 100,
+          "max_dexterity": 25,
+          "initial_strength": 45,
+          "initial_intelligence": 45,
+          "initial_dexterity": 45,
+          "basic_speed": 5,
+          "basic_attack": 1,
+          "basic_armor": 0,
+          "basic_trail": {
+            "interval": 0.2,
+            "life_time": 0.5,
+            "max_trails": 50
+          },
+          "basic_death_timer_duration": 8.0
+        },
+        "assets": {
+          "active_set": "sets",
+          "sets": {
+            "sprites_set": {
+              "idle": [
+                "characters/mague/mague_idle.png"
+              ],
+              "walk": [
+                "characters/mague/mague_walking.png"
+              ],
+              "chase": [],
+              "cast": [],
+              "attack": [],
+              "damage": [],
+              "death": []
+            },
+            "sprites_data_set": {
+              "scale_idle": 0.5,
+              "scale_walk": 0.5,
+              "scale_chase": 0.5,
+              "scale_cast": 0.5,
+              "scale_attack": 0.5,
+              "scale_damage": 0.5,
+              "scale_death": 0.5
+            }
+          },
+          "no-sets": {
+            "idle": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "chase": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "attack": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "death": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "damage": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "cast": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "sprites_data_no-set": {
+              "scale": 0.35,
+              "death_scale": 0.5,
+              "tint": null
+            }
+          }
+        }
+      },
+      "elven": {
+        "stats": {
+          "max_strength": 70,
+          "max_intelligence": 55,
+          "max_dexterity": 100,
+          "initial_strength": 45,
+          "initial_intelligence": 45,
+          "initial_dexterity": 45,
+          "basic_speed": 6,
+          "basic_attack": 2,
+          "basic_armor": 1,
+          "basic_trail": {
+            "interval": 0.1,
+            "life_time": 0.3,
+            "max_trails": 50
+          },
+          "basic_death_timer_duration": 8.0
+        },
+        "assets": {
+          "active_set": "sets",
+          "sets": {
+            "sprites_set": {
+              "idle": [
+                "characters/elven/elven_idle.png"
+              ],
+              "walk": [
+                "characters/elven/elven_walking.png"
+              ],
+              "chase": [],
+              "cast": [],
+              "attack": [],
+              "damage": [],
+              "death": []
+            },
+            "sprites_data_set": {
+              "scale_idle": 0.5,
+              "scale_walk": 0.5,
+              "scale_chase": 0.5,
+              "scale_cast": 0.5,
+              "scale_attack": 0.5,
+              "scale_damage": 0.5,
+              "scale_death": 0.5
+            }
+          },
+          "no-sets": {
+            "idle": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "walk": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "chase": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "attack": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "death": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "damage": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "cast": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "sprites_data_no-set": {
+              "scale": 0.35,
+              "death_scale": 0.5,
+              "tint": null
+            }
+          }
+        }
+      },
+      "barbarian": {
+        "stats": {
+          "max_strength": 150,
+          "max_intelligence": 25,
+          "max_dexterity": 100,
+          "initial_strength": 45,
+          "initial_intelligence": 45,
+          "initial_dexterity": 45,
+          "basic_speed": 5,
+          "basic_attack": 2,
+          "basic_armor": 2,
+          "basic_trail": {
+            "interval": 0.1,
+            "life_time": 0.3,
+            "max_trails": 50
+          },
+          "basic_death_timer_duration": 8.0
+        },
+        "assets": {
+          "active_set": "sets",
+          "sets": {
+            "sprites_set": {
+              "idle": [
+                "characters/barbarian/barbarian_idle.png"
+              ],
+              "walk": [
+                "characters/barbarian/barbarian_walking.png"
+              ],
+              "chase": [],
+              "cast": [],
+              "attack": [],
+              "damage": [],
+              "death": []
+            },
+            "sprites_data_set": {
+              "scale_idle": 0.5,
+              "scale_walk": 0.5,
+              "scale_chase": 0.5,
+              "scale_cast": 0.5,
+              "scale_attack": 0.5,
+              "scale_damage": 0.5,
+              "scale_death": 0.5
+            },
+            "no-sets": {
+              "idle": {
+                "s": null,
+                "se": null,
+                "e": null,
+                "ne": null,
+                "n": null,
+                "nw": null,
+                "w": null,
+                "sw": null
+              },
+              "walk": {
+                "s": null,
+                "se": null,
+                "e": null,
+                "ne": null,
+                "n": null,
+                "nw": null,
+                "w": null,
+                "sw": null
+              },
+              "chase": {
+                "s": null,
+                "se": null,
+                "e": null,
+                "ne": null,
+                "n": null,
+                "nw": null,
+                "w": null,
+                "sw": null
+              },
+              "attack": {
+                "s": null,
+                "se": null,
+                "e": null,
+                "ne": null,
+                "n": null,
+                "nw": null,
+                "w": null,
+                "sw": null
+              },
+              "death": {
+                "s": null,
+                "se": null,
+                "e": null,
+                "ne": null,
+                "n": null,
+                "nw": null,
+                "w": null,
+                "sw": null
+              },
+              "damage": {
+                "s": null,
+                "se": null,
+                "e": null,
+                "ne": null,
+                "n": null,
+                "nw": null,
+                "w": null,
+                "sw": null
+              },
+              "cast": {
+                "s": null,
+                "se": null,
+                "e": null,
+                "ne": null,
+                "n": null,
+                "nw": null,
+                "w": null,
+                "sw": null
+              }
+            }
+          },
+          "no-sets": {
+            "idle": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "walk": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "chase": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "attack": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "death": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "damage": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "cast": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "sprites_data_no-set": {
+              "scale": 0.35,
+              "death_scale": 0.5,
+              "tint": null
+            }
+          }
+        },
+        "max_strength": 150
+      }
+    }
+  }
+}

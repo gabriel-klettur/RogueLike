@@ -7,6 +7,9 @@ from .interfaces import OverlayStore
 from roguelike_engine.config.config import DATA_DIR
 from roguelike_engine.config.map_config import global_map_settings
 
+import logging
+logger = logging.getLogger(__name__)
+
 class JsonOverlayStore(OverlayStore):
     """
     Implementación de OverlayStore que persiste en JSON files,
@@ -28,7 +31,7 @@ class JsonOverlayStore(OverlayStore):
         if zone_path.is_file():
             with open(zone_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                print(f"[DEBUG][JsonOverlayStore] load zone '{zone_name}', data_type={type(data)}, rows={len(data) if isinstance(data, list) else 'n/a'}")
+                logger.debug(f" load zone '{zone_name}', data_type={type(data)}, rows={len(data) if isinstance(data, list) else 'n/a'}")
                 return data
         return None
 
@@ -41,4 +44,4 @@ class JsonOverlayStore(OverlayStore):
         out_path = self.zones_dir / f"{zone_name}.overlay.json"
         with open(out_path, "w", encoding="utf-8") as f:
             json.dump(overlay, f, ensure_ascii=False, indent=2)
-            print(f"[DEBUG][JsonOverlayStore] saved zone '{zone_name}', data_type={type(overlay)}, rows={len(overlay) if isinstance(overlay, list) else 'n/a'}")
+            logger.debug(f" saved zone '{zone_name}', data_type={type(overlay)}, rows={len(overlay) if isinstance(overlay, list) else 'n/a'}")

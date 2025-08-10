@@ -1,0 +1,14 @@
+{
+  "mon1": {
+    "assets": {
+      "no-sets": {},
+      "sets": {
+        "sprites_set": {
+          "idle": [
+            "dummy.png"
+          ]
+        }
+      }
+    }
+  }
+}

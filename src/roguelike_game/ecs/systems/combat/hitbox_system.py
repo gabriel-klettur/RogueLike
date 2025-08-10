@@ -8,6 +8,9 @@ from roguelike_game.ecs.systems.fsm.states.monster.alert_chase_state import Aler
 from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
 from roguelike_game.ecs.systems.fsm.fsm_system import _EntityProxy
 
+import logging
+logger = logging.getLogger(__name__)
+
 class HitboxSystem:
     """
     ECS system that processes HitboxComponent: decrements lifespan,
@@ -89,7 +92,7 @@ class HitboxSystem:
                         continue
                 identity = world.components.get('Identity', {}).get(target)
                 name = identity.name if identity else 'Unknown'
-                print(f"[DEBUG][HitboxSystem] Hit! target {target} ({name}), hp_before={healths[target].current_hp}, damage={hb.damage}")
+                logger.debug(f"[DEBUG][HitboxSystem] Hit! target {target} ({name}), hp_before={healths[target].current_hp}, damage={hb.damage}")
                 # apply damage
                 health = healths[target]
                 health.current_hp = max(0, health.current_hp - hb.damage)

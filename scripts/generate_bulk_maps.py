@@ -1,6 +1,8 @@
 import sys
 import os
 import pygame
+import logging
+logger = logging.getLogger(__name__)
 
 # Inicializar pantalla para que convert_alpha() funcione
 pygame.init()
@@ -13,7 +15,7 @@ from roguelike_engine.map.core.manager import build_map
 
 def generate_bulk_maps(n=100):
     for i in range(n):
-        print(f"🔁 Generando mapa {i + 1} de {n}")
+        logger.info(f"🔁 Generando mapa {i + 1} de {n}")
         build_map()
 
 if __name__ == "__main__":

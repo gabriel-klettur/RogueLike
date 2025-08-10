@@ -2,10 +2,14 @@
 import os
 import json
 import pygame
+import logging
 
 from roguelike_engine.config.config import BUILDINGS_DATA_PATH
 from roguelike_game.entities.buildings.building import Building
 from roguelike_game.systems.editor.buildings.utils.zone_helpers import assign_zone_and_relatives
+
+
+logger = logging.getLogger(__name__)
 
 def main():
     # Inicializar pygame para poder cargar imágenes
@@ -15,7 +19,7 @@ def main():
 
     filepath = BUILDINGS_DATA_PATH
     if not os.path.isfile(filepath):
-        print(f"⚠️  Archivo no encontrado: {filepath}")
+        logger.warning("Archivo no encontrado: %s", filepath)
         return
 
     # Cargar datos existentes
@@ -53,10 +57,11 @@ def main():
             entry.pop('y', None)
 
             changed = True
-            print(f"✅ Asignada zona '{b.zone}' y relativos ({b.rel_x}, {b.rel_y}) a '{b.image_path}'")
+            logger.info("Asignada zona '%s' y relativos (%d, %d) a '%s'",
+                        b.zone, b.rel_x, b.rel_y, b.image_path)
 
     if not changed:
-        print("ℹ️  Ningún edificio sin zona encontrado.")
+        logger.info("Ningún edificio sin zona encontrado.")
         return
 
     # Hacer backup y guardar los cambios
@@ -65,7 +70,7 @@ def main():
     with open(filepath, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
 
-    print(f"✅ Cambios guardados en {filepath} (respaldo en {backup})")
+    logger.info("Cambios guardados en %s (respaldo en %s)", filepath, backup)
 
 if __name__ == '__main__':
     main()

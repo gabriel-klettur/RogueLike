@@ -24,7 +24,7 @@ Leer (o crear si no existe) el JSON completo.
 Para cada building_id, inyectar collision_map: list[list[str]] en el objeto edificio.
 
 ## 3. Modelo y estado  ✅ Completado
-En BuildingsEditorState:
+En BuildingsEditorModel:
 Añadir flags idénticos al tile‐editor:
 collision_picker_open, collision_choice, collision_picker_rects, collision_picker_pos, dragging, etc.
 Cada objeto edificio en memoria llevará su propia collision_map.

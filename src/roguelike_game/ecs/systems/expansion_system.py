@@ -10,6 +10,11 @@ from roguelike_engine.config.map_config import global_map_settings
 from roguelike_game.ecs.core.spatial_index import SpatialIndex
 from roguelike_game.ecs.utils.collider_utils import build_collider_rect
 
+import logging
+logger = logging.getLogger(__name__)
+
+import logging
+logger = logging.getLogger(__name__)
 
 class ExpansionSystem:
     def __init__(self, perf_log):
@@ -59,7 +64,7 @@ class ExpansionSystem:
                                         for dx in (-1,0,1) for dy in (-1,0,1)]
             state.expand_area_start_time = None
             state.last_area_print_time = None  # Init print timer
-            print(f"[ExpansionTrigger] Coords iniciales: {state.expand_area_coords}")
+            logger.debug(f" Coords iniciales: {state.expand_area_coords}")
 
         # 2) Detección y trigger de expansión
         if hasattr(state, 'expand_area_coords'):
@@ -86,7 +91,7 @@ class ExpansionSystem:
                 # Print once per second
                 if state.last_area_print_time is None or now - state.last_area_print_time >= 1.0:
                     elapsed = (now - state.expand_area_start_time) if state.expand_area_start_time else 0.0
-                    print(f"[ExpansionTrigger] Dentro área, tiempo transcurrido: {elapsed:.2f}s")
+                    logger.debug(f" Dentro área, tiempo transcurrido: {elapsed:.2f}s")
                     state.last_area_print_time = now
                 # Control de temporizador de expansión
                 if state.expand_area_start_time is None:
@@ -131,7 +136,7 @@ class ExpansionSystem:
                                 max_d, far_center = d, c
                     state.expand_area_coords = [(far_center[0]+dx, far_center[1]+dy)
                                                 for dx in (-1,0,1) for dy in (-1,0,1)]
-                    print(f"[ExpansionTrigger] Nueva área coords (path): {state.expand_area_coords}")
+                    logger.debug(f" Nueva área coords (path): {state.expand_area_coords}")
             else:
                 # Fuera del área: reset timers
                 state.expand_area_start_time = None

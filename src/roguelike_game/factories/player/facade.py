@@ -7,7 +7,8 @@ from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.factories.player.loader import load_and_scale_sprites, extract_initial_frame
 from roguelike_game.factories.player.calibrator import calibrate_tile_position
 from roguelike_game.factories.player.builder import PlayerBuilder
-from roguelike_game.factories.player.config import DEFAULT_CLASS
+import importlib
+import roguelike_game.factories.player.config as player_cfg
 
 
 @register_factory("player")
@@ -16,7 +17,11 @@ class PlayerFactory(Factory):
 
     def create(self, world, *, x: int | None = None, y: int | None = None,
                tile_x: int | None = None, tile_y: int | None = None,
-               class_player: str = DEFAULT_CLASS) -> int:
+               class_player: str | None = None) -> int:
+        # Reload config and resolve default class at runtime
+        importlib.reload(player_cfg)
+        if not class_player:
+            class_player = player_cfg.DEFAULT_CLASS
         # Compatibilidad para tests: usar ManagerClass.spawn_player_tile si se ha sobrecargado
         from roguelike_game.ecs.core.manager import ECSWorld as ManagerClass
         override_cls = getattr(ManagerClass, 'ECSWorld', None)

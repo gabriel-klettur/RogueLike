@@ -1,7 +1,7 @@
 from roguelike_engine.config.config_tiles import TILE_SIZE
-from roguelike_game.ecs.components.items.teleport_component import TeleportComponent
-from roguelike_game.ecs.components.transform.position import Position
-from roguelike_game.ecs.components.core.player_tag import PlayerTagComponent
+
+import logging
+logger = logging.getLogger(__name__)
 
 class TeleportSystem:
     """
@@ -28,6 +28,6 @@ class TeleportSystem:
             dx = player_pos.x - item_pos.x
             dy = player_pos.y - item_pos.y
             if dx*dx + dy*dy <= TILE_SIZE * TILE_SIZE:
-                print(f"[TeleportSystem] Teleporting player to {tp.dest_map} at ({tp.dest_x}, {tp.dest_y})")
+                logger.debug(f"[TeleportSystem] Teleporting player to {tp.dest_map} at ({tp.dest_x}, {tp.dest_y})")
                 # TODO: integrar con el gestor de mapas para cambiar de nivel
                 break

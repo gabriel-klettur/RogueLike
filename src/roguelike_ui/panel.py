@@ -27,13 +27,13 @@ class DraggablePanel(PanelSurface):
         event: pygame event
         header_rect: pygame.Rect defining draggable area
         """
-        if event.type == pygame.MOUSEBUTTONDOWN and header_rect and header_rect.collidepoint(event.pos):
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3 and header_rect and header_rect.collidepoint(event.pos):
             self.dragging = True
             mx, my = event.pos
             ox = mx - (self.pos[0] if self.pos else 0)
             oy = my - (self.pos[1] if self.pos else 0)
             self.drag_offset = (ox, oy)
-        elif event.type == pygame.MOUSEBUTTONUP and self.dragging:
+        elif event.type == pygame.MOUSEBUTTONUP and event.button == 3 and self.dragging:
             self.dragging = False
         elif event.type == pygame.MOUSEMOTION and self.dragging:
             mx, my = event.pos

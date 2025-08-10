@@ -17,6 +17,9 @@ from roguelike_game.ecs.systems.fsm.states.player.player_spell_select_state impo
 from roguelike_game.ecs.systems.fsm.fsm_system import _EntityProxy
 from roguelike_game.config.input_config import InputConfig
 
+import logging
+logger = logging.getLogger(__name__)
+
 class InputSystem:
     """
     Captura el estado del teclado y actualiza InputComponent y Velocity.
@@ -78,7 +81,7 @@ class InputSystem:
             inp.move_x = int(keys[move_right]) - int(keys[move_left])
             inp.move_y = int(keys[move_down]) - int(keys[move_up])
             inp.attack = bool(keys[attack_key])
-            #print(f"[DEBUG][{time.time():.3f}] eid={eid} move=({inp.move_x},{inp.move_y}), click={inp.click}")
+            #logger.debug(f"[DEBUG][{time.time():.3f}] eid={eid} move=({inp.move_x},{inp.move_y}), click={inp.click}")
             # Actualizar velocidad según MovementSpeed
             vel = world.components.get('Velocity', {}).get(eid)
             ms = world.components.get('MovementSpeed', {}).get(eid)
@@ -132,14 +135,14 @@ class InputSystem:
                 state = self.prev_spell_keys.get((eid,name), 0)
                 ts = time.time()
                 if curr and state == 0:
-                    print(f'[DEBUG][{ts:.3f}] eid={eid} botón presionado -> {name}')
+                    logger.debug(f'[DEBUG][{ts:.3f}] eid={eid} botón presionado -> {name}')
                     world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell=name)
                     state = 1
                 elif curr and state == 1:
-                    print(f'[DEBUG][{ts:.3f}] eid={eid} botón mantenido apretado -> {name}')
+                    logger.debug(f'[DEBUG][{ts:.3f}] eid={eid} botón mantenido apretado -> {name}')
                     state = 2
                 elif not curr and state > 0:
-                    print(f'[DEBUG][{ts:.3f}] eid={eid} botón soltado    -> {name}')
+                    logger.debug(f'[DEBUG][{ts:.3f}] eid={eid} botón soltado    -> {name}')
                     state = 0
                 self.prev_spell_keys[(eid,name)] = state
 
@@ -178,7 +181,7 @@ class InputSystem:
             dragging = dragging_items or dragging_ui
 
             if dragging:
-                print(f"[DEBUG] [InputSystem] input suppressed due to UI drag (dragging_items={dragging_items}, dragging_ui={dragging_ui})")
+                logger.debug(f"[DEBUG] [InputSystem] input suppressed due to UI drag (dragging_items={dragging_items}, dragging_ui={dragging_ui})")
                 inp.click = False
                 self.prev_click[eid] = False
                 curr_right = False
@@ -196,7 +199,7 @@ class InputSystem:
                 # Lanzar el beam con click del medio
                 middle = pygame.mouse.get_pressed()[1]
                 if middle:
-                    print(f"[DEBUG][{time.time():.3f}] eid={eid} middle-click -> laser_beam")
+                    logger.debug(f"[DEBUG][{time.time():.3f}] eid={eid} middle-click -> laser_beam")
                     world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='laser_beam')
                 # Detectar dash (right-click) por flanco ascendente
                 curr_right = bool(pygame.mouse.get_pressed()[2])
@@ -206,9 +209,9 @@ class InputSystem:
                     for s in getattr(world, 'render_systems', []):
                         if isinstance(s, InventoryUISystem) and s.panel_rect and s.panel_rect.collidepoint(pygame.mouse.get_pos()):
                             curr_right = False
-                            print(f"[DEBUG] [InputSystem] suppressed initial dash on inventory panel")
+                            logger.debug(f"[DEBUG] [InputSystem] suppressed initial dash on inventory panel")
                             break
                 if curr_right and not prev_r:
-                    print(f"[DEBUG][{time.time():.3f}] eid={eid} right-click -> dash")
+                    logger.debug(f"[DEBUG][{time.time():.3f}] eid={eid} right-click -> dash")
                     world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='dash')
                 self.prev_right[eid] = curr_right
