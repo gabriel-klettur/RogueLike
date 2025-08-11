@@ -27,5 +27,10 @@ def handle_event(model: DiagnosticsOverlayModel, view: DiagnosticsOverlayView, e
                     else:
                         model.collapsed_groups.add(group_id)
                     model.reset_panel()
+                    # Persist collapsed state across sessions
+                    try:
+                        model.save_persisted_state()
+                    except Exception:
+                        pass
                     return True
     return False

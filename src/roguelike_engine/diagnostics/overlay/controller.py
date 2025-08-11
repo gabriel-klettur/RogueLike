@@ -140,6 +140,7 @@ class DiagnosticsOverlayController:
     ):
         model = self.model
         lines: List[Tuple[str, str]] = []
+        line_levels: List[Optional[int]] = []
         label_w = value_w = 0
 
         tree = self._build_perf_tree(model.perf_log)
@@ -165,12 +166,16 @@ class DiagnosticsOverlayController:
                     lbl = f"{'  ' * level}{display_label:<20}"
                     val = f"{avg_ms:>6.2f} ms"
                     lines.append((lbl, val))
+                    line_levels.append(level)
                     continue
                 # Render header for multi-item groups
                 name_part = f" {child.get('title')}" if child.get('title') else ""
-                header_lbl = f"{'  ' * level}{gid}{name_part} ({child['count']}):"
+                is_collapsed = gid in model.collapsed_groups
+                indicator = '▶' if is_collapsed else '▼'
+                header_lbl = f"{'  ' * level}{indicator} {gid}{name_part} ({child['count']}):"
                 header_val = f"{child['total']:>6.2f} ms"
                 lines.append((header_lbl, header_val))
+                line_levels.append(level)
                 if gid not in model.collapsed_groups:
                     render_node(child, level + 1)
             # Direct items at this level
@@ -182,6 +187,7 @@ class DiagnosticsOverlayController:
                     lbl = f"{'  ' * level}{display_label:<20}"
                     val = f"{avg_ms:>6.2f} ms"
                     lines.append((lbl, val))
+                    line_levels.append(level)
 
         render_node(tree, 0)
 
@@ -189,13 +195,18 @@ class DiagnosticsOverlayController:
             fps = state.clock.get_fps()
             ft = (1000 / fps) if fps > 0 else 0
             lines.insert(0, ("FrameTime:", f"{ft:0.1f} ms"))
+            line_levels.insert(0, None)
             lines.insert(0, ("FPS:", f"{fps:0.1f}"))
+            line_levels.insert(0, None)
 
         if extra_lines is None and state and camera and map_manager and entities:
             extra_lines = self.get_custom_debug_lines(state, camera, map_manager, entities)
         if extra_lines:
             lines.append(("", ""))
-            lines.extend((text, "") for text in extra_lines)
+            line_levels.append(None)
+            for text in extra_lines:
+                lines.append((text, ""))
+                line_levels.append(None)
 
         # Final width adjust for all lines (single pass)
         font = self.view._get_font(model.font_name, model.font_size)
@@ -205,7 +216,7 @@ class DiagnosticsOverlayController:
             label_w = max(label_w, lw)
             value_w = max(value_w, vw)
 
-        return lines, label_w, value_w
+        return lines, label_w, value_w, line_levels
 
     def draw_borders(self, screen, camera, map_manager):
         # Lobby
@@ -237,8 +248,10 @@ class DiagnosticsOverlayController:
         now = time.perf_counter()
         rebuild = (now - self.model.last_update_time) >= self.model.update_interval
         if rebuild or self.model.panel_surf is None:
-            lines, label_w, value_w = self._build_lines(state, camera, map_manager, entities, extra_lines)
+            lines, label_w, value_w, line_levels = self._build_lines(state, camera, map_manager, entities, extra_lines)
             self.view.rebuild_panel(self.model, position, lines, label_w, value_w)
+            # Store levels aligned with rendered lines for hover highlighting
+            self.model.line_levels = line_levels
             self.model.last_update_time = now
 
         if self.model.panel_surf and self.model.panel_rect:
@@ -252,19 +265,34 @@ class DiagnosticsOverlayController:
                 line_h = self.view.line_height(self.model)
                 local_y = my - self.model.panel_rect.top + self.model.scroll_offset
                 index = local_y // line_h
-                if 0 <= index < len(self.model.line_keys):
-                    start_idx = index
-                    while start_idx > 0 and not self.model.line_keys[start_idx].endswith(':'):
-                        start_idx -= 1
-                    end_idx = start_idx + 1
-                    while end_idx < len(self.model.line_keys) and not self.model.line_keys[end_idx].endswith(':'):
-                        end_idx += 1
-                    end_idx -= 1
-                    rect_x = self.model.panel_rect.left
-                    rect_y = self.model.panel_rect.top - self.model.scroll_offset + start_idx * line_h
-                    rect_w = self.model.panel_rect.width
-                    rect_h = (end_idx - start_idx + 1) * line_h
-                    pygame.draw.rect(screen, (255, 255, 0), pygame.Rect(rect_x, rect_y, rect_w, rect_h), 2)
+                keys = self.model.line_keys
+                levels = getattr(self.model, 'line_levels', [])
+                if 0 <= index < len(keys) and 0 <= index < len(levels):
+                    cur_level = levels[index]
+                    if cur_level is not None:
+                        # Find owning header at level <= current line's level
+                        h = index
+                        while h >= 0:
+                            if keys[h].endswith(':') and levels[h] is not None and levels[h] <= cur_level:
+                                break
+                            h -= 1
+                        if h >= 0 and keys[h].endswith(':'):
+                            header_level = levels[h] or 0
+                            j = h + 1
+                            while j < len(keys):
+                                lv = levels[j] if j < len(levels) else None
+                                # Stop at separators/others (None) or any line at same or shallower level
+                                if lv is None or lv <= header_level:
+                                    break
+                                j += 1
+                            start_idx = h
+                            end_idx = j - 1
+                            if end_idx >= start_idx:
+                                rect_x = self.model.panel_rect.left
+                                rect_y = self.model.panel_rect.top - self.model.scroll_offset + start_idx * line_h
+                                rect_w = self.model.panel_rect.width
+                                rect_h = (end_idx - start_idx + 1) * line_h
+                                pygame.draw.rect(screen, (255, 255, 0), pygame.Rect(rect_x, rect_y, rect_w, rect_h), 2)
 
         if show_borders:
             if not (map_manager and camera):

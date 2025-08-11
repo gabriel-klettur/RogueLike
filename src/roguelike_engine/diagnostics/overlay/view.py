@@ -55,12 +55,14 @@ class DiagnosticsOverlayView:
                 disp = left.strip()[:-1]  # remove trailing ':'
                 if '(' in disp:
                     disp = disp.split('(')[0].strip()
-                # Extract numeric dotted id if present; else use token as-is
+                # Remove visual indicator if present
+                disp = re.sub(r'^[▶▼]\s*', '', disp)
+                # Extract numeric dotted id if present; else use first token
                 m = re.match(r"^(\d+(?:\.\d+)*)\b", disp)
                 if m:
                     group_id = m.group(1)
                 else:
-                    group_id = disp
+                    group_id = disp.split()[0] if disp else ''
                 model.line_keys.append(f"{group_id}:")
             else:
                 model.line_keys.append(left.strip())

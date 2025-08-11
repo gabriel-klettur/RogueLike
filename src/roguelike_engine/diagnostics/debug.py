@@ -42,6 +42,11 @@ class DiagnosticsOverlay:
             update_interval=update_interval,
             scroll_speed=scroll_speed,
         )
+        # Load persisted UI state (collapsed groups)
+        try:
+            self.model.load_persisted_state()
+        except Exception:
+            pass
         self.view = DiagnosticsOverlayView()
         self.controller = DiagnosticsOverlayController(self.model, self.view)
 
