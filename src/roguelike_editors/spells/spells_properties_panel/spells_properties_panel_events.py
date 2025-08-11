@@ -130,11 +130,14 @@ class SpellsPropertiesPanelEventHandler:
                         self.model.focused_property = key
                         self.model.editing_property = key
                         active_id = self.controller._selected_id or self.controller._hovered_id
-                        data = self.controller._spells.get(active_id)
-                        if data is not None:
-                            initial = str(data.get(key, "")) if key != 'id' else str(active_id or "")
+                        if key == 'id':
+                            initial = str(active_id or "")
                         else:
-                            initial = ""
+                            try:
+                                val = self.controller.get_value_for_key(active_id, key) if active_id else None
+                            except Exception:
+                                val = None
+                            initial = str(val if val is not None else "")
                         self.model.editing_text = initial
                         self.model.editing_cursor = len(initial)
                         self.text_input.activate(initial)

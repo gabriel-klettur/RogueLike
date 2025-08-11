@@ -1,4 +1,5 @@
 import pygame
+import json
 from typing import Dict, Any, Optional
 from .spells_properties_panel_models import SpellsPropertiesPanelModel
 from roguelike_editors.entities.services.constants import UI_MARGIN
@@ -128,17 +129,73 @@ class SpellsPropertiesPanelView:
                 display_val = model.editing_text if getattr(model, 'editing_property', None) == k else str(v)
                 entries.append((k, display_val))
         else:
-            order_keys: list[str] = []
-            for k in ("id", "name", "description"):
-                if k in data_map:
-                    order_keys.append(k)
-            for k, v in data_map.items():
-                if k in ("id", "name", "description") or v is None:
-                    continue
-                order_keys.append(k)
-            for k in order_keys:
-                v = data_map.get(k, "")
-                display_val = model.editing_text if getattr(model, 'editing_property', None) == k else str(v)
+            # Helpers for nested display
+            def get_by_path(d: Dict[str, Any], path: str, default: Any = "") -> Any:
+                cur: Any = d
+                for part in path.split('.'):  # dotted path
+                    if not isinstance(cur, dict) or part not in cur:
+                        cur = None
+                        break
+                    cur = cur[part]
+                if cur is None:
+                    # Fallbacks for legacy flat fields
+                    if path == 'vfx.sprite.path':
+                        return d.get('sprite', default)
+                    if path == 'vfx.sprite.scale':
+                        return d.get('scale', default)
+                    # particles fallbacks
+                    fb_map = {
+                        'vfx.particles.count': 'particle_count',
+                        'vfx.particles.dispersion': 'particle_dispersion',
+                        'vfx.particles.colors': 'particle_colors',
+                        'vfx.particles.lifespan': 'particle_lifespan',
+                        'vfx.particles.speed': 'particle_speed',
+                    }
+                    if path in fb_map:
+                        return d.get(fb_map[path], default)
+                    return default
+                return cur
+
+            def fmt_val(v: Any) -> str:
+                if isinstance(v, (dict, list)):
+                    try:
+                        return json.dumps(v, ensure_ascii=False)
+                    except Exception:
+                        return str(v)
+                if v is None:
+                    return ""
+                return str(v)
+
+            # Ordered keys grouped by sections
+            keys: list[str] = []
+            keys += ["id", "name", "type"]
+            keys += [
+                "timings.prepare", "timings.channel", "timings.cooldown",
+            ]
+            keys += [
+                "rules.allow_movement", "rules.lock_cast_direction", "rules.interruptible",
+                "rules.automatic", "rules.automatic_cast_punish",
+            ]
+            keys += [
+                "constraints.max_instances", "constraints.allow_overlap",
+            ]
+            keys += [
+                "effect.damage", "effect.range", "effect.speed", "effect.duration", "effect.lifetime",
+                "effect.radius", "effect.distance", "effect.arc_range_degrees", "effect.buff",
+            ]
+            keys += [
+                "vfx.preset", "vfx.sprite.path", "vfx.sprite.scale",
+                "vfx.particles.count", "vfx.particles.dispersion", "vfx.particles.colors",
+                "vfx.particles.lifespan", "vfx.particles.speed", "vfx.particles.size_range",
+                "vfx.particles.color", "vfx.particles.emit_rate",
+            ]
+            keys += [
+                "meta.offset", "meta.speed_multiplier", "meta.segments",
+            ]
+
+            for k in keys:
+                raw_val = get_by_path(data_map, k, "") if "." in k else data_map.get(k, "")
+                display_val = model.editing_text if getattr(model, 'editing_property', None) == k else fmt_val(raw_val)
                 entries.append((k, display_val))
 
         # Pestañas superiores
@@ -245,17 +302,21 @@ class SpellsPropertiesPanelView:
             pygame.draw.rect(screen, (60, 60, 60), cell_rect)
             pygame.draw.rect(screen, (255, 255, 255), cell_rect, 2)
 
-            # Obtener ruta del icono (icon/icon_small/icon_large)
+            # Obtener ruta del icono principal (vfx.sprite.path o 'sprite' legado)
             data_map_icon = data_map if spell_obj is not None else getattr(model, 'new_spell_draft', {})
             icon_path = None
-            for k in ("icon", "icon_small", "icon_large"):
-                if k in data_map_icon:
-                    val = data_map_icon[k]
-                    if isinstance(val, list):
-                        icon_path = val[0] if val else None
-                    else:
-                        icon_path = val
-                    break
+            # Nested
+            try:
+                vfx = data_map_icon.get('vfx', {}) if isinstance(data_map_icon, dict) else {}
+                if isinstance(vfx, dict):
+                    spr = vfx.get('sprite', {})
+                    if isinstance(spr, dict):
+                        icon_path = spr.get('path')
+            except Exception:
+                icon_path = None
+            # Fallback to flat sprite
+            if not icon_path and isinstance(data_map_icon, dict):
+                icon_path = data_map_icon.get('sprite')
             if icon_path:
                 try:
                     thumb = load_image(str(icon_path), (cell_size - 4, cell_size - 4))
@@ -268,7 +329,7 @@ class SpellsPropertiesPanelView:
                 ph = pygame.Surface((cell_size - 4, cell_size - 4))
                 ph.fill((40, 40, 40))
                 screen.blit(ph, (cell_rect.x + 2, cell_rect.y + 2))
-            label = self.font.render("Spell Image", True, (220, 220, 220))
+            label = self.font.render("Spell Image (vfx.sprite.path)", True, (220, 220, 220))
             screen.blit(label, (cell_rect.right + 10, cell_rect.y + 4))
 
         # Restaurar clip

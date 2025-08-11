@@ -115,10 +115,123 @@ SCHEMA_KEYS: List[str] = [
 ]
 
 
+def _flatten_new_style(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Map new nested schema (timings/rules/constraints/effect/vfx) to flat keys.
+
+    This function is tolerant: it only copies existing keys and ignores unknown ones.
+    """
+    flat: Dict[str, Any] = {}
+    # timings -> *_duration
+    timings = data.get("timings") or {}
+    if isinstance(timings, dict):
+        if "prepare" in timings:
+            flat["prepare_duration"] = timings.get("prepare")
+        if "channel" in timings:
+            flat["channel_duration"] = timings.get("channel")
+        if "cooldown" in timings:
+            flat["cooldown_duration"] = timings.get("cooldown")
+
+    # rules (flat or nested mobility/behavior)
+    rules = data.get("rules") or {}
+    if isinstance(rules, dict):
+        # Flat
+        for k in ("allow_movement", "lock_cast_direction", "interruptible",
+                  "automatic", "automatic_cast_punish"):
+            if k in rules:
+                flat[k] = rules.get(k)
+        # Nested variants
+        mobility = rules.get("mobility") or {}
+        if isinstance(mobility, dict):
+            for k in ("allow_movement", "lock_cast_direction"):
+                if k in mobility:
+                    flat[k] = mobility.get(k)
+        behavior = rules.get("behavior") or {}
+        if isinstance(behavior, dict):
+            if "interruptible" in behavior:
+                flat["interruptible"] = behavior.get("interruptible")
+            if "automatic" in behavior:
+                flat["automatic"] = behavior.get("automatic")
+            if "punish" in behavior:
+                flat["automatic_cast_punish"] = behavior.get("punish")
+
+    # constraints
+    constraints = data.get("constraints") or {}
+    if isinstance(constraints, dict):
+        for k in ("max_instances", "allow_overlap"):
+            if k in constraints:
+                flat[k] = constraints.get(k)
+
+    # effect (generic container)
+    effect = data.get("effect") or {}
+    if isinstance(effect, dict):
+        # Copy recognized keys directly
+        for k in ("speed", "damage", "range", "distance", "radius",
+                  "arc_range_degrees", "duration", "lifetime"):
+            if k in effect:
+                flat[k] = effect.get(k)
+        # Backward compat: mirror lifetime->lifespan
+        if "lifetime" in effect and "lifespan" not in flat:
+            flat["lifespan"] = effect.get("lifetime")
+
+    # vfx: sprite/particles/preset
+    vfx = data.get("vfx")
+    if isinstance(vfx, dict):
+        # Preserve full object in extras later by returning under a special key
+        flat["__vfx_obj__"] = vfx
+        preset = vfx.get("preset")
+        if isinstance(preset, str):
+            flat["vfx"] = preset
+        sprite = vfx.get("sprite") or {}
+        if isinstance(sprite, dict):
+            if "path" in sprite:
+                flat["sprite"] = sprite.get("path")
+            if "scale" in sprite:
+                flat["scale"] = sprite.get("scale")
+        particles = vfx.get("particles") or {}
+        if isinstance(particles, dict):
+            mapping = {
+                "count": "particle_count",
+                "dispersion": "particle_dispersion",
+                "colors": "particle_colors",
+                "lifespan": "particle_lifespan",
+                "speed": "particle_speed",
+                "size_range": "size_range",
+                "color": "color",
+                "emit_rate": "emit_rate",
+                # Allow a generic scale inside particles if provided (not standard but tolerated)
+                "scale": "scale",
+            }
+            for src, dst in mapping.items():
+                if src in particles and dst not in flat:
+                    flat[dst] = particles.get(src)
+    elif isinstance(vfx, str):
+        flat["vfx"] = vfx
+
+    # meta: allow hoisting known flat keys used at runtime (e.g., offset, speed_multiplier, segments)
+    meta = data.get("meta") or {}
+    if isinstance(meta, dict):
+        for k, v in meta.items():
+            if k in SCHEMA_KEYS and k not in flat:
+                flat[k] = v
+
+    return flat
+
+
 def _coerce_types(spell_key: str, data: Dict[str, Any]) -> SpellConfig:
-    """Build a SpellConfig from raw dict, ignoring unknown keys and coercing simple types."""
+    """Build a SpellConfig from raw dict, accepting both legacy flat and new nested formats."""
+    # Start with legacy flat keys
     kwargs: Dict[str, Any] = {k: v for k, v in data.items() if k in SCHEMA_KEYS}
-    extras: Dict[str, Any] = {k: v for k, v in data.items() if k not in kwargs}
+    # Merge in flattened new-style keys (without overwriting explicit legacy values)
+    new_flat = _flatten_new_style(data)
+    for k, v in new_flat.items():
+        if k in ("__vfx_obj__",):
+            continue
+        if k not in kwargs:
+            kwargs[k] = v
+    # Compose extras: original unknowns + preserved vfx object if present
+    extras: Dict[str, Any] = {k: v for k, v in data.items() if k not in SCHEMA_KEYS}
+    if "__vfx_obj__" in new_flat:
+        extras["vfx"] = new_flat["__vfx_obj__"]
     # Basic normalizations
     if isinstance(kwargs.get("size_range"), tuple):
         kwargs["size_range"] = list(kwargs["size_range"])  # json-friendly
@@ -128,6 +241,12 @@ def _coerce_types(spell_key: str, data: Dict[str, Any]) -> SpellConfig:
         kwargs["particle_color"] = list(kwargs["particle_color"])
     if isinstance(kwargs.get("particle_colors"), tuple):
         kwargs["particle_colors"] = list(kwargs["particle_colors"])
+
+    # Lifetime/lifespan normalization: if only one exists, mirror it so both getters work
+    if "lifetime" in kwargs and "lifespan" not in kwargs:
+        kwargs["lifespan"] = kwargs["lifetime"]
+    if "lifespan" in kwargs and "lifetime" not in kwargs:
+        kwargs["lifetime"] = kwargs["lifespan"]
 
     cfg = SpellConfig(key=spell_key, **kwargs, extra=extras)  # type: ignore[arg-type]
     # Minimal required validation

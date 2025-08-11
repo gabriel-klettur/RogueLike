@@ -44,6 +44,60 @@ class SpellsPropertiesPanelController:
         # on_after_commit_edit(key, old_id, new_id, value)
         self.on_after_commit_edit = None
 
+    # --- Nested helpers ---
+    @staticmethod
+    def _get_by_path(data: Dict[str, Any], path: str, default: Any = None) -> Any:
+        if not path or not isinstance(data, dict):
+            return default
+        cur: Any = data
+        for part in path.split('.'):
+            if not isinstance(cur, dict) or part not in cur:
+                return default
+            cur = cur[part]
+        return cur
+
+    @staticmethod
+    def _set_by_path(data: Dict[str, Any], path: str, value: Any) -> None:
+        if not path:
+            return
+        parts = path.split('.')
+        cur: Any = data
+        for p in parts[:-1]:
+            if not isinstance(cur, dict):
+                return
+            if p not in cur or not isinstance(cur[p], dict):
+                cur[p] = {}
+            cur = cur[p]
+        if isinstance(cur, dict):
+            cur[parts[-1]] = value
+
+    def get_value_for_key(self, spell_id: str, key: str) -> Any:
+        data = self._spells.get(spell_id) or {}
+        if '.' in key:
+            return self._get_by_path(data, key, None)
+        return data.get(key)
+
+    @staticmethod
+    def _convert_text_to_type(text: str, old_val: Any) -> Any:
+        if isinstance(old_val, bool):
+            return text.lower() in ("true", "1", "yes", "y", "on")
+        if isinstance(old_val, int) and not isinstance(old_val, bool):
+            try:
+                return int(text)
+            except ValueError:
+                pass
+        if isinstance(old_val, float):
+            try:
+                return float(text)
+            except ValueError:
+                pass
+        # Try generic JSON parse for arrays/objects
+        try:
+            import json as _json
+            return _json.loads(text)
+        except Exception:
+            return text
+
     # --- External linking ---
     def set_spells(self, spells: Dict[str, Any]):
         self._spells = spells
@@ -115,7 +169,11 @@ class SpellsPropertiesPanelController:
             return
         self.model.focused_property = key_to_edit
         self.model.editing_property = key_to_edit
-        initial = str(data.get(key_to_edit, "")) if key_to_edit != 'id' else str(active_id or "")
+        if key_to_edit == 'id':
+            initial = str(active_id or "")
+        else:
+            val = self._get_by_path(data, key_to_edit, None) if '.' in key_to_edit else data.get(key_to_edit, "")
+            initial = str(val if val is not None else "")
         self.model.editing_text = initial
         self.model.editing_cursor = len(initial)
         self.text_input.activate(initial)
@@ -131,16 +189,9 @@ class SpellsPropertiesPanelController:
             path = os.path.join(os.getcwd(), "data", "spells", "spells.json")
             data_json = load_from_json(path)
             entry = data_json.get(spell_id, {}).copy()
-            old_val = entry.get(key)
+            old_val = self._get_by_path(entry, key, None) if '.' in key else entry.get(key)
             try:
-                if isinstance(old_val, bool):
-                    converted = new_text.lower() in ("true", "1", "yes")
-                elif isinstance(old_val, int):
-                    converted = int(new_text)
-                elif isinstance(old_val, float):
-                    converted = float(new_text)
-                else:
-                    converted = new_text
+                converted = self._convert_text_to_type(new_text, old_val)
             except ValueError:
                 converted = new_text
 
@@ -185,12 +236,17 @@ class SpellsPropertiesPanelController:
                         except Exception:
                             logger.exception("[SpellsPropertiesPanel] on_after_commit_edit callback failed")
             else:
-                entry[key] = converted
+                # Write to nested path if needed
+                if '.' in key:
+                    self._set_by_path(entry, key, converted)
+                else:
+                    entry[key] = converted
                 save_to_json(path, spell_id, entry)
                 # Update in-memory
                 self._spells[spell_id] = entry
-                # If sprite changed, refresh asset
-                if key == 'sprite' and isinstance(converted, str):
+                # If sprite changed, refresh asset (support nested vfx.sprite.path)
+                sprite_changed = (key == 'sprite') or (key == 'vfx.sprite.path')
+                if sprite_changed and isinstance(converted, str):
                     try:
                         img = load_image(converted)
                         if callable(self.on_asset_changed):
@@ -225,11 +281,11 @@ class SpellsPropertiesPanelController:
         width = (cell.w if cell else (anchor.w if anchor else 320))
 
         def _on_chosen(asset_path: str):
-            # Persist sprite path and notify
+            # Persist sprite path under vfx.sprite.path and notify
             path = os.path.join(os.getcwd(), "data", "spells", "spells.json")
             data_json = load_from_json(path)
             entry = data_json.get(active_id, {}).copy()
-            entry['sprite'] = asset_path
+            self._set_by_path(entry, 'vfx.sprite.path', asset_path)
             save_to_json(path, active_id, entry)
             self._spells[active_id] = entry
             try:
@@ -239,4 +295,4 @@ class SpellsPropertiesPanelController:
                 logger.exception("[SpellsPropertiesPanel] on_asset_changed callback failed")
             self.assets_picker.hide()
 
-        self.assets_picker.show(key='sprite', x=x, y=y, width=width, callback=_on_chosen, label_provider=None)
+        self.assets_picker.show(key='vfx.sprite.path', x=x, y=y, width=width, callback=_on_chosen, label_provider=None)

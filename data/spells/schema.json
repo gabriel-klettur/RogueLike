@@ -2,97 +2,191 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Spells Config",
   "type": "object",
-  "patternProperties": {
-    "^[a-zA-Z0-9_]+$": {
+  "definitions": {
+    "spellType": {
+      "type": "string",
+      "enum": [
+        "projectile",
+        "aura",
+        "beam",
+        "dash",
+        "slash",
+        "lightning",
+        "arcane_flame",
+        "firework_launch",
+        "smoke",
+        "smoke_emitter",
+        "sphere_magic_shield",
+        "teleport"
+      ]
+    },
+    "rgbColor": {
+      "type": "array",
+      "items": { "type": "integer", "minimum": 0, "maximum": 255 },
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "timingsDef": {
       "type": "object",
       "properties": {
-        "id": {"type": "string"},
-        "name": {"type": "string"},
-        "type": {
-          "type": "string",
-          "enum": [
-            "projectile",
-            "aura",
-            "beam",
-            "dash",
-            "slash",
-            "lightning",
-            "arcane_flame",
-            "firework_launch",
-            "smoke",
-            "smoke_emitter",
-            "sphere_magic_shield",
-            "teleport"
-          ]
+        "prepare": { "type": "number" },
+        "channel": { "type": "number" },
+        "cooldown": { "type": "number" }
+      },
+      "additionalProperties": false
+    },
+    "rulesDef": {
+      "type": "object",
+      "properties": {
+        "allow_movement": { "type": "boolean" },
+        "lock_cast_direction": { "type": "boolean" },
+        "interruptible": { "type": "boolean" },
+        "automatic": { "type": "boolean" },
+        "automatic_cast_punish": { "type": "number" },
+        "mobility": {
+          "type": "object",
+          "properties": {
+            "allow_movement": { "type": "boolean" },
+            "lock_cast_direction": { "type": "boolean" }
+          },
+          "additionalProperties": false
         },
-        "prepare_duration": {"type": "number"},
-        "channel_duration": {"type": "number"},
-        "cooldown_duration": {"type": "number"},
-        "lock_cast_direction": {"type": "boolean"},
-        "max_instances": {"type": "integer", "minimum": 0},
-        "allow_overlap": {"type": "boolean"},
-        "allow_movement": {"type": "boolean"},
-        "interruptible": {"type": "boolean"},
-        "automatic": {"type": "boolean"},
-        "automatic_cast_punish": {"type": "number"},
-
-        "speed": {"type": "number"},
-        "damage": {"type": "number"},
-        "lifespan": {"type": "number"},
-        "range": {"type": "number"},
-        "sprite": {"type": ["string", "null"]},
-        "scale": {"type": "number"},
-
-        "radius": {"type": "number"},
-        "duration": {"type": "number"},
-        "buff": {"type": "object", "additionalProperties": {"type": ["number", "integer", "boolean", "string"]}},
-
-        "particle_count": {"type": "integer"},
-        "particle_dispersion": {"type": "number"},
-        "particle_colors": {
-          "type": "array",
-          "items": {
-            "type": "array",
-            "items": {"type": "integer", "minimum": 0, "maximum": 255},
-            "minItems": 3,
-            "maxItems": 3
-          }
-        },
-        "segments": {"type": "integer"},
-        "offset": {"type": "number"},
-        "lifetime": {"type": "number"},
-
-        "distance": {"type": "number"},
-
-        "size_range": {
-          "type": "array",
-          "items": {"type": "number"},
-          "minItems": 2,
-          "maxItems": 2
-        },
-        "color": {
-          "type": "array",
-          "items": {"type": "integer", "minimum": 0, "maximum": 255},
-          "minItems": 3,
-          "maxItems": 3
-        },
-        "speed_multiplier": {"type": "number"},
-        "arc_range_degrees": {"type": "number"},
-
-        "particle_color": {
-          "type": "array",
-          "items": {"type": "integer", "minimum": 0, "maximum": 255},
-          "minItems": 3,
-          "maxItems": 3
-        },
-        "emit_rate": {"type": "integer"},
-
-        "vfx": {"type": ["string", "null"]},
-        "particle_lifespan": {"type": "number"},
-        "particle_speed": {"type": "number"}
+        "behavior": {
+          "type": "object",
+          "properties": {
+            "interruptible": { "type": "boolean" },
+            "automatic": { "type": "boolean" },
+            "punish": { "type": "number" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": true
+    },
+    "constraintsDef": {
+      "type": "object",
+      "properties": {
+        "max_instances": { "type": "integer", "minimum": 0 },
+        "allow_overlap": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "effectDef": {
+      "type": "object",
+      "properties": {
+        "speed": { "type": "number" },
+        "damage": { "type": "number" },
+        "range": { "type": "number" },
+        "distance": { "type": "number" },
+        "radius": { "type": "number" },
+        "arc_range_degrees": { "type": "number" },
+        "duration": { "type": "number" },
+        "lifetime": { "type": "number" },
+        "buff": { "type": "object", "additionalProperties": {"type": ["number", "integer", "boolean", "string"]} }
+      },
+      "additionalProperties": true
+    },
+    "spriteDef": {
+      "type": "object",
+      "properties": {
+        "path": { "type": ["string", "null"] },
+        "scale": { "type": "number" }
+      },
+      "additionalProperties": false
+    },
+    "particlesDef": {
+      "type": "object",
+      "properties": {
+        "count": { "type": "integer" },
+        "dispersion": { "type": "number" },
+        "colors": { "type": "array", "items": { "$ref": "#/definitions/rgbColor" } },
+        "lifespan": { "type": "number" },
+        "speed": { "type": "number" },
+        "size_range": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 },
+        "color": { "$ref": "#/definitions/rgbColor" },
+        "emit_rate": { "type": "integer" }
+      },
+      "additionalProperties": true
+    },
+    "vfxDef": {
+      "type": "object",
+      "properties": {
+        "preset": { "type": "string" },
+        "sprite": { "$ref": "#/definitions/spriteDef" },
+        "particles": { "$ref": "#/definitions/particlesDef" }
+      },
+      "additionalProperties": true
+    },
+    "legacySpell": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "$ref": "#/definitions/spellType" },
+        "prepare_duration": { "type": "number" },
+        "channel_duration": { "type": "number" },
+        "cooldown_duration": { "type": "number" },
+        "lock_cast_direction": { "type": "boolean" },
+        "max_instances": { "type": "integer", "minimum": 0 },
+        "allow_overlap": { "type": "boolean" },
+        "allow_movement": { "type": "boolean" },
+        "interruptible": { "type": "boolean" },
+        "automatic": { "type": "boolean" },
+        "automatic_cast_punish": { "type": "number" },
+        "speed": { "type": "number" },
+        "damage": { "type": "number" },
+        "lifespan": { "type": "number" },
+        "range": { "type": "number" },
+        "sprite": { "type": ["string", "null"] },
+        "scale": { "type": "number" },
+        "radius": { "type": "number" },
+        "duration": { "type": "number" },
+        "buff": { "type": "object", "additionalProperties": {"type": ["number", "integer", "boolean", "string"]} },
+        "particle_count": { "type": "integer" },
+        "particle_dispersion": { "type": "number" },
+        "particle_colors": { "type": "array", "items": { "$ref": "#/definitions/rgbColor" } },
+        "segments": { "type": "integer" },
+        "offset": { "type": "number" },
+        "lifetime": { "type": "number" },
+        "distance": { "type": "number" },
+        "size_range": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 },
+        "color": { "$ref": "#/definitions/rgbColor" },
+        "speed_multiplier": { "type": "number" },
+        "arc_range_degrees": { "type": "number" },
+        "particle_color": { "$ref": "#/definitions/rgbColor" },
+        "emit_rate": { "type": "integer" },
+        "vfx": { "type": ["string", "null"] },
+        "particle_lifespan": { "type": "number" },
+        "particle_speed": { "type": "number" }
       },
       "required": ["id", "name", "type"],
       "additionalProperties": true
+    },
+    "newSpell": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "$ref": "#/definitions/spellType" },
+        "timings": { "$ref": "#/definitions/timingsDef" },
+        "rules": { "$ref": "#/definitions/rulesDef" },
+        "constraints": { "$ref": "#/definitions/constraintsDef" },
+        "effect": { "$ref": "#/definitions/effectDef" },
+        "vfx": { "oneOf": [ {"type": "string"}, { "$ref": "#/definitions/vfxDef" } ] },
+        "meta": { "type": "object" },
+        "sfx": { "type": "object" },
+        "version": { "type": ["integer", "string"] }
+      },
+      "required": ["id", "name", "type"],
+      "additionalProperties": true
+    }
+  },
+  "patternProperties": {
+    "^[a-zA-Z0-9_]+$": {
+      "anyOf": [
+        { "$ref": "#/definitions/legacySpell" },
+        { "$ref": "#/definitions/newSpell" }
+      ]
     }
   },
   "additionalProperties": false
