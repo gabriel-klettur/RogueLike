@@ -61,13 +61,7 @@ class ItemsPropertiesPanelView:
         top_y = max(margin, (title_rect.bottom + 10) if title_rect else margin)
 
         item = items[active_item_id]
-        raw_name = getattr(item, 'name', str(active_item_id))
-        desc = getattr(item, 'description', "")
-
-        # Construir líneas: nombre + descripción + props
-        desc_lines = self._wrap_text(desc, max(10, self.panel_w - 40))
-        desc_count = len(desc_lines)
-        lines: list[str] = [raw_name] + desc_lines
+        # Obtener datos del ítem
         if hasattr(item, 'model_dump'):
             data = item.model_dump()
         else:
@@ -75,10 +69,27 @@ class ItemsPropertiesPanelView:
                 data = item.dict()
             except Exception:
                 data = vars(item)
-        for key, val in data.items():
-            if key in ("name", "description") or val is None:
+
+        # Construir entradas editables como pares (key, value)
+        order_keys = []
+        for k in ("id", "name", "description"):
+            if k in data:
+                order_keys.append(k)
+        # Resto de claves
+        for k, v in data.items():
+            if k in ("id", "name", "description") or v is None:
                 continue
-            lines.append(f"{key}: {val}")
+            order_keys.append(k)
+
+        entries: list[tuple[str, str]] = []
+        for k in order_keys:
+            v = data.get(k, "")
+            # Si está en edición esta clave, sobrescribir con el texto de edición
+            if getattr(model, 'editing_property', None) == k:
+                display_val = model.editing_text
+            else:
+                display_val = str(v)
+            entries.append((k, display_val))
 
         font_h = self.font.get_height()
         panel_padding = 10
@@ -145,33 +156,23 @@ class ItemsPropertiesPanelView:
 
         if model.active_type_tab == "properties":
             max_line_width = view_rect.w
-            model.content_height = len(lines) * (font_h + 2)
+            model.content_height = len(entries) * (font_h + 2)
             tx = view_rect.x
             ty0 = view_rect.y
-            for idx_line, line in enumerate(lines):
-                color = (255, 255, 0) if idx_line == 0 else (200, 200, 200)
-                if idx_line > desc_count:
-                    key, val = line.split(': ', 1)
-                    text_content = (
-                        f"{key}: {model.editing_text}" if model.editing_property == key else f"{key}: {val}"
-                    )
-                else:
-                    text_content = line
+            for idx, (key, val) in enumerate(entries):
+                text_content = f"{key}: {val}"
                 display_text = self._truncate_text(text_content, max_line_width)
-                if 0 < idx_line <= desc_count:
-                    self.font.set_italic(True)
+                # Color: resaltar 'name' como antes, el resto gris claro
+                color = (255, 255, 0) if key == 'name' else (200, 200, 200)
                 txt_surf = self.font.render(display_text, True, color)
-                if 0 < idx_line <= desc_count:
-                    self.font.set_italic(False)
 
                 # Y con scroll
-                y = ty0 + idx_line * (font_h + 2) - model.scroll_y
+                y = ty0 + idx * (font_h + 2) - model.scroll_y
                 line_rect = pygame.Rect(tx, y, txt_surf.get_width(), font_h)
                 # Sólo dibujar si intersecta el viewport
                 if line_rect.bottom >= view_rect.top and line_rect.top <= view_rect.bottom:
                     screen.blit(txt_surf, (tx, y))
-                    if idx_line > desc_count:
-                        model.property_entries.append((line_rect, key))
+                    model.property_entries.append((line_rect, key))
                     if display_text != text_content:
                         truncated_entries.append((line_rect, text_content))
         else:
@@ -238,19 +239,24 @@ class ItemsPropertiesPanelView:
             thumb = pygame.Rect(track.x, thumb_y, bar_w, thumb_h)
             pygame.draw.rect(screen, (120, 120, 120), thumb)
 
-        # Decoraciones de edición/enfoque (usar rects ya scrolleados) solo en propiedades
-        if model.active_type_tab == "properties" and getattr(model, 'editing_property', None):
-            for rect_prop, key_prop in getattr(model, 'property_entries', []):
-                if key_prop == model.editing_property:
-                    ed_rect = rect_prop.inflate(4, 0)
-                    pygame.draw.rect(screen, (128, 0, 128), ed_rect, 2)
-                    break
-        elif model.active_type_tab == "properties" and getattr(model, 'focused_property', None):
-            for rect_prop, key_prop in getattr(model, 'property_entries', []):
-                if key_prop == model.focused_property:
-                    hl_rect = rect_prop.inflate(4, 0)
-                    pygame.draw.rect(screen, (255, 255, 0), hl_rect, 2)
-                    break
+        # Decoraciones de estado (usar rects ya scrolleados) solo en propiedades
+        if model.active_type_tab == "properties":
+            # Edición tiene prioridad: púrpura
+            if getattr(model, 'editing_property', None):
+                for rect_prop, key_prop in getattr(model, 'property_entries', []):
+                    if key_prop == model.editing_property:
+                        ed_rect = rect_prop.inflate(4, 0)
+                        pygame.draw.rect(screen, (128, 0, 128), ed_rect, 2)
+                        break
+            else:
+                # Hover o foco: amarillo
+                target_key = getattr(model, 'hovered_property', None) or getattr(model, 'focused_property', None)
+                if target_key:
+                    for rect_prop, key_prop in getattr(model, 'property_entries', []):
+                        if key_prop == target_key:
+                            hl_rect = rect_prop.inflate(4, 0)
+                            pygame.draw.rect(screen, (255, 255, 0), hl_rect, 2)
+                            break
 
         # Tooltips (post) sólo si el ratón está sobre el viewport
         mx, my = pygame.mouse.get_pos()

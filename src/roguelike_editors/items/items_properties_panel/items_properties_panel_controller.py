@@ -2,6 +2,7 @@ import os
 import pygame
 from typing import Any, Dict, Optional
 from pathlib import Path
+import json
 
 from roguelike_ui.widgets.text_input import TextInput
 from roguelike_ui.widgets.double_click_detector import DoubleClickDetector
@@ -40,6 +41,9 @@ class ItemsPropertiesPanelController:
         self.get_assets_anchor_rect = None
         # on_asset_changed(item_id: str, new_asset_path: str) -> None
         self.on_asset_changed = None
+        # on_after_commit_edit(key: str, old_id: str, new_id: Optional[str], value: Any) -> None
+        # Se invoca tras persistir un cambio (incluyendo rename de 'id') para que el orquestador refresque caches.
+        self.on_after_commit_edit = None
 
     # ---- Enlaces externos ----
     def set_items(self, items: Dict[str, Any]):
@@ -89,9 +93,8 @@ class ItemsPropertiesPanelController:
     def start_inline_edit(self, prop_key: Optional[str] = None) -> None:
         """Inicia edición inline para la propiedad indicada o la primera disponible.
 
-        Si no se provee prop_key, se selecciona la primera clave válida del ítem activo
-        (excluyendo 'name' y 'description' y valores None) para que coincida
-        con lo que realmente se muestra en la vista.
+        Si no se provee prop_key, se selecciona la primera clave válida del ítem activo.
+        Ahora se permiten todas las propiedades, incluyendo 'name', 'description' e 'id'.
         """
         active_id = self._selected_id or self._hovered_id
         if not active_id or active_id not in self._items:
@@ -110,11 +113,17 @@ class ItemsPropertiesPanelController:
         # Determinar propiedad destino
         key_to_edit: Optional[str] = prop_key
         if key_to_edit is None:
-            for k, v in data.items():
-                if k in ("name", "description") or v is None:
-                    continue
-                key_to_edit = k
-                break
+            # Priorizar 'name' si existe, luego 'description', luego la primera disponible
+            for candidate in ("name", "description"):
+                if candidate in data:
+                    key_to_edit = candidate
+                    break
+            if key_to_edit is None:
+                for k, v in data.items():
+                    if v is None:
+                        continue
+                    key_to_edit = k
+                    break
         if not key_to_edit:
             return
         # Configurar modelo y TextInput
@@ -146,22 +155,89 @@ class ItemsPropertiesPanelController:
                     converted = new_text
             except ValueError:
                 converted = new_text
-            try:
-                setattr(item, key, converted)
-            except Exception as e:
-                logger.error(f"[ItemsPropertiesPanel] Invalid assignment for {key}: '{converted}', error: {e}")
-                # cleanup on invalid input
-                self.text_input.deactivate()
-                self.model.editing_property = None
-                self.model.editing_text = ""
-                self.model.editing_cursor = 0
-                return
-            # Guardar JSON
+            # Guardar JSON (con manejo especial para 'id')
             path = os.path.join(os.getcwd(), "data", "items", "items.json")
-            data = load_from_json(path)
-            entry = data.get(item_id, {})
-            entry[key] = converted
-            save_to_json(path, item_id, entry)
+            data_json = load_from_json(path)
+            entry = data_json.get(item_id, {})
+
+            if key == 'id':
+                new_id = str(converted)
+                if not new_id:
+                    logger.warning("[ItemsPropertiesPanel] Empty id not allowed; ignoring change")
+                elif new_id == item_id:
+                    # Nada que renombrar; solo asegurar atributo y JSON consistente
+                    try:
+                        setattr(item, 'id', new_id)
+                    except Exception:
+                        pass
+                    entry['id'] = new_id
+                    save_to_json(path, item_id, entry)
+                    # Notificar edición (sin cambio real de id)
+                    try:
+                        if callable(self.on_after_commit_edit):
+                            self.on_after_commit_edit('id', item_id, item_id, new_id)
+                    except Exception:
+                        logger.exception("[ItemsPropertiesPanel] on_after_commit_edit callback failed")
+                else:
+                    if new_id in data_json:
+                        # Colisión: revertir y abortar
+                        logger.error(f"[ItemsPropertiesPanel] Cannot rename id: '{new_id}' already exists")
+                        try:
+                            setattr(item, 'id', item_id)
+                        except Exception:
+                            pass
+                    else:
+                        # Actualizar objeto en memoria
+                        try:
+                            setattr(item, 'id', new_id)
+                        except Exception:
+                            pass
+                        # Mover entrada en el JSON y reescribir archivo completo
+                        entry['id'] = new_id
+                        data_json[new_id] = entry
+                        if item_id in data_json:
+                            del data_json[item_id]
+                        try:
+                            with open(path, 'w', encoding='utf-8') as f:
+                                json.dump(data_json, f, ensure_ascii=False, indent=2)
+                        except Exception as e:
+                            logger.exception(f"[ItemsPropertiesPanel] Failed to rewrite items JSON on id rename: {e}")
+                        # Actualizar mapa en memoria y selección
+                        try:
+                            self._items[new_id] = self._items.pop(item_id)
+                        except Exception:
+                            pass
+                        if self._selected_id == item_id:
+                            self._selected_id = new_id
+                        if self._hovered_id == item_id:
+                            self._hovered_id = new_id
+                        # Notificar cambio de id para permitir refresh de caches
+                        try:
+                            if callable(self.on_after_commit_edit):
+                                self.on_after_commit_edit('id', item_id, new_id, new_id)
+                        except Exception:
+                            logger.exception("[ItemsPropertiesPanel] on_after_commit_edit callback failed")
+            else:
+                # Asignación normal del atributo
+                try:
+                    setattr(item, key, converted)
+                except Exception as e:
+                    logger.error(f"[ItemsPropertiesPanel] Invalid assignment for {key}: '{converted}', error: {e}")
+                    # cleanup on invalid input
+                    self.text_input.deactivate()
+                    self.model.editing_property = None
+                    self.model.editing_text = ""
+                    self.model.editing_cursor = 0
+                    return
+                # Persistencia del campo actualizado
+                entry[key] = converted
+                save_to_json(path, item_id, entry)
+                # Notificar cambio normal de propiedad
+                try:
+                    if callable(self.on_after_commit_edit):
+                        self.on_after_commit_edit(key, item_id, None, converted)
+                except Exception:
+                    logger.exception("[ItemsPropertiesPanel] on_after_commit_edit callback failed")
         self.model.editing_property = None
         self.model.editing_text = ""
         self.model.editing_cursor = 0
@@ -259,6 +335,13 @@ class ItemsPropertiesPanelController:
                     self.on_asset_changed(item_id, asset_value)
             except Exception:
                 logger.exception("[ItemsPropertiesPanel] on_asset_changed callback failed")
+            # Notificar post-commit para refrescar catálogos (items/assets) globales y caches ECS
+            try:
+                if callable(self.on_after_commit_edit):
+                    # Indicamos la clave específica actualizada (p.ej. 'icon'/'icon_small')
+                    self.on_after_commit_edit(target_key, item_id, None, asset_value)
+            except Exception:
+                logger.exception("[ItemsPropertiesPanel] on_after_commit_edit callback failed tras cambio de asset")
         finally:
             # Ocultar picker en cualquier caso
             try:

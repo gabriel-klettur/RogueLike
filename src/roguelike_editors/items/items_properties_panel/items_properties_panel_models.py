@@ -8,6 +8,8 @@ class ItemsPropertiesPanelModel:
     """Estado del panel de propiedades (solo UI de propiedades)."""
     # Propiedad enfocada y en edición
     focused_property: Optional[str] = None
+    # Propiedad bajo el cursor (para hover)
+    hovered_property: Optional[str] = None
     editing_property: Optional[str] = None
     editing_text: str = ""
     editing_cursor: int = 0

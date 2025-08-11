@@ -190,6 +190,8 @@ class ItemsEditorController:
 
         self.properties_controller.get_assets_anchor_rect = _assets_anchor_rect
         self.properties_controller.on_asset_changed = _on_asset_changed
+        # Notificación tras commit de edición de propiedades (incluye rename de id)
+        self.properties_controller.on_after_commit_edit = self._on_after_commit_edit
 
         # Hover rendering system (reuse in editor to match in-game behavior)
         try:
@@ -309,13 +311,18 @@ class ItemsEditorController:
         except Exception:
             pass
         # Render standard drop hover (highlight + tooltip) under editor UI using the shared system
+        # Evitar duplicación: si el mundo ya tiene DropHoverRenderSystem, no dibujar el del editor
         try:
             if hasattr(self, 'game') and getattr(self.model, 'visible', False) and not getattr(self.model, 'holding_pos_focus', False):
-                world = getattr(self.game, 'ecs', None)
-                world = getattr(world, 'ecs_world', None)
+                world_obj = getattr(self.game, 'ecs', None)
+                world = getattr(world_obj, 'ecs_world', None)
                 camera = getattr(self.game, 'camera', None)
-                if world and camera and hasattr(self, '_hover_renderer') and self._hover_renderer:
-                    self._hover_renderer.update(world, screen, camera)
+                if world and camera:
+                    systems_u = list(getattr(world, 'update_systems', []))
+                    systems_r = list(getattr(world, 'render_systems', []))
+                    has_world_hover = any(isinstance(s, DropHoverRenderSystem) for s in (systems_u + systems_r))
+                    if not has_world_hover and hasattr(self, '_hover_renderer') and self._hover_renderer:
+                        self._hover_renderer.update(world, screen, camera)
         except Exception:
             logging.getLogger(__name__).exception("[ItemsEditorController.draw] hover render failed")
         # Resaltar ítem del mapa bajo el cursor en modo eliminar (borde rojo como en Entities)
@@ -407,6 +414,171 @@ class ItemsEditorController:
         self.picker_controller.game = game
         # El InstancesPanel ahora puede solicitar enfoque de cámara
         self.instances_controller.game = game
+
+    def _on_after_commit_edit(self, key: str, old_id: str, new_id: Optional[str], value: Any) -> None:
+        """Callback desde PropertiesPanel tras persistir un cambio.
+
+        - Si se renombra 'id', actualiza la selección al nuevo id.
+        - Refresca el catálogo de ítems y caches globales para que los spawns usen datos actualizados.
+        """
+        try:
+            if key == 'id' and new_id and new_id != old_id:
+                # Mantener selección coherente en editor y picker
+                if self.model.selected_item_id == old_id:
+                    self.model.selected_item_id = new_id
+                try:
+                    if getattr(self.picker_controller.model, 'selected_item_id', None) == old_id:
+                        self.picker_controller.model.selected_item_id = new_id
+                except Exception:
+                    pass
+        finally:
+            # Siempre refrescar el catálogo tras un commit (cualquier propiedad puede afectar spawns)
+            try:
+                self._refresh_items_catalog()
+            except Exception:
+                logging.getLogger(__name__).exception("[ItemsEditorController] Failed to refresh items catalog after edit")
+
+    def _refresh_items_catalog(self) -> None:
+        """Recarga items.json y assets, y sincroniza caches en:
+        - Editor (model, picker, propiedades)
+        - Game caches (game.items, game.item_assets)
+        - Sistemas ECS que cachean ítems (MapLoadDropsSystem, ConsumeSystem)
+        - Cache de spawns inmediatos del editor
+        """
+        try:
+            from roguelike_game.managers.items.loader import ItemsLoader
+            loader = ItemsLoader()
+            items, assets = loader.load()
+        except Exception:
+            logging.getLogger(__name__).exception("[ItemsEditorController] ItemsLoader.load() failed")
+            return
+
+        # Actualizar modelo del editor
+        self.model.items = items
+        self.model.assets = assets
+        # Propagar a subcontroladores que puedan mantener referencias
+        try:
+            self.picker_controller.model.items = self.model.items
+        except Exception:
+            pass
+        try:
+            self.picker_controller.view.items = self.model.items  # si la vista cachea ref
+        except Exception:
+            pass
+        try:
+            self.properties_controller.set_items(self.model.items)
+        except Exception:
+            pass
+
+        # Actualizar caches globales del juego
+        if hasattr(self, 'game') and self.game is not None:
+            try:
+                self.game.items = items
+                self.game.item_assets = assets
+            except Exception:
+                pass
+            # Actualizar sistemas ECS que cachean ítems
+            try:
+                world = getattr(getattr(self.game, 'ecs', None), 'ecs_world', None)
+                if world:
+                    # Importar aquí para evitar dependencias circulares en tope de archivo
+                    from roguelike_game.ecs.systems.inventory.map_load_drops_system import MapLoadDropsSystem
+                    from roguelike_game.ecs.systems.items.consume_system import ConsumeSystem
+                    from roguelike_game.ecs.systems.rendering.drop_hover_system import DropHoverRenderSystem
+                    from roguelike_game.ecs.systems.inventory.inventory_ui_system import InventoryUISystem
+                    from roguelike_game.ecs.systems.inventory.inventory_editor_system import InventoryEditorSystem
+                    from roguelike_game.ecs.components.transform.scale import Scale
+                    # update systems
+                    for sys in list(getattr(world, 'update_systems', [])):
+                        try:
+                            if isinstance(sys, MapLoadDropsSystem):
+                                sys.items = items
+                            elif isinstance(sys, ConsumeSystem):
+                                sys.items = items
+                            elif isinstance(sys, DropHoverRenderSystem):
+                                sys.items = items
+                            elif isinstance(sys, InventoryUISystem):
+                                sys.items = items
+                                try:
+                                    # Reemplazar superficies de íconos con assets recargados
+                                    sys.icon_surfaces = {iid: assets.get(iid) for iid in items.keys()}
+                                except Exception:
+                                    pass
+                            elif isinstance(sys, InventoryEditorSystem):
+                                sys.items = items
+                                try:
+                                    # Invalidate scaled cache para forzar recarga
+                                    sys.images = {}
+                                except Exception:
+                                    pass
+                        except Exception:
+                            pass
+                    # render systems
+                    for sys in list(getattr(world, 'render_systems', [])):
+                        try:
+                            if isinstance(sys, DropHoverRenderSystem):
+                                sys.items = items
+                            elif isinstance(sys, InventoryUISystem):
+                                sys.items = items
+                                try:
+                                    sys.icon_surfaces = {iid: assets.get(iid) for iid in items.keys()}
+                                except Exception:
+                                    pass
+                            elif isinstance(sys, InventoryEditorSystem):
+                                sys.items = items
+                                try:
+                                    sys.images = {}
+                                except Exception:
+                                    pass
+                        except Exception:
+                            pass
+
+                    # Actualizar sprites/escala de drops ya spawneados que correspondan con el item
+                    try:
+                        comps = world.components
+                        phys_map = comps.get('PhysicalItemComponent', {})
+                        sprite_map = comps.get('Sprite', {})
+                        scale_map = comps.get('Scale', {})
+                        for eid, phys in list(phys_map.items()):
+                            spr = sprite_map.get(eid)
+                            if spr is None:
+                                continue
+                            model = items.get(phys.item_id)
+                            # Actualizar imagen del sprite si hay asset cargado
+                            new_img = assets.get(phys.item_id)
+                            if new_img is not None:
+                                try:
+                                    spr.image = new_img
+                                except Exception:
+                                    pass
+                            # Actualizar escala según modelo
+                            try:
+                                new_scale = getattr(model, 'scale_map', None)
+                                if new_scale is not None:
+                                    sc = scale_map.get(eid)
+                                    if sc is None:
+                                        scale_map[eid] = Scale(new_scale)
+                                    else:
+                                        sc.scale = new_scale
+                            except Exception:
+                                pass
+                    except Exception:
+                        logging.getLogger(__name__).exception("[ItemsEditorController] Failed to update existing drop sprites after edit")
+            except Exception:
+                logging.getLogger(__name__).exception("[ItemsEditorController] Failed updating ECS systems items cache")
+
+        # Actualizar cache interna usada para spawn inmediato
+        try:
+            self._items_models = items
+        except Exception:
+            pass
+
+        # Refrescar renderer de hover del editor (si existe)
+        try:
+            if hasattr(self, '_hover_renderer') and self._hover_renderer is not None:
+                self._hover_renderer.items = items
+        except Exception:
+            pass
 
     # API para ToolbarView: consultar si una herramienta está activa (principal o sub-toolbar)
     def is_active(self, tool: str) -> bool:

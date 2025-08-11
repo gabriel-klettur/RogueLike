@@ -26,6 +26,23 @@ class ItemsPropertiesPanelEventHandler:
                 return
             # Si el TextInput no consumió el evento, dejamos continuar (para permitir scroll, etc.)
 
+        # Hover de propiedades con el ratón (seguimiento en pestaña 'properties')
+        if event.type == pygame.MOUSEMOTION:
+            if self.model.active_type_tab == 'properties':
+                panel = getattr(self.model, 'content_view_rect', None)
+                if panel and panel.collidepoint(event.pos):
+                    # Buscar primera entrada que colisiona
+                    new_hover = None
+                    for rect, key in getattr(self.model, 'property_entries', []):
+                        if rect.collidepoint(event.pos):
+                            new_hover = key
+                            break
+                    self.model.hovered_property = new_hover
+                else:
+                    self.model.hovered_property = None
+            else:
+                self.model.hovered_property = None
+
         # Scroll con rueda del ratón cuando el cursor está sobre el panel
         if event.type == pygame.MOUSEWHEEL:
             # No hay scroll en la pestaña 'assets'
@@ -96,6 +113,7 @@ class ItemsPropertiesPanelEventHandler:
                     # Al cambiar de pestaña, limpiar estado de edición/foco
                     self.model.focused_property = None
                     self.model.editing_property = None
+                    self.model.hovered_property = None
                     if self.text_input.active:
                         # cancelar edición sin commit
                         self.text_input.deactivate()
@@ -116,6 +134,7 @@ class ItemsPropertiesPanelEventHandler:
                     # Clic fuera: ocultar picker si hubiera algo y limpiar
                     self.model.focused_property = None
                     self.model.editing_property = None
+                    self.model.hovered_property = None
                 return
 
             # 3) Pestaña 'properties': clic en propiedades para foco/edición
@@ -134,6 +153,8 @@ class ItemsPropertiesPanelEventHandler:
                         self.text_input.activate(initial)
                     else:
                         self.model.focused_property = key
+                        # Actualizar hovered también para feedback inmediato
+                        self.model.hovered_property = key
                     return
 
             # Clic fuera del panel: limpiar foco/edición
@@ -141,6 +162,7 @@ class ItemsPropertiesPanelEventHandler:
             if panel and not panel.collidepoint(mx, my):
                 self.model.focused_property = None
                 self.model.editing_property = None
+                self.model.hovered_property = None
                 return
 
         # No-op para otros eventos (tooltips se dibujan en la vista)
