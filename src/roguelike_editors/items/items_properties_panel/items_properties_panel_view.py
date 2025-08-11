@@ -5,6 +5,7 @@ from roguelike_editors.entities.entities_properties_panel.services.state_tabs_he
     build_tab_rects,
     format_tab_label,
 )
+from roguelike_ui.ui_blocker import register_blocker
 
 
 class ItemsPropertiesPanelView:
@@ -94,6 +95,12 @@ class ItemsPropertiesPanelView:
 
         # Actualizar estado de colisiones y viewport de contenido
         model.panel_rect = pygame.Rect(panel_x, panel_y, panel_w, panel_h)
+        # Registrar como bloqueador de UI para evitar hover/drag debajo del panel
+        try:
+            if model.panel_rect and model.panel_rect.w > 0 and model.panel_rect.h > 0:
+                register_blocker(model.panel_rect)
+        except Exception:
+            pass
 
         # Pestañas de tipo (arriba)
         tab_pad = (10, 5)

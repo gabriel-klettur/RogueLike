@@ -118,8 +118,8 @@ class ToolbarView:
         """
         header = pygame.Rect(self.panel.pos or (self.x, self.y), self.panel.surface.get_size())
         if event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 3 and header.collidepoint(event.pos):
-            logger.debug(f"[DEBUG][{self.name}][DRAG START]", event.pos)
+            logger.debug("[DEBUG][%s][DRAG START] pos=%s", self.name, event.pos)
         res = self.panel.handle_event(event, header)
         if event.type == pygame.MOUSEBUTTONUP and getattr(event, 'button', None) == 3:
-            logger.debug(f"[DEBUG][{self.name}][DRAG END] panel.pos", self.panel.pos)
+            logger.debug("[DEBUG][%s][DRAG END] panel.pos=%s", self.name, self.panel.pos)
         return res

@@ -11,8 +11,14 @@
         "item": "wood",
         "quantity": 2
       },
-      null,
-      null,
+      {
+        "item": "iron_sword",
+        "quantity": 3
+      },
+      {
+        "item": "food_chicken",
+        "quantity": 1
+      },
       null,
       null,
       null,

@@ -58,35 +58,5 @@
       "x": 888,
       "y": 2098
     }
-  },
-  "7420eef6c3dc4b75ae2fef21653e233a": {
-    "item_id": "iron_sword",
-    "quantity": 1,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 414.0,
-      "y": 2718.0
-    }
-  },
-  "1c4f826a497c42d3bd6013753e05bed5": {
-    "item_id": "iron_sword",
-    "quantity": 1,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 528,
-      "y": 2680
-    }
-  },
-  "492fef94e24e4e238fb9cdce983b9aac": {
-    "item_id": "iron_sword",
-    "quantity": 1,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 528,
-      "y": 2680
-    }
   }
 }

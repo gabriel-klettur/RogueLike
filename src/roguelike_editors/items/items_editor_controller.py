@@ -32,6 +32,7 @@ from roguelike_game.ecs.components.rendering.sprite import Sprite
 from roguelike_game.ecs.components.transform.scale import Scale
 from roguelike_game.ecs.components.item_models import load_items
 from roguelike_game.ecs.systems.inventory.map_load_drops_system import MapLoadDropsSystem
+from roguelike_game.ecs.systems.rendering.drop_hover_system import DropHoverRenderSystem
 import os
 import uuid
 from roguelike_engine.utils.loader import load_image
@@ -190,6 +191,12 @@ class ItemsEditorController:
         self.properties_controller.get_assets_anchor_rect = _assets_anchor_rect
         self.properties_controller.on_asset_changed = _on_asset_changed
 
+        # Hover rendering system (reuse in editor to match in-game behavior)
+        try:
+            self._hover_renderer = DropHoverRenderSystem(perf_log=None)
+        except Exception:
+            logging.getLogger(__name__).exception("[ItemsEditorController] Failed to init DropHoverRenderSystem")
+
     # --- Ciclo principal ---
     def handle_event(self, event: pygame.event.Event) -> None:
         # Delegación centralizada (ItemsEditorEvents maneja F7/ESC siempre)
@@ -301,6 +308,16 @@ class ItemsEditorController:
             self.items_add_remove_controller.render(screen)
         except Exception:
             pass
+        # Render standard drop hover (highlight + tooltip) under editor UI using the shared system
+        try:
+            if hasattr(self, 'game') and getattr(self.model, 'visible', False) and not getattr(self.model, 'holding_pos_focus', False):
+                world = getattr(self.game, 'ecs', None)
+                world = getattr(world, 'ecs_world', None)
+                camera = getattr(self.game, 'camera', None)
+                if world and camera and hasattr(self, '_hover_renderer') and self._hover_renderer:
+                    self._hover_renderer.update(world, screen, camera)
+        except Exception:
+            logging.getLogger(__name__).exception("[ItemsEditorController.draw] hover render failed")
         # Resaltar ítem del mapa bajo el cursor en modo eliminar (borde rojo como en Entities)
         try:
             if getattr(self.model, 'delete_mode_active', False):
