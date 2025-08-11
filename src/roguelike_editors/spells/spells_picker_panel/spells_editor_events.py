@@ -1,6 +1,6 @@
 import pygame
 import os
-from roguelike_ui.services.json_persistence import save_to_json, load_from_json
+from roguelike_ui.services.json_persistence import save_to_json, load_from_json, remove_from_json
 
 class SpellEditorEventHandler:
     """
@@ -14,15 +14,7 @@ class SpellEditorEventHandler:
         self.dc_detector = controller.dc_detector
 
     def handle(self, event: pygame.event.Event) -> None:
-        # Inline text input handling
-        if self.text_input.active:
-            if self.text_input.handle_event(event):
-                self.model.editing_text = self.text_input.text
-                self.model.editing_cursor = self.text_input.cursor
-                if not self.text_input.active:
-                    self.controller._commit_edit()
-                return
-            return
+        # Inline text input is now handled by SpellsPropertiesPanelController
 
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_F4:
@@ -42,22 +34,9 @@ class SpellEditorEventHandler:
         # Mouse click
         if event.type == pygame.MOUSEBUTTONDOWN and self.model.visible and event.button == 1:
             mx, my = event.pos
-            # Click on property entries
-            for rect, key in getattr(self.model, 'property_entries', []):
-                if rect.collidepoint(mx, my):
-                    if getattr(event, 'clicks', 1) >= 2 or self.dc_detector.is_double_click(key):
-                        self.model.focused_property = key
-                        self.model.editing_property = key
-                        sid = self.model.selected_id or self.model.hovered_id
-                        if sid:
-                            val = self.model.spells.get(sid, {}).get(key, "")
-                            self.model.editing_text = str(val)
-                            self.model.editing_cursor = len(self.model.editing_text)
-                            self.text_input.activate(self.model.editing_text)
-                        return
-                    else:
-                        self.model.focused_property = key
-                        return
+            # Respect picker visibility
+            if not getattr(self.model, 'picker_visible', False):
+                return
             # Click on grid
             screen = pygame.display.get_surface()
             sw, sh = screen.get_size() if screen else (0, 0)
@@ -67,42 +46,77 @@ class SpellEditorEventHandler:
             font_h = self.view.font.get_height()
             cell_height = cell_size + text_margin + font_h
             cols = 8
+            # top offset matches view (title height aware)
+            title_rect = getattr(self.view, 'title_rect', None)
+            grid_top = max(margin, (title_rect.bottom + 10) if title_rect else margin)
             # determine clicked cell
-            if mx < margin or my < margin:
-                self.model.selected_id = None
+            if mx < margin or my < grid_top:
+                clicked_sid = None
             else:
                 col = (mx - margin) // (cell_size + margin)
-                row = (my - margin + self.model.scroll_index * (cell_height + margin)) // (cell_height + margin)
+                row = (my - grid_top + self.model.scroll_index * (cell_height + margin)) // (cell_height + margin)
                 spell_ids = list(self.model.spells.keys())
                 idx = row * cols + col
                 x0 = margin + col * (cell_size + margin)
-                y0 = margin + (row - self.model.scroll_index) * (cell_height + margin)
+                y0 = grid_top + (row - self.model.scroll_index) * (cell_height + margin)
                 if 0 <= col < cols and 0 <= idx < len(spell_ids) and x0 <= mx <= x0 + cell_size and y0 <= my <= y0 + cell_size:
-                    self.model.selected_id = spell_ids[idx]
+                    clicked_sid = spell_ids[idx]
                 else:
+                    clicked_sid = None
+
+            # If delete mode active, process deletion
+            if getattr(self.model, 'delete_mode_active', False):
+                if clicked_sid:
+                    # Persist deletion
+                    path = os.path.join(os.getcwd(), "data", "spells", "spells.json")
+                    removed = remove_from_json(path, clicked_sid)
+                    if removed:
+                        if clicked_sid in self.model.spells:
+                            del self.model.spells[clicked_sid]
+                        if clicked_sid in self.model.assets:
+                            del self.model.assets[clicked_sid]
+                    # exit delete mode
+                    self.model.delete_mode_active = False
+                    # sync AR panel state
+                    ar_model = getattr(self.controller, 'spells_add_remove_model', None)
+                    if ar_model is not None:
+                        ar_model.active_tool = None
                     self.model.selected_id = None
-            self.model.focused_property = None
-            self.model.editing_property = None
+                else:
+                    # Clicked outside: cancel delete mode
+                    self.model.delete_mode_active = False
+                    ar_model = getattr(self.controller, 'spells_add_remove_model', None)
+                    if ar_model is not None:
+                        ar_model.active_tool = None
+                return
+
+            # Normal selection flow
+            self.model.selected_id = clicked_sid
             return
 
         # Mouse hover
         if event.type == pygame.MOUSEMOTION and self.model.visible:
             mx, my = event.pos
+            if not getattr(self.model, 'picker_visible', False):
+                self.model.hovered_id = None
+                return
             margin = 20
             cell_size = 64
             text_margin = 4
             font_h = self.view.font.get_height()
             cell_height = cell_size + text_margin + font_h
             cols = 8
-            if mx < margin or my < margin:
+            title_rect = getattr(self.view, 'title_rect', None)
+            grid_top = max(margin, (title_rect.bottom + 10) if title_rect else margin)
+            if mx < margin or my < grid_top:
                 self.model.hovered_id = None
             else:
                 col = (mx - margin) // (cell_size + margin)
-                row = (my - margin + self.model.scroll_index * (cell_height + margin)) // (cell_height + margin)
+                row = (my - grid_top + self.model.scroll_index * (cell_height + margin)) // (cell_height + margin)
                 spell_ids = list(self.model.spells.keys())
                 idx = row * cols + col
                 x0 = margin + col * (cell_size + margin)
-                y0 = margin + (row - self.model.scroll_index) * (cell_height + margin)
+                y0 = grid_top + (row - self.model.scroll_index) * (cell_height + margin)
                 if 0 <= col < cols and 0 <= idx < len(spell_ids) and x0 <= mx <= x0 + cell_size and y0 <= my <= y0 + cell_size:
                     self.model.hovered_id = spell_ids[idx]
                 else:

@@ -1,14 +1,4 @@
 {
-  "d433bbce0cc64941962dca09f38ebdc4": {
-    "item_id": "wizard_staff_lvl_2",
-    "quantity": 1,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 536.0,
-      "y": 2678.0
-    }
-  },
   "126e4829-96e1-4794-a3e2-afc60f3d530a": {
     "item_id": "gold",
     "quantity": 4,

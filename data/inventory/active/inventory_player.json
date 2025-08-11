@@ -19,7 +19,10 @@
         "item": "food_chicken",
         "quantity": 1
       },
-      null,
+      {
+        "item": "wizard_staff_lvl_2",
+        "quantity": 1
+      },
       null,
       null,
       null,

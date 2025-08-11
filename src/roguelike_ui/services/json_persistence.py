@@ -25,3 +25,20 @@ def load_from_json(path: str) -> dict:
         with open(full, encoding='utf-8') as f:
             return json.load(f)
     return {}
+
+
+def remove_from_json(path: str, key: str, indent: int = 2) -> bool:
+    """
+    Remove key from JSON if present and persist. Returns True if removed.
+    """
+    full = os.path.abspath(path)
+    if not os.path.exists(full):
+        return False
+    with open(full, encoding='utf-8') as f:
+        data = json.load(f)
+    if key in data:
+        del data[key]
+        with open(full, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=indent)
+        return True
+    return False
