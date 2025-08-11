@@ -5,18 +5,19 @@ import types
 
 
 def update_game(
-    state,    
+    state,
     camera,
     clock,
     screen,
     map,
-    buildings,      
+    buildings,
     tiles_editor,
     buildings_editor,
     map_editor,
     minimap,
     ecs,
-    perf_log
+    perf_log,
+    item_editor=None,
 ):
     """
     Actualiza el juego en cada frame, incluyendo:
@@ -61,9 +62,16 @@ def update_game(
         camera.offset_y += dy * pan_speed
         return
 
-    # 3.1) Cámara sigue al jugador si está vivo (tiene Position)
+    # 3.1) Cámara sigue al jugador si está vivo (tiene Position),
+    #      salvo cuando el Items Editor está reteniendo enfoque manual (hold-focus)
     @benchmark(perf_log, "2.1.camera.update")
     def _update_camera():
+        try:
+            if item_editor is not None and getattr(getattr(item_editor, 'model', None), 'holding_pos_focus', False):
+                # Respetar enfoque manual del editor: no seguir jugador
+                return
+        except Exception:
+            pass
         eid = ecs.ecs_world.player_entity
         pos_map = ecs.ecs_world.components.get('Position', {})
         if eid in pos_map:

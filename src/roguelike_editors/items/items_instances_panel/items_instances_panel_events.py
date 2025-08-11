@@ -4,6 +4,7 @@ from typing import Any
 import logging
 
 from roguelike_ui.services.json_persistence import save_to_json
+from roguelike_engine.config.config_tiles import TILE_SIZE
 
 logger = logging.getLogger(__name__)
 
@@ -31,14 +32,23 @@ class ItemsInstancesPanelEvents:
             # Si es click izquierdo, iniciar enfoque de cámara mientras se mantenga presionado
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 try:
-                    # Preferir posición absoluta si existe, si no, usar tile
-                    if 'position' in inst_data and isinstance(inst_data['position'], dict):
-                        x = float(inst_data['position'].get('x'))
-                        y = float(inst_data['position'].get('y'))
-                    else:
+                    # Preferir posición absoluta (en píxeles). Si no existe, convertir tile -> píxeles.
+                    x = y = None
+                    pos = inst_data.get('position')
+                    if isinstance(pos, dict):
+                        px = pos.get('x')
+                        py = pos.get('y')
+                        if px is not None and py is not None:
+                            x = float(px)
+                            y = float(py)
+                    if x is None or y is None:
                         tile = inst_data.get('tile', {})
-                        x = float(tile.get('x'))
-                        y = float(tile.get('y'))
+                        tx = tile.get('x')
+                        ty = tile.get('y')
+                        if tx is not None and ty is not None:
+                            # Convertir al centro del tile para un enfoque más natural
+                            x = (float(tx) + 0.5) * TILE_SIZE
+                            y = (float(ty) + 0.5) * TILE_SIZE
                     if controller.on_start_hold_focus and x is not None and y is not None:
                         controller.on_start_hold_focus(x, y)
                 except Exception:

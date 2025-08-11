@@ -132,6 +132,7 @@ class ItemsEditorController:
             if not hasattr(self, 'game'):
                 return
             try:
+                logging.getLogger(__name__).info("[ItemsEditorController] Focusing camera at (%.2f, %.2f)", x, y)
                 self.game.camera.update(SimpleNamespace(x=x, y=y))
                 self.model.holding_pos_focus = True
             except Exception:
@@ -144,6 +145,7 @@ class ItemsEditorController:
             try:
                 pos = getattr(self.game.ecs.ecs_world, 'player_position', None)
                 if pos is not None:
+                    logging.getLogger(__name__).info("[ItemsEditorController] Restoring camera to player at (%.2f, %.2f)", pos.x, pos.y)
                     self.game.camera.update(SimpleNamespace(x=pos.x, y=pos.y))
                 self.model.holding_pos_focus = False
             except Exception:

@@ -75,7 +75,8 @@ class Game:
             self.map_editor,
             self.minimap,
             self.ecs,
-            self.perf_log
+            self.perf_log,
+            item_editor=self.item_editor,
         )
 
     @benchmark(lambda self: self.perf_log, "3.TOTAL: RENDER")
