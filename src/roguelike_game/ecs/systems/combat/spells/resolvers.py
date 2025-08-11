@@ -91,7 +91,26 @@ class AuraResolver(BaseSpellResolver):
         radius = cfg.get('radius', 100)
         buff = cfg.get('buff', {})
         duration = cfg.get('duration', 5.0)
-        world.components.setdefault('AuraComponent', {})[caster] = AuraComponent(radius, buff, duration)
+        comp = AuraComponent(radius, buff, duration)
+        # Hacer que Aura use los parámetros comunes de partículas aplanados desde vfx.particles.*
+        try:
+            if 'particle_speed' in cfg:
+                comp.particle_speed = cfg.get('particle_speed')
+            if 'particle_colors' in cfg:
+                comp.particle_colors = cfg.get('particle_colors')
+            if 'particle_lifespan' in cfg:
+                comp.particle_lifespan = cfg.get('particle_lifespan')
+            if 'size_range' in cfg:
+                sr = cfg.get('size_range')
+                if isinstance(sr, (list, tuple)) and len(sr) == 2:
+                    comp.particle_min_size = int(sr[0])
+                    comp.particle_max_size = int(sr[1])
+            # Si hay ritmo de emisión genérico
+            if 'emit_rate' in cfg and hasattr(comp, 'particles_per_frame'):
+                comp.particles_per_frame = cfg.get('emit_rate')
+        except Exception:
+            pass
+        world.components.setdefault('AuraComponent', {})[caster] = comp
 
 class BeamResolver(BaseSpellResolver):
     """

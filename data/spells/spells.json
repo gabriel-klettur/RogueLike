@@ -159,9 +159,19 @@
       }
     },
     "vfx": {
-      "preset": "healing_ring",
       "sprite": {
         "scale": 0.3
+      },
+      "particles": {
+        "emit_rate": 3,
+        "speed": 1.2,
+        "lifespan": 60,
+        "size_range": [4, 8],
+        "colors": [
+          [0, 255, 100],
+          [100, 255, 150],
+          [0, 200, 100]
+        ]
       }
     }
   },
