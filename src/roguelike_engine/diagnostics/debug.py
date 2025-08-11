@@ -1,19 +1,12 @@
 from roguelike_engine.utils.benchmark import benchmark
 import roguelike_engine.config.config as config
-from roguelike_engine.debuger.overlay.model import DebugOverlayModel
-from roguelike_engine.debuger.overlay.view import DebugOverlayView
-from roguelike_engine.debuger.overlay.controller import DebugOverlayController
-from roguelike_engine.debuger.overlay.events import handle_event as handle_overlay_event
-
-# Re-export helper draw functions for backward-compatible imports
-from roguelike_engine.debuger.helpers import (
-    draw_debug_rect,
-    draw_debug_mask_outline,
-    draw_zone_border,
-)
+from roguelike_engine.diagnostics.overlay.model import DiagnosticsOverlayModel
+from roguelike_engine.diagnostics.overlay.view import DiagnosticsOverlayView
+from roguelike_engine.diagnostics.overlay.controller import DiagnosticsOverlayController
+from roguelike_engine.diagnostics.overlay.events import handle_event as handle_overlay_event
 
 
-class DebugOverlay:
+class DiagnosticsOverlay:
     def __init__(
         self,
         perf_log: dict[str, list[float]],
@@ -30,7 +23,7 @@ class DebugOverlay:
         update_interval: float = 0.2,
         scroll_speed: int = 20,
     ):
-        self.model = DebugOverlayModel(
+        self.model = DiagnosticsOverlayModel(
             perf_log=perf_log,
             font_name=font_name,
             font_size=font_size,
@@ -49,8 +42,8 @@ class DebugOverlay:
             update_interval=update_interval,
             scroll_speed=scroll_speed,
         )
-        self.view = DebugOverlayView()
-        self.controller = DebugOverlayController(self.model, self.view)
+        self.view = DiagnosticsOverlayView()
+        self.controller = DiagnosticsOverlayController(self.model, self.view)
 
     @property
     def perf_log(self):
@@ -67,7 +60,7 @@ class DebugOverlay:
     def handle_event(self, event) -> bool:
         return handle_overlay_event(self.model, self.view, event)
 
-    @benchmark(lambda self: self.perf_log, "3.12. debug.render")
+    @benchmark(lambda self: self.perf_log, "3.12. diagnostics.render")
     def render(
         self,
         screen,
@@ -91,10 +84,10 @@ class DebugOverlay:
         )
 
 
-def render_debug_overlay(debug_overlay, screen, state, camera, map_manager, entities, show_borders=False):
-    if not config.DEBUG or debug_overlay.perf_log is None:
+def render_diagnostics_overlay(overlay, screen, state, camera, map_manager, entities, show_borders=False):
+    if not config.DEBUG or overlay.perf_log is None:
         return
-    debug_overlay.render(
+    overlay.render(
         screen,
         state=state,
         camera=camera,
@@ -102,3 +95,9 @@ def render_debug_overlay(debug_overlay, screen, state, camera, map_manager, enti
         entities=entities,
         show_borders=show_borders
     )
+
+
+__all__ = [
+    "DiagnosticsOverlay",
+    "render_diagnostics_overlay",
+]

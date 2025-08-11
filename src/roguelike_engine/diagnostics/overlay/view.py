@@ -1,10 +1,10 @@
 import pygame
 from typing import List, Tuple
 
-from .model import DebugOverlayModel
+from .model import DiagnosticsOverlayModel
 
 
-class DebugOverlayView:
+class DiagnosticsOverlayView:
     def __init__(self):
         self._fonts: dict[tuple[str, int, bool], pygame.font.Font] = {}
         self._text_cache: dict[str, pygame.Surface] = {}
@@ -15,13 +15,13 @@ class DebugOverlayView:
             self._fonts[key] = pygame.font.SysFont(name, size, bold=bold)
         return self._fonts[key]
 
-    def line_height(self, model: DebugOverlayModel) -> int:
+    def line_height(self, model: DiagnosticsOverlayModel) -> int:
         font = self._get_font(model.font_name, model.font_size)
         return font.get_height() + model.padding_y * 2 + model.spacing
 
     def rebuild_panel(
         self,
-        model: DebugOverlayModel,
+        model: DiagnosticsOverlayModel,
         position: Tuple[int, int],
         lines: List[Tuple[str, str]],
         label_w: int,

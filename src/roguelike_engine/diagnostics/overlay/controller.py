@@ -6,12 +6,12 @@ from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.map.utils import calculate_dungeon_offset
 
-from .model import DebugOverlayModel
-from .view import DebugOverlayView
+from .model import DiagnosticsOverlayModel
+from .view import DiagnosticsOverlayView
 
 
-class DebugOverlayController:
-    def __init__(self, model: DebugOverlayModel, view: DebugOverlayView):
+class DiagnosticsOverlayController:
+    def __init__(self, model: DiagnosticsOverlayModel, view: DiagnosticsOverlayView):
         self.model = model
         self.view = view
 

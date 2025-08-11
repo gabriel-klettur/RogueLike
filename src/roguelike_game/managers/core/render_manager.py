@@ -1,7 +1,7 @@
 import pygame
 from roguelike_engine.utils.mouse import draw_mouse_crosshair
 from roguelike_engine.utils.benchmark import benchmark
-from roguelike_engine.debuger.debug import DebugOverlay, render_debug_overlay
+from roguelike_engine.diagnostics import DiagnosticsOverlay, render_diagnostics_overlay
 from roguelike_engine.config.config_tiles import TILE_SIZE
 import roguelike_engine.config.config as config
 from types import SimpleNamespace
@@ -47,7 +47,7 @@ class RendererManager:
         self.tiles_editor = tiles_editor
         self.map_editor = map_editor
         self._dirty_rects = []        
-        self.debug_overlay = DebugOverlay(perf_log=perf_log)
+        self.diagnostics_overlay = DiagnosticsOverlay(perf_log=perf_log)
         self.zone_view = ZoneView()
         self.minimap = minimap
         self.ecs = ecs
@@ -156,7 +156,7 @@ class RendererManager:
 
         # Debug: overlay y bordes
         debug_entities = SimpleNamespace(player=self.ecs.ecs_world.player_position)
-        render_debug_overlay(self.debug_overlay, screen, state, camera, self.map, debug_entities, show_borders=True)
+        render_diagnostics_overlay(self.diagnostics_overlay, screen, state, camera, self.map, debug_entities, show_borders=True)
         # Resaltar área de expansión de dungeon
         self._render_expand_area(self._last_state)
         # Mostrar ayuda de controles según el modo

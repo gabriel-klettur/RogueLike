@@ -18,9 +18,10 @@ def handle_events(game):
 
     # Capturar eventos
     events = pygame.event.get()
-    # Pre-despacho: permitir que el DebugOverlay consuma eventos de ratón siempre
+    # Pre-despacho: permitir que el DiagnosticsOverlay consuma eventos de ratón siempre
     # incluso si luego retornamos temprano por menús/editores.
-    overlay = getattr(game.renderer, 'debug_overlay', None)
+    # Use the Diagnostics overlay instance
+    overlay = getattr(game.renderer, 'diagnostics_overlay', None)
     consumed_idx: set[int] = set()
     if overlay and overlay.panel_rect:
         for i, ev in enumerate(events):
@@ -162,6 +163,7 @@ def handle_events(game):
     # Por defecto, delegar al handle de engine
     # Pasar solo eventos no consumidos al motor para evitar doble manejo.
     remaining_events = [e for idx, e in enumerate(events) if idx not in consumed_idx]
+    # Pass remaining events and diagnostics overlay to the engine input handler
     engine_handle_events(
         game.state,
         game.camera,
@@ -172,6 +174,6 @@ def handle_events(game):
         game.tiles_editor,
         game.buildings_editor,
         game.map_editor,
-        game.renderer.debug_overlay,
-        remaining_events
+        remaining_events,
+        diagnostics_overlay=overlay,
     )
