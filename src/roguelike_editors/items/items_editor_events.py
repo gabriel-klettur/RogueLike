@@ -121,10 +121,13 @@ class ItemsEditorEvents:
             over_picker = bool(picker_rect and picker_rect.collidepoint(mx, my))
             over_props = bool(props_rect and props_rect.collidepoint(mx, my))
             over_instances = bool((inst_list_rect and inst_list_rect.collidepoint(mx, my)) or (inst_params_rect and inst_params_rect.collidepoint(mx, my)))
-            # Delete mode: eliminar drop del mapa si clic fuera del picker/props/instancias
+            # Delete mode: 
+            # - si clic sobre el picker, delegar al picker para que dispare on_select/on_open
+            #   (el ItemsEditorController intercepta y elimina del sistema cuando 'remove_item' está activo)
+            # - si clic sobre el mapa fuera de picker/props/instancias, eliminar drop del mapa
             if getattr(model, 'delete_mode_active', False):
                 if over_picker:
-                    # No soportamos borrar definiciones de ítems desde el picker; consumir
+                    controller.picker_controller.handle_event(event)
                     return True
                 if not over_props and not over_instances:
                     if controller.delete_drop_at_screen_pos(mx, my):

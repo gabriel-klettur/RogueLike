@@ -36,6 +36,8 @@ from roguelike_game.ecs.systems.rendering.drop_hover_system import DropHoverRend
 import os
 import uuid
 from roguelike_engine.utils.loader import load_image
+import json
+from roguelike_ui.services.json_persistence import load_from_json
 
 
 class ItemsEditorController:
@@ -72,6 +74,25 @@ class ItemsEditorController:
 
         # Callbacks unificados de selección
         def _set_selected_item(item_id: str) -> None:
+            # Si está activo 'remove_item' o delete_mode_active, eliminar del sistema en lugar de seleccionar
+            try:
+                if getattr(self.items_add_remove_model, 'active_tool', None) == 'remove_item' or \
+                   getattr(self.model, 'delete_mode_active', False):
+                    ok = self.delete_item_from_system(item_id)
+                    if ok:
+                        logging.getLogger(__name__).info("[ItemsEditorController] Deleted item '%s' from system via picker", item_id)
+                        # Limpiar selección ya que el ítem ya no existe
+                        self.model.selected_item_id = None
+                        self.picker_controller.model.selected_item_id = None
+                        # Forzar refresco de contexto de propiedades (queda vacío)
+                        self.properties_controller.update_context(self.model.items, None, self.model.hovered_item_id)
+                        try:
+                            self.instances_controller.reload_data()
+                        except Exception:
+                            pass
+                        return
+            except Exception:
+                logging.getLogger(__name__).exception("[ItemsEditorController] remove_item via picker failed")
             # Actualizar SSOT del editor y del picker para resaltar en la grilla
             self.model.selected_item_id = item_id
             self.picker_controller.model.selected_item_id = item_id
@@ -79,6 +100,23 @@ class ItemsEditorController:
             self.properties_controller.update_context(self.model.items, self.model.selected_item_id, self.model.hovered_item_id)
 
         def _on_open_id(item_id: str) -> None:
+            # Si estamos en modo eliminar, borrar directamente al abrir
+            try:
+                if getattr(self.items_add_remove_model, 'active_tool', None) == 'remove_item' or \
+                   getattr(self.model, 'delete_mode_active', False):
+                    ok = self.delete_item_from_system(item_id)
+                    if ok:
+                        logging.getLogger(__name__).info("[ItemsEditorController] Deleted item '%s' from system via open", item_id)
+                        self.model.selected_item_id = None
+                        self.picker_controller.model.selected_item_id = None
+                        self.properties_controller.update_context(self.model.items, None, self.model.hovered_item_id)
+                        try:
+                            self.instances_controller.reload_data()
+                        except Exception:
+                            pass
+                        return
+            except Exception:
+                logging.getLogger(__name__).exception("[ItemsEditorController] remove_item via open failed")
             # Seleccionar y abrir edición inline de la primera propiedad
             _set_selected_item(item_id)
             self.properties_controller.update_context(self.model.items, self.model.selected_item_id, self.model.hovered_item_id)
@@ -625,6 +663,29 @@ class ItemsEditorController:
         except Exception:
             return False
 
+    # --- Item system operations ---
+    def delete_item_from_system(self, item_id: str) -> bool:
+        """Remove an item entry from data/items/items.json by id. Returns True if removed."""
+        try:
+            items_path = os.path.join(os.getcwd(), 'data', 'items', 'items.json')
+            data = load_from_json(items_path)
+            if item_id not in data:
+                logging.getLogger(__name__).warning("[ItemsEditorController] delete_item_from_system: '%s' not found", item_id)
+                return False
+            # Remove entry and write back
+            del data[item_id]
+            with open(items_path, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            # Refrescar catálogos/caches y vista del picker
+            try:
+                self._refresh_items_catalog()
+            except Exception:
+                logging.getLogger(__name__).exception("[ItemsEditorController] Failed to refresh after deleting '%s'", item_id)
+            return True
+        except Exception:
+            logging.getLogger(__name__).exception("[ItemsEditorController] delete_item_from_system failed for '%s'", item_id)
+            return False
+
     # --- Spawn/Delete modes ---
     def enter_spawn_mode(self) -> None:
         """Enter item spawn mode: enable picker visibility and reset selection."""
@@ -651,6 +712,11 @@ class ItemsEditorController:
         if self.model.spawn_mode_active:
             self.exit_spawn_mode()
         self.model.delete_mode_active = True
+        # Asegurar que el picker esté visible para elegir qué ítem del sistema eliminar
+        try:
+            self.picker_controller.model.visible = True
+        except Exception:
+            pass
         try:
             pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_CROSSHAIR)
         except Exception:

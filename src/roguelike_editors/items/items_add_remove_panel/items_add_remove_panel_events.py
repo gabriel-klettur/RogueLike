@@ -33,7 +33,18 @@ class ItemsAddRemovePanelEventHandler:
                             self.model.active_tool = key
                             self.controller.enter_spawn_mode()
                         return True
-                    if key == 'remove_item' and tb_active == 'items_on_map':
+                    if key == 'remove_item':
+                        # Asegurar toolbar principal en 'items_on_map' y picker visible
+                        try:
+                            if tb_active != 'items_on_map' and tb_model is not None:
+                                tb_model.active_tool = 'items_on_map'
+                                # Mostrar picker explícitamente
+                                try:
+                                    self.controller.picker_controller.model.visible = True
+                                except Exception:
+                                    pass
+                        except Exception:
+                            pass
                         if getattr(self.controller.model, 'delete_mode_active', False):
                             # Toggle off
                             self.controller.exit_delete_mode()
