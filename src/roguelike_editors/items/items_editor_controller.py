@@ -34,6 +34,7 @@ from roguelike_game.ecs.components.item_models import load_items
 from roguelike_game.ecs.systems.inventory.map_load_drops_system import MapLoadDropsSystem
 import os
 import uuid
+from roguelike_engine.utils.loader import load_image
 
 
 class ItemsEditorController:
@@ -155,6 +156,39 @@ class ItemsEditorController:
             self.items_toolbar_controller.add_remove_controller = self.items_add_remove_controller
         except Exception:
             pass
+
+        # --- Wire assets picker anchor and change notifications ---
+        def _assets_anchor_rect() -> Optional[pygame.Rect]:
+            try:
+                # Use picker panel rect computed by ItemPickerPanelView
+                rect = getattr(self.picker_controller, 'picker_state', None)
+                if rect is not None and getattr(rect, 'rect', None):
+                    return rect.rect
+            except Exception:
+                pass
+            return None
+
+        def _on_asset_changed(item_id: str, new_asset_path: str) -> None:
+            try:
+                # Load new image and update shared assets dict
+                img = load_image(new_asset_path)
+                # Update editor-level assets
+                self.model.assets[item_id] = img
+                # Keep picker model/view in sync (they likely share the same dict, but ensure)
+                try:
+                    self.picker_controller.model.assets[item_id] = img
+                except Exception:
+                    pass
+                try:
+                    # Some views cache the assets ref; replace the entry
+                    self.picker_controller.view.assets[item_id] = img
+                except Exception:
+                    pass
+            except Exception:
+                logging.getLogger(__name__).exception("[ItemsEditorController] Failed to refresh asset image for '%s'", item_id)
+
+        self.properties_controller.get_assets_anchor_rect = _assets_anchor_rect
+        self.properties_controller.on_asset_changed = _on_asset_changed
 
     # --- Ciclo principal ---
     def handle_event(self, event: pygame.event.Event) -> None:

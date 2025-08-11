@@ -177,11 +177,14 @@ class FileSystemPickerView:
         count = len(self.model.entries)
         # Compute target grid dimensions to force a fixed number of columns
         cols = max(1, self.cols)
-        rows = (count + cols - 1) // cols
+        rows_total = (count + cols - 1) // cols
         # Match legacy ScrollableGrid geometry (includes outer padding on both sides)
         w = cols * (self.thumb_size + self.pad) + self.pad
-        grid_h = rows * (self.thumb_size + self.pad) + self.pad
-        height = grid_h + self.pad + 20  # extra space for path label
+        grid_h_total = rows_total * (self.thumb_size + self.pad) + self.pad
+        # Limit visible height to 3 rows and rely on PickerPanel scrollbar for overflow
+        visible_rows = max(1, min(3, rows_total))
+        grid_h_visible = visible_rows * (self.thumb_size + self.pad) + self.pad
+        height = grid_h_visible + self.pad + 20  # extra space for path label
         # Init or resize panel
         if self.panel is None:
             self.panel = PanelSurface(w, height)
@@ -189,7 +192,7 @@ class FileSystemPickerView:
             self.panel.resize(w, height)
         # Prepare picker state and render grid
         self._last_draw_position = position
-        self.grid_state.rect = pygame.Rect(0, 0, w, grid_h)
+        self.grid_state.rect = pygame.Rect(0, 0, w, grid_h_visible)
         # Sync selected index from model before rendering (for keyboard navigation)
         if self.model.selected is not None:
             try:
@@ -215,7 +218,8 @@ class FileSystemPickerView:
         path_str = str(hovered[1]) if hovered else str(self.model.current_dir)
         big_font = pygame.font.SysFont(None, 20)
         label = big_font.render(path_str, True, (255, 230, 0))
-        label_rect = label.get_rect(topleft=(self.pad, grid_h + self.pad))
+        # Position label just below the visible grid area
+        label_rect = label.get_rect(topleft=(self.pad, self.grid_state.rect.h + self.pad))
         self.panel.surface.blit(label, label_rect)
         # Blit panel
         surface.blit(self.panel.surface, position)

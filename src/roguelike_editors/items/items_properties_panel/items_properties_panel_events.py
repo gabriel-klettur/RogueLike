@@ -1,5 +1,6 @@
 import pygame
 import logging
+from roguelike_editors.entities.entities_properties_panel.services.state_tabs_helpers import hit_test_state_tab
 
 logger = logging.getLogger(__name__)
 
@@ -15,8 +16,8 @@ class ItemsPropertiesPanelEventHandler:
         self.dc_detector = controller.dc_detector
 
     def handle(self, event: pygame.event.Event) -> None:
-        # Entrada de texto para edición inline
-        if self.text_input.active:
+        # Entrada de texto para edición inline (solo en pestaña 'properties')
+        if self.model.active_type_tab == 'properties' and self.text_input.active:
             if self.text_input.handle_event(event):
                 self.model.editing_text = self.text_input.text
                 self.model.editing_cursor = self.text_input.cursor
@@ -27,6 +28,9 @@ class ItemsPropertiesPanelEventHandler:
 
         # Scroll con rueda del ratón cuando el cursor está sobre el panel
         if event.type == pygame.MOUSEWHEEL:
+            # No hay scroll en la pestaña 'assets'
+            if self.model.active_type_tab != 'properties':
+                return
             panel = getattr(self.model, 'panel_rect', None)
             if panel:
                 mx, my = pygame.mouse.get_pos()
@@ -55,6 +59,8 @@ class ItemsPropertiesPanelEventHandler:
 
         # Soporte para ruedas antiguas como botones 4/5
         if event.type == pygame.MOUSEBUTTONDOWN and event.button in (4, 5):
+            if self.model.active_type_tab != 'properties':
+                return
             panel = getattr(self.model, 'panel_rect', None)
             if panel:
                 mx, my = pygame.mouse.get_pos()
@@ -78,9 +84,41 @@ class ItemsPropertiesPanelEventHandler:
                     logger.debug(f"[ItemsPropertiesPanel] btn4/5 applied scroll_y={self.model.scroll_y}")
                     return
 
-        # Clicks del ratón sobre propiedades
+        # Clicks del ratón: tabs, asset cell, propiedades
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mx, my = event.pos
+            # 1) Tabs en la parte superior
+            tab_hit = None
+            if getattr(self.model, 'type_tab_rects', None):
+                tab_hit = hit_test_state_tab(self.model.type_tab_rects, (mx, my))
+            if tab_hit:
+                if tab_hit != self.model.active_type_tab:
+                    # Al cambiar de pestaña, limpiar estado de edición/foco
+                    self.model.focused_property = None
+                    self.model.editing_property = None
+                    if self.text_input.active:
+                        # cancelar edición sin commit
+                        self.text_input.deactivate()
+                    self.model.active_type_tab = tab_hit
+                return
+
+            # 2) Pestaña 'assets': abrir picker con doble clic sobre la celda
+            if self.model.active_type_tab == 'assets':
+                cell = getattr(self.model, 'asset_cell_rect', None)
+                if cell and cell.collidepoint(mx, my):
+                    # Requerir doble clic (event.clicks>=2) o usar detector para entornos que no proveen 'clicks'
+                    if getattr(event, 'clicks', 1) >= 2 or self.dc_detector.is_double_click('asset_icon_cell'):
+                        self.controller.open_assets_picker()
+                    return
+                # Click dentro del panel en otros sitios no hace nada especial
+                panel = getattr(self.model, 'panel_rect', None)
+                if panel and not panel.collidepoint(mx, my):
+                    # Clic fuera: ocultar picker si hubiera algo y limpiar
+                    self.model.focused_property = None
+                    self.model.editing_property = None
+                return
+
+            # 3) Pestaña 'properties': clic en propiedades para foco/edición
             # Si clic en alguna propiedad
             for rect, key in getattr(self.model, 'property_entries', []):
                 if rect.collidepoint(mx, my):

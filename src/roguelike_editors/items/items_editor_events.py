@@ -24,6 +24,31 @@ class ItemsEditorEvents:
         if not model.visible:
             return False
 
+        # Si el Assets Picker (de propiedades) está visible, priorizar su manejo
+        try:
+            props = controller.properties_controller
+            ap = getattr(props, 'assets_picker', None)
+            ap_model = getattr(ap, 'model', None)
+            if ap and ap_model and getattr(ap_model, 'visible', False):
+                # 1) Eventos con posición: si caen dentro del rect del picker, manejar y salir
+                panel_rect = getattr(ap_model, 'panel_rect', None)
+                if hasattr(event, 'pos') and isinstance(getattr(event, 'pos'), (tuple, list)) and panel_rect:
+                    if panel_rect.collidepoint(*event.pos):
+                        if ap.handle_event(event):
+                            return True
+                # 2) Rueda: si el cursor está sobre el panel del picker, manejar
+                if event.type == pygame.MOUSEWHEEL and panel_rect:
+                    mx, my = pygame.mouse.get_pos()
+                    if panel_rect.collidepoint(mx, my):
+                        if ap.handle_event(event):
+                            return True
+                # 3) Otros eventos globales (p.ej. ESC) delegarlos también
+                if event.type in (pygame.KEYDOWN, pygame.KEYUP):
+                    if ap.handle_event(event):
+                        return True
+        except Exception:
+            logger.exception("[ItemsEditorEvents] routing to assets picker failed")
+
         # Toolbars primero (permitir clicks/drag sobre ellos antes que otros paneles)
         try:
             itb = getattr(controller, 'items_toolbar_controller', None)

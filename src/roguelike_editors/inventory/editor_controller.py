@@ -3,8 +3,6 @@ import logging
 logger = logging.getLogger(__name__)
 from .data_controller import DataController
 
-
-
 from roguelike_editors.inventory.left_panel.panel_controller import PanelController
 from roguelike_editors.inventory.right_panel.inventory_items_panel.inventory_items_panel_controller import InventoryItemsPanelController
 from roguelike_editors.inventory.right_panel.item_selection_panel.item_selection_panel_events import ItemSelectionPanelEventHandler
@@ -19,8 +17,6 @@ from roguelike_editors.inventory.editor_view import InventoryEditorView
 from roguelike_editors.inventory.inventory_title.inventory_title_controller import InventoryTitleController
 from roguelike_editors.inventory.inventory_title.inventory_title_model import InventoryTitleModel
  
-
-
 class InventoryEditorController:
     """
     Controller para el editor de inventario (MVC): maneja estados y eventos.
