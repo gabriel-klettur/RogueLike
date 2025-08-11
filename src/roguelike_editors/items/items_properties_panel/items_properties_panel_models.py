@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Optional, List, Tuple, Dict
+from typing import Optional, List, Tuple, Dict, Any
 import pygame
 
 
@@ -31,3 +31,13 @@ class ItemsPropertiesPanelModel:
 
     # Única celda para asset del ítem (icono)
     asset_cell_rect: Optional[pygame.Rect] = None
+
+    # Modo "añadir ítem al sistema" (controlado desde la sub-toolbar Add/Remove)
+    # La vista actual no dibuja un selector dedicado, pero este flag permite
+    # coordinar el layout con el editor y mostrar/ocultar controles si fuese necesario.
+    show_add_system_selector: bool = False
+
+    # Claves (esquema) unificadas extraídas de data/items/items.json para poder crear nuevos ítems
+    schema_keys: List[str] = field(default_factory=list)
+    # Borrador de nuevo ítem cuando no hay ítem activo en modo add-on-system
+    new_item_draft: Dict[str, Any] = field(default_factory=dict)

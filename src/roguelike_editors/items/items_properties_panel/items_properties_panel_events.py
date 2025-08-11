@@ -104,6 +104,18 @@ class ItemsPropertiesPanelEventHandler:
         # Clicks del ratón: tabs, asset cell, propiedades
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mx, my = event.pos
+            # 0) Botón verde de Confirmar (modo add-on-system)
+            if getattr(self.model, 'show_add_system_selector', False):
+                btn_rect = getattr(self.model, 'confirm_button_rect', None)
+                panel = getattr(self.model, 'panel_rect', None)
+                if btn_rect and panel and panel.collidepoint(mx, my):
+                    if btn_rect.collidepoint(mx, my):
+                        # Confirmar y salir del modo
+                        try:
+                            self.controller.confirm_add_item_on_system()
+                        except Exception:
+                            logger.exception("[ItemsPropertiesPanel] confirm button handler failed")
+                        return
             # 1) Tabs en la parte superior
             tab_hit = None
             if getattr(self.model, 'type_tab_rects', None):
@@ -144,10 +156,15 @@ class ItemsPropertiesPanelEventHandler:
                     if getattr(event, 'clicks', 1) >= 2 or self.dc_detector.is_double_click(key):
                         self.model.focused_property = key
                         self.model.editing_property = key
-                        # Cargar valor inicial desde ítem activo
+                        # Cargar valor inicial desde ítem activo o borrador (modo add-on-system)
                         active_id = self.controller._selected_id or self.controller._hovered_id
                         item = self.controller._items.get(active_id)
-                        initial = str(getattr(item, key, "")) if item else ""
+                        if item:
+                            initial = str(getattr(item, key, ""))
+                        elif getattr(self.model, 'show_add_system_selector', False):
+                            initial = str(getattr(self.model, 'new_item_draft', {}).get(key, ""))
+                        else:
+                            initial = ""
                         self.model.editing_text = initial
                         self.model.editing_cursor = len(initial)
                         self.text_input.activate(initial)

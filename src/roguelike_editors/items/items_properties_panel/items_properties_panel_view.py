@@ -50,54 +50,90 @@ class ItemsPropertiesPanelView:
              title_rect: Optional[pygame.Rect] = None) -> None:
         margin = 20
         sw, sh = screen.get_size()
-        if not active_item_id or active_item_id not in items:
-            # Sin ítem activo: ocultar completamente el panel
+        # Permitir mostrar el panel anclado aunque no haya selección si estamos en modo add-on-system
+        allow_empty_panel = getattr(model, 'show_add_system_selector', False)
+        no_active_item = (not active_item_id) or (active_item_id not in items)
+        if no_active_item and not allow_empty_panel:
+            # Sin ítem activo y no en modo especial: ocultar completamente el panel
             model.panel_rect = None
             model.property_entries = []
             model.content_height = 0
             model.content_view_rect = None
+            # Limpiar botón de confirmación
+            if hasattr(model, 'confirm_button_rect'):
+                model.confirm_button_rect = None
             return
 
+        # Posicionar panel: por defecto bajo el título; si hay ancla externa, respetarla
         top_y = max(margin, (title_rect.bottom + 10) if title_rect else margin)
+        left_anchor_x = getattr(self, '_left_anchor_x', None)
+        top_anchor_y = getattr(self, '_top_anchor_y', None)
 
-        item = items[active_item_id]
+        item = items.get(active_item_id) if active_item_id else None
         # Obtener datos del ítem
-        if hasattr(item, 'model_dump'):
+        if item is None:
+            data = {}
+        elif hasattr(item, 'model_dump'):
             data = item.model_dump()
         else:
             try:
                 data = item.dict()
             except Exception:
-                data = vars(item)
+                try:
+                    data = vars(item)
+                except Exception:
+                    data = {}
 
         # Construir entradas editables como pares (key, value)
-        order_keys = []
-        for k in ("id", "name", "description"):
-            if k in data:
-                order_keys.append(k)
-        # Resto de claves
-        for k, v in data.items():
-            if k in ("id", "name", "description") or v is None:
-                continue
-            order_keys.append(k)
-
         entries: list[tuple[str, str]] = []
-        for k in order_keys:
-            v = data.get(k, "")
-            # Si está en edición esta clave, sobrescribir con el texto de edición
-            if getattr(model, 'editing_property', None) == k:
-                display_val = model.editing_text
-            else:
-                display_val = str(v)
-            entries.append((k, display_val))
+        if item is None and getattr(model, 'show_add_system_selector', False):
+            # Usar esquema completo si está disponible
+            schema_keys = getattr(model, 'schema_keys', []) or []
+            # Reordenar para priorizar campos principales
+            preferred = ["id", "name", "description"]
+            order_keys = [k for k in preferred if k in schema_keys]
+            for k in schema_keys:
+                if k not in order_keys:
+                    order_keys.append(k)
+            for k in order_keys:
+                v = getattr(model, 'new_item_draft', {}).get(k, "")
+                if getattr(model, 'editing_property', None) == k:
+                    display_val = model.editing_text
+                else:
+                    display_val = str(v)
+                entries.append((k, display_val))
+        else:
+            # Entradas basadas en el ítem actual
+            order_keys = []
+            for k in ("id", "name", "description"):
+                if k in data:
+                    order_keys.append(k)
+            for k, v in data.items():
+                if k in ("id", "name", "description") or v is None:
+                    continue
+                order_keys.append(k)
+            for k in order_keys:
+                v = data.get(k, "")
+                if getattr(model, 'editing_property', None) == k:
+                    display_val = model.editing_text
+                else:
+                    display_val = str(v)
+                entries.append((k, display_val))
 
         font_h = self.font.get_height()
         panel_padding = 10
         panel_w = self.panel_w
         # Mantener en pantalla si no cabe completamente
         panel_h = self.panel_h if (top_y + self.panel_h + margin) <= sh else max(80, sh - top_y - margin)
-        panel_x = sw - panel_w - margin
-        panel_y = top_y
+        # Si tenemos ancla desde el editor (Add/Remove a la izquierda), usarla
+        if left_anchor_x is not None:
+            panel_x = min(sw - panel_w - margin, left_anchor_x + 8)
+        else:
+            panel_x = sw - panel_w - margin
+        if top_anchor_y is not None:
+            panel_y = max(margin, top_anchor_y)
+        else:
+            panel_y = top_y
 
         # Fondo del panel (fijo)
         info_surf = pygame.Surface((panel_w, panel_h), pygame.SRCALPHA)
@@ -189,13 +225,22 @@ class ItemsPropertiesPanelView:
             pygame.draw.rect(screen, (255, 255, 255), cell_rect, 2)
             # Cargar imagen actual (icon/icon_small/icon_large; lista->primero)
             icon_path = None
-            if hasattr(item, 'model_dump'):
+            if item is None:
+                # Mostrar valor desde el borrador si existe
+                try:
+                    data_map = dict(getattr(model, 'new_item_draft', {}))
+                except Exception:
+                    data_map = {}
+            elif hasattr(item, 'model_dump'):
                 data_map = item.model_dump()
             else:
                 try:
                     data_map = item.dict()
                 except Exception:
-                    data_map = vars(item)
+                    try:
+                        data_map = vars(item)
+                    except Exception:
+                        data_map = {}
             for k in ("icon", "icon_small", "icon_large"):
                 if k in data_map:
                     val = data_map[k]
@@ -273,3 +318,30 @@ class ItemsPropertiesPanelView:
                     tooltip_surf.blit(tooltip_txt, (4, 2))
                     screen.blit(tooltip_surf, (tt_x, tt_y))
                     break
+
+        # Botón de confirmación al final del panel cuando está activo el modo add-on-system
+        # Se pinta siempre que el panel esté visible; si no hay ítem seleccionado, se mostrará pero la acción no hará nada
+        btn_h_pad = 10
+        if getattr(model, 'show_add_system_selector', False) and model.panel_rect:
+            btn_w = 120
+            btn_h = 32
+            btn_x = model.panel_rect.right - btn_w - 10
+            btn_y = model.panel_rect.bottom - btn_h - 10
+            btn_rect = pygame.Rect(btn_x, btn_y, btn_w, btn_h)
+            # Guardar en el modelo para hit-test desde eventos
+            setattr(model, 'confirm_button_rect', btn_rect)
+            # Fondo verde
+            surf_btn = pygame.Surface((btn_w, btn_h), pygame.SRCALPHA)
+            surf_btn.fill((0, 160, 0, 230))
+            screen.blit(surf_btn, (btn_x, btn_y))
+            # Borde
+            pygame.draw.rect(screen, (0, 255, 0), btn_rect, 2)
+            # Texto
+            label = self.font.render("Confirmar", True, (255, 255, 255))
+            lx = btn_x + (btn_w - label.get_width()) // 2
+            ly = btn_y + (btn_h - label.get_height()) // 2
+            screen.blit(label, (lx, ly))
+        else:
+            # No mostrar botón; limpiar rect si existiera
+            if hasattr(model, 'confirm_button_rect'):
+                model.confirm_button_rect = None

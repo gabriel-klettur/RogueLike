@@ -43,8 +43,36 @@ class ItemsAddRemovePanelEventHandler:
                             self.controller.enter_delete_mode()
                         return True
                     if key == 'add_item_on_system':
-                        # Placeholder: reservar para futuros flujos (p.ej. añadir definiciones/params)
-                        self.model.active_tool = key
+                        # Toggle modo de añadir ítem al sistema
+                        if self.model.active_tool == 'add_item_on_system':
+                            # Cerrar modo
+                            self.model.active_tool = None
+                            try:
+                                pp_model = self.controller.properties_controller.model
+                                pp_model.show_add_system_selector = False
+                                # Restaurar layout UI
+                                if hasattr(self.controller, 'exit_add_items_on_system_mode'):
+                                    self.controller.exit_add_items_on_system_mode()
+                            except Exception:
+                                pass
+                        else:
+                            # Asegurar que no estamos en modos que ocultan/alteran el flujo
+                            if getattr(self.controller.model, 'spawn_mode_active', False):
+                                self.controller.exit_spawn_mode()
+                            if getattr(self.controller.model, 'delete_mode_active', False):
+                                self.controller.exit_delete_mode()
+                            self.model.active_tool = key
+                            try:
+                                # Mostrar selector en Properties Panel (si la vista lo usa)
+                                pp_model = self.controller.properties_controller.model
+                                pp_model.show_add_system_selector = True
+                            except Exception:
+                                pass
+                            try:
+                                if hasattr(self.controller, 'enter_add_items_on_system_mode'):
+                                    self.controller.enter_add_items_on_system_mode()
+                            except Exception:
+                                pass
                         return True
+            return False
         return False
-

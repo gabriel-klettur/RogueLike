@@ -114,6 +114,12 @@ class ItemsEditorController:
         self.instances_controller.on_start_hold_focus = _start_hold_focus
         self.instances_controller.on_end_hold_focus = _end_hold_focus
 
+        # Back-reference so the properties panel can call editor methods (confirm flow)
+        try:
+            self.properties_controller.editor_controller = self
+        except Exception:
+            pass
+
         # Delegar spawn RMB desde el picker hacia aquí
         def _spawn_at_player(item_id: str) -> None:
             if not hasattr(self, 'game') or not hasattr(self.game, 'ecs'):
@@ -274,10 +280,35 @@ class ItemsEditorController:
                     # Ancla izquierda del picker: pegado al borde derecho del Add/Remove (gap=0)
                     left_anchor_x = ar_x + ar_panel_w
                     setattr(self.picker_controller.view, '_left_anchor_x', left_anchor_x)
+                    # Si estamos en modo add_item_on_system, anclar también el panel de propiedades al borde derecho del Add/Remove
+                    try:
+                        if getattr(self.properties_controller.model, 'show_add_system_selector', False) or \
+                           getattr(self.items_add_remove_model, 'active_tool', None) == 'add_item_on_system':
+                            setattr(self.properties_controller.view, '_left_anchor_x', left_anchor_x)
+                            # Alinear Y con la fila de toolbars
+                            top_anchor_y = (title_rect.bottom + 8) if title_rect is not None else None
+                            setattr(self.properties_controller.view, '_top_anchor_y', top_anchor_y)
+                        else:
+                            # Limpiar anclas cuando no esté activo el modo
+                            if hasattr(self.properties_controller.view, '_left_anchor_x'):
+                                setattr(self.properties_controller.view, '_left_anchor_x', None)
+                            if hasattr(self.properties_controller.view, '_top_anchor_y'):
+                                setattr(self.properties_controller.view, '_top_anchor_y', None)
+                    except Exception:
+                        pass
             else:
                 # Limpiar ancla cuando no esté visible
                 if hasattr(self.picker_controller.view, '_left_anchor_x'):
                     setattr(self.picker_controller.view, '_left_anchor_x', None)
+                # Y limpiar anclas del panel de propiedades salvo que el modo especial fuerce su visibilidad
+                try:
+                    if not getattr(self.properties_controller.model, 'show_add_system_selector', False):
+                        if hasattr(self.properties_controller.view, '_left_anchor_x'):
+                            setattr(self.properties_controller.view, '_left_anchor_x', None)
+                        if hasattr(self.properties_controller.view, '_top_anchor_y'):
+                            setattr(self.properties_controller.view, '_top_anchor_y', None)
+                except Exception:
+                    pass
         except Exception:
             logging.getLogger(__name__).exception("[ItemsEditorController.draw] failed to compute picker left anchor")
         # Inyectar flags de spawn al PickerPanelView para efectos visuales (parpadeo)
@@ -462,7 +493,9 @@ class ItemsEditorController:
         except Exception:
             pass
         try:
-            self.picker_controller.view.items = self.model.items  # si la vista cachea ref
+            # Actualizar también assets en controller y view del picker
+            self.picker_controller.model.assets = self.model.assets
+            self.picker_controller.view.assets = self.model.assets
         except Exception:
             pass
         try:
@@ -628,6 +661,36 @@ class ItemsEditorController:
         self.model.delete_mode_active = False
         try:
             pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
+        except Exception:
+            pass
+
+    # --- Add Item On System mode (UI orchestration) ---
+    def enter_add_items_on_system_mode(self) -> None:
+        """Hide the picker and let Properties panel take focus/space while adding items to the system."""
+        # Hide picker panel during this mode
+        try:
+            self.picker_controller.model.visible = False
+        except Exception:
+            pass
+        # If the properties panel had any transient layout overrides from previous sessions, clear them
+        try:
+            pp_model = self.properties_controller.model
+            # No draggable panel in Items view; keep potential placeholders consistent
+            setattr(pp_model, 'expand_into_picker_space', True)
+        except Exception:
+            pass
+
+    def exit_add_items_on_system_mode(self) -> None:
+        """Restore picker visibility and clear transient flags."""
+        # Show picker again
+        try:
+            self.picker_controller.model.visible = True
+        except Exception:
+            pass
+        # Clear temporary flags
+        try:
+            pp_model = self.properties_controller.model
+            setattr(pp_model, 'expand_into_picker_space', False)
         except Exception:
             pass
 

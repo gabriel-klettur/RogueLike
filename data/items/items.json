@@ -266,5 +266,26 @@
     "rarity": "epic",
     "level_requirement": 10,
     "z_layer": 1
+  },
+  "456": {
+    "id": "456",
+    "name": "45",
+    "description": "4555",
+    "icon": "assets/items/energy_potion.png",
+    "stackable": false
+  },
+  "asd4545": {
+    "id": "asd4545",
+    "name": "asd45",
+    "description": "ASD",
+    "icon": "assets/items/iron_ingot.png",
+    "stackable": false
+  },
+  "4545": {
+    "id": "4545",
+    "name": "4545",
+    "description": "4545",
+    "icon": "assets/objects/rock.png",
+    "stackable": false
   }
 }
