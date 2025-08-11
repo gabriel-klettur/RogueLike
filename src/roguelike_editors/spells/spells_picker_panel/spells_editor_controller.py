@@ -11,16 +11,28 @@ from roguelike_editors.spells.spells_properties_panel.spells_properties_panel_co
     SpellsPropertiesPanelController,
 )
 from roguelike_engine.utils.loader import load_image
-from roguelike_editors.spells.spells_tool_bar_panel.spells_toolbar_impl import (
+from roguelike_editors.spells.spells_tool_bar_panel.spells_tool_bar_panel_model import (
     SpellsToolBarPanelModel,
+)
+from roguelike_editors.spells.spells_tool_bar_panel.spells_tool_bar_panel_view import (
     SpellsToolBarPanelView,
+)
+from roguelike_editors.spells.spells_tool_bar_panel.spells_tool_bar_panel_events import (
     SpellsToolBarPanelEventHandler,
+)
+from roguelike_editors.spells.spells_tool_bar_panel.spells_tool_bar_panel_controller import (
     SpellsToolBarPanelController,
 )
-from roguelike_editors.spells.spells_add_remove_panel.spells_add_remove_panel_impl import (
+from roguelike_editors.spells.spells_add_remove_panel.spells_add_remove_panel_model import (
     SpellsAddRemovePanelModel,
+)
+from roguelike_editors.spells.spells_add_remove_panel.spells_add_remove_panel_view import (
     SpellsAddRemovePanelView,
+)
+from roguelike_editors.spells.spells_add_remove_panel.spells_add_remove_panel_events import (
     SpellsAddRemovePanelEventHandler,
+)
+from roguelike_editors.spells.spells_add_remove_panel.spells_add_remove_panel_controller import (
     SpellsAddRemovePanelController,
 )
 from roguelike_editors.entities.services.constants import UI_MARGIN

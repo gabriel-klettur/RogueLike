@@ -1,21 +1,14 @@
 """
-Controlador para la toolbar de Spells.
+Spells Add/Remove panel controller.
 """
 
 
-class SpellsToolBarPanelController:
-    """Controlador de la toolbar de Spells."""
+class SpellsAddRemovePanelController:
     def __init__(self, editor_controller, model, view, event_handler):
         self.editor_controller = editor_controller
         self.model = model
         self.view = view
         self.event_handler = event_handler
-        # Para posicionamiento bajo el título
-        self.title_controller = getattr(editor_controller, 'title_controller', None)
-        # Exponer picker/editor para fallback de posicionamiento
-        self.picker_controller = editor_controller
-        # Referencia opcional al panel Add/Remove
-        self.add_remove_controller = None
 
     def is_active(self, tool: str) -> bool:
         return getattr(self.model, 'active_tool', None) == tool

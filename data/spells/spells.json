@@ -71,7 +71,7 @@
     "range": 600,
     "allow_movement": true,
     "lock_cast_direction": false,
-    "automatic": true,    
+    "automatic": true,
     "interruptible": false,
     "automatic_cast_punish": 2.0
   },
