@@ -18,6 +18,17 @@ def handle_events(game):
 
     # Capturar eventos
     events = pygame.event.get()
+    # Pre-despacho: permitir que el DebugOverlay consuma eventos de ratón siempre
+    # incluso si luego retornamos temprano por menús/editores.
+    overlay = getattr(game.renderer, 'debug_overlay', None)
+    consumed_idx: set[int] = set()
+    if overlay and overlay.panel_rect:
+        for i, ev in enumerate(events):
+            if ev.type in (pygame.MOUSEWHEEL, pygame.MOUSEBUTTONDOWN):
+                pos = pygame.mouse.get_pos() if ev.type == pygame.MOUSEWHEEL else ev.pos
+                if overlay.hit_test(pos):
+                    if overlay.handle_event(ev):
+                        consumed_idx.add(i)
     # Priorizar consola
     for event in events:
         if game.console_events.process_event(event):
@@ -59,10 +70,7 @@ def handle_events(game):
                 game.player_manager.change_class(result)
         return
 
-    # Dispatch mouse events a DebugOverlay
-    for ev in events:
-        if ev.type in (pygame.MOUSEWHEEL, pygame.MOUSEBUTTONDOWN):
-            game.renderer.debug_overlay.handle_event(ev)
+    # Debug overlay ya pudo haber consumido algunos eventos arriba.
 
     for event in events:
         if event.type == pygame.KEYDOWN and event.key == game.input_config.get_key('select_class'):
@@ -152,6 +160,8 @@ def handle_events(game):
         return
 
     # Por defecto, delegar al handle de engine
+    # Pasar solo eventos no consumidos al motor para evitar doble manejo.
+    remaining_events = [e for idx, e in enumerate(events) if idx not in consumed_idx]
     engine_handle_events(
         game.state,
         game.camera,
@@ -162,5 +172,6 @@ def handle_events(game):
         game.tiles_editor,
         game.buildings_editor,
         game.map_editor,
-        game.renderer.debug_overlay
+        game.renderer.debug_overlay,
+        remaining_events
     )

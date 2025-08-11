@@ -14,7 +14,8 @@ def handle_events(
     tiles_editor,
     buildings_editor,
     map_editor,
-    debug_overlay=None
+    debug_overlay=None,
+    events=None
 ):
     """
     Maneja eventos de pygame para input y editores.
@@ -42,8 +43,9 @@ def handle_events(
     kb = handle_keyboard
     ms = handle_mouse
 
-    panel = debug_overlay._panel_rect if debug_overlay else None
-    events = pygame.event.get()
+    panel = debug_overlay.panel_rect if debug_overlay else None
+    if events is None:
+        events = pygame.event.get()
     for ev in events:
         et = ev.type
         if et == pygame.QUIT:
@@ -52,10 +54,9 @@ def handle_events(
             kb(ev, state, camera, clock, menu, entities, tiles_editor, buildings_editor, map_editor, map)
         elif et in (pygame.MOUSEWHEEL, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP):
             consumed = False
-            if panel:
+            if debug_overlay and panel:
                 mx, my = (pygame.mouse.get_pos() if et == pygame.MOUSEWHEEL else ev.pos)
-                if panel.collidepoint((mx, my)):
-                    debug_overlay.handle_event(ev)
-                    consumed = True
+                if debug_overlay.hit_test((mx, my)):
+                    consumed = bool(debug_overlay.handle_event(ev))
             if not consumed and not active_tiles and not active_buildings:
                 ms(ev, state, camera, clock, map, entities)

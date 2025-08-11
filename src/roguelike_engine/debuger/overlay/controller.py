@@ -1,0 +1,163 @@
+import time
+import pygame
+from typing import Dict, List, Optional, Tuple
+
+from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_engine.config.map_config import global_map_settings
+from roguelike_engine.map.utils import calculate_dungeon_offset
+
+from .model import DebugOverlayModel
+from .view import DebugOverlayView
+
+
+class DebugOverlayController:
+    def __init__(self, model: DebugOverlayModel, view: DebugOverlayView):
+        self.model = model
+        self.view = view
+
+    def _group_perf(self, perf_log: Dict[str, List[float]]):
+        groups: Dict[str, List[Tuple[str, float]]] = {}
+        for key, samples in perf_log.items():
+            recent = samples[-60:]
+            if not recent:
+                continue
+            avg_ms = sum(recent) / len(recent) * 1000
+            group = key.split(".")[0]
+            groups.setdefault(group, []).append((key, avg_ms))
+        return groups
+
+    def get_custom_debug_lines(self, state, camera, map_manager, entities) -> List[str]:
+        lines = [
+            f"Modo: {state.mode}",
+            f"Pos: ({round(entities.player.x)}, {round(entities.player.y)})",
+        ]
+        mx, my = pygame.mouse.get_pos()
+        wx = round(mx / camera.zoom + camera.offset_x)
+        wy = round(my / camera.zoom + camera.offset_y)
+        lines.append(f"Mouse: ({wx}, {wy})")
+        tile_col, tile_row = wx // TILE_SIZE, wy // TILE_SIZE
+        tile_text = next((t.tile_type for t in map_manager.tiles_in_region if t.rect.collidepoint(wx, wy)), "?")
+        lines.append(f"Tile: ({tile_col}, {tile_row}) Tipo: '{tile_text}'")
+        return lines
+
+    def _build_lines(
+        self,
+        state=None,
+        camera=None,
+        map_manager=None,
+        entities=None,
+        extra_lines: Optional[List[str]] = None,
+    ):
+        model = self.model
+        lines: List[Tuple[str, str]] = []
+        label_w = value_w = 0
+
+        groups = self._group_perf(model.perf_log)
+        if model.initially_collapsed:
+            model.collapsed_groups = set(groups.keys())
+            model.initially_collapsed = False
+
+        for group, entries in sorted(groups.items()):
+            count = len(entries)
+            total_item = next(((k, v) for k, v in entries if 'TOTAL' in k.upper()), None)
+            if total_item:
+                total_key, total_val = total_item
+                header_lbl = f'{total_key} ({count}):'
+                header_val = f'{total_val:>6.2f} ms'
+            else:
+                header_lbl = f'{group} ({count}):'
+                header_val = ''
+            lines.append((header_lbl, header_val))
+            if group not in model.collapsed_groups:
+                for full_key, avg_ms in sorted(entries):
+                    if total_item and full_key == total_key:
+                        continue
+                    lbl = f"  {full_key:<20}"
+                    val = f"{avg_ms:>6.2f} ms"
+                    lines.append((lbl, val))
+
+        if state and hasattr(state, 'clock'):
+            fps = state.clock.get_fps()
+            ft = (1000 / fps) if fps > 0 else 0
+            lines.insert(0, ("FrameTime:", f"{ft:0.1f} ms"))
+            lines.insert(0, ("FPS:", f"{fps:0.1f}"))
+
+        if extra_lines is None and state and camera and map_manager and entities:
+            extra_lines = self.get_custom_debug_lines(state, camera, map_manager, entities)
+        if extra_lines:
+            lines.append(("", ""))
+            lines.extend((text, "") for text in extra_lines)
+
+        # Final width adjust for all lines (single pass)
+        font = self.view._get_font(model.font_name, model.font_size)
+        for left, right in lines:
+            lw, _ = font.size(left)
+            vw, _ = font.size(right)
+            label_w = max(label_w, lw)
+            value_w = max(value_w, vw)
+
+        return lines, label_w, value_w
+
+    def draw_borders(self, screen, camera, map_manager):
+        # Lobby
+        x0, y0 = map_manager.lobby_offset
+        tl = camera.apply((x0 * TILE_SIZE, y0 * TILE_SIZE))
+        sz = camera.scale((global_map_settings.zone_width * TILE_SIZE, global_map_settings.zone_height * TILE_SIZE))
+        pygame.draw.rect(screen, self.model.border_colors['lobby'], pygame.Rect(tl, sz), self.model.border_width)
+        # Dungeon
+        dx, dy = calculate_dungeon_offset(map_manager.lobby_offset)
+        tl2 = camera.apply((dx * TILE_SIZE, dy * TILE_SIZE))
+        sz2 = camera.scale((global_map_settings.zone_width * TILE_SIZE, global_map_settings.zone_height * TILE_SIZE))
+        pygame.draw.rect(screen, self.model.border_colors['dungeon'], pygame.Rect(tl2, sz2), self.model.border_width)
+        # Global
+        tl3 = camera.apply((0, 0))
+        sz3 = camera.scale((global_map_settings.global_width * TILE_SIZE, global_map_settings.global_height * TILE_SIZE))
+        pygame.draw.rect(screen, self.model.border_colors['global'], pygame.Rect(tl3, sz3), self.model.border_width)
+
+    def render(
+        self,
+        screen,
+        state=None,
+        camera=None,
+        map_manager=None,
+        entities=None,
+        extra_lines: Optional[List[str]] = None,
+        position=(8, 8),
+        show_borders=False,
+    ):
+        now = time.perf_counter()
+        rebuild = (now - self.model.last_update_time) >= self.model.update_interval
+        if rebuild or self.model.panel_surf is None:
+            lines, label_w, value_w = self._build_lines(state, camera, map_manager, entities, extra_lines)
+            self.view.rebuild_panel(self.model, position, lines, label_w, value_w)
+            self.model.last_update_time = now
+
+        if self.model.panel_surf and self.model.panel_rect:
+            clip = screen.get_clip()
+            screen.set_clip(self.model.panel_rect)
+            screen.blit(self.model.panel_surf, (self.model.panel_rect.left, self.model.panel_rect.top - self.model.scroll_offset))
+            screen.set_clip(clip)
+            # Hover highlight group rectangle
+            mx, my = pygame.mouse.get_pos()
+            if self.model.panel_rect.collidepoint((mx, my)):
+                line_h = self.view.line_height(self.model)
+                local_y = my - self.model.panel_rect.top + self.model.scroll_offset
+                index = local_y // line_h
+                if 0 <= index < len(self.model.line_keys):
+                    start_idx = index
+                    while start_idx > 0 and not self.model.line_keys[start_idx].endswith(':'):
+                        start_idx -= 1
+                    end_idx = start_idx + 1
+                    while end_idx < len(self.model.line_keys) and not self.model.line_keys[end_idx].endswith(':'):
+                        end_idx += 1
+                    end_idx -= 1
+                    rect_x = self.model.panel_rect.left
+                    rect_y = self.model.panel_rect.top - self.model.scroll_offset + start_idx * line_h
+                    rect_w = self.model.panel_rect.width
+                    rect_h = (end_idx - start_idx + 1) * line_h
+                    pygame.draw.rect(screen, (255, 255, 0), pygame.Rect(rect_x, rect_y, rect_w, rect_h), 2)
+
+        if show_borders:
+            if not (map_manager and camera):
+                raise ValueError("Para dibujar bordes debe proporcionar map_manager y camera")
+            self.draw_borders(screen, camera, map_manager)
