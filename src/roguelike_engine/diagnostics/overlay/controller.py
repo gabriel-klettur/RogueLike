@@ -1,4 +1,5 @@
 import time
+import re
 import pygame
 from typing import Dict, List, Optional, Tuple
 
@@ -15,16 +16,105 @@ class DiagnosticsOverlayController:
         self.model = model
         self.view = view
 
-    def _group_perf(self, perf_log: Dict[str, List[float]]):
-        groups: Dict[str, List[Tuple[str, float]]] = {}
+    def _parse_numeric_id(self, key: str) -> Tuple[Optional[str], str]:
+        """
+        Returns (id_str, rest_label).
+        id_str is like '1', '1.2', '1.2.3' if a numeric dotted prefix exists at the beginning of key,
+        otherwise None. rest_label is the remaining label after stripping the numeric prefix and extra spaces/dot.
+        """
+        m = re.match(r"^\s*(\d+(?:\.\d+)*)(?:\.)?\s*(.*)$", key)
+        if m:
+            id_str = m.group(1)
+            rest = m.group(2) or ""
+            return id_str, rest
+        # No numeric prefix; keep full key as label
+        return None, key
+
+    def _build_perf_tree(self, perf_log: Dict[str, List[float]]):
+        """
+        Build a hierarchical tree based on numeric id prefixes.
+        Node structure: { 'id': str | None, 'children': dict[str, node], 'items': list[(label, avg_ms)] }
+        Root node has id=None.
+        """
+        root = {"id": None, "children": {}, "items": [], "title": ""}
         for key, samples in perf_log.items():
             recent = samples[-60:]
             if not recent:
                 continue
             avg_ms = sum(recent) / len(recent) * 1000
-            group = key.split(".")[0]
-            groups.setdefault(group, []).append((key, avg_ms))
-        return groups
+            id_str, rest_label = self._parse_numeric_id(key)
+            if id_str:
+                parts = id_str.split('.')
+                node = root
+                for i in range(1, len(parts) + 1):
+                    sub_id = '.'.join(parts[:i])
+                    if sub_id not in node["children"]:
+                        node["children"][sub_id] = {"id": sub_id, "children": {}, "items": [], "title": ""}
+                    node = node["children"][sub_id]
+                # Attach item to the most specific id node; store (id,label,value)
+                label = rest_label if rest_label else key
+                node["items"].append((id_str, label, avg_ms))
+                # If this item names the node (exact id), record a title (prefer shortest label)
+                if rest_label:
+                    if not node["title"] or len(rest_label) < len(node["title"]):
+                        node["title"] = rest_label
+            else:
+                # No numeric id: group by first token; fall back to 'Other'
+                group = key.split('.')[0].strip() or 'Other'
+                node = root["children"].setdefault(group, {"id": group, "children": {}, "items": [], "title": ""})
+                # No numeric id; store with id=None
+                node["items"].append((None, key, avg_ms))
+
+        # compute totals and counts recursively
+        def compute(node):
+            total = sum(v for _, _, v in node["items"])
+            count = len(node["items"])
+            for child in node["children"].values():
+                c_total, c_count = compute(child)
+                total += c_total
+                count += c_count
+            node["total"] = total
+            node["count"] = count
+            return total, count
+
+        compute(root)
+        return root
+
+    def _collect_group_ids(self, node) -> List[str]:
+        ids = []
+        for gid, child in node["children"].items():
+            ids.append(gid)
+            ids.extend(self._collect_group_ids(child))
+        return ids
+
+    def _numeric_sort_key(self, gid: str):
+        # If gid is numeric dotted id, sort numerically by components; else sort after numeric groups
+        if re.match(r"^(\d+(?:\.\d+)*)$", gid):
+            return (0, [int(p) for p in gid.split('.')])
+        return (1, [gid])
+
+    def _is_numeric_id(self, gid: Optional[str]) -> bool:
+        return bool(gid and re.match(r"^(\d+(?:\.\d+)*)$", gid))
+
+    def _find_sole_item(self, node) -> Optional[Tuple[str, str, float]]:
+        """
+        If subtree has exactly one item, return (deepest_gid, label, avg_ms).
+        Otherwise, None.
+        """
+        if node.get('count', 0) != 1:
+            return None
+        # If item is directly here
+        if len(node.get('items', [])) == 1 and all(c.get('count', 0) == 0 for c in node.get('children', {}).values()):
+            item_id, label, val = node['items'][0]
+            gid = item_id if self._is_numeric_id(item_id) else (node.get('id') if self._is_numeric_id(node.get('id')) else '')
+            return gid or '', label, val
+        # Otherwise the sole item must be in the only child with count==1
+        for child in node.get('children', {}).values():
+            if child.get('count', 0) == 1:
+                res = self._find_sole_item(child)
+                if res:
+                    return res
+        return None
 
     def get_custom_debug_lines(self, state, camera, map_manager, entities) -> List[str]:
         lines = [
@@ -52,29 +142,48 @@ class DiagnosticsOverlayController:
         lines: List[Tuple[str, str]] = []
         label_w = value_w = 0
 
-        groups = self._group_perf(model.perf_log)
+        tree = self._build_perf_tree(model.perf_log)
         if model.initially_collapsed:
-            model.collapsed_groups = set(groups.keys())
+            model.collapsed_groups = set(self._collect_group_ids(tree))
             model.initially_collapsed = False
 
-        for group, entries in sorted(groups.items()):
-            count = len(entries)
-            total_item = next(((k, v) for k, v in entries if 'TOTAL' in k.upper()), None)
-            if total_item:
-                total_key, total_val = total_item
-                header_lbl = f'{total_key} ({count}):'
-                header_val = f'{total_val:>6.2f} ms'
-            else:
-                header_lbl = f'{group} ({count}):'
-                header_val = ''
-            lines.append((header_lbl, header_val))
-            if group not in model.collapsed_groups:
-                for full_key, avg_ms in sorted(entries):
-                    if total_item and full_key == total_key:
-                        continue
-                    lbl = f"  {full_key:<20}"
+        def render_node(node, level: int = 0):
+            # Render child groups first (with headers), flattening single-item subtrees into item lines
+            for gid in sorted(node["children"].keys(), key=self._numeric_sort_key):
+                child = node["children"][gid]
+                sole = self._find_sole_item(child)
+                if sole:
+                    full_gid, label, avg_ms = sole
+                    # Compose label without duplicating the id
+                    if full_gid and (not label or label.startswith(full_gid)):
+                        display_label = full_gid
+                    elif full_gid:
+                        display_label = f"{full_gid} {label}"
+                    else:
+                        display_label = label
+                    # No header -> do not add an extra indent level
+                    lbl = f"{'  ' * level}{display_label:<20}"
                     val = f"{avg_ms:>6.2f} ms"
                     lines.append((lbl, val))
+                    continue
+                # Render header for multi-item groups
+                name_part = f" {child.get('title')}" if child.get('title') else ""
+                header_lbl = f"{'  ' * level}{gid}{name_part} ({child['count']}):"
+                header_val = f"{child['total']:>6.2f} ms"
+                lines.append((header_lbl, header_val))
+                if gid not in model.collapsed_groups:
+                    render_node(child, level + 1)
+            # Direct items at this level
+            if level > 0:  # root has no direct label, so only indent items when inside a group
+                for item_id, label, avg_ms in sorted(node["items"], key=lambda x: x[1]):
+                    # If we have a numeric id (from item or from this node), show it
+                    display_id = item_id if self._is_numeric_id(item_id) else (node.get('id') if self._is_numeric_id(node.get('id')) else None)
+                    display_label = f"{display_id} {label}".strip() if display_id else label
+                    lbl = f"{'  ' * level}{display_label:<20}"
+                    val = f"{avg_ms:>6.2f} ms"
+                    lines.append((lbl, val))
+
+        render_node(tree, 0)
 
         if state and hasattr(state, 'clock'):
             fps = state.clock.get_fps()

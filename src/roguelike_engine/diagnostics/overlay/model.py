@@ -31,7 +31,7 @@ class DiagnosticsOverlayModel:
     value_w: int = 0
     line_keys: List[str] = field(default_factory=list)
     collapsed_groups: Set[str] = field(default_factory=set)
-    initially_collapsed: bool = False
+    initially_collapsed: bool = True
 
     def reset_panel(self):
         self.panel_surf = None

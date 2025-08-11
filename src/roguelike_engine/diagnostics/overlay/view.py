@@ -1,4 +1,5 @@
 import pygame
+import re
 from typing import List, Tuple
 
 from .model import DiagnosticsOverlayModel
@@ -49,12 +50,17 @@ class DiagnosticsOverlayView:
                     self._text_cache[cache_label] = font.render(left, True, model.text_color)
             surf_l = self._text_cache[cache_label]
             surf.blit(surf_l, (model.padding_x, y + model.padding_y))
-            # Store a normalized key for interaction: headers store just the group id + ':'
+            # Store a normalized key for interaction: headers store the full group id + ':'
             if is_header:
                 disp = left.strip()[:-1]  # remove trailing ':'
                 if '(' in disp:
                     disp = disp.split('(')[0].strip()
-                group_id = disp.split('.')[0]
+                # Extract numeric dotted id if present; else use token as-is
+                m = re.match(r"^(\d+(?:\.\d+)*)\b", disp)
+                if m:
+                    group_id = m.group(1)
+                else:
+                    group_id = disp
                 model.line_keys.append(f"{group_id}:")
             else:
                 model.line_keys.append(left.strip())
