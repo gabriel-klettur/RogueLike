@@ -2,7 +2,7 @@ import pygame
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.tile.model.tile_model import Tile
-from roguelike_engine.debuger.debug import draw_zone_border
+from roguelike_engine.diagnostics.helpers import draw_zone_border
 
 
 class ZoneView:
