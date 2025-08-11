@@ -1,5 +1,7 @@
 {
   "fireball": {
+    "id": "fireball",
+    "name": "Bola de Fuego",
     "type": "projectile",
     "prepare_duration": 0.015,
     "channel_duration": 0.015,
@@ -19,6 +21,8 @@
     "automatic_cast_punish": 1.0
   },
   "iceball": {
+    "id": "iceball",
+    "name": "Bola de Hielo",
     "type": "projectile",
     "prepare_duration": 0.2,
     "channel_duration": 0.5,
@@ -38,6 +42,8 @@
     "automatic_cast_punish": 2.0
   },
   "lightball": {
+    "id": "lightball",
+    "name": "Bola de Luz",
     "type": "projectile",
     "prepare_duration": 0.5,
     "channel_duration": 0.5,
@@ -57,6 +63,8 @@
     "automatic_cast_punish": 2.0
   },
   "darkball": {
+    "id": "darkball",
+    "name": "Bola de Oscuridad",
     "type": "projectile",
     "prepare_duration": 0.2,
     "channel_duration": 0.5,
@@ -76,6 +84,8 @@
     "automatic_cast_punish": 2.0
   },
   "healing_aura": {
+    "id": "healing_aura",
+    "name": "Aura de Curación",
     "type": "aura",
     "prepare_duration": 0.2,
     "channel_duration": 0.5,
@@ -97,6 +107,8 @@
     "automatic_cast_punish": 2.0
   },
   "laser_beam": {
+    "id": "laser_beam",
+    "name": "Laser",
     "type": "beam",
     "prepare_duration": 0.1,
     "channel_duration": 0.2,
@@ -134,6 +146,8 @@
     "automatic_cast_punish": 2.0
   },
   "dash": {
+    "id": "dash",
+    "name": "Dash",
     "type": "dash",
     "prepare_duration": 0.0,
     "channel_duration": 0.0,
@@ -149,6 +163,8 @@
     "automatic_cast_punish": 2.0
   },
   "teleport": {
+    "id": "teleport",
+    "name": "Teleport",
     "type": "teleport",
     "prepare_duration": 0.0,
     "channel_duration": 0.0,
@@ -164,6 +180,8 @@
     "automatic_cast_punish": 1.0
   },
   "slash": {
+    "id": "slash",
+    "name": "Slash",
     "type": "slash",
     "prepare_duration": 0.0,
     "channel_duration": 0.0,
@@ -193,6 +211,8 @@
     "automatic_cast_punish": 2.0
   },
   "lightning": {
+    "id": "lightning",
+    "name": "Lightning",
     "type": "lightning",
     "prepare_duration": 0.1,
     "channel_duration": 0.2,
@@ -205,6 +225,8 @@
     "automatic_cast_punish": 2.0
   },
   "arcane_flame": {
+    "id": "arcane_flame",
+    "name": "Arcane Flame",
     "type": "arcane_flame",
     "prepare_duration": 0.1,
     "channel_duration": 0.2,
@@ -264,6 +286,8 @@
     "automatic_cast_punish": 2.0
   },
   "firework_launch": {
+    "id": "firework_launch",
+    "name": "Firework Launch",
     "type": "firework_launch",
     "prepare_duration": 0.2,
     "channel_duration": 0.5,
@@ -296,6 +320,8 @@
     "automatic_cast_punish": 1.0
   },
   "smoke": {
+    "id": "smoke",
+    "name": "Smoke",
     "type": "smoke",
     "prepare_duration": 0.15,
     "channel_duration": 0.2,
@@ -309,6 +335,8 @@
     "automatic_cast_punish": 1.0
   },
   "smoke_emitter": {
+    "id": "smoke_emitter",
+    "name": "Smoke Emitter",
     "type": "smoke_emitter",
     "prepare_duration": 0.1,
     "channel_duration": 0.2,
@@ -327,6 +355,8 @@
     "automatic_cast_punish": 1.0
   },
   "sphere_magic_shield": {
+    "id": "sphere_magic_shield",
+    "name": "Sphere Magic Shield",
     "type": "sphere_magic_shield",
     "prepare_duration": 0.2,
     "channel_duration": 0.2,

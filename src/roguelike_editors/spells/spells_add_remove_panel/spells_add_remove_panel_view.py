@@ -52,8 +52,14 @@ class SpellsAddRemovePanelView:
             tb_widget = toolbar_view.widget
             panel_pos = tb_widget.panel.pos or (tb_widget.x, tb_widget.y)
             panel_w, _ = tb_widget.panel.surface.get_size()
-            self.widget.x = panel_pos[0] + panel_w + UI_MARGIN
-            self.widget.y = panel_pos[1]
+            new_x = panel_pos[0] + panel_w + UI_MARGIN
+            new_y = panel_pos[1]
+            self.widget.x = new_x
+            self.widget.y = new_y
+            try:
+                self.widget.panel.pos = (new_x, new_y)
+            except Exception:
+                pass
         self.widget.render(screen)
         # Blink border for active modes
         now = pygame.time.get_ticks()

@@ -111,6 +111,33 @@ class SpellEditorController:
         self.spells_properties_controller.on_asset_changed = _on_asset_changed
         self.spells_properties_controller.on_after_commit_edit = _on_after_commit_edit
 
+        # Provide a left-anchor provider so the picker grid sits to the right of Add/Remove panel
+        def _picker_left_anchor_x() -> int | None:
+            try:
+                # Only when picker is visible (tied to 'spells_on_map')
+                if not getattr(self.model, 'picker_visible', False):
+                    return None
+                # Need toolbar widget to compute base position
+                tb_widget = getattr(self.spells_toolbar_view, 'widget', None)
+                if tb_widget is None:
+                    return None
+                tb_pos = tb_widget.panel.pos or (tb_widget.x, tb_widget.y)
+                tb_w, _ = tb_widget.panel.surface.get_size()
+                # Add/Remove width (even if not yet rendered this frame)
+                arm_widget = getattr(self.spells_add_remove_view, 'widget', None)
+                if arm_widget is None:
+                    return tb_pos[0] + tb_w + UI_MARGIN
+                arm_w, _ = arm_widget.panel.surface.get_size()
+                # Picker left is to the right of Add/Remove panel
+                return tb_pos[0] + tb_w + UI_MARGIN + arm_w + UI_MARGIN
+            except Exception:
+                return None
+
+        try:
+            self.view.get_picker_left_anchor_x = _picker_left_anchor_x
+        except Exception:
+            pass
+
     def handle_event(self, event: pygame.event.Event) -> None:
         # Route to toolbar first, then add/remove, only if editor visible
         if self.model.visible:

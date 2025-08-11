@@ -48,32 +48,36 @@ class SpellsToolBarPanelView:
         )
 
     def render(self, screen: pygame.Surface):
-        # Centrar horizontalmente el grupo de iconos
-        try:
-            sw = screen.get_width()
-        except Exception:
-            sw = 1280
+        # Calcular tamaño total de íconos
         total_w = self.size * len(self.model.tools) + self.padding * (len(self.model.tools) - 1)
-        self.widget.x = (sw - total_w) // 2
-        # Posicionar bajo el título si existe
-        title_widget = getattr(getattr(self.controller, 'title_controller', None), 'view', None)
-        title_widget = getattr(title_widget, 'widget', None)
-        if title_widget is not None:
-            title_text = title_widget.text or ""
-            text_surf = title_widget.font.render(title_text, True, title_widget.text_color)
-            bg_h = text_surf.get_height() + title_widget.padding_y * 2
-            self.widget.y = title_widget.y + bg_h + UI_MARGIN
+        # Obtener title_rect desde la vista del editor
+        editor_view = getattr(self.controller, 'view', None)
+        title_rect = getattr(editor_view, 'title_rect', None)
+        if title_rect is not None:
+            # Alinear el borde izquierdo con el título y posicionar justo debajo
+            new_x = int(title_rect.left)
+            new_y = int(title_rect.bottom + UI_MARGIN)
+            # Actualizar tanto atributos como panel.pos (usado en render)
+            self.widget.x = new_x
+            self.widget.y = new_y
+            try:
+                self.widget.panel.pos = (new_x, new_y)
+            except Exception:
+                pass
         else:
-            # Fallback: usar title_rect del picker/view del editor
-            picker_view = getattr(self.controller, 'picker_controller', None)
-            if picker_view is None:
-                picker_view = getattr(self.controller, 'editor_controller', None)
-            picker_view = getattr(picker_view, 'view', None)
-            title_rect = getattr(picker_view, 'title_rect', None)
-            if title_rect is not None:
-                self.widget.y = title_rect.bottom + UI_MARGIN
-            else:
-                self.widget.y = self.y
+            # Fallback: centrar en pantalla y usar posición por defecto en Y
+            try:
+                sw = screen.get_width()
+            except Exception:
+                sw = 1280
+            new_x = (sw - total_w) // 2
+            new_y = self.y
+            self.widget.x = new_x
+            self.widget.y = new_y
+            try:
+                self.widget.panel.pos = (new_x, new_y)
+            except Exception:
+                pass
         self.widget.render(screen)
 
     def handle_event(self, event):

@@ -319,7 +319,6 @@ default_resolvers = {
     'firework_launch': FireworkLaunchResolver(),
     'smoke': SmokeResolver(),
     'smoke_emitter': SmokeEmitterResolver(),
-    'sphere_magic_shield': SphereMagicShieldResolver(),
 }
 SPELL_RESOLVERS = default_resolvers
 

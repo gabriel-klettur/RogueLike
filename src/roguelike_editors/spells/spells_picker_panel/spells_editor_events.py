@@ -1,6 +1,7 @@
 import pygame
 import os
 from roguelike_ui.services.json_persistence import save_to_json, load_from_json, remove_from_json
+from roguelike_editors.entities.services.constants import UI_MARGIN
 
 class SpellEditorEventHandler:
     """
@@ -15,6 +16,10 @@ class SpellEditorEventHandler:
 
     def handle(self, event: pygame.event.Event) -> None:
         # Inline text input is now handled by SpellsPropertiesPanelController
+
+        # First, allow panel dragging like Entities picker (right mouse button)
+        if self._handle_panel_drag(event):
+            return
 
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_F4:
@@ -37,32 +42,37 @@ class SpellEditorEventHandler:
             # Respect picker visibility
             if not getattr(self.model, 'picker_visible', False):
                 return
-            # Click on grid
-            screen = pygame.display.get_surface()
-            sw, sh = screen.get_size() if screen else (0, 0)
-            margin = 20
-            cell_size = 64
-            text_margin = 4
-            font_h = self.view.font.get_height()
-            cell_height = cell_size + text_margin + font_h
-            cols = 8
-            # top offset matches view (title height aware)
-            title_rect = getattr(self.view, 'title_rect', None)
-            grid_top = max(margin, (title_rect.bottom + 10) if title_rect else margin)
-            # determine clicked cell
-            if mx < margin or my < grid_top:
+            # Only process clicks inside panel rect (like Entities picker)
+            if self.model.panel_rect and not self.model.panel_rect.collidepoint(event.pos):
+                return
+
+            # Use view config to match rendering
+            margin = getattr(self.view, 'margin', 20)
+            cell_size = getattr(self.view, 'cell_size', 64)
+            text_margin = getattr(self.view, 'text_margin', 4)
+            cols = getattr(self.view, 'columns', 10)
+            fh = self.view.font.get_height()
+            ch = cell_size + text_margin + fh
+
+            # Anchors (the view pins x/y to anchors already)
+            ox, oy = getattr(self.view, 'x', 0), getattr(self.view, 'y', 0)
+            header_height = 0  # no tabs/header in spells picker
+
+            # Relative mouse pos inside grid
+            mx_rel = mx - (ox + margin)
+            my_rel = my - (oy + margin + header_height)
+            if mx_rel < 0 or my_rel < 0:
                 clicked_sid = None
             else:
-                col = (mx - margin) // (cell_size + margin)
-                row = (my - grid_top + self.model.scroll_index * (cell_height + margin)) // (cell_height + margin)
+                col = mx_rel // (cell_size + margin)
+                row = my_rel // (ch + margin) + self.model.scroll_index
                 spell_ids = list(self.model.spells.keys())
                 idx = row * cols + col
-                x0 = margin + col * (cell_size + margin)
-                y0 = grid_top + (row - self.model.scroll_index) * (cell_height + margin)
-                if 0 <= col < cols and 0 <= idx < len(spell_ids) and x0 <= mx <= x0 + cell_size and y0 <= my <= y0 + cell_size:
-                    clicked_sid = spell_ids[idx]
-                else:
-                    clicked_sid = None
+                x0 = ox + margin + col * (cell_size + margin)
+                y0 = oy + margin + header_height + (row - self.model.scroll_index) * (ch + margin)
+                in_x = x0 <= mx <= x0 + cell_size
+                in_y = y0 <= my <= y0 + ch
+                clicked_sid = spell_ids[idx] if (0 <= col < cols and 0 <= idx < len(spell_ids) and in_x and in_y) else None
 
             # If delete mode active, process deletion
             if getattr(self.model, 'delete_mode_active', False):
@@ -100,28 +110,59 @@ class SpellEditorEventHandler:
             if not getattr(self.model, 'picker_visible', False):
                 self.model.hovered_id = None
                 return
-            margin = 20
-            cell_size = 64
-            text_margin = 4
-            font_h = self.view.font.get_height()
-            cell_height = cell_size + text_margin + font_h
-            cols = 8
-            title_rect = getattr(self.view, 'title_rect', None)
-            grid_top = max(margin, (title_rect.bottom + 10) if title_rect else margin)
-            if mx < margin or my < grid_top:
+            # Only update hover within panel rect
+            if self.model.panel_rect and not self.model.panel_rect.collidepoint(event.pos):
+                self.model.hovered_id = None
+                return
+
+            margin = getattr(self.view, 'margin', 20)
+            cell_size = getattr(self.view, 'cell_size', 64)
+            text_margin = getattr(self.view, 'text_margin', 4)
+            cols = getattr(self.view, 'columns', 10)
+            fh = self.view.font.get_height()
+            ch = cell_size + text_margin + fh
+
+            ox, oy = getattr(self.view, 'x', 0), getattr(self.view, 'y', 0)
+            header_height = 0
+            mx_rel = mx - (ox + margin)
+            my_rel = my - (oy + margin + header_height)
+            if mx_rel < 0 or my_rel < 0:
                 self.model.hovered_id = None
             else:
-                col = (mx - margin) // (cell_size + margin)
-                row = (my - grid_top + self.model.scroll_index * (cell_height + margin)) // (cell_height + margin)
+                col = mx_rel // (cell_size + margin)
+                row = my_rel // (ch + margin) + self.model.scroll_index
                 spell_ids = list(self.model.spells.keys())
                 idx = row * cols + col
-                x0 = margin + col * (cell_size + margin)
-                y0 = grid_top + (row - self.model.scroll_index) * (cell_height + margin)
-                if 0 <= col < cols and 0 <= idx < len(spell_ids) and x0 <= mx <= x0 + cell_size and y0 <= my <= y0 + cell_size:
-                    self.model.hovered_id = spell_ids[idx]
-                else:
-                    self.model.hovered_id = None
+                x0 = ox + margin + col * (cell_size + margin)
+                y0 = oy + margin + header_height + (row - self.model.scroll_index) * (ch + margin)
+                in_x = x0 <= mx <= x0 + cell_size
+                in_y = y0 <= my <= y0 + ch
+                self.model.hovered_id = spell_ids[idx] if (0 <= col < cols and 0 <= idx < len(spell_ids) and in_x and in_y) else None
             return
 
         # Reset hover
         self.model.hovered_id = None
+
+    def _handle_panel_drag(self, event: pygame.event.Event) -> bool:
+        """Support right-click dragging of the picker panel, mirroring Entities picker."""
+        if not self.model.visible or not getattr(self.model, 'picker_visible', False):
+            return False
+
+        # Start drag with RMB within the panel rect
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
+            if self.model.panel_rect and self.model.panel_rect.collidepoint(event.pos):
+                # Use entire panel as header for dragging
+                self.view.draggable_panel.handle_event(event, header_rect=self.model.panel_rect)
+                return True
+
+        # Continue dragging
+        if event.type == pygame.MOUSEMOTION and getattr(self.view.draggable_panel, 'dragging', False):
+            self.view.draggable_panel.handle_event(event)
+            return True
+
+        # End dragging
+        if event.type == pygame.MOUSEBUTTONUP and getattr(self.view.draggable_panel, 'dragging', False):
+            self.view.draggable_panel.handle_event(event)
+            return True
+
+        return False
