@@ -32,7 +32,6 @@ class GameLoop:
             or g.tiles_editor.editor_state.active
             or g.buildings_editor.editor_state.active
             or g.map_editor.editor_state.active
-            or g.item_editor.model.visible
             or g.inventory_editor.model.visible
         )
 

@@ -1,6 +1,7 @@
 import pygame
 import logging
 from typing import Any
+from roguelike_ui.ui_blocker import register_blocker
 
 from .items_instances_panel_model import ItemsInstancesPanelModel
 
@@ -52,6 +53,11 @@ class ItemsInstancesPanelView:
             bg = pygame.Surface(list_rect.size, pygame.SRCALPHA)
             bg.fill((20, 20, 20, 180))
             screen.blit(bg, list_rect.topleft)
+            # Registrar como bloqueador de UI para evitar hover/drag debajo de la lista
+            try:
+                register_blocker(list_rect)
+            except Exception:
+                pass
 
         # Etiquetas de sección y rects de contenido sin solaparse con título
         header_pad = 6

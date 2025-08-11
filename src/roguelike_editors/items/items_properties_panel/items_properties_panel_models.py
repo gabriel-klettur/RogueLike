@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Dict
 import pygame
 
 
@@ -8,6 +8,8 @@ class ItemsPropertiesPanelModel:
     """Estado del panel de propiedades (solo UI de propiedades)."""
     # Propiedad enfocada y en edición
     focused_property: Optional[str] = None
+    # Propiedad bajo el cursor (para hover)
+    hovered_property: Optional[str] = None
     editing_property: Optional[str] = None
     editing_text: str = ""
     editing_cursor: int = 0
@@ -21,3 +23,11 @@ class ItemsPropertiesPanelModel:
     scroll_y: int = 0
     content_height: int = 0
     content_view_rect: Optional[pygame.Rect] = None
+
+    # Pestañas principales: 'properties' y 'assets'
+    type_tabs: List[str] = field(default_factory=lambda: ["properties", "assets"])
+    active_type_tab: str = "properties"
+    type_tab_rects: Dict[str, pygame.Rect] = field(default_factory=dict)
+
+    # Única celda para asset del ítem (icono)
+    asset_cell_rect: Optional[pygame.Rect] = None

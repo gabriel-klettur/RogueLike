@@ -52,16 +52,16 @@
     "scale_map": 0.04,
     "scale_inventory": 0.05,
     "max_stack": 5,
-    
-    "default_params": { "healing": 50 },
-
+    "default_params": {
+      "healing": 50
+    },
     "z_layer": 1
   },
   "iron_sword": {
     "id": "iron_sword",
     "name": "Espada de Hierro",
-    "description": "Una espada básica de hierro.",
-    "icon": "assets/items/iron_sword.png",
+    "description": "Una espada básica de hierro 2",
+    "icon": "assets/items/ancient_relic_mask.png",
     "stackable": false,
     "scale_editor": 1.0,
     "scale_map": 0.04,
@@ -105,9 +105,9 @@
   },
   "bucket_water": {
     "id": "bucket_water",
-    "name": "Cubo de Agua",
+    "name": "Cubo de Agua sagrado",
     "description": "Cubo lleno de agua fresca.",
-    "icon": "assets/items/bucket_water.png",
+    "icon": "assets/items/ChatGPT Image Jul 8, 2025, 08_00_28 PM.png",
     "stackable": false,
     "scale_editor": 1.0,
     "scale_map": 0.04,
@@ -126,7 +126,9 @@
     "scale_map": 0.04,
     "scale_inventory": 0.05,
     "max_stack": 5,
-    "default_params": { "energy": 50 },
+    "default_params": {
+      "energy": 50
+    },
     "z_layer": 1
   },
   "explosion_potion": {
@@ -152,7 +154,9 @@
     "scale_map": 0.04,
     "scale_inventory": 0.05,
     "max_stack": 10,
-    "default_params": { "hunger": 30 },
+    "default_params": {
+      "hunger": 30
+    },
     "z_layer": 1
   },
   "image_item_not_found": {
@@ -185,7 +189,9 @@
     "scale_map": 0.04,
     "scale_inventory": 0.05,
     "max_stack": 6,
-    "default_params": { "mana": 50 },
+    "default_params": {
+      "mana": 50
+    },
     "z_layer": 1
   },
   "poison_potion": {

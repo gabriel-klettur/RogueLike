@@ -25,9 +25,6 @@ def update_game(
     """
     if not state.running:
         return
-    # Pausar update si ItemEditor visible
-    if getattr(state, 'item_editor_state', None) and state.item_editor_state.visible:
-        return
 
     # 1) Prioridad: si el Tile-Editor está activo, nada más se hace
     if tiles_editor.editor_state.active:

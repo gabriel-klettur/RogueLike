@@ -42,9 +42,33 @@ class InputSystem:
         # Suppress game clicks when Item Editor is open
         # world.state.item_editor_state is set by ItemsEditorManager
         if hasattr(world, 'state') and getattr(world.state, 'item_editor_state', None) and world.state.item_editor_state.visible:
-            # clear all click flags
-            for inp in world.components.get('InputComponent', {}).values():
+            # Reset inputs and velocities to fully freeze gameplay while editor is open
+            spell_attrs = ['lightball','slash','healing_aura','darkball','iceball','lightning','arcane_flame','firework_launch','smoke','smoke_emitter','sphere_magic_shield','teleport']
+            for eid, inp in world.components.get('InputComponent', {}).items():
+                # Current-frame inputs
                 inp.click = False
+                inp.move_x = 0
+                inp.move_y = 0
+                inp.attack = False
+                inp.show_all_drops = False
+                for name in spell_attrs:
+                    setattr(inp, f'spell_{name}', False)
+                inp.toggle_editor = False
+                inp.drop = False
+                inp.toggle_inventory = False
+                # Zero velocity so the player doesn't drift while paused
+                vel = world.components.get('Velocity', {}).get(eid)
+                if vel:
+                    vel.vx = 0
+                    vel.vy = 0
+                # Clear edge-detection memory to avoid firing on resume
+                self.prev_click[eid] = False
+                self.prev_right[eid] = False
+                self.prev_drop[eid] = False
+                self.prev_toggle[eid] = False
+                self.prev_toggle_inventory[eid] = False
+                for name in spell_attrs:
+                    self.prev_spell_keys[(eid, name)] = 0
             return
 
         # Recargar bindings para aplicar cambios guardados sin reiniciar

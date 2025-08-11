@@ -105,14 +105,20 @@ class ItemPickerPanelController:
         self.event_handler = ItemPickerPanelEventHandler(self)
 
     def handle_event(self, event: pygame.event.Event) -> None:
-        # Añadir nuevo ítem al mapa con clic derecho (delegado al orquestador / instances panel)
+        # Añadir nuevo ítem al mapa con clic derecho SOLO si el clic ocurre dentro del grid del picker.
+        # Evita que RMB sobre el mapa (usado para drag) dispare spawns accidentales cuando el picker está visible.
         if self.model.visible and event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
-            if self.model.selected_item_id and self.on_spawn_at_player is not None:
-                try:
-                    self.on_spawn_at_player(self.model.selected_item_id)
-                except Exception:
-                    logger.exception("on_spawn_at_player callback failed")
-            return
+            try:
+                rect = getattr(self.picker_state, 'rect', None)
+                if rect and hasattr(event, 'pos') and rect.collidepoint(*event.pos):
+                    if self.model.selected_item_id and self.on_spawn_at_player is not None:
+                        try:
+                            self.on_spawn_at_player(self.model.selected_item_id)
+                        except Exception:
+                            logger.exception("on_spawn_at_player callback failed")
+                    return  # Consumir RMB sólo si se manejó dentro del picker
+            except Exception:
+                logger.exception("[ItemPickerPanelController] RMB spawn handling failed")
 
         # Si existe panel de propiedades interno y clic cae sobre él, manejar ahí y no seguir
         if self.model.visible and hasattr(event, 'pos') and self._internal_properties:

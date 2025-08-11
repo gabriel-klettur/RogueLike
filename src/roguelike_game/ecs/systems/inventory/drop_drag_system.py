@@ -4,6 +4,7 @@ from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.ecs.systems.inventory.inventory_pickup_system import InventoryPickupSystem
 from roguelike_game.ecs.systems.inventory.inventory_ui_system import InventoryUISystem
 from roguelike_game.managers.map.item_drop_manager import ItemDropManager
+from roguelike_ui.ui_blocker import is_blocked
 
 import logging
 logger = logging.getLogger(__name__)
@@ -29,7 +30,16 @@ class DropDragSystem:
     def update(self, world, camera):
         comps = world.components
         mouse_buttons = pygame.mouse.get_pressed()
-        left_pressed = mouse_buttons[0]
+        # Use RMB while Items editor is visible; otherwise, default to LMB
+        use_rmb = False
+        try:
+            use_rmb = (
+                hasattr(world, 'state') and getattr(world.state, 'item_editor_state', None)
+                and bool(world.state.item_editor_state.visible)
+            )
+        except Exception:
+            use_rmb = False
+        active_pressed = mouse_buttons[2] if use_rmb else mouse_buttons[0]
         now = pygame.time.get_ticks()
         mouse_x, mouse_y = pygame.mouse.get_pos()
         # Convertir mouse screen a world coords
@@ -38,16 +48,22 @@ class DropDragSystem:
 
 
         # Soltar botón: cancelar potencial o finalizar arrastre
-        if not left_pressed:
+        if not active_pressed:
             if self.dragging_eid is None and self.potential_drag_eid is not None:
                 self.potential_drag_eid = None
                 self.drag_press_time = None
             if self.dragging_eid is None:
-                self.prev_mouse = left_pressed
+                self.prev_mouse = active_pressed
                 return
             # Detectar fin de drag: caer en UI o actualizar JSON
             ui_sys = next((s for s in getattr(world, 'render_systems', []) if isinstance(s, InventoryUISystem)), None)
-            if ui_sys and ui_sys.visible and ui_sys.panel_rect and ui_sys.panel_rect.collidepoint(mouse_x, mouse_y) and not (hasattr(world, 'state') and getattr(world.state, 'item_editor_state', None) and world.state.item_editor_state.visible):
+            if (
+                ui_sys and ui_sys.visible and ui_sys.panel_rect and ui_sys.panel_rect.collidepoint(mouse_x, mouse_y)
+                and not (
+                    hasattr(world, 'state') and getattr(world.state, 'item_editor_state', None)
+                    and world.state.item_editor_state.visible
+                )
+            ):
                 phys = comps['PhysicalItemComponent'][self.dragging_eid]
                 player = getattr(world, 'player_entity', None)
                 if player:
@@ -73,6 +89,10 @@ class DropDragSystem:
         if self.dragging_eid is None:
             hovered = None
             max_layer = -float('inf')
+            # No iniciar drag si el cursor está sobre un panel UI registrado
+            if is_blocked(mouse_x, mouse_y):
+                self.prev_mouse = active_pressed
+                return
             for eid in world.get_entities_in_camera(camera, 'PhysicalItemComponent', 'Sprite', 'Position', 'ZLayer'):
                 pos2 = comps['Position'][eid]
                 sprite = comps['Sprite'][eid]
@@ -89,16 +109,16 @@ class DropDragSystem:
                         hovered = eid
                         max_layer = layer
             if hovered is not None:
-                if not self.prev_mouse and left_pressed:
+                if not self.prev_mouse and active_pressed:
                     self.drag_press_time = now
                     self.potential_drag_eid = hovered
-                elif self.potential_drag_eid == hovered and left_pressed and now - self.drag_press_time >= self.drag_hold_threshold:
+                elif self.potential_drag_eid == hovered and active_pressed and now - self.drag_press_time >= self.drag_hold_threshold:
                     self.dragging_eid = hovered
                     pos2 = comps['Position'][hovered]
                     self.offset_x = pos2.x - world_x
                     self.offset_y = pos2.y - world_y
                     self.potential_drag_eid = None
-            self.prev_mouse = left_pressed
+            self.prev_mouse = active_pressed
             return
 
         # Drag activo: actualizar posición componente

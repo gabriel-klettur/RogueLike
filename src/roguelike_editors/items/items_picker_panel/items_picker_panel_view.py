@@ -2,6 +2,7 @@ import pygame
 import logging
 from typing import Any, Dict
 from roguelike_editors.items.items_title_panel.items_title_view import ItemsTitleView
+from roguelike_ui.ui_blocker import register_blocker
 
 class ItemPickerPanelView:
     """
@@ -122,6 +123,11 @@ class ItemPickerPanelView:
                 bg = pygame.Surface(panel_rect.size, pygame.SRCALPHA)
                 bg.fill((20, 20, 20, 180))
                 screen.blit(bg, panel_rect.topleft)
+                # Registrar como bloqueador de UI para evitar hover/drag debajo del picker
+                try:
+                    register_blocker(panel_rect)
+                except Exception:
+                    pass
             # Sincronizar selección del modelo hacia el panel (si existe)
             # para mantener resalte cuando seleccionamos desde otras UI (map_ui)
             if getattr(model, 'selected_item_id', None) is not None:
