@@ -292,6 +292,14 @@ class TeleportResolver(BaseSpellResolver):
         # Resolver for teleport effect
         pos_cmp = world.components['Position'][caster]
         cx, cy = pos_cmp.x, pos_cmp.y
+        # Use sprite center if available so the VFX and target are centered
+        sprite_cmp = world.components.get('Sprite', {}).get(caster)
+        if sprite_cmp:
+            try:
+                w, h = sprite_cmp.image.get_size()
+                cx += w / 2; cy += h / 2
+            except Exception:
+                pass
         direction = spawn_meta.get('direction', (1, 0))
         distance = cfg.get('distance', 200)
         end_x = cx + direction[0] * distance
