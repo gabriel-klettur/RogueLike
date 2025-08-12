@@ -1,5 +1,7 @@
 import pygame
 import json
+import logging
+import os
 from typing import Dict, Any, Optional
 from .spells_properties_panel_models import SpellsPropertiesPanelModel
 from roguelike_editors.entities.services.constants import UI_MARGIN
@@ -9,6 +11,18 @@ from roguelike_editors.entities.entities_properties_panel.services.state_tabs_he
     format_tab_label,
 )
 from roguelike_ui.ui_blocker import register_blocker
+
+
+logger = logging.getLogger(__name__)
+# Toggle to enable verbose per-frame/provide-call debug logs for this view
+LOG_SPELLS_PROPS_DEBUG = (
+    os.getenv("RL_SPELLS_PROPS_DEBUG") == "1"
+    or os.getenv("RL_SPELLS_VIEW_DEBUG") == "1"
+    or os.getenv("RL_SPELLS_EDITOR_DEBUG") == "1"
+)
+# Throttle timestamps (ms) for debug prints
+_last_dt_log_ts = 0
+_last_call_log_ts = 0
 
 
 class SpellsPropertiesPanelView:
@@ -21,6 +35,10 @@ class SpellsPropertiesPanelView:
         # Match Items panel fixed size
         self.panel_w = 420
         self.panel_h = 360
+        # Frame timing for particle previews
+        self._last_ticks: int = pygame.time.get_ticks()
+        self._dt_ms: int = 16
+        self._max_dt_ms: int = 50
 
     def set_anchor(self, left_x: Optional[int], top_y: Optional[int]) -> None:
         """Set external anchor for the panel top-left position, mirroring Entities layout."""
@@ -51,7 +69,23 @@ class SpellsPropertiesPanelView:
             text = text[:-1]
         return text + '...'
 
-    def draw(self, screen: pygame.Surface, model: SpellsPropertiesPanelModel, spells: Dict[str, Any], active_id: Optional[str], title_rect: Optional[pygame.Rect] = None) -> None:
+    def draw(self, screen: pygame.Surface, model: SpellsPropertiesPanelModel, spells: Dict[str, Any], active_id: Optional[str], title_rect: Optional[pygame.Rect] = None, preview_provider=None) -> None:
+        # Frame delta for previews
+        now = pygame.time.get_ticks()
+        self._dt_ms = max(1, now - self._last_ticks)
+        # Clamp dt to avoid large spikes when panel opens or window regains focus
+        self._dt_ms = min(self._dt_ms, self._max_dt_ms)
+        self._last_ticks = now
+        # Debug: dt for properties panel (throttled and gated)
+        if LOG_SPELLS_PROPS_DEBUG and logger.isEnabledFor(logging.DEBUG):
+            global _last_dt_log_ts
+            now_ms = pygame.time.get_ticks()
+            if now_ms - _last_dt_log_ts >= 1000:
+                try:
+                    logger.debug("[SpellsProps] dt_ms=%d", self._dt_ms)
+                except Exception:
+                    pass
+                _last_dt_log_ts = now_ms
         # Permitir panel visible sin selección si está activo el modo add-on-system
         allow_empty_panel = getattr(model, 'show_add_system_selector', False)
         no_active = (not active_id) or (active_id not in spells)
@@ -291,7 +325,7 @@ class SpellsPropertiesPanelView:
                             pygame.draw.rect(screen, (255, 255, 0), hl_rect, 2)
                             break
         else:
-            # Tab 'assets': celda para el icono del hechizo
+            # Tab 'assets/particles': celda para el icono del hechizo o preview de partículas
             model.content_height = 0
             cell_size = 96
             pad_cell = 8
@@ -317,20 +351,98 @@ class SpellsPropertiesPanelView:
             # Fallback to flat sprite
             if not icon_path and isinstance(data_map_icon, dict):
                 icon_path = data_map_icon.get('sprite')
-            if icon_path:
+            # If a particle preview provider is available, render it; otherwise show the asset image
+            drew_preview = False
+            if callable(preview_provider):
                 try:
-                    thumb = load_image(str(icon_path), (cell_size - 4, cell_size - 4))
-                    screen.blit(thumb, (cell_rect.x + 2, cell_rect.y + 2))
+                    size = (cell_size - 4, cell_size - 4)
+                    # Debug: provider call intent (throttled and gated)
+                    if LOG_SPELLS_PROPS_DEBUG and logger.isEnabledFor(logging.DEBUG):
+                        global _last_call_log_ts
+                        now_ms = pygame.time.get_ticks()
+                        if now_ms - _last_call_log_ts >= 1000:
+                            try:
+                                logger.debug("[SpellsProps] calling provider size=%s dt_ms=%d", size, self._dt_ms)
+                            except Exception:
+                                pass
+                            _last_call_log_ts = now_ms
+                    frame = preview_provider(size, self._dt_ms)
+                    fw, fh = frame.get_size()
+                    # Center inside the cell
+                    dx = cell_rect.x + (cell_size - fw) // 2
+                    dy = cell_rect.y + (cell_size - fh) // 2
+                    screen.blit(frame, (dx, dy))
+                    drew_preview = True
                 except Exception:
+                    drew_preview = False
+            if not drew_preview:
+                if icon_path:
+                    try:
+                        thumb = load_image(str(icon_path), (cell_size - 4, cell_size - 4))
+                        screen.blit(thumb, (cell_rect.x + 2, cell_rect.y + 2))
+                    except Exception:
+                        ph = pygame.Surface((cell_size - 4, cell_size - 4))
+                        ph.fill((100, 100, 100))
+                        screen.blit(ph, (cell_rect.x + 2, cell_rect.y + 2))
+                else:
                     ph = pygame.Surface((cell_size - 4, cell_size - 4))
-                    ph.fill((100, 100, 100))
+                    ph.fill((40, 40, 40))
                     screen.blit(ph, (cell_rect.x + 2, cell_rect.y + 2))
+
+            # Dynamic label to the right indicating Asset or Particles and the details
+            right_label_x = cell_rect.right + 10
+            max_label_w = max(0, view_rect.right - right_label_x)
+
+            def _infer_particle_kind(d: Dict[str, Any]) -> str:
+                try:
+                    vfx_local = d.get('vfx', {}) if isinstance(d.get('vfx', {}), dict) else {}
+                    parts = vfx_local.get('particles', {}) if isinstance(vfx_local.get('particles', {}), dict) else {}
+                    kind_local = parts.get('kind') if isinstance(parts, dict) else None
+                    if kind_local:
+                        return str(kind_local)
+                    stype = d.get('type')
+                    if stype in ('aura',):
+                        return 'aura'
+                    if stype in ('beam',):
+                        return 'laser'
+                    if stype in ('dash',):
+                        return 'dash'
+                    if stype in ('slash',):
+                        return 'slash'
+                    if stype in ('lightning',):
+                        return 'lightning'
+                    if stype in ('arcane_flame',):
+                        return 'arcane_flame'
+                    if stype in ('firework', 'firework_launch'):
+                        return 'firework'
+                    if stype in ('smoke_emitter',):
+                        return 'smoke_emitter'
+                    if stype in ('smoke',):
+                        return 'smoke'
+                    if stype in ('teleport',):
+                        return 'teleport'
+                    if stype in ('sphere_magic_shield',):
+                        return 'aura'
+                    sid_l = str(d.get('id') or '').lower()
+                    for kw, kind_m in (
+                        ('aura', 'aura'), ('beam', 'laser'), ('laser', 'laser'), ('dash', 'dash'), ('slash', 'slash'),
+                        ('lightning', 'lightning'), ('firework', 'firework'), ('smoke_emitter', 'smoke_emitter'),
+                        ('smoke', 'smoke'), ('flame', 'arcane_flame'), ('teleport', 'teleport'), ('shield', 'aura'),
+                    ):
+                        if kw in sid_l:
+                            return kind_m
+                except Exception:
+                    pass
+                return 'particles'
+
+            if drew_preview:
+                sys_name = _infer_particle_kind(data_map_icon if isinstance(data_map_icon, dict) else {})
+                label_text = f"Particles: {sys_name}"
             else:
-                ph = pygame.Surface((cell_size - 4, cell_size - 4))
-                ph.fill((40, 40, 40))
-                screen.blit(ph, (cell_rect.x + 2, cell_rect.y + 2))
-            label = self.font.render("Spell Image (vfx.sprite.path)", True, (220, 220, 220))
-            screen.blit(label, (cell_rect.right + 10, cell_rect.y + 4))
+                label_text = f"Asset: {icon_path or ''}"
+            label_text = self._truncate_text(label_text, max_label_w)
+            label_surf = self.font.render(label_text, True, (220, 220, 220))
+            screen.blit(label_surf, (right_label_x, cell_rect.y + 4))
 
         # Restaurar clip
         screen.set_clip(old_clip)

@@ -24,7 +24,7 @@ class SpellsPropertiesPanelModel:
     content_view_rect: Optional[pygame.Rect] = None
 
     # Tabs
-    type_tabs: List[str] = field(default_factory=lambda: ["properties", "assets"])
+    type_tabs: List[str] = field(default_factory=lambda: ["properties", "assets/particles"])
     active_type_tab: str = "properties"
     type_tab_rects: Dict[str, pygame.Rect] = field(default_factory=dict)
 

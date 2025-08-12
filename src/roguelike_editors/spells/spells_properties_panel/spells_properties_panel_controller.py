@@ -111,6 +111,53 @@ class SpellsPropertiesPanelController:
         self._selected_id = selected_id
         self._hovered_id = hovered_id
 
+    # --- Preview providers (reuse picker previews) ---
+    def get_preview_provider_for_spell(self, spell_id: Optional[str]):
+        """Return the preview provider callable for a spell if available.
+
+        This reuses the providers built by the main SpellEditorController for the picker grid.
+        """
+        try:
+            ec = getattr(self, 'editor_controller', None)
+            if ec and getattr(ec, 'view', None) is not None and spell_id:
+                providers = getattr(ec.view, 'preview_providers', None)
+                if isinstance(providers, dict):
+                    return providers.get(spell_id)
+        except Exception:
+            pass
+        return None
+
+    def is_active_particle_spell(self) -> bool:
+        """Determine if the active spell should show a particle preview in the Assets/Particles tab."""
+        sid = self._selected_id or self._hovered_id
+        if not sid:
+            return False
+        # Prefer presence of a preview provider (authoritative)
+        if callable(self.get_preview_provider_for_spell(sid)):
+            return True
+        # Fallback: inspect spell definition
+        try:
+            sdef = self._spells.get(sid, {}) or {}
+            vfx = sdef.get('vfx', {}) or {}
+            if vfx.get('preview') == 'particles':
+                return True
+            parts = vfx.get('particles')
+            if isinstance(parts, dict) and len(parts) > 0:
+                return True
+            stype = sdef.get('type')
+            if stype in (
+                'lightning', 'aura', 'beam', 'dash', 'slash', 'arcane_flame',
+                'firework', 'firework_launch', 'smoke_emitter', 'smoke', 'teleport', 'sphere_magic_shield'
+            ):
+                return True
+            sid_l = str(sid).lower()
+            for kw in ('aura', 'beam', 'laser', 'dash', 'slash', 'lightning', 'firework', 'smoke', 'flame', 'teleport', 'shield'):
+                if kw in sid_l:
+                    return True
+        except Exception:
+            pass
+        return False
+
     # --- UI Loop ---
     def handle_event(self, event: pygame.event.Event) -> bool:
         try:
@@ -135,7 +182,8 @@ class SpellsPropertiesPanelController:
 
     def draw(self, screen: pygame.Surface, title_rect: Optional[pygame.Rect] = None) -> None:
         active_id = self._selected_id or self._hovered_id
-        self.view.draw(screen, self.model, self._spells, active_id, title_rect)
+        provider = self.get_preview_provider_for_spell(active_id)
+        self.view.draw(screen, self.model, self._spells, active_id, title_rect, preview_provider=provider)
         # Inline caret
         if self.model.editing_property and self.text_input.active:
             for rect_prop, key_prop in self.model.property_entries:

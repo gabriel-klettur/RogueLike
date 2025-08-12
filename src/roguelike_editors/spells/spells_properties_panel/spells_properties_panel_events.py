@@ -105,11 +105,25 @@ class SpellsPropertiesPanelEventHandler:
                     self.model.active_type_tab = tab_hit
                 return
 
-            # Assets tab: open picker on double click
-            if self.model.active_type_tab == 'assets':
+            # Assets/Particles tab: open picker on double click (but ignore if showing particle preview)
+            if self.model.active_type_tab == 'assets/particles':
                 cell = getattr(self.model, 'asset_cell_rect', None)
                 if cell and cell.collidepoint(mx, my):
                     if getattr(event, 'clicks', 1) >= 2 or self.dc_detector.is_double_click('asset_icon_cell'):
+                        # If the current spell has a particle preview provider, do NOT open the assets picker
+                        try:
+                            active_id = self.controller._selected_id or self.controller._hovered_id
+                            provider = self.controller.get_preview_provider_for_spell(active_id)
+                            if callable(provider):
+                                return
+                        except Exception:
+                            pass
+                        # Fallback: if controller deems this a particle spell, also block
+                        try:
+                            if hasattr(self.controller, 'is_active_particle_spell') and self.controller.is_active_particle_spell():
+                                return
+                        except Exception:
+                            pass
                         try:
                             self.controller.open_assets_picker()
                         except Exception:
