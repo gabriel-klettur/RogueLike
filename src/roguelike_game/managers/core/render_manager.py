@@ -140,9 +140,12 @@ class RendererManager:
         def _bench_minimap():
             if (
                 not self.tiles_editor.editor_state.active
+                and not self.buildings_editor.editor_state.active
+                and not self.map_editor.editor_state.active
                 and not (hasattr(state, 'entities_editor_state') and state.entities_editor_state.visible)
                 and not (hasattr(state, 'inventory_editor_state') and getattr(state.inventory_editor_state, 'visible', False))
                 and not (hasattr(state, 'item_editor_state') and getattr(state.item_editor_state, 'visible', False))
+                and not getattr(state, 'spells_editor_visible', False)
             ):
                 self._render_minimap(screen)
         _bench_minimap()
@@ -337,6 +340,17 @@ class RendererManager:
         if hasattr(state, 'inventory_editor_state') and getattr(state.inventory_editor_state, 'visible', False):
             return
         if hasattr(state, 'item_editor_state') and getattr(state.item_editor_state, 'visible', False):
+            return
+        # Ocultar también cuando el Buildings Editor está activo
+        if self.buildings_editor.editor_state.active:
+            return
+        # Ocultar también cuando el Tiles Editor o Map Editor están activos
+        if self.tiles_editor.editor_state.active:
+            return
+        if self.map_editor.editor_state.active:
+            return
+        # Ocultar cuando el Spells Editor está visible
+        if getattr(state, 'spells_editor_visible', False):
             return
         if self.map_editor.editor_state.active:
             mode = 'map'

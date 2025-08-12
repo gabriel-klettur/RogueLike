@@ -41,4 +41,10 @@ class BuildingsEditorModel:
         self.collision_picker_panel_size = (0, 0)
         # Flag to indicate collision brush painting active
         self.collision_brush_dragging: bool = False
-# Path: src/roguelike_game/systems/editor/buildings/model/building_editor_state.py
+
+        # --- NUEVO: Picker panel draggable ---
+        # Si no es None, el panel usa esta posición absoluta en pantalla
+        self.picker_manual_pos: tuple[int, int] | None = None
+        # Flags/estado de drag del panel
+        self.picker_dragging_panel: bool = False
+        self.picker_drag_offset: tuple[int, int] = (0, 0)

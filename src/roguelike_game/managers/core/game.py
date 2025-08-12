@@ -82,6 +82,11 @@ class Game:
     @benchmark(lambda self: self.perf_log, "3.TOTAL: RENDER")
     def render(self):
         # Renderiza el mundo
+        # Propaga visibilidad del Spells Editor al estado para que el renderer pueda ocultar minimapa/leyenda
+        try:
+            self.state.spells_editor_visible = bool(getattr(self, 'spells_editor', None) and self.spells_editor.model.visible)
+        except Exception:
+            self.state.spells_editor_visible = False
         self.renderer.render_game(
             self.state,
             self.screen,

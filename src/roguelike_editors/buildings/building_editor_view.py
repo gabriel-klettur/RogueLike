@@ -78,7 +78,18 @@ class BuildingEditorView:
             return
 
         # Title bar always visible when editor is active
-        self.title_view.render(screen)
+        title_rect = self.title_view.render(screen)
+        # Anchor picker: if user dragged the panel, use manual position; else align under title
+        try:
+            if getattr(self.editor, 'picker_manual_pos', None) is None:
+                self.picker_view._top_anchor_y = title_rect.bottom + 8  # small gap
+                self.picker_view._left_anchor_x = title_rect.left
+            else:
+                px, py = self.editor.picker_manual_pos
+                self.picker_view._left_anchor_x = int(px)
+                self.picker_view._top_anchor_y = int(py)
+        except Exception:
+            pass
 
         # Collision brush mode: persist active collision building until exit or scroll
         if self.editor.current_tool == 'collision_brush':
@@ -95,6 +106,7 @@ class BuildingEditorView:
         # (Modo normal: renderizado completo con bordes y z-layer)
         if self.editor.picker_active:
             self.picker_view.render(screen, camera)
+
         for b in buildings:
             # Solo mostrar opciones en el edificio activo (persistente)
             if b != getattr(self.editor, 'active_building', None):
