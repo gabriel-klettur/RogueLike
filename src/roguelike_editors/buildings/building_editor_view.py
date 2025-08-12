@@ -33,11 +33,19 @@ class BuildingEditorView:
             self._last_title_rect = title_rect
         except Exception:
             pass
-        # Anchor picker: if user dragged the panel, use manual position; else align under title
+        # Anchor picker: if user dragged the panel, use manual position.
+        # Else align next to Add/Remove panel if present; fallback to under title
         try:
             if getattr(self.editor, 'picker_manual_pos', None) is None:
-                self.picker_view._top_anchor_y = title_rect.bottom + 8  # small gap
-                self.picker_view._left_anchor_x = title_rect.left
+                add_remove_rect = getattr(self.editor, 'add_remove_panel_rect', None)
+                if add_remove_rect is not None:
+                    # Align to the right of the add/remove panel
+                    self.picker_view._left_anchor_x = add_remove_rect.right + 8
+                    self.picker_view._top_anchor_y = add_remove_rect.top
+                else:
+                    # Default: under the title bar
+                    self.picker_view._top_anchor_y = title_rect.bottom + 8
+                    self.picker_view._left_anchor_x = title_rect.left
             else:
                 px, py = self.editor.picker_manual_pos
                 self.picker_view._left_anchor_x = int(px)
