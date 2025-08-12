@@ -33,6 +33,11 @@ class BuildingsEditorModel:
         # Solo 'select' aquí; el panel de colisiones gestiona su propio estado.
         self.current_tool: str = 'select'
 
+        # --- Alcance de edición de colliders ---
+        # 'CG' = Cambios Globales (por image_path)
+        # 'CU' = Cambios Únicos (sólo instancia activa, no persiste global)
+        self.collider_scope: str = 'CG'
+
         # --- NUEVO: Picker panel draggable ---
         # Si no es None, el panel usa esta posición absoluta en pantalla
         self.picker_manual_pos: tuple[int, int] | None = None

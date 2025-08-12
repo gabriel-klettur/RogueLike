@@ -144,20 +144,63 @@ class BuildingCollidersPanelEventHandler:
                 col = int((world_x - x_b) // TILE_SIZE)
                 row = int((world_y - y_b) // TILE_SIZE)
                 if 0 <= row < len(b.collision_map) and 0 <= col < len(b.collision_map[0]):
+                    # Pinta en el edificio activo
                     b.collision_map[row][col] = self.model.choice
-                    # invalidate collision tiles cache in model if present
+                    # Invalida caches
                     try:
                         b.model._collision_tiles_cache = None
                         b.model._collision_tile_objs = None
                     except Exception:
                         pass
+                    # Según alcance del building activo, propagar a todos los que comparten image_path
+                    scope_b = getattr(b, 'collider_scope', getattr(self.editor_state, 'collider_scope', 'CG'))
+                    if scope_b == 'CG':
+                        rows_ref = len(b.collision_map)
+                        cols_ref = len(b.collision_map[0]) if rows_ref > 0 else 0
+                        for other in buildings:
+                            if other is b:
+                                continue
+                            if getattr(other, 'image_path', None) != getattr(b, 'image_path', None):
+                                continue
+                            # No sobrescribir instancias marcadas como CU
+                            if getattr(other, 'collider_scope', 'CG') == 'CU':
+                                continue
+                            # Mapear índice (row,col) proporcionalmente si tamaños difieren
+                            try:
+                                rows2 = len(other.collision_map)
+                                cols2 = len(other.collision_map[0]) if rows2 > 0 else 0
+                                if rows2 <= 0 or cols2 <= 0:
+                                    continue
+                                r2 = int(row * rows2 / max(1, rows_ref))
+                                c2 = int(col * cols2 / max(1, cols_ref))
+                                if r2 >= rows2: r2 = rows2 - 1
+                                if c2 >= cols2: c2 = cols2 - 1
+                                other.collision_map[r2][c2] = self.model.choice
+                                try:
+                                    other.model._collision_tiles_cache = None
+                                    other.model._collision_tile_objs = None
+                                except Exception:
+                                    pass
+                            except Exception:
+                                # Si algún edificio no tiene mapa válido, lo omitimos
+                                continue
                 return True
         return False
 
-    def _save_collisions(self, buildings):
+    def _save_collisions(self, buildings, force: bool = False):
+        # Persistencia: por defecto sólo si el building activo está en modo CG.
+        # Si force=True, ignorar el alcance activo y guardar colisiones CG globales igualmente.
+        if not force:
+            active = getattr(self.model, 'active_building', None)
+            eff_scope = getattr(active, 'collider_scope', getattr(self.editor_state, 'collider_scope', 'CG')) if active else getattr(self.editor_state, 'collider_scope', 'CG')
+            if eff_scope != 'CG':
+                return
         data = {}
         for b in buildings:
             if getattr(b, 'collision_map', None) is None:
+                continue
+            # Sólo tomar como fuente las instancias CG para no sobreescribir con CU
+            if getattr(b, 'collider_scope', 'CG') != 'CG':
                 continue
             data[getattr(b, 'image_path', '')] = {
                 'width': len(b.collision_map[0]) if b.collision_map else 0,

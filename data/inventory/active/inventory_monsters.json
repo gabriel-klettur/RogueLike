@@ -1,48 +1,10 @@
 {
-  "79d77197-98b3-43be-87ed-c83e7e1a0f6a": {
-    "template_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+  "f5c86140-7030-4e87-a11d-2765f46c7a1f": {
+    "template_id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
     "slots": [
       {
         "item": "gold",
         "quantity": 2
-      },
-      {
-        "item": "experience_orb",
-        "quantity": 2
-      },
-      {
-        "item": "wood",
-        "quantity": 1
-      },
-      {
-        "item": "bucket",
-        "quantity": 1
-      },
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "schema_version": "1.0.0"
-  },
-  "17a443f0-f81c-40b8-8bd7-e9c72eb2d2c4": {
-    "template_id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
-    "slots": [
-      {
-        "item": "gold",
-        "quantity": 3
       },
       {
         "item": "experience_orb",

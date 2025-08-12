@@ -4,6 +4,7 @@ from roguelike_editors.buildings.buildings_title_panel.buildings_title_view impo
 
 from roguelike_editors.buildings.tools.split_z_tool.split_tool_view   import SplitToolView
 from roguelike_editors.buildings.tools.z_tool.z_tool_view       import ZToolView
+from roguelike_editors.buildings.tools.collider_scope_tool.collider_scope_tool_view import ColliderScopeToolView
 
 from roguelike_editors.buildings.buildings_picker.building_picker_view      import PickerView
 
@@ -16,6 +17,7 @@ class BuildingEditorView:
         self.split_view    = SplitToolView(state, editor_state)
         self.z_bottom_view = ZToolView(state, editor_state, target="bottom")
         self.z_top_view    = ZToolView(state, editor_state, target="top")
+        self.collider_scope_view = ColliderScopeToolView(state, editor_state)
                 
         self.picker_view = PickerView(editor_state)
         # Professional title bar (top-left)
@@ -72,3 +74,8 @@ class BuildingEditorView:
             self.split_view.render(screen, b, camera)
             self.z_bottom_view.render(screen, b, camera)
             self.z_top_view.render(screen, b, camera)
+            # Render toggle CG/CU bottom-right
+            try:
+                self.collider_scope_view.render(screen, b, camera)
+            except Exception:
+                pass

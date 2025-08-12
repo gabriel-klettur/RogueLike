@@ -5,6 +5,9 @@ Centraliza la lógica de captura y despacho de eventos extraída de Game.
 import pygame
 import roguelike_engine.config.config as config
 from roguelike_engine.input.events import handle_events as engine_handle_events
+from roguelike_editors.buildings.utils.save_buildings_to_json import save_buildings_to_json
+from roguelike_engine.config.config import BUILDINGS_DATA_PATH
+from roguelike_engine.config.map_config import global_map_settings
 
 import logging
 logger = logging.getLogger(__name__)
@@ -13,6 +16,26 @@ def handle_events(game):
     # Procesar QUIT antes que nada
     if pygame.event.peek(pygame.QUIT):
         pygame.event.get(pygame.QUIT)
+        # Persistir colisiones globales antes de salir (si existe el editor)
+        try:
+            be = getattr(game, 'buildings_editor', None)
+            bm = getattr(game, 'buildings', None)
+            if be and bm and hasattr(be, 'colliders') and hasattr(be.colliders, 'events'):
+                be.colliders.events._save_collisions(bm.buildings, force=True)
+        except Exception:
+            pass
+        # Guardar buildings con overrides CU
+        try:
+            bm = getattr(game, 'buildings', None)
+            if bm and hasattr(bm, 'buildings'):
+                save_buildings_to_json(
+                    bm.buildings,
+                    BUILDINGS_DATA_PATH,
+                    z_state=getattr(game.state, 'z_state', None),
+                    zone_offsets=getattr(global_map_settings, 'zone_offsets', None),
+                )
+        except Exception:
+            pass
         game.state.running = False
         return
 
@@ -119,6 +142,30 @@ def handle_events(game):
         if event.type == pygame.KEYDOWN and event.key == game.menu.input_config.get_key('toggle_building_editor'):
             # Toggle building editor open/close
             new_active = not game.buildings_editor.editor_state.active
+            # Si estamos cerrando el editor, persistir colisiones CG y refrescar índice espacial
+            if not new_active:
+                try:
+                    be = game.buildings_editor
+                    bm = game.buildings
+                    if hasattr(be, 'colliders') and hasattr(be.colliders, 'events'):
+                        be.colliders.events._save_collisions(bm.buildings, force=True)
+                except Exception:
+                    pass
+                # Guardar buildings con overrides CU
+                try:
+                    save_buildings_to_json(
+                        bm.buildings,
+                        BUILDINGS_DATA_PATH,
+                        z_state=getattr(game.state, 'z_state', None),
+                        zone_offsets=getattr(global_map_settings, 'zone_offsets', None),
+                    )
+                except Exception:
+                    pass
+                # Invalidate spatial index para respetar colisiones inmediatamente en gameplay
+                try:
+                    game.ecs.ecs_world.invalidate_spatial_index()
+                except Exception:
+                    pass
             game.buildings_editor.editor_state.active = new_active
             # No forzar apertura del picker al activar: debe iniciar oculto
             game.buildings_editor.editor_state.picker_active = False

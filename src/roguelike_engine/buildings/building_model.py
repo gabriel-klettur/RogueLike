@@ -48,6 +48,9 @@ class BuildingModel:
         self._collision_tiles_cache: list[pygame.Rect] | None = None
         self._collision_tile_objs: list[types.SimpleNamespace] | None = None
 
+        # Alcance de colisión por edificio: 'CG' (global) o 'CU' (único)
+        self.collider_scope: str = 'CG'
+
         # ── Z-layers por defecto (se pueden sobreescribir) ──
         from roguelike_engine.config.config_z_layer import Z_LAYERS
         self.z_bottom = z_bottom if z_bottom is not None else Z_LAYERS["building_low"]
@@ -209,8 +212,9 @@ class BuildingModel:
         """
         w = int(self.image.get_width()) if self.image else 0
         h = int(self.image.get_height()) if self.image else 0
-        cols = max(1, w // TILE_SIZE) if w > 0 else 1
-        rows = max(1, h // TILE_SIZE) if h > 0 else 1
+        # Ceil division para cubrir el borde parcial del asset
+        cols = max(1, (w + TILE_SIZE - 1) // TILE_SIZE) if w > 0 else 1
+        rows = max(1, (h + TILE_SIZE - 1) // TILE_SIZE) if h > 0 else 1
         return rows, cols
 
     def _resample_collision_map(self, new_rows: int, new_cols: int):
@@ -289,7 +293,8 @@ class BuildingModel:
             'z_bottom': self.z_bottom,
             'z_top': self.z_top,
             'collision_map': self._collision_map,
-            'original_scale': self.original_scale
+            'original_scale': self.original_scale,
+            'collider_scope': self.collider_scope,
         }
 
     def __setstate__(self, state):
@@ -306,5 +311,7 @@ class BuildingModel:
         self._collision_tiles_cache = None
         self._collision_tile_objs = None
         self.original_scale = state.get('original_scale')
+        # Restaurar alcance de colisión por edificio
+        self.collider_scope = state.get('collider_scope', 'CG')
         # Reload image using cached loader
         self._load_and_prepare_image(self.original_scale)
