@@ -36,6 +36,14 @@ class BuildingEditorEventHandler:
         if events is None:
             events = pygame.event.get()
         for ev in events:
+            # Delegar primero a la toolbar SOLO para eventos de mouse (no teclas)
+            if ev.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP, pygame.MOUSEMOTION, pygame.MOUSEWHEEL):
+                try:
+                    toolbar = getattr(self, 'buildings_toolbar_controller', None)
+                    if toolbar and toolbar.handle_event(ev):
+                        continue
+                except Exception:
+                    pass
             # Pan camera with middle mouse
             if ev.type == pygame.MOUSEBUTTONDOWN and getattr(ev, 'button', None) == 2:
                 # Start panning
@@ -81,6 +89,8 @@ class BuildingEditorEventHandler:
                     self.controller.toggle_editor()
                     self.editor.current_tool = 'select'
                     self.editor.collision_picker_open = False
+                    # Picker oculto inicialmente al abrir el editor
+                    self.editor.picker_active = False
                     # Initialize active building for editor mode
                     self.editor.active_building = getattr(self.editor, 'hovered_building', None)
                 else:

@@ -79,6 +79,11 @@ class BuildingEditorView:
 
         # Title bar always visible when editor is active
         title_rect = self.title_view.render(screen)
+        # Expose last title rect for external layout (e.g., toolbars)
+        try:
+            self._last_title_rect = title_rect
+        except Exception:
+            pass
         # Anchor picker: if user dragged the panel, use manual position; else align under title
         try:
             if getattr(self.editor, 'picker_manual_pos', None) is None:

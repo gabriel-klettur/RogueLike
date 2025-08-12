@@ -188,9 +188,9 @@ class RendererManager:
                 self.map
             )
 
-        # Render Building Editor UI
+        # Render Building Editor UI (use manager to include toolbar rendering)
         if self.buildings_editor.editor_state.active:
-            self.buildings_editor.view.render(
+            self.buildings_editor.render(
                 self.screen,
                 self.camera,
                 self.entities.buildings

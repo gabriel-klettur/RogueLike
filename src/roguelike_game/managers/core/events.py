@@ -120,7 +120,8 @@ def handle_events(game):
             # Toggle building editor open/close
             new_active = not game.buildings_editor.editor_state.active
             game.buildings_editor.editor_state.active = new_active
-            game.buildings_editor.editor_state.picker_active = new_active
+            # No forzar apertura del picker al activar: debe iniciar oculto
+            game.buildings_editor.editor_state.picker_active = False
             return
         if event.type == pygame.KEYDOWN and event.key == game.menu.input_config.get_key('toggle_map_editor'):
             game.map_editor.toggle()
