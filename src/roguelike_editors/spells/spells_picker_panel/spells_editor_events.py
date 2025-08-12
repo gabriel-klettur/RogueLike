@@ -2,6 +2,8 @@ import pygame
 import os
 from roguelike_ui.services.json_persistence import save_to_json, load_from_json, remove_from_json
 from roguelike_editors.entities.services.constants import UI_MARGIN
+from roguelike_engine.utils.loader import load_image
+from roguelike_game.config.spells_config import reload_spells
 
 class SpellEditorEventHandler:
     """
@@ -73,6 +75,64 @@ class SpellEditorEventHandler:
                 in_x = x0 <= mx <= x0 + cell_size
                 in_y = y0 <= my <= y0 + ch
                 clicked_sid = spell_ids[idx] if (0 <= col < cols and 0 <= idx < len(spell_ids) and in_x and in_y) else None
+
+            # If ADD mode (pending duplicate) is active, duplicate the clicked spell
+            ar_model = getattr(self.controller, 'spells_add_remove_model', None)
+            if ar_model is not None and getattr(ar_model, 'active_tool', None) == 'add_spell':
+                if clicked_sid:
+                    # Clone base entry
+                    base = dict(self.model.spells.get(clicked_sid, {}))
+                    # Generate unique id based on clicked id
+                    def unique_id(prefix: str) -> str:
+                        i = 1
+                        cand = prefix
+                        existing = self.model.spells
+                        while cand in existing:
+                            cand = f"{prefix}_{i}"
+                            i += 1
+                        return cand
+                    pref = f"{clicked_sid}_copy"
+                    new_id = unique_id(pref)
+                    # Persist to JSON (ensure internal 'id' matches the new key)
+                    path = os.path.join(os.getcwd(), "data", "spells", "spells.json")
+                    try:
+                        if isinstance(base, dict):
+                            base['id'] = new_id
+                    except Exception:
+                        pass
+                    save_to_json(path, new_id, base)
+                    # Update in-memory model
+                    self.model.spells[new_id] = base
+                    sprite_path = base.get('sprite')
+                    loaded_asset = False
+                    if sprite_path:
+                        try:
+                            self.model.assets[new_id] = load_image(sprite_path)
+                            loaded_asset = True
+                        except Exception:
+                            loaded_asset = False
+                    # Fallback: duplicate the existing Surface if available
+                    if not loaded_asset:
+                        try:
+                            orig = self.model.assets.get(clicked_sid)
+                            if orig is not None:
+                                self.model.assets[new_id] = orig
+                        except Exception:
+                            pass
+                    # Select the new spell and exit add mode
+                    self.model.selected_id = new_id
+                    ar_model.active_tool = None
+                    # Hot-reload runtime and rebuild previews
+                    try:
+                        reload_spells()
+                    except Exception:
+                        pass
+                    try:
+                        self.controller._rebuild_particle_preview_providers()
+                    except Exception:
+                        pass
+                # Always stop further processing in ADD mode
+                return
 
             # If delete mode active, process deletion
             if getattr(self.model, 'delete_mode_active', False):
