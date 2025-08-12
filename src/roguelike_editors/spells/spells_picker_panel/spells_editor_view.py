@@ -68,10 +68,7 @@ class SpellEditorView:
         now = pygame.time.get_ticks()
         self._dt_ms = max(1, now - self._last_ticks)
         self._last_ticks = now
-        # Semi-transparent background
-        overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 180))
-        screen.blit(overlay, (0, 0))
+        # Removed full-screen dim overlay to keep game visible behind the editor
         # Title above the dim background
         if self.title_view is None:
             self.title_view = SpellsTitleView(None, model)
