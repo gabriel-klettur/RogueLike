@@ -23,6 +23,11 @@ class EntitiesAssetsPickerPanelController:
         self.model.width = width
         self.model.on_asset_chosen = callback
         self.model.label_provider = label_provider
+        # Reset double-commit guard on every show
+        try:
+            self.model._committed_once = False
+        except Exception:
+            pass
         self.model.visible = True
         # Reiniciar FS model
         # Reset to model's root Path
