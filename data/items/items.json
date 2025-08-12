@@ -266,5 +266,12 @@
     "rarity": "epic",
     "level_requirement": 10,
     "z_layer": 1
+  },
+  "ghjgjh": {
+    "icon": "assets/objects/rock.png",
+    "id": "ghjgjh",
+    "name": "ghjgjh",
+    "description": "ghjghjg",
+    "stackable": false
   }
 }
