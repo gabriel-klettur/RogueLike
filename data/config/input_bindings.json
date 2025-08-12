@@ -14,5 +14,6 @@
     "spell_arcane_flame": "K_c",
     "toggle_item_editor": "K_F7",
     "toggle_inventory": "K_I",
-    "select_class": "K_F2"
+    "select_class": "K_F2",
+    "spell_teleport": "K_q"
 }
