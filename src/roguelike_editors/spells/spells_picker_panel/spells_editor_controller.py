@@ -50,6 +50,7 @@ from roguelike_editors.spells.services.particle_preview import (
     ParticlePreviewExplosion,
     ParticlePreviewArcaneFlame,
     ParticlePreviewHealingAura,
+    ParticlePreviewTeleport,
 )
 
 class SpellEditorController:
@@ -291,12 +292,12 @@ class SpellEditorController:
                 return True
             # Inferred by spell type: these are inherently VFX-heavy and we provide lightweight previews
             stype = sdef.get('type')
-            if stype in ('lightning', 'aura', 'beam', 'dash', 'slash', 'arcane_flame', 'firework', 'firework_launch', 'smoke_emitter', 'smoke'):
+            if stype in ('lightning', 'aura', 'beam', 'dash', 'slash', 'arcane_flame', 'firework', 'firework_launch', 'smoke_emitter', 'smoke', 'teleport', 'sphere_magic_shield'):
                 return True
             # Fallback by id substring
             sid = sdef.get('id') or ''
             sid_l = str(sid).lower()
-            for kw in ('aura', 'beam', 'laser', 'dash', 'slash', 'lightning', 'firework', 'smoke', 'flame'):
+            for kw in ('aura', 'beam', 'laser', 'dash', 'slash', 'lightning', 'firework', 'smoke', 'flame', 'teleport', 'shield'):
                 if kw in sid_l:
                     return True
             return False
@@ -366,6 +367,10 @@ class SpellEditorController:
                 kind = 'smoke_emitter'
             elif stype in ('smoke',):
                 kind = 'smoke'
+            elif stype in ('teleport',):
+                kind = 'teleport'
+            elif stype in ('sphere_magic_shield',):
+                kind = 'aura'
         # If still not resolved, infer by id substring
         if not kind:
             sid_l = str(sdef.get('id') or '').lower()
@@ -387,6 +392,10 @@ class SpellEditorController:
                 kind = 'smoke'
             elif 'flame' in sid_l:
                 kind = 'arcane_flame'
+            elif 'teleport' in sid_l:
+                kind = 'teleport'
+            elif 'shield' in sid_l:
+                kind = 'aura'
         # Build kind-specific preview
         preview_obj = None
         try:
@@ -439,6 +448,9 @@ class SpellEditorController:
                 # If looks like a healing aura (by id or particle params), use the rising-particles aura
                 sid_l = str(sdef.get('id') or '').lower()
                 healing_like = ('heal' in sid_l) or any(k in particles for k in ('emit_rate', 'lifespan', 'size_range'))
+                # Default color depends on stype: blue for sphere_magic_shield, green otherwise
+                stype_local = sdef.get('type')
+                default_aura_color = (150, 200, 255) if stype_local == 'sphere_magic_shield' else (80, 200, 120)
                 if healing_like:
                     emit_rate = particles.get('emit_rate') if isinstance(particles.get('emit_rate'), int) and particles.get('emit_rate') > 0 else None
                     if emit_rate is None:
@@ -450,7 +462,7 @@ class SpellEditorController:
                     palette = palette_colors if isinstance(palette_colors, list) and len(palette_colors) > 0 else None
                     warm_steps = min(24, 6 + int(emit_rate) * 2)
                     preview_obj = ParticlePreviewHealingAura(
-                        color=color if color_explicit else (80, 200, 120),
+                        color=color if color_explicit else default_aura_color,
                         palette=palette,
                         radius=radius,
                         emit_rate=int(emit_rate),
@@ -468,7 +480,7 @@ class SpellEditorController:
                         count = max(8, min(40, int(er) * 8)) if isinstance(er, int) and er > 0 else 24
                     # Pass palette if available for healing aura varied tones
                     palette = palette_colors if isinstance(palette_colors, list) and len(palette_colors) > 0 else None
-                    preview_obj = ParticlePreviewAura(color=color if color_explicit else (80, 200, 120), radius=radius, speed=float(speed), count=int(count), palette=palette)
+                    preview_obj = ParticlePreviewAura(color=color if color_explicit else default_aura_color, radius=radius, speed=float(speed), count=int(count), palette=palette)
             elif kind in ('dash',):
                 # Prefer particles.speed_px; fallback to effect.speed
                 speed_px = particles.get('speed_px') if isinstance(particles.get('speed_px'), (int, float)) else (sdef.get('effect', {}).get('speed') if isinstance(sdef.get('effect', {}).get('speed'), (int, float)) else 60.0)
@@ -505,6 +517,15 @@ class SpellEditorController:
                     spark_size_range=(smin, smax),
                     spark_lifespan=int(spark_life),
                 )
+            elif kind in ('teleport',):
+                # Use effect.lifetime (seconds) to drive per-phase cycle speed
+                eff = sdef.get('effect', {}) if isinstance(sdef.get('effect', {}), dict) else {}
+                life = eff.get('lifetime') if isinstance(eff.get('lifetime'), (int, float)) else None
+                if isinstance(life, (int, float)):
+                    cycle_ms = int(max(300, min(900, float(life) * 1000)))
+                else:
+                    cycle_ms = 600
+                preview_obj = ParticlePreviewTeleport(color=color if color_explicit else (0, 200, 255), cycle_ms=cycle_ms)
             elif kind in ('explosion',):
                 # Use palette when available for richer arcane flame look
                 palette = palette_colors if isinstance(palette_colors, list) and len(palette_colors) > 0 else None

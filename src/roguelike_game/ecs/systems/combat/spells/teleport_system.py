@@ -20,7 +20,16 @@ class TeleportSystem:
                 # reposition entity
                 pos = world.components['Position'].get(eid)
                 if pos:
-                    pos.x, pos.y = model.end_pos
+                    end_x, end_y = model.end_pos
+                    spr = world.components.get('Sprite', {}).get(eid)
+                    if spr is not None and getattr(spr, 'image', None) is not None:
+                        try:
+                            w, h = spr.image.get_size()
+                            end_x -= w / 2
+                            end_y -= h / 2
+                        except Exception:
+                            pass
+                    pos.x, pos.y = end_x, end_y
             # remove finished effect
             if model.is_finished():
                 world.components['TeleportComponent'].pop(eid, None)

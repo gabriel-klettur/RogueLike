@@ -134,8 +134,10 @@ class InputSystem:
                     # Ataque físico
                     if inp.attack:
                         state_comp.fsm.change_state(PlayerAttackState(), proxy)
-                    # Hechizos (q/e)
-                    if inp.spell_lightball or inp.spell_slash:
+                    # Hechizos (q/e): entrar a selección SOLO en flanco ascendente y si está en Idle/Move
+                    pressed_lb = bool(keys[lb_key]) and self.prev_spell_keys.get((eid, 'lightball'), 0) == 0
+                    pressed_sl = bool(keys[slash_key]) and self.prev_spell_keys.get((eid, 'slash'), 0) == 0
+                    if (pressed_lb or pressed_sl) and (isinstance(current, IdleState) or isinstance(current, MoveState)):
                         state_comp.fsm.change_state(PlayerSpellSelectState(), proxy)
 
             # Mapear habilidades Q, E, X desde config

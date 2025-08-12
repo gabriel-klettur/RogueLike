@@ -758,3 +758,52 @@ class ParticlePreviewLightning:
                     for dy in (-1, 0, 1):
                         pygame.draw.lines(self._surf, col, False, [(x+dx, y+dy) for (x, y) in pts], self._thickness)
         return self._surf
+
+
+class ParticlePreviewTeleport:
+    """Expanding/fading ring preview matching in-game TeleportView.
+
+    Cycles between an 'out' and 'in' phase so the preview loops in the cell.
+    """
+
+    def __init__(self, color: Tuple[int, int, int] = (0, 200, 255), cycle_ms: int = 600) -> None:
+        self._surf: pygame.Surface | None = None
+        self._size: Tuple[int, int] | None = None
+        self._color = color
+        self._elapsed_ms = 0
+        self._cycle_ms = max(200, int(cycle_ms))
+        self._phase = 'out'  # toggles between 'out' and 'in' for looping
+
+    def _ensure_surface(self, size: Tuple[int, int]) -> None:
+        if self._size != size or self._surf is None:
+            self._size = size
+            self._surf = pygame.Surface(size, pygame.SRCALPHA)
+
+    def render(self, size: Tuple[int, int], dt_ms: int) -> pygame.Surface:
+        self._ensure_surface(size)
+        assert self._surf is not None and self._size is not None
+        self._surf.fill((0, 0, 0, 0))
+        w, h = self._size
+        # advance timer
+        self._elapsed_ms += (dt_ms or 16)
+        if self._elapsed_ms >= self._cycle_ms:
+            self._elapsed_ms -= self._cycle_ms
+            self._phase = 'in' if self._phase == 'out' else 'out'
+        # progress in [0,1]
+        t = max(0.0, min(1.0, self._elapsed_ms / max(1, self._cycle_ms)))
+        max_radius = max(6, int(min(w, h) * 0.45))
+        if self._phase == 'out':
+            radius = max(2, int(max_radius * t))
+            alpha = max(0, min(255, int(255 * (1 - t))))
+        else:
+            radius = max(2, int(max_radius * (1 - t)))
+            alpha = max(0, min(255, int(255 * t)))
+        col = (*self._color, alpha)
+        cx, cy = w // 2, h // 2
+        try:
+            pygame.draw.circle(self._surf, col, (cx, cy), radius, width=4)
+        except Exception:
+            # radius might be too large for tiny cells; clamp silently
+            r = max(1, min(radius, max(1, min(w, h) // 2 - 1)))
+            pygame.draw.circle(self._surf, col, (cx, cy), r, width=3)
+        return self._surf
