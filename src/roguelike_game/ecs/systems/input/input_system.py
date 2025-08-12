@@ -16,6 +16,7 @@ from roguelike_game.ecs.systems.fsm.states.player.player_attack_state import Pla
 from roguelike_game.ecs.systems.fsm.states.player.player_spell_select_state import PlayerSpellSelectState
 from roguelike_game.ecs.systems.fsm.fsm_system import _EntityProxy
 from roguelike_game.config.input_config import InputConfig
+from roguelike_game.config.spells_config import reload_spells
 
 import logging
 logger = logging.getLogger(__name__)
@@ -36,6 +37,8 @@ class InputSystem:
         self.prev_spell_keys = {}
         # Cargar configuración de teclas desde JSON
         self.config = InputConfig(config_path)
+        # Edge detection for manual spells reload (F5)
+        self._prev_reload_spells = False
 
     @benchmark(lambda self: self.perf_log, "4.2.2.InputSystem.update")
     def update(self, world, *args):
@@ -75,6 +78,15 @@ class InputSystem:
         self.config._load()
         # Obtener estado actual del teclado
         keys = pygame.key.get_pressed()
+        # Manual reload of spells.json via F4
+        reload_pressed = bool(keys[getattr(pygame, 'K_F4')])
+        if reload_pressed and not self._prev_reload_spells:
+            try:
+                reload_spells()
+                logger.info("[InputSystem] Manual reload of spells.json triggered (F4)")
+            except Exception:
+                logger.exception("[InputSystem] Failed to reload spells on F4")
+        self._prev_reload_spells = reload_pressed
         # Leer bindings dinámicos
         move_up = self.config.get_key("move_up")
         move_down = self.config.get_key("move_down")

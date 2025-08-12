@@ -1,4 +1,13 @@
 import time
+from roguelike_game.config.spells_defaults import (
+    DEFAULT_AURA_OFFSET_X,
+    DEFAULT_AURA_PARTICLES_PER_FRAME,
+    DEFAULT_AURA_PARTICLE_SPEED,
+    DEFAULT_AURA_PARTICLE_MIN_SIZE,
+    DEFAULT_AURA_PARTICLE_MAX_SIZE,
+    DEFAULT_AURA_PARTICLE_COLORS,
+    DEFAULT_AURA_PARTICLE_LIFESPAN,
+)
 
 class AuraComponent:
     """
@@ -8,16 +17,19 @@ class AuraComponent:
     duration: duración en segundos.
     start_time: marca de tiempo de inicio.
     """
-    def __init__(self, radius: float, buff: dict, duration: float):
+    def __init__(self, radius: float, buff: dict, duration: float, spell_key: str = "", last_refresh_version: int = -1):
         self.radius = radius
         self.buff = buff
         self.duration = duration
         self.start_time = time.time()
-        # Parámetros VFX de aura
-        self.offset_x = buff.get('offset_x', 0)  # fallback si no existe
-        self.particles_per_frame = buff.get('particles_per_frame', 2)
-        self.particle_speed      = buff.get('particle_speed', 1.0)
-        self.particle_min_size   = buff.get('particle_min_size', 4)
-        self.particle_max_size   = buff.get('particle_max_size', 8)
-        self.particle_colors     = buff.get('particle_colors', [(0,255,100),(100,255,150),(0,200,100)])
-        self.particle_lifespan   = buff.get('particle_lifespan', 60)
+        # Identificación de hechizo y control de refresco
+        self.spell_key = spell_key
+        self.last_refresh_version = last_refresh_version
+        # Parámetros VFX de aura (valores por defecto centralizados)
+        self.offset_x = buff.get('offset_x', DEFAULT_AURA_OFFSET_X)
+        self.particles_per_frame = buff.get('particles_per_frame', DEFAULT_AURA_PARTICLES_PER_FRAME)
+        self.particle_speed      = buff.get('particle_speed', DEFAULT_AURA_PARTICLE_SPEED)
+        self.particle_min_size   = buff.get('particle_min_size', DEFAULT_AURA_PARTICLE_MIN_SIZE)
+        self.particle_max_size   = buff.get('particle_max_size', DEFAULT_AURA_PARTICLE_MAX_SIZE)
+        self.particle_colors     = buff.get('particle_colors', DEFAULT_AURA_PARTICLE_COLORS)
+        self.particle_lifespan   = buff.get('particle_lifespan', DEFAULT_AURA_PARTICLE_LIFESPAN)
