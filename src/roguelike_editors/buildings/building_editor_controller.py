@@ -7,6 +7,7 @@ from roguelike_editors.buildings.tools.placer_tool.placer_tool  import PlacerToo
 from roguelike_editors.buildings.tools.delete_tool.delete_tool  import DeleteTool
 from roguelike_editors.buildings.tools.default_tool.default_tool_view import DefaultToolView
 from roguelike_editors.buildings.tools.collider_scope_tool import ColliderScopeTool
+from roguelike_ui.ui_blocker import is_blocked
 
 from roguelike_editors.buildings.utils.zone_helpers import assign_zone_and_relatives
 
@@ -131,6 +132,15 @@ class BuildingEditorController:
         if self.editor.dragging or self.editor.resizing or self.editor.split_dragging:
             self.update(camera)
             return
+        # Bloquear hover si el ratón está sobre cualquier panel UI registrado
+        try:
+            mx, my = pos
+            if is_blocked(mx, my):
+                self.editor.hovered_buildings = []
+                self.editor.hovered_building = None
+                return
+        except Exception:
+            pass
         # Detectar todos los edificios bajo el mouse (orden arriba-abajo)
         hovered_list = self._buildings_under_mouse(pos, camera, buildings)
         self.editor.hovered_buildings = hovered_list

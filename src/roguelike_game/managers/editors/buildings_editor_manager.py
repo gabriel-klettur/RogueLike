@@ -9,6 +9,7 @@ from roguelike_editors.buildings.buildings_tool_bar_panel.buildings_tool_bar_pan
 from roguelike_editors.buildings.buildings_tool_bar_panel.buildings_tool_bar_panel_events import BuildingsToolBarPanelEventHandler
 from roguelike_editors.buildings.buildings_tool_bar_panel.buildings_tool_bar_panel_controller import BuildingsToolBarPanelController
 from roguelike_engine.config.map_config import global_map_settings
+from roguelike_ui.ui_blocker import clear_blockers
 
 class BuildingEditorManager:
     def __init__(self, game):
@@ -82,6 +83,12 @@ class BuildingEditorManager:
                 self.add_remove.view.toolbar_view = tmp_view
         except Exception:
             pass
+        # Permitir que el panel de Colliders se alinee con el botón 'buildings_colliders' del toolbar
+        try:
+            if hasattr(self.colliders, 'view'):
+                self.colliders.view.toolbar_view = tmp_view
+        except Exception:
+            pass
         # Permitir al event handler del editor delegar a la toolbar
         try:
             self.handler.buildings_toolbar_controller = self.buildings_toolbar_controller
@@ -100,6 +107,11 @@ class BuildingEditorManager:
 
     def render(self, screen, camera, buildings):
         if self.editor_state.active:
+            # Limpiar zonas de bloqueo de UI antes de registrar los paneles de este frame
+            try:
+                clear_blockers()
+            except Exception:
+                pass
             # 1) Render de la toolbar primero (posicionada bajo el título)
             try:
                 self.buildings_toolbar_controller.render(screen)
