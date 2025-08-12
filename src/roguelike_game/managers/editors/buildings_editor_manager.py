@@ -2,6 +2,7 @@ from roguelike_editors.buildings.building_editor_model import BuildingsEditorMod
 from roguelike_editors.buildings.building_editor_controller import BuildingEditorController
 from roguelike_editors.buildings.building_editor_events import BuildingEditorEventHandler
 from roguelike_editors.buildings.building_editor_view import BuildingEditorView
+from roguelike_editors.buildings.buildings_colliders_panel import BuildingCollidersPanelController
 from roguelike_editors.buildings.buildings_tool_bar_panel.buildings_tool_bar_panel_model import BuildingsToolBarPanelModel
 from roguelike_editors.buildings.buildings_tool_bar_panel.buildings_tool_bar_panel_view import BuildingsToolBarPanelView
 from roguelike_editors.buildings.buildings_tool_bar_panel.buildings_tool_bar_panel_events import BuildingsToolBarPanelEventHandler
@@ -20,6 +21,8 @@ class BuildingEditorManager:
         self.editor_state = BuildingsEditorModel()
         self.controller   = BuildingEditorController(state, self.editor_state, buildings, game.camera)
         self.view         = BuildingEditorView(state, self.editor_state)
+        # Panel especializado de colisiones (delegación completa del "collision brush")
+        self.colliders    = BuildingCollidersPanelController(state, self.editor_state, self.view)
 
         # Ahora el event handler recibe también la lista de buildings
 
@@ -31,6 +34,11 @@ class BuildingEditorManager:
             buildings,
             zone_offsets= global_map_settings.zone_offsets
         )
+        # Permitir al manejador de eventos delegar al panel de colisiones
+        try:
+            self.handler.colliders = self.colliders
+        except Exception:
+            pass
 
         # --- Buildings Toolbar Panel ---
         # Crear toolbar (modelo, vista, eventos, controlador) siguiendo patrón Items
@@ -73,5 +81,10 @@ class BuildingEditorManager:
             # Render de la toolbar (centrada bajo el título)
             try:
                 self.buildings_toolbar_controller.render(screen)
+            except Exception:
+                pass
+            # Render del panel de colisiones por encima (overlay/picker)
+            try:
+                self.colliders.render(screen, camera, buildings)
             except Exception:
                 pass

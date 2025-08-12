@@ -50,30 +50,38 @@ class BuildingsToolBarPanelEventHandler:
                     st.picker_active = False
                 else:
                     self.model.active_tool = 'buildings_manager'
-                    # Desactivar otros modos
-                    if getattr(self.model, 'active_tool', None) != 'buildings_colliders':
-                        st.current_tool = 'select'
-                        st.collision_picker_open = False
-                        st.collision_brush_dragging = False
+                    # Desactivar panel de colisiones si está activo
+                    try:
+                        colliders = getattr(self.controller.editor_manager, 'colliders', None)
+                        if colliders and colliders.is_active():
+                            colliders.deactivate()
+                    except Exception:
+                        pass
                     st.picker_active = True
                 return True
 
-            # Buildings colliders (toggle collision brush UI)
+            # Buildings colliders (toggle panel especializado)
             rect = icon_rects.get('buildings_colliders')
             if rect and rect.collidepoint(pos):
                 st = self.controller.editor_state
+                colliders = getattr(self.controller.editor_manager, 'colliders', None)
                 if getattr(self.model, 'active_tool', None) == 'buildings_colliders':
-                    # Apagar modo de colisión
+                    # Apagar panel de colisión
                     self.model.active_tool = None
-                    st.current_tool = 'select'
-                    st.collision_picker_open = False
-                    st.collision_brush_dragging = False
+                    try:
+                        if colliders:
+                            colliders.deactivate()
+                    except Exception:
+                        pass
                 else:
-                    # Encender modo de colisión
+                    # Encender panel de colisión
                     self.model.active_tool = 'buildings_colliders'
-                    st.current_tool = 'collision_brush'
-                    st.collision_picker_open = True
                     st.picker_active = False
+                    try:
+                        if colliders:
+                            colliders.activate()
+                    except Exception:
+                        pass
                 return True
 
         return False
