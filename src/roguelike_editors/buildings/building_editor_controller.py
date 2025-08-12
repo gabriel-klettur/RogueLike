@@ -89,8 +89,10 @@ class BuildingEditorController:
 
         # 4) Paneles Z (+ / –) (clic izq)
         if button == 1:
-            self.z_tool_bottom.handle_mouse_click((mx, my), buildings)
-            self.z_tool_top.handle_mouse_click((mx, my), buildings)
+            if self.z_tool_bottom.handle_mouse_click((mx, my), buildings, camera):
+                return
+            if self.z_tool_top.handle_mouse_click((mx, my), buildings, camera):
+                return
 
     def on_mouse_up(self, button, camera, buildings):
         # 1) Finalizar resize / split (igual que antes)

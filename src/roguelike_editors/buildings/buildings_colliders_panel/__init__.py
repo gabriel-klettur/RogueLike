@@ -103,17 +103,24 @@ class BuildingCollidersPanelView:
         screen.blit(surf, (px, py))
 
     def render(self, screen, camera, buildings, editor_view=None):
-        if not self.model.active:
-            return
-        # highlight and overlay for active building
-        b = self.model.active_building
-        if b and getattr(b, 'collision_map', None):
-            self._render_building_collision_overlay(screen, camera, b)
-            x, y = camera.apply((b.x, b.y))
-            w, h = camera.scale(b.image.get_size())
-            pygame.draw.rect(screen, (0, 255, 255), (x, y, w, h), 4)
-        if self.model.picker_open:
-            self._render_picker(screen, editor_view)
+        # Always show collider overlay for the hovered building while the editor is active
+        hb = getattr(self.editor_state, 'hovered_building', None)
+        drawn_for = None
+        if hb and getattr(hb, 'collision_map', None):
+            self._render_building_collision_overlay(screen, camera, hb)
+            drawn_for = hb
+
+        # When the panel is active, also render overlay and highlight for active building
+        if self.model.active:
+            b = self.model.active_building
+            if b and getattr(b, 'collision_map', None) and b is not drawn_for:
+                self._render_building_collision_overlay(screen, camera, b)
+            if b and getattr(b, 'collision_map', None):
+                x, y = camera.apply((b.x, b.y))
+                w, h = camera.scale(b.image.get_size())
+                pygame.draw.rect(screen, (0, 255, 255), (x, y, w, h), 4)
+            if self.model.picker_open:
+                self._render_picker(screen, editor_view)
 
 
 class BuildingCollidersPanelEventHandler:
