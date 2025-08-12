@@ -10,6 +10,22 @@ logger = logging.getLogger(__name__)
 BASE_DIR = Path(__file__).resolve().parents[3]
 
 
+# Mapping used to flatten nested vfx.particles.* keys into flat runtime keys.
+# Exported so editor/runtime can share a single source of truth.
+FLATTEN_PARTICLES_MAPPING: Dict[str, str] = {
+    "count": "particle_count",
+    "dispersion": "particle_dispersion",
+    "colors": "particle_colors",
+    "lifespan": "particle_lifespan",
+    "speed": "particle_speed",
+    "size_range": "size_range",
+    "color": "color",
+    "emit_rate": "emit_rate",
+    # Allow a generic scale inside particles if provided (not standard but tolerated)
+    "scale": "scale",
+}
+
+
 @dataclass
 class SpellConfig:
     """Typed view over a spell config entry with sensible defaults.
@@ -85,6 +101,10 @@ class SpellConfig:
         if hasattr(self, key):
             return getattr(self, key)
         return self.extra.get(key, default)
+
+    # Allow `'key' in cfg` style membership checks safely
+    def __contains__(self, key: str) -> bool:  # type: ignore[override]
+        return hasattr(self, key) or (key in self.extra)
 
 
 # Keys exposed for schema-driven editors (no external dependency required)
@@ -172,6 +192,9 @@ def _flatten_new_style(data: Dict[str, Any]) -> Dict[str, Any]:
         # Backward compat: mirror lifetime->lifespan
         if "lifetime" in effect and "lifespan" not in flat:
             flat["lifespan"] = effect.get("lifetime")
+        # Hoist nested buff container (e.g., healing parameters)
+        if "buff" in effect and "buff" not in flat:
+            flat["buff"] = effect.get("buff")
 
     # vfx: sprite/particles/preset
     vfx = data.get("vfx")
@@ -189,19 +212,7 @@ def _flatten_new_style(data: Dict[str, Any]) -> Dict[str, Any]:
                 flat["scale"] = sprite.get("scale")
         particles = vfx.get("particles") or {}
         if isinstance(particles, dict):
-            mapping = {
-                "count": "particle_count",
-                "dispersion": "particle_dispersion",
-                "colors": "particle_colors",
-                "lifespan": "particle_lifespan",
-                "speed": "particle_speed",
-                "size_range": "size_range",
-                "color": "color",
-                "emit_rate": "emit_rate",
-                # Allow a generic scale inside particles if provided (not standard but tolerated)
-                "scale": "scale",
-            }
-            for src, dst in mapping.items():
+            for src, dst in FLATTEN_PARTICLES_MAPPING.items():
                 if src in particles and dst not in flat:
                     flat[dst] = particles.get(src)
     elif isinstance(vfx, str):
@@ -281,8 +292,9 @@ def load_spells_config(json_path: Path) -> Dict[str, SpellConfig]:
     return typed
 
 
-# Cargar configuración de hechizos (typed)
+# Cargar configuración de hechizos (typed) y versión de config
 SPELLS: Dict[str, SpellConfig] = load_spells_config(BASE_DIR / "data" / "spells" / "spells.json")
+SPELLS_VERSION: int = 0
 
 
 def reload_spells() -> None:
@@ -295,6 +307,9 @@ def reload_spells() -> None:
         new_data = load_spells_config(BASE_DIR / "data" / "spells" / "spells.json")
         SPELLS.clear()
         SPELLS.update(new_data)
-        logger.info("[spells_config] Reloaded spells.json: %d entries", len(SPELLS))
+        # Increment version so systems can detect updates
+        global SPELLS_VERSION
+        SPELLS_VERSION += 1
+        logger.info("[spells_config] Reloaded spells.json: %d entries (version=%d)", len(SPELLS), SPELLS_VERSION)
     except Exception:
         logger.exception("[spells_config] Failed to reload spells.json")

@@ -2,10 +2,7 @@
 Spells Add/Remove panel events.
 """
 
-import os
 import pygame
-from roguelike_ui.services.json_persistence import save_to_json
-from roguelike_engine.utils.loader import load_image
 
 
 class SpellsAddRemovePanelEventHandler:
@@ -24,40 +21,27 @@ class SpellsAddRemovePanelEventHandler:
             # Add
             rect_add = icon_rects.get('add_spell')
             if rect_add and rect_add.collidepoint(pos):
-                # Determine base entry to clone
-                sid_base = self.controller.model.selected_id
-                if not sid_base and self.controller.model.spells:
-                    sid_base = next(iter(self.controller.model.spells.keys()))
-                base = dict(self.controller.model.spells.get(sid_base, {})) if sid_base else {
-                    'name': 'New Spell',
-                    'sprite': '',
-                }
-                # Generate unique id
-                def unique_id(prefix: str) -> str:
-                    i = 1
-                    cand = prefix
-                    existing = self.controller.model.spells
-                    while cand in existing:
-                        cand = f"{prefix}_{i}"
-                        i += 1
-                    return cand
-                pref = (sid_base + '_copy') if sid_base else 'new_spell'
-                new_id = unique_id(pref)
-                # Persist
-                path = os.path.join(os.getcwd(), 'data', 'spells', 'spells.json')
-                save_to_json(path, new_id, base)
-                # Update model
-                self.controller.model.spells[new_id] = base
-                sprite_path = base.get('sprite')
-                if sprite_path:
+                # Toggle ADD mode (pending duplicate selection). Actual duplication
+                # will occur when the user clicks a spell in the picker grid.
+                if self.model.active_tool == 'add_spell':
+                    self.model.active_tool = None
+                    # Ensure delete mode is off when leaving add mode
                     try:
-                        self.controller.model.assets[new_id] = load_image(sprite_path)
+                        self.controller.model.delete_mode_active = False
                     except Exception:
                         pass
-                self.controller.model.selected_id = new_id
-                self.controller.model.picker_visible = True
-                # Exit add mode visual
-                self.model.active_tool = None
+                else:
+                    self.model.active_tool = 'add_spell'
+                    # Turn off delete mode when entering add mode
+                    try:
+                        self.controller.model.delete_mode_active = False
+                    except Exception:
+                        pass
+                    # Ensure the picker is visible so the user can select a base spell
+                    try:
+                        self.controller.model.picker_visible = True
+                    except Exception:
+                        pass
                 return True
             # Remove toggle
             rect_del = icon_rects.get('remove_spell')

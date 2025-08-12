@@ -234,6 +234,19 @@ class SpellEditorController:
                         pass
                 self.spells_properties_controller.draw(screen, title_rect=title_rect)
 
+        # Blink yellow border around the Spells Picker panel while in add or remove modes
+        # to guide user action (duplicate-on-selection or delete-on-click).
+        try:
+            active_tool = getattr(self.spells_add_remove_model, 'active_tool', None)
+            if active_tool in ('add_spell', 'remove_spell') and getattr(self.model, 'picker_visible', False):
+                panel_rect = getattr(self.model, 'panel_rect', None)
+                if panel_rect:
+                    now = pygame.time.get_ticks()
+                    if (now // 500) % 2 == 0:
+                        pygame.draw.rect(screen, (255, 255, 0), panel_rect.inflate(6, 6), 3)
+        except Exception:
+            pass
+
     def _commit_edit(self) -> None:
         if not self.model.editing_property:
             return
