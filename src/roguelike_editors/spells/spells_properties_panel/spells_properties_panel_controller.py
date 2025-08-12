@@ -276,21 +276,44 @@ class SpellsPropertiesPanelController:
                 anchor = self.get_assets_anchor_rect()
         except Exception:
             anchor = None
-        x = (cell.x if cell else (anchor.x if anchor else 20))
-        y = (cell.bottom if cell else (anchor.bottom if anchor else 80))
-        width = (cell.w if cell else (anchor.w if anchor else 320))
+        # Prefer external anchor (Spells Picker grid) so the Assets picker opens BELOW and ALIGNED to it.
+        if anchor is not None:
+            x = anchor.x
+            y = anchor.bottom
+            width = anchor.w
+        elif cell is not None:
+            x = cell.x
+            y = cell.bottom
+            width = cell.w
+        else:
+            x, y, width = 20, 80, 320
 
-        def _on_chosen(asset_path: str):
+        def _on_chosen(key: str, asset_path: str):
             # Persist sprite path under vfx.sprite.path and notify
             path = os.path.join(os.getcwd(), "data", "spells", "spells.json")
+            # Normalize path to project-relative with forward slashes to ensure JSON-safe value
+            try:
+                ap = str(asset_path)
+                cwd = os.getcwd()
+                rel = os.path.relpath(ap, cwd)
+                norm = rel if not rel.startswith('..') else ap
+                norm = norm.replace('\\', '/')
+            except Exception:
+                norm = str(asset_path)
             data_json = load_from_json(path)
             entry = data_json.get(active_id, {}).copy()
-            self._set_by_path(entry, 'vfx.sprite.path', asset_path)
-            save_to_json(path, active_id, entry)
+            # Use provided key for flexibility; default to vfx.sprite.path
+            target_key = key or 'vfx.sprite.path'
+            self._set_by_path(entry, target_key, norm)
+            try:
+                save_to_json(path, active_id, entry)
+            except Exception:
+                logger.exception("[SpellsPropertiesPanel] Failed to save spells.json when setting %s to %s", target_key, norm)
+                return
             self._spells[active_id] = entry
             try:
                 if callable(self.on_asset_changed):
-                    self.on_asset_changed(active_id, asset_path)
+                    self.on_asset_changed(active_id, norm)
             except Exception:
                 logger.exception("[SpellsPropertiesPanel] on_asset_changed callback failed")
             self.assets_picker.hide()

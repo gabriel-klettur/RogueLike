@@ -283,3 +283,18 @@ def load_spells_config(json_path: Path) -> Dict[str, SpellConfig]:
 
 # Cargar configuración de hechizos (typed)
 SPELLS: Dict[str, SpellConfig] = load_spells_config(BASE_DIR / "data" / "spells" / "spells.json")
+
+
+def reload_spells() -> None:
+    """Reload spells.json and update the global SPELLS dict in-place.
+
+    Keeping the same dict object ensures modules that imported SPELLS by name
+    still see the updated contents.
+    """
+    try:
+        new_data = load_spells_config(BASE_DIR / "data" / "spells" / "spells.json")
+        SPELLS.clear()
+        SPELLS.update(new_data)
+        logger.info("[spells_config] Reloaded spells.json: %d entries", len(SPELLS))
+    except Exception:
+        logger.exception("[spells_config] Failed to reload spells.json")

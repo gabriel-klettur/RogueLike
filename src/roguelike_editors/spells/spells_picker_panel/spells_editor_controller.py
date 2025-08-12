@@ -36,6 +36,7 @@ from roguelike_editors.spells.spells_add_remove_panel.spells_add_remove_panel_co
     SpellsAddRemovePanelController,
 )
 from roguelike_editors.entities.services.constants import UI_MARGIN
+from roguelike_game.config.spells_config import reload_spells
 
 class SpellEditorController:
     """Controller for Spell Editor UI."""
@@ -66,14 +67,26 @@ class SpellEditorController:
         self.spells_properties_controller = SpellsPropertiesPanelController(self.model.spells, font)
         # Provide callbacks
         def _get_assets_anchor_rect():
-            # Prefer the properties panel cell rect if present
+            """Return an anchor rect so the Assets picker appears BELOW and ALIGNED to the Spells Picker panel.
+            Primary anchor: the picker's grid_rect (left x, bottom y + margin, same width).
+            Fallbacks: asset cell rect, then properties panel rect.
+            """
+            # Prefer aligning to the Spells Picker grid
+            try:
+                grid_rect = getattr(self.view, 'grid_rect', None)
+                if grid_rect is not None:
+                    # Build a rect whose top-left is just below the grid, aligned on the left, and with same width
+                    return pygame.Rect(grid_rect.x, grid_rect.bottom + UI_MARGIN, grid_rect.w, 0)
+            except Exception:
+                pass
+            # Fallback to the properties panel cell rect if present
             try:
                 cell = getattr(self.spells_properties_controller.model, 'asset_cell_rect', None)
                 if cell:
                     return cell
             except Exception:
                 pass
-            # Fallback to the panel rect
+            # Final fallback to the properties panel rect
             try:
                 return getattr(self.spells_properties_controller.model, 'panel_rect', None)
             except Exception:
@@ -86,6 +99,11 @@ class SpellEditorController:
                 # Keep view dict in sync
                 try:
                     self.view.assets[spell_id] = img
+                except Exception:
+                    pass
+                # Hot-reload game spells so new casts use updated sprite/scale
+                try:
+                    reload_spells()
                 except Exception:
                     pass
             except Exception:
@@ -106,6 +124,11 @@ class SpellEditorController:
                         self.model.hovered_id = new_id
                 except Exception:
                     pass
+            # Hot-reload game spells so runtime immediately reflects edits
+            try:
+                reload_spells()
+            except Exception:
+                pass
 
         self.spells_properties_controller.get_assets_anchor_rect = _get_assets_anchor_rect
         self.spells_properties_controller.on_asset_changed = _on_asset_changed
@@ -206,6 +229,11 @@ class SpellEditorController:
         entry[key] = converted
         # Persist changes
         save_to_json(path, sid, entry)
+        # Hot-reload runtime spells config so new casts reflect changes
+        try:
+            reload_spells()
+        except Exception:
+            pass
         # Update model
         self.model.spells[sid] = entry
         # Reset editing

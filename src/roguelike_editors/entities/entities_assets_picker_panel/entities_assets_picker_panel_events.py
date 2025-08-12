@@ -1,5 +1,6 @@
 import pygame
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -11,13 +12,51 @@ class EntitiesAssetsPickerPanelEventHandler:
         self.view = controller.view
         # Conectar callbacks del FileSystemPicker a las acciones del modelo
         # Doble clic / Enter en archivo -> emitir on_asset_chosen
-        def _on_open(path):
+        def _normalize_path(p) -> str:
+            # Convert to string and prefer project-relative with forward slashes
+            try:
+                p_str = str(p)
+                cwd = os.getcwd()
+                rel = os.path.relpath(p_str, cwd)
+                use = rel if not rel.startswith('..') else p_str
+                return use.replace('\\', '/')
+            except Exception:
+                try:
+                    return str(p).replace('\\', '/')
+                except Exception:
+                    return str(p)
+
+        def _commit_once(norm_path: str):
+            # Avoid double-callbacks when select and open fire on double-click
+            try:
+                if getattr(self.model, '_committed_once', False):
+                    return False
+                self.model._committed_once = True
+            except Exception:
+                # Best-effort guard
+                pass
             if self.model.on_asset_chosen:
-                logger.debug(f" Invoking on_asset_chosen callback for key={self.model.key}, path={path}")
-                self.model.on_asset_chosen(self.model.key, path)
+                logger.debug(f" commit_once -> on_asset_chosen key={self.model.key}, path={norm_path}")
+                self.model.on_asset_chosen(self.model.key, norm_path)
+            return True
+
+        def _on_open(path):
+            norm = _normalize_path(path)
+            _commit_once(norm)
         self.view.fs_view.on_open = _on_open
-        # Selección (click o teclado) ya sincroniza self.model.fs_model.selected en FileSystemPickerView
-        self.view.fs_view.on_select = lambda idx: None
+        # Selección (click o teclado): si es archivo, confirmar selección inmediatamente
+        def _on_select(idx: int):
+            try:
+                entries = self.view.fs_view.model.entries
+                if 0 <= idx < len(entries):
+                    name, path, is_dir = entries[idx]
+                    if not is_dir and self.model.on_asset_chosen:
+                        norm = _normalize_path(path)
+                        logger.debug(f" on_select choose asset for key={self.model.key}, path={norm}")
+                        _commit_once(norm)
+            except Exception:
+                logger.exception("[EntitiesAssetsPicker] on_select handler failed")
+        self.view.fs_view.on_select = _on_select
 
     def handle(self, event: pygame.event.Event) -> bool:
         """Delegar eventos a FileSystemPicker/PickerPanel y gestionar cierre/ocultación."""
