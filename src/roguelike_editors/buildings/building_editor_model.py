@@ -29,18 +29,9 @@ class BuildingsEditorModel:
         self.selected_entry = None          # elemento actual (para drag)
         self.dragging_building: bool = False
 
-        # --- NUEVO: Collision brush UI ---
-        # Herramienta actual: 'select' | 'collision_brush'
+        # --- Herramienta actual ---
+        # Solo 'select' aquí; el panel de colisiones gestiona su propio estado.
         self.current_tool: str = 'select'
-        self.collision_picker_open = False   # toggle del picker de colisión
-        self.collision_choice = None         # '#' o '.' seleccionado
-        self.collision_picker_rects = {}     # rects de UI del picker
-        self.collision_picker_pos = None     # posición del panel picker
-        self.collision_picker_dragging = False
-        self.collision_picker_drag_offset = (0, 0)
-        self.collision_picker_panel_size = (0, 0)
-        # Flag to indicate collision brush painting active
-        self.collision_brush_dragging: bool = False
 
         # --- NUEVO: Picker panel draggable ---
         # Si no es None, el panel usa esta posición absoluta en pantalla

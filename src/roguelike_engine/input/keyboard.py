@@ -27,11 +27,11 @@ def handle_keyboard(event, state, camera, clock, menu, entities, tiles_editor, b
         # ---------- TEST / DEBUG ---------- #
         elif event.key == menu.input_config.get_key('toggle_building_editor'):
             if hasattr(state, "editor"):
-                # alternamos el editor y también arrancamos el picker
+                # Alternar editor, pero NO abrir el picker automáticamente
                 new_val = not state.editor.active
                 state.editor.active        = new_val
-                state.editor.picker_active = new_val
-                logger.debug("🛠️ Building Editor ON (picker abierto)"  if new_val else
+                state.editor.picker_active = False
+                logger.debug("🛠️ Building Editor ON (picker oculto)"  if new_val else
                       "🛑 Building Editor OFF (picker cerrado)")
             return
 

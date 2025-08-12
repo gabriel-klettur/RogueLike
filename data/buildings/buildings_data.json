@@ -818,8 +818,8 @@
     },
     {
         "zone": "Forest",
-        "rel_x": 913,
-        "rel_y": 774,
+        "rel_x": 943,
+        "rel_y": 766,
         "image_path": "assets/buildings\\vegetation\\tree_7.PNG",
         "solid": true,
         "scale": [
