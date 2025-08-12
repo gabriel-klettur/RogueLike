@@ -154,9 +154,7 @@
     "effect": {
       "duration": 8.0,
       "radius": 100,
-      "buff": {
-        "heal_per_second": 20
-      }
+      "buff": "{'heal_per_second': 20}"
     },
     "vfx": {
       "sprite": {

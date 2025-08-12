@@ -1,6 +1,7 @@
 import pygame
 pygame.font.init()
 import os
+import logging
 from roguelike_ui.services.json_persistence import save_to_json, load_from_json
 from roguelike_editors.spells.spells_picker_panel.spells_editor_model import SpellEditorModel
 from roguelike_editors.spells.spells_picker_panel.spells_editor_view import SpellEditorView
@@ -37,6 +38,19 @@ from roguelike_editors.spells.spells_add_remove_panel.spells_add_remove_panel_co
 )
 from roguelike_editors.entities.services.constants import UI_MARGIN
 from roguelike_game.config.spells_config import reload_spells
+from roguelike_editors.spells.services.particle_preview import (
+    ParticlePreviewSmoke,
+    ParticlePreviewSmokeBurst,
+    ParticlePreviewFirework,
+    ParticlePreviewLightning,
+    ParticlePreviewAura,
+    ParticlePreviewDash,
+    ParticlePreviewSlash,
+    ParticlePreviewLaser,
+    ParticlePreviewExplosion,
+    ParticlePreviewArcaneFlame,
+    ParticlePreviewHealingAura,
+)
 
 class SpellEditorController:
     """Controller for Spell Editor UI."""
@@ -47,6 +61,8 @@ class SpellEditorController:
         self.dc_detector = DoubleClickDetector()
         self.view.text_input = self.text_input
         self.event_handler = SpellEditorEventHandler(self)
+        # Cache of built previews per spell id
+        self._particle_previews: dict[str, object] = {}
         # Toolbar MVC
         self.spells_toolbar_model = SpellsToolBarPanelModel()
         self.spells_toolbar_view = SpellsToolBarPanelView(controller=self, model=self.spells_toolbar_model)
@@ -106,6 +122,11 @@ class SpellEditorController:
                     reload_spells()
                 except Exception:
                     pass
+                # Rebuild preview providers in case this change toggles preview behavior
+                try:
+                    self._rebuild_particle_preview_providers()
+                except Exception:
+                    pass
             except Exception:
                 # Leave asset unchanged on failure
                 pass
@@ -127,6 +148,11 @@ class SpellEditorController:
             # Hot-reload game spells so runtime immediately reflects edits
             try:
                 reload_spells()
+            except Exception:
+                pass
+            # Rebuild previews so picker reflects particle setting or params
+            try:
+                self._rebuild_particle_preview_providers()
             except Exception:
                 pass
 
@@ -158,6 +184,12 @@ class SpellEditorController:
 
         try:
             self.view.get_picker_left_anchor_x = _picker_left_anchor_x
+        except Exception:
+            pass
+
+        # Initialize particle previews for spells with vfx.preview == 'particles'
+        try:
+            self._rebuild_particle_preview_providers()
         except Exception:
             pass
 
@@ -234,9 +266,293 @@ class SpellEditorController:
             reload_spells()
         except Exception:
             pass
+        # Rebuild previews in case vfx.preview or particle params changed
+        try:
+            self._rebuild_particle_preview_providers()
+        except Exception:
+            pass
         # Update model
         self.model.spells[sid] = entry
         # Reset editing
         self.model.editing_property = None
         self.model.editing_text = ""
         self.model.editing_cursor = 0
+
+    # --- Internal: particle preview wiring ---
+    def _is_particle_spell(self, sdef: dict) -> bool:
+        try:
+            vfx = sdef.get('vfx', {}) or {}
+            # Explicit flag
+            if vfx.get('preview') == 'particles':
+                return True
+            # Implicit: if particles config exists and is a dict, assume particle preview
+            parts = vfx.get('particles')
+            if isinstance(parts, dict) and len(parts) > 0:
+                return True
+            # Inferred by spell type: these are inherently VFX-heavy and we provide lightweight previews
+            stype = sdef.get('type')
+            if stype in ('lightning', 'aura', 'beam', 'dash', 'slash', 'arcane_flame', 'firework', 'firework_launch', 'smoke_emitter', 'smoke'):
+                return True
+            # Fallback by id substring
+            sid = sdef.get('id') or ''
+            sid_l = str(sid).lower()
+            for kw in ('aura', 'beam', 'laser', 'dash', 'slash', 'lightning', 'firework', 'smoke', 'flame'):
+                if kw in sid_l:
+                    return True
+            return False
+        except Exception:
+            return False
+
+    def _build_preview_for_spell(self, spell_id: str, sdef: dict) -> None:
+        logger = logging.getLogger(__name__)
+        if not self._is_particle_spell(sdef):
+            # Remove any existing provider/cache
+            self._particle_previews.pop(spell_id, None)
+            self.view.preview_providers.pop(spell_id, None)
+            return
+        vfx = sdef.get('vfx', {})
+        particles = vfx.get('particles', {}) if isinstance(vfx.get('particles', {}), dict) else {}
+        try:
+            logger.debug("[SpellsPreview] %s: type=%s, has_particles=%s", spell_id, sdef.get('type'), bool(particles))
+        except Exception:
+            pass
+        # Common optional color param
+        color = None  # Only override if explicitly provided
+        color_explicit = False
+        try:
+            color_tuple = particles.get('color')
+            if isinstance(color_tuple, (list, tuple)) and len(color_tuple) >= 3:
+                color = (int(color_tuple[0]), int(color_tuple[1]), int(color_tuple[2]))
+                color_explicit = True
+            else:
+                colors_list = particles.get('colors')
+                if isinstance(colors_list, (list, tuple)) and len(colors_list) > 0:
+                    c0 = colors_list[0]
+                    if isinstance(c0, (list, tuple)) and len(c0) >= 3:
+                        color = (int(c0[0]), int(c0[1]), int(c0[2]))
+                        color_explicit = True
+                        # Capture full palette for effects like explosion
+                        try:
+                            palette_colors = []
+                            for c in colors_list:
+                                if isinstance(c, (list, tuple)) and len(c) >= 3:
+                                    palette_colors.append((int(c[0]), int(c[1]), int(c[2])))
+                        except Exception:
+                            palette_colors = []
+        except Exception:
+            pass
+        # Ensure palette_colors exists
+        if 'palette_colors' not in locals():
+            palette_colors = []
+        kind = particles.get('kind')
+        # If no explicit kind, try inferring from spell type
+        if not kind:
+            stype = sdef.get('type')
+            if stype in ('aura',):
+                kind = 'aura'
+            elif stype in ('beam',):
+                kind = 'laser'
+            elif stype in ('dash',):
+                kind = 'dash'
+            elif stype in ('slash',):
+                kind = 'slash'
+            elif stype in ('lightning',):
+                kind = 'lightning'
+            elif stype in ('arcane_flame',):
+                kind = 'arcane_flame'
+            elif stype in ('firework', 'firework_launch'):
+                kind = 'firework'
+            elif stype in ('smoke_emitter',):
+                kind = 'smoke_emitter'
+            elif stype in ('smoke',):
+                kind = 'smoke'
+        # If still not resolved, infer by id substring
+        if not kind:
+            sid_l = str(sdef.get('id') or '').lower()
+            if 'aura' in sid_l:
+                kind = 'aura'
+            elif 'beam' in sid_l or 'laser' in sid_l:
+                kind = 'laser'
+            elif 'dash' in sid_l:
+                kind = 'dash'
+            elif 'slash' in sid_l:
+                kind = 'slash'
+            elif 'lightning' in sid_l:
+                kind = 'lightning'
+            elif 'firework' in sid_l:
+                kind = 'firework'
+            elif 'smoke_emitter' in sid_l:
+                kind = 'smoke_emitter'
+            elif 'smoke' in sid_l:
+                kind = 'smoke'
+            elif 'flame' in sid_l:
+                kind = 'arcane_flame'
+        # Build kind-specific preview
+        preview_obj = None
+        try:
+            if kind in (None, 'smoke_emitter'):
+                # Continuous emitter uses emit_rate (fallback from count)
+                emit_rate = 2
+                er = particles.get('emit_rate')
+                if isinstance(er, int) and er > 0:
+                    emit_rate = er
+                else:
+                    cnt = particles.get('count')
+                    if isinstance(cnt, int) and cnt > 0:
+                        emit_rate = max(1, min(8, cnt // 2))
+                # Color may come from meta.particle_color for smoke_emitter
+                if not color_explicit:
+                    meta = sdef.get('meta', {}) if isinstance(sdef.get('meta', {}), dict) else {}
+                    mcol = meta.get('particle_color') if isinstance(meta.get('particle_color'), (list, tuple)) and len(meta.get('particle_color')) >= 3 else None
+                    if mcol:
+                        try:
+                            color = (int(mcol[0]), int(mcol[1]), int(mcol[2]))
+                        except Exception:
+                            pass
+                warm_steps = min(24, 6 + emit_rate * 2)
+                preview_obj = ParticlePreviewSmoke(color=color if color_explicit or 'color' in locals() else (200, 200, 200), emit_rate=emit_rate, warm_start_steps=warm_steps)
+            elif kind in ('smoke',):
+                # One-shot burst uses count; loop when particles die out
+                cnt = particles.get('count') if isinstance(particles.get('count'), int) else 12
+                cnt = max(1, min(40, cnt))
+                # optional direction; default upwards
+                direction = particles.get('direction') if isinstance(particles.get('direction'), (list, tuple)) and len(particles.get('direction')) >= 2 else (0.0, -1.0)
+                warm_steps = min(18, 6 + cnt // 4)
+                preview_obj = ParticlePreviewSmokeBurst(color=color if color_explicit else (200, 200, 200), count=int(cnt), direction=direction, warm_start_steps=warm_steps)
+            elif kind in ('firework', 'firework_launch'):
+                speed = particles.get('speed')
+                if not isinstance(speed, (int, float)):
+                    speed = 12.0
+                # Firework preview can accept a color override or use internal randoms
+                preview_obj = ParticlePreviewFirework(color=color if color_explicit else None, speed=float(speed))
+            elif kind in ('lightning',):
+                meta = sdef.get('meta', {}) if isinstance(sdef.get('meta', {}), dict) else {}
+                segments = particles.get('segments') if isinstance(particles.get('segments'), int) else (meta.get('segments') if isinstance(meta.get('segments'), int) else 10)
+                offset = particles.get('offset') if isinstance(particles.get('offset'), int) else (meta.get('offset') if isinstance(meta.get('offset'), int) else 10)
+                lifetime = particles.get('lifetime') if isinstance(particles.get('lifetime'), int) else (sdef.get('effect', {}).get('lifetime') if isinstance(sdef.get('effect', {}).get('lifetime'), int) else 8)
+                thickness = particles.get('thickness') if isinstance(particles.get('thickness'), int) else 2
+                # Use class default lightning color unless explicitly provided
+                preview_obj = ParticlePreviewLightning(color=color if color_explicit else (120, 200, 255), segments=segments, offset=offset, lifetime=lifetime, thickness=thickness)
+            elif kind in ('aura',):
+                # Prefer particles.radius; fallback to effect.radius
+                radius = particles.get('radius') if isinstance(particles.get('radius'), int) else (sdef.get('effect', {}).get('radius') if isinstance(sdef.get('effect', {}).get('radius'), int) else None)
+                # If looks like a healing aura (by id or particle params), use the rising-particles aura
+                sid_l = str(sdef.get('id') or '').lower()
+                healing_like = ('heal' in sid_l) or any(k in particles for k in ('emit_rate', 'lifespan', 'size_range'))
+                if healing_like:
+                    emit_rate = particles.get('emit_rate') if isinstance(particles.get('emit_rate'), int) and particles.get('emit_rate') > 0 else None
+                    if emit_rate is None:
+                        cnt = particles.get('count') if isinstance(particles.get('count'), int) else 0
+                        emit_rate = max(1, min(8, cnt // 2)) if cnt > 0 else 3
+                    speed = particles.get('speed') if isinstance(particles.get('speed'), (int, float)) else 1.0
+                    lifespan = particles.get('lifespan') if isinstance(particles.get('lifespan'), int) else 60
+                    size_range = particles.get('size_range') if isinstance(particles.get('size_range'), (list, tuple)) else (4, 8)
+                    palette = palette_colors if isinstance(palette_colors, list) and len(palette_colors) > 0 else None
+                    warm_steps = min(24, 6 + int(emit_rate) * 2)
+                    preview_obj = ParticlePreviewHealingAura(
+                        color=color if color_explicit else (80, 200, 120),
+                        palette=palette,
+                        radius=radius,
+                        emit_rate=int(emit_rate),
+                        speed=float(speed),
+                        lifespan=int(lifespan),
+                        size_range=size_range,
+                        warm_start_steps=warm_steps,
+                    )
+                else:
+                    speed = particles.get('speed') if isinstance(particles.get('speed'), (int, float)) else 1.0
+                    if isinstance(particles.get('count'), int):
+                        count = int(particles.get('count'))
+                    else:
+                        er = particles.get('emit_rate')
+                        count = max(8, min(40, int(er) * 8)) if isinstance(er, int) and er > 0 else 24
+                    # Pass palette if available for healing aura varied tones
+                    palette = palette_colors if isinstance(palette_colors, list) and len(palette_colors) > 0 else None
+                    preview_obj = ParticlePreviewAura(color=color if color_explicit else (80, 200, 120), radius=radius, speed=float(speed), count=int(count), palette=palette)
+            elif kind in ('dash',):
+                # Prefer particles.speed_px; fallback to effect.speed
+                speed_px = particles.get('speed_px') if isinstance(particles.get('speed_px'), (int, float)) else (sdef.get('effect', {}).get('speed') if isinstance(sdef.get('effect', {}).get('speed'), (int, float)) else 60.0)
+                preview_obj = ParticlePreviewDash(color=color if color_explicit else (180, 220, 255), speed_px=float(speed_px))
+            elif kind in ('slash',):
+                speed = particles.get('speed') if isinstance(particles.get('speed'), (int, float)) else 2.5
+                preview_obj = ParticlePreviewSlash(color=color if color_explicit else (100, 220, 255), speed=float(speed))
+            elif kind in ('laser',):
+                preview_obj = ParticlePreviewLaser(color=color if color_explicit else (0, 255, 255))
+            elif kind in ('arcane_flame',):
+                # Map effect.duration to preview duration when available
+                eff = sdef.get('effect', {}) if isinstance(sdef.get('effect', {}), dict) else {}
+                duration = eff.get('duration') if isinstance(eff.get('duration'), (int, float)) else 5.0
+                seed = particles.get('seed') if isinstance(particles.get('seed'), int) else 0
+                # Map VFX particle params to preview sparks for better fidelity
+                # count -> spark_rate (reduced to fit small preview cell)
+                cnt = particles.get('count') if isinstance(particles.get('count'), int) else 20
+                spark_rate = max(2, min(14, int(cnt * 0.5)))
+                # speed -> pixel speed scale (normalize large gameplay speed)
+                spd = particles.get('speed') if isinstance(particles.get('speed'), (int, float)) else 100.0
+                spark_speed = max(0.6, min(2.5, float(spd) / 90.0))
+                # lifespan -> shorter overlay lifespan in preview frames
+                life = particles.get('lifespan') if isinstance(particles.get('lifespan'), int) else 60
+                spark_life = max(12, min(60, int(life * 0.5)))
+                # size_range -> keep sparks small in picker cell
+                sr = particles.get('size_range') if isinstance(particles.get('size_range'), (list, tuple)) and len(particles.get('size_range')) == 2 else (2, 6)
+                smin = max(1, min(3, int(sr[0])))
+                smax = max(smin, min(4, int(sr[1])))
+                preview_obj = ParticlePreviewArcaneFlame(
+                    duration=float(duration),
+                    seed=int(seed),
+                    spark_rate=int(spark_rate),
+                    spark_speed=float(spark_speed),
+                    spark_size_range=(smin, smax),
+                    spark_lifespan=int(spark_life),
+                )
+            elif kind in ('explosion',):
+                # Use palette when available for richer arcane flame look
+                palette = palette_colors if isinstance(palette_colors, list) and len(palette_colors) > 0 else None
+                base_color = color if color_explicit else (255, 180, 60)
+                cnt = particles.get('count') if isinstance(particles.get('count'), int) else 24
+                spd = particles.get('speed') if isinstance(particles.get('speed'), (int, float)) else None
+                # Derive a reasonable speed range from gameplay speed if present
+                if isinstance(spd, (int, float)):
+                    lo = max(0.6, float(spd) * 0.012)
+                    hi = max(lo + 0.4, float(spd) * 0.024)
+                    speed_range = (lo, hi)
+                else:
+                    speed_range = (0.8, 2.5)
+                preview_obj = ParticlePreviewExplosion(color=base_color, palette=palette, count=int(cnt), speed_range=speed_range)
+            else:
+                # Fallback to smoke for unknown kinds
+                emit_rate = 2
+                er = particles.get('emit_rate')
+                if isinstance(er, int) and er > 0:
+                    emit_rate = er
+                preview_obj = ParticlePreviewSmoke(color=color if color_explicit else (200, 200, 200), emit_rate=emit_rate)
+        except Exception:
+            # As a last resort, don't set a provider
+            preview_obj = None
+
+        if preview_obj is not None:
+            # Replace cache and provider
+            self._particle_previews[spell_id] = preview_obj
+            def provider(size: tuple[int, int], dt_ms: int) -> pygame.Surface:
+                return preview_obj.render(size, dt_ms)
+            self.view.preview_providers[spell_id] = provider
+            try:
+                logger.debug("[SpellsPreview] %s: kind=%s, color=%s, provider=%s", spell_id, kind, color if color_explicit else 'default', type(preview_obj).__name__)
+            except Exception:
+                pass
+        else:
+            # Remove if cannot build
+            self._particle_previews.pop(spell_id, None)
+            self.view.preview_providers.pop(spell_id, None)
+
+    def _rebuild_particle_preview_providers(self) -> None:
+        # Remove providers for spells that no longer exist
+        for sid in list(self.view.preview_providers.keys()):
+            if sid not in self.model.spells:
+                self.view.preview_providers.pop(sid, None)
+                self._particle_previews.pop(sid, None)
+        # Rebuild/add providers for current spells
+        for sid, sdef in self.model.spells.items():
+            if not isinstance(sdef, dict):
+                continue
+            self._build_preview_for_spell(sid, sdef)

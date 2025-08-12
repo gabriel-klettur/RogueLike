@@ -19,6 +19,11 @@ class SpellEditorView:
         # Optional provider to override the left anchor (x) for the picker grid
         # Should return an int x or None to keep default margin
         self.get_picker_left_anchor_x: Optional[Callable[[], int | None]] = None
+        # Optional per-spell preview providers: (size, dt_ms) -> Surface
+        self.preview_providers: dict[str, Callable[[tuple[int, int], int], pygame.Surface]] = {}
+        # Frame timing for previews
+        self._last_ticks: int = pygame.time.get_ticks()
+        self._dt_ms: int = 16
 
         # Panel configuration to match Entities picker
         self.margin = 20
@@ -59,6 +64,10 @@ class SpellEditorView:
     def draw(self, screen: pygame.Surface, model: SpellEditorModel) -> None:
         if not model.visible:
             return
+        # Frame delta for previews
+        now = pygame.time.get_ticks()
+        self._dt_ms = max(1, now - self._last_ticks)
+        self._last_ticks = now
         # Semi-transparent background
         overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 180))
@@ -141,24 +150,36 @@ class SpellEditorView:
         """Draw a single picker cell: background, icon (aspect-correct), and label."""
         # Cell background
         pygame.draw.rect(screen, (50, 50, 50), rect)
-        icon = self.assets.get(spell_id)
-        if icon:
-            orig_w, orig_h = icon.get_size()
-            if orig_w > 0 and orig_h > 0:
-                pad = 6
-                max_w = self.cell_size - 2 * pad
-                max_h = self.cell_size - 2 * pad
-                scale = min(max_w / orig_w, max_h / orig_h)
-                new_w = max(1, int(orig_w * scale))
-                new_h = max(1, int(orig_h * scale))
-                icon_surf = pygame.transform.smoothscale(icon, (new_w, new_h))
-                dest_x = rect.x + (self.cell_size - new_w) // 2
-                dest_y = rect.y + (self.cell_size - new_h - pad)  # bottom align inside cell
-                # subtle shadow
-                shadow = pygame.Surface((new_w, new_h), pygame.SRCALPHA)
-                shadow.fill((0, 0, 0, 80))
-                screen.blit(shadow, (dest_x + 2, dest_y + 2))
-                screen.blit(icon_surf, (dest_x, dest_y))
+        pad = 6
+        max_w = self.cell_size - 2 * pad
+        max_h = self.cell_size - 2 * pad
+        # Prefer particle preview if provided for this spell
+        provider = self.preview_providers.get(spell_id)
+        if callable(provider):
+            try:
+                frame = provider((max_w, max_h), self._dt_ms)
+                fw, fh = frame.get_size()
+                dest_x = rect.x + (self.cell_size - fw) // 2
+                dest_y = rect.y + (self.cell_size - fh - pad)
+                screen.blit(frame, (dest_x, dest_y))
+            except Exception:
+                pass
+        else:
+            icon = self.assets.get(spell_id)
+            if icon:
+                orig_w, orig_h = icon.get_size()
+                if orig_w > 0 and orig_h > 0:
+                    scale = min(max_w / orig_w, max_h / orig_h)
+                    new_w = max(1, int(orig_w * scale))
+                    new_h = max(1, int(orig_h * scale))
+                    icon_surf = pygame.transform.smoothscale(icon, (new_w, new_h))
+                    dest_x = rect.x + (self.cell_size - new_w) // 2
+                    dest_y = rect.y + (self.cell_size - new_h - pad)  # bottom align inside cell
+                    # subtle shadow
+                    shadow = pygame.Surface((new_w, new_h), pygame.SRCALPHA)
+                    shadow.fill((0, 0, 0, 80))
+                    screen.blit(shadow, (dest_x + 2, dest_y + 2))
+                    screen.blit(icon_surf, (dest_x, dest_y))
         # Label below icon
         label = self._truncate_text(spell_id, self.cell_size)
         text = self.font.render(label, True, (255, 255, 255))
