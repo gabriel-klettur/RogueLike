@@ -3,6 +3,7 @@ from roguelike_editors.buildings.building_editor_controller import BuildingEdito
 from roguelike_editors.buildings.building_editor_events import BuildingEditorEventHandler
 from roguelike_editors.buildings.building_editor_view import BuildingEditorView
 from roguelike_editors.buildings.buildings_colliders_panel import BuildingCollidersPanelController
+from roguelike_editors.buildings.buildings_add_remove_panel.buildings_add_remove_panel_controller import BuildingsAddRemovePanelController
 from roguelike_editors.buildings.buildings_tool_bar_panel.buildings_tool_bar_panel_model import BuildingsToolBarPanelModel
 from roguelike_editors.buildings.buildings_tool_bar_panel.buildings_tool_bar_panel_view import BuildingsToolBarPanelView
 from roguelike_editors.buildings.buildings_tool_bar_panel.buildings_tool_bar_panel_events import BuildingsToolBarPanelEventHandler
@@ -23,6 +24,18 @@ class BuildingEditorManager:
         self.view         = BuildingEditorView(state, self.editor_state)
         # Panel especializado de colisiones (delegación completa del "collision brush")
         self.colliders    = BuildingCollidersPanelController(state, self.editor_state, self.view)
+        # Panel de Add/Remove (abre picker y acciones rápidas)
+        self.add_remove   = BuildingsAddRemovePanelController(state, self.editor_state, self.view, self)
+        # Asegurar estado inicial: panel Add/Remove y Picker apagados al abrir el editor
+        try:
+            self.add_remove.deactivate()
+        except Exception:
+            pass
+        try:
+            self.editor_state.picker_active = False
+            self.editor_state.add_remove_panel_rect = None
+        except Exception:
+            pass
 
         # Ahora el event handler recibe también la lista de buildings
 
@@ -37,6 +50,11 @@ class BuildingEditorManager:
         # Permitir al manejador de eventos delegar al panel de colisiones
         try:
             self.handler.colliders = self.colliders
+        except Exception:
+            pass
+        # Delegación al panel de add/remove
+        try:
+            self.handler.add_remove = self.add_remove
         except Exception:
             pass
 
@@ -58,6 +76,12 @@ class BuildingEditorManager:
         except Exception:
             pass
         tmp_events.controller = self.buildings_toolbar_controller
+        # Permitir que el panel Add/Remove se alinee a la derecha del toolbar
+        try:
+            if hasattr(self.add_remove, 'view'):
+                self.add_remove.view.toolbar_view = tmp_view
+        except Exception:
+            pass
         # Permitir al event handler del editor delegar a la toolbar
         try:
             self.handler.buildings_toolbar_controller = self.buildings_toolbar_controller
@@ -76,13 +100,19 @@ class BuildingEditorManager:
 
     def render(self, screen, camera, buildings):
         if self.editor_state.active:
-            # Render principal del editor (incluye título y picker/overlays)
-            self.view.render(screen, camera, buildings)
-            # Render de la toolbar (centrada bajo el título)
+            # 1) Render de la toolbar primero (posicionada bajo el título)
             try:
                 self.buildings_toolbar_controller.render(screen)
             except Exception:
                 pass
+            # 2) Render del panel de Add/Remove (se alinea a la derecha de la toolbar)
+            try:
+                self.add_remove.render(screen)
+            except Exception:
+                pass
+            # 3) Render principal del editor (incluye título y picker/overlays)
+            #    El picker se alineará a la derecha del Add/Remove usando editor_state.add_remove_panel_rect
+            self.view.render(screen, camera, buildings)
             # Render del panel de colisiones por encima (overlay/picker)
             try:
                 self.colliders.render(screen, camera, buildings)

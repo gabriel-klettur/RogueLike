@@ -48,6 +48,13 @@ class BuildingsToolBarPanelEventHandler:
                 if getattr(self.model, 'active_tool', None) == 'buildings_manager':
                     self.model.active_tool = None
                     st.picker_active = False
+                    # Cerrar panel Add/Remove si existe
+                    try:
+                        add_remove = getattr(self.controller.editor_manager, 'add_remove', None)
+                        if add_remove and add_remove.is_active():
+                            add_remove.deactivate()
+                    except Exception:
+                        pass
                 else:
                     self.model.active_tool = 'buildings_manager'
                     # Desactivar panel de colisiones si está activo
@@ -57,6 +64,14 @@ class BuildingsToolBarPanelEventHandler:
                             colliders.deactivate()
                     except Exception:
                         pass
+                    # Activar panel Add/Remove
+                    try:
+                        add_remove = getattr(self.controller.editor_manager, 'add_remove', None)
+                        if add_remove:
+                            add_remove.activate()
+                    except Exception:
+                        pass
+                    # Abrir picker
                     st.picker_active = True
                 return True
 
@@ -77,6 +92,13 @@ class BuildingsToolBarPanelEventHandler:
                     # Encender panel de colisión
                     self.model.active_tool = 'buildings_colliders'
                     st.picker_active = False
+                    # Desactivar Add/Remove si estuviese activo
+                    try:
+                        add_remove = getattr(self.controller.editor_manager, 'add_remove', None)
+                        if add_remove and add_remove.is_active():
+                            add_remove.deactivate()
+                    except Exception:
+                        pass
                     try:
                         if colliders:
                             colliders.activate()

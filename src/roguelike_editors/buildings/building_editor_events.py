@@ -40,6 +40,13 @@ class BuildingEditorEventHandler:
                         continue
                 except Exception:
                     pass
+                # Delegar al panel de Add/Remove si está activo
+                try:
+                    add_remove = getattr(self, 'add_remove', None)
+                    if add_remove and add_remove.is_active() and add_remove.handle_event(ev, camera, entities):
+                        continue
+                except Exception:
+                    pass
             # Delegar al panel de colisiones (si está activo). Consume el evento si corresponde.
             try:
                 colliders = getattr(self, 'colliders', None)
