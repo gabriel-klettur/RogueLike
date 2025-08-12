@@ -48,6 +48,9 @@ class BuildingModel:
         self._collision_tiles_cache: list[pygame.Rect] | None = None
         self._collision_tile_objs: list[types.SimpleNamespace] | None = None
 
+        # Alcance de colisión por edificio: 'CG' (global) o 'CU' (único)
+        self.collider_scope: str = 'CG'
+
         # ── Z-layers por defecto (se pueden sobreescribir) ──
         from roguelike_engine.config.config_z_layer import Z_LAYERS
         self.z_bottom = z_bottom if z_bottom is not None else Z_LAYERS["building_low"]
@@ -132,6 +135,14 @@ class BuildingModel:
         self.image = surf
         self.original_scale = (new_width, new_height)
         self._cut_world = int(new_height * self.split_ratio)
+        # Ajustar el collision_map al nuevo tamaño de imagen (grid por TILE_SIZE)
+        try:
+            new_rows, new_cols = self._image_to_grid_size()
+            self._resample_collision_map(new_rows, new_cols)
+        except Exception:
+            # Si algo falla, al menos garantizamos un mapa válido
+            if not self._collision_map:
+                self._collision_map = [["."]]
         # Invalidar caches de colisión y renderizado (se regenerarán cuando sea necesario)
         self._collision_tiles_cache = None
         self._collision_tile_objs = None
@@ -193,6 +204,65 @@ class BuildingModel:
         _ = self.collision_tiles
         return self._collision_tile_objs or []
 
+    # ───────────── Utilidades de grid para collision_map ─────────────
+    def _image_to_grid_size(self) -> tuple[int, int]:
+        """
+        Devuelve (rows, cols) de la grilla de colisión a partir del tamaño de la imagen.
+        Garantiza al menos 1×1 celdas para permitir edición incluso en tamaños pequeños.
+        """
+        w = int(self.image.get_width()) if self.image else 0
+        h = int(self.image.get_height()) if self.image else 0
+        # Ceil division para cubrir el borde parcial del asset
+        cols = max(1, (w + TILE_SIZE - 1) // TILE_SIZE) if w > 0 else 1
+        rows = max(1, (h + TILE_SIZE - 1) // TILE_SIZE) if h > 0 else 1
+        return rows, cols
+
+    def _resample_collision_map(self, new_rows: int, new_cols: int):
+        """
+        Redimensiona self._collision_map a (new_rows×new_cols) usando remuestreo
+        nearest-neighbor para preservar lo existente al escalar.
+        Si el mapa actual es vacío, inicializa con '.' (caminable).
+        """
+        if new_rows <= 0 or new_cols <= 0:
+            new_rows, new_cols = 1, 1
+        old_rows = len(self._collision_map)
+        old_cols = len(self._collision_map[0]) if old_rows > 0 else 0
+        if old_rows == 0 or old_cols == 0:
+            self._collision_map = [["." for _ in range(new_cols)] for _ in range(new_rows)]
+            return
+        # Si el tamaño no cambia, no hacer nada
+        if new_rows == old_rows and new_cols == old_cols:
+            return
+        # Area pooling: para cada celda destino, tomar el rectángulo fuente equivalente
+        # y marcar '#' si alguna celda fuente es '#'. Esto evita perder colisiones al reducir.
+        res: list[list[str]] = [["." for _ in range(new_cols)] for _ in range(new_rows)]
+        for r in range(new_rows):
+            r0 = int((r * old_rows) / new_rows)
+            r1 = int(((r + 1) * old_rows) / new_rows) - 1
+            if r0 >= old_rows:
+                r0 = old_rows - 1
+            if r1 < r0:
+                r1 = r0
+            for c in range(new_cols):
+                c0 = int((c * old_cols) / new_cols)
+                c1 = int(((c + 1) * old_cols) / new_cols) - 1
+                if c0 >= old_cols:
+                    c0 = old_cols - 1
+                if c1 < c0:
+                    c1 = c0
+                solid = False
+                # Explorar el bloque fuente y parar temprano si encontramos '#'
+                for sr in range(r0, r1 + 1):
+                    row = self._collision_map[sr]
+                    for sc in range(c0, c1 + 1):
+                        if row[sc] == "#":
+                            solid = True
+                            break
+                    if solid:
+                        break
+                res[r][c] = "#" if solid else "."
+        self._collision_map = res
+
     # ───────────── Acceso al mapa de colisión en bruto ─────────────
     @property
     def collision_map(self) -> list[list[str]]:
@@ -223,7 +293,8 @@ class BuildingModel:
             'z_bottom': self.z_bottom,
             'z_top': self.z_top,
             'collision_map': self._collision_map,
-            'original_scale': self.original_scale
+            'original_scale': self.original_scale,
+            'collider_scope': self.collider_scope,
         }
 
     def __setstate__(self, state):
@@ -240,5 +311,7 @@ class BuildingModel:
         self._collision_tiles_cache = None
         self._collision_tile_objs = None
         self.original_scale = state.get('original_scale')
+        # Restaurar alcance de colisión por edificio
+        self.collider_scope = state.get('collider_scope', 'CG')
         # Reload image using cached loader
         self._load_and_prepare_image(self.original_scale)

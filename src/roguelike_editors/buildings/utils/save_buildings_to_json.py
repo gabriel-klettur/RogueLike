@@ -34,10 +34,21 @@ def save_buildings_to_json(
                 "split_ratio": round(b.split_ratio, 3),
                 "z_bottom": b.z_bottom,
                 "z_top": b.z_top,
+                "collider_scope": getattr(b, "collider_scope", "CG"),
             }
 
             if z_state:
                 building_data["z"] = inject_z_into_json(b, z_state)
+
+            # Persistir override de colisiones por instancia si el alcance es CU
+            if building_data.get("collider_scope") == "CU" and getattr(b, "collision_map", None):
+                rows = len(b.collision_map)
+                cols = len(b.collision_map[0]) if rows > 0 else 0
+                building_data["collision_override"] = {
+                    "width": cols,
+                    "height": rows,
+                    "collision": b.collision_map,
+                }
 
             data.append(building_data)
 

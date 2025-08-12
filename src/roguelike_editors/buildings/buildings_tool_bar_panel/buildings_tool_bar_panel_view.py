@@ -92,6 +92,17 @@ class BuildingsToolBarPanelView:
     def render(self, screen: pygame.Surface) -> None:
         self._compute_position(screen)
         self.widget.render(screen)
+        # Efecto de borde parpadeante para el botón de colliders cuando está activo
+        try:
+            if self.controller and self.controller.is_active('buildings_colliders'):
+                rect = self.widget.icon_rects.get('buildings_colliders')
+                if rect is not None:
+                    ticks = pygame.time.get_ticks()
+                    flash_on = ((ticks // 350) % 2) == 0
+                    if flash_on:
+                        pygame.draw.rect(screen, (255, 255, 0), rect.inflate(6, 6), 4)
+        except Exception:
+            pass
 
     def handle_event(self, event) -> bool:
         return self.widget.handle_event(event)

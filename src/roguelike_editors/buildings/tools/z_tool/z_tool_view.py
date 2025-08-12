@@ -34,8 +34,7 @@ class ZToolView:
             "minus_rect": minus,
             "plus_rect":  plus,
         }
-        building._ztool_bounds = getattr(building, "_ztool_bounds", {})
-        building._ztool_bounds[self.target] = bounds
+        return bounds
 
     def _get_cached_panel_base(self, zoom: float) -> pygame.Surface:
         if zoom in self._panel_cache:

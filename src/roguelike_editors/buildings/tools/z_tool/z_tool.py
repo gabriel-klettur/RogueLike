@@ -1,6 +1,11 @@
-
 import pygame
 import logging
+from roguelike_editors.buildings.buildings_editor_config import (
+    Z_PANEL_W,
+    Z_PANEL_H,
+    Z_BTN_W,
+    Z_BTN_H,
+)
 logger = logging.getLogger(__name__)
 
 class ZTool:
@@ -14,28 +19,32 @@ class ZTool:
         self.editor_state = editor_state
         self.target = target          # bottom | top
 
-        self.font = pygame.font.SysFont("Arial", 16)
-
-        # Caches -------------------------------------------------------
-        self._panel_cache: dict[float, pygame.Surface] = {}   # {zoom: Surface}
-        self._text_cache: dict[tuple[str, float], pygame.Surface] = {}  # {(char,zoom):Surf}
-
-    
     # ------------------------------------------------------------------ #
     # MOUSE CLICK                                                        #
     # ------------------------------------------------------------------ #
-    def handle_mouse_click(self, mouse_pos, buildings):
-        for b in buildings:
-            bnd = getattr(b, "_ztool_bounds", {}).get(self.target)
-            if not bnd:
-                continue
-            px, py = bnd["panel_pos"]
-            if bnd["minus_rect"].move(px, py).collidepoint(mouse_pos):
+    def handle_mouse_click(self, mouse_pos: tuple[int, int], buildings, camera) -> bool:
+        """Detecta clicks sobre los botones +/- del panel Z.
+
+        Calcula los rects en coordenadas de pantalla en el momento del click
+        usando el camera y el tamaño/posición actual del building, para evitar
+        desfases tras un resize o cambios de zoom.
+
+        Returns True si consumió el evento.
+        """
+        mx, my = mouse_pos
+        # Si existe un edificio activo (el único que dibuja paneles), limitar a ese
+        active = getattr(self.editor_state, 'active_building', None)
+        to_iter = [active] if active is not None else list(reversed(buildings))
+        # Prioriza el edificio más arriba (render order) recorriendo al revés si no hay activo
+        for b in to_iter:
+            minus_rect, plus_rect = self._get_button_rects(b, camera)
+            if minus_rect and minus_rect.collidepoint(mx, my):
                 self._update_z(b, -1)
-                return
-            if bnd["plus_rect"].move(px, py).collidepoint(mouse_pos):
+                return True
+            if plus_rect and plus_rect.collidepoint(mx, my):
                 self._update_z(b, +1)
-                return
+                return True
+        return False
 
     def _update_z(self, building, delta):
         if self.target == "bottom":
@@ -45,4 +54,33 @@ class ZTool:
         else:
             building.z_top = max(0, building.z_top + delta)
             logger.info(f"⬆️  Z‑top nuevo: {building.z_top}")
-    
+
+    # ------------------------------------------------------------------ #
+    # LÓGICA DE GEOMETRÍA (screen-space)
+    # ------------------------------------------------------------------ #
+    def _compute_panel_pos(self, building, camera) -> tuple[int, int]:
+        """Posición topleft del panel en pantalla para este building/target."""
+        # Tamaño del edificio en pantalla según zoom
+        w_scaled, h_scaled = camera.scale(building.image.get_size())
+        # Posición del edificio en pantalla
+        x, y = camera.apply((building.x, building.y))
+        panel_x = x + (w_scaled - Z_PANEL_W) // 2
+        # Anclaje arriba/abajo con ligero margen
+        panel_y = y + (h_scaled - 50 if self.target == "bottom" else 10)
+        return int(panel_x), int(panel_y)
+
+    def _get_button_rects(self, building, camera) -> tuple[pygame.Rect | None, pygame.Rect | None]:
+        """Rectángulos absolutos de los botones '-' y '+' en pantalla.
+
+        Devuelve (minus_rect, plus_rect). Puede devolver (None, None) si el
+        building no tiene image o no está inicializado, por robustez.
+        """
+        if not getattr(building, "image", None):
+            return None, None
+        panel_x, panel_y = self._compute_panel_pos(building, camera)
+        minus_rel = pygame.Rect(5, 5, Z_BTN_W, Z_BTN_H)
+        plus_rel  = pygame.Rect(Z_PANEL_W - 5 - Z_BTN_W, 5, Z_BTN_W, Z_BTN_H)
+        return (
+            minus_rel.move(panel_x, panel_y),
+            plus_rel.move(panel_x, panel_y),
+        )

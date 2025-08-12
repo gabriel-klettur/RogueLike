@@ -188,6 +188,15 @@ class Building:
         self.model.collision_map = data
 
     @property
+    def collider_scope(self) -> str:
+        """Per-building collider scope: 'CG' (global) or 'CU' (unique)."""
+        return getattr(self.model, 'collider_scope', 'CG')
+
+    @collider_scope.setter
+    def collider_scope(self, value: str):
+        self.model.collider_scope = 'CU' if value == 'CU' else 'CG'
+
+    @property
     def z_bottom(self) -> int:
         """Capa Z inferior del edificio."""
         return self.model.z_bottom

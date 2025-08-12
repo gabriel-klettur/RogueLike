@@ -6,6 +6,8 @@ from roguelike_editors.buildings.tools.split_z_tool.split_tool  import SplitTool
 from roguelike_editors.buildings.tools.placer_tool.placer_tool  import PlacerTool
 from roguelike_editors.buildings.tools.delete_tool.delete_tool  import DeleteTool
 from roguelike_editors.buildings.tools.default_tool.default_tool_view import DefaultToolView
+from roguelike_editors.buildings.tools.collider_scope_tool import ColliderScopeTool
+from roguelike_ui.ui_blocker import is_blocked
 
 from roguelike_editors.buildings.utils.zone_helpers import assign_zone_and_relatives
 
@@ -26,6 +28,8 @@ class BuildingEditorController:
         self.split_tool = SplitTool(state, editor_state)
         self.z_tool_bottom = ZTool(state, editor_state, target="bottom")
         self.z_tool_top    = ZTool(state, editor_state, target="top")        
+        # Toggle CG/CU de alcance de colliders
+        self.collider_scope_tool = ColliderScopeTool(state, editor_state)
         self.placer_tool = PlacerTool(
             state, editor_state,
             building_class=type(buildings[0]),
@@ -52,8 +56,15 @@ class BuildingEditorController:
                 self.split_tool.start_drag(b)
                 return
 
-        # 2) Botón eliminar (clic izq)
+        # 2) Alcance colliders CG/CU (clic izq, esquina inferior derecha)
         if button == 1:
+            ab = getattr(self.editor, 'active_building', None)
+            if ab is not None:
+                scope_rect = self.collider_scope_tool.get_handle_rect(ab, camera)
+                if scope_rect and scope_rect.collidepoint(mx, my):
+                    self.collider_scope_tool.toggle_scope(ab)
+                    return
+            # Botón eliminar (clic izq)
             # Usar la vista para el botón rojo
             if hasattr(self, 'default_view'):
                 get_rect = self.default_view.get_delete_handle_rect
@@ -89,8 +100,10 @@ class BuildingEditorController:
 
         # 4) Paneles Z (+ / –) (clic izq)
         if button == 1:
-            self.z_tool_bottom.handle_mouse_click((mx, my), buildings)
-            self.z_tool_top.handle_mouse_click((mx, my), buildings)
+            if self.z_tool_bottom.handle_mouse_click((mx, my), buildings, camera):
+                return
+            if self.z_tool_top.handle_mouse_click((mx, my), buildings, camera):
+                return
 
     def on_mouse_up(self, button, camera, buildings):
         # 1) Finalizar resize / split (igual que antes)
@@ -119,6 +132,15 @@ class BuildingEditorController:
         if self.editor.dragging or self.editor.resizing or self.editor.split_dragging:
             self.update(camera)
             return
+        # Bloquear hover si el ratón está sobre cualquier panel UI registrado
+        try:
+            mx, my = pos
+            if is_blocked(mx, my):
+                self.editor.hovered_buildings = []
+                self.editor.hovered_building = None
+                return
+        except Exception:
+            pass
         # Detectar todos los edificios bajo el mouse (orden arriba-abajo)
         hovered_list = self._buildings_under_mouse(pos, camera, buildings)
         self.editor.hovered_buildings = hovered_list
