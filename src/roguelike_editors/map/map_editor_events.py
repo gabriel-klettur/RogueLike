@@ -11,6 +11,7 @@ from roguelike_engine.map.model.layer import Layer
 from roguelike_editors.buildings.utils.save_buildings_to_json import save_buildings_to_json
 from roguelike_engine.map.model.overlay.overlay_manager import load_layers, save_layers
 from roguelike_game.ecs.core.spatial_index import SpatialIndex
+from roguelike_ui.ui_blocker import is_blocked
 
 
 class MapEditorEventHandler:
@@ -37,6 +38,11 @@ class MapEditorEventHandler:
 
         # 2. Procesar eventos de Pygame
         for ev in pygame.event.get():
+            # Delegar eventos al widget del toolbar (arrastre con botón derecho, etc.)
+            try:
+                self.controller.toolbar.view.handle_event(ev)
+            except Exception:
+                pass
             if ev.type == pygame.QUIT:
                 self.manager.game.state.running = False
                 return
@@ -95,6 +101,11 @@ class MapEditorEventHandler:
             if ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
                 # Toolbar
                 if self.controller.toolbar.handle_click(ev.pos):
+                    return
+
+                # Si el clic cae dentro de un panel bloqueante (fondo del toolbar), consumirlo
+                mx, my = ev.pos
+                if is_blocked(mx, my):
                     return
 
                 # Dropdown de visibilidad de capas

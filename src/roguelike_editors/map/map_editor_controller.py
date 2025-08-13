@@ -8,6 +8,9 @@ from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config import DATA_DIR
 from roguelike_engine.utils.loader import load_image
 from roguelike_engine.map.model.layer import Layer
+from roguelike_editors.map.map_tool_bar_panel.map_tool_bar_panel_controller import (
+    MapToolBarPanelController,
+)
 
 
 class MapEditorController:
@@ -22,7 +25,8 @@ class MapEditorController:
     def __init__(self, state, map_manager):
         self.state = state
         self.map_manager = map_manager
-        self.toolbar = MapToolbarController(self.state)
+        # Delegate toolbar responsibilities to map_tool_bar_panel package
+        self.toolbar = MapToolBarPanelController(self.state)
 
     # -------------------------------------------------------------
     # 1. SELECCIÓN Y VISIBILIDAD DE ZONAS
@@ -268,6 +272,7 @@ class MapEditorController:
 
 
 class MapToolbarController:
+
     """
     Componente de toolbar para el Map Editor:
       - Botón principal para layers view
@@ -278,75 +283,106 @@ class MapToolbarController:
     def __init__(self, editor_state):
         self.editor = editor_state
 
-        # Cargar íconos con dimensiones fijas
-        self.icon = load_image("assets/ui/layers_view_tool.png", (64, 64))
-        self.add_icon = load_image("assets/ui/add_zone.png", (64, 64))
-        self.delete_icon = load_image("assets/ui/delete_zone.png", (64, 64))
-        self.paint_tiles_icon = load_image("assets/ui/pintar_tiles_zone.png", (64, 64))
-        self.clear_colliders_icon = load_image("assets/ui/vaciar_colliders_zone.png", (64, 64))
-        self.paint_colliders_icon = load_image("assets/ui/pintar_colliders_zone.png", (64, 64))
-
-        # Posicionamiento inicial
+        # Posicionamiento inicial y layout
         self.x, self.y = 10, 10
         self.size = 64
         self.padding = 8
 
-        # Rectángulos que se asignarán en renderizado
-        self.icon_rect: pygame.Rect | None = None
-        self.add_rect: pygame.Rect | None = None
-        self.delete_rect: pygame.Rect | None = None
-        self.paint_tiles_rect: pygame.Rect | None = None
-        self.clear_colliders_rect: pygame.Rect | None = None
-        self.paint_colliders_rect: pygame.Rect | None = None
+        # Cargar íconos en un diccionario para ToolbarView
+        self.icons: dict[str, pygame.Surface] = self._load_icons()
+        # Rects de iconos expuestos por ToolbarView (rellenados en render o bajo demanda)
+        self.icon_rects: dict[str, pygame.Rect] = {}
+
+        # Dropdown option rects (seguimos usándolo para la vista de capas)
         self.option_rects: dict[Layer | str, pygame.Rect] = {}
+
+        # Vista que envuelve al ToolbarView compartido
+        self.view = MapToolbarView(self)
 
     def handle_click(self, mouse_pos: tuple[int, int]) -> bool:
         """
-        Procesa un clic del usuario en la toolbar o dropdown:
-          - Si clic en ícono principal: toggle layers_view_open
-          - Si clic en cualquiera de los botones: activa/desactiva su modo correspondiente
-          - Si layers_view_open: procesa clics dentro del dropdown para show/hide capas, edificios o colliders
+        Procesa clics usando los rects provistos por ToolbarView (icon_rects).
+        Incluye fallback para pre-render: calcula rects con la misma geometría del widget.
         """
-        # 1. Toggle dropdown layers view
-        if self.icon_rect and self.icon_rect.collidepoint(mouse_pos):
-            self.editor.layers_view_open = not self.editor.layers_view_open
-            logger.debug(f"[DEBUG][Toolbar] layers_view_open -> {self.editor.layers_view_open}")
-            return True
+        # Asegurar icon_rects aunque no se haya renderizado aún
+        if not self.icon_rects:
+            widget = getattr(getattr(self, 'view', None), 'widget', None)
+            if widget and getattr(widget, 'icon_rects', None):
+                self.icon_rects = dict(widget.icon_rects)
+            elif widget:
+                # Precalcular rects según la geometría del ToolbarView
+                edge = getattr(widget, 'edge_padding', 8)
+                panel_pos = widget.panel.pos or (widget.x, widget.y)
+                size, pad = widget.size, widget.padding
+                self.icon_rects = {}
+                for idx, tool_name in enumerate(TOOLS):
+                    local = pygame.Rect(edge, edge + idx * (size + pad), size, size)
+                    self.icon_rects[tool_name] = local.move(panel_pos)
 
-        # 2. Botones secuenciales: add_zone, delete_zone, paint_tiles, clear_colliders, paint_colliders
-        if self.add_rect and self.add_rect.collidepoint(mouse_pos):
-            self._toggle_mode("add_zone_mode", disable=["delete_zone_mode"])
-            logger.debug(f"[DEBUG][Toolbar] add_zone_mode -> {self.editor.add_zone_mode}")
-            return True
+        # Mapa de handlers por tool
+        def _toggle_pair(primary: str, disable: list[str]):
+            self._toggle_mode(primary, disable=disable)
+            logger.debug(f"[DEBUG][Toolbar] {primary} -> {getattr(self.editor, primary)}")
 
-        if self.delete_rect and self.delete_rect.collidepoint(mouse_pos):
-            self._toggle_mode("delete_zone_mode", disable=["add_zone_mode"])
-            logger.debug(f"[DEBUG][Toolbar] delete_zone_mode -> {self.editor.delete_zone_mode}")
-            return True
+        for tool_name, rect in self.icon_rects.items():
+            if rect and rect.collidepoint(mouse_pos):
+                if tool_name == "view_layers":
+                    self.editor.layers_view_open = not self.editor.layers_view_open
+                    logger.debug(f"[DEBUG][Toolbar] layers_view_open -> {self.editor.layers_view_open}")
+                    return True
+                if tool_name == "add_zone":
+                    _toggle_pair("add_zone_mode", ["delete_zone_mode", "paint_tiles_mode", "clear_colliders_mode", "paint_colliders_mode"])
+                    return True
+                if tool_name == "delete_zone":
+                    _toggle_pair("delete_zone_mode", ["add_zone_mode", "paint_tiles_mode", "clear_colliders_mode", "paint_colliders_mode"])
+                    return True
+                if tool_name == "paint_tiles":
+                    _toggle_pair("paint_tiles_mode", ["add_zone_mode", "delete_zone_mode", "clear_colliders_mode", "paint_colliders_mode"])
+                    return True
+                if tool_name == "clear_colliders":
+                    _toggle_pair("clear_colliders_mode", ["add_zone_mode", "delete_zone_mode", "paint_tiles_mode", "paint_colliders_mode"])
+                    return True
+                if tool_name == "paint_colliders":
+                    _toggle_pair("paint_colliders_mode", ["add_zone_mode", "delete_zone_mode", "paint_tiles_mode", "clear_colliders_mode"])
+                    return True
 
-        if self.paint_tiles_rect and self.paint_tiles_rect.collidepoint(mouse_pos):
-            self._toggle_mode("paint_tiles_mode", disable=["add_zone_mode", "delete_zone_mode", "clear_colliders_mode", "paint_colliders_mode"])
-            logger.debug(f"[DEBUG][Toolbar] paint_tiles_mode -> {self.editor.paint_tiles_mode}")
-            return True
-
-        if self.clear_colliders_rect and self.clear_colliders_rect.collidepoint(mouse_pos):
-            self._toggle_mode("clear_colliders_mode", disable=["add_zone_mode", "delete_zone_mode", "paint_tiles_mode", "paint_colliders_mode"])
-            logger.debug(f"[DEBUG][Toolbar] clear_colliders_mode -> {self.editor.clear_colliders_mode}")
-            return True
-
-        if self.paint_colliders_rect and self.paint_colliders_rect.collidepoint(mouse_pos):
-            self._toggle_mode("paint_colliders_mode", disable=["add_zone_mode", "delete_zone_mode", "paint_tiles_mode", "clear_colliders_mode"])
-            logger.debug(f"[DEBUG][Toolbar] paint_colliders_mode -> {self.editor.paint_colliders_mode}")
-            return True
-
-        # 3. Procesar clic dentro del dropdown de visibilidad de capas
+        # Dropdown de capas
         if self.editor.layers_view_open:
             for key, rect in self.option_rects.items():
-                if rect.collidepoint(mouse_pos):
+                if rect and rect.collidepoint(mouse_pos):
                     self._handle_dropdown_selection(key)
                     return True
 
         return False
+
+    def is_active(self, tool: str) -> bool:
+        """
+        Indica al ToolbarView si un botón debe mostrarse como activo.
+        """
+        if tool == "view_layers":
+            return bool(self.editor.layers_view_open)
+        if tool == "add_zone":
+            return bool(getattr(self.editor, "add_zone_mode", False))
+        if tool == "delete_zone":
+            return bool(getattr(self.editor, "delete_zone_mode", False))
+        if tool == "paint_tiles":
+            return bool(getattr(self.editor, "paint_tiles_mode", False))
+        if tool == "clear_colliders":
+            return bool(getattr(self.editor, "clear_colliders_mode", False))
+        if tool == "paint_colliders":
+            return bool(getattr(self.editor, "paint_colliders_mode", False))
+        return False
+
+    def _load_icons(self) -> dict[str, pygame.Surface]:
+        """Carga y escala los iconos para el toolbar del editor de mapa."""
+        return {
+            "view_layers": load_image("assets/ui/layers_view_tool.png", (self.size, self.size)),
+            "add_zone": load_image("assets/ui/add_zone.png", (self.size, self.size)),
+            "delete_zone": load_image("assets/ui/delete_zone.png", (self.size, self.size)),
+            "paint_tiles": load_image("assets/ui/pintar_tiles_zone.png", (self.size, self.size)),
+            "clear_colliders": load_image("assets/ui/vaciar_colliders_zone.png", (self.size, self.size)),
+            "paint_colliders": load_image("assets/ui/pintar_colliders_zone.png", (self.size, self.size)),
+        }
 
     def _toggle_mode(self, mode_attr: str, disable: list[str] = []) -> None:
         """

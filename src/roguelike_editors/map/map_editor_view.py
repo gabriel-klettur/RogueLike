@@ -268,56 +268,26 @@ class MapEditorView:
     # 4. Toolbar: icono principal y botones de zona
     # -------------------------------------------------------------
     def _draw_toolbar(self, screen: Surface) -> None:
-        toolbar = self.controller.toolbar
-
-        # Dibujar icono principal (layers view)
-        screen.blit(toolbar.icon, (toolbar.x, toolbar.y))
-        toolbar.icon_rect = Rect(toolbar.x, toolbar.y, toolbar.size, toolbar.size)
-
-        # Dibujar botones secuenciales: Añadir, Borrar, Pintar Tiles, Vaciar Colliders, Pintar Colliders
-        buttons_info = [
-            ("add_zone_mode", toolbar.add_icon, toolbar.size),
-            ("delete_zone_mode", toolbar.delete_icon, toolbar.size),
-            ("paint_tiles_mode", toolbar.paint_tiles_icon, toolbar.size),
-            ("clear_colliders_mode", toolbar.clear_colliders_icon, toolbar.size),
-            ("paint_colliders_mode", toolbar.paint_colliders_icon, toolbar.size),
-        ]
-        for idx, (mode_attr, icon_surf, size) in enumerate(buttons_info, start=1):
-            btn_x = toolbar.x
-            btn_y = toolbar.y + idx * (size + toolbar.padding)
-            screen.blit(icon_surf, (btn_x, btn_y))
-        
-        # Determine rect attribute for each mode
-        rect_attr = {
-            "add_zone_mode": "add_rect",
-            "delete_zone_mode": "delete_rect",
-            "paint_tiles_mode": "paint_tiles_rect",
-            "clear_colliders_mode": "clear_colliders_rect",
-            "paint_colliders_mode": "paint_colliders_rect",
-        }
-        for idx, (mode_attr, icon_surf, size) in enumerate(buttons_info, start=1):
-            btn_x = toolbar.x
-            btn_y = toolbar.y + idx * (size + toolbar.padding)
-            setattr(toolbar, rect_attr[mode_attr], Rect(btn_x, btn_y, size, size))
-
-            # Resaltar si está en ese modo
-            if getattr(self.state, mode_attr):
-                highlight_color = {
-                    "add_zone_mode": self.COLOR_BORDER_SELECTED,
-                    "delete_zone_mode": self.COLOR_BORDER_DELETE,
-                    "paint_tiles_mode": (0, 0, 255),
-                    "clear_colliders_mode": (255, 165, 0),
-                    "paint_colliders_mode": (128, 0, 128),
-                }[mode_attr]
-                pygame.draw.rect(screen, highlight_color, getattr(toolbar, rect_attr[mode_attr]), 3)
+        # Delegar dibujo en el widget compartido a través de la vista del toolbar
+        self.controller.toolbar.view.render(screen)
 
     # -------------------------------------------------------------
     # 5. Dropdown: vista de capas (capas de tiles, edificios, colliders)
     # -------------------------------------------------------------
     def _draw_layers_dropdown(self, screen: Surface) -> None:
         toolbar = self.controller.toolbar
-        drop_x = toolbar.x + toolbar.size + toolbar.padding
-        drop_y = toolbar.y
+        # Anchor dropdown to the current toolbar widget position and width (supports dragging)
+        tv = getattr(getattr(toolbar, "view", None), "widget", None)
+        panel = getattr(tv, "panel", None)
+        if panel and getattr(panel, "pos", None):
+            panel_pos = panel.pos
+            panel_w = panel.surface.get_width()
+        else:
+            # Fallback to initial static coords
+            panel_pos = (toolbar.x, toolbar.y)
+            panel_w = toolbar.size + 2 * getattr(tv, "edge_padding", 8) if tv else toolbar.size + 16
+        drop_x = panel_pos[0] + panel_w + toolbar.padding
+        drop_y = panel_pos[1]
         toolbar.option_rects.clear()
 
         # Claves: "show_all", "hide_all", cada Layer, "buildings", "colliders"
