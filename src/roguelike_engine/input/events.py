@@ -38,7 +38,8 @@ def handle_events(
     elif active_buildings:
         buildings_editor.handler.handle(camera, entities)
     elif active_map:
-        map_editor.handler.handle(camera, map)
+        # Pass through the same events list captured upstream (may be None)
+        map_editor.handler.handle(camera, map, events)
     # Cache handlers and diagnostics panel
     
     kb = handle_keyboard
@@ -60,5 +61,5 @@ def handle_events(
                 mx, my = (pygame.mouse.get_pos() if et == pygame.MOUSEWHEEL else ev.pos)
                 if overlay.hit_test((mx, my)):
                     consumed = bool(overlay.handle_event(ev))
-            if not consumed and not active_tiles and not active_buildings:
+            if not consumed and not active_tiles and not active_buildings and not active_map:
                 ms(ev, state, camera, clock, map, entities)
