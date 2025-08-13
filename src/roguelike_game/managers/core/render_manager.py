@@ -52,6 +52,9 @@ class RendererManager:
         self.minimap = minimap
         self.ecs = ecs
 
+        # FSM editor UI (lazy)
+        self._fsm_title_controller = None
+
         self._last_state = None  # almacenar último estado para editor
         
         self._last_visible_layers = None # Cache last visible layers to minimize cache invalidations
@@ -199,6 +202,15 @@ class RendererManager:
         if self.map_editor.editor_state.active:
             self.map_editor.render(self.screen, self.camera, self.map)
 
+        # FSM Editor Title: mostrar cuando el debug de entidades está activo (F12)
+        try:
+            import roguelike_engine.config.config as config
+            if getattr(config, "DEBUG_ENTITIES", False):
+                self._render_fsm_editor_ui(self.screen)
+        except Exception:
+            # Evitar romper el render si la UI FSM falla
+            pass
+
     def _render_effects(self, camera, screen, effects):
         dirty_rects = effects.render(screen, camera)
         self._dirty_rects.extend(dirty_rects)
@@ -294,6 +306,24 @@ class RendererManager:
     def _render_minimap(self, screen):
             rect = self.minimap.render(screen)
             self._dirty_rects.append(rect)
+
+    def _render_fsm_editor_ui(self, screen):
+        """Renderiza el título del editor FSM usando TitleBar reutilizable."""
+        try:
+            # Import perezoso para evitar dependencias circulares en importación
+            from roguelike_editors.fsm.fsm_title.fsm_title_model import FsmTitleModel
+            from roguelike_editors.fsm.fsm_title.fsm_title_controller import FsmTitleController
+            if self._fsm_title_controller is None:
+                self._fsm_title_controller = FsmTitleController(
+                    editor_state=None,
+                    model=FsmTitleModel(),
+                    font=None,
+                )
+            # Dibuja y devuelve rect (no usado aquí)
+            self._fsm_title_controller.render(screen)
+        except Exception:
+            # Silencioso: no bloquear el render principal por UI opcional
+            pass
 
     def _render_collisions(self, screen, camera, map):
         """Render collision grid (# solid, . walkable) efficiently"""

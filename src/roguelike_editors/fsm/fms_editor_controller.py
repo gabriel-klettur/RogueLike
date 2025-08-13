@@ -1,10 +1,10 @@
 ﻿import logging
 from typing import Optional, Callable, List, TYPE_CHECKING
 
-from .fms_model import FMSModel
+from .fms_editor_model import FMSModel
 
 if TYPE_CHECKING:
-    from .fms_view import FMSView
+    from .fms_editor_view import FMSView
 
 logger = logging.getLogger(__name__)
 

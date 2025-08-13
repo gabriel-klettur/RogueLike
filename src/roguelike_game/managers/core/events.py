@@ -8,7 +8,7 @@ from roguelike_engine.input.events import handle_events as engine_handle_events
 from roguelike_editors.buildings.utils.save_buildings_to_json import save_buildings_to_json
 from roguelike_engine.config.config import BUILDINGS_DATA_PATH
 from roguelike_engine.config.map_config import global_map_settings
-from roguelike_editors.fsm.fms_events import FMSEventSpy
+from roguelike_editors.fsm.fms_editor_events import FMSEventHandler
 
 import logging
 logger = logging.getLogger(__name__)
@@ -133,7 +133,7 @@ def handle_events(game):
             config.DEBUG = not config.DEBUG
             logger.debug(f"🧪 DEBUG {'activado' if config.DEBUG else 'desactivado'}")
             return
-        if FMSEventSpy.handle_event(event):
+        if FMSEventHandler.handle_event(event):
             # Evento consumido por el FSM editor/spy (por ejemplo, F12)
             return
         if event.type == pygame.KEYDOWN and event.key == game.menu.input_config.get_key('toggle_tile_editor'):

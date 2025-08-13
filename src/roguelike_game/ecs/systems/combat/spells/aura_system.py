@@ -10,6 +10,7 @@ from roguelike_game.ecs.components.combat.health import Health
 
 logger = logging.getLogger(__name__)
 
+
 class AuraSystem:
     """
     Sistema que procesa auras activas: curación y expiración.

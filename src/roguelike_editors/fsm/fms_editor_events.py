@@ -1,9 +1,9 @@
 """FSM editor event spy: only handles input and delegates to controller."""
 
-from .fms_controller import FMSController
+from .fms_editor_controller import FMSController
 
 
-class FMSEventSpy:
+class FMSEventHandler:
     """
     Punto de entrada para el manejo de eventos relacionados a F12.
     Otros módulos deben delegar aquí en vez de tocar config directamente.
@@ -22,7 +22,7 @@ class FMSEventSpy:
         try:
             import pygame  # import local para evitar dependencia dura al importar sin pygame
             if event.type == pygame.KEYDOWN and event.key == pygame.K_F12:
-                FMSEventSpy.toggle_debug()
+                FMSEventHandler.toggle_debug()
                 return True
         except Exception:
             # Si pygame no está disponible o falla, no consumir el evento
