@@ -41,7 +41,7 @@ def handle_keyboard(event, state, camera, clock, menu, entities, tiles_editor, b
             logger.debug(f"🧪 DEBUG {'activado' if config.DEBUG else 'desactivado'}")
 
         elif FMSEventHandler.handle_event(event):
-            # FMSEventSpy consumió el evento (por ejemplo, F12)
+            # FMSEventHandler consumió el evento (F12: FSM Editor)
             return
 
         # Toggle Item Editor (F7)

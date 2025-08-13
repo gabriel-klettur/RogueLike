@@ -10,8 +10,9 @@ from roguelike_game.ecs.systems.rendering.death_timer_debug_system import DeathT
 
 class EntitiesDebugSystem:
     """
-    Sistema unificado para debug de entidades (colisiones, hitboxes, estados, spawn y muerte).
-    Actualiza toda la capa de debug cada N frames y la blitea cada frame.
+    Sistema unificado del FSM Editor: renderiza la capa de depuración
+    (colisiones, hitboxes, estados, spawn y muerte).
+    Actualiza toda la capa cada N frames y la blitea cada frame.
     """
     def __init__(self, perf_log=None):
         self.subsystems = [

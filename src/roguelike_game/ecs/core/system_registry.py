@@ -94,7 +94,7 @@ def get_render_system_classes():
         # DropRenderSystem removed: drops rendered via RenderSystem
     ]
     # Render systems comunes
-    # Overlay unificado de debug de entidades (se activa/desactiva internamente con F12)
+    # Overlay unificado del FSM Editor (se activa/desactiva internamente con F12)
     base.append(EntitiesDebugSystem)
     base.append(GrayscaleRenderSystem)
     base.append(ResurrectionAreaSystem)

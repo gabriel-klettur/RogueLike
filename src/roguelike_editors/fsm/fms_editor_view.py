@@ -1,4 +1,4 @@
-﻿import logging
+import logging
 from typing import Optional, Tuple
 
 from .fms_controller import FMSController
@@ -22,13 +22,13 @@ class FMSView:
     def on_debug_toggle(self, enabled: bool) -> None:
         self._last_state = bool(enabled)
         try:
-            logger.debug("FSMView: Entities Debug %s", "ON" if enabled else "OFF")
+            logger.debug("FSMView: FSM Editor %s", "ON" if enabled else "OFF")
         except Exception:
             pass
 
     # --- API opcional de UI ---
     def get_status_text(self) -> str:
-        return f"Entities Debug: {'ON' if self._last_state else 'OFF'}"
+        return f"FSM Editor: {'ON' if self._last_state else 'OFF'}"
 
     def draw_status(self, surface, topleft: Tuple[int, int] = (8, 8)) -> None:
         """

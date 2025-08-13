@@ -1,4 +1,4 @@
-"""FSM editor event spy: only handles input and delegates to controller."""
+"""FSM editor event handler: only handles input and delegates to controller."""
 
 from .fms_editor_controller import FMSController
 
@@ -16,7 +16,7 @@ class FMSEventHandler:
     @staticmethod
     def handle_event(event) -> bool:
         """
-        Si el evento corresponde a F12, alterna el debug y devuelve True (consumido).
+        Si el evento corresponde a F12, alterna el FSM Editor y devuelve True (consumido).
         De lo contrario devuelve False.
         """
         try:

@@ -1,7 +1,7 @@
 """
 Module: spawn_debug_system.py
 Provides SpawnDebugSystem to visualize NPC spawn points
-on the map when DEBUG mode is enabled.
+when the FSM Editor is active.
 """
 import pygame
 import roguelike_engine.config.config as config
@@ -11,7 +11,7 @@ from roguelike_engine.utils.benchmark import benchmark
 class SpawnDebugSystem:
     """
     Sistema que dibuja marcadores de spawn de NPCs en pantalla 
-    si la configuración DEBUG está activada y el mundo define spawn_tiles.
+    cuando el FSM Editor está activo y el mundo define spawn_tiles.
     """
     def __init__(self, perf_log):
         self.perf_log = perf_log
@@ -31,7 +31,7 @@ class SpawnDebugSystem:
           screen – Superficie de pygame donde dibujar.
           camera – Objeto que transforma coordenadas de mundo a pantalla.
         """
-        # Solo renderizar spawn debug en modo ENTITIES DEBUG (F12)
+        # Solo renderizar spawn debug cuando el FSM Editor está activo (F12)
         if not config.DEBUG_ENTITIES or not getattr(world, 'spawn_tiles', None):
             return
 

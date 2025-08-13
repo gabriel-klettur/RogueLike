@@ -1,4 +1,4 @@
-﻿import logging
+import logging
 from typing import Optional, Callable, List, TYPE_CHECKING
 
 from .fms_editor_model import FMSModel
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class FMSController:
     """
     Controlador del editor FSM. Mantiene un modelo de estado y expone
-    operaciones para alternar/establecer el debug de entidades.
+    operaciones para alternar/establecer el FSM Editor.
 
     Ofrece un mecanismo simple de suscripción para que vistas (u otros
     interesados) reaccionen a cambios de estado.
@@ -39,7 +39,7 @@ class FMSController:
         self.model.debug_entities_enabled = not self.model.debug_entities_enabled
         self.model.apply_to_config()
         logger.debug(
-            " ENTITIES DEBUG %s",
+            " FSM EDITOR %s",
             "activado" if self.model.debug_entities_enabled else "desactivado",
         )
         # Notificar vista y suscriptores
@@ -56,7 +56,7 @@ class FMSController:
         self.model.apply_to_config()
         if prev != self.model.debug_entities_enabled:
             logger.debug(
-                " ENTITIES DEBUG %s (set)",
+                " FSM EDITOR %s (set)",
                 "activado" if self.model.debug_entities_enabled else "desactivado",
             )
             if self._view:

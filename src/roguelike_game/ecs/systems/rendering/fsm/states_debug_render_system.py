@@ -19,7 +19,7 @@ class StatesDebugRenderSystem:
         # view frustum culling
         view_rect = pygame.Rect(0, 0, camera.screen_width, camera.screen_height)
 
-        # Solo debug de entidades (F12)
+        # Solo cuando el FSM Editor está activo (F12)
         if not config.DEBUG_ENTITIES:
             return
 

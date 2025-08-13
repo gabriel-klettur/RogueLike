@@ -202,7 +202,7 @@ class RendererManager:
         if self.map_editor.editor_state.active:
             self.map_editor.render(self.screen, self.camera, self.map)
 
-        # FSM Editor Title: mostrar cuando el debug de entidades está activo (F12)
+        # FSM Editor Title: mostrar cuando el FSM Editor está activo (F12)
         try:
             import roguelike_engine.config.config as config
             if getattr(config, "DEBUG_ENTITIES", False):
@@ -416,7 +416,7 @@ class RendererManager:
                 lines = [
                     "Debug Mode:",
                     "F9: Toggle Debug Overlay",
-                    "F12: Toggle Entities Debug",
+                    "F12: Toggle FSM Editor",
                     "Mouse Wheel: Scroll Overlay"
                 ]
             else:
