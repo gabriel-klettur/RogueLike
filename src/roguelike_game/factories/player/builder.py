@@ -28,6 +28,7 @@ from roguelike_game.ecs.components.rendering.trail_component import TrailCompone
 from roguelike_game.ecs.components.fsm.npc_state import NPCState
 from roguelike_game.ecs.systems.fsm.states.idle_state import IdleState
 from roguelike_game.ecs.systems.fsm.fsm import FiniteStateMachine
+from roguelike_editors.fsm.services.fsm_runtime_bridge import build_fsm_for_archetype
 
 
 class PlayerBuilder:
@@ -86,8 +87,17 @@ class PlayerBuilder:
         trail_params = PLAYER_STATS[class_player].get("basic_trail", DEFAULT_TRAIL)
         trail_cfg = TrailConfig(interval=trail_params["interval"], life_time=trail_params["life_time"], max_trails=trail_params["max_trails"])
         comps["TrailComponent"][eid] = TrailComponent(config=trail_cfg)
-        # FSM
-        fsm = FiniteStateMachine(IdleState())
-        comps["NPCState"][eid] = NPCState(fsm, "IdleState")
+        # FSM (JSON-driven with fallback)
+        built = None
+        try:
+            built = build_fsm_for_archetype('player', eid=eid)
+        except Exception:
+            built = None
+        if built is not None:
+            fsm, initial_name = built
+            comps["NPCState"][eid] = NPCState(fsm, initial_name)
+        else:
+            fsm = FiniteStateMachine(IdleState())
+            comps["NPCState"][eid] = NPCState(fsm, "IdleState")
 
         return eid

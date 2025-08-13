@@ -26,11 +26,33 @@ class FsmToolbarView:
         # Build icons dict once or if buttons changed
         if self.toolbar is None or self.icons is None or getattr(self.toolbar, 'items', None) != model.buttons:
             icon_size = (max(8, self.size - 8), max(8, self.size - 8))
-            surf = IconCache.get_icon(self.icon_path, icon_size)
-            if surf is None:
-                surf = pygame.Surface(icon_size, pygame.SRCALPHA)
-                surf.fill((180, 180, 180, 255))
-            self.icons = {tool: surf for tool in model.buttons}
+            base = IconCache.get_icon(self.icon_path, icon_size)
+            if base is None:
+                base = pygame.Surface(icon_size, pygame.SRCALPHA)
+                base.fill((180, 180, 180, 255))
+            # Build per-tool icons, giving 'sets' a distinct look
+            icons = {}
+            for tool in model.buttons:
+                surf = base.copy()
+                if tool == 'sets':
+                    # Try a dedicated icon; else overlay an 'S'
+                    specific = (IconCache.get_icon('assets/ui/fsm_sets.png', icon_size)
+                                or IconCache.get_icon('assets/ui/icons/fsm_sets.png', icon_size))
+                    if specific is not None:
+                        surf = specific
+                    else:
+                        try:
+                            font = pygame.font.SysFont(None, max(12, int(icon_size[1] * 0.8)))
+                            label = font.render('S', True, (40, 40, 40))
+                            # simple contrast ring
+                            pygame.draw.rect(surf, (230, 230, 230), surf.get_rect(), 1)
+                            # center the label
+                            lr = label.get_rect(center=(icon_size[0] // 2, icon_size[1] // 2))
+                            surf.blit(label, lr)
+                        except Exception:
+                            pass
+                icons[tool] = surf
+            self.icons = icons
             self.toolbar = _ToolbarView(
                 controller=self,
                 items=model.buttons,
@@ -63,6 +85,71 @@ class FsmToolbarView:
         panel_pos = self.toolbar.panel.pos or (self.anchor if anchor is None else anchor)
         panel_size = self.toolbar.panel.surface.get_size()
         self.last_rect = pygame.Rect(panel_pos, panel_size)
+        # Visual enhancements for 'sets' button: active border + count badge
+        try:
+            icon_rects = getattr(self.toolbar, 'icon_rects', {}) or {}
+            sets_rect = icon_rects.get('sets')
+            if sets_rect is not None:
+                # Active highlight
+                if getattr(model, 'active_tool', None) == 'sets':
+                    pygame.draw.rect(screen, (80, 160, 240), sets_rect.inflate(4, 4), 2)
+                # Badge with number of sets loaded
+                try:
+                    from roguelike_editors.fsm.services.fsm_runtime_bridge import get_snapshot
+                    snap = get_snapshot()
+                    count = len(snap.get('sets', []))
+                except Exception:
+                    count = 0
+                if count > 0:
+                    badge_r = 8
+                    cx = sets_rect.right - 2
+                    cy = sets_rect.top + 2
+                    pygame.draw.circle(screen, (240, 90, 60), (cx, cy), badge_r)
+                    pygame.draw.circle(screen, (255, 255, 255), (cx, cy), badge_r, 1)
+                    try:
+                        font = pygame.font.SysFont(None, 14)
+                        txt = font.render(str(min(99, count)), True, (255, 255, 255))
+                        tr = txt.get_rect(center=(cx, cy))
+                        screen.blit(txt, tr)
+                    except Exception:
+                        pass
+                # Hover highlight and tooltip
+                try:
+                    mx, my = pygame.mouse.get_pos()
+                    if sets_rect.collidepoint((mx, my)):
+                        # subtle hover ring
+                        pygame.draw.rect(screen, (200, 200, 200), sets_rect.inflate(2, 2), 1)
+                        # tooltip bubble
+                        tip = "FSM Sets"
+                        font = pygame.font.SysFont(None, 18)
+                        txt = font.render(tip, True, (240, 240, 240))
+                        tw, th = txt.get_size()
+                        pad = 6
+                        bx = sets_rect.right + 8
+                        by = max(sets_rect.top - 4, 4)
+                        bw = tw + pad * 2
+                        bh = th + pad * 2
+                        # keep inside screen if possible
+                        sw, sh = screen.get_size()
+                        if bx + bw + 4 > sw:
+                            bx = sets_rect.left - 8 - bw
+                        if by + bh + 4 > sh:
+                            by = sh - bh - 4
+                        bg = pygame.Surface((bw, bh), pygame.SRCALPHA)
+                        bg.fill((20, 20, 20, 210))
+                        pygame.draw.rect(bg, (100, 100, 100), bg.get_rect(), 1)
+                        screen.blit(bg, (bx, by))
+                        screen.blit(txt, (bx + pad, by + pad))
+                except Exception:
+                    pass
+        except Exception:
+            pass
+        # Register blocker so gameplay input under toolbar is suppressed
+        try:
+            from roguelike_ui.ui_blocker import register_blocker
+            register_blocker(self.last_rect)
+        except Exception:
+            pass
         return self.last_rect
 
     # ToolbarView expects its controller to provide is_active(tool)

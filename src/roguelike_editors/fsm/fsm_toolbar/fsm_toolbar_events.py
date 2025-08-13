@@ -17,6 +17,13 @@ class FsmToolbarEventHandler:
                 return True
             return False
 
+        # Toggle 'sets' tool with the 'S' key
+        if getattr(event, 'type', None) == pygame.KEYDOWN and getattr(event, 'key', None) == pygame.K_s:
+            new_state = None if controller.is_active('sets') else 'sets'
+            controller.set_active(new_state)
+            logger.debug("[FSMToolbar][KEY S] toggled 'sets' -> active_tool=%s", new_state)
+            return True
+
         toolbar = getattr(controller.view, 'toolbar', None)
         if toolbar is None:
             return False

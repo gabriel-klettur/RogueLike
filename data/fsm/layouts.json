@@ -1,0 +1,72 @@
+{
+  "by_set": {
+    "Monster_Default": {
+      "nodes": {
+        "Aggro": {
+          "x": 631,
+          "y": 143
+        },
+        "AlertChase": {
+          "x": 188,
+          "y": 418
+        },
+        "Attack": {
+          "x": 20,
+          "y": 64
+        },
+        "Chase": {
+          "x": 434,
+          "y": 31
+        },
+        "Death": {
+          "x": 454,
+          "y": 426
+        },
+        "Flee": {
+          "x": 680,
+          "y": 428
+        },
+        "Patrol": {
+          "x": 18,
+          "y": 243
+        }
+      }
+    },
+    "Monster_Goblin": {
+      "nodes": {
+        "Attack": {
+          "x": 520,
+          "y": 275
+        },
+        "Chase": {
+          "x": 442,
+          "y": 50
+        },
+        "Patrol": {
+          "x": 60,
+          "y": 85
+        }
+      }
+    },
+    "Player_Default": {
+      "nodes": {
+        "Attack": {
+          "x": 36,
+          "y": 113
+        },
+        "Idle": {
+          "x": 315,
+          "y": 49
+        },
+        "Move": {
+          "x": 604,
+          "y": 111
+        },
+        "SpellSelect": {
+          "x": 313,
+          "y": 287
+        }
+      }
+    }
+  }
+}
