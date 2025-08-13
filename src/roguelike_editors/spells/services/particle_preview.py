@@ -50,6 +50,9 @@ class ParticlePreviewSmoke:
         self._size: Tuple[int, int] | None = None
         self._warm_started = False
         self._warm_steps = max(0, int(warm_start_steps))
+        # Fixed-timestep accumulator for stable speed (~30 Hz)
+        self._acc_ms = 0
+        self._step_ms = 33
 
     def _ensure_surface(self, size: Tuple[int, int]) -> None:
         if self._size != size or self._surf is None:
@@ -64,15 +67,16 @@ class ParticlePreviewSmoke:
         # Place emitter near bottom-center so smoke rises inside the cell
         self.model.origin.update(w / 2.0, max(4, h - 6))
 
-        # Step simulation a few times depending on dt (target ~30 Hz)
-        steps = max(1, int(dt_ms / 33)) if dt_ms is not None else 1
         # Warm start once to fill some particles on first frame
         if not self._warm_started:
             for _ in range(self._warm_steps):
                 self.model.update()
             self._warm_started = True
-        for _ in range(steps):
+        # Step simulation using accumulator (~30 Hz)
+        self._acc_ms += max(0, dt_ms)
+        while self._acc_ms >= self._step_ms:
             self.model.update()
+            self._acc_ms -= self._step_ms
 
         # Clear and draw
         self._surf.fill((0, 0, 0, 0))
@@ -117,6 +121,9 @@ class ParticlePreviewSmokeBurst:
         self._parts: list[SmokeParticle] = []
         self._warm_started = False
         self._warm_steps = max(0, int(warm_start_steps))
+        # Fixed-timestep accumulator for stable speed (~30 Hz)
+        self._acc_ms = 0
+        self._step_ms = 33
 
     def _ensure_surface(self, size: Tuple[int, int]) -> None:
         if self._size != size or self._surf is None:
@@ -154,14 +161,15 @@ class ParticlePreviewSmokeBurst:
                 if not self._parts:
                     self._spawn_burst(w, h)
             self._warm_started = True
-
-        steps = max(1, int((dt_ms or 16) / 33))
-        for _ in range(steps):
+        # Step simulation using accumulator (~30 Hz)
+        self._acc_ms += max(0, dt_ms)
+        while self._acc_ms >= self._step_ms:
             for p in self._parts:
                 p.update()
             self._parts = [p for p in self._parts if not p.is_dead()]
             if not self._parts:
                 self._spawn_burst(w, h)
+            self._acc_ms -= self._step_ms
 
         # Draw
         self._surf.fill((0, 0, 0, 0))
@@ -214,6 +222,9 @@ class ParticlePreviewHealingAura:
         # x,y,vx,vy,age,life,size,color
         self._warm_started = False
         self._warm_steps = max(0, int(warm_start_steps))
+        # Fixed-timestep accumulator for stable speed (~30 Hz)
+        self._acc_ms = 0
+        self._step_ms = 33
 
     def _ensure_surface(self, size: Tuple[int, int]) -> None:
         if self._size != size or self._surf is None:
@@ -274,15 +285,16 @@ class ParticlePreviewHealingAura:
                     if age + 1 < life
                 ]
             self._warm_started = True
-
-        steps = max(1, int((dt_ms or 16) / 33))
-        for _ in range(steps):
+        # Step simulation using accumulator (~30 Hz)
+        self._acc_ms += max(0, dt_ms)
+        while self._acc_ms >= self._step_ms:
             self._spawn(w, h)
             self._parts = [
                 (x + vx, y + vy, vx, vy, age + 1, life, sz, col)
                 for (x, y, vx, vy, age, life, sz, col) in self._parts
                 if age + 1 < life
             ]
+            self._acc_ms -= self._step_ms
 
         # Draw
         self._surf.fill((0, 0, 0, 0))
@@ -318,7 +330,7 @@ class ParticlePreviewAura:
         assert self._surf is not None and self._size is not None
         w, h = self._size
         self._surf.fill((0, 0, 0, 0))
-        self._theta += (dt_ms or 16) * 0.001 * self._speed
+        self._theta += max(0, dt_ms) * 0.001 * self._speed
         # If an explicit radius was provided from spell data, clamp it to fit the preview cell.
         # This avoids invisible rings when the gameplay radius is much larger than the 64px cell.
         if isinstance(self._radius, int):
@@ -352,6 +364,9 @@ class ParticlePreviewDash:
         self._pos = 0.0
         self._trail: list[tuple[float, float, int]] = []  # x, y, age
         self._speed = speed_px
+        # Fixed-timestep accumulator for stable trail timing (~30 Hz)
+        self._acc_ms = 0
+        self._step_ms = 33
 
     def _ensure_surface(self, size: Tuple[int, int]) -> None:
         if self._size != size or self._surf is None:
@@ -363,15 +378,24 @@ class ParticlePreviewDash:
     def render(self, size: Tuple[int, int], dt_ms: int) -> pygame.Surface:
         self._ensure_surface(size)
         assert self._surf is not None and self._size is not None
-        w, h = self._size
         self._surf.fill((0, 0, 0, 0))
-        dt = (dt_ms or 16) / 1000.0
-        self._pos += self._speed * dt
-        px = int(self._pos % max(1, w-6)) + 3
+        # Step simulation using fixed-timestep accumulator (~30 Hz)
+        self._acc_ms += max(0, dt_ms)
+        while self._acc_ms >= self._step_ms:
+            # advance head position by fixed time slice
+            self._pos += self._speed * (self._step_ms / 1000.0)
+            # sample trail at current head
+            w_step, h_step = self._size
+            px_step = int(self._pos % max(1, w_step - 6)) + 3
+            py_step = h_step // 2
+            self._trail.append((px_step, py_step, 0))
+            # age trail in fixed steps
+            self._trail = [(x, y, age + 1) for (x, y, age) in self._trail if age + 1 < 24]
+            self._acc_ms -= self._step_ms
+        # Draw current state
+        w, h = self._size
+        px = int(self._pos % max(1, w - 6)) + 3
         py = h // 2
-        # add current head and multiple streak points
-        self._trail.append((px, py, 0))
-        self._trail = [(x, y, age + 1) for (x, y, age) in self._trail if age < 24]
         for (x, y, age) in self._trail:
             alpha = max(0, 200 - age * 8)
             length = max(1, 8 - age // 3)
@@ -408,7 +432,7 @@ class ParticlePreviewSlash:
         self._surf.fill((0, 0, 0, 0))
         w, h = self._size
         cx, cy = w // 2, h // 2
-        self._angle += (dt_ms or 16) * 0.001 * self._speed
+        self._angle += max(0, dt_ms) * 0.001 * self._speed
         radius = max(10, min(w, h) // 3)
         # draw multiple points along a 90-degree arc
         for i in range(14):
@@ -431,6 +455,9 @@ class ParticlePreviewLaser:
         self._size: Tuple[int, int] | None = None
         self._color = color
         self._sparks: list[tuple[int, int, int]] = []  # x, y, age
+        # Fixed-timestep accumulator for stable spark timing (~30 Hz)
+        self._acc_ms = 0
+        self._step_ms = 33
 
     def _ensure_surface(self, size: Tuple[int, int]) -> None:
         if self._size != size or self._surf is None:
@@ -441,15 +468,22 @@ class ParticlePreviewLaser:
     def render(self, size: Tuple[int, int], dt_ms: int) -> pygame.Surface:
         self._ensure_surface(size)
         assert self._surf is not None and self._size is not None
+        # Update using fixed-timestep accumulator (~30 Hz)
+        self._acc_ms += max(0, dt_ms)
+        while self._acc_ms >= self._step_ms:
+            w_step, h_step = self._size
+            y_step = h_step // 2
+            if random.random() < 0.7:
+                self._sparks.append((random.randint(4, max(4, w_step - 5)), y_step + random.randint(-4, 4), 0))
+            self._sparks = [(x, sy, age + 1) for (x, sy, age) in self._sparks if age + 1 < 20]
+            self._acc_ms -= self._step_ms
+        # Draw after updates
         w, h = self._size
         self._surf.fill((0, 0, 0, 0))
         y = h // 2
         # laser bar
         pygame.draw.rect(self._surf, (*self._color, 200), pygame.Rect(2, y-1, max(1, w-4), 2))
         # sparks
-        if random.random() < 0.7:
-            self._sparks.append((random.randint(4, max(4, w-5)), y + random.randint(-4, 4), 0))
-        self._sparks = [(x, sy, age + 1) for (x, sy, age) in self._sparks if age < 20]
         for (x, sy, age) in self._sparks:
             alpha = max(0, 200 - age * 10)
             dot = pygame.Surface((2, 2), pygame.SRCALPHA)
@@ -478,6 +512,9 @@ class ParticlePreviewExplosion:
         self._spd_lo = float(min(lo, hi))
         self._spd_hi = float(max(lo, hi))
         self._parts: list[tuple[float, float, float, float, int]] = []  # x,y,dx,dy,age
+        # Fixed-timestep accumulator for stable speed (~30 Hz)
+        self._acc_ms = 0
+        self._step_ms = 33
 
     def _ensure_surface(self, size: Tuple[int, int]) -> None:
         if self._size != size or self._surf is None:
@@ -500,28 +537,33 @@ class ParticlePreviewExplosion:
         if not self._parts:
             self._spawn(w, h)
         self._surf.fill((0, 0, 0, 0))
-        # update and draw
-        new_parts: list[tuple[float, float, float, float, int]] = []
+        # Update using accumulator (~30 Hz)
+        self._acc_ms += max(0, dt_ms)
+        while self._acc_ms >= self._step_ms:
+            new_parts: list[tuple[float, float, float, float, int]] = []
+            for (x, y, dx, dy, age) in self._parts:
+                x += dx
+                y += dy
+                age += 1
+                if age < 30:
+                    new_parts.append((x, y, dx, dy, age))
+            self._parts = new_parts
+            if not self._parts:
+                # respawn loop to keep animation alive
+                self._spawn(w, h)
+            self._acc_ms -= self._step_ms
+        # Draw after updates
         for (x, y, dx, dy, age) in self._parts:
-            x += dx
-            y += dy
-            age += 1
-            if age < 30:
-                alpha = max(0, 220 - age * 7)
-                dot = pygame.Surface((3, 3), pygame.SRCALPHA)
-                if self._palette and len(self._palette) > 0:
-                    col = random.choice(self._palette)
-                else:
-                    col = self._color
-                dot.fill((*col, alpha))
-                ix, iy = int(x), int(y)
-                if 0 <= ix < w and 0 <= iy < h:
-                    self._surf.blit(dot, (ix, iy))
-                new_parts.append((x, y, dx, dy, age))
-        self._parts = new_parts
-        if not self._parts:
-            # respawn loop
-            self._spawn(w, h)
+            alpha = max(0, 220 - age * 7)
+            dot = pygame.Surface((3, 3), pygame.SRCALPHA)
+            if self._palette and len(self._palette) > 0:
+                col = random.choice(self._palette)
+            else:
+                col = self._color
+            dot.fill((*col, alpha))
+            ix, iy = int(x), int(y)
+            if 0 <= ix < w and 0 <= iy < h:
+                self._surf.blit(dot, (ix, iy))
         return self._surf
 
 
@@ -553,6 +595,9 @@ class ParticlePreviewArcaneFlame:
         self._spark_sz_max = int(max(spark_size_range))
         self._spark_life = max(6, int(spark_lifespan))
         self._sparks: list[tuple[float, float, float, float, int, int, tuple[int, int, int]]] = []
+        # Fixed-timestep accumulator for stable speed (~30 Hz)
+        self._acc_ms = 0
+        self._step_ms = 33
 
     def _ensure_surface(self, size: Tuple[int, int]) -> None:
         if self._size != size or self._surf is None:
@@ -576,11 +621,14 @@ class ParticlePreviewArcaneFlame:
         assert self._surf is not None and self._size is not None
         w, h = self._size
         self._ensure_model(w, h)
-        # Step the model a few ticks roughly at 30 Hz
-        steps = max(1, int((dt_ms or 16) / 33))
-        for _ in range(steps):
+        # Step the model using accumulator (~30 Hz)
+        self._acc_ms += max(0, dt_ms)
+        steps = 0
+        while self._acc_ms >= self._step_ms:
             assert self._model is not None
             self._model.update()
+            self._acc_ms -= self._step_ms
+            steps += 1
         # Inject base heat on the bottom rows to keep the flame continuous in preview
         try:
             if self._model is not None:
@@ -606,11 +654,12 @@ class ParticlePreviewArcaneFlame:
         # Update overlay sparks similar to runtime emitter
         try:
             if self._spark_rate > 0:
-                # Spawn a modest number of sparks per step batch, scaled down
+                # Spawn a modest number of sparks per simulated step, scaled down
                 spawn_n = max(0, int(self._spark_rate * 0.35))
+                total_spawns = spawn_n * steps
                 cx, cy = w / 2.0, h / 2.0
                 palette = getattr(self._model, 'palette', None) if self._model else None
-                for _ in range(spawn_n):
+                for _ in range(total_spawns):
                     ang = random.random() * 2 * math.pi
                     r = random.uniform(0, min(w, h) * 0.35)
                     sx = cx + math.cos(ang) * r
@@ -625,16 +674,16 @@ class ParticlePreviewArcaneFlame:
                     else:
                         col = (255, 200, 120)
                     self._sparks.append((sx, sy, dx, dy, 0, life, col))
-                # Step sparks
-                new_sparks: list[tuple[float, float, float, float, int, int, tuple[int, int, int]]] = []
-                for (sx, sy, dx, dy, age, life, col) in self._sparks:
-                    for _ in range(steps):
-                        sx += dx
-                        sy += dy
-                        age += 1
-                    if age < life and -4 <= sx < w + 4 and -4 <= sy < h + 4:
-                        new_sparks.append((sx, sy, dx, dy, age, life, col))
-                self._sparks = new_sparks
+                # Step sparks according to number of simulated steps
+                if steps > 0:
+                    new_sparks: list[tuple[float, float, float, float, int, int, tuple[int, int, int]]] = []
+                    for (sx, sy, dx, dy, age, life, col) in self._sparks:
+                        sx += dx * steps
+                        sy += dy * steps
+                        age += steps
+                        if age < life and -4 <= sx < w + 4 and -4 <= sy < h + 4:
+                            new_sparks.append((sx, sy, dx, dy, age, life, col))
+                    self._sparks = new_sparks
         except Exception:
             # Fail-safe: keep preview running even if spark update fails
             pass
@@ -665,6 +714,9 @@ class ParticlePreviewFirework:
         self._model: FireworkLaunchModel | None = None
         self._color = color  # If None, use model defaults/randoms
         self._speed = speed
+        # Fixed-timestep accumulator for stable speed (~30 Hz)
+        self._acc_ms = 0
+        self._step_ms = 33
 
     def _ensure_surface(self, size: Tuple[int, int]) -> None:
         if self._size != size or self._surf is None:
@@ -685,11 +737,12 @@ class ParticlePreviewFirework:
         assert self._surf is not None and self._size is not None
         w, h = self._size
         self._ensure_model(w, h)
-        # Step model some ticks based on dt (~30 Hz)
-        steps = max(1, int(dt_ms / 33)) if dt_ms is not None else 1
-        for _ in range(steps):
+        # Step model using accumulator (~30 Hz)
+        self._acc_ms += max(0, dt_ms)
+        while self._acc_ms >= self._step_ms:
             assert self._model is not None
             self._model.update()
+            self._acc_ms -= self._step_ms
         # Clear and draw
         self._surf.fill((0, 0, 0, 0))
         if self._model:
@@ -720,6 +773,9 @@ class ParticlePreviewLightning:
         self._offset = offset
         self._lifetime = lifetime
         self._thickness = thickness
+        # Fixed-timestep accumulator for stable speed (~30 Hz)
+        self._acc_ms = 0
+        self._step_ms = 33
 
     def _ensure_surface(self, size: Tuple[int, int]) -> None:
         if self._size != size or self._surf is None:
@@ -740,11 +796,12 @@ class ParticlePreviewLightning:
         assert self._surf is not None and self._size is not None
         w, h = self._size
         self._ensure_model(w, h)
-        # Step model a few times (~30 Hz)
-        steps = max(1, int(dt_ms / 33)) if dt_ms is not None else 1
-        for _ in range(steps):
+        # Step model using accumulator (~30 Hz)
+        self._acc_ms += max(0, dt_ms)
+        while self._acc_ms >= self._step_ms:
             assert self._model is not None
             self._model.update()
+            self._acc_ms -= self._step_ms
         # Clear and draw polyline with fade by lifetime fraction
         self._surf.fill((0, 0, 0, 0))
         if self._model:
@@ -785,7 +842,7 @@ class ParticlePreviewTeleport:
         self._surf.fill((0, 0, 0, 0))
         w, h = self._size
         # advance timer
-        self._elapsed_ms += (dt_ms or 16)
+        self._elapsed_ms += max(0, dt_ms)
         if self._elapsed_ms >= self._cycle_ms:
             self._elapsed_ms -= self._cycle_ms
             self._phase = 'in' if self._phase == 'out' else 'out'

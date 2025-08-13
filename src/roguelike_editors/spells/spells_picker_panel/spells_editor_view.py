@@ -1,4 +1,6 @@
 import pygame
+import logging
+import os
 from typing import Any, Callable, Optional
 from roguelike_editors.spells.spells_picker_panel.spells_editor_model import SpellEditorModel
 from roguelike_editors.spells.spells_title_panel.spells_title_view import SpellsTitleView
@@ -7,6 +9,15 @@ from roguelike_ui.panel import DraggablePanel
 from roguelike_ui.widgets.picker_panel import PickerPanel, PickerPanelState
 from roguelike_ui.ui_blocker import register_blocker
 from roguelike_ui.widgets.hover import draw_hover
+
+# Module logger and throttled debug controls
+logger = logging.getLogger(__name__)
+LOG_SPELLS_VIEW_DEBUG = (
+    os.getenv("RL_SPELLS_VIEW_DEBUG") == "1"
+    or os.getenv("RL_SPELLS_EDITOR_DEBUG") == "1"
+)
+_last_dt_log_ts = 0
+_last_providers_log_ts = 0
 
 class SpellEditorView:
     """Render the spell editor UI."""
@@ -24,6 +35,7 @@ class SpellEditorView:
         # Frame timing for previews
         self._last_ticks: int = pygame.time.get_ticks()
         self._dt_ms: int = 16
+        self._max_dt_ms: int = 50
 
         # Panel configuration to match Entities picker
         self.margin = 20
@@ -67,7 +79,19 @@ class SpellEditorView:
         # Frame delta for previews
         now = pygame.time.get_ticks()
         self._dt_ms = max(1, now - self._last_ticks)
+        # Clamp dt to avoid large spikes on window focus or selection changes
+        self._dt_ms = min(self._dt_ms, getattr(self, '_max_dt_ms', 50))
         self._last_ticks = now
+        # Debug summary for this view draw (throttled and gated)
+        if LOG_SPELLS_VIEW_DEBUG and logger.isEnabledFor(logging.DEBUG):
+            global _last_dt_log_ts
+            now_ms = pygame.time.get_ticks()
+            if now_ms - _last_dt_log_ts >= 1000:
+                try:
+                    logger.debug("[SpellsView] dt_ms=%d", self._dt_ms)
+                except Exception:
+                    pass
+                _last_dt_log_ts = now_ms
         # Removed full-screen dim overlay to keep game visible behind the editor
         # Title above the dim background
         if self.title_view is None:
@@ -130,6 +154,18 @@ class SpellEditorView:
         self.picker_state.hovered_index = (spell_ids.index(model.hovered_id) if model.hovered_id in spell_ids else None)
         # Convert row scroll to pixel scroll to match Entities behavior
         self.picker_state.scroll_y = max(0, model.scroll_index) * (cell_h_with_label + self.margin)
+        # Log how many preview providers will be asked this draw (throttled and gated)
+        if LOG_SPELLS_VIEW_DEBUG and logger.isEnabledFor(logging.DEBUG):
+            global _last_providers_log_ts
+            now_ms = pygame.time.get_ticks()
+            if now_ms - _last_providers_log_ts >= 1000:
+                try:
+                    if spell_ids:
+                        have_prev = sum(1 for sid in spell_ids if callable(self.preview_providers.get(sid)))
+                        logger.debug("[SpellsView] providers=%d/%d", have_prev, len(spell_ids))
+                except Exception:
+                    pass
+                _last_providers_log_ts = now_ms
         self.picker.render(screen, self.picker_state)
 
         # Footer label (hovered or selected)

@@ -53,6 +53,13 @@ from roguelike_editors.spells.services.particle_preview import (
     ParticlePreviewTeleport,
 )
 
+logger = logging.getLogger(__name__)
+# Env-gated spelling editor preview debug
+LOG_SPELLS_PREVIEW_DEBUG = (
+    os.getenv("RL_SPELLS_PREVIEW_DEBUG") == "1"
+    or os.getenv("RL_SPELLS_EDITOR_DEBUG") == "1"
+)
+
 class SpellEditorController:
     """Controller for Spell Editor UI."""
     def __init__(self, spells: dict[str, any], assets: dict[str, pygame.Surface], font: pygame.font.Font):
@@ -64,6 +71,10 @@ class SpellEditorController:
         self.event_handler = SpellEditorEventHandler(self)
         # Cache of built previews per spell id
         self._particle_previews: dict[str, object] = {}
+        # Track last frame we emitted a provider-call debug to avoid spamming across providers
+        self._last_preview_debug_frame: int = -1
+        # Throttle timestamp for frame-id debug logs (ms)
+        self._last_frameid_log_ts: int = 0
         # Toolbar MVC
         self.spells_toolbar_model = SpellsToolBarPanelModel()
         self.spells_toolbar_view = SpellsToolBarPanelView(controller=self, model=self.spells_toolbar_model)
@@ -82,6 +93,12 @@ class SpellEditorController:
 
         # Properties panel MVC
         self.spells_properties_controller = SpellsPropertiesPanelController(self.model.spells, font)
+        # Link back so properties panel can query preview providers and selection from this controller
+        try:
+            self.spells_properties_controller.editor_controller = self
+        except Exception:
+            pass
+
         # Provide callbacks
         def _get_assets_anchor_rect():
             """Return an anchor rect so the Assets picker appears BELOW and ALIGNED to the Spells Picker panel.
@@ -161,6 +178,9 @@ class SpellEditorController:
         self.spells_properties_controller.on_asset_changed = _on_asset_changed
         self.spells_properties_controller.on_after_commit_edit = _on_after_commit_edit
 
+        # Frame id used to ensure previews update only once per frame across all views
+        self._render_frame_id: int = 0
+
         # Provide a left-anchor provider so the picker grid sits to the right of Add/Remove panel
         def _picker_left_anchor_x() -> int | None:
             try:
@@ -207,6 +227,19 @@ class SpellEditorController:
         self.event_handler.handle(event)
 
     def draw(self, screen: pygame.Surface) -> None:
+        # Advance frame id once per controller draw call
+        self._render_frame_id += 1
+        if LOG_SPELLS_PREVIEW_DEBUG and logger.isEnabledFor(logging.DEBUG):
+            now_ms = pygame.time.get_ticks()
+            if now_ms - getattr(self, "_last_frameid_log_ts", 0) >= 1000:
+                try:
+                    logger.debug("[SpellsEditor] frame_id=%d", self._render_frame_id)
+                except Exception:
+                    pass
+                try:
+                    self._last_frameid_log_ts = now_ms
+                except Exception:
+                    pass
         self.view.draw(screen, self.model)
         # Draw toolbar and add/remove on top only when visible
         if self.model.visible:
@@ -567,13 +600,87 @@ class SpellEditorController:
         if preview_obj is not None:
             # Replace cache and provider
             self._particle_previews[spell_id] = preview_obj
+            # Ensure the preview updates state only once per frame across grid and properties panel
+            last_frame_seen: int = -1
+            # Render at a stable internal simulation size to avoid resetting preview state
+            # when different views request different sizes within the same frame.
+            sim_size: tuple[int, int] | None = None
+            last_base_frame_id: int = -1
+            last_base_surface: pygame.Surface | None = None
+
             def provider(size: tuple[int, int], dt_ms: int) -> pygame.Surface:
-                return preview_obj.render(size, dt_ms)
+                nonlocal last_frame_seen, sim_size, last_base_frame_id, last_base_surface
+                frame_id = getattr(self, "_render_frame_id", 0)
+
+                # Choose a stable simulation size: grow to the largest requested so far
+                req_w, req_h = max(1, int(size[0])), max(1, int(size[1]))
+                sim_changed = False
+                if sim_size is None:
+                    sim_size = (req_w, req_h)
+                    sim_changed = True
+                else:
+                    new_sim = (max(sim_size[0], req_w), max(sim_size[1], req_h))
+                    if new_sim != sim_size:
+                        sim_size = new_sim
+                        sim_changed = True
+
+                # Gate time so we only advance simulation once per frame
+                effective_dt = dt_ms if frame_id != last_frame_seen else 0
+                if (
+                    LOG_SPELLS_PREVIEW_DEBUG
+                    and logger.isEnabledFor(logging.DEBUG)
+                    and effective_dt > 0
+                    and getattr(self, "_last_preview_debug_frame", -1) != frame_id
+                ):
+                    try:
+                        logger.debug(
+                            "[SpellsPreviewCall] %s: frame=%d dt_ms=%d size=%s sim_size=%s",
+                            spell_id,
+                            frame_id,
+                            effective_dt,
+                            (req_w, req_h),
+                            sim_size,
+                        )
+                    except Exception:
+                        pass
+                    try:
+                        self._last_preview_debug_frame = frame_id
+                    except Exception:
+                        pass
+                last_frame_seen = frame_id
+
+                # Render base surface at sim_size. Re-render if advancing time this frame,
+                # or if simulation size changed, or if we don't have a cached base surface yet.
+                need_base_render = (
+                    effective_dt > 0 or sim_changed or last_base_surface is None or last_base_frame_id != frame_id
+                )
+                if need_base_render:
+                    base = preview_obj.render(sim_size, effective_dt if effective_dt > 0 else 0)
+                    last_base_surface = base
+                    last_base_frame_id = frame_id
+                else:
+                    base = last_base_surface
+
+                # Return scaled copy when requested size differs from sim_size
+                if (req_w, req_h) != sim_size:
+                    try:
+                        return pygame.transform.smoothscale(base, (req_w, req_h))
+                    except Exception:
+                        # Fallback to basic scale if smoothscale is unavailable
+                        return pygame.transform.scale(base, (req_w, req_h))
+                return base
             self.view.preview_providers[spell_id] = provider
-            try:
-                logger.debug("[SpellsPreview] %s: kind=%s, color=%s, provider=%s", spell_id, kind, color if color_explicit else 'default', type(preview_obj).__name__)
-            except Exception:
-                pass
+            if LOG_SPELLS_PREVIEW_DEBUG and logger.isEnabledFor(logging.DEBUG):
+                try:
+                    logger.debug(
+                        "[SpellsPreview] %s: kind=%s, color=%s, provider=%s",
+                        spell_id,
+                        kind,
+                        color if color_explicit else 'default',
+                        type(preview_obj).__name__,
+                    )
+                except Exception:
+                    pass
         else:
             # Remove if cannot build
             self._particle_previews.pop(spell_id, None)

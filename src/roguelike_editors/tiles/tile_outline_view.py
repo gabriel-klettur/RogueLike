@@ -11,6 +11,7 @@ from roguelike_editors.tiles.tiles_editor_config import (
     EYEDROPPER_BLINK_DURATION_MS,
     EYEDROPPER_BLINK_INTERVAL_MS,
 )
+from roguelike_ui.ui_blocker import is_blocked
 
 class TileOutlineView:
     """Dibuja contornos y overlays de hover/selección en el editor de tiles."""
@@ -33,13 +34,24 @@ class TileOutlineView:
 
         # Hover / brush preview (brush, delete y default)
         if self.editor.current_tool in ("brush", "delete", "default"):
-            hover = self.controller._tile_under_mouse(pygame.mouse.get_pos(), camera, game_map)
-            if hover:
-                rect = self._compute_rect(hover, camera)
-                # semi-transparent fill (reusar surface del tamaño actual)
-                hover_surf = self._get_hover_surface(rect.width, rect.height)
-                screen.blit(hover_surf, rect.topleft)
-                pygame.draw.rect(screen, OUTLINE_HOVER, rect, OUTLINE_WIDTH)
+            mouse_pos = pygame.mouse.get_pos()
+            # Suprimir hover si el cursor está sobre el toolbar o un panel UI bloqueante
+            over_toolbar = False
+            try:
+                panel = self.controller.toolbar.view.widget.panel  # ToolbarView.panel
+                panel_pos = panel.pos or (self.controller.toolbar.x, self.controller.toolbar.y)
+                panel_rect = pygame.Rect(panel_pos, panel.surface.get_size())
+                over_toolbar = panel_rect.collidepoint(mouse_pos)
+            except Exception:
+                over_toolbar = False
+            if not over_toolbar and not is_blocked(*mouse_pos):
+                hover = self.controller._tile_under_mouse(mouse_pos, camera, game_map)
+                if hover:
+                    rect = self._compute_rect(hover, camera)
+                    # semi-transparent fill (reusar surface del tamaño actual)
+                    hover_surf = self._get_hover_surface(rect.width, rect.height)
+                    screen.blit(hover_surf, rect.topleft)
+                    pygame.draw.rect(screen, OUTLINE_HOVER, rect, OUTLINE_WIDTH)
 
         # Seleccionado
         sel = self.editor.selected_tile

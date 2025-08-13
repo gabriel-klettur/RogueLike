@@ -46,6 +46,13 @@ class BuildingEditorController:
         """button: 1 = izq, 3 = der"""
         mx, my = pos
 
+        # Do not process building clicks when mouse is over any UI panel
+        try:
+            if is_blocked(mx, my):
+                return
+        except Exception:
+            pass
+
         world_x = mx / camera.zoom + camera.offset_x
         world_y = my / camera.zoom + camera.offset_y
 

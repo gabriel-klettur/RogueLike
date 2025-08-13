@@ -107,11 +107,8 @@ class BuildingEditorManager:
 
     def render(self, screen, camera, buildings):
         if self.editor_state.active:
-            # Limpiar zonas de bloqueo de UI antes de registrar los paneles de este frame
-            try:
-                clear_blockers()
-            except Exception:
-                pass
+            # Nota: los UI blockers ya se limpian una vez por frame en RendererManager.
+            # No limpiar aquí para no borrar los blockers registrados por otros editores (p.ej. Tiles Collision Panel).
             # 1) Render de la toolbar primero (posicionada bajo el título)
             try:
                 self.buildings_toolbar_controller.render(screen)

@@ -2,7 +2,7 @@ import os
 import json
 from dataclasses import dataclass, field
 import pygame
-from roguelike_ui.ui_blocker import register_blocker
+from roguelike_ui.ui_blocker import register_blocker, is_blocked
 
 try:
     from roguelike_engine.config.config_tiles import TILE_SIZE
@@ -139,15 +139,26 @@ class BuildingCollidersPanelView:
             pass
 
     def render(self, screen, camera, buildings, editor_view=None):
-        # Always show collider overlay for the hovered building while the editor is active
-        hb = getattr(self.editor_state, 'hovered_building', None)
-        drawn_for = None
-        if hb and getattr(hb, 'collision_map', None):
-            self._render_building_collision_overlay(screen, camera, hb)
-            drawn_for = hb
+        # Respect UI blockers: do not draw any hover/active overlays while mouse is over UI
+        blocked = False
+        try:
+            mx, my = pygame.mouse.get_pos()
+            blocked = is_blocked(mx, my)
+        except Exception:
+            blocked = False
 
-        # When the panel is active, also render overlay and highlight for active building
-        if self.model.active:
+        # Hovered building overlay (only when not blocked)
+        if not blocked:
+            hb = getattr(self.editor_state, 'hovered_building', None)
+            drawn_for = None
+            if hb and getattr(hb, 'collision_map', None):
+                self._render_building_collision_overlay(screen, camera, hb)
+                drawn_for = hb
+        else:
+            drawn_for = None
+
+        # Active panel overlays and cyan outline (only when not blocked)
+        if self.model.active and not blocked:
             b = self.model.active_building
             if b and getattr(b, 'collision_map', None) and b is not drawn_for:
                 self._render_building_collision_overlay(screen, camera, b)
@@ -155,8 +166,10 @@ class BuildingCollidersPanelView:
                 x, y = camera.apply((b.x, b.y))
                 w, h = camera.scale(b.image.get_size())
                 pygame.draw.rect(screen, (0, 255, 255), (x, y, w, h), 4)
-            if self.model.picker_open:
-                self._render_picker(screen, editor_view)
+
+        # Picker UI should still render and register as a blocker
+        if self.model.picker_open:
+            self._render_picker(screen, editor_view)
 
 
 class BuildingCollidersPanelEventHandler:
