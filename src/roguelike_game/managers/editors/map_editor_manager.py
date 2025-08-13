@@ -50,9 +50,9 @@ class MapEditorManager:
             self.editor_state.dragging = None
         logger.debug(" Map Editor ON" if active else " Map Editor OFF")
 
-    def handle(self, camera, map_manager):
+    def handle(self, camera, map_manager, events=None):
         if self.editor_state.active:
-            self.handler.handle(camera, map_manager)
+            self.handler.handle(camera, map_manager, events)
 
     def update(self, camera, map_manager):
         # por ahora no hay lógica de actualización adicional

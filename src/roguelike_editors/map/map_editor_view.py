@@ -68,9 +68,26 @@ class MapEditorView:
             return
 
         # Title bar in normal rendering path
+        title_rect = None
         if self.title_view:
             self.title_view.state = self.state
-            self.title_view.render(screen)
+            title_rect = self.title_view.render(screen)
+            # Align toolbar panel flush left (matching title's left) and just below the title (preserve dragging later)
+            try:
+                toolbar = getattr(self.controller, "toolbar", None)
+                tv = getattr(getattr(toolbar, "view", None), "widget", None)
+                panel = getattr(tv, "panel", None)
+                if tv and panel and not getattr(panel, "dragging", False):
+                    # If toolbar is still at its initial position, snap it under the title
+                    initial_pos = (getattr(tv, "x", 10), getattr(tv, "y", 10))
+                    if getattr(panel, "pos", None) in (None, initial_pos):
+                        gap = 8
+                        snap_x = int(title_rect.left)
+                        snap_y = int(title_rect.bottom + gap)
+                        panel.pos = (snap_x, snap_y)
+            except Exception:
+                # Non-fatal: keep previous toolbar position
+                pass
 
         # 2. Dibujar zonas
         self._draw_zones(screen, camera)

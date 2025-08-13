@@ -30,14 +30,17 @@ class MapEditorEventHandler:
         self.controller = controller
         self.map_manager = map_manager
 
-    def handle(self, camera, map_manager):
+    def handle(self, camera, map_manager, events=None):
         # 1. Ciclo de ejecución asíncrona
         if self.state.executing_tool:
             self._process_async_tool(camera)
             return
 
         # 2. Procesar eventos de Pygame
-        for ev in pygame.event.get():
+        # Pan continuo con flechas del teclado (independiente de eventos discretos)
+        self._handle_keyboard_pan(camera)
+        ev_iter = events if events is not None else pygame.event.get()
+        for ev in ev_iter:
             # Delegar eventos al widget del toolbar (arrastre con botón derecho, etc.)
             try:
                 self.controller.toolbar.view.handle_event(ev)
@@ -45,85 +48,100 @@ class MapEditorEventHandler:
                 pass
             if ev.type == pygame.QUIT:
                 self.manager.game.state.running = False
-                return
+                continue
 
             if ev.type == pygame.MOUSEWHEEL:
                 self._handle_zoom(ev, camera)
-                return
+                continue
 
-            if ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 2:
-                self._start_panning(ev, camera)
-                return
+            if ev.type == pygame.MOUSEBUTTONDOWN and ev.button in (2, 3):
+                # Evitar conflicto con UI (toolbar, diálogos, etc.)
+                mx, my = ev.pos
+                if not is_blocked(mx, my):
+                    self._start_panning(ev, camera)
+                    continue
 
-            if ev.type == pygame.MOUSEBUTTONUP and ev.button == 2:
+            if ev.type == pygame.MOUSEBUTTONUP and ev.button in (2, 3):
                 self.state.panning = False
-                return
+                continue
 
-            if ev.type == pygame.MOUSEMOTION and self.state.panning:
-                self._update_panning(ev, camera)
-                return
+            if ev.type == pygame.MOUSEMOTION:
+                # Actualizar panning activo
+                if self.state.panning:
+                    self._update_panning(ev, camera)
+                    continue
+                # Fallback: iniciar panning si se detecta botón medio o derecho sostenido durante el movimiento
+                buttons = getattr(ev, "buttons", None)
+                if buttons and len(buttons) >= 3 and (buttons[1] or buttons[2]):
+                    mx, my = ev.pos
+                    if not is_blocked(mx, my):
+                        self.state.panning = True
+                        self.state.pan_start_mouse = ev.pos
+                        self.state.pan_start_offset = (camera.offset_x, camera.offset_y)
+                        self._update_panning(ev, camera)
+                        continue
 
             if ev.type == pygame.KEYDOWN:
                 # Modo renombrar
                 if self.state.renaming_zone:
                     if self._handle_renaming_keys(ev):
-                        return
+                        continue
 
                 # Teclas de atajo globales
                 if ev.key == pygame.K_F11:
                     self.manager.toggle()
-                    return
+                    continue
                 if ev.key == pygame.K_ESCAPE:
                     self.manager.game.state.running = False
-                    return
+                    continue
                 if ev.key == pygame.K_n:
                     self.controller.duplicate_zone()
-                    return
+                    continue
                 if ev.key == pygame.K_l:
                     self.controller.load_zones()
-                    return
+                    continue
                 if ev.key == pygame.K_s and (ev.mod & pygame.KMOD_CTRL):
                     self.controller.save_zones()
-                    return
+                    continue
                 if ev.key == pygame.K_d:
                     self.controller.delete_zone()
-                    return
+                    continue
                 if ev.key == pygame.K_h and self.state.selected_zone:
                     self.controller.toggle_hide_zone(self.state.selected_zone)
-                    return
+                    continue
 
             # Modo renombrar con clic
             if self.state.renaming_zone and ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
                 if self._handle_renaming_click(ev):
-                    return
+                    continue
 
             # Clic izquierdo para interacciones generales
             if ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
                 # Toolbar
                 if self.controller.toolbar.handle_click(ev.pos):
-                    return
+                    continue
 
                 # Si el clic cae dentro de un panel bloqueante (fondo del toolbar), consumirlo
                 mx, my = ev.pos
                 if is_blocked(mx, my):
-                    return
+                    continue
 
                 # Dropdown de visibilidad de capas
                 if self.state.layers_view_open:
                     if self._handle_layers_dropdown_click(ev):
-                        return
+                        continue
 
                 # Confirmaciones de diálogos
                 if self._handle_confirmation_dialogs(ev):
-                    return
+                    continue
 
                 # Modos de clic según state (añadir, borrar, pintar)
                 if self._handle_mode_clicks(ev, camera):
-                    return
+                    continue
 
                 # Selección y detección de doble-clic en zona
                 if self._handle_zone_selection(ev, camera):
-                    return
+                    continue
 
     # -------------------------------------------------------------
     # 1. EJECUCIÓN ASÍNCRONA DE HERRAMIENTAS
@@ -261,8 +279,23 @@ class MapEditorEventHandler:
         mx, my = ev.pos
         dx = (mx - self.state.pan_start_mouse[0]) / camera.zoom
         dy = (my - self.state.pan_start_mouse[1]) / camera.zoom
-        camera.offset_x = self.state.pan_start_offset[0] - dx
-        camera.offset_y = self.state.pan_start_offset[1] - dy
+        # Mover la cámara en la misma dirección que las flechas del teclado
+        # Flecha derecha incrementa offset_x; arrastrar a la derecha también debe incrementarlo
+        camera.offset_x = self.state.pan_start_offset[0] + dx
+        camera.offset_y = self.state.pan_start_offset[1] + dy
+
+    def _handle_keyboard_pan(self, camera):
+        """
+        Permite mover la cámara con flechas del teclado de forma continua.
+        La velocidad en pantalla se mantiene consistente mediante 1/zoom.
+        """
+        keys = pygame.key.get_pressed()
+        dx = (1 if keys[pygame.K_RIGHT] else 0) - (1 if keys[pygame.K_LEFT] else 0)
+        dy = (1 if keys[pygame.K_DOWN] else 0) - (1 if keys[pygame.K_UP] else 0)
+        if dx or dy:
+            step = 20 / max(camera.zoom, 0.01)  # 20 px en pantalla por frame aprox.
+            camera.offset_x += dx * step
+            camera.offset_y += dy * step
 
     def _handle_renaming_keys(self, ev) -> bool:
         if ev.key == pygame.K_RETURN:
