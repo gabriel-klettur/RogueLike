@@ -3,6 +3,7 @@ from roguelike_engine.map.events.events import handle_expand_dungeon
 import logging
 logger = logging.getLogger(__name__)
 import pygame
+from roguelike_editors.fsm.fms_events import FMSEventSpy
 
 def handle_keyboard(event, state, camera, clock, menu, entities, tiles_editor, buildings_editor, map_editor, map_manager):
     if event.type == pygame.KEYDOWN:
@@ -39,10 +40,9 @@ def handle_keyboard(event, state, camera, clock, menu, entities, tiles_editor, b
             config.DEBUG = not config.DEBUG
             logger.debug(f"🧪 DEBUG {'activado' if config.DEBUG else 'desactivado'}")
 
-        elif event.key == pygame.K_F12:
-            # Toggle de debug de entidades (FSM, IA, etc.)
-            config.DEBUG_ENTITIES = not config.DEBUG_ENTITIES
-            logger.debug(f"🧪 ENTITIES DEBUG {'activado' if config.DEBUG_ENTITIES else 'desactivado'}")
+        elif FMSEventSpy.handle_event(event):
+            # FMSEventSpy consumió el evento (por ejemplo, F12)
+            return
 
         # Toggle Item Editor (F7)
         elif event.key == menu.input_config.get_key('toggle_item_editor'):
