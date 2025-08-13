@@ -386,7 +386,7 @@ class RendererManager:
                 lines = [
                     "Debug Mode:",
                     "F9: Toggle Debug Overlay",
-                    "F12: Toggle Hitbox Debug",
+                    "F12: Toggle Entities Debug",
                     "Mouse Wheel: Scroll Overlay"
                 ]
             else:
