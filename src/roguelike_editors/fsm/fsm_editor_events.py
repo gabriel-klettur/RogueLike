@@ -28,6 +28,12 @@ class FsmEditorEventHandler:
 
         if event.type == pygame.KEYDOWN and event.key == pygame.K_F12:
             ctrl.toggle_visible()
+            # Mirror gate flag used by debug overlay systems
+            try:
+                import roguelike_engine.config.config as config
+                config.DEBUG_ENTITIES = ctrl.visible
+            except Exception:
+                pass
             return True
 
         if not ctrl.visible:
