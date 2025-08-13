@@ -1,5 +1,6 @@
 import pygame
 from .title_panel import TitlePanel
+from roguelike_ui.ui_blocker import register_blocker
 
 class TitleBar:
     """
@@ -41,4 +42,7 @@ class TitleBar:
         text_surf = self.font.render(self.panel.text or "", True, self.panel.text_color)
         bg_w = text_surf.get_width() + self.panel.padding_x * 2
         bg_h = text_surf.get_height() + self.panel.padding_y * 2
-        return pygame.Rect(self.panel.x, self.panel.y, bg_w, bg_h)
+        rect = pygame.Rect(self.panel.x, self.panel.y, bg_w, bg_h)
+        # Register as UI blocker to suppress hover beneath the title bar
+        register_blocker(rect)
+        return rect

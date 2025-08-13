@@ -1,5 +1,6 @@
 import pygame
 from roguelike_ui.widgets.text_input import TextInput
+from roguelike_ui.ui_blocker import register_blocker
 from pathlib import Path
 from roguelike_ui.panel import DraggablePanel
 from roguelike_ui.widgets.grid import ScrollableGrid
@@ -400,6 +401,9 @@ class TilePickerView:
                 # update panel position and blit
         self.panel.pos = self.picker_state.pos
         screen.blit(self.panel.surface, self.panel.pos)
+        # Registrar bloqueador UI para suprimir hover debajo del panel
+        panel_rect = pygame.Rect(self.panel.pos, self.panel.surface.get_size())
+        register_blocker(panel_rect)
         # Cache last rendered panel surface and state
         self._last_state = state
         self.static_panel_surf = self.panel.surface.copy()

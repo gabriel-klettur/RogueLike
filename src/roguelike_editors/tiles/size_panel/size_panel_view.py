@@ -1,4 +1,5 @@
 import pygame
+from roguelike_ui.ui_blocker import register_blocker
 from roguelike_editors.tiles.tiles_editor_config import BTN_W, BTN_H, PAD, CLR_SELECTION, CLR_BORDER
 from roguelike_ui.panel import DraggablePanel
 from roguelike_ui.widgets.button import Button
@@ -35,6 +36,9 @@ class SizePanelView:
 
         # Dibujar fondo del panel
         screen.blit(self.panel.surface, self.panel.pos)
+        # Registrar bloqueador UI para suprimir hover debajo del panel
+        panel_rect = pygame.Rect(self.panel.pos, self.panel.surface.get_size())
+        register_blocker(panel_rect)
 
         # Resetear rects clicables
         self.state.option_rects.clear()

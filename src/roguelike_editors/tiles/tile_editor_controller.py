@@ -19,6 +19,7 @@ from roguelike_editors.tiles.common.controller import flood_fill
 from roguelike_editors.tiles.common.view import screen_to_tile
 from roguelike_engine.config.map_config import global_map_settings
 import threading
+from roguelike_ui.ui_blocker import is_blocked
 
 import logging
 logger = logging.getLogger(__name__)
@@ -208,8 +209,22 @@ class TileEditorController:
             camera.offset_x -= dx / camera.zoom
             camera.offset_y -= dy / camera.zoom
         # --- 1) Hover del cursor ---
-        col, row = screen_to_tile(pygame.mouse.get_pos(), camera)
-        self.editor.hovered_tile = (col, row)
+        mouse_pos = pygame.mouse.get_pos()
+        # Supresión explícita: si el cursor está sobre el toolbar, anular hover
+        over_toolbar = False
+        try:
+            panel = self.toolbar.view.widget.panel  # ToolbarView.panel
+            panel_pos = panel.pos or (self.toolbar.x, self.toolbar.y)
+            panel_rect = pygame.Rect(panel_pos, panel.surface.get_size())
+            over_toolbar = panel_rect.collidepoint(mouse_pos)
+        except Exception:
+            over_toolbar = False
+
+        if over_toolbar or is_blocked(*mouse_pos):
+            self.editor.hovered_tile = None
+        else:
+            col, row = screen_to_tile(mouse_pos, camera)
+            self.editor.hovered_tile = (col, row)
         if not self.editor.active or self.editor.picker_state.open:
             return
         # Delegate continuous actions to toolbar controller

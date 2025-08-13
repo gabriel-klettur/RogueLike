@@ -1,5 +1,6 @@
 import pygame
 import logging
+from roguelike_ui.ui_blocker import is_blocked
 
 from roguelike_editors.buildings.utils.save_buildings_to_json import save_buildings_to_json
 from roguelike_engine.config.config import BUILDINGS_DATA_PATH
@@ -202,6 +203,16 @@ class BuildingEditorEventHandler:
                 return
             elif ev.type == pygame.MOUSEMOTION:
                 mx, my = ev.pos
+                # If mouse is over any registered UI panel (Tiles/Buildings/Map),
+                # suppress Buildings Editor hover/active states to avoid bleed-through visuals.
+                try:
+                    if is_blocked(mx, my):
+                        self.editor.hovered_buildings = []
+                        self.editor.hovered_building = None
+                        self.editor.active_building = None
+                        return
+                except Exception:
+                    pass
 
                 # Clear active building if mouse leaves its bounds in editor mode
                 if self.editor.current_tool == 'select':

@@ -1,6 +1,7 @@
 import pygame
 from roguelike_editors.buildings.tools.default_tool.default_tool_view import DefaultToolView
 from roguelike_editors.buildings.buildings_title_panel.buildings_title_view import BuildingsTitleView
+from roguelike_ui.ui_blocker import is_blocked
 
 from roguelike_editors.buildings.tools.split_z_tool.split_tool_view   import SplitToolView
 from roguelike_editors.buildings.tools.z_tool.z_tool_view       import ZToolView
@@ -60,6 +61,14 @@ class BuildingEditorView:
         # (Modo normal: renderizado completo con bordes y z-layer)
         if self.editor.picker_active:
             self.picker_view.render(screen, camera)
+
+        # Suppress building hover visuals (outline, handles) when UI is blocking
+        try:
+            mx, my = pygame.mouse.get_pos()
+            if is_blocked(mx, my):
+                return
+        except Exception:
+            pass
 
         for b in buildings:
             # Solo mostrar opciones en el edificio activo (persistente)

@@ -1,4 +1,5 @@
 import pygame
+from roguelike_ui.ui_blocker import is_blocked
 
 class ColliderScopeToolView:
     def __init__(self, state, editor_state):
@@ -17,6 +18,11 @@ class ColliderScopeToolView:
         w, h = camera.scale(building.image.get_size())
         size = max(15, min(65, int(w * 0.10)))
         rect = pygame.Rect(x + w - size, y + h - size, size, size)
+
+        # Suppress hover and button visuals if UI is blocking
+        mx, my = pygame.mouse.get_pos()
+        if is_blocked(mx, my):
+            return rect
 
         scope = getattr(building, 'collider_scope', getattr(self.editor_state, 'collider_scope', 'CG'))
         is_cg = (scope == 'CG')
