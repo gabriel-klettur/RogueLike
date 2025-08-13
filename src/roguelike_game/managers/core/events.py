@@ -9,6 +9,7 @@ from roguelike_editors.buildings.utils.save_buildings_to_json import save_buildi
 from roguelike_engine.config.config import BUILDINGS_DATA_PATH
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_editors.fsm.fsm_editor_events import FsmEditorEventHandler
+from roguelike_ui.ui_blocker import is_blocked
 
 import logging
 logger = logging.getLogger(__name__)
@@ -209,8 +210,27 @@ def handle_events(game):
         return
 
     # Por defecto, delegar al handle de engine
-    # Pasar solo eventos no consumidos al motor para evitar doble manejo.
-    remaining_events = [e for idx, e in enumerate(events) if idx not in consumed_idx]
+    # Pasar solo eventos no consumidos y no bloqueados por UI al motor.
+    blocked_idx: set[int] = set()
+    for i, ev in enumerate(events):
+        # Rueda del ratón: usa posición actual del cursor
+        if ev.type == pygame.MOUSEWHEEL:
+            mx, my = pygame.mouse.get_pos()
+            if is_blocked(mx, my):
+                logger.debug("[Events] Blocked MOUSEWHEEL over UI at (%s,%s)", mx, my)
+                blocked_idx.add(i)
+        # Clicks dentro de paneles UI
+        elif ev.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP):
+            mx, my = getattr(ev, 'pos', (None, None))
+            if mx is not None and is_blocked(mx, my):
+                logger.debug("[Events] Blocked MOUSEBUTTON event=%s over UI at (%s,%s)", ev.type, mx, my)
+                blocked_idx.add(i)
+        # Opcionalmente bloquear MOUSEMOTION sobre UI para evitar hovers del motor
+        elif ev.type == pygame.MOUSEMOTION:
+            mx, my = getattr(ev, 'pos', (None, None))
+            if mx is not None and is_blocked(mx, my):
+                blocked_idx.add(i)
+    remaining_events = [e for idx, e in enumerate(events) if idx not in consumed_idx and idx not in blocked_idx]
     # Pass remaining events and diagnostics overlay to the engine input handler
     engine_handle_events(
         game.state,

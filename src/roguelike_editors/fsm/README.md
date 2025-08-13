@@ -109,6 +109,22 @@ Acciones concretas de alineación:
   - `fsm_runtime_bridge.py`: señalización de reload y mapeo set->runtime.
 - __UI Blockers__: todos los paneles registran `ui_blocker` rect para suprimir hovers/drag del canvas cuando el ratón está sobre UI.
 
+### fsm_toolbar (implementado)
+- __Ubicación__: `src/roguelike_editors/fsm/fsm_toolbar/` con MVC: `fsm_toolbar_model.py`, `fsm_toolbar_view.py`, `fsm_toolbar_controller.py`, `fsm_toolbar_events.py`.
+- __Botones por defecto__: definidos en `DEFAULT_BUTTONS` del `FsmToolbarModel`:
+  `['select','connect','delete','zoom_in','zoom_out','undo','redo','sets']`.
+- __Iconos__: temporalmente todos los botones usan el mismo icono genérico `assets/ui/generic_icon.png` a través de `IconCache`.
+- __Vista__: `FsmToolbarView` envuelve `ToolbarView` (vertical). Propiedades iniciales: `anchor=(20,60)`, `size=32`, `padding=8`.
+- __Interacción__:
+  - LMB sobre un botón: activa la herramienta (`model.active_tool`); click repetido sobre la misma herramienta la desactiva.
+  - RMB sobre el panel: permite arrastrar el toolbar (delegado a `DraggablePanel`).
+  - ESC: limpia la herramienta activa (`active_tool=None`).
+- __API del controlador__: `FsmToolbarController.is_active(tool)` y `set_active(tool|None)` para que la vista pinte selección y el resto del editor pueda consultar el estado.
+- __Integración típica__:
+  - Render: `rect = toolbar_controller.render(screen)` devuelve el `pygame.Rect` del panel para layout y registro de UI blockers (el `ToolbarView` ya invoca `register_blocker`).
+  - Eventos: llamar primero `toolbar_controller.handle_event(event)` para que gestione drag/clicks del toolbar antes que el canvas.
+- __Siguientes pasos__: reemplazar iconos por específicos por herramienta, añadir atajos de teclado (p. ej., `V` select, `C` connect, `Del` delete, `Ctrl+Z/Y` undo/redo) y tooltips.
+
 
 ## Pipeline Autoría → Build → Runtime
 1. __Autoría__: el editor modifica un AST declarativo en memoria con historial de comandos.

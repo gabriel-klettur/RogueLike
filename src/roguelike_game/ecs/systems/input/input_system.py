@@ -7,6 +7,7 @@ import time
 import math
 from roguelike_game.ecs.systems.inventory.drop_drag_system import DropDragSystem
 from roguelike_game.ecs.systems.inventory.inventory_ui_system import InventoryUISystem
+from roguelike_ui.ui_blocker import is_blocked
 
 from roguelike_game.ecs.components.ai.wants_to_cast import WantsToCastSpell
 from roguelike_engine.utils.benchmark import benchmark
@@ -226,21 +227,25 @@ class InputSystem:
                 self.prev_right[eid] = False
             else:
                 # Actualizar estado del click y detectar flanco ascendente
-                curr_click = bool(pygame.mouse.get_pressed()[0])
+                mx, my = pygame.mouse.get_pos()
+                ui_blocked = is_blocked(mx, my)
+                curr_click = bool(pygame.mouse.get_pressed()[0]) and not ui_blocked
                 inp.click = curr_click
                 prev = self.prev_click.get(eid, False)
                 # Generar intención de fireball sólo en flanco ascendente
                 if eid in world.components.get('PlayerTagComponent', {}) and curr_click and not prev:
                     world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='fireball')
+                elif ui_blocked and bool(pygame.mouse.get_pressed()[0]) and not prev:
+                    logger.debug(f"[InputSystem] click suppressed over UI at ({mx},{my})")
                 # Guardar estado click para próxima iteración
                 self.prev_click[eid] = curr_click
                 # Lanzar el beam con click del medio
-                middle = pygame.mouse.get_pressed()[1]
+                middle = pygame.mouse.get_pressed()[1] and not ui_blocked
                 if middle:
                     logger.debug(f"[DEBUG][{time.time():.3f}] eid={eid} middle-click -> laser_beam")
                     world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='laser_beam')
                 # Detectar dash (right-click) por flanco ascendente
-                curr_right = bool(pygame.mouse.get_pressed()[2])
+                curr_right = bool(pygame.mouse.get_pressed()[2]) and not ui_blocked
                 prev_r = self.prev_right.get(eid, False)
                 # Suppress initial dash if right-click on inventory panel
                 if curr_right and not prev_r:
@@ -249,6 +254,8 @@ class InputSystem:
                             curr_right = False
                             logger.debug(f"[DEBUG] [InputSystem] suppressed initial dash on inventory panel")
                             break
+                if not curr_right and ui_blocked and bool(pygame.mouse.get_pressed()[2]) and not prev_r:
+                    logger.debug(f"[InputSystem] right-click suppressed over UI at ({mx},{my})")
                 if curr_right and not prev_r:
                     logger.debug(f"[DEBUG][{time.time():.3f}] eid={eid} right-click -> dash")
                     world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='dash')

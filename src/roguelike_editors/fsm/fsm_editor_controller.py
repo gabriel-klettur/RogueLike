@@ -7,6 +7,7 @@ from __future__ import annotations
 from typing import Optional
 import pygame
 
+from .fsm_toolbar.fsm_toolbar_controller import FsmToolbarController
 
 class FsmEditorController:
     def __init__(self) -> None:
@@ -15,7 +16,7 @@ class FsmEditorController:
 
         # Lazy-created/plugged submodules. Wired in later phases.
         self.title_controller = None
-        self.toolbar_controller = None
+        self.toolbar_controller: Optional[FsmToolbarController] = FsmToolbarController()
         self.sets_panel_controller = None
         self.graph_panel_controller = None
         self.properties_panel_controller = None
@@ -28,14 +29,20 @@ class FsmEditorController:
     def render(self, screen) -> None:
         if not self.visible:
             return
+        # Toolbar (left column, anchored). Returns its rect.
+        if self.toolbar_controller:
+            self.toolbar_controller.render(screen)
         # TODO: layout title -> toolbar -> left/center/right panels
-        # No-op: Title rendering is handled by FsmEditorEventHandler.render()
+        # No-op: Title rendering may be handled by a dedicated Title controller/view later
         return
 
     def handle_event(self, event) -> bool:
         if not self.visible:
             return False
-        # TODO: delegate to toolbar/sets/graph/properties event handlers
+        # Toolbar first, so drag/clicks don't leak to canvas
+        if self.toolbar_controller and self.toolbar_controller.handle_event(event):
+            return True
+        # TODO: delegate to sets/graph/properties event handlers next
         return False
 
     # --- Visibility ---

@@ -48,6 +48,11 @@ class FsmEditorEventHandler:
         ctrl = get_controller()
         if not ctrl.visible:
             return
+        # Render main FSM Editor panels (toolbar, etc.)
+        try:
+            ctrl.render(screen)
+        except Exception:
+            pass
         # Draw FSM Editor Title using reusable TitleBar (same as other editors)
         try:
             from roguelike_editors.fsm.fsm_title.fsm_title_model import FsmTitleModel
