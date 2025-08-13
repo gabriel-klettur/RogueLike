@@ -7,7 +7,6 @@ from pygame.locals import *
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.config.config import DATA_DIR, ASSETS_DIR
-from roguelike_engine.map.model.layer import Layer
 from roguelike_editors.buildings.utils.save_buildings_to_json import save_buildings_to_json
 from roguelike_engine.map.model.overlay.overlay_manager import load_layers, save_layers
 from roguelike_game.ecs.core.spatial_index import SpatialIndex
@@ -125,11 +124,6 @@ class MapEditorEventHandler:
                 mx, my = ev.pos
                 if is_blocked(mx, my):
                     continue
-
-                # Dropdown de visibilidad de capas
-                if self.state.layers_view_open:
-                    if self._handle_layers_dropdown_click(ev):
-                        continue
 
                 # Confirmaciones de diálogos
                 if self._handle_confirmation_dialogs(ev):
@@ -353,28 +347,7 @@ class MapEditorEventHandler:
         pygame.key.set_repeat()
         return True
 
-    def _handle_layers_dropdown_click(self, ev) -> bool:
-        for key, rect in self.controller.toolbar.option_rects.items():
-            if rect and rect.collidepoint(ev.pos):
-                if key == "show_all":
-                    for layer in self.state.visible_layers:
-                        self.state.visible_layers[layer] = True
-                    self.state.show_buildings = True
-                    self.state.show_colliders = True
-                elif key == "hide_all":
-                    for layer in self.state.visible_layers:
-                        self.state.visible_layers[layer] = False
-                    self.state.show_buildings = False
-                    self.state.show_colliders = False
-                elif isinstance(key, Layer):
-                    vl = self.state.visible_layers
-                    vl[key] = not vl[key]
-                elif key == "buildings":
-                    self.state.show_buildings = not self.state.show_buildings
-                elif key == "colliders":
-                    self.state.show_colliders = not self.state.show_colliders
-                return True
-        return False
+    
 
     # -------------------------------------------------------------
     # 3. HANDLERS DE DIÁLOGOS DE CONFIRMACIÓN

@@ -1,14 +1,14 @@
 {
-  "9d963265-70ad-44e2-bb53-e3a02194e526": {
-    "template_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+  "47e34b46-ba68-4547-9737-6f07904f7f58": {
+    "template_id": "33333333-3333-3333-3333-333333333333",
     "slots": [
       {
         "item": "gold",
-        "quantity": 7
+        "quantity": 1
       },
       {
         "item": "experience_orb",
-        "quantity": 3
+        "quantity": 1
       },
       null,
       null,
@@ -31,25 +31,54 @@
     ],
     "schema_version": "1.0.0"
   },
-  "00e80923-64ff-400b-9397-e83ae034b5c4": {
-    "template_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+  "8008a575-d330-447f-8abf-3e23ed022fbb": {
+    "template_id": "33333333-3333-3333-3333-333333333333",
     "slots": [
       {
         "item": "gold",
-        "quantity": 6
+        "quantity": 1
+      },
+      {
+        "item": "experience_orb",
+        "quantity": 1
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "f761e956-a021-4222-9604-558ce2fe5e4f": {
+    "template_id": "11111111-2222-3333-4444-555555555555",
+    "slots": [
+      {
+        "item": "wood",
+        "quantity": 3
+      },
+      {
+        "item": "gold",
+        "quantity": 2
       },
       {
         "item": "experience_orb",
         "quantity": 2
       },
-      {
-        "item": "wood",
-        "quantity": 1
-      },
-      {
-        "item": "bucket",
-        "quantity": 1
-      },
+      null,
       null,
       null,
       null,
@@ -69,12 +98,12 @@
     ],
     "schema_version": "1.0.0"
   },
-  "b0c98235-4348-4269-a993-fc2691845955": {
-    "template_id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+  "528ad3eb-8468-4709-ae77-a1e8a3e69fc0": {
+    "template_id": "33333333-3333-3333-3333-333333333333",
     "slots": [
       {
         "item": "gold",
-        "quantity": 4
+        "quantity": 2
       },
       {
         "item": "experience_orb",
