@@ -211,6 +211,15 @@ class RendererManager:
             # Evitar romper el render si la UI FSM falla
             pass
 
+        # FSM Editor full UI render (lazy; draws when visible)
+        try:
+            # Lazy import to avoid circular deps on startup
+            from roguelike_editors.fsm.fsm_editor_events import FsmEditorEventHandler
+            FsmEditorEventHandler.render(self.screen)
+        except Exception:
+            # Never break main render if optional UI fails
+            pass
+
     def _render_effects(self, camera, screen, effects):
         dirty_rects = effects.render(screen, camera)
         self._dirty_rects.extend(dirty_rects)
