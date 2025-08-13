@@ -30,7 +30,6 @@ class GameLoop:
         return (
             g.menu.show_menu
             or g.tiles_editor.editor_state.active
-            or g.buildings_editor.editor_state.active
             or g.map_editor.editor_state.active
             or g.inventory_editor.model.visible
         )
