@@ -87,6 +87,12 @@ class Game:
             self.state.spells_editor_visible = bool(getattr(self, 'spells_editor', None) and self.spells_editor.model.visible)
         except Exception:
             self.state.spells_editor_visible = False
+        # Propaga visibilidad del FSM Editor (usa config.DEBUG_ENTITIES como flag global del editor FSM)
+        try:
+            import roguelike_engine.config.config as config
+            self.state.fsm_editor_visible = bool(getattr(config, 'DEBUG_ENTITIES', False))
+        except Exception:
+            self.state.fsm_editor_visible = False
         self.renderer.render_game(
             self.state,
             self.screen,

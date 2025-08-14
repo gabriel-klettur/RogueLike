@@ -16,6 +16,7 @@ from .fsm_assigment_entities.fsm_assigment_entities_controller import (
     FsmAssigmentEntitiesController,
 )
 from .fsm_graph_panel.fsm_graph_panel_controller import FsmGraphPanelController
+from .fsm_properties_panel.fsm_properties_panel_controller import FsmPropertiesPanelController
 from roguelike_editors.fsm.services.fsm_persistence import (
     default_layouts_path,
     load_layouts,
@@ -34,7 +35,7 @@ class FsmEditorController:
         self.anim_panel_controller: Optional[FsmAssigmentAnimationsController] = FsmAssigmentAnimationsController()
         self.entities_panel_controller: Optional[FsmAssigmentEntitiesController] = FsmAssigmentEntitiesController()
         self.graph_panel_controller: Optional[FsmGraphPanelController] = FsmGraphPanelController()
-        self.properties_panel_controller = None
+        self.properties_panel_controller: Optional[FsmPropertiesPanelController] = FsmPropertiesPanelController()
 
         # View/Event handler can be split; keep placeholders for now
         self.view = None
@@ -60,6 +61,7 @@ class FsmEditorController:
         sets_rect = None
         anim_rect = None
         entities_rect = None
+        props_rect = None
         if self.sets_panel_controller:
             try:
                 self.sets_panel_controller.model.visible = (tool == 'sets_list')
@@ -128,6 +130,27 @@ class FsmEditorController:
                     except Exception:
                         pass
                     entities_rect = self.entities_panel_controller.render(screen, anchor=anchor)
+            except Exception:
+                pass
+        # Properties panel
+        if self.properties_panel_controller:
+            try:
+                self.properties_panel_controller.model.visible = (tool == 'set_properties')
+                if self.properties_panel_controller.model.visible:
+                    anchor = (20, 120)
+                    try:
+                        if toolbar_rect is not None:
+                            margin = 8
+                            panel_w, panel_h = 540, 420
+                            sw, sh = screen.get_size()
+                            ax = toolbar_rect.right + margin
+                            ay = toolbar_rect.top
+                            ax = max(4, min(ax, max(4, sw - panel_w - 4)))
+                            ay = max(4, min(ay, max(4, sh - panel_h - 4)))
+                            anchor = (ax, ay)
+                    except Exception:
+                        pass
+                    props_rect = self.properties_panel_controller.render(screen, anchor=anchor)
             except Exception:
                 pass
         # Graph panel to the right of the Sets panel when an item is selected
@@ -365,6 +388,13 @@ class FsmEditorController:
         try:
             if self.entities_panel_controller and getattr(self.entities_panel_controller.model, 'visible', False):
                 if self.entities_panel_controller.handle_event(event):
+                    return True
+        except Exception:
+            pass
+        # Properties panel events if visible
+        try:
+            if self.properties_panel_controller and getattr(self.properties_panel_controller.model, 'visible', False):
+                if self.properties_panel_controller.handle_event(event):
                     return True
         except Exception:
             pass

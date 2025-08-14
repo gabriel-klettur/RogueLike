@@ -149,6 +149,7 @@ class RendererManager:
                 and not (hasattr(state, 'inventory_editor_state') and getattr(state.inventory_editor_state, 'visible', False))
                 and not (hasattr(state, 'item_editor_state') and getattr(state.item_editor_state, 'visible', False))
                 and not getattr(state, 'spells_editor_visible', False)
+                and not getattr(state, 'fsm_editor_visible', False)
             ):
                 self._render_minimap(screen)
         _bench_minimap()
@@ -390,6 +391,9 @@ class RendererManager:
             return
         # Ocultar cuando el Spells Editor está visible
         if getattr(state, 'spells_editor_visible', False):
+            return
+        # Ocultar cuando el FSM Editor está visible
+        if getattr(state, 'fsm_editor_visible', False):
             return
         if self.map_editor.editor_state.active:
             mode = 'map'
