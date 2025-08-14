@@ -4,13 +4,13 @@ from __future__ import annotations
 class FsmGraphPanelView:
     def __init__(self) -> None:
         self.canvas_rect = None
-        # Graph toolbar (top horizontal bar inside the canvas)
-        self.graph_toolbar_rects = {}
-        self.graph_toolbar_h = 48
-        self.graph_toolbar_padding = 8
-        self.graph_toolbar_button_size = 40
+        # Last rendered label rects (in local canvas coordinates)
+        self.node_label_rects = {}
+        self.edge_label_rects = {}
+        # Last rendered edge paths (list of local points) for hover proximity checks
+        self.edge_paths = {}
 
-    def render(self, model, screen, *, anchor=(360, 120)):
+    def render(self, model, screen, *, anchor=(360, 120), toolbar=None):
         if not getattr(model, "visible", True):
             return None
         try:
@@ -25,78 +25,20 @@ class FsmGraphPanelView:
         # Background panel
         surf = pygame.Surface((w, h), pygame.SRCALPHA)
         surf.fill((15, 15, 18, 225))
+        # Reset last label rects for new frame
+        self.node_label_rects = {}
+        self.edge_label_rects = {}
+        self.edge_paths = {}
 
-        # Draw top graph toolbar (horizontal)
-        try:
-            from roguelike_ui.widgets.icon_cache import IconCache
-            # Toolbar background bar
-            tb_h = int(self.graph_toolbar_h)
-            pygame.draw.rect(surf, (22, 22, 26), pygame.Rect(0, 0, w, tb_h))
-            pygame.draw.line(surf, (60, 60, 68), (0, tb_h-1), (w, tb_h-1), 1)
-            # Build icons and rects
-            pad = int(self.graph_toolbar_padding)
-            size = int(self.graph_toolbar_button_size)
-            icon_size = (max(8, size - 6), max(8, size - 6))
-            base = IconCache.get_icon("assets/ui/generic_icon.png", icon_size)
-            if base is None:
-                base = pygame.Surface(icon_size, pygame.SRCALPHA)
-                base.fill((180, 180, 180, 255))
-            gp_icon_map = {
-                'select': 'assets/ui/fsm_editor/graph_panel/select_node.png',
-                'add_node': 'assets/ui/fsm_editor/graph_panel/add_node.png',
-                'clone_node': 'assets/ui/fsm_editor/graph_panel/clone_node.png',
-                'connect': 'assets/ui/fsm_editor/graph_panel/connect_node.png',
-                'disconnect': 'assets/ui/fsm_editor/graph_panel/disconnect_node.png',
-                'delete': 'assets/ui/fsm_editor/graph_panel/delete_node.png',
-                'mark_ini': 'assets/ui/fsm_editor/graph_panel/start_node.png',
-                'mark_end': 'assets/ui/fsm_editor/graph_panel/end_node.png',
-                'zoom_in': 'assets/ui/fsm_editor/graph_panel/zoom_in.png',
-                'zoom_out': 'assets/ui/fsm_editor/graph_panel/zoom_out.png',
-            }
-            x_cursor = pad
-            y_cursor = (tb_h - size) // 2
-            self.graph_toolbar_rects = {}
-            active_tool = getattr(model, 'active_graph_tool', None)
-            for tool in getattr(model, 'graph_toolbar_buttons', []):
-                rect = pygame.Rect(x_cursor, y_cursor, size, size)
-                # Button background and border (active highlight)
-                bg_col = (32, 34, 40)
-                pygame.draw.rect(surf, bg_col, rect, border_radius=4)
-                if tool == active_tool:
-                    pygame.draw.rect(surf, (90, 170, 255), rect, 2, border_radius=4)
-                else:
-                    pygame.draw.rect(surf, (75, 75, 85), rect, 1, border_radius=4)
-                # Icon
-                icon = None
-                # Prefer specific icon asset
-                sp = gp_icon_map.get(tool)
-                if sp:
-                    icon = IconCache.get_icon(sp, icon_size)
-                if icon is None:
-                    icon = base
-                surf_icon = icon.copy()
-                ir = surf_icon.get_rect(center=rect.center)
-                # Small text overlay as fallback or for zoom
-                try:
-                    font = pygame.font.SysFont(None, 16)
-                    labels = {
-                        'zoom_in': '+', 'zoom_out': '-',
-                    }
-                    if sp is None and tool in labels:
-                        lbl = font.render(labels[tool], True, (40, 40, 40))
-                        # light ring for contrast
-                        pygame.draw.rect(surf, (230,230,230), rect.inflate(-6, -6), 1, border_radius=3)
-                        lrr = lbl.get_rect(center=rect.center)
-                        surf.blit(lbl, lrr)
-                    else:
-                        surf.blit(surf_icon, ir)
-                except Exception:
-                    surf.blit(surf_icon, ir)
-                self.graph_toolbar_rects[tool] = pygame.Rect(x + rect.x, y + rect.y, rect.w, rect.h)
-                x_cursor += size + pad
-        except Exception:
-            # If UI deps missing, at least keep rects empty to avoid crashes
-            self.graph_toolbar_rects = {}
+        # Draw top graph toolbar (horizontal) via toolbar submodule
+        tb_h = 0
+        if toolbar is not None:
+            try:
+                active_tool = getattr(model, 'active_graph_tool', None)
+                # Expect toolbar to be a controller with .view and .model
+                tb_h = int(toolbar.view.render_into(surf, toolbar.model, screen_origin=(x, y), width=w, active_tool=active_tool) or 0)
+            except Exception:
+                tb_h = 0
         # Pan/zoom parameters
         pan_x = float(getattr(model, 'pan_x', 0.0))
         pan_y = float(getattr(model, 'pan_y', 0.0))
@@ -115,7 +57,7 @@ class FsmGraphPanelView:
             ox = int(pan_x) % grid
             oy = int(pan_y) % grid
             # Avoid overdrawing under the toolbar visually by starting after tb_h
-            tb_h = int(getattr(self, 'graph_toolbar_h', 0))
+            tb_h = int(tb_h)
             # Vertical grid lines: only draw below toolbar
             for gx in range(-ox, w, grid):
                 pygame.draw.line(surf, grid_color, (gx, tb_h), (gx, h), 1)
@@ -213,6 +155,7 @@ class FsmGraphPanelView:
                 fr = e.get('from'); to = e.get('to')
                 if fr not in node_pos or to not in node_pos:
                     continue
+                edge_i = idx  # preserve enumerate index for mapping/hover
                 sx, sy, sw, sh = node_pos[fr]
                 tx, ty, tw, th = node_pos[to]
                 sc = (sx + sw/2.0, sy + sh/2.0)
@@ -231,15 +174,21 @@ class FsmGraphPanelView:
                 fr = e.get('from'); to = e.get('to')
                 if fr not in node_pos or to not in node_pos:
                     continue
+                edge_i = idx  # ensure consistent index for hover mapping
                 sx, sy, sw, sh = node_pos[fr]
                 tx, ty, tw, th = node_pos[to]
                 sc = (sx + sw/2.0, sy + sh/2.0)
                 tc = (tx + tw/2.0, ty + th/2.0)
 
+                is_edge_hover = (idx == getattr(model, 'hover_edge_index', None))
                 color = e.get('color', (120, 120, 140))
                 if e.get('active'):
                     color = (255, 210, 90)
+                elif is_edge_hover:
+                    color = (255, 230, 120)
                 width = int(e.get('width', 2))
+                if is_edge_hover:
+                    width = max(width + 1, 3)
                 head_len = int(e.get('head_len', 14))
                 head_width = int(e.get('head_width', 10))
 
@@ -261,20 +210,30 @@ class FsmGraphPanelView:
                         dir_vec = (p_tip[0]-p_prev[0], p_tip[1]-p_prev[1])
                         _draw_polyline(surf, color, pts[:-1], width)
                         _arrowhead(surf, color, p_tip, dir_vec, head_len=head_len, head_width=head_width)
+                    # Store path for hover proximity
+                    try:
+                        self.edge_paths[edge_i] = list(pts)
+                    except Exception:
+                        pass
                     label = e.get('label') or e.get('on') or e.get('event')
                     if label:
-                        font = pygame.font.SysFont(None, 18)
+                        is_hover = (edge_i == getattr(model, 'hover_edge_index', None))
+                        font = pygame.font.SysFont(None, 20 if is_hover else 18)
                         mid = _quad_point(p0, ctrl, p2, 0.35)
                         mid = W(mid)
-                        txt = font.render(str(label), True, (210,210,210))
+                        txt = font.render(str(label), True, (255,230,120) if is_hover else (210,210,210))
                         tr = txt.get_rect(center=(mid[0], mid[1]))
                         surf.blit(txt, tr)
+                        try:
+                            self.edge_label_rects[edge_i] = tr.copy()
+                        except Exception:
+                            pass
                     continue
 
                 pair_key = tuple(sorted([fr, to]))
                 dkey = (fr, to)
-                idx = dir_index.get(dkey, 0)
-                dir_index[dkey] = idx + 1
+                dir_i = dir_index.get(dkey, 0)
+                dir_index[dkey] = dir_i + 1
 
                 # Base straight path start/end: from edge of rectangles with per-side ports
                 # Find slot indices for source and dest
@@ -303,8 +262,8 @@ class FsmGraphPanelView:
                     alignment = max(abs(ux), abs(uy))  # 1 for axis-aligned
                     step *= (1.0 + 0.75 * alignment)
                     # Alternate sides and increase magnitude: 0, +1, -1, +2, -2 ...
-                    sign = 1 if (idx % 2 == 0) else -1
-                    mult = (idx // 2) + 1
+                    sign = 1 if (dir_i % 2 == 0) else -1
+                    mult = (dir_i // 2) + 1
                     offset = sign * mult * step
                     mid = ((p_start[0]+p_end[0])/2.0, (p_start[1]+p_end[1])/2.0)
                     ctrl = (mid[0] + nx*offset, mid[1] + ny*offset)
@@ -318,14 +277,24 @@ class FsmGraphPanelView:
                         dir_vec = (p_tip[0]-p_prev[0], p_tip[1]-p_prev[1])
                         _draw_polyline(surf, color, pts[:-1], width)
                         _arrowhead(surf, color, p_tip, dir_vec, head_len=head_len, head_width=head_width)
+                    # Store path for hover proximity
+                    try:
+                        self.edge_paths[idx] = list(pts)
+                    except Exception:
+                        pass
                     label = e.get('label') or e.get('on') or e.get('event')
                     if label:
-                        font = pygame.font.SysFont(None, 18)
+                        is_hover = (idx == getattr(model, 'hover_edge_index', None))
+                        font = pygame.font.SysFont(None, 20 if is_hover else 18)
                         mid_lbl = _quad_point(p_start, ctrl, p_end, 0.5)
                         mid_lbl = W(mid_lbl)
-                        txt = font.render(str(label), True, (210,210,210))
+                        txt = font.render(str(label), True, (255,230,120) if is_hover else (210,210,210))
                         tr = txt.get_rect(center=(mid_lbl[0], mid_lbl[1]))
                         surf.blit(txt, tr)
+                        try:
+                            self.edge_label_rects[idx] = tr.copy()
+                        except Exception:
+                            pass
                 else:
                     # Straight arrow with edge-anchored endpoints
                     dx, dy = (p_end[0]-p_start[0], p_end[1]-p_start[1])
@@ -333,20 +302,32 @@ class FsmGraphPanelView:
                     p_end_l = W(p_end)
                     _draw_polyline(surf, color, [p_start_l, (p_end_l[0]-dx*0.0001*zoom, p_end_l[1]-dy*0.0001*zoom)], width)
                     _arrowhead(surf, color, p_end_l, (dx*zoom, dy*zoom), head_len=head_len, head_width=head_width)
+                    # Store path for hover proximity (simple 2-point polyline)
+                    try:
+                        self.edge_paths[idx] = [p_start_l, p_end_l]
+                    except Exception:
+                        pass
                     label = e.get('label') or e.get('on') or e.get('event')
                     if label:
-                        font = pygame.font.SysFont(None, 18)
+                        is_hover = (idx == getattr(model, 'hover_edge_index', None))
+                        font = pygame.font.SysFont(None, 20 if is_hover else 18)
                         mid_lbl = ((p_start[0]+p_end[0])/2.0, (p_start[1]+p_end[1])/2.0)
                         mid_lbl = W(mid_lbl)
-                        txt = font.render(str(label), True, (210,210,210))
+                        txt = font.render(str(label), True, (255,230,120) if is_hover else (210,210,210))
                         tr = txt.get_rect(center=(mid_lbl[0], mid_lbl[1]))
                         surf.blit(txt, tr)
+                        try:
+                            self.edge_label_rects[idx] = tr.copy()
+                        except Exception:
+                            pass
         except Exception:
             pass
 
         # Nodes
         try:
-            font = pygame.font.SysFont(None, 20)
+            base_font_size = 20
+            base_color = (235, 235, 235)
+            font = pygame.font.SysFont(None, base_font_size)
             for n in getattr(model, 'nodes', []):
                 nx = int(n.get('x', 0)); ny = int(n.get('y', 0))
                 nw = int(n.get('w', 120)); nh = int(n.get('h', 60))
@@ -355,8 +336,12 @@ class FsmGraphPanelView:
                 # body
                 pygame.draw.rect(surf, (40, 44, 52), rect, 0, border_radius=6)
                 # border (initial highlighted)
+                is_hover_node = (n.get('id') == getattr(model, 'hover_node_id', None))
                 if n.get('id') == getattr(model, 'selected_node_id', None):
                     color = (255, 210, 90)
+                    border_w = 3
+                elif is_hover_node:
+                    color = (255, 230, 120)
                     border_w = 3
                 elif n.get('initial'):
                     color = (90, 170, 255)
@@ -365,11 +350,17 @@ class FsmGraphPanelView:
                     color = (90, 90, 100)
                     border_w = 2
                 pygame.draw.rect(surf, color, rect, border_w, border_radius=6)
-                # label
+                # label (hover highlight)
+                is_hover = (n.get('id') == getattr(model, 'hover_node_id', None))
                 label = str(n.get('label', n.get('id', '?')))
-                txt = font.render(label, True, (235, 235, 235))
+                node_font = pygame.font.SysFont(None, (base_font_size + 2) if is_hover else base_font_size)
+                txt = node_font.render(label, True, (255, 230, 120) if is_hover else base_color)
                 tr = txt.get_rect(center=(rect.centerx, rect.centery))
                 surf.blit(txt, tr)
+                try:
+                    self.node_label_rects[n.get('id')] = tr.copy()
+                except Exception:
+                    pass
         except Exception:
             pass
 

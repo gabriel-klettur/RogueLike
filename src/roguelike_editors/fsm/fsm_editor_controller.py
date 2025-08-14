@@ -94,6 +94,13 @@ class FsmEditorController:
                         set_id = None
                     # If changed, rebuild nodes/edges from snapshot
                     if set_id and self.graph_panel_controller.model.selected_set_id != set_id:
+                        # Reset viewport defaults on set change; may be overridden by persisted viewport below
+                        try:
+                            self.graph_panel_controller.model.zoom = 1.0
+                            self.graph_panel_controller.model.pan_x = 0.0
+                            self.graph_panel_controller.model.pan_y = 0.0
+                        except Exception:
+                            pass
                         snap = get_snapshot()
                         set_def = None
                         try:
@@ -225,6 +232,21 @@ class FsmEditorController:
                                                     n['y'] = int(saved['y'])
                                                 except Exception:
                                                     pass
+                                    # Apply persisted viewport if present
+                                    vp = entry.get("viewport") or {}
+                                    if isinstance(vp, dict):
+                                        try:
+                                            z = float(vp.get("zoom", 1.0))
+                                            self.graph_panel_controller.model.zoom = max(0.2, min(3.0, z))
+                                        except Exception:
+                                            pass
+                                        try:
+                                            px = float(vp.get("pan_x", 0.0))
+                                            py = float(vp.get("pan_y", 0.0))
+                                            self.graph_panel_controller.model.pan_x = px
+                                            self.graph_panel_controller.model.pan_y = py
+                                        except Exception:
+                                            pass
                             # Edges from transitions (carry label and optional style)
                             for t in transitions:
                                 fr = t.get('from'); to = t.get('to')
