@@ -3,15 +3,13 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 
 
-DEFAULT_BUTTONS: List[str] = [
-    "select",
-    "connect",
-    "delete",
-    "zoom_in",
-    "zoom_out",
+DEFAULT_BUTTONS: List[str] = [    
+    "sets_list",
+    "sets_entities_assignment",
+    "sets_animation_assignment",
+    "set_properties",
     "undo",
     "redo",
-    "sets",
 ]
 
 

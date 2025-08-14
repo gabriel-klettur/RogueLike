@@ -4,6 +4,11 @@ from __future__ import annotations
 class FsmGraphPanelView:
     def __init__(self) -> None:
         self.canvas_rect = None
+        # Graph toolbar (top horizontal bar inside the canvas)
+        self.graph_toolbar_rects = {}
+        self.graph_toolbar_h = 48
+        self.graph_toolbar_padding = 8
+        self.graph_toolbar_button_size = 40
 
     def render(self, model, screen, *, anchor=(360, 120)):
         if not getattr(model, "visible", True):
@@ -20,6 +25,76 @@ class FsmGraphPanelView:
         # Background panel
         surf = pygame.Surface((w, h), pygame.SRCALPHA)
         surf.fill((15, 15, 18, 225))
+
+        # Draw top graph toolbar (horizontal)
+        try:
+            from roguelike_ui.widgets.icon_cache import IconCache
+            # Toolbar background bar
+            tb_h = int(self.graph_toolbar_h)
+            pygame.draw.rect(surf, (22, 22, 26), pygame.Rect(0, 0, w, tb_h))
+            pygame.draw.line(surf, (60, 60, 68), (0, tb_h-1), (w, tb_h-1), 1)
+            # Build icons and rects
+            pad = int(self.graph_toolbar_padding)
+            size = int(self.graph_toolbar_button_size)
+            icon_size = (max(8, size - 6), max(8, size - 6))
+            base = IconCache.get_icon("assets/ui/generic_icon.png", icon_size)
+            if base is None:
+                base = pygame.Surface(icon_size, pygame.SRCALPHA)
+                base.fill((180, 180, 180, 255))
+            gp_icon_map = {
+                'select': 'assets/ui/fsm_editor/graph_panel/select_node.png',
+                'add_node': 'assets/ui/fsm_editor/graph_panel/add_node.png',
+                'clone_node': 'assets/ui/fsm_editor/graph_panel/clone_node.png',
+                'connect': 'assets/ui/fsm_editor/graph_panel/connect_node.png',
+                'disconnect': 'assets/ui/fsm_editor/graph_panel/disconnect_node.png',
+                'delete': 'assets/ui/fsm_editor/graph_panel/delete_node.png',
+                'mark_ini': 'assets/ui/fsm_editor/graph_panel/start_node.png',
+                'mark_end': 'assets/ui/fsm_editor/graph_panel/end_node.png',
+            }
+            x_cursor = pad
+            y_cursor = (tb_h - size) // 2
+            self.graph_toolbar_rects = {}
+            active_tool = getattr(model, 'active_graph_tool', None)
+            for tool in getattr(model, 'graph_toolbar_buttons', []):
+                rect = pygame.Rect(x_cursor, y_cursor, size, size)
+                # Button background and border (active highlight)
+                bg_col = (32, 34, 40)
+                pygame.draw.rect(surf, bg_col, rect, border_radius=4)
+                if tool == active_tool:
+                    pygame.draw.rect(surf, (90, 170, 255), rect, 2, border_radius=4)
+                else:
+                    pygame.draw.rect(surf, (75, 75, 85), rect, 1, border_radius=4)
+                # Icon
+                icon = None
+                # Prefer specific icon asset
+                sp = gp_icon_map.get(tool)
+                if sp:
+                    icon = IconCache.get_icon(sp, icon_size)
+                if icon is None:
+                    icon = base
+                surf_icon = icon.copy()
+                ir = surf_icon.get_rect(center=rect.center)
+                # Small text overlay as fallback or for zoom
+                try:
+                    font = pygame.font.SysFont(None, 16)
+                    labels = {
+                        'zoom_in': '+', 'zoom_out': '-',
+                    }
+                    if sp is None and tool in labels:
+                        lbl = font.render(labels[tool], True, (40, 40, 40))
+                        # light ring for contrast
+                        pygame.draw.rect(surf, (230,230,230), rect.inflate(-6, -6), 1, border_radius=3)
+                        lrr = lbl.get_rect(center=rect.center)
+                        surf.blit(lbl, lrr)
+                    else:
+                        surf.blit(surf_icon, ir)
+                except Exception:
+                    surf.blit(surf_icon, ir)
+                self.graph_toolbar_rects[tool] = pygame.Rect(x + rect.x, y + rect.y, rect.w, rect.h)
+                x_cursor += size + pad
+        except Exception:
+            # If UI deps missing, at least keep rects empty to avoid crashes
+            self.graph_toolbar_rects = {}
         # Pan/zoom parameters
         pan_x = float(getattr(model, 'pan_x', 0.0))
         pan_y = float(getattr(model, 'pan_y', 0.0))
@@ -37,9 +112,11 @@ class FsmGraphPanelView:
             # offset so grid scrolls smoothly
             ox = int(pan_x) % grid
             oy = int(pan_y) % grid
+            # Avoid overdrawing under the toolbar visually by starting after tb_h
+            tb_h = int(getattr(self, 'graph_toolbar_h', 0))
             for gx in range(-ox, w, grid):
                 pygame.draw.line(surf, grid_color, (gx, 0), (gx, h), 1)
-            for gy in range(-oy, h, grid):
+            for gy in range(max(tb_h, -oy), h, grid):
                 pygame.draw.line(surf, grid_color, (0, gy), (w, gy), 1)
         except Exception:
             pass

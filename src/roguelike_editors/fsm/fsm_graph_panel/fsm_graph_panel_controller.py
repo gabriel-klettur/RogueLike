@@ -8,6 +8,7 @@ from roguelike_editors.fsm.services.fsm_persistence import (
     load_layouts,
     save_layouts,
 )
+from roguelike_editors.fsm.services.fsm_id import new_id
 
 
 class FsmGraphPanelController:
@@ -64,19 +65,135 @@ class FsmGraphPanelController:
         pan_y = float(getattr(self.model, 'pan_y', 0.0))
         zoom = float(getattr(self.model, 'zoom', 1.0))
 
+        # Handle clicks on the graph toolbar buttons (top row inside canvas)
+        if et == pygame.MOUSEBUTTONDOWN and btn == 1:
+            try:
+                tb_rects = getattr(self.view, 'graph_toolbar_rects', {}) or {}
+                for tool_key, tb_rect in tb_rects.items():
+                    if tb_rect.collidepoint(mouse_pos):
+                        if tool_key in ('select', 'add_node', 'clone_node', 'connect', 'disconnect', 'delete', 'mark_ini', 'mark_end'):
+                            self.model.active_graph_tool = tool_key
+                        elif tool_key in ('zoom_in', 'zoom_out'):
+                            factor = 1.1 if tool_key == 'zoom_in' else (1/1.1)
+                            old_z = max(0.05, float(getattr(self.model, 'zoom', 1.0)))
+                            new_z = max(0.2, min(3.0, old_z * factor))
+                            if abs(new_z - old_z) > 1e-6:
+                                # Zoom around canvas center
+                                cx = rect.left + rect.w // 2
+                                cy = rect.top + rect.h // 2
+                                lcx, lcy = to_local((cx, cy))
+                                wx, wy = to_world(lcx, lcy)
+                                self.model.zoom = new_z
+                                self.model.pan_x = lcx - wx * new_z
+                                self.model.pan_y = lcy - wy * new_z
+                        return True
+            except Exception:
+                pass
+
         if et == pygame.MOUSEBUTTONDOWN:
             if btn == 1:
                 wx, wy = to_world(local_x, local_y)
                 node = pick_node(wx, wy)
-                if node is not None:
-                    self.model.selected_node_id = node.get('id')
-                    self.model.dragging_node_id = node.get('id')
-                    self.model.drag_offset_x = node.get('x', 0) - wx
-                    self.model.drag_offset_y = node.get('y', 0) - wy
-                else:
-                    # deselect if clicking empty space
-                    self.model.selected_node_id = None
-                return True
+                tool = getattr(self.model, 'active_graph_tool', 'select')
+                if tool == 'select':
+                    if node is not None:
+                        self.model.selected_node_id = node.get('id')
+                        self.model.dragging_node_id = node.get('id')
+                        self.model.drag_offset_x = node.get('x', 0) - wx
+                        self.model.drag_offset_y = node.get('y', 0) - wy
+                    else:
+                        # deselect if clicking empty space
+                        self.model.selected_node_id = None
+                    return True
+                elif tool == 'connect':
+                    if node is not None:
+                        nid = node.get('id')
+                        src = getattr(self.model, 'connect_source_node_id', None)
+                        if not src:
+                            self.model.connect_source_node_id = nid
+                        else:
+                            if src != nid:
+                                # add edge if not existing
+                                exists = any((e.get('from') == src and e.get('to') == nid) for e in getattr(self.model, 'edges', []))
+                                if not exists:
+                                    self.model.edges.append({'from': src, 'to': nid})
+                            self.model.connect_source_node_id = None
+                        return True
+                    # click on empty: cancel pending connection
+                    self.model.connect_source_node_id = None
+                    return True
+                elif tool == 'disconnect':
+                    if node is not None:
+                        nid = node.get('id')
+                        src = getattr(self.model, 'connect_source_node_id', None)
+                        if not src:
+                            self.model.connect_source_node_id = nid
+                        else:
+                            if src != nid:
+                                # remove edge if present
+                                self.model.edges = [
+                                    e for e in getattr(self.model, 'edges', [])
+                                    if not (e.get('from') == src and e.get('to') == nid)
+                                ]
+                            self.model.connect_source_node_id = None
+                        return True
+                    # click on empty: cancel pending disconnect
+                    self.model.connect_source_node_id = None
+                    return True
+                elif tool == 'delete':
+                    if node is not None:
+                        nid = node.get('id')
+                        # remove node
+                        self.model.nodes = [n for n in getattr(self.model, 'nodes', []) if n.get('id') != nid]
+                        # remove connected edges
+                        self.model.edges = [e for e in getattr(self.model, 'edges', []) if e.get('from') != nid and e.get('to') != nid]
+                        if getattr(self.model, 'selected_node_id', None) == nid:
+                            self.model.selected_node_id = None
+                        return True
+                    return True
+                elif tool == 'add_node':
+                    if node is None:
+                        # create a new node at click position
+                        existing_ids = {n.get('id') for n in getattr(self.model, 'nodes', []) if isinstance(n.get('id'), str)}
+                        nid = new_id('node', existing_ids)
+                        self.model.nodes.append({
+                            'id': nid,
+                            'label': nid,
+                            'x': int(wx), 'y': int(wy),
+                            'w': 120, 'h': 60,
+                        })
+                        self.model.selected_node_id = nid
+                        return True
+                    return True
+                elif tool == 'clone_node':
+                    if node is not None:
+                        existing_ids = {n.get('id') for n in getattr(self.model, 'nodes', []) if isinstance(n.get('id'), str)}
+                        nid = new_id('node', existing_ids)
+                        new_node = dict(node)
+                        new_node['id'] = nid
+                        new_node['x'] = int(node.get('x', 0)) + 20
+                        new_node['y'] = int(node.get('y', 0)) + 20
+                        # Reset flags that should not duplicate by default
+                        if new_node.get('initial'):
+                            new_node['initial'] = False
+                        self.model.nodes.append(new_node)
+                        self.model.selected_node_id = nid
+                        return True
+                    return True
+                elif tool in ('mark_ini', 'mark_end'):
+                    if node is not None:
+                        nid = node.get('id')
+                        if tool == 'mark_ini':
+                            # Clear existing and mark this one
+                            for n in getattr(self.model, 'nodes', []):
+                                n['initial'] = (n.get('id') == nid)
+                        else:
+                            # Mark terminal/end flag on this node
+                            for n in getattr(self.model, 'nodes', []):
+                                if n.get('id') == nid:
+                                    n['terminal'] = True
+                        return True
+                    return True
             if btn in (2, 3):  # middle or right button pans
                 self.model.dragging_pan = True
                 self.model.drag_last_local_x = int(local_x)
@@ -97,7 +214,7 @@ class FsmGraphPanelController:
                 return True
 
         if et == pygame.MOUSEMOTION:
-            if self.model.dragging_node_id:
+            if self.model.dragging_node_id and getattr(self.model, 'active_graph_tool', 'select') == 'select':
                 wx, wy = to_world(local_x, local_y)
                 # mutate node position in world space
                 nid = self.model.dragging_node_id

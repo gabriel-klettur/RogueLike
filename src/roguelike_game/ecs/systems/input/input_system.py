@@ -235,8 +235,6 @@ class InputSystem:
                 # Generar intención de fireball sólo en flanco ascendente
                 if eid in world.components.get('PlayerTagComponent', {}) and curr_click and not prev:
                     world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='fireball')
-                elif ui_blocked and bool(pygame.mouse.get_pressed()[0]) and not prev:
-                    logger.debug(f"[InputSystem] click suppressed over UI at ({mx},{my})")
                 # Guardar estado click para próxima iteración
                 self.prev_click[eid] = curr_click
                 # Lanzar el beam con click del medio
@@ -252,10 +250,7 @@ class InputSystem:
                     for s in getattr(world, 'render_systems', []):
                         if isinstance(s, InventoryUISystem) and s.panel_rect and s.panel_rect.collidepoint(pygame.mouse.get_pos()):
                             curr_right = False
-                            logger.debug(f"[DEBUG] [InputSystem] suppressed initial dash on inventory panel")
                             break
-                if not curr_right and ui_blocked and bool(pygame.mouse.get_pressed()[2]) and not prev_r:
-                    logger.debug(f"[InputSystem] right-click suppressed over UI at ({mx},{my})")
                 if curr_right and not prev_r:
                     logger.debug(f"[DEBUG][{time.time():.3f}] eid={eid} right-click -> dash")
                     world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='dash')

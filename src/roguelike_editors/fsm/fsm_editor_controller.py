@@ -52,7 +52,7 @@ class FsmEditorController:
         sets_rect = None
         if self.sets_panel_controller:
             try:
-                self.sets_panel_controller.model.visible = (tool == 'sets')
+                self.sets_panel_controller.model.visible = (tool == 'sets_list')
                 if self.sets_panel_controller.model.visible:
                     # Populate items from runtime snapshot
                     snap = get_snapshot()

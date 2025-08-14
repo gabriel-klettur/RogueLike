@@ -8,7 +8,7 @@ class FsmToolbarView:
         self.icons = None      # cached icons dict per tool
         self._last_model = None
         self.anchor = (20, 60)
-        self.size = 32
+        self.size = 64
         self.padding = 8
         self.icon_path = "assets/ui/generic_icon.png"
 
@@ -30,12 +30,25 @@ class FsmToolbarView:
             if base is None:
                 base = pygame.Surface(icon_size, pygame.SRCALPHA)
                 base.fill((180, 180, 180, 255))
-            # Build per-tool icons, giving 'sets' a distinct look
+            # Build per-tool icons, assign specific assets when available
+            specific_map = {
+                'sets_list': 'assets/ui/fsm_editor/tool_panel/sets_list.png',
+                'sets_entities_assignment': 'assets/ui/fsm_editor/tool_panel/set_assigment_entities.png',
+                'sets_animation_assignment': 'assets/ui/fsm_editor/tool_panel/set_assigment_animations.png',
+                'set_properties': 'assets/ui/fsm_editor/tool_panel/set_properties.png',
+                'undo': 'assets/ui/undo.png',
+                'redo': 'assets/ui/redo.png',
+            }
             icons = {}
             for tool in model.buttons:
                 surf = base.copy()
-                if tool == 'sets':
-                    # Try a dedicated icon; else overlay an 'S'
+                # Try specific icon file first
+                specific_path = specific_map.get(tool)
+                specific_icon = IconCache.get_icon(specific_path, icon_size) if specific_path else None
+                if specific_icon is not None:
+                    surf = specific_icon
+                elif tool == 'sets_list':
+                    # Fallback for sets_list: legacy dedicated options, then overlay 'S'
                     specific = (IconCache.get_icon('assets/ui/fsm_sets.png', icon_size)
                                 or IconCache.get_icon('assets/ui/icons/fsm_sets.png', icon_size))
                     if specific is not None:
@@ -85,13 +98,13 @@ class FsmToolbarView:
         panel_pos = self.toolbar.panel.pos or (self.anchor if anchor is None else anchor)
         panel_size = self.toolbar.panel.surface.get_size()
         self.last_rect = pygame.Rect(panel_pos, panel_size)
-        # Visual enhancements for 'sets' button: active border + count badge
+        # Visual enhancements for 'sets_list' button: active border + count badge
         try:
             icon_rects = getattr(self.toolbar, 'icon_rects', {}) or {}
-            sets_rect = icon_rects.get('sets')
+            sets_rect = icon_rects.get('sets_list')
             if sets_rect is not None:
                 # Active highlight
-                if getattr(model, 'active_tool', None) == 'sets':
+                if getattr(model, 'active_tool', None) == 'sets_list':
                     pygame.draw.rect(screen, (80, 160, 240), sets_rect.inflate(4, 4), 2)
                 # Badge with number of sets loaded
                 try:
@@ -120,7 +133,7 @@ class FsmToolbarView:
                         # subtle hover ring
                         pygame.draw.rect(screen, (200, 200, 200), sets_rect.inflate(2, 2), 1)
                         # tooltip bubble
-                        tip = "FSM Sets"
+                        tip = "FSM Sets List"
                         font = pygame.font.SysFont(None, 18)
                         txt = font.render(tip, True, (240, 240, 240))
                         tw, th = txt.get_size()

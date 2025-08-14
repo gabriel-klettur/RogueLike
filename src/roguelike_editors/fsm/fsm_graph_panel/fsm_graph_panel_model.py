@@ -9,6 +9,12 @@ class FsmGraphPanelModel:
     pan_x: float = 0.0
     pan_y: float = 0.0
     zoom: float = 1.0
+    # Graph toolbar state
+    graph_toolbar_buttons: List[str] = field(default_factory=lambda: [
+        'select', 'add_node', 'clone_node', 'connect', 'disconnect', 'delete', 'mark_ini', 'mark_end', 'zoom_in', 'zoom_out'
+    ])
+    active_graph_tool: Optional[str] = 'select'
+    connect_source_node_id: Optional[str] = None
     selected_node_id: Optional[str] = None
     selected_edge_index: Optional[int] = None
     dragging_node_id: Optional[str] = None

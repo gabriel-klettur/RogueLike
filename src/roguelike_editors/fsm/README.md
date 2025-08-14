@@ -97,9 +97,9 @@ Acciones concretas de alineación:
 - __Eventos__: `fsm_editor_events.py` (delegación a paneles; teclado/ratón)
 - __Paneles__:
   - `fsm_title/` ya existente: título con `TitleBar`.
-  - `fsm_toolbar/`: usa `ToolbarView` con botones: ['select', 'connect', 'delete', 'zoom_in', 'zoom_out', 'undo', 'redo', 'sets'].
+  - `fsm_toolbar/`: usa `ToolbarView` con botones: ['undo', 'redo', 'sets_list', 'sets_entities_assignment', 'sets_animation_assignment', 'set_properties'].
   - `fsm_sets_panel/`: lista de FSM Sets con `PickerPanel` (crear/duplicar/eliminar/renombrar set).
-  - `fsm_graph_panel/`: canvas nodal (estados como nodos, transiciones como aristas). Soporta pan/zoom, selección, arrastre, conexión.
+  - `fsm_graph_panel/`: canvas nodal (estados como nodos, transiciones como aristas). Soporta pan/zoom, selección, arrastre, conexión. Incluye una barra de herramientas horizontal superior con botones: ['select', 'connect', 'delete', 'zoom_in', 'zoom_out', 'mark_ini', 'mark_end'].
   - `fsm_properties_panel/`: propiedades del estado o transición seleccionados; pestañas: ['state', 'transition', 'actions', 'conditions', 'blackboard'].
 - __Servicios__ (nuevo `services/`):
   - `fsm_persistence.py`: load/save/validate contra `schema.json`.
@@ -112,13 +112,14 @@ Acciones concretas de alineación:
 ### fsm_toolbar (implementado)
 - __Ubicación__: `src/roguelike_editors/fsm/fsm_toolbar/` con MVC: `fsm_toolbar_model.py`, `fsm_toolbar_view.py`, `fsm_toolbar_controller.py`, `fsm_toolbar_events.py`.
 - __Botones por defecto__: definidos en `DEFAULT_BUTTONS` del `FsmToolbarModel`:
-  `['select','connect','delete','zoom_in','zoom_out','undo','redo','sets']`.
+  `['undo','redo','sets_list','sets_entities_assignment','sets_animation_assignment','set_properties']`.
 - __Iconos__: temporalmente todos los botones usan el mismo icono genérico `assets/ui/generic_icon.png` a través de `IconCache`.
 - __Vista__: `FsmToolbarView` envuelve `ToolbarView` (vertical). Propiedades iniciales: `anchor=(20,60)`, `size=32`, `padding=8`.
 - __Interacción__:
-  - LMB sobre un botón: activa la herramienta (`model.active_tool`); click repetido sobre la misma herramienta la desactiva.
+  - LMB sobre un botón: activa la herramienta (`model.active_tool`) cuando aplica (p. ej., `sets_list`).
   - RMB sobre el panel: permite arrastrar el toolbar (delegado a `DraggablePanel`).
   - ESC: limpia la herramienta activa (`active_tool=None`).
+  - Atajo: tecla `S` alterna la visibilidad de `sets_list`.
 - __API del controlador__: `FsmToolbarController.is_active(tool)` y `set_active(tool|None)` para que la vista pinte selección y el resto del editor pueda consultar el estado.
 - __Integración típica__:
   - Render: `rect = toolbar_controller.render(screen)` devuelve el `pygame.Rect` del panel para layout y registro de UI blockers (el `ToolbarView` ya invoca `register_blocker`).
