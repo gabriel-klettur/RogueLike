@@ -10,12 +10,13 @@ with open(_DATA_DIR / "entities/new_monsters.json", encoding="utf-8") as f:
 # Extract raw monster classes
 _raw_classes = _monster_cfg.get("monsters", {}).get("classes", {})
 
-# Flatten stats into top-level and keep assets nested
+# Flatten stats into top-level and keep assets nested; include optional fsm_set per class
 MONSTER_DEFS: Dict[str, Any] = {}
 for class_name, class_cfg in _raw_classes.items():
     stats = class_cfg.get("stats", {})
     assets = class_cfg.get("assets", {})
-    MONSTER_DEFS[class_name] = {**stats, "assets": assets}
+    fsm_set = class_cfg.get("fsm_set")
+    MONSTER_DEFS[class_name] = {**stats, "assets": assets, "fsm_set": fsm_set}
 
 # Separate mappings for stats and assets
 MONSTER_STATS: Dict[str, Any] = {class_name: class_cfg.get("stats", {}) for class_name, class_cfg in _raw_classes.items()}
@@ -32,12 +33,14 @@ def reload_monster_defs() -> None:
     with open(_DATA_DIR / "entities/new_monsters.json", encoding="utf-8") as f:
         monster_cfg = json.load(f)
     _raw_classes = monster_cfg.get("monsters", {}).get("classes", {})
-    # Flatten stats into top-level and keep assets nested
+    # Flatten stats into top-level and keep assets nested; include optional fsm_set per class
     MONSTER_DEFS.clear()
     for class_name, class_cfg in _raw_classes.items():
         stats = class_cfg.get("stats", {})
         assets = class_cfg.get("assets", {})
-        MONSTER_DEFS[class_name] = {**stats, "assets": assets}
+        fsm_set = class_cfg.get("fsm_set")
+        MONSTER_DEFS[class_name] = {**stats, "assets": assets, "fsm_set": fsm_set}
+
     # Update stats and assets mappings
     MONSTER_STATS.clear()
     MONSTER_STATS.update({class_name: class_cfg.get("stats", {}) for class_name, class_cfg in _raw_classes.items()})

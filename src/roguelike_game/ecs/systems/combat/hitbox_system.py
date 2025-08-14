@@ -2,11 +2,6 @@ import math
 import pygame
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.ecs.utils.collider_utils import build_collider_rect
-from roguelike_game.ecs.systems.fsm.states.damage_state import DamageState
-from roguelike_game.ecs.systems.fsm.states.attack_state import AttackState
-from roguelike_game.ecs.systems.fsm.states.monster.alert_chase_state import AlertChaseState
-from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
-from roguelike_game.ecs.systems.fsm.fsm_system import _EntityProxy
 
 import logging
 logger = logging.getLogger(__name__)
@@ -101,10 +96,8 @@ class HitboxSystem:
                     attacker_pos = world.components['Position'][hb.owner]
                     defender_pos = world.components['Position'][target]
                     from_left = attacker_pos.x < defender_pos.x
-                    fsm = world.components['NPCState'][target].fsm
-                    proxy = _EntityProxy(world, target)
-                    current = fsm.current_state
-                    next_state = AttackState() if isinstance(current, AttackState) else AlertChaseState()
-                    fsm.change_state(DamageState(next_state, from_left), proxy)
+                    qmap = world.components.setdefault('FSMEventQueue', {})
+                    q = qmap.setdefault(target, [])
+                    q.append({"type": "OnHit", "from_left": from_left})
                     if health.current_hp <= 0:
-                        fsm.change_state(DeathState(), proxy)
+                        q.append({"type": "OnDeath"})

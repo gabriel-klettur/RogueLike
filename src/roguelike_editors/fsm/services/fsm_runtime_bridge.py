@@ -39,6 +39,11 @@ def _ensure_cache() -> _Cached:
     if _CACHE is not None:
         return _CACHE
     sets, assignments = load_all()
+    # Basic validation: initial state exists; state classes resolvable
+    try:
+        _validate_sets(sets)
+    except Exception as ex:
+        logger.warning("[FSMBridge] validation warnings: %s", ex)
     by_id = {s["id"]: s for s in sets.get("sets", [])}
     _CACHE = _Cached(sets=sets, assignments=assignments, by_id=by_id)
     logger.debug("[FSMBridge] cache loaded: %d sets", len(by_id))
@@ -78,7 +83,62 @@ def build_fsm_from_set(set_def: Dict[str, Any]) -> Tuple[FiniteStateMachine, str
     if cls is None:
         raise ValueError(f"FSM state class not found: {class_name}")
     fsm = FiniteStateMachine(cls())
+    # Configure allowed state classes ONLY for Monster_* sets so Player is unaffected.
+    set_id = set_def.get("id", "") or ""
+    if set_id.startswith("Monster_"):
+        try:
+            allowed_classes = {s.get("class") for s in set_def.get("states", []) if s.get("class")}
+        except Exception:
+            allowed_classes = set()
+        fsm.context["allowed_state_classes"] = allowed_classes
+        fsm.context["set_id"] = set_id
+        # Map state-id -> class-name for editor/runtime helpers
+        fsm.context["id_to_class"] = {s.get("id"): s.get("class") for s in set_def.get("states", []) if s.get("id")}
+        # Always allow transitioning to DeathState by default unless explicitly disabled elsewhere.
+        fsm.context.setdefault("allow_death", True)
+        # Always allow transitioning to DamageState by default unless explicitly disabled elsewhere.
+        fsm.context.setdefault("allow_damage", True)
+        # Policy for next state after Damage:
+        # 1) If there is a transition defined in JSON from 'Damage' -> X, use X's class.
+        # 2) Else prefer AlertChase -> Chase -> Patrol based on allowed states.
+        damage_to_class = None
+        for tr in set_def.get("transitions", []) or []:
+            if tr.get("from") == "Damage":
+                to_id = tr.get("to")
+                if to_id:
+                    to_cls = fsm.context["id_to_class"].get(to_id)
+                    if to_cls:
+                        damage_to_class = to_cls
+                        break
+        if damage_to_class:
+            fsm.context.setdefault("damage_next_class", damage_to_class)
+        else:
+            if "AlertChaseState" in allowed_classes:
+                fsm.context.setdefault("damage_next_class", "AlertChaseState")
+            elif "ChaseState" in allowed_classes:
+                fsm.context.setdefault("damage_next_class", "ChaseState")
+            else:
+                fsm.context.setdefault("damage_next_class", "PatrolState")
     return fsm, initial
+
+
+def _validate_sets(sets_doc: Dict[str, Any]) -> None:
+    """Log warnings for common issues in sets.json."""
+    from .fsm_registry import get_state_class
+    problems = []
+    for s in sets_doc.get("sets", []):
+        sid = s.get("id")
+        initial = s.get("initial")
+        states = {st.get("id"): st for st in s.get("states", [])}
+        if not initial or initial not in states:
+            problems.append(f"set {sid}: missing/invalid initial '{initial}'")
+        for st in states.values():
+            cls_name = st.get("class")
+            if cls_name and get_state_class(cls_name) is None:
+                problems.append(f"set {sid}: unknown state class '{cls_name}'")
+    if problems:
+        for p in problems:
+            logger.warning("[FSMBridge][validate] %s", p)
 
 
 def _assignment_for(archetype: str, eid: Optional[int] = None) -> Optional[str]:

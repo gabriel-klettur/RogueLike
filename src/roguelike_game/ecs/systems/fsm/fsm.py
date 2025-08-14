@@ -28,6 +28,23 @@ class FiniteStateMachine:
         """
         old_state_name = self.current_state.__class__.__name__
         new_state_name = new_state.__class__.__name__
+        # Guard: enforce allowed states if provided by the JSON FSM set.
+        try:
+            ctx = getattr(self, 'context', {}) or {}
+        except Exception:
+            ctx = {}
+        allowed = ctx.get('allowed_state_classes')
+        allow_death = ctx.get('allow_death', True)
+        allow_damage = ctx.get('allow_damage', True)
+        if allowed:
+            if new_state_name not in allowed:
+                special_ok = (
+                    (allow_death and new_state_name == 'DeathState') or
+                    (allow_damage and new_state_name == 'DamageState')
+                )
+                if not special_ok:
+                    logger.debug(f" Eid={entity.id} blocked transition {old_state_name} -> {new_state_name} (not allowed by set)")
+                    return
         # Track debug history
         self._seen_states.add(new_state)
         self._history.append((self.current_state, new_state))

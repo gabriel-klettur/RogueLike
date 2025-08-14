@@ -23,7 +23,7 @@ from roguelike_game.ecs.components.ai.damage_config import DamageConfig
 from roguelike_game.ecs.components.fsm.patrol_route import PatrolRoute
 from roguelike_game.ecs.systems.fsm.states.monster.patrol_state import PatrolState
 from roguelike_game.ecs.systems.fsm.fsm import FiniteStateMachine
-from roguelike_editors.fsm.services.fsm_runtime_bridge import build_fsm_for_archetype
+from roguelike_editors.fsm.services.fsm_runtime_bridge import build_fsm_for_archetype, get_set, build_fsm_from_set
 from roguelike_game.ecs.components.fsm.npc_state import NPCState
 from roguelike_game.ecs.components.core.npc_tag import NPCTagComponent
 from roguelike_game.ecs.components.monster_instance_component import MonsterInstanceComponent
@@ -93,10 +93,22 @@ class MonsterBuilder:
         # FSM: PatrolRoute & NPCState
         route_points = [(x, y), (x + 5 * TILE_SIZE, y)]
         world.components["PatrolRoute"][eid] = PatrolRoute(route_points)
-        # Try JSON-driven FSM by archetype; fallback to Patrol
+        # Try per-class FSM via fsm_set in new_monsters.json, then fallback to assignments.json, then Patrol
+        fsm_set_id = cfg.get("fsm_set")
+        if fsm_set_id:
+            try:
+                set_def = get_set(fsm_set_id)
+                if set_def:
+                    fsm, initial_name = build_fsm_from_set(set_def)
+                    world.components["NPCState"][eid] = NPCState(fsm, initial_name)
+                    return eid
+            except Exception:
+                # Ignore and fallback to assignment-based build
+                pass
+
+        # Fallback: JSON-driven FSM by archetype assignment; if none, go Patrol
         built = None
         try:
-            # Use monster_type in assignments (e.g., 'goblin')
             archetype = str(monster_type).lower()
             built = build_fsm_for_archetype(archetype, eid=eid)
         except Exception:

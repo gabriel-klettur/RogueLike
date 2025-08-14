@@ -35,6 +35,18 @@
       "initial": "Patrol"
     },
     {
+      "id": "Monster_stupid",
+      "label": "Monster Stupid",
+      "states": [
+        { "id": "Patrol", "class": "PatrolState" },
+        { "id": "Damage", "class": "DamageState" }
+      ],
+      "transitions": [
+        { "from": "Damage", "to": "Patrol", "when": "after_damage" }
+      ],
+      "initial": "Patrol"
+    },
+    {
       "id": "Monster_Default",
       "label": "Monster Default",
       "states": [
@@ -44,6 +56,7 @@
         { "id": "Attack", "class": "AttackState" },
         { "id": "Flee", "class": "FleeState" },
         { "id": "AlertChase", "class": "AlertChaseState" },
+        { "id": "Damage", "class": "DamageState" },
         { "id": "Death", "class": "DeathState" }
       ],
       "transitions": [
@@ -54,6 +67,7 @@
         { "from": "Chase", "to": "Attack", "when": "melee_range" },
         { "from": "Chase", "to": "Patrol", "when": "lost_player" },
         { "from": "Attack", "to": "Chase", "when": "out_of_melee_range" },
+        { "from": "Damage", "to": "AlertChase", "when": "after_damage" },
         { "from": "AlertChase", "to": "Patrol", "when": "timer_5s" },
         { "from": "Patrol", "to": "Death", "when": "dead" },
         { "from": "Aggro", "to": "Death", "when": "dead" },

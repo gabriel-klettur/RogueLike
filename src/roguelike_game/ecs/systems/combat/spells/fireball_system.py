@@ -1,11 +1,7 @@
 import pygame
 from roguelike_engine.utils.benchmark import benchmark
-from roguelike_game.ecs.systems.fsm.fsm_system import _EntityProxy
-from roguelike_game.ecs.systems.fsm.states.damage_state import DamageState
-from roguelike_game.ecs.systems.fsm.states.attack_state import AttackState
 import math
 from roguelike_game.config.spells_config import SPELLS
-from roguelike_game.ecs.systems.fsm.states.monster.alert_chase_state import AlertChaseState
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.abilities.explosion_component import ExplosionComponent
 from roguelike_game.ecs.systems.combat.explosions_models import FireExplosionModel
@@ -67,19 +63,18 @@ class FireballSystem:
                         hp = world.components['Health'][target]
                         hp.current_hp = max(0, hp.current_hp - comp.damage)
                         world.remove_entity(eid)
-                        # Si el daño viene de fireball de jugador, estado alerta de chase
+                        # Si el daño viene de fireball de jugador, publicar eventos FSM
                         caster = comp.caster
                         if caster in world.components.get('PlayerTagComponent', {}):
-                            fsm = world.components['NPCState'][target].fsm                            
-                            # determinar dirección de daño y siguiente estado
+                            # determinar dirección de daño
                             attacker_pos = world.components['Position'][caster]
                             defender_pos = world.components['Position'][target]
                             from_left = attacker_pos.x < defender_pos.x
-                            proxy = _EntityProxy(world, target)
-                            # Si ya estaba en AttackState, volver a Attack; sino AlertChase
-                            current = fsm.current_state
-                            next_state = AttackState() if isinstance(current, AttackState) else AlertChaseState()
-                            fsm.change_state(DamageState(next_state, from_left), proxy)
+                            qmap = world.components.setdefault('FSMEventQueue', {})
+                            q = qmap.setdefault(target, [])
+                            q.append({"type": "OnHit", "from_left": from_left})
+                            if hp.current_hp <= 0:
+                                q.append({"type": "OnDeath"})
                         break
             # Colisión con tiles sólidos
             point = pygame.Rect(pos.x, pos.y, 1, 1)

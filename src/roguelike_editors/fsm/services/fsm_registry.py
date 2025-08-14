@@ -33,6 +33,7 @@ _try_register('roguelike_game.ecs.systems.fsm.states.monster.aggro_state', 'Aggr
 _try_register('roguelike_game.ecs.systems.fsm.states.monster.flee_state', 'FleeState')
 _try_register('roguelike_game.ecs.systems.fsm.states.monster.alert_chase_state', 'AlertChaseState')
 _try_register('roguelike_game.ecs.systems.fsm.states.death_state', 'DeathState')
+_try_register('roguelike_game.ecs.systems.fsm.states.damage_state', 'DamageState')
 
 
 def get_state_class(name: str) -> Optional[Type[State]]:
