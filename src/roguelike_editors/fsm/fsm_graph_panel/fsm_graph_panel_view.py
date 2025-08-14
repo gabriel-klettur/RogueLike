@@ -50,6 +50,8 @@ class FsmGraphPanelView:
                 'delete': 'assets/ui/fsm_editor/graph_panel/delete_node.png',
                 'mark_ini': 'assets/ui/fsm_editor/graph_panel/start_node.png',
                 'mark_end': 'assets/ui/fsm_editor/graph_panel/end_node.png',
+                'zoom_in': 'assets/ui/fsm_editor/graph_panel/zoom_in.png',
+                'zoom_out': 'assets/ui/fsm_editor/graph_panel/zoom_out.png',
             }
             x_cursor = pad
             y_cursor = (tb_h - size) // 2
@@ -114,9 +116,12 @@ class FsmGraphPanelView:
             oy = int(pan_y) % grid
             # Avoid overdrawing under the toolbar visually by starting after tb_h
             tb_h = int(getattr(self, 'graph_toolbar_h', 0))
+            # Vertical grid lines: only draw below toolbar
             for gx in range(-ox, w, grid):
-                pygame.draw.line(surf, grid_color, (gx, 0), (gx, h), 1)
-            for gy in range(max(tb_h, -oy), h, grid):
+                pygame.draw.line(surf, grid_color, (gx, tb_h), (gx, h), 1)
+            # Horizontal grid lines: align with pan offset and start at first y >= tb_h
+            start_y = tb_h + ((-oy - tb_h) % grid)
+            for gy in range(start_y, h, grid):
                 pygame.draw.line(surf, grid_color, (0, gy), (w, gy), 1)
         except Exception:
             pass
