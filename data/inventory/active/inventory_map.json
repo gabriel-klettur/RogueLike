@@ -19,26 +19,6 @@
       "y": 2379.5416689895665
     }
   },
-  "77c50b8a-f7d2-42ec-b3ce-55d646f51bf9": {
-    "item_id": "gold",
-    "quantity": 6,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 1422.0,
-      "y": 2418
-    }
-  },
-  "a5d27541-f765-4b91-b792-c808f9edf871": {
-    "item_id": "experience_orb",
-    "quantity": 1,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 1422.0,
-      "y": 2418
-    }
-  },
   "cf55fe7a-a83d-4df6-97ce-09f163c92cd8": {
     "item_id": "wood",
     "quantity": 1,
@@ -47,36 +27,6 @@
     "position": {
       "x": 1422.0,
       "y": 2418
-    }
-  },
-  "ffca78ba-77fd-430f-949b-f72292c3d584": {
-    "item_id": "bucket",
-    "quantity": 1,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 1422.0,
-      "y": 2418
-    }
-  },
-  "9fa19547-7bec-466e-b0cb-ae9f5f16da6e": {
-    "item_id": "iron_sword",
-    "quantity": 1,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 641.1912519823146,
-      "y": 1820.1504399465296
-    }
-  },
-  "4d4f147f-56f3-4074-a4d5-2700b8118f16": {
-    "item_id": "gold",
-    "quantity": 16,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 641.1912519823146,
-      "y": 1820.1504399465296
     }
   }
 }

@@ -6,6 +6,8 @@ class FsmPropertiesPanelView:
         # Geometry caches filled at render
         self.panel_rect = None
         self.header_rect = None
+        self.lint_warn_rect = None
+        self.lint_err_rect = None
         self.tabs_nodes_rect = None
         self.tabs_trans_rect = None
         self.set_prev_rect = None
@@ -39,6 +41,38 @@ class FsmPropertiesPanelView:
                 pygame.draw.rect(surf, (28, 28, 28), self.header_rect)
                 label = title_font.render("FSM Properties", True, (240, 240, 240))
                 surf.blit(label, (10, 6))
+                # Lint badges (errors and warnings)
+                errs = getattr(model, 'lint_errors', []) or []
+                warns = getattr(model, 'lint_warnings', []) or []
+                def _badge(text, color_bg, color_fg=(255,255,255)):
+                    t = font.render(text, True, color_fg)
+                    pad_x, pad_y = 6, 2
+                    bw, bh = t.get_width() + pad_x * 2, t.get_height() + pad_y * 2
+                    bsurf = pygame.Surface((bw, bh), pygame.SRCALPHA)
+                    bsurf.fill((*color_bg, 230))
+                    pygame.draw.rect(bsurf, (255, 255, 255), bsurf.get_rect(), 1, border_radius=6)
+                    bsurf.blit(t, (pad_x, pad_y))
+                    return bsurf
+                # Place from right to left
+                cx = w - 8
+                self.lint_err_rect = None
+                self.lint_warn_rect = None
+                if errs:
+                    b = _badge(f"E:{len(errs)}", (200, 60, 60))
+                    r = b.get_rect()
+                    r.top = 4
+                    r.right = cx
+                    surf.blit(b, r)
+                    self.lint_err_rect = r
+                    cx = r.left - 6
+                if warns:
+                    b = _badge(f"W:{len(warns)}", (220, 160, 60))
+                    r = b.get_rect()
+                    r.top = 4
+                    r.right = cx
+                    surf.blit(b, r)
+                    self.lint_warn_rect = r
+                    cx = r.left - 6
                 # Tabs bar
                 tabs_y = header_h
                 pygame.draw.rect(surf, (34, 34, 34), pygame.Rect(0, tabs_y, w, tabs_h))
@@ -136,6 +170,48 @@ class FsmPropertiesPanelView:
                         pygame.draw.rect(surf, (120, 160, 220), underline_rect)
                         edit_txt = font.render(model.editing_text, True, (240, 240, 240))
                         surf.blit(edit_txt, (self.value_col_x, row_y + 3))
+                # Tooltips: lint and row hints
+                try:
+                    mx, my = pygame.mouse.get_pos()
+                    local_x, local_y = mx - self.panel_rect.x, my - self.panel_rect.y
+                    # Lint tooltips
+                    def _tooltip(lines: List[str], bx: int, by: int):
+                        if not lines:
+                            return
+                        tip_font = pygame.font.SysFont(None, 18)
+                        pad = 6
+                        # Render up to 8 lines
+                        lines = lines[:8]
+                        rendered = [tip_font.render(l, True, (240, 240, 240)) for l in lines]
+                        tw = max(r.get_width() for r in rendered)
+                        th = sum(r.get_height() for r in rendered) + (len(rendered) - 1) * 2
+                        bw, bh = tw + pad * 2, th + pad * 2
+                        # keep inside panel bounds
+                        if bx + bw + 4 > w:
+                            bx = max(4, w - bw - 4)
+                        if by + bh + 4 > h:
+                            by = max(4, h - bh - 4)
+                        bg = pygame.Surface((bw, bh), pygame.SRCALPHA)
+                        bg.fill((20, 20, 20, 210))
+                        pygame.draw.rect(bg, (100, 100, 100), bg.get_rect(), 1)
+                        surf.blit(bg, (bx, by))
+                        ty = by + pad
+                        for r in rendered:
+                            surf.blit(r, (bx + pad, ty))
+                            ty += r.get_height() + 2
+                    if self.lint_err_rect and self.lint_err_rect.collidepoint(local_x, local_y):
+                        _tooltip([str(m) for m in errs], self.lint_err_rect.left, self.lint_err_rect.bottom + 4)
+                    elif self.lint_warn_rect and self.lint_warn_rect.collidepoint(local_x, local_y):
+                        _tooltip([str(m) for m in warns], self.lint_warn_rect.left, self.lint_warn_rect.bottom + 4)
+                    # Row hint tooltip near mouse when hovering
+                    hi = getattr(model, 'hovered_index', None)
+                    if hi is not None and 0 <= int(hi) < len(model.rows):
+                        key = model.rows[int(hi)].key
+                        hint = (getattr(model, 'row_hints', {}) or {}).get(key)
+                        if hint:
+                            _tooltip([hint], local_x + 12, local_y + 12)
+                except Exception:
+                    pass
             except Exception:
                 pass
             screen.blit(surf, self.panel_rect.topleft)

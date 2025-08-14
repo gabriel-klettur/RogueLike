@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 
 @dataclass
@@ -37,6 +37,13 @@ class FsmPropertiesPanelModel:
 
     # Rows for the lower table (key/value pairs)
     rows: List[Row] = field(default_factory=list)
+
+    # Lint results (populated after saves)
+    lint_warnings: List[str] = field(default_factory=list)
+    lint_errors: List[str] = field(default_factory=list)
+
+    # Optional per-row tooltips/hints (key -> hint)
+    row_hints: Dict[str, str] = field(default_factory=dict)
 
     # UI state: hover/selection/editing
     hovered_index: Optional[int] = None

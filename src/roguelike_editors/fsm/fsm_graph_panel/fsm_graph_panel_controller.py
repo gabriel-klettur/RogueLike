@@ -10,7 +10,11 @@ from roguelike_editors.fsm.services.fsm_persistence import (
     default_layouts_path,
     load_layouts,
     save_layouts,
+    default_sets_path,
+    load_sets,
+    save_sets,
 )
+from roguelike_editors.fsm.services.fsm_runtime_bridge import publish_reload
 from roguelike_editors.fsm.services.fsm_id import new_id
 
 LOGGER = logging.getLogger("roguelike_editors.fsm.fsm_graph_panel.controller")
@@ -163,6 +167,10 @@ class FsmGraphPanelController:
                             self._persist_layout()
                         except Exception:
                             pass
+                        try:
+                            self._persist_sets_structural()
+                        except Exception:
+                            pass
                         return True
                     # click on empty: cancel pending connection
                     self.model.connect_source_node_id = None
@@ -189,6 +197,10 @@ class FsmGraphPanelController:
                             self._persist_layout()
                         except Exception:
                             pass
+                        try:
+                            self._persist_sets_structural()
+                        except Exception:
+                            pass
                         return True
                     # click on empty: cancel pending disconnect
                     self.model.connect_source_node_id = None
@@ -211,6 +223,10 @@ class FsmGraphPanelController:
                             self._persist_layout()
                         except Exception:
                             pass
+                        try:
+                            self._persist_sets_structural()
+                        except Exception:
+                            pass
                         return True
                     return True
                 elif tool == 'add_node':
@@ -228,6 +244,10 @@ class FsmGraphPanelController:
                         # Persist after add
                         try:
                             self._persist_layout()
+                        except Exception:
+                            pass
+                        try:
+                            self._persist_sets_structural()
                         except Exception:
                             pass
                         return True
@@ -250,6 +270,10 @@ class FsmGraphPanelController:
                             self._persist_layout()
                         except Exception:
                             pass
+                        try:
+                            self._persist_sets_structural()
+                        except Exception:
+                            pass
                         return True
                     return True
                 elif tool in ('mark_ini', 'mark_end'):
@@ -267,6 +291,10 @@ class FsmGraphPanelController:
                         # Persist after mark
                         try:
                             self._persist_layout()
+                        except Exception:
+                            pass
+                        try:
+                            self._persist_sets_structural()
                         except Exception:
                             pass
                         return True
@@ -526,6 +554,86 @@ class FsmGraphPanelController:
         by_set[set_id] = entry
         layouts["by_set"] = by_set
         save_layouts(layouts, path)
+
+    def _persist_sets_structural(self) -> None:
+        """Write current nodes/edges into the selected set within sets.json.
+        - Adds/removes states based on nodes
+        - Updates set.initial from node flags
+        - Rebuilds transitions from edges, preserving existing 'when' if possible
+        """
+        set_id = getattr(self.model, 'selected_set_id', None)
+        if not set_id:
+            return
+        path = default_sets_path()
+        data = load_sets(path)
+        sets = (data or {}).get('sets') or []
+        target = None
+        for s in sets:
+            if s.get('id') == set_id:
+                target = s
+                break
+        if target is None:
+            return
+        # States
+        existing_states = {st.get('id'): st for st in (target.get('states') or []) if isinstance(st, dict)}
+        new_states = []
+        initial_node_id = None
+        for n in getattr(self.model, 'nodes', []):
+            nid = n.get('id')
+            if not nid:
+                continue
+            st = dict(existing_states.get(nid) or {'id': nid})
+            # Keep label if present, else from node
+            if 'label' not in st or not st.get('label'):
+                if n.get('label'):
+                    st['label'] = n.get('label')
+            # Flags
+            if n.get('initial'):
+                initial_node_id = nid
+            st['terminal'] = bool(n.get('terminal', st.get('terminal', False)))
+            new_states.append(st)
+        target['states'] = new_states
+        # Initial selection: prefer explicitly marked node; otherwise keep previous if still present; else fallback to first
+        new_ids = [st.get('id') for st in new_states if isinstance(st.get('id'), str)]
+        if initial_node_id:
+            target['initial'] = initial_node_id
+        else:
+            prev_init = target.get('initial')
+            if prev_init not in new_ids:
+                if new_ids:
+                    target['initial'] = new_ids[0]
+        # Transitions: build from edges, preserve existing 'when' if possible
+        existing_trs = target.get('transitions') or []
+        by_pair = {}
+        for tr in existing_trs:
+            key = (tr.get('from'), tr.get('to'))
+            by_pair.setdefault(key, []).append(tr)
+        new_trs = []
+        for e in getattr(self.model, 'edges', []):
+            fr = e.get('from'); to = e.get('to')
+            if not fr or not to:
+                continue
+            key = (fr, to)
+            carry = (by_pair.get(key) or [None])[0]
+            when = e.get('label') if isinstance(e.get('label'), str) else (carry.get('when') if isinstance(carry, dict) else '')
+            tr = {'from': fr, 'to': to, 'when': when}
+            # Preserve optional style/fields
+            if isinstance(carry, dict):
+                for k in ('conditions', 'actions', 'style', 'color', 'width', 'head_len', 'head_width', 'curved', 'curve_step', 'active'):
+                    if k in carry and k not in tr:
+                        tr[k] = carry[k]
+            for k in ('color', 'width', 'head_len', 'head_width', 'curved', 'curve_step', 'active'):
+                if k in e:
+                    tr[k] = e[k]
+            new_trs.append(tr)
+        target['transitions'] = new_trs
+        # Save (validates and codegens via save_sets)
+        save_sets(data, path)
+        # Hot-reload runtime snapshot
+        try:
+            publish_reload()
+        except Exception:
+            pass
 
 
 __all__ = ["FsmGraphPanelController"]

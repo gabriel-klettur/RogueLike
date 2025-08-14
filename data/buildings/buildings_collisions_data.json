@@ -5450,5 +5450,117 @@
                 "."
             ]
         ]
+    },
+    "assets/buildings\\forest_decoration\\natural\\champinones_agrupados_marrones.png": {
+        "width": 2,
+        "height": 2,
+        "collision": [
+            [
+                ".",
+                "."
+            ],
+            [
+                ".",
+                "."
+            ]
+        ]
+    },
+    "assets/buildings\\forest_decoration\\natural\\raiz_expuesta_suave.png": {
+        "width": 3,
+        "height": 3,
+        "collision": [
+            [
+                ".",
+                ".",
+                "."
+            ],
+            [
+                ".",
+                ".",
+                "."
+            ],
+            [
+                ".",
+                ".",
+                "."
+            ]
+        ]
+    },
+    "assets/buildings\\forest_decoration\\natural\\Flor_silvestre_azul.png": {
+        "width": 3,
+        "height": 3,
+        "collision": [
+            [
+                ".",
+                ".",
+                "."
+            ],
+            [
+                ".",
+                ".",
+                "."
+            ],
+            [
+                ".",
+                ".",
+                "."
+            ]
+        ]
+    },
+    "assets/buildings\\forest_decoration\\natural\\petalos_rosados_2.png": {
+        "width": 2,
+        "height": 2,
+        "collision": [
+            [
+                ".",
+                "."
+            ],
+            [
+                ".",
+                "."
+            ]
+        ]
+    },
+    "assets/buildings\\forest_decoration\\natural\\seta_blanca.png": {
+        "width": 2,
+        "height": 2,
+        "collision": [
+            [
+                ".",
+                "."
+            ],
+            [
+                ".",
+                "."
+            ]
+        ]
+    },
+    "assets/buildings\\forest_decoration\\natural\\mariposa rama caida.png": {
+        "width": 2,
+        "height": 2,
+        "collision": [
+            [
+                ".",
+                "."
+            ],
+            [
+                ".",
+                "."
+            ]
+        ]
+    },
+    "assets/buildings\\forest_decoration\\natural\\petalos_rosados_3.png": {
+        "width": 2,
+        "height": 2,
+        "collision": [
+            [
+                ".",
+                "."
+            ],
+            [
+                ".",
+                "."
+            ]
+        ]
     }
 }

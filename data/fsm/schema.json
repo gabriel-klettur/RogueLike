@@ -1,0 +1,82 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "FSM Sets Schema",
+  "type": "object",
+  "$defs": {
+    "style": {
+      "type": "object",
+      "properties": {
+        "color": { "type": "string" },
+        "width": { "type": "number" },
+        "head_len": { "type": "number" },
+        "head_width": { "type": "number" }
+      },
+      "additionalProperties": true
+    },
+    "state": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "label": { "type": "string" },
+        "class": { "type": "string", "minLength": 1 },
+        "props": { "type": "object", "additionalProperties": true },
+        "initial": { "type": "boolean" },
+        "terminal": { "type": "boolean" },
+        "x": { "type": "integer" },
+        "y": { "type": "integer" },
+        "w": { "type": "integer" },
+        "h": { "type": "integer" }
+      },
+      "required": ["id", "class"],
+      "additionalProperties": true
+    },
+    "transition": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "from": { "type": "string", "minLength": 1 },
+        "to": { "type": "string", "minLength": 1 },
+        "when": { "type": "string", "minLength": 1 },
+        "label": { "type": "string" },
+        "conditions": { "type": "array", "items": { "type": "string" } },
+        "actions": { "type": "array", "items": { "type": "string" } },
+        "style": { "$ref": "#/$defs/style" },
+        "color": { "type": "string" },
+        "width": { "type": "number" },
+        "head_len": { "type": "number" },
+        "head_width": { "type": "number" },
+        "curved": { "type": "boolean" },
+        "curve_step": { "type": "number" },
+        "active": { "type": "boolean" }
+      },
+      "required": ["from", "to", "when"],
+      "additionalProperties": true
+    }
+  },
+  "properties": {
+    "version": { "type": "integer", "minimum": 1 },
+    "sets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "label": { "type": "string" },
+          "states": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/state" }
+          },
+          "transitions": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/transition" }
+          },
+          "initial": { "type": "string", "minLength": 1 }
+        },
+        "required": ["id", "states", "transitions"],
+        "additionalProperties": true
+      }
+    }
+  },
+  "required": ["version", "sets"],
+  "additionalProperties": false
+}

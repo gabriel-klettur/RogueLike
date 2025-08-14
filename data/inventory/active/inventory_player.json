@@ -5,7 +5,7 @@
     "slots": [
       {
         "item": "gold",
-        "quantity": 569
+        "quantity": 591
       },
       {
         "item": "wood",
@@ -13,7 +13,7 @@
       },
       {
         "item": "iron_sword",
-        "quantity": 5
+        "quantity": 6
       },
       {
         "item": "food_chicken",
@@ -23,7 +23,10 @@
         "item": "wizard_staff_lvl_2",
         "quantity": 1
       },
-      null,
+      {
+        "item": "bucket",
+        "quantity": 1
+      },
       null,
       null,
       null,

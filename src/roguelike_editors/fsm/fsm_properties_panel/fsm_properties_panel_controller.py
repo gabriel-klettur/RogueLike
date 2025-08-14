@@ -26,6 +26,15 @@ class FsmPropertiesPanelController:
             return None
         # Refresh data and rows before rendering
         self._refresh_snapshot()
+        # Pull last lint results for UI surfacing
+        try:
+            from roguelike_editors.fsm.services.fsm_persistence import get_last_lint
+            warns, errs = get_last_lint()
+            self.model.lint_warnings = list(warns or [])
+            self.model.lint_errors = list(errs or [])
+        except Exception:
+            self.model.lint_warnings = []
+            self.model.lint_errors = []
         self._refresh_sets()
         self._refresh_items()
         self._build_rows()
@@ -111,6 +120,8 @@ class FsmPropertiesPanelController:
         if not s:
             self.model.rows = rows
             return
+        # Reset row hints
+        self.model.row_hints = {}
         if self.model.active_tab == 'nodes':
             node = None
             nid = self.model.selected_node_id
@@ -121,23 +132,69 @@ class FsmPropertiesPanelController:
             if node:
                 rows.append(Row(key='id', value=str(node.get('id')), editable=False))
                 rows.append(Row(key='class', value=str(node.get('class') or ''), editable=True))
+                self.model.row_hints['class'] = 'Fully qualified Python class path for the state implementation.'
                 props = node.get('props') or {}
                 if isinstance(props, dict):
                     for k, v in props.items():
                         rows.append(Row(key=f"props.{k}", value=str(v) if v is not None else '', editable=True))
+                        self.model.row_hints[f"props.{k}"] = 'Arbitrary property on the state. Value is stored as string.'
         else:
             idx = self.model.selected_transition_index
             trs = s.get('transitions', []) or []
             tr = trs[int(idx)] if (idx is not None and 0 <= int(idx) < len(trs)) else None
             if tr:
+                # Non-editable stable ID for copy/reference
+                if 'id' in tr:
+                    rows.append(Row(key='id', value=str(tr.get('id')), editable=False))
                 rows.append(Row(key='from', value=str(tr.get('from')), editable=False))
                 rows.append(Row(key='to', value=str(tr.get('to')), editable=False))
                 rows.append(Row(key='when', value=str(tr.get('when') or ''), editable=True))
-                # Optional style keys if present
-                for k in ('color', 'width', 'head_len', 'head_width', 'curved', 'curve_step', 'active'):
-                    if k in tr:
+                self.model.row_hints['when'] = 'Trigger/event name for this transition.'
+                # Conditions (array of strings) and actions (array of strings)
+                conds = tr.get('conditions') if isinstance(tr.get('conditions'), list) else []
+                acts = tr.get('actions') if isinstance(tr.get('actions'), list) else []
+                cond_text = ", ".join([str(x) for x in conds]) if conds else ''
+                act_text = ", ".join([str(x) for x in acts]) if acts else ''
+                rows.append(Row(key='conditions', value=cond_text, editable=True))
+                rows.append(Row(key='actions', value=act_text, editable=True))
+                self.model.row_hints['conditions'] = 'Comma-separated list of condition names. All must pass.'
+                self.model.row_hints['actions'] = 'Comma-separated list of action names executed on transition.'
+                # Style keys (always present for editing). Prefer nested style.* over flat.
+                keys = ('color', 'width', 'head_len', 'head_width', 'curved', 'curve_step', 'active')
+                style = tr.get('style') if isinstance(tr.get('style'), dict) else None
+                included: set[str] = set()
+                if style is not None:
+                    for k in keys:
+                        if k in style:
+                            rows.append(Row(key=f'style.{k}', value=str(style.get(k)), editable=True))
+                            self._hint_style_key(f'style.{k}')
+                            included.add(k)
+                for k in keys:
+                    if k in tr and k not in included:
                         rows.append(Row(key=k, value=str(tr.get(k)), editable=True))
+                        self._hint_style_key(k)
+                        included.add(k)
+                # Add missing style.* editable rows so user can set them
+                for k in keys:
+                    if k not in included:
+                        rows.append(Row(key=f'style.{k}', value='', editable=True))
+                        self._hint_style_key(f'style.{k}')
         self.model.rows = rows
+
+    def _hint_style_key(self, key: str) -> None:
+        hints = {
+            'color': 'Edge color (e.g., #RRGGBB or name).',
+            'width': 'Edge line width (float).',
+            'head_len': 'Arrow head length (float).',
+            'head_width': 'Arrow head width (float).',
+            'curved': 'Whether the edge is curved (true/false).',
+            'curve_step': 'Curvature step intensity (float).',
+            'active': 'Highlight edge as active (true/false).',
+        }
+        base = key.split('.', 1)[-1]
+        h = hints.get(base, '')
+        if h:
+            self.model.row_hints[key] = h
 
     # --- Navigation helpers (called by events) ---
     def _switch_tab(self, tab: str) -> None:
@@ -217,6 +274,7 @@ class FsmPropertiesPanelController:
                 save_sets,
                 default_schema_path,
                 validate,
+                get_last_lint,
             )
             from roguelike_editors.fsm.services.fsm_runtime_bridge import publish_reload
             path = default_sets_path()
@@ -256,9 +314,18 @@ class FsmPropertiesPanelController:
                 tr = trs[int(t_idx)]
                 if key == 'when':
                     tr['when'] = new_val_raw
+                elif key == 'conditions':
+                    tr['conditions'] = self._parse_csv_list(new_val_raw)
+                elif key == 'actions':
+                    tr['actions'] = self._parse_csv_list(new_val_raw)
+                elif key.startswith('style.'):
+                    skey = key.split('.', 1)[1]
+                    style = tr.setdefault('style', {}) if isinstance(tr.get('style'), dict) else {}
+                    tr['style'] = style
+                    style[skey] = self._parse_typed_style_value(skey, new_val_raw)
                 else:
                     # Allow editing present style keys
-                    tr[key] = new_val_raw
+                    tr[key] = self._parse_typed_style_value(key, new_val_raw)
 
             # Validate if possible (no-op if missing)
             try:
@@ -266,8 +333,19 @@ class FsmPropertiesPanelController:
             except Exception:
                 # Keep saving even if schema warns
                 pass
-            save_sets(data, path)
+            warns, errs = save_sets(data, path)
             publish_reload()
+            # Update lint in model
+            try:
+                self.model.lint_warnings = list(warns or [])
+                self.model.lint_errors = list(errs or [])
+            except Exception:
+                try:
+                    lw, le = get_last_lint()
+                    self.model.lint_warnings = list(lw or [])
+                    self.model.lint_errors = list(le or [])
+                except Exception:
+                    pass
         except Exception:
             # swallow errors in editor
             pass
@@ -278,6 +356,27 @@ class FsmPropertiesPanelController:
             self._refresh_snapshot()
             self._refresh_items()
             self._build_rows()
+
+    # --- Helpers: parsing ---
+    def _parse_csv_list(self, text: str) -> List[str]:
+        parts = [p.strip() for p in (text or '').split(',')]
+        return [p for p in parts if p]
+
+    def _parse_typed_style_value(self, key: str, text: str) -> Any:
+        k = key.split('.', 1)[-1]
+        if k in ('curved', 'active'):
+            return self._parse_bool(text)
+        if k in ('width', 'head_len', 'head_width', 'curve_step'):
+            try:
+                return float(text)
+            except Exception:
+                return 0.0
+        # color and others -> string passthrough
+        return text
+
+    def _parse_bool(self, text: str) -> bool:
+        t = (text or '').strip().lower()
+        return t in ('1', 'true', 'yes', 'y', 'on')
 
 
 __all__ = ["FsmPropertiesPanelController"]
