@@ -4,6 +4,7 @@ from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
 from roguelike_game.ecs.components.transform.velocity import Velocity
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.ecs.systems.fsm.states.attack_state import AttackState
+from roguelike_game.ecs.systems.fsm.anim_bridge import set_mapped_anim, primary_direction_from_vector
 
 
 class ChaseState(State):
@@ -31,13 +32,10 @@ class ChaseState(State):
         dx = player_pos.x - pos.x
         dy = player_pos.y - pos.y
         dist_sq = dx*dx + dy*dy
-        # Actualizar animación de chase según dirección
-        anim = world.components['Animator'][eid]
-        if abs(dx) > abs(dy):
-            direction = 'left' if dx < 0 else 'right'
-        else:
-            direction = 'down' if dy > 0 else 'up'
-        anim.current_state = f"chase_{direction}"
+        # Actualizar animación de chase según dirección vía anim_map
+        direction = primary_direction_from_vector(dx, dy)
+        set_mapped_anim(entity, 'ChaseState', direction)
+
         # Si dentro de rango melee: cambiar a AttackState
         mr_cmp = world.components['MeleeRange'][entity]
         melee_dist_sq = (mr_cmp.range * TILE_SIZE) ** 2
@@ -68,12 +66,7 @@ class ChaseState(State):
             world.components['Velocity'][eid] = Velocity(0, 0)
 
     def exit(self, entity):
-        # Al salir de ChaseState, restablecer animación base y detener movimiento
+        # Al salir de ChaseState, detener movimiento; siguiente estado decidirá animación
         world = entity.world
         eid = entity.id
-        # Detener movimiento
         world.components['Velocity'][eid] = Velocity(0, 0)
-        # Restablecer animación base eliminando 'chase_' si existía
-        anim = world.components['Animator'][eid]
-        if anim.current_state.startswith('chase_'):
-            anim.current_state = anim.current_state[len('chase_'):]

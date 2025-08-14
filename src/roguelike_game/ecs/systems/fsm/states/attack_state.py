@@ -6,6 +6,7 @@ from roguelike_game.ecs.components.combat.npc_attack_cooldown import NPCAttackCo
 from roguelike_game.ecs.components.combat.health import Health
 from roguelike_engine.config.config_tiles import TILE_SIZE
 import time
+from roguelike_game.ecs.systems.fsm.anim_bridge import set_mapped_anim, primary_direction_from_vector
 
 class AttackState(State):
     """
@@ -18,6 +19,16 @@ class AttackState(State):
         world.components['ChaseTarget'][eid] = ChaseTarget(world.player_entity)
         # Resetear velocidad al entrar en AttackState
         world.components['Velocity'][eid] = Velocity(0, 0)
+        # Establecer animación de ataque según dirección hacia el jugador
+        player_pos = world.player_position
+        pos = world.components['Position'].get(eid)
+        if player_pos and pos:
+            dx = player_pos.x - pos.x
+            dy = player_pos.y - pos.y
+            direction = primary_direction_from_vector(dx, dy)
+        else:
+            direction = None
+        set_mapped_anim(entity, 'AttackState', direction, reset_frame=True)
 
     def execute(self, entity, dt):
         world = entity.world

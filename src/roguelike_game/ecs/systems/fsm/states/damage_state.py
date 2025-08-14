@@ -3,6 +3,7 @@ import logging
 from roguelike_game.ecs.systems.fsm.state import State
 from roguelike_game.ecs.components.transform.velocity import Velocity
 from roguelike_game.ecs.components.rendering.flash_component import FlashComponent
+from roguelike_game.ecs.systems.fsm.anim_bridge import set_mapped_anim
 
 import logging
 logger = logging.getLogger(__name__)
@@ -31,10 +32,8 @@ class DamageState(State):
         if anim:
             # store previous animation state
             self.prev_anim_state = anim.current_state
-            state = 'damage_left' if self.from_left else 'damage_right'
-            if state in anim.animations:
-                anim.current_state = state
-                anim.frame_idx = 0  # reset to first damage frame
+            direction = 'left' if self.from_left else 'right'
+            set_mapped_anim(entity, 'DamageState', direction, reset_frame=True)
         else:
             logging.warning(f"[DamageState] No Animator for eid {eid}, skipping animation")
 

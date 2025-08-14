@@ -78,25 +78,5 @@
       "x": 641.1912519823146,
       "y": 1820.1504399465296
     }
-  },
-  "ffb26ab5-4806-48c7-85d7-5877c6886b55": {
-    "item_id": "wood",
-    "quantity": 1,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 801.0,
-      "y": 2130
-    }
-  },
-  "f039eefd-4241-45ca-acab-bef2ba986e35": {
-    "item_id": "bucket",
-    "quantity": 1,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "position": {
-      "x": 801.0,
-      "y": 2130
-    }
   }
 }

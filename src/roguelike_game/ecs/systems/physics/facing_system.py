@@ -58,9 +58,29 @@ class FacingSystem:
             animator = anim_map.get(eid)
             if not animator:
                 continue
+            # El jugador es controlado por PlayerFacingSystem; no sobreescribir sus animaciones aquí
+            if eid in comps.get('PlayerTagComponent', {}):
+                continue
             # No sobrescribir animaciones de chase para evitar parpadeo
             if animator.current_state.startswith('chase_'):
                 continue
+            # Respetar bases mapeadas para estados de persecución según anim_map por entidad
+            npc_state = comps.get('NPCState', {}).get(eid)
+            if npc_state is not None:
+                try:
+                    amap = (getattr(npc_state.fsm, 'context', {}) or {}).get('anim_map') or {}
+                    chase_bases = []
+                    for k in ('ChaseState', 'AlertChaseState'):
+                        b = amap.get(k)
+                        if b:
+                            chase_bases.append(b)
+                    if any(
+                        animator.current_state == base or animator.current_state.startswith(f"{base}_")
+                        for base in chase_bases
+                    ):
+                        continue
+                except Exception:
+                    pass
 
             # 2) Obtener o crear el cooldown de facing
             now = time.time()

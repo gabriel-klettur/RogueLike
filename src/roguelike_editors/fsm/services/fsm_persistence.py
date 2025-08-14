@@ -39,6 +39,11 @@ def default_layouts_path() -> Path:
     return _project_root() / "data" / "fsm" / "layouts.json"
 
 
+def default_animation_map_path() -> Path:
+    """Path for FSM animation map (state-class -> animation base, with per-set overrides)."""
+    return _project_root() / "data" / "fsm" / "animation_map.json"
+
+
 def load_sets(path: str | Path) -> Dict[str, Any]:
     """Load FSM sets from JSON file. TODO: implement fully."""
     import json
@@ -63,6 +68,13 @@ def save_assignments(data: Dict[str, Any], path: str | Path) -> None:
     import json
     with open(str(path), "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2, sort_keys=True)
+
+
+def load_animation_map(path: str | Path) -> Dict[str, Any]:
+    """Load animation_map.json. Returns an object with keys 'default' and optional 'overrides'."""
+    import json
+    with open(str(path), "r", encoding="utf-8") as f:
+        return json.load(f)
 
 
 def load_layouts(path: str | Path) -> Dict[str, Any]:
@@ -130,10 +142,12 @@ __all__ = [
     "default_assignments_path",
     "default_layouts_path",
     "default_schema_path",
+    "default_animation_map_path",
     "load_sets",
     "save_sets",
     "load_assignments",
     "save_assignments",
+    "load_animation_map",
     "load_layouts",
     "save_layouts",
     "validate",

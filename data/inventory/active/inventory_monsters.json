@@ -1,14 +1,14 @@
 {
-  "f850489f-3e89-4ec9-87ab-ec58a767ded4": {
+  "7f74e47b-fabd-4610-a245-d8b21ca20423": {
     "template_id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
     "slots": [
       {
         "item": "gold",
-        "quantity": 4
+        "quantity": 3
       },
       {
         "item": "experience_orb",
-        "quantity": 2
+        "quantity": 1
       },
       null,
       null,
@@ -31,7 +31,7 @@
     ],
     "schema_version": "1.0.0"
   },
-  "4ab2d077-3867-4782-84ab-d6a92c3430a2": {
+  "8c1df7f7-068d-4420-997a-5c8ad03d585a": {
     "template_id": "dddddddd-dddd-dddd-dddd-dddddddddddd",
     "slots": [
       {
@@ -40,7 +40,7 @@
       },
       {
         "item": "gold",
-        "quantity": 18
+        "quantity": 16
       },
       null,
       null,
@@ -63,71 +63,25 @@
     ],
     "schema_version": "1.0.0"
   },
-  "660f6fcd-e8e2-4b70-ab72-83dba04d9902": {
-    "template_id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+  "5d4973a2-83d1-47af-9297-3b0d70a2f507": {
+    "template_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
     "slots": [
       {
         "item": "gold",
-        "quantity": 2
+        "quantity": 3
       },
       {
         "item": "experience_orb",
+        "quantity": 2
+      },
+      {
+        "item": "wood",
         "quantity": 1
       },
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "schema_version": "1.0.0"
-  },
-  "3beacced-96a5-4431-82d6-2fde07a77d0a": {
-    "template_id": "dddddddd-dddd-dddd-dddd-dddddddddddd",
-    "slots": [
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "schema_version": "1.0.0"
-  },
-  "ba4c2aec-b714-4580-8655-531b20501d3d": {
-    "template_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-    "slots": [
-      null,
-      null,
-      null,
-      null,
+      {
+        "item": "bucket",
+        "quantity": 1
+      },
       null,
       null,
       null,

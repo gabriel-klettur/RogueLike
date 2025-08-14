@@ -1,6 +1,7 @@
 from roguelike_game.ecs.systems.fsm.state import State
 from roguelike_game.ecs.systems.fsm.states.idle_state import IdleState
 import time
+from roguelike_game.ecs.systems.fsm.anim_bridge import set_mapped_anim
 
 class PlayerAttackState(State):
     def enter(self, entity):
@@ -8,10 +9,8 @@ class PlayerAttackState(State):
         vel = entity.world.components.get('Velocity', {}).get(entity.id)
         if vel:
             vel.vx = vel.vy = 0
-        # Iniciar animación de ataque
-        animator = entity.world.components.get('Animator', {}).get(entity.id)
-        if animator:
-            animator.current_state = 'attack'
+        # Iniciar animación de ataque vía mapa de animaciones (sin dirección específica)
+        set_mapped_anim(entity, 'PlayerAttackState', direction=None, reset_frame=True)
         # Registrar inicio de ataque
         self.start_time = time.time()
 
@@ -21,7 +20,5 @@ class PlayerAttackState(State):
             entity.world.components['NPCState'][entity.id].fsm.change_state(IdleState(), entity)
 
     def exit(self, entity):
-        # Restaurar animación a 'idle'
-        animator = entity.world.components.get('Animator', {}).get(entity.id)
-        if animator:
-            animator.current_state = 'idle'
+        # No forzar 'idle'; el PlayerFacingSystem resolverá el estado adecuado
+        pass

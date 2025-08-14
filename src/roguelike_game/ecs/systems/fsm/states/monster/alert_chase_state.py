@@ -5,6 +5,7 @@ from roguelike_game.ecs.systems.fsm.states.monster.patrol_state import PatrolSta
 from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
 from roguelike_game.ecs.components.transform.velocity import Velocity
 from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_game.ecs.systems.fsm.anim_bridge import set_mapped_anim, primary_direction_from_vector
 
 class AlertChaseState(State):
     """
@@ -34,13 +35,10 @@ class AlertChaseState(State):
         dx = player_pos.x - pos.x
         dy = player_pos.y - pos.y
         dist_sq = dx*dx + dy*dy
-        # Actualizar animación de chase según dirección
-        anim = world.components['Animator'][eid]
-        if abs(dx) > abs(dy):
-            direction = 'left' if dx < 0 else 'right'
-        else:
-            direction = 'down' if dy > 0 else 'up'
-        anim.current_state = f"chase_{direction}"
+        # Actualizar animación de chase según dirección vía anim_map
+        direction = primary_direction_from_vector(dx, dy)
+        set_mapped_anim(entity, 'AlertChaseState', direction)
+
         # Mover con velocidad aumentada (50%) en chase
         speed_cmp = world.components['MovementSpeed'][eid]
         chase_speed = speed_cmp.speed * 1.5
@@ -54,10 +52,7 @@ class AlertChaseState(State):
             world.components['Velocity'][eid] = Velocity(0, 0)
 
     def exit(self, entity):
-        # Al salir de AlertChase, detener movimiento y limpiar animación
+        # Al salir de AlertChase, detener movimiento; siguiente estado decidirá animación
         eid = entity.id
         world = entity.world
         world.components['Velocity'][eid] = Velocity(0, 0)
-        anim = world.components['Animator'][eid]
-        if anim.current_state.startswith('chase_'):
-            anim.current_state = anim.current_state[len('chase_'):]
