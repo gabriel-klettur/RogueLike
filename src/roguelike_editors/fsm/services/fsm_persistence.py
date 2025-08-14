@@ -76,6 +76,14 @@ def load_animation_map(path: str | Path) -> Dict[str, Any]:
     with open(str(path), "r", encoding="utf-8") as f:
         return json.load(f)
 
+def save_animation_map(data: Dict[str, Any], path: str | Path) -> None:
+    """Save animation_map.json in pretty, deterministic format."""
+    import json
+    p = Path(path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    with open(str(p), "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2, sort_keys=True)
+
 
 def load_layouts(path: str | Path) -> Dict[str, Any]:
     """Load FSM editor graph layouts.
@@ -148,6 +156,7 @@ __all__ = [
     "load_assignments",
     "save_assignments",
     "load_animation_map",
+    "save_animation_map",
     "load_layouts",
     "save_layouts",
     "validate",

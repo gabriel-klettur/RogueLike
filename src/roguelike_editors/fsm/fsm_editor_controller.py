@@ -9,6 +9,12 @@ import pygame
 
 from .fsm_toolbar.fsm_toolbar_controller import FsmToolbarController
 from .fsm_sets_panel.fsm_sets_panel_controller import FsmSetsPanelController
+from .fsm_assigment_animations.fsm_assigment_animations_controller import (
+    FsmAssigmentAnimationsController,
+)
+from .fsm_assigment_entities.fsm_assigment_entities_controller import (
+    FsmAssigmentEntitiesController,
+)
 from .fsm_graph_panel.fsm_graph_panel_controller import FsmGraphPanelController
 from roguelike_editors.fsm.services.fsm_persistence import (
     default_layouts_path,
@@ -25,6 +31,8 @@ class FsmEditorController:
         self.title_controller = None
         self.toolbar_controller: Optional[FsmToolbarController] = FsmToolbarController()
         self.sets_panel_controller = FsmSetsPanelController()
+        self.anim_panel_controller: Optional[FsmAssigmentAnimationsController] = FsmAssigmentAnimationsController()
+        self.entities_panel_controller: Optional[FsmAssigmentEntitiesController] = FsmAssigmentEntitiesController()
         self.graph_panel_controller: Optional[FsmGraphPanelController] = FsmGraphPanelController()
         self.properties_panel_controller = None
 
@@ -50,6 +58,8 @@ class FsmEditorController:
         except Exception:
             tool = None
         sets_rect = None
+        anim_rect = None
+        entities_rect = None
         if self.sets_panel_controller:
             try:
                 self.sets_panel_controller.model.visible = (tool == 'sets_list')
@@ -75,6 +85,49 @@ class FsmEditorController:
                     except Exception:
                         pass
                     sets_rect = self.sets_panel_controller.render(screen, anchor=anchor)
+            except Exception:
+                pass
+        # Animations assignment panel
+        if self.anim_panel_controller:
+            try:
+                self.anim_panel_controller.model.visible = (tool == 'sets_animation_assignment')
+                if self.anim_panel_controller.model.visible:
+                    # Provide same anchor logic as sets panel (next to toolbar)
+                    anchor = (20, 120)
+                    try:
+                        if toolbar_rect is not None:
+                            margin = 8
+                            panel_w, panel_h = 420, 320
+                            sw, sh = screen.get_size()
+                            ax = toolbar_rect.right + margin
+                            ay = toolbar_rect.top
+                            ax = max(4, min(ax, max(4, sw - panel_w - 4)))
+                            ay = max(4, min(ay, max(4, sh - panel_h - 4)))
+                            anchor = (ax, ay)
+                    except Exception:
+                        pass
+                    anim_rect = self.anim_panel_controller.render(screen, anchor=anchor)
+            except Exception:
+                pass
+        # Entities assignment panel
+        if self.entities_panel_controller:
+            try:
+                self.entities_panel_controller.model.visible = (tool == 'sets_entities_assignment')
+                if self.entities_panel_controller.model.visible:
+                    anchor = (20, 120)
+                    try:
+                        if toolbar_rect is not None:
+                            margin = 8
+                            panel_w, panel_h = 420, 320
+                            sw, sh = screen.get_size()
+                            ax = toolbar_rect.right + margin
+                            ay = toolbar_rect.top
+                            ax = max(4, min(ax, max(4, sw - panel_w - 4)))
+                            ay = max(4, min(ay, max(4, sh - panel_h - 4)))
+                            anchor = (ax, ay)
+                    except Exception:
+                        pass
+                    entities_rect = self.entities_panel_controller.render(screen, anchor=anchor)
             except Exception:
                 pass
         # Graph panel to the right of the Sets panel when an item is selected
@@ -298,6 +351,20 @@ class FsmEditorController:
         try:
             if self.sets_panel_controller and getattr(self.sets_panel_controller.model, 'visible', False):
                 if self.sets_panel_controller.handle_event(event):
+                    return True
+        except Exception:
+            pass
+        # Animations panel events if visible
+        try:
+            if self.anim_panel_controller and getattr(self.anim_panel_controller.model, 'visible', False):
+                if self.anim_panel_controller.handle_event(event):
+                    return True
+        except Exception:
+            pass
+        # Entities panel events if visible
+        try:
+            if self.entities_panel_controller and getattr(self.entities_panel_controller.model, 'visible', False):
+                if self.entities_panel_controller.handle_event(event):
                     return True
         except Exception:
             pass
