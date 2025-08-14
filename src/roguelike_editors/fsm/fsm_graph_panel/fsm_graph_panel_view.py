@@ -335,7 +335,7 @@ class FsmGraphPanelView:
                 rect = pygame.Rect(tl[0], tl[1], int(nw*zoom), int(nh*zoom))
                 # body
                 pygame.draw.rect(surf, (40, 44, 52), rect, 0, border_radius=6)
-                # border (initial highlighted)
+                # border (selected/hover/terminal/initial highlighted)
                 is_hover_node = (n.get('id') == getattr(model, 'hover_node_id', None))
                 if n.get('id') == getattr(model, 'selected_node_id', None):
                     color = (255, 210, 90)
@@ -343,8 +343,13 @@ class FsmGraphPanelView:
                 elif is_hover_node:
                     color = (255, 230, 120)
                     border_w = 3
+                elif n.get('terminal'):
+                    # Terminal/end nodes: red highlight
+                    color = (220, 80, 80)
+                    border_w = 3
                 elif n.get('initial'):
-                    color = (90, 170, 255)
+                    # Initial/start nodes: green highlight
+                    color = (80, 200, 120)
                     border_w = 3
                 else:
                     color = (90, 90, 100)

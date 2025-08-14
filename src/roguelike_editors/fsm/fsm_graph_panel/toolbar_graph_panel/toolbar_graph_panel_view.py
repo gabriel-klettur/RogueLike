@@ -40,15 +40,51 @@ class FsmGraphToolbarView:
         y_cursor = (tb_h - size) // 2
         x_cursor = pad
         model.rects_abs = {}
+        # Pre-read mouse and time for hover/blink
+        mouse_pos = pygame.mouse.get_pos()
+        ticks = 0
+        try:
+            ticks = int(pygame.time.get_ticks())
+        except Exception:
+            ticks = 0
+        blink_on = ((ticks // 400) % 2) == 0  # ~2.5 Hz blink
+
         for tool in list(getattr(model, 'buttons', [])):
             rect = pygame.Rect(x_cursor, y_cursor, size, size)
-            # Button background
-            pygame.draw.rect(surface, (32, 34, 40), rect, border_radius=4)
-            # Border highlight
-            if tool == active_tool:
-                pygame.draw.rect(surface, (90, 170, 255), rect, 2, border_radius=4)
+            # Absolute rect for hover test
+            abs_rect = pygame.Rect(x0 + rect.x, y0 + rect.y, rect.w, rect.h)
+            is_hover = False
+            try:
+                is_hover = abs_rect.collidepoint(mouse_pos)
+            except Exception:
+                is_hover = False
+            is_selected = (tool == active_tool)
+
+            # Button background (yellow on hover)
+            if is_hover:
+                pygame.draw.rect(surface, (245, 225, 100), rect, border_radius=6)
             else:
-                pygame.draw.rect(surface, (75, 75, 85), rect, 1, border_radius=4)
+                pygame.draw.rect(surface, (32, 34, 40), rect, border_radius=6)
+
+            # Border highlight: thicker and CLEAR blinking when selected
+            if is_selected:
+                if blink_on:
+                    # Faint yellow glow overlay
+                    try:
+                        glow = pygame.Surface((rect.w, rect.h), pygame.SRCALPHA)
+                        glow.fill((255, 240, 100, 40))
+                        surface.blit(glow, rect.topleft)
+                    except Exception:
+                        pass
+                    # Bright thick border on
+                    pygame.draw.rect(surface, (255, 240, 100), rect, 4, border_radius=6)
+                else:
+                    # Darker, thinner border off
+                    pygame.draw.rect(surface, (60, 60, 70), rect, 2, border_radius=6)
+            else:
+                # Subtle border; slightly brighter when hovering
+                bcol = (120, 120, 90) if is_hover else (75, 75, 85)
+                pygame.draw.rect(surface, bcol, rect, 1, border_radius=6)
             # Icon
             icon = None
             sp = gp_icon_map.get(tool)
@@ -71,7 +107,7 @@ class FsmGraphToolbarView:
                 surface.blit(icon, ir)
 
             # Save absolute rect
-            model.rects_abs[tool] = pygame.Rect(x0 + rect.x, y0 + rect.y, rect.w, rect.h)
+            model.rects_abs[tool] = abs_rect
             x_cursor += size + pad
 
         return tb_h

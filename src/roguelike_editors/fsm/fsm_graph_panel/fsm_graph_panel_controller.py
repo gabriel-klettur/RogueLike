@@ -122,6 +122,11 @@ class FsmGraphPanelController:
         if et == pygame.MOUSEBUTTONDOWN and btn == 1:
             try:
                 if self.toolbar.handle_mouse_down(mouse_pos, rect, self.model):
+                    # Persist viewport/tool state after toolbar interaction (e.g., zoom)
+                    try:
+                        self._persist_layout()
+                    except Exception:
+                        pass
                     return True
             except Exception:
                 pass
@@ -148,15 +153,23 @@ class FsmGraphPanelController:
                         if not src:
                             self.model.connect_source_node_id = nid
                         else:
-                            if src != nid:
-                                # add edge if not existing
-                                exists = any((e.get('from') == src and e.get('to') == nid) for e in getattr(self.model, 'edges', []))
-                                if not exists:
-                                    self.model.edges.append({'from': src, 'to': nid})
+                            # add edge if not existing
+                            exists = any((e.get('from') == src and e.get('to') == nid) for e in getattr(self.model, 'edges', []))
+                            if not exists:
+                                self.model.edges.append({'from': src, 'to': nid})
                             self.model.connect_source_node_id = None
+                        # Persist after connection interaction
+                        try:
+                            self._persist_layout()
+                        except Exception:
+                            pass
                         return True
                     # click on empty: cancel pending connection
                     self.model.connect_source_node_id = None
+                    try:
+                        self._persist_layout()
+                    except Exception:
+                        pass
                     return True
                 elif tool == 'disconnect':
                     if node is not None:
@@ -165,16 +178,24 @@ class FsmGraphPanelController:
                         if not src:
                             self.model.connect_source_node_id = nid
                         else:
-                            if src != nid:
-                                # remove edge if present
-                                self.model.edges = [
-                                    e for e in getattr(self.model, 'edges', [])
-                                    if not (e.get('from') == src and e.get('to') == nid)
-                                ]
+                            # remove edge if present
+                            self.model.edges = [
+                                e for e in getattr(self.model, 'edges', [])
+                                if not (e.get('from') == src and e.get('to') == nid)
+                            ]
                             self.model.connect_source_node_id = None
+                        # Persist after disconnect interaction
+                        try:
+                            self._persist_layout()
+                        except Exception:
+                            pass
                         return True
                     # click on empty: cancel pending disconnect
                     self.model.connect_source_node_id = None
+                    try:
+                        self._persist_layout()
+                    except Exception:
+                        pass
                     return True
                 elif tool == 'delete':
                     if node is not None:
@@ -185,6 +206,11 @@ class FsmGraphPanelController:
                         self.model.edges = [e for e in getattr(self.model, 'edges', []) if e.get('from') != nid and e.get('to') != nid]
                         if getattr(self.model, 'selected_node_id', None) == nid:
                             self.model.selected_node_id = None
+                        # Persist after delete
+                        try:
+                            self._persist_layout()
+                        except Exception:
+                            pass
                         return True
                     return True
                 elif tool == 'add_node':
@@ -199,6 +225,11 @@ class FsmGraphPanelController:
                             'w': 120, 'h': 60,
                         })
                         self.model.selected_node_id = nid
+                        # Persist after add
+                        try:
+                            self._persist_layout()
+                        except Exception:
+                            pass
                         return True
                     return True
                 elif tool == 'clone_node':
@@ -214,6 +245,11 @@ class FsmGraphPanelController:
                             new_node['initial'] = False
                         self.model.nodes.append(new_node)
                         self.model.selected_node_id = nid
+                        # Persist after clone
+                        try:
+                            self._persist_layout()
+                        except Exception:
+                            pass
                         return True
                     return True
                 elif tool in ('mark_ini', 'mark_end'):
@@ -224,10 +260,15 @@ class FsmGraphPanelController:
                             for n in getattr(self.model, 'nodes', []):
                                 n['initial'] = (n.get('id') == nid)
                         else:
-                            # Mark terminal/end flag on this node
+                            # Toggle terminal/end flag on this node
                             for n in getattr(self.model, 'nodes', []):
                                 if n.get('id') == nid:
-                                    n['terminal'] = True
+                                    n['terminal'] = not bool(n.get('terminal'))
+                        # Persist after mark
+                        try:
+                            self._persist_layout()
+                        except Exception:
+                            pass
                         return True
                     return True
             if btn == 2:  # middle button pans
