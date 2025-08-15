@@ -538,6 +538,8 @@ class MapEditorEventHandler:
         # Modo: Borrar zona
         if self.state.delete_zone_mode:
             for zn, (ox, oy) in global_map_settings.zone_offsets.items():
+                if zn in ("no zone", "no-zone"):
+                    continue
                 w, h = global_map_settings.zone_size
                 if ox <= tx < ox + w and oy <= ty < oy + h:
                     self.state.pending_delete_zone = zn
@@ -548,6 +550,8 @@ class MapEditorEventHandler:
         # Modo: Pintar tiles
         if self.state.paint_tiles_mode:
             for zn, (ox, oy) in global_map_settings.zone_offsets.items():
+                if zn in ("no zone", "no-zone"):
+                    continue
                 w, h = global_map_settings.zone_size
                 if ox <= tx < ox + w and oy <= ty < oy + h:
                     self.state.pending_paint_tiles_zone = zn
@@ -559,6 +563,8 @@ class MapEditorEventHandler:
         # Modo: Vaciar colliders
         if self.state.clear_colliders_mode:
             for zn, (ox, oy) in global_map_settings.zone_offsets.items():
+                if zn in ("no zone", "no-zone"):
+                    continue
                 w, h = global_map_settings.zone_size
                 if ox <= tx < ox + w and oy <= ty < oy + h:
                     self.state.pending_clear_colliders_zone = zn
@@ -569,6 +575,8 @@ class MapEditorEventHandler:
         # Modo: Pintar colliders
         if self.state.paint_colliders_mode:
             for zn, (ox, oy) in global_map_settings.zone_offsets.items():
+                if zn in ("no zone", "no-zone"):
+                    continue
                 w, h = global_map_settings.zone_size
                 if ox <= tx < ox + w and oy <= ty < oy + h:
                     self.state.pending_paint_colliders_zone = zn
@@ -578,29 +586,23 @@ class MapEditorEventHandler:
 
         return False
 
-    # -------------------------------------------------------------
-    # 5. SELECCIÓN Y DOBLE-CLIC EN ZONA
-    # -------------------------------------------------------------
     def _handle_zone_selection(self, ev, camera) -> bool:
         world_x, world_y = self._screen_to_world(ev.pos, camera)
         tx = int(world_x) // TILE_SIZE
         ty = int(world_y) // TILE_SIZE
 
         for zn, (ox, oy) in global_map_settings.zone_offsets.items():
+            if zn in ("no zone", "no-zone"):
+                continue
             w, h = global_map_settings.zone_size
             if ox <= tx < ox + w and oy <= ty < oy + h:
                 now = pygame.time.get_ticks()
                 if self.state.last_click_zone == zn and now - self.state.last_click_time <= 400:
-                    # Detección de doble-clic → iniciar renombrado
+                    # Doble clic: iniciar renombrado
                     self.state.renaming_zone = zn
                     self.state.rename_input = zn
-                    pygame.key.set_repeat(400, 50)
-                    # Centrar cámara en la zona
-                    self._center_camera_on_zone(camera, zn)
-                    self.state.last_click_zone = None
-                    self.state.last_click_time = 0
+                    pygame.key.set_repeat(200, 30)
                     return True
-
                 # Clic simple: seleccionar zona y preparar doble-clic
                 self.state.selected_zone = zn
                 self.state.last_click_zone = zn

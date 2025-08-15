@@ -50,6 +50,9 @@ class MapEditorController:
         Actualiza únicamente el mapping en global_map_settings.zone_offsets.
         """
         offsets = global_map_settings.zone_offsets
+        # Evitar mover el centinela 'no zone'
+        if zone_name in ("no zone", "no-zone"):
+            return
         if zone_name not in offsets:
             return
         x, y = offsets[zone_name]
@@ -63,6 +66,9 @@ class MapEditorController:
         """
         sel = self.state.selected_zone
         if not sel:
+            return
+        # Evitar duplicar el centinela 'no zone'
+        if sel in ("no zone", "no-zone"):
             return
 
         offsets = global_map_settings.zone_offsets
@@ -111,7 +117,7 @@ class MapEditorController:
           3. Recarga offsets y mapa, deselecciona la zona.
         """
         sel = self.state.selected_zone
-        if not sel or sel == "lobby":
+        if not sel or sel in ("lobby", "no zone", "no-zone"):
             return
 
         json_path = os.path.join(DATA_DIR, "zones", "zones.json")
@@ -147,6 +153,11 @@ class MapEditorController:
 
         if not old or not new or old == new:
             logger.debug("DEBUG [Controller.rename_zone] abort: invalid or same name")
+            return
+
+        # No permitir renombrar hacia/desde el centinela 'no zone'
+        if old in ("no zone", "no-zone") or new in ("no zone", "no-zone"):
+            logger.debug("DEBUG [Controller.rename_zone] abort: sentinel 'no zone' involved")
             return
 
         # Forzar uso de JSON y obtener offsets actuales
@@ -185,7 +196,9 @@ class MapEditorController:
         """
         global_map_settings.use_zones_json = True
         json_path = os.path.join(DATA_DIR, "zones", "zones.json")
-        self._save_json(json_path, global_map_settings.zone_offsets)
+        # Filtrar el centinela 'no zone'/'no-zone' para no persistirlo como zona real
+        filtered = {k: v for k, v in global_map_settings.zone_offsets.items() if k not in ("no zone", "no-zone")}
+        self._save_json(json_path, filtered)
 
     def load_zones(self) -> None:
         """

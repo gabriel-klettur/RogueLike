@@ -147,6 +147,9 @@ class MapEditorView:
         zone_w, zone_h = global_map_settings.zone_size
 
         for zone_name, (ox, oy) in zones.items():
+            # Skip sentinel zone entries that represent "outside any defined zone"
+            if zone_name in ("no zone", "no-zone"):
+                continue
             # Determinar colores según estado
             hidden = zone_name in self.state.hidden_zones
             if hidden:
