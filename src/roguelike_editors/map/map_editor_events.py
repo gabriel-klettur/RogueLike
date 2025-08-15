@@ -6,11 +6,16 @@ logger = logging.getLogger(__name__)
 from pygame.locals import *
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_engine.config.config_editor import TILE_PAINT_BATCH, TILE_PAINT_TICK
 from roguelike_engine.config.config import DATA_DIR, ASSETS_DIR
 from roguelike_editors.buildings.utils.save_buildings_to_json import save_buildings_to_json
 from roguelike_engine.map.model.overlay.overlay_manager import load_layers, save_layers
 from roguelike_game.ecs.core.spatial_index import SpatialIndex
 from roguelike_ui.ui_blocker import is_blocked
+from roguelike_engine.map.model.layer import Layer
+from roguelike_engine.tile.utils.loader import get_sprite_for_tile
+from roguelike_editors.map.services.overlay_service import set_overlay_cell, merge_zone_to_world
+from roguelike_editors.map.commands.paint_tiles_command import PaintTilesCommand
 
 
 class MapEditorEventHandler:
@@ -46,6 +51,12 @@ class MapEditorEventHandler:
             except Exception:
                 pass
             if ev.type == pygame.QUIT:
+                # Persist camera if the editor is active and app is quitting
+                try:
+                    if self.state.active and camera is not None:
+                        self.manager._save_persisted_camera(camera.offset_x, camera.offset_y, camera.zoom)
+                except Exception:
+                    pass
                 self.manager.game.state.running = False
                 continue
 
@@ -87,6 +98,13 @@ class MapEditorEventHandler:
                         continue
 
                 # Teclas de atajo globales
+                # Undo / Redo
+                if (ev.key == pygame.K_z) and (ev.mod & pygame.KMOD_CTRL):
+                    self._perform_undo(camera)
+                    continue
+                if (ev.key == pygame.K_y) and (ev.mod & pygame.KMOD_CTRL):
+                    self._perform_redo(camera)
+                    continue
                 if ev.key == pygame.K_F11:
                     self.manager.toggle()
                     continue
@@ -157,9 +175,42 @@ class MapEditorEventHandler:
             self._apply_tile_overlay(tile)
             self._apply_ground_overlay(tile)
             self.state.execution_index += 1
+            # Incremental view update: coalesce dirty cells and refresh chunks in batches
+            try:
+                if len(self.state.dirty_cells) >= TILE_PAINT_BATCH or (
+                    self.state.execution_index % TILE_PAINT_TICK == 0 and self.state.dirty_cells
+                ):
+                    cells = list(self.state.dirty_cells)
+                    self.map_manager.view.update_chunks(self.map_manager, camera, cells)
+                    self.state.dirty_cells.clear()
+            except Exception:
+                # Never break the async loop on visual update errors
+                pass
+            # Progreso (con throttling cada 10%)
+            total = max(self.state.execution_total, 1)
+            percent = int((self.state.execution_index / total) * 100)
+            if percent >= (self.state.last_progress_report + 10):
+                elapsed = pygame.time.get_ticks() - self.state.execution_start_time
+                logger.debug(
+                    f"[MapEditor] Painting zone={zone} progress={percent}% "
+                    f"({self.state.execution_index}/{total}) elapsed={elapsed}ms"
+                )
+                self.state.last_progress_report = percent
         else:
-            self._finalize_paint_tiles(zone)
-            self._clear_async_state()
+            # Flush any remaining dirty cells before finalizing
+            try:
+                if self.state.dirty_cells:
+                    cells = list(self.state.dirty_cells)
+                    self.map_manager.view.update_chunks(self.map_manager, camera, cells)
+                    self.state.dirty_cells.clear()
+            except Exception:
+                pass
+            try:
+                self._finalize_paint_tiles(zone)
+            except Exception as e:
+                logger.exception(f"[MapEditor] Error finalizing paint tiles for zone={zone}: {e}")
+            finally:
+                self._clear_async_state()
 
     def _apply_tile_overlay(self, tile):
         orig = tile.tile_type
@@ -177,8 +228,23 @@ class MapEditorEventHandler:
             gt.overlay_code = tile.overlay_code
             gt.sprite = get_sprite_for_tile(orig2, gt.overlay_code)
             gt.scaled_cache.clear()
+        # Update the in-memory world-sized Ground layer grid used by the renderer
+        # and record undo/redo edit
+        world = self.map_manager.layers.get(Layer.Ground)
+        before = None
+        if world and 0 <= ty < len(world) and 0 <= tx < len(world[0]):
+            before = world[ty][tx]
+        set_overlay_cell(self.map_manager, tx, ty, tile.overlay_code)
+        try:
+            if before != tile.overlay_code and self.state.current_command is not None:
+                self.state.current_command.add_edit(ty, tx, before, tile.overlay_code)
+        except Exception:
+            pass
+        # Track dirty cell for coalesced chunk refresh
+        self.state.dirty_cells.add((ty, tx))
 
     def _finalize_paint_tiles(self, zone):
+        start = pygame.time.get_ticks()
         layers = load_layers(zone)
         off_x, off_y = global_map_settings.zone_offsets.get(zone)
         wz, hz = global_map_settings.zone_size
@@ -188,10 +254,44 @@ class MapEditorEventHandler:
             ly = t.y // TILE_SIZE - off_y
             if 0 <= lx < wz and 0 <= ly < hz:
                 grid[ly][lx] = t.overlay_code
+        painted = sum(1 for row in grid for code in row if code)
         layers[Layer.Ground] = grid
         save_layers(zone, layers)
-        logger.debug(f"DEBUG: persisted overlay for zone {zone}")
+        # Merge the zone-sized grid back into the world-sized Ground layer
+        merge_zone_to_world(self.map_manager, zone, grid)
+        elapsed = pygame.time.get_ticks() - start
+        logger.info(
+            f"[MapEditor] Overlay persisted for zone={zone} layer=Ground size={wz}x{hz} "
+            f"painted_cells={painted} duration={elapsed}ms"
+        )
         self.map_manager.view.invalidate_cache()
+        # Commit command to undo stack
+        if self.state.current_command is not None:
+            self.state.undo_stack.append(self.state.current_command)
+            self.state.redo_stack.clear()
+            self.state.current_command = None
+
+    def _perform_undo(self, camera):
+        if not self.state.undo_stack:
+            return
+        cmd = self.state.undo_stack.pop()
+        try:
+            cells = cmd.undo(self.map_manager)
+            if cells:
+                self.map_manager.view.update_chunks(self.map_manager, camera, cells)
+        finally:
+            self.state.redo_stack.append(cmd)
+
+    def _perform_redo(self, camera):
+        if not self.state.redo_stack:
+            return
+        cmd = self.state.redo_stack.pop()
+        try:
+            cells = cmd.redo(self.map_manager)
+            if cells:
+                self.map_manager.view.update_chunks(self.map_manager, camera, cells)
+        finally:
+            self.state.undo_stack.append(cmd)
 
     def _handle_clear_colliders_execution(self):
         idx = self.state.execution_index
@@ -204,12 +304,12 @@ class MapEditorEventHandler:
 
     def _finalize_clear_colliders(self, zone):
         w, h = global_map_settings.zone_size
-        grid = [["#" for _ in range(w)] for _ in range(h)]
+        grid = [["." for _ in range(w)] for _ in range(h)]
         path = os.path.join(DATA_DIR, "collisions", f"{zone}.json")
         try:
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(grid, f, indent=2)
-            logger.debug(f"DEBUG [MapEditorEventHandler] cleared colliders for zone {zone}")
+            logger.debug(f"DEBUG [MapEditorEventHandler] cleared colliders (all walkable '.') for zone {zone}")
         except Exception as e:
             logger.debug(f"DEBUG [MapEditorEventHandler] failed to clear colliders for zone {zone}: {e}")
         self.map_manager.reload_map()
@@ -228,12 +328,12 @@ class MapEditorEventHandler:
 
     def _finalize_paint_colliders(self, zone):
         w, h = global_map_settings.zone_size
-        grid = [["." for _ in range(w)] for _ in range(h)]
+        grid = [["#" for _ in range(w)] for _ in range(h)]
         path = os.path.join(DATA_DIR, "collisions", f"{zone}.json")
         try:
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(grid, f, indent=2)
-            logger.debug(f"DEBUG [MapEditorEventHandler] painted colliders for zone {zone}")
+            logger.debug(f"DEBUG [MapEditorEventHandler] painted colliders (all blocked '#') for zone {zone}")
         except Exception as e:
             logger.debug(f"DEBUG [MapEditorEventHandler] failed to paint colliders for zone {zone}: {e}")
         self.map_manager.reload_map()
@@ -247,9 +347,7 @@ class MapEditorEventHandler:
         self.state.execution_list.clear()
         self.state.execution_index = 0
         self.state.execution_total = 0
-        # Limpiar tile_code si existe
-        if hasattr(self.state, "tile_code"):
-            self.state.tile_code = None
+        # Mantener tile_code para futuras operaciones (permite repetir última selección)
 
     # -------------------------------------------------------------
     # 2. HANDLERS DE EVENTOS DE PYGAME
@@ -273,10 +371,11 @@ class MapEditorEventHandler:
         mx, my = ev.pos
         dx = (mx - self.state.pan_start_mouse[0]) / camera.zoom
         dy = (my - self.state.pan_start_mouse[1]) / camera.zoom
-        # Mover la cámara en la misma dirección que las flechas del teclado
-        # Flecha derecha incrementa offset_x; arrastrar a la derecha también debe incrementarlo
-        camera.offset_x = self.state.pan_start_offset[0] + dx
-        camera.offset_y = self.state.pan_start_offset[1] + dy
+        # Grab-to-pan: arrastrar el mapa hacia la derecha desplaza el contenido hacia la derecha.
+        # Con la convención de render (screen = (world - offset) * zoom),
+        # esto implica restar el delta al offset de cámara.
+        camera.offset_x = self.state.pan_start_offset[0] - dx
+        camera.offset_y = self.state.pan_start_offset[1] - dy
 
     def _handle_keyboard_pan(self, camera):
         """
@@ -369,13 +468,19 @@ class MapEditorEventHandler:
         if self.state.confirm_paint_tiles:
             zone = self.state.pending_paint_tiles_zone
             if self.state.confirm_paint_yes_rect and self.state.confirm_paint_yes_rect.collidepoint(ev.pos):
-                logger.debug(f"DEBUG: scheduling paint tiles for zone {zone}")
-                self.state.begin_async_tool("paint_tiles", zone, self.map_manager.tiles_by_zone.get(zone, []))
-                self.state.reset_paint_tiles_dialog()
+                # Establecer código de overlay antes de iniciar la ejecución
                 self.state.tile_code = "floor"
+                tiles = self.map_manager.tiles_by_zone.get(zone, [])
+                self.state.begin_async_tool("paint_tiles", zone, tiles)
+                # Initialize undo/redo command for this batch
+                self.state.current_command = PaintTilesCommand(zone, self.state.tile_code)
+                logger.info(
+                    f"[MapEditor] Paint tiles confirmed zone={zone} count={len(tiles)} overlay={self.state.tile_code}"
+                )
+                self.state.reset_paint_tiles_dialog()
                 return True
             if self.state.confirm_paint_no_rect and self.state.confirm_paint_no_rect.collidepoint(ev.pos):
-                logger.debug("DEBUG: canceled paint tiles")
+                logger.info("[MapEditor] Paint tiles canceled")
                 self.state.reset_paint_tiles_dialog()
                 return True
 

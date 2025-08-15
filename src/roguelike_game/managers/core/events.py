@@ -209,6 +209,11 @@ def handle_events(game):
         game.buildings_editor.handle(game.camera, game.buildings, events)
         return
 
+    # Si el editor de mapa está activo, delegar antes de bloquear eventos por UI
+    if hasattr(game, 'map_editor') and getattr(game.map_editor.editor_state, 'active', False):
+        game.map_editor.handle(game.camera, game.map, events)
+        return
+
     # Por defecto, delegar al handle de engine
     # Pasar solo eventos no consumidos y no bloqueados por UI al motor.
     blocked_idx: set[int] = set()

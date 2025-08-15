@@ -20,6 +20,14 @@ class MapEditorState:
         self.active: bool = False
         self.selected_zone: str | None = None
         self.hidden_zones: set[str] = set()
+        # Persistencia de cámara entre toggles del editor
+        #   - saved_game_camera: (offset_x, offset_y, zoom) fuera del editor
+        #   - saved_editor_camera: (offset_x, offset_y, zoom) dentro del editor
+        self.saved_game_camera = None
+        self.saved_editor_camera = None
+        # Contador para diferir el follow automático de la cámara tras salir del editor
+        # Evita que el update de juego sobreescriba inmediatamente el estado restaurado
+        self.defer_follow_frames: int = 0
 
         # 2. MODOS DE INTERACCIÓN
         self.add_zone_mode: bool = False       # Modo: añadir zona
@@ -28,6 +36,8 @@ class MapEditorState:
         self.clear_colliders_mode: bool = False  # Modo: vaciar colliders
         self.paint_colliders_mode: bool = False  # Modo: pintar colliders
         self.layers_view_open: bool = False    # Modo: dropdown de visibilidad de capas
+        # Código de overlay activo para pintar tiles (por defecto, 'floor')
+        self.tile_code: str | None = "floor"
 
         # 3. DIÁLOGOS DE CONFIRMACIÓN
         # -- Borrar zona
@@ -97,6 +107,15 @@ class MapEditorState:
         self.execution_index: int = 0            # Índice de progreso
         self.execution_total: int = 0            # Total de items
         self.execution_start_time: int = 0       # Tick al iniciar ejecución
+        # Último porcentaje de progreso reportado (para logs)
+        self.last_progress_report: int = -1
+        # Celdas sucias para refresco incremental de chunks (tuplas (ty, tx))
+        self.dirty_cells: set[tuple[int, int]] = set()
+        # Pila de comandos para Undo/Redo de operaciones (p. ej., pintar tiles)
+        self.undo_stack: list = []
+        self.redo_stack: list = []
+        # Comando actual en construcción durante la ejecución asíncrona
+        self.current_command = None
 
     # -------------------------------------------------------------
     # MÉTODOS AUXILIARES PARA MANTENER CONSISTENCIA INTERNA
@@ -190,6 +209,10 @@ class MapEditorState:
         self.execution_total = len(items)
         self.execution_index = 0
         self.execution_start_time = pygame.time.get_ticks()
+        # Reiniciar marcador de progreso para logging controlado
+        self.last_progress_report = -1
+        # Reiniciar buffer de celdas sucias
+        self.dirty_cells.clear()
 
     def update_async_progress(self) -> None:
         """
