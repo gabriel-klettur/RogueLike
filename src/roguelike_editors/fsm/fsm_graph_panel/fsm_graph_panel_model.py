@@ -9,6 +9,8 @@ class FsmGraphPanelModel:
     pan_x: float = 0.0
     pan_y: float = 0.0
     zoom: float = 1.0
+    # UI state
+    legend_collapsed: bool = False
     active_graph_tool: Optional[str] = 'select'
     connect_source_node_id: Optional[str] = None
     selected_node_id: Optional[str] = None

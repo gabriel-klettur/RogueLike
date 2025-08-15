@@ -11,6 +11,10 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Feature toggle: auto-include special states in all sets during normalization
+# Currently includes only the Damage state.
+AUTO_INCLUDE_DAMAGE: bool = True
+
 
 def _project_root() -> Path:
     """Resolve the project root by locating the 'src' directory and returning its parent."""
@@ -239,6 +243,28 @@ def _ensure_ids_and_defaults(data: Dict[str, Any]) -> None:
                 if "props" not in st or not isinstance(st.get("props"), dict):
                     st["props"] = {}
                 # Optional layout fields (kept if present); don't force here
+            # Optional: ensure Damage state exists across all sets (external-entry)
+            if AUTO_INCLUDE_DAMAGE:
+                try:
+                    has_damage = False
+                    for st in states:
+                        sid = st.get("id")
+                        sclass = st.get("class")
+                        if sid == "Damage" or sclass == "DamageState":
+                            has_damage = True
+                            break
+                    if not has_damage:
+                        states.append({
+                            "id": "Damage",
+                            "label": "Damage",
+                            "class": "DamageState",
+                            "special": "damage",
+                            "external_entry": True,
+                        })
+                        s["states"] = states
+                except Exception:
+                    # Don't block normalization if inclusion fails
+                    pass
         # Transitions (edges)
         trans = s.get("transitions") or []
         if isinstance(trans, list):
@@ -356,8 +382,32 @@ def _lint_sets(data: Dict[str, Any]) -> Tuple[List[str], List[str]]:
                     if nxt not in reachable:
                         stack.append(nxt)
             unreachable = [nid for nid in state_ids if nid not in reachable]
-            if unreachable:
-                warns.append(f"set '{sid}': unreachable states from initial: {unreachable}")
+            # Identify externally-entered/special states to suppress unreachable warnings
+            external_ids: set[str] = set()
+            try:
+                for st in states:
+                    nid = st.get("id")
+                    if not isinstance(nid, str):
+                        continue
+                    cls = st.get("class")
+                    # Explicit flag
+                    if st.get("external_entry") is True:
+                        external_ids.add(nid)
+                        continue
+                    # Semantics via 'special'
+                    spec = st.get("special")
+                    if isinstance(spec, str) and spec.lower() in ("damage", "external", "interrupt", "alert"):
+                        external_ids.add(nid)
+                        continue
+                    # Known built-ins
+                    if (nid in ("Damage", "AlertChase")) or (cls in ("DamageState", "AlertChaseState")):
+                        external_ids.add(nid)
+            except Exception:
+                # Best-effort; never block linting
+                external_ids = external_ids
+            filtered_unreachable = [nid for nid in unreachable if nid not in external_ids]
+            if filtered_unreachable:
+                warns.append(f"set '{sid}': unreachable states from initial: {filtered_unreachable}")
     return warns, errs
 
 

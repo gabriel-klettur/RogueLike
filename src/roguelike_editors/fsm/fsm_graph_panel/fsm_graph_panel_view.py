@@ -9,6 +9,9 @@ class FsmGraphPanelView:
         self.edge_label_rects = {}
         # Last rendered edge paths (list of local points) for hover proximity checks
         self.edge_paths = {}
+        # Legend overlay rects (screen-space)
+        self.legend_rect = None
+        self.legend_button_rect = None
 
     def render(self, model, screen, *, anchor=(360, 120), toolbar=None):
         if not getattr(model, "visible", True):
@@ -29,6 +32,9 @@ class FsmGraphPanelView:
         self.node_label_rects = {}
         self.edge_label_rects = {}
         self.edge_paths = {}
+        # Reset legend rects
+        self.legend_rect = None
+        self.legend_button_rect = None
 
         # Draw top graph toolbar (horizontal) via toolbar submodule
         tb_h = 0
@@ -335,7 +341,7 @@ class FsmGraphPanelView:
                 rect = pygame.Rect(tl[0], tl[1], int(nw*zoom), int(nh*zoom))
                 # body
                 pygame.draw.rect(surf, (40, 44, 52), rect, 0, border_radius=6)
-                # border (selected/hover/terminal/initial highlighted)
+                # border (selected/hover/special/terminal/initial highlighted)
                 is_hover_node = (n.get('id') == getattr(model, 'hover_node_id', None))
                 if n.get('id') == getattr(model, 'selected_node_id', None):
                     color = (255, 210, 90)
@@ -343,17 +349,38 @@ class FsmGraphPanelView:
                 elif is_hover_node:
                     color = (255, 230, 120)
                     border_w = 3
-                elif n.get('terminal'):
-                    # Terminal/end nodes: red highlight
-                    color = (220, 80, 80)
-                    border_w = 3
-                elif n.get('initial'):
-                    # Initial/start nodes: green highlight
-                    color = (80, 200, 120)
-                    border_w = 3
                 else:
-                    color = (90, 90, 100)
-                    border_w = 2
+                    # Special states styling (damage/alert/interrupt/external)
+                    spec = n.get('special')
+                    spec_l = spec.lower() if isinstance(spec, str) else None
+                    nid = n.get('id')
+                    ncls = n.get('class')
+                    is_damage = (spec_l == 'damage') or (nid == 'Damage') or (ncls == 'DamageState')
+                    is_alert = (spec_l == 'alert') or (nid == 'AlertChase') or (ncls == 'AlertChaseState')
+                    is_interrupt = (spec_l == 'interrupt') or (spec_l == 'external') or (n.get('external_entry') is True)
+                    if is_damage:
+                        # Damage: purple highlight
+                        color = (160, 80, 200)
+                        border_w = 3
+                    elif is_alert:
+                        # Alert-chase or alert-like: magenta/pink highlight
+                        color = (220, 100, 180)
+                        border_w = 3
+                    elif is_interrupt:
+                        # External-entry/interruptible: cyan highlight
+                        color = (90, 200, 220)
+                        border_w = 3
+                    elif n.get('terminal'):
+                        # Terminal/end nodes: red highlight
+                        color = (220, 80, 80)
+                        border_w = 3
+                    elif n.get('initial'):
+                        # Initial/start nodes: green highlight
+                        color = (80, 200, 120)
+                        border_w = 3
+                    else:
+                        color = (90, 90, 100)
+                        border_w = 2
                 pygame.draw.rect(surf, color, rect, border_w, border_radius=6)
                 # label (hover highlight)
                 is_hover = (n.get('id') == getattr(model, 'hover_node_id', None))
@@ -373,6 +400,88 @@ class FsmGraphPanelView:
         pygame.draw.rect(surf, (95, 95, 105), surf.get_rect(), 2)
         # Blit to screen
         screen.blit(surf, (x, y))
+
+        # Legend overlay (drawn AFTER blitting canvas so it's on top), bottom-right corner
+        try:
+            legend_items = [
+                ((160, 80, 200), "Damage"),
+                ((220, 100, 180), "Alert"),
+                ((90, 200, 220), "Interrupt/External"),
+            ]
+            lfont = pygame.font.SysFont(None, 16)
+            small_font = pygame.font.SysFont(None, 14)
+            swatch_w, swatch_h = 14, 8
+            gap_x, gap_y = 8, 6
+            margin = 8
+            if getattr(model, 'legend_collapsed', False):
+                # Collapsed pill with a [+] button
+                label = "Legend"
+                txt = lfont.render(label, True, (210, 210, 215))
+                btn_w = txt.get_height() + 6
+                btn_h = txt.get_height() + 2
+                box_w = btn_w + 6 + txt.get_width() + gap_x
+                box_h = max(btn_h, txt.get_height()) + gap_y
+                box_x = x + w - margin - box_w
+                box_y = y + h - margin - box_h
+                bg = pygame.Surface((box_w, box_h), pygame.SRCALPHA)
+                bg.fill((20, 20, 24, 230))
+                pygame.draw.rect(bg, (95, 95, 105), bg.get_rect(), 1)
+                # Button [+]
+                btn_rect_local = pygame.Rect(gap_x//2, (box_h - btn_h)//2, btn_w, btn_h)
+                pygame.draw.rect(bg, (95, 95, 105), btn_rect_local, border_radius=3)
+                plus = small_font.render("+", True, (235, 235, 240))
+                pr = plus.get_rect(center=btn_rect_local.center)
+                bg.blit(plus, pr)
+                # Label
+                bg.blit(txt, (btn_rect_local.right + 6, (box_h - txt.get_height())//2))
+                # Composite
+                screen.blit(bg, (box_x, box_y))
+                # Store rects (screen-space)
+                self.legend_rect = pygame.Rect(box_x, box_y, box_w, box_h)
+                self.legend_button_rect = pygame.Rect(box_x + btn_rect_local.left, box_y + btn_rect_local.top, btn_w, btn_h)
+            else:
+                # Expanded panel with a minimize button [−]
+                header = lfont.render("Legend (special)", True, (200, 200, 210))
+                max_item_w = 0
+                item_h = max(swatch_h, lfont.get_height())
+                for color, label in legend_items:
+                    tw = lfont.size(label)[0]
+                    max_item_w = max(max_item_w, swatch_w + 6 + tw)
+                # Minimize button size
+                btn_w = 18
+                btn_h = 16
+                # Box size
+                box_w = max(header.get_width() + btn_w + 6, max_item_w) + gap_x * 2
+                box_h = header.get_height() + gap_y + len(legend_items) * (item_h + 2) + gap_y
+                # Position bottom-right
+                box_x = x + w - margin - box_w
+                box_y = y + h - margin - box_h
+                bg = pygame.Surface((box_w, box_h), pygame.SRCALPHA)
+                bg.fill((20, 20, 24, 230))
+                pygame.draw.rect(bg, (95, 95, 105), bg.get_rect(), 1)
+                # Header and minimize button
+                bg.blit(header, (gap_x, gap_y - 2))
+                btn_rect_local = pygame.Rect(box_w - gap_x - btn_w, gap_y - 2, btn_w, btn_h)
+                pygame.draw.rect(bg, (95, 95, 105), btn_rect_local, border_radius=3)
+                minus = small_font.render("-", True, (235, 235, 240))
+                mr = minus.get_rect(center=btn_rect_local.center)
+                bg.blit(minus, mr)
+                # Items
+                iy = gap_y + header.get_height()
+                for color, label in legend_items:
+                    pygame.draw.rect(bg, color, pygame.Rect(gap_x, iy + (item_h - swatch_h)//2, swatch_w, swatch_h))
+                    txt = lfont.render(label, True, (210, 210, 215))
+                    bg.blit(txt, (gap_x + swatch_w + 6, iy - 1))
+                    iy += item_h + 2
+                # Composite
+                screen.blit(bg, (box_x, box_y))
+                # Store rects (screen-space)
+                self.legend_rect = pygame.Rect(box_x, box_y, box_w, box_h)
+                self.legend_button_rect = pygame.Rect(box_x + btn_rect_local.left, box_y + btn_rect_local.top, btn_w, btn_h)
+        except Exception:
+            # Non-fatal if we can't render legend
+            self.legend_rect = None
+            self.legend_button_rect = None
 
         # Register blocker so gameplay input under canvas is suppressed
         try:

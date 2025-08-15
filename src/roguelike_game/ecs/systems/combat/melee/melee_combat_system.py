@@ -58,6 +58,18 @@ class MeleeCombatSystem:
                 q.append({"type": "OnHit", "from_left": from_left})
                 if defender_stats.current_hp <= 0:
                     q.append({"type": "OnDeath"})
+            # Jugador recibe daño de NPC/u otro -> publicar evento OnHit y posible OnDeath
+            elif intent.target in world.components.get('PlayerTagComponent', {}):
+                target_eid = intent.target
+                # determinar dirección de daño
+                attacker_pos = world.components['Position'][intent.attacker]
+                defender_pos = world.components['Position'][target_eid]
+                from_left = attacker_pos.x < defender_pos.x
+                qmap = world.components.setdefault('FSMEventQueue', {})
+                q = qmap.setdefault(target_eid, [])
+                q.append({"type": "OnHit", "from_left": from_left})
+                if defender_stats.current_hp <= 0:
+                    q.append({"type": "OnDeath"})
             
             # (Opcional) Aquí podrías disparar efectos secundarios,
             # p.ej. animaciones, sonidos o eventos de muerte si HP ≤ 0

@@ -323,6 +323,11 @@ class FsmEditorController:
                                             self.graph_panel_controller.model.pan_y = py
                                         except Exception:
                                             pass
+                                        try:
+                                            lc = bool(vp.get("legend_collapsed", False))
+                                            self.graph_panel_controller.model.legend_collapsed = lc
+                                        except Exception:
+                                            pass
                             # Edges from transitions (carry label and optional style)
                             for t in transitions:
                                 fr = t.get('from'); to = t.get('to')

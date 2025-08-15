@@ -25,6 +25,7 @@ from roguelike_game.ecs.components.combat.energy import Energy
 from roguelike_game.ecs.components.combat.hunger import Hunger
 from roguelike_game.ecs.components.combat.melee_weapon import MeleeWeapon
 from roguelike_game.ecs.components.rendering.trail_component import TrailComponent, TrailConfig
+from roguelike_game.ecs.components.ai.damage_config import DamageConfig
 from roguelike_game.ecs.components.fsm.npc_state import NPCState
 from roguelike_game.ecs.systems.fsm.states.idle_state import IdleState
 from roguelike_game.ecs.systems.fsm.fsm import FiniteStateMachine
@@ -70,6 +71,8 @@ class PlayerBuilder:
         # Salud y combate
         max_hp = PLAYER_STATS[class_player]["max_strength"]
         comps["Health"][eid] = Health(max_hp, max_hp)
+        # Daño configurable (duración del estado Damage)
+        comps["DamageConfig"][eid] = DamageConfig(0.25)
         comps["CombatStats"][eid] = CombatStats(current_hp=max_hp, max_hp=max_hp,
                                                 power=PLAYER_STATS[class_player]["basic_attack"],
                                                 defense=PLAYER_STATS[class_player]["basic_armor"])
