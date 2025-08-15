@@ -42,6 +42,8 @@ class InputSystem:
         self.config = InputConfig(config_path)
         # Edge detection for manual spells reload (F5)
         self._prev_reload_spells = False
+        # Per-entity cache to avoid spamming suppression logs each frame
+        self._prev_suppressed = {}
 
     @benchmark(lambda self: self.perf_log, "4.2.2.InputSystem.update")
     def update(self, world, *args):
@@ -112,6 +114,8 @@ class InputSystem:
         se_key = self.config.get_key("spell_smoke_emitter")
         sh_key = self.config.get_key("spell_sphere_magic_shield")
         tp_key = self.config.get_key("spell_teleport")
+        # Flag: Buildings Editor activo -> solo permitir movimiento
+        editor_buildings_active = bool(getattr(getattr(world, 'state', None), 'buildings_editor_active', False))
         # Para cada entidad con InputComponent
         # Flag para mostrar todos los drops
         alt_down = bool(pygame.key.get_mods() & pygame.KMOD_ALT)
@@ -149,51 +153,62 @@ class InputSystem:
                         state_comp.fsm.change_state(MoveState(), proxy)
                     elif inp.move_x == 0 and inp.move_y == 0 and isinstance(current, MoveState):
                         state_comp.fsm.change_state(IdleState(), proxy)
-                    # Ataque físico: sólo en flanco ascendente y evitar re-entrada
-                    prev_a = self.prev_attack.get(eid, False)
-                    if curr_attack and not prev_a:
-                        if (not isinstance(current, PlayerAttackState)) and (isinstance(current, IdleState) or isinstance(current, MoveState)):
-                            state_comp.fsm.change_state(PlayerAttackState(), proxy)
-                    # Hechizos (q/e): entrar a selección SOLO en flanco ascendente y si está en Idle/Move
-                    pressed_lb = bool(keys[lb_key]) and self.prev_spell_keys.get((eid, 'lightball'), 0) == 0
-                    pressed_sl = bool(keys[slash_key]) and self.prev_spell_keys.get((eid, 'slash'), 0) == 0
-                    if (pressed_lb or pressed_sl) and (isinstance(current, IdleState) or isinstance(current, MoveState)):
-                        state_comp.fsm.change_state(PlayerSpellSelectState(), proxy)
-
-                    # Actualizar memoria de flanco para ataque
-                    self.prev_attack[eid] = curr_attack
+                    if not editor_buildings_active:
+                        # Ataque físico: sólo en flanco ascendente y evitar re-entrada
+                        prev_a = self.prev_attack.get(eid, False)
+                        if curr_attack and not prev_a:
+                            if (not isinstance(current, PlayerAttackState)) and (isinstance(current, IdleState) or isinstance(current, MoveState)):
+                                state_comp.fsm.change_state(PlayerAttackState(), proxy)
+                        # Hechizos (q/e): entrar a selección SOLO en flanco ascendente y si está en Idle/Move
+                        pressed_lb = bool(keys[lb_key]) and self.prev_spell_keys.get((eid, 'lightball'), 0) == 0
+                        pressed_sl = bool(keys[slash_key]) and self.prev_spell_keys.get((eid, 'slash'), 0) == 0
+                        if (pressed_lb or pressed_sl) and (isinstance(current, IdleState) or isinstance(current, MoveState)):
+                            state_comp.fsm.change_state(PlayerSpellSelectState(), proxy)
+                        # Actualizar memoria de flanco para ataque
+                        self.prev_attack[eid] = curr_attack
+                    else:
+                        # En editor: desactivar ataque y limpiar memoria para evitar flancos al salir
+                        inp.attack = False
+                        self.prev_attack[eid] = False
 
             # Mapear habilidades Q, E, X desde config
-            inp.spell_lightball = bool(keys[lb_key])
-            inp.spell_slash = bool(keys[slash_key])
-            inp.spell_healing_aura = bool(keys[heal_key])
-            # Mapear nuevos hechizos oscuro e hielo
-            inp.spell_darkball = bool(keys[db_key])
-            inp.spell_iceball = bool(keys[ib_key])
-            inp.spell_lightning = bool(keys[lightning_key])
-            inp.spell_arcane_flame = bool(keys[af_key])
-            inp.spell_firework_launch = bool(keys[fw_key])
-            inp.spell_smoke = bool(keys[sm_key])
-            inp.spell_smoke_emitter = bool(keys[se_key])
-            inp.spell_sphere_magic_shield = bool(keys[sh_key])
-            inp.spell_teleport = bool(keys[tp_key])
-            # Detección de eventos de hechizos: presionado, mantenido y soltado
             spell_attrs = ['lightball','slash','healing_aura','darkball','iceball','lightning','arcane_flame','firework_launch','smoke','smoke_emitter','sphere_magic_shield','teleport']
-            for name in spell_attrs:
-                curr = getattr(inp, f'spell_{name}')
-                state = self.prev_spell_keys.get((eid,name), 0)
-                ts = time.time()
-                if curr and state == 0:
-                    logger.debug(f'[DEBUG][{ts:.3f}] eid={eid} botón presionado -> {name}')
-                    world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell=name)
-                    state = 1
-                elif curr and state == 1:
-                    logger.debug(f'[DEBUG][{ts:.3f}] eid={eid} botón mantenido apretado -> {name}')
-                    state = 2
-                elif not curr and state > 0:
-                    logger.debug(f'[DEBUG][{ts:.3f}] eid={eid} botón soltado    -> {name}')
-                    state = 0
-                self.prev_spell_keys[(eid,name)] = state
+            if editor_buildings_active:
+                # En editor: desactivar todos los hechizos y resetear flancos
+                for name in spell_attrs:
+                    setattr(inp, f'spell_{name}', False)
+                    self.prev_spell_keys[(eid,name)] = 0
+            else:
+                # Mapear hechizos desde teclado
+                inp.spell_lightball = bool(keys[lb_key])
+                inp.spell_slash = bool(keys[slash_key])
+                inp.spell_healing_aura = bool(keys[heal_key])
+                # Mapear nuevos hechizos oscuro e hielo
+                inp.spell_darkball = bool(keys[db_key])
+                inp.spell_iceball = bool(keys[ib_key])
+                inp.spell_lightning = bool(keys[lightning_key])
+                inp.spell_arcane_flame = bool(keys[af_key])
+                inp.spell_firework_launch = bool(keys[fw_key])
+                inp.spell_smoke = bool(keys[sm_key])
+                inp.spell_smoke_emitter = bool(keys[se_key])
+                inp.spell_sphere_magic_shield = bool(keys[sh_key])
+                inp.spell_teleport = bool(keys[tp_key])
+                # Detección de eventos de hechizos: presionado, mantenido y soltado
+                for name in spell_attrs:
+                    curr = getattr(inp, f'spell_{name}')
+                    state = self.prev_spell_keys.get((eid,name), 0)
+                    ts = time.time()
+                    if curr and state == 0:
+                        logger.debug(f'[DEBUG][{ts:.3f}] eid={eid} botón presionado -> {name}')
+                        world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell=name)
+                        state = 1
+                    elif curr and state == 1:
+                        logger.debug(f'[DEBUG][{ts:.3f}] eid={eid} botón mantenido apretado -> {name}')
+                        state = 2
+                    elif not curr and state > 0:
+                        logger.debug(f'[DEBUG][{ts:.3f}] eid={eid} botón soltado    -> {name}')
+                        state = 0
+                    self.prev_spell_keys[(eid,name)] = state
 
             # Toggle editor mode: detectar flanco ascendente
             toggle_key = self.config.get_key("toggle_item_editor")
@@ -228,9 +243,18 @@ class InputSystem:
             dragging_items = any(isinstance(s, DropDragSystem) and s.dragging_eid is not None for s in getattr(world, 'update_systems', []))
             dragging_ui = any(isinstance(s, InventoryUISystem) and s.dragging for s in getattr(world, 'render_systems', []))
             dragging = dragging_items or dragging_ui
+            # Log suppression only on transitions to reduce noise
+            suppressed_now = editor_buildings_active or dragging
+            prev_supp = self._prev_suppressed.get(eid, False)
+            if suppressed_now and not prev_supp:
+                logger.debug(
+                    f"[DEBUG] [InputSystem] input suppressed (buildings_editor={editor_buildings_active}, dragging_items={dragging_items}, dragging_ui={dragging_ui})"
+                )
+            elif not suppressed_now and prev_supp:
+                logger.debug("[DEBUG] [InputSystem] input suppression ended")
+            self._prev_suppressed[eid] = suppressed_now
 
-            if dragging:
-                logger.debug(f"[DEBUG] [InputSystem] input suppressed due to UI drag (dragging_items={dragging_items}, dragging_ui={dragging_ui})")
+            if suppressed_now:
                 inp.click = False
                 self.prev_click[eid] = False
                 curr_right = False

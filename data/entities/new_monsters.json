@@ -416,7 +416,7 @@
       },
       "barbol_boss": {
         "stats": {
-          "hp": 500,
+          "hp": 2000,
           "speed": 4.0,
           "faction": "EVIL",
           "aggro_range": 10,

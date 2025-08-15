@@ -63,6 +63,12 @@ class Game:
             return
         if hasattr(self, 'spells_editor') and self.spells_editor.model.visible:
             return
+        # Propagar estado del Buildings Editor al state para que sistemas (InputSystem)
+        # puedan leerlo y suprimir hechizos/dash mientras permiten movimiento.
+        try:
+            self.state.buildings_editor_active = bool(self.buildings_editor.editor_state.active)
+        except Exception:
+            self.state.buildings_editor_active = False
         update_game(
             self.state,            
             self.camera,
