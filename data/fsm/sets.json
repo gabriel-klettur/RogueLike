@@ -1,82 +1,270 @@
 {
-  "version": 1,
   "sets": [
     {
       "id": "Player_Default",
+      "initial": "Idle",
       "label": "Player Default",
       "states": [
-        { "id": "Idle", "class": "IdleState", "props": {} },
-        { "id": "Move", "class": "MoveState", "props": {} },
-        { "id": "Attack", "class": "PlayerAttackState", "props": {} },
-        { "id": "SpellSelect", "class": "PlayerSpellSelectState", "props": {} }
+        {
+          "class": "IdleState",
+          "id": "Idle",
+          "props": {}
+        },
+        {
+          "class": "MoveState",
+          "id": "Move",
+          "props": {}
+        },
+        {
+          "class": "PlayerAttackState",
+          "id": "Attack",
+          "props": {}
+        },
+        {
+          "class": "PlayerSpellSelectState",
+          "id": "SpellSelect",
+          "props": {}
+        }
       ],
       "transitions": [
-        { "from": "Idle", "to": "Move", "when": "input.move" },
-        { "from": "Move", "to": "Idle", "when": "input.stop" },
-        { "from": "Idle", "to": "Attack", "when": "input.attack" },
-        { "from": "Idle", "to": "SpellSelect", "when": "key.q_or_e_edge" },
-        { "from": "SpellSelect", "to": "Idle", "when": "key.escape" }
-      ],
-      "initial": "Idle"
+        {
+          "from": "Idle",
+          "id": "tr_07faddc1",
+          "to": "Move",
+          "when": "input.move"
+        },
+        {
+          "from": "Move",
+          "id": "tr_be280ebe",
+          "to": "Idle",
+          "when": "input.stop"
+        },
+        {
+          "from": "Idle",
+          "id": "tr_f92a2064",
+          "to": "Attack",
+          "when": "input.attack"
+        },
+        {
+          "from": "Idle",
+          "id": "tr_2c28d6b7",
+          "to": "SpellSelect",
+          "when": "key.q_or_e_edge"
+        },
+        {
+          "from": "SpellSelect",
+          "id": "tr_d98603f5",
+          "to": "Idle",
+          "when": "key.escape"
+        }
+      ]
     },
     {
       "id": "Monster_Goblin",
+      "initial": "Patrol",
       "label": "Goblin",
       "states": [
-        { "id": "Patrol", "class": "PatrolState" },
-        { "id": "Chase", "class": "ChaseState" },
-        { "id": "Attack", "class": "AttackState" }
+        {
+          "class": "PatrolState",
+          "id": "Patrol",
+          "props": {}
+        },
+        {
+          "class": "ChaseState",
+          "id": "Chase",
+          "props": {}
+        },
+        {
+          "class": "AttackState",
+          "id": "Attack",
+          "props": {}
+        }
       ],
       "transitions": [
-        { "from": "Patrol", "to": "Chase", "when": "player_in_range" },
-        { "from": "Chase", "to": "Attack", "when": "melee_range" },
-        { "from": "Attack", "to": "Chase", "when": "target_alive" }
-      ],
-      "initial": "Patrol"
+        {
+          "from": "Patrol",
+          "id": "tr_588e2ef8",
+          "to": "Chase",
+          "when": "player_in_range"
+        },
+        {
+          "from": "Chase",
+          "id": "tr_6ded15c2",
+          "to": "Attack",
+          "when": "melee_range"
+        },
+        {
+          "from": "Attack",
+          "id": "tr_67122fb5",
+          "to": "Chase",
+          "when": "target_alive"
+        }
+      ]
     },
     {
       "id": "Monster_stupid",
+      "initial": "Patrol",
       "label": "Monster Stupid",
       "states": [
-        { "id": "Patrol", "class": "PatrolState" },
-        { "id": "Damage", "class": "DamageState" }
+        {
+          "class": "PatrolState",
+          "id": "Patrol",
+          "props": {}
+        },
+        {
+          "class": "DamageState",
+          "id": "Damage",
+          "props": {}
+        }
       ],
       "transitions": [
-        { "from": "Damage", "to": "Patrol", "when": "after_damage" }
-      ],
-      "initial": "Patrol"
+        {
+          "from": "Damage",
+          "id": "tr_f5a59d54",
+          "to": "Patrol",
+          "when": "after_damage"
+        }
+      ]
     },
     {
       "id": "Monster_Default",
+      "initial": "Patrol",
       "label": "Monster Default",
       "states": [
-        { "id": "Patrol", "class": "PatrolState" },
-        { "id": "Aggro", "class": "AggroState" },
-        { "id": "Chase", "class": "ChaseState" },
-        { "id": "Attack", "class": "AttackState" },
-        { "id": "Flee", "class": "FleeState" },
-        { "id": "AlertChase", "class": "AlertChaseState" },
-        { "id": "Damage", "class": "DamageState" },
-        { "id": "Death", "class": "DeathState" }
+        {
+          "class": "PatrolState",
+          "id": "Patrol",
+          "props": {}
+        },
+        {
+          "class": "AggroState",
+          "id": "Aggro",
+          "props": {}
+        },
+        {
+          "class": "ChaseState",
+          "id": "Chase",
+          "props": {}
+        },
+        {
+          "class": "AttackState",
+          "id": "Attack",
+          "props": {}
+        },
+        {
+          "class": "FleeState",
+          "id": "Flee",
+          "props": {}
+        },
+        {
+          "class": "AlertChaseState",
+          "id": "AlertChase",
+          "props": {}
+        },
+        {
+          "class": "DamageState",
+          "id": "Damage",
+          "props": {}
+        },
+        {
+          "class": "DeathState",
+          "id": "Death",
+          "props": {}
+        }
       ],
       "transitions": [
-        { "from": "Patrol", "to": "Aggro", "when": "player_in_aggro" },
-        { "from": "Aggro", "to": "Chase", "when": "aggro_continue" },
-        { "from": "Aggro", "to": "Attack", "when": "melee_range" },
-        { "from": "Aggro", "to": "Flee", "when": "low_health" },
-        { "from": "Chase", "to": "Attack", "when": "melee_range" },
-        { "from": "Chase", "to": "Patrol", "when": "lost_player" },
-        { "from": "Attack", "to": "Chase", "when": "out_of_melee_range" },
-        { "from": "Damage", "to": "AlertChase", "when": "after_damage" },
-        { "from": "AlertChase", "to": "Patrol", "when": "timer_5s" },
-        { "from": "Patrol", "to": "Death", "when": "dead" },
-        { "from": "Aggro", "to": "Death", "when": "dead" },
-        { "from": "Chase", "to": "Death", "when": "dead" },
-        { "from": "Attack", "to": "Death", "when": "dead" },
-        { "from": "Flee", "to": "Death", "when": "dead" },
-        { "from": "AlertChase", "to": "Death", "when": "dead" }
-      ],
-      "initial": "Patrol"
+        {
+          "from": "Patrol",
+          "id": "tr_803d4cd0",
+          "to": "Aggro",
+          "when": "player_in_aggro"
+        },
+        {
+          "from": "Aggro",
+          "id": "tr_40a37ebc",
+          "to": "Chase",
+          "when": "aggro_continue"
+        },
+        {
+          "from": "Aggro",
+          "id": "tr_d7957f3e",
+          "to": "Attack",
+          "when": "melee_range"
+        },
+        {
+          "from": "Aggro",
+          "id": "tr_88e3b7e4",
+          "to": "Flee",
+          "when": "low_health"
+        },
+        {
+          "from": "Chase",
+          "id": "tr_ca305750",
+          "to": "Attack",
+          "when": "melee_range"
+        },
+        {
+          "from": "Chase",
+          "id": "tr_8c75a711",
+          "to": "Patrol",
+          "when": "lost_player"
+        },
+        {
+          "from": "Attack",
+          "id": "tr_0b7ac56a",
+          "to": "Chase",
+          "when": "out_of_melee_range"
+        },
+        {
+          "from": "Damage",
+          "id": "tr_14877a25",
+          "to": "AlertChase",
+          "when": "after_damage"
+        },
+        {
+          "from": "AlertChase",
+          "id": "tr_a8f4684f",
+          "to": "Patrol",
+          "when": "timer_5s"
+        },
+        {
+          "from": "Patrol",
+          "id": "tr_47898f90",
+          "to": "Death",
+          "when": "dead"
+        },
+        {
+          "from": "Aggro",
+          "id": "tr_e0e22411",
+          "to": "Death",
+          "when": "dead"
+        },
+        {
+          "from": "Chase",
+          "id": "tr_03f4e0d7",
+          "to": "Death",
+          "when": "dead"
+        },
+        {
+          "from": "Attack",
+          "id": "tr_7c2067b8",
+          "to": "Death",
+          "when": "dead"
+        },
+        {
+          "from": "Flee",
+          "id": "tr_cd96e594",
+          "to": "Death",
+          "when": "dead"
+        },
+        {
+          "from": "AlertChase",
+          "id": "tr_9ad6186c",
+          "to": "Death",
+          "when": "dead"
+        }
+      ]
     }
-  ]
+  ],
+  "version": 1
 }
