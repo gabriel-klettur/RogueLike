@@ -45,7 +45,8 @@ class MapToolBarPanelEvents:
                     logger.debug(f"[DEBUG][Toolbar/Events] layers_view_open -> {editor.layers_view_open}")
                     return True
                 if tool_name == "add_zone":
-                    _toggle_pair("add_zone_mode", ["delete_zone_mode", "paint_tiles_mode", "clear_colliders_mode", "paint_colliders_mode"])
+                    # Delegate to the Add Zone tool controller, which enforces exclusivity
+                    c.add_zone.toggle()
                     return True
                 if tool_name == "delete_zone":
                     _toggle_pair("delete_zone_mode", ["add_zone_mode", "paint_tiles_mode", "clear_colliders_mode", "paint_colliders_mode"])

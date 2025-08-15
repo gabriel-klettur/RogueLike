@@ -28,13 +28,13 @@ class MapToolBarPanelModel:
     # Assets
     # ---------------------------
     def _load_icons(self) -> dict[str, pygame.Surface]:
-        return {
-            "view_layers": load_image("assets/ui/layers_view_tool.png", (self.size, self.size)),
+        return {            
             "add_zone": load_image("assets/ui/add_zone.png", (self.size, self.size)),
             "delete_zone": load_image("assets/ui/delete_zone.png", (self.size, self.size)),
             "paint_tiles": load_image("assets/ui/pintar_tiles_zone.png", (self.size, self.size)),
             "clear_colliders": load_image("assets/ui/vaciar_colliders_zone.png", (self.size, self.size)),
             "paint_colliders": load_image("assets/ui/pintar_colliders_zone.png", (self.size, self.size)),
+            "view_layers": load_image("assets/ui/layers_view_tool.png", (self.size, self.size)),
         }
 
     # ---------------------------

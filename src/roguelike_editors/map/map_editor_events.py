@@ -3,11 +3,10 @@ import os
 import json
 import logging
 logger = logging.getLogger(__name__)
-from pygame.locals import *
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.config.config_editor import TILE_PAINT_BATCH, TILE_PAINT_TICK
-from roguelike_engine.config.config import DATA_DIR, ASSETS_DIR
+from roguelike_engine.config.config import DATA_DIR
 from roguelike_editors.buildings.utils.save_buildings_to_json import save_buildings_to_json
 from roguelike_engine.map.model.overlay.overlay_manager import load_layers, save_layers
 from roguelike_game.ecs.core.spatial_index import SpatialIndex
@@ -112,7 +111,10 @@ class MapEditorEventHandler:
                     self.manager.game.state.running = False
                     continue
                 if ev.key == pygame.K_n:
-                    self.controller.duplicate_zone()
+                    new_zone = self.controller.duplicate_zone()
+                    if new_zone:
+                        self.state.selected_zone = new_zone
+                        logger.info(f"[MapEditor] Duplicated zone selected: {new_zone}")
                     continue
                 if ev.key == pygame.K_l:
                     self.controller.load_zones()
@@ -394,19 +396,22 @@ class MapEditorEventHandler:
         if ev.key == pygame.K_RETURN:
             old_zone = self.state.renaming_zone
             new_name = self.state.rename_input.strip()
-            logger.debug(f"DEBUG: renaming {old_zone} -> {new_name}")
-            self.controller.rename_zone(old_zone, new_name)
-            for b in self.manager.game.buildings.buildings:
-                if getattr(b, "zone", None) == old_zone:
-                    b.zone = new_name
-                    logger.debug(f"DEBUG: building {b} zone updated from {old_zone} to {new_name}")
-            save_buildings_to_json(
-                self.manager.game.buildings.buildings,
-                z_state=self.manager.game.z_state,
-                zone_offsets=global_map_settings.zone_offsets,
-            )
-            logger.debug("DEBUG: persisted buildings_data.json")
-            self.state.selected_zone = new_name
+            logger.debug(f"[MapEditor] renaming (Enter) {old_zone} -> {new_name}")
+            success = self.controller.rename_zone(old_zone, new_name)
+            if success:
+                for b in self.manager.game.buildings.buildings:
+                    if getattr(b, "zone", None) == old_zone:
+                        b.zone = new_name
+                        logger.debug(f"[MapEditor] building {b} zone updated from {old_zone} to {new_name}")
+                save_buildings_to_json(
+                    self.manager.game.buildings.buildings,
+                    z_state=self.manager.game.z_state,
+                    zone_offsets=global_map_settings.zone_offsets,
+                )
+                logger.debug("[MapEditor] persisted buildings_data.json after rename")
+                self.state.selected_zone = new_name
+            else:
+                logger.info(f"[MapEditor] rename aborted for {old_zone} -> {new_name}")
             self.state.renaming_zone = None
             self.state.rename_input = ""
             pygame.key.set_repeat()
@@ -426,19 +431,22 @@ class MapEditorEventHandler:
         if self.state.rename_accept_rect and self.state.rename_accept_rect.collidepoint(ev.pos):
             old_zone = self.state.renaming_zone
             new_name = self.state.rename_input.strip()
-            logger.debug(f"DEBUG: accept rename {old_zone} -> {new_name}")
-            self.controller.rename_zone(old_zone, new_name)
-            for b in self.manager.game.buildings.buildings:
-                if getattr(b, "zone", None) == old_zone:
-                    b.zone = new_name
-                    logger.debug(f"DEBUG: building {b} zone updated from {old_zone} to {new_name}")
-            save_buildings_to_json(
-                self.manager.game.buildings.buildings,
-                z_state=self.manager.game.z_state,
-                zone_offsets=global_map_settings.zone_offsets,
-            )
-            logger.debug("DEBUG: persisted buildings_data.json")
-            self.state.selected_zone = new_name
+            logger.debug(f"[MapEditor] accept rename click {old_zone} -> {new_name}")
+            success = self.controller.rename_zone(old_zone, new_name)
+            if success:
+                for b in self.manager.game.buildings.buildings:
+                    if getattr(b, "zone", None) == old_zone:
+                        b.zone = new_name
+                        logger.debug(f"[MapEditor] building {b} zone updated from {old_zone} to {new_name}")
+                save_buildings_to_json(
+                    self.manager.game.buildings.buildings,
+                    z_state=self.manager.game.z_state,
+                    zone_offsets=global_map_settings.zone_offsets,
+                )
+                logger.debug("[MapEditor] persisted buildings_data.json after rename")
+                self.state.selected_zone = new_name
+            else:
+                logger.info(f"[MapEditor] rename aborted for {old_zone} -> {new_name}")
         self.state.renaming_zone = None
         self.state.rename_input = ""
         self.state.rename_input_rect = None
@@ -508,13 +516,8 @@ class MapEditorEventHandler:
 
         # Añadir zona
         if self.state.confirm_add_zone:
-            tx, ty = self.state.pending_add_zone_coords
-            if self.state.confirm_add_yes_rect and self.state.confirm_add_yes_rect.collidepoint(ev.pos):
-                self.controller.add_zone(tx, ty)
-                self.state.reset_add_zone_dialog()
-                return True
-            if self.state.confirm_add_no_rect and self.state.confirm_add_no_rect.collidepoint(ev.pos):
-                self.state.reset_add_zone_dialog()
+            # Delegate to Add Zone tool events (no legacy fallback)
+            if self.controller.toolbar.add_zone.events.handle_confirm_click(ev.pos):
                 return True
 
         return False
@@ -530,14 +533,14 @@ class MapEditorEventHandler:
 
         # Modo: Añadir zona
         if self.state.add_zone_mode:
-            self.state.pending_add_zone_coords = (tx, ty)
-            self.state.confirm_add_zone = True
-            self.state.add_zone_mode = False
-            return True
+            if self.controller.toolbar.add_zone.handle_map_click(tx, ty):
+                return True
 
         # Modo: Borrar zona
         if self.state.delete_zone_mode:
             for zn, (ox, oy) in global_map_settings.zone_offsets.items():
+                if zn in ("no zone", "no-zone"):
+                    continue
                 w, h = global_map_settings.zone_size
                 if ox <= tx < ox + w and oy <= ty < oy + h:
                     self.state.pending_delete_zone = zn
@@ -548,6 +551,8 @@ class MapEditorEventHandler:
         # Modo: Pintar tiles
         if self.state.paint_tiles_mode:
             for zn, (ox, oy) in global_map_settings.zone_offsets.items():
+                if zn in ("no zone", "no-zone"):
+                    continue
                 w, h = global_map_settings.zone_size
                 if ox <= tx < ox + w and oy <= ty < oy + h:
                     self.state.pending_paint_tiles_zone = zn
@@ -559,6 +564,8 @@ class MapEditorEventHandler:
         # Modo: Vaciar colliders
         if self.state.clear_colliders_mode:
             for zn, (ox, oy) in global_map_settings.zone_offsets.items():
+                if zn in ("no zone", "no-zone"):
+                    continue
                 w, h = global_map_settings.zone_size
                 if ox <= tx < ox + w and oy <= ty < oy + h:
                     self.state.pending_clear_colliders_zone = zn
@@ -569,6 +576,8 @@ class MapEditorEventHandler:
         # Modo: Pintar colliders
         if self.state.paint_colliders_mode:
             for zn, (ox, oy) in global_map_settings.zone_offsets.items():
+                if zn in ("no zone", "no-zone"):
+                    continue
                 w, h = global_map_settings.zone_size
                 if ox <= tx < ox + w and oy <= ty < oy + h:
                     self.state.pending_paint_colliders_zone = zn
@@ -578,29 +587,23 @@ class MapEditorEventHandler:
 
         return False
 
-    # -------------------------------------------------------------
-    # 5. SELECCIÓN Y DOBLE-CLIC EN ZONA
-    # -------------------------------------------------------------
     def _handle_zone_selection(self, ev, camera) -> bool:
         world_x, world_y = self._screen_to_world(ev.pos, camera)
         tx = int(world_x) // TILE_SIZE
         ty = int(world_y) // TILE_SIZE
 
         for zn, (ox, oy) in global_map_settings.zone_offsets.items():
+            if zn in ("no zone", "no-zone"):
+                continue
             w, h = global_map_settings.zone_size
             if ox <= tx < ox + w and oy <= ty < oy + h:
                 now = pygame.time.get_ticks()
                 if self.state.last_click_zone == zn and now - self.state.last_click_time <= 400:
-                    # Detección de doble-clic → iniciar renombrado
+                    # Doble clic: iniciar renombrado
                     self.state.renaming_zone = zn
                     self.state.rename_input = zn
-                    pygame.key.set_repeat(400, 50)
-                    # Centrar cámara en la zona
-                    self._center_camera_on_zone(camera, zn)
-                    self.state.last_click_zone = None
-                    self.state.last_click_time = 0
+                    pygame.key.set_repeat(200, 30)
                     return True
-
                 # Clic simple: seleccionar zona y preparar doble-clic
                 self.state.selected_zone = zn
                 self.state.last_click_zone = zn

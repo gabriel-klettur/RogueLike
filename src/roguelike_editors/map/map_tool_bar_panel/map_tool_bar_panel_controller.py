@@ -3,6 +3,7 @@ from roguelike_engine.map.model.layer import Layer
 from .map_tool_bar_panel_view import MapToolBarPanelView
 from .map_tool_bar_panel_model import MapToolBarPanelModel
 from .map_tool_bar_panel_events import MapToolBarPanelEvents
+from .add_zone.add_zone_controller import AddZoneController
 
 logger = logging.getLogger(__name__)
 
@@ -14,8 +15,10 @@ class MapToolBarPanelController:
     Exposes the same API as the previous inline MapToolbarController.
     """
 
-    def __init__(self, editor_state):
+    def __init__(self, editor_state, map_controller=None):
         self.editor = editor_state
+        # Optional back-reference to the MapEditorController for tool actions
+        self.map_controller = map_controller
 
         # Model: geometry, icons, and rects
         self.model = MapToolBarPanelModel(editor_state, x=10, y=10, size=64, padding=8)
@@ -31,6 +34,13 @@ class MapToolBarPanelController:
 
         # View wrapper that hosts the shared ToolbarView
         self.view = MapToolBarPanelView(self, self.model)
+
+        # Tool controllers
+        self.add_zone = AddZoneController(
+            editor_state=editor_state,
+            map_controller=self.map_controller,
+            toolbar_controller=self,
+        )
 
     def handle_click(self, mouse_pos: tuple[int, int]) -> bool:
         """

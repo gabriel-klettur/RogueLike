@@ -70,23 +70,75 @@ class BuildingModel:
     # ───────────── Propiedades de posición absoluta ─────────────
     @property
     def x(self) -> int:        
-        ox, oy = global_map_settings.zone_offsets.get(self.zone, (0, 0))
+        offsets = global_map_settings.zone_offsets
+        zone = self.zone
+        if zone not in offsets and isinstance(zone, str):
+            low = zone.lower()
+            if low in offsets:
+                zone = low
+            else:
+                for k in offsets.keys():
+                    if k.lower() == low:
+                        zone = k
+                        break
+        ox, oy = offsets.get(zone, (0, 0))
+        if (ox, oy) == (0, 0) and zone not in offsets and zone and str(self.zone).lower() not in ("no zone", "no-zone"):
+            logger.warning(f"[BuildingModel] Zone '{self.zone}' not found in offsets. Using (0,0).")
         return ox * TILE_SIZE + self.rel_x
 
     @x.setter
     def x(self, value: int):
-        ox, oy = global_map_settings.zone_offsets.get(self.zone, (0, 0))
+        offsets = global_map_settings.zone_offsets
+        zone = self.zone
+        if zone not in offsets and isinstance(zone, str):
+            low = zone.lower()
+            if low in offsets:
+                zone = low
+            else:
+                for k in offsets.keys():
+                    if k.lower() == low:
+                        zone = k
+                        break
+        ox, oy = offsets.get(zone, (0, 0))
+        if (ox, oy) == (0, 0) and zone not in offsets and zone and str(self.zone).lower() not in ("no zone", "no-zone"):
+            logger.warning(f"[BuildingModel] Zone '{self.zone}' not found in offsets when setting x. Using (0,0).")
         px = int(value)
         self.rel_x = px - ox * TILE_SIZE
 
     @property
     def y(self) -> int:        
-        ox, oy = global_map_settings.zone_offsets.get(self.zone, (0, 0))
+        offsets = global_map_settings.zone_offsets
+        zone = self.zone
+        if zone not in offsets and isinstance(zone, str):
+            low = zone.lower()
+            if low in offsets:
+                zone = low
+            else:
+                for k in offsets.keys():
+                    if k.lower() == low:
+                        zone = k
+                        break
+        ox, oy = offsets.get(zone, (0, 0))
+        if (ox, oy) == (0, 0) and zone not in offsets and zone and str(self.zone).lower() not in ("no zone", "no-zone"):
+            logger.warning(f"[BuildingModel] Zone '{self.zone}' not found in offsets. Using (0,0).")
         return oy * TILE_SIZE + self.rel_y
 
     @y.setter
     def y(self, value: int):
-        ox, oy = global_map_settings.zone_offsets.get(self.zone, (0, 0))
+        offsets = global_map_settings.zone_offsets
+        zone = self.zone
+        if zone not in offsets and isinstance(zone, str):
+            low = zone.lower()
+            if low in offsets:
+                zone = low
+            else:
+                for k in offsets.keys():
+                    if k.lower() == low:
+                        zone = k
+                        break
+        ox, oy = offsets.get(zone, (0, 0))
+        if (ox, oy) == (0, 0) and zone not in offsets and zone and str(self.zone).lower() not in ("no zone", "no-zone"):
+            logger.warning(f"[BuildingModel] Zone '{self.zone}' not found in offsets when setting y. Using (0,0).")
         py = int(value)
         self.rel_y = py - oy * TILE_SIZE
 

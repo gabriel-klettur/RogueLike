@@ -174,11 +174,43 @@ class MapService:
             # Evitar duplicar zonas base
             if zone_name in ("lobby", "dungeon"):
                 continue
-            parent_offset = offsets.get(parent)
+            # Si estamos usando zones.json, solo colocar zonas adicionales que estén
+            # explícitamente definidas en offsets; no derivar nuevas.
+            if global_map_settings.use_zones_json and zone_name not in offsets:
+                logger.debug(f"Omitiendo zona adicional '{zone_name}' (use_zones_json=True y no definida en zones.json)")
+                continue
+            # Resolver nombre efectivo del padre en offsets (manejar mayúsculas/minúsculas
+            # y posibles renombrados cuando se usa zones.json)
+            parent_key = parent
+            parent_offset = offsets.get(parent_key)
+            if parent_offset is None:
+                # Si es una zona base, mapear al key real usando offsets dinámicos
+                if parent_key in ("lobby", "dungeon"):
+                    dyn_offs = global_map_settings._dynamic_offsets()
+                    dyn_parent_off = dyn_offs[parent_key]
+                    resolved = next((k for k, v in offsets.items() if v == dyn_parent_off), None)
+                    if resolved:
+                        parent_key = resolved
+                        parent_offset = offsets[parent_key]
+            if parent_offset is None:
+                # Intento adicional: coincidencia case-insensitive de nombre
+                ci_match = next((k for k in offsets.keys() if k.lower() == parent.lower()), None)
+                if ci_match:
+                    parent_key = ci_match
+                    parent_offset = offsets[parent_key]
             if parent_offset is None:
                 logger.warning(f"Zona padre '{parent}' no definida para zona adicional '{zone_name}'.")
                 continue
-            offset = offsets[zone_name]
+            # Obtener/derivar offset de la zona si no está en offsets
+            offset = offsets.get(zone_name)
+            if offset is None:
+                if global_map_settings.use_zones_json:
+                    # En modo JSON no derivamos zonas implícitas
+                    logger.debug(f"Sin offset definido para '{zone_name}' y use_zones_json=True; se omite")
+                    continue
+                offset = global_map_settings.calculate_offset(parent_offset, side)
+                # Añadirlo al mapeo local de offsets para que el loader integre overlays si aplica
+                offsets[zone_name] = offset
             # Si la zona es vacía (nombre empieza con 'empty'), generar zona de suelo caminable
             if zone_name.startswith("empty"):
                 zone = Zone(zone_name, offset)
@@ -196,7 +228,7 @@ class MapService:
             zone_rows = ["".join(r) for r in raw_map]
             zone.set_matrix_from_rows(zone_rows)
             self._merge_zone_into_world(world, zone)
-            # Conectar túneles entre padre y zona adicional
+            # Conectar túneles entre padre y zona adicional (si hay parent_offset)
             if side == "bottom":
                 exit_x = parent_offset[0] + global_map_settings.zone_width // 2
                 exit_y = parent_offset[1] + global_map_settings.zone_height
@@ -217,7 +249,10 @@ class MapService:
                 exit_y = parent_offset[1] + global_map_settings.zone_height // 2
                 entry_x = offset[0]
                 entry_y = offset[1] + global_map_settings.zone_height // 2
-            # Dibujar túneles
+            # Dibujar túneles (si el padre fue resuelto)
+            if parent_offset is None:
+                logger.debug(f"No se pudo resolver zona padre para '{zone_name}', omitimos túneles")
+                continue
             if random.random() < 0.5:
                 DungeonGenerator._horiz_tunnel(world.matrix, exit_x, entry_x, exit_y)
                 DungeonGenerator._vert_tunnel(world.matrix, exit_y, entry_y, entry_x)

@@ -2,6 +2,7 @@ import json
 import os
 import logging
 logger = logging.getLogger(__name__)
+from typing import Any, TYPE_CHECKING
 
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config import DATA_DIR
@@ -23,7 +24,8 @@ class MapEditorController:
         self.state = state
         self.map_manager = map_manager
         # Delegate toolbar responsibilities to map_tool_bar_panel package
-        self.toolbar = MapToolBarPanelController(self.state)
+        # Provide back-reference so tool controllers can invoke map CRUD
+        self.toolbar = MapToolBarPanelController(self.state, map_controller=self)
 
     # -------------------------------------------------------------
     # 1. SELECCIÓN Y VISIBILIDAD DE ZONAS
@@ -50,12 +52,15 @@ class MapEditorController:
         Actualiza únicamente el mapping en global_map_settings.zone_offsets.
         """
         offsets = global_map_settings.zone_offsets
+        # Evitar mover el centinela 'no zone'
+        if self._is_sentinel_zone(zone_name):
+            return
         if zone_name not in offsets:
             return
         x, y = offsets[zone_name]
         offsets[zone_name] = (x + dx, y + dy)
 
-    def duplicate_zone(self) -> None:
+    def duplicate_zone(self) -> str | None:
         """
         Duplica la zona actualmente seleccionada:
           - Crea una nueva clave con sufijo "_copy"
@@ -63,7 +68,10 @@ class MapEditorController:
         """
         sel = self.state.selected_zone
         if not sel:
-            return
+            return None
+        # Evitar duplicar el centinela 'no zone'
+        if self._is_sentinel_zone(sel):
+            return None
 
         offsets = global_map_settings.zone_offsets
         new_key = self._generate_unique_zone_key(sel, offsets)
@@ -72,11 +80,13 @@ class MapEditorController:
         # Clonar lista de habitaciones y matriz (placeholder)
         self.map_manager.zone_rooms[new_key] = list(self.map_manager.zone_rooms.get(sel, []))
         self.map_manager.matrix = self.map_manager.matrix[:]
+        logger.debug(f"[MapEditor] Duplicated zone '{sel}' -> '{new_key}'")
+        return new_key
 
     # -------------------------------------------------------------
     # 2. OPERACIONES CRUD SOBRE ZONAS
     # -------------------------------------------------------------
-    def add_zone(self, tx: int, ty: int) -> None:
+    def add_zone(self, tx: int, ty: int) -> str:
         """
         Agrega una nueva zona de tamaño zone_size alineada al grid de zonas.
         1. Calcula offset en tiles basado en (tx, ty).
@@ -88,7 +98,7 @@ class MapEditorController:
         offy = (ty // zone_h) * zone_h
         base_name = f"zone_{offx}_{offy}"
 
-        json_path = os.path.join(DATA_DIR, "zones", "zones.json")
+        json_path = self._zones_json_path()
         offsets = self._load_json_or_empty(json_path)
 
         new_name = self._ensure_unique_name(base_name, offsets)
@@ -96,13 +106,15 @@ class MapEditorController:
         self._save_json(json_path, offsets)
 
         # Forzar recarga de offsets y mapa
+        global_map_settings.use_zones_json = True
         global_map_settings.__dict__.pop("zone_offsets", None)
         self.map_manager.reload_map()
         self.state.selected_zone = new_name
 
-        logger.debug(f"DEBUG [Controller.add_zone] Added zone {new_name} at offset ({offx}, {offy})")
+        logger.debug(f"[MapEditor] Added zone '{new_name}' at offset ({offx}, {offy})")
+        return new_name
 
-    def delete_zone(self) -> None:
+    def delete_zone(self) -> bool:
         """
         Elimina la zona actualmente seleccionada (excepto 'lobby'):
           1. Retira del JSON de zones y persiste.
@@ -110,10 +122,10 @@ class MapEditorController:
           3. Recarga offsets y mapa, deselecciona la zona.
         """
         sel = self.state.selected_zone
-        if not sel or sel == "lobby":
-            return
+        if not sel or sel in ("lobby",) or self._is_sentinel_zone(sel):
+            return False
 
-        json_path = os.path.join(DATA_DIR, "zones", "zones.json")
+        json_path = self._zones_json_path()
         offsets = self._load_json_or_empty(json_path)
         offsets.pop(sel, None)
         self._save_json(json_path, offsets)
@@ -131,9 +143,10 @@ class MapEditorController:
         self.map_manager.reload_map()
         self.state.selected_zone = None
 
-        logger.debug(f"DEBUG [Controller.delete_zone] Removed zone {sel}")
+        logger.debug(f"[MapEditor] Removed zone '{sel}'")
+        return True
 
-    def rename_zone(self, old_name: str, new_name: str) -> None:
+    def rename_zone(self, old_name: str, new_name: str) -> bool:
         """
         Renombra una zona (si old_name existe y new_name no existe):
           1. Actualiza JSON de zones y persiste.
@@ -142,25 +155,30 @@ class MapEditorController:
         """
         old = old_name.strip()
         new = new_name.strip()
-        logger.debug(f"DEBUG [Controller.rename_zone] called with old_name={old!r}, new_name={new!r}")
+        logger.debug(f"[MapEditor] rename_zone old={old!r} new={new!r}")
 
         if not old or not new or old == new:
-            logger.debug("DEBUG [Controller.rename_zone] abort: invalid or same name")
-            return
+            logger.debug("[MapEditor] rename aborted: invalid or same name")
+            return False
+
+        # No permitir renombrar hacia/desde el centinela 'no zone'
+        if self._is_sentinel_zone(old) or self._is_sentinel_zone(new):
+            logger.debug("[MapEditor] rename aborted: sentinel 'no zone' involved")
+            return False
 
         # Forzar uso de JSON y obtener offsets actuales
         global_map_settings.use_zones_json = True
         offsets = dict(global_map_settings.zone_offsets)
 
         if old not in offsets or new in offsets:
-            logger.debug("DEBUG [Controller.rename_zone] abort: old_name not in offsets or new_name exists")
-            return
+            logger.debug("[MapEditor] rename aborted: old not found or new already exists")
+            return False
 
         # 1. Actualizar JSON de zones
         offsets[new] = offsets.pop(old)
-        json_path = os.path.join(DATA_DIR, "zones", "zones.json")
+        json_path = self._zones_json_path()
         self._save_json(json_path, offsets)
-        logger.debug(f"DEBUG [Controller.rename_zone] saved zones.json at {json_path}")
+        logger.debug(f"[MapEditor] zones.json saved at {json_path}")
 
         # 2. Renombrar archivos de colisiones y overlays
         self._rename_zone_file("collisions", old, new, "[Controller.rename_zone]")
@@ -176,22 +194,25 @@ class MapEditorController:
             tile.zone = new
         self.map_manager.tiles_by_zone[new] = tiles
 
-        logger.debug(f"DEBUG [Controller.rename_zone] Completed rename from {old} to {new}")
+        logger.debug(f"[MapEditor] Completed rename from '{old}' to '{new}'")
+        return True
 
     def save_zones(self) -> None:
         """
         Persiste el mapping zone_offsets en el JSON correspondiente.
         """
         global_map_settings.use_zones_json = True
-        json_path = os.path.join(DATA_DIR, "zones", "zones.json")
-        self._save_json(json_path, global_map_settings.zone_offsets)
+        json_path = self._zones_json_path()
+        # Filtrar el centinela 'no zone'/'no-zone' para no persistirlo como zona real
+        filtered = {k: v for k, v in global_map_settings.zone_offsets.items() if k not in ("no zone", "no-zone")}
+        self._save_json(json_path, filtered)
 
     def load_zones(self) -> None:
         """
         Carga offsets desde JSON, actualiza additional_zones y limpia caché.
         """
         global_map_settings.use_zones_json = True
-        json_path = os.path.join(DATA_DIR, "zones", "zones.json")
+        json_path = self._zones_json_path()
         try:
             with open(json_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
@@ -199,12 +220,21 @@ class MapEditorController:
             for k, (x, y) in data.items():
                 global_map_settings.additional_zones[k] = (None, None)
             global_map_settings.__dict__.pop("zone_offsets", None)
-        except Exception:
-            pass
+        except Exception as e:
+            # No interrumpir flujo por errores de lectura; registrar a nivel debug
+            logger.debug(f"[MapEditor] load_zones failed to read {json_path}: {e}")
 
     # -------------------------------------------------------------
     # 3. HELPERS PRIVADOS DE PERSISTENCIA Y ARCHIVOS
     # -------------------------------------------------------------
+    def _zones_json_path(self) -> str:
+        """Devuelve la ruta al archivo principal de zonas (zones.json)."""
+        return os.path.join(DATA_DIR, "zones", "zones.json")
+
+    def _is_sentinel_zone(self, name: str) -> bool:
+        """True si 'name' corresponde al centinela especial de 'no zone'."""
+        return name in ("no zone", "no-zone")
+
     def _load_json_or_empty(self, path: str) -> dict:
         """
         Abre y parsea JSON en 'path'; si falla, retorna {}.
@@ -245,6 +275,7 @@ class MapEditorController:
         new_file = os.path.join(DATA_DIR, subdir, f"{new}{suffix}")
         if os.path.exists(old_file):
             try:
+                os.makedirs(os.path.dirname(new_file), exist_ok=True)
                 os.rename(old_file, new_file)
                 logger.debug(f"DEBUG {debug_tag} Renamed file {old_file} -> {new_file}")
             except Exception as e:

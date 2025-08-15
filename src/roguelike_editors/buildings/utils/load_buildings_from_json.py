@@ -4,11 +4,42 @@ from typing import List
 from roguelike_engine.config.config import BUILDINGS_DATA_PATH, BUILDINGS_COLLISIONS_DATA_PATH
 from roguelike_engine.z_layer.persistence import extract_z_from_json
 from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_engine.config.map_config import global_map_settings
 
 from roguelike_engine.buildings.building import Building
 
 import logging
 logger = logging.getLogger(__name__)
+
+def _canonicalize_zone(zone: str) -> str:
+    """
+    Map arbitrary zone label from JSON to the canonical key used in
+    global_map_settings.zone_offsets. Performs case-insensitive match and
+    normalizes base zones ('lobby', 'dungeon') to lowercase.
+    """
+    try:
+        if not zone or not isinstance(zone, str):
+            return zone
+        # Respect sentinel value used when an entity is intentionally outside any zone
+        if zone.lower() == "no zone":
+            return "no zone"
+        offsets = getattr(global_map_settings, 'zone_offsets', {}) or {}
+        # Exact match first
+        if zone in offsets:
+            return zone
+        low = zone.lower()
+        # Normalize known base zones
+        if low in ("lobby", "dungeon") and low in offsets:
+            return low
+        # Case-insensitive lookup among existing keys
+        for k in offsets.keys():
+            if k.lower() == low:
+                return k
+        # Fallback: return original and warn
+        logger.warning(f"[Buildings] Zone '{zone}' not found in offsets (keys={list(offsets.keys())}). Using as-is; building may be misaligned.")
+        return zone
+    except Exception:
+        return zone
 
 def load_buildings_from_json(
     z_state=None
@@ -125,7 +156,7 @@ def load_buildings_from_json(
 
             # Asignar zona si viene en JSON
             if entry.get("zone"):
-                b.zone = entry["zone"]
+                b.zone = _canonicalize_zone(entry["zone"]) 
 
             # Alcance de colisión por edificio (CG/CU)
             try:
