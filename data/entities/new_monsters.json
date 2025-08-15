@@ -499,7 +499,7 @@
               "sw": null
             },
             "death": {
-              "s": "assets/items/health_potion.png",
+              "s": "assets/npc/monsters/barbol/barbol_female_death.png",
               "se": null,
               "e": null,
               "ne": null,
