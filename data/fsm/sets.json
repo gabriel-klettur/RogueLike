@@ -115,132 +115,148 @@
         {
           "class": "PatrolState",
           "id": "Patrol",
-          "props": {}
+          "label": "Patrol",
+          "props": {},
+          "terminal": false
         },
         {
           "class": "AggroState",
           "id": "Aggro",
-          "props": {}
+          "label": "Aggro",
+          "props": {},
+          "terminal": false
         },
         {
           "class": "ChaseState",
           "id": "Chase",
-          "props": {}
+          "label": "Chase",
+          "props": {},
+          "terminal": false
         },
         {
           "class": "AttackState",
           "id": "Attack",
-          "props": {}
+          "label": "Attack",
+          "props": {},
+          "terminal": false
         },
         {
           "class": "FleeState",
           "id": "Flee",
-          "props": {}
+          "label": "Flee",
+          "props": {},
+          "terminal": false
         },
         {
           "class": "AlertChaseState",
           "id": "AlertChase",
-          "props": {}
+          "label": "AlertChase",
+          "props": {},
+          "terminal": false
         },
         {
           "class": "DamageState",
           "id": "Damage",
-          "props": {}
+          "label": "Damage",
+          "props": {},
+          "terminal": false
         },
         {
           "class": "DeathState",
           "id": "Death",
-          "props": {}
+          "label": "Death",
+          "props": {},
+          "terminal": false
         }
       ],
       "transitions": [
         {
           "from": "Patrol",
-          "id": "tr_803d4cd0",
+          "id": "tr_7b3eca4d",
           "to": "Aggro",
           "when": "player_in_aggro"
         },
         {
           "from": "Aggro",
-          "id": "tr_40a37ebc",
+          "id": "tr_c9ab93b6",
           "to": "Chase",
           "when": "aggro_continue"
         },
         {
           "from": "Aggro",
-          "id": "tr_d7957f3e",
+          "id": "tr_4e2b5d85",
           "to": "Attack",
           "when": "melee_range"
         },
         {
           "from": "Aggro",
-          "id": "tr_88e3b7e4",
+          "id": "tr_abe6f7c7",
           "to": "Flee",
           "when": "low_health"
         },
         {
           "from": "Chase",
-          "id": "tr_ca305750",
+          "id": "tr_b19a430a",
           "to": "Attack",
           "when": "melee_range"
         },
         {
           "from": "Chase",
-          "id": "tr_8c75a711",
+          "id": "tr_50ae2cbf",
           "to": "Patrol",
           "when": "lost_player"
         },
         {
           "from": "Attack",
-          "id": "tr_0b7ac56a",
+          "id": "tr_aa2ad20b",
           "to": "Chase",
           "when": "out_of_melee_range"
         },
         {
           "from": "Damage",
-          "id": "tr_14877a25",
+          "id": "tr_993675f0",
           "to": "AlertChase",
           "when": "after_damage"
         },
         {
           "from": "AlertChase",
-          "id": "tr_a8f4684f",
+          "id": "tr_1b38f648",
           "to": "Patrol",
           "when": "timer_5s"
         },
         {
           "from": "Patrol",
-          "id": "tr_47898f90",
+          "id": "tr_859db257",
           "to": "Death",
           "when": "dead"
         },
         {
           "from": "Aggro",
-          "id": "tr_e0e22411",
+          "id": "tr_e89def93",
           "to": "Death",
           "when": "dead"
         },
         {
           "from": "Chase",
-          "id": "tr_03f4e0d7",
+          "id": "tr_2d960c98",
           "to": "Death",
           "when": "dead"
         },
         {
           "from": "Attack",
-          "id": "tr_7c2067b8",
+          "id": "tr_97b533d3",
           "to": "Death",
           "when": "dead"
         },
         {
           "from": "Flee",
-          "id": "tr_cd96e594",
+          "id": "tr_fe48b5d7",
           "to": "Death",
           "when": "dead"
         },
         {
           "from": "AlertChase",
-          "id": "tr_9ad6186c",
+          "id": "tr_e2e4cfac",
           "to": "Death",
           "when": "dead"
         }

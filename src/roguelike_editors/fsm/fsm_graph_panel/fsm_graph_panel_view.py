@@ -39,7 +39,9 @@ class FsmGraphPanelView:
 
         # Background panel
         surf = pygame.Surface((w, h), pygame.SRCALPHA)
-        surf.fill((15, 15, 18, 225))
+        # Use fully opaque background to completely hide any underlying game elements
+        # when the FSM Graph Panel is visible.
+        surf.fill((15, 15, 18, 255))
         # Reset last label rects for new frame
         self.node_label_rects = {}
         self.edge_label_rects = {}
