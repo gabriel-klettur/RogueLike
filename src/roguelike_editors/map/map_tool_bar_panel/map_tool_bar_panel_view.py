@@ -16,11 +16,11 @@ class MapToolBarPanelView:
     Wrapper view for the Map toolbar that reuses the shared ToolbarView widget.
     Lives under map_tool_bar_panel to centralize toolbar responsibilities.
     """
-    def __init__(self, controller, model=None):
+    def __init__(self, controller, model):
         self.toolbar = controller
-        self.model = model or getattr(controller, "model", None)
-        # Fallback to controller attributes if model is not present yet
-        src = self.model or self.toolbar
+        self.model = model
+        # Enforce explicit model injection to avoid implicit controller coupling
+        src = self.model
         self.widget = ToolbarView(
             controller=self.toolbar,
             items=TOOLS,

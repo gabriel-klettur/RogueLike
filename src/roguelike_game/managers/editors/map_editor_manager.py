@@ -25,25 +25,46 @@ class MapEditorManager:
     def toggle(self):
         active = not self.editor_state.active
         self.editor_state.active = active
-        # Reset zoom to minimum when entering Map Editor
+        cam = self.game.camera
         if active:
-            # Set initial zoom
-            self.game.camera.zoom = 0.5
-            # Center camera on the center of the player's current zone
-            player_tile = self.game.map._local_state.get("player_pos")
-            if player_tile:
-                zone = get_zone_for_tile(player_tile[0], player_tile[1])
-                off_x, off_y = global_map_settings.zone_offsets.get(zone, (0, 0))
-                zone_w, zone_h = global_map_settings.zone_size
-                center_tx = off_x + zone_w // 2
-                center_ty = off_y + zone_h // 2
-                px = center_tx * TILE_SIZE + TILE_SIZE / 2
-                py = center_ty * TILE_SIZE + TILE_SIZE / 2
-                self.game.camera.update(SimpleNamespace(x=px, y=py))
+            # Guardar estado de cámara del juego (fuera del editor)
+            self.editor_state.saved_game_camera = (cam.offset_x, cam.offset_y, cam.zoom)
+            # Restaurar última cámara del editor si existe; si no, inicializar centrado
+            if self.editor_state.saved_editor_camera:
+                ox, oy, z = self.editor_state.saved_editor_camera
+                cam.offset_x, cam.offset_y, cam.zoom = ox, oy, z
+            else:
+                # Zoom inicial cómodo para edición
+                cam.zoom = 0.5
+                # Centrar cámara en el centro de la zona actual del jugador (si disponible)
+                player_tile = self.game.map._local_state.get("player_pos")
+                if player_tile:
+                    zone = get_zone_for_tile(player_tile[0], player_tile[1])
+                    off_x, off_y = global_map_settings.zone_offsets.get(zone, (0, 0))
+                    zone_w, zone_h = global_map_settings.zone_size
+                    center_tx = off_x + zone_w // 2
+                    center_ty = off_y + zone_h // 2
+                    px = center_tx * TILE_SIZE + TILE_SIZE / 2
+                    py = center_ty * TILE_SIZE + TILE_SIZE / 2
+                    cam.update(SimpleNamespace(x=px, y=py))
         else:
-            # Restore zoom and recenter camera on exit
-            self.game.camera.zoom = 1.0
-            self.game.camera.update(self.game.ecs.ecs_world.player_position)
+            # Guardar estado de cámara del editor
+            self.editor_state.saved_editor_camera = (cam.offset_x, cam.offset_y, cam.zoom)
+            # Restaurar cámara del juego si estaba guardada; si no, fallback a comportamiento previo
+            if self.editor_state.saved_game_camera:
+                ox, oy, z = self.editor_state.saved_game_camera
+                cam.offset_x, cam.offset_y, cam.zoom = ox, oy, z
+            else:
+                cam.zoom = 1.0
+                try:
+                    cam.update(self.game.ecs.ecs_world.player_position)
+                except Exception:
+                    pass
+            # Diferir el follow automático 1 frame para no sobrescribir el estado restaurado
+            try:
+                self.editor_state.defer_follow_frames = max(1, getattr(self.editor_state, 'defer_follow_frames', 0))
+            except Exception:
+                self.editor_state.defer_follow_frames = 1
             # reset de subestado al cerrar
             self.editor_state.selected_zone = None
             self.editor_state.hidden_zones.clear()

@@ -67,6 +67,13 @@ def update_game(
     @benchmark(perf_log, "2.1.camera.update")
     def _update_camera():
         try:
+            # Respetar defer de follow tras salir del Map Editor
+            if getattr(getattr(map_editor, 'editor_state', None), 'defer_follow_frames', 0) > 0:
+                map_editor.editor_state.defer_follow_frames -= 1
+                return
+        except Exception:
+            pass
+        try:
             if item_editor is not None and getattr(getattr(item_editor, 'model', None), 'holding_pos_focus', False):
                 # Respetar enfoque manual del editor: no seguir jugador
                 return
