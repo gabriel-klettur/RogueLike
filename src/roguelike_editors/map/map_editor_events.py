@@ -123,7 +123,8 @@ class MapEditorEventHandler:
                     self.controller.save_zones()
                     continue
                 if ev.key == pygame.K_d:
-                    self.controller.delete_zone()
+                    # Open delete confirmation for the currently selected zone via tool
+                    self.controller.toolbar.delete_zone.request_delete_selected()
                     continue
                 if ev.key == pygame.K_h and self.state.selected_zone:
                     self.controller.toggle_hide_zone(self.state.selected_zone)
@@ -451,16 +452,9 @@ class MapEditorEventHandler:
     # 3. HANDLERS DE DIÁLOGOS DE CONFIRMACIÓN
     # -------------------------------------------------------------
     def _handle_confirmation_dialogs(self, ev) -> bool:
-        # Borrar zona
+        # Borrar zona (delegar en herramienta)
         if self.state.confirm_delete_zone:
-            if self.state.confirm_yes_rect and self.state.confirm_yes_rect.collidepoint(ev.pos):
-                zone = self.state.pending_delete_zone
-                self.state.selected_zone = zone
-                self.controller.delete_zone()
-                self.state.reset_delete_dialog()
-                return True
-            if self.state.confirm_no_rect and self.state.confirm_no_rect.collidepoint(ev.pos):
-                self.state.reset_delete_dialog()
+            if self.controller.toolbar.delete_zone.events.handle_confirm_click(ev.pos):
                 return True
 
         # Pintar tiles
@@ -522,17 +516,10 @@ class MapEditorEventHandler:
             if self.controller.toolbar.add_zone.handle_map_click(tx, ty):
                 return True
 
-        # Modo: Borrar zona
+        # Modo: Borrar zona (delegar en herramienta)
         if self.state.delete_zone_mode:
-            for zn, (ox, oy) in global_map_settings.zone_offsets.items():
-                if zn in ("no zone", "no-zone"):
-                    continue
-                w, h = global_map_settings.zone_size
-                if ox <= tx < ox + w and oy <= ty < oy + h:
-                    self.state.pending_delete_zone = zn
-                    self.state.confirm_delete_zone = True
-                    self.state.delete_zone_mode = False
-                    return True
+            if self.controller.toolbar.delete_zone.handle_map_click(tx, ty):
+                return True
 
         # Modo: Pintar tiles
         if self.state.paint_tiles_mode:

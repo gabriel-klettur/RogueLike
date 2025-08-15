@@ -49,7 +49,8 @@ class MapToolBarPanelEvents:
                     c.add_zone.toggle()
                     return True
                 if tool_name == "delete_zone":
-                    _toggle_pair("delete_zone_mode", ["add_zone_mode", "paint_tiles_mode", "clear_colliders_mode", "paint_colliders_mode"])
+                    # Delegate to the Delete Zone tool controller, which enforces exclusivity
+                    c.delete_zone.toggle()
                     return True
                 if tool_name == "paint_tiles":
                     _toggle_pair("paint_tiles_mode", ["add_zone_mode", "delete_zone_mode", "clear_colliders_mode", "paint_colliders_mode"])
