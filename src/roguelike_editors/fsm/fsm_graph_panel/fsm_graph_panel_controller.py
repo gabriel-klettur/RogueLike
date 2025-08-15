@@ -135,6 +135,31 @@ class FsmGraphPanelController:
             except Exception:
                 pass
 
+        # Legend minimize/expand toggle and click capture
+        if et == pygame.MOUSEBUTTONDOWN and btn == 1:
+            try:
+                lbr = getattr(self.view, 'legend_button_rect', None)
+                lrect = getattr(self.view, 'legend_rect', None)
+                # Click on button toggles
+                if lbr is not None and lbr.collidepoint(mouse_pos):
+                    self.model.legend_collapsed = not bool(getattr(self.model, 'legend_collapsed', False))
+                    try:
+                        self._persist_layout()
+                    except Exception:
+                        pass
+                    return True
+                # Click inside legend body: consume; expand if collapsed
+                if lrect is not None and lrect.collidepoint(mouse_pos):
+                    if bool(getattr(self.model, 'legend_collapsed', False)):
+                        self.model.legend_collapsed = False
+                        try:
+                            self._persist_layout()
+                        except Exception:
+                            pass
+                    return True
+            except Exception:
+                pass
+
         if et == pygame.MOUSEBUTTONDOWN:
             if btn == 1:
                 wx, wy = to_world(local_x, local_y)
@@ -550,7 +575,12 @@ class FsmGraphPanelController:
         except Exception:
             pan_x, pan_y = 0.0, 0.0
         entry["nodes"] = nodes_map
-        entry["viewport"] = {"zoom": zoom, "pan_x": pan_x, "pan_y": pan_y}
+        entry["viewport"] = {
+            "zoom": zoom,
+            "pan_x": pan_x,
+            "pan_y": pan_y,
+            "legend_collapsed": bool(getattr(self.model, 'legend_collapsed', False)),
+        }
         by_set[set_id] = entry
         layouts["by_set"] = by_set
         save_layouts(layouts, path)

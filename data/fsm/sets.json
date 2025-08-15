@@ -24,6 +24,13 @@
           "class": "PlayerSpellSelectState",
           "id": "SpellSelect",
           "props": {}
+        },
+        {
+          "class": "DamageState",
+          "external_entry": true,
+          "id": "Damage",
+          "label": "Damage",
+          "special": "damage"
         }
       ],
       "transitions": [
@@ -56,48 +63,6 @@
           "id": "tr_d98603f5",
           "to": "Idle",
           "when": "key.escape"
-        }
-      ]
-    },
-    {
-      "id": "Monster_Goblin",
-      "initial": "Patrol",
-      "label": "Goblin",
-      "states": [
-        {
-          "class": "PatrolState",
-          "id": "Patrol",
-          "props": {}
-        },
-        {
-          "class": "ChaseState",
-          "id": "Chase",
-          "props": {}
-        },
-        {
-          "class": "AttackState",
-          "id": "Attack",
-          "props": {}
-        }
-      ],
-      "transitions": [
-        {
-          "from": "Patrol",
-          "id": "tr_588e2ef8",
-          "to": "Chase",
-          "when": "player_in_range"
-        },
-        {
-          "from": "Chase",
-          "id": "tr_6ded15c2",
-          "to": "Attack",
-          "when": "melee_range"
-        },
-        {
-          "from": "Attack",
-          "id": "tr_67122fb5",
-          "to": "Chase",
-          "when": "target_alive"
         }
       ]
     },

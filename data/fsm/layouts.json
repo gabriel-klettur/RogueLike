@@ -99,6 +99,7 @@
         }
       },
       "viewport": {
+        "legend_collapsed": false,
         "pan_x": 137.27241082644605,
         "pan_y": 66.8177385424492,
         "zoom": 0.751314800901578
