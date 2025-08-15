@@ -1,14 +1,14 @@
 {
-  "be6a3e08-3036-4490-bb9d-65970d6104ab": {
-    "template_id": "33333333-3333-3333-3333-333333333333",
+  "dbf0b5bf-d42a-4039-bd76-5dfa05b1d851": {
+    "template_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
     "slots": [
       {
         "item": "gold",
-        "quantity": 2
+        "quantity": 3
       },
       {
         "item": "experience_orb",
-        "quantity": 1
+        "quantity": 3
       },
       null,
       null,

@@ -51,6 +51,12 @@ class MapEditorEventHandler:
             except Exception:
                 pass
             if ev.type == pygame.QUIT:
+                # Persist camera if the editor is active and app is quitting
+                try:
+                    if self.state.active and camera is not None:
+                        self.manager._save_persisted_camera(camera.offset_x, camera.offset_y, camera.zoom)
+                except Exception:
+                    pass
                 self.manager.game.state.running = False
                 continue
 

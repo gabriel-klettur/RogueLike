@@ -9,6 +9,9 @@ from types import SimpleNamespace
 
 import logging
 logger = logging.getLogger(__name__)
+import os
+import json
+from roguelike_engine.config.config import DATA_DIR
 
 class MapEditorManager:
     """
@@ -21,6 +24,48 @@ class MapEditorManager:
         self.view = MapEditorView(self.controller, self.editor_state, game.map)
         # Pass self to handler so toggle logic resets zoom and recenter on exit
         self.handler = MapEditorEventHandler(self, self.editor_state, self.controller, game.map)
+        # Load persisted camera for the editor (if any)
+        try:
+            self._load_persisted_camera()
+        except Exception:
+            # Never break initialization due to persistence issues
+            pass
+
+    # --- Persistence helpers (camera state across sessions) ---
+    def _state_file_path(self) -> str:
+        path = os.path.join(DATA_DIR, "editors")
+        os.makedirs(path, exist_ok=True)
+        return os.path.join(path, "map_editor_state.json")
+
+    def _load_persisted_camera(self) -> None:
+        fp = self._state_file_path()
+        if os.path.exists(fp):
+            with open(fp, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            try:
+                ox = float(data.get("offset_x", 0.0))
+                oy = float(data.get("offset_y", 0.0))
+                z = float(data.get("zoom", 1.0))
+                self.editor_state.saved_editor_camera = (ox, oy, z)
+                logger.debug(
+                    f"[MapEditor] Loaded persisted camera: offset=({ox:.2f},{oy:.2f}) zoom={z:.3f}"
+                )
+            except Exception:
+                # Ignore malformed file
+                pass
+
+    def _save_persisted_camera(self, ox: float, oy: float, z: float) -> None:
+        fp = self._state_file_path()
+        data = {"offset_x": ox, "offset_y": oy, "zoom": z}
+        try:
+            with open(fp, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            logger.debug(
+                f"[MapEditor] Saved persisted camera: offset=({ox:.2f},{oy:.2f}) zoom={z:.3f}"
+            )
+        except Exception:
+            # Ignore I/O failures silently
+            pass
 
     def toggle(self):
         active = not self.editor_state.active
@@ -50,6 +95,11 @@ class MapEditorManager:
         else:
             # Guardar estado de cámara del editor
             self.editor_state.saved_editor_camera = (cam.offset_x, cam.offset_y, cam.zoom)
+            # Persist to disk for next sessions
+            try:
+                self._save_persisted_camera(cam.offset_x, cam.offset_y, cam.zoom)
+            except Exception:
+                pass
             # Restaurar cámara del juego si estaba guardada; si no, fallback a comportamiento previo
             if self.editor_state.saved_game_camera:
                 ox, oy, z = self.editor_state.saved_game_camera
