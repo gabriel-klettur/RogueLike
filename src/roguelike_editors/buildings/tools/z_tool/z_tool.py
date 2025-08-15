@@ -48,12 +48,19 @@ class ZTool:
 
     def _update_z(self, building, delta):
         if self.target == "bottom":
+            # Update bottom and keep non-negative
             building.z_bottom = max(0, building.z_bottom + delta)
+            # Ensure top is never below bottom
+            if building.z_top < building.z_bottom:
+                building.z_top = building.z_bottom
+            # Sync global z_state with bottom layer (collision/main layer)
             self.state.z_state.set(building, building.z_bottom)
-            logger.info(f"⬇️  Z‑bottom nuevo: {building.z_bottom}")
+            logger.info(f"⬇️  Z‑bottom nuevo: {building.z_bottom} (top={building.z_top})")
         else:
-            building.z_top = max(0, building.z_top + delta)
-            logger.info(f"⬆️  Z‑top nuevo: {building.z_top}")
+            # Update top ensuring it's not below bottom and is non-negative
+            new_top = max(0, building.z_top + delta)
+            building.z_top = max(building.z_bottom, new_top)
+            logger.info(f"⬆️  Z‑top nuevo: {building.z_top} (bottom={building.z_bottom})")
 
     # ------------------------------------------------------------------ #
     # LÓGICA DE GEOMETRÍA (screen-space)

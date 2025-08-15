@@ -416,7 +416,7 @@
       },
       "barbol_boss": {
         "stats": {
-          "hp": 500,
+          "hp": 2000,
           "speed": 4.0,
           "faction": "EVIL",
           "aggro_range": 10,
@@ -499,7 +499,7 @@
               "sw": null
             },
             "death": {
-              "s": "assets/npc/monsters/barbol/barbol_female_death.png",
+              "s": "assets/items/health_potion.png",
               "se": null,
               "e": null,
               "ne": null,

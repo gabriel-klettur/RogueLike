@@ -167,8 +167,8 @@
         "speed": 1.2,
         "lifespan": 60,
         "size_range": [
-          4,
-          8
+          1,
+          2
         ],
         "colors": [
           [

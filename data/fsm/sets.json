@@ -46,43 +46,43 @@
       "transitions": [
         {
           "from": "Idle",
-          "id": "tr_2eb4090d",
+          "id": "tr_c1d3b0f3",
           "to": "Move",
           "when": "input.move"
         },
         {
           "from": "Move",
-          "id": "tr_0143af45",
+          "id": "tr_3ac424bb",
           "to": "Idle",
           "when": "input.stop"
         },
         {
           "from": "Idle",
-          "id": "tr_bb6d0836",
+          "id": "tr_c1ac0885",
           "to": "Attack",
           "when": "input.attack"
         },
         {
           "from": "Attack",
-          "id": "tr_fe1dd270",
+          "id": "tr_a118f50f",
           "to": "Idle",
           "when": "after_attack"
         },
         {
           "from": "Idle",
-          "id": "tr_9c8a8f3d",
+          "id": "tr_4456905b",
           "to": "SpellSelect",
           "when": "key.q_or_e_edge"
         },
         {
           "from": "SpellSelect",
-          "id": "tr_14507336",
+          "id": "tr_6bad833d",
           "to": "Idle",
           "when": "key.escape"
         },
         {
           "from": "Damage",
-          "id": "tr_4b25af4f",
+          "id": "tr_b52b3ae2",
           "to": "Idle",
           "when": "after_damage"
         }
