@@ -95,10 +95,6 @@ class MapEditorState:
         self.dragging: str | None = None
         self.drag_offset: tuple[int, int] = (0, 0)
 
-        # 7. RECTÁNGULOS DE BOTONES EN TOOLBAR
-        self.paint_tiles_rect: pygame.Rect | None = None
-        self.clear_colliders_rect: pygame.Rect | None = None
-        self.paint_colliders_rect: pygame.Rect | None = None
 
         # 8. EJECUCIÓN ASÍNCRONA DE HERRAMIENTAS
         self.executing_tool: str | None = None   # Nombre de herramienta en ejecución

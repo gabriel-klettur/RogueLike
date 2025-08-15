@@ -55,7 +55,7 @@ class MapToolBarPanelEvents:
                     _toggle_pair("paint_tiles_mode", ["add_zone_mode", "delete_zone_mode", "clear_colliders_mode", "paint_colliders_mode"])
                     return True
                 if tool_name == "clear_colliders":
-                    _toggle_pair("clear_colliders_mode", ["add_zone_mode", "delete_zone_mode", "paint_tiles_mode", "paint_colliders_mode"])
+                    c.clear_colliders.toggle()
                     return True
                 if tool_name == "paint_colliders":
                     _toggle_pair("paint_colliders_mode", ["add_zone_mode", "delete_zone_mode", "paint_tiles_mode", "clear_colliders_mode"])

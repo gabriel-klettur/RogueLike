@@ -4,6 +4,7 @@ from .map_tool_bar_panel_view import MapToolBarPanelView
 from .map_tool_bar_panel_model import MapToolBarPanelModel
 from .map_tool_bar_panel_events import MapToolBarPanelEvents
 from .add_zone.add_zone_controller import AddZoneController
+from .clear_colliders.clear_colliders_controller import ClearCollidersController
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +38,11 @@ class MapToolBarPanelController:
 
         # Tool controllers
         self.add_zone = AddZoneController(
+            editor_state=editor_state,
+            map_controller=self.map_controller,
+            toolbar_controller=self,
+        )
+        self.clear_colliders = ClearCollidersController(
             editor_state=editor_state,
             map_controller=self.map_controller,
             toolbar_controller=self,

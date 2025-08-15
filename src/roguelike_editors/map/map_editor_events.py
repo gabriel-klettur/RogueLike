@@ -301,23 +301,14 @@ class MapEditorEventHandler:
         if idx < self.state.execution_total:
             self.state.execution_index += 1
         else:
-            self._finalize_clear_colliders(zone)
-            self._clear_async_state()
+            try:
+                self.controller.toolbar.clear_colliders.finalize(zone)
+            finally:
+                self.manager.game.ecs.ecs_world.spatial_index = SpatialIndex(
+                    self.map_manager, self.manager.game.buildings.buildings
+                )
+                self._clear_async_state()
 
-    def _finalize_clear_colliders(self, zone):
-        w, h = global_map_settings.zone_size
-        grid = [["." for _ in range(w)] for _ in range(h)]
-        path = os.path.join(DATA_DIR, "collisions", f"{zone}.json")
-        try:
-            with open(path, "w", encoding="utf-8") as f:
-                json.dump(grid, f, indent=2)
-            logger.debug(f"DEBUG [MapEditorEventHandler] cleared colliders (all walkable '.') for zone {zone}")
-        except Exception as e:
-            logger.debug(f"DEBUG [MapEditorEventHandler] failed to clear colliders for zone {zone}: {e}")
-        self.map_manager.reload_map()
-        self.manager.game.ecs.ecs_world.spatial_index = SpatialIndex(
-            self.map_manager, self.manager.game.buildings.buildings
-        )
 
     def _handle_paint_colliders_execution(self):
         idx = self.state.execution_index
@@ -494,13 +485,8 @@ class MapEditorEventHandler:
 
         # Vaciar colliders
         if self.state.confirm_clear_colliders:
-            zone = self.state.pending_clear_colliders_zone
-            if self.state.confirm_clear_colliders_yes_rect and self.state.confirm_clear_colliders_yes_rect.collidepoint(ev.pos):
-                self.state.begin_async_tool("clear_colliders", zone, self.map_manager.tiles_by_zone.get(zone, []))
-                self.state.reset_clear_colliders_dialog()
-                return True
-            if self.state.confirm_clear_colliders_no_rect and self.state.confirm_clear_colliders_no_rect.collidepoint(ev.pos):
-                self.state.reset_clear_colliders_dialog()
+            # Delegate to Clear Colliders tool events
+            if self.controller.toolbar.clear_colliders.events.handle_confirm_click(ev.pos):
                 return True
 
         # Pintar colliders
@@ -563,15 +549,8 @@ class MapEditorEventHandler:
 
         # Modo: Vaciar colliders
         if self.state.clear_colliders_mode:
-            for zn, (ox, oy) in global_map_settings.zone_offsets.items():
-                if zn in ("no zone", "no-zone"):
-                    continue
-                w, h = global_map_settings.zone_size
-                if ox <= tx < ox + w and oy <= ty < oy + h:
-                    self.state.pending_clear_colliders_zone = zn
-                    self.state.confirm_clear_colliders = True
-                    self.state.clear_colliders_mode = False
-                    return True
+            if self.controller.toolbar.clear_colliders.handle_map_click(tx, ty):
+                return True
 
         # Modo: Pintar colliders
         if self.state.paint_colliders_mode:
