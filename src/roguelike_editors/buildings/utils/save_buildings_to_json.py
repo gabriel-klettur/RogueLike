@@ -6,6 +6,34 @@ from roguelike_engine.z_layer.persistence import inject_z_into_json
 import logging
 logger = logging.getLogger(__name__)
 
+from roguelike_engine.config.map_config import global_map_settings
+
+def _canonicalize_zone(zone: str) -> str:
+    """
+    Ensure the zone label persisted to JSON matches the canonical key used by
+    global_map_settings.zone_offsets (case-insensitive; 'lobby'/'dungeon' -> lowercase).
+    """
+    try:
+        if not zone or not isinstance(zone, str):
+            return zone
+        # Respect sentinel value used when a building is intentionally outside any zone
+        if zone.lower() == "no zone":
+            return "no zone"
+        offsets = getattr(global_map_settings, 'zone_offsets', {}) or {}
+        if zone in offsets:
+            return zone
+        low = zone.lower()
+        if low in ("lobby", "dungeon") and low in offsets:
+            return low
+        for k in offsets.keys():
+            if k.lower() == low:
+                return k
+        # If still not found, keep original but warn
+        logger.warning(f"[Buildings][Save] Zone '{zone}' not found in offsets; saving as-is.")
+        return zone
+    except Exception:
+        return zone
+
 def save_buildings_to_json(
     buildings,
     filepath: Optional[str] = None,
@@ -24,7 +52,7 @@ def save_buildings_to_json(
     for b in buildings:
         try:
             building_data = {
-                "zone": b.zone,
+                "zone": _canonicalize_zone(b.zone),
                 "rel_x": int(b.rel_x),
                 "rel_y": int(b.rel_y),
                 "image_path": b.image_path,

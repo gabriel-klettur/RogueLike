@@ -96,6 +96,7 @@ class MapEditorController:
         self._save_json(json_path, offsets)
 
         # Forzar recarga de offsets y mapa
+        global_map_settings.use_zones_json = True
         global_map_settings.__dict__.pop("zone_offsets", None)
         self.map_manager.reload_map()
         self.state.selected_zone = new_name
