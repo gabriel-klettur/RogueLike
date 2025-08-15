@@ -1,12 +1,12 @@
 import logging
 from roguelike_engine.map.model.layer import Layer
 from roguelike_engine.config.map_config import global_map_settings
-from roguelike_engine.config.config_tiles import TILE_SIZE
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-def set_overlay_cell(map_manager, tx: int, ty: int, code: str) -> None:
+def set_overlay_cell(map_manager: Any, tx: int, ty: int, code: str) -> None:
     """
     Update the in-memory world-sized Ground layer grid at tile coords (tx, ty).
     Bounds-safe and no-op if out of range.
@@ -20,7 +20,7 @@ def set_overlay_cell(map_manager, tx: int, ty: int, code: str) -> None:
         layers_grid[ty][tx] = code
 
 
-def merge_zone_to_world(map_manager, zone: str, zone_grid: list[list[str]]) -> None:
+def merge_zone_to_world(map_manager: Any, zone: str, zone_grid: list[list[str]]) -> None:
     """
     Merge a zone-sized overlay grid back into the world-sized Ground layer using zone offsets.
     Only non-empty codes are written to avoid accidentally clearing existing overlay.
@@ -46,3 +46,4 @@ def merge_zone_to_world(map_manager, zone: str, zone_grid: list[list[str]]) -> N
             code = row[xx]
             if code:
                 world[wy][wx] = code
+
