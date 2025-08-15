@@ -36,6 +36,8 @@ class InputSystem:
         self.prev_toggle_inventory = {}
         # Estado previo de hechizos para detección de flancos
         self.prev_spell_keys = {}
+        # Estado previo de ataque para detección de flanco ascendente
+        self.prev_attack = {}
         # Cargar configuración de teclas desde JSON
         self.config = InputConfig(config_path)
         # Edge detection for manual spells reload (F5)
@@ -73,6 +75,8 @@ class InputSystem:
                 self.prev_toggle_inventory[eid] = False
                 for name in spell_attrs:
                     self.prev_spell_keys[(eid, name)] = 0
+                # Reset attack edge state
+                self.prev_attack[eid] = False
             return
 
         # Recargar bindings para aplicar cambios guardados sin reiniciar
@@ -117,7 +121,8 @@ class InputSystem:
             # Movimiento en ejes X e Y
             inp.move_x = int(keys[move_right]) - int(keys[move_left])
             inp.move_y = int(keys[move_down]) - int(keys[move_up])
-            inp.attack = bool(keys[attack_key])
+            curr_attack = bool(keys[attack_key])
+            inp.attack = curr_attack
             #logger.debug(f"[DEBUG][{time.time():.3f}] eid={eid} move=({inp.move_x},{inp.move_y}), click={inp.click}")
             # Actualizar velocidad según MovementSpeed
             vel = world.components.get('Velocity', {}).get(eid)
@@ -144,14 +149,19 @@ class InputSystem:
                         state_comp.fsm.change_state(MoveState(), proxy)
                     elif inp.move_x == 0 and inp.move_y == 0 and isinstance(current, MoveState):
                         state_comp.fsm.change_state(IdleState(), proxy)
-                    # Ataque físico
-                    if inp.attack:
-                        state_comp.fsm.change_state(PlayerAttackState(), proxy)
+                    # Ataque físico: sólo en flanco ascendente y evitar re-entrada
+                    prev_a = self.prev_attack.get(eid, False)
+                    if curr_attack and not prev_a:
+                        if (not isinstance(current, PlayerAttackState)) and (isinstance(current, IdleState) or isinstance(current, MoveState)):
+                            state_comp.fsm.change_state(PlayerAttackState(), proxy)
                     # Hechizos (q/e): entrar a selección SOLO en flanco ascendente y si está en Idle/Move
                     pressed_lb = bool(keys[lb_key]) and self.prev_spell_keys.get((eid, 'lightball'), 0) == 0
                     pressed_sl = bool(keys[slash_key]) and self.prev_spell_keys.get((eid, 'slash'), 0) == 0
                     if (pressed_lb or pressed_sl) and (isinstance(current, IdleState) or isinstance(current, MoveState)):
                         state_comp.fsm.change_state(PlayerSpellSelectState(), proxy)
+
+                    # Actualizar memoria de flanco para ataque
+                    self.prev_attack[eid] = curr_attack
 
             # Mapear habilidades Q, E, X desde config
             inp.spell_lightball = bool(keys[lb_key])

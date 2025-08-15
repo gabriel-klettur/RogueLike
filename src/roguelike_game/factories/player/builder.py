@@ -4,7 +4,7 @@ Builder para crear la entidad jugador usando coordenadas en píxeles.
 import time
 import pygame
 from roguelike_game.factories.player.loader import load_and_scale_sprites, extract_initial_frame, build_animator_map
-from roguelike_game.factories.player.config import DEFAULT_CLASS, ANIMATION_INTERVAL, INITIAL_ANIMATION_STATE, PLAYER_STATS, MELEE_WEAPON_CFG, DEFAULT_TRAIL
+from roguelike_game.factories.player.config import DEFAULT_CLASS, ANIMATION_INTERVAL, INITIAL_ANIMATION_STATE, PLAYER_STATS, MELEE_WEAPON_CFG, DEFAULT_TRAIL, DEFAULT_DAMAGE_DURATION
 from roguelike_game.factories.player.collider import create_body_and_feet
 from roguelike_engine.config.config_z_layer import Z_LAYERS
 from roguelike_engine.config.config_tiles import TILE_SIZE
@@ -71,8 +71,9 @@ class PlayerBuilder:
         # Salud y combate
         max_hp = PLAYER_STATS[class_player]["max_strength"]
         comps["Health"][eid] = Health(max_hp, max_hp)
-        # Daño configurable (duración del estado Damage)
-        comps["DamageConfig"][eid] = DamageConfig(0.25)
+        # Daño configurable (duración del estado Damage) desde JSON
+        dmg_duration = PLAYER_STATS[class_player].get("damage_duration", DEFAULT_DAMAGE_DURATION)
+        comps["DamageConfig"][eid] = DamageConfig(float(dmg_duration))
         comps["CombatStats"][eid] = CombatStats(current_hp=max_hp, max_hp=max_hp,
                                                 power=PLAYER_STATS[class_player]["basic_attack"],
                                                 defense=PLAYER_STATS[class_player]["basic_armor"])
@@ -98,9 +99,22 @@ class PlayerBuilder:
             built = None
         if built is not None:
             fsm, initial_name = built
+            # Inject attack duration from player JSON into FSM context
+            attack_duration = PLAYER_STATS[class_player].get("attack_duration")
+            if attack_duration is None:
+                # Fallback to global weapon cooldown from JSON if class-specific duration is absent
+                attack_duration = MELEE_WEAPON_CFG.get("cooldown")
+            if attack_duration is not None:
+                fsm.context["attack_duration"] = float(attack_duration)
             comps["NPCState"][eid] = NPCState(fsm, initial_name)
         else:
             fsm = FiniteStateMachine(IdleState())
             comps["NPCState"][eid] = NPCState(fsm, "IdleState")
+            # Ensure attack_duration exists in context even with fallback FSM
+            attack_duration = PLAYER_STATS[class_player].get("attack_duration")
+            if attack_duration is None:
+                attack_duration = MELEE_WEAPON_CFG.get("cooldown")
+            if attack_duration is not None:
+                fsm.context["attack_duration"] = float(attack_duration)
 
         return eid

@@ -11,13 +11,13 @@ class PlayerAttackState(State):
             vel.vx = vel.vy = 0
         # Iniciar animación de ataque vía mapa de animaciones (sin dirección específica)
         set_mapped_anim(entity, 'PlayerAttackState', direction=None, reset_frame=True)
-        # Registrar inicio de ataque
-        self.start_time = time.time()
+        # Registrar inicio de ataque y duración por defecto en el contexto de la FSM
+        fsm = entity.world.components['NPCState'][entity.id].fsm
+        fsm.context['attack_start'] = time.time()
 
     def execute(self, entity, dt):
-        # Esperar duración del ataque
-        if time.time() - self.start_time >= 0.3:
-            entity.world.components['NPCState'][entity.id].fsm.change_state(IdleState(), entity)
+        # La transición a Idle ahora es gobernada por JSON ('after_attack') evaluada en FSMSystem
+        pass
 
     def exit(self, entity):
         # No forzar 'idle'; el PlayerFacingSystem resolverá el estado adecuado

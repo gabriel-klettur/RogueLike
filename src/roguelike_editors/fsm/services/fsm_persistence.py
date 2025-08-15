@@ -313,6 +313,8 @@ def _lint_sets(data: Dict[str, Any]) -> Tuple[List[str], List[str]]:
             states = []
         state_ids: list[str] = []
         seen_state_ids: set[str] = set()
+        # Map state id -> class to support semantic lint (e.g., after_attack)
+        state_class_by_id: dict[str, str] = {}
         for st in states:
             nid = st.get("id")
             if not isinstance(nid, str) or not nid:
@@ -323,6 +325,12 @@ def _lint_sets(data: Dict[str, Any]) -> Tuple[List[str], List[str]]:
             else:
                 seen_state_ids.add(nid)
                 state_ids.append(nid)
+                try:
+                    scls = st.get("class")
+                    if isinstance(scls, str):
+                        state_class_by_id[nid] = scls
+                except Exception:
+                    pass
         # Initial
         initial = s.get("initial")
         if not isinstance(initial, str) or not initial:
@@ -358,6 +366,32 @@ def _lint_sets(data: Dict[str, Any]) -> Tuple[List[str], List[str]]:
                     warns.append(f"set '{sid}': duplicate transition triple {sig}")
                 else:
                     seen_sig.add(sig)
+        # Semantic linting for 'after_attack' transitions
+        try:
+            after_attack_hint_added = False
+            for tr in transitions:
+                wh = tr.get("when")
+                if wh != "after_attack":
+                    continue
+                fr = tr.get("from")
+                tid = tr.get("id")
+                if not isinstance(fr, str):
+                    continue
+                cls = state_class_by_id.get(fr, "")
+                from_is_attack = (fr == "Attack") or ("Attack" in fr)
+                class_is_attack = (cls == "AttackState") or ("Attack" in cls)
+                if not (from_is_attack or class_is_attack):
+                    warns.append(
+                        f"set '{sid}': transition '{tid or '<no-id>'}' uses 'after_attack' but 'from' state '{fr}' is not an Attack state (class='{cls}')"
+                    )
+                if not after_attack_hint_added:
+                    warns.append(
+                        f"set '{sid}': uses 'after_attack' — ensure runtime provides fsm.context['attack_duration'] and AttackState sets 'attack_start'"
+                    )
+                    after_attack_hint_added = True
+        except Exception:
+            # Never block linting on best-effort semantic checks
+            pass
         # Node-level initial flags consistency (optional)
         flagged = [st.get("id") for st in states if isinstance(st, dict) and st.get("initial") is True and isinstance(st.get("id"), str)]
         if len(flagged) > 1:
