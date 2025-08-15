@@ -46,43 +46,43 @@
       "transitions": [
         {
           "from": "Idle",
-          "id": "tr_fb8cd1a4",
+          "id": "tr_2eb4090d",
           "to": "Move",
           "when": "input.move"
         },
         {
           "from": "Move",
-          "id": "tr_4ba3abe2",
+          "id": "tr_0143af45",
           "to": "Idle",
           "when": "input.stop"
         },
         {
           "from": "Idle",
-          "id": "tr_a8eff193",
+          "id": "tr_bb6d0836",
           "to": "Attack",
           "when": "input.attack"
         },
         {
           "from": "Attack",
-          "id": "tr_player_after_attack",
+          "id": "tr_fe1dd270",
           "to": "Idle",
           "when": "after_attack"
         },
         {
           "from": "Idle",
-          "id": "tr_f3ff1e23",
+          "id": "tr_9c8a8f3d",
           "to": "SpellSelect",
           "when": "key.q_or_e_edge"
         },
         {
           "from": "SpellSelect",
-          "id": "tr_6774e681",
+          "id": "tr_14507336",
           "to": "Idle",
           "when": "key.escape"
         },
         {
           "from": "Damage",
-          "id": "tr_fe09fe9d",
+          "id": "tr_4b25af4f",
           "to": "Idle",
           "when": "after_damage"
         }
@@ -178,91 +178,91 @@
       "transitions": [
         {
           "from": "Patrol",
-          "id": "tr_a2c61ddd",
+          "id": "tr_d4aeff4d",
           "to": "Aggro",
           "when": "player_in_aggro"
         },
         {
           "from": "Aggro",
-          "id": "tr_d1ce948e",
+          "id": "tr_920609f2",
           "to": "Chase",
           "when": "aggro_continue"
         },
         {
           "from": "Aggro",
-          "id": "tr_d609fe3d",
+          "id": "tr_95c26df6",
           "to": "Attack",
           "when": "melee_range"
         },
         {
           "from": "Aggro",
-          "id": "tr_75e4470a",
+          "id": "tr_b2319a5e",
           "to": "Flee",
           "when": "low_health"
         },
         {
           "from": "Chase",
-          "id": "tr_ac704d22",
+          "id": "tr_b56700bb",
           "to": "Attack",
           "when": "melee_range"
         },
         {
           "from": "Chase",
-          "id": "tr_9dcbb5db",
+          "id": "tr_a5fb0d53",
           "to": "Patrol",
           "when": "lost_player"
         },
         {
           "from": "Attack",
-          "id": "tr_066909a9",
+          "id": "tr_072c53fd",
           "to": "Chase",
           "when": "out_of_melee_range"
         },
         {
           "from": "Damage",
-          "id": "tr_4eb63b22",
+          "id": "tr_6170b805",
           "to": "AlertChase",
           "when": "after_damage"
         },
         {
           "from": "AlertChase",
-          "id": "tr_2f98af98",
+          "id": "tr_6094fcde",
           "to": "Patrol",
           "when": "timer_5s"
         },
         {
           "from": "Patrol",
-          "id": "tr_e42e479f",
+          "id": "tr_5faeda85",
           "to": "Death",
           "when": "dead"
         },
         {
           "from": "Aggro",
-          "id": "tr_23275a2c",
+          "id": "tr_17ce0c09",
           "to": "Death",
           "when": "dead"
         },
         {
           "from": "Chase",
-          "id": "tr_e7fee77a",
+          "id": "tr_755dbb1f",
           "to": "Death",
           "when": "dead"
         },
         {
           "from": "Attack",
-          "id": "tr_b38a981b",
+          "id": "tr_e536689f",
           "to": "Death",
           "when": "dead"
         },
         {
           "from": "Flee",
-          "id": "tr_fd9b291a",
+          "id": "tr_79b31459",
           "to": "Death",
           "when": "dead"
         },
         {
           "from": "AlertChase",
-          "id": "tr_43306c4e",
+          "id": "tr_e001a8cc",
           "to": "Death",
           "when": "dead"
         }

@@ -1101,8 +1101,8 @@
     },
     {
         "zone": "Forest",
-        "rel_x": 759,
-        "rel_y": -158,
+        "rel_x": 732,
+        "rel_y": -144,
         "image_path": "assets/buildings\\vegetation\\tree_1.PNG",
         "solid": true,
         "scale": [
@@ -1181,8 +1181,8 @@
     },
     {
         "zone": "Forest",
-        "rel_x": 857,
-        "rel_y": -38,
+        "rel_x": 895,
+        "rel_y": -48,
         "image_path": "assets/buildings\\vegetation\\tree_10.PNG",
         "solid": true,
         "scale": [
@@ -1581,8 +1581,8 @@
     },
     {
         "zone": "Forest",
-        "rel_x": 1094,
-        "rel_y": 278,
+        "rel_x": 1070,
+        "rel_y": 309,
         "image_path": "assets/buildings\\vegetation\\tree_10.PNG",
         "solid": true,
         "scale": [
@@ -1601,8 +1601,8 @@
     },
     {
         "zone": "Forest",
-        "rel_x": 1259,
-        "rel_y": 230,
+        "rel_x": 1284,
+        "rel_y": 260,
         "image_path": "assets/buildings\\vegetation\\tree_8.PNG",
         "solid": true,
         "scale": [
@@ -2121,8 +2121,8 @@
     },
     {
         "zone": "Forest",
-        "rel_x": 877,
-        "rel_y": 233,
+        "rel_x": 896,
+        "rel_y": 209,
         "image_path": "assets/buildings\\forest_decoration\\natural\\Flor_silvestre_azul.png",
         "solid": true,
         "scale": [
@@ -2258,5 +2258,25 @@
         "z_top": 5,
         "collider_scope": "CG",
         "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 397,
+        "rel_y": 621,
+        "image_path": "assets/buildings\\vegetation\\tree_4.png",
+        "solid": true,
+        "scale": [
+            188,
+            376
+        ],
+        "original_scale": [
+            188,
+            376
+        ],
+        "split_ratio": 0.774,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "z": 1
     }
 ]
