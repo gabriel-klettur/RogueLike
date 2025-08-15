@@ -100,6 +100,10 @@ class MonsterBuilder:
                 set_def = get_set(fsm_set_id)
                 if set_def:
                     fsm, initial_name = build_fsm_from_set(set_def)
+                    # Inject attack duration into FSM context from monster JSON (damage_duration)
+                    attack_duration = cfg.get("damage_duration")
+                    if attack_duration is not None:
+                        fsm.context["attack_duration"] = float(attack_duration)
                     world.components["NPCState"][eid] = NPCState(fsm, initial_name)
                     return eid
             except Exception:
@@ -115,9 +119,17 @@ class MonsterBuilder:
             built = None
         if built is not None:
             fsm, initial_name = built
+            # Inject attack duration into FSM context from monster JSON (damage_duration)
+            attack_duration = cfg.get("damage_duration")
+            if attack_duration is not None:
+                fsm.context["attack_duration"] = float(attack_duration)
             world.components["NPCState"][eid] = NPCState(fsm, initial_name)
         else:
             fsm = FiniteStateMachine(PatrolState())
             world.components["NPCState"][eid] = NPCState(fsm, "PatrolState")
+            # Also make attack_duration available even in Patrol fallback
+            attack_duration = cfg.get("damage_duration")
+            if attack_duration is not None:
+                fsm.context["attack_duration"] = float(attack_duration)
 
         return eid

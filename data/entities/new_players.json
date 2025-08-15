@@ -23,6 +23,7 @@
     "damage": 1,
     "cooldown": 1.0
   },
+  "DEFAULT_DAMAGE_DURATION": 0.25,
   "players": {
     "classes": {
       "dwarf": {

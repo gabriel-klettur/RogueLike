@@ -111,6 +111,19 @@ def build_fsm_from_set(set_def: Dict[str, Any]) -> Tuple[FiniteStateMachine, str
     except Exception:
         id_to_class = {}
     fsm.context["id_to_class"] = id_to_class
+    # Also expose reverse mapping: class-name -> state-id
+    try:
+        class_to_id = {cls_name: sid for sid, cls_name in id_to_class.items() if cls_name}
+    except Exception:
+        class_to_id = {}
+    fsm.context["class_to_id"] = class_to_id
+    # Expose transitions list for JSON-driven evaluation
+    try:
+        fsm.context["transitions"] = list(set_def.get("transitions", []) or [])
+    except Exception:
+        fsm.context["transitions"] = []
+    # Always attach set_id for diagnostics and policies
+    fsm.context["set_id"] = set_id
     # Policy for next state after Damage for ANY set:
     # 1) If there is a transition defined in JSON from 'Damage' -> X, use X's class.
     damage_to_class = None
@@ -131,7 +144,6 @@ def build_fsm_from_set(set_def: Dict[str, Any]) -> Tuple[FiniteStateMachine, str
         except Exception:
             allowed_classes = set()
         fsm.context["allowed_state_classes"] = allowed_classes
-        fsm.context["set_id"] = set_id
         # Always allow transitioning to DeathState by default unless explicitly disabled elsewhere.
         fsm.context.setdefault("allow_death", True)
         # Always allow transitioning to DamageState by default unless explicitly disabled elsewhere.
