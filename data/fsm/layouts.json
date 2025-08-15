@@ -74,6 +74,7 @@
         }
       },
       "viewport": {
+        "legend_collapsed": false,
         "pan_x": -58.0,
         "pan_y": -57.0,
         "zoom": 1.0
@@ -98,8 +99,8 @@
           "y": 325
         },
         "SpellSelect": {
-          "x": -79,
-          "y": 249
+          "x": -108,
+          "y": 258
         }
       },
       "viewport": {

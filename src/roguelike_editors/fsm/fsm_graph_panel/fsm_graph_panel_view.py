@@ -1,4 +1,5 @@
 from __future__ import annotations
+from roguelike_ui.widgets.text_input import TextInput
 
 
 class FsmGraphPanelView:
@@ -9,9 +10,20 @@ class FsmGraphPanelView:
         self.edge_label_rects = {}
         # Last rendered edge paths (list of local points) for hover proximity checks
         self.edge_paths = {}
+        # Last rendered edge endpoints in local (canvas) coordinates: {edge_idx: {"from": (x,y), "to": (x,y)}}
+        self.edge_endpoints_local = {}
         # Legend overlay rects (screen-space)
         self.legend_rect = None
         self.legend_button_rect = None
+        # Inline text input widget and absolute rect for outside-click checks
+        self.text_input: TextInput | None = None
+        self.text_input_abs_rect = None
+        self._pending_text_edit: tuple[str, bool] | None = None
+
+    # Called by controller when user starts an edit (double-click on label)
+    def begin_text_edit(self, initial_text: str, select_all: bool = False) -> None:
+        # Defer actual creation/activation to render; store initial text
+        self._pending_text_edit = (str(initial_text or ''), bool(select_all))
 
     def render(self, model, screen, *, anchor=(360, 120), toolbar=None):
         if not getattr(model, "visible", True):
@@ -32,6 +44,7 @@ class FsmGraphPanelView:
         self.node_label_rects = {}
         self.edge_label_rects = {}
         self.edge_paths = {}
+        self.edge_endpoints_local = {}
         # Reset legend rects
         self.legend_rect = None
         self.legend_button_rect = None
@@ -73,6 +86,10 @@ class FsmGraphPanelView:
                 pygame.draw.line(surf, grid_color, (0, gy), (w, gy), 1)
         except Exception:
             pass
+
+        
+
+        
 
         # Edges (draw beneath nodes) as arrows with edge-to-edge anchors, curves, and labels
         try:
@@ -216,20 +233,32 @@ class FsmGraphPanelView:
                         dir_vec = (p_tip[0]-p_prev[0], p_tip[1]-p_prev[1])
                         _draw_polyline(surf, color, pts[:-1], width)
                         _arrowhead(surf, color, p_tip, dir_vec, head_len=head_len, head_width=head_width)
+                    # Store endpoints (both ends coincide for loops)
+                    try:
+                        lp = W(p0)
+                        self.edge_endpoints_local[edge_i] = {"from": lp, "to": lp}
+                    except Exception:
+                        pass
                     # Store path for hover proximity
                     try:
                         self.edge_paths[edge_i] = list(pts)
                     except Exception:
                         pass
                     label = e.get('label') or e.get('on') or e.get('event')
-                    if label:
+                    if label or (getattr(model, 'editing_edge_index', None) == edge_i):
                         is_hover = (edge_i == getattr(model, 'hover_edge_index', None))
                         font = pygame.font.SysFont(None, 20 if is_hover else 18)
                         mid = _quad_point(p0, ctrl, p2, 0.35)
                         mid = W(mid)
-                        txt = font.render(str(label), True, (255,230,120) if is_hover else (210,210,210))
+                        # Compute rect (even when editing to place TextInput), but don't blit label during edit
+                        if getattr(model, 'editing_edge_index', None) == edge_i:
+                            text_for_rect = str(getattr(model, 'editing_text', '') or '')
+                        else:
+                            text_for_rect = str(label or '')
+                        txt = font.render(text_for_rect, True, (255,230,120) if is_hover else (210,210,210))
                         tr = txt.get_rect(center=(mid[0], mid[1]))
-                        surf.blit(txt, tr)
+                        if getattr(model, 'editing_edge_index', None) != edge_i:
+                            surf.blit(txt, tr)
                         try:
                             self.edge_label_rects[edge_i] = tr.copy()
                         except Exception:
@@ -283,20 +312,30 @@ class FsmGraphPanelView:
                         dir_vec = (p_tip[0]-p_prev[0], p_tip[1]-p_prev[1])
                         _draw_polyline(surf, color, pts[:-1], width)
                         _arrowhead(surf, color, p_tip, dir_vec, head_len=head_len, head_width=head_width)
+                    # Store endpoints for handle hover (local)
+                    try:
+                        self.edge_endpoints_local[idx] = {"from": W(p_start), "to": W(p_end)}
+                    except Exception:
+                        pass
                     # Store path for hover proximity
                     try:
                         self.edge_paths[idx] = list(pts)
                     except Exception:
                         pass
                     label = e.get('label') or e.get('on') or e.get('event')
-                    if label:
+                    if label or (getattr(model, 'editing_edge_index', None) == idx):
                         is_hover = (idx == getattr(model, 'hover_edge_index', None))
                         font = pygame.font.SysFont(None, 20 if is_hover else 18)
                         mid_lbl = _quad_point(p_start, ctrl, p_end, 0.5)
                         mid_lbl = W(mid_lbl)
-                        txt = font.render(str(label), True, (255,230,120) if is_hover else (210,210,210))
+                        if getattr(model, 'editing_edge_index', None) == idx:
+                            text_for_rect = str(getattr(model, 'editing_text', '') or '')
+                        else:
+                            text_for_rect = str(label or '')
+                        txt = font.render(text_for_rect, True, (255,230,120) if is_hover else (210,210,210))
                         tr = txt.get_rect(center=(mid_lbl[0], mid_lbl[1]))
-                        surf.blit(txt, tr)
+                        if getattr(model, 'editing_edge_index', None) != idx:
+                            surf.blit(txt, tr)
                         try:
                             self.edge_label_rects[idx] = tr.copy()
                         except Exception:
@@ -313,15 +352,25 @@ class FsmGraphPanelView:
                         self.edge_paths[idx] = [p_start_l, p_end_l]
                     except Exception:
                         pass
+                    # Store endpoints for handle hover (local)
+                    try:
+                        self.edge_endpoints_local[idx] = {"from": p_start_l, "to": p_end_l}
+                    except Exception:
+                        pass
                     label = e.get('label') or e.get('on') or e.get('event')
-                    if label:
+                    if label or (getattr(model, 'editing_edge_index', None) == idx):
                         is_hover = (idx == getattr(model, 'hover_edge_index', None))
                         font = pygame.font.SysFont(None, 20 if is_hover else 18)
                         mid_lbl = ((p_start[0]+p_end[0])/2.0, (p_start[1]+p_end[1])/2.0)
                         mid_lbl = W(mid_lbl)
-                        txt = font.render(str(label), True, (255,230,120) if is_hover else (210,210,210))
+                        if getattr(model, 'editing_edge_index', None) == idx:
+                            text_for_rect = str(getattr(model, 'editing_text', '') or '')
+                        else:
+                            text_for_rect = str(label or '')
+                        txt = font.render(text_for_rect, True, (255,230,120) if is_hover else (210,210,210))
                         tr = txt.get_rect(center=(mid_lbl[0], mid_lbl[1]))
-                        surf.blit(txt, tr)
+                        if getattr(model, 'editing_edge_index', None) != idx:
+                            surf.blit(txt, tr)
                         try:
                             self.edge_label_rects[idx] = tr.copy()
                         except Exception:
@@ -386,18 +435,135 @@ class FsmGraphPanelView:
                 is_hover = (n.get('id') == getattr(model, 'hover_node_id', None))
                 label = str(n.get('label', n.get('id', '?')))
                 node_font = pygame.font.SysFont(None, (base_font_size + 2) if is_hover else base_font_size)
-                txt = node_font.render(label, True, (255, 230, 120) if is_hover else base_color)
+                editing_this = (getattr(model, 'editing_node_id', None) == n.get('id'))
+                text_for_rect = str(getattr(model, 'editing_text', label) if editing_this else label)
+                txt = node_font.render(text_for_rect, True, (255, 230, 120) if is_hover else base_color)
                 tr = txt.get_rect(center=(rect.centerx, rect.centery))
-                surf.blit(txt, tr)
+                # Do not draw the node label if currently editing this node; still record rect
+                if not editing_this:
+                    surf.blit(txt, tr)
                 try:
                     self.node_label_rects[n.get('id')] = tr.copy()
                 except Exception:
                     pass
         except Exception:
             pass
+        
+        # Overlay: edge handle circles and drag preview (drawn above nodes on the same canvas surface)
+        try:
+            import math
+            # Draw handle circles for hovered edge or currently dragging edge
+            hovered_e = getattr(model, 'hover_edge_index', None)
+            dragging_e = getattr(model, 'dragging_edge_index', None)
+            hovered_end = getattr(model, 'hover_edge_handle_end', None)
+            # Helper to draw a circle outline or filled for handle
+            def _draw_handle(center, filled=False, radius=6):
+                cx, cy = int(center[0]), int(center[1])
+                color = (255, 230, 120)
+                if filled:
+                    pygame.draw.circle(surf, color, (cx, cy), radius)
+                    pygame.draw.circle(surf, (40, 40, 44), (cx, cy), radius-2)
+                    pygame.draw.circle(surf, color, (cx, cy), radius, 2)
+                else:
+                    pygame.draw.circle(surf, color, (cx, cy), radius, 2)
+            # Draw for hovered edge
+            if hovered_e is not None:
+                ends = self.edge_endpoints_local.get(int(hovered_e))
+                if isinstance(ends, dict):
+                    fr = ends.get('from'); to = ends.get('to')
+                    if fr:
+                        _draw_handle(fr, filled=(hovered_end == 'from'))
+                    if to:
+                        _draw_handle(to, filled=(hovered_end == 'to'))
+            # Draw for dragging edge (always show both handles on that edge)
+            if dragging_e is not None:
+                ends = self.edge_endpoints_local.get(int(dragging_e))
+                if isinstance(ends, dict):
+                    fr = ends.get('from'); to = ends.get('to')
+                    if fr:
+                        _draw_handle(fr, filled=(getattr(model, 'dragging_edge_end', None) == 'from'))
+                    if to:
+                        _draw_handle(to, filled=(getattr(model, 'dragging_edge_end', None) == 'to'))
+            # Drag preview: show arrow pointing toward the 'to' end
+            if dragging_e is not None:
+                end_side = getattr(model, 'dragging_edge_end', None)
+                px = getattr(model, 'dragging_edge_preview_x', None)
+                py = getattr(model, 'dragging_edge_preview_y', None)
+                ends = self.edge_endpoints_local.get(int(dragging_e))
+                if end_side in ('from', 'to') and isinstance(px, (int, float)) and isinstance(py, (int, float)) and isinstance(ends, dict):
+                    tip_local = W((float(px), float(py)))
+                    fixed_local = ends.get('to' if end_side == 'from' else 'from')
+                    if fixed_local and tip_local:
+                        # Determine start (source) and dest (arrowhead) so that arrow always points to 'to'
+                        if end_side == 'from':
+                            sx, sy = int(tip_local[0]), int(tip_local[1])     # moving 'from'
+                            dx, dy = int(fixed_local[0]), int(fixed_local[1]) # fixed 'to'
+                        else:  # dragging 'to'
+                            sx, sy = int(fixed_local[0]), int(fixed_local[1]) # fixed 'from'
+                            dx, dy = int(tip_local[0]), int(tip_local[1])     # moving 'to'
+                        # Draw preview polyline and arrowhead at dest
+                        pygame.draw.line(surf, (255, 230, 120), (sx, sy), (dx, dy), 2)
+                        vx, vy = (dx - sx), (dy - sy)
+                        mag = math.hypot(vx, vy) or 1.0
+                        ux, uy = vx / mag, vy / mag
+                        head_len = 14
+                        head_width = 10
+                        bx, by = dx - ux * head_len, dy - uy * head_len
+                        pxn, pyn = -uy, ux
+                        hw = head_width / 2.0
+                        left = (bx + pxn * hw, by + pyn * hw)
+                        right = (bx - pxn * hw, by - pyn * hw)
+                        pygame.draw.polygon(surf, (255, 230, 120), [left, right, (dx, dy)])
+        except Exception:
+            pass
 
         # Border of canvas
         pygame.draw.rect(surf, (95, 95, 105), surf.get_rect(), 2)
+        # Inline TextInput overlay (draw on top of canvas contents)
+        try:
+            # Determine if an edit is active
+            edit_node = getattr(model, 'editing_node_id', None)
+            edit_edge = getattr(model, 'editing_edge_index', None)
+            target_rect_local = None
+            if edit_node is not None:
+                target_rect_local = self.node_label_rects.get(edit_node)
+            elif edit_edge is not None:
+                try:
+                    target_rect_local = self.edge_label_rects.get(int(edit_edge))
+                except Exception:
+                    target_rect_local = None
+            if target_rect_local is not None:
+                # Ensure widget exists and activated
+                if self.text_input is None:
+                    # Create default font
+                    font = pygame.font.SysFont(None, 18)
+                    self.text_input = TextInput(font)
+                # Update font size to match label size roughly
+                # For node labels we used base_font_size (20), for edge labels ~18
+                try:
+                    base_font_size = 20 if edit_node is not None else 18
+                    self.text_input.font = pygame.font.SysFont(None, base_font_size)
+                except Exception:
+                    pass
+                # Activate with pending/init text if needed
+                if self._pending_text_edit is not None:
+                    init_text, select_all = self._pending_text_edit
+                    try:
+                        self.text_input.activate(init_text, select_all=select_all)
+                    except Exception:
+                        pass
+                    self._pending_text_edit = None
+                # Draw input at local position
+                tx = int(target_rect_local.left)
+                ty = int(target_rect_local.top)
+                # Slightly inset to center within the rect vertically
+                self.text_input.draw(surf, tx, ty, color=(255, 255, 255))
+                # Compute absolute screen-space rect for controller click-outside checks
+                lr = getattr(self.text_input, 'last_rect', None)
+                if isinstance(lr, pygame.Rect):
+                    self.text_input_abs_rect = pygame.Rect(x + lr.left, y + lr.top, lr.width, lr.height)
+        except Exception:
+            self.text_input_abs_rect = None
         # Blit to screen
         screen.blit(surf, (x, y))
 
