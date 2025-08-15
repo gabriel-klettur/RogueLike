@@ -2,6 +2,6 @@
 
 SET_IDS = ['Player_Default', 'Monster_stupid', 'Monster_Default']
 STATES_BY_SET = {'Player_Default': ['Idle', 'Move', 'Attack', 'SpellSelect', 'Damage'], 'Monster_stupid': ['Patrol', 'Damage'], 'Monster_Default': ['Patrol', 'Aggro', 'Chase', 'Attack', 'Flee', 'AlertChase', 'Damage', 'Death']}
-TRANSITIONS_BY_SET = {'Player_Default': ['tr_07faddc1', 'tr_be280ebe', 'tr_f92a2064', 'tr_2c28d6b7', 'tr_d98603f5'], 'Monster_stupid': ['tr_f5a59d54'], 'Monster_Default': ['tr_803d4cd0', 'tr_40a37ebc', 'tr_d7957f3e', 'tr_88e3b7e4', 'tr_ca305750', 'tr_8c75a711', 'tr_0b7ac56a', 'tr_14877a25', 'tr_a8f4684f', 'tr_47898f90', 'tr_e0e22411', 'tr_03f4e0d7', 'tr_7c2067b8', 'tr_cd96e594', 'tr_9ad6186c']}
+TRANSITIONS_BY_SET = {'Player_Default': ['tr_0c3689f0', 'tr_96c80b8d', 'tr_214c2881', 'tr_255caec1', 'tr_01f11810', 'tr_c9e8ee9d'], 'Monster_stupid': ['tr_f5a59d54'], 'Monster_Default': ['tr_803d4cd0', 'tr_40a37ebc', 'tr_d7957f3e', 'tr_88e3b7e4', 'tr_ca305750', 'tr_8c75a711', 'tr_0b7ac56a', 'tr_14877a25', 'tr_a8f4684f', 'tr_47898f90', 'tr_e0e22411', 'tr_03f4e0d7', 'tr_7c2067b8', 'tr_cd96e594', 'tr_9ad6186c']}
 
 __all__ = ['SET_IDS', 'STATES_BY_SET', 'TRANSITIONS_BY_SET']

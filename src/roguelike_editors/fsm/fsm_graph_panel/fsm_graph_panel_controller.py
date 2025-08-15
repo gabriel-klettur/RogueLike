@@ -98,6 +98,7 @@ class FsmGraphPanelController:
             and not getattr(self.model, 'dragging_pan', False)
             and getattr(self.model, 'dragging_node_id', None) is None
             and getattr(self.model, 'dragging_edge_index', None) is None
+            and getattr(self.model, 'dragging_edge_id', None) is None
             and not ti_active
         ):
             if et == pygame.MOUSEWHEEL:
@@ -126,10 +127,15 @@ class FsmGraphPanelController:
                 self._persist_layout()
             except Exception:
                 pass
-        if getattr(self.model, 'dragging_edge_index', None) is not None and not left_down:
+        if (
+            (getattr(self.model, 'dragging_edge_index', None) is not None or getattr(self.model, 'dragging_edge_id', None) is not None)
+            and not left_down
+            and et != pygame.MOUSEBUTTONUP  # let the MOUSEBUTTONUP branch finalize reconnection
+        ):
             LOGGER.debug("[GraphPanel][EDGE FORCE-RELEASE] left not pressed anymore; canceling edge handle drag.")
             # Cancel edge handle drag (no structural change on force-cancel)
             self.model.dragging_edge_index = None
+            self.model.dragging_edge_id = None
             self.model.dragging_edge_end = None
             self.model.dragging_edge_preview_x = None
             self.model.dragging_edge_preview_y = None
@@ -204,6 +210,13 @@ class FsmGraphPanelController:
         pan_x = float(getattr(self.model, 'pan_x', 0.0))
         pan_y = float(getattr(self.model, 'pan_y', 0.0))
         zoom = float(getattr(self.model, 'zoom', 1.0))
+        # Ensure caches are up-to-date for ID/index mappings
+        try:
+            if len(getattr(self.model, 'edge_id_by_index', []) or []) != len(getattr(self.model, 'edges', []) or []) or \
+               len(getattr(self.model, 'node_index_by_id', {}) or {}) != len(getattr(self.model, 'nodes', []) or []):
+                self.model.rebuild_caches()
+        except Exception:
+            pass
 
         # Inline text editing active: delegate events to TextInput and swallow others
         try:
@@ -314,9 +327,10 @@ class FsmGraphPanelController:
         try:
             if et == pygame.KEYDOWN and getattr(event, 'key', None) == pygame.K_ESCAPE:
                 # Cancel edge handle drag
-                if getattr(self.model, 'dragging_edge_index', None) is not None:
+                if getattr(self.model, 'dragging_edge_index', None) is not None or getattr(self.model, 'dragging_edge_id', None) is not None:
                     LOGGER.debug("[GraphPanel][EDGE DRAG CANCEL] via ESC")
                     self.model.dragging_edge_index = None
+                    self.model.dragging_edge_id = None
                     self.model.dragging_edge_end = None
                     self.model.dragging_edge_preview_x = None
                     self.model.dragging_edge_preview_y = None
@@ -415,6 +429,17 @@ class FsmGraphPanelController:
                             try:
                                 if r.collidepoint(int(local_x), int(local_y)):
                                     self.model.selected_edge_index = int(ei)
+                                    # Update selection by edge id as well
+                                    try:
+                                        if len(getattr(self.model, 'edge_id_by_index', []) or []) != len(getattr(self.model, 'edges', []) or []):
+                                            self.model.rebuild_caches()
+                                        idx = int(ei)
+                                        if 0 <= idx < len(self.model.edge_id_by_index):
+                                            self.model.selected_edge_id = self.model.edge_id_by_index[idx]
+                                        else:
+                                            self.model.selected_edge_id = None
+                                    except Exception:
+                                        self.model.selected_edge_id = None
                                     if self._dbl.is_double_click(('edge_label', int(ei))):
                                         self.model.editing_node_id = None
                                         try:
@@ -443,7 +468,45 @@ class FsmGraphPanelController:
                 tool = getattr(self.model, 'active_graph_tool', 'select')
                 if tool == 'select':
                     # Priority: if clicking on an edge handle, start edge-handle drag
-                    handle_hit = closest_handle(local_x, local_y)
+                    # 1) If a specific handle end is hovered, use it exactly.
+                    handle_hit = None
+                    try:
+                        hovered_ei = getattr(self.model, 'hover_edge_index', None)
+                        hovered_end = getattr(self.model, 'hover_edge_handle_end', None)
+                        if hovered_ei is not None and hovered_end in ('from', 'to'):
+                            handle_hit = (int(hovered_ei), hovered_end)
+                    except Exception:
+                        handle_hit = None
+                    # 2) Otherwise, prefer the hovered edge's nearest end within radius.
+                    if handle_hit is None:
+                        try:
+                            hovered_ei = getattr(self.model, 'hover_edge_index', None)
+                            if hovered_ei is not None:
+                                ends_map = getattr(self.view, 'edge_endpoints_local', {}) or {}
+                                ends = ends_map.get(int(hovered_ei))
+                                if isinstance(ends, dict):
+                                    rad = 8
+                                    rad2 = rad * rad
+                                    ex, ey = int(local_x), int(local_y)
+                                    best_side = None
+                                    best_d2 = rad2
+                                    for side in ('from', 'to'):
+                                        p = ends.get(side)
+                                        if not p:
+                                            continue
+                                        dx = ex - int(p[0])
+                                        dy = ey - int(p[1])
+                                        d2 = dx*dx + dy*dy
+                                        if d2 <= best_d2:
+                                            best_d2 = d2
+                                            best_side = side
+                                    if best_side is not None:
+                                        handle_hit = (int(hovered_ei), best_side)
+                        except Exception:
+                            handle_hit = None
+                    # 3) Fallback: search globally for the closest handle among all edges
+                    if handle_hit is None:
+                        handle_hit = closest_handle(local_x, local_y)
                     if handle_hit is not None:
                         ei, end = handle_hit
                         edges = getattr(self.model, 'edges', [])
@@ -455,6 +518,19 @@ class FsmGraphPanelController:
                             self.model.dragging_edge_preview_y = float(wy)
                             self.model.dragging_edge_orig_from = edges[ei].get('from')
                             self.model.dragging_edge_orig_to = edges[ei].get('to')
+                            # Track selection/drag by stable edge ID too
+                            try:
+                                if len(getattr(self.model, 'edge_id_by_index', []) or []) != len(getattr(self.model, 'edges', []) or []):
+                                    self.model.rebuild_caches()
+                                if 0 <= ei < len(self.model.edge_id_by_index):
+                                    eid = self.model.edge_id_by_index[ei]
+                                else:
+                                    eid = edges[ei].get('id')
+                                self.model.selected_edge_id = eid if isinstance(eid, str) else None
+                                self.model.dragging_edge_id = eid if isinstance(eid, str) else None
+                            except Exception:
+                                self.model.selected_edge_id = None
+                                self.model.dragging_edge_id = None
                             LOGGER.debug("[GraphPanel][EDGE DRAG START] edge=%s end=%s world=(%.1f,%.1f)", ei, end, wx, wy)
                             return True
                     # Otherwise fall back to node select/drag
@@ -637,27 +713,51 @@ class FsmGraphPanelController:
                 except Exception:
                     pass
                 return True
-            if btn == 1 and getattr(self.model, 'dragging_edge_index', None) is not None:
+            if btn == 1 and (getattr(self.model, 'dragging_edge_index', None) is not None or getattr(self.model, 'dragging_edge_id', None) is not None):
                 # Finalize edge handle drag: snap to node if dropping over a node; otherwise cancel (revert)
-                ei = int(getattr(self.model, 'dragging_edge_index', -1) or -1)
+                try:
+                    ei_val = getattr(self.model, 'dragging_edge_index', None)
+                    ei = int(ei_val) if ei_val is not None else -1
+                except Exception:
+                    ei = -1
+                eid = getattr(self.model, 'dragging_edge_id', None)
                 end = getattr(self.model, 'dragging_edge_end', None)
                 wx, wy = to_world(local_x, local_y)
                 node = pick_node(wx, wy)
                 changed = False
                 edges = getattr(self.model, 'edges', [])
-                if node is not None and isinstance(ei, int) and 0 <= ei < len(edges) and end in ('from', 'to'):
+                # Resolve edge index via ID if available
+                try:
+                    if not isinstance(eid, str) or not eid:
+                        # derive from index
+                        if len(getattr(self.model, 'edge_id_by_index', []) or []) != len(edges or []):
+                            self.model.rebuild_caches()
+                        if isinstance(ei, int) and 0 <= ei < len(getattr(self.model, 'edge_id_by_index', []) or []):
+                            eid = self.model.edge_id_by_index[ei]
+                        else:
+                            eid = None
+                    if isinstance(eid, str):
+                        if len(getattr(self.model, 'edge_index_by_id', {}) or {}) != len(getattr(self.model, 'edge_id_by_index', []) or []):
+                            self.model.rebuild_caches()
+                        ei_now = getattr(self.model, 'edge_index_by_id', {}).get(eid)
+                    else:
+                        ei_now = ei if isinstance(ei, int) else None
+                except Exception:
+                    ei_now = ei if isinstance(ei, int) else None
+                if node is not None and isinstance(ei_now, int) and 0 <= ei_now < len(edges) and end in ('from', 'to'):
                     nid = node.get('id')
                     try:
                         if end == 'from':
-                            edges[ei]['from'] = nid
+                            edges[ei_now]['from'] = nid
                         else:
-                            edges[ei]['to'] = nid
+                            edges[ei_now]['to'] = nid
                         changed = True
                     except Exception:
                         changed = False
-                LOGGER.debug("[GraphPanel][EDGE DRAG END] edge=%s end=%s world=(%.1f,%.1f) changed=%s", ei, end, wx, wy, changed)
+                LOGGER.debug("[GraphPanel][EDGE DRAG END] edge_idx=%s edge_id=%s end=%s world=(%.1f,%.1f) changed=%s", ei, eid, end, wx, wy, changed)
                 # Clear drag state
                 self.model.dragging_edge_index = None
+                self.model.dragging_edge_id = None
                 self.model.dragging_edge_end = None
                 self.model.dragging_edge_preview_x = None
                 self.model.dragging_edge_preview_y = None
@@ -665,6 +765,11 @@ class FsmGraphPanelController:
                 self.model.dragging_edge_orig_to = None
                 self.model.hover_edge_handle_end = None
                 if changed:
+                    # Rebuild caches to maintain adjacency and ID/index maps
+                    try:
+                        self.model.rebuild_caches()
+                    except Exception:
+                        pass
                     try:
                         self._persist_sets_structural()
                     except Exception:
@@ -723,6 +828,7 @@ class FsmGraphPanelController:
                 left_down_now
                 and getattr(self.model, 'dragging_node_id', None) is None
                 and getattr(self.model, 'dragging_edge_index', None) is None
+                and getattr(self.model, 'dragging_edge_id', None) is None
                 and not getattr(self.model, 'dragging_pan', False)
                 and getattr(self.model, 'active_graph_tool', 'select') == 'select'
                 and inside
@@ -737,7 +843,7 @@ class FsmGraphPanelController:
                     # Do not return; fall-through so the drag logic below moves the node immediately
 
             # Edge handle drag move: update preview world coordinates
-            if getattr(self.model, 'dragging_edge_index', None) is not None:
+            if getattr(self.model, 'dragging_edge_index', None) is not None or getattr(self.model, 'dragging_edge_id', None) is not None:
                 wx, wy = to_world(local_x, local_y)
                 self.model.dragging_edge_preview_x = float(wx)
                 self.model.dragging_edge_preview_y = float(wy)
@@ -823,6 +929,20 @@ class FsmGraphPanelController:
                     tol = 8
                     hover_e = best_e if best_d <= tol else None
                 self.model.hover_edge_index = hover_e
+                # Also track hover by edge id for robustness
+                try:
+                    if hover_e is not None:
+                        if len(getattr(self.model, 'edge_id_by_index', []) or []) != len(getattr(self.model, 'edges', []) or []):
+                            self.model.rebuild_caches()
+                        idx = int(hover_e)
+                        if 0 <= idx < len(self.model.edge_id_by_index):
+                            self.model.hover_edge_id = self.model.edge_id_by_index[idx]
+                        else:
+                            self.model.hover_edge_id = None
+                    else:
+                        self.model.hover_edge_id = None
+                except Exception:
+                    self.model.hover_edge_id = None
                 # Additionally compute whether a specific handle is hovered for the hovered edge
                 hover_end = None
                 if hover_e is not None:

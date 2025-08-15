@@ -8,65 +8,75 @@
         {
           "class": "IdleState",
           "id": "Idle",
-          "props": {}
+          "label": "Idle",
+          "props": {},
+          "terminal": false
         },
         {
           "class": "MoveState",
           "id": "Move",
-          "props": {}
+          "label": "Move",
+          "props": {},
+          "terminal": false
         },
         {
           "class": "PlayerAttackState",
           "id": "Attack",
-          "props": {}
+          "label": "Attack",
+          "props": {},
+          "terminal": false
         },
         {
           "class": "PlayerSpellSelectState",
           "id": "SpellSelect",
-          "props": {}
+          "label": "SpellSelect",
+          "props": {},
+          "terminal": false
         },
         {
           "class": "DamageState",
           "external_entry": true,
           "id": "Damage",
           "label": "Damage",
-          "special": "damage"
+          "props": {},
+          "special": "damage",
+          "terminal": false
         }
       ],
       "transitions": [
         {
           "from": "Idle",
-          "id": "tr_07faddc1",
+          "id": "tr_0c3689f0",
           "to": "Move",
           "when": "input.move"
         },
         {
           "from": "Move",
-          "id": "tr_be280ebe",
+          "id": "tr_96c80b8d",
           "to": "Idle",
           "when": "input.stop"
         },
         {
           "from": "Idle",
-          "id": "tr_f92a2064",
+          "id": "tr_214c2881",
           "to": "Attack",
           "when": "input.attack"
         },
         {
           "from": "Idle",
-          "id": "tr_2c28d6b7",
+          "id": "tr_255caec1",
           "to": "SpellSelect",
           "when": "key.q_or_e_edge"
         },
         {
           "from": "SpellSelect",
-          "id": "tr_d98603f5",
+          "id": "tr_01f11810",
           "to": "Idle",
           "when": "key.escape"
         },
         {
           "from": "Damage",
-          "id": "tr_player_damage_after",
+          "id": "tr_c9e8ee9d",
           "to": "Idle",
           "when": "after_damage"
         }

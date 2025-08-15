@@ -202,15 +202,23 @@ class FsmGraphPanelView:
                 tx, ty, tw, th = node_pos[to]
                 sc = (sx + sw/2.0, sy + sh/2.0)
                 tc = (tx + tw/2.0, ty + th/2.0)
-
-                is_edge_hover = (idx == getattr(model, 'hover_edge_index', None))
+                # Resolve hover/selection state using edge ID or index
+                eid = e.get('id')
+                hover_id = getattr(model, 'hover_edge_id', None)
+                is_edge_hover = (idx == getattr(model, 'hover_edge_index', None)) or (isinstance(eid, str) and eid == hover_id)
+                sel_id = getattr(model, 'selected_edge_id', None)
+                is_edge_selected = (idx == getattr(model, 'selected_edge_index', None)) or (isinstance(eid, str) and eid == sel_id)
                 color = e.get('color', (120, 120, 140))
                 if e.get('active'):
                     color = (255, 210, 90)
+                elif is_edge_selected:
+                    color = (255, 220, 110)
                 elif is_edge_hover:
                     color = (255, 230, 120)
                 width = int(e.get('width', 2))
-                if is_edge_hover:
+                if is_edge_selected:
+                    width = max(width + 2, 4)
+                elif is_edge_hover:
                     width = max(width + 1, 3)
                 head_len = int(e.get('head_len', 14))
                 head_width = int(e.get('head_width', 10))
@@ -237,30 +245,36 @@ class FsmGraphPanelView:
                     try:
                         lp = W(p0)
                         self.edge_endpoints_local[edge_i] = {"from": lp, "to": lp}
+                        if isinstance(eid, str):
+                            self.edge_endpoints_local[eid] = {"from": lp, "to": lp}
                     except Exception:
                         pass
                     # Store path for hover proximity
                     try:
                         self.edge_paths[edge_i] = list(pts)
+                        if isinstance(eid, str):
+                            self.edge_paths[eid] = list(pts)
                     except Exception:
                         pass
                     label = e.get('label') or e.get('on') or e.get('event')
-                    if label or (getattr(model, 'editing_edge_index', None) == edge_i):
-                        is_hover = (edge_i == getattr(model, 'hover_edge_index', None))
-                        font = pygame.font.SysFont(None, 20 if is_hover else 18)
+                    is_editing = (getattr(model, 'editing_edge_index', None) == edge_i) or (isinstance(eid, str) and getattr(model, 'editing_edge_id', None) == eid)
+                    if label or is_editing:
+                        is_hover = (edge_i == getattr(model, 'hover_edge_index', None)) or (isinstance(eid, str) and getattr(model, 'hover_edge_id', None) == eid)
+                        is_selected = (edge_i == getattr(model, 'selected_edge_index', None)) or (isinstance(eid, str) and getattr(model, 'selected_edge_id', None) == eid)
+                        is_focus = is_hover or is_selected
+                        font = pygame.font.SysFont(None, 20 if is_focus else 18)
                         mid = _quad_point(p0, ctrl, p2, 0.35)
                         mid = W(mid)
                         # Compute rect (even when editing to place TextInput), but don't blit label during edit
-                        if getattr(model, 'editing_edge_index', None) == edge_i:
-                            text_for_rect = str(getattr(model, 'editing_text', '') or '')
-                        else:
-                            text_for_rect = str(label or '')
-                        txt = font.render(text_for_rect, True, (255,230,120) if is_hover else (210,210,210))
+                        text_for_rect = str(getattr(model, 'editing_text', '') or '') if is_editing else str(label or '')
+                        txt = font.render(text_for_rect, True, (255,230,120) if is_focus else (210,210,210))
                         tr = txt.get_rect(center=(mid[0], mid[1]))
-                        if getattr(model, 'editing_edge_index', None) != edge_i:
+                        if not is_editing:
                             surf.blit(txt, tr)
                         try:
                             self.edge_label_rects[edge_i] = tr.copy()
+                            if isinstance(eid, str):
+                                self.edge_label_rects[eid] = tr.copy()
                         except Exception:
                             pass
                     continue
@@ -315,29 +329,35 @@ class FsmGraphPanelView:
                     # Store endpoints for handle hover (local)
                     try:
                         self.edge_endpoints_local[idx] = {"from": W(p_start), "to": W(p_end)}
+                        if isinstance(eid, str):
+                            self.edge_endpoints_local[eid] = {"from": W(p_start), "to": W(p_end)}
                     except Exception:
                         pass
                     # Store path for hover proximity
                     try:
                         self.edge_paths[idx] = list(pts)
+                        if isinstance(eid, str):
+                            self.edge_paths[eid] = list(pts)
                     except Exception:
                         pass
                     label = e.get('label') or e.get('on') or e.get('event')
-                    if label or (getattr(model, 'editing_edge_index', None) == idx):
-                        is_hover = (idx == getattr(model, 'hover_edge_index', None))
-                        font = pygame.font.SysFont(None, 20 if is_hover else 18)
+                    is_editing = (getattr(model, 'editing_edge_index', None) == idx) or (isinstance(eid, str) and getattr(model, 'editing_edge_id', None) == eid)
+                    if label or is_editing:
+                        is_hover = (idx == getattr(model, 'hover_edge_index', None)) or (isinstance(eid, str) and getattr(model, 'hover_edge_id', None) == eid)
+                        is_selected = (idx == getattr(model, 'selected_edge_index', None)) or (isinstance(eid, str) and getattr(model, 'selected_edge_id', None) == eid)
+                        is_focus = is_hover or is_selected
+                        font = pygame.font.SysFont(None, 20 if is_focus else 18)
                         mid_lbl = _quad_point(p_start, ctrl, p_end, 0.5)
                         mid_lbl = W(mid_lbl)
-                        if getattr(model, 'editing_edge_index', None) == idx:
-                            text_for_rect = str(getattr(model, 'editing_text', '') or '')
-                        else:
-                            text_for_rect = str(label or '')
-                        txt = font.render(text_for_rect, True, (255,230,120) if is_hover else (210,210,210))
+                        text_for_rect = str(getattr(model, 'editing_text', '') or '') if is_editing else str(label or '')
+                        txt = font.render(text_for_rect, True, (255,230,120) if is_focus else (210,210,210))
                         tr = txt.get_rect(center=(mid_lbl[0], mid_lbl[1]))
-                        if getattr(model, 'editing_edge_index', None) != idx:
+                        if not is_editing:
                             surf.blit(txt, tr)
                         try:
                             self.edge_label_rects[idx] = tr.copy()
+                            if isinstance(eid, str):
+                                self.edge_label_rects[eid] = tr.copy()
                         except Exception:
                             pass
                 else:
@@ -350,29 +370,35 @@ class FsmGraphPanelView:
                     # Store path for hover proximity (simple 2-point polyline)
                     try:
                         self.edge_paths[idx] = [p_start_l, p_end_l]
+                        if isinstance(eid, str):
+                            self.edge_paths[eid] = [p_start_l, p_end_l]
                     except Exception:
                         pass
                     # Store endpoints for handle hover (local)
                     try:
                         self.edge_endpoints_local[idx] = {"from": p_start_l, "to": p_end_l}
+                        if isinstance(eid, str):
+                            self.edge_endpoints_local[eid] = {"from": p_start_l, "to": p_end_l}
                     except Exception:
                         pass
                     label = e.get('label') or e.get('on') or e.get('event')
-                    if label or (getattr(model, 'editing_edge_index', None) == idx):
-                        is_hover = (idx == getattr(model, 'hover_edge_index', None))
-                        font = pygame.font.SysFont(None, 20 if is_hover else 18)
+                    is_editing = (getattr(model, 'editing_edge_index', None) == idx) or (isinstance(eid, str) and getattr(model, 'editing_edge_id', None) == eid)
+                    if label or is_editing:
+                        is_hover = (idx == getattr(model, 'hover_edge_index', None)) or (isinstance(eid, str) and getattr(model, 'hover_edge_id', None) == eid)
+                        is_selected = (idx == getattr(model, 'selected_edge_index', None)) or (isinstance(eid, str) and getattr(model, 'selected_edge_id', None) == eid)
+                        is_focus = is_hover or is_selected
+                        font = pygame.font.SysFont(None, 20 if is_focus else 18)
                         mid_lbl = ((p_start[0]+p_end[0])/2.0, (p_start[1]+p_end[1])/2.0)
                         mid_lbl = W(mid_lbl)
-                        if getattr(model, 'editing_edge_index', None) == idx:
-                            text_for_rect = str(getattr(model, 'editing_text', '') or '')
-                        else:
-                            text_for_rect = str(label or '')
-                        txt = font.render(text_for_rect, True, (255,230,120) if is_hover else (210,210,210))
+                        text_for_rect = str(getattr(model, 'editing_text', '') or '') if is_editing else str(label or '')
+                        txt = font.render(text_for_rect, True, (255,230,120) if is_focus else (210,210,210))
                         tr = txt.get_rect(center=(mid_lbl[0], mid_lbl[1]))
-                        if getattr(model, 'editing_edge_index', None) != idx:
+                        if not is_editing:
                             surf.blit(txt, tr)
                         try:
                             self.edge_label_rects[idx] = tr.copy()
+                            if isinstance(eid, str):
+                                self.edge_label_rects[eid] = tr.copy()
                         except Exception:
                             pass
         except Exception:
@@ -453,8 +479,10 @@ class FsmGraphPanelView:
         try:
             import math
             # Draw handle circles for hovered edge or currently dragging edge
-            hovered_e = getattr(model, 'hover_edge_index', None)
-            dragging_e = getattr(model, 'dragging_edge_index', None)
+            hovered_e_idx = getattr(model, 'hover_edge_index', None)
+            hovered_e_id = getattr(model, 'hover_edge_id', None)
+            dragging_e_idx = getattr(model, 'dragging_edge_index', None)
+            dragging_e_id = getattr(model, 'dragging_edge_id', None)
             hovered_end = getattr(model, 'hover_edge_handle_end', None)
             # Helper to draw a circle outline or filled for handle
             def _draw_handle(center, filled=False, radius=6):
@@ -467,29 +495,48 @@ class FsmGraphPanelView:
                 else:
                     pygame.draw.circle(surf, color, (cx, cy), radius, 2)
             # Draw for hovered edge
-            if hovered_e is not None:
-                ends = self.edge_endpoints_local.get(int(hovered_e))
-                if isinstance(ends, dict):
-                    fr = ends.get('from'); to = ends.get('to')
-                    if fr:
-                        _draw_handle(fr, filled=(hovered_end == 'from'))
-                    if to:
-                        _draw_handle(to, filled=(hovered_end == 'to'))
+            ends = None
+            if isinstance(hovered_e_id, str):
+                ends = self.edge_endpoints_local.get(hovered_e_id)
+            if ends is None and hovered_e_idx is not None:
+                try:
+                    ends = self.edge_endpoints_local.get(int(hovered_e_idx))
+                except Exception:
+                    ends = None
+            if isinstance(ends, dict):
+                fr = ends.get('from'); to = ends.get('to')
+                if fr:
+                    _draw_handle(fr, filled=(hovered_end == 'from'))
+                if to:
+                    _draw_handle(to, filled=(hovered_end == 'to'))
             # Draw for dragging edge (always show both handles on that edge)
-            if dragging_e is not None:
-                ends = self.edge_endpoints_local.get(int(dragging_e))
-                if isinstance(ends, dict):
-                    fr = ends.get('from'); to = ends.get('to')
-                    if fr:
-                        _draw_handle(fr, filled=(getattr(model, 'dragging_edge_end', None) == 'from'))
-                    if to:
-                        _draw_handle(to, filled=(getattr(model, 'dragging_edge_end', None) == 'to'))
+            ends = None
+            if isinstance(dragging_e_id, str):
+                ends = self.edge_endpoints_local.get(dragging_e_id)
+            if ends is None and dragging_e_idx is not None:
+                try:
+                    ends = self.edge_endpoints_local.get(int(dragging_e_idx))
+                except Exception:
+                    ends = None
+            if isinstance(ends, dict):
+                fr = ends.get('from'); to = ends.get('to')
+                if fr:
+                    _draw_handle(fr, filled=(getattr(model, 'dragging_edge_end', None) == 'from'))
+                if to:
+                    _draw_handle(to, filled=(getattr(model, 'dragging_edge_end', None) == 'to'))
             # Drag preview: show arrow pointing toward the 'to' end
-            if dragging_e is not None:
+            if dragging_e_idx is not None or isinstance(dragging_e_id, str):
                 end_side = getattr(model, 'dragging_edge_end', None)
                 px = getattr(model, 'dragging_edge_preview_x', None)
                 py = getattr(model, 'dragging_edge_preview_y', None)
-                ends = self.edge_endpoints_local.get(int(dragging_e))
+                ends = None
+                if isinstance(dragging_e_id, str):
+                    ends = self.edge_endpoints_local.get(dragging_e_id)
+                if ends is None and dragging_e_idx is not None:
+                    try:
+                        ends = self.edge_endpoints_local.get(int(dragging_e_idx))
+                    except Exception:
+                        ends = None
                 if end_side in ('from', 'to') and isinstance(px, (int, float)) and isinstance(py, (int, float)) and isinstance(ends, dict):
                     tip_local = W((float(px), float(py)))
                     fixed_local = ends.get('to' if end_side == 'from' else 'from')
@@ -523,15 +570,20 @@ class FsmGraphPanelView:
         try:
             # Determine if an edit is active
             edit_node = getattr(model, 'editing_node_id', None)
-            edit_edge = getattr(model, 'editing_edge_index', None)
+            edit_edge_idx = getattr(model, 'editing_edge_index', None)
+            edit_edge_id = getattr(model, 'editing_edge_id', None)
             target_rect_local = None
             if edit_node is not None:
                 target_rect_local = self.node_label_rects.get(edit_node)
-            elif edit_edge is not None:
-                try:
-                    target_rect_local = self.edge_label_rects.get(int(edit_edge))
-                except Exception:
-                    target_rect_local = None
+            else:
+                # Edge editing: resolve by ID first, then index fallback
+                if isinstance(edit_edge_id, str):
+                    target_rect_local = self.edge_label_rects.get(edit_edge_id)
+                if target_rect_local is None and edit_edge_idx is not None:
+                    try:
+                        target_rect_local = self.edge_label_rects.get(int(edit_edge_idx))
+                    except Exception:
+                        target_rect_local = None
             if target_rect_local is not None:
                 # Ensure widget exists and activated
                 if self.text_input is None:
