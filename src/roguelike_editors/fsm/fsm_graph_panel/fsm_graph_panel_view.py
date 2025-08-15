@@ -403,6 +403,101 @@ class FsmGraphPanelView:
                                 self.edge_label_rects[eid] = tr.copy()
                         except Exception:
                             pass
+            # Re-draw hovered edge above other edges for better highlight visibility
+            try:
+                hover_eid = getattr(model, 'hover_edge_id', None)
+                hover_ei = getattr(model, 'hover_edge_index', None)
+                # Resolve key to fetch cached path (prefer ID)
+                key = None
+                if isinstance(hover_eid, str) and hover_eid in self.edge_paths:
+                    key = hover_eid
+                else:
+                    try:
+                        if hover_ei is not None and int(hover_ei) in self.edge_paths:
+                            key = int(hover_ei)
+                    except Exception:
+                        key = None
+                if key is not None:
+                    pts = self.edge_paths.get(key)
+                    if isinstance(pts, list) and len(pts) >= 2:
+                        # Find the edge dict and compute style
+                        idx = None
+                        if isinstance(key, int):
+                            idx = key
+                        elif isinstance(key, str):
+                            try:
+                                idx = (getattr(model, 'edge_index_by_id', {}) or {}).get(key)
+                            except Exception:
+                                idx = None
+                        e = None
+                        edges = getattr(model, 'edges', [])
+                        if isinstance(idx, int) and 0 <= idx < len(edges):
+                            e = edges[idx]
+                        elif isinstance(key, str):
+                            # Fallback: linear scan by ID
+                            try:
+                                for i, ee in enumerate(edges):
+                                    if ee.get('id') == key:
+                                        idx = i
+                                        e = ee
+                                        break
+                            except Exception:
+                                e = None
+                        if isinstance(e, dict):
+                            eid = e.get('id')
+                            # Selection/hover state
+                            is_edge_selected = (idx == getattr(model, 'selected_edge_index', None)) or (isinstance(eid, str) and eid == getattr(model, 'selected_edge_id', None))
+                            # Color/width similar to main pass, but ensure hover emphasis
+                            color = e.get('color', (120, 120, 140))
+                            if e.get('active'):
+                                color = (255, 210, 90)
+                            elif is_edge_selected:
+                                color = (255, 220, 110)
+                            else:
+                                color = (255, 230, 120)
+                            width = int(e.get('width', 2))
+                            if is_edge_selected:
+                                width = max(width + 2, 4)
+                            else:
+                                width = max(width + 1, 3)
+                            head_len = int(e.get('head_len', 14))
+                            head_width = int(e.get('head_width', 10))
+                            # Draw polyline (excluding exact tip) and arrowhead using last segment direction
+                            p_tip = pts[-1]
+                            p_prev = pts[-2]
+                            if len(pts) >= 3:
+                                # Curved or multi-sampled path: draw all but the last sample
+                                _draw_polyline(surf, color, pts[:-1], width)
+                            else:
+                                # Straight 2-point path: draw line to slightly before the tip
+                                vx, vy = (p_tip[0] - p_prev[0], p_tip[1] - p_prev[1])
+                                mag = math.hypot(vx, vy) or 1.0
+                                # retract a tiny amount to avoid overdraw under the arrowhead
+                                retract = 0.001 * mag
+                                ux, uy = vx / mag, vy / mag
+                                shortened_tip = (p_tip[0] - ux * retract, p_tip[1] - uy * retract)
+                                _draw_polyline(surf, color, [pts[0], shortened_tip], width)
+                            dir_vec = (p_tip[0] - p_prev[0], p_tip[1] - p_prev[1])
+                            _arrowhead(surf, color, p_tip, dir_vec, head_len=head_len, head_width=head_width)
+                            # Re-draw label above others (skip while editing)
+                            is_editing = (getattr(model, 'editing_edge_index', None) == idx) or (isinstance(eid, str) and getattr(model, 'editing_edge_id', None) == eid)
+                            if not is_editing:
+                                label = e.get('label') or e.get('on') or e.get('event')
+                                if label:
+                                    try:
+                                        # Prefer stored label rect center
+                                        lr = self.edge_label_rects.get(key)
+                                        if lr is None and isinstance(idx, int):
+                                            lr = self.edge_label_rects.get(idx)
+                                    except Exception:
+                                        lr = None
+                                    if lr is not None:
+                                        font = pygame.font.SysFont(None, 20 if is_edge_selected else 20)
+                                        txt = font.render(str(label), True, (255, 230, 120))
+                                        tr = txt.get_rect(center=(lr.centerx, lr.centery))
+                                        surf.blit(txt, tr)
+            except Exception:
+                pass
         except Exception:
             pass
 

@@ -178,91 +178,91 @@
       "transitions": [
         {
           "from": "Patrol",
-          "id": "tr_7b3eca4d",
+          "id": "tr_a2c61ddd",
           "to": "Aggro",
           "when": "player_in_aggro"
         },
         {
           "from": "Aggro",
-          "id": "tr_c9ab93b6",
+          "id": "tr_d1ce948e",
           "to": "Chase",
           "when": "aggro_continue"
         },
         {
           "from": "Aggro",
-          "id": "tr_4e2b5d85",
+          "id": "tr_d609fe3d",
           "to": "Attack",
           "when": "melee_range"
         },
         {
           "from": "Aggro",
-          "id": "tr_abe6f7c7",
+          "id": "tr_75e4470a",
           "to": "Flee",
           "when": "low_health"
         },
         {
           "from": "Chase",
-          "id": "tr_b19a430a",
+          "id": "tr_ac704d22",
           "to": "Attack",
           "when": "melee_range"
         },
         {
           "from": "Chase",
-          "id": "tr_50ae2cbf",
+          "id": "tr_9dcbb5db",
           "to": "Patrol",
           "when": "lost_player"
         },
         {
           "from": "Attack",
-          "id": "tr_aa2ad20b",
+          "id": "tr_066909a9",
           "to": "Chase",
           "when": "out_of_melee_range"
         },
         {
           "from": "Damage",
-          "id": "tr_993675f0",
+          "id": "tr_4eb63b22",
           "to": "AlertChase",
           "when": "after_damage"
         },
         {
           "from": "AlertChase",
-          "id": "tr_1b38f648",
+          "id": "tr_2f98af98",
           "to": "Patrol",
           "when": "timer_5s"
         },
         {
           "from": "Patrol",
-          "id": "tr_859db257",
+          "id": "tr_e42e479f",
           "to": "Death",
           "when": "dead"
         },
         {
           "from": "Aggro",
-          "id": "tr_e89def93",
+          "id": "tr_23275a2c",
           "to": "Death",
           "when": "dead"
         },
         {
           "from": "Chase",
-          "id": "tr_2d960c98",
+          "id": "tr_e7fee77a",
           "to": "Death",
           "when": "dead"
         },
         {
           "from": "Attack",
-          "id": "tr_97b533d3",
+          "id": "tr_b38a981b",
           "to": "Death",
           "when": "dead"
         },
         {
           "from": "Flee",
-          "id": "tr_fe48b5d7",
+          "id": "tr_fd9b291a",
           "to": "Death",
           "when": "dead"
         },
         {
           "from": "AlertChase",
-          "id": "tr_e2e4cfac",
+          "id": "tr_43306c4e",
           "to": "Death",
           "when": "dead"
         }
