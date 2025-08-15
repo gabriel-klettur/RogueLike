@@ -101,3 +101,16 @@ class HitboxSystem:
                     q.append({"type": "OnHit", "from_left": from_left})
                     if health.current_hp <= 0:
                         q.append({"type": "OnDeath"})
+                elif target in world.components.get('PlayerTagComponent', {}):
+                    # NPC or other entity hit the player -> publish OnHit/OnDeath for player
+                    attacker_pos = positions.get(hb.owner)
+                    defender_pos = positions.get(target)
+                    if attacker_pos and defender_pos:
+                        from_left = attacker_pos.x < defender_pos.x
+                    else:
+                        from_left = False
+                    qmap = world.components.setdefault('FSMEventQueue', {})
+                    q = qmap.setdefault(target, [])
+                    q.append({"type": "OnHit", "from_left": from_left})
+                    if health.current_hp <= 0:
+                        q.append({"type": "OnDeath"})

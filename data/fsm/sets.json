@@ -63,6 +63,12 @@
           "id": "tr_d98603f5",
           "to": "Idle",
           "when": "key.escape"
+        },
+        {
+          "from": "Damage",
+          "id": "tr_player_damage_after",
+          "to": "Idle",
+          "when": "after_damage"
         }
       ]
     },

@@ -63,13 +63,26 @@ class FireballSystem:
                         hp = world.components['Health'][target]
                         hp.current_hp = max(0, hp.current_hp - comp.damage)
                         world.remove_entity(eid)
-                        # Si el daño viene de fireball de jugador, publicar eventos FSM
+                        # Publicar eventos FSM para NPCs golpeados por jugador o jugador golpeado por NPC
                         caster = comp.caster
                         if caster in world.components.get('PlayerTagComponent', {}):
-                            # determinar dirección de daño
+                            # Jugador -> NPC
                             attacker_pos = world.components['Position'][caster]
                             defender_pos = world.components['Position'][target]
                             from_left = attacker_pos.x < defender_pos.x
+                            qmap = world.components.setdefault('FSMEventQueue', {})
+                            q = qmap.setdefault(target, [])
+                            q.append({"type": "OnHit", "from_left": from_left})
+                            if hp.current_hp <= 0:
+                                q.append({"type": "OnDeath"})
+                        elif target in world.components.get('PlayerTagComponent', {}):
+                            # NPC -> Jugador
+                            attacker_pos = world.components['Position'].get(caster)
+                            defender_pos = world.components['Position'].get(target)
+                            if attacker_pos and defender_pos:
+                                from_left = attacker_pos.x < defender_pos.x
+                            else:
+                                from_left = False
                             qmap = world.components.setdefault('FSMEventQueue', {})
                             q = qmap.setdefault(target, [])
                             q.append({"type": "OnHit", "from_left": from_left})

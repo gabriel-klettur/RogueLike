@@ -105,6 +105,25 @@ def build_fsm_from_set(set_def: Dict[str, Any]) -> Tuple[FiniteStateMachine, str
         fsm.context["anim_map"] = resolved
     except Exception as ex:
         logger.debug("[FSMBridge] anim_map not attached for set_id=%s: %s", set_id, ex)
+    # Map state-id -> class-name for editor/runtime helpers (all sets)
+    try:
+        id_to_class = {s.get("id"): s.get("class") for s in set_def.get("states", []) if s.get("id")}
+    except Exception:
+        id_to_class = {}
+    fsm.context["id_to_class"] = id_to_class
+    # Policy for next state after Damage for ANY set:
+    # 1) If there is a transition defined in JSON from 'Damage' -> X, use X's class.
+    damage_to_class = None
+    for tr in set_def.get("transitions", []) or []:
+        if tr.get("from") == "Damage":
+            to_id = tr.get("to")
+            if to_id:
+                to_cls = id_to_class.get(to_id)
+                if to_cls:
+                    damage_to_class = to_cls
+                    break
+    if damage_to_class:
+        fsm.context.setdefault("damage_next_class", damage_to_class)
     # Configure allowed state classes ONLY for Monster_* sets so Player is unaffected.
     if set_id.startswith("Monster_"):
         try:
@@ -113,33 +132,18 @@ def build_fsm_from_set(set_def: Dict[str, Any]) -> Tuple[FiniteStateMachine, str
             allowed_classes = set()
         fsm.context["allowed_state_classes"] = allowed_classes
         fsm.context["set_id"] = set_id
-        # Map state-id -> class-name for editor/runtime helpers
-        fsm.context["id_to_class"] = {s.get("id"): s.get("class") for s in set_def.get("states", []) if s.get("id")}
         # Always allow transitioning to DeathState by default unless explicitly disabled elsewhere.
         fsm.context.setdefault("allow_death", True)
         # Always allow transitioning to DamageState by default unless explicitly disabled elsewhere.
         fsm.context.setdefault("allow_damage", True)
-        # Policy for next state after Damage:
-        # 1) If there is a transition defined in JSON from 'Damage' -> X, use X's class.
-        # 2) Else prefer AlertChase -> Chase -> Patrol based on allowed states.
-        damage_to_class = None
-        for tr in set_def.get("transitions", []) or []:
-            if tr.get("from") == "Damage":
-                to_id = tr.get("to")
-                if to_id:
-                    to_cls = fsm.context["id_to_class"].get(to_id)
-                    if to_cls:
-                        damage_to_class = to_cls
-                        break
-        if damage_to_class:
-            fsm.context.setdefault("damage_next_class", damage_to_class)
-        else:
+        # If no explicit Damage transition exists, fall back to a sensible Monster policy.
+        if "damage_next_class" not in fsm.context:
             if "AlertChaseState" in allowed_classes:
-                fsm.context.setdefault("damage_next_class", "AlertChaseState")
+                fsm.context["damage_next_class"] = "AlertChaseState"
             elif "ChaseState" in allowed_classes:
-                fsm.context.setdefault("damage_next_class", "ChaseState")
+                fsm.context["damage_next_class"] = "ChaseState"
             else:
-                fsm.context.setdefault("damage_next_class", "PatrolState")
+                fsm.context["damage_next_class"] = "PatrolState"
     return fsm, initial
 
 
