@@ -1,12 +1,9 @@
 import pygame
-import os
-import json
 import logging
 logger = logging.getLogger(__name__)
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.config.config_editor import TILE_PAINT_BATCH, TILE_PAINT_TICK
-from roguelike_engine.config.config import DATA_DIR
 from roguelike_editors.buildings.utils.save_buildings_to_json import save_buildings_to_json
 from roguelike_engine.map.model.overlay.overlay_manager import load_layers, save_layers
 from roguelike_game.ecs.core.spatial_index import SpatialIndex
@@ -317,23 +314,15 @@ class MapEditorEventHandler:
         if idx < self.state.execution_total:
             self.state.execution_index += 1
         else:
-            self._finalize_paint_colliders(zone)
-            self._clear_async_state()
+            try:
+                self.controller.toolbar.paint_colliders.finalize(zone)
+            finally:
+                self.manager.game.ecs.ecs_world.spatial_index = SpatialIndex(
+                    self.map_manager, self.manager.game.buildings.buildings
+                )
+                self._clear_async_state()
 
-    def _finalize_paint_colliders(self, zone):
-        w, h = global_map_settings.zone_size
-        grid = [["#" for _ in range(w)] for _ in range(h)]
-        path = os.path.join(DATA_DIR, "collisions", f"{zone}.json")
-        try:
-            with open(path, "w", encoding="utf-8") as f:
-                json.dump(grid, f, indent=2)
-            logger.debug(f"DEBUG [MapEditorEventHandler] painted colliders (all blocked '#') for zone {zone}")
-        except Exception as e:
-            logger.debug(f"DEBUG [MapEditorEventHandler] failed to paint colliders for zone {zone}: {e}")
-        self.map_manager.reload_map()
-        self.manager.game.ecs.ecs_world.spatial_index = SpatialIndex(
-            self.map_manager, self.manager.game.buildings.buildings
-        )
+    
 
     def _clear_async_state(self):
         self.state.executing_tool = None
@@ -483,15 +472,9 @@ class MapEditorEventHandler:
             if self.controller.toolbar.clear_colliders.events.handle_confirm_click(ev.pos):
                 return True
 
-        # Pintar colliders
+        # Pintar colliders (delegar en herramienta)
         if self.state.confirm_paint_colliders:
-            zone = self.state.pending_paint_colliders_zone
-            if self.state.confirm_paint_colliders_yes_rect and self.state.confirm_paint_colliders_yes_rect.collidepoint(ev.pos):
-                self.state.begin_async_tool("paint_colliders", zone, self.map_manager.tiles_by_zone.get(zone, []))
-                self.state.reset_paint_colliders_dialog()
-                return True
-            if self.state.confirm_paint_colliders_no_rect and self.state.confirm_paint_colliders_no_rect.collidepoint(ev.pos):
-                self.state.reset_paint_colliders_dialog()
+            if self.controller.toolbar.paint_colliders.events.handle_confirm_click(ev.pos):
                 return True
 
         # Añadir zona
@@ -539,17 +522,10 @@ class MapEditorEventHandler:
             if self.controller.toolbar.clear_colliders.handle_map_click(tx, ty):
                 return True
 
-        # Modo: Pintar colliders
+        # Modo: Pintar colliders (delegar en herramienta)
         if self.state.paint_colliders_mode:
-            for zn, (ox, oy) in global_map_settings.zone_offsets.items():
-                if zn in ("no zone", "no-zone"):
-                    continue
-                w, h = global_map_settings.zone_size
-                if ox <= tx < ox + w and oy <= ty < oy + h:
-                    self.state.pending_paint_colliders_zone = zn
-                    self.state.confirm_paint_colliders = True
-                    self.state.paint_colliders_mode = False
-                    return True
+            if self.controller.toolbar.paint_colliders.handle_map_click(tx, ty):
+                return True
 
         return False
 

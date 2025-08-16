@@ -1,11 +1,12 @@
 import logging
-from roguelike_engine.map.model.layer import Layer
 from .map_tool_bar_panel_view import MapToolBarPanelView
 from .map_tool_bar_panel_model import MapToolBarPanelModel
 from .map_tool_bar_panel_events import MapToolBarPanelEvents
 from .add_zone.add_zone_controller import AddZoneController
 from .clear_colliders.clear_colliders_controller import ClearCollidersController
 from .delete_zone.delete_zone_controller import DeleteZoneController
+from .paint_colliders.paint_colliders_controller import PaintCollidersController
+from .view_layers.view_layers_controller import ViewLayersController
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +30,6 @@ class MapToolBarPanelController:
         self.size, self.padding = self.model.size, self.model.padding
         self.icons = self.model.icons
         self.icon_rects = self.model.icon_rects
-        self.option_rects = self.model.option_rects
 
         # Events
         self.events = MapToolBarPanelEvents(self, self.model)
@@ -38,6 +38,10 @@ class MapToolBarPanelController:
         self.view = MapToolBarPanelView(self, self.model)
 
         # Tool controllers
+        self.view_layers = ViewLayersController(
+            editor_state=editor_state,
+            toolbar_controller=self,
+        )
         self.add_zone = AddZoneController(
             editor_state=editor_state,
             map_controller=self.map_controller,
@@ -49,6 +53,12 @@ class MapToolBarPanelController:
             toolbar_controller=self,
         )
         self.clear_colliders = ClearCollidersController(
+            editor_state=editor_state,
+            map_controller=self.map_controller,
+            toolbar_controller=self,
+        )
+        # Pintar colliders (nuevo MVC)
+        self.paint_colliders = PaintCollidersController(
             editor_state=editor_state,
             map_controller=self.map_controller,
             toolbar_controller=self,
@@ -82,7 +92,5 @@ class MapToolBarPanelController:
         """Toggle a mode in editor_state and disable others from the provided list."""
         self.model.toggle_mode(mode_attr, disable)
 
-    def _handle_dropdown_selection(self, key: Layer | str) -> None:
-        """Delegate to model for dropdown selection handling."""
-        self.model.handle_dropdown_selection(key)
+    # Dropdown selection is now handled by ViewLayers MVC
 

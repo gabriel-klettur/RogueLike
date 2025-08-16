@@ -100,7 +100,12 @@ class MapEditorView:
         self._draw_toolbar(screen)
 
         if self.state.layers_view_open:
-            self._draw_layers_dropdown(screen)
+            # Delegar dropdown al MVC de ViewLayers
+            try:
+                self.controller.toolbar.view_layers.view.render_dropdown(screen)
+            except Exception:
+                # Falla no fatal: evita romper el render completo si algo ocurre en la vista de dropdown
+                pass
 
         # 5. Dibujar los diálogos de confirmación, si corresponde
         self._draw_confirmation_dialogs(screen)
@@ -292,62 +297,8 @@ class MapEditorView:
         self.controller.toolbar.view.render(screen)
 
     # -------------------------------------------------------------
-    # 5. Dropdown: vista de capas (capas de tiles, edificios, colliders)
+    # 5. Dropdown: la lógica y el render ahora viven en ViewLayersView
     # -------------------------------------------------------------
-    def _draw_layers_dropdown(self, screen: Surface) -> None:
-        toolbar = self.controller.toolbar
-        # Anchor dropdown to the current toolbar widget position and width (supports dragging)
-        tv = getattr(getattr(toolbar, "view", None), "widget", None)
-        panel = getattr(tv, "panel", None)
-        if panel and getattr(panel, "pos", None):
-            panel_pos = panel.pos
-            panel_w = panel.surface.get_width()
-        else:
-            # Fallback to initial static coords
-            panel_pos = (toolbar.x, toolbar.y)
-            panel_w = toolbar.size + 2 * getattr(tv, "edge_padding", 8) if tv else toolbar.size + 16
-        drop_x = panel_pos[0] + panel_w + toolbar.padding
-        drop_y = panel_pos[1]
-        toolbar.option_rects.clear()
-
-        # Claves: "show_all", "hide_all", cada Layer, "buildings", "colliders"
-        keys = ["show_all", "hide_all"] + list(Layer) + ["buildings", "colliders"]
-        for idx, key in enumerate(keys):
-            ry = drop_y + idx * BTN_H
-            rect = Rect(drop_x, ry, BTN_W, BTN_H)
-            toolbar.option_rects[key] = rect
-
-            # Fondo y borde según tipo
-            pygame.draw.rect(screen, (20, 20, 20), rect)
-            if key in ("show_all", "hide_all"):
-                border_color = self.COLOR_TEXT
-            elif isinstance(key, Layer):
-                border_color = (
-                    (0, 255, 0) if self.state.visible_layers[key] else (255, 0, 0)
-                )
-            elif key == "buildings":
-                border_color = (128, 0, 128) if self.state.show_buildings else (255, 0, 0)
-            else:  # "colliders"
-                border_color = (255, 255, 0) if self.state.show_colliders else (255, 0, 0)
-
-            pygame.draw.rect(screen, border_color, rect, 2)
-
-            # Texto descriptivo
-            if key == "show_all":
-                text = "Show All"
-            elif key == "hide_all":
-                text = "Hide All"
-            elif isinstance(key, Layer):
-                text = key.name
-            elif key == "buildings":
-                text = "Buildings"
-            else:
-                text = "Colliders"
-
-            text_surf = self.font_dropdown.render(text, True, self.COLOR_TEXT)
-            screen.blit(
-                text_surf, (drop_x + 5, ry + (BTN_H - text_surf.get_height()) // 2)
-            )
 
     # -------------------------------------------------------------
     # 5.1. Diálogos de confirmación (Delete, Paint Tiles, Clear Colliders, Paint Colliders, Add Zone)

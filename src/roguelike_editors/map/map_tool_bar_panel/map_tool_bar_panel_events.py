@@ -14,7 +14,7 @@ class MapToolBarPanelEvents:
         """
         Procesa clics del toolbar usando los rects calculados por ToolbarView.
         Si aún no existen, los calcula basándose en la geometría del widget.
-        También maneja el dropdown de capas cuando está abierto.
+        También delega el dropdown de capas al MVC de ViewLayers cuando está abierto.
         """
         c = self.controller
         editor = c.editor
@@ -41,8 +41,9 @@ class MapToolBarPanelEvents:
         for tool_name, rect in c.icon_rects.items():
             if rect and rect.collidepoint(mouse_pos):
                 if tool_name == "view_layers":
-                    editor.layers_view_open = not editor.layers_view_open
-                    logger.debug(f"[DEBUG][Toolbar/Events] layers_view_open -> {editor.layers_view_open}")
+                    # Delegar al controlador ViewLayers (mantiene consistencia y exclusividad si aplica)
+                    opened = c.view_layers.toggle()
+                    logger.debug(f"[DEBUG][Toolbar/Events] layers_view_open -> {opened}")
                     return True
                 if tool_name == "add_zone":
                     # Delegate to the Add Zone tool controller, which enforces exclusivity
@@ -59,14 +60,14 @@ class MapToolBarPanelEvents:
                     c.clear_colliders.toggle()
                     return True
                 if tool_name == "paint_colliders":
-                    _toggle_pair("paint_colliders_mode", ["add_zone_mode", "delete_zone_mode", "paint_tiles_mode", "clear_colliders_mode"])
+                    # Delegate to the Paint Colliders tool controller, which enforces exclusivity
+                    c.paint_colliders.toggle()
                     return True
 
-        # Dropdown de capas
+        # Dropdown de capas: delegar a ViewLayersEvents
         if editor.layers_view_open:
-            for key, rect in c.option_rects.items():
-                if rect and rect.collidepoint(mouse_pos):
-                    c._handle_dropdown_selection(key)
-                    return True
+            if c.view_layers.events.handle_dropdown_click(mouse_pos):
+                return True
 
         return False
+
