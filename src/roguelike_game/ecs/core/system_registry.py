@@ -48,7 +48,7 @@ from roguelike_game.ecs.systems.combat.hitbox_system import HitboxSystem
 from roguelike_game.ecs.systems.combat.spells.lightning_system import LightningSystem
 from roguelike_editors.fsm.debug.entities_debug_system import EntitiesDebugSystem
 from roguelike_game.ecs.systems.expansion_system import ExpansionSystem
-from roguelike_game.ecs.systems.experience_system import ExperienceSystem
+from roguelike_game.ecs.systems.experience.experience_system import ExperienceSystem
 from roguelike_game.ecs.systems.magic_spell_bar_system import MagicSpellBarSystem
 from roguelike_game.ecs.systems.coin_pickup_system import CoinPickupSystem
 from roguelike_game.ecs.systems.experience.orb_attraction_system import OrbAttractionSystem
