@@ -243,8 +243,10 @@ class InputSystem:
             dragging_items = any(isinstance(s, DropDragSystem) and s.dragging_eid is not None for s in getattr(world, 'update_systems', []))
             dragging_ui = any(isinstance(s, InventoryUISystem) and s.dragging for s in getattr(world, 'render_systems', []))
             dragging = dragging_items or dragging_ui
+            # Suppress gameplay input while Spawner Editor is dragging/panning with RMB
+            spawner_suppressed = bool(getattr(getattr(world, 'state', None), 'spawner_input_suppressed', False))
             # Log suppression only on transitions to reduce noise
-            suppressed_now = editor_buildings_active or dragging
+            suppressed_now = editor_buildings_active or dragging or spawner_suppressed
             prev_supp = self._prev_suppressed.get(eid, False)
             if suppressed_now and not prev_supp:
                 logger.debug(

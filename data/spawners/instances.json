@@ -1,0 +1,14 @@
+[
+  {
+    "template_id": "default_barbol_periodic",
+    "zone": "lobby",
+    "tile": [
+      -24,
+      15
+    ],
+    "overrides": {
+      "policy.cooldown_s": 5.0,
+      "trigger.radius": 8
+    }
+  }
+]

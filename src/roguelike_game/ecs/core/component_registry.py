@@ -19,5 +19,7 @@ def create_empty_component_store():
         'ChaseTarget': {}, 'FacingCooldown': {}, 'InputComponent': {}, 'InventoryComponent': {}, 'PhysicalItemComponent': {}, 'CollectibleComponent': {}, 'ExperienceComponent': {},
         'CameraFollowComponent': {}, 'PlayerTagComponent': {}, 'NPCTagComponent': {}, 'MonsterInstanceComponent': {}, 'InCombat': {},
         'FlashComponent': {}, 'TrailComponent': {}, 'GrayscaleComponent': {},
+        # Spawner components
+        'SpawnerConfig': {}, 'SpawnerState': {},
     }
 # Path: src/roguelike_game/ecs/core/component_registry.py

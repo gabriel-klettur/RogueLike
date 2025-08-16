@@ -116,6 +116,9 @@ class Game:
         self.inventory_editor.draw(self.screen)
         self.entities_editor.draw(self.screen)
         self.spells_editor.draw(self.screen)
+        # Spawner Editor overlay
+        if hasattr(self, 'spawner_editor'):
+            self.spawner_editor.draw(self.screen)
         # Render consola
         self.console_view.render(self.screen)
 

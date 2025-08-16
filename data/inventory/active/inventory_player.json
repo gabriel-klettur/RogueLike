@@ -5,11 +5,11 @@
     "slots": [
       {
         "item": "gold",
-        "quantity": 661
+        "quantity": 741
       },
       {
         "item": "wood",
-        "quantity": 10
+        "quantity": 17
       },
       {
         "item": "iron_sword",
@@ -17,7 +17,7 @@
       },
       {
         "item": "bucket",
-        "quantity": 3
+        "quantity": 10
       },
       {
         "item": "food_chicken",

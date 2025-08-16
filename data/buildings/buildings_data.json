@@ -120,9 +120,9 @@
         "z": 1
     },
     {
-        "zone": "lobby",
-        "rel_x": 32,
-        "rel_y": -21,
+        "zone": "Forest",
+        "rel_x": 1364,
+        "rel_y": 26,
         "image_path": "assets/buildings/vegetation/tree_9.png",
         "solid": true,
         "scale": [

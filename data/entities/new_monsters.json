@@ -44,7 +44,7 @@
           "spawn_count": 10,
           "spawn_margin": 0
         },
-        "fsm_set": "Monster_stupid",
+        "fsm_set": "Monster_Default",
         "assets": {
           "active_set": "no-sets",
           "sets": {
