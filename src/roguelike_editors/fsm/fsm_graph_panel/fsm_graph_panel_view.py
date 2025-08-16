@@ -807,5 +807,23 @@ class FsmGraphPanelView:
 
         return self.canvas_rect
 
+    # Optional overlay for active tool-specific visuals. The controller calls this
+    # after the main render. If a tool-specific View is provided and it has a
+    # render_overlay() method, delegate to it with canvas_rect and this view.
+    def render_active_tool_overlay(self, model, screen, tool_view=None):
+        try:
+            import pygame  # type: ignore
+        except Exception:
+            return None
+        if self.canvas_rect is None:
+            return None
+        try:
+            if tool_view and hasattr(tool_view, 'render_overlay'):
+                tool_view.render_overlay(model=model, screen=screen, canvas_rect=self.canvas_rect, view=self)
+        except Exception:
+            # Non-fatal if tool overlay fails
+            pass
+        return None
+
 
 __all__ = ["FsmGraphPanelView"]
