@@ -1,6 +1,14 @@
 from __future__ import annotations
 import logging
-import math
+from .services.hit_test import (
+    pick_node_world,
+)
+from .events.hover import update_hover_state
+from .events.navigation import handle_navigation_event
+from .events.text_edit import begin_text_edit, begin_edge_text_edit, handle_text_input_event
+from .events.selection import handle_selection_event
+from .events.edges import handle_edge_drag_event
+from .model import to_world as model_to_world, begin_pan, update_pan, end_pan
 
 
 class FsmGraphPanelEventHandler:
@@ -31,18 +39,7 @@ class FsmGraphPanelEventHandler:
         pan_y = float(getattr(model, 'pan_y', 0.0))
         zoom = float(getattr(model, 'zoom', 1.0))
 
-        # Helpers
-        def to_world(lx, ly):
-            z = max(0.05, float(getattr(model, 'zoom', 1.0)))
-            return ((lx - float(getattr(model, 'pan_x', 0.0))) / z, (ly - float(getattr(model, 'pan_y', 0.0))) / z)
-
-        def pick_node(wx, wy):
-            for n in reversed(list(getattr(model, 'nodes', []))):
-                nx = int(n.get('x', 0)); ny = int(n.get('y', 0))
-                nw = int(n.get('w', 120)); nh = int(n.get('h', 60))
-                if nx <= wx <= nx + nw and ny <= wy <= ny + nh:
-                    return n
-            return None
+        # Helpers are provided by model (to_world) and services.hit_test
 
         # Delegate mouse wheel and other toolbar-handled events to toolbar events
         try:
@@ -62,109 +59,12 @@ class FsmGraphPanelEventHandler:
         except Exception:
             pass
 
-        # Inline text editing active: delegate events to TextInput and swallow others
+        # Inline text input routing
         try:
-            ti = getattr(view, 'text_input', None)
+            if handle_text_input_event(controller, model, view, event):
+                return True
         except Exception:
-            ti = None
-        if ti is not None and getattr(ti, 'active', False):
-            # Cancel on ESC
-            if et == pygame.KEYDOWN and getattr(event, 'key', None) == pygame.K_ESCAPE:
-                try:
-                    ti.deactivate()
-                except Exception:
-                    pass
-                model.editing_node_id = None
-                model.editing_edge_index = None
-                model.editing_text = None
-                return True
-            # Delegate to widget (translate local mouse coords for hit-testing)
-            try:
-                if et == pygame.MOUSEBUTTONDOWN:
-                    try:
-                        adj_event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, {
-                            'pos': (int(local_x), int(local_y)),
-                            'button': getattr(event, 'button', None),
-                        })
-                    except Exception:
-                        adj_event = event
-                    handled = bool(ti.handle_event(adj_event))
-                else:
-                    handled = bool(ti.handle_event(event))
-            except Exception:
-                handled = False
-            if handled:
-                # Live-sync editing text for dynamic label rect sizing during typing
-                try:
-                    model.editing_text = str(getattr(ti, 'text', '') or '')
-                except Exception:
-                    pass
-                # Commit when widget deactivates (Enter)
-                if not getattr(ti, 'active', False):
-                    text = str(getattr(ti, 'text', '') or '')
-                    if getattr(model, 'editing_node_id', None):
-                        nid = model.editing_node_id
-                        for n in getattr(model, 'nodes', []):
-                            if n.get('id') == nid:
-                                n['label'] = text
-                                break
-                    elif getattr(model, 'editing_edge_index', None) is not None:
-                        try:
-                            ei = int(model.editing_edge_index)  # type: ignore[arg-type]
-                        except Exception:
-                            ei = -1
-                        edges = getattr(model, 'edges', [])
-                        if isinstance(ei, int) and 0 <= ei < len(edges):
-                            edges[ei]['label'] = text
-                    model.editing_node_id = None
-                    model.editing_edge_index = None
-                    model.editing_text = None
-                    try:
-                        controller._persist_sets_structural()
-                    except Exception:
-                        pass
-                    try:
-                        controller._persist_layout()
-                    except Exception:
-                        pass
-                return True
-            # Click outside input rectangle: commit and close
-            if et == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
-                abs_r = getattr(view, 'text_input_abs_rect', None)
-                if abs_r is None or not abs_r.collidepoint(mouse_pos):
-                    try:
-                        ti.deactivate()
-                    except Exception:
-                        pass
-                    text = str(getattr(ti, 'text', '') or '')
-                    if getattr(model, 'editing_node_id', None):
-                        nid = model.editing_node_id
-                        for n in getattr(model, 'nodes', []):
-                            if n.get('id') == nid:
-                                n['label'] = text
-                                break
-                    elif getattr(model, 'editing_edge_index', None) is not None:
-                        try:
-                            ei = int(model.editing_edge_index)  # type: ignore[arg-type]
-                        except Exception:
-                            ei = -1
-                        edges = getattr(model, 'edges', [])
-                        if isinstance(ei, int) and 0 <= ei < len(edges):
-                            edges[ei]['label'] = text
-                    model.editing_node_id = None
-                    model.editing_edge_index = None
-                    model.editing_text = None
-                    try:
-                        controller._persist_sets_structural()
-                    except Exception:
-                        pass
-                    try:
-                        controller._persist_layout()
-                    except Exception:
-                        pass
-                    return True
-            # Swallow other events while editing
-            return True
+            pass
 
         # Global ESC handling when not inline-editing: cancel drags or pending connect/disconnect
         try:
@@ -211,6 +111,33 @@ class FsmGraphPanelEventHandler:
             except Exception:
                 pass
 
+        # Route navigation (pan/zoom) and selection via submodules
+        try:
+            if handle_navigation_event(controller, model, view, event):
+                # Persist viewport at the end of pan or after zoom; rely on caller for zoom persistence elsewhere
+                try:
+                    import pygame  # type: ignore
+                    if getattr(event, 'type', None) == pygame.MOUSEBUTTONUP and getattr(event, 'button', None) == 2:
+                        controller._persist_layout()
+                except Exception:
+                    pass
+                return True
+        except Exception:
+            pass
+
+        # Edge handle drag workflow
+        try:
+            if handle_edge_drag_event(controller, model, view, event):
+                return True
+        except Exception:
+            pass
+
+        try:
+            if handle_selection_event(controller, model, view, event):
+                return True
+        except Exception:
+            pass
+
         # Legend minimize/expand toggle and click capture
         if et == pygame.MOUSEBUTTONDOWN and btn == 1:
             try:
@@ -256,94 +183,18 @@ class FsmGraphPanelEventHandler:
                 getattr(model, 'pan_x', 0.0), getattr(model, 'pan_y', 0.0),
                 float(getattr(model, 'zoom', 1.0)),
             )
-            model.dragging_pan = True
-            model.drag_last_local_x = int(local_x)
-            model.drag_last_local_y = int(local_y)
+            begin_pan(model, int(local_x), int(local_y))
             return True
 
         # Mouse button up handling: node drag end, edge drag finalize, pan end
         if et == pygame.MOUSEBUTTONUP:
-            if btn == 1 and getattr(model, 'dragging_node_id', None) is not None and getattr(model, 'dragging_edge_index', None) is None:
-                model.dragging_node_id = None
-                try:
-                    controller._persist_layout()
-                except Exception:
-                    pass
-                return True
-            if btn == 1 and (getattr(model, 'dragging_edge_index', None) is not None or getattr(model, 'dragging_edge_id', None) is not None):
-                # Finalize edge handle drag: snap to node if dropping over a node; otherwise cancel (revert)
-                try:
-                    ei_val = getattr(model, 'dragging_edge_index', None)
-                    ei = int(ei_val) if ei_val is not None else -1
-                except Exception:
-                    ei = -1
-                eid = getattr(model, 'dragging_edge_id', None)
-                end = getattr(model, 'dragging_edge_end', None)
-                wx, wy = to_world(local_x, local_y)
-                node = pick_node(wx, wy)
-                changed = False
-                edges = getattr(model, 'edges', [])
-                # Resolve edge index via ID if available
-                try:
-                    if not isinstance(eid, str) or not eid:
-                        if len(getattr(model, 'edge_id_by_index', []) or []) != len(edges or []):
-                            model.rebuild_caches()
-                        if isinstance(ei, int) and 0 <= ei < len(getattr(model, 'edge_id_by_index', []) or []):
-                            eid = model.edge_id_by_index[ei]
-                        else:
-                            eid = None
-                    if isinstance(eid, str):
-                        if len(getattr(model, 'edge_index_by_id', {}) or {}) != len(getattr(model, 'edge_id_by_index', []) or []):
-                            model.rebuild_caches()
-                        ei_now = getattr(model, 'edge_index_by_id', {}).get(eid)
-                    else:
-                        ei_now = ei if isinstance(ei, int) else None
-                except Exception:
-                    ei_now = ei if isinstance(ei, int) else None
-                if node is not None and isinstance(ei_now, int) and 0 <= ei_now < len(edges) and end in ('from', 'to'):
-                    nid = node.get('id')
-                    try:
-                        if end == 'from':
-                            edges[ei_now]['from'] = nid
-                        else:
-                            edges[ei_now]['to'] = nid
-                        changed = True
-                    except Exception:
-                        changed = False
-                logging.getLogger("roguelike_editors.fsm.fsm_graph_panel.events").debug(
-                    "[GraphPanel][EDGE DRAG END] edge_idx=%s edge_id=%s end=%s world=(%.1f,%.1f) changed=%s",
-                    ei, eid, end, wx, wy, changed,
-                )
-                # Clear drag state
-                model.dragging_edge_index = None
-                model.dragging_edge_id = None
-                model.dragging_edge_end = None
-                model.dragging_edge_preview_x = None
-                model.dragging_edge_preview_y = None
-                model.dragging_edge_orig_from = None
-                model.dragging_edge_orig_to = None
-                model.hover_edge_handle_end = None
-                if changed:
-                    try:
-                        model.rebuild_caches()
-                    except Exception:
-                        pass
-                    try:
-                        controller._persist_sets_structural()
-                    except Exception:
-                        pass
-                    try:
-                        controller._persist_layout()
-                    except Exception:
-                        pass
-                return True
             if btn == 2 and getattr(model, 'dragging_pan', False):
                 logging.getLogger("roguelike_editors.fsm.fsm_graph_panel.events").debug(
                     "[GraphPanel][PAN END] mouse=%s local=(%d,%d) pan=(%s,%s)",
                     mouse_pos, int(local_x), int(local_y),
                     getattr(model, 'pan_x', 0.0), getattr(model, 'pan_y', 0.0),
                 )
-                model.dragging_pan = False
+                end_pan(model)
                 try:
                     controller._persist_layout()
                 except Exception:
@@ -358,17 +209,13 @@ class FsmGraphPanelEventHandler:
                 except TypeError:
                     buttons = pygame.mouse.get_pressed()
                 mid_down_now = bool(buttons[1]) if buttons and len(buttons) > 1 else False
-                left_down_now = bool(buttons[0]) if buttons and len(buttons) > 0 else False
             except Exception:
                 mid_down_now = False
-                left_down_now = False
 
             if mid_down_now and not getattr(model, 'dragging_pan', False) and inside:
                 if getattr(model, 'dragging_node_id', None) is not None:
                     model.dragging_node_id = None
-                model.dragging_pan = True
-                model.drag_last_local_x = int(local_x)
-                model.drag_last_local_y = int(local_y)
+                begin_pan(model, int(local_x), int(local_y))
                 logging.getLogger("roguelike_editors.fsm.fsm_graph_panel.events").debug(
                     "[GraphPanel][PAN START@MOTION] mouse=%s local=(%d,%d) pan=(%s,%s) zoom=%.3f",
                     mouse_pos, int(local_x), int(local_y),
@@ -377,181 +224,50 @@ class FsmGraphPanelEventHandler:
                 )
                 return True
 
-            if (
-                left_down_now
-                and getattr(model, 'dragging_node_id', None) is None
-                and getattr(model, 'dragging_edge_index', None) is None
-                and getattr(model, 'dragging_edge_id', None) is None
-                and not getattr(model, 'dragging_pan', False)
-                and getattr(model, 'active_graph_tool', 'select') == 'select'
-                and inside
-            ):
-                wx, wy = to_world(local_x, local_y)
-                node = pick_node(wx, wy)
-                if node is not None:
-                    model.selected_node_id = node.get('id')
-                    model.dragging_node_id = node.get('id')
-                    model.drag_offset_x = node.get('x', 0) - wx
-                    model.drag_offset_y = node.get('y', 0) - wy
-
-            # Edge handle drag move: update preview world coordinates
-            if getattr(model, 'dragging_edge_index', None) is not None or getattr(model, 'dragging_edge_id', None) is not None:
-                wx, wy = to_world(local_x, local_y)
-                model.dragging_edge_preview_x = float(wx)
-                model.dragging_edge_preview_y = float(wy)
-                return True
-
-            if getattr(model, 'dragging_node_id', None) and getattr(model, 'active_graph_tool', 'select') == 'select':
-                wx, wy = to_world(local_x, local_y)
-                nid = model.dragging_node_id
-                for n in getattr(model, 'nodes', []):
-                    if n.get('id') == nid:
-                        n['x'] = int(wx + model.drag_offset_x)
-                        n['y'] = int(wy + model.drag_offset_y)
-                        break
-                return True
             if getattr(model, 'dragging_pan', False):
-                dx = int(local_x) - int(getattr(model, 'drag_last_local_x', int(local_x)))
-                dy = int(local_y) - int(getattr(model, 'drag_last_local_y', int(local_y)))
                 before = (getattr(model, 'pan_x', 0.0), getattr(model, 'pan_y', 0.0))
-                model.pan_x = pan_x + dx
-                model.pan_y = pan_y + dy
+                dx, dy = update_pan(model, int(local_x), int(local_y))
                 logging.getLogger("roguelike_editors.fsm.fsm_graph_panel.events").debug(
                     "[GraphPanel][PAN MOVE] mouse=%s local=(%d,%d) dx=%d dy=%d pan %s -> (%s,%s)",
                     mouse_pos, int(local_x), int(local_y), dx, dy, before,
                     getattr(model, 'pan_x', 0.0), getattr(model, 'pan_y', 0.0),
                 )
-                model.drag_last_local_x = int(local_x)
-                model.drag_last_local_y = int(local_y)
                 return True
 
-            # Hover tracking
+            # Hover tracking via submodule
             try:
-                wx, wy = to_world(local_x, local_y)
-                node = pick_node(wx, wy)
-                model.hover_node_id = node.get('id') if node is not None else None
+                update_hover_state(controller, model, view, (int(local_x), int(local_y)))
             except Exception:
-                model.hover_node_id = None
-
-            try:
-                ex, ey = int(local_x), int(local_y)
-                hover_e = None
-                label_rects = getattr(view, 'edge_label_rects', {}) or {}
-                for ei, r in (label_rects.items() if isinstance(label_rects, dict) else []):
-                    try:
-                        if r.collidepoint(ex, ey):
-                            hover_e = ei
-                            break
-                    except Exception:
-                        continue
-                if hover_e is None:
-                    paths = getattr(view, 'edge_paths', {}) or {}
-                    best_e = None
-                    best_d = 1e9
-                    def _dist_pt_seg(px, py, ax, ay, bx, by):
-                        vx, vy = bx - ax, by - ay
-                        wx0, wy0 = px - ax, py - ay
-                        vv = vx*vx + vy*vy
-                        if vv <= 1e-6:
-                            dx, dy = px - ax, py - ay
-                            return math.hypot(dx, dy)
-                        t = max(0.0, min(1.0, (wx0*vx + wy0*vy) / vv))
-                        cx, cy = ax + t*vx, ay + t*vy
-                        return math.hypot(px - cx, py - cy)
-                    for ei, pts in (paths.items() if isinstance(paths, dict) else []):
-                        try:
-                            if not pts or len(pts) < 2:
-                                continue
-                            for i in range(len(pts)-1):
-                                ax, ay = pts[i]
-                                bx, by = pts[i+1]
-                                d = _dist_pt_seg(ex, ey, ax, ay, bx, by)
-                                if d < best_d:
-                                    best_d = d
-                                    best_e = ei
-                        except Exception:
-                            continue
-                    tol = 8
-                    hover_e = best_e if best_d <= tol else None
-                model.hover_edge_index = hover_e
-                try:
-                    if hover_e is not None:
-                        if len(getattr(model, 'edge_id_by_index', []) or []) != len(getattr(model, 'edges', []) or []):
-                            model.rebuild_caches()
-                        idx = int(hover_e)
-                        if 0 <= idx < len(model.edge_id_by_index):
-                            model.hover_edge_id = model.edge_id_by_index[idx]
-                        else:
-                            model.hover_edge_id = None
-                    else:
-                        model.hover_edge_id = None
-                except Exception:
-                    model.hover_edge_id = None
-                hover_end = None
-                if hover_e is not None:
-                    try:
-                        ends = (getattr(view, 'edge_endpoints_local', {}) or {}).get(int(hover_e))
-                        if isinstance(ends, dict):
-                            rad = 8
-                            rad2 = rad * rad
-                            for side in ('from', 'to'):
-                                p = ends.get(side)
-                                if not p:
-                                    continue
-                                dx = ex - int(p[0])
-                                dy = ey - int(p[1])
-                                if dx*dx + dy*dy <= rad2:
-                                    hover_end = side
-                                    break
-                    except Exception:
-                        hover_end = None
-                model.hover_edge_handle_end = hover_end
-            except Exception:
-                model.hover_edge_index = None
-                model.hover_edge_handle_end = None
+                pass
 
             return True
 
-        # Fallback: some environments emit wheel as buttons 4/5
-        if et == pygame.MOUSEBUTTONDOWN and btn in (4, 5):
-            y = 1 if btn == 4 else -1
-            factor = 1.1 ** y
-            logging.getLogger("roguelike_editors.fsm.fsm_graph_panel.events").debug(
-                "[GraphPanel][WHEEL BTN] handler handling btn=%s y=%s mouse=%s factor=%.3f", btn, y, mouse_pos, factor
-            )
-            if factor != 1.0:
-                old_z = max(0.05, zoom)
-                new_z = max(0.2, min(3.0, old_z * factor))
-                if abs(new_z - old_z) > 1e-6:
-                    wx, wy = to_world(local_x, local_y)
-                    model.zoom = new_z
-                    model.pan_x = local_x - wx * new_z
-                    model.pan_y = local_y - wy * new_z
-                    try:
-                        controller._persist_layout()
-                    except Exception:
-                        pass
-                return True
+        # Wheel and button 4/5 zoom are already handled above via navigation handler
 
-        if et == pygame.MOUSEWHEEL:
-            y = getattr(event, 'y', 0)
-            factor = 1.1 ** y
-            logging.getLogger("roguelike_editors.fsm.fsm_graph_panel.events").debug(
-                "[GraphPanel][WHEEL] handler handling y=%s mouse=%s factor=%.3f", y, mouse_pos, factor
-            )
-            if factor != 1.0:
-                old_z = max(0.05, zoom)
-                new_z = max(0.2, min(3.0, old_z * factor))
-                if abs(new_z - old_z) > 1e-6:
-                    wx, wy = to_world(local_x, local_y)
-                    model.zoom = new_z
-                    model.pan_x = local_x - wx * new_z
-                    model.pan_y = local_y - wy * new_z
+        # Double-click-to-edit labels
+        if et == pygame.MOUSEBUTTONDOWN and btn == 1 and inside:
+            try:
+                clicks = getattr(event, 'clicks', 0)
+            except Exception:
+                clicks = 0
+            if clicks and clicks >= 2:
+                # Prefer edge label if an edge is hovered
+                idx = getattr(model, 'hover_edge_index', None)
+                if idx is not None:
                     try:
-                        controller._persist_layout()
+                        begin_edge_text_edit(controller, model, view, int(idx))
+                        return True
                     except Exception:
                         pass
-                return True
+                # Otherwise, start node label editing if a node is under cursor
+                try:
+                    wx, wy = model_to_world(model, local_x, local_y)
+                    node = pick_node_world(model, float(wx), float(wy))
+                    if node is not None and node.get('id'):
+                        begin_text_edit(controller, model, view, str(node.get('id')))
+                        return True
+                except Exception:
+                    pass
 
         return False
 

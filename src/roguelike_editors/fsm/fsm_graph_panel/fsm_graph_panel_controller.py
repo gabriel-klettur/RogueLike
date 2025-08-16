@@ -1,6 +1,5 @@
 from __future__ import annotations
 from typing import Optional
-import logging
 
 from .fsm_graph_panel_model import FsmGraphPanelModel
 from .fsm_graph_panel_view import FsmGraphPanelView
@@ -18,7 +17,6 @@ from roguelike_editors.fsm.services.fsm_persistence import (
 from roguelike_editors.fsm.services.fsm_runtime_bridge import publish_reload
 from .fsm_graph_panel_events import FsmGraphPanelEventHandler
 
-LOGGER = logging.getLogger("roguelike_editors.fsm.fsm_graph_panel.controller")
 
 class FsmGraphPanelController:
     def __init__(self, model: Optional[FsmGraphPanelModel] = None, view: Optional[FsmGraphPanelView] = None) -> None:
