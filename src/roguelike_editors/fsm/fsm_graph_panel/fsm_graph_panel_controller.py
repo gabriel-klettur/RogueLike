@@ -21,7 +21,6 @@ from roguelike_ui.widgets.double_click_detector import DoubleClickDetector
 
 LOGGER = logging.getLogger("roguelike_editors.fsm.fsm_graph_panel.controller")
 
-
 class FsmGraphPanelController:
     def __init__(self, model: Optional[FsmGraphPanelModel] = None, view: Optional[FsmGraphPanelView] = None) -> None:
         self.model = model or FsmGraphPanelModel()

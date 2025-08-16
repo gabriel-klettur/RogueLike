@@ -1,8 +1,5 @@
 class BuildingsEditorModel:
     def __init__(self):
-
-        self.mode = None #! para edificios?????? buildings????? entities????? parece deprecado
-
         # Editor principal
         self.active = False
 
@@ -44,3 +41,7 @@ class BuildingsEditorModel:
         # Flags/estado de drag del panel
         self.picker_dragging_panel: bool = False
         self.picker_drag_offset: tuple[int, int] = (0, 0)
+
+        # --- NUEVO: Flag para indicar si el panel de colisiones está activo ---
+        # Usado para ocultar/deshabilitar herramientas visuales cuando se edita colisiones
+        self.colliders_mode: bool = False

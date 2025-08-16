@@ -56,6 +56,18 @@ class BuildingEditorController:
         world_x = mx / camera.zoom + camera.offset_x
         world_y = my / camera.zoom + camera.offset_y
 
+        # Si el panel de colisiones está activo, deshabilitar clics de herramientas
+        # excepto el toggle de alcance CG/CU
+        if getattr(self.editor, 'colliders_mode', False):
+            if button == 1:
+                ab = getattr(self.editor, 'active_building', None)
+                if ab is not None:
+                    scope_rect = self.collider_scope_tool.get_handle_rect(ab, camera)
+                    if scope_rect and scope_rect.collidepoint(mx, my):
+                        self.collider_scope_tool.toggle_scope(ab)
+                        return
+            return
+
 
         # 1) Barra split (clic izq o der indistinto)
         for b in reversed(buildings):
@@ -172,19 +184,6 @@ class BuildingEditorController:
             if rect.collidepoint(wx, wy):
                 result.append(b)
         return result
-
-    def _building_under_mouse(self, mouse_pos, camera, buildings):
-        mx, my = mouse_pos
-        wx = mx / camera.zoom + camera.offset_x
-        wy = my / camera.zoom + camera.offset_y
-        # buildings puede estar en self.state.entities.buildings o inyectarse, aquí usamos self.state.entities.buildings
-        for b in reversed(buildings):  # Reversed para priorizar el más arriba (por si se solapan)
-            x, y = b.x, b.y
-            w, h = b.image.get_size()
-            rect = pygame.Rect(x, y, w, h)
-            if rect.collidepoint(wx, wy):
-                return b
-        return None
 
     def toggle_editor(self):
         """Activa/desactiva los handles del Building Editor, sin tocar el picker."""
