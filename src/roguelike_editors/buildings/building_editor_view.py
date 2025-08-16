@@ -79,10 +79,12 @@ class BuildingEditorView:
             rect = pygame.Rect(x, y, w, h)
             pygame.draw.rect(screen, (0, 255, 255), rect, 4)
             pygame.draw.rect(screen, (255, 255, 255), rect, 1)
-            self.default_view.render_reset_handle(screen, b, camera)
-            self.split_view.render(screen, b, camera)
-            self.z_bottom_view.render(screen, b, camera)
-            self.z_top_view.render(screen, b, camera)
+            # Ocultar handles de herramientas en modo colisiones (colliders_mode)
+            if not getattr(self.editor, 'colliders_mode', False):
+                self.default_view.render_reset_handle(screen, b, camera)
+                self.split_view.render(screen, b, camera)
+                self.z_bottom_view.render(screen, b, camera)
+                self.z_top_view.render(screen, b, camera)
             # Render toggle CG/CU bottom-right
             try:
                 self.collider_scope_view.render(screen, b, camera)

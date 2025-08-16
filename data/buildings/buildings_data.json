@@ -1381,8 +1381,8 @@
     },
     {
         "zone": "Forest",
-        "rel_x": 374,
-        "rel_y": 572,
+        "rel_x": 385,
+        "rel_y": 515,
         "image_path": "assets/buildings\\vegetation\\tree_3.PNG",
         "solid": true,
         "scale": [
@@ -1395,7 +1395,7 @@
         ],
         "split_ratio": 0.685,
         "z_bottom": 3,
-        "z_top": 6,
+        "z_top": 9,
         "collider_scope": "CG",
         "z": 3
     },
@@ -1433,7 +1433,7 @@
             182,
             249
         ],
-        "split_ratio": 0.663,
+        "split_ratio": 0.655,
         "z_bottom": 1,
         "z_top": 5,
         "collider_scope": "CG",
@@ -1441,8 +1441,8 @@
     },
     {
         "zone": "Forest",
-        "rel_x": 306,
-        "rel_y": 325,
+        "rel_x": 276,
+        "rel_y": 404,
         "image_path": "assets/buildings\\vegetation\\tree_10.PNG",
         "solid": true,
         "scale": [
@@ -1455,7 +1455,7 @@
         ],
         "split_ratio": 0.698,
         "z_bottom": 3,
-        "z_top": 5,
+        "z_top": 7,
         "collider_scope": "CG",
         "z": 3
     },
@@ -1521,8 +1521,8 @@
     },
     {
         "zone": "Forest",
-        "rel_x": 1428,
-        "rel_y": 352,
+        "rel_x": 1413,
+        "rel_y": 396,
         "image_path": "assets/buildings\\vegetation\\tree_10.PNG",
         "solid": true,
         "scale": [
@@ -1534,10 +1534,10 @@
             302
         ],
         "split_ratio": 0.691,
-        "z_bottom": 3,
+        "z_bottom": 4,
         "z_top": 9,
         "collider_scope": "CG",
-        "z": 3
+        "z": 4
     },
     {
         "zone": "Forest",
@@ -1581,8 +1581,8 @@
     },
     {
         "zone": "Forest",
-        "rel_x": 1088,
-        "rel_y": 253,
+        "rel_x": 1091,
+        "rel_y": 241,
         "image_path": "assets/buildings\\vegetation\\tree_10.PNG",
         "solid": true,
         "scale": [
@@ -1593,11 +1593,149 @@
             277,
             354
         ],
-        "split_ratio": 0.684,
+        "split_ratio": 0.678,
         "z_bottom": 3,
         "z_top": 6,
-        "collider_scope": "CG",
-        "z": 3
+        "collider_scope": "CU",
+        "z": 3,
+        "collision_override": {
+            "width": 9,
+            "height": 12,
+            "collision": [
+                [
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    "."
+                ],
+                [
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    "."
+                ],
+                [
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    "."
+                ],
+                [
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    "."
+                ],
+                [
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    "."
+                ],
+                [
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    "."
+                ],
+                [
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    "."
+                ],
+                [
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    "."
+                ],
+                [
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    "."
+                ],
+                [
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    "."
+                ],
+                [
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    "."
+                ],
+                [
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    "."
+                ]
+            ]
+        }
     },
     {
         "zone": "Forest",
@@ -1621,8 +1759,8 @@
     },
     {
         "zone": "Forest",
-        "rel_x": 1254,
-        "rel_y": 345,
+        "rel_x": 1264,
+        "rel_y": 346,
         "image_path": "assets/buildings\\vegetation\\tree_1.PNG",
         "solid": true,
         "scale": [
@@ -2101,8 +2239,8 @@
     },
     {
         "zone": "Forest",
-        "rel_x": 1334,
-        "rel_y": 534,
+        "rel_x": 1291,
+        "rel_y": 513,
         "image_path": "assets/buildings\\forest_decoration\\natural\\raiz_expuesta_suave.png",
         "solid": true,
         "scale": [

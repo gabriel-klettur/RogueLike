@@ -146,13 +146,13 @@ class BuildingEditorEventHandler:
                     return
 
                 # D → reset (default) sobre hovered_building
-                if ev.key == pygame.K_d and self.editor.hovered_building:
+                if ev.key == pygame.K_d and not getattr(self.editor, 'colliders_mode', False) and self.editor.hovered_building:
                     self.controller.default_tool.apply_reset(self.editor.hovered_building)
                     logger.info("🔄 Reset (default) aplicado con D sobre hovered_building")
                     return
 
                 # R → iniciar resize sobre hovered_building (al presionar)
-                if ev.key == pygame.K_r and self.editor.hovered_building:
+                if ev.key == pygame.K_r and not getattr(self.editor, 'colliders_mode', False) and self.editor.hovered_building:
                     mx, my = pygame.mouse.get_pos()
                     self.controller._start_resize(self.editor.hovered_building, (mx, my))
                     logger.info("🔧 Resize iniciado con R sobre hovered_building")
@@ -177,12 +177,12 @@ class BuildingEditorEventHandler:
                     return
 
                 # N → colocar edificio aleatorio sin picker
-                if ev.key == pygame.K_n:
+                if ev.key == pygame.K_n and not getattr(self.editor, 'colliders_mode', False):
                     self.controller.placer_tool.place_building_at_mouse(entities.buildings)
                     return
 
                 # Supr → borrar edificio bajo el ratón
-                if ev.key == pygame.K_DELETE:
+                if ev.key == pygame.K_DELETE and not getattr(self.editor, 'colliders_mode', False):
                     self.controller.delete_tool.delete_building_at_mouse(entities)
 
             # --- Mouse en modo editor (handles y split) ---
