@@ -18,3 +18,11 @@ class SpawnerEditorModel:
     hovered_eid: int | None = None
     # Title submodel for consistent title bar rendering
     title_model: SpawnerTitleModel = field(default_factory=SpawnerTitleModel)
+    # Pending zone confirmation overlay data, or None
+    # {
+    #   'eid': int,
+    #   'orig_zone': str,
+    #   'proposed_zone': str,
+    #   'orig_local': tuple[int,int] | None,
+    # }
+    pending_zone_confirm: dict | None = None

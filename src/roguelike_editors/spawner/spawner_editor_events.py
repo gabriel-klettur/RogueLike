@@ -9,6 +9,7 @@ from roguelike_editors.spawner.services import (
     screen_to_tile,
     find_instance_in_json,
     persist_drop,
+    zone_for_global_tile,
 )
 
 
@@ -139,18 +140,48 @@ class SpawnerEditorEventHandler:
                         setattr(world.state, 'spawner_editor_hovered_eid', self.model.hovered_eid)
                 except Exception:
                     pass
-                # Persist new position to instances.json
+                # Decide zone and persist (or ask for confirmation if zone changed)
                 try:
                     if eid is not None:
+                        cfg = world.components['SpawnerConfig'][eid]
+                        tx, ty = cfg.anchor_tile
+                        proposed_zone = zone_for_global_tile(int(tx), int(ty)) or cfg.zone
+                        orig_zone = None
+                        orig_local = None
+                        if self._drag_start_entry:
+                            orig_zone = self._drag_start_entry.get('zone')
+                            if self._drag_start_entry.get('local_tile') is not None:
+                                try:
+                                    lx, ly = self._drag_start_entry['local_tile']
+                                    orig_local = (int(lx), int(ly))
+                                except Exception:
+                                    orig_local = None
+                        # If changed zone, require user confirmation
+                        if orig_zone and proposed_zone and proposed_zone != orig_zone:
+                            self.model.pending_zone_confirm = {
+                                'eid': eid,
+                                'orig_zone': orig_zone,
+                                'proposed_zone': proposed_zone,
+                                'orig_local': orig_local,
+                            }
+                            # Keep input suppressed until decision
+                            return True
+                        # Otherwise persist directly
                         persist_drop(world, eid, self._drag_start_entry)
+                        # Refresh instances list UI if visible
+                        try:
+                            self.controller.spawner_instances.refresh_from_disk()
+                        except Exception:
+                            pass
                 except Exception:
                     pass
-                # Re-enable gameplay input after drag ends
-                try:
-                    if hasattr(world, 'state'):
-                        setattr(world.state, 'spawner_input_suppressed', False)
-                except Exception:
-                    pass
+                # Re-enable gameplay input after drag ends if no pending confirm
+                if not self.model.pending_zone_confirm:
+                    try:
+                        if hasattr(world, 'state'):
+                            setattr(world.state, 'spawner_input_suppressed', False)
+                    except Exception:
+                        pass
                 return True
             # Stop camera panning if active
             if self.panning:
@@ -177,5 +208,62 @@ class SpawnerEditorEventHandler:
             except Exception:
                 pass
             return True
+
+        # While a zone confirmation is pending, capture Y/N or Enter/Esc
+        if event.type == pygame.KEYDOWN and self.model.pending_zone_confirm:
+            pending = self.model.pending_zone_confirm
+            key = event.key
+            # Confirm: Y or Return/Enter
+            if key in (pygame.K_y, pygame.K_RETURN, pygame.K_KP_ENTER):
+                try:
+                    eid = pending.get('eid')
+                    orig_zone = pending.get('orig_zone')
+                    proposed_zone = pending.get('proposed_zone')
+                    if eid is not None:
+                        # Persist under new zone, replacing original entry
+                        persist_drop(world, eid, self._drag_start_entry, override_zone=proposed_zone, orig_zone=orig_zone)
+                        # Update in-memory config zone for future moves
+                        try:
+                            cfg = world.components['SpawnerConfig'][eid]
+                            cfg.zone = proposed_zone
+                        except Exception:
+                            pass
+                        # Refresh instances list UI if visible
+                        try:
+                            self.controller.spawner_instances.refresh_from_disk()
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
+                self.model.pending_zone_confirm = None
+                # Re-enable gameplay input
+                try:
+                    if hasattr(world, 'state'):
+                        setattr(world.state, 'spawner_input_suppressed', False)
+                except Exception:
+                    pass
+                return True
+            # Cancel: N or Esc
+            if key in (pygame.K_n, pygame.K_ESCAPE):
+                try:
+                    eid = pending.get('eid')
+                    orig_zone = pending.get('orig_zone')
+                    orig_local = pending.get('orig_local')
+                    if eid is not None and orig_zone and orig_local:
+                        ox, oy = global_map_settings.zone_offsets.get(orig_zone, (0, 0))
+                        gx = int(ox + int(orig_local[0]))
+                        gy = int(oy + int(orig_local[1]))
+                        cfg = world.components['SpawnerConfig'][eid]
+                        cfg.anchor_tile = (gx, gy)
+                except Exception:
+                    pass
+                self.model.pending_zone_confirm = None
+                # Re-enable gameplay input
+                try:
+                    if hasattr(world, 'state'):
+                        setattr(world.state, 'spawner_input_suppressed', False)
+                except Exception:
+                    pass
+                return True
 
         return False

@@ -2,24 +2,29 @@ from __future__ import annotations
 
 from typing import Optional, List, Dict, Any
 
-from roguelike_editors.spawner.spawner_list.spawner_list_model import SpawnerListModel
-from roguelike_editors.spawner.spawner_list.spawner_list_view import SpawnerListView
-from roguelike_editors.spawner.spawner_list.spawner_list_events import SpawnerListEventHandler
+from .list_templates_model import ListTemplatesModel
+from .list_templates_view import ListTemplatesView
+from .list_templates_events import ListTemplatesEventHandler
 from roguelike_editors.spawner.services.persistence import load_spawners_json
 
 
 class SpawnerTemplatesListController:
     """List controller for spawner templates (spawners.json).
 
-    Reuses the same view and event handler as the instances list to keep style consistent.
+    Uses the common list panel components via local aliases.
     """
 
     def __init__(self,
-                 model: Optional[SpawnerListModel] = None,
-                 view: Optional[SpawnerListView] = None) -> None:
-        self.model = model or SpawnerListModel()
-        self.view = view or SpawnerListView()
-        self.events = SpawnerListEventHandler()
+                 model: Optional[ListTemplatesModel] = None,
+                 view: Optional[ListTemplatesView] = None) -> None:
+        self.model = model or ListTemplatesModel()
+        # Specific title for Templates list
+        try:
+            self.model.title = "Spawners Templates"
+        except Exception:
+            pass
+        self.view = view or ListTemplatesView()
+        self.events = ListTemplatesEventHandler()
         self._templates: List[Dict[str, Any]] = []
 
     def render(self, screen, *, anchor=None):
@@ -47,6 +52,17 @@ class SpawnerTemplatesListController:
         self.model.items = items
         if self.model.selected_index is not None and not (0 <= self.model.selected_index < len(items)):
             self.model.selected_index = None
+        # Clamp scroll window
+        visible_rows = int(getattr(self.model, 'visible_rows', 11) or 11)
+        max_off = max(0, len(items) - visible_rows)
+        off = int(getattr(self.model, 'scroll_offset', 0) or 0)
+        if off > max_off:
+            self.model.scroll_offset = max_off
+        if off < 0:
+            self.model.scroll_offset = 0
+        # Reset hover if invalid
+        if self.model.hovered_index is not None and not (0 <= self.model.hovered_index < len(items)):
+            self.model.hovered_index = None
 
     def get_selected_template(self) -> Optional[Dict[str, Any]]:
         idx = self.model.selected_index

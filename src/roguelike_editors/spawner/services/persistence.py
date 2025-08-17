@@ -28,6 +28,24 @@ def load_instances_json() -> List[Dict[str, Any]]:
         return []
 
 
+def zone_for_global_tile(tx: int, ty: int) -> Optional[str]:
+    """Return the zone name that contains the global tile (tx, ty), or None.
+
+    Uses `global_map_settings.zone_offsets` and zone_size.
+    """
+    try:
+        w, h = global_map_settings.zone_size
+        for name, (ox, oy) in global_map_settings.zone_offsets.items():
+            # Skip sentinel entries
+            if name in ('no zone', 'no-zone'):
+                continue
+            if ox <= tx < ox + w and oy <= ty < oy + h:
+                return name
+    except Exception:
+        pass
+    return None
+
+
 def load_spawners_json() -> List[Dict[str, Any]]:
     path = spawners_path()
     try:
@@ -65,10 +83,16 @@ def find_instance_in_json(template_id: str, zone: str, local_tile: Tuple[int, in
     return data, idx_found, overrides
 
 
-def persist_drop(world, eid: int, drag_start_entry: Optional[Dict[str, Any]]) -> None:
+def persist_drop(world,
+                 eid: int,
+                 drag_start_entry: Optional[Dict[str, Any]],
+                 *,
+                 override_zone: Optional[str] = None,
+                 orig_zone: Optional[str] = None) -> None:
     """Persist a moved spawner's anchor tile back to instances.json.
 
-    - Computes local tile with zone offset
+    - Computes local tile with zone offset (using override_zone if provided, else cfg.zone)
+    - Looks up original entry in orig_zone (if provided) or snapshot zone to replace in-place
     - Preserves overrides if present in snapshot or existing entry
     - Replaces existing entry or appends a new one
     """
@@ -76,7 +100,8 @@ def persist_drop(world, eid: int, drag_start_entry: Optional[Dict[str, Any]]) ->
     if 'SpawnerConfig' not in comps or eid not in comps['SpawnerConfig']:
         return
     cfg = comps['SpawnerConfig'][eid]
-    zone = cfg.zone
+    # Target zone to persist under
+    zone = override_zone or cfg.zone
     off_x, off_y = global_map_settings.zone_offsets.get(zone, (0, 0))
     tx, ty = cfg.anchor_tile
     new_local = (int(tx - off_x), int(ty - off_y))
@@ -87,7 +112,9 @@ def persist_drop(world, eid: int, drag_start_entry: Optional[Dict[str, Any]]) ->
     if drag_start_entry and drag_start_entry.get('local_tile') is not None:
         orig_local = tuple(drag_start_entry['local_tile'])
 
-    data, idx_found, _ = find_instance_in_json(tpl_id, zone, orig_local or new_local)
+    # Where to search the existing entry
+    lookup_zone = orig_zone or (drag_start_entry.get('zone') if drag_start_entry else None) or zone
+    data, idx_found, _ = find_instance_in_json(tpl_id, lookup_zone, orig_local or new_local)
     if idx_found is None:
         # Try by new location in case snapshot is missing
         _, idx_found, _ = find_instance_in_json(tpl_id, zone, new_local)
