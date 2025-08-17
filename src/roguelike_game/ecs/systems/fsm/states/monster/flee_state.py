@@ -23,7 +23,7 @@ class FleeState(State):
         # Salir de FleeState cuando salud completa: volver a patrulla
         hp_cmp = world.components['Health'][eid]
         if hp_cmp.current_hp >= hp_cmp.max_hp:
-            from roguelike_game.ecs.fsm.states.patrol_state import PatrolState
+            from roguelike_game.ecs.systems.fsm.states.patrol_state import PatrolState
             world.components['NPCState'][entity].fsm.change_state(PatrolState(), entity)
             return
         # Verificar muerte

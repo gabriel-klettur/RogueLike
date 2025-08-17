@@ -51,11 +51,21 @@ def create_patrol_components(px: int, py: int, monster_type: str, cfg: Dict[str,
         _load_caches_once()
     base = _SPRITE_SURFACES.get(monster_type, {})
     sprites: Dict[str, list] = {}
+    masks: Dict[str, list] = {}
     for d, surf in base.items():
         if isinstance(surf, pygame.Surface):
-            sprites[d] = [surf.copy()]
+            frame = surf.copy()
         elif surf is not None and hasattr(surf, "copy"):
-            sprites[d] = [surf.copy()]
+            frame = surf.copy()
+        else:
+            frame = None
+        if frame is not None:
+            sprites[d] = [frame]
+            try:
+                masks[d] = [pygame.mask.from_surface(frame)]
+            except Exception:
+                masks[d] = []
+
     if not sprites:
         ph = _make_placeholder()
         sprites = {"down": [ph]}
@@ -65,7 +75,8 @@ def create_patrol_components(px: int, py: int, monster_type: str, cfg: Dict[str,
             any_dir = next(iter(sprites.values()))[0]
             sprites["down"] = [any_dir]
     patrol = Patrol((px, py), sprites_by_direction=sprites)
+
     patrol.default_sprite = sprites["down"][0]
     movement = MovementSpeed(float(cfg["speed"]))
-    animator = Animator(animations=sprites, current_state="down")
+    animator = Animator(animations=sprites, current_state="down", masks=masks)
     return patrol, movement, animator

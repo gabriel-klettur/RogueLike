@@ -2,7 +2,7 @@ import time
 import pygame
 import importlib
 from roguelike_game.factories.player.loader import (
-    load_and_scale_sprites, extract_initial_frame, build_animator_map
+    load_and_scale_sprites, extract_initial_frame, build_animator_map, build_masks_map
 )
 import roguelike_game.factories.player.config as player_cfg
 from roguelike_game.ecs.components.rendering.sprite import Sprite
@@ -51,7 +51,8 @@ class PlayerManager:
         comps["Sprite"][eid] = Sprite(img)
         comps["Animator"][eid] = Animator(
             animations=build_animator_map(sprites),
-            current_state=player_cfg.INITIAL_ANIMATION_STATE
+            current_state=player_cfg.INITIAL_ANIMATION_STATE,
+            masks=build_masks_map(sprites),
         )
         comps["AnimationTimer"][eid] = AnimationTimer(
             last_time=time.time(),

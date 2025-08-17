@@ -5,15 +5,15 @@
     "slots": [
       {
         "item": "gold",
-        "quantity": 842
+        "quantity": 900
       },
       {
         "item": "wood",
-        "quantity": 35
+        "quantity": 37
       },
       {
         "item": "bucket",
-        "quantity": 28
+        "quantity": 30
       },
       {
         "item": "iron_sword",
