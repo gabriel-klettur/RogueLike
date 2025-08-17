@@ -91,7 +91,7 @@ class MapLoadDropsSystem:
 
             eid = world.create_entity()
             world.components['PhysicalItemComponent'][eid] = PhysicalItemComponent(
-                drop_id, item_id, quantity, zone_id
+                drop_id, item_id, quantity, zone_id, created_at=data.get('created_at')
             )
             world.components['Position'][eid] = pos
             world.components['CollectibleComponent'][eid] = CollectibleComponent()

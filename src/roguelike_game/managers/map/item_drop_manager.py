@@ -62,6 +62,13 @@ class ItemDropManager:
             entry['position'] = coords
         else:
             raise ValueError("Debe especificar 'tile' o 'position'")
+        # Registrar tiempo de creación (epoch seconds) para soportar auto-despawn
+        try:
+            import time
+            entry['created_at'] = time.time()
+        except Exception:
+            # En caso de fallo inusual, omitir timestamp (el sistema lo inicializará al spawn)
+            pass
         self._data[drop_id] = entry
         self._persist()
 
