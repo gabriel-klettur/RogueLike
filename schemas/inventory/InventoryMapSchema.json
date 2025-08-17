@@ -29,6 +29,7 @@
         "required": ["x", "y"],
         "additionalProperties": false
       },
+      "created_at": { "type": "number", "description": "Timestamp UNIX (segundos) de creación del drop" },
       "schema_version": { "type": "string", "description": "Versión del esquema JSON" }
     },
     "required": ["item_id", "quantity", "zone_id"],

@@ -1,6 +1,5 @@
 from roguelike_game.ecs.systems.fsm.state import State
 from roguelike_engine.config.config_tiles import TILE_SIZE
-from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
 from roguelike_game.ecs.components.transform.velocity import Velocity
 import time
 
@@ -23,11 +22,13 @@ class FleeState(State):
         # Salir de FleeState cuando salud completa: volver a patrulla
         hp_cmp = world.components['Health'][eid]
         if hp_cmp.current_hp >= hp_cmp.max_hp:
-            from roguelike_game.ecs.systems.fsm.states.patrol_state import PatrolState
+            from roguelike_game.ecs.systems.fsm.states.monster.patrol_state import PatrolState
             world.components['NPCState'][entity].fsm.change_state(PatrolState(), entity)
             return
         # Verificar muerte
         if hp_cmp.current_hp <= 0:
+            # Import local para evitar importación circular con DeathState
+            from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
             world.components['NPCState'][entity].fsm.change_state(DeathState(), entity)
             return
         pos = world.components['Position'][eid]
@@ -49,4 +50,4 @@ class FleeState(State):
         # Resetear velocidad al salir de FleeState
         eid = entity.id
         world = entity.world
-        world.components['Velocity'][eid] = Velocity(0, 0)
+        world.components['Velocity'][eid] = Velocity(0, 0)

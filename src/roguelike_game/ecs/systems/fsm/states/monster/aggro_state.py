@@ -1,7 +1,5 @@
 from roguelike_game.ecs.systems.fsm.state import State
-from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
 from roguelike_engine.config.config_tiles import TILE_SIZE
-from roguelike_game.ecs.systems.fsm.states.monster.chase_state import ChaseState
 
 class AggroState(State):
     """
@@ -19,6 +17,8 @@ class AggroState(State):
         # Verificar muerte
         hp_cmp = world.components['Health'][entity]
         if hp_cmp.current_hp <= 0:
+            # Import local para evitar importación circular con DeathState
+            from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
             world.components['NPCState'][entity].fsm.change_state(DeathState(), entity)
             return
         # La persecución se maneja directamente en ChaseState
@@ -41,9 +41,10 @@ class AggroState(State):
                 world.components['NPCState'][entity].fsm.change_state(AttackState(), entity)
                 return
         # Si no ataca ni huye, continuar persiguiendo                
+        from roguelike_game.ecs.systems.fsm.states.monster.chase_state import ChaseState
         world.components['NPCState'][entity].fsm.change_state(ChaseState(), entity)
         return
 
     def exit(self, entity):
         # Limpiar animaciones de agresión
-        pass
+        pass

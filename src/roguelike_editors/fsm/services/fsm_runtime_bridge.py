@@ -15,7 +15,6 @@ from .fsm_persistence import (
     default_animation_map_path,
     load_animation_map,
 )
-from .fsm_registry import get_state_class
 from roguelike_game.ecs.systems.fsm.fsm import FiniteStateMachine
 
 import logging
@@ -89,6 +88,8 @@ def build_fsm_from_set(set_def: Dict[str, Any]) -> Tuple[FiniteStateMachine, str
     if not initial_def:
         raise ValueError(f"FSM set '{set_def.get('id')}' missing initial state '{initial}'")
     class_name = initial_def.get("class")
+    # Lazy import to avoid circular import during module initialization
+    from .fsm_registry import get_state_class
     cls = get_state_class(class_name) if class_name else None
     if cls is None:
         raise ValueError(f"FSM state class not found: {class_name}")

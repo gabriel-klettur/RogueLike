@@ -2,6 +2,8 @@ from __future__ import annotations
 from typing import Dict, Type, Optional
 
 from roguelike_game.ecs.systems.fsm.state import State
+import logging
+logger = logging.getLogger(__name__)
 
 _STATE_REGISTRY: Dict[str, Type[State]] = {}
 
@@ -14,9 +16,9 @@ def _try_register(qual_name: str, cls_name: str, key: Optional[str] = None) -> N
         cls = getattr(module, cls_name, None)
         if cls is not None:
             _STATE_REGISTRY[key] = cls  # type: ignore[assignment]
-    except Exception:
+    except Exception as ex:
         # Optional states may not exist yet during early phases
-        pass
+        logger.warning("[FSMRegistry] failed to import %s.%s: %s", qual_name, cls_name, ex)
 
 
 # Core/common

@@ -1,6 +1,5 @@
 import math
 from roguelike_game.ecs.systems.fsm.state import State
-from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
 from roguelike_game.ecs.components.transform.velocity import Velocity
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.ecs.systems.fsm.states.monster.aggro_state import AggroState
@@ -23,6 +22,8 @@ class PatrolState(State):
         # Verificar muerte
         hp_cmp = world.components['Health'][eid]
         if hp_cmp.current_hp <= 0:
+            # Import local para evitar importación circular con DeathState
+            from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
             world.components['NPCState'][eid].fsm.change_state(DeathState(), entity)
             return
         # Asegurar componentes requeridos para patrulla

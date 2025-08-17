@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 from roguelike_engine.log_config import init_logging
 # Initialize logging: console and rotating file handler
-init_logging(level="DEBUG", logfile="logs/roguelike.log")
+init_logging(level="INFO", logfile="logs/roguelike.log")
 
 import logging
 from roguelike_game.main import main

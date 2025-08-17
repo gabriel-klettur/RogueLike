@@ -1,5 +1,4 @@
 from roguelike_game.ecs.systems.fsm.state import State
-from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
 from roguelike_game.ecs.components.ai.chase_target import ChaseTarget
 from roguelike_game.ecs.components.transform.velocity import Velocity
 from roguelike_game.ecs.components.combat.npc_attack_cooldown import NPCAttackCooldown
@@ -57,6 +56,8 @@ class AttackState(State):
         # Verificar muerte
         hp_cmp = world.components['Health'][eid]
         if hp_cmp.current_hp <= 0:
+            # Import local para evitar importación circular con DeathState
+            from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
             world.components['NPCState'][eid].fsm.change_state(DeathState(), entity)
             return
         # Obtener posiciones del NPC y jugador

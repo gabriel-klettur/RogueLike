@@ -1,9 +1,7 @@
 import math
 from roguelike_game.ecs.systems.fsm.state import State
-from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
 from roguelike_game.ecs.components.transform.velocity import Velocity
 from roguelike_engine.config.config_tiles import TILE_SIZE
-from roguelike_game.ecs.systems.fsm.states.attack_state import AttackState
 from roguelike_game.ecs.systems.fsm.anim_bridge import set_mapped_anim, primary_direction_from_vector
 
 
@@ -23,6 +21,8 @@ class ChaseState(State):
         # Verificar muerte
         hp_cmp = world.components['Health'][eid]
         if hp_cmp.current_hp <= 0:
+            # Import local para evitar importación circular con DeathState
+            from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
             world.components['NPCState'][entity].fsm.change_state(DeathState(), entity)
             return
         pos = world.components['Position'][entity]
@@ -42,6 +42,8 @@ class ChaseState(State):
         dx = world.player_position.x - world.components['Position'][entity].x
         dy = world.player_position.y - world.components['Position'][entity].y
         if dx*dx + dy*dy <= melee_dist_sq:            
+            # Import local para evitar importación circular con AttackState
+            from roguelike_game.ecs.systems.fsm.states.attack_state import AttackState
             world.components['NPCState'][eid].fsm.change_state(AttackState(), entity)
             return
         # Si jugador sale de rango de aggro, volver a Idle
