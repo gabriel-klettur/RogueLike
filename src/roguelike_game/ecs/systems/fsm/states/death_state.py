@@ -1,6 +1,9 @@
 from roguelike_game.ecs.systems.fsm.state import State
 from roguelike_game.ecs.components.combat.death_timer import DeathTimer
 from roguelike_game.ecs.components.rendering.grayscale_component import GrayscaleComponent
+from roguelike_game.ecs.components.transform.z_layer import ZLayer
+from roguelike_engine.config.config_z_layer import Z_LAYERS
+
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.config.players_config import PLAYER_STATS
@@ -20,6 +23,7 @@ class DeathState(State):
         """Registra temporizador."""
         world = entity.world
         eid = entity.id
+
         logger.debug(f"[DeathState.enter] eid={eid}, is_player={eid in world.components.get('PlayerTagComponent', {})}")
         # Determinar duración del temporizador de muerte
         duration = None
@@ -47,6 +51,8 @@ class DeathState(State):
             # Deshabilitar animación para no sobreescribir el sprite de muerte
             world.components.get('Animator', {}).pop(eid, None)
             world.components.get('AnimationTimer', {}).pop(eid, None)
+        # Bajar la capa Z del cadáver para que los drops puedan renderizar por encima sin tapar a vivos
+        world.components.setdefault('ZLayer', {})[eid] = ZLayer(Z_LAYERS.get('low_object', 2))
 
 
     def execute(self, entity, dt):
@@ -92,6 +98,8 @@ class DeathState(State):
                     hp = world.components.get('Health', {}).get(nid)
                     if hp:
                         hp.current_hp = hp.max_hp
+                    # Restaurar ZLayer del jugador
+                    comps.setdefault('ZLayer', {})[nid] = ZLayer(Z_LAYERS.get('player', 4))
                     # Cambiar FSM a IdleState
                     npc_state = comps.get('NPCState', {}).get(nid)
                     if npc_state:
