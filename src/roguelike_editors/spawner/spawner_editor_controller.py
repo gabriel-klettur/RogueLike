@@ -9,7 +9,7 @@ from roguelike_editors.spawner.spawner_editor_view import SpawnerEditorView
 from roguelike_editors.spawner.spawner_title.spawner_title_controller import SpawnerTitleController
 from roguelike_editors.spawner.spawner_toolbar.spawner_toolbar_controller import SpawnerToolbarController
 from roguelike_editors.spawner.spawner_manager.spawner_manager_controller import SpawnerManagerController
-from roguelike_editors.spawner.spawner_list.spawner_list_controller import SpawnerListController
+from roguelike_editors.spawner.spawner_list_instances.spawner_list_instances_controller import SpawnerListInstancesController
 
 
 class SpawnerEditorController:
@@ -30,7 +30,7 @@ class SpawnerEditorController:
         self.spawner_toolbar = SpawnerToolbarController(self)
         # Spawner lists:
         # - Instances list (data/spawners/instances.json)
-        self.spawner_instances = SpawnerListController()
+        self.spawner_instances = SpawnerListInstancesController()
         # - Manager (templates list, data/spawners/spawners.json)
         self.spawner_manager = SpawnerManagerController()
         self._instances_visible_last: bool = False

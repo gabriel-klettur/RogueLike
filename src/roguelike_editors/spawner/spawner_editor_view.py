@@ -74,3 +74,46 @@ class SpawnerEditorView:
                 screen.blit(text, (10, base_y))
         except Exception:
             pass
+
+        # 5) Zone change confirmation overlay
+        try:
+            pending = getattr(c.model, 'pending_zone_confirm', None)
+            if pending:
+                # Full-screen translucent dark backdrop
+                overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+                overlay.fill((0, 0, 0, 160))
+                screen.blit(overlay, (0, 0))
+
+                # Compose message lines
+                orig_zone = str(pending.get('orig_zone'))
+                prop_zone = str(pending.get('proposed_zone'))
+                lines = [
+                    f"Move spawner to zone '{prop_zone}'?",
+                    f"Original zone: '{orig_zone}'",
+                    "Press Y/Enter to confirm, N/Esc to cancel",
+                ]
+                # Draw centered panel
+                font = getattr(c, 'font', None)
+                if not font:
+                    return
+                max_w = 0
+                rendered = []
+                for ln in lines:
+                    surf = font.render(ln, True, (255, 255, 255))
+                    rendered.append(surf)
+                    max_w = max(max_w, surf.get_width())
+                pad = 14
+                line_h = rendered[0].get_height()
+                total_h = line_h * len(rendered) + pad * 2
+                total_w = max_w + pad * 2
+                vw, vh = screen.get_size()
+                rect = pygame.Rect((vw - total_w) // 2, (vh - total_h) // 2, total_w, total_h)
+                pygame.draw.rect(screen, (20, 20, 20), rect)
+                pygame.draw.rect(screen, (200, 200, 200), rect, 2)
+                y = rect.top + pad
+                for surf in rendered:
+                    x = rect.left + (rect.width - surf.get_width()) // 2
+                    screen.blit(surf, (x, y))
+                    y += line_h
+        except Exception:
+            pass

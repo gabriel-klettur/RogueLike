@@ -1,1 +1,13 @@
-{}
+{
+  "59c36b4d-15d3-49d1-ab46-2a514dc8552c": {
+    "item_id": "wood",
+    "quantity": 1,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "position": {
+      "x": 872.1904442847004,
+      "y": 1995.6570766340453
+    },
+    "created_at": 1755462013.1867106
+  }
+}

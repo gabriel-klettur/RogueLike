@@ -1,10 +1,10 @@
 [
   {
     "template_id": "default_barbol_periodic",
-    "zone": "lobby",
+    "zone": "Forest",
     "tile": [
-      -19,
-      15
+      29,
+      14
     ],
     "overrides": {
       "policy.cooldown_s": 5.0,

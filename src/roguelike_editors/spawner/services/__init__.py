@@ -6,4 +6,5 @@ from .persistence import (
     write_instances_json,
     find_instance_in_json,
     persist_drop,
+    zone_for_global_tile,
 )

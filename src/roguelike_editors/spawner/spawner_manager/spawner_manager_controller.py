@@ -5,7 +5,10 @@ from typing import Optional
 from .spawner_manager_model import SpawnerManagerModel
 from .spawner_manager_view import SpawnerManagerView
 from .spawner_manager_events import SpawnerManagerEventHandler
-from .spawner_templates_list_controller import SpawnerTemplatesListController
+from .list_templates.list_templates_controller import SpawnerTemplatesListController
+from roguelike_editors.spawner.spawner_properties.spawners_manager_controller import (
+    SpawnersManagerController as SpawnerPropertiesController,
+)
 
 
 class SpawnerManagerController:
@@ -17,6 +20,8 @@ class SpawnerManagerController:
         self.events = SpawnerManagerEventHandler()
         # Child panels: list of templates from data/spawners/spawners.json
         self.list_controller = SpawnerTemplatesListController()
+        # Properties panel (shows details of selected template)
+        self.props_controller = SpawnerPropertiesController()
         # Track first-time activation to refresh data
         self._was_visible = False
 
@@ -25,6 +30,11 @@ class SpawnerManagerController:
             # Became visible -> refresh list from disk
             try:
                 self.list_controller.refresh_from_disk()
+            except Exception:
+                pass
+            # Sync selection to properties on show
+            try:
+                self._sync_selection_to_props()
             except Exception:
                 pass
         self.model.visible = visible
@@ -38,6 +48,18 @@ class SpawnerManagerController:
         if not self.model.visible:
             return False
         return self.events.handle_event(self, event)
+
+    # --- Internal -----------------------------------------------------------
+    def _sync_selection_to_props(self) -> None:
+        tpl = None
+        try:
+            tpl = self.list_controller.get_selected_template()
+        except Exception:
+            tpl = None
+        try:
+            self.props_controller.set_template(tpl)
+        except Exception:
+            pass
 
 
 __all__ = ["SpawnerManagerController"]
