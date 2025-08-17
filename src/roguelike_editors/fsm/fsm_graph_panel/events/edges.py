@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, Tuple
 from ..services.hit_test import pick_node_world
 from ..model import to_world
+from ..services import persist_layout, persist_sets_structural
 
 
 def handle_edge_drag_event(controller: Any, model: Any, view: Any, event: Any) -> bool:
@@ -123,11 +124,11 @@ def handle_edge_drag_event(controller: Any, model: Any, view: Any, event: Any) -
             except Exception:
                 pass
             try:
-                controller._persist_sets_structural()
+                persist_sets_structural(model)
             except Exception:
                 pass
             try:
-                controller._persist_layout()
+                persist_layout(model)
             except Exception:
                 pass
         return True

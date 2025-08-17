@@ -1,5 +1,6 @@
 from __future__ import annotations
 import logging
+from ...services import persist_layout, persist_sets_structural
 
 LOGGER = logging.getLogger("roguelike_editors.fsm.fsm_graph_panel.tools.disconnect")
 
@@ -72,11 +73,11 @@ class DisconnectEventHandler:
             pass
         if removed > 0:
             try:
-                controller._persist_sets_structural()
+                persist_sets_structural(model)
             except Exception:
                 pass
             try:
-                controller._persist_layout()
+                persist_layout(model)
             except Exception:
                 pass
             LOGGER.debug("[Disconnect] removed %d edge(s) %s -> %s", removed, src, nid)

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any, Optional
+from ..services import persist_layout, persist_sets_structural
 
 
 def begin_text_edit(controller: Any, model: Any, view: Any, node_id: str) -> None:
@@ -106,11 +107,11 @@ def handle_text_input_event(controller: Any, model: Any, view: Any, event: Any) 
             model.editing_edge_id = None
             model.editing_text = None
             try:
-                controller._persist_sets_structural()
+                persist_sets_structural(model)
             except Exception:
                 pass
             try:
-                controller._persist_layout()
+                persist_layout(model)
             except Exception:
                 pass
         return True
@@ -143,11 +144,11 @@ def handle_text_input_event(controller: Any, model: Any, view: Any, event: Any) 
             model.editing_edge_id = None
             model.editing_text = None
             try:
-                controller._persist_sets_structural()
+                persist_sets_structural(model)
             except Exception:
                 pass
             try:
-                controller._persist_layout()
+                persist_layout(model)
             except Exception:
                 pass
             return True

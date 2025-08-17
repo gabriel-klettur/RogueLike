@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any
+from ..services import apply_zoom_at_point
 
 
 def handle_navigation_event(controller: Any, model: Any, view: Any, event: Any) -> bool:
@@ -44,22 +45,6 @@ def handle_navigation_event(controller: Any, model: Any, view: Any, event: Any) 
         return False
 
     factor = (1.1) ** y
-    if abs(factor - 1.0) < 1e-9:
-        return False
-
-    old_z = max(0.05, float(getattr(model, 'zoom', 1.0)))
-    new_z = max(0.2, min(3.0, old_z * factor))
-    if abs(new_z - old_z) < 1e-6:
-        return False
-
-    # Keep world point under cursor stable: wx = (lx - pan_x)/z
-    pan_x = float(getattr(model, 'pan_x', 0.0))
-    pan_y = float(getattr(model, 'pan_y', 0.0))
-    wx = (float(local_x) - pan_x) / old_z
-    wy = (float(local_y) - pan_y) / old_z
-
-    model.zoom = new_z
-    model.pan_x = float(local_x) - wx * new_z
-    model.pan_y = float(local_y) - wy * new_z
-
-    return True
+    if apply_zoom_at_point(model, float(local_x), float(local_y), factor):
+        return True
+    return False

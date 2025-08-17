@@ -1,5 +1,6 @@
 from __future__ import annotations
 import logging
+from ...services import persist_layout, persist_sets_structural
 
 LOGGER = logging.getLogger("roguelike_editors.fsm.fsm_graph_panel.tools.connect")
 
@@ -68,11 +69,11 @@ class ConnectEventHandler:
         except Exception:
             pass
         try:
-            controller._persist_sets_structural()
+            persist_sets_structural(model)
         except Exception:
             pass
         try:
-            controller._persist_layout()
+            persist_layout(model)
         except Exception:
             pass
         model.connect_source_node_id = None
