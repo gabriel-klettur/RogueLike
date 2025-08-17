@@ -115,10 +115,14 @@ class FsmGraphPanelEventHandler:
         # Route navigation (pan/zoom) and selection via submodules
         try:
             if handle_navigation_event(controller, model, view, event):
-                # Persist viewport at the end of pan or after zoom; rely on caller for zoom persistence elsewhere
+                # Persist viewport after zoom (wheel or 4/5) and at the end of pan (MMB up)
                 try:
                     import pygame  # type: ignore
-                    if getattr(event, 'type', None) == pygame.MOUSEBUTTONUP and getattr(event, 'button', None) == 2:
+                    et = getattr(event, 'type', None)
+                    btn = getattr(event, 'button', None)
+                    if et == pygame.MOUSEBUTTONUP and btn == 2:
+                        persist_layout(model)
+                    elif et == pygame.MOUSEWHEEL or (et == pygame.MOUSEBUTTONDOWN and btn in (4, 5)):
                         persist_layout(model)
                 except Exception:
                     pass
