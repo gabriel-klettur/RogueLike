@@ -142,7 +142,9 @@ class SpellCollisionDebugSystem:
             sx, sy = camera.apply((pos.x, pos.y))
             pygame.draw.circle(screen, (255, 80, 80), (int(sx), int(sy)), 3)
             self._draw_cross(screen, sx, sy, (255, 255, 0))
-            # Entity collider highlight if colliding now (iterate all, prefer mask over rect)
+            # Entity collider highlight if colliding now
+            # If target has any MaskCollider, ONLY test/draw mask collisions (no rect fallback).
+            # If target has no mask, fallback to rects.
             for tid in world.get_entities_with('Position', 'MultiCollider', 'Health'):
                 if tid == fid or tid == getattr(fcmp, 'caster', None):
                     continue
@@ -153,8 +155,12 @@ class SpellCollisionDebugSystem:
                 if not (tpos and multi):
                     continue
                 hit_drawn = False
-                for collider in multi.colliders.values():
-                    if isinstance(collider, MaskCollider):
+                has_mask = any(isinstance(c, MaskCollider) for c in multi.colliders.values())
+                if has_mask:
+                    # Only test mask colliders
+                    for collider in multi.colliders.values():
+                        if not isinstance(collider, MaskCollider):
+                            continue
                         bx = tpos.x + collider.offset_x
                         by = tpos.y + collider.offset_y
                         lx = int(pos.x - bx)
@@ -178,7 +184,11 @@ class SpellCollisionDebugSystem:
                             pygame.draw.circle(screen, (255, 0, 255), (int(bsx), int(bsy)), 2)
                             hit_drawn = True
                             break
-                    else:
+                else:
+                    # No mask colliders: fallback to rects
+                    for collider in multi.colliders.values():
+                        if isinstance(collider, MaskCollider):
+                            continue
                         rect_w = build_collider_rect(tpos.x, tpos.y, collider)
                         if rect_w.collidepoint(pos.x, pos.y):
                             rsx, rsy = camera.apply((rect_w.x, rect_w.y))

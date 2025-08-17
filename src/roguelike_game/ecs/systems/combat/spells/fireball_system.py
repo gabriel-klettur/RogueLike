@@ -41,7 +41,7 @@ class FireballSystem:
             if comp.age >= comp.lifespan:
                 world.remove_entity(eid)
                 continue
-            # Colisión con NPCs (prefer MaskCollider pixel test over rect)
+            # Colisión con NPCs (usar MaskCollider pixel-perfect siempre que exista)
             for target in world.get_entities_with('Position', 'MultiCollider', 'Health'):
                 # Saltar self, caster y cadáveres con DeathTimer
                 if target == eid or target == comp.caster:
@@ -53,33 +53,38 @@ class FireballSystem:
                 hit = False
                 hit_pos = None
                 hit_shape = None
-                # Test all colliders, mask first
-                # Try mask colliders
-                for col in multi.colliders.values():
-                    if isinstance(col, MaskCollider):
-                        bx = tpos.x + col.offset_x
-                        by = tpos.y + col.offset_y
-                        lx = int(pos.x - bx)
-                        ly = int(pos.y - by)
-                        mw, mh = col.mask.get_size()
-                        if 0 <= lx < mw and 0 <= ly < mh and col.mask.get_at((lx, ly)):
-                            hit = True
-                            hit_pos = (float(pos.x), float(pos.y))
-                            hit_shape = 'mask'
-                            break
-                # Fallback to rects
-                if not hit:
+                # Determinar si el target tiene al menos un MaskCollider
+                has_mask = any(isinstance(c, MaskCollider) for c in multi.colliders.values())
+                # 1) Intentar con máscaras (pixel-perfect) si existen
+                if has_mask:
+                    for col in multi.colliders.values():
+                        if isinstance(col, MaskCollider):
+                            bx = tpos.x + col.offset_x
+                            by = tpos.y + col.offset_y
+                            lx = int(pos.x - bx)
+                            ly = int(pos.y - by)
+                            mw, mh = col.mask.get_size()
+                            if 0 <= lx < mw and 0 <= ly < mh and col.mask.get_at((lx, ly)):
+                                hit = True
+                                hit_pos = (float(pos.x), float(pos.y))
+                                hit_shape = 'mask'
+                                break
+                # 2) Solo si NO hay máscaras, usar fallback a rectángulos
+                if not hit and not has_mask:
                     for col in multi.colliders.values():
                         if not isinstance(col, MaskCollider):
-                            rect = pygame.Rect(tpos.x + col.offset_x,
-                                               tpos.y + col.offset_y,
-                                               getattr(col, 'width', 0),
-                                               getattr(col, 'height', 0))
+                            rect = pygame.Rect(
+                                tpos.x + col.offset_x,
+                                tpos.y + col.offset_y,
+                                getattr(col, 'width', 0),
+                                getattr(col, 'height', 0)
+                            )
                             if rect.collidepoint(pos.x, pos.y):
                                 hit = True
                                 hit_pos = (float(pos.x), float(pos.y))
                                 hit_shape = 'rect'
                                 break
+
                 if hit:
                     hp = world.components['Health'][target]
                     hp.current_hp = max(0, hp.current_hp - comp.damage)
