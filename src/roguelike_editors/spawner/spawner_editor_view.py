@@ -20,11 +20,57 @@ class SpawnerEditorView:
             title_rect = c.title_controller.render(screen)
         except Exception:
             title_rect = None
-        # 2) Hint overlay (only if editor font is available); place below title
+        # 2) Spawner toolbar just below title
+        tb_rect = None
+        try:
+            if hasattr(c, 'spawner_toolbar') and c.spawner_toolbar:
+                if title_rect is not None:
+                    anchor = (title_rect.left, title_rect.bottom + 8)
+                else:
+                    anchor = (20, 60)
+                c.spawner_toolbar.render(screen, anchor=anchor)
+                tb_rect = getattr(getattr(c.spawner_toolbar, 'view', None), 'last_rect', None)
+        except Exception:
+            pass
+        # 3) Spawner Manager (Templates list) to the RIGHT of toolbar when active
+        mgr_rect = None
+        try:
+            if hasattr(c, 'spawner_manager') and getattr(getattr(c.spawner_manager, 'model', None), 'visible', False):
+                if tb_rect is not None:
+                    # Right of toolbar, aligned to its top
+                    anchor = (tb_rect.right + 8, tb_rect.top)
+                else:
+                    # Fallback: place below title if toolbar rect missing
+                    base_x = title_rect.left if title_rect else 20
+                    anchor = (base_x, (title_rect.bottom + 8) if title_rect else 90)
+                mgr_rect = c.spawner_manager.render(screen, anchor=anchor)
+        except Exception:
+            pass
+        # 3b) Spawner Instances list (instances.json) when active, same placement
+        inst_rect = None
+        try:
+            if hasattr(c, 'spawner_instances') and getattr(getattr(c.spawner_instances, 'model', None), 'visible', True):
+                # Only render when not showing manager to avoid overlap
+                if not getattr(getattr(c.spawner_manager, 'model', None), 'visible', False):
+                    if tb_rect is not None:
+                        anchor = (tb_rect.right + 8, tb_rect.top)
+                    else:
+                        base_x = title_rect.left if title_rect else 20
+                        anchor = (base_x, (title_rect.bottom + 8) if title_rect else 90)
+                    inst_rect = c.spawner_instances.render(screen, anchor=anchor)
+        except Exception:
+            pass
+        # 4) Hint overlay (only if editor font is available); place below title/toolbar/manager
         try:
             if c.font:
-                hint_y = (title_rect.bottom + 6) if title_rect else 10
+                base_y = (title_rect.bottom + 6) if title_rect else 10
+                if tb_rect is not None:
+                    base_y = max(base_y, tb_rect.bottom + 6)
+                if mgr_rect is not None:
+                    base_y = max(base_y, mgr_rect.bottom + 6)
+                if inst_rect is not None:
+                    base_y = max(base_y, inst_rect.bottom + 6)
                 text = c.font.render("Spawner Editor (RMB drag to move)", True, (0, 200, 255))
-                screen.blit(text, (10, hint_y))
+                screen.blit(text, (10, base_y))
         except Exception:
             pass

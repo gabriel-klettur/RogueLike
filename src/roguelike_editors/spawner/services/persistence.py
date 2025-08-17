@@ -13,8 +13,23 @@ def instances_path() -> str:
     return os.path.join(base, 'spawners', 'instances.json')
 
 
+def spawners_path() -> str:
+    base = getattr(config, 'DATA_DIR', 'data')
+    return os.path.join(base, 'spawners', 'spawners.json')
+
+
 def load_instances_json() -> List[Dict[str, Any]]:
     path = instances_path()
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        return data if isinstance(data, list) else []
+    except FileNotFoundError:
+        return []
+
+
+def load_spawners_json() -> List[Dict[str, Any]]:
+    path = spawners_path()
     try:
         with open(path, 'r', encoding='utf-8') as f:
             data = json.load(f)

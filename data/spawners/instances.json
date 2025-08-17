@@ -3,8 +3,8 @@
     "template_id": "default_barbol_periodic",
     "zone": "lobby",
     "tile": [
-      -29,
-      20
+      -19,
+      15
     ],
     "overrides": {
       "policy.cooldown_s": 5.0,
