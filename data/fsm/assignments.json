@@ -1,9 +1,7 @@
 {
   "by_archetype": {
-    "player": "Player_Default",
-    "goblin": "Monster_Goblin",
-    "barbol": "Monster_Default",
-    "barbol_oscuro": "Monster_Default"
+    "player": "Player_Default",    
+    "barbol": "Monster_Default"    
   },
   "by_eid": {}
 }

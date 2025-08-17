@@ -19,6 +19,7 @@
   "FEET_HEIGHT_DIVISOR": 4,
   "ANIMATION_INTERVAL": 0.15,
   "INITIAL_ANIMATION_STATE": "down_idle",
+  "DEFAULT_DEATH_DISSAPEAR_TIME": 30.0,
   "MELEE_WEAPON": {
     "damage": 1,
     "cooldown": 1.0
@@ -42,7 +43,8 @@
           "feet_height_factor": 0.2,
           "spawn_padding": 3,
           "spawn_count": 10,
-          "spawn_margin": 0
+          "spawn_margin": 0,
+          "death_dissapear_time": 5.0
         },
         "fsm_set": "Monster_Default",
         "assets": {
@@ -169,7 +171,8 @@
           "feet_height_factor": 0.2,
           "spawn_padding": 3,
           "spawn_count": 10,
-          "spawn_margin": 0
+          "spawn_margin": 0,
+          "death_dissapear_time": 2.5
         },
         "fsm_set": "Monster_Default",
         "assets": {
@@ -300,7 +303,8 @@
           "feet_height_factor": 0.2,
           "spawn_padding": 3,
           "spawn_count": 10,
-          "spawn_margin": 0
+          "spawn_margin": 0,
+          "death_dissapear_time": 5.0
         },
         "fsm_set": "Monster_Default",
         "assets": {
@@ -431,7 +435,8 @@
           "feet_height_factor": 0.2,
           "spawn_padding": 3,
           "spawn_count": 10,
-          "spawn_margin": 0
+          "spawn_margin": 0,
+          "death_dissapear_time": 5.0
         },
         "fsm_set": "Monster_Default",
         "assets": {
@@ -572,7 +577,8 @@
           "feet_height_factor": 0.2,
           "spawn_padding": 3,
           "spawn_count": 10,
-          "spawn_margin": 0
+          "spawn_margin": 0,
+          "death_dissapear_time": 5.0
         },
         "fsm_set": "Monster_Default",
         "assets": {
@@ -703,7 +709,8 @@
           "feet_height_factor": 0.2,
           "spawn_padding": 3,
           "spawn_count": 10,
-          "spawn_margin": 0
+          "spawn_margin": 0,
+          "death_dissapear_time": 5.0
         },
         "fsm_set": "Monster_Default",
         "assets": {
@@ -834,7 +841,8 @@
           "feet_height_factor": 0.2,
           "spawn_padding": 3,
           "spawn_count": 10,
-          "spawn_margin": 0
+          "spawn_margin": 0,
+          "death_dissapear_time": 5.0
         },
         "fsm_set": "Monster_Default",
         "assets": {
@@ -965,7 +973,8 @@
           "feet_height_factor": 0.2,
           "spawn_padding": 3,
           "spawn_count": 10,
-          "spawn_margin": 0
+          "spawn_margin": 0,
+          "death_dissapear_time": 5.0
         },
         "fsm_set": "Monster_Default",
         "assets": {
@@ -1096,7 +1105,8 @@
           "feet_height_factor": 0.2,
           "spawn_padding": 3,
           "spawn_count": 10,
-          "spawn_margin": 0
+          "spawn_margin": 0,
+          "death_dissapear_time": 3.5
         },
         "fsm_set": "Monster_Default",
         "assets": {
@@ -1227,7 +1237,8 @@
           "feet_height_factor": 0.2,
           "spawn_padding": 3,
           "spawn_count": 10,
-          "spawn_margin": 0
+          "spawn_margin": 0,
+          "death_dissapear_time": 10.0
         },
         "fsm_set": "Monster_Default",
         "assets": {

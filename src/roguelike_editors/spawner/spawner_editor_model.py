@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from roguelike_editors.spawner.spawner_title.spawner_title_model import SpawnerTitleModel
 
 
 @dataclass
@@ -15,3 +16,5 @@ class SpawnerEditorModel:
     dragging: bool = False
     dragging_eid: int | None = None
     hovered_eid: int | None = None
+    # Title submodel for consistent title bar rendering
+    title_model: SpawnerTitleModel = field(default_factory=SpawnerTitleModel)
