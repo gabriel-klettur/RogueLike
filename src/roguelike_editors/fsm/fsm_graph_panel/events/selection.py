@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 from ..services.hit_test import pick_node_world
 from ..model import to_world
+from ..services import persist_layout
 
 
 def handle_selection_event(controller: Any, model: Any, view: Any, event: Any) -> bool:
@@ -63,6 +64,11 @@ def handle_selection_event(controller: Any, model: Any, view: Any, event: Any) -
     if et == pygame.MOUSEBUTTONUP and getattr(event, 'button', None) == 1:
         if getattr(model, 'dragging_node_id', None):
             model.dragging_node_id = None
+            # Persist node positions and viewport after finishing a drag
+            try:
+                persist_layout(model)
+            except Exception:
+                pass
             return True
         # Also consume plain clicks in select tool to avoid propagation
         if inside:

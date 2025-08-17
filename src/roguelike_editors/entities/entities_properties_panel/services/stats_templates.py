@@ -13,6 +13,7 @@ PLAYER_STATS_TEMPLATE: dict[str, object] = {
     "basic_speed": None,
     "basic_attack": None,
     "basic_armor": None,
+    "attack_duration": None,
     "basic_trail": {
         "interval": None,
         "life_time": None,
