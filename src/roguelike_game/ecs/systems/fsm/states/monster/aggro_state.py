@@ -25,7 +25,7 @@ class AggroState(State):
         # Verificar salud para cambio a huida
         health_cmp = world.components['Health'][entity]
         if health_cmp.current_hp <= health_cmp.max_hp * 0.3:
-            from roguelike_game.ecs.fsm.states.monster.flee_state import FleeState
+            from roguelike_game.ecs.systems.fsm.states.monster.flee_state import FleeState
             world.components['NPCState'][entity].fsm.change_state(FleeState(), entity)
             return
         # Verificar distancia de ataque

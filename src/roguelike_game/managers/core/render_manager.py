@@ -63,6 +63,9 @@ class RendererManager:
         self._collision_font = None
         self._collision_surf_solid = None
         self._collision_surf_walkable = None
+        # Debug systems (lazy init)
+        self._hitbox_debug_system = None
+        self._spell_debug_system = None
         # Cache para help overlay: (mode_key, screen_size) -> (surface, rect)
         self._help_overlay_key = None
         self._help_overlay_surf = None
@@ -125,6 +128,27 @@ class RendererManager:
             if not (self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.toolbar_state.show_collisions and not self.tiles_editor.editor_state.toolbar_state.show_collisions_overlay):
                 self._render_tile_editor_layer(state, screen, camera, map)
         _bench_tile_editor()
+
+        # Debug overlays for spell collisions and hitboxes (F9 toggles config.DEBUG)
+        @benchmark(perf_log, "3.55. spell_debug")
+        def _bench_spell_debug():
+            if getattr(config, "DEBUG", False):
+                try:
+                    # Lazy import and instantiate debug systems
+                    if self._hitbox_debug_system is None:
+                        from roguelike_game.ecs.systems.rendering.hitbox_debug_system import HitboxDebugSystem
+                        self._hitbox_debug_system = HitboxDebugSystem(perf_log=perf_log)
+                    if self._spell_debug_system is None:
+                        from roguelike_game.ecs.systems.rendering.spell_collision_debug_system import SpellCollisionDebugSystem
+                        self._spell_debug_system = SpellCollisionDebugSystem(perf_log=perf_log)
+                    world = self.ecs.ecs_world
+                    # Draw hitbox arcs and colliders, then spell-specific collision hints
+                    self._hitbox_debug_system.update(world, screen, camera)
+                    self._spell_debug_system.update(world, screen, camera)
+                except Exception:
+                    # Never break main render due to optional debug overlays
+                    pass
+        _bench_spell_debug()
 
         # 6) Crosshair
         @benchmark(perf_log, "3.6. crosshair")

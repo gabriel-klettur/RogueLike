@@ -6,6 +6,9 @@ Updates entity animations by advancing frames and applying the current frame to 
 import time
 import pygame
 from roguelike_engine.utils.benchmark import benchmark
+from roguelike_game.ecs.components.physics.mask_collider import MaskCollider
+
+_mask_cache = {}
 
 class AnimationSystem:
     """
@@ -36,6 +39,8 @@ class AnimationSystem:
         timer_map = comps.get('AnimationTimer', {})
         anim_map = comps.get('Animator', {})   # Map id -> Animator component
         sprite_map = comps.get('Sprite', {})   # Map id -> Sprite component
+        scale_map = comps.get('Scale', {})     # Map id -> Scale component (optional)
+        mc_map = comps.get('MultiCollider', {})
 
         # 2) Iterar sobre cada Animator
         for eid, animator in anim_map.items():
@@ -60,3 +65,45 @@ class AnimationSystem:
                     border_color = (128, 0, 128)
                     pygame.draw.rect(placeholder, border_color, placeholder.get_rect(), 2)
                     sprite_map[eid].image = placeholder
+
+                # Sincronizar máscara de colisión (body) con el frame actual
+                mc = mc_map.get(eid)
+                if mc:
+                    body = mc.colliders.get('body') if hasattr(mc, 'colliders') else None
+                    if isinstance(body, MaskCollider):
+                        # 1) Intentar usar máscara precomputada en Animator
+                        masks_map = getattr(animator, 'masks', {}) or {}
+                        state_key = getattr(animator, 'current_state', None)
+                        idx = getattr(animator, 'last_frame_idx', 0)
+                        used_precomputed = False
+                        if state_key and state_key in masks_map:
+                            frames_masks = masks_map.get(state_key) or []
+                            if 0 <= idx < len(frames_masks):
+                                pmask = frames_masks[idx]
+                                if pmask is not None:
+                                    body.mask = pmask
+                                    setattr(body, '_source_key', (state_key, idx, 'precomputed'))
+                                    used_precomputed = True
+                        # 2) Si no hay máscara precalculada, construir/cargar desde caché por Surface+Scale
+                        if not used_precomputed:
+                            surf = sprite_map[eid].image
+                            # Escala del entity (no confundir con zoom de cámara)
+                            scale_comp = scale_map.get(eid)
+                            scale = getattr(scale_comp, 'scale', 1.0)
+                            key = (id(surf), round(scale, 3))
+                            cached = _mask_cache.get(key)
+                            if cached is None:
+                                # Construir superficie escalada si es necesario
+                                if scale and scale != 1.0:
+                                    w, h = surf.get_size()
+                                    scaled_surf = pygame.transform.scale(surf, (int(w * scale), int(h * scale)))
+                                else:
+                                    scaled_surf = surf
+                                mask = pygame.mask.from_surface(scaled_surf)
+                                _mask_cache[key] = mask
+                                cached = mask
+                            # Aplicar máscara cacheada si ha cambiado la fuente
+                            if getattr(body, '_source_key', None) != key or body.mask is None:
+                                body.mask = cached
+                                # Mantener offsets definidos por fábrica; no tocamos feet collider aquí
+                                setattr(body, '_source_key', key)

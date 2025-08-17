@@ -74,3 +74,17 @@ def build_animator_map(sprites_dict: dict[str, dict[str, list[pygame.Surface]]])
         anim_map[f"{direction}_idle"] = states.get("idle", [])
         anim_map[f"{direction}_walk"] = states.get("walk", [])
     return anim_map
+
+
+def build_masks_map(sprites_dict: dict[str, dict[str, list[pygame.Surface]]]) -> dict[str, list[pygame.mask.Mask]]:
+    """
+    Precalcula máscaras para cada frame ya escalado.
+    Claves igual que build_animator_map.
+    """
+    masks_map: dict[str, list[pygame.mask.Mask]] = {}
+    for direction, states in sprites_dict.items():
+        idle_frames = states.get("idle", [])
+        walk_frames = states.get("walk", [])
+        masks_map[f"{direction}_idle"] = [pygame.mask.from_surface(f) for f in idle_frames]
+        masks_map[f"{direction}_walk"] = [pygame.mask.from_surface(f) for f in walk_frames]
+    return masks_map

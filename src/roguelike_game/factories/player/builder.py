@@ -3,7 +3,7 @@ Builder para crear la entidad jugador usando coordenadas en píxeles.
 """
 import time
 import pygame
-from roguelike_game.factories.player.loader import load_and_scale_sprites, extract_initial_frame, build_animator_map
+from roguelike_game.factories.player.loader import load_and_scale_sprites, extract_initial_frame, build_animator_map, build_masks_map
 from roguelike_game.factories.player.config import DEFAULT_CLASS, ANIMATION_INTERVAL, INITIAL_ANIMATION_STATE, PLAYER_STATS, MELEE_WEAPON_CFG, DEFAULT_TRAIL, DEFAULT_DAMAGE_DURATION
 from roguelike_game.factories.player.collider import create_body_and_feet
 from roguelike_engine.config.config_z_layer import Z_LAYERS
@@ -58,7 +58,11 @@ class PlayerBuilder:
         # Solo añadir Sprite si es una Surface de pygame
         if frame and isinstance(frame, pygame.Surface):
             comps["Sprite"][eid] = Sprite(frame)
-        comps["Animator"][eid] = Animator(animations=build_animator_map(sprites), current_state=INITIAL_ANIMATION_STATE)
+        comps["Animator"][eid] = Animator(
+            animations=build_animator_map(sprites),
+            current_state=INITIAL_ANIMATION_STATE,
+            masks=build_masks_map(sprites),
+        )
         comps["AnimationTimer"][eid] = AnimationTimer(last_time=time.time(), interval=ANIMATION_INTERVAL)
         # Movimiento
         speed_value = PLAYER_STATS[class_player]["basic_speed"]
