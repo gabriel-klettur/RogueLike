@@ -9,6 +9,7 @@ from .events.text_edit import begin_text_edit, begin_edge_text_edit, handle_text
 from .events.selection import handle_selection_event
 from .events.edges import handle_edge_drag_event
 from .model import to_world as model_to_world, begin_pan, update_pan, end_pan
+from .services import persist_layout, persist_sets_structural
 
 
 class FsmGraphPanelEventHandler:
@@ -52,7 +53,7 @@ class FsmGraphPanelEventHandler:
             ):
                 # Persist viewport (zoom/pan) after toolbar-handled zoom
                 try:
-                    controller._persist_layout()
+                    persist_layout(model)
                 except Exception:
                     pass
                 return True
@@ -85,7 +86,7 @@ class FsmGraphPanelEventHandler:
                 if tool in ('connect', 'disconnect') and getattr(model, 'connect_source_node_id', None):
                     model.connect_source_node_id = None
                     try:
-                        controller._persist_layout()
+                        persist_layout(model)
                     except Exception:
                         pass
                     return True
@@ -98,7 +99,7 @@ class FsmGraphPanelEventHandler:
                 if getattr(controller, 'toolbar', None) and controller.toolbar.handle_mouse_down(mouse_pos, rect, model):
                     # Persist viewport/tool state after toolbar interaction (e.g., zoom)
                     try:
-                        controller._persist_layout()
+                        persist_layout(model)
                     except Exception:
                         pass
                     # Activate tool runtime (if any) after changing active_graph_tool
@@ -118,7 +119,7 @@ class FsmGraphPanelEventHandler:
                 try:
                     import pygame  # type: ignore
                     if getattr(event, 'type', None) == pygame.MOUSEBUTTONUP and getattr(event, 'button', None) == 2:
-                        controller._persist_layout()
+                        persist_layout(model)
                 except Exception:
                     pass
                 return True
@@ -147,7 +148,7 @@ class FsmGraphPanelEventHandler:
                 if lbr is not None and lbr.collidepoint(mouse_pos):
                     model.legend_collapsed = not bool(getattr(model, 'legend_collapsed', False))
                     try:
-                        controller._persist_layout()
+                        persist_layout(model)
                     except Exception:
                         pass
                     return True
@@ -156,7 +157,7 @@ class FsmGraphPanelEventHandler:
                     if bool(getattr(model, 'legend_collapsed', False)):
                         model.legend_collapsed = False
                         try:
-                            controller._persist_layout()
+                            persist_layout(model)
                         except Exception:
                             pass
                     return True
@@ -196,7 +197,7 @@ class FsmGraphPanelEventHandler:
                 )
                 end_pan(model)
                 try:
-                    controller._persist_layout()
+                    persist_layout(model)
                 except Exception:
                     pass
                 return True

@@ -1,5 +1,6 @@
 from __future__ import annotations
 import logging
+from ...services import persist_layout, persist_sets_structural
 
 LOGGER = logging.getLogger("roguelike_editors.fsm.fsm_graph_panel.tools.clone")
 
@@ -82,11 +83,11 @@ class CloneEventHandler:
         except Exception:
             pass
         try:
-            controller._persist_sets_structural()
+            persist_sets_structural(model)
         except Exception:
             pass
         try:
-            controller._persist_layout()
+            persist_layout(model)
         except Exception:
             pass
         LOGGER.debug("[Clone] cloned node %s -> %s", src.get('id'), nid)
