@@ -6,6 +6,7 @@ import pygame
 from roguelike_editors.spawner.spawner_editor_model import SpawnerEditorModel
 from roguelike_editors.spawner.spawner_editor_events import SpawnerEditorEventHandler
 from roguelike_editors.spawner.spawner_editor_view import SpawnerEditorView
+from roguelike_editors.spawner.spawner_title.spawner_title_controller import SpawnerTitleController
 
 
 class SpawnerEditorController:
@@ -21,6 +22,7 @@ class SpawnerEditorController:
         self.font = font
         self.game = None  # set via set_game
         # Delegates
+        self.title_controller = SpawnerTitleController(self, self.model.title_model, self.font)
         self.events = SpawnerEditorEventHandler(self)
         self.view = SpawnerEditorView(self)
 
@@ -43,6 +45,9 @@ class SpawnerEditorController:
 
     def handle_event(self, event: pygame.event.Event) -> bool:
         try:
+            # Title panel (currently no events, but keep parity with other editors)
+            if hasattr(self, 'title_controller') and self.title_controller.handle_event(event):
+                return True
             return self.events.handle_event(event)
         except Exception:
             return False
