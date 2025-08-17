@@ -19,6 +19,27 @@ class AttackState(State):
         world.components['ChaseTarget'][eid] = ChaseTarget(world.player_entity)
         # Resetear velocidad al entrar en AttackState
         world.components['Velocity'][eid] = Velocity(0, 0)
+        # Registrar inicio de ataque y asegurar duración en contexto FSM
+        try:
+            fsm = world.components['NPCState'][eid].fsm
+            fsm.context['attack_start'] = time.time()
+            try:
+                dur = float(fsm.context.get('attack_duration', 0))
+            except Exception:
+                dur = 0.0
+            if dur <= 0.0:
+                # Intentar derivar de MeleeWeapon.cooldown; si no, fallback seguro
+                try:
+                    mw = world.components.get('MeleeWeapon', {}).get(eid)
+                    if mw and hasattr(mw, 'cooldown') and float(mw.cooldown) > 0:
+                        fsm.context['attack_duration'] = float(mw.cooldown)
+                    else:
+                        fsm.context['attack_duration'] = 0.5
+                except Exception:
+                    fsm.context['attack_duration'] = 0.5
+        except Exception:
+            # Si algo falla con el contexto, no bloquear la entrada al estado
+            pass
         # Establecer animación de ataque según dirección hacia el jugador
         player_pos = world.player_position
         pos = world.components['Position'].get(eid)

@@ -75,6 +75,7 @@ def update_player_stats(ecs_world: Any, ent_id: str, key: str, value: Any) -> No
         health_comps = ecs_world.components.get('Health', {})
         combat_comps = ecs_world.components.get('CombatStats', {})
         speed_comps = ecs_world.components.get('MovementSpeed', {})
+        npc_states = ecs_world.components.get('NPCState', {})
         for eid, tag in player_tags.items():
             if tag.class_name == ent_id:
                 if key == 'max_strength':
@@ -98,6 +99,13 @@ def update_player_stats(ecs_world: Any, ent_id: str, key: str, value: Any) -> No
                     sc = speed_comps.get(eid)
                     if sc:
                         sc.speed = value
+                elif key == 'attack_duration':
+                    ns = npc_states.get(eid)
+                    try:
+                        if ns and hasattr(ns, 'fsm') and hasattr(ns.fsm, 'context'):
+                            ns.fsm.context['attack_duration'] = float(value) if value is not None else None
+                    except Exception:
+                        pass
         logger.debug(f"[ecs_update_service] Player ECS stats updated for class {ent_id}")
     except Exception as e:
         logger.error(f"[ecs_update_service][ERROR] Failed to update player ECS stats for {ent_id}: {e}")
@@ -110,6 +118,7 @@ def update_monster_stats(ecs_world: Any, ent_id: str, key: str, value: Any) -> N
         health_comps = ecs_world.components.get('Health', {})
         combat_comps = ecs_world.components.get('CombatStats', {})
         speed_comps = ecs_world.components.get('MovementSpeed', {})
+        npc_states = ecs_world.components.get('NPCState', {})
         for eid, identity in idents.items():
             if identity.name.lower() == ent_id:
                 if key == 'hp':
@@ -133,6 +142,13 @@ def update_monster_stats(ecs_world: Any, ent_id: str, key: str, value: Any) -> N
                     sc = speed_comps.get(eid)
                     if sc:
                         sc.speed = float(value)
+                elif key == 'damage_duration':
+                    ns = npc_states.get(eid)
+                    try:
+                        if ns and hasattr(ns, 'fsm') and hasattr(ns.fsm, 'context'):
+                            ns.fsm.context['attack_duration'] = float(value) if value is not None else None
+                    except Exception:
+                        pass
         logger.debug(f"[ecs_update_service] Monster ECS stats updated for type {ent_id}")
     except Exception as e:
         logger.error(f"[ecs_update_service][ERROR] Failed to update monster ECS stats for {ent_id}: {e}")

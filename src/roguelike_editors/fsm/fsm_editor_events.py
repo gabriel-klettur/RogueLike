@@ -28,12 +28,6 @@ class FsmEditorEventHandler:
 
         if event.type == pygame.KEYDOWN and event.key == pygame.K_F12:
             ctrl.toggle_visible()
-            # Mirror gate flag used by debug overlay systems
-            try:
-                import roguelike_engine.config.config as config
-                config.DEBUG_ENTITIES = ctrl.visible
-            except Exception:
-                pass
             return True
 
         if not ctrl.visible:
@@ -48,25 +42,10 @@ class FsmEditorEventHandler:
         ctrl = get_controller()
         if not ctrl.visible:
             return
-        # Render main FSM Editor panels (toolbar, etc.)
+        # Render FSM Editor via controller (view will handle title)
         try:
             ctrl.render(screen)
         except Exception:
-            pass
-        # Draw FSM Editor Title using reusable TitleBar (same as other editors)
-        try:
-            from roguelike_editors.fsm.fsm_title.fsm_title_model import FsmTitleModel
-            from roguelike_editors.fsm.fsm_title.fsm_title_controller import FsmTitleController
-            global _title_ctrl
-            try:
-                _title_ctrl
-            except NameError:
-                _title_ctrl = None
-            if _title_ctrl is None:
-                _title_ctrl = FsmTitleController(editor_state=None, model=FsmTitleModel(), font=None)
-            _title_ctrl.render(screen)
-        except Exception:
-            # Keep optional UI safe
             pass
 
 

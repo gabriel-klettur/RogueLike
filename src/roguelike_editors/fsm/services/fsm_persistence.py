@@ -368,6 +368,19 @@ def _lint_sets(data: Dict[str, Any]) -> Tuple[List[str], List[str]]:
                     seen_sig.add(sig)
         # Semantic linting for 'after_attack' transitions
         try:
+            # Detect if the set defines any Attack-like state; if so, suppress the generic hint
+            has_attack_state = False
+            try:
+                for st in states:
+                    if not isinstance(st, dict):
+                        continue
+                    sid2 = st.get("id") or ""
+                    scls2 = st.get("class") or ""
+                    if (isinstance(sid2, str) and "Attack" in sid2) or (isinstance(scls2, str) and "Attack" in scls2):
+                        has_attack_state = True
+                        break
+            except Exception:
+                has_attack_state = has_attack_state
             after_attack_hint_added = False
             for tr in transitions:
                 wh = tr.get("when")
@@ -384,7 +397,7 @@ def _lint_sets(data: Dict[str, Any]) -> Tuple[List[str], List[str]]:
                     warns.append(
                         f"set '{sid}': transition '{tid or '<no-id>'}' uses 'after_attack' but 'from' state '{fr}' is not an Attack state (class='{cls}')"
                     )
-                if not after_attack_hint_added:
+                if not after_attack_hint_added and not has_attack_state:
                     warns.append(
                         f"set '{sid}': uses 'after_attack' — ensure runtime provides fsm.context['attack_duration'] and AttackState sets 'attack_start'"
                     )
