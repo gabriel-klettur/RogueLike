@@ -66,6 +66,7 @@ from roguelike_game.ecs.systems.inventory.inventory_ui_system import InventoryUI
 from roguelike_game.ecs.systems.spawner.spawner_placement_system import SpawnerPlacementSystem
 from roguelike_game.ecs.systems.spawner.spawner_trigger_system import SpawnerTriggerSystem
 from roguelike_game.ecs.systems.spawner.spawner_system import SpawnerRuntimeSystem
+from roguelike_game.ecs.systems.rendering.temp_z_layer_system import TempZLayerSystem
 
 from roguelike_game.ecs.systems.rendering.drop_hover_system import DropHoverRenderSystem
 from roguelike_game.ecs.systems.rendering.grayscale_render_system import GrayscaleRenderSystem
@@ -92,7 +93,7 @@ def get_update_system_classes():
         # Processes SpawnRequest -> entities
         SpawnSystem,
         # Inventory & pickups
-        InventoryInitSystem, DeathDropSystem, InventoryDropSystem, InventoryPickupSystem, ConsumeSystem, InventoryTransferSystem, InventoryDragSystem, MapLoadDropsSystem, DropDespawnSystem, CoinPickupSystem, OrbAttractionSystem, ExperienceSystem, MagicSpellBarSystem, ExpansionSystem,
+        InventoryInitSystem, DeathDropSystem, InventoryDropSystem, InventoryPickupSystem, ConsumeSystem, InventoryTransferSystem, InventoryDragSystem, MapLoadDropsSystem, TempZLayerSystem, DropDespawnSystem, CoinPickupSystem, OrbAttractionSystem, ExperienceSystem, MagicSpellBarSystem, ExpansionSystem,
     ]
 
 def get_render_system_classes():

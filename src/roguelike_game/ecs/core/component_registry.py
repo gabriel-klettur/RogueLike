@@ -1,4 +1,3 @@
-
 def create_empty_component_store():
     """
     Devuelve un diccionario con todas las claves de componentes inicializadas a diccionarios vacíos.
@@ -18,6 +17,7 @@ def create_empty_component_store():
         'WantsToMelee': {}, 'AttackCooldown': {}, 'WantsToCastSpell': {}, 'AggroRange': {},
         'ChaseTarget': {}, 'FacingCooldown': {}, 'InputComponent': {}, 'InventoryComponent': {}, 'PhysicalItemComponent': {}, 'CollectibleComponent': {}, 'ExperienceComponent': {},
         'CameraFollowComponent': {}, 'PlayerTagComponent': {}, 'NPCTagComponent': {}, 'MonsterInstanceComponent': {}, 'InCombat': {},
+        'TempZLayer': {},
         'FlashComponent': {}, 'TrailComponent': {}, 'GrayscaleComponent': {},
         # Spawner components
         'SpawnerConfig': {}, 'SpawnerState': {},
