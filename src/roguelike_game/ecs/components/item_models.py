@@ -32,6 +32,8 @@ class ItemModel(BaseModel):
     scale_editor: Optional[float] = 1.0
     scale_map: Optional[float] = 1.0
     scale_inventory: Optional[float] = 1.0
+    # Despawn automático: segundos que permanece el drop en el suelo
+    despawn_time: Optional[float] = None
 
 
 class ItemStack:

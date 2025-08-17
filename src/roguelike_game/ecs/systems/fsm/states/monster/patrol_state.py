@@ -25,17 +25,34 @@ class PatrolState(State):
         if hp_cmp.current_hp <= 0:
             world.components['NPCState'][eid].fsm.change_state(DeathState(), entity)
             return
+        # Asegurar componentes requeridos para patrulla
+        comps = world.components
+        if ('PatrolRoute' not in comps or eid not in comps['PatrolRoute'] or
+            'Position' not in comps or eid not in comps['Position'] or
+            'MovementSpeed' not in comps or eid not in comps['MovementSpeed']):
+            # Sin ruta/posición/velocidad: detener y retroceder a Idle
+            try:
+                comps['Velocity'][eid] = Velocity(0, 0)
+            except Exception:
+                pass
+            npc_state = comps.get('NPCState', {}).get(eid)
+            if npc_state:
+                from roguelike_game.ecs.systems.fsm.states.idle_state import IdleState
+                npc_state.fsm.change_state(IdleState(), entity)
+            return
         pos = world.components['Position'][eid]
         route = world.components['PatrolRoute'][eid]
         speed_cmp = world.components['MovementSpeed'][eid]
         # Detectar jugador y cambiar a AggroState
         player_pos = world.player_position
-        if player_pos:
+        rng_cmp = world.components.get('AggroRange', {}).get(eid)
+        if player_pos and rng_cmp:
             dx_p = pos.x - player_pos.x
             dy_p = pos.y - player_pos.y
-            if dx_p*dx_p + dy_p*dy_p <= (world.components['AggroRange'][eid].radius * TILE_SIZE) ** 2:                
-                npc_state = world.components['NPCState'][eid]
-                npc_state.fsm.change_state(AggroState(), entity)
+            if dx_p*dx_p + dy_p*dy_p <= (rng_cmp.radius * TILE_SIZE) ** 2:
+                npc_state = world.components.get('NPCState', {}).get(eid)
+                if npc_state:
+                    npc_state.fsm.change_state(AggroState(), entity)
                 return
         # Mover hacia el waypoint actual
         if self.current_index < len(route.points):

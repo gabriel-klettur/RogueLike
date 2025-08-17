@@ -11,6 +11,7 @@
         "quantity": { "type": "number" },
         "zone_id": { "type": ["string", "null"] },
         "schema_version": { "type": "string" },
+        "created_at": { "type": "number" },
         "tile": {
           "type": "object",
           "properties": { "x": { "type": "number" }, "y": { "type": "number" } },

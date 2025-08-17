@@ -14,7 +14,8 @@
     "scale_map": 0.04,
     "scale_inventory": 0.05,
     "stackable": false,
-    "z_layer": 1
+    "z_layer": 1,
+    "despawn_time": 10
   },
   "gold": {
     "id": "gold",
@@ -28,7 +29,8 @@
     "scale_inventory": 0.05,
     "max_stack": 999,
     "threshold": 10,
-    "z_layer": 1
+    "z_layer": 1,
+    "despawn_time": 300
   },
   "wood": {
     "id": "wood",
@@ -40,7 +42,8 @@
     "scale_map": 0.04,
     "scale_inventory": 0.05,
     "max_stack": 99,
-    "z_layer": 1
+    "z_layer": 1,
+    "despawn_time": 60
   },
   "health_potion": {
     "id": "health_potion",
@@ -55,6 +58,7 @@
     "default_params": {
       "healing": 50
     },
+    "despawn_time": 60,
     "z_layer": 1
   },
   "iron_sword": {
@@ -77,7 +81,8 @@
     "value": 50,
     "rarity": "common",
     "level_requirement": 1,
-    "z_layer": 1
+    "z_layer": 1,
+    "despawn_time": 60
   },
   "ancient_relic_mask": {
     "id": "ancient_relic_mask",
@@ -89,7 +94,9 @@
     "scale_map": 0.04,
     "scale_inventory": 0.05,
     "quest_id": "123e4567-e89b-12d3-a456-426614174000",
+    "despawn_time": 60,
     "z_layer": 1
+    
   },
   "bucket": {
     "id": "bucket",
@@ -101,6 +108,7 @@
     "scale_map": 0.04,
     "scale_inventory": 0.05,
     "max_stack": 3,
+    "despawn_time": 60,
     "z_layer": 1
   },
   "bucket_water": {
@@ -114,6 +122,7 @@
     "scale_inventory": 0.05,
     "max_stack": 1,
     "effect": "water_source",
+    "despawn_time": 60,
     "z_layer": 1
   },
   "energy_potion": {
@@ -129,6 +138,7 @@
     "default_params": {
       "energy": 50
     },
+    "despawn_time": 60,
     "z_layer": 1
   },
   "explosion_potion": {
@@ -142,6 +152,7 @@
     "scale_inventory": 0.05,
     "max_stack": 3,
     "effect": "explode_area",
+    "despawn_time": 60,
     "z_layer": 1
   },
   "food_chicken": {
@@ -154,6 +165,7 @@
     "scale_map": 0.04,
     "scale_inventory": 0.05,
     "max_stack": 10,
+    "despawn_time": 60,
     "default_params": {
       "hunger": 30
     },
@@ -165,6 +177,7 @@
     "description": "Representa un ítem no encontrado en el juego.",
     "icon": "assets/items/image_item_not_found.png",
     "stackable": false,
+    "despawn_time": 60,
     "z_layer": 1
   },
   "iron_ingot": {
@@ -177,6 +190,7 @@
     "scale_map": 0.04,
     "scale_inventory": 0.05,
     "max_stack": 50,
+    "despawn_time": 60,
     "z_layer": 1
   },
   "mana_potion": {
@@ -192,6 +206,7 @@
     "default_params": {
       "mana": 50
     },
+    "despawn_time": 60,
     "z_layer": 1
   },
   "poison_potion": {
@@ -205,6 +220,7 @@
     "scale_inventory": 0.05,
     "max_stack": 5,
     "effect": "poison_area",
+    "despawn_time": 60,
     "z_layer": 1
   },
   "wizard_staff_lvl_1": {
@@ -225,6 +241,7 @@
     "value": 150,
     "rarity": "uncommon",
     "level_requirement": 2,
+    "despawn_time": 60,
     "z_layer": 1
   },
   "wizard_staff_lvl_2": {
@@ -245,6 +262,7 @@
     "value": 300,
     "rarity": "rare",
     "level_requirement": 5,
+    "despawn_time": 60,
     "z_layer": 1
   },
   "wizard_staff_lvl_3": {
@@ -265,6 +283,7 @@
     "value": 600,
     "rarity": "epic",
     "level_requirement": 10,
+    "despawn_time": 60,
     "z_layer": 1
   },
   "ghjgjh": {
@@ -272,6 +291,7 @@
     "id": "ghjgjh",
     "name": "ghjgjh",
     "description": "ghjghjg",
+    "despawn_time": 60,
     "stackable": false
   }
 }

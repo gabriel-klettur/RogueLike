@@ -33,7 +33,7 @@ class IdleState(State):
         dx = pos.x - player_pos.x
         dy = pos.y - player_pos.y
         if dx*dx + dy*dy <= (rng_cmp.radius * TILE_SIZE)**2:
-            from roguelike_game.ecs.fsm.states.aggro_state import AggroState
+            from roguelike_game.ecs.systems.fsm.states.monster.aggro_state import AggroState
             npc_state = world.components.get('NPCState', {}).get(entity.id)
             if npc_state:
                 npc_state.fsm.change_state(AggroState(), entity)
