@@ -102,6 +102,14 @@ def handle_events(game):
         if event.type == pygame.KEYDOWN and event.key == game.input_config.get_key('select_class'):
             game.class_selector.show = not game.class_selector.show
             return
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_F3:
+            # Toggle Spawner Editor visibility and mirror a global debug flag
+            try:
+                game.spawner_editor.controller.toggle_visible()
+                config.DEBUG_SPAWNER = bool(getattr(game.spawner_editor.model, 'visible', False))
+            except Exception:
+                pass
+            return
         if event.type == pygame.KEYDOWN and event.key == pygame.K_F4:
             game.spells_editor.model.visible = not game.spells_editor.model.visible
             return
@@ -198,6 +206,16 @@ def handle_events(game):
         for event in events:
             game.entities_editor.handle_event(event)
         return
+
+    # Si el editor de spawner está activo, permitir que consuma eventos específicos (RMB sobre spawner),
+    # pero no retornar: el resto de eventos deben seguir hacia el motor.
+    if hasattr(game, 'spawner_editor') and getattr(game.spawner_editor.model, 'visible', False):
+        for i, event in enumerate(events):
+            try:
+                if game.spawner_editor.handle_event(event):
+                    consumed_idx.add(i)
+            except Exception:
+                pass
 
     # Si un editor de tiles está activo
     if game.tiles_editor.editor_state.active:

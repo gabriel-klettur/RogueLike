@@ -1,17 +1,12 @@
 from collections import deque
 import time
-import types
-import pygame
 
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_engine.config.config_tiles import TILE_SIZE
-from roguelike_engine.map.events.events import handle_expand_dungeon, _next_zone_key
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_game.ecs.core.spatial_index import SpatialIndex
 from roguelike_game.ecs.utils.collider_utils import build_collider_rect
-
-import logging
-logger = logging.getLogger(__name__)
+from roguelike_engine.map.services.expansion_service import expand_dungeon
 
 import logging
 logger = logging.getLogger(__name__)
@@ -97,10 +92,8 @@ class ExpansionSystem:
                 if state.expand_area_start_time is None:
                     state.expand_area_start_time = now
                 elif now - state.expand_area_start_time >= 3.0:
-                    # Trigger expansion como F3 y mover área roja a nuevo dungeon
-                    new_key, parent_key = _next_zone_key()
-                    fake_evt = types.SimpleNamespace(type=pygame.KEYDOWN, key=pygame.K_F3)
-                    handle_expand_dungeon(fake_evt, game_map, entities_manager)
+                    # Ejecutar expansión directamente y mover área roja a nuevo dungeon
+                    expand_dungeon(world)
                     # Actualizar índice espacial tras expansión para colisiones
                     world.spatial_index = SpatialIndex(game_map, entities_manager.buildings)
                     # Recalcular área de expansión usando ruta más larga desde lobby

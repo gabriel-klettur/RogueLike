@@ -2,6 +2,17 @@
 
 Este documento define el diseño profesional del editor de Máquinas de Estados Finitos (FSM) para el proyecto. El objetivo es crear, conectar, modificar y eliminar estados y transiciones dentro de “conjuntos de FSM” (FSM Sets) y asignarlos a entidades del juego.
 
+## Resumen rápido
+El FSM Editor permite autoría visual de comportamientos con nodos y transiciones reutilizables (FSM Sets) validados por esquema y con recarga en caliente del runtime.
+
+## Características destacadas
+- __Edición visual__: nodos/estados y aristas/transiciones dirigidas con flechas, ancladas a bordes, soportando aristas paralelas curvadas, auto-bucles y etiquetas.
+- __Paneles dedicados__: Sets (lista/duplicar/renombrar), Graph (canvas con herramientas), Properties (estado/transición/acciones/condiciones/blackboard) con hints.
+- __Validación y linter__: validación por `schema.json`; el Properties Panel muestra contadores de warnings/errores y tooltips por fila.
+- __Persistencia profesional__: normaliza IDs, valida, y genera código `src/roguelike_game/fsm/fsm_ids.py` (SET_IDS/STATES_BY_SET/TRANSITIONS_BY_SET) para uso en runtime.
+- __Hot-reload__: guardado (Ctrl+S) publica versión y el runtime recarga sin reiniciar.
+- __UX afinada__: pan solo con MMB; zoom con rueda del mouse y teclas `+`/`-`; UI blockers para evitar “hover bleed-through”.
+- __Integración UI__: al abrir el editor se ocultan minimapa y help overlay para no interferir con la vista del grafo.
 
 ## Objetivos
 - __FSM Sets__: Agrupar la definición completa de una FSM (estados + transiciones + propiedades) con un `id` único reutilizable.
@@ -11,13 +22,11 @@ Este documento define el diseño profesional del editor de Máquinas de Estados 
 - __Deshacer/Rehacer__: Historial de comandos para todas las acciones del editor.
 - __Reutilización__: Basarse en componentes existentes (TitleBar, ToolbarView, PickerPanel, UI blockers, servicios comunes).
 
-
 ## Conceptos clave
 - __FSM Set__: Una colección nombrada de estados y transiciones. `id` único global.
 - __State__: Nodo con `id`, `label`, `pos` (x,y), `entry_actions`, `exit_actions`, `update_actions`, `properties`.
 - __Transition__: Arista con `from`, `to`, `conditions` (guards), `actions`, `priority` y `kind` opcional (e.g., on_event, timed).
 - __Blackboard__: Diccionario de datos asociado al runtime de la FSM por entidad (valores evaluables por guards/actions).
-
 
 ## Almacenamiento y esquema
 - __Directorio__: `data/fsm/`
@@ -65,6 +74,7 @@ Notas:
   - Opción B: mantener `data/fsm/assignments.json` y resolver al spawn.
 - __Recarga__: al guardar `sets.json`, el editor notifica un `FSM_RELOAD` para reconstruir máquinas activas (similar a otras recargas existentes). Atajo sugerido: Ctrl+S dentro del editor.
 - __Toggle del editor__: F12 (ya usado internamente como “FSM Editor”).
+- __Visibilidad UI__: cuando el FSM Editor está visible, se ocultan minimapa y help overlay para evitar solapamiento (ver `src/roguelike_game/managers/core/render_manager.py`).
 
 Skeleton conceptual de runtime (ilustrativo):
 ```python
@@ -100,9 +110,12 @@ Acciones concretas de alineación:
   - `fsm_toolbar/`: usa `ToolbarView` con botones: ['undo', 'redo', 'sets_list', 'sets_entities_assignment', 'sets_animation_assignment', 'set_properties'].
   - `fsm_sets_panel/`: lista de FSM Sets con `PickerPanel` (crear/duplicar/eliminar/renombrar set).
   - `fsm_graph_panel/`: canvas nodal (estados como nodos, transiciones como aristas). Soporta pan/zoom, selección, arrastre, conexión. Incluye una barra de herramientas horizontal superior con botones: ['select', 'connect', 'delete', 'zoom_in', 'zoom_out', 'mark_ini', 'mark_end'].
+    - Render dirigido: aristas con flechas (arrowheads) y anclaje a bordes de nodos (no centro a centro).
+    - Aristas paralelas curvadas, auto-bucles y etiquetas por arista; estilos por transición vía claves `style.*` (color, width, head_len, head_width).
+    - Leyenda de colores bajo la barra para estados especiales (p. ej., Damage/Alert/External) con botón clicable para minimizar/expandir.
   - `fsm_properties_panel/`: propiedades del estado o transición seleccionados; pestañas: ['state', 'transition', 'actions', 'conditions', 'blackboard'].
 - __Servicios__ (nuevo `services/`):
-  - `fsm_persistence.py`: load/save/validate contra `schema.json`.
+  - `fsm_persistence.py`: load/save/validate contra `schema.json` y codegen de `src/roguelike_game/fsm/fsm_ids.py` (SET_IDS, STATES_BY_SET, TRANSITIONS_BY_SET).
   - `fsm_graph_layout.py`: snap a grid, auto-layout inicial, routing sencillo de aristas.
   - `fsm_history.py`: comandos (Command pattern) para undo/redo.
   - `fsm_id.py`: generación/validación de ids únicos.
@@ -141,10 +154,12 @@ Acciones concretas de alineación:
 
 
 ## Interacciones y UX
-- __Pan/Zoom__: MMB para pan; Ctrl+Rueda para zoom.
+- __Pan__: solo botón medio (MMB). Seguridad: liberación forzada si MMB deja de estar presionado.
+- __Zoom__: rueda del mouse cuando el puntero está sobre el canvas (centra en el puntero); teclas '+'/'-' (fila numérica o keypad; '+' con Shift sobre '=') centran en el canvas.
 - __Selección__: LMB en nodo/arista. Arrastre para mover nodo; Shift+LMB para multi-selección (marquee).
 - __Herramienta Conectar__: Activa el modo “connect”; LMB en origen, LMB en destino para crear transición.
 - __Eliminar__: tecla Supr o botón “delete” sobre selección elimina estados/aristas (confirmación si afecta transiciones).
+- __Edición inline de etiquetas__: doble click sobre estado o etiqueta de transición para editar el texto.
 - __Editar propiedades__: panel derecho; Enter aplica cambios; Ctrl+Z/Ctrl+Y para undo/redo.
 - __Guardar__: Ctrl+S valida y persiste `sets.json` y notifica reload.
 
@@ -167,6 +182,7 @@ Atajos propuestos adicionales:
 - Al guardar: validar contra `schema.json`; mostrar lista de errores con referencias a set/state/transition.
 - Restricciones: ids únicos por set, `initial_state` existente, transiciones referencian estados válidos.
 - Linter opcional: advertencias por estados sin salidas, transiciones sin condiciones, ciclos triviales.
+ - UI: el Properties Panel muestra badges de conteo (warnings/errores) y tooltips/hints por fila para facilitar la corrección.
 
 Validaciones adicionales para profesionalizar:
 - __Tipos estrictos__: `properties` tipadas por estado (schema enriquecido por tipo de estado).

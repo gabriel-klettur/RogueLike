@@ -1,12 +1,7 @@
 import os
 import math
-from roguelike_game.ecs.components.physical_item_component import PhysicalItemComponent
-from roguelike_game.ecs.components.collectible_component import CollectibleComponent
-from roguelike_game.ecs.components.transform.position import Position
-from roguelike_game.ecs.components.experience_component import ExperienceComponent
-from roguelike_game.ecs.components.core.player_tag import PlayerTagComponent
 from roguelike_game.ecs.components.item_models import load_items
-from roguelike_game.ecs.systems.experience_system import ExperienceSystem
+from roguelike_game.ecs.systems.experience.experience_system import ExperienceSystem
 from roguelike_game.managers.map.item_drop_manager import ItemDropManager
 
 
