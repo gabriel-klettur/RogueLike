@@ -43,6 +43,15 @@ class ClassSelectorManager:
             "dwarf": r"C:\\Project\\RogueLike\\assets\\ui\\character_selection\\character_selection_drwaft.png",
             "barbarian": r"C:\\Project\\RogueLike\\assets\\ui\\character_selection\\character_selection_barbrian.png",
         }
+        # Per-class border highlight colors
+        self.class_border_colors: Dict[str, tuple] = {
+            "barbarian": (220, 50, 50),     # rojo
+            "elven": (50, 200, 90),         # verde
+            "mague": (255, 220, 90),        # amarillo
+            "valkyrie": (255, 105, 180),    # rosa
+            "dwarf": (70, 120, 255),        # azul
+            "drawft": (70, 120, 255),       # azul (alias por posible typo)
+        }
 
     def refresh_options(self):
         """Reload players_config and refresh available class options."""
@@ -200,7 +209,8 @@ class ClassSelectorManager:
             # Border highlight for selection
             if idx == self.selected:
                 pygame.draw.rect(panel, (20, 20, 20), cell_rect.inflate(6, 6), width=2, border_radius=12)
-                pygame.draw.rect(panel, (255, 220, 90), cell_rect, width=4, border_radius=10)
+                border_col = self.class_border_colors.get(cls_name, (255, 220, 90))
+                pygame.draw.rect(panel, border_col, cell_rect, width=4, border_radius=10)
             else:
                 pygame.draw.rect(panel, (95, 95, 95), cell_rect, width=2, border_radius=10)
 
