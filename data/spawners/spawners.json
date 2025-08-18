@@ -25,5 +25,32 @@
         ]
       }
     ]
+  },
+  {
+    "id": "barbol_periodic_faster",
+    "spawner_type": "invisible",
+    "trigger": {
+      "type": "proximity",
+      "radius": 6,
+      "auto_start": true
+    },
+    "policy": {
+      "mode": "periodic",
+      "cooldown_s": 1,
+      "max_active": 0,
+      "persistent": false
+    },
+    "waves": [
+      {
+        "spawns": [
+          {
+            "kind": "monster",
+            "id": "barbol",
+            "count": 1,
+            "spread_radius": 2
+          }
+        ]
+      }
+    ]
   }
 ]

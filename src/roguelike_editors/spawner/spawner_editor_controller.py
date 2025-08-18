@@ -13,6 +13,7 @@ from roguelike_editors.spawner.spawner_toolbar.spawner_toolbar_controller import
 from roguelike_editors.spawner.spawner_templates_panel.spawner_manager_controller import SpawnerManagerController
 from roguelike_editors.spawner.spawner_instances_panel.spawner_list_instances_controller import SpawnerListInstancesController
 from roguelike_editors.spawner.spawner_instance_properties_panel.instance_properties_controller import InstancePropertiesController
+from roguelike_editors.spawner.spawner_instance_toolbar.spawner_instance_toolbar_controller import SpawnerInstanceToolbarController
 
 
 class SpawnerEditorController:
@@ -31,6 +32,8 @@ class SpawnerEditorController:
         self.title_controller = SpawnerTitleController(self, self.model.title_model, self.font)
         # Toolbar (undo/spawner_manager/redo)
         self.spawner_toolbar = SpawnerToolbarController(self)
+        # Instance Toolbar (add/remove spawner instances)
+        self.instance_toolbar = SpawnerInstanceToolbarController(self)
         # Spawner lists:
         # - Instances list (data/spawners/instances.json)
         self.spawner_instances = SpawnerListInstancesController()
@@ -169,6 +172,11 @@ class SpawnerEditorController:
                 self.spawner_instances.model.visible = bool(self.model.visible and (active_tool == 'spawner_list'))
             except Exception:
                 pass
+            # Gate Instance Toolbar visibility alongside Instances tool
+            try:
+                self.instance_toolbar.model.visible = bool(instances_visible)
+            except Exception:
+                pass
             # Sync Instance Properties visibility with active tool and selection
             try:
                 sel = self.spawner_instances.get_selected_instance()
@@ -208,6 +216,9 @@ class SpawnerEditorController:
             # Instances list captures next if visible
             # Even if hidden due to hold, we still route events so it can receive MOUSEBUTTONUP to end hold
             if (self.model.visible and (active_tool == 'spawner_list')):
+                # Instance toolbar first (for add/remove buttons and dragging)
+                if hasattr(self, 'instance_toolbar') and self.instance_toolbar.handle_event(event):
+                    return True
                 if self.spawner_instances.handle_event(event):
                     return True
                 # Then route to Instance Properties if visible
@@ -233,6 +244,11 @@ class SpawnerEditorController:
             # Keep model visible in sync for view short-circuit
             try:
                 self.spawner_instances.model.visible = bool(instances_visible)
+            except Exception:
+                pass
+            # Gate Instance Toolbar visibility alongside Instances tool
+            try:
+                self.instance_toolbar.model.visible = bool(instances_visible)
             except Exception:
                 pass
             # Expose global flag so gameplay input can be suppressed while editor is active

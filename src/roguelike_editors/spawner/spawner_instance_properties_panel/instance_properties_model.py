@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Dict, Optional, Tuple
 
 
@@ -20,3 +20,9 @@ class InstancePropertiesModel:
     hovered_index: Optional[int] = None
     editing_key: Optional[str] = None  # dotted path like "overrides.trigger.radius" or "tile.0"
     editing_row_index: Optional[int] = None
+
+    # Combobox state for template_id
+    template_combo_open: bool = False
+    template_options: list[str] = field(default_factory=list)
+    template_hovered_index: Optional[int] = None
+    template_scroll_offset: int = 0

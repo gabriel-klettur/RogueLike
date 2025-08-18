@@ -38,6 +38,20 @@ class SpawnerEditorView:
                 tb_rect = getattr(getattr(c.spawner_toolbar, 'view', None), 'last_rect', None)
         except Exception:
             pass
+        # 2b) Instance Toolbar to the RIGHT of main toolbar when Instances tool is active
+        inst_tb_rect = None
+        try:
+            # Visible is synced in controller based on active tool
+            if hasattr(c, 'instance_toolbar') and getattr(getattr(c.instance_toolbar, 'model', None), 'visible', False):
+                if tb_rect is not None:
+                    anchor = (tb_rect.right + 8, tb_rect.top)
+                else:
+                    base_x = title_rect.left if title_rect else 20
+                    anchor = (base_x, (title_rect.bottom + 8) if title_rect else 90)
+                c.instance_toolbar.render(screen, anchor=anchor)
+                inst_tb_rect = getattr(getattr(c.instance_toolbar, 'view', None), 'last_rect', None)
+        except Exception:
+            pass
         # 3) Spawner Manager (Templates list) to the RIGHT of toolbar when active
         mgr_rect = None
         try:
@@ -58,7 +72,10 @@ class SpawnerEditorView:
             if hasattr(c, 'spawner_instances') and getattr(getattr(c.spawner_instances, 'model', None), 'visible', True):
                 # Only render when not showing manager to avoid overlap
                 if not getattr(getattr(c.spawner_manager, 'model', None), 'visible', False):
-                    if tb_rect is not None:
+                    # Prefer placing to the right of the Instance Toolbar if present; else right of main toolbar
+                    if inst_tb_rect is not None:
+                        anchor = (inst_tb_rect.right + 8, inst_tb_rect.top)
+                    elif tb_rect is not None:
                         anchor = (tb_rect.right + 8, tb_rect.top)
                     else:
                         base_x = title_rect.left if title_rect else 20
@@ -72,6 +89,8 @@ class SpawnerEditorView:
             if ip is not None and getattr(getattr(ip, 'model', None), 'visible', False):
                 if inst_rect is not None:
                     anchor = (inst_rect.right + 8, inst_rect.top)
+                elif inst_tb_rect is not None:
+                    anchor = (inst_tb_rect.right + 8, inst_tb_rect.top)
                 elif tb_rect is not None:
                     anchor = (tb_rect.right + 8, tb_rect.top)
                 else:
