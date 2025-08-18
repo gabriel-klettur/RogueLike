@@ -72,6 +72,11 @@ class DropHoverRenderSystem:
                                     out_of_range = math.hypot(dx, dy) > rng
                             except Exception:
                                 out_of_range = False
+                            # Determinar si el drag YA está activo (post-umbral)
+                            is_active_drag = (
+                                (hasattr(drag_sys, 'dragging_eid') and getattr(drag_sys, 'dragging_eid', None) is not None) or
+                                (hasattr(drag_sys, 'dragging_idx') and getattr(drag_sys, 'dragging_idx', None) is not None)
+                            )
                             # Siempre dibujar el borde del jugador mientras el cursor está encima
                             now_ts = pygame.time.get_ticks()
                             t = now_ts / 1000.0
@@ -81,14 +86,16 @@ class DropHoverRenderSystem:
                             alpha = int(base_alpha + (max_alpha - base_alpha) * s)
                             thickness = int(base_th + (max_th - base_th) * s)
                             border_overlay = pygame.Surface((pw, ph), pygame.SRCALPHA)
-                            pygame.draw.rect(border_overlay, (255, 215, 0, alpha), border_overlay.get_rect(), max(1, thickness))
+                            border_color = (80, 220, 120, alpha) if is_active_drag else (255, 215, 0, alpha)
+                            pygame.draw.rect(border_overlay, border_color, border_overlay.get_rect(), max(1, thickness))
                             screen.blit(border_overlay, (psx, psy))
                             # Círculo de rango solo si está fuera de rango
                             if out_of_range:
                                 scx, scy = camera.apply((jcx, jcy))
                                 radius_screen = max(1, int(rng * camera.zoom))
                                 circle_overlay = pygame.Surface((radius_screen * 2 + 2, radius_screen * 2 + 2), pygame.SRCALPHA)
-                                pygame.draw.circle(circle_overlay, (255, 215, 0, alpha), (radius_screen + 1, radius_screen + 1), radius_screen, max(1, thickness))
+                                circle_color = (80, 220, 120, alpha) if is_active_drag else (255, 215, 0, alpha)
+                                pygame.draw.circle(circle_overlay, circle_color, (radius_screen + 1, radius_screen + 1), radius_screen, max(1, thickness))
                                 screen.blit(circle_overlay, (int(scx - radius_screen - 1), int(scy - radius_screen - 1)))
         except Exception:
             pass
@@ -190,7 +197,31 @@ class DropHoverRenderSystem:
         h = int(h * scale * camera.zoom)
         sx, sy = camera.apply((pos.x, pos.y))
         border_rect = pygame.Rect(sx, sy, w, h)
-        draw_highlight_rect(screen, border_rect) # highlight using UI helper
+        # Color del borde: amarillo por defecto, verde si ya alcanzó el umbral de hold o si está en drag activo
+        border_color_rgb = (255, 255, 0)
+        try:
+            ready_green = False
+            # Caso 1: aún en hold pre-drag sobre este drop y progreso >= umbral
+            drag_sys_hold = next((s for s in getattr(world, 'update_systems', []) if hasattr(s, 'potential_drag_eid')), None)
+            if drag_sys_hold is not None:
+                pot_eid = getattr(drag_sys_hold, 'potential_drag_eid', None)
+                press_time = getattr(drag_sys_hold, 'drag_press_time', None)
+                threshold = getattr(drag_sys_hold, 'drag_hold_threshold', 300)
+                if pot_eid == hovered and press_time is not None:
+                    now_ts = pygame.time.get_ticks()
+                    p = max(0.0, min(1.0, (now_ts - press_time) / max(1, threshold)))
+                    if p >= 0.999:
+                        ready_green = True
+            # Caso 2: drag activo de este mismo drop
+            if not ready_green:
+                drag_sys_active = next((s for s in getattr(world, 'update_systems', []) if hasattr(s, 'dragging_eid')), None)
+                if drag_sys_active and getattr(drag_sys_active, 'dragging_eid', None) == hovered:
+                    ready_green = True
+            if ready_green:
+                border_color_rgb = (80, 220, 120)
+        except Exception:
+            pass
+        draw_highlight_rect(screen, border_rect, color=border_color_rgb) # highlight using UI helper
         # Efecto de rellenado progresivo (hold-to-grab) y borde pulsante
         try:
             drag_sys = next((s for s in getattr(world, 'update_systems', []) if hasattr(s, 'potential_drag_eid')), None)
@@ -203,11 +234,13 @@ class DropHoverRenderSystem:
                     p = max(0.0, min(1.0, (now_ts - press_time) / max(1, threshold)))
                     # easing (ease-out cubic)
                     pe = 1 - pow(1 - p, 3)
-                    # Relleno amarillo intenso desde abajo hacia arriba
+                    # Relleno (amarillo -> verde al completar) desde abajo hacia arriba
                     overlay = pygame.Surface((w, h), pygame.SRCALPHA)
                     fill_h = int(h * pe)
                     fill_rect = pygame.Rect(0, h - fill_h, w, fill_h)
-                    pygame.draw.rect(overlay, (255, 255, 0, 220), fill_rect)
+                    done = p >= 0.999
+                    base_color = (80, 220, 120) if done else (255, 255, 0)  # verde si completo
+                    pygame.draw.rect(overlay, (*base_color, 220), fill_rect)
                     screen.blit(overlay, (sx, sy))
                     # Borde pulsante (doradito) sincronizado con el progreso
                     t = now_ts / 1000.0
@@ -218,7 +251,8 @@ class DropHoverRenderSystem:
                     alpha = int(base_alpha + (max_alpha - base_alpha) * pulse_factor)
                     thickness = int(base_th + (max_th - base_th) * pulse_factor)
                     border_overlay = pygame.Surface((w, h), pygame.SRCALPHA)
-                    pygame.draw.rect(border_overlay, (255, 215, 0, alpha), border_overlay.get_rect(), max(1, thickness))
+                    pulse_color = (80, 220, 120) if done else (255, 215, 0)
+                    pygame.draw.rect(border_overlay, (*pulse_color, alpha), border_overlay.get_rect(), max(1, thickness))
                     screen.blit(border_overlay, (sx, sy))
                     # Si el drop está fuera de rango respecto al jugador, resaltar jugador con borde dorado
                     try:

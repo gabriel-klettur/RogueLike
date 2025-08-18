@@ -53,33 +53,96 @@ class InventoryDragSystem:
         padding = 10
         slot_w, slot_h = 64, 64
 
-        # Iniciar potencial drag tras mantener presionado 0.5s
+        # Iniciar drag instantáneo (sin hold) cuando se presiona sobre un slot válido
         if self.dragging_idx is None and mouse_pressed and not self.prev_mouse:
             if panel.collidepoint(mouse_x, mouse_y):
                 rel_x = mouse_x - panel.x - padding
                 rel_y = mouse_y - panel.y - padding
-                col = int(rel_x // (slot_w + padding))
-                row = int(rel_y // (slot_h + padding))
-                idx = row * cols + col
-                inv = world.components.get('InventoryComponent', {}).get(player)
-                if inv and 0 <= idx < len(inv.slots) and inv.slots[idx]:
-                    # start timing potential drag
-                    self.drag_press_time = now
-                    self.potential_drag_idx = idx
+                if rel_x >= 0 and rel_y >= 0:
+                    col = int(rel_x // (slot_w + padding))
+                    row = int(rel_y // (slot_h + padding))
+                    idx = row * cols + col
+                    # Validar que el click ocurrió dentro del rect del slot (no en padding)
+                    sx = panel.x + padding + col * (slot_w + padding)
+                    sy = panel.y + padding + row * (slot_h + padding)
+                    slot_rect = pygame.Rect(sx, sy, slot_w, slot_h)
+                    inv = world.components.get('InventoryComponent', {}).get(player)
+                    if inv and 0 <= idx < len(inv.slots) and inv.slots[idx] and slot_rect.collidepoint(mouse_x, mouse_y):
+                        self.dragging_idx = idx
+                        # limpiar cualquier estado de hold anterior por seguridad
+                        self.potential_drag_idx = None
+                        self.drag_press_time = None
 
-        # Confirmar arrastre tras 0.5s de click
-        if self.dragging_idx is None and self.potential_drag_idx is not None and mouse_pressed:
-            if now - self.drag_press_time >= self.drag_hold_threshold:
-                self.dragging_idx = self.potential_drag_idx
-                self.potential_drag_idx = None
+        # Sin confirmación por hold: arrastre ya se inicia instantáneamente
 
-        # Soltar drag: crear drop en mapa solo si se suelta fuera del panel
+        # Soltar drag: manejar inventario→inventario y mapa
         if self.dragging_idx is not None and not mouse_pressed and self.prev_mouse:
             # reset potential drag on release before threshold
             self.potential_drag_idx = None
             self.drag_press_time = None
-            # Cancelar drop si el release ocurre dentro del panel (click)
+            # Inventario → Inventario: mover/stackear al soltar dentro del panel
             if panel.collidepoint(mouse_x, mouse_y):
+                inv_ui = next((s for s in getattr(world, 'render_systems', []) if isinstance(s, InventoryUISystem)), None)
+                inv = world.components.get('InventoryComponent', {}).get(player)
+                if inv_ui and inv and 0 <= self.dragging_idx < len(inv.slots):
+                    # Calcular slot destino bajo el mouse y validar dentro de su rect (no padding)
+                    cols = getattr(inv_ui, 'GRID_COLS', 5)
+                    padding = getattr(inv_ui, 'PADDING', 10)
+                    size = getattr(inv_ui, 'SLOT_SIZE', 64)
+                    rel_x = mouse_x - panel.x - padding
+                    rel_y = mouse_y - panel.y - padding
+                    changed = False
+                    if rel_x >= 0 and rel_y >= 0:
+                        col = int(rel_x // (size + padding))
+                        row = int(rel_y // (size + padding))
+                        dst_idx = row * cols + col
+                        # Validar posicion exacta dentro del slot
+                        sx = panel.x + padding + col * (size + padding)
+                        sy = panel.y + padding + row * (size + padding)
+                        slot_rect = pygame.Rect(sx, sy, size, size)
+                        if 0 <= dst_idx < len(inv.slots) and slot_rect.collidepoint(mouse_x, mouse_y):
+                            src_idx = self.dragging_idx
+                            if dst_idx != src_idx:
+                                src_stack = inv.slots[src_idx]
+                                dst_stack = inv.slots[dst_idx]
+                                if src_stack:
+                                    # Movimiento a vacío
+                                    if dst_stack is None:
+                                        inv.slots[dst_idx] = src_stack
+                                        inv.slots[src_idx] = None
+                                        changed = True
+                                    # Stacking si mismo item y permitido
+                                    elif dst_stack.item_id == src_stack.item_id:
+                                        # Consultar reglas de stack desde UI items
+                                        model = getattr(inv_ui, 'items', {}).get(src_stack.item_id)
+                                        stackable = getattr(model, 'stackable', False) if model else False
+                                        max_stack = getattr(model, 'max_stack', None) if model else None
+                                        if stackable:
+                                            if max_stack is None:
+                                                # Sin límite explícito
+                                                dst_stack.quantity += src_stack.quantity
+                                                inv.slots[src_idx] = None
+                                                changed = True
+                                            else:
+                                                # Respetar capacidad máxima
+                                                cap = int(max_stack) - int(dst_stack.quantity)
+                                                if cap > 0:
+                                                    move_qty = min(cap, int(src_stack.quantity))
+                                                    dst_stack.quantity += move_qty
+                                                    src_stack.quantity -= move_qty
+                                                    changed = True
+                                                    if src_stack.quantity <= 0:
+                                                        inv.slots[src_idx] = None
+                                    else:
+                                        # Ítem distinto: intercambiar (swap)
+                                        inv.slots[dst_idx], inv.slots[src_idx] = src_stack, dst_stack
+                                        changed = True
+                    if changed:
+                        # Persistir inventario tras operación
+                        persist_sys = next((s for s in getattr(world, 'update_systems', []) if isinstance(s, InventoryPickupSystem)), None)
+                        if persist_sys:
+                            persist_sys._persist_inventory(player, inv)
+                # Finalizar drag en cualquier caso dentro del panel
                 self.dragging_idx = None
             else:
                 inv = world.components.get('InventoryComponent', {}).get(player)

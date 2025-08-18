@@ -34,6 +34,11 @@ class InventoryUISystem:
     PULSE_BASE_THICKNESS = 2
     PULSE_MAX_THICKNESS = 5
     PULSE_FREQ = 2.0  # pulsos por segundo
+    # Colores de éxito (al finalizar la carga)
+    GRAB_SUCCESS_COLOR = (80, 220, 120)  # verde
+    PULSE_SUCCESS_COLOR = (80, 220, 120)
+    # Umbral para considerar "listo para arrastrar" (mostrar verde antes de activar el drag)
+    DRAG_READY_RATIO = 1.0
 
     def __init__(self, perf_log=None, items_path=None):
         """
@@ -196,17 +201,19 @@ class InventoryUISystem:
                 qty_surf = self.font.render(str(stack.quantity), True, self.TEXT_COLOR)
                 qty_rect = qty_surf.get_rect(bottomright=(x + size - 5, y + size - 5))
                 screen.blit(qty_surf, qty_rect)
-            # Dibujar progreso de agarre si aplica para este slot
+            # Dibujar progreso de agarre (hold-to-drag) si aplica para este slot
             if highlight_idx is not None and idx == highlight_idx and grab_progress > 0.0:
                 p = max(0.0, min(1.0, float(grab_progress)))
                 pe = self._ease_out_cubic(p)
                 # Superficie semitransparente
                 overlay = pygame.Surface((size, size), pygame.SRCALPHA)
                 overlay.fill((0, 0, 0, 0))
-                # Llenado progresivo de abajo hacia arriba en amarillo
+                # Llenado progresivo de abajo hacia arriba (amarillo -> verde al completar)
                 fill_h = int(size * pe)
                 fill_rect = pygame.Rect(0, size - fill_h, size, fill_h)
-                color = (*self.GRAB_PROGRESS_COLOR, self.GRAB_PROGRESS_ALPHA)
+                done = p >= self.DRAG_READY_RATIO
+                base_color = self.GRAB_SUCCESS_COLOR if done else self.GRAB_PROGRESS_COLOR
+                color = (*base_color, self.GRAB_PROGRESS_ALPHA)
                 pygame.draw.rect(overlay, color, fill_rect)
                 screen.blit(overlay, (x, y))
                 # Borde pulsante sincronizado con el progreso (más intenso hacia el final)
@@ -216,7 +223,8 @@ class InventoryUISystem:
                 alpha = int(self.PULSE_BASE_ALPHA + (self.PULSE_MAX_ALPHA - self.PULSE_BASE_ALPHA) * pulse_factor)
                 thickness = int(self.PULSE_BASE_THICKNESS + (self.PULSE_MAX_THICKNESS - self.PULSE_BASE_THICKNESS) * pulse_factor)
                 border_overlay = pygame.Surface((size, size), pygame.SRCALPHA)
-                pygame.draw.rect(border_overlay, (*self.PULSE_BORDER_COLOR, alpha), border_overlay.get_rect(), max(1, thickness))
+                pulse_color = self.PULSE_SUCCESS_COLOR if done else self.PULSE_BORDER_COLOR
+                pygame.draw.rect(border_overlay, (*pulse_color, alpha), border_overlay.get_rect(), max(1, thickness))
                 screen.blit(border_overlay, (x, y))
 
     def update(self, world, screen, camera):
@@ -265,6 +273,27 @@ class InventoryUISystem:
                     mx, my = pygame.mouse.get_pos()
                     screen.blit(ghost, (mx - size//2, my - size//2))
                 # Manejar uso de consumibles (doble clic izquierdo en slot)
+                # Highlight del slot destino mientras se arrastra dentro del inventario
+                mx2, my2 = pygame.mouse.get_pos()
+                if panel_rect and panel_rect.collidepoint(mx2, my2):
+                    rel_x = mx2 - panel_rect.x - self.PADDING
+                    rel_y = my2 - panel_rect.y - self.PADDING
+                    if rel_x >= 0 and rel_y >= 0:
+                        col = int(rel_x // (self.SLOT_SIZE + self.PADDING))
+                        row = int(rel_y // (self.SLOT_SIZE + self.PADDING))
+                        dst_idx = row * self.GRID_COLS + col
+                        sx = panel_rect.x + self.PADDING + col * (self.SLOT_SIZE + self.PADDING)
+                        sy = panel_rect.y + self.PADDING + row * (self.SLOT_SIZE + self.PADDING)
+                        slot_rect = pygame.Rect(sx, sy, self.SLOT_SIZE, self.SLOT_SIZE)
+                        if 0 <= dst_idx < len(slots) and slot_rect.collidepoint(mx2, my2) and dst_idx != drag_idx:
+                            overlay = pygame.Surface((self.SLOT_SIZE, self.SLOT_SIZE), pygame.SRCALPHA)
+                            # Usamos el color de éxito (verde) semitransparente
+                            pygame.draw.rect(overlay, (*self.GRAB_SUCCESS_COLOR, 80), overlay.get_rect())
+                            screen.blit(overlay, (sx, sy))
+                            # Borde para mayor claridad
+                            border_overlay = pygame.Surface((self.SLOT_SIZE, self.SLOT_SIZE), pygame.SRCALPHA)
+                            pygame.draw.rect(border_overlay, (*self.PULSE_SUCCESS_COLOR, 200), border_overlay.get_rect(), 3)
+                            screen.blit(border_overlay, (sx, sy))
         # Map->Inventory drag feedback: overlay on hovered slot + ghost sprite
         drop_sys = next((s for s in getattr(world, 'update_systems', []) if hasattr(s, 'dragging_eid')), None)
         drop_eid = getattr(drop_sys, 'dragging_eid', None) if drop_sys else None
@@ -286,12 +315,14 @@ class InventoryUISystem:
                     now_ts = pygame.time.get_ticks()
                     p = max(0.0, min(1.0, (now_ts - hover_start) / max(1, hover_threshold)))
                     pe = self._ease_out_cubic(p)
-                    # Relleno amarillo
+                    # Relleno (amarillo -> verde al completar)
                     overlay = pygame.Surface((size, size), pygame.SRCALPHA)
                     overlay.fill((0, 0, 0, 0))
                     fill_h = int(size * pe)
                     fill_rect = pygame.Rect(0, size - fill_h, size, fill_h)
-                    color = (*self.GRAB_PROGRESS_COLOR, self.GRAB_PROGRESS_ALPHA)
+                    done = p >= 0.999
+                    base_color = self.GRAB_SUCCESS_COLOR if done else self.GRAB_PROGRESS_COLOR
+                    color = (*base_color, self.GRAB_PROGRESS_ALPHA)
                     pygame.draw.rect(overlay, color, fill_rect)
                     screen.blit(overlay, (x, y))
                     # Borde pulsante
@@ -301,7 +332,8 @@ class InventoryUISystem:
                     alpha = int(self.PULSE_BASE_ALPHA + (self.PULSE_MAX_ALPHA - self.PULSE_BASE_ALPHA) * pulse_factor)
                     thickness = int(self.PULSE_BASE_THICKNESS + (self.PULSE_MAX_THICKNESS - self.PULSE_BASE_THICKNESS) * pulse_factor)
                     border_overlay = pygame.Surface((size, size), pygame.SRCALPHA)
-                    pygame.draw.rect(border_overlay, (*self.PULSE_BORDER_COLOR, alpha), border_overlay.get_rect(), max(1, thickness))
+                    pulse_color = self.PULSE_SUCCESS_COLOR if done else self.PULSE_BORDER_COLOR
+                    pygame.draw.rect(border_overlay, (*pulse_color, alpha), border_overlay.get_rect(), max(1, thickness))
                     screen.blit(border_overlay, (x, y))
             except Exception:
                 pass

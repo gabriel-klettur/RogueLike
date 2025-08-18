@@ -7,6 +7,7 @@ from roguelike_game.ecs.systems.inventory.inventory_ui_system import InventoryUI
 from roguelike_game.managers.map.item_drop_manager import ItemDropManager
 from roguelike_ui.ui_blocker import is_blocked
 import roguelike_game.config.players_config as players_config
+from roguelike_game.ecs.components.item_models import ItemStack
 
 import logging
 logger = logging.getLogger(__name__)
@@ -75,9 +76,6 @@ class DropDragSystem:
             if self.dragging_eid is None and self.potential_drag_eid is not None:
                 self.potential_drag_eid = None
                 self.drag_press_time = None
-            # limpiar hover visual al soltar
-            self.hover_slot_idx = None
-            self.hover_start_time = None
             if self.dragging_eid is None:
                 self.prev_mouse = active_pressed
                 return
@@ -90,19 +88,46 @@ class DropDragSystem:
                     and world.state.item_editor_state.visible
                 )
             ):
-                phys = comps['PhysicalItemComponent'][self.dragging_eid]
-                player = getattr(world, 'player_entity', None)
-                if player:
-                    inv_comp = comps.get('InventoryComponent', {}).get(player)
-                    if inv_comp:
-                        inv_comp.add(phys.item_id, phys.quantity)
-                        pickup_sys = next((s for s in getattr(world, 'update_systems', []) if isinstance(s, InventoryPickupSystem)), None)
-                        if pickup_sys:
-                            pickup_sys._persist_inventory(player, inv_comp)
-                self.drop_manager.pick_up(phys.drop_id)
-                world.remove_entity(self.dragging_eid)
-                self.dragging_eid = None
-                return
+                # Calcular índice de slot exacto bajo el mouse
+                panel = ui_sys.panel_rect
+                cols = getattr(ui_sys, 'GRID_COLS', 5)
+                padding = getattr(ui_sys, 'PADDING', 10)
+                size = getattr(ui_sys, 'SLOT_SIZE', 64)
+                rel_x = mouse_x - panel.x - padding
+                rel_y = mouse_y - panel.y - padding
+                drop_handled = False
+                if rel_x >= 0 and rel_y >= 0:
+                    col = int(rel_x // (size + padding))
+                    row = int(rel_y // (size + padding))
+                    idx = row * cols + col
+                    # Validar mouse dentro del rect del slot calculado
+                    sx = panel.x + padding + col * (size + padding)
+                    sy = panel.y + padding + row * (size + padding)
+                    slot_rect = pygame.Rect(sx, sy, size, size)
+                    if slot_rect.collidepoint(mouse_x, mouse_y):
+                        phys = comps['PhysicalItemComponent'][self.dragging_eid]
+                        player = getattr(world, 'player_entity', None)
+                        inv_comp = comps.get('InventoryComponent', {}).get(player) if player else None
+                        if inv_comp and 0 <= idx < len(inv_comp.slots):
+                            curr = inv_comp.slots[idx]
+                            if curr is None:
+                                inv_comp.slots[idx] = ItemStack(phys.item_id, phys.quantity)
+                                drop_handled = True
+                            elif curr.item_id == phys.item_id:
+                                curr.quantity += phys.quantity
+                                drop_handled = True
+                        if drop_handled:
+                            pickup_sys = next((s for s in getattr(world, 'update_systems', []) if isinstance(s, InventoryPickupSystem)), None)
+                            if pickup_sys and player and inv_comp:
+                                pickup_sys._persist_inventory(player, inv_comp)
+                            self.drop_manager.pick_up(phys.drop_id)
+                            world.remove_entity(self.dragging_eid)
+                            self.dragging_eid = None
+                            # limpiar hover visual tras finalizar
+                            self.hover_slot_idx = None
+                            self.hover_start_time = None
+                            return
+                # Si no se soltó sobre un slot válido u ocupado con distinto item, no recoger: continuar flujo normal
             # Detectar fin de drag: caer sobre el jugador -> recoger al inventario
             player = getattr(world, 'player_entity', None)
             if player is not None:
