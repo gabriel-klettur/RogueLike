@@ -81,14 +81,102 @@ class SpawnerEditorEventHandler:
         if not world or not camera:
             return False
 
+        # Add Mode: while active (and before a template is chosen -> placing_template_id is None),
+        # block world interactions and allow ESC to cancel, BUT allow MMB panning.
+        if getattr(self.model, 'add_mode_active', False) and not getattr(self.model, 'placing_template_id', None):
+            # Cancel with ESC
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                self.model.add_mode_active = False
+                # Hide Templates Manager (switch back to Instances list)
+                try:
+                    tb = getattr(self.controller, 'spawner_toolbar', None)
+                    if tb and getattr(tb, 'model', None) is not None:
+                        tb.model.active_tool = 'spawner_list'
+                except Exception:
+                    pass
+                # Mirror to toolbar model to stop blinking
+                try:
+                    if hasattr(self.controller, 'instance_toolbar') and getattr(self.controller.instance_toolbar, 'model', None) is not None:
+                        self.controller.instance_toolbar.model.add_mode_active = False
+                        # Also clear dropdown list if present
+                        try:
+                            self.controller.instance_toolbar.model.add_templates = []
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
+                # Re-enable gameplay input
+                try:
+                    if hasattr(world, 'state'):
+                        setattr(world.state, 'spawner_input_suppressed', False)
+                except Exception:
+                    pass
+                return True
+            # Consume other inputs so the world does not react while template selection is required,
+            # but allow MMB panning to work.
+            if event.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP):
+                btn = getattr(event, 'button', None)
+                if btn == 2:
+                    # Let MMB events pass (handled below for panning)
+                    pass
+                else:
+                    return True
+            elif event.type == pygame.MOUSEMOTION:
+                # Allow motion when panning with MMB, otherwise consume
+                if not self.panning:
+                    return True
+            elif event.type in (pygame.MOUSEWHEEL, pygame.KEYDOWN, pygame.KEYUP):
+                return True
+
+        # Remove-mode: allow ESC to exit mode when no deletion is pending
+        if event.type == pygame.KEYDOWN and getattr(self.model, 'remove_mode_active', False) and not getattr(self.model, 'pending_delete_confirm', None):
+            if event.key == pygame.K_ESCAPE:
+                self.model.remove_mode_active = False
+                # Mirror into toolbar model if available
+                try:
+                    tb = getattr(self.controller, 'instance_toolbar', None)
+                    if tb and getattr(tb, 'model', None) is not None:
+                        tb.model.remove_mode_active = False
+                except Exception:
+                    pass
+                # Clear world flags
+                try:
+                    if hasattr(world, 'state'):
+                        setattr(world.state, 'spawner_remove_mode', False)
+                        setattr(world.state, 'spawner_remove_candidate_eid', None)
+                except Exception:
+                    pass
+                # Restore Instances panel by activating 'spawner_list'
+                try:
+                    main_tb = getattr(self.controller, 'spawner_toolbar', None)
+                    if main_tb and getattr(main_tb, 'model', None) is not None:
+                        main_tb.model.active_tool = 'spawner_list'
+                except Exception:
+                    pass
+                return True
+
         # Placement mode: cancel with ESC
         if event.type == pygame.KEYDOWN and getattr(self.model, 'placing_template_id', None):
             if event.key == pygame.K_ESCAPE:
                 self.model.placing_template_id = None
+                # Stop Add button blinking upon cancel
+                try:
+                    self.model.add_mode_active = False
+                    if hasattr(self.controller, 'instance_toolbar') and getattr(self.controller.instance_toolbar, 'model', None) is not None:
+                        self.controller.instance_toolbar.model.add_mode_active = False
+                except Exception:
+                    pass
                 # Re-enable gameplay input when leaving placement
                 try:
                     if hasattr(world, 'state'):
                         setattr(world.state, 'spawner_input_suppressed', False)
+                except Exception:
+                    pass
+                # Restore Instances panel by activating 'spawner_list'
+                try:
+                    tb = getattr(self.controller, 'spawner_toolbar', None)
+                    if tb and getattr(tb, 'model', None) is not None:
+                        tb.model.active_tool = 'spawner_list'
                 except Exception:
                     pass
                 return True
@@ -100,6 +188,11 @@ class SpawnerEditorEventHandler:
             try:
                 if hasattr(world, 'state'):
                     setattr(world.state, 'spawner_editor_hovered_eid', self.model.hovered_eid)
+                    # In remove mode, also mark candidate for red highlight
+                    if getattr(self.model, 'remove_mode_active', False):
+                        setattr(world.state, 'spawner_remove_candidate_eid', self.model.hovered_eid)
+                    else:
+                        setattr(world.state, 'spawner_remove_candidate_eid', None)
             except Exception:
                 pass
             # Handle camera panning while moving mouse
@@ -170,17 +263,87 @@ class SpawnerEditorEventHandler:
                 self.controller.spawner_instances.refresh_from_disk()
             except Exception:
                 pass
-            # Exit placement mode and re-enable input
+            # Exit placement mode, stop Add button blinking, re-enable input, and restore Instances panel
             self.model.placing_template_id = None
+            try:
+                self.model.add_mode_active = False
+                if hasattr(self.controller, 'instance_toolbar') and getattr(self.controller.instance_toolbar, 'model', None) is not None:
+                    self.controller.instance_toolbar.model.add_mode_active = False
+            except Exception:
+                pass
             try:
                 if hasattr(world, 'state'):
                     setattr(world.state, 'spawner_input_suppressed', False)
             except Exception:
                 pass
+            # Activate 'spawner_list' so Instances panel reappears
+            try:
+                tb = getattr(self.controller, 'spawner_toolbar', None)
+                if tb and getattr(tb, 'model', None) is not None:
+                    tb.model.active_tool = 'spawner_list'
+            except Exception:
+                pass
             return True
+
+        # MMB down: start camera panning (always available while editor visible)
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 2:
+            mx, my = event.pos
+            self.panning = True
+            self.pan_start = (mx, my)
+            self.pan_offset_start = (camera.offset_x, camera.offset_y)
+            try:
+                if hasattr(world, 'state'):
+                    setattr(world.state, 'spawner_input_suppressed', True)
+            except Exception:
+                pass
+            return True
+
+        # MMB up: stop camera panning
+        if event.type == pygame.MOUSEBUTTONUP and event.button == 2:
+            if self.panning:
+                self.panning = False
+                try:
+                    if hasattr(world, 'state'):
+                        setattr(world.state, 'spawner_input_suppressed', False)
+                except Exception:
+                    pass
+                return True
+
+        # Remove mode: LMB click on a spawner asks for deletion confirmation
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and getattr(self.model, 'remove_mode_active', False):
+            mx, my = event.pos
+            eid = self.model.hovered_eid or pick_spawner_under_cursor(world, camera, mx, my)
+            if eid is None:
+                return False
+            # Build pending delete confirmation payload
+            try:
+                cfg = world.components['SpawnerConfig'][eid]
+                zone = cfg.zone
+                off_x, off_y = global_map_settings.zone_offsets.get(zone, (0, 0))
+                tx, ty = cfg.anchor_tile
+                local_tx, local_ty = int(tx - off_x), int(ty - off_y)
+                tpl_id = cfg.template_id
+                self.model.pending_delete_confirm = {
+                    'eid': eid,
+                    'template_id': tpl_id,
+                    'zone': zone,
+                    'local_tile': (local_tx, local_ty),
+                }
+                # Suppress gameplay input while prompt is open
+                try:
+                    if hasattr(world, 'state'):
+                        setattr(world.state, 'spawner_input_suppressed', True)
+                except Exception:
+                    pass
+                return True
+            except Exception:
+                return False
 
         # RMB down: start drag if clicking near a spawner anchor; otherwise start camera panning
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
+            # Disable drag/pan when in remove mode
+            if getattr(self.model, 'remove_mode_active', False):
+                return True
             mx, my = event.pos
             # Only consume RMB if hovering a spawner
             eid = self.model.hovered_eid or pick_spawner_under_cursor(world, camera, mx, my)
@@ -355,6 +518,71 @@ class SpawnerEditorEventHandler:
                     pass
                 self.model.pending_zone_confirm = None
                 # Re-enable gameplay input
+                try:
+                    if hasattr(world, 'state'):
+                        setattr(world.state, 'spawner_input_suppressed', False)
+                except Exception:
+                    pass
+                return True
+
+        # While a delete confirmation is pending, capture Y/N or Enter/Esc
+        if event.type == pygame.KEYDOWN and self.model.pending_delete_confirm:
+            pending = self.model.pending_delete_confirm
+            key = event.key
+            # Confirm delete
+            if key in (pygame.K_y, pygame.K_RETURN, pygame.K_KP_ENTER):
+                try:
+                    eid = pending.get('eid')
+                    tpl_id = pending.get('template_id')
+                    zone = pending.get('zone')
+                    local_tile = pending.get('local_tile')
+                    data, idx, _ = find_instance_in_json(tpl_id, zone, tuple(local_tile))
+                    if idx is not None:
+                        try:
+                            data.pop(idx)
+                        except Exception:
+                            pass
+                        try:
+                            write_instances_json(data)
+                        except Exception:
+                            pass
+                    # Remove entity from world
+                    try:
+                        if eid is not None:
+                            world.remove_entity(eid)
+                    except Exception:
+                        pass
+                    # Refresh UI list and hide properties
+                    try:
+                        self.controller.spawner_instances.refresh_from_disk()
+                    except Exception:
+                        pass
+                    try:
+                        if hasattr(self.controller, 'instance_properties') and getattr(self.controller.instance_properties.model, 'visible', False):
+                            self.controller.instance_properties.model.visible = False
+                    except Exception:
+                        pass
+                    # Clear candidate highlight
+                    try:
+                        if hasattr(world, 'state'):
+                            setattr(world.state, 'spawner_remove_candidate_eid', None)
+                            setattr(world.state, 'spawner_editor_hovered_eid', None)
+                    except Exception:
+                        pass
+                except Exception:
+                    pass
+                self.model.pending_delete_confirm = None
+                # Keep remove mode active; re-enable gameplay input after prompt closes
+                try:
+                    if hasattr(world, 'state'):
+                        setattr(world.state, 'spawner_input_suppressed', False)
+                except Exception:
+                    pass
+                return True
+            # Cancel delete
+            if key in (pygame.K_n, pygame.K_ESCAPE):
+                self.model.pending_delete_confirm = None
+                # Re-enable gameplay input after prompt closes
                 try:
                     if hasattr(world, 'state'):
                         setattr(world.state, 'spawner_input_suppressed', False)

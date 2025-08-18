@@ -29,7 +29,20 @@ class SpawnerEditorModel:
     # Placement mode (initiated from Templates list "Add" button)
     # When not None: waiting for a map click to place this template as a new instance
     placing_template_id: str | None = None
+    # Add mode: set True when user presses Add button and must choose a template from the list
+    # This drives UI blinking and input suppression prior to entering placement mode
+    add_mode_active: bool = False
     # Hold-to-focus state (when user holds click on coords in Instances panel)
     hold_focus_active: bool = False
     # World pixel target to focus camera while holding (x_px, y_px)
     hold_focus_target_px: tuple[float, float] | None = None
+    # Remove mode: when True, LMB selects a spawner to delete (requires confirmation)
+    remove_mode_active: bool = False
+    # Pending delete confirmation overlay data, or None
+    # {
+    #   'eid': int,
+    #   'template_id': str,
+    #   'zone': str,
+    #   'local_tile': tuple[int,int],
+    # }
+    pending_delete_confirm: dict | None = None

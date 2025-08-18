@@ -32,10 +32,15 @@ class SpawnerDebugRenderSystem:
         self._ensure_font()
         zoom = getattr(camera, 'zoom', 1.0) or 1.0
         hovered_eid = None
+        remove_candidate = None
         try:
             hovered_eid = getattr(getattr(world, 'state', None), 'spawner_editor_hovered_eid', None)
         except Exception:
             hovered_eid = None
+        try:
+            remove_candidate = getattr(getattr(world, 'state', None), 'spawner_remove_candidate_eid', None)
+        except Exception:
+            remove_candidate = None
         for eid in world.get_entities_with('SpawnerConfig', 'SpawnerState'):
             cfg = comps['SpawnerConfig'][eid]
             st = comps['SpawnerState'][eid]
@@ -48,13 +53,21 @@ class SpawnerDebugRenderSystem:
             # Draw anchor (crosshair + dot)
             cx, cy = int(sx), int(sy)
             base_col = (0, 200, 255)
-            hover = (eid == hovered_eid)
-            dot_col = (255, 220, 0) if hover else base_col
-            cross_col = (255, 220, 0) if hover else base_col
-            # Yellow hover halo
-            if hover:
+            is_hover = (eid == hovered_eid)
+            is_remove_sel = (eid == remove_candidate)
+            if is_remove_sel:
+                dot_col = (255, 60, 60)
+                cross_col = (255, 60, 60)
+                # Red selection halo
                 halo_r = int(14 * zoom)
-                pygame.draw.circle(screen, (255, 220, 0), (cx, cy), max(halo_r, 8), width=3)
+                pygame.draw.circle(screen, (255, 60, 60), (cx, cy), max(halo_r, 8), width=3)
+            else:
+                dot_col = (255, 220, 0) if is_hover else base_col
+                cross_col = (255, 220, 0) if is_hover else base_col
+                # Yellow hover halo
+                if is_hover:
+                    halo_r = int(14 * zoom)
+                    pygame.draw.circle(screen, (255, 220, 0), (cx, cy), max(halo_r, 8), width=3)
             pygame.draw.circle(screen, dot_col, (cx, cy), 4)
             arm = 8
             pygame.draw.line(screen, cross_col, (cx - arm, cy), (cx + arm, cy), 2)

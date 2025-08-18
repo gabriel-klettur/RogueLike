@@ -11,6 +11,11 @@ class SpawnerInstanceToolbarView:
         self.anchor = (20, 60)
         self.size = 64
         self.padding = 8
+        # Keep last model for active/blink state queries from ToolbarView
+        self._model_ref = None
+        # Dropdown state (rendered by this view)
+        self.dropdown_rect = None
+        self.dropdown_item_rects = []  # list[tuple[str, pygame.Rect]]
 
     def _build_icons(self, model) -> dict:
         try:
@@ -67,6 +72,8 @@ class SpawnerInstanceToolbarView:
     def render(self, model, screen, *, anchor: Optional[Tuple[int, int]] = None):
         if not getattr(model, 'visible', True):
             return None
+        # Update model ref for is_active/blink queries
+        self._model_ref = model
         self.ensure_ready(model, anchor=anchor)
         try:
             import pygame  # type: ignore
@@ -82,11 +89,73 @@ class SpawnerInstanceToolbarView:
             register_blocker(self.last_rect)
         except Exception:
             pass
+        # Optional dropdown for Add mode
+        self.dropdown_rect = None
+        self.dropdown_item_rects = []
+        if getattr(model, 'add_mode_active', False) and getattr(model, 'add_templates', None):
+            add_rect = None
+            try:
+                add_rect = self.toolbar.icon_rects.get('add_spawner')
+            except Exception:
+                add_rect = None
+            if add_rect is None:
+                add_rect = self.last_rect
+            # Layout
+            item_h = 22
+            max_w = 220
+            pad = 6
+            x = add_rect.right + 8
+            y = add_rect.top
+            items = list(getattr(model, 'add_templates', []) or [])
+            height = len(items) * item_h + 2 * pad
+            width = max_w
+            self.dropdown_rect = pygame.Rect(x, y, width, height)
+            # Draw background
+            bg = pygame.Surface((width, height), pygame.SRCALPHA)
+            bg.fill((0, 0, 0, 200))
+            screen.blit(bg, (x, y))
+            # Draw items
+            try:
+                font = pygame.font.Font(None, 18)
+            except Exception:
+                font = None
+            for idx, tpl in enumerate(items):
+                item_rect = pygame.Rect(x + pad, y + pad + idx * item_h, width - 2 * pad, item_h)
+                # hover highlight
+                if item_rect.collidepoint(pygame.mouse.get_pos()):
+                    hover_surf = pygame.Surface(item_rect.size, pygame.SRCALPHA)
+                    hover_surf.fill((255, 255, 0, 40))
+                    screen.blit(hover_surf, item_rect.topleft)
+                if font:
+                    txt = font.render(str(tpl), True, (230, 230, 230))
+                    screen.blit(txt, (item_rect.x + 6, item_rect.y + 2))
+                self.dropdown_item_rects.append((str(tpl), item_rect))
+            # Border
+            pygame.draw.rect(screen, (255, 255, 255), self.dropdown_rect, 1)
+            # Block interactions under dropdown too
+            try:
+                from roguelike_ui.ui_blocker import register_blocker
+                register_blocker(self.dropdown_rect)
+            except Exception:
+                pass
         return self.last_rect
 
     # ToolbarView expects controller to expose this
     def is_active(self, tool: str) -> bool:
-        # No toggle state for instance toolbar buttons
+        # Active for remove/add modes
+        if tool == 'remove_spawner':
+            # The actual flag lives in the editor controller model; it is forwarded into this model
+            return bool(getattr(self._model_ref, 'remove_mode_active', False))
+        if tool == 'add_spawner':
+            return bool(getattr(self._model_ref, 'add_mode_active', False))
+        return False
+
+    # Optional: blinking support for active tools
+    def blink_active(self, tool: str) -> bool:
+        if tool == 'remove_spawner':
+            return bool(getattr(self._model_ref, 'remove_mode_active', False))
+        if tool == 'add_spawner':
+            return bool(getattr(self._model_ref, 'add_mode_active', False))
         return False
 
 

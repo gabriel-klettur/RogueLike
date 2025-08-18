@@ -79,6 +79,12 @@ def update_game(
                 return
         except Exception:
             pass
+        # Mientras el usuario arrastra con MMB, no recentrar la cámara al jugador
+        try:
+            if getattr(state, 'mmb_panning', False):
+                return
+        except Exception:
+            pass
         # Respetar enfoque manual del Spawner Editor (hold-focus)
         try:
             if getattr(getattr(ecs, 'ecs_world', None), 'state', None) is not None:

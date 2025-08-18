@@ -265,17 +265,38 @@ def handle_events(game):
             if is_blocked(mx, my):
                 logger.debug("[Events] Blocked MOUSEWHEEL over UI at (%s,%s)", mx, my)
                 blocked_idx.add(i)
-        # Clicks dentro de paneles UI
+        # Clicks dentro de paneles UI (excepto MMB que se usa para pan de cámara)
         elif ev.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP):
+            btn = getattr(ev, 'button', None)
+            # Permitir MMB solo si el Spawner Editor está visible
+            allow_mmb_ui = bool(getattr(getattr(game, 'spawner_editor', None), 'model', None) and getattr(game.spawner_editor.model, 'visible', False))
+            if btn == 2 and allow_mmb_ui:
+                logger.debug("[Events] Allowing MMB event=%s over UI passthrough (down/up) [SpawnerEditor visible]", ev.type)
+                continue
             mx, my = getattr(ev, 'pos', (None, None))
             if mx is not None and is_blocked(mx, my):
-                logger.debug("[Events] Blocked MOUSEBUTTON event=%s over UI at (%s,%s)", ev.type, mx, my)
+                logger.debug("[Events] Blocked MOUSEBUTTON event=%s (button=%s) over UI at (%s,%s)", ev.type, btn, mx, my)
                 blocked_idx.add(i)
-        # Opcionalmente bloquear MOUSEMOTION sobre UI para evitar hovers del motor
+        # Bloquear MOUSEMOTION sobre UI salvo cuando se arrastra con MMB
         elif ev.type == pygame.MOUSEMOTION:
             mx, my = getattr(ev, 'pos', (None, None))
-            if mx is not None and is_blocked(mx, my):
+            if mx is None:
+                continue
+            # Detectar si MMB está pulsado durante el movimiento
+            mmb_held = False
+            buttons = getattr(ev, 'buttons', None)
+            try:
+                if buttons and len(buttons) >= 3:
+                    mmb_held = bool(buttons[1])
+                else:
+                    mmb_held = bool(pygame.mouse.get_pressed(3)[1])
+            except Exception:
+                mmb_held = False
+            allow_mmb_ui = bool(getattr(getattr(game, 'spawner_editor', None), 'model', None) and getattr(game.spawner_editor.model, 'visible', False))
+            if is_blocked(mx, my) and not (mmb_held and allow_mmb_ui):
                 blocked_idx.add(i)
+            elif is_blocked(mx, my) and mmb_held and allow_mmb_ui:
+                logger.debug("[Events] Allowing MOUSEMOTION with MMB held over UI [SpawnerEditor visible]")
     remaining_events = [e for idx, e in enumerate(events) if idx not in consumed_idx and idx not in blocked_idx]
     # Pass remaining events and diagnostics overlay to the engine input handler
     engine_handle_events(

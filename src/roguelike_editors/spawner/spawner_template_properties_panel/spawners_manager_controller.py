@@ -22,6 +22,9 @@ class SpawnersManagerController:
         # Optional callback set by parent controller to react on id renames
         # Signature: (old_id: str, new_id: str) -> None
         self.on_template_renamed: Optional[Callable[[str, str], None]] = None
+        # Optional callback invoked after saving non-id edits to the template
+        # Signature: (updated_template: dict) -> None
+        self.on_template_saved: Optional[Callable[[dict], None]] = None
         # UI helpers
         self._dbl = DoubleClickDetector(interval_ms=450)
         self._text_input: Optional[TextInput] = None
@@ -155,6 +158,12 @@ class SpawnersManagerController:
                 # Persist
                 try:
                     save_spawner_template(self.model.selected_template)  # type: ignore[arg-type]
+                except Exception:
+                    pass
+                # Notify listeners that a template was saved (e.g., to refresh ECS spawners)
+                try:
+                    if self.on_template_saved and self.model.selected_template is not None:
+                        self.on_template_saved(self.model.selected_template)
                 except Exception:
                     pass
             # Clear

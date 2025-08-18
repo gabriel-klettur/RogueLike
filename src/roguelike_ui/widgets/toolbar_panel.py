@@ -109,8 +109,20 @@ class ToolbarView:
                 hover_surf.fill(self.hover_color)
                 screen.blit(hover_surf, rect.topleft)
             if self.controller.is_active(tool):
-
-                pygame.draw.rect(screen, self.selection_color, rect, self.selection_border_width)
+                # Optional blinking when controller exposes blink_active(tool)
+                blink = False
+                try:
+                    if hasattr(self.controller, 'blink_active') and callable(getattr(self.controller, 'blink_active')):
+                        blink = bool(self.controller.blink_active(tool))
+                except Exception:
+                    blink = False
+                if blink:
+                    ticks = pygame.time.get_ticks()
+                    phase_on = ((ticks // 300) % 2) == 0
+                    if phase_on:
+                        pygame.draw.rect(screen, self.selection_color, rect, self.selection_border_width)
+                else:
+                    pygame.draw.rect(screen, self.selection_color, rect, self.selection_border_width)
 
     def handle_event(self, event):
         """

@@ -4,7 +4,7 @@
     "spawner_type": "invisible",
     "trigger": {
       "type": "proximity",
-      "radius": 6,
+      "radius": 5,
       "auto_start": true
     },
     "policy": {

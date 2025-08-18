@@ -43,71 +43,135 @@ class SpawnerInstanceToolbarController:
 
     # Actions -----------------------------------------------------------------
     def on_add_spawner(self) -> None:
-        """Begin placement using the selected instance's template_id if available;
-        otherwise open the Templates Manager to pick one.
+        """Enter/exit Add Mode with a simple dropdown of template ids.
+
+        - Populates model.add_templates from spawners.json
+        - Toggles blinking on the Add button
+        - Does NOT switch main toolbar tool; dropdown is owned by Instance Toolbar
+        - Ensures Remove Mode is turned off
+        - Suppresses gameplay input while open
         """
-        try:
-            inst = self.editor_controller.spawner_instances.get_selected_instance()
-            tpl_id = inst.get('template_id') if inst else None
-        except Exception:
-            tpl_id = None
-        if tpl_id:
+        # Toggle behavior
+        active = bool(getattr(self.editor_controller.model, 'add_mode_active', False))
+        new_state = not active
+        # Load template ids when entering
+        if new_state:
             try:
-                self.editor_controller._begin_place_template(str(tpl_id))
+                from roguelike_editors.spawner.services.persistence import load_spawners_json
+                tpls = load_spawners_json() or []
+                ids = [str(t.get('id')) for t in tpls if isinstance(t, dict) and t.get('id')]
+                self.model.add_templates = ids
             except Exception:
-                logging.getLogger(__name__).debug("[InstanceToolbar] _begin_place_template failed", exc_info=False)
+                self.model.add_templates = []
         else:
-            # No selection: switch to templates manager tool to let user choose
+            # Leaving -> clear list
+            self.model.add_templates = []
+        # Set editor flag and mirror
+        self.editor_controller.model.add_mode_active = new_state
+        try:
+            self.model.add_mode_active = new_state
+        except Exception:
+            pass
+        # Ensure remove mode is OFF when entering add mode
+        if new_state:
+            try:
+                self.editor_controller.model.remove_mode_active = False
+                self.model.remove_mode_active = False
+                world = getattr(getattr(self.editor_controller, 'game', None), 'ecs', None)
+                world = getattr(world, 'ecs_world', None)
+                if world and hasattr(world, 'state'):
+                    setattr(world.state, 'spawner_remove_mode', False)
+                    setattr(world.state, 'spawner_remove_candidate_eid', None)
+            except Exception:
+                pass
+        # Suppress/re-enable gameplay input
+        try:
+            world = getattr(getattr(self.editor_controller, 'game', None), 'ecs', None)
+            world = getattr(world, 'ecs_world', None)
+        except Exception:
+            world = None
+        if world and hasattr(world, 'state'):
+            try:
+                setattr(world.state, 'spawner_input_suppressed', bool(new_state))
+            except Exception:
+                pass
+        # If user toggled OFF Add Mode via the button, bring back the Instances panel
+        if not new_state:
             try:
                 tb = getattr(self.editor_controller, 'spawner_toolbar', None)
                 if tb and getattr(tb, 'model', None) is not None:
-                    tb.model.active_tool = 'spawner_manager'
+                    tb.model.active_tool = 'spawner_list'
             except Exception:
                 pass
 
     def on_remove_spawner(self) -> None:
-        """Delete the currently selected instance from instances.json and refresh the list."""
+        """Toggle Remove Mode: when active, user can click a spawner center to delete with confirm."""
+        # Flip mode
+        active = bool(getattr(self.editor_controller.model, 'remove_mode_active', False))
+        new_state = not active
+        self.editor_controller.model.remove_mode_active = new_state
         try:
-            inst = self.editor_controller.spawner_instances.get_selected_instance()
+            # Mirror into toolbar model so view can blink
+            self.model.remove_mode_active = new_state
         except Exception:
-            inst = None
-        if not inst:
-            return
+            pass
+        # Reflect to ECS world state for render systems
         try:
-            target_id = str(inst.get('id')) if inst.get('id') is not None else None
+            world = getattr(getattr(self.editor_controller, 'game', None), 'ecs', None)
+            world = getattr(world, 'ecs_world', None)
         except Exception:
-            target_id = None
-        data = load_instances_json()
-        changed = False
-        if target_id:
-            new_data = [x for x in data if str(x.get('id')) != target_id]
-            changed = len(new_data) != len(data)
-            data = new_data
-        else:
-            # Fallback: match by tuple(template_id, zone, tile)
+            world = None
+        if world and hasattr(world, 'state'):
             try:
-                key = (inst.get('template_id'), inst.get('zone'), tuple(inst.get('tile', [0, 0])))
-                def _same(x):
-                    return (x.get('template_id'), x.get('zone'), tuple(x.get('tile', [0, 0]))) == key
-                before = len(data)
-                data = [x for x in data if not _same(x)]
-                changed = len(data) != before
-            except Exception:
-                changed = False
-        if changed:
-            try:
-                write_instances_json(data)
-            except Exception:
-                logging.getLogger(__name__).warning("[InstanceToolbar] Failed to write instances.json", exc_info=False)
-            # Refresh list and hide properties if nothing selected
-            try:
-                self.editor_controller.spawner_instances.refresh_from_disk()
+                setattr(world.state, 'spawner_remove_mode', new_state)
+                # Clear any prior candidate when toggling
+                if not new_state:
+                    setattr(world.state, 'spawner_remove_candidate_eid', None)
             except Exception:
                 pass
+        # Leave placement mode if entering remove mode
+        if new_state:
             try:
-                self.editor_controller.instance_properties.model.visible = False
+                self.editor_controller.model.placing_template_id = None
+                if world and hasattr(world, 'state'):
+                    setattr(world.state, 'spawner_input_suppressed', False)
             except Exception:
                 pass
+            # Also exit Add Mode if it was active
+            try:
+                self.editor_controller.model.add_mode_active = False
+                self.model.add_mode_active = False
+                self.model.add_templates = []
+                tb = getattr(self.editor_controller, 'spawner_toolbar', None)
+                if tb and getattr(tb, 'model', None) is not None:
+                    tb.model.active_tool = None
+            except Exception:
+                pass
+        # Clear any pending confirms when turning off, and restore Instances panel
+        if not new_state:
+            try:
+                self.editor_controller.model.pending_delete_confirm = None
+            except Exception:
+                pass
+            # Activate 'spawner_list' so instances panel shows again
+            try:
+                tb = getattr(self.editor_controller, 'spawner_toolbar', None)
+                if tb and getattr(tb, 'model', None) is not None:
+                    tb.model.active_tool = 'spawner_list'
+            except Exception:
+                pass
+
+    # Selection from dropdown -------------------------------------------------
+    def on_add_template_selected(self, template_id: str) -> None:
+        """User picked a template from the Add dropdown."""
+        try:
+            if template_id:
+                # Close dropdown UI, but KEEP blinking (add_mode_active True) until placement ends
+                self.model.add_templates = []
+                # Begin placement
+                self.editor_controller._begin_place_template(str(template_id))
+        except Exception:
+            pass
 
 
 __all__ = ["SpawnerInstanceToolbarController"]

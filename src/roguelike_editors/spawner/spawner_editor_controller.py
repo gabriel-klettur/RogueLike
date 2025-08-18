@@ -4,6 +4,8 @@ from typing import Optional
 from types import SimpleNamespace
 import pygame
 import logging
+from roguelike_engine.config.map_config import global_map_settings
+from roguelike_editors.spawner.services.persistence import find_instance_in_json
 
 from roguelike_editors.spawner.spawner_editor_model import SpawnerEditorModel
 from roguelike_editors.spawner.spawner_editor_events import SpawnerEditorEventHandler
@@ -52,6 +54,11 @@ class SpawnerEditorController:
         # Wire after-delete callback to refresh Instances panel
         try:
             self.spawner_manager.list_controller.on_after_delete_template = self._after_delete_template
+        except Exception:
+            pass
+        # When a template is saved (e.g., trigger.radius edited), refresh live ECS configs
+        try:
+            self.spawner_manager.props_controller.on_template_saved = self._on_template_saved
         except Exception:
             pass
         # Wire selection change from Instances list to Instance Properties panel
@@ -106,6 +113,86 @@ class SpawnerEditorController:
         except Exception:
             pass
         return
+
+    # Template change propagation --------------------------------------------
+    def _on_template_saved(self, updated_template: dict) -> None:
+        """Propagate template edits (e.g., trigger.radius) to live ECS entities.
+
+        - Finds all entities with matching template_id
+        - Re-resolves config by merging updated template with per-instance overrides
+        - Updates trigger/policy/waves/spawner_type and recalculates cooldown_frames
+        """
+        try:
+            world = getattr(getattr(self, 'game', None), 'ecs', None)
+            world = getattr(world, 'ecs_world', None)
+            if not world:
+                return
+            t_id = str(updated_template.get('id')) if isinstance(updated_template, dict) else None
+            if not t_id:
+                return
+            comps = getattr(world, 'components', {})
+            if 'SpawnerConfig' not in comps:
+                return
+            for eid in world.get_entities_with('SpawnerConfig', 'SpawnerState'):
+                try:
+                    cfg = comps['SpawnerConfig'][eid]
+                except Exception:
+                    continue
+                try:
+                    if str(getattr(cfg, 'template_id', '')) != t_id:
+                        continue
+                except Exception:
+                    continue
+                # Compute local tile for lookup
+                try:
+                    zone = getattr(cfg, 'zone', 'lobby')
+                    off_x, off_y = global_map_settings.zone_offsets.get(zone, (0, 0))
+                    gx, gy = getattr(cfg, 'anchor_tile', (0, 0))
+                    local_tile = (int(gx - off_x), int(gy - off_y))
+                except Exception:
+                    zone = getattr(cfg, 'zone', 'lobby')
+                    local_tile = (0, 0)
+                # Fetch instance overrides (if any)
+                try:
+                    _, _, overrides = find_instance_in_json(t_id, zone, local_tile)
+                except Exception:
+                    overrides = None
+                # Build merged config like placement system
+                trigger = dict(updated_template.get('trigger', {})) if isinstance(updated_template, dict) else {}
+                policy = dict(updated_template.get('policy', {})) if isinstance(updated_template, dict) else {}
+                waves = list(updated_template.get('waves', [])) if isinstance(updated_template, dict) else []
+                spawner_type = updated_template.get('spawner_type', getattr(cfg, 'spawner_type', 'invisible')) if isinstance(updated_template, dict) else getattr(cfg, 'spawner_type', 'invisible')
+                if isinstance(overrides, dict):
+                    for k, v in overrides.items():
+                        try:
+                            if k.startswith('trigger.'):
+                                trigger[k.split('.', 1)[1]] = v
+                            elif k.startswith('policy.'):
+                                policy[k.split('.', 1)[1]] = v
+                            elif k == 'spawner_type':
+                                spawner_type = v
+                        except Exception:
+                            continue
+                # Recompute cooldown frames from policy
+                try:
+                    from roguelike_engine.config import config as _cfg
+                    fps = getattr(_cfg, 'FPS', 60)
+                    cooldown_s = float(policy.get('cooldown_s', 10.0))
+                    cooldown_frames = int(round(cooldown_s * fps))
+                except Exception:
+                    cooldown_frames = getattr(cfg, 'cooldown_frames', 0)
+                # Apply updates in-place
+                try:
+                    cfg.trigger = trigger
+                    cfg.policy = policy
+                    if isinstance(waves, list):
+                        cfg.waves = waves
+                    cfg.spawner_type = spawner_type
+                    cfg.cooldown_frames = cooldown_frames
+                except Exception:
+                    pass
+        except Exception:
+            pass
 
     # Public API ---------------------------------------------------------------
     def set_game(self, game) -> None:
@@ -165,16 +252,32 @@ class SpawnerEditorController:
             # Gate subpanels by editor visibility
             hold = bool(getattr(self.model, 'hold_focus_active', False))
             self.spawner_manager.set_visible(self.model.visible and (active_tool == 'spawner_manager') and not hold)
-            instances_visible = bool(self.model.visible and (active_tool == 'spawner_list') and not hold)
+            # Hide Instances panel while Add Mode, Remove Mode, or Placement is active
+            placing_active = bool(getattr(self.model, 'placing_template_id', None))
+            instances_visible = bool(
+                self.model.visible
+                and (active_tool == 'spawner_list')
+                and not hold
+                and not getattr(self.model, 'add_mode_active', False)
+                and not getattr(self.model, 'remove_mode_active', False)
+                and not placing_active
+            )
             # Keep model visible in sync for view short-circuit (stay visible even during hold
             # so the Instances event handler can receive MOUSEBUTTONUP to end hold)
             try:
-                self.spawner_instances.model.visible = bool(self.model.visible and (active_tool == 'spawner_list'))
+                # But force hidden during Add Mode, Remove Mode, or Placement
+                self.spawner_instances.model.visible = bool(
+                    self.model.visible
+                    and (active_tool == 'spawner_list')
+                    and not getattr(self.model, 'add_mode_active', False)
+                    and not getattr(self.model, 'remove_mode_active', False)
+                    and not placing_active
+                )
             except Exception:
                 pass
-            # Gate Instance Toolbar visibility alongside Instances tool
+            # Keep Instance Toolbar visible whenever the editor is visible
             try:
-                self.instance_toolbar.model.visible = bool(instances_visible)
+                self.instance_toolbar.model.visible = bool(self.model.visible)
             except Exception:
                 pass
             # Sync Instance Properties visibility with active tool and selection
@@ -209,16 +312,28 @@ class SpawnerEditorController:
             # Route toolbar first to consume UI interactions
             if hasattr(self, 'spawner_toolbar') and self.spawner_toolbar.handle_event(event):
                 return True
+            # Instance toolbar should still be interactive during Add Mode (to allow cancel)
+            try:
+                if getattr(getattr(self.instance_toolbar, 'model', None), 'visible', False):
+                    if self.instance_toolbar.handle_event(event):
+                        return True
+            except Exception:
+                pass
             # Manager captures UI next if visible
             if getattr(self.spawner_manager.model, 'visible', False):
                 if self.spawner_manager.handle_event(event):
                     return True
-            # Instances list captures next if visible
+            # Instances list captures next if visible (not during Add Mode, Remove Mode, or Placement)
             # Even if hidden due to hold, we still route events so it can receive MOUSEBUTTONUP to end hold
-            if (self.model.visible and (active_tool == 'spawner_list')):
-                # Instance toolbar first (for add/remove buttons and dragging)
-                if hasattr(self, 'instance_toolbar') and self.instance_toolbar.handle_event(event):
-                    return True
+            placing_active = bool(getattr(self.model, 'placing_template_id', None))
+            if (
+                self.model.visible
+                and (active_tool == 'spawner_list')
+                and not getattr(self.model, 'add_mode_active', False)
+                and not getattr(self.model, 'remove_mode_active', False)
+                and not placing_active
+            ):
+                # Instance toolbar already handled above
                 if self.spawner_instances.handle_event(event):
                     return True
                 # Then route to Instance Properties if visible
@@ -240,15 +355,24 @@ class SpawnerEditorController:
             # Gate subpanels by editor visibility
             hold = bool(getattr(self.model, 'hold_focus_active', False))
             self.spawner_manager.set_visible(self.model.visible and (active_tool == 'spawner_manager') and not hold)
-            instances_visible = bool(self.model.visible and (active_tool == 'spawner_list') and not hold)
+            # Hide Instances panel while Add Mode, Remove Mode, or Placement is active
+            placing_active = bool(getattr(self.model, 'placing_template_id', None))
+            instances_visible = bool(
+                self.model.visible
+                and (active_tool == 'spawner_list')
+                and not hold
+                and not getattr(self.model, 'add_mode_active', False)
+                and not getattr(self.model, 'remove_mode_active', False)
+                and not placing_active
+            )
             # Keep model visible in sync for view short-circuit
             try:
                 self.spawner_instances.model.visible = bool(instances_visible)
             except Exception:
                 pass
-            # Gate Instance Toolbar visibility alongside Instances tool
+            # Keep Instance Toolbar visible whenever the editor is visible
             try:
-                self.instance_toolbar.model.visible = bool(instances_visible)
+                self.instance_toolbar.model.visible = bool(self.model.visible)
             except Exception:
                 pass
             # Expose global flag so gameplay input can be suppressed while editor is active
@@ -291,6 +415,25 @@ class SpawnerEditorController:
         try:
             self.model.visible = True
             self.model.placing_template_id = str(template_id)
+            # Keep Add Mode flag active to blink the Add button until placement completes/cancels
+            # Ensure hold-to-focus is cleared so view doesn't hide overlays
+            try:
+                self.model.hold_focus_active = False
+                self.model.hold_focus_target_px = None
+                world = getattr(getattr(self, 'game', None), 'ecs', None)
+                world = getattr(world, 'ecs_world', None)
+                if world is not None and hasattr(world, 'state'):
+                    setattr(world.state, 'spawner_hold_focus', False)
+            except Exception:
+                pass
+            # Hide Templates Manager by clearing active tool
+            try:
+                tb = getattr(self, 'spawner_toolbar', None)
+                if tb and getattr(tb, 'model', None) is not None:
+                    tb.model.active_tool = None
+            except Exception:
+                pass
+            # Do not stop blinking here; toolbar model keeps add_mode_active True until placement ends
             # Suppress gameplay input while in placement mode
             world = getattr(getattr(self.game, 'ecs', None), 'ecs_world', None)
             if world is not None and hasattr(world, 'state'):

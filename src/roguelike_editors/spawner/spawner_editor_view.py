@@ -52,12 +52,15 @@ class SpawnerEditorView:
                 inst_tb_rect = getattr(getattr(c.instance_toolbar, 'view', None), 'last_rect', None)
         except Exception:
             pass
-        # 3) Spawner Manager (Templates list) to the RIGHT of toolbar when active
+        # 3) Spawner Manager (Templates list) to the RIGHT of toolbar/instance toolbar when active
         mgr_rect = None
         try:
             if hasattr(c, 'spawner_manager') and getattr(getattr(c.spawner_manager, 'model', None), 'visible', False):
-                if tb_rect is not None:
-                    # Right of toolbar, aligned to its top
+                if inst_tb_rect is not None:
+                    # Prefer right of Instance Toolbar if present to avoid overlap
+                    anchor = (inst_tb_rect.right + 8, inst_tb_rect.top)
+                elif tb_rect is not None:
+                    # Right of main toolbar
                     anchor = (tb_rect.right + 8, tb_rect.top)
                 else:
                     # Fallback: place below title if toolbar rect missing
@@ -149,6 +152,48 @@ class SpawnerEditorView:
                 rect = pygame.Rect((vw - total_w) // 2, (vh - total_h) // 2, total_w, total_h)
                 pygame.draw.rect(screen, (20, 20, 20), rect)
                 pygame.draw.rect(screen, (200, 200, 200), rect, 2)
+                y = rect.top + pad
+                for surf in rendered:
+                    x = rect.left + (rect.width - surf.get_width()) // 2
+                    screen.blit(surf, (x, y))
+                    y += line_h
+        except Exception:
+            pass
+
+        # 6) Delete instance confirmation overlay
+        try:
+            pending_del = getattr(c.model, 'pending_delete_confirm', None)
+            if pending_del:
+                # Full-screen translucent dark backdrop
+                overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+                overlay.fill((0, 0, 0, 160))
+                screen.blit(overlay, (0, 0))
+
+                tpl = str(pending_del.get('template_id'))
+                zone = str(pending_del.get('zone'))
+                lt = pending_del.get('local_tile') or (0, 0)
+                lines = [
+                    f"Delete spawner instance?",
+                    f"Template: '{tpl}' | Zone: '{zone}' | Tile: ({lt[0]}, {lt[1]})",
+                    "Press Y/Enter to confirm, N/Esc to cancel",
+                ]
+                font = getattr(c, 'font', None)
+                if not font:
+                    return
+                max_w = 0
+                rendered = []
+                for ln in lines:
+                    surf = font.render(ln, True, (255, 200, 200))
+                    rendered.append(surf)
+                    max_w = max(max_w, surf.get_width())
+                pad = 14
+                line_h = rendered[0].get_height()
+                total_h = line_h * len(rendered) + pad * 2
+                total_w = max_w + pad * 2
+                vw, vh = screen.get_size()
+                rect = pygame.Rect((vw - total_w) // 2, (vh - total_h) // 2, total_w, total_h)
+                pygame.draw.rect(screen, (30, 0, 0), rect)
+                pygame.draw.rect(screen, (220, 60, 60), rect, 2)
                 y = rect.top + pad
                 for surf in rendered:
                     x = rect.left + (rect.width - surf.get_width()) // 2
