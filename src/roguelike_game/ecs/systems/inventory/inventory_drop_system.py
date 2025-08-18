@@ -28,6 +28,23 @@ class InventoryDropSystem:
         invs = comps.get('InventoryComponent', {})
         inputs = comps.get('InputComponent', {})
         positions = comps.get('Position', {})
+        # Evitar dropeo si la UI de inventario está visible o hay drag activo
+        try:
+            from roguelike_game.ecs.systems.inventory.drop_drag_system import DropDragSystem
+            from roguelike_game.ecs.systems.inventory.inventory_drag_system import InventoryDragSystem
+            from roguelike_game.ecs.systems.inventory.inventory_ui_system import InventoryUISystem
+            render_systems = getattr(world, 'render_systems', [])
+            update_systems = getattr(world, 'update_systems', [])
+            inv_ui_visible = any(isinstance(s, InventoryUISystem) and getattr(s, 'visible', False) for s in render_systems)
+            dragging_map_drop = any(isinstance(s, DropDragSystem) and getattr(s, 'dragging_eid', None) is not None for s in update_systems)
+            dragging_inventory = any(isinstance(s, InventoryDragSystem) and getattr(s, 'dragging_idx', None) is not None for s in update_systems)
+            if inv_ui_visible or dragging_map_drop or dragging_inventory:
+                for _, inp in inputs.items():
+                    if getattr(inp, 'drop', False):
+                        inp.drop = False
+                return
+        except Exception:
+            pass
         # Process drop requests
         for eid, inp in inputs.items():
             if not getattr(inp, 'drop', False):

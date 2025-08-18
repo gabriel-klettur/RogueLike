@@ -31,7 +31,6 @@ class InputSystem:
         # Mapear estado previo de click y right-click para detección de flanco ascendente
         self.prev_click = {}
         self.prev_right = {}
-        self.prev_drop = {}
         self.prev_toggle = {}
         self.prev_toggle_inventory = {}
         # Estado previo de hechizos para detección de flancos
@@ -62,7 +61,6 @@ class InputSystem:
                 for name in spell_attrs:
                     setattr(inp, f'spell_{name}', False)
                 inp.toggle_editor = False
-                inp.drop = False
                 inp.toggle_inventory = False
                 # Zero velocity so the player doesn't drift while paused
                 vel = world.components.get('Velocity', {}).get(eid)
@@ -72,7 +70,6 @@ class InputSystem:
                 # Clear edge-detection memory to avoid firing on resume
                 self.prev_click[eid] = False
                 self.prev_right[eid] = False
-                self.prev_drop[eid] = False
                 self.prev_toggle[eid] = False
                 self.prev_toggle_inventory[eid] = False
                 for name in spell_attrs:
@@ -94,7 +91,6 @@ class InputSystem:
                 for name in spell_attrs:
                     setattr(inp, f'spell_{name}', False)
                 inp.toggle_editor = False
-                inp.drop = False
                 inp.toggle_inventory = False
                 # Zero velocity so the player doesn't drift while selector is open
                 vel = world.components.get('Velocity', {}).get(eid)
@@ -104,7 +100,6 @@ class InputSystem:
                 # Clear edge-detection memory to avoid firing on resume
                 self.prev_click[eid] = False
                 self.prev_right[eid] = False
-                self.prev_drop[eid] = False
                 self.prev_toggle[eid] = False
                 self.prev_toggle_inventory[eid] = False
                 for name in spell_attrs:
@@ -125,7 +120,6 @@ class InputSystem:
                 for name in spell_attrs:
                     setattr(inp, f'spell_{name}', False)
                 inp.toggle_editor = False
-                inp.drop = False
                 inp.toggle_inventory = False
                 vel = world.components.get('Velocity', {}).get(eid)
                 if vel:
@@ -133,7 +127,6 @@ class InputSystem:
                     vel.vy = 0
                 self.prev_click[eid] = False
                 self.prev_right[eid] = False
-                self.prev_drop[eid] = False
                 self.prev_toggle[eid] = False
                 self.prev_toggle_inventory[eid] = False
                 for name in spell_attrs:
@@ -280,15 +273,6 @@ class InputSystem:
                 inp.toggle_editor = False
             self.prev_toggle[eid] = curr_toggle
 
-            drop_key = self.config.get_key("drop")
-            curr_drop = bool(keys[drop_key])
-            prev_d = self.prev_drop.get(eid, False)
-            if curr_drop and not prev_d:
-                inp.drop = True
-            else:
-                inp.drop = False
-            self.prev_drop[eid] = curr_drop
-
             # Toggle inventory display: detectar flanco ascendente
             inv_key = self.config.get_key("toggle_inventory")
             curr_inv = bool(keys[inv_key])
@@ -302,6 +286,7 @@ class InputSystem:
             # Control de click: desactivar cuando se arrastra un ítem o el panel de inventario
             dragging_items = any(isinstance(s, DropDragSystem) and s.dragging_eid is not None for s in getattr(world, 'update_systems', []))
             dragging_ui = any(isinstance(s, InventoryUISystem) and s.dragging for s in getattr(world, 'render_systems', []))
+            # Nota: dropeo por teclado deshabilitado completamente; sólo drag & drop
             dragging = dragging_items or dragging_ui
             # Suppress gameplay input while Spawner Editor is dragging/panning with RMB
             spawner_suppressed = bool(getattr(getattr(world, 'state', None), 'spawner_input_suppressed', False))

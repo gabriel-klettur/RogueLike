@@ -117,6 +117,10 @@ class InventoryDragSystem:
                             drop_sys._persist_inventory(player, inv)
             # reset drag
             self.dragging_idx = None
+        # Si se suelta antes del umbral sin haber iniciado drag, limpiar estado potencial
+        if self.dragging_idx is None and not mouse_pressed and self.prev_mouse:
+            self.potential_drag_idx = None
+            self.drag_press_time = None
         self.prev_mouse = mouse_pressed
 
     def _collect_occupied_tiles(self, world, zone_id: str, offx: int, offy: int):

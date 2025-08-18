@@ -54,7 +54,6 @@ from roguelike_game.ecs.systems.physics.coin_pickup_system import CoinPickupSyst
 from roguelike_game.ecs.systems.experience.orb_attraction_system import OrbAttractionSystem
 from roguelike_game.ecs.systems.inventory.inventory_init_system import InventoryInitSystem
 from roguelike_game.ecs.systems.inventory.death_drop_system import DeathDropSystem
-from roguelike_game.ecs.systems.inventory.inventory_drop_system import InventoryDropSystem
 from roguelike_game.ecs.systems.inventory.inventory_pickup_system import InventoryPickupSystem
 from roguelike_game.ecs.systems.items.consume_system import ConsumeSystem
 from roguelike_game.ecs.systems.inventory.inventory_transfer_system import InventoryTransferSystem
@@ -92,8 +91,8 @@ def get_update_system_classes():
         AnimationSystem, FlashSystem, 
         # Processes SpawnRequest -> entities
         SpawnSystem,
-        # Inventory & pickups
-        InventoryInitSystem, DeathDropSystem, InventoryDropSystem, InventoryPickupSystem, ConsumeSystem, InventoryTransferSystem, InventoryDragSystem, MapLoadDropsSystem, TempZLayerSystem, DropDespawnSystem, CoinPickupSystem, OrbAttractionSystem, ExperienceSystem, MagicSpellBarSystem, ExpansionSystem,
+        # Inventory & pickups (keyboard drop disabled; only drag-and-drop allowed)
+        InventoryInitSystem, DeathDropSystem, InventoryPickupSystem, ConsumeSystem, InventoryTransferSystem, InventoryDragSystem, MapLoadDropsSystem, TempZLayerSystem, DropDespawnSystem, CoinPickupSystem, OrbAttractionSystem, ExperienceSystem, MagicSpellBarSystem, ExpansionSystem,
     ]
 
 def get_render_system_classes():

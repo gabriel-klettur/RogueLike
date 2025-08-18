@@ -42,7 +42,8 @@
             "life_time": 0.2,
             "max_trails": 100
           },
-          "basic_death_timer_duration": 10.0
+          "basic_death_timer_duration": 10.0,
+          "drag_drop_range": 128
         },
         "assets": {
           "active_set": "sets",
@@ -175,7 +176,8 @@
             "life_time": 0.5,
             "max_trails": 50
           },
-          "basic_death_timer_duration": 8.0
+          "basic_death_timer_duration": 8.0,
+          "drag_drop_range": 128
         },
         "assets": {
           "sets": {
@@ -299,7 +301,8 @@
             "life_time": 0.5,
             "max_trails": 50
           },
-          "basic_death_timer_duration": 8.0
+          "basic_death_timer_duration": 8.0,
+          "drag_drop_range": 128
         },
         "assets": {
           "active_set": "sets",
@@ -412,7 +415,8 @@
             "life_time": 0.3,
             "max_trails": 50
           },
-          "basic_death_timer_duration": 8.0
+          "basic_death_timer_duration": 8.0,
+          "drag_drop_range": 128
         },
         "assets": {
           "active_set": "sets",
@@ -535,7 +539,8 @@
             "life_time": 0.3,
             "max_trails": 50
           },
-          "basic_death_timer_duration": 8.0
+          "basic_death_timer_duration": 8.0,
+          "drag_drop_range": 128
         },
         "assets": {
           "active_set": "sets",

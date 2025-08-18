@@ -48,7 +48,6 @@ class InputConfig:
                 "spell_teleport": "K_j",
                 "pause": "K_ESCAPE",
                 "toggle_item_editor": "K_F6",
-                "drop": "K_d",
                 "select_class": "K_F2",
                 "toggle_inventory": "K_i",
                 "toggle_building_editor": "K_F10"
@@ -57,6 +56,7 @@ class InputConfig:
             with open(self.path, 'w', encoding='utf-8') as f:
                 json.dump(self.bindings, f, indent=4)
                 # Toggle Item Editor binding
+
         if "toggle_item_editor" not in self.bindings:
             self.bindings["toggle_item_editor"] = "K_F6"
             self.save()
@@ -78,6 +78,7 @@ class InputConfig:
         if "select_class" not in self.bindings:
             self.bindings["select_class"] = "K_F2"
             self.save()
+
     def get_key(self, action):
         """
         Retorna el código pygame de la tecla para una acción.
@@ -100,7 +101,6 @@ class InputConfig:
             "spell_smoke_emitter": pygame.K_g,
             "spell_sphere_magic_shield": pygame.K_t,
             "spell_teleport": pygame.K_j,
-            "drop": pygame.K_d,
             "pause": pygame.K_ESCAPE,
             "toggle_item_editor": pygame.K_F6,
             "toggle_inventory": pygame.K_i,

@@ -1,10 +1,12 @@
 import os
+import math
 import pygame
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.ecs.systems.inventory.inventory_pickup_system import InventoryPickupSystem
 from roguelike_game.ecs.systems.inventory.inventory_ui_system import InventoryUISystem
 from roguelike_game.managers.map.item_drop_manager import ItemDropManager
 from roguelike_ui.ui_blocker import is_blocked
+import roguelike_game.config.players_config as players_config
 
 import logging
 logger = logging.getLogger(__name__)
@@ -24,7 +26,28 @@ class DropDragSystem:
         self.prev_mouse = False
         self.potential_drag_eid = None
         self.drag_press_time = None
-        self.drag_hold_threshold = 80  # ms
+        self.drag_hold_threshold = 500  # ms, igual que inventario
+        # Seguimiento de hover sobre slot del inventario durante el drag
+        self.hover_slot_idx = None
+        self.hover_start_time = None
+        self.hover_fill_threshold = 300  # ms para el efecto visual de relleno
+        # Guardar origen del drag en coords de mundo para validar rango al soltar sobre jugador
+        self.drag_origin = None
+
+    def _get_pickup_range(self, world) -> float:
+        """Return per-class pickup range (pixels). Fallback to 128 when missing."""
+        try:
+            cls = None
+            state = getattr(world, 'state', None)
+            if state is not None:
+                cls = getattr(state, 'current_player_class', None)
+            if not cls:
+                cls = players_config.PLAYER_CFG.get("DEFAULT_CLASS")
+            stats = players_config.PLAYER_STATS.get(cls, {}) or {}
+            rng = stats.get("drag_drop_range")
+            return float(rng) if rng is not None else 128.0
+        except Exception:
+            return 128.0
 
     @benchmark(lambda self: self.perf_log, "DropDragSystem.update")
     def update(self, world, camera):
@@ -52,6 +75,9 @@ class DropDragSystem:
             if self.dragging_eid is None and self.potential_drag_eid is not None:
                 self.potential_drag_eid = None
                 self.drag_press_time = None
+            # limpiar hover visual al soltar
+            self.hover_slot_idx = None
+            self.hover_start_time = None
             if self.dragging_eid is None:
                 self.prev_mouse = active_pressed
                 return
@@ -77,12 +103,62 @@ class DropDragSystem:
                 world.remove_entity(self.dragging_eid)
                 self.dragging_eid = None
                 return
+            # Detectar fin de drag: caer sobre el jugador -> recoger al inventario
+            player = getattr(world, 'player_entity', None)
+            if player is not None:
+                ppos = comps.get('Position', {}).get(player)
+                pspr = comps.get('Sprite', {}).get(player)
+                if ppos and pspr:
+                    pscale_comp = comps.get('Scale', {}).get(player)
+                    pscale = pscale_comp.scale if pscale_comp else 1.0
+                    pw, ph = pspr.image.get_size()
+                    pw = int(pw * pscale * camera.zoom)
+                    ph = int(ph * pscale * camera.zoom)
+                    psx, psy = camera.apply((ppos.x, ppos.y))
+                    prect = pygame.Rect(psx, psy, pw, ph)
+                    # Inflar hitbox para facilitar el drop sobre el jugador
+                    prect = prect.inflate(12, 12)
+                    if prect.collidepoint(mouse_x, mouse_y):
+                        # Validar que el ítem estaba dentro de rango al iniciar el drag
+                        in_range = True
+                        try:
+                            rng = self._get_pickup_range(world)
+                            # Si tenemos origen del drag, usarlo para validar contra centro del jugador
+                            if self.drag_origin is not None:
+                                # centro jugador (coords de mundo)
+                                j_w, j_h = pspr.image.get_size()
+                                j_w = j_w * (comps.get('Scale', {}).get(player).scale if comps.get('Scale', {}).get(player) else 1.0)
+                                j_h = j_h * (comps.get('Scale', {}).get(player).scale if comps.get('Scale', {}).get(player) else 1.0)
+                                jcx = ppos.x + j_w * 0.5
+                                jcy = ppos.y + j_h * 0.5
+                                dx = (self.drag_origin[0] - jcx)
+                                dy = (self.drag_origin[1] - jcy)
+                                in_range = math.hypot(dx, dy) <= rng
+                        except Exception:
+                            in_range = True
+                        if in_range:
+                            phys = comps['PhysicalItemComponent'][self.dragging_eid]
+                            inv_comp = comps.get('InventoryComponent', {}).get(player)
+                            if inv_comp:
+                                inv_comp.add(phys.item_id, phys.quantity)
+                                pickup_sys = next((s for s in getattr(world, 'update_systems', []) if isinstance(s, InventoryPickupSystem)), None)
+                                if pickup_sys:
+                                    pickup_sys._persist_inventory(player, inv_comp)
+                            self.drop_manager.pick_up(phys.drop_id)
+                            world.remove_entity(self.dragging_eid)
+                            self.dragging_eid = None
+                            self.drag_origin = None
+                            return
             # Actualizar drop en JSON
             phys = comps['PhysicalItemComponent'][self.dragging_eid]
             pos = comps['Position'][self.dragging_eid]
             logger.debug(f"[DropDragSystem][DEBUG] Updating drop {phys.drop_id} to position ({pos.x:.2f},{pos.y:.2f})")
             self.drop_manager.update_drop(phys.drop_id, position=pos)
             self.dragging_eid = None
+            self.drag_origin = None
+            # limpiar hover visual tras finalizar drag
+            self.hover_slot_idx = None
+            self.hover_start_time = None
             return            
 
         # Si botón presionado pero sin drag activo: iniciar drag tras 0.5s de click
@@ -113,11 +189,42 @@ class DropDragSystem:
                     self.drag_press_time = now
                     self.potential_drag_eid = hovered
                 elif self.potential_drag_eid == hovered and active_pressed and now - self.drag_press_time >= self.drag_hold_threshold:
-                    self.dragging_eid = hovered
-                    pos2 = comps['Position'][hovered]
-                    self.offset_x = pos2.x - world_x
-                    self.offset_y = pos2.y - world_y
-                    self.potential_drag_eid = None
+                    # Antes de iniciar el drag, validar rango respecto al jugador
+                    allow_drag = True
+                    try:
+                        player = getattr(world, 'player_entity', None)
+                        if player is not None:
+                            ppos = comps.get('Position', {}).get(player)
+                            pspr = comps.get('Sprite', {}).get(player)
+                            if ppos and pspr:
+                                pscale_comp = comps.get('Scale', {}).get(player)
+                                pscale = pscale_comp.scale if pscale_comp else 1.0
+                                pw, ph = pspr.image.get_size()
+                                pw = pw * pscale
+                                ph = ph * pscale
+                                pcx = ppos.x + pw * 0.5
+                                pcy = ppos.y + ph * 0.5
+                                dpos = comps['Position'][hovered]
+                                dspr = comps['Sprite'][hovered]
+                                dscale_comp = comps.get('Scale', {}).get(hovered)
+                                dscale = dscale_comp.scale if dscale_comp else 1.0
+                                dw, dh = dspr.image.get_size()
+                                dw = dw * dscale
+                                dh = dh * dscale
+                                dcx = dpos.x + dw * 0.5
+                                dcy = dpos.y + dh * 0.5
+                                rng = self._get_pickup_range(world)
+                                allow_drag = (math.hypot(dcx - pcx, dcy - pcy) <= rng)
+                    except Exception:
+                        allow_drag = True
+                    if allow_drag:
+                        self.dragging_eid = hovered
+                        pos2 = comps['Position'][hovered]
+                        # Guardar origen de drag en coords de mundo
+                        self.drag_origin = (pos2.x, pos2.y)
+                        self.offset_x = pos2.x - world_x
+                        self.offset_y = pos2.y - world_y
+                        self.potential_drag_eid = None
             self.prev_mouse = active_pressed
             return
 
@@ -131,3 +238,38 @@ class DropDragSystem:
             return
         pos_comp.x = world_x + self.offset_x
         pos_comp.y = world_y + self.offset_y
+        # Actualizar hover sobre inventario para feedback visual
+        ui_sys = next((s for s in getattr(world, 'render_systems', []) if isinstance(s, InventoryUISystem)), None)
+        if ui_sys and ui_sys.visible and ui_sys.panel_rect:
+            mx, my = mouse_x, mouse_y
+            panel = ui_sys.panel_rect
+            if panel.collidepoint(mx, my):
+                cols = 5
+                padding = 10
+                size = 64
+                rel_x = mx - panel.x - padding
+                rel_y = my - panel.y - padding
+                if rel_x >= 0 and rel_y >= 0:
+                    col = int(rel_x // (size + padding))
+                    row = int(rel_y // (size + padding))
+                    idx = row * cols + col
+                    # Validar que el cursor está dentro del rect del slot calculado
+                    sx = panel.x + padding + col * (size + padding)
+                    sy = panel.y + padding + row * (size + padding)
+                    slot_rect = pygame.Rect(sx, sy, size, size)
+                    if slot_rect.collidepoint(mx, my):
+                        if self.hover_slot_idx != idx:
+                            self.hover_slot_idx = idx
+                            self.hover_start_time = now
+                    else:
+                        self.hover_slot_idx = None
+                        self.hover_start_time = None
+                else:
+                    self.hover_slot_idx = None
+                    self.hover_start_time = None
+            else:
+                self.hover_slot_idx = None
+                self.hover_start_time = None
+        else:
+            self.hover_slot_idx = None
+            self.hover_start_time = None
