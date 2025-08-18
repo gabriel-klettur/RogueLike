@@ -29,3 +29,7 @@ class SpawnerEditorModel:
     # Placement mode (initiated from Templates list "Add" button)
     # When not None: waiting for a map click to place this template as a new instance
     placing_template_id: str | None = None
+    # Hold-to-focus state (when user holds click on coords in Instances panel)
+    hold_focus_active: bool = False
+    # World pixel target to focus camera while holding (x_px, y_px)
+    hold_focus_target_px: tuple[float, float] | None = None

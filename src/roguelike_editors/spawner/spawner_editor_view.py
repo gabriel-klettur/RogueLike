@@ -15,6 +15,12 @@ class SpawnerEditorView:
         c = self.controller
         if not c.model.visible:
             return
+        # While hold-to-focus is active, hide all editor panels/overlays
+        try:
+            if getattr(c.model, 'hold_focus_active', False):
+                return
+        except Exception:
+            pass
         # 1) Title bar (always renders with its own font)
         try:
             title_rect = c.title_controller.render(screen)

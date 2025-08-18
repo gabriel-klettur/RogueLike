@@ -5,8 +5,8 @@ from typing import Optional, List, Dict, Any, Callable
 from roguelike_editors.spawner.common import (
     ListPanelModel as SpawnerListInstancesModel,
     ListPanelView as SpawnerListInstancesView,
-    ListPanelEventHandler as SpawnerListInstancesEventHandler,
 )
+from .spawner_list_instances_events import SpawnerListInstancesEventHandler
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_editors.spawner.services.persistence import load_instances_json, zone_for_global_tile
 
@@ -28,6 +28,10 @@ class SpawnerListInstancesController:
         # Optional callback set by parent to react on selection change
         # Signature: (selected_index: Optional[int], selected_instance: Optional[dict]) -> None
         self.on_selection_changed: Optional[Callable[[Optional[int], Optional[Dict[str, Any]]], None]] = None
+        # Optional callbacks to focus camera while holding LMB over coords segment
+        # Signatures: on_start_hold_focus(x_px: float, y_px: float) and on_end_hold_focus()
+        self.on_start_hold_focus: Optional[Callable[[float, float], None]] = None
+        self.on_end_hold_focus: Optional[Callable[[], None]] = None
 
     def render(self, screen, *, anchor=None):
         if anchor is None:
@@ -81,7 +85,8 @@ class SpawnerListInstancesController:
                 except Exception:
                     pass
                 label_id = f"[{inst_id}] " if inst_id else ""
-                items.append(f"{label_id}{tpl} @ {zone} ({tile[0]},{tile[1]}){warn}")
+                # Show coords prefix first as requested: "@ zone (x,y) - [id]name"
+                items.append(f"@ {zone} ({tile[0]},{tile[1]}) - {label_id}{tpl}{warn}")
             except Exception:
                 items.append(str(inst))
         self.model.items = items

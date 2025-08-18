@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Optional
+from types import SimpleNamespace
 import pygame
 import logging
 
@@ -55,11 +56,53 @@ class SpawnerEditorController:
             self.spawner_instances.on_selection_changed = self._on_instance_selection_changed
         except Exception:
             pass
+        # Wire hold-to-focus callbacks from Instances list
+        try:
+            self.spawner_instances.on_start_hold_focus = self._on_start_hold_focus
+            self.spawner_instances.on_end_hold_focus = self._on_end_hold_focus
+        except Exception:
+            pass
         # Wire persist callback from Instance Properties to refresh Instances list
         try:
             self.instance_properties.on_persist = lambda: self.spawner_instances.refresh_from_disk()
         except Exception:
             pass
+
+    # Hold-to-focus integration ------------------------------------------------
+    def _on_start_hold_focus(self, x_px: float, y_px: float) -> None:
+        self.model.hold_focus_active = True
+        self.model.hold_focus_target_px = (float(x_px), float(y_px))
+        # Suppress gameplay input while focusing
+        try:
+            world = getattr(getattr(self, 'game', None), 'ecs', None)
+            world = getattr(world, 'ecs_world', None)
+            if world is not None and hasattr(world, 'state'):
+                setattr(world.state, 'spawner_input_suppressed', True)
+                # Mark hold-focus active in global state so the main loop stops following the player
+                setattr(world.state, 'spawner_hold_focus', True)
+        except Exception:
+            pass
+        # Immediately center camera this frame so world render uses the focused position
+        try:
+            cam = getattr(self.game, 'camera', None)
+            if cam is not None:
+                cam.update(SimpleNamespace(x=float(x_px), y=float(y_px)))
+        except Exception:
+            pass
+
+    def _on_end_hold_focus(self) -> None:
+        self.model.hold_focus_active = False
+        self.model.hold_focus_target_px = None
+        # Re-enable gameplay input
+        try:
+            world = getattr(getattr(self, 'game', None), 'ecs', None)
+            world = getattr(world, 'ecs_world', None)
+            if world is not None and hasattr(world, 'state'):
+                setattr(world.state, 'spawner_input_suppressed', False)
+                setattr(world.state, 'spawner_hold_focus', False)
+        except Exception:
+            pass
+        return
 
     # Public API ---------------------------------------------------------------
     def set_game(self, game) -> None:
@@ -79,6 +122,18 @@ class SpawnerEditorController:
             self.model.visible = not self.model.visible
         # When hiding, also clear toolbar active tool and subpanels visibility
         if not getattr(self.model, 'visible', False):
+            # Cancel hold-to-focus if active
+            self.model.hold_focus_active = False
+            self.model.hold_focus_target_px = None
+            # Clear any global state flags set during hold so camera/input restore
+            try:
+                world = getattr(getattr(self, 'game', None), 'ecs', None)
+                world = getattr(world, 'ecs_world', None)
+                if world is not None and hasattr(world, 'state'):
+                    setattr(world.state, 'spawner_input_suppressed', False)
+                    setattr(world.state, 'spawner_hold_focus', False)
+            except Exception:
+                pass
             try:
                 tb = getattr(getattr(self, 'spawner_toolbar', None), 'model', None)
                 if tb is not None:
@@ -105,11 +160,13 @@ class SpawnerEditorController:
             active_tool = getattr(getattr(self, 'spawner_toolbar', None), 'model', None)
             active_tool = getattr(active_tool, 'active_tool', None)
             # Gate subpanels by editor visibility
-            self.spawner_manager.set_visible(self.model.visible and active_tool == 'spawner_manager')
-            instances_visible = bool(self.model.visible and (active_tool == 'spawner_list'))
-            # Keep model visible in sync for view short-circuit
+            hold = bool(getattr(self.model, 'hold_focus_active', False))
+            self.spawner_manager.set_visible(self.model.visible and (active_tool == 'spawner_manager') and not hold)
+            instances_visible = bool(self.model.visible and (active_tool == 'spawner_list') and not hold)
+            # Keep model visible in sync for view short-circuit (stay visible even during hold
+            # so the Instances event handler can receive MOUSEBUTTONUP to end hold)
             try:
-                self.spawner_instances.model.visible = bool(instances_visible)
+                self.spawner_instances.model.visible = bool(self.model.visible and (active_tool == 'spawner_list'))
             except Exception:
                 pass
             # Sync Instance Properties visibility with active tool and selection
@@ -127,17 +184,20 @@ class SpawnerEditorController:
                     setattr(
                         world.state,
                         'spawner_editor_active',
-                        bool(self.model.visible and (self.spawner_manager.model.visible or instances_visible or placing_active)),
+                        bool(self.model.visible and (
+                            getattr(self.spawner_manager.model, 'visible', False) or
+                            instances_visible or placing_active or hold
+                        )),
                     )
             except Exception:
                 pass
             # Refresh instances list on first show
-            if instances_visible and not self._instances_visible_last:
+            if (self.model.visible and (active_tool == 'spawner_list')) and not self._instances_visible_last:
                 try:
                     self.spawner_instances.refresh_from_disk()
                 except Exception:
                     pass
-            self._instances_visible_last = instances_visible
+            self._instances_visible_last = bool(self.model.visible and (active_tool == 'spawner_list'))
             # Route toolbar first to consume UI interactions
             if hasattr(self, 'spawner_toolbar') and self.spawner_toolbar.handle_event(event):
                 return True
@@ -146,7 +206,8 @@ class SpawnerEditorController:
                 if self.spawner_manager.handle_event(event):
                     return True
             # Instances list captures next if visible
-            if instances_visible:
+            # Even if hidden due to hold, we still route events so it can receive MOUSEBUTTONUP to end hold
+            if (self.model.visible and (active_tool == 'spawner_list')):
                 if self.spawner_instances.handle_event(event):
                     return True
                 # Then route to Instance Properties if visible
@@ -166,8 +227,9 @@ class SpawnerEditorController:
             active_tool = getattr(getattr(self, 'spawner_toolbar', None), 'model', None)
             active_tool = getattr(active_tool, 'active_tool', None)
             # Gate subpanels by editor visibility
-            self.spawner_manager.set_visible(self.model.visible and active_tool == 'spawner_manager')
-            instances_visible = bool(self.model.visible and (active_tool == 'spawner_list'))
+            hold = bool(getattr(self.model, 'hold_focus_active', False))
+            self.spawner_manager.set_visible(self.model.visible and (active_tool == 'spawner_manager') and not hold)
+            instances_visible = bool(self.model.visible and (active_tool == 'spawner_list') and not hold)
             # Keep model visible in sync for view short-circuit
             try:
                 self.spawner_instances.model.visible = bool(instances_visible)
@@ -186,12 +248,23 @@ class SpawnerEditorController:
                     )
             except Exception:
                 pass
-            if instances_visible and not self._instances_visible_last:
+            if (self.model.visible and (active_tool == 'spawner_list')) and not self._instances_visible_last:
                 try:
                     self.spawner_instances.refresh_from_disk()
                 except Exception:
                     pass
-            self._instances_visible_last = instances_visible
+            self._instances_visible_last = bool(self.model.visible and (active_tool == 'spawner_list'))
+            # While holding focus, keep camera centered on target
+            if hold and getattr(self.model, 'hold_focus_target_px', None) is not None:
+                try:
+                    cam = getattr(self.game, 'camera', None)
+                    if cam is not None:
+                        tx, ty = self.model.hold_focus_target_px
+                        zoom = getattr(cam, 'zoom', 1.0) or 1.0
+                        cam.offset_x = float(tx) - (cam.screen_width / (2 * zoom))
+                        cam.offset_y = float(ty) - (cam.screen_height / (2 * zoom))
+                except Exception:
+                    pass
             self.view.render(screen)
         except Exception:
             pass
