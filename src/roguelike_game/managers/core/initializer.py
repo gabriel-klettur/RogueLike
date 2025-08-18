@@ -288,6 +288,14 @@ class GameInitializer:
     def _init_menu(self):
         g = self.game
         g.input_config = InputConfig()
-        g.menu = MenuManager(g.state, g.screen, g.input_config)
+        g.menu = MenuManager(g, g.state, g.screen, g.input_config)
+        # Arrancar en menú principal (start)
+        try:
+            g.menu.set_mode("start")
+            g.menu.show_menu = True
+        except Exception:
+            # Fallback si aún no existe API
+            g.menu.mode = "start"
+            g.menu.show_menu = True
         g.class_selector = ClassSelectorManager(g.state, g.input_config, g.screen)
         g.player_manager = PlayerManager(g.ecs.ecs_world)

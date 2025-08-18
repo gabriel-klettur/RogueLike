@@ -1,4 +1,6 @@
 import pygame
+from pathlib import Path
+from roguelike_engine.world.world_config import WORLD_CONFIG
 
 import logging
 logger = logging.getLogger(__name__)
@@ -12,13 +14,25 @@ class MenuHandler:
         self.input_config = input_config
         self.configurator = configurator
         self.selected = 0
+        self.mode = "pause"  # 'start' | 'pause'
 
     def get_options(self):
         """
         Genera la lista de opciones según el estado actual.
         """
+        if self.mode == "start":
+            opts = ["Nuevo juego", "Opciones", "Salir"]
+            if self._has_saves():
+                # Insertar Cargar juego después de Nuevo juego
+                opts.insert(1, "Cargar juego")
+            return opts
+        # pause menu
         mode_option = "Modo local" if self.state.mode == "online" else "Modo multijugador"
-        return ["Continuar", mode_option, "Configurar Botones", "Salir"]
+        opts = ["Continuar", "Guardar partida", "Opciones", mode_option, "Salir"]
+        if self._has_saves():
+            # Insertar Cargar juego después de Guardar partida
+            opts.insert(2, "Cargar juego")
+        return opts
 
     def handle_input(self, event):
         """
@@ -26,11 +40,11 @@ class MenuHandler:
         """
         options = self.get_options()
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_UP:
+            if event.key in (pygame.K_UP, pygame.K_w, pygame.K_a):
                 self.selected = (self.selected - 1) % len(options)
-            elif event.key == pygame.K_DOWN:
+            elif event.key in (pygame.K_DOWN, pygame.K_s, pygame.K_d):
                 self.selected = (self.selected + 1) % len(options)
-            elif event.key == pygame.K_RETURN:
+            elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
                 return options[self.selected]
         return None
 
@@ -40,7 +54,7 @@ class MenuHandler:
         """
         if selected == "Salir":
             self.state.running = False
-        elif selected == "Configurar Botones":
+        elif selected in ("Configurar Botones", "Opciones"):
             self.configurator.configure()
             # Borrar eventos pendientes (p.ej. ESC) para no alternar menú principal
             pygame.event.clear(pygame.KEYDOWN)
@@ -59,3 +73,16 @@ class MenuHandler:
             self.state.mode = "local"
             logger.info("Cambiando a modo local...")
             # self.state.network.disconnect()
+
+    def _has_saves(self) -> bool:
+        """Devuelve True si hay partidas guardadas disponibles para cargar."""
+        try:
+            save_dir: Path = WORLD_CONFIG.save_dir
+            if not save_dir.exists():
+                return False
+            # Partidas multi-slot
+            if any(save_dir.glob('partida_*.json')):
+                return True
+        except Exception:
+            pass
+        return False

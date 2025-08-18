@@ -9,5 +9,5 @@ class ExperienceComponent:
     xp_to_next_level: experiencia requerida para subir de nivel.
     """
     xp: int = 0
-    level: int = 1
+    level: int = 0
     xp_to_next_level: int = 100

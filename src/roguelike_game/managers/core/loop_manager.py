@@ -58,7 +58,8 @@ class GameLoop:
         cfg = self.game.world.config
         now = time.time()
         if cfg.autosave_enabled and (now - self.game._last_autosave_time >= cfg.autosave_interval):
-            self.game.world.save_world()
+            # Usar el ShutdownManager para capturar posición e inventario actuales
+            self.game.shutdown_manager.shutdown()
             self.game._last_autosave_time = now
 
     def _cap_fps(self) -> None:

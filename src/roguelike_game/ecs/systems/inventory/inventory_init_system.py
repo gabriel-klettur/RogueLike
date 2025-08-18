@@ -86,34 +86,42 @@ class InventoryInitSystem:
             if eid in self.initialized:
                 continue
             key = str(eid)
-            # Cargar inventario persistido si existe
-            if key in active_players:
-                pdata = active_players[key]
-                # Crear InventoryComponent a partir de datos guardados
-                inv_comp = InventoryComponent(
-                    capacity=self.player_template.get('capacity', 20),
-                    player_id=pdata.get('player_id', self.player_template.get('player_id'))
-                )
-                for slot in pdata.get('slots', []):
-                    if slot:
-                        inv_comp.add(slot['item'], slot['quantity'])
-            else:
-                # Crear InventoryComponent con plantilla por defecto
-                capacity = self.player_template.get('capacity', 20)
-                player_id = self.player_template.get('player_id')
-                inv_comp = InventoryComponent(capacity=capacity, player_id=player_id)
-                for slot in self.player_template.get('slots', []):
-                    if slot:
-                        inv_comp.add(slot['item'], slot['quantity'])
-                # Persistir inicial
-                active_players[key] = {
-                    'player_id': player_id,
-                    'slots': inv_comp.serialize().get('slots'),
-                    'schema_version': self.schema_version
-                }
-                self.dirty_players = True
-            world.components['InventoryComponent'][eid] = inv_comp
-            world.components['ExperienceComponent'][eid] = ExperienceComponent()
+            # Si ya existen componentes (cargados desde un save), NO sobrescribirlos
+            existing_inv = world.components.get('InventoryComponent', {}).get(eid)
+            existing_xp  = world.components.get('ExperienceComponent', {}).get(eid)
+
+            # Inventario: solo crear/asignar si no existe ya
+            if existing_inv is None:
+                # Cargar inventario persistido de activos si existe
+                if key in active_players:
+                    pdata = active_players[key]
+                    inv_comp = InventoryComponent(
+                        capacity=self.player_template.get('capacity', 20),
+                        player_id=pdata.get('player_id', self.player_template.get('player_id'))
+                    )
+                    for slot in pdata.get('slots', []):
+                        if slot:
+                            inv_comp.add(slot['item'], slot['quantity'])
+                else:
+                    # Crear InventoryComponent con plantilla por defecto
+                    capacity = self.player_template.get('capacity', 20)
+                    player_id = self.player_template.get('player_id')
+                    inv_comp = InventoryComponent(capacity=capacity, player_id=player_id)
+                    for slot in self.player_template.get('slots', []):
+                        if slot:
+                            inv_comp.add(slot['item'], slot['quantity'])
+                    # Persistir inicial
+                    active_players[key] = {
+                        'player_id': player_id,
+                        'slots': inv_comp.serialize().get('slots'),
+                        'schema_version': self.schema_version
+                    }
+                    self.dirty_players = True
+                world.components['InventoryComponent'][eid] = inv_comp
+
+            # Experiencia: solo crear por defecto si no existe ya
+            if existing_xp is None:
+                world.components['ExperienceComponent'][eid] = ExperienceComponent()
             self.initialized.add(eid)
 
         # Inicializar NPCs
