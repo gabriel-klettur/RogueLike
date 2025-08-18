@@ -1,7 +1,7 @@
 from __future__ import annotations
 import logging
 
-LOGGER = logging.getLogger("roguelike_editors.spawner.spawner_manager.list_templates.delete.events")
+LOGGER = logging.getLogger("roguelike_editors.spawner.spawner_templates_panel.list_templates.delete.events")
 
 
 class ListTemplatesDeleteEventHandler:

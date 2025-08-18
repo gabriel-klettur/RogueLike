@@ -4,6 +4,8 @@ from __future__ import annotations
 class ListPanelView:
     def __init__(self) -> None:
         self.panel_rect = None
+        # Map of global row index -> pygame.Rect (panel-local) for the "@ zone (x,y)" prefix
+        self.coords_hitboxes = {}
 
     def render(self, model, screen, *, anchor=(20, 120)):
         if not getattr(model, 'visible', True):
@@ -11,7 +13,7 @@ class ListPanelView:
         try:
             import pygame  # type: ignore
             x, y = anchor
-            width = 360
+            width = 720
             height = 260
             self.panel_rect = pygame.Rect(x, y, width, height)
             surf = pygame.Surface(self.panel_rect.size, pygame.SRCALPHA)
@@ -32,6 +34,8 @@ class ListPanelView:
                 items = list(getattr(model, 'items', []) or [])
                 start = max(0, int(getattr(model, 'scroll_offset', 0) or 0))
                 end = min(start + visible_rows, len(items))
+                # reset hitboxes for this frame
+                self.coords_hitboxes = {}
                 # Rows (windowed by scroll_offset)
                 for i, item in enumerate(items[start:end]):
                     g_idx = start + i
@@ -44,6 +48,28 @@ class ListPanelView:
                     color = (255, 255, 255) if getattr(model, 'selected_index', None) == g_idx else (230, 230, 230)
                     text = font.render(str(item), True, color)
                     surf.blit(text, (10, row_y))
+                    # If item begins with an "@ zone (x,y)" prefix, compute its hitbox and hover outline
+                    try:
+                        s = str(item)
+                        if s.startswith('@ ') and ') ' in s:
+                            end_par = s.find(')')
+                            if end_par != -1:
+                                prefix = s[: end_par + 1]
+                                line_h = font.get_linesize()
+                                prefix_w = font.size(prefix)[0]
+                                seg_rect = pygame.Rect(10, row_y, max(prefix_w, 1), line_h)
+                                self.coords_hitboxes[g_idx] = seg_rect
+                                # Hover outline in orange if mouse over
+                                try:
+                                    mx, my = pygame.mouse.get_pos()
+                                    local_x = mx - self.panel_rect.left
+                                    local_y = my - self.panel_rect.top
+                                    if seg_rect.collidepoint(local_x, local_y):
+                                        pygame.draw.rect(surf, (255, 165, 0), seg_rect, 2)
+                                except Exception:
+                                    pass
+                    except Exception:
+                        pass
                     # Yellow outline for hover/selection
                     if getattr(model, 'hovered_index', None) == g_idx or getattr(model, 'selected_index', None) == g_idx:
                         pygame.draw.rect(surf, (255, 220, 60), row_rect_local, 2)
@@ -73,3 +99,4 @@ class ListPanelView:
 
 
 __all__ = ["ListPanelView"]
+

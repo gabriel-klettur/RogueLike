@@ -1,14 +1,15 @@
 [
   {
-    "template_id": "default_barbol_periodic",
+    "template_id": "barbol_periodic_faster",
     "zone": "Forest",
     "tile": [
-      27,
-      14
+      32,
+      12
     ],
     "overrides": {
       "policy.cooldown_s": 5.0,
       "trigger.radius": 8
-    }
+    },
+    "id": "spawner_forest_N1"
   }
 ]

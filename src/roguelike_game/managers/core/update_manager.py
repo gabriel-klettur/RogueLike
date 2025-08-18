@@ -79,6 +79,14 @@ def update_game(
                 return
         except Exception:
             pass
+        # Respetar enfoque manual del Spawner Editor (hold-focus)
+        try:
+            if getattr(getattr(ecs, 'ecs_world', None), 'state', None) is not None:
+                st = ecs.ecs_world.state
+                if getattr(st, 'spawner_hold_focus', False):
+                    return
+        except Exception:
+            pass
         eid = ecs.ecs_world.player_entity
         pos_map = ecs.ecs_world.components.get('Position', {})
         if eid in pos_map:

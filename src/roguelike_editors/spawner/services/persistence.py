@@ -3,6 +3,8 @@ from __future__ import annotations
 from typing import Optional, Tuple, List, Dict, Any
 import os
 import json
+import re
+import uuid
 
 from roguelike_engine.config import config
 from roguelike_engine.config.map_config import global_map_settings
@@ -23,7 +25,14 @@ def load_instances_json() -> List[Dict[str, Any]]:
     try:
         with open(path, 'r', encoding='utf-8') as f:
             data = json.load(f)
-        return data if isinstance(data, list) else []
+        if not isinstance(data, list):
+            return []
+        # Ensure every instance has a unique 'id' for robust identification
+        changed, fixed = ensure_instance_ids(data)
+        if changed:
+            write_instances_json(fixed)
+            return fixed
+        return data
     except FileNotFoundError:
         return []
 
@@ -147,6 +156,86 @@ def write_instances_json(data: List[Dict[str, Any]]) -> None:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
+def slugify(s: str) -> str:
+    try:
+        s = str(s)
+    except Exception:
+        s = ""
+    s = s.strip().lower()
+    s = re.sub(r"[^a-z0-9]+", "_", s)
+    s = re.sub(r"_+", "_", s)
+    return s.strip('_')
+
+
+def generate_instance_id(inst: Dict[str, Any], existing_ids: set[str]) -> str:
+    tpl = slugify(inst.get('template_id', 'tpl'))
+    zone = slugify(inst.get('zone', 'zone'))
+    try:
+        tile = inst.get('tile', [0, 0])
+        x, y = int(tile[0]), int(tile[1])
+    except Exception:
+        x, y = 0, 0
+    base = f"{tpl}_{zone}_{x}_{y}" if tpl or zone else f"inst_{x}_{y}"
+    if not base:
+        base = f"inst_{uuid.uuid4().hex[:8]}"
+    candidate = base
+    i = 1
+    while candidate in existing_ids:
+        i += 1
+        candidate = f"{base}_{i}"
+    return candidate
+
+
+def ensure_instance_ids(data: List[Dict[str, Any]]) -> tuple[bool, List[Dict[str, Any]]]:
+    """Ensure each instance dict has a unique 'id' (string). Returns (changed, data)."""
+    changed = False
+    ids: set[str] = set()
+    # First pass: normalize and collect
+    for inst in data:
+        cur = inst.get('id')
+        if cur is not None:
+            try:
+                s = str(cur).strip()
+            except Exception:
+                s = ""
+            if s:
+                # ensure uniqueness
+                if s in ids:
+                    # will regenerate in second pass
+                    inst['id'] = None  # type: ignore
+                    changed = True
+                else:
+                    inst['id'] = s
+                    ids.add(s)
+            else:
+                inst.pop('id', None)
+                changed = True
+    # Second pass: generate for missing or duplicated
+    for inst in data:
+        if not inst.get('id'):
+            new_id = generate_instance_id(inst, ids)
+            inst['id'] = new_id
+            ids.add(new_id)
+            changed = True
+    return changed, data
+
+
+def find_instance_by_id(target_id: str) -> tuple[List[Dict[str, Any]], Optional[int], Optional[Dict[str, Any]]]:
+    """Load JSON and find the instance by its 'id'. Returns (list, index, overrides)."""
+    data = load_instances_json()
+    idx_found: Optional[int] = None
+    overrides: Optional[Dict[str, Any]] = None
+    for i, inst in enumerate(data):
+        try:
+            if str(inst.get('id')) == str(target_id):
+                idx_found = i
+                overrides = inst.get('overrides')
+                break
+        except Exception:
+            continue
+    return data, idx_found, overrides
+
+
 def find_instance_in_json(template_id: str, zone: str, local_tile: Tuple[int, int]) -> tuple[List[Dict[str, Any]], Optional[int], Optional[Dict[str, Any]]]:
     """Load JSON and find the instance matching template_id, zone and tile=local_tile.
     Returns (instances_list, index or None, overrides or None).
@@ -219,6 +308,18 @@ def persist_drop(world,
             overrides = None
     if overrides is not None:
         entry['overrides'] = overrides
+
+    # Preserve or assign instance id
+    try:
+        if idx_found is not None:
+            prev_id = data[idx_found].get('id')
+            if prev_id:
+                entry['id'] = prev_id
+        else:
+            existing_ids = {str(x.get('id')) for x in data if x.get('id')}
+            entry['id'] = generate_instance_id(entry, existing_ids)
+    except Exception:
+        pass
 
     if idx_found is not None:
         data[idx_found] = entry
