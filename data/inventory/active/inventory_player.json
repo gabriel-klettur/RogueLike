@@ -3,10 +3,7 @@
     "player_id": "22222222-2222-2222-2222-222222222222",
     "capacity": 100,
     "slots": [
-      {
-        "item": "gold",
-        "quantity": 888
-      },
+      null,
       null,
       null,
       null,

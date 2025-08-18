@@ -21,6 +21,7 @@ from roguelike_game.ecs.components.rendering.trail_component import (
 )
 from roguelike_game.factories.player.collider import create_body_and_feet
 from roguelike_game.ecs.components.core.player_tag import PlayerTagComponent
+from roguelike_game.ecs.components.ai.damage_config import DamageConfig
 
 
 class PlayerManager:
@@ -70,6 +71,9 @@ class PlayerManager:
         stats = player_cfg.PLAYER_STATS[new_class]
         max_hp = stats["max_strength"]
         comps["Health"][eid] = Health(max_hp, max_hp)
+        # Update damage config duration based on class stats (fallback to default)
+        dmg_duration = stats.get("damage_duration", player_cfg.DEFAULT_DAMAGE_DURATION)
+        comps["DamageConfig"][eid] = DamageConfig(float(dmg_duration))
         comps["CombatStats"][eid] = CombatStats(
             current_hp=max_hp,
             max_hp=max_hp,
@@ -100,3 +104,14 @@ class PlayerManager:
             max_trails=trail_params["max_trails"]
         )
         comps["TrailComponent"][eid] = TrailComponent(config=trail_cfg)
+        # Refresh FSM context (attack_duration) if NPCState is present
+        try:
+            npc_state = comps["NPCState"].get(eid)
+        except Exception:
+            npc_state = None
+        if npc_state and hasattr(npc_state, "fsm") and hasattr(npc_state.fsm, "context"):
+            attack_duration = stats.get("attack_duration")
+            if attack_duration is None:
+                attack_duration = player_cfg.MELEE_WEAPON_CFG.get("cooldown")
+            if attack_duration is not None:
+                npc_state.fsm.context["attack_duration"] = float(attack_duration)

@@ -174,6 +174,7 @@ class RendererManager:
                 and not (hasattr(state, 'item_editor_state') and getattr(state.item_editor_state, 'visible', False))
                 and not getattr(state, 'spells_editor_visible', False)
                 and not getattr(state, 'fsm_editor_visible', False)
+                and not getattr(state, 'class_selector_visible', False)
             ):
                 self._render_minimap(screen)
         _bench_minimap()
@@ -399,6 +400,9 @@ class RendererManager:
         size = screen.get_size()
         # Ocultar la leyenda de comandos cuando un editor de superposición está visible
         # (Entities Editor, Inventory Editor, etc.)
+        # Ocultar también cuando el selector de clases está visible
+        if getattr(state, 'class_selector_visible', False):
+            return
         if hasattr(state, 'entities_editor_state') and getattr(state.entities_editor_state, 'visible', False):
             return
         if hasattr(state, 'inventory_editor_state') and getattr(state.inventory_editor_state, 'visible', False):

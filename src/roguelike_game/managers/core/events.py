@@ -59,9 +59,12 @@ def handle_events(game):
     for event in events:
         if game.console_events.process_event(event):
             return
-    # Siempre permitir toggle de menú con ESC
+    # ESC: si el selector de clase está abierto, ciérralo; si no, toggle menú
     for event in events:
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            if hasattr(game, 'class_selector') and getattr(game.class_selector, 'show', False):
+                game.class_selector.show = False
+                return
             game.menu.show_menu = not game.menu.show_menu
             return
 

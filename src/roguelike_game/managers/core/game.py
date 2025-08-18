@@ -99,6 +99,11 @@ class Game:
             self.state.fsm_editor_visible = bool(getattr(config, 'DEBUG_ENTITIES', False))
         except Exception:
             self.state.fsm_editor_visible = False
+        # Propaga visibilidad del selector de clases para ocultar minimapa/leyendas cuando esté activo
+        try:
+            self.state.class_selector_visible = bool(getattr(self, 'class_selector', None) and self.class_selector.show)
+        except Exception:
+            self.state.class_selector_visible = False
         self.renderer.render_game(
             self.state,
             self.screen,
