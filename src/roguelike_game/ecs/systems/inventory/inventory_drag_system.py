@@ -1,5 +1,6 @@
 import os
 import uuid
+import math
 import pygame
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.map.utils import get_zone_for_tile
@@ -9,6 +10,7 @@ from roguelike_game.ecs.components.inventory_component import InventoryComponent
 from roguelike_game.ecs.systems.inventory.inventory_pickup_system import InventoryPickupSystem
 from roguelike_game.managers.map.item_drop_manager import ItemDropManager
 from roguelike_game.ecs.systems.inventory.inventory_ui_system import InventoryUISystem
+import roguelike_game.config.players_config as players_config
 
 class InventoryDragSystem:
     """
@@ -84,9 +86,36 @@ class InventoryDragSystem:
                 if inv and 0 <= self.dragging_idx < len(inv.slots):
                     stack = inv.slots[self.dragging_idx]
                     if stack:
-                        # Soltar en mapa usando no-colisión por tile
+                        # Soltar en mapa con clamp por rango desde el jugador
                         world_x = mouse_x / camera.zoom + camera.offset_x
                         world_y = mouse_y / camera.zoom + camera.offset_y
+                        # Centro del jugador y rango por clase
+                        jcx = jcy = None
+                        rng = None
+                        try:
+                            ppos = world.components.get('Position', {}).get(player)
+                            pspr = world.components.get('Sprite', {}).get(player)
+                            if ppos and pspr:
+                                pscale_comp = world.components.get('Scale', {}).get(player)
+                                pscale = pscale_comp.scale if pscale_comp else 1.0
+                                jw, jh = pspr.image.get_size()
+                                jw = jw * pscale
+                                jh = jh * pscale
+                                jcx = ppos.x + jw * 0.5
+                                jcy = ppos.y + jh * 0.5
+                                # Obtener rango por clase
+                                cls = getattr(getattr(world, 'state', None), 'current_player_class', None) or players_config.PLAYER_CFG.get("DEFAULT_CLASS")
+                                stats = players_config.PLAYER_STATS.get(cls, {}) or {}
+                                rng = float(stats.get('drag_drop_range', 128))
+                                dx = world_x - jcx
+                                dy = world_y - jcy
+                                dist = math.hypot(dx, dy)
+                                if dist > rng and dist > 0:
+                                    scale = rng / dist
+                                    world_x = jcx + dx * scale
+                                    world_y = jcy + dy * scale
+                        except Exception:
+                            jcx = jcy = rng = None
                         g_tx = int(world_x // TILE_SIZE)
                         g_ty = int(world_y // TILE_SIZE)
                         zone_id = get_zone_for_tile(g_tx, g_ty)
@@ -100,6 +129,12 @@ class InventoryDragSystem:
                                 continue
                             if map_manager and not map_manager.is_walkable(cx, cy):
                                 continue
+                            # Asegurar que el centro del tile esté dentro del rango si conocemos jcx/jcy
+                            if jcx is not None and rng is not None:
+                                tile_cx = (cx + 0.5) * TILE_SIZE
+                                tile_cy = (cy + 0.5) * TILE_SIZE
+                                if math.hypot(tile_cx - jcx, tile_cy - jcy) > rng:
+                                    continue
                             placed_local = (l_tx, l_ty)
                             break
                         if placed_local is None:

@@ -149,9 +149,32 @@ class DropDragSystem:
                             self.dragging_eid = None
                             self.drag_origin = None
                             return
-            # Actualizar drop en JSON
+            # Clampear a rango máximo desde el jugador y actualizar drop en JSON
             phys = comps['PhysicalItemComponent'][self.dragging_eid]
             pos = comps['Position'][self.dragging_eid]
+            try:
+                player = getattr(world, 'player_entity', None)
+                if player is not None:
+                    ppos = comps.get('Position', {}).get(player)
+                    pspr = comps.get('Sprite', {}).get(player)
+                    if ppos and pspr:
+                        pscale_comp = comps.get('Scale', {}).get(player)
+                        pscale = pscale_comp.scale if pscale_comp else 1.0
+                        jw, jh = pspr.image.get_size()
+                        jw = jw * pscale
+                        jh = jh * pscale
+                        jcx = ppos.x + jw * 0.5
+                        jcy = ppos.y + jh * 0.5
+                        rng = self._get_pickup_range(world)
+                        dx = pos.x - jcx
+                        dy = pos.y - jcy
+                        dist = math.hypot(dx, dy)
+                        if dist > rng and dist > 0:
+                            scale = rng / dist
+                            pos.x = jcx + dx * scale
+                            pos.y = jcy + dy * scale
+            except Exception:
+                pass
             logger.debug(f"[DropDragSystem][DEBUG] Updating drop {phys.drop_id} to position ({pos.x:.2f},{pos.y:.2f})")
             self.drop_manager.update_drop(phys.drop_id, position=pos)
             self.dragging_eid = None

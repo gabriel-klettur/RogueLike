@@ -31,10 +31,15 @@ class DropHoverRenderSystem:
         mouse_x, mouse_y = pygame.mouse.get_pos()
         if is_blocked(mouse_x, mouse_y):
             return
-        # Si estamos arrastrando un drop, resaltar jugador SOLO si el ítem original estaba fuera de rango
+        # Si estamos arrastrando (drop del mapa o ítem del inventario), resaltar jugador; círculo si el origen estaba fuera de rango
         try:
-            drag_sys = next((s for s in getattr(world, 'update_systems', []) if hasattr(s, 'dragging_eid')), None)
-            if drag_sys and getattr(drag_sys, 'dragging_eid', None) is not None:
+            drag_sys = None
+            for s in getattr(world, 'update_systems', []):
+                if (hasattr(s, 'dragging_eid') and getattr(s, 'dragging_eid', None) is not None) or \
+                   (hasattr(s, 'dragging_idx') and getattr(s, 'dragging_idx', None) is not None):
+                    drag_sys = s
+                    break
+            if drag_sys is not None:
                 comps0 = world.components
                 player = getattr(world, 'player_entity', None)
                 if player is not None:
@@ -49,7 +54,7 @@ class DropHoverRenderSystem:
                         psx, psy = camera.apply((ppos.x, ppos.y))
                         prect = pygame.Rect(psx, psy, pw, ph).inflate(12, 12)
                         if prect.collidepoint(mouse_x, mouse_y):
-                            # Calcular si el origen del drag estaba fuera de rango
+                            # Calcular si el origen del drag estaba fuera de rango (solo aplica si el drag tiene drag_origin)
                             out_of_range = False
                             try:
                                 cls = getattr(getattr(world, 'state', None), 'current_player_class', None) or players_config.PLAYER_CFG.get("DEFAULT_CLASS")
@@ -85,6 +90,49 @@ class DropHoverRenderSystem:
                                 circle_overlay = pygame.Surface((radius_screen * 2 + 2, radius_screen * 2 + 2), pygame.SRCALPHA)
                                 pygame.draw.circle(circle_overlay, (255, 215, 0, alpha), (radius_screen + 1, radius_screen + 1), radius_screen, max(1, thickness))
                                 screen.blit(circle_overlay, (int(scx - radius_screen - 1), int(scy - radius_screen - 1)))
+        except Exception:
+            pass
+        
+        # Si estamos arrastrando (inventario o drop) y el mouse está FUERA de rango para soltar, dibujar círculo de rango
+        try:
+            drag_active = False
+            for s in getattr(world, 'update_systems', []):
+                if (hasattr(s, 'dragging_eid') and getattr(s, 'dragging_eid', None) is not None) or \
+                   (hasattr(s, 'dragging_idx') and getattr(s, 'dragging_idx', None) is not None):
+                    drag_active = True
+                    break
+            if drag_active:
+                player = getattr(world, 'player_entity', None)
+                comps0 = world.components
+                if player is not None:
+                    ppos = comps0.get('Position', {}).get(player)
+                    pspr = comps0.get('Sprite', {}).get(player)
+                    pscale_comp = comps0.get('Scale', {}).get(player)
+                    if ppos and pspr:
+                        jscale = pscale_comp.scale if pscale_comp else 1.0
+                        jw, jh = pspr.image.get_size()
+                        jcx = ppos.x + jw * jscale * 0.5
+                        jcy = ppos.y + jh * jscale * 0.5
+                        cls = getattr(getattr(world, 'state', None), 'current_player_class', None) or players_config.PLAYER_CFG.get("DEFAULT_CLASS")
+                        stats = players_config.PLAYER_STATS.get(cls, {}) or {}
+                        rng = float(stats.get('drag_drop_range', 128))
+                        # Mouse -> mundo
+                        mx, my = pygame.mouse.get_pos()
+                        world_x = mx / camera.zoom + camera.offset_x
+                        world_y = my / camera.zoom + camera.offset_y
+                        if math.hypot(world_x - jcx, world_y - jcy) > rng:
+                            now_ts = pygame.time.get_ticks()
+                            t = now_ts / 1000.0
+                            s = (math.sin(2.0 * math.pi * 2.0 * t) + 1.0) * 0.5  # 2 Hz
+                            base_alpha, max_alpha = 120, 230
+                            base_th, max_th = 2, 6
+                            alpha = int(base_alpha + (max_alpha - base_alpha) * s)
+                            thickness = int(base_th + (max_th - base_th) * s)
+                            scx, scy = camera.apply((jcx, jcy))
+                            radius_screen = max(1, int(rng * camera.zoom))
+                            circle_overlay = pygame.Surface((radius_screen * 2 + 2, radius_screen * 2 + 2), pygame.SRCALPHA)
+                            pygame.draw.circle(circle_overlay, (255, 215, 0, alpha), (radius_screen + 1, radius_screen + 1), radius_screen, max(1, thickness))
+                            screen.blit(circle_overlay, (int(scx - radius_screen - 1), int(scy - radius_screen - 1)))
         except Exception:
             pass
         
