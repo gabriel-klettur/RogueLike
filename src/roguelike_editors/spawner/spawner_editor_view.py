@@ -60,6 +60,20 @@ class SpawnerEditorView:
                     inst_rect = c.spawner_instances.render(screen, anchor=anchor)
         except Exception:
             pass
+        # 3c) Instance Properties panel to the RIGHT of Instances list when a selection exists
+        try:
+            ip = getattr(c, 'instance_properties', None)
+            if ip is not None and getattr(getattr(ip, 'model', None), 'visible', False):
+                if inst_rect is not None:
+                    anchor = (inst_rect.right + 8, inst_rect.top)
+                elif tb_rect is not None:
+                    anchor = (tb_rect.right + 8, tb_rect.top)
+                else:
+                    base_x = title_rect.left if title_rect else 20
+                    anchor = (base_x + 420, (title_rect.bottom + 8) if title_rect else 90)
+                ip.render(screen, anchor=anchor)
+        except Exception:
+            pass
         # 4) Hint overlay (only if editor font is available); place below title/toolbar/manager
         try:
             if c.font:

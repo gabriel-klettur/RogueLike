@@ -1,6 +1,6 @@
 [
   {
-    "id": "default_barbol_periodic",
+    "id": "barbol_periodic_no_stack",
     "spawner_type": "invisible",
     "trigger": {
       "type": "proximity",
@@ -27,16 +27,16 @@
     ]
   },
   {
-    "id": "default_barbol_periodic-2",
+    "id": "barbol_periodic_no_stack-Faster",
     "spawner_type": "invisible",
     "trigger": {
       "type": "proximity",
-      "radius": 6,
+      "radius": 20,
       "auto_start": true
     },
     "policy": {
       "mode": "periodic",
-      "cooldown_s": 10.0,
+      "cooldown_s": 1,
       "max_active": 0,
       "persistent": false
     },
