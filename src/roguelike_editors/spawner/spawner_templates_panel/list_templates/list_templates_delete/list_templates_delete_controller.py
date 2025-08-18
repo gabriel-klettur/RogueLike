@@ -8,7 +8,7 @@ from roguelike_editors.spawner.services.persistence import (
     write_instances_json,
 )
 
-LOGGER = logging.getLogger("roguelike_editors.spawner.spawner_manager.list_templates.delete.controller")
+LOGGER = logging.getLogger("roguelike_editors.spawner.spawner_templates_panel.list_templates.delete.controller")
 
 
 class ListTemplatesDeleteController:

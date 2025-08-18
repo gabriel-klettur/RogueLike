@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from roguelike_editors.spawner.spawner_list_common.list_panel_view import ListPanelView
+from roguelike_editors.spawner.common.list_panel_view import ListPanelView
 
 
 class ListTemplatesView(ListPanelView):

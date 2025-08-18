@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from roguelike_editors.spawner.spawner_list_common.list_panel_events import ListPanelEventHandler
+from roguelike_editors.spawner.common.list_panel_events import ListPanelEventHandler
 
 
 class ListTemplatesEventHandler(ListPanelEventHandler):

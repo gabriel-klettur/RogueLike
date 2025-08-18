@@ -6,7 +6,7 @@ from .spawner_manager_model import SpawnerManagerModel
 from .spawner_manager_view import SpawnerManagerView
 from .spawner_manager_events import SpawnerManagerEventHandler
 from .list_templates.list_templates_controller import SpawnerTemplatesListController
-from roguelike_editors.spawner.spawner_properties.spawners_manager_controller import (
+from roguelike_editors.spawner.spawner_template_properties_panel.spawners_manager_controller import (
     SpawnersManagerController as SpawnerPropertiesController,
 )
 

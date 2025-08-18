@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Optional, List, Dict, Any, Callable
 
-from roguelike_editors.spawner.spawner_list_common import (
+from roguelike_editors.spawner.common import (
     ListPanelModel as SpawnerListInstancesModel,
     ListPanelView as SpawnerListInstancesView,
     ListPanelEventHandler as SpawnerListInstancesEventHandler,
