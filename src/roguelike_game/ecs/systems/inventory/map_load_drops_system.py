@@ -27,22 +27,22 @@ class MapLoadDropsSystem:
     def __init__(self, perf_log=None):
         self.perf_log = perf_log
         path = os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_map.json')
-        # Validar esquema de instancias de ítems con Draft7Validator y RefResolver
-        schema_path = os.path.join(os.getcwd(), 'schemas', 'items', 'instances.json')
+        # Validar esquema correcto de drops de mapa con Draft7Validator y RefResolver
+        schema_path = os.path.join(os.getcwd(), 'schemas', 'inventory', 'InventoryMapSchema.json')
         with open(schema_path, 'r', encoding='utf-8') as sf:
-            instances_schema = json.load(sf)
+            drop_schema = json.load(sf)
         schema_uri = Path(schema_path).resolve().as_uri()
-        resolver = RefResolver(base_uri=schema_uri, referrer=instances_schema)
-        validator = Draft7Validator(instances_schema, resolver=resolver)
+        resolver = RefResolver(base_uri=schema_uri, referrer=drop_schema)
+        validator = Draft7Validator(drop_schema, resolver=resolver)
         with open(path, 'r', encoding='utf-8') as df:
             drops_raw = json.load(df)
-        # Flatten nested 'map' key if JSON is wrongly nested
+        # Compatibilidad con formato legado con clave 'map'
         if isinstance(drops_raw, dict) and 'map' in drops_raw:
             drops_raw = drops_raw['map']
         try:
             validator.validate(drops_raw)
         except jsonschema.ValidationError as e:
-            logging.error(f" Schema validation failed: {e.message}. Continuing without drops.")
+            logging.warning(f" Inventory map schema validation failed: {e.message}. Continuing.")
         # Instanciar el ItemDropManager con datos validados
         self.drop_manager = ItemDropManager(path)
         # Flatten nested 'map' key in drop_manager data if present

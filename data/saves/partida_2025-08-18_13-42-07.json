@@ -1,0 +1,29 @@
+{
+  "player": {
+    "level": "global_map",
+    "pos": [
+      75,
+      75
+    ]
+  },
+  "npcs": {},
+  "levels": {
+    "global_map": {
+      "player_pos": [
+        75,
+        75
+      ],
+      "npc_states": {}
+    }
+  },
+  "meta": {
+    "name": "partida",
+    "created_at": "2025-08-18T13:42:07",
+    "last_played": "2025-08-18T13:44:37",
+    "player": {
+      "xp": null,
+      "level": null
+    },
+    "items_summary": {}
+  }
+}

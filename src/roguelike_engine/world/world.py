@@ -151,7 +151,16 @@ class WorldManager:
         """
         load_path = path or self.current_save_path
         if not load_path:
-            raise FileNotFoundError("No hay slot de guardado activo para cargar.")
+            # Intento de fallback: usar el slot más reciente si existe
+            latest = self._find_latest_slot()
+            if latest is not None:
+                load_path = str(latest)
+                try:
+                    logger.info(f"[World] Cargando mundo usando slot más reciente: {load_path}")
+                except Exception:
+                    pass
+            else:
+                raise FileNotFoundError("No hay slot de guardado activo para cargar.")
         # Recordar slot activo si se pasa un path explícito
         self.current_save_path = load_path
         data = load_world_state(load_path)
