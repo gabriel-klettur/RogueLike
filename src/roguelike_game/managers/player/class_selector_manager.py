@@ -65,7 +65,7 @@ class ClassSelectorManager:
 
     def handle_input(self, event):
         # Handle mouse click on class options
-        if event.type == pygame.MOUSEBUTTONDOWN:
+        if event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', 1) == 1:
             mx, my = event.pos
             # Use same header reservation as in draw()
             grid_rect, cell_w, cell_h = self._calc_grid_geometry(reserve_top=self._reserved_top())
@@ -84,6 +84,22 @@ class ClassSelectorManager:
                     self.state.current_player_class = chosen
                     self.show = False
                     return chosen
+
+        # Hover highlight: update selection when moving mouse over a cell
+        if event.type == pygame.MOUSEMOTION:
+            mx, my = event.pos
+            grid_rect, cell_w, cell_h = self._calc_grid_geometry(reserve_top=self._reserved_top())
+            if grid_rect and grid_rect.collidepoint(mx, my) and self.options:
+                rel_x = mx - grid_rect.x
+                rel_y = my - grid_rect.y
+                col = int(rel_x // (cell_w + self.cell_h_margin))
+                row = int(rel_y // (cell_h + self.cell_v_margin))
+                cx = col * (cell_w + self.cell_h_margin)
+                cy = row * (cell_h + self.cell_v_margin)
+                cell_rect = pygame.Rect(grid_rect.x + cx, grid_rect.y + cy, cell_w, cell_h)
+                idx = row * self.columns + col
+                if 0 <= idx < len(self.options) and cell_rect.collidepoint(mx, my):
+                    self.selected = idx
 
         if event.type == pygame.KEYDOWN:
             key = event.key

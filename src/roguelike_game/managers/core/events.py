@@ -64,6 +64,11 @@ def handle_events(game):
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
             if hasattr(game, 'class_selector') and getattr(game.class_selector, 'show', False):
                 game.class_selector.show = False
+                # Clear blocker flag when closing selector with ESC
+                try:
+                    game.state.class_selector_open = False
+                except Exception:
+                    pass
                 return
             game.menu.show_menu = not game.menu.show_menu
             return
@@ -93,10 +98,20 @@ def handle_events(game):
 
     # Si el selector de clase está abierto
     if hasattr(game, 'class_selector') and game.class_selector.show:
+        # While the selector is visible, mark input as blocked for gameplay
+        try:
+            game.state.class_selector_open = True
+        except Exception:
+            pass
         for event in events:
             result = game.class_selector.handle_input(event)
             if result:
                 game.player_manager.change_class(result)
+        # Reflect current visibility after handling inputs (may have closed)
+        try:
+            game.state.class_selector_open = bool(getattr(game.class_selector, 'show', False))
+        except Exception:
+            pass
         return
 
     # Debug overlay ya pudo haber consumido algunos eventos arriba.
@@ -104,6 +119,11 @@ def handle_events(game):
     for event in events:
         if event.type == pygame.KEYDOWN and event.key == game.input_config.get_key('select_class'):
             game.class_selector.show = not game.class_selector.show
+            # Sync blocker flag with visibility on toggle
+            try:
+                game.state.class_selector_open = bool(game.class_selector.show)
+            except Exception:
+                pass
             return
         if event.type == pygame.KEYDOWN and event.key == pygame.K_F3:
             # Toggle Spawner Editor visibility and mirror a global debug flag
