@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, Callable
+import ast
 
 from .spawners_manager_model import SpawnersManagerModel
 from .spawners_manager_view import SpawnersManagerView
 from .spawners_manager_events import SpawnersManagerEventHandler
 from roguelike_ui.widgets.double_click_detector import DoubleClickDetector
 from roguelike_ui.widgets.text_input import TextInput
-from roguelike_editors.spawner.services.persistence import save_spawner_template
+from roguelike_editors.spawner.services.persistence import save_spawner_template, rename_spawner_template_id
 import pygame
 
 
@@ -18,6 +19,9 @@ class SpawnersManagerController:
         self.model = model or SpawnersManagerModel()
         self.view = view or SpawnersManagerView()
         self.events = SpawnersManagerEventHandler()
+        # Optional callback set by parent controller to react on id renames
+        # Signature: (old_id: str, new_id: str) -> None
+        self.on_template_renamed: Optional[Callable[[str, str], None]] = None
         # UI helpers
         self._dbl = DoubleClickDetector(interval_ms=450)
         self._text_input: Optional[TextInput] = None
@@ -115,14 +119,44 @@ class SpawnersManagerController:
         if self.model.editing_key and self._text_input and not self._text_input.active:
             key_path = self.model.editing_key
             new_text = self._text_input.text
-            new_value = self._parse_value(new_text, key_path)
-            # Apply into selected_template
-            self._set_by_path(self.model.selected_template, key_path, new_value)
-            # Persist
-            try:
-                save_spawner_template(self.model.selected_template)  # type: ignore[arg-type]
-            except Exception:
-                pass
+            # Special-case renaming template id to keep JSONs consistent
+            if key_path == 'id':
+                old_id = None
+                try:
+                    old_id = str((self.model.selected_template or {}).get('id'))
+                except Exception:
+                    old_id = None
+                new_id = (new_text or '').strip()
+                # Only attempt if non-empty and changed
+                if new_id and old_id and new_id != old_id:
+                    updated = None
+                    try:
+                        updated = rename_spawner_template_id(old_id, new_id)
+                    except Exception:
+                        updated = None
+                    if updated is not None:
+                        # Update current selection to the renamed template
+                        self.model.selected_template = updated
+                        # Notify parent so it can refresh list/selection
+                        if self.on_template_renamed and old_id is not None:
+                            try:
+                                self.on_template_renamed(old_id, new_id)
+                            except Exception:
+                                pass
+                    else:
+                        # Conflict or failure: keep old id in model
+                        if self.model.selected_template is not None:
+                            self.model.selected_template['id'] = old_id
+                # If empty or unchanged, do nothing (revert to old visually)
+            else:
+                new_value = self._parse_value(new_text, key_path)
+                # Apply into selected_template
+                self._set_by_path(self.model.selected_template, key_path, new_value)
+                # Persist
+                try:
+                    save_spawner_template(self.model.selected_template)  # type: ignore[arg-type]
+                except Exception:
+                    pass
             # Clear
             self.model.editing_key = None
             self.model.editing_row_index = None
@@ -156,7 +190,11 @@ class SpawnersManagerController:
                 import json
                 return json.loads(t)
             except Exception:
-                pass
+                # Try Python-literal fallback (handles single quotes)
+                try:
+                    return ast.literal_eval(t)
+                except Exception:
+                    pass
         return text
 
     def _set_by_path(self, root: dict | None, path: str, value) -> None:

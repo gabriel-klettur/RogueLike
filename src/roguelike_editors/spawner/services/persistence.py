@@ -89,6 +89,57 @@ def save_spawner_template(updated: Dict[str, Any]) -> None:
     write_spawners_json(data)
 
 
+def rename_spawner_template_id(old_id: str, new_id: str) -> Optional[Dict[str, Any]]:
+    """Safely rename a spawner template id across spawners.json and instances.json.
+
+    - If new_id already exists and is different from old_id -> do nothing (return None).
+    - Otherwise, update the template entry id and update all instance entries' template_id.
+    - Returns the updated template dict on success, else None.
+    """
+    if not old_id or not new_id or str(old_id) == str(new_id):
+        return None
+    data = load_spawners_json()
+    # Check conflict
+    for sp in data:
+        try:
+            sid = str(sp.get('id'))
+        except Exception:
+            continue
+        if sid == str(new_id) and sid != str(old_id):
+            return None  # conflict
+    # Find template by old_id
+    idx = None
+    for i, sp in enumerate(data):
+        try:
+            if str(sp.get('id')) == str(old_id):
+                idx = i
+                break
+        except Exception:
+            continue
+    if idx is None:
+        return None
+    # Update id and persist templates
+    data[idx]['id'] = str(new_id)
+    write_spawners_json(data)
+    updated_tpl = data[idx]
+    # Update instances
+    try:
+        inst_list = load_instances_json()
+        changed = False
+        for inst in inst_list:
+            try:
+                if str(inst.get('template_id')) == str(old_id):
+                    inst['template_id'] = str(new_id)
+                    changed = True
+            except Exception:
+                continue
+        if changed:
+            write_instances_json(inst_list)
+    except Exception:
+        pass
+    return updated_tpl
+
+
 def write_instances_json(data: List[Dict[str, Any]]) -> None:
     path = instances_path()
     os.makedirs(os.path.dirname(path), exist_ok=True)

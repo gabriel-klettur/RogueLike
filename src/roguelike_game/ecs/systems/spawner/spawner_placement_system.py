@@ -5,6 +5,7 @@ with SpawnerConfig + SpawnerState components.
 from __future__ import annotations
 
 import json
+import ast
 import os
 from typing import Any, Dict, List
 
@@ -47,7 +48,28 @@ class SpawnerPlacementSystem:
         # template base
         trigger = dict(tpl.get("trigger", {}))
         policy = dict(tpl.get("policy", {}))
-        waves = list(tpl.get("waves", []))
+        # waves can be list or, if saved incorrectly, a string with JSON/Python-like content
+        raw_waves = tpl.get("waves", [])
+        waves: List[Dict[str, Any]] = []
+        try:
+            if isinstance(raw_waves, str):
+                s = raw_waves.strip()
+                parsed = None
+                try:
+                    parsed = json.loads(s)
+                except Exception:
+                    try:
+                        parsed = ast.literal_eval(s)
+                    except Exception:
+                        parsed = None
+                if isinstance(parsed, list):
+                    waves = parsed
+            elif isinstance(raw_waves, list):
+                waves = raw_waves
+        except Exception:
+            waves = []
+        # keep only dict entries
+        waves = [w for w in waves if isinstance(w, dict)]
         spawner_type = tpl.get("spawner_type", "invisible")
 
         # apply overrides in dot-notation

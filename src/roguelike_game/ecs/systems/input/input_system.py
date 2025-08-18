@@ -81,6 +81,34 @@ class InputSystem:
                 self.prev_attack[eid] = False
             return
 
+        # Suppress ALL gameplay input when Spawner Editor is active
+        if hasattr(world, 'state') and bool(getattr(world.state, 'spawner_editor_active', False)):
+            spell_attrs = ['lightball','slash','healing_aura','darkball','iceball','lightning','arcane_flame','firework_launch','smoke','smoke_emitter','sphere_magic_shield','teleport']
+            for eid, inp in world.components.get('InputComponent', {}).items():
+                inp.click = False
+                inp.move_x = 0
+                inp.move_y = 0
+                inp.attack = False
+                inp.show_all_drops = False
+                for name in spell_attrs:
+                    setattr(inp, f'spell_{name}', False)
+                inp.toggle_editor = False
+                inp.drop = False
+                inp.toggle_inventory = False
+                vel = world.components.get('Velocity', {}).get(eid)
+                if vel:
+                    vel.vx = 0
+                    vel.vy = 0
+                self.prev_click[eid] = False
+                self.prev_right[eid] = False
+                self.prev_drop[eid] = False
+                self.prev_toggle[eid] = False
+                self.prev_toggle_inventory[eid] = False
+                for name in spell_attrs:
+                    self.prev_spell_keys[(eid, name)] = 0
+                self.prev_attack[eid] = False
+            return
+
         # Recargar bindings para aplicar cambios guardados sin reiniciar
         self.config._load()
         # Obtener estado actual del teclado

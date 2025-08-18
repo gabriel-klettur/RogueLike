@@ -26,3 +26,6 @@ class SpawnerEditorModel:
     #   'orig_local': tuple[int,int] | None,
     # }
     pending_zone_confirm: dict | None = None
+    # Placement mode (initiated from Templates list "Add" button)
+    # When not None: waiting for a map click to place this template as a new instance
+    placing_template_id: str | None = None
