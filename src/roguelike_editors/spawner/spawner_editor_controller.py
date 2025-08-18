@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Optional
 import pygame
+import logging
 
 from roguelike_editors.spawner.spawner_editor_model import SpawnerEditorModel
 from roguelike_editors.spawner.spawner_editor_events import SpawnerEditorEventHandler
@@ -36,6 +37,16 @@ class SpawnerEditorController:
         self._instances_visible_last: bool = False
         self.events = SpawnerEditorEventHandler(self)
         self.view = SpawnerEditorView(self)
+        # Wire Add button callback from Templates list to begin placement mode
+        try:
+            self.spawner_manager.list_controller.on_add_template = self._begin_place_template
+        except Exception:
+            pass
+        # Wire after-delete callback to refresh Instances panel
+        try:
+            self.spawner_manager.list_controller.on_after_delete_template = self._after_delete_template
+        except Exception:
+            pass
 
     # Public API ---------------------------------------------------------------
     def set_game(self, game) -> None:
@@ -64,6 +75,15 @@ class SpawnerEditorController:
             # Keep model visible in sync for view short-circuit
             try:
                 self.spawner_instances.model.visible = bool(instances_visible)
+            except Exception:
+                pass
+            # Expose global flag so gameplay input can be suppressed while editor is active
+            try:
+                world = getattr(getattr(self, 'game', None), 'ecs', None)
+                world = getattr(world, 'ecs_world', None)
+                if world is not None and hasattr(world, 'state'):
+                    placing_active = bool(getattr(self.model, 'placing_template_id', None))
+                    setattr(world.state, 'spawner_editor_active', bool(self.spawner_manager.model.visible or instances_visible or placing_active))
             except Exception:
                 pass
             # Refresh instances list on first show
@@ -103,6 +123,15 @@ class SpawnerEditorController:
                 self.spawner_instances.model.visible = bool(instances_visible)
             except Exception:
                 pass
+            # Expose global flag so gameplay input can be suppressed while editor is active
+            try:
+                world = getattr(getattr(self, 'game', None), 'ecs', None)
+                world = getattr(world, 'ecs_world', None)
+                if world is not None and hasattr(world, 'state'):
+                    placing_active = bool(getattr(self.model, 'placing_template_id', None))
+                    setattr(world.state, 'spawner_editor_active', bool(self.spawner_manager.model.visible or instances_visible or placing_active))
+            except Exception:
+                pass
             if instances_visible and not self._instances_visible_last:
                 try:
                     self.spawner_instances.refresh_from_disk()
@@ -110,5 +139,38 @@ class SpawnerEditorController:
                     pass
             self._instances_visible_last = instances_visible
             self.view.render(screen)
+        except Exception:
+            pass
+
+    # Internal helpers ---------------------------------------------------------
+    def _begin_place_template(self, template_id: str) -> None:
+        """Enter placement mode for the provided spawner template id."""
+        try:
+            self.model.visible = True
+            self.model.placing_template_id = str(template_id)
+            # Suppress gameplay input while in placement mode
+            world = getattr(getattr(self.game, 'ecs', None), 'ecs_world', None)
+            if world is not None and hasattr(world, 'state'):
+                setattr(world.state, 'spawner_input_suppressed', True)
+        except Exception:
+            pass
+
+    def _after_delete_template(self, template_id: str, removed_instances: int) -> None:
+        """React to a template deletion by refreshing the Instances list.
+
+        Args:
+            template_id: The template id that was deleted.
+            removed_instances: How many instances were removed in cascade.
+        """
+        try:
+            self.spawner_instances.refresh_from_disk()
+        except Exception:
+            pass
+        try:
+            logging.getLogger("roguelike_editors.spawner").info(
+                "[SpawnerEditor] Template '%s' deleted. Removed %d instance(s).",
+                template_id,
+                int(removed_instances or 0),
+            )
         except Exception:
             pass

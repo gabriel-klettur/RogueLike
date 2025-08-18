@@ -24,6 +24,11 @@ class SpawnerManagerController:
         self.props_controller = SpawnerPropertiesController()
         # Track first-time activation to refresh data
         self._was_visible = False
+        # When a template is renamed from the properties panel, refresh the list and keep selection
+        try:
+            self.props_controller.on_template_renamed = self._handle_template_renamed
+        except Exception:
+            pass
 
     def set_visible(self, visible: bool) -> None:
         if visible and not self.model.visible:
@@ -58,6 +63,25 @@ class SpawnerManagerController:
             tpl = None
         try:
             self.props_controller.set_template(tpl)
+        except Exception:
+            pass
+
+    # --- Callbacks -----------------------------------------------------------
+    def _handle_template_renamed(self, old_id: str, new_id: str) -> None:
+        """Refresh the templates list and keep selection on the renamed id."""
+        try:
+            # Refresh list from disk to reflect new id
+            self.list_controller.refresh_from_disk()
+            # Keep selection at the renamed entry
+            idx = None
+            try:
+                idx = next((i for i, t in enumerate(self.list_controller._templates)
+                            if str(t.get('id')) == str(new_id)), None)
+            except Exception:
+                idx = None
+            self.list_controller.model.selected_index = idx
+            # Sync properties panel to the (renamed) template
+            self._sync_selection_to_props()
         except Exception:
             pass
 

@@ -10,7 +10,10 @@ from roguelike_editors.spawner.services import (
     find_instance_in_json,
     persist_drop,
     zone_for_global_tile,
+    load_instances_json,
+    write_instances_json,
 )
+from roguelike_editors.spawner.services.persistence import load_spawners_json
 
 
 class SpawnerEditorEventHandler:
@@ -42,7 +45,11 @@ class SpawnerEditorEventHandler:
 
     def toggle_visible(self) -> None:
         self.model.visible = not self.model.visible
-        # Stop drag when toggling off
+        # Stop drag when toggling off and update global flags
+        try:
+            world = getattr(self.game.ecs, 'ecs_world', None)
+        except Exception:
+            world = None
         if not self.model.visible:
             self.model.dragging = False
             self.model.dragging_eid = None
@@ -50,11 +57,19 @@ class SpawnerEditorEventHandler:
             self.panning = False
             self._drag_start_entry = None
             try:
-                world = getattr(self.game.ecs, 'ecs_world', None)
                 if world and hasattr(world, 'state'):
                     setattr(world.state, 'spawner_editor_hovered_eid', None)
                     # Ensure input is re-enabled on hide
                     setattr(world.state, 'spawner_input_suppressed', False)
+                    # Mark editor as inactive globally
+                    setattr(world.state, 'spawner_editor_active', False)
+            except Exception:
+                pass
+        else:
+            # Mark editor as active globally
+            try:
+                if world and hasattr(world, 'state'):
+                    setattr(world.state, 'spawner_editor_active', True)
             except Exception:
                 pass
 
@@ -65,6 +80,18 @@ class SpawnerEditorEventHandler:
         camera = getattr(self.game, 'camera', None)
         if not world or not camera:
             return False
+
+        # Placement mode: cancel with ESC
+        if event.type == pygame.KEYDOWN and getattr(self.model, 'placing_template_id', None):
+            if event.key == pygame.K_ESCAPE:
+                self.model.placing_template_id = None
+                # Re-enable gameplay input when leaving placement
+                try:
+                    if hasattr(world, 'state'):
+                        setattr(world.state, 'spawner_input_suppressed', False)
+                except Exception:
+                    pass
+                return True
 
         # Update hover on mouse movement
         if event.type == pygame.MOUSEMOTION:
@@ -82,6 +109,75 @@ class SpawnerEditorEventHandler:
                 camera.offset_x = self.pan_offset_start[0] - dx / (getattr(camera, 'zoom', 1.0) or 1.0)
                 camera.offset_y = self.pan_offset_start[1] - dy / (getattr(camera, 'zoom', 1.0) or 1.0)
                 return True
+
+        # Placement mode: LMB places a new instance on map
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and getattr(self.model, 'placing_template_id', None):
+            tpl_id = self.model.placing_template_id
+            mx, my = event.pos
+            tx, ty = screen_to_tile(camera, mx, my)
+            zone = zone_for_global_tile(int(tx), int(ty)) or 'lobby'
+            off_x, off_y = global_map_settings.zone_offsets.get(zone, (0, 0))
+            local_tx, local_ty = int(tx - off_x), int(ty - off_y)
+            # Persist instance
+            try:
+                instances = load_instances_json()
+            except Exception:
+                instances = []
+            new_entry = {
+                'template_id': tpl_id,
+                'zone': zone,
+                'tile': [local_tx, local_ty],
+            }
+            instances.append(new_entry)
+            try:
+                write_instances_json(instances)
+            except Exception:
+                pass
+            # Spawn entity immediately
+            try:
+                # load template dict
+                tpls = {t.get('id'): t for t in (load_spawners_json() or []) if isinstance(t, dict)}
+                tpl = tpls.get(tpl_id)
+                if tpl:
+                    trigger = dict(tpl.get('trigger', {}))
+                    policy = dict(tpl.get('policy', {}))
+                    waves = list(tpl.get('waves', []))
+                    spawner_type = tpl.get('spawner_type', 'invisible')
+                    # frames
+                    from roguelike_engine.config import config as _cfg
+                    fps = getattr(_cfg, 'FPS', 60)
+                    cooldown_s = float(policy.get('cooldown_s', 10.0))
+                    cooldown_frames = int(round(cooldown_s * fps))
+                    from roguelike_game.ecs.components.spawner.spawner_config import SpawnerConfig
+                    from roguelike_game.ecs.components.spawner.spawner_state import SpawnerState
+                    cfg = SpawnerConfig(
+                        template_id=tpl_id,
+                        zone=zone,
+                        anchor_tile=(int(tx), int(ty)),
+                        spawner_type=spawner_type,
+                        trigger=trigger,
+                        policy=policy,
+                        waves=waves,
+                        cooldown_frames=cooldown_frames,
+                    )
+                    eid = world.create_entity()
+                    world.components['SpawnerConfig'][eid] = cfg
+                    world.components['SpawnerState'][eid] = SpawnerState()
+            except Exception:
+                pass
+            # Refresh UI list of instances if visible
+            try:
+                self.controller.spawner_instances.refresh_from_disk()
+            except Exception:
+                pass
+            # Exit placement mode and re-enable input
+            self.model.placing_template_id = None
+            try:
+                if hasattr(world, 'state'):
+                    setattr(world.state, 'spawner_input_suppressed', False)
+            except Exception:
+                pass
+            return True
 
         # RMB down: start drag if clicking near a spawner anchor; otherwise start camera panning
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:

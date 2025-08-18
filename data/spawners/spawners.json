@@ -2,12 +2,53 @@
   {
     "id": "default_barbol_periodic",
     "spawner_type": "invisible",
-    "trigger": { "type": "proximity", "radius": 6, "auto_start": true },
-    "policy": { "mode": "periodic", "cooldown_s": 10.0, "max_active": 0, "persistent": false },
+    "trigger": {
+      "type": "proximity",
+      "radius": 6,
+      "auto_start": true
+    },
+    "policy": {
+      "mode": "periodic",
+      "cooldown_s": 10.0,
+      "max_active": 0,
+      "persistent": false
+    },
     "waves": [
       {
         "spawns": [
-          { "kind": "monster", "id": "barbol", "count": 1, "spread_radius": 2 }
+          {
+            "kind": "monster",
+            "id": "barbol",
+            "count": 1,
+            "spread_radius": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "default_barbol_periodic-2",
+    "spawner_type": "invisible",
+    "trigger": {
+      "type": "proximity",
+      "radius": 6,
+      "auto_start": true
+    },
+    "policy": {
+      "mode": "periodic",
+      "cooldown_s": 10.0,
+      "max_active": 0,
+      "persistent": false
+    },
+    "waves": [
+      {
+        "spawns": [
+          {
+            "kind": "monster",
+            "id": "barbol",
+            "count": 1,
+            "spread_radius": 2
+          }
         ]
       }
     ]

@@ -3,7 +3,7 @@
     "template_id": "default_barbol_periodic",
     "zone": "Forest",
     "tile": [
-      29,
+      27,
       14
     ],
     "overrides": {
