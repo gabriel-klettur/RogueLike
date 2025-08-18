@@ -56,6 +56,39 @@ def load_spawners_json() -> List[Dict[str, Any]]:
         return []
 
 
+def write_spawners_json(data: List[Dict[str, Any]]) -> None:
+    """Write the full spawners list to data/spawners/spawners.json."""
+    path = spawners_path()
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+
+def save_spawner_template(updated: Dict[str, Any]) -> None:
+    """Update or append a single spawner template in spawners.json by id.
+
+    If an entry with the same 'id' exists, replace it in-place; otherwise append it.
+    """
+    try:
+        sid = str(updated.get('id'))
+    except Exception:
+        sid = None  # type: ignore
+    data = load_spawners_json()
+    replaced = False
+    if sid:
+        for i, sp in enumerate(data):
+            try:
+                if str(sp.get('id')) == sid:
+                    data[i] = updated
+                    replaced = True
+                    break
+            except Exception:
+                continue
+    if not replaced:
+        data.append(updated)
+    write_spawners_json(data)
+
+
 def write_instances_json(data: List[Dict[str, Any]]) -> None:
     path = instances_path()
     os.makedirs(os.path.dirname(path), exist_ok=True)
