@@ -22,7 +22,7 @@ class SpawnerEditorEventHandler:
     Responsibilities:
     - Maintain visibility flag.
     - Handle RMB drag to reposition a spawner's anchor tile.
-    - Handle RMB panning of the camera when not on a spawner.
+    - Handle MMB panning of the camera; no camera panning on RMB.
     - Suppress gameplay input while dragging/panning.
     """
 
@@ -31,7 +31,7 @@ class SpawnerEditorEventHandler:
         self.model = controller.model
         self.font = controller.font
         self.game = controller.game
-        # Camera panning state (RMB when not hovering a spawner)
+        # Camera panning state (MMB only)
         self.panning: bool = False
         self.pan_start: tuple[int, int] = (0, 0)
         self.pan_offset_start: tuple[float, float] = (0.0, 0.0)
@@ -339,7 +339,7 @@ class SpawnerEditorEventHandler:
             except Exception:
                 return False
 
-        # RMB down: start drag if clicking near a spawner anchor; otherwise start camera panning
+        # RMB down: start drag if clicking near a spawner anchor; otherwise do nothing
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
             # Disable drag/pan when in remove mode
             if getattr(self.model, 'remove_mode_active', False):
@@ -375,16 +375,7 @@ class SpawnerEditorEventHandler:
                 except Exception:
                     self._drag_start_entry = None
                 return True
-            # Not hovering: start camera panning with RMB
-            self.panning = True
-            self.pan_start = (mx, my)
-            self.pan_offset_start = (camera.offset_x, camera.offset_y)
-            # Suppress gameplay input during panning as well
-            try:
-                if hasattr(world, 'state'):
-                    setattr(world.state, 'spawner_input_suppressed', True)
-            except Exception:
-                pass
+            # Not hovering a spawner: do nothing (consume to avoid gameplay actions)
             return True
 
         # RMB up: stop drag
@@ -442,16 +433,8 @@ class SpawnerEditorEventHandler:
                     except Exception:
                         pass
                 return True
-            # Stop camera panning if active
-            if self.panning:
-                self.panning = False
-                # Re-enable gameplay input after panning ends
-                try:
-                    if hasattr(world, 'state'):
-                        setattr(world.state, 'spawner_input_suppressed', False)
-                except Exception:
-                    pass
-                return True
+            # Not dragging: ignore RMB up (do not affect MMB panning)
+            return True
 
         # Mouse move while dragging: update anchor tile of selected spawner
         if event.type == pygame.MOUSEMOTION and self.model.dragging and self.model.dragging_eid is not None:

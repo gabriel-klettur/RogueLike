@@ -23,7 +23,7 @@ class SpawnerPlacementSystem:
 
     def _load_templates(self) -> Dict[str, Dict[str, Any]]:
         base = config.DATA_DIR
-        path = os.path.join(base, "spawners", "spawners.json")
+        path = os.path.join(base, "spawners", "spawners_templates.json")
         try:
             with open(path, "r", encoding="utf-8") as f:
                 data = json.load(f)
@@ -36,7 +36,7 @@ class SpawnerPlacementSystem:
 
     def _load_instances(self) -> List[Dict[str, Any]]:
         base = config.DATA_DIR
-        path = os.path.join(base, "spawners", "instances.json")
+        path = os.path.join(base, "spawners", "spawners_instances.json")
         try:
             with open(path, "r", encoding="utf-8") as f:
                 data = json.load(f)

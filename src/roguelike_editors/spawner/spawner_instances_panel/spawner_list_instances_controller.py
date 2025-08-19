@@ -55,7 +55,7 @@ class SpawnerListInstancesController:
 
     # --- Data ops ------------------------------------------------------------
     def refresh_from_disk(self) -> None:
-        """Load spawner instances.json and fill model.items and cache raw entries."""
+        """Load spawners_instances.json and fill model.items and cache raw entries."""
         # Try to preserve selection by id across refreshes
         prev_selected_id = None
         try:

@@ -196,7 +196,7 @@ class InstancePropertiesController:
             # Parse new value and apply to selected_instance
             new_value = self._parse_value(new_text, key_path)
             self._apply_edit(key_path, new_value)
-            # Persist to instances.json
+            # Persist to spawners_instances.json
             self._persist_instance()
             # Clear editing state and refresh rows
             self.model.editing_key = None

@@ -45,7 +45,7 @@ class SpawnerInstanceToolbarController:
     def on_add_spawner(self) -> None:
         """Enter/exit Add Mode with a simple dropdown of template ids.
 
-        - Populates model.add_templates from spawners.json
+        - Populates model.add_templates from spawners_templates.json
         - Toggles blinking on the Add button
         - Does NOT switch main toolbar tool; dropdown is owned by Instance Toolbar
         - Ensures Remove Mode is turned off
