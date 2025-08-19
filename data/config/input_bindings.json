@@ -16,5 +16,13 @@
     "toggle_inventory": "K_I",
     "select_class": "K_F2",
     "spell_teleport": "K_q",
-    "spell_sphere_magic_shield": "K_t"
+    "spell_sphere_magic_shield": "K_t",
+    "toggle_spawner_editor": "K_F3",
+    "toggle_spells_editor": "K_F4",
+    "toggle_entities_editor": "K_F5",
+    "toggle_inventory_editor": "K_F6",
+    "toggle_tile_editor": "K_F8",
+    "toggle_building_editor": "K_F10",
+    "toggle_map_editor": "K_F11",
+    "toggle_fsm_editor": "K_F12"
 }

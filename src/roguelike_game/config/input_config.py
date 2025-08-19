@@ -47,22 +47,50 @@ class InputConfig:
                 "spell_sphere_magic_shield": "K_t",
                 "spell_teleport": "K_j",
                 "pause": "K_ESCAPE",
-                "toggle_item_editor": "K_F6",
+                # Editor toggles (defaults)
+                "toggle_spawner_editor": "K_F3",
+                "toggle_spells_editor": "K_F4",
+                "toggle_entities_editor": "K_F5",
+                "toggle_inventory_editor": "K_F6",
+                "toggle_item_editor": "K_F7",
+                "toggle_tile_editor": "K_F8",
+                "toggle_building_editor": "K_F10",
+                "toggle_map_editor": "K_F11",
+                "toggle_fsm_editor": "K_F12",
                 "select_class": "K_F2",
-                "toggle_inventory": "K_i",
-                "toggle_building_editor": "K_F10"
+                # Gameplay inventory (not editor)
+                "toggle_inventory": "K_i"
             }
             os.makedirs(os.path.dirname(self.path), exist_ok=True)
             with open(self.path, 'w', encoding='utf-8') as f:
                 json.dump(self.bindings, f, indent=4)
-                # Toggle Item Editor binding
 
+        # Ensure presence of editor toggle bindings in user config for discoverability
+        ensured = False
+        if "toggle_spawner_editor" not in self.bindings:
+            self.bindings["toggle_spawner_editor"] = "K_F3"; ensured = True
+        if "toggle_spells_editor" not in self.bindings:
+            self.bindings["toggle_spells_editor"] = "K_F4"; ensured = True
+        if "toggle_entities_editor" not in self.bindings:
+            self.bindings["toggle_entities_editor"] = "K_F5"; ensured = True
+        if "toggle_inventory_editor" not in self.bindings:
+            self.bindings["toggle_inventory_editor"] = "K_F6"; ensured = True
         if "toggle_item_editor" not in self.bindings:
-            self.bindings["toggle_item_editor"] = "K_F6"
+            self.bindings["toggle_item_editor"] = "K_F7"; ensured = True
+        if "toggle_tile_editor" not in self.bindings:
+            self.bindings["toggle_tile_editor"] = "K_F8"; ensured = True
+        if "toggle_building_editor" not in self.bindings:
+            self.bindings["toggle_building_editor"] = "K_F10"; ensured = True
+        if "toggle_map_editor" not in self.bindings:
+            self.bindings["toggle_map_editor"] = "K_F11"; ensured = True
+        if "toggle_fsm_editor" not in self.bindings:
+            self.bindings["toggle_fsm_editor"] = "K_F12"; ensured = True
+        if ensured:
             self.save()
         if "toggle_inventory" not in self.bindings:
             self.bindings["toggle_inventory"] = "K_i"
             self.save()
+
         # Asegurar binding para lightning
         if "spell_lightning" not in self.bindings:
             self.bindings["spell_lightning"] = "K_r"
@@ -102,13 +130,21 @@ class InputConfig:
             "spell_sphere_magic_shield": pygame.K_t,
             "spell_teleport": pygame.K_j,
             "pause": pygame.K_ESCAPE,
-            "toggle_item_editor": pygame.K_F6,
-            "toggle_inventory": pygame.K_i,
+            # Editor toggles (defaults)
+            "toggle_spawner_editor": pygame.K_F3,
+            "toggle_spells_editor": pygame.K_F4,
+            "toggle_entities_editor": pygame.K_F5,
+            "toggle_inventory_editor": pygame.K_F6,
+            "toggle_item_editor": pygame.K_F7,
             "toggle_tile_editor": pygame.K_F8,
             "toggle_building_editor": pygame.K_F10,
             "toggle_map_editor": pygame.K_F11,
+            "toggle_fsm_editor": pygame.K_F12,
+            # Gameplay inventory (not editor)
+            "toggle_inventory": pygame.K_i,
             "select_class": pygame.K_F2
         }
+
         # Intentar binding de usuario
         name = self.bindings.get(action)
         if name:

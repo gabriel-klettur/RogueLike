@@ -101,9 +101,6 @@ class MapEditorEventHandler:
                 if (ev.key == pygame.K_y) and (ev.mod & pygame.KMOD_CTRL):
                     self._perform_redo(camera)
                     continue
-                if ev.key == pygame.K_F11:
-                    self.manager.toggle()
-                    continue
                 if ev.key == pygame.K_ESCAPE:
                     self.manager.game.state.running = False
                     continue

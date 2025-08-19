@@ -121,7 +121,7 @@ def test_drag_sequence_right_button_moves_panel():
     assert calls["drag_events"] == [pygame.MOUSEBUTTONDOWN, pygame.MOUSEMOTION, pygame.MOUSEBUTTONUP]
 
 
-def test_keydown_up_down_and_f5_toggle():
+def test_keydown_up_down_only():
     controller, _ = _make_picker_controller_stub()
     handler = EntitiesPickerEventHandler(controller)
 
@@ -135,10 +135,11 @@ def test_keydown_up_down_and_f5_toggle():
     assert handler.handle(ev_up) is True
     assert controller.model.scroll_index == 0
 
-    # F5 toggles visibility off when currently visible
+    # F5 no longer toggles locally (centralized); handler still consumes keydown path
     ev_f5 = SimpleNamespace(type=pygame.KEYDOWN, key=pygame.K_F5)
     assert handler.handle(ev_f5) is True
-    assert controller.model.visible is False
+    # Visibility unchanged
+    assert controller.model.visible is True
 
 
 def test_click_outside_panel_returns_false():

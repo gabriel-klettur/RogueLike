@@ -5,8 +5,9 @@
     "slots": [
       {
         "item": "gold",
-        "quantity": 14
+        "quantity": 16
       },
+      null,
       null,
       null,
       null,
@@ -25,9 +26,8 @@
       null,
       {
         "item": "wood",
-        "quantity": 3
+        "quantity": 4
       },
-      null,
       null
     ],
     "schema_version": "1.0.0"

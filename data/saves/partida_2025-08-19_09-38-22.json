@@ -48,16 +48,11 @@
   "meta": {
     "name": "partida_2025-08-19_09-38-22",
     "created_at": "2025-08-19T09:38:22",
-    "last_played": "2025-08-19T10:25:05",
+    "last_played": "2025-08-19T10:55:18",
     "player": {
-      "xp": 0,
-      "level": 0
+      "xp": null,
+      "level": null
     },
-    "items_summary": {
-      "stacks": 1,
-      "top_items": [
-        "gold"
-      ]
-    }
+    "items_summary": {}
   }
 }

@@ -8,6 +8,10 @@ from roguelike_game.config.spells_config import reload_spells
 class SpellEditorEventHandler:
     """
     Event handler for the Spell Editor UI.
+
+    Note: Visibility toggling is handled centrally by
+    `roguelike_game/managers/core/events.py` via InputConfig keybindings.
+    This handler does not toggle visibility locally.
     """
     def __init__(self, controller):
         self.controller = controller
@@ -24,11 +28,6 @@ class SpellEditorEventHandler:
             return
 
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_F4:
-                # Toggle visibility
-                self.model.visible = not self.model.visible
-                self.model.selected_id = None
-                return
             if not self.model.visible:
                 return
             if event.key == pygame.K_UP:

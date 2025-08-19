@@ -14,6 +14,195 @@ from roguelike_ui.ui_blocker import is_blocked
 import logging
 logger = logging.getLogger(__name__)
 
+# --- Centralized editor visibility management ---------------------------------
+def _close_all_editors(game) -> None:
+    """Close all editors, running their respective close side-effects.
+
+    Ensures mutual exclusivity by turning OFF visibility/active flags everywhere.
+    """
+    # Spawner Editor
+    try:
+        sp = getattr(game, 'spawner_editor', None)
+        if sp and getattr(getattr(sp, 'model', None), 'visible', False):
+            sp.controller.toggle_visible()
+    except Exception:
+        pass
+    try:
+        # Mirror global debug flag
+        config.DEBUG_SPAWNER = False
+    except Exception:
+        pass
+    # Spells Editor
+    try:
+        if getattr(getattr(game, 'spells_editor', None), 'model', None) and getattr(game.spells_editor.model, 'visible', False):
+            game.spells_editor.model.visible = False
+    except Exception:
+        pass
+    # Entities Editor
+    try:
+        if getattr(getattr(game, 'entities_editor', None), 'model', None) and getattr(game.entities_editor.model, 'visible', False):
+            game.entities_editor.model.visible = False
+    except Exception:
+        pass
+    # Inventory Editor
+    try:
+        if getattr(getattr(game, 'inventory_editor', None), 'model', None) and getattr(game.inventory_editor.model, 'visible', False):
+            game.inventory_editor.model.visible = False
+    except Exception:
+        pass
+    # Items Editor
+    try:
+        it = getattr(game, 'item_editor', None)
+        if it and getattr(getattr(it, 'model', None), 'visible', False):
+            it.hide()
+    except Exception:
+        pass
+    # FSM Editor (Entities Spy)
+    try:
+        config.DEBUG_ENTITIES = False
+    except Exception:
+        pass
+    # Tiles Editor
+    try:
+        te = getattr(game, 'tiles_editor', None)
+        if te and getattr(getattr(te, 'editor_state', None), 'active', False):
+            # Reset key flags similar to ESC/F8 close behavior
+            te.editor_state.active = False
+            try:
+                te.editor_state.picker_state.open = False
+                te.editor_state.selected_tile = None
+                te.editor_state.brush_dragging = False
+                te.editor_state.default_dragging = False
+                te.editor_state.delete_dragging = False
+            except Exception:
+                pass
+    except Exception:
+        pass
+    # Buildings Editor (persist on close + spatial index invalidation)
+    try:
+        be = getattr(game, 'buildings_editor', None)
+        bm = getattr(game, 'buildings', None)
+        if be and getattr(getattr(be, 'editor_state', None), 'active', False):
+            # Persistir colisiones CG si el editor estaba activo
+            try:
+                if hasattr(be, 'colliders') and hasattr(be.colliders, 'events'):
+                    be.colliders.events._save_collisions(bm.buildings, force=True)
+            except Exception:
+                pass
+            # Guardar buildings con overrides CU
+            try:
+                save_buildings_to_json(
+                    bm.buildings,
+                    BUILDINGS_DATA_PATH,
+                    z_state=getattr(game.state, 'z_state', None),
+                    zone_offsets=getattr(global_map_settings, 'zone_offsets', None),
+                )
+            except Exception:
+                pass
+            # Invalidate spatial index para respetar colisiones inmediatamente en gameplay
+            try:
+                game.ecs.ecs_world.invalidate_spatial_index()
+            except Exception:
+                pass
+            be.editor_state.active = False
+            # No forzar apertura del picker al activar: siempre inicia oculto
+            try:
+                be.editor_state.picker_active = False
+            except Exception:
+                pass
+    except Exception:
+        pass
+    # Map Editor
+    try:
+        me = getattr(game, 'map_editor', None)
+        if me and getattr(getattr(me, 'editor_state', None), 'active', False):
+            me.editor_state.active = False
+    except Exception:
+        pass
+
+
+def _open_editor_exclusive(game, target: str) -> None:
+    """Close all editors, then open exactly one target editor.
+
+    target in {'spawner','spells','entities','inventory','items','fsm','tiles','buildings','map'}
+    """
+    _close_all_editors(game)
+    if target == 'spawner':
+        try:
+            if not getattr(getattr(game.spawner_editor, 'model', None), 'visible', False):
+                game.spawner_editor.controller.toggle_visible()
+            config.DEBUG_SPAWNER = bool(getattr(game.spawner_editor.model, 'visible', False))
+        except Exception:
+            pass
+    elif target == 'spells':
+        try:
+            game.spells_editor.model.visible = True
+        except Exception:
+            pass
+    elif target == 'entities':
+        try:
+            game.entities_editor.model.visible = True
+        except Exception:
+            pass
+    elif target == 'inventory':
+        try:
+            game.inventory_editor.model.visible = True
+            # Initialize entities list as done on manual toggle open
+            logger.debug(f"[Controller] Loading JSON entities for category {game.inventory_editor.model.current_category}...")
+            data = game.inventory_editor.model.active_data.get(game.inventory_editor.model.current_category, {})
+            entities = list(data.keys()) if isinstance(data, dict) else []
+            game.inventory_editor.model.entities = entities
+            logger.debug(f"[Controller] JSON Entities loaded: {entities}")
+            prev = game.inventory_editor.model.selected_eid
+            if prev in entities:
+                selected = prev
+            else:
+                selected = entities[0] if entities else None
+            game.inventory_editor.model.selected_eid = selected
+            logger.debug(f"[Controller] Selected EID: {selected}")
+            try:
+                game.inventory_editor.debug_dump()
+            except Exception:
+                pass
+        except Exception:
+            pass
+    elif target == 'items':
+        try:
+            game.item_editor.show()
+        except Exception:
+            pass
+    elif target == 'fsm':
+        try:
+            config.DEBUG_ENTITIES = True
+        except Exception:
+            pass
+    elif target == 'tiles':
+        try:
+            game.tiles_editor.editor_state.active = True
+            # Mimic previous F8-on side effects: show view panel and size panel by default
+            try:
+                game.tiles_editor.editor_state.toolbar_state.view_active = True
+            except Exception:
+                pass
+            try:
+                game.tiles_editor.editor_state.size_panel_state.visible = True
+            except Exception:
+                pass
+        except Exception:
+            pass
+    elif target == 'buildings':
+        try:
+            game.buildings_editor.editor_state.active = True
+            # Picker inicia oculto
+            game.buildings_editor.editor_state.picker_active = False
+        except Exception:
+            pass
+    elif target == 'map':
+        try:
+            game.map_editor.editor_state.active = True
+        except Exception:
+            pass
+
 def handle_events(game):
     # Procesar QUIT antes que nada
     if pygame.event.peek(pygame.QUIT):
@@ -125,90 +314,107 @@ def handle_events(game):
             except Exception:
                 pass
             return
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_F3:
-            # Toggle Spawner Editor visibility and mirror a global debug flag
+        if event.type == pygame.KEYDOWN and event.key == game.input_config.get_key('toggle_spawner_editor'):
+            # Spawner Editor (exclusive)
             try:
-                game.spawner_editor.controller.toggle_visible()
-                config.DEBUG_SPAWNER = bool(getattr(game.spawner_editor.model, 'visible', False))
+                is_vis = bool(getattr(getattr(game, 'spawner_editor', None), 'model', None) and getattr(game.spawner_editor.model, 'visible', False))
             except Exception:
-                pass
+                is_vis = False
+            if is_vis:
+                _close_all_editors(game)
+            else:
+                _open_editor_exclusive(game, 'spawner')
             return
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_F4:
-            game.spells_editor.model.visible = not game.spells_editor.model.visible
+        if event.type == pygame.KEYDOWN and event.key == game.input_config.get_key('toggle_spells_editor'):
+            # Spells Editor (exclusive)
+            try:
+                is_vis = bool(getattr(getattr(game, 'spells_editor', None), 'model', None) and getattr(game.spells_editor.model, 'visible', False))
+            except Exception:
+                is_vis = False
+            if is_vis:
+                _close_all_editors(game)
+            else:
+                _open_editor_exclusive(game, 'spells')
             return
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_F5:
-            game.entities_editor.model.visible = not game.entities_editor.model.visible
+        if event.type == pygame.KEYDOWN and event.key == game.input_config.get_key('toggle_entities_editor'):
+            # Entities Editor (exclusive)
+            try:
+                is_vis = bool(getattr(getattr(game, 'entities_editor', None), 'model', None) and getattr(game.entities_editor.model, 'visible', False))
+            except Exception:
+                is_vis = False
+            if is_vis:
+                _close_all_editors(game)
+            else:
+                _open_editor_exclusive(game, 'entities')
             return
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_F6:
-            logger.debug(f"[Controller] Toggling Inventory Editor. Old visible: {game.inventory_editor.model.visible}")
-            new_vis = not game.inventory_editor.model.visible
-            game.inventory_editor.model.visible = new_vis
-            if new_vis:
-                logger.debug(f"[Controller] Loading JSON entities for category {game.inventory_editor.model.current_category}...")
-                data = game.inventory_editor.model.active_data.get(game.inventory_editor.model.current_category, {})
-                entities = list(data.keys()) if isinstance(data, dict) else []
-                game.inventory_editor.model.entities = entities
-                logger.debug(f"[Controller] JSON Entities loaded: {entities}")
-                prev = game.inventory_editor.model.selected_eid
-                if prev in entities:
-                    selected = prev
-                else:
-                    selected = entities[0] if entities else None
-                game.inventory_editor.model.selected_eid = selected
-                logger.debug(f"[Controller] Selected EID: {selected}")
-                game.inventory_editor.debug_dump()
+        if event.type == pygame.KEYDOWN and event.key == game.input_config.get_key('toggle_inventory_editor'):
+            # Inventory Editor (exclusive)
+            try:
+                is_vis = bool(getattr(getattr(game, 'inventory_editor', None), 'model', None) and getattr(game.inventory_editor.model, 'visible', False))
+            except Exception:
+                is_vis = False
+            if is_vis:
+                _close_all_editors(game)
+            else:
+                _open_editor_exclusive(game, 'inventory')
             return
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_F7:
-            game.state.item_editor_state.visible = not game.state.item_editor_state.visible
+        if event.type == pygame.KEYDOWN and event.key == game.input_config.get_key('toggle_item_editor'):
+            # Items Editor (exclusive)
+            try:
+                is_vis = bool(getattr(getattr(game, 'item_editor', None), 'model', None) and getattr(game.item_editor.model, 'visible', False))
+            except Exception:
+                is_vis = False
+            if is_vis:
+                _close_all_editors(game)
+            else:
+                _open_editor_exclusive(game, 'items')
             return
         if event.type == pygame.KEYDOWN and event.key == pygame.K_F9:
             config.DEBUG = not config.DEBUG
             logger.debug(f"🧪 DEBUG {'activado' if config.DEBUG else 'desactivado'}")
             return
-        # FSM Editor: solo gestionar el toggle F12 aquí y salir. La delegación de eventos
-        # y el passthrough de MMB al motor se hace más abajo en el bloque dedicado.
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_F12:
+        # FSM Editor (Entities Spy): exclusive toggle
+        # Delegation of other events occurs in the FSM-visible block further below.
+        if event.type == pygame.KEYDOWN and event.key == game.input_config.get_key('toggle_fsm_editor'):
             try:
-                FsmEditorEventHandler.handle_event(event)
+                import roguelike_engine.config.config as cfg
+                is_vis = bool(getattr(cfg, 'DEBUG_ENTITIES', False))
             except Exception:
-                pass
+                is_vis = False
+            if is_vis:
+                _close_all_editors(game)
+            else:
+                _open_editor_exclusive(game, 'fsm')
             return
-        if event.type == pygame.KEYDOWN and event.key == game.menu.input_config.get_key('toggle_tile_editor'):
-            game.tiles_editor.toggle()
+        if event.type == pygame.KEYDOWN and event.key == game.input_config.get_key('toggle_tile_editor'):
+            try:
+                is_active = bool(getattr(getattr(game, 'tiles_editor', None), 'editor_state', None) and getattr(game.tiles_editor.editor_state, 'active', False))
+            except Exception:
+                is_active = False
+            if is_active:
+                _close_all_editors(game)
+            else:
+                _open_editor_exclusive(game, 'tiles')
             return
-        if event.type == pygame.KEYDOWN and event.key == game.menu.input_config.get_key('toggle_building_editor'):
-            # Toggle building editor open/close
-            new_active = not game.buildings_editor.editor_state.active
-            # Si estamos cerrando el editor, persistir colisiones CG y refrescar índice espacial
-            if not new_active:
-                try:
-                    be = game.buildings_editor
-                    bm = game.buildings
-                    if hasattr(be, 'colliders') and hasattr(be.colliders, 'events'):
-                        be.colliders.events._save_collisions(bm.buildings, force=True)
-                except Exception:
-                    pass
-                # Guardar buildings con overrides CU
-                try:
-                    save_buildings_to_json(
-                        bm.buildings,
-                        BUILDINGS_DATA_PATH,
-                        z_state=getattr(game.state, 'z_state', None),
-                        zone_offsets=getattr(global_map_settings, 'zone_offsets', None),
-                    )
-                except Exception:
-                    pass
-                # Invalidate spatial index para respetar colisiones inmediatamente en gameplay
-                try:
-                    game.ecs.ecs_world.invalidate_spatial_index()
-                except Exception:
-                    pass
-            game.buildings_editor.editor_state.active = new_active
-            # No forzar apertura del picker al activar: debe iniciar oculto
-            game.buildings_editor.editor_state.picker_active = False
+        if event.type == pygame.KEYDOWN and event.key == game.input_config.get_key('toggle_building_editor'):
+            try:
+                is_active = bool(getattr(getattr(game, 'buildings_editor', None), 'editor_state', None) and getattr(game.buildings_editor.editor_state, 'active', False))
+            except Exception:
+                is_active = False
+            if is_active:
+                _close_all_editors(game)
+            else:
+                _open_editor_exclusive(game, 'buildings')
             return
-        if event.type == pygame.KEYDOWN and event.key == game.menu.input_config.get_key('toggle_map_editor'):
-            game.map_editor.toggle()
+        if event.type == pygame.KEYDOWN and event.key == game.input_config.get_key('toggle_map_editor'):
+            try:
+                is_active = bool(getattr(getattr(game, 'map_editor', None), 'editor_state', None) and getattr(game.map_editor.editor_state, 'active', False))
+            except Exception:
+                is_active = False
+            if is_active:
+                _close_all_editors(game)
+            else:
+                _open_editor_exclusive(game, 'map')
             return
 
     # Si el editor de ítems está activo, permitir MMB pan (pase al engine) y delegar sus eventos

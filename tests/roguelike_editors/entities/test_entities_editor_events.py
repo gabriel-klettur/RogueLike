@@ -12,18 +12,20 @@ def make_env():
     return model, controller, camera
 
 
-def test_f5_toggles_editor_active_state():
+def test_f5_no_longer_toggles_editor_locally():
     model, controller, camera = make_env()
     handler = EntitiesEditorEventHandler(model, controller)
 
+    # Initially inactive; F5 should not be handled here and should not change state
     e1 = SimpleNamespace(type=pygame.KEYDOWN, key=pygame.K_F5)
-    assert handler.handle([e1], camera) is True
-    assert model.active is True
-
-    # toggle off
-    e2 = SimpleNamespace(type=pygame.KEYDOWN, key=pygame.K_F5)
-    assert handler.handle([e2], camera) is True
+    assert handler.handle([e1], camera) is False
     assert model.active is False
+
+    # Set active and press F5 again; still no local toggle or consumption
+    model.active = True
+    e2 = SimpleNamespace(type=pygame.KEYDOWN, key=pygame.K_F5)
+    assert handler.handle([e2], camera) is False
+    assert model.active is True
 
 
 def test_escape_closes_editor():
