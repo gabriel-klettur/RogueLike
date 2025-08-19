@@ -24,6 +24,13 @@ def handle_mouse(event, state, camera, clock, map, entities, *, mmb_pan_enabled:
                     # Fallbacks if state/camera are not fully formed
                     pass
     elif event.type == pygame.MOUSEMOTION:
+        # If context no longer allows MMB panning, cancel immediately
+        if getattr(state, 'mmb_panning', False) and not mmb_pan_enabled:
+            try:
+                state.mmb_panning = False
+                logger.debug("[Mouse] MMB MOVE cancel pan (context disabled)")
+            except Exception:
+                pass
         # Update camera while panning with MMB
         if getattr(state, 'mmb_panning', False):
             try:
@@ -45,5 +52,14 @@ def handle_mouse(event, state, camera, clock, map, entities, *, mmb_pan_enabled:
                 try:
                     state.mmb_panning = False
                     logger.debug("[Mouse] MMB UP end pan")
+                    # Defer camera follow a few frames to avoid instant recenter after release
+                    try:
+                        # Only apply when panning was enabled in this context
+                        if mmb_pan_enabled:
+                            # keep the max in case another system already set a larger defer
+                            current = int(getattr(state, 'defer_follow_frames', 0) or 0)
+                            state.defer_follow_frames = max(current, 12)
+                    except Exception:
+                        pass
                 except Exception:
                     pass

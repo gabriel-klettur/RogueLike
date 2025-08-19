@@ -165,8 +165,13 @@ def handle_events(game):
             config.DEBUG = not config.DEBUG
             logger.debug(f"🧪 DEBUG {'activado' if config.DEBUG else 'desactivado'}")
             return
-        if FsmEditorEventHandler.handle_event(event):
-            # Evento consumido por el FSM editor/spy (por ejemplo, F12)
+        # FSM Editor: solo gestionar el toggle F12 aquí y salir. La delegación de eventos
+        # y el passthrough de MMB al motor se hace más abajo en el bloque dedicado.
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_F12:
+            try:
+                FsmEditorEventHandler.handle_event(event)
+            except Exception:
+                pass
             return
         if event.type == pygame.KEYDOWN and event.key == game.menu.input_config.get_key('toggle_tile_editor'):
             game.tiles_editor.toggle()
@@ -206,10 +211,42 @@ def handle_events(game):
             game.map_editor.toggle()
             return
 
-    # Si el editor de ítems está activo, capturar solo sus eventos
+    # Si el editor de ítems está activo, permitir MMB pan (pase al engine) y delegar sus eventos
     if game.item_editor.model.visible:
+        # Delegar al editor
         for event in events:
             game.item_editor.handle_event(event)
+        # Forward solo MMB-down/up y motion con MMB pulsado al engine para panning
+        mmb_events = []
+        for ev in events:
+            if ev.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP) and getattr(ev, 'button', None) == 2:
+                mmb_events.append(ev)
+            elif ev.type == pygame.MOUSEMOTION:
+                buttons = getattr(ev, 'buttons', None)
+                try:
+                    mmb_held = bool(buttons and len(buttons) >= 3 and buttons[1]) or bool(pygame.mouse.get_pressed(3)[1])
+                except Exception:
+                    mmb_held = False
+                if mmb_held:
+                    mmb_events.append(ev)
+        if mmb_events:
+            engine_handle_events(
+                game.state,
+                game.camera,
+                game.clock,
+                game.menu,
+                game.map,
+                game.buildings,
+                game.tiles_editor,
+                game.buildings_editor,
+                game.map_editor,
+                game.spawner_editor,
+                mmb_events,
+                diagnostics_overlay=overlay,
+                spells_editor=getattr(game, 'spells_editor', None),
+                item_editor=getattr(game, 'item_editor', None),
+                fsm_visible=getattr(__import__('roguelike_engine.config.config', fromlist=['config']), 'DEBUG_ENTITIES', False),
+            )
         return
 
     # Si el editor de inventario está activo, capturar solo sus eventos
@@ -218,10 +255,87 @@ def handle_events(game):
             game.inventory_editor.handle_event(event)
         return
 
-    # Si el editor de hechizos está activo
+    # Si el editor de hechizos está activo, permitir MMB pan (pase al engine) y delegar sus eventos
     if hasattr(game, 'spells_editor') and game.spells_editor.model.visible:
         for event in events:
             game.spells_editor.handle_event(event)
+        mmb_events = []
+        for ev in events:
+            if ev.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP) and getattr(ev, 'button', None) == 2:
+                mmb_events.append(ev)
+            elif ev.type == pygame.MOUSEMOTION:
+                buttons = getattr(ev, 'buttons', None)
+                try:
+                    mmb_held = bool(buttons and len(buttons) >= 3 and buttons[1]) or bool(pygame.mouse.get_pressed(3)[1])
+                except Exception:
+                    mmb_held = False
+                if mmb_held:
+                    mmb_events.append(ev)
+        if mmb_events:
+            engine_handle_events(
+                game.state,
+                game.camera,
+                game.clock,
+                game.menu,
+                game.map,
+                game.buildings,
+                game.tiles_editor,
+                game.buildings_editor,
+                game.map_editor,
+                game.spawner_editor,
+                mmb_events,
+                diagnostics_overlay=overlay,
+                spells_editor=getattr(game, 'spells_editor', None),
+                item_editor=getattr(game, 'item_editor', None),
+                fsm_visible=getattr(__import__('roguelike_engine.config.config', fromlist=['config']), 'DEBUG_ENTITIES', False),
+            )
+        return
+
+    # Si el editor FSM (Entities Spy) está visible, delegar al editor y pasar MMB al motor para pan
+    try:
+        import roguelike_engine.config.config as cfg
+        fsm_vis = bool(getattr(cfg, 'DEBUG_ENTITIES', False))
+    except Exception:
+        fsm_vis = False
+    if fsm_vis:
+        # Delegar todos los eventos al FSM editor
+        for event in events:
+            try:
+                # No forzar retorno global; permitir seguir procesando MMB abajo
+                FsmEditorEventHandler.handle_event(event)
+            except Exception:
+                pass
+        # Forward solo MMB-down/up y motion con MMB pulsado al engine para panning
+        mmb_events = []
+        for ev in events:
+            if ev.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP) and getattr(ev, 'button', None) == 2:
+                mmb_events.append(ev)
+            elif ev.type == pygame.MOUSEMOTION:
+                buttons = getattr(ev, 'buttons', None)
+                try:
+                    mmb_held = bool(buttons and len(buttons) >= 3 and buttons[1]) or bool(pygame.mouse.get_pressed(3)[1])
+                except Exception:
+                    mmb_held = False
+                if mmb_held:
+                    mmb_events.append(ev)
+        if mmb_events:
+            engine_handle_events(
+                game.state,
+                game.camera,
+                game.clock,
+                game.menu,
+                game.map,
+                game.buildings,
+                game.tiles_editor,
+                game.buildings_editor,
+                game.map_editor,
+                game.spawner_editor,
+                mmb_events,
+                diagnostics_overlay=overlay,
+                spells_editor=getattr(game, 'spells_editor', None),
+                item_editor=getattr(game, 'item_editor', None),
+                fsm_visible=True,
+            )
         return
 
     # Si el editor de entidades está activo
@@ -231,11 +345,28 @@ def handle_events(game):
         return
 
     # Si el editor de spawner está activo, permitir que consuma eventos específicos (RMB sobre spawner),
-    # pero no retornar: el resto de eventos deben seguir hacia el motor.
+    # pero NO consumir MMB ni su motion para que el motor pueda panear la cámara.
     if hasattr(game, 'spawner_editor') and getattr(game.spawner_editor.model, 'visible', False):
         for i, event in enumerate(events):
             try:
-                if game.spawner_editor.handle_event(event):
+                handled = game.spawner_editor.handle_event(event)
+                if handled:
+                    # No consumir MMB down/up ni motion con MMB pulsado: dejar que pase al motor en la fase final
+                    if event.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP) and getattr(event, 'button', None) == 2:
+                        continue
+                    if event.type == pygame.MOUSEMOTION:
+                        buttons = getattr(event, 'buttons', None)
+                        mmb_held = False
+                        try:
+                            if buttons and len(buttons) >= 3:
+                                mmb_held = bool(buttons[1])
+                            else:
+                                mmb_held = bool(pygame.mouse.get_pressed(3)[1])
+                        except Exception:
+                            mmb_held = False
+                        if mmb_held:
+                            continue
+                    # Consumir todo lo demás (por ejemplo RMB para mover anchors)
                     consumed_idx.add(i)
             except Exception:
                 pass
@@ -268,10 +399,18 @@ def handle_events(game):
         # Clicks dentro de paneles UI (excepto MMB que se usa para pan de cámara)
         elif ev.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP):
             btn = getattr(ev, 'button', None)
-            # Permitir MMB solo si el Spawner Editor está visible
-            allow_mmb_ui = bool(getattr(getattr(game, 'spawner_editor', None), 'model', None) and getattr(game.spawner_editor.model, 'visible', False))
+            # Permitir MMB sobre UI cuando ciertos editores están visibles (Spawner/Spells/Items/FSM)
+            sp_vis = bool(getattr(getattr(game, 'spawner_editor', None), 'model', None) and getattr(game.spawner_editor.model, 'visible', False))
+            spells_vis = bool(getattr(getattr(game, 'spells_editor', None), 'model', None) and getattr(game.spells_editor.model, 'visible', False))
+            items_vis = bool(getattr(getattr(game, 'item_editor', None), 'model', None) and getattr(game.item_editor.model, 'visible', False))
+            try:
+                import roguelike_engine.config.config as cfg
+                fsm_vis = bool(getattr(cfg, 'DEBUG_ENTITIES', False))
+            except Exception:
+                fsm_vis = False
+            allow_mmb_ui = sp_vis or spells_vis or items_vis or fsm_vis
             if btn == 2 and allow_mmb_ui:
-                logger.debug("[Events] Allowing MMB event=%s over UI passthrough (down/up) [SpawnerEditor visible]", ev.type)
+                logger.debug("[Events] Allowing MMB event=%s over UI passthrough (down/up) [editor visible]", ev.type)
                 continue
             mx, my = getattr(ev, 'pos', (None, None))
             if mx is not None and is_blocked(mx, my):
@@ -292,11 +431,19 @@ def handle_events(game):
                     mmb_held = bool(pygame.mouse.get_pressed(3)[1])
             except Exception:
                 mmb_held = False
-            allow_mmb_ui = bool(getattr(getattr(game, 'spawner_editor', None), 'model', None) and getattr(game.spawner_editor.model, 'visible', False))
+            sp_vis = bool(getattr(getattr(game, 'spawner_editor', None), 'model', None) and getattr(game.spawner_editor.model, 'visible', False))
+            spells_vis = bool(getattr(getattr(game, 'spells_editor', None), 'model', None) and getattr(game.spells_editor.model, 'visible', False))
+            items_vis = bool(getattr(getattr(game, 'item_editor', None), 'model', None) and getattr(game.item_editor.model, 'visible', False))
+            try:
+                import roguelike_engine.config.config as cfg
+                fsm_vis = bool(getattr(cfg, 'DEBUG_ENTITIES', False))
+            except Exception:
+                fsm_vis = False
+            allow_mmb_ui = sp_vis or spells_vis or items_vis or fsm_vis
             if is_blocked(mx, my) and not (mmb_held and allow_mmb_ui):
                 blocked_idx.add(i)
             elif is_blocked(mx, my) and mmb_held and allow_mmb_ui:
-                logger.debug("[Events] Allowing MOUSEMOTION with MMB held over UI [SpawnerEditor visible]")
+                logger.debug("[Events] Allowing MOUSEMOTION with MMB held over UI [editor visible]")
     remaining_events = [e for idx, e in enumerate(events) if idx not in consumed_idx and idx not in blocked_idx]
     # Pass remaining events and diagnostics overlay to the engine input handler
     engine_handle_events(
@@ -309,6 +456,10 @@ def handle_events(game):
         game.tiles_editor,
         game.buildings_editor,
         game.map_editor,
+        game.spawner_editor,
         remaining_events,
         diagnostics_overlay=overlay,
+        spells_editor=getattr(game, 'spells_editor', None),
+        item_editor=getattr(game, 'item_editor', None),
+        fsm_visible=getattr(__import__('roguelike_engine.config.config', fromlist=['config']), 'DEBUG_ENTITIES', False),
     )

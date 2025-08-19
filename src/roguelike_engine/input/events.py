@@ -14,9 +14,13 @@ def handle_events(
     tiles_editor,
     buildings_editor,
     map_editor,
+    spawner_editor=None,
     events=None,
     *,
     diagnostics_overlay=None,
+    spells_editor=None,
+    item_editor=None,
+    fsm_visible: bool = False,
 ):
     """
     Maneja eventos de pygame para input y editores.
@@ -32,6 +36,24 @@ def handle_events(
         active_map = map_editor.editor_state.active
     except Exception:
         pass
+    # Spawner editor is considered "active" for the purpose of enabling MMB camera panning
+    active_spawner = False
+    try:
+        active_spawner = bool(getattr(getattr(spawner_editor, 'model', None), 'visible', False))
+    except Exception:
+        active_spawner = False
+    # Other editors (visibility toggles) also enable MMB camera panning
+    active_spells = False
+    try:
+        active_spells = bool(getattr(getattr(spells_editor, 'model', None), 'visible', False))
+    except Exception:
+        active_spells = False
+    active_items = False
+    try:
+        active_items = bool(getattr(getattr(item_editor, 'model', None), 'visible', False))
+    except Exception:
+        active_items = False
+    active_fsm = bool(fsm_visible)
     # Pre-handle editors
     if active_tiles:
         tiles_editor.handler.handle(camera, map)
@@ -45,8 +67,6 @@ def handle_events(
     kb = handle_keyboard
     ms = handle_mouse
 
-    overlay = diagnostics_overlay
-    panel = overlay.panel_rect if overlay else None
     if events is None:
         events = pygame.event.get()
     for ev in events:
@@ -56,16 +76,11 @@ def handle_events(
         elif et in (pygame.KEYDOWN, pygame.KEYUP):
             kb(ev, state, camera, clock, menu, entities, tiles_editor, buildings_editor, map_editor, map)
         elif et in (pygame.MOUSEWHEEL, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP, pygame.MOUSEMOTION):
-            consumed = False
-            if overlay and panel:
-                # For wheel, use current mouse position; for others, prefer event.pos when available
-                try:
-                    mx, my = (pygame.mouse.get_pos() if et == pygame.MOUSEWHEEL else getattr(ev, 'pos', pygame.mouse.get_pos()))
-                except Exception:
-                    mx, my = pygame.mouse.get_pos()
-                if overlay.hit_test((mx, my)):
-                    consumed = bool(overlay.handle_event(ev))
-            # Enable MMB panning only while an editor is active (tiles/buildings/map)
-            mmb_pan_enabled = bool(active_tiles or active_buildings or active_map)
-            if not consumed and not active_tiles and not active_buildings and not active_map:
-                ms(ev, state, camera, clock, map, entities, mmb_pan_enabled=mmb_pan_enabled)
+            # Diagnostics overlay is handled upstream in managers/core/events.py
+            # Enable MMB camera panning while editors are active; disable in gameplay.
+            # Include Spawner/Spells/Items editors visibility and FSM editor visible flag.
+            mmb_pan_enabled = (
+                active_tiles or active_buildings or active_map or
+                active_spawner or active_spells or active_items or active_fsm
+            )
+            ms(ev, state, camera, clock, map, entities, mmb_pan_enabled=mmb_pan_enabled)
