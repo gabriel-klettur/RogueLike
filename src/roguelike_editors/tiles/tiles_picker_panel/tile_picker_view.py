@@ -144,6 +144,38 @@ class TilePickerView:
         ly = my - py
         return lx, ly, y0
 
+    def _draw_assets_grid(self, grid):
+        """Return hovered asset (value, orig_size) without drawing via grid fallback.
+
+        This matches the behavior expected by tests: in both default and config modes,
+        compute the hovered index using the grid geometry and current scroll, and
+        return the corresponding (value, orig_size) if the mouse is over a valid cell;
+        otherwise return (None, None). The grid.draw_items fallback is intentionally
+        not called here.
+        """
+        # Compute grid layout
+        cols, rows, w, h_grid = grid.compute()
+
+        # Local mouse coordinates relative to the panel
+        lx, ly, _y0 = self._get_local_coords()
+
+        hovered_idx = None
+        if 0 <= lx < w and 0 <= ly < h_grid:
+            col = lx // (THUMB + PAD)
+            row = (ly + self.picker_state.scroll_offset) // (THUMB + PAD)
+            idx = row * cols + col
+            if 0 <= idx < len(self.assets):
+                hovered_idx = idx
+
+        # Update cached hovered index for consistency with render overlays
+        self._hovered_idx = hovered_idx
+
+        if hovered_idx is None:
+            return (None, None)
+
+        value, _thumb, _is_dir, orig_size = self.assets[hovered_idx]
+        return (value, orig_size)
+
     def _draw_asset_cell(self, surf: pygame.Surface, rect: pygame.Rect, idx: int) -> None:
         """Draw one asset cell using PickerPanel callback; overlays handled here to preserve existing visuals."""
         if idx < 0 or idx >= len(self.assets):
