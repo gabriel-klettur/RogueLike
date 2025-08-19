@@ -53,6 +53,8 @@ class MenuManager:
         self._last_click_pos: tuple[int, int] | None = None
         # Hover del botón Cargar
         self._saves_hover_load_button: bool = False
+        # Guardar configuración previa de key repeat para restaurar al salir de edición
+        self._prev_key_repeat: tuple[int, int] | None = None
 
     def handle_input(self, event):
         """
@@ -65,28 +67,83 @@ class MenuManager:
                 if self._saves_editing_name:
                     if event.key == pygame.K_ESCAPE:
                         # Cancelar edición
-                        self._saves_editing_name = False
+                        self._end_edit_save_name(cancel=True)
                         return None
                     if event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
                         # Commit del renombrado
                         self._commit_save_rename()
                         return None
                     if event.key == pygame.K_BACKSPACE:
-                        if self._saves_edit_caret > 0 and len(self._saves_edit_name_text) > 0:
+                        mods = pygame.key.get_mods()
+                        if mods & pygame.KMOD_CTRL:
+                            # Borrar palabra hacia la izquierda
                             i = self._saves_edit_caret
-                            self._saves_edit_name_text = self._saves_edit_name_text[:i-1] + self._saves_edit_name_text[i:]
-                            self._saves_edit_caret -= 1
+                            text = self._saves_edit_name_text
+                            if i > 0 and text:
+                                j = i
+                                # saltar espacios a la izquierda
+                                while j > 0 and text[j-1].isspace():
+                                    j -= 1
+                                # borrar hasta inicio o espacio anterior
+                                while j > 0 and not text[j-1].isspace():
+                                    j -= 1
+                                self._saves_edit_name_text = text[:j] + text[i:]
+                                self._saves_edit_caret = j
+                        else:
+                            if self._saves_edit_caret > 0 and len(self._saves_edit_name_text) > 0:
+                                i = self._saves_edit_caret
+                                self._saves_edit_name_text = self._saves_edit_name_text[:i-1] + self._saves_edit_name_text[i:]
+                                self._saves_edit_caret -= 1
                         return None
                     if event.key == pygame.K_DELETE:
-                        i = self._saves_edit_caret
-                        if i < len(self._saves_edit_name_text):
-                            self._saves_edit_name_text = self._saves_edit_name_text[:i] + self._saves_edit_name_text[i+1:]
+                        mods = pygame.key.get_mods()
+                        if mods & pygame.KMOD_CTRL:
+                            # Borrar palabra hacia la derecha
+                            i = self._saves_edit_caret
+                            text = self._saves_edit_name_text
+                            if i < len(text):
+                                j = i
+                                # saltar espacios a la derecha
+                                while j < len(text) and text[j].isspace():
+                                    j += 1
+                                # borrar hasta siguiente espacio/fin
+                                while j < len(text) and not text[j].isspace():
+                                    j += 1
+                                self._saves_edit_name_text = text[:i] + text[j:]
+                        else:
+                            i = self._saves_edit_caret
+                            if i < len(self._saves_edit_name_text):
+                                self._saves_edit_name_text = self._saves_edit_name_text[:i] + self._saves_edit_name_text[i+1:]
                         return None
                     if event.key in (pygame.K_LEFT, pygame.K_KP_4):
-                        self._saves_edit_caret = max(0, self._saves_edit_caret - 1)
+                        mods = pygame.key.get_mods()
+                        if mods & pygame.KMOD_CTRL:
+                            # Mover caret a inicio de palabra anterior
+                            i = self._saves_edit_caret
+                            text = self._saves_edit_name_text
+                            j = i
+                            while j > 0 and text[j-1].isspace():
+                                j -= 1
+                            while j > 0 and not text[j-1].isspace():
+                                j -= 1
+                            self._saves_edit_caret = j
+                        else:
+                            self._saves_edit_caret = max(0, self._saves_edit_caret - 1)
                         return None
                     if event.key in (pygame.K_RIGHT, pygame.K_KP_6):
-                        self._saves_edit_caret = min(len(self._saves_edit_name_text), self._saves_edit_caret + 1)
+                        mods = pygame.key.get_mods()
+                        if mods & pygame.KMOD_CTRL:
+                            # Mover caret al inicio de la siguiente palabra
+                            i = self._saves_edit_caret
+                            text = self._saves_edit_name_text
+                            j = i
+                            while j < len(text) and text[j].isspace():
+                                j += 1
+                            while j < len(text) and not text[j].isspace():
+                                j += 1
+                            self._saves_edit_caret = j
+                        else:
+                            self._saves_edit_caret = min(len(self._saves_edit_name_text), self._saves_edit_caret + 1)
                         return None
                     if event.key == pygame.K_HOME:
                         self._saves_edit_caret = 0
@@ -106,7 +163,7 @@ class MenuManager:
                     if self.save_entries:
                         self.load_selected = (self.load_selected - 1) % len(self.save_entries)
                         # salir de edición si cambia selección
-                        self._saves_editing_name = False
+                        self._end_edit_save_name(cancel=True)
                         # Mantener visible
                         layout = getattr(self.renderer, 'last_saves_layout', None)
                         if layout:
@@ -117,7 +174,7 @@ class MenuManager:
                 elif event.key in (pygame.K_DOWN, pygame.K_s, pygame.K_d):
                     if self.save_entries:
                         self.load_selected = (self.load_selected + 1) % len(self.save_entries)
-                        self._saves_editing_name = False
+                        self._end_edit_save_name(cancel=True)
                         # Mantener visible
                         layout = getattr(self.renderer, 'last_saves_layout', None)
                         if layout:
@@ -600,6 +657,13 @@ class MenuManager:
         self._saves_editing_name = True
         self._saves_edit_name_text = str(current)
         self._saves_edit_caret = len(self._saves_edit_name_text)
+        # Activar repetición de teclas para edición fluida (incluye Backspace/Delete)
+        try:
+            # Guardar config previa (si está disponible) y activar repeat
+            self._prev_key_repeat = pygame.key.get_repeat() if hasattr(pygame.key, 'get_repeat') else None
+            pygame.key.set_repeat(350, 40)
+        except Exception:
+            pass
 
     def _set_caret_from_click(self, pos: tuple[int, int]):
         try:
@@ -626,12 +690,12 @@ class MenuManager:
 
     def _commit_save_rename(self):
         if not self.save_entries:
-            self._saves_editing_name = False
+            self._end_edit_save_name(cancel=True)
             return
         new_name = (self._saves_edit_name_text or '').strip()
         if not new_name:
             # No permitir vacío: cancelar
-            self._saves_editing_name = False
+            self._end_edit_save_name(cancel=True)
             return
         entry = self.save_entries[self.load_selected]
         path = entry.get('path')
@@ -647,9 +711,22 @@ class MenuManager:
             # Actualizar en memoria
             entry['label'] = new_name
             entry['meta'] = meta
-            self._saves_editing_name = False
+            self._end_edit_save_name()
             # Recalcular layout fijo por posibles cambios de ancho
             self._compute_saves_fixed_layout(self.screen)
         except Exception as e:
             logger.warning("No se pudo guardar el nuevo nombre del guardado: %s", e)
-            self._saves_editing_name = False
+            self._end_edit_save_name(cancel=True)
+
+    def _end_edit_save_name(self, cancel: bool = False):
+        """Sale del modo edición y restaura el key repeat global."""
+        self._saves_editing_name = False
+        try:
+            # Restaurar repetición previa si la teníamos registrada, o desactivar
+            if self._prev_key_repeat and all(isinstance(x, int) for x in self._prev_key_repeat):
+                delay, interval = self._prev_key_repeat
+                pygame.key.set_repeat(delay, interval)
+            else:
+                pygame.key.set_repeat(0)
+        except Exception:
+            pass

@@ -46,18 +46,13 @@
     ]
   },
   "meta": {
-    "name": "partida_2025-08-19_14-13-47",
+    "name": "TEST 2",
     "created_at": "2025-08-19T14:13:47",
-    "last_played": "2025-08-19T15:48:22",
+    "last_played": "2025-08-19T18:56:51",
     "player": {
-      "xp": 0,
-      "level": 0
+      "xp": null,
+      "level": null
     },
-    "items_summary": {
-      "stacks": 1,
-      "top_items": [
-        "gold"
-      ]
-    }
+    "items_summary": {}
   }
 }

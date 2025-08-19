@@ -5,7 +5,15 @@
     "slots": [
       {
         "item": "gold",
+<<<<<<< Updated upstream
         "quantity": 36
+=======
+        "quantity": 26
+      },
+      {
+        "item": "experience_orb",
+        "quantity": 1
+>>>>>>> Stashed changes
       },
       null,
       null,

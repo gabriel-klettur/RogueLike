@@ -2,16 +2,26 @@
   "player": {
     "level": "global_map",
     "pos": [
+<<<<<<< Updated upstream
       19,
       64
+=======
+      24,
+      68
+>>>>>>> Stashed changes
     ]
   },
   "npcs": {},
   "levels": {
     "global_map": {
       "player_pos": [
+<<<<<<< Updated upstream
         19,
         64
+=======
+        24,
+        68
+>>>>>>> Stashed changes
       ],
       "npc_states": {}
     }
@@ -22,7 +32,11 @@
     "slots": [
       {
         "item": "gold",
+<<<<<<< Updated upstream
         "quantity": 36
+=======
+        "quantity": 26
+>>>>>>> Stashed changes
       },
       null,
       null,
@@ -48,10 +62,17 @@
   "meta": {
     "name": "TEST",
     "created_at": "2025-08-19T15:07:08",
+<<<<<<< Updated upstream
     "last_played": "2025-08-19T19:25:51",
     "player": {
       "xp": 20,
       "level": 1
+=======
+    "last_played": "2025-08-19T19:01:55",
+    "player": {
+      "xp": 80,
+      "level": 0
+>>>>>>> Stashed changes
     },
     "items_summary": {
       "stacks": 1,
