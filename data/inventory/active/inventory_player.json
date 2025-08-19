@@ -5,29 +5,29 @@
     "slots": [
       {
         "item": "gold",
-        "quantity": 16
+        "quantity": 17
       },
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
       {
-        "item": "wood",
-        "quantity": 4
+        "item": "experience_orb",
+        "quantity": 1
       },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
       null
     ],
     "schema_version": "1.0.0"

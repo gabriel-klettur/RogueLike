@@ -265,14 +265,20 @@ def handle_events(game):
     # Si el menú está abierto, solo procesar inputs de menú
     if game.menu.show_menu:
         for event in events:
+            # En modo 'load_list' delegamos TODOS los eventos relevantes al MenuManager
+            # para permitir hover, doble clic y scroll dentro de la lista y panel de detalles.
+            mode = getattr(game.menu, 'mode', '')
+            if mode == 'load_list':
+                if event.type in (pygame.KEYDOWN, pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEWHEEL):
+                    game.menu.handle_input(event)
+                # Continuar con el siguiente evento; evitamos el manejo genérico abajo
+                continue
             if event.type == pygame.KEYDOWN:
                 result = game.menu.handle_input(event)
                 if result:
                     game.menu.execute_menu_option(result, game.state)
             elif event.type == pygame.MOUSEMOTION:
                 # Hover como flechas: actualizar seleccionado según posición del ratón
-                if getattr(game.menu, 'mode', '') == 'load_list':
-                    continue
                 mx, my = event.pos
                 try:
                     options = game.menu.handler.get_options()
@@ -304,10 +310,6 @@ def handle_events(game):
                             game.menu.handler.selected = idx
                             logger.debug("[Menu Hover] pos=(%s,%s) -> idx=%s", mx, my, idx)
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                # En modo 'load_list' la navegación es por teclado; omitir click-hit-testing aquí
-                if getattr(game.menu, 'mode', '') == 'load_list':
-                    logger.debug("[Menu Click] skip hit-test: mode=load_list")
-                    continue
                 mx, my = event.pos
                 # Calcular rect del panel usando el renderer y las opciones actuales
                 try:

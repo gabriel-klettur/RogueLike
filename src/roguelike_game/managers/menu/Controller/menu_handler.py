@@ -28,10 +28,15 @@ class MenuHandler:
             return opts
         # pause menu
         mode_option = "Modo local" if self.state.mode == "online" else "Modo multijugador"
-        opts = ["Continuar", "Guardar partida", "Opciones", mode_option, "Salir"]
+        # Incluir 'Nueva Partida' también en el menú de pausa
+        opts = ["Continuar", "Nueva Partida", "Guardar partida", "Opciones", mode_option, "Salir"]
         if self._has_saves():
             # Insertar Cargar juego después de Guardar partida
-            opts.insert(2, "Cargar juego")
+            try:
+                gi = opts.index("Guardar partida")
+                opts.insert(gi + 1, "Cargar juego")
+            except ValueError:
+                opts.insert(2, "Cargar juego")
         return opts
 
     def handle_input(self, event):
