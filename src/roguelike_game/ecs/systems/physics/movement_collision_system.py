@@ -37,6 +37,8 @@ class MovementCollisionSystem:
 
         # Preparar rects de pies de NPCs para colisión mutua
         npc_feet_rects = {}
+        stab_map = comps.get('SpawnStabilizer', {})
+        stabilized_ids = set(stab_map.keys()) if stab_map else set()
         for nid in world.get_entities_with('Position', 'MultiCollider'):
             if nid in comps.get('PlayerTagComponent', {}):
                 continue
@@ -77,8 +79,9 @@ class MovementCollisionSystem:
                     feet.rect.x = old_x
                     vel.vx = 0
                 else:
-                    # Sin colisión con tile, verificar NPCs
-                    if any(feet.rect.colliderect(r) for id2, r in npc_feet_rects.items() if id2 != eid):
+                    # Sin colisión con tile, verificar NPCs (omitir mientras SpawnStabilizer activo)
+                    check_npc = eid not in stabilized_ids
+                    if check_npc and any(feet.rect.colliderect(r) for id2, r in npc_feet_rects.items() if id2 != eid and id2 not in stabilized_ids):
                         # Colisión con otro NPC: revertir
                         feet.rect.x = old_x
                     else:
@@ -96,7 +99,8 @@ class MovementCollisionSystem:
                     feet.rect.y = old_y
                     vel.vy = 0
                 else:
-                    if any(feet.rect.colliderect(r) for id2, r in npc_feet_rects.items() if id2 != eid):
+                    check_npc = eid not in stabilized_ids
+                    if check_npc and any(feet.rect.colliderect(r) for id2, r in npc_feet_rects.items() if id2 != eid and id2 not in stabilized_ids):
                         # Colisión con otro NPC: revertir
                         feet.rect.y = old_y
                     else:

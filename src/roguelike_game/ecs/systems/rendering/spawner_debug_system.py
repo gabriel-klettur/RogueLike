@@ -7,6 +7,7 @@ import pygame
 import roguelike_engine.config.config as config
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_game.ecs.utils.collider_utils import build_collider_rect
 
 
 class SpawnerDebugRenderSystem:
@@ -89,3 +90,40 @@ class SpawnerDebugRenderSystem:
                 label = f"{cfg.template_id}:{'ON' if st.started else 'OFF'}"
                 surf = self.font.render(label, True, (0, 200, 255))
                 screen.blit(surf, (sx + 6, sy - 6))
+
+        # Draw NPC 'feet' colliders in pink to visualize overlap hitboxes
+        pos_map = comps.get('Position', {})
+        multi_map = comps.get('MultiCollider', {})
+        death_map = comps.get('DeathTimer', {})
+        player_map = comps.get('PlayerTagComponent', {})
+        pink_outline = (255, 105, 180)
+        pink_fill = (255, 105, 180, 80)
+
+        for nid in world.get_entities_with('Position', 'MultiCollider'):
+            if nid in death_map:
+                continue
+            if nid in player_map:
+                continue
+            multi = multi_map.get(nid)
+            if not multi:
+                continue
+            feet = multi.colliders.get('feet')
+            if not feet:
+                continue
+            pos = pos_map.get(nid)
+            if not pos:
+                continue
+            rect_world = build_collider_rect(pos.x, pos.y, feet)
+            # Map to screen space by transforming both corners (prevents double-zoom)
+            tlx, tly = camera.apply((rect_world.x, rect_world.y))
+            brx, bry = camera.apply((rect_world.x + rect_world.w, rect_world.y + rect_world.h))
+            sx = int(tlx)
+            sy = int(tly)
+            sw = max(1, int(brx - tlx))
+            sh = max(1, int(bry - tly))
+            # Filled translucent overlay
+            overlay = pygame.Surface((sw, sh), pygame.SRCALPHA)
+            overlay.fill(pink_fill)
+            screen.blit(overlay, (sx, sy))
+            # Outline
+            pygame.draw.rect(screen, pink_outline, pygame.Rect(sx, sy, sw, sh), width=2)

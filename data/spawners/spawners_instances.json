@@ -1,11 +1,11 @@
 [
   {
-    "template_id": "barbol_periodic_no_stack",
+    "template_id": "survival_10",
     "zone": "Forest",
     "tile": [
-      14,
-      7
+      29,
+      17
     ],
-    "id": "barbol_periodic_no_stack_forest_38_28"
+    "id": "survival_10_forest_14_9"
   }
 ]

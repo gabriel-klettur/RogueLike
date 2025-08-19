@@ -13,6 +13,9 @@ from roguelike_engine.config import config
 from roguelike_game.ecs.components.spawner.spawner_config import SpawnerConfig
 from roguelike_game.ecs.components.spawner.spawner_state import SpawnerState
 from roguelike_engine.config.map_config import global_map_settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class SpawnerPlacementSystem:
@@ -20,6 +23,7 @@ class SpawnerPlacementSystem:
         self.perf_log = perf_log
         self._loaded = False
         self._templates: Dict[str, Dict[str, Any]] = {}
+        self._waves: Dict[str, List[Dict[str, Any]]] = {}
 
     def _load_templates(self) -> Dict[str, Dict[str, Any]]:
         base = config.DATA_DIR
@@ -33,6 +37,30 @@ class SpawnerPlacementSystem:
             return data or {}
         except FileNotFoundError:
             return {}
+
+    def _load_waves(self) -> Dict[str, List[Dict[str, Any]]]:
+        """Load wave sets by ID from spawners_waves.json. Supports either
+        { id: [ ...waves... ] } or { id: { "waves": [ ... ] } } formats.
+        """
+        base = config.DATA_DIR
+        path = os.path.join(base, "spawners", "spawners_waves.json")
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except FileNotFoundError:
+            return {}
+        except json.JSONDecodeError:
+            logger.warning("[SpawnerPlacementSystem] spawners_waves.json invalid JSON; ignoring")
+            return {}
+        if not isinstance(data, dict):
+            return {}
+        waves_map: Dict[str, List[Dict[str, Any]]] = {}
+        for key, val in data.items():
+            if isinstance(val, list):
+                waves_map[key] = [w for w in val if isinstance(w, dict)]
+            elif isinstance(val, dict) and isinstance(val.get("waves"), list):
+                waves_map[key] = [w for w in val.get("waves", []) if isinstance(w, dict)]
+        return waves_map
 
     def _load_instances(self) -> List[Dict[str, Any]]:
         base = config.DATA_DIR
@@ -48,26 +76,32 @@ class SpawnerPlacementSystem:
         # template base
         trigger = dict(tpl.get("trigger", {}))
         policy = dict(tpl.get("policy", {}))
-        # waves can be list or, if saved incorrectly, a string with JSON/Python-like content
+        # waves can be external by id, inline list, or a bad string to parse
+        waves_id = tpl.get("waves_id")
         raw_waves = tpl.get("waves", [])
         waves: List[Dict[str, Any]] = []
-        try:
-            if isinstance(raw_waves, str):
-                s = raw_waves.strip()
-                parsed = None
-                try:
-                    parsed = json.loads(s)
-                except Exception:
+        # Prefer referenced waves by id
+        if isinstance(waves_id, str) and waves_id in self._waves:
+            waves = self._waves[waves_id]
+        else:
+            # Backward compatibility with inline waves
+            try:
+                if isinstance(raw_waves, str):
+                    s = raw_waves.strip()
+                    parsed = None
                     try:
-                        parsed = ast.literal_eval(s)
+                        parsed = json.loads(s)
                     except Exception:
-                        parsed = None
-                if isinstance(parsed, list):
-                    waves = parsed
-            elif isinstance(raw_waves, list):
-                waves = raw_waves
-        except Exception:
-            waves = []
+                        try:
+                            parsed = ast.literal_eval(s)
+                        except Exception:
+                            parsed = None
+                    if isinstance(parsed, list):
+                        waves = parsed
+                elif isinstance(raw_waves, list):
+                    waves = raw_waves
+            except Exception:
+                waves = []
         # keep only dict entries
         waves = [w for w in waves if isinstance(w, dict)]
         spawner_type = tpl.get("spawner_type", "invisible")
@@ -110,6 +144,7 @@ class SpawnerPlacementSystem:
         self._loaded = True
 
         self._templates = self._load_templates()
+        self._waves = self._load_waves()
         instances = self._load_instances()
         if not instances or not self._templates:
             return

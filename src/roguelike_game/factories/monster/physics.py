@@ -62,12 +62,21 @@ def create_collider_components(sprite, cfg: Dict[str, Any]) -> MultiCollider:
         mask_surf = pygame.transform.scale(mask_surf, (int(w*scale_val), int(h*scale_val)))
     body = MaskCollider(pygame.mask.from_surface(mask_surf), 0, 0)
     w, h = mask_surf.get_size()
-    width_factor = cfg.get("stats", {}).get("feet_width_factor", 1.0)
-    height_factor = cfg.get("stats", {}).get("feet_height_factor", 1.0)
-    feet_w = int(w * width_factor)
-    feet_h = int(h * height_factor)
+    # Allow config overrides; otherwise use safe defaults for a bottom band
+    width_factor = cfg.get("stats", {}).get("feet_width_factor")
+    height_factor = cfg.get("stats", {}).get("feet_height_factor")
+    if width_factor is None:
+        width_factor = 0.45  # ~45% of sprite width centered
+    if height_factor is None:
+        height_factor = 0.22  # ~22% of sprite height at bottom
+
+    # Compute size with minimum pixel constraints to avoid zero-sized boxes on small sprites
+    feet_w = max(8, int(w * float(width_factor)))
+    feet_h = max(6, int(h * float(height_factor)))
+
     offset_x = (w - feet_w) // 2
-    offset_y = h - feet_h
+    offset_y = h - feet_h  # anchor to bottom
+
     feet = Collider(feet_w, feet_h, offset_x, offset_y)
     return MultiCollider({"body": body, "feet": feet})
 

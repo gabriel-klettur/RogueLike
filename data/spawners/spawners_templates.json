@@ -52,5 +52,21 @@
         ]
       }
     ]
+  },
+  {
+    "id": "survival_10",
+    "spawner_type": "invisible",
+    "trigger": {
+      "type": "proximity",
+      "radius": 10,
+      "auto_start": true
+    },
+    "policy": {
+      "mode": "periodic",
+      "cooldown_s": 1.0,
+      "max_active": 0,
+      "persistent": false
+    },
+    "waves_id": "waves_survival_10"
   }
 ]
