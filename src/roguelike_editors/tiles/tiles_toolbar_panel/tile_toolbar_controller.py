@@ -177,6 +177,39 @@ class TileToolbarController:
                     game_map.view.invalidate_cache()
                     self.editor_controller._did_partial_updates = False
 
+    def drag(self, pos):
+        """
+        Actualiza la posición del toolbar durante un arrastre con botón derecho.
+        Usa el offset calculado al inicio del drag para mantener el cursor
+        en el mismo punto relativo del panel.
+
+        Args:
+            pos: Tupla (x, y) con la posición actual del ratón.
+        """
+        ts = self.editor_state.toolbar_state
+        try:
+            dx, dy = ts.drag_offset
+        except Exception:
+            dx, dy = (0, 0)
+        mx, my = pos
+        ts.pos = (mx - dx, my - dy)
+        # Mantener en sincronía los atributos de geometría del controlador
+        try:
+            self.x, self.y = ts.pos
+        except Exception:
+            pass
+
+    def stop_drag(self):
+        """Detiene el estado de arrastre del toolbar."""
+        ts = self.editor_state.toolbar_state
+        ts.dragging = False
+        # Asegurar que la posición final se refleje en la geometría del controlador
+        try:
+            if getattr(ts, 'pos', None) is not None:
+                self.x, self.y = ts.pos
+        except Exception:
+            pass
+
     def set_default(self, game_map, camera):
         """
         Restaura la región seleccionada al estado por defecto y guarda cambios de overlay.

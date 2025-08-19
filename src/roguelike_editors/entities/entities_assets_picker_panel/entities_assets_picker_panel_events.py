@@ -76,7 +76,9 @@ class EntitiesAssetsPickerPanelEventHandler:
 
         # Teclado: siempre delegar al picker cuando está visible
         if event.type == pygame.KEYDOWN:
-            self.view.fs_view.handle_event(event, self.model.pos)
+            fs_view = getattr(self.view, 'fs_view', None)
+            if hasattr(fs_view, 'handle_event'):
+                fs_view.handle_event(event, self.model.pos)
             return True
 
         # Rueda/Movimiento/Clic: decidir por posición
@@ -84,8 +86,39 @@ class EntitiesAssetsPickerPanelEventHandler:
             # Eventos de ratón sin pos (MOUSEWHEEL) usan el mouse global para decidir
             mx, my = pygame.mouse.get_pos() if not hasattr(event, 'pos') else event.pos
             if panel_rect.collidepoint(mx, my):
+                # Click dentro del panel: si es sobre una entrada conocida, aplicar selección/navegación
+                if event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
+                    for rect, entry, idx in getattr(self.view, 'entry_rects', []) or []:
+                        if rect.collidepoint(mx, my):
+                            try:
+                                # entry: (name, path, is_dir)
+                                name, path, is_dir = entry
+                            except Exception:
+                                break
+                            # Selección con un solo clic
+                            try:
+                                setattr(self.model.fs_model, 'selected', path)
+                            except Exception:
+                                pass
+                            # Doble clic: navegar (dir) o confirmar archivo
+                            try:
+                                dc = getattr(self, 'dc_detector', None)
+                                if dc and hasattr(dc, 'is_double_click') and dc.is_double_click(idx):
+                                    if is_dir:
+                                        navigate = getattr(self.model.fs_model, 'navigate', None)
+                                        if callable(navigate):
+                                            navigate(idx)
+                                    else:
+                                        if self.model.on_asset_chosen:
+                                            # Tests esperan el path tal cual (sin normalizar)
+                                            self.model.on_asset_chosen(self.model.key, path)
+                            except Exception:
+                                logger.exception("[EntitiesAssetsPicker] double click handling failed")
+                            return True
                 # Delegar al FS picker (traduce coords internas y propaga a PickerPanel)
-                self.view.fs_view.handle_event(event, self.model.pos)
+                fs_view = getattr(self.view, 'fs_view', None)
+                if hasattr(fs_view, 'handle_event'):
+                    fs_view.handle_event(event, self.model.pos)
                 return True
             # Clic fuera -> ocultar
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:

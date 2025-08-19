@@ -4,6 +4,7 @@ Handles conversion of SpawnRequest components into actual game entities
 using the entity factory.
 """
 from roguelike_game.factories.registry import get_factory
+from roguelike_game.ecs.components.spawn.spawn_stabilizer import SpawnStabilizer
 from roguelike_engine.utils.benchmark import benchmark
 
 class SpawnSystem:
@@ -30,7 +31,19 @@ class SpawnSystem:
         for req_eid, req in requests:
             # req.prototype: identificador del tipo de NPC a generar
             # req.position: tupla (x, y) de coordenadas donde spawnar
-            get_factory("monster").create(world, tile_x=req.position[0], tile_y=req.position[1], monster_type=req.prototype)
+            new_eid = get_factory("monster").create(world, tile_x=req.position[0], tile_y=req.position[1], monster_type=req.prototype)
+            # Marcar para estabilización pos-spawn (evitar solapes iniciales sin jitter)
+            world.components.setdefault('SpawnStabilizer', {})[new_eid] = SpawnStabilizer()
+
+            # Si la solicitud tiene metadatos de spawner/oleada, registrar la entidad creada
+            spawner_eid = getattr(req, 'spawner_eid', None)
+            wave_idx = getattr(req, 'wave_idx', None)
+            if spawner_eid is not None and wave_idx is not None:
+                st = world.components.get('SpawnerState', {}).get(spawner_eid)
+                if st is not None:
+                    # Sólo añadir si corresponde a la oleada actual
+                    if st.current_wave_idx == wave_idx:
+                        st.current_wave_entities.add(new_eid)
 
             # Una vez generado el NPC, eliminar la entidad de solicitud
             world.remove_entity(req_eid)

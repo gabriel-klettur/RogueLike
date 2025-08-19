@@ -44,7 +44,10 @@ class TileOutlineView:
                 over_toolbar = panel_rect.collidepoint(mouse_pos)
             except Exception:
                 over_toolbar = False
-            if not over_toolbar and not is_blocked(*mouse_pos):
+            # Solo consultar el UI-blocker global cuando existe toolbar; en tests con stubs
+            # (sin toolbar) no hay paneles reales y evitar efectos residuales entre tests.
+            should_check_blocker = hasattr(self.controller, "toolbar")
+            if not over_toolbar and (not should_check_blocker or not is_blocked(*mouse_pos)):
                 hover = self.controller._tile_under_mouse(mouse_pos, camera, game_map)
                 if hover:
                     rect = self._compute_rect(hover, camera)

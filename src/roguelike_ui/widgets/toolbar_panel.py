@@ -108,7 +108,14 @@ class ToolbarView:
                 hover_surf = pygame.Surface(rect.size, pygame.SRCALPHA)
                 hover_surf.fill(self.hover_color)
                 screen.blit(hover_surf, rect.topleft)
-            if self.controller.is_active(tool):
+            # Be defensive: controllers in tests may not implement is_active
+            active = False
+            try:
+                if hasattr(self.controller, 'is_active') and callable(getattr(self.controller, 'is_active')):
+                    active = bool(self.controller.is_active(tool))
+            except Exception:
+                active = False
+            if active:
                 # Optional blinking when controller exposes blink_active(tool)
                 blink = False
                 try:

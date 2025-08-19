@@ -51,6 +51,7 @@ from roguelike_game.ecs.systems.map.expansion_system import ExpansionSystem
 from roguelike_game.ecs.systems.experience.experience_system import ExperienceSystem
 from roguelike_game.ecs.systems.rendering.magic_spell_bar_system import MagicSpellBarSystem
 from roguelike_game.ecs.systems.physics.coin_pickup_system import CoinPickupSystem
+from roguelike_game.ecs.systems.core.spawn_stabilization_system import SpawnStabilizationSystem
 from roguelike_game.ecs.systems.experience.orb_attraction_system import OrbAttractionSystem
 from roguelike_game.ecs.systems.inventory.inventory_init_system import InventoryInitSystem
 from roguelike_game.ecs.systems.inventory.death_drop_system import DeathDropSystem
@@ -82,6 +83,9 @@ def get_update_system_classes():
         FSMSystem,
         # Spawner systems (runtime M1)
         SpawnerPlacementSystem, SpawnerTriggerSystem, SpawnerRuntimeSystem,
+        # Process spawn requests and immediately stabilize overlapped spawns
+        SpawnSystem,
+        SpawnStabilizationSystem,
         # Player & input
         PlayerFacingSystem, FacingSystem, DropDragSystem, InputSystem,
         MovementCollisionSystem,
@@ -89,8 +93,6 @@ def get_update_system_classes():
         MeleeCombatSystem, SpellCastingSystem, ArcaneFlameSystem, SmokeSystem, SmokeEmitterSystem, SphereMagicShieldSystem, TeleportSystem, FireworkLaunchSystem, AuraSystem, ParticleSystem, ExplosionSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, LightningEmitterSystem, FireballSystem, LightningSystem, DashSystem, HitboxSystem,
         TrailSystem,
         AnimationSystem, FlashSystem, 
-        # Processes SpawnRequest -> entities
-        SpawnSystem,
         # Inventory & pickups (keyboard drop disabled; only drag-and-drop allowed)
         InventoryInitSystem, DeathDropSystem, InventoryPickupSystem, ConsumeSystem, InventoryTransferSystem, InventoryDragSystem, MapLoadDropsSystem, TempZLayerSystem, DropDespawnSystem, CoinPickupSystem, OrbAttractionSystem, ExperienceSystem, MagicSpellBarSystem, ExpansionSystem,
     ]
