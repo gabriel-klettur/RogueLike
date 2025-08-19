@@ -163,6 +163,80 @@ class MenuRenderer:
         # Devolvemos overlay_rect para garantizar repintado completo (overlay + panel)
         return overlay_rect
 
+    def draw_confirm_dialog(self, screen, lines: list[str], *, hover_yes: bool = False, hover_cancel: bool = False):
+        """
+        Dibuja un cuadro de confirmación modal con botones Sí/Cancelar.
+        Expone last_confirm_layout: {'panel_rect','yes_rect','cancel_rect'}
+        """
+        # Overlay adicional para modal
+        overlay_rect = self._draw_overlay(screen)
+
+        # Medir contenido
+        max_w = 0
+        for line in lines:
+            tw, _ = self.font.size(line)
+            max_w = max(max_w, tw)
+        # Botones
+        yes_t = self.font.render("Sí, borrar", True, self.text_color)
+        cancel_t = self.font.render("Cancelar", True, self.text_color)
+        pad_btn_x = 18
+        btn_h = self.line_height
+        yes_w = yes_t.get_width() + pad_btn_x * 2
+        cancel_w = cancel_t.get_width() + pad_btn_x * 2
+        gap = 20
+        buttons_w = yes_w + gap + cancel_w
+
+        w = self.padding_x * 2 + max(max_w, buttons_w)
+        rows_h = (len(lines) or 1) * self.line_height + max(0, (len(lines) - 1)) * (self.item_gap - 2)
+        h = self.padding_y * 2 + rows_h + self.item_gap + btn_h
+        sw, sh = screen.get_size()
+        w = min(w, int(sw * 0.8))
+        h = min(h, int(sh * 0.5))
+        panel_rect = self._center_rect(screen, (w, h))
+
+        # Sombra y panel
+        self._draw_shadow(screen, panel_rect)
+        panel = self._draw_panel((w, h))
+
+        # Texto
+        y = self.padding_y
+        for line in lines:
+            t = self.font.render(line, True, self.text_color)
+            ty = y + (self.line_height - t.get_height()) // 2
+            panel.blit(t, (self.padding_x, ty))
+            y += self.line_height + (self.item_gap - 2)
+
+        # Botonera
+        btn_y = h - self.padding_y - btn_h
+        base_x = (w - buttons_w) // 2
+        yes_rect_local = pygame.Rect(base_x, btn_y, yes_w, btn_h)
+        cancel_rect_local = pygame.Rect(base_x + yes_w + gap, btn_y, cancel_w, btn_h)
+        btn_bg = (255, 255, 255, 22)
+        # Sí
+        pygame.draw.rect(panel, btn_bg, yes_rect_local, border_radius=self.radius // 2)
+        if hover_yes:
+            pygame.draw.rect(panel, self.border_color, yes_rect_local, width=2, border_radius=self.radius // 2)
+        yx = yes_rect_local.x + (yes_rect_local.width - yes_t.get_width()) // 2
+        yy = yes_rect_local.y + (yes_rect_local.height - yes_t.get_height()) // 2
+        panel.blit(yes_t, (yx, yy))
+        # Cancelar
+        pygame.draw.rect(panel, btn_bg, cancel_rect_local, border_radius=self.radius // 2)
+        if hover_cancel:
+            pygame.draw.rect(panel, self.border_color, cancel_rect_local, width=2, border_radius=self.radius // 2)
+        cx = cancel_rect_local.x + (cancel_rect_local.width - cancel_t.get_width()) // 2
+        cy = cancel_rect_local.y + (cancel_rect_local.height - cancel_t.get_height()) // 2
+        panel.blit(cancel_t, (cx, cy))
+
+        # Blit y layout
+        surface_to_blit = panel._surf if hasattr(panel, '_surf') else panel
+        screen.blit(surface_to_blit, panel_rect.topleft)
+        self.last_confirm_layout = {
+            'panel_rect': panel_rect,
+            'yes_rect': yes_rect_local.move(panel_rect.topleft),
+            'cancel_rect': cancel_rect_local.move(panel_rect.topleft),
+        }
+        return overlay_rect
+
     def draw_saves_panel(self, screen,
                           selected: int,
                           items: list[str],
@@ -177,7 +251,9 @@ class MenuRenderer:
                           editing_name: bool = False,
                           edit_name_text: str | None = None,
                           caret_pos: int = 0,
-                          hover_load_button: bool = False) -> pygame.Rect:
+                          hover_load_button: bool = False,
+                          hover_delete_button: bool = False,
+                          select_all_edit: bool = False) -> pygame.Rect:
         """
         Dibuja un panel de "cargar partida" con estilo profesional, tamaño fijo opcional,
         scroll vertical en la lista y layout expuesto para hit-testing.
@@ -237,6 +313,7 @@ class MenuRenderer:
             'end': 0,
             'details_name_rect': None,
             'load_button_rect': None,
+            'delete_button_rect': None,
         }
 
         list_x = self.padding_x
@@ -323,6 +400,10 @@ class MenuRenderer:
                 panel.blit(vt, (px, vy))
                 # Calcular rect de edición/hover del valor
                 name_rect = pygame.Rect(px - 4, ty - 2, max(vt.get_width(), 80) + 8, self.line_height + 4)
+                # Fondo de selección si select-all activo
+                if editing_name and select_all_edit:
+                    sel_bg = (255, 220, 0, 48)
+                    pygame.draw.rect(panel, sel_bg, name_rect, border_radius=6)
                 # Borde amarillo si hover o en edición
                 if hover_details_name or editing_name:
                     pygame.draw.rect(panel, self.border_color, name_rect, width=2, border_radius=6)
@@ -348,27 +429,42 @@ class MenuRenderer:
         self.last_saves_layout['end'] = end
         self.last_saves_layout['scroll_offset'] = row_scroll_offset
 
-        # 6.5) Botón "Cargar" centrado en la parte baja del panel
-        btn_label = "Cargar"
-        bt = self.font.render(btn_label, True, self.text_color)
+        # 6.5) Botones "Borrar" y "Cargar" en la parte baja del panel
+        load_label = "Cargar"
+        del_label = "Borrar"
+        bt_load = self.font.render(load_label, True, self.text_color)
+        bt_del = self.font.render(del_label, True, self.text_color)
         btn_pad_x = 18
-        btn_pad_y = max(6, self.line_height // 6)
-        btn_w = bt.get_width() + btn_pad_x * 2
         btn_h = self.line_height
-        btn_x = (w - btn_w) // 2
-        btn_y = h - self.padding_y - btn_h
-        btn_rect_local = pygame.Rect(btn_x, btn_y, btn_w, btn_h)
-        # Estilo del botón: pill con borde/acento al hover
+        # Anchos individuales
+        load_w = bt_load.get_width() + btn_pad_x * 2
+        del_w = bt_del.get_width() + btn_pad_x * 2
+        gap = 16
+        total_w = load_w + gap + del_w
+        base_y = h - self.padding_y - btn_h
+        base_x = (w - total_w) // 2
+        # Rects locales
+        del_rect_local = pygame.Rect(base_x, base_y, del_w, btn_h)
+        load_rect_local = pygame.Rect(base_x + del_w + gap, base_y, load_w, btn_h)
+        # Estilos
         btn_bg = (255, 255, 255, 22)
-        pygame.draw.rect(panel, btn_bg, btn_rect_local, border_radius=self.radius // 2)
+        # Borrar
+        pygame.draw.rect(panel, btn_bg, del_rect_local, border_radius=self.radius // 2)
+        if hover_delete_button:
+            pygame.draw.rect(panel, self.border_color, del_rect_local, width=2, border_radius=self.radius // 2)
+        dx = del_rect_local.x + (del_rect_local.width - bt_del.get_width()) // 2
+        dy = del_rect_local.y + (del_rect_local.height - bt_del.get_height()) // 2
+        panel.blit(bt_del, (dx, dy))
+        # Cargar
+        pygame.draw.rect(panel, btn_bg, load_rect_local, border_radius=self.radius // 2)
         if hover_load_button:
-            pygame.draw.rect(panel, self.border_color, btn_rect_local, width=2, border_radius=self.radius // 2)
-        # Texto centrado
-        btx = btn_rect_local.x + (btn_rect_local.width - bt.get_width()) // 2
-        bty = btn_rect_local.y + (btn_rect_local.height - bt.get_height()) // 2
-        panel.blit(bt, (btx, bty))
-        # Rect absoluto para hit-test
-        self.last_saves_layout['load_button_rect'] = btn_rect_local.move(panel_rect.topleft)
+            pygame.draw.rect(panel, self.border_color, load_rect_local, width=2, border_radius=self.radius // 2)
+        lx = load_rect_local.x + (load_rect_local.width - bt_load.get_width()) // 2
+        ly = load_rect_local.y + (load_rect_local.height - bt_load.get_height()) // 2
+        panel.blit(bt_load, (lx, ly))
+        # Guardar rects absolutos
+        self.last_saves_layout['load_button_rect'] = load_rect_local.move(panel_rect.topleft)
+        self.last_saves_layout['delete_button_rect'] = del_rect_local.move(panel_rect.topleft)
 
         # 7) Blit
         surface_to_blit = panel._surf if hasattr(panel, '_surf') else panel
