@@ -269,20 +269,83 @@ def handle_events(game):
                 result = game.menu.handle_input(event)
                 if result:
                     game.menu.execute_menu_option(result, game.state)
-            elif event.type == pygame.MOUSEBUTTONDOWN:
+            elif event.type == pygame.MOUSEMOTION:
+                # Hover como flechas: actualizar seleccionado según posición del ratón
+                if getattr(game.menu, 'mode', '') == 'load_list':
+                    continue
                 mx, my = event.pos
-                # Calcular posición centrada
-                width = game.menu.renderer.surface.get_width()
-                height = game.menu.renderer.surface.get_height()
+                try:
+                    options = game.menu.handler.get_options()
+                except Exception:
+                    options = []
+                try:
+                    width, height = game.menu.renderer._measure_menu(options)
+                except Exception:
+                    width, height = 320, 200
                 screen_w, screen_h = game.screen.get_size()
+                width = min(width, int(screen_w * 0.9))
+                height = min(height, int(screen_h * 0.85))
                 x = (screen_w - width) // 2
                 y = (screen_h - height) // 2
-                if x <= mx <= x + width and y <= my <= y + height:
-                    rel_y = my - y
-                    idx = (rel_y - 40) // 50
+                panel_rect = pygame.Rect(x, y, width, height)
+                if panel_rect.collidepoint(mx, my) and options:
+                    pad_y = getattr(game.menu.renderer, 'padding_y', 24)
+                    line_h = getattr(game.menu.renderer, 'line_height', 36)
+                    gap = getattr(game.menu.renderer, 'item_gap', 12)
+                    block_h = line_h + gap
+                    inner_top = y + pad_y
+                    inner_y = my - inner_top
+                    rows_h = len(options) * line_h + max(0, (len(options) - 1)) * gap
+                    if 0 <= inner_y <= rows_h:
+                        idx = int(inner_y // block_h)
+                        # Clamp defensivo
+                        idx = max(0, min(idx, len(options) - 1))
+                        if game.menu.handler.selected != idx:
+                            game.menu.handler.selected = idx
+                            logger.debug("[Menu Hover] pos=(%s,%s) -> idx=%s", mx, my, idx)
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                # En modo 'load_list' la navegación es por teclado; omitir click-hit-testing aquí
+                if getattr(game.menu, 'mode', '') == 'load_list':
+                    logger.debug("[Menu Click] skip hit-test: mode=load_list")
+                    continue
+                mx, my = event.pos
+                # Calcular rect del panel usando el renderer y las opciones actuales
+                try:
                     options = game.menu.handler.get_options()
-                    if 0 <= idx < len(options):
-                        game.menu.execute_menu_option(options[idx], game.state)
+                except Exception:
+                    options = []
+                # Medidas dinámicas base del menú
+                try:
+                    width, height = game.menu.renderer._measure_menu(options)
+                except Exception:
+                    # Fallback conservador
+                    width, height = 300, 200
+                # Limitar a la pantalla como en draw()
+                screen_w, screen_h = game.screen.get_size()
+                width = min(width, int(screen_w * 0.9))
+                height = min(height, int(screen_h * 0.85))
+                x = (screen_w - width) // 2
+                y = (screen_h - height) // 2
+                panel_rect = pygame.Rect(x, y, width, height)
+                if panel_rect.collidepoint(mx, my):
+                    # Calcular índice clicado usando padding y alturas del renderer
+                    pad_y = getattr(game.menu.renderer, 'padding_y', 24)
+                    line_h = getattr(game.menu.renderer, 'line_height', 36)
+                    gap = getattr(game.menu.renderer, 'item_gap', 12)
+                    block_h = line_h + gap
+                    inner_top = y + pad_y
+                    inner_y = my - inner_top
+                    total = len(options)
+                    rows_h = (total or 1) * line_h + max(0, (total - 1)) * gap
+                    if 0 <= inner_y <= rows_h:
+                        idx = int(inner_y // block_h)
+                        logger.debug("[Menu Click] pos=(%s,%s) panel=%s idx=%s total=%s", mx, my, panel_rect, idx, total)
+                        if 0 <= idx < total:
+                            game.menu.execute_menu_option(options[idx], game.state)
+                        else:
+                            logger.debug("[Menu Click] idx fuera de rango: %s", idx)
+                    else:
+                        logger.debug("[Menu Click] fuera del área de items: inner_y=%s rows_h=%s", inner_y, rows_h)
         return
 
     # Si el selector de clase está abierto

@@ -107,6 +107,45 @@ class InputConfig:
             self.bindings["select_class"] = "K_F2"
             self.save()
 
+        # Mouse actions defaults (allow configuring dash, fireball, laser beam)
+        ensured_mouse = False
+        if "mouse_fireball" not in self.bindings:
+            self.bindings["mouse_fireball"] = "M_LEFT"  # left click
+            ensured_mouse = True
+        if "mouse_laser_beam" not in self.bindings:
+            self.bindings["mouse_laser_beam"] = "M_MIDDLE"  # middle click
+            ensured_mouse = True
+        if "mouse_dash" not in self.bindings:
+            self.bindings["mouse_dash"] = "M_RIGHT"  # right click
+            ensured_mouse = True
+        if ensured_mouse:
+            self.save()
+
+        # Ensure triple-slot bindings for combat actions (keyboard A/B + mouse)
+        ensured_slots = False
+        for base in ("fireball", "laser_beam", "dash"):
+            kb_a = f"kb_{base}_a"
+            kb_b = f"kb_{base}_b"
+            mkey = f"mouse_{base}"
+            if kb_a not in self.bindings:
+                self.bindings[kb_a] = ""  # empty means unbound
+                ensured_slots = True
+            if kb_b not in self.bindings:
+                self.bindings[kb_b] = ""
+                ensured_slots = True
+            # mouse_{base} ya se asegura arriba, pero por si el archivo del usuario es antiguo
+            if mkey not in self.bindings:
+                # establecer un valor razonable por defecto
+                default_mouse = {
+                    "fireball": "M_LEFT",
+                    "laser_beam": "M_MIDDLE",
+                    "dash": "M_RIGHT",
+                }[base]
+                self.bindings[mkey] = default_mouse
+                ensured_slots = True
+        if ensured_slots:
+            self.save()
+
     def get_key(self, action):
         """
         Retorna el código pygame de la tecla para una acción.
@@ -169,8 +208,82 @@ class InputConfig:
         raise KeyError(f"No key binding for action '{action}'")
 
     def set_key(self, action, keyname):
-        self.bindings[action] = keyname
+        # Maintain backward compatibility while enforcing global uniqueness
+        self.set_binding(action, keyname)
+
+    # --- New slot-based helpers with uniqueness enforcement ---
+    def set_binding(self, binding_key: str, value: str, enforce_unique: bool = True):
+        """Set a binding value (e.g., 'kb_fireball_a' -> 'K_Z' or 'mouse_fireball' -> 'M_RIGHT').
+        If enforce_unique is True, remove this same value from any other binding keys to guarantee global uniqueness.
+        Empty/false-y values unbind the slot.
+        """
+        val = (value or "").strip()
+        # Enforce uniqueness across all bindings of the same family (K_* among keys, M_* among mouse)
+        if enforce_unique and val:
+            family_prefix = None
+            if isinstance(val, str):
+                if val.upper().startswith("K_"):
+                    family_prefix = "K_"
+                elif val.upper().startswith("M_"):
+                    family_prefix = "M_"
+            if family_prefix is not None:
+                for k, v in list(self.bindings.items()):
+                    if k == binding_key:
+                        continue
+                    if isinstance(v, str) and v.upper() == val.upper():
+                        # Clear previous owner to keep uniqueness
+                        self.bindings[k] = ""
+        # Finally set
+        self.bindings[binding_key] = val
+        self.save()
+
+    def get_key_for_binding(self, binding_key: str) -> int | None:
+        """Resolve pygame keycode for a K_* binding entry; returns None if unbound or non-key."""
+        name = self.bindings.get(binding_key, "")
+        if not name or not isinstance(name, str):
+            return None
+        up = name.upper()
+        if up.startswith("K_"):
+            try:
+                return getattr(pygame, up)
+            except AttributeError:
+                # try lowercase variant after K_
+                alt = "K_" + name[2:].lower()
+                try:
+                    return getattr(pygame, alt)
+                except AttributeError:
+                    return None
+        return None
+
+    def get_mouse_button_for_binding(self, binding_key: str) -> int | None:
+        """Resolve mouse button index for an M_* binding entry; returns None if unbound or non-mouse."""
+        name = self.bindings.get(binding_key, "")
+        if not name or not isinstance(name, str):
+            return None
+        up = name.upper()
+        if up.startswith("M_"):
+            return self._MOUSE_BUTTONS.get(up)
+        return None
 
     def save(self):
         with open(self.path, 'w', encoding='utf-8') as f:
             json.dump(self.bindings, f, indent=4)
+
+    # --- Mouse helpers ---
+    _MOUSE_BUTTONS = {
+        "M_LEFT": 0,
+        "M_MIDDLE": 1,
+        "M_RIGHT": 2,
+        "M_X1": 3,
+        "M_X2": 4,
+    }
+
+    def get_mouse_button(self, action: str) -> int:
+        """Return pygame mouse button index for a mouse action binding.
+        Defaults to left click if invalid/not found.
+        """
+        name = self.bindings.get(action)
+        if isinstance(name, str) and name.upper().startswith("M_"):
+            return self._MOUSE_BUTTONS.get(name.upper(), 0)
+        # fallback
+        return 0

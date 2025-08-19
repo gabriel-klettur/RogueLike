@@ -24,5 +24,14 @@
     "toggle_tile_editor": "K_F8",
     "toggle_building_editor": "K_F10",
     "toggle_map_editor": "K_F11",
-    "toggle_fsm_editor": "K_F12"
+    "toggle_fsm_editor": "K_F12",
+    "mouse_fireball": "M_LEFT",
+    "mouse_laser_beam": "M_MIDDLE",
+    "mouse_dash": "M_RIGHT",
+    "kb_fireball_a": "",
+    "kb_fireball_b": "",
+    "kb_laser_beam_a": "",
+    "kb_laser_beam_b": "",
+    "kb_dash_a": "",
+    "kb_dash_b": ""
 }

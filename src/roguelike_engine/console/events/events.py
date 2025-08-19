@@ -22,10 +22,13 @@ class ConsoleEvents:
         if key == pygame.K_BACKQUOTE:
             self.controller.toggle()
             return True
-        # Cerrar con Escape
+        # Escape: solo cierra si la consola ya está abierta; no la abre.
         if key == pygame.K_ESCAPE:
-            self.controller.toggle()
-            return True
+            if self.controller.state.is_open:
+                self.controller.toggle()
+                return True
+            # Si está cerrada, no consumir el evento para permitir manejo global (menú, etc.)
+            return False
         # Solo procesar si la consola está abierta
         if not self.controller.state.is_open:
             return False
