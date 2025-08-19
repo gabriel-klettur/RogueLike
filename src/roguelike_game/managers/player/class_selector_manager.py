@@ -37,11 +37,13 @@ class ClassSelectorManager:
         ]
         # Specific header image overrides per class (absolute paths provided by user)
         self.header_override: Dict[str, str] = {
-            "elven": r"C:\\Project\\RogueLike\\assets\\ui\\character_selection\\character_selection_elve.png",
-            "valkyrie": r"C:\\Project\\RogueLike\\assets\\ui\\character_selection\\character_selection_valkyrie.png",
-            "mague": r"C:\\Project\\RogueLike\\assets\\ui\\character_selection\\character_selection_mague.png",
-            "dwarf": r"C:\\Project\\RogueLike\\assets\\ui\\character_selection\\character_selection_drwaft.png",
-            "barbarian": r"C:\\Project\\RogueLike\\assets\\ui\\character_selection\\character_selection_barbrian.png",
+            "elven": "assets/ui/character_selection/character_selection_elve.png",
+            "valkyrie": "assets/ui/character_selection/character_selection_valkyrie.png",
+            "mague": "assets/ui/character_selection/character_selection_mague.png",
+            "dwarf": "assets/ui/character_selection/character_selection_drwaft.png",
+            "barbarian": "assets/ui/character_selection/character_selection_barbrian.png",
+            # Alias for potential typo in class key
+            "drawft": "assets/ui/character_selection/character_selection_drwaft.png",
         }
         # Per-class border highlight colors
         self.class_border_colors: Dict[str, tuple] = {
@@ -340,9 +342,11 @@ class ClassSelectorManager:
             # 1) Try user-provided override mapping first
             override_path = self.header_override.get(cls_name)
             if override_path:
-                img = pygame.image.load(override_path).convert_alpha()
-                self._header_cache[cls_name] = img
-                return img
+                full_override = self._resolve_asset_path(override_path)
+                if full_override is not None:
+                    img = pygame.image.load(str(full_override)).convert_alpha()
+                    self._header_cache[cls_name] = img
+                    return img
 
             # 2) Fallback: use idle sprite from assets config
             assets = players_config.PLAYER_ASSETS.get(cls_name, {}) or {}
