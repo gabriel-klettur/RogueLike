@@ -5,12 +5,17 @@
     "slots": [
       {
         "item": "gold",
-        "quantity": 122
+<<<<<<< Updated upstream
+        "quantity": 36
+=======
+        "quantity": 26
       },
       {
-        "item": "wood",
-        "quantity": 10
+        "item": "experience_orb",
+        "quantity": 1
+>>>>>>> Stashed changes
       },
+      null,
       null,
       null,
       null,

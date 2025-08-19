@@ -93,28 +93,6 @@ class BuildingEditorEventHandler:
                     self.editor.resizing = False
                     logger.info("✅ Resize finalizado al soltar R")
                     # Opcional: podrías llamar aquí a una función para fijar el tamaño
-            # --- F10: Toggle building editor ---
-            if ev.type == pygame.KEYDOWN and ev.key == pygame.K_F10:
-                if not self.editor.active:
-                    # Enter building editor in select mode
-                    self.controller.toggle_editor()
-                    self.editor.current_tool = 'select'
-                    # Picker oculto inicialmente al abrir el editor
-                    self.editor.picker_active = False
-                    # Initialize active building for editor mode
-                    self.editor.active_building = getattr(self.editor, 'hovered_building', None)
-                else:
-                    # Exit building editor
-                    self.controller.toggle_editor()
-                    self.editor.current_tool = 'select'
-                    # Save buildings data
-                    save_buildings_to_json(
-                        entities.buildings,
-                        BUILDINGS_DATA_PATH,
-                        z_state=self.state.z_state,
-                        zone_offsets=self.zone_offsets
-                    )
-                return
 
             # --- Si el picker está activo, delego ahí ---
             if self.editor.picker_active:

@@ -10,7 +10,7 @@ class EntitiesPickerEventHandler:
     Manejador de eventos para el panel de selección de entidades en el editor.
     
     Permite:
-    - Mostrar/ocultar el panel con F5.
+    - Mostrar/ocultar el panel: toggling centralizado en `roguelike_game/managers/core/events.py`.
     - Desplazarse por el grid con teclas de dirección.
     - Seleccionar entidades con clic izquierdo.
     - Detectar hover sobre celdas.
@@ -98,23 +98,7 @@ class EntitiesPickerEventHandler:
     # EVENTOS DE TECLADO
     # ----------------------------
     def _handle_keydown(self, event: pygame.event.Event) -> None:
-        """Maneja eventos de teclado (F5 para toggle, flechas para scroll)."""
-        
-        if event.key == pygame.K_F5:
-            # Mostrar/ocultar panel
-            self.model.visible = not self.model.visible
-            self.model.selected_id = None
-            if self.model.visible:
-                # DEBUG on panel open
-                for ent_id, mdef in self.model.monsters.items():
-                    assets_def = mdef.get('assets', {})
-                    active_set = assets_def.get('active_set', 'no-sets')
-                    if active_set == 'no-sets':
-                        tint = assets_def.get('no-sets', {}).get('sprites_data_no-set', {}).get('tint')
-                    else:
-                        tint = assets_def.get('sets', {}).get('sprites_data_set', {}).get('tint')
-                    logger.debug(f" ent_id={ent_id} active_set={active_set} tint={tint}")
-            return
+        """Maneja eventos de teclado (flechas para scroll)."""
 
         if not self.model.visible:
             return

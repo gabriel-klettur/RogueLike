@@ -25,3 +25,13 @@ class ItemsEditorManager:
     def draw(self, screen: pygame.Surface) -> None:
         """Delegar renderizado"""
         self.controller.draw(screen)
+
+    # Exponer API de visibilidad para el sistema centralizado de toggles
+    def show(self) -> None:
+        self.controller.show()
+
+    def hide(self) -> None:
+        self.controller.hide()
+
+    def toggle(self) -> None:
+        self.controller.toggle()

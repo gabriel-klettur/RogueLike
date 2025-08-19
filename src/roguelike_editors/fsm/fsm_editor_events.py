@@ -20,15 +20,17 @@ class FsmEditorEventHandler:
     def handle_event(event) -> bool:
         """
         Entry-point used by the engine:
-        - F12 toggles editor visibility
+        - Visibility is toggled centrally (managers/core/events.py)
         - If visible, delegate to controller; return True if consumed
         - If not visible, return False
         """
         ctrl = get_controller()
-
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_F12:
-            ctrl.toggle_visible()
-            return True
+        # Mirror centralized debug flag to controller visibility
+        try:
+            import roguelike_engine.config.config as cfg
+            ctrl.visible = bool(getattr(cfg, 'DEBUG_ENTITIES', False))
+        except Exception:
+            pass
 
         if not ctrl.visible:
             return False
@@ -40,6 +42,12 @@ class FsmEditorEventHandler:
     def render(screen) -> None:
         """Optional render entry-point used by the engine loop."""
         ctrl = get_controller()
+        # Mirror centralized flag before rendering
+        try:
+            import roguelike_engine.config.config as cfg
+            ctrl.visible = bool(getattr(cfg, 'DEBUG_ENTITIES', False))
+        except Exception:
+            pass
         if not ctrl.visible:
             return
         # Render FSM Editor via controller (view will handle title)

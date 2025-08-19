@@ -28,9 +28,14 @@ class InputSystem:
     """
     def __init__(self, perf_log, config_path=None):
         self.perf_log = perf_log
-        # Mapear estado previo de click y right-click para detección de flanco ascendente
-        self.prev_click = {}
-        self.prev_right = {}
+        # Mapear estado previo de click izquierdo (para pickups) y botones de acciones mouse
+        self.prev_click = {}  # left button state for inp.click semantics
+        self.prev_right = {}  # legacy compatibility; no longer used for dash detection
+        self.prev_mouse = {}  # (eid, action) -> bool for edge detection of mouse actions
+        # Estado previo por slot de acciones con teclado (kb_a/kb_b)
+        # keys: (eid, '<base>_kb_a'|'_kb_b') -> bool
+        self.prev_action_slots = {}
+
         self.prev_toggle = {}
         self.prev_toggle_inventory = {}
         # Estado previo de hechizos para detección de flancos
@@ -70,12 +75,18 @@ class InputSystem:
                 # Clear edge-detection memory to avoid firing on resume
                 self.prev_click[eid] = False
                 self.prev_right[eid] = False
+                self.prev_mouse[(eid, 'fireball')] = False
+                self.prev_mouse[(eid, 'dash')] = False
                 self.prev_toggle[eid] = False
                 self.prev_toggle_inventory[eid] = False
                 for name in spell_attrs:
                     self.prev_spell_keys[(eid, name)] = 0
                 # Reset attack edge state
                 self.prev_attack[eid] = False
+                # Reset tri-slot keyboard edges to avoid firing on resume
+                for base in ('fireball','laser_beam','dash'):
+                    self.prev_action_slots[(eid, f'{base}_kb_a')] = False
+                    self.prev_action_slots[(eid, f'{base}_kb_b')] = False
             return
 
         # Suppress ALL gameplay input when Class Selector is open
@@ -100,6 +111,8 @@ class InputSystem:
                 # Clear edge-detection memory to avoid firing on resume
                 self.prev_click[eid] = False
                 self.prev_right[eid] = False
+                self.prev_mouse[(eid, 'fireball')] = False
+                self.prev_mouse[(eid, 'dash')] = False
                 self.prev_toggle[eid] = False
                 self.prev_toggle_inventory[eid] = False
                 for name in spell_attrs:
@@ -127,11 +140,16 @@ class InputSystem:
                     vel.vy = 0
                 self.prev_click[eid] = False
                 self.prev_right[eid] = False
+                self.prev_mouse[(eid, 'fireball')] = False
+                self.prev_mouse[(eid, 'dash')] = False
                 self.prev_toggle[eid] = False
                 self.prev_toggle_inventory[eid] = False
                 for name in spell_attrs:
                     self.prev_spell_keys[(eid, name)] = 0
                 self.prev_attack[eid] = False
+                for base in ('fireball','laser_beam','dash'):
+                    self.prev_action_slots[(eid, f'{base}_kb_a')] = False
+                    self.prev_action_slots[(eid, f'{base}_kb_b')] = False
             return
 
         # Recargar bindings para aplicar cambios guardados sin reiniciar
@@ -304,35 +322,92 @@ class InputSystem:
             if suppressed_now:
                 inp.click = False
                 self.prev_click[eid] = False
-                curr_right = False
                 self.prev_right[eid] = False
+                # Reset mouse action edges
+                self.prev_mouse[(eid, 'fireball')] = False
+                self.prev_mouse[(eid, 'dash')] = False
+                # Reset keyboard slot edges
+                for base in ('fireball','laser_beam','dash'):
+                    self.prev_action_slots[(eid, f'{base}_kb_a')] = False
+                    self.prev_action_slots[(eid, f'{base}_kb_b')] = False
             else:
-                # Actualizar estado del click y detectar flanco ascendente
+                # Actualizar estado del mouse y acciones configurables
                 mx, my = pygame.mouse.get_pos()
                 ui_blocked = is_blocked(mx, my)
-                curr_click = bool(pygame.mouse.get_pressed()[0]) and not ui_blocked
-                inp.click = curr_click
-                prev = self.prev_click.get(eid, False)
-                # Generar intención de fireball sólo en flanco ascendente
-                if eid in world.components.get('PlayerTagComponent', {}) and curr_click and not prev:
+                # Request state for up to 5 buttons (L, M, R, X1, X2)
+                mouse_pressed = pygame.mouse.get_pressed(5)
+                # inp.click sigue atado al botón izquierdo para pick-up de inventario
+                curr_left = bool(mouse_pressed[0]) and not ui_blocked
+                inp.click = curr_left
+                self.prev_click[eid] = curr_left
+
+                # Botones configurables para acciones (pueden estar desasignados -> None)
+                fb_btn = self.config.get_mouse_button_for_binding("mouse_fireball")
+                lb_btn = self.config.get_mouse_button_for_binding("mouse_laser_beam")
+                dash_btn = self.config.get_mouse_button_for_binding("mouse_dash")
+
+                # Teclas configurables (A/B) para acciones
+                kb_codes = {
+                    ('fireball','a'): self.config.get_key_for_binding('kb_fireball_a'),
+                    ('fireball','b'): self.config.get_key_for_binding('kb_fireball_b'),
+                    ('laser_beam','a'): self.config.get_key_for_binding('kb_laser_beam_a'),
+                    ('laser_beam','b'): self.config.get_key_for_binding('kb_laser_beam_b'),
+                    ('dash','a'): self.config.get_key_for_binding('kb_dash_a'),
+                    ('dash','b'): self.config.get_key_for_binding('kb_dash_b'),
+                }
+
+                # Fireball en flanco ascendente
+                curr_fb_mouse = bool(mouse_pressed[fb_btn]) if isinstance(fb_btn, int) else False
+                curr_fb_mouse = curr_fb_mouse and not ui_blocked
+                prev_fb_mouse = self.prev_mouse.get((eid, 'fireball'), False)
+                fb_edge = (curr_fb_mouse and not prev_fb_mouse)
+                # Keyboard edges (A/B)
+                for slot in ('a','b'):
+                    code = kb_codes.get(('fireball', slot))
+                    if code is not None:
+                        curr = bool(keys[code]) and not ui_blocked
+                        prev = self.prev_action_slots.get((eid, f'fireball_kb_{slot}'), False)
+                        if curr and not prev:
+                            fb_edge = True
+                        self.prev_action_slots[(eid, f'fireball_kb_{slot}')] = curr
+                if eid in world.components.get('PlayerTagComponent', {}) and fb_edge:
                     world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='fireball')
-                # Guardar estado click para próxima iteración
-                self.prev_click[eid] = curr_click
-                # Lanzar el beam con click del medio
-                middle = pygame.mouse.get_pressed()[1] and not ui_blocked
-                if middle:
-                    logger.debug(f"[DEBUG][{time.time():.3f}] eid={eid} middle-click -> laser_beam")
+                self.prev_mouse[(eid, 'fireball')] = curr_fb_mouse
+
+                # Laser beam: mantener el comportamiento original (disparo continuo mientras se mantiene)
+                curr_lb_mouse = bool(mouse_pressed[lb_btn]) if isinstance(lb_btn, int) else False
+                curr_lb_mouse = curr_lb_mouse and not ui_blocked
+                curr_lb = curr_lb_mouse
+                for slot in ('a','b'):
+                    code = kb_codes.get(('laser_beam', slot))
+                    if code is not None:
+                        curr_lb = curr_lb or (bool(keys[code]) and not ui_blocked)
+                if curr_lb:
+                    logger.debug(f"[DEBUG][{time.time():.3f}] eid={eid} mouse-button({lb_btn}) -> laser_beam")
                     world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='laser_beam')
-                # Detectar dash (right-click) por flanco ascendente
-                curr_right = bool(pygame.mouse.get_pressed()[2]) and not ui_blocked
-                prev_r = self.prev_right.get(eid, False)
-                # Suppress initial dash if right-click on inventory panel
-                if curr_right and not prev_r:
+
+                # Dash en flanco ascendente, con supresión si el click inicial cae sobre el panel de inventario
+                curr_dash_mouse = bool(mouse_pressed[dash_btn]) if isinstance(dash_btn, int) else False
+                curr_dash_mouse = curr_dash_mouse and not ui_blocked
+                prev_dash_mouse = self.prev_mouse.get((eid, 'dash'), False)
+                dash_edge = (curr_dash_mouse and not prev_dash_mouse)
+                if dash_edge:
+                    # Si se pulsa sobre el panel de inventario, ignorar
                     for s in getattr(world, 'render_systems', []):
-                        if isinstance(s, InventoryUISystem) and s.panel_rect and s.panel_rect.collidepoint(pygame.mouse.get_pos()):
-                            curr_right = False
+                        if isinstance(s, InventoryUISystem) and s.panel_rect and s.panel_rect.collidepoint((mx, my)):
+                            curr_dash_mouse = False
+                            dash_edge = False
                             break
-                if curr_right and not prev_r:
-                    logger.debug(f"[DEBUG][{time.time():.3f}] eid={eid} right-click -> dash")
+                # Keyboard edges (A/B) for dash
+                for slot in ('a','b'):
+                    code = kb_codes.get(('dash', slot))
+                    if code is not None:
+                        curr = bool(keys[code]) and not ui_blocked
+                        prev = self.prev_action_slots.get((eid, f'dash_kb_{slot}'), False)
+                        if curr and not prev:
+                            dash_edge = True
+                        self.prev_action_slots[(eid, f'dash_kb_{slot}')] = curr
+                if dash_edge:
+                    logger.debug(f"[DEBUG][{time.time():.3f}] eid={eid} mouse-button({dash_btn}) -> dash")
                     world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='dash')
-                self.prev_right[eid] = curr_right
+                self.prev_mouse[(eid, 'dash')] = curr_dash_mouse

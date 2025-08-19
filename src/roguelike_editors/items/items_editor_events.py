@@ -14,9 +14,6 @@ class ItemsEditorEvents:
 
         # Atajos globales (funcionan incluso si no es visible para abrir/cerrar)
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_F7:
-                controller.toggle()
-                return True
             if event.key == pygame.K_ESCAPE and model.visible:
                 controller.hide()
                 return True
