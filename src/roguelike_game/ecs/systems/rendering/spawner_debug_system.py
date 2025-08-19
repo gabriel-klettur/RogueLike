@@ -4,6 +4,7 @@ SpawnerDebugRenderSystem: draws spawner anchors and proximity radii for debuggin
 from __future__ import annotations
 
 import pygame
+import math
 import roguelike_engine.config.config as config
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_engine.config.config_tiles import TILE_SIZE
@@ -14,6 +15,10 @@ class SpawnerDebugRenderSystem:
     def __init__(self, perf_log=None):
         self.perf_log = perf_log
         self.font = None
+        # Track per-entity state to diagnose movement issues
+        self._last_pos: dict[int, tuple[float, float]] = {}
+        self._last_dir: dict[int, tuple[float, float]] = {}
+        self._stuck_frames: dict[int, int] = {}
 
     def _ensure_font(self):
         if self.font is None:
@@ -96,8 +101,12 @@ class SpawnerDebugRenderSystem:
         multi_map = comps.get('MultiCollider', {})
         death_map = comps.get('DeathTimer', {})
         player_map = comps.get('PlayerTagComponent', {})
+        vel_map = comps.get('Velocity', {})
         pink_outline = (255, 105, 180)
         pink_fill = (255, 105, 180, 80)
+        blue_debug = (80, 160, 255)
+        blue_faint = (120, 180, 255)
+        red_blocked = (255, 80, 80)
 
         for nid in world.get_entities_with('Position', 'MultiCollider'):
             if nid in death_map:
@@ -127,3 +136,58 @@ class SpawnerDebugRenderSystem:
             screen.blit(overlay, (sx, sy))
             # Outline
             pygame.draw.rect(screen, pink_outline, pygame.Rect(sx, sy, sw, sh), width=2)
+
+            # Direction indicator inside feet-collider: circle + radius line
+            vel = vel_map.get(nid)
+            if vel is not None:
+                cx = sx + sw // 2
+                cy = sy + sh // 2
+                # radius slightly inset from the pink outline
+                r = max(3, min(sw, sh) // 2 - 3)
+                if r > 2:
+                    pygame.draw.circle(screen, blue_debug, (cx, cy), r, width=2)
+                # Decide which direction vector and color to use
+                vx = getattr(vel, 'vx', 0.0) or 0.0
+                vy = getattr(vel, 'vy', 0.0) or 0.0
+                mag = math.hypot(vx, vy)
+                # Compute world displacement since last frame
+                lastp = self._last_pos.get(nid)
+                disp = 0.0
+                if lastp is not None:
+                    disp = math.hypot((pos.x - lastp[0]), (pos.y - lastp[1]))
+                # Thresholds
+                vel_eps = 0.01
+                move_eps = 0.25  # pixels per frame considered as "not moving"
+
+                blocked = False
+                dir_vec = None
+
+                if mag > vel_eps:
+                    # Normalize current velocity as direction
+                    dir_vec = (vx / mag, vy / mag)
+                    # Persist direction as last known
+                    self._last_dir[nid] = dir_vec
+                    # Detect stuck: trying to move but position barely changes for several frames
+                    if disp <= move_eps and lastp is not None:
+                        self._stuck_frames[nid] = self._stuck_frames.get(nid, 0) + 1
+                    else:
+                        self._stuck_frames[nid] = 0
+                else:
+                    # No current velocity -> use last known direction if available
+                    dir_vec = self._last_dir.get(nid)
+                    # Slowly decay stuck counter when idle
+                    if self._stuck_frames.get(nid, 0) > 0:
+                        self._stuck_frames[nid] = max(0, self._stuck_frames[nid] - 1)
+
+                blocked = self._stuck_frames.get(nid, 0) >= 5
+                color = red_blocked if blocked else (blue_debug if mag > vel_eps else blue_faint)
+
+                if dir_vec and r > 2:
+                    dx = int(dir_vec[0] * r)
+                    dy = int(dir_vec[1] * r)
+                    pygame.draw.line(screen, color, (cx, cy), (cx + dx, cy + dy), 2)
+                else:
+                    pygame.draw.circle(screen, color, (cx, cy), 2)
+
+                # Update last position for next frame
+                self._last_pos[nid] = (pos.x, pos.y)

@@ -2,7 +2,7 @@
   "player": {
     "level": "global_map",
     "pos": [
-      20,
+      31,
       68
     ]
   },
@@ -10,7 +10,7 @@
   "levels": {
     "global_map": {
       "player_pos": [
-        20,
+        31,
         68
       ],
       "npc_states": {}
@@ -22,11 +22,11 @@
     "slots": [
       {
         "item": "gold",
-        "quantity": 36
+        "quantity": 169
       },
       {
         "item": "wood",
-        "quantity": 3
+        "quantity": 4
       },
       null,
       null,
@@ -51,10 +51,10 @@
   "meta": {
     "name": "TEST 2",
     "created_at": "2025-08-19T14:13:47",
-    "last_played": "2025-08-19T19:46:24",
+    "last_played": "2025-08-19T21:03:22",
     "player": {
-      "xp": 40,
-      "level": 2
+      "xp": 20,
+      "level": 5
     },
     "items_summary": {
       "stacks": 2,

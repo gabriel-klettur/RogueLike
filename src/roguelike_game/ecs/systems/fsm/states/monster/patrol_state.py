@@ -3,6 +3,10 @@ from roguelike_game.ecs.systems.fsm.state import State
 from roguelike_game.ecs.components.transform.velocity import Velocity
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.ecs.systems.fsm.states.monster.aggro_state import AggroState
+from roguelike_game.ecs.systems.fsm.anim_bridge import (
+    set_mapped_anim,
+    primary_direction_from_vector,
+)
 
 class PatrolState(State):
     """
@@ -13,6 +17,11 @@ class PatrolState(State):
 
     def enter(self, entity):
         self.current_index = 0
+        # Asegurar cambio inmediato a assets de patrulla al entrar
+        try:
+            set_mapped_anim(entity, 'PatrolState', None)
+        except Exception:
+            pass
 
     def execute(self, entity, dt):
         world = entity.world
@@ -66,15 +75,31 @@ class PatrolState(State):
                 self.current_index += 1
                 # Detener al llegar al waypoint
                 world.components['Velocity'][eid] = Velocity(0, 0)
+                # Mostrar anim base de patrulla al hacer alto
+                try:
+                    set_mapped_anim(entity, 'PatrolState', None)
+                except Exception:
+                    pass
             else:
                 dist = math.sqrt(dist_sq)
                 vx = dx/dist * step
                 vy = dy/dist * step
                 world.components['Velocity'][eid] = Velocity(vx, vy)
+                # Actualizar animación de patrulla según dirección vía anim_map
+                try:
+                    direction = primary_direction_from_vector(dx, dy)
+                    set_mapped_anim(entity, 'PatrolState', direction)
+                except Exception:
+                    pass
         else:
             # Ruta completa, reiniciar para patrulla en bucle
             world.components['Velocity'][eid] = Velocity(0, 0)
             self.current_index = 0
+            # Asegurar anim base de patrulla
+            try:
+                set_mapped_anim(entity, 'PatrolState', None)
+            except Exception:
+                pass
 
     def exit(self, entity):
         pass
