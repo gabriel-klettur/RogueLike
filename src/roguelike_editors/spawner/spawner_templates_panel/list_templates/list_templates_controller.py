@@ -13,7 +13,7 @@ from .list_templates_delete.list_templates_delete_view import ListTemplatesDelet
 
 
 class SpawnerTemplatesListController:
-    """List controller for spawner templates (spawners.json).
+    """List controller for spawner templates (spawners_templates.json).
 
     Uses the common list panel components via local aliases.
     """

@@ -37,11 +37,11 @@ class SpawnerEditorController:
         # Instance Toolbar (add/remove spawner instances)
         self.instance_toolbar = SpawnerInstanceToolbarController(self)
         # Spawner lists:
-        # - Instances list (data/spawners/instances.json)
+        # - Instances list (data/spawners/spawners_instances.json)
         self.spawner_instances = SpawnerListInstancesController()
-        # - Manager (templates list, data/spawners/spawners.json)
+        # - Manager (templates list, data/spawners/spawners_templates.json)
         self.spawner_manager = SpawnerManagerController()
-        # - Instance Properties panel (details of selected entry in instances.json)
+        # - Instance Properties panel (details of selected entry in spawners_instances.json)
         self.instance_properties = InstancePropertiesController()
         self._instances_visible_last: bool = False
         self.events = SpawnerEditorEventHandler(self)

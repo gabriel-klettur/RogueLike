@@ -8,7 +8,7 @@ from typing import Any, Dict, Optional, Tuple
 class InstancePropertiesModel:
     visible: bool = False
     selected_instance: Optional[Dict[str, Any]] = None
-    # Index of the instance in instances.json at the time of selection
+    # Index of the instance in spawners_instances.json at the time of selection
     selected_index: Optional[int] = None
     # Original instance id (if present) to aid in persistence by id
     original_id: Optional[str] = None

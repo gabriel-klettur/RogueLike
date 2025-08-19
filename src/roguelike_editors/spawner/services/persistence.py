@@ -12,12 +12,12 @@ from roguelike_engine.config.map_config import global_map_settings
 
 def instances_path() -> str:
     base = getattr(config, 'DATA_DIR', 'data')
-    return os.path.join(base, 'spawners', 'instances.json')
+    return os.path.join(base, 'spawners', 'spawners_instances.json')
 
 
 def spawners_path() -> str:
     base = getattr(config, 'DATA_DIR', 'data')
-    return os.path.join(base, 'spawners', 'spawners.json')
+    return os.path.join(base, 'spawners', 'spawners_templates.json')
 
 
 def load_instances_json() -> List[Dict[str, Any]]:
@@ -66,7 +66,7 @@ def load_spawners_json() -> List[Dict[str, Any]]:
 
 
 def write_spawners_json(data: List[Dict[str, Any]]) -> None:
-    """Write the full spawners list to data/spawners/spawners.json."""
+    """Write the full spawners list to data/spawners/spawners_templates.json."""
     path = spawners_path()
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, 'w', encoding='utf-8') as f:
@@ -74,7 +74,7 @@ def write_spawners_json(data: List[Dict[str, Any]]) -> None:
 
 
 def save_spawner_template(updated: Dict[str, Any]) -> None:
-    """Update or append a single spawner template in spawners.json by id.
+    """Update or append a single spawner template in spawners_templates.json by id.
 
     If an entry with the same 'id' exists, replace it in-place; otherwise append it.
     """
@@ -99,7 +99,7 @@ def save_spawner_template(updated: Dict[str, Any]) -> None:
 
 
 def rename_spawner_template_id(old_id: str, new_id: str) -> Optional[Dict[str, Any]]:
-    """Safely rename a spawner template id across spawners.json and instances.json.
+    """Safely rename a spawner template id across spawners_templates.json and spawners_instances.json.
 
     - If new_id already exists and is different from old_id -> do nothing (return None).
     - Otherwise, update the template entry id and update all instance entries' template_id.
@@ -262,7 +262,7 @@ def persist_drop(world,
                  *,
                  override_zone: Optional[str] = None,
                  orig_zone: Optional[str] = None) -> None:
-    """Persist a moved spawner's anchor tile back to instances.json.
+    """Persist a moved spawner's anchor tile back to spawners_instances.json.
 
     - Computes local tile with zone offset (using override_zone if provided, else cfg.zone)
     - Looks up original entry in orig_zone (if provided) or snapshot zone to replace in-place

@@ -58,7 +58,7 @@ class ListTemplatesDeleteController:
             self.confirm_no(parent_controller)
             return
         try:
-            # 1) Remove the template from spawners.json
+            # 1) Remove the template from spawners_templates.json
             data = load_spawners_json()
             new_list = [t for t in data if str(t.get("id")) != target_id]
             write_spawners_json(new_list)

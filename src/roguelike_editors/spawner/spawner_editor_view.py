@@ -69,7 +69,7 @@ class SpawnerEditorView:
                 mgr_rect = c.spawner_manager.render(screen, anchor=anchor)
         except Exception:
             pass
-        # 3b) Spawner Instances list (instances.json) when active, same placement
+        # 3b) Spawner Instances list (spawners_instances.json) when active, same placement
         inst_rect = None
         try:
             if hasattr(c, 'spawner_instances') and getattr(getattr(c.spawner_instances, 'model', None), 'visible', True):

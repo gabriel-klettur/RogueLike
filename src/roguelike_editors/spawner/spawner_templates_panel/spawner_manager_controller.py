@@ -18,7 +18,7 @@ class SpawnerManagerController:
         self.model = model or SpawnerManagerModel()
         self.view = view or SpawnerManagerView()
         self.events = SpawnerManagerEventHandler()
-        # Child panels: list of templates from data/spawners/spawners.json
+        # Child panels: list of templates from data/spawners/spawners_templates.json
         self.list_controller = SpawnerTemplatesListController()
         # Properties panel (shows details of selected template)
         self.props_controller = SpawnerPropertiesController()
