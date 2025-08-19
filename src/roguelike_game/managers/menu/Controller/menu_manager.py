@@ -53,6 +53,14 @@ class MenuManager:
         self._last_click_pos: tuple[int, int] | None = None
         # Hover del botón Cargar
         self._saves_hover_load_button: bool = False
+        # Hover del botón Borrar
+        self._saves_hover_delete_button: bool = False
+        # Modal de confirmación de borrado
+        self._saves_show_confirm_delete: bool = False
+        self._saves_hover_confirm_yes: bool = False
+        self._saves_hover_confirm_cancel: bool = False
+        # Selección total para edición inline (doble click)
+        self._saves_select_all_edit: bool = False
         # Guardar configuración previa de key repeat para restaurar al salir de edición
         self._prev_key_repeat: tuple[int, int] | None = None
 
@@ -63,6 +71,17 @@ class MenuManager:
         # Modo especial: lista de partidas
         if self.mode == "load_list":
             if event.type == pygame.KEYDOWN:
+                # Si está visible el modal de borrar, manejar teclas allí
+                if self._saves_show_confirm_delete:
+                    if event.key == pygame.K_ESCAPE:
+                        self._saves_show_confirm_delete = False
+                        self._saves_hover_confirm_yes = False
+                        self._saves_hover_confirm_cancel = False
+                        return None
+                    if event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+                        self._confirm_delete_selected_save()
+                        return None
+                    return None
                 # Si estamos editando el nombre, capturar edición primero
                 if self._saves_editing_name:
                     if event.key == pygame.K_ESCAPE:
@@ -74,6 +93,12 @@ class MenuManager:
                         self._commit_save_rename()
                         return None
                     if event.key == pygame.K_BACKSPACE:
+                        if self._saves_select_all_edit:
+                            # Backspace con todo seleccionado: limpiar
+                            self._saves_edit_name_text = ""
+                            self._saves_edit_caret = 0
+                            self._saves_select_all_edit = False
+                            return None
                         mods = pygame.key.get_mods()
                         if mods & pygame.KMOD_CTRL:
                             # Borrar palabra hacia la izquierda
@@ -96,6 +121,12 @@ class MenuManager:
                                 self._saves_edit_caret -= 1
                         return None
                     if event.key == pygame.K_DELETE:
+                        if self._saves_select_all_edit:
+                            # Delete con todo seleccionado: limpiar
+                            self._saves_edit_name_text = ""
+                            self._saves_edit_caret = 0
+                            self._saves_select_all_edit = False
+                            return None
                         mods = pygame.key.get_mods()
                         if mods & pygame.KMOD_CTRL:
                             # Borrar palabra hacia la derecha
@@ -116,6 +147,11 @@ class MenuManager:
                                 self._saves_edit_name_text = self._saves_edit_name_text[:i] + self._saves_edit_name_text[i+1:]
                         return None
                     if event.key in (pygame.K_LEFT, pygame.K_KP_4):
+                        if self._saves_select_all_edit:
+                            # Mover caret al inicio y salir del select-all
+                            self._saves_edit_caret = 0
+                            self._saves_select_all_edit = False
+                            return None
                         mods = pygame.key.get_mods()
                         if mods & pygame.KMOD_CTRL:
                             # Mover caret a inicio de palabra anterior
@@ -131,6 +167,11 @@ class MenuManager:
                             self._saves_edit_caret = max(0, self._saves_edit_caret - 1)
                         return None
                     if event.key in (pygame.K_RIGHT, pygame.K_KP_6):
+                        if self._saves_select_all_edit:
+                            # Mover caret al final y salir del select-all
+                            self._saves_edit_caret = len(self._saves_edit_name_text)
+                            self._saves_select_all_edit = False
+                            return None
                         mods = pygame.key.get_mods()
                         if mods & pygame.KMOD_CTRL:
                             # Mover caret al inicio de la siguiente palabra
@@ -147,16 +188,24 @@ class MenuManager:
                         return None
                     if event.key == pygame.K_HOME:
                         self._saves_edit_caret = 0
+                        self._saves_select_all_edit = False
                         return None
                     if event.key == pygame.K_END:
                         self._saves_edit_caret = len(self._saves_edit_name_text)
+                        self._saves_select_all_edit = False
                         return None
                     # Entrada de texto básica por unicode
                     ch = getattr(event, 'unicode', '') or ''
                     if ch and ord(ch) >= 32:
-                        i = self._saves_edit_caret
-                        self._saves_edit_name_text = self._saves_edit_name_text[:i] + ch + self._saves_edit_name_text[i:]
-                        self._saves_edit_caret += len(ch)
+                        if self._saves_select_all_edit:
+                            # Reemplazar selección completa por nueva entrada
+                            self._saves_edit_name_text = ch
+                            self._saves_edit_caret = len(ch)
+                            self._saves_select_all_edit = False
+                        else:
+                            i = self._saves_edit_caret
+                            self._saves_edit_name_text = self._saves_edit_name_text[:i] + ch + self._saves_edit_name_text[i:]
+                            self._saves_edit_caret += len(ch)
                     return None
 
                 if event.key in (pygame.K_UP, pygame.K_w, pygame.K_a):
@@ -198,15 +247,28 @@ class MenuManager:
                 elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
                     # Deshabilitado: la única forma de cargar es el botón "Cargar"
                     return None
-                elif event.key in (pygame.K_ESCAPE,):
-                    # Volver al menú anterior (start/pause)
-                    self.set_mode(self.prev_mode)
-            elif event.type == pygame.MOUSEMOTION:
+                return None
+
+            if event.type == pygame.MOUSEMOTION:
+                # Si modal visible: actualizar hover de botones del modal y salir
+                if self._saves_show_confirm_delete:
+                    self._saves_hover_confirm_yes = False
+                    self._saves_hover_confirm_cancel = False
+                    layout_c = getattr(self.renderer, 'last_confirm_layout', None)
+                    if layout_c:
+                        yes_rect = layout_c.get('yes_rect')
+                        cancel_rect = layout_c.get('cancel_rect')
+                        if yes_rect and yes_rect.collidepoint(event.pos):
+                            self._saves_hover_confirm_yes = True
+                        if cancel_rect and cancel_rect.collidepoint(event.pos):
+                            self._saves_hover_confirm_cancel = True
+                    return None
                 # Hover sobre filas
                 layout = getattr(self.renderer, 'last_saves_layout', None)
                 self._saves_hovered_idx = None
                 self._saves_hover_details_name = False
                 self._saves_hover_load_button = False
+                self._saves_hover_delete_button = False
                 if layout:
                     for idx, rect in layout.get('row_rects', {}).items():
                         if rect.collidepoint(event.pos):
@@ -220,17 +282,47 @@ class MenuManager:
                     btn_rect = layout.get('load_button_rect')
                     if btn_rect and btn_rect.collidepoint(event.pos):
                         self._saves_hover_load_button = True
+                    # Hover sobre botón Borrar
+                    del_rect = layout.get('delete_button_rect')
+                    if del_rect and del_rect.collidepoint(event.pos):
+                        self._saves_hover_delete_button = True
             elif event.type == pygame.MOUSEWHEEL:
                 # Scroll vertical de la lista
                 self._saves_row_scroll_offset = max(0, self._saves_row_scroll_offset - event.y)
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 # Click para seleccionar/cargar
+                # Si modal visible: click en botones o fuera para cancelar
+                if self._saves_show_confirm_delete:
+                    layout_c = getattr(self.renderer, 'last_confirm_layout', None)
+                    if layout_c:
+                        panel_rect = layout_c.get('panel_rect')
+                        yes_rect = layout_c.get('yes_rect')
+                        cancel_rect = layout_c.get('cancel_rect')
+                        if yes_rect and yes_rect.collidepoint(event.pos):
+                            self._confirm_delete_selected_save()
+                            return None
+                        if cancel_rect and cancel_rect.collidepoint(event.pos):
+                            self._saves_show_confirm_delete = False
+                            return None
+                        # Click fuera del panel: cancelar
+                        if panel_rect and not panel_rect.collidepoint(event.pos):
+                            self._saves_show_confirm_delete = False
+                            return None
+                    return None
+
                 layout = getattr(self.renderer, 'last_saves_layout', None)
                 if layout:
                     # Click en botón Cargar -> cargar partida seleccionada
                     btn_rect = layout.get('load_button_rect')
                     if btn_rect and btn_rect.collidepoint(event.pos):
                         self._load_selected_save()
+                        return None
+                    # Click en botón Borrar -> abrir confirmación
+                    del_rect = layout.get('delete_button_rect')
+                    if del_rect and del_rect.collidepoint(event.pos):
+                        self._saves_show_confirm_delete = True
+                        # Salir de edición si estaba activo
+                        self._end_edit_save_name(cancel=False)
                         return None
                     # Click en detalles -> posible doble click para editar o mover caret
                     name_rect = layout.get('details_name_rect')
@@ -246,17 +338,21 @@ class MenuManager:
                         self._last_click_time = now
                         self._last_click_pos = event.pos
                         if dbl:
-                            # Entrar en modo edición
+                            # Entrar en modo edición con seleccionar todo
                             self._begin_edit_save_name()
+                            self._saves_select_all_edit = True
                         else:
                             # Si ya estamos editando, ajustar caret según x
                             if self._saves_editing_name:
                                 self._set_caret_from_click(event.pos)
+                                self._saves_select_all_edit = False
                         return None
 
                     for idx, rect in layout.get('row_rects', {}).items():
                         if rect.collidepoint(event.pos):
                             self.load_selected = idx
+                            # Salir de edición si cambia selección
+                            self._end_edit_save_name(cancel=True)
                             break
             return None
 
@@ -275,7 +371,7 @@ class MenuManager:
             items = [e["label"] for e in self.save_entries]
             meta = self.save_entries[self.load_selected]["meta"] if self.save_entries else {}
             detail_lines = self._format_save_details(meta)
-            return self.renderer.draw_saves_panel(
+            overlay_rect = self.renderer.draw_saves_panel(
                 screen,
                 selected=self.load_selected,
                 items=items,
@@ -290,7 +386,28 @@ class MenuManager:
                 edit_name_text=self._saves_edit_name_text,
                 caret_pos=self._saves_edit_caret,
                 hover_load_button=self._saves_hover_load_button,
+                hover_delete_button=self._saves_hover_delete_button,
+                select_all_edit=self._saves_select_all_edit,
             )
+            # Si hay confirmación de borrado, dibujar modal por encima
+            if self._saves_show_confirm_delete:
+                # Construir líneas del mensaje con el nombre del guardado seleccionado
+                name = "-"
+                if self.save_entries:
+                    entry = self.save_entries[self.load_selected]
+                    name = (entry.get('meta') or {}).get('name') or entry.get('label') or '-'
+                lines = [
+                    "¿Borrar esta partida?",
+                    f"{name}",
+                    "Esta acción no se puede deshacer."
+                ]
+                overlay_rect = self.renderer.draw_confirm_dialog(
+                    screen,
+                    lines,
+                    hover_yes=self._saves_hover_confirm_yes,
+                    hover_cancel=self._saves_hover_confirm_cancel,
+                )
+            return overlay_rect
 
         self.handler.mode = self.mode
         options = self.handler.get_options()
@@ -657,6 +774,8 @@ class MenuManager:
         self._saves_editing_name = True
         self._saves_edit_name_text = str(current)
         self._saves_edit_caret = len(self._saves_edit_name_text)
+        # Por defecto, no seleccionar todo; el doble click lo activará
+        self._saves_select_all_edit = False
         # Activar repetición de teclas para edición fluida (incluye Backspace/Delete)
         try:
             # Guardar config previa (si está disponible) y activar repeat
@@ -721,6 +840,7 @@ class MenuManager:
     def _end_edit_save_name(self, cancel: bool = False):
         """Sale del modo edición y restaura el key repeat global."""
         self._saves_editing_name = False
+        self._saves_select_all_edit = False
         try:
             # Restaurar repetición previa si la teníamos registrada, o desactivar
             if self._prev_key_repeat and all(isinstance(x, int) for x in self._prev_key_repeat):
@@ -728,5 +848,37 @@ class MenuManager:
                 pygame.key.set_repeat(delay, interval)
             else:
                 pygame.key.set_repeat(0)
+        except Exception:
+            pass
+
+    # ---- Delete save helpers ----
+    def _confirm_delete_selected_save(self):
+        """Borra el archivo del guardado seleccionado tras confirmar, refresca la lista y cierra el modal."""
+        if not self.save_entries:
+            self._saves_show_confirm_delete = False
+            return
+        idx = self.load_selected
+        path = self.save_entries[idx].get('path')
+        try:
+            if path:
+                p = Path(path)
+                if p.exists():
+                    p.unlink()
+        except Exception as e:
+            logger.warning("No se pudo borrar el guardado %s: %s", path, e)
+        # Refrescar lista y ajustar selección
+        self._refresh_save_list()
+        if not self.save_entries:
+            self.load_selected = 0
+        else:
+            self.load_selected = min(self.load_selected, len(self.save_entries) - 1)
+        # Cerrar modal y limpiar hovers
+        self._saves_show_confirm_delete = False
+        self._saves_hover_confirm_yes = False
+        self._saves_hover_confirm_cancel = False
+        self._saves_hover_delete_button = False
+        # Recalcular layout por si cambió el contenido
+        try:
+            self._compute_saves_fixed_layout(self.screen)
         except Exception:
             pass

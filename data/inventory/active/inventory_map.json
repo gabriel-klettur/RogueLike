@@ -1,26 +1,86 @@
 {
-  "3867885b-9fc1-4ade-b2c8-24edd4abcc32": {
+  "611ea984-befa-482e-8891-bc3c7e0d36ed": {
     "item_id": "wood",
     "quantity": 1,
     "zone_id": "Forest",
     "schema_version": "1.0.0",
     "z_layer": 3,
     "tile": {
-      "x": 10,
-      "y": 1
+      "x": 27,
+      "y": 16
     },
-    "created_at": 1755631521.8557234
+    "created_at": 1755632744.6212156
   },
-  "16e04472-d291-4167-af86-4031d5a08600": {
+  "9e2935b5-8326-4b6b-abb3-80e6d4e9306d": {
     "item_id": "wood",
     "quantity": 1,
     "zone_id": "Forest",
     "schema_version": "1.0.0",
     "z_layer": 3,
     "tile": {
-      "x": 11,
-      "y": 2
+      "x": 29,
+      "y": 15
     },
-    "created_at": 1755631542.3334773
+    "created_at": 1755632746.453936
+  },
+  "b3200b05-bd7a-42aa-8474-97eac1914bd7": {
+    "item_id": "wood",
+    "quantity": 1,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "z_layer": 3,
+    "tile": {
+      "x": 28,
+      "y": 18
+    },
+    "created_at": 1755632766.360797
+  },
+  "d28961cb-6c11-413f-b1fb-0bb3ea8b0ff3": {
+    "item_id": "wood",
+    "quantity": 1,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "z_layer": 3,
+    "tile": {
+      "x": 31,
+      "y": 18
+    },
+    "created_at": 1755632767.9280267
+  },
+  "70e0044a-7fb6-4c0a-b644-3cd06effedb1": {
+    "item_id": "gold",
+    "quantity": 3,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "z_layer": 3,
+    "tile": {
+      "x": 28,
+      "y": 19
+    },
+    "created_at": 1755632768.74403
+  },
+  "03088667-76d8-40bb-87c3-a7147f0b3f54": {
+    "item_id": "wood",
+    "quantity": 1,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "z_layer": 3,
+    "tile": {
+      "x": 26,
+      "y": 16
+    },
+    "created_at": 1755632768.7451975
+  },
+  "dc628966-bc9c-427e-a22d-af921fe6f075": {
+    "item_id": "wood",
+    "quantity": 1,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "z_layer": 3,
+    "tile": {
+      "x": 28,
+      "y": 20
+    },
+    "created_at": 1755632769.063936
   }
 }

@@ -1,21 +1,15 @@
 {
   "1": {
-    "player_id": "22222222-2222-2222-2222-222222222222",
-    "capacity": 100,
+    "player_id": null,
     "slots": [
       {
         "item": "gold",
-<<<<<<< Updated upstream
         "quantity": 36
-=======
-        "quantity": 26
       },
       {
-        "item": "experience_orb",
-        "quantity": 1
->>>>>>> Stashed changes
+        "item": "wood",
+        "quantity": 3
       },
-      null,
       null,
       null,
       null,
