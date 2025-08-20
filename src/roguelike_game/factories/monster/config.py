@@ -25,7 +25,8 @@ for class_name, class_cfg in _raw_classes.items():
     stats = class_cfg.get("stats", {})
     assets = class_cfg.get("assets", {})
     fsm_set = class_cfg.get("fsm_set")
-    MONSTER_DEFS[class_name] = {**stats, "assets": assets, "fsm_set": fsm_set}
+    patrol = class_cfg.get("patrol")
+    MONSTER_DEFS[class_name] = {**stats, "assets": assets, "fsm_set": fsm_set, "patrol": patrol}
 
 # Separate mappings for stats and assets
 MONSTER_STATS: Dict[str, Any] = {class_name: class_cfg.get("stats", {}) for class_name, class_cfg in _raw_classes.items()}
@@ -59,7 +60,8 @@ def reload_monster_defs() -> None:
         stats = class_cfg.get("stats", {})
         assets = class_cfg.get("assets", {})
         fsm_set = class_cfg.get("fsm_set")
-        MONSTER_DEFS[class_name] = {**stats, "assets": assets, "fsm_set": fsm_set}
+        patrol = class_cfg.get("patrol")
+        MONSTER_DEFS[class_name] = {**stats, "assets": assets, "fsm_set": fsm_set, "patrol": patrol}
 
     # Update stats and assets mappings
     MONSTER_STATS.clear()

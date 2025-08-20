@@ -3,7 +3,7 @@ def create_empty_component_store():
     Devuelve un diccionario con todas las claves de componentes inicializadas a diccionarios vacíos.
     """
     return {
-        'Position': {}, 'Sprite': {}, 'Patrol': {}, 'MovementSpeed': {},
+        'Position': {}, 'Sprite': {}, 'MovementSpeed': {},
         'PatrolRoute': {}, 'NPCState': {}, 'Animator': {}, 'AnimationTimer': {},
         'Health': {}, 'Mana': {}, 'Energy': {}, 'Hunger': {}, 'Scale': {}, 'Identity': {}, 'Velocity': {}, 'MultiCollider': {},
         'ZLayer': {}, 'DeathTimer': {}, 'DamageConfig': {}, 'FireballComponent': {}, 'ArcaneFlameComponent': {}, 'FireworkLaunchComponent': {}, 'SmokeComponent': {},

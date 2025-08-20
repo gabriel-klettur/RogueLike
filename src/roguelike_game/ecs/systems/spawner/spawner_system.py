@@ -82,10 +82,31 @@ class SpawnerRuntimeSystem:
         for eid in world.get_entities_with('SpawnerConfig', 'SpawnerState'):
             cfg = comps['SpawnerConfig'][eid]
             st = comps['SpawnerState'][eid]
+            policy = getattr(cfg, 'policy', {}) or {}
+            looping = bool(policy.get('loop') or policy.get('repeat') or policy.get('restart_on_done'))
+            max_active = int(policy.get('max_active', 0) or 0)
+            advance_on = str(policy.get('advance_on', 'clear') or 'clear').lower()
+            advance_on_cooldown = (advance_on == 'cooldown')
 
-            # Skip if already finished
+            # Handle finished: either stop or auto-restart if looping is enabled
             if getattr(st, 'finished', False):
-                continue
+                if looping:
+                    # Count down restart delay, then reset
+                    if getattr(st, 'restart_cooldown_remaining', 0) > 0:
+                        st.restart_cooldown_remaining -= 1
+                        continue
+                    st.finished = False
+                    st.current_wave_idx = 0
+                    st.spawned_this_wave = False
+                    st.expected_this_wave = 0
+                    try:
+                        st.current_wave_entities.clear()
+                    except Exception:
+                        st.current_wave_entities = set()
+                    # No extra delay: first wave spawns immediately after restart cooldown
+                    st.cooldown_remaining = 0
+                else:
+                    continue
 
             # Only run if started and there is at least one wave
             if not st.started or not cfg.waves:
@@ -100,8 +121,17 @@ class SpawnerRuntimeSystem:
                         alive.add(ent_id)
                 st.current_wave_entities = alive
 
-            # If we already spawned this wave, wait until all are eliminated
-            if st.spawned_this_wave:
+            # Prune active_entities as well (used for max_active enforcement)
+            if getattr(st, 'active_entities', None) is not None:
+                active_alive = set()
+                ents = set(world.entities)
+                for ent_id in list(st.active_entities):
+                    if ent_id in ents:
+                        active_alive.add(ent_id)
+                st.active_entities = active_alive
+
+            # If we already spawned this wave and we advance on clear, wait until all are eliminated
+            if st.spawned_this_wave and not advance_on_cooldown:
                 if st.expected_this_wave > 0 and len(st.current_wave_entities) == 0:
                     # Wave completed
                     wave_num = st.current_wave_idx + 1
@@ -110,16 +140,43 @@ class SpawnerRuntimeSystem:
                     st.current_wave_idx += 1
                     st.spawned_this_wave = False
                     st.expected_this_wave = 0
-                    # If no more waves, mark finished
+                    # If no more waves, either loop or mark finished
                     if st.current_wave_idx >= len(cfg.waves):
-                        st.finished = True
-                        logger.info(f"[Spawner] {cfg.template_id}:{eid} all waves completed")
-                        continue
-                    # Small delay before next wave
-                    st.cooldown_remaining = max(st.cooldown_remaining, getattr(cfg, 'cooldown_frames', 0))
+                        if looping:
+                            st.spawned_this_wave = False
+                            st.expected_this_wave = 0
+                            st.restart_cooldown_remaining = getattr(cfg, 'restart_cooldown_frames', getattr(cfg, 'cooldown_frames', 0))
+                            st.finished = True
+                            logger.info(f"[Spawner] {cfg.template_id}:{eid} cycle completed; scheduling restart in {st.restart_cooldown_remaining} frames")
+                            continue
+                        else:
+                            st.finished = True
+                            logger.info(f"[Spawner] {cfg.template_id}:{eid} all waves completed")
+                            continue
+                    else:
+                        # Small delay before next wave
+                        st.cooldown_remaining = max(st.cooldown_remaining, getattr(cfg, 'cooldown_frames', 0))
                 else:
                     # Still waiting for monsters to be eliminated or none actually spawned yet
                     continue
+
+            # In cooldown-advance mode: if we already spawned all waves, wait until all active entities are cleared to finish/restart
+            if advance_on_cooldown and st.current_wave_idx >= len(cfg.waves):
+                active_count = 0
+                try:
+                    active_count = len(getattr(st, 'active_entities', set()) or [])
+                except Exception:
+                    active_count = 0
+                if active_count == 0:
+                    if looping:
+                        st.restart_cooldown_remaining = getattr(cfg, 'restart_cooldown_frames', getattr(cfg, 'cooldown_frames', 0))
+                        st.finished = True
+                        logger.info(f"[Spawner] {cfg.template_id}:{eid} cycle completed; scheduling restart in {st.restart_cooldown_remaining} frames")
+                    else:
+                        st.finished = True
+                        logger.info(f"[Spawner] {cfg.template_id}:{eid} all waves completed")
+                # Either way, do nothing else this tick while waiting
+                continue
 
             # Cooldown handling (only matters when spawning a new wave)
             if st.cooldown_remaining > 0:
@@ -136,8 +193,15 @@ class SpawnerRuntimeSystem:
                 logger.info(f"[Spawner] {cfg.template_id}:{eid} wave {wave_num}/{total_waves} completed (empty)")
                 st.current_wave_idx += 1
                 if st.current_wave_idx >= len(cfg.waves):
-                    st.finished = True
-                    logger.info(f"[Spawner] {cfg.template_id}:{eid} all waves completed")
+                    if looping:
+                        st.spawned_this_wave = False
+                        st.expected_this_wave = 0
+                        st.restart_cooldown_remaining = getattr(cfg, 'restart_cooldown_frames', getattr(cfg, 'cooldown_frames', 0))
+                        st.finished = True
+                        logger.info(f"[Spawner] {cfg.template_id}:{eid} cycle completed; scheduling restart in {st.restart_cooldown_remaining} frames")
+                    else:
+                        st.finished = True
+                        logger.info(f"[Spawner] {cfg.template_id}:{eid} all waves completed")
                 else:
                     st.cooldown_remaining = cfg.cooldown_frames
                 continue
@@ -151,6 +215,21 @@ class SpawnerRuntimeSystem:
             npc_tiles = self._collect_npc_tiles(world)
             # Reserve tiles chosen in this wave to prevent duplicates
             reserved_tiles = set()
+
+            # Enforce max_active across waves if configured
+            capacity_left = None
+            if max_active > 0 and getattr(st, 'active_entities', None) is not None:
+                try:
+                    capacity_left = max(0, max_active - len(st.active_entities))
+                except Exception:
+                    capacity_left = max_active
+            
+            if capacity_left is not None and capacity_left <= 0:
+                # No capacity: retry after cooldown
+                st.cooldown_remaining = max(st.cooldown_remaining, getattr(cfg, 'cooldown_frames', 0))
+                # Do not mark wave as spawned; try again later
+                continue
+
             for entry in spawns:
                 if entry.get('kind') != 'monster':
                     # MVP: only monsters
@@ -161,6 +240,11 @@ class SpawnerRuntimeSystem:
                 fallback_max = int(entry.get('spread_fallback_max', max(spread, 8)))
                 min_px_dist = int(entry.get('min_px_distance', 0))
                 min_px_dist_sq = min_px_dist * min_px_dist
+                # Apply capacity limit if present
+                if capacity_left is not None:
+                    if capacity_left <= 0:
+                        continue
+                    count = max(0, min(count, capacity_left))
                 attempted_total += count
                 for _ in range(count):
                     chosen = None
@@ -217,6 +301,8 @@ class SpawnerRuntimeSystem:
                         wave_idx=st.current_wave_idx,
                     )
                     total_expected += 1
+                    if capacity_left is not None:
+                        capacity_left = max(0, capacity_left - 1)
 
             # Telemetry: placed vs attempted for this wave
             try:
@@ -238,10 +324,25 @@ class SpawnerRuntimeSystem:
                 st.spawned_this_wave = False
                 st.expected_this_wave = 0
                 if st.current_wave_idx >= len(cfg.waves):
-                    st.finished = True
-                    logger.info(f"[Spawner] {cfg.template_id}:{eid} all waves completed")
+                    # End reached: loop or finish
+                    policy = getattr(cfg, 'policy', {}) or {}
+                    looping = bool(policy.get('loop') or policy.get('repeat') or policy.get('restart_on_done'))
+                    if looping:
+                        st.spawned_this_wave = False
+                        st.expected_this_wave = 0
+                        st.restart_cooldown_remaining = getattr(cfg, 'restart_cooldown_frames', getattr(cfg, 'cooldown_frames', 0))
+                        st.finished = True
+                        logger.info(f"[Spawner] {cfg.template_id}:{eid} cycle completed; scheduling restart in {st.restart_cooldown_remaining} frames")
+                    else:
+                        st.finished = True
+                        logger.info(f"[Spawner] {cfg.template_id}:{eid} all waves completed")
                 else:
                     st.cooldown_remaining = cfg.cooldown_frames
             else:
-                # After issuing requests, wait for completion
+                # After issuing requests
                 st.cooldown_remaining = cfg.cooldown_frames
+                if advance_on_cooldown:
+                    # Immediately move to next wave; completion will be checked after all waves are spawned
+                    st.current_wave_idx += 1
+                    st.spawned_this_wave = False
+                    # expected_this_wave is not used for advancing in this mode

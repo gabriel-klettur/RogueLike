@@ -47,6 +47,9 @@
           "death_dissapear_time": 5.0
         },
         "fsm_set": "Monster_Default",
+        "patrol": {
+          "id": "line"        
+        },
         "assets": {
           "active_set": "no-sets",
           "sets": {
@@ -175,6 +178,7 @@
           "death_dissapear_time": 2.5
         },
         "fsm_set": "Monster_Default",
+        "patrol": { "id": "circle", "params": { "radius_tiles": 4, "points": 16, "clockwise": true } },
         "assets": {
           "active_set": "no-sets",
           "sets": {
@@ -307,6 +311,7 @@
           "death_dissapear_time": 5.0
         },
         "fsm_set": "Monster_Default",
+        "patrol": { "id": "square", "params": { "width_tiles": 6, "height_tiles": 6, "points_per_edge": 4 } },
         "assets": {
           "active_set": "no-sets",
           "sets": {
@@ -1109,6 +1114,7 @@
           "death_dissapear_time": 3.5
         },
         "fsm_set": "Monster_Default",
+        "patrol": { "id": "zigzag", "params": { "segments": 6, "step_tiles": 2, "amplitude_tiles": 1, "axis": "x" } },
         "assets": {
           "active_set": "no-sets",
           "sets": {
@@ -1241,6 +1247,7 @@
           "death_dissapear_time": 10.0
         },
         "fsm_set": "Monster_Default",
+        "patrol": { "id": "figure_eight", "params": { "radius_tiles": 4, "points_per_loop": 16, "gap_tiles": 2 } },
         "assets": {
           "active_set": "no-sets",
           "sets": {

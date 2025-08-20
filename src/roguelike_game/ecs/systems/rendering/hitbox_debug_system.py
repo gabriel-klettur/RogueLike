@@ -1,7 +1,8 @@
 import math
 import pygame
 import roguelike_engine.config.config as config
-from roguelike_game.ecs.utils.collider_utils import build_collider_rect
+from roguelike_game.ecs.utils.collider_utils import build_collider_rect, get_circle_world
+from roguelike_game.ecs.components.physics.circle_collider import CircleCollider
 from roguelike_engine.utils.benchmark import benchmark
 
 
@@ -61,7 +62,7 @@ class HitboxDebugSystem:
             tpos = pos_store.get(tid)
             if tpos is None:
                 continue
-            for collider in multi.colliders.values():
+            for name, collider in multi.colliders.items():
                 rect_w = build_collider_rect(tpos.x, tpos.y, collider)
                 screen_x, screen_y = camera.apply((rect_w.x, rect_w.y))
                 rect_s = pygame.Rect(int(screen_x), int(screen_y), int(rect_w.width), int(rect_w.height))
@@ -69,3 +70,20 @@ class HitboxDebugSystem:
                 if not rect_s.colliderect(view_rect):
                     continue
                 pygame.draw.rect(screen, (0, 0, 255), rect_s, 1)
+                # If it's a circle collider, draw its true circle (use cached surfaces)
+                if isinstance(collider, CircleCollider):
+                    cx, cy, r = get_circle_world(tpos.x, tpos.y, collider)
+                    cx_s, cy_s = camera.apply((cx, cy))
+                    radius = int(r)
+                    if radius > 0:
+                        surf = self.circle_surfs.get(radius)
+                        if surf is None:
+                            size = radius * 2 + 2
+                            surf = pygame.Surface((size, size), flags=pygame.SRCALPHA)
+                            # magenta outline for feet circles
+                            pygame.draw.circle(surf, (255, 0, 255), (radius+1, radius+1), radius, 1)
+                            self.circle_surfs[radius] = surf
+                        # cull using the circle's bounding rect in screen space
+                        circle_rect = pygame.Rect(int(cx_s - (radius+1)), int(cy_s - (radius+1)), int(radius*2+2), int(radius*2+2))
+                        if circle_rect.colliderect(view_rect):
+                            screen.blit(surf, (int(cx_s - (radius+1)), int(cy_s - (radius+1))))

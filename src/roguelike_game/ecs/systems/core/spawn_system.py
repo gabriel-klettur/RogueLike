@@ -44,6 +44,12 @@ class SpawnSystem:
                     # Sólo añadir si corresponde a la oleada actual
                     if st.current_wave_idx == wave_idx:
                         st.current_wave_entities.add(new_eid)
+                    # Siempre registrar en el conjunto de activos del spawner
+                    try:
+                        st.active_entities.add(new_eid)
+                    except Exception:
+                        # Backward compatibility if field missing
+                        pass
 
             # Una vez generado el NPC, eliminar la entidad de solicitud
             world.remove_entity(req_eid)

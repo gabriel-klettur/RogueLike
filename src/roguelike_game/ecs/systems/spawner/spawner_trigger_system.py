@@ -26,30 +26,39 @@ class SpawnerTriggerSystem:
         return int(pos.x // TILE_SIZE), int(pos.y // TILE_SIZE)
 
     def update(self, world, camera=None):
-        player_tile = self._get_player_tile(world)
-        if player_tile is None:
-            return
-        px, py = player_tile
-
         comps = world.components
+        # Evaluate triggers per spawner
         for eid in world.get_entities_with('SpawnerConfig', 'SpawnerState'):
             cfg = comps['SpawnerConfig'][eid]
             st = comps['SpawnerState'][eid]
+            trig = (cfg.trigger or {})
+            ttype = trig.get('type', 'proximity')
 
-            if (cfg.trigger or {}).get('type') != 'proximity':
+            if ttype == 'auto':
+                # Always started; future: support start_delay_s if needed
+                st.started = True
                 continue
-            radius = int((cfg.trigger or {}).get('radius', 5))
+
+            if ttype != 'proximity':
+                # Unknown trigger types: keep current state
+                continue
+
+            # Proximity trigger
+            player_tile = self._get_player_tile(world)
+            if player_tile is None:
+                # No player: can't evaluate proximity, default to not started unless persistent state
+                continue
+            px, py = player_tile
+            radius = int(trig.get('radius', 5))
             ax, ay = cfg.anchor_tile
             dx = px - ax
             dy = py - ay
-            # Euclidean distance in tiles
             within = (dx*dx + dy*dy) <= (radius * radius)
 
-            auto = bool((cfg.trigger or {}).get('auto_start', True))
+            auto = bool(trig.get('auto_start', True))
             if auto:
                 st.started = within
             else:
-                # If not auto, leave it off by default (will be toggled by future UI prompt)
                 if within and not st.started:
-                    # could raise a prompt event in the future
+                    # Reserved for future manual confirmation
                     pass

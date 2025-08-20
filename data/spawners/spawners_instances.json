@@ -3,8 +3,8 @@
     "template_id": "survival_10",
     "zone": "Forest",
     "tile": [
-      29,
-      17
+      27,
+      21
     ],
     "id": "survival_10_forest_14_9"
   },
@@ -16,5 +16,14 @@
       4
     ],
     "id": "barbol_periodic_no_stack_forest_8_4"
+  },
+  {
+    "template_id": "barbol_auto_pair_3s_max2_restart10",
+    "zone": "Forest",
+    "tile": [
+      44,
+      5
+    ],
+    "id": "barbol_auto_pair_3s_max2_restart10_forest_37_6"
   }
 ]

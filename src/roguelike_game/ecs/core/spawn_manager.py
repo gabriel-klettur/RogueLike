@@ -63,8 +63,11 @@ class SpawnNPCManager:
 
         # Calcular padding de spawn según collider de pies de la variante base
         feet = proto_colliders.get("barbol").colliders.get("feet")
-        radius = max(feet.width, feet.height) / 2
+        # Usar la AABB del collider (genérico: rect o círculo) para derivar un radio conservador
+        rect = build_collider_rect(0, 0, feet)
+        radius = max(rect.width, rect.height) / 2
         neighbor_padding = math.ceil(radius / TILE_SIZE) + SPAWN_PADDING_EXTRA
+
         spawned_rects = []
 
         # 3) Spawn en LOBBY

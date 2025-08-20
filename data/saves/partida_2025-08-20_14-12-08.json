@@ -2,16 +2,16 @@
   "player": {
     "level": "global_map",
     "pos": [
-      12,
-      57
+      20,
+      74
     ]
   },
   "npcs": {},
   "levels": {
     "global_map": {
       "player_pos": [
-        12,
-        57
+        20,
+        74
       ],
       "npc_states": {}
     }
@@ -22,7 +22,7 @@
     "slots": [
       {
         "item": "gold",
-        "quantity": 177
+        "quantity": 30
       },
       null,
       null,
@@ -46,12 +46,12 @@
     ]
   },
   "meta": {
-    "name": "TEST 2",
-    "created_at": "2025-08-19T14:13:47",
-    "last_played": "2025-08-20T09:13:19",
+    "name": "partida_2025-08-20_14-12-08",
+    "created_at": "2025-08-20T14:12:08",
+    "last_played": "2025-08-20T15:19:53",
     "player": {
-      "xp": 0,
-      "level": 0
+      "xp": 70,
+      "level": 1
     },
     "items_summary": {
       "stacks": 1,

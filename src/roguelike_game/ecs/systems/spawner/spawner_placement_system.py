@@ -119,6 +119,9 @@ class SpawnerPlacementSystem:
         fps = getattr(config, "FPS", 60)
         cooldown_s = float(policy.get("cooldown_s", 10.0))
         cooldown_frames = int(round(cooldown_s * fps))
+        # separate restart cooldown (falls back to cooldown_s)
+        restart_cooldown_s = float(policy.get("restart_cooldown_s", cooldown_s))
+        restart_cooldown_frames = int(round(restart_cooldown_s * fps))
 
         # Convert zone-local tile -> global tile using zone offsets
         zone = inst.get("zone", "lobby")
@@ -135,6 +138,7 @@ class SpawnerPlacementSystem:
             policy=policy,
             waves=waves,
             cooldown_frames=cooldown_frames,
+            restart_cooldown_frames=restart_cooldown_frames,
         )
 
     def update(self, world, camera=None):
