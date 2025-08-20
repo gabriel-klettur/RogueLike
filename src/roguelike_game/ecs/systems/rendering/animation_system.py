@@ -52,19 +52,11 @@ class AnimationSystem:
                 timer.last_time = now
             # Obtener el siguiente frame de animación
             frame = animator.next_frame()
-            # Actualizar Sprite incluso sin frame
+            # Actualizar Sprite solo cuando hay frame válido
             if eid in sprite_map:
-                if frame:
+                if frame is not None:
                     # Frame válido: aplicarlo
                     sprite_map[eid].image = frame
-                else:
-                    # Placeholder semi-transparente con borde morado
-                    size = sprite_map[eid].image.get_size()
-                    placeholder = pygame.Surface(size, pygame.SRCALPHA)
-                    placeholder.fill((128, 0, 128, 100))
-                    border_color = (128, 0, 128)
-                    pygame.draw.rect(placeholder, border_color, placeholder.get_rect(), 2)
-                    sprite_map[eid].image = placeholder
 
                 # Sincronizar máscara de colisión (body) con el frame actual
                 mc = mc_map.get(eid)

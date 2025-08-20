@@ -7,7 +7,7 @@ from roguelike_game.factories.monster.sprite_loader import create_sprite_compone
 from roguelike_game.factories.monster.physics import create_physics_components, create_collider_components, create_zlayer_component
 from roguelike_game.factories.monster.calibrator import calibrate_tile_position
 from roguelike_engine.config.config_tiles import TILE_SIZE
-from roguelike_game.factories.monster.behaviour_loader import build_patrol_points
+from roguelike_game.factories.monster.behaviour_loader import build_patrol_route, build_patrol_points
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.rendering.sprite import Sprite
 from roguelike_game.ecs.components.transform.scale import Scale
@@ -92,8 +92,15 @@ class MonsterBuilder:
 
         # FSM: PatrolRoute & NPCState
         patrol_cfg = cfg.get("patrol")
-        route_points = build_patrol_points(x, y, patrol_cfg, TILE_SIZE)
-        world.components["PatrolRoute"][eid] = PatrolRoute(route_points)
+        route = build_patrol_route(x, y, patrol_cfg, TILE_SIZE)
+        world.components["PatrolRoute"][eid] = PatrolRoute(
+            points=route.get("points", []),
+            dwell_times=route.get("dwell_times"),
+            pattern_id=route.get("pattern_id"),
+            area_center=route.get("area_center"),
+            area_radius=route.get("area_radius"),
+            min_step=route.get("min_step"),
+        )
         # Try per-class FSM via fsm_set in new_monsters.json, then fallback to assignments.json, then Patrol
         fsm_set_id = cfg.get("fsm_set")
         if fsm_set_id:

@@ -1,1 +1,34 @@
-{}
+{
+  "1": {
+    "player_id": null,
+    "slots": [
+      {
+        "item": "gold",
+        "quantity": 30
+      },
+      {
+        "item": "experience_orb",
+        "quantity": 1
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  }
+}

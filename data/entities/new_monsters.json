@@ -47,7 +47,9 @@
           "death_dissapear_time": 5.0
         },
         "fsm_set": "Monster_Default",
-        "patrol": { "id": "line", "params": { "axis": "x", "length_tiles": 5 } },
+        "patrol": {
+          "id": "line"        
+        },
         "assets": {
           "active_set": "no-sets",
           "sets": {

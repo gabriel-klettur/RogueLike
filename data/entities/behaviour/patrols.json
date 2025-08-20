@@ -25,6 +25,19 @@
       "label": "Ocho",
       "description": "Patrón en forma de 8 (dos bucles).",
       "default_params": { "radius_tiles": 3, "points_per_loop": 12, "gap_tiles": 2 }
+    },
+    "natural": {
+      "label": "Natural / Guardia de zona",
+      "description": "Patrulla dentro de un radio con desplazamientos largos, pausas naturales y sin repetir puntos cercanos.",
+      "default_params": {
+        "radius_tiles": 5,
+        "points": 12,
+        "min_step_factor": 1.0,
+        "avoid_revisit_radius_tiles": 1.0,
+        "dwell_min_s": 0.6,
+        "dwell_max_s": 2.0,
+        "max_attempts": 2000
+      }
     }
   }
 }

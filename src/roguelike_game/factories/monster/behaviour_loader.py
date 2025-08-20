@@ -1,6 +1,7 @@
 from __future__ import annotations
 import json
 import math
+import random
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Any, List, Tuple, Optional
@@ -29,18 +30,18 @@ def _merge_params(defaults: Dict[str, Any], overrides: Optional[Dict[str, Any]])
     return merged
 
 
-def build_patrol_points(px: int, py: int, patrol_cfg: Optional[Dict[str, Any]], tile_size: int) -> List[Tuple[float, float]]:
+def build_patrol_route(px: int, py: int, patrol_cfg: Optional[Dict[str, Any]], tile_size: int) -> Dict[str, Any]:
     """
-    Build a world-space waypoint list based on patrol configuration and catalog.
-    patrol_cfg example: {"id": "circle", "params": {"radius_tiles": 5, "points": 16}}
-    If patrol_cfg is None or unknown, falls back to a simple 2-point line along +X.
+    Build a patrol route structure: {"points": List[(x,y)], "dwell_times": Optional[List[float]]}
+    Supports all catalog patterns. New patterns can attach dwell_times for natural pauses.
+    If config is missing/unknown, returns a simple 2-point line and dwell_times=None.
     """
     catalog = _load_catalog()
     patterns: Dict[str, Any] = catalog.get("patrols", {})
 
     # Default fallback: two points (current behavior)
-    def default_line() -> List[Tuple[float, float]]:
-        return [(px, py), (px + 5 * tile_size, py)]
+    def default_line() -> Dict[str, Any]:
+        return {"points": [(px, py), (px + 5 * tile_size, py)], "dwell_times": None}
 
     if not patrol_cfg or not isinstance(patrol_cfg, dict):
         return default_line()
@@ -65,17 +66,17 @@ def build_patrol_points(px: int, py: int, patrol_cfg: Optional[Dict[str, Any]], 
         axis = str(params.get("axis", "x")).lower()
         length = float(params.get("length_tiles", 5))
         if axis == "y":
-            return [(px, py), (px, py + tiles(length))]
+            return {"points": [(px, py), (px, py + tiles(length))], "dwell_times": None}
         # default x
-        return [(px, py), (px + tiles(length), py)]
+        return {"points": [(px, py), (px + tiles(length), py)], "dwell_times": None}
 
     if pid == "ping_pong":
         # Like line but explicit; same as 2-point
         length = float(params.get("length_tiles", 5))
         axis = str(params.get("axis", "x")).lower()
         if axis == "y":
-            return [(px, py), (px, py + tiles(length))]
-        return [(px, py), (px + tiles(length), py)]
+            return {"points": [(px, py), (px, py + tiles(length))], "dwell_times": None}
+        return {"points": [(px, py), (px + tiles(length), py)], "dwell_times": None}
 
     if pid == "circle":
         radius = tiles(float(params.get("radius_tiles", 4)))
@@ -88,7 +89,7 @@ def build_patrol_points(px: int, py: int, patrol_cfg: Optional[Dict[str, Any]], 
             cx = px + radius * math.cos(th)
             cy = py + radius * math.sin(th)
             out.append((cx, cy))
-        return out
+        return {"points": out, "dwell_times": None}
 
     if pid == "square":
         width = tiles(float(params.get("width_tiles", 6)))
@@ -114,7 +115,7 @@ def build_patrol_points(px: int, py: int, patrol_cfg: Optional[Dict[str, Any]], 
         for i in range(1, per_edge - 1):
             t = i / max(1, per_edge - 1)
             out.append((x0, y1 - (y1 - y0) * t))
-        return out
+        return {"points": out, "dwell_times": None}
 
     if pid == "zigzag":
         # segments: number of corners horizontally; step_tiles: advance per segment; amplitude_tiles: vertical amplitude
@@ -135,7 +136,7 @@ def build_patrol_points(px: int, py: int, patrol_cfg: Optional[Dict[str, Any]], 
                 x = px + step * i
                 y = py + (amp if i % 2 == 0 else -amp)
                 out.append((x, y))
-        return out
+        return {"points": out, "dwell_times": None}
 
     if pid == "figure_eight":
         # Two circles of radius r, centers separated by gap along X
@@ -154,7 +155,32 @@ def build_patrol_points(px: int, py: int, patrol_cfg: Optional[Dict[str, Any]], 
         for i in range(pts):
             th = (2.0 * math.pi * i) / pts
             out.append((cx_right + r * math.cos(th), cy + r * math.sin(th)))
-        return out
+        return {"points": out, "dwell_times": None}
+
+    if pid == "natural":
+        # Dynamic area patrol: FSM will pick a new target after a fixed dwell.
+        # Requirements:
+        #  - Wait 1s, then choose another place to walk
+        #  - Minimum stride length = radius / 4
+        radius = tiles(float(params.get("radius_tiles", 5)))
+        min_step = radius * 0.25
+        # No precomputed points; FSM will sample dynamically within this area.
+        return {
+            "points": [],
+            "dwell_times": None,
+            "pattern_id": "natural",
+            "area_center": (px, py),
+            "area_radius": radius,
+            "min_step": min_step,
+        }
 
     # Unknown pattern -> default
     return default_line()
+
+
+def build_patrol_points(px: int, py: int, patrol_cfg: Optional[Dict[str, Any]], tile_size: int) -> List[Tuple[float, float]]:
+    """
+    Backward-compatible helper that returns only the points list.
+    """
+    route = build_patrol_route(px, py, patrol_cfg, tile_size)
+    return route.get("points", [])

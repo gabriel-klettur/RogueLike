@@ -25,9 +25,9 @@ Este subpaquete contiene todo lo necesario para crear la entidad **monstruo** en
   - `create_movement_components(px, py, monster_type, cfg)`: inicializa `MovementSpeed` y `Animator`.
 
 - `behaviour_loader.py`  
-  Genera rutas de patrulla (`PatrolRoute.points`) a partir de una configuración declarativa:
+  Genera rutas de patrulla (`PatrolRoute.points`) y tiempos de espera opcionales (`dwell_times`) a partir de una configuración declarativa:
   lee `data/entities/behaviour/patrols.json` (catálogo) y la propiedad `patrol` del monstruo en `data/entities/new_monsters.json`.
-  Patrones soportados: `line`, `circle`, `square`, `zigzag`, `figure_eight`.
+  Patrones soportados: `line`, `circle`, `square`, `zigzag`, `figure_eight`, `natural`.
 
 - `physics.py`  
   Funciones:
@@ -66,3 +66,23 @@ monster_id = get_factory("monster").create(world, tile_x=5, tile_y=7, monster_ty
 ```
 
 Si se omite `patrol`, se usa una ruta lineal simple de dos puntos.
+
+### Patrón "natural"
+
+Permite un patrullaje realista dentro de un radio con pausas en los puntos:
+
+```json
+"patrol": {
+  "id": "natural",
+  "params": {
+    "radius_tiles": 5,
+    "points": 12,
+    "min_step_factor": 1.0,
+    "avoid_revisit_radius_tiles": 1.0,
+    "dwell_min_s": 0.6,
+    "dwell_max_s": 2.0
+  }
+}
+```
+
+`PatrolState` respeta `dwell_times` generados por el patrón para pausas entre waypoints.
