@@ -9,7 +9,7 @@ Rutas relevantes:
 
 Sistemas/Componentes:
 - `SpawnerPlacementSystem` (carga y crea entidades)
-- `SpawnerTriggerSystem` (activa/desactiva por proximidad)
+- `SpawnerTriggerSystem` (activa/desactiva por proximidad o arranque automático)
 - `SpawnerRuntimeSystem` (gestión de oleadas, cooldown, loop)
 - `SpawnSystem` (convierte `SpawnRequest` en entidades del juego)
 - `SpawnerConfig`, `SpawnerState`, `SpawnRequest`
@@ -18,7 +18,7 @@ Sistemas/Componentes:
 - 1) Plantillas: Define la plantilla base del spawner (tipo, trigger, política y olas inline o por referencia).
 - 2) Olas: Catálogo reutilizable de secuencias de olas (listas de spawns) que las plantillas pueden referenciar con `waves_id`.
 - 3) Instancias: Colocación de spawners en el mundo (zona, tile) con posibilidad de overrides por dot-notation.
-- 4) Triggers: Condiciones de activación, actualmente proximidad (radio y auto_start).
+- 4) Triggers: Condiciones de activación: proximidad (radio y auto_start) y auto.
 - 5) Policy: Parámetros de comportamiento (cooldown, modo, loop/restart_on_done y flags futuros).
 - 6) Estructura de olas y spawns: Formato de cada ola y entradas de spawn (qué, cuántos y cómo se distribuyen).
 - 7) Ciclo de vida: Cómo progresa el spawner entre olas, aplica cooldown y reinicia si hay loop.
@@ -115,26 +115,31 @@ Cálculos al cargar:
 ---
 
 ## 4) Triggers soportados (MVP)
-- `type`: "proximity" (único soportado actualmente).
-- `radius` (int): radio en tiles. Default si falta: 5.
-- `auto_start` (bool): si true, el spawner se activa automáticamente cuando el jugador está dentro del radio y se desactiva al salir. Default: true.
+- `type`: "proximity" | "auto".
+- `radius` (int, proximity): radio en tiles. Default si falta: 5.
+- `auto_start` (bool, proximity): si true, el spawner se activa automáticamente cuando el jugador está dentro del radio y se desactiva al salir. Default: true.
 
 Runtime (`SpawnerTriggerSystem`):
-- Calcula la distancia en tiles entre `anchor_tile` y la posición del jugador.
-- Si `auto_start=true`, `SpawnerState.started` refleja si el jugador está dentro del radio.
+- Proximidad: Calcula la distancia en tiles entre `anchor_tile` y la posición del jugador. Si `auto_start=true`, `SpawnerState.started` refleja si el jugador está dentro del radio.
+- Auto: `SpawnerState.started = true` de forma continua (no depende del jugador).
 
 ---
 
 ## 5) Policy soportada (MVP)
 - `mode` (string): p.ej. "periodic". Hoy es informativo (render/debug), no altera la lógica.
 - `cooldown_s` (float): segundos entre olas/spawns. Default: 10.0.
-- `max_active` (int): aceptado pero no aplicado en runtime (reservado para futuro).
+- `max_active` (int): máximo de monstruos simultáneamente activos generados por este spawner. Si se alcanza, se pospone el spawn de la ola actual hasta que haya capacidad.
 - `persistent` (bool): aceptado pero no aplicado en runtime (reservado para futuro).
-- `restart_on_done` (bool): si true, al terminar todas las olas, el spawner reinicia desde la ola 0 tras `cooldown_frames`.
+- `restart_on_done` (bool): si true, al terminar todas las olas y quedar eliminados los monstruos de la última ola, el spawner reinicia.
+- `restart_cooldown_s` (float): segundos de espera antes del reinicio del ciclo (si `restart_on_done`/`loop`/`repeat`). Default: usa `cooldown_s` si no se especifica.
 - Sinónimos aceptados: `loop`, `repeat` (cualquier true equivale a loop).
+- `advance_on` (string): controla cómo avanza entre olas.
+  - `"clear"` (default): la siguiente ola sólo inicia cuando todos los mobs de la ola actual han sido eliminados.
+  - `"cooldown"`: avanza de ola tras aplicar `cooldown_frames` aunque sigan vivos los mobs de la ola anterior. El fin de ciclo (y el reinicio) se retrasa hasta que no quede ningún mob activo del spawner.
 
 Derivados:
 - `cooldown_frames` (int): precalculado en `SpawnerConfig` a partir de `cooldown_s` y `FPS`.
+- `restart_cooldown_frames` (int): precalculado a partir de `restart_cooldown_s` (o `cooldown_s`) y `FPS`.
 
 ---
 
@@ -171,8 +176,12 @@ Resultados por ola:
 - Avance de olas:
   - Si quedan más olas: se incrementa `current_wave_idx` y se aplica `cooldown_frames` antes de la siguiente.
   - Si no quedan más olas:
-    - Si `policy.restart_on_done` (o `loop`/`repeat`) es true: se reinicia a ola 0 y se aplica `cooldown_frames`.
+    - Si `policy.restart_on_done` (o `loop`/`repeat`) es true: se programa reinicio tras `restart_cooldown_frames`. Durante este tiempo, el spawner queda en estado `DONE`.
     - Si no: `finished = true`.
+
+Notas para `advance_on`:
+- `advance_on = "clear"` (default): el punto anterior aplica tal cual. Cada ola espera a que sus mobs mueran para pasar a la siguiente.
+- `advance_on = "cooldown"`: tras spawnear una ola, se incrementa inmediatamente `current_wave_idx` y se aplica `cooldown_frames` para la siguiente ola, sin esperar a que la anterior muera. El ciclo sólo se considera finalizado cuando `active_entities` del spawner queda vacío; recién ahí se aplica `restart_cooldown_frames` (si hay loop/restart).
 
 ---
 
@@ -190,10 +199,10 @@ Resultados por ola:
 
 ## 9) Componentes (referencia rápida)
 `SpawnerConfig`:
-- `template_id`, `zone`, `anchor_tile` (global), `spawner_type`, `trigger`, `policy`, `waves`, `cooldown_frames`.
+- `template_id`, `zone`, `anchor_tile` (global), `spawner_type`, `trigger`, `policy`, `waves`, `cooldown_frames`, `restart_cooldown_frames`.
 
 `SpawnerState`:
-- `started`, `current_wave_idx`, `cooldown_remaining`, `spawned_entities` (no usado), `spawned_this_wave`, `current_wave_entities`, `expected_this_wave`, `finished`.
+- `started`, `current_wave_idx`, `cooldown_remaining`, `spawned_entities` (no usado), `spawned_this_wave`, `current_wave_entities`, `expected_this_wave`, `finished`, `restart_cooldown_remaining`, `active_entities`.
 
 `SpawnRequest`:
 - `prototype` (string), `position` (tileX, tileY), `spawner_eid?`, `wave_idx?`.
@@ -210,7 +219,7 @@ Resultados por ola:
 ---
 
 ## 11) Limitaciones actuales (MVP)
-- Sólo `trigger.type = 'proximity'`.
+- Triggers soportados: `proximity` y `auto`.
 - Sólo `spawn.kind = 'monster'`.
-- `policy.max_active` y `policy.persistent` aceptados pero no aplicados todavía.
+- `policy.persistent` aceptado pero no aplicado todavía.
 - `spread_radius` hoy sólo afecta el `spread_fallback_max` por defecto; la búsqueda real es en espiral.

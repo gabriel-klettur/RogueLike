@@ -15,6 +15,7 @@ class SpawnerConfig:
     - policy: dict with at least { mode: "periodic", cooldown_s: float, max_active: int, persistent: bool }
     - waves: list of dicts, each with { spawns: [ { kind: "monster"|"item", id: str, count: int, spread_radius: int } ] }
     - cooldown_frames: derived from policy.cooldown_s using 60 FPS assumption
+    - restart_cooldown_frames: derived from policy.restart_cooldown_s using 60 FPS (falls back to cooldown_s if not provided)
     """
     template_id: str
     zone: str
@@ -24,3 +25,4 @@ class SpawnerConfig:
     policy: Dict[str, Any]
     waves: List[Dict[str, Any]]
     cooldown_frames: int = 0
+    restart_cooldown_frames: int = 0

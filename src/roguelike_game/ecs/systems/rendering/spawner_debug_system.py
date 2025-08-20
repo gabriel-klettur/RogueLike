@@ -136,17 +136,25 @@ class SpawnerDebugRenderSystem:
                     live = 0
                 exp = int(getattr(st, 'expected_this_wave', 0) or 0)
                 cd_frames = int(getattr(st, 'cooldown_remaining', 0) or 0)
+                rc_frames = int(getattr(st, 'restart_cooldown_remaining', 0) or 0)
                 cd_s = cd_frames / float(fps)
+                rc_s = rc_frames / float(fps)
                 loop_policy = bool((getattr(cfg, 'policy', {}) or {}).get('loop') or (getattr(cfg, 'policy', {}) or {}).get('repeat') or (getattr(cfg, 'policy', {}) or {}).get('restart_on_done'))
                 mode = str((getattr(cfg, 'policy', {}) or {}).get('mode', '') or '')
                 status = 'ON' if getattr(st, 'started', False) else 'OFF'
                 if getattr(st, 'finished', False):
                     status = 'DONE'
 
+                # Decide which cooldown to display
+                if getattr(st, 'finished', False) and rc_frames > 0:
+                    cd_line = f"rc {rc_s:.2f}s"
+                else:
+                    cd_line = f"cd {cd_s:.2f}s"
+
                 lines = [
                     f"{cfg.template_id}",
                     f"{status} | wave {wave_num}/{total_waves}",
-                    f"live {live}/{exp} | cd {cd_s:.2f}s",
+                    f"live {live}/{exp} | {cd_line}",
                     f"{mode} | loop:{'on' if loop_policy else 'off'}",
                 ]
 
