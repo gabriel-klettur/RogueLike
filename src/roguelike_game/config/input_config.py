@@ -151,6 +151,14 @@ class InputConfig:
         Retorna el código pygame de la tecla para una acción.
         Primero intenta la configuración del usuario, luego aplica valores por defecto.
         """
+        # Preferir tri-slot si existe: kb_<action>_a, luego kb_<action>_b
+        if isinstance(action, str):
+            a_code = self.get_key_for_binding(f"kb_{action}_a")
+            if a_code is not None:
+                return a_code
+            b_code = self.get_key_for_binding(f"kb_{action}_b")
+            if b_code is not None:
+                return b_code
         # Mapeo de valores por defecto
         defaults = {
             "move_up": pygame.K_UP,
@@ -184,7 +192,7 @@ class InputConfig:
             "select_class": pygame.K_F2
         }
 
-        # Intentar binding de usuario
+        # Intentar binding de usuario (binding base, p.ej. 'move_up' -> 'K_UP')
         name = self.bindings.get(action)
         if name:
             if name.startswith("K_"):
@@ -227,15 +235,39 @@ class InputConfig:
                 elif val.upper().startswith("M_"):
                     family_prefix = "M_"
             if family_prefix is not None:
+                new_base = self._binding_base(binding_key)
                 for k, v in list(self.bindings.items()):
                     if k == binding_key:
                         continue
                     if isinstance(v, str) and v.upper() == val.upper():
-                        # Clear previous owner to keep uniqueness
+                        # Do not clear if both belong to the same action base (allow base+slot duplicates)
+                        if self._binding_base(k) == new_base:
+                            continue
+                        # Clear previous owner to keep uniqueness across different actions
                         self.bindings[k] = ""
         # Finally set
         self.bindings[binding_key] = val
         self.save()
+
+    def _binding_base(self, binding_key: str) -> str:
+        """Return the logical base action for a binding key.
+        Examples:
+        - 'kb_fireball_a' -> 'fireball'
+        - 'kb_fireball_b' -> 'fireball'
+        - 'mouse_fireball' -> 'fireball'
+        - 'move_up' -> 'move_up'
+        - 'spell_lightball' -> 'spell_lightball'
+        """
+        if not isinstance(binding_key, str):
+            return str(binding_key)
+        if binding_key.startswith('kb_'):
+            body = binding_key[len('kb_'):]
+            if body.endswith('_a') or body.endswith('_b'):
+                body = body[:-2]
+            return body
+        if binding_key.startswith('mouse_'):
+            return binding_key[len('mouse_'):]
+        return binding_key
 
     def get_key_for_binding(self, binding_key: str) -> int | None:
         """Resolve pygame keycode for a K_* binding entry; returns None if unbound or non-key."""

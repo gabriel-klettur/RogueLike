@@ -33,5 +33,9 @@
     "kb_laser_beam_a": "",
     "kb_laser_beam_b": "",
     "kb_dash_a": "",
-    "kb_dash_b": ""
+    "kb_dash_b": "",
+    "kb_move_down_b": "K_DOWN",
+    "kb_move_left_b": "K_LEFT",
+    "kb_move_right_b": "K_RIGHT",
+    "kb_move_up_b": "K_UP"
 }

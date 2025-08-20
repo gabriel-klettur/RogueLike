@@ -262,82 +262,73 @@ class MenuConfigurator:
     def _build_row_specs(self, category: str | None = None):
         """Construye especificaciones de filas para el renderer y edición.
         Retorna (row_specs, rows) donde:
-        - row_specs: lista de dicts con 'kind' ('tri'|'single'), 'display', y claves subyacentes.
+        - row_specs: lista de dicts con 'kind' ('tri'), 'display', y claves subyacentes.
         - rows: lista de listas de strings para el renderer.
         """
         bindings = self.config.bindings
-        tri_bases = [
-            ("fireball", "mouse_fireball"),
-            ("laser_beam", "mouse_laser_beam"),
-            ("dash", "mouse_dash"),
-        ]
-        tri_mouse_keys = {m for _, m in tri_bases}
-        tri_kb_keys = {f"kb_{b}_a" for b, _ in tri_bases} | {f"kb_{b}_b" for b, _ in tri_bases}
 
-        specs = []
-        # Tri-slot rows
-        for base, mkey in tri_bases:
+        # 1) Construir el conjunto de acciones base a partir de todas las claves
+        base_actions: set[str] = set()
+        for k in bindings.keys():
+            if k.startswith('kb_'):
+                body = k[len('kb_'):]
+                # remover sufijos _a/_b si existen
+                if body.endswith('_a') or body.endswith('_b'):
+                    body = body[:-2]
+                base_actions.add(body)
+            elif k.startswith('mouse_'):
+                base_actions.add(k[len('mouse_'):])
+            else:
+                base_actions.add(k)
+
+        # 2) Construir especificaciones tri-slot para TODAS las acciones base
+        all_specs: list[dict] = []
+
+        def label_for(name: str) -> str:
+            val = bindings.get(name, "")
+            return format_key_label(val) if isinstance(val, str) and val else "—"
+
+        for base in sorted(base_actions):
             kb_a_key = f"kb_{base}_a"
             kb_b_key = f"kb_{base}_b"
-            kb_a_label = format_key_label(bindings.get(kb_a_key, "")) if isinstance(bindings.get(kb_a_key, ""), str) else "—"
-            kb_b_label = format_key_label(bindings.get(kb_b_key, "")) if isinstance(bindings.get(kb_b_key, ""), str) else "—"
-            mouse_label = format_key_label(bindings.get(mkey, "")) if isinstance(bindings.get(mkey, ""), str) else "—"
-            specs.append({
+            mouse_key = f"mouse_{base}"
+            # Etiquetas: A/B/mouse desde sus slots; A cae al binding base si slot vacío
+            kb_a_label = label_for(kb_a_key)
+            if kb_a_label == "—":
+                raw_base = bindings.get(base, "")
+                if isinstance(raw_base, str) and raw_base:
+                    kb_a_label = format_key_label(raw_base)
+            kb_b_label = label_for(kb_b_key)
+            mouse_label = label_for(mouse_key)
+
+            all_specs.append({
                 'kind': 'tri',
-                'display': self._format_action_name(mkey),
+                'display': self._format_action_name(base),
                 'kb_a_key': kb_a_key,
                 'kb_b_key': kb_b_key,
-                'mouse_key': mkey,
+                'mouse_key': mouse_key,
+                'base_key': base,
                 'labels': (kb_a_label, kb_b_label, mouse_label),
             })
 
-        # Single-slot rows for the rest
-        skip_keys = set(tri_mouse_keys) | set(tri_kb_keys)
-        singles = []
-        for action in bindings.keys():
-            if action in skip_keys:
-                continue
-            if action.startswith('kb_'):
-                continue
-            display = self._format_action_name(action)
-            raw = bindings.get(action, "")
-            key_a = format_key_label(raw) if isinstance(raw, str) and raw.startswith('K_') else "—"
-            mouse = format_key_label(raw) if isinstance(raw, str) and raw.startswith('M_') else "—"
-            singles.append({
-                'kind': 'single',
-                'display': display,
-                'action_key': action,
-                'labels': (key_a, "—", mouse),
-            })
-
-        # Merge
-        all_specs = specs + singles
-
-        # Categorizar
-        def categorize(sp: dict) -> str:
-            if sp.get('kind') == 'tri':
-                mkey = sp.get('mouse_key', '')
-                base = mkey[len('mouse_'):] if isinstance(mkey, str) and mkey.startswith('mouse_') else mkey
-                if base == 'dash':
+        # 3) Categorizar
+        def categorize(spec: dict) -> str:
+            base = spec.get('base_key', '')
+            if isinstance(base, str):
+                if base == 'dash' or base.startswith('move_'):
                     return 'movements'
-                return 'spells'
-            # single
-            ak = sp.get('action_key', '')
-            if isinstance(ak, str):
-                if ak.startswith('move_'):
-                    return 'movements'
-                if ak.startswith('spell_'):
+                if base in ('fireball', 'laser_beam') or base.startswith('spell_'):
                     return 'spells'
-                if ak.startswith('toggle_') and ak.endswith('_editor'):
+                if base.startswith('toggle_') and base.endswith('_editor'):
                     return 'editors'
-                if ak in ('pause', 'toggle_inventory', 'select_class'):
+                if base in ('pause', 'toggle_inventory', 'select_class'):
                     return 'general'
             return 'general'
 
         if category:
             all_specs = [s for s in all_specs if categorize(s) == category]
 
-        # Sort by display name
+        # 4) Ordenar y construir filas
         all_specs.sort(key=lambda s: s['display'])
         rows = [[s['display'], s['labels'][0], s['labels'][1], s['labels'][2]] for s in all_specs]
         return all_specs, rows
