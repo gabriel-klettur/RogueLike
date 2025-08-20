@@ -156,6 +156,14 @@ class InputSystem:
         self.config._load()
         # Obtener estado actual del teclado
         keys = pygame.key.get_pressed()
+        # Helper para evaluar múltiples teclas configuradas por acción
+        def any_pressed(action: str) -> bool:
+            try:
+                codes = self.config.get_keys_for_action(action)
+            except Exception:
+                codes = []
+            return any(bool(keys[c]) for c in codes if isinstance(c, int))
+
         # Manual reload of spells.json via F4
         reload_pressed = bool(keys[getattr(pygame, 'K_F4')])
         if reload_pressed and not self._prev_reload_spells:
@@ -165,26 +173,9 @@ class InputSystem:
             except Exception:
                 logger.exception("[InputSystem] Failed to reload spells on F4")
         self._prev_reload_spells = reload_pressed
-        # Leer bindings dinámicos
-        move_up = self.config.get_key("move_up")
-        move_down = self.config.get_key("move_down")
-        move_left = self.config.get_key("move_left")
-        move_right = self.config.get_key("move_right")
-        attack_key = self.config.get_key("attack")
-        # Nuevos hechizos semánticos
-        lb_key = self.config.get_key("spell_lightball")
-        slash_key = self.config.get_key("spell_slash")
-        heal_key = self.config.get_key("spell_healing_aura")
-        db_key = self.config.get_key("spell_darkball")
-        ib_key = self.config.get_key("spell_iceball")
-        lightning_key = self.config.get_key("spell_lightning")
-        pause_key = self.config.get_key("pause")
-        af_key = self.config.get_key("spell_arcane_flame")
-        fw_key = self.config.get_key("spell_firework_launch")
-        sm_key = self.config.get_key("spell_smoke")
-        se_key = self.config.get_key("spell_smoke_emitter")
-        sh_key = self.config.get_key("spell_sphere_magic_shield")
-        tp_key = self.config.get_key("spell_teleport")
+        # Leer bindings dinámicos (multi-binding via OR)
+        # Movimiento y acciones simples se evaluarán con any_pressed dentro del bucle por entidad
+
         # Flag: Buildings Editor activo -> solo permitir movimiento
         editor_buildings_active = bool(getattr(getattr(world, 'state', None), 'buildings_editor_active', False))
         # Para cada entidad con InputComponent
@@ -193,10 +184,16 @@ class InputSystem:
         for eid, inp in world.components.get('InputComponent', {}).items():
             # Asignar flag show_all_drops
             inp.show_all_drops = alt_down
-            # Movimiento en ejes X e Y
-            inp.move_x = int(keys[move_right]) - int(keys[move_left])
-            inp.move_y = int(keys[move_down]) - int(keys[move_up])
-            curr_attack = bool(keys[attack_key])
+            # Movimiento en ejes X e Y (soporta múltiples teclas por acción)
+            right_down = any_pressed("move_right")
+            left_down = any_pressed("move_left")
+            down_down = any_pressed("move_down")
+            up_down = any_pressed("move_up")
+            inp.move_x = int(right_down) - int(left_down)
+            inp.move_y = int(down_down) - int(up_down)
+            # Ataque físico (soporta múltiples teclas por acción)
+            curr_attack = any_pressed("attack")
+
             inp.attack = curr_attack
             #logger.debug(f"[DEBUG][{time.time():.3f}] eid={eid} move=({inp.move_x},{inp.move_y}), click={inp.click}")
             # Actualizar velocidad según MovementSpeed
@@ -231,8 +228,9 @@ class InputSystem:
                             if (not isinstance(current, PlayerAttackState)) and (isinstance(current, IdleState) or isinstance(current, MoveState)):
                                 state_comp.fsm.change_state(PlayerAttackState(), proxy)
                         # Hechizos (q/e): entrar a selección SOLO en flanco ascendente y si está en Idle/Move
-                        pressed_lb = bool(keys[lb_key]) and self.prev_spell_keys.get((eid, 'lightball'), 0) == 0
-                        pressed_sl = bool(keys[slash_key]) and self.prev_spell_keys.get((eid, 'slash'), 0) == 0
+                        pressed_lb = any_pressed("spell_lightball") and self.prev_spell_keys.get((eid, 'lightball'), 0) == 0
+                        pressed_sl = any_pressed("spell_slash") and self.prev_spell_keys.get((eid, 'slash'), 0) == 0
+
                         if (pressed_lb or pressed_sl) and (isinstance(current, IdleState) or isinstance(current, MoveState)):
                             state_comp.fsm.change_state(PlayerSpellSelectState(), proxy)
                         # Actualizar memoria de flanco para ataque
@@ -250,20 +248,21 @@ class InputSystem:
                     setattr(inp, f'spell_{name}', False)
                     self.prev_spell_keys[(eid,name)] = 0
             else:
-                # Mapear hechizos desde teclado
-                inp.spell_lightball = bool(keys[lb_key])
-                inp.spell_slash = bool(keys[slash_key])
-                inp.spell_healing_aura = bool(keys[heal_key])
+                # Mapear hechizos desde teclado (OR de múltiples bindings)
+                inp.spell_lightball = any_pressed("spell_lightball")
+                inp.spell_slash = any_pressed("spell_slash")
+                inp.spell_healing_aura = any_pressed("spell_healing_aura")
                 # Mapear nuevos hechizos oscuro e hielo
-                inp.spell_darkball = bool(keys[db_key])
-                inp.spell_iceball = bool(keys[ib_key])
-                inp.spell_lightning = bool(keys[lightning_key])
-                inp.spell_arcane_flame = bool(keys[af_key])
-                inp.spell_firework_launch = bool(keys[fw_key])
-                inp.spell_smoke = bool(keys[sm_key])
-                inp.spell_smoke_emitter = bool(keys[se_key])
-                inp.spell_sphere_magic_shield = bool(keys[sh_key])
-                inp.spell_teleport = bool(keys[tp_key])
+                inp.spell_darkball = any_pressed("spell_darkball")
+                inp.spell_iceball = any_pressed("spell_iceball")
+                inp.spell_lightning = any_pressed("spell_lightning")
+                inp.spell_arcane_flame = any_pressed("spell_arcane_flame")
+                inp.spell_firework_launch = any_pressed("spell_firework_launch")
+                inp.spell_smoke = any_pressed("spell_smoke")
+                inp.spell_smoke_emitter = any_pressed("spell_smoke_emitter")
+                inp.spell_sphere_magic_shield = any_pressed("spell_sphere_magic_shield")
+                inp.spell_teleport = any_pressed("spell_teleport")
+
                 # Detección de eventos de hechizos: presionado, mantenido y soltado
                 for name in spell_attrs:
                     curr = getattr(inp, f'spell_{name}')
@@ -281,9 +280,9 @@ class InputSystem:
                         state = 0
                     self.prev_spell_keys[(eid,name)] = state
 
-            # Toggle editor mode: detectar flanco ascendente
-            toggle_key = self.config.get_key("toggle_item_editor")
-            curr_toggle = bool(keys[toggle_key])
+            # Toggle editor mode: detectar flanco ascendente (OR de múltiples teclas)
+            curr_toggle = any_pressed("toggle_item_editor")
+
             prev_toggle = self.prev_toggle.get(eid, False)
             if curr_toggle and not prev_toggle:
                 inp.toggle_editor = True
@@ -291,9 +290,9 @@ class InputSystem:
                 inp.toggle_editor = False
             self.prev_toggle[eid] = curr_toggle
 
-            # Toggle inventory display: detectar flanco ascendente
-            inv_key = self.config.get_key("toggle_inventory")
-            curr_inv = bool(keys[inv_key])
+            # Toggle inventory display: detectar flanco ascendente (OR de múltiples teclas)
+            curr_inv = any_pressed("toggle_inventory")
+
             prev_inv = self.prev_toggle_inventory.get(eid, False)
             if curr_inv and not prev_inv:
                 inp.toggle_inventory = True

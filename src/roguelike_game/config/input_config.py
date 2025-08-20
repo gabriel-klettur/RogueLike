@@ -1,6 +1,7 @@
 import pygame
 import json
 import os
+from typing import Optional
 
 class InputConfig:
     # Singleton por ruta de config
@@ -215,6 +216,91 @@ class InputConfig:
         # Si no hay binding y no es acción conocida, error
         raise KeyError(f"No key binding for action '{action}'")
 
+    def get_keys_for_action(self, action: str) -> list[int]:
+        """Devuelve una lista de keycodes pygame para una acción, agregando:
+        - kb_<action>_a y kb_<action>_b si existen
+        - binding base (self.bindings[action]) si es una tecla válida
+        - valor por defecto si existe en la tabla de defaults
+
+        El orden es [kb_a, kb_b, base, default] y se eliminan duplicados conservando el orden.
+        """
+        codes: list[int] = []
+        if not isinstance(action, str):
+            return codes
+        # 1) Slots A/B
+        a_code = self.get_key_for_binding(f"kb_{action}_a")
+        b_code = self.get_key_for_binding(f"kb_{action}_b")
+        if a_code is not None:
+            codes.append(a_code)
+        if b_code is not None:
+            codes.append(b_code)
+        # 2) Binding base de usuario (si es tecla)
+        name = self.bindings.get(action)
+        if isinstance(name, str) and name:
+            up = name.upper()
+            # Soportar nombres tipo 'K_*' o equivalentes en minúscula
+            if up.startswith("K_"):
+                try:
+                    codes.append(getattr(pygame, up))
+                except AttributeError:
+                    # probar variante minúscula tras K_
+                    alt = "K_" + name[2:].lower()
+                    try:
+                        codes.append(getattr(pygame, alt))
+                    except AttributeError:
+                        try:
+                            codes.append(pygame.key.key_code(name))
+                        except Exception:
+                            pass
+            else:
+                try:
+                    codes.append(pygame.key.key_code(name))
+                except Exception:
+                    pass
+        # 3) Valores por defecto (idénticos a los de get_key)
+        defaults = {
+            "move_up": pygame.K_UP,
+            "move_down": pygame.K_DOWN,
+            "move_left": pygame.K_LEFT,
+            "move_right": pygame.K_RIGHT,
+            "spell_lightball": pygame.K_q,
+            "spell_slash": pygame.K_e,
+            "spell_healing_aura": pygame.K_x,
+            "spell_darkball": pygame.K_1,
+            "spell_iceball": pygame.K_2,
+            "spell_arcane_flame": pygame.K_c,
+            "spell_firework_launch": pygame.K_v,
+            "spell_smoke": pygame.K_f,
+            "spell_smoke_emitter": pygame.K_g,
+            "spell_sphere_magic_shield": pygame.K_t,
+            "spell_teleport": pygame.K_j,
+            "pause": pygame.K_ESCAPE,
+            "toggle_spawner_editor": pygame.K_F3,
+            "toggle_spells_editor": pygame.K_F4,
+            "toggle_entities_editor": pygame.K_F5,
+            "toggle_inventory_editor": pygame.K_F6,
+            "toggle_item_editor": pygame.K_F7,
+            "toggle_tile_editor": pygame.K_F8,
+            "toggle_building_editor": pygame.K_F10,
+            "toggle_map_editor": pygame.K_F11,
+            "toggle_fsm_editor": pygame.K_F12,
+            "toggle_inventory": pygame.K_i,
+            "select_class": pygame.K_F2,
+        }
+        if action in defaults:
+            codes.append(defaults[action])
+        # 4) Deduplicar preservando orden
+        seen = set()
+        uniq: list[int] = []
+        for c in codes:
+            if not isinstance(c, int):
+                continue
+            if c in seen:
+                continue
+            seen.add(c)
+            uniq.append(c)
+        return uniq
+
     def set_key(self, action, keyname):
         # Maintain backward compatibility while enforcing global uniqueness
         self.set_binding(action, keyname)
@@ -269,7 +355,7 @@ class InputConfig:
             return binding_key[len('mouse_'):]
         return binding_key
 
-    def get_key_for_binding(self, binding_key: str) -> int | None:
+    def get_key_for_binding(self, binding_key: str) -> Optional[int]:
         """Resolve pygame keycode for a K_* binding entry; returns None if unbound or non-key."""
         name = self.bindings.get(binding_key, "")
         if not name or not isinstance(name, str):
@@ -287,7 +373,7 @@ class InputConfig:
                     return None
         return None
 
-    def get_mouse_button_for_binding(self, binding_key: str) -> int | None:
+    def get_mouse_button_for_binding(self, binding_key: str) -> Optional[int]:
         """Resolve mouse button index for an M_* binding entry; returns None if unbound or non-mouse."""
         name = self.bindings.get(binding_key, "")
         if not name or not isinstance(name, str):
