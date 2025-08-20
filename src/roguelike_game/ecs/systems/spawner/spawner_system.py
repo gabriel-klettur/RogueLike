@@ -82,10 +82,23 @@ class SpawnerRuntimeSystem:
         for eid in world.get_entities_with('SpawnerConfig', 'SpawnerState'):
             cfg = comps['SpawnerConfig'][eid]
             st = comps['SpawnerState'][eid]
+            policy = getattr(cfg, 'policy', {}) or {}
+            looping = bool(policy.get('loop') or policy.get('repeat') or policy.get('restart_on_done'))
 
-            # Skip if already finished
+            # Handle finished: either stop or auto-restart if looping is enabled
             if getattr(st, 'finished', False):
-                continue
+                if looping:
+                    st.finished = False
+                    st.current_wave_idx = 0
+                    st.spawned_this_wave = False
+                    st.expected_this_wave = 0
+                    try:
+                        st.current_wave_entities.clear()
+                    except Exception:
+                        st.current_wave_entities = set()
+                    st.cooldown_remaining = max(st.cooldown_remaining, getattr(cfg, 'cooldown_frames', 0))
+                else:
+                    continue
 
             # Only run if started and there is at least one wave
             if not st.started or not cfg.waves:
@@ -110,13 +123,21 @@ class SpawnerRuntimeSystem:
                     st.current_wave_idx += 1
                     st.spawned_this_wave = False
                     st.expected_this_wave = 0
-                    # If no more waves, mark finished
+                    # If no more waves, either loop or mark finished
                     if st.current_wave_idx >= len(cfg.waves):
-                        st.finished = True
-                        logger.info(f"[Spawner] {cfg.template_id}:{eid} all waves completed")
-                        continue
-                    # Small delay before next wave
-                    st.cooldown_remaining = max(st.cooldown_remaining, getattr(cfg, 'cooldown_frames', 0))
+                        if looping:
+                            st.current_wave_idx = 0
+                            st.spawned_this_wave = False
+                            st.expected_this_wave = 0
+                            st.cooldown_remaining = max(st.cooldown_remaining, getattr(cfg, 'cooldown_frames', 0))
+                            logger.info(f"[Spawner] {cfg.template_id}:{eid} loop restart")
+                        else:
+                            st.finished = True
+                            logger.info(f"[Spawner] {cfg.template_id}:{eid} all waves completed")
+                            continue
+                    else:
+                        # Small delay before next wave
+                        st.cooldown_remaining = max(st.cooldown_remaining, getattr(cfg, 'cooldown_frames', 0))
                 else:
                     # Still waiting for monsters to be eliminated or none actually spawned yet
                     continue
@@ -136,8 +157,15 @@ class SpawnerRuntimeSystem:
                 logger.info(f"[Spawner] {cfg.template_id}:{eid} wave {wave_num}/{total_waves} completed (empty)")
                 st.current_wave_idx += 1
                 if st.current_wave_idx >= len(cfg.waves):
-                    st.finished = True
-                    logger.info(f"[Spawner] {cfg.template_id}:{eid} all waves completed")
+                    if looping:
+                        st.current_wave_idx = 0
+                        st.spawned_this_wave = False
+                        st.expected_this_wave = 0
+                        st.cooldown_remaining = max(st.cooldown_remaining, getattr(cfg, 'cooldown_frames', 0))
+                        logger.info(f"[Spawner] {cfg.template_id}:{eid} loop restart")
+                    else:
+                        st.finished = True
+                        logger.info(f"[Spawner] {cfg.template_id}:{eid} all waves completed")
                 else:
                     st.cooldown_remaining = cfg.cooldown_frames
                 continue
@@ -238,8 +266,18 @@ class SpawnerRuntimeSystem:
                 st.spawned_this_wave = False
                 st.expected_this_wave = 0
                 if st.current_wave_idx >= len(cfg.waves):
-                    st.finished = True
-                    logger.info(f"[Spawner] {cfg.template_id}:{eid} all waves completed")
+                    # End reached: loop or finish
+                    policy = getattr(cfg, 'policy', {}) or {}
+                    looping = bool(policy.get('loop') or policy.get('repeat') or policy.get('restart_on_done'))
+                    if looping:
+                        st.current_wave_idx = 0
+                        st.spawned_this_wave = False
+                        st.expected_this_wave = 0
+                        st.cooldown_remaining = max(st.cooldown_remaining, getattr(cfg, 'cooldown_frames', 0))
+                        logger.info(f"[Spawner] {cfg.template_id}:{eid} loop restart")
+                    else:
+                        st.finished = True
+                        logger.info(f"[Spawner] {cfg.template_id}:{eid} all waves completed")
                 else:
                     st.cooldown_remaining = cfg.cooldown_frames
             else:

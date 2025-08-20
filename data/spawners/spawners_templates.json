@@ -11,7 +11,8 @@
       "mode": "periodic",
       "cooldown_s": 10.0,
       "max_active": 0,
-      "persistent": false
+      "persistent": false,
+      "restart_on_done": true
     },
     "waves": [
       {
@@ -38,7 +39,8 @@
       "mode": "periodic",
       "cooldown_s": 1,
       "max_active": 0,
-      "persistent": false
+      "persistent": false,
+      "restart_on_done": true
     },
     "waves": [
       {
@@ -65,7 +67,8 @@
       "mode": "periodic",
       "cooldown_s": 1.0,
       "max_active": 0,
-      "persistent": false
+      "persistent": false,
+      "restart_on_done": false
     },
     "waves_id": "waves_survival_10"
   }

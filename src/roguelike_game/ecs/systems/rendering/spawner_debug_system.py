@@ -125,9 +125,51 @@ class SpawnerDebugRenderSystem:
 
             # Optional label
             if self.font:
-                label = f"{cfg.template_id}:{'ON' if st.started else 'OFF'}"
-                surf = self.font.render(label, True, (0, 200, 255))
-                screen.blit(surf, (sx + 6, sy - 6))
+                # Build compact multiline info centered on the spawner anchor (inside cyan circle)
+                fps = getattr(config, 'FPS', 60) or 60
+                total_waves = max(1, len(getattr(cfg, 'waves', []) or []))
+                wave_num = min(getattr(st, 'current_wave_idx', 0) + 1, total_waves)
+                live = 0
+                try:
+                    live = len(getattr(st, 'current_wave_entities', set()) or [])
+                except Exception:
+                    live = 0
+                exp = int(getattr(st, 'expected_this_wave', 0) or 0)
+                cd_frames = int(getattr(st, 'cooldown_remaining', 0) or 0)
+                cd_s = cd_frames / float(fps)
+                loop_policy = bool((getattr(cfg, 'policy', {}) or {}).get('loop') or (getattr(cfg, 'policy', {}) or {}).get('repeat') or (getattr(cfg, 'policy', {}) or {}).get('restart_on_done'))
+                mode = str((getattr(cfg, 'policy', {}) or {}).get('mode', '') or '')
+                status = 'ON' if getattr(st, 'started', False) else 'OFF'
+                if getattr(st, 'finished', False):
+                    status = 'DONE'
+
+                lines = [
+                    f"{cfg.template_id}",
+                    f"{status} | wave {wave_num}/{total_waves}",
+                    f"live {live}/{exp} | cd {cd_s:.2f}s",
+                    f"{mode} | loop:{'on' if loop_policy else 'off'}",
+                ]
+
+                # Render multiline with translucent background, centered at (cx, cy)
+                cyan = (0, 200, 255)
+                padding = 4
+                line_gap = 1
+                line_surfs = [self.font.render(t, True, cyan) for t in lines]
+                max_w = max((s.get_width() for s in line_surfs), default=0)
+                total_h = sum((s.get_height() for s in line_surfs)) + line_gap * (len(line_surfs) - 1 if line_surfs else 0)
+                box_w = max_w + padding * 2
+                box_h = total_h + padding * 2
+                box = pygame.Surface((box_w, box_h), pygame.SRCALPHA)
+                # Background and border
+                box.fill((0, 0, 0, 150))
+                pygame.draw.rect(box, cyan, pygame.Rect(0, 0, box_w, box_h), width=1)
+                # Blit lines
+                y = padding
+                for srf in line_surfs:
+                    x = (box_w - srf.get_width()) // 2
+                    box.blit(srf, (x, y))
+                    y += srf.get_height() + line_gap
+                screen.blit(box, (cx - box_w // 2, cy - box_h // 2))
 
         # Draw NPC 'feet' colliders in pink to visualize overlap hitboxes
         pos_map = comps.get('Position', {})
