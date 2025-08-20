@@ -1,8 +1,6 @@
 from __future__ import annotations
 import json
 import math
-import random
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Any, List, Tuple, Optional
 
@@ -33,7 +31,7 @@ def _merge_params(defaults: Dict[str, Any], overrides: Optional[Dict[str, Any]])
 def build_patrol_route(px: int, py: int, patrol_cfg: Optional[Dict[str, Any]], tile_size: int) -> Dict[str, Any]:
     """
     Build a patrol route structure: {"points": List[(x,y)], "dwell_times": Optional[List[float]]}
-    Supports all catalog patterns. New patterns can attach dwell_times for natural pauses.
+    Supports all catalog patterns. New patterns can attach dwell_times for pauses.
     If config is missing/unknown, returns a simple 2-point line and dwell_times=None.
     """
     catalog = _load_catalog()
@@ -156,23 +154,6 @@ def build_patrol_route(px: int, py: int, patrol_cfg: Optional[Dict[str, Any]], t
             th = (2.0 * math.pi * i) / pts
             out.append((cx_right + r * math.cos(th), cy + r * math.sin(th)))
         return {"points": out, "dwell_times": None}
-
-    if pid == "natural":
-        # Dynamic area patrol: FSM will pick a new target after a fixed dwell.
-        # Requirements:
-        #  - Wait 1s, then choose another place to walk
-        #  - Minimum stride length = radius / 4
-        radius = tiles(float(params.get("radius_tiles", 5)))
-        min_step = radius * 0.25
-        # No precomputed points; FSM will sample dynamically within this area.
-        return {
-            "points": [],
-            "dwell_times": None,
-            "pattern_id": "natural",
-            "area_center": (px, py),
-            "area_radius": radius,
-            "min_step": min_step,
-        }
 
     # Unknown pattern -> default
     return default_line()

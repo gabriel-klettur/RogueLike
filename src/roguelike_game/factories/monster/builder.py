@@ -96,10 +96,6 @@ class MonsterBuilder:
         world.components["PatrolRoute"][eid] = PatrolRoute(
             points=route.get("points", []),
             dwell_times=route.get("dwell_times"),
-            pattern_id=route.get("pattern_id"),
-            area_center=route.get("area_center"),
-            area_radius=route.get("area_radius"),
-            min_step=route.get("min_step"),
         )
         # Try per-class FSM via fsm_set in new_monsters.json, then fallback to assignments.json, then Patrol
         fsm_set_id = cfg.get("fsm_set")

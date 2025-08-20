@@ -1,5 +1,4 @@
 import math
-import random
 from roguelike_game.ecs.systems.fsm.state import State
 from roguelike_game.ecs.components.transform.velocity import Velocity
 from roguelike_engine.config.config_tiles import TILE_SIZE
@@ -18,13 +17,11 @@ class PatrolState(State):
         self.current_index = 0
         self.waiting = False
         self.dwell_timer = 0.0
-        self.natural_target = None  # (tx, ty) for dynamic 'natural' pattern
 
     def enter(self, entity):
         self.current_index = 0
         self.waiting = False
         self.dwell_timer = 0.0
-        self.natural_target = None
         # Asegurar cambio inmediato a assets de patrulla al entrar
         try:
             set_mapped_anim(entity, 'PatrolState', None)
@@ -73,10 +70,6 @@ class PatrolState(State):
                 if npc_state:
                     npc_state.fsm.change_state(AggroState(), entity)
                 return
-        # Rama dinámica para patrón 'natural'
-        if getattr(route, 'pattern_id', None) == 'natural':
-            self._execute_natural(entity, dt, pos, speed_cmp, route)
-            return
         # Si está esperando en un waypoint, consumir dwell y mantener anim/velocidad
         if self.waiting:
             dt_val = dt or 0.0
@@ -147,84 +140,6 @@ class PatrolState(State):
             # Asegurar anim base de patrulla
             try:
                 set_mapped_anim(entity, 'PatrolState', None)
-            except Exception:
-                pass
-
-    def _execute_natural(self, entity, dt, pos, speed_cmp, route):
-        """
-        Patrón natural: esperar 1s y luego elegir un nuevo objetivo dentro del radio.
-        Distancia mínima a caminar: radius / 4 (route.min_step).
-        """
-        world = entity.world
-        eid = entity.id
-
-        # Extraer metadatos con valores por defecto seguros
-        cx, cy = (route.area_center if getattr(route, 'area_center', None) else (pos.x, pos.y))
-        radius = float(getattr(route, 'area_radius', 0.0) or 0.0)
-        min_step = float(getattr(route, 'min_step', 0.0) or 0.0)
-
-        # Si estamos esperando, consumir dwell de 1s
-        if self.waiting:
-            self.dwell_timer -= (dt or 0.0)
-            world.components['Velocity'][eid] = Velocity(0, 0)
-            if self.dwell_timer <= 0.0:
-                self.waiting = False
-                # listo para elegir nuevo objetivo
-            else:
-                try:
-                    set_mapped_anim(entity, 'PatrolState', None)
-                except Exception:
-                    pass
-                return
-
-        # Si no estamos esperando y aún no tenemos objetivo, seleccionar uno (moverse inmediatamente al inicio)
-        if self.natural_target is None and not self.waiting:
-            def rand_in_disk():
-                u = random.random()
-                v = random.random()
-                ang = 2.0 * math.pi * v
-                r = radius * math.sqrt(u)
-                return cx + r * math.cos(ang), cy + r * math.sin(ang)
-
-            attempts = 0
-            max_attempts = 200
-            while attempts < max_attempts:
-                attempts += 1
-                tx, ty = rand_in_disk()
-                dx = tx - pos.x
-                dy = ty - pos.y
-                if dx*dx + dy*dy >= (min_step * min_step):
-                    self.natural_target = (tx, ty)
-                    break
-            if self.natural_target is None:
-                # Fallback: punto en el borde al Este del centro
-                self.natural_target = (cx + radius, cy)
-
-        # Mover hacia el objetivo actual
-        tx, ty = self.natural_target
-        dx = tx - pos.x
-        dy = ty - pos.y
-        dist_sq = dx*dx + dy*dy
-        step = speed_cmp.speed * dt if dt else speed_cmp.speed
-        if dist_sq <= step*step:
-            # Llegó: detener y esperar 1s antes de elegir otro
-            self.natural_target = None
-            self.waiting = True
-            self.dwell_timer = 1.0
-            world.components['Velocity'][eid] = Velocity(0, 0)
-            try:
-                set_mapped_anim(entity, 'PatrolState', None)
-            except Exception:
-                pass
-            return
-        else:
-            dist = math.sqrt(dist_sq)
-            vx = dx/dist * step
-            vy = dy/dist * step
-            world.components['Velocity'][eid] = Velocity(vx, vy)
-            try:
-                direction = primary_direction_from_vector(dx, dy)
-                set_mapped_anim(entity, 'PatrolState', direction)
             except Exception:
                 pass
 

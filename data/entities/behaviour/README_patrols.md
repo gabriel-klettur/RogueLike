@@ -83,20 +83,7 @@ El catálogo (`patrols.json`) incluye 5 patrones con `default_params`. A continu
   - `gap_tiles` (number, default `2`): separación entre centros de los bucles.
 - Notas: el bucle izquierdo se recorre horario y el derecho antihorario para formar el lazo cruzado.
 
-### 6) natural (Natural / Guardia de zona)
-- Descripción: patrullaje realista dentro de un radio centrado en el spawn. Genera puntos únicos (no repite cercanos), con desplazamientos largos (al menos el radio) y pausas naturales (dwell) entre tramos.
-- Parámetros:
-  - `radius_tiles` (number, default `5`): radio del área de patrulla (en tiles).
-  - `points` (integer, default `12`): cantidad de waypoints a generar dentro del área.
-  - `min_step_factor` (number, default `1.0`): factor multiplicador del radio para el desplazamiento mínimo entre puntos (min_step = `radius * min_step_factor`).
-  - `avoid_revisit_radius_tiles` (number, default `1.0`): radio mínimo para evitar puntos demasiado cercanos a anteriores (de-duplicación espacial).
-  - `dwell_min_s` (number, default `0.6`): tiempo mínimo de pausa en segundos al llegar a cada waypoint.
-  - `dwell_max_s` (number, default `2.0`): tiempo máximo de pausa en segundos.
-  - `max_attempts` (integer, default `2000`): intentos máximos para generar puntos válidos antes de relajar restricciones.
-- Notas:
-  - Este patrón adjunta `dwell_times` al `PatrolRoute` para que `PatrolState` haga pausas reales.
-  - La selección de puntos es aleatoria uniforme en disco con salvaguardas para distancias mínimas y no-repetición.
-  - Si no se alcanzan suficientes puntos, se rellenan sobre el perímetro para garantizar cobertura sin salir del área.
+
 
 ## Ejemplos de uso por monstruo
 
