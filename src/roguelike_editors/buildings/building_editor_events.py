@@ -33,6 +33,87 @@ class BuildingEditorEventHandler:
         if events is None:
             events = pygame.event.get()
         for ev in events:
+            # Early guard: iniciar drag del panel del picker con RMB dentro del panel pero fuera del grid/scrollbar
+            if (
+                ev.type == pygame.MOUSEBUTTONDOWN
+                and getattr(ev, 'button', None) == 3
+                and getattr(self.editor, 'picker_active', False)
+            ):
+                try:
+                    panel_rect = getattr(self.editor, 'picker_panel_rect', None)
+                    if panel_rect:
+                        mx, my = getattr(ev, 'pos', (None, None))
+                        if mx is not None and panel_rect.collidepoint(mx, my):
+                            m = int(getattr(self.editor, 'picker_internal_margin', 8) or 8)
+                            pad = int(getattr(self.editor, 'picker_padding', 8) or 8)
+                            cw = int(getattr(self.editor, 'picker_cell_w', 64) or 64)
+                            ch = int(getattr(self.editor, 'picker_cell_h', 64) or 64)
+                            footer_h = int(getattr(self.editor, 'picker_footer_h', 0) or 0)
+                            needs_scroll = bool(getattr(self.editor, 'picker_needs_scroll', False))
+                            sb_pad = 4
+                            sb_w = int(getattr(self.editor, 'picker_scrollbar_w', 10) or 10) if needs_scroll else 0
+                            gx = panel_rect.left + m
+                            gy = panel_rect.top + m
+                            gw = max(0, panel_rect.w - 2 * m)
+                            gh = max(0, panel_rect.h - 2 * m - footer_h)
+                            gw_effective = max(0, gw - (sb_w + (sb_pad if needs_scroll else 0)))
+                            track_rect = getattr(self.editor, 'picker_scroll_track_rect', None)
+                            in_grid = pygame.Rect(gx, gy, gw, gh).collidepoint(mx, my)
+                            in_scroll = needs_scroll and (
+                                (track_rect and pygame.Rect(track_rect).collidepoint(mx, my)) or (mx >= gx + gw_effective)
+                            )
+                            if (not in_grid) and (not in_scroll):
+                                self.editor.picker_dragging_panel = True
+                                self.editor.picker_drag_offset = (mx - panel_rect.left, my - panel_rect.top)
+                                if getattr(self.editor, 'picker_manual_pos', None) is None:
+                                    self.editor.picker_manual_pos = (panel_rect.left, panel_rect.top)
+                                # No consumir aquí; dejar que el picker procese también si está activo
+                except Exception:
+                    pass
+            # Si el picker está activo y el mouse está sobre su panel, delegar PRIMERO al picker
+            if ev.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP, pygame.MOUSEMOTION, pygame.MOUSEWHEEL) and getattr(self.editor, 'picker_active', False):
+                try:
+                    panel_rect = getattr(self.editor, 'picker_panel_rect', None)
+                    if panel_rect:
+                        if ev.type == pygame.MOUSEWHEEL:
+                            mx, my = pygame.mouse.get_pos()
+                        else:
+                            mx, my = getattr(ev, 'pos', (None, None))
+                        if mx is not None and panel_rect.collidepoint(mx, my):
+                            # Robust guard: si es RMB down dentro del panel pero fuera del grid/scrollbar,
+                            # marcar el flag de arrastre del panel inmediatamente (evita que el orden de delegación lo impida)
+                            if ev.type == pygame.MOUSEBUTTONDOWN and getattr(ev, 'button', None) == 3:
+                                try:
+                                    m = int(getattr(self.editor, 'picker_internal_margin', 8) or 8)
+                                    pad = int(getattr(self.editor, 'picker_padding', 8) or 8)
+                                    cw = int(getattr(self.editor, 'picker_cell_w', 64) or 64)
+                                    ch = int(getattr(self.editor, 'picker_cell_h', 64) or 64)
+                                    footer_h = int(getattr(self.editor, 'picker_footer_h', 0) or 0)
+                                    needs_scroll = bool(getattr(self.editor, 'picker_needs_scroll', False))
+                                    sb_pad = 4
+                                    sb_w = int(getattr(self.editor, 'picker_scrollbar_w', 10) or 10) if needs_scroll else 0
+                                    gx = panel_rect.left + m
+                                    gy = panel_rect.top + m
+                                    gw = max(0, panel_rect.w - 2 * m)
+                                    gh = max(0, panel_rect.h - 2 * m - footer_h)
+                                    # Scrollbar track
+                                    gw_effective = max(0, gw - (sb_w + (sb_pad if needs_scroll else 0)))
+                                    track_rect = getattr(self.editor, 'picker_scroll_track_rect', None)
+                                    in_grid = pygame.Rect(gx, gy, gw, gh).collidepoint(mx, my)
+                                    in_scroll = needs_scroll and (
+                                        (track_rect and pygame.Rect(track_rect).collidepoint(mx, my)) or (mx >= gx + gw_effective)
+                                    )
+                                    if (not in_grid) and (not in_scroll):
+                                        self.editor.picker_dragging_panel = True
+                                        self.editor.picker_drag_offset = (mx - panel_rect.left, my - panel_rect.top)
+                                        if getattr(self.editor, 'picker_manual_pos', None) is None:
+                                            self.editor.picker_manual_pos = (panel_rect.left, panel_rect.top)
+                                except Exception:
+                                    pass
+                            self.picker_events.handle(ev, camera)
+                            continue
+                except Exception:
+                    pass
             # Delegar primero a la toolbar SOLO para eventos de mouse (no teclas)
             if ev.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP, pygame.MOUSEMOTION, pygame.MOUSEWHEEL):
                 try:
