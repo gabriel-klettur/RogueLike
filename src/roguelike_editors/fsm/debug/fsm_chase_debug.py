@@ -4,6 +4,7 @@ from roguelike_game.ecs.utils.position_utils import compute_foot_tile
 from roguelike_game.ecs.utils.render_utils import draw_sprite_bbox
 from roguelike_engine.utils.benchmark import benchmark
 import roguelike_engine.config.config as config
+from roguelike_game.ecs.utils.collider_utils import build_collider_rect
 
 class ChaseDebugSystem:
     """
@@ -40,8 +41,8 @@ class ChaseDebugSystem:
             mc = comps.get('MultiCollider', {}).get(eid)
             if mc and 'feet' in mc.colliders:
                 feet = mc.colliders['feet']
-                cx = pos.x + feet.offset_x + feet.width / 2
-                cy = pos.y + feet.offset_y + feet.height / 2
+                rect = build_collider_rect(pos.x, pos.y, feet)
+                cx, cy = rect.center
             else:
                 sprite = comps.get('Sprite', {}).get(eid)
                 if sprite:
@@ -62,8 +63,8 @@ class ChaseDebugSystem:
             if not pos: continue
             if mc and 'feet' in mc.colliders:
                 feet = mc.colliders['feet']
-                cx = pos.x + feet.offset_x + feet.width / 2
-                cy = pos.y + feet.offset_y + feet.height / 2
+                rect = build_collider_rect(pos.x, pos.y, feet)
+                cx, cy = rect.center
             else:
                 sprite = comps.get('Sprite', {}).get(eid)
                 if sprite:

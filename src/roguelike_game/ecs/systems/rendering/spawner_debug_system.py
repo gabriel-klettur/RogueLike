@@ -8,7 +8,8 @@ import math
 import roguelike_engine.config.config as config
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_engine.config.config_tiles import TILE_SIZE
-from roguelike_game.ecs.utils.collider_utils import build_collider_rect
+from roguelike_game.ecs.utils.collider_utils import build_collider_rect, get_circle_world
+from roguelike_game.ecs.components.physics.circle_collider import CircleCollider
 
 
 class SpawnerDebugRenderSystem:
@@ -19,6 +20,38 @@ class SpawnerDebugRenderSystem:
         self._last_pos: dict[int, tuple[float, float]] = {}
         self._last_dir: dict[int, tuple[float, float]] = {}
         self._stuck_frames: dict[int, int] = {}
+
+    def _auto_bottom_band_metrics(self, mask) -> tuple[int, int]:
+        """Return (auto_center_x, avg_width) on the bottom band using weighted centroid of opaque pixels.
+        Mirrors factory logic so cross matches feet center X.
+        """
+        try:
+            w, h = mask.get_size()
+        except Exception:
+            return 0, 0
+        if w <= 0 or h <= 0:
+            return 0, 0
+        band_h = max(6, min(max(6, h // 5), 28))
+        y_start = h - band_h
+        total_weight = 0.0
+        sum_x = 0.0
+        sum_width = 0.0
+        for y in range(h - 1, y_start - 1, -1):
+            weight = 1.0 + (y - y_start) * 0.3
+            row_count = 0
+            for x in range(w):
+                if mask.get_at((x, y)):
+                    sum_x += x * weight
+                    row_count += 1
+            if row_count > 0:
+                total_weight += weight * row_count
+                sum_width += (row_count * weight)
+        if total_weight <= 0.0:
+            return w // 2, 0
+        cx = int(round(sum_x / total_weight))
+        denom = max(1.0, (band_h))
+        avg_width = int(round((sum_width / denom)))
+        return max(0, min(w - 1, cx)), max(0, avg_width)
 
     def _ensure_font(self):
         if self.font is None:
@@ -122,72 +155,125 @@ class SpawnerDebugRenderSystem:
             pos = pos_map.get(nid)
             if not pos:
                 continue
-            rect_world = build_collider_rect(pos.x, pos.y, feet)
-            # Map to screen space by transforming both corners (prevents double-zoom)
-            tlx, tly = camera.apply((rect_world.x, rect_world.y))
-            brx, bry = camera.apply((rect_world.x + rect_world.w, rect_world.y + rect_world.h))
-            sx = int(tlx)
-            sy = int(tly)
-            sw = max(1, int(brx - tlx))
-            sh = max(1, int(bry - tly))
-            # Filled translucent overlay
-            overlay = pygame.Surface((sw, sh), pygame.SRCALPHA)
-            overlay.fill(pink_fill)
-            screen.blit(overlay, (sx, sy))
-            # Outline
-            pygame.draw.rect(screen, pink_outline, pygame.Rect(sx, sy, sw, sh), width=2)
+            zoom = getattr(camera, 'zoom', 1.0) or 1.0
+            if isinstance(feet, CircleCollider):
+                # Draw true circle overlay and outline
+                cx_w, cy_w, r_w = get_circle_world(pos.x, pos.y, feet)
+                cx_s, cy_s = camera.apply((cx_w, cy_w))
+                sr = max(1, int(r_w * zoom))
+                size = sr * 2
+                overlay = pygame.Surface((size, size), pygame.SRCALPHA)
+                pygame.draw.circle(overlay, pink_fill, (sr, sr), sr, width=0)
+                pygame.draw.circle(overlay, pink_outline, (sr, sr), sr, width=2)
+                screen.blit(overlay, (int(cx_s) - sr, int(cy_s) - sr))
 
-            # Direction indicator inside feet-collider: circle + radius line
-            vel = vel_map.get(nid)
-            if vel is not None:
-                cx = sx + sw // 2
-                cy = sy + sh // 2
-                # radius slightly inset from the pink outline
-                r = max(3, min(sw, sh) // 2 - 3)
-                if r > 2:
-                    pygame.draw.circle(screen, blue_debug, (cx, cy), r, width=2)
-                # Decide which direction vector and color to use
-                vx = getattr(vel, 'vx', 0.0) or 0.0
-                vy = getattr(vel, 'vy', 0.0) or 0.0
-                mag = math.hypot(vx, vy)
-                # Compute world displacement since last frame
-                lastp = self._last_pos.get(nid)
-                disp = 0.0
-                if lastp is not None:
-                    disp = math.hypot((pos.x - lastp[0]), (pos.y - lastp[1]))
-                # Thresholds
-                vel_eps = 0.01
-                move_eps = 0.25  # pixels per frame considered as "not moving"
+                # Visualize the exact alignment counterpart: bottom-band center from body mask
+                body = multi.colliders.get('body')
+                if body is not None and getattr(body, 'mask', None) is not None:
+                    auto_cx, _ = self._auto_bottom_band_metrics(body.mask)
+                    try:
+                        bw, bh = body.mask.get_size()
+                    except Exception:
+                        bw, bh = 0, 0
+                    # DEBUG: hot-fix vertical alignment by syncing feet.offset_x to centroid
+                    expected_x = getattr(body, 'offset_x', 0) + auto_cx
+                    if abs(getattr(feet, 'offset_x', 0) - expected_x) >= 1:
+                        feet.offset_x = expected_x
+                    anchor_wx = pos.x + expected_x
+                    anchor_wy = pos.y + getattr(body, 'offset_y', 0) + max(0, bh - 1)
+                    ax, ay = camera.apply((anchor_wx, anchor_wy))
+                    ax = int(ax); ay = int(ay)
+                    cross = 5
+                    pygame.draw.line(screen, blue_debug, (ax - cross, ay), (ax + cross, ay), 2)
+                    pygame.draw.line(screen, blue_debug, (ax, ay - cross), (ax, ay + cross), 2)
+                    pygame.draw.line(screen, blue_debug, (ax, ay), (int(cx_s), int(cy_s)), 1)
 
-                blocked = False
-                dir_vec = None
-
-                if mag > vel_eps:
-                    # Normalize current velocity as direction
-                    dir_vec = (vx / mag, vy / mag)
-                    # Persist direction as last known
-                    self._last_dir[nid] = dir_vec
-                    # Detect stuck: trying to move but position barely changes for several frames
-                    if disp <= move_eps and lastp is not None:
-                        self._stuck_frames[nid] = self._stuck_frames.get(nid, 0) + 1
+                # Direction indicator using circle center and radius
+                vel = vel_map.get(nid)
+                if vel is not None:
+                    cx = int(cx_s)
+                    cy = int(cy_s)
+                    r = max(3, sr - 3)
+                    if r > 2:
+                        pygame.draw.circle(screen, blue_debug, (cx, cy), r, width=2)
+                    vx = getattr(vel, 'vx', 0.0) or 0.0
+                    vy = getattr(vel, 'vy', 0.0) or 0.0
+                    mag = math.hypot(vx, vy)
+                    lastp = self._last_pos.get(nid)
+                    disp = 0.0
+                    if lastp is not None:
+                        disp = math.hypot((pos.x - lastp[0]), (pos.y - lastp[1]))
+                    vel_eps = 0.01
+                    move_eps = 0.25
+                    dir_vec = None
+                    if mag > vel_eps:
+                        dir_vec = (vx / mag, vy / mag)
+                        self._last_dir[nid] = dir_vec
+                        if disp <= move_eps and lastp is not None:
+                            self._stuck_frames[nid] = self._stuck_frames.get(nid, 0) + 1
+                        else:
+                            self._stuck_frames[nid] = 0
                     else:
-                        self._stuck_frames[nid] = 0
-                else:
-                    # No current velocity -> use last known direction if available
-                    dir_vec = self._last_dir.get(nid)
-                    # Slowly decay stuck counter when idle
-                    if self._stuck_frames.get(nid, 0) > 0:
-                        self._stuck_frames[nid] = max(0, self._stuck_frames[nid] - 1)
+                        dir_vec = self._last_dir.get(nid)
+                        if self._stuck_frames.get(nid, 0) > 0:
+                            self._stuck_frames[nid] = max(0, self._stuck_frames[nid] - 1)
+                    blocked = self._stuck_frames.get(nid, 0) >= 5
+                    color = red_blocked if blocked else (blue_debug if mag > vel_eps else blue_faint)
+                    if dir_vec and r > 2:
+                        dx = int(dir_vec[0] * r)
+                        dy = int(dir_vec[1] * r)
+                        pygame.draw.line(screen, color, (cx, cy), (cx + dx, cy + dy), 2)
+                    else:
+                        pygame.draw.circle(screen, color, (cx, cy), 2)
+                    self._last_pos[nid] = (pos.x, pos.y)
+            else:
+                # Fallback: draw rect AABB as before
+                rect_world = build_collider_rect(pos.x, pos.y, feet)
+                tlx, tly = camera.apply((rect_world.x, rect_world.y))
+                brx, bry = camera.apply((rect_world.x + rect_world.w, rect_world.y + rect_world.h))
+                sx = int(tlx)
+                sy = int(tly)
+                sw = max(1, int(brx - tlx))
+                sh = max(1, int(bry - tly))
+                overlay = pygame.Surface((sw, sh), pygame.SRCALPHA)
+                overlay.fill(pink_fill)
+                screen.blit(overlay, (sx, sy))
+                pygame.draw.rect(screen, pink_outline, pygame.Rect(sx, sy, sw, sh), width=2)
 
-                blocked = self._stuck_frames.get(nid, 0) >= 5
-                color = red_blocked if blocked else (blue_debug if mag > vel_eps else blue_faint)
-
-                if dir_vec and r > 2:
-                    dx = int(dir_vec[0] * r)
-                    dy = int(dir_vec[1] * r)
-                    pygame.draw.line(screen, color, (cx, cy), (cx + dx, cy + dy), 2)
-                else:
-                    pygame.draw.circle(screen, color, (cx, cy), 2)
-
-                # Update last position for next frame
-                self._last_pos[nid] = (pos.x, pos.y)
+                vel = vel_map.get(nid)
+                if vel is not None:
+                    cx = sx + sw // 2
+                    cy = sy + sh // 2
+                    r = max(3, min(sw, sh) // 2 - 3)
+                    if r > 2:
+                        pygame.draw.circle(screen, blue_debug, (cx, cy), r, width=2)
+                    vx = getattr(vel, 'vx', 0.0) or 0.0
+                    vy = getattr(vel, 'vy', 0.0) or 0.0
+                    mag = math.hypot(vx, vy)
+                    lastp = self._last_pos.get(nid)
+                    disp = 0.0
+                    if lastp is not None:
+                        disp = math.hypot((pos.x - lastp[0]), (pos.y - lastp[1]))
+                    vel_eps = 0.01
+                    move_eps = 0.25
+                    dir_vec = None
+                    if mag > vel_eps:
+                        dir_vec = (vx / mag, vy / mag)
+                        self._last_dir[nid] = dir_vec
+                        if disp <= move_eps and lastp is not None:
+                            self._stuck_frames[nid] = self._stuck_frames.get(nid, 0) + 1
+                        else:
+                            self._stuck_frames[nid] = 0
+                    else:
+                        dir_vec = self._last_dir.get(nid)
+                        if self._stuck_frames.get(nid, 0) > 0:
+                            self._stuck_frames[nid] = max(0, self._stuck_frames[nid] - 1)
+                    blocked = self._stuck_frames.get(nid, 0) >= 5
+                    color = red_blocked if blocked else (blue_debug if mag > vel_eps else blue_faint)
+                    if dir_vec and r > 2:
+                        dx = int(dir_vec[0] * r)
+                        dy = int(dir_vec[1] * r)
+                        pygame.draw.line(screen, color, (cx, cy), (cx + dx, cy + dy), 2)
+                    else:
+                        pygame.draw.circle(screen, color, (cx, cy), 2)
+                    self._last_pos[nid] = (pos.x, pos.y)
