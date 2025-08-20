@@ -19,6 +19,15 @@
               "required": ["stats", "assets"],
               "properties": {
                 "fsm_set": { "type": ["string", "null"] },
+                "patrol": {
+                  "type": ["object", "null"],
+                  "properties": {
+                    "id": { "type": "string" },
+                    "type": { "type": "string" },
+                    "params": { "type": "object", "additionalProperties": true }
+                  },
+                  "additionalProperties": true
+                },
                 "stats": {
                   "type": "object",
                   "properties": {

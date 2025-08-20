@@ -3,10 +3,11 @@ Builder para crear la entidad monstruo usando coordenadas en píxeles.
 """
 from roguelike_game.factories.monster.cache import _load_caches_once
 from roguelike_game.factories.monster.config import MONSTER_DEFS
-from roguelike_game.factories.monster.sprite_loader import create_sprite_component, create_patrol_components
+from roguelike_game.factories.monster.sprite_loader import create_sprite_component, create_movement_components
 from roguelike_game.factories.monster.physics import create_physics_components, create_collider_components, create_zlayer_component
 from roguelike_game.factories.monster.calibrator import calibrate_tile_position
 from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_game.factories.monster.behaviour_loader import build_patrol_points
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.rendering.sprite import Sprite
 from roguelike_game.ecs.components.transform.scale import Scale
@@ -56,9 +57,8 @@ class MonsterBuilder:
         # Position
         world.components["Position"][eid] = Position(x, y)
 
-        # Patrol, MovementSpeed, Animator
-        patrol, movement, animator = create_patrol_components(x, y, monster_type, cfg)
-        world.components["Patrol"][eid] = patrol
+        # MovementSpeed, Animator (Patrol component removed)
+        movement, animator = create_movement_components(x, y, monster_type, cfg)
         world.components["MovementSpeed"][eid] = movement
         world.components["Animator"][eid] = animator
 
@@ -91,7 +91,8 @@ class MonsterBuilder:
         world.components["DamageConfig"][eid] = DamageConfig(cfg["damage_duration"])
 
         # FSM: PatrolRoute & NPCState
-        route_points = [(x, y), (x + 5 * TILE_SIZE, y)]
+        patrol_cfg = cfg.get("patrol")
+        route_points = build_patrol_points(x, y, patrol_cfg, TILE_SIZE)
         world.components["PatrolRoute"][eid] = PatrolRoute(route_points)
         # Try per-class FSM via fsm_set in new_monsters.json, then fallback to assignments.json, then Patrol
         fsm_set_id = cfg.get("fsm_set")
