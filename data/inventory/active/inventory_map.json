@@ -1,154 +1,26 @@
 {
-<<<<<<< Updated upstream
-  "6c8a1b00-f5fe-495a-9a9a-e408641f1ea1": {
+  "44130241-64a0-4205-ae5b-3294d9be0007": {
     "item_id": "gold",
-    "quantity": 4,
+    "quantity": 6,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "z_layer": 3,
+    "tile": {
+      "x": 27,
+      "y": 12
+    },
+    "created_at": 1755686261.391275
+  },
+  "5799bbb7-af83-48c5-9c3d-af4697f053bd": {
+    "item_id": "wood",
+    "quantity": 1,
     "zone_id": "Forest",
     "schema_version": "1.0.0",
     "z_layer": 3,
     "tile": {
       "x": 28,
-      "y": 15
+      "y": 12
     },
-    "created_at": 1755685666.326016
-  },
-  "a5b666ab-885c-4398-b334-58a9db356510": {
-    "item_id": "wood",
-    "quantity": 1,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "z_layer": 3,
-    "tile": {
-      "x": 29,
-      "y": 15
-    },
-    "created_at": 1755685666.3270295
-  },
-  "0f4b77c8-531a-4af7-a0e9-754c8d770eec": {
-    "item_id": "experience_orb",
-    "quantity": 1,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "z_layer": 3,
-    "position": {
-      "x": 932,
-      "y": 2119
-    },
-    "created_at": 1755685666.327417
-  },
-  "e10a86c4-3b51-4aed-93e8-f10a29f9e926": {
-    "item_id": "gold",
-    "quantity": 3,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "z_layer": 3,
-    "tile": {
-      "x": 29,
-      "y": 17
-    },
-    "created_at": 1755685666.4647171
-  },
-  "ef3a778e-fe5a-47fc-a7c3-5138fd326706": {
-    "item_id": "experience_orb",
-=======
-  "1122a34b-2fe2-4c50-8334-6681daecdd9e": {
-    "item_id": "gold",
->>>>>>> Stashed changes
-    "quantity": 2,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "z_layer": 3,
-    "tile": {
-<<<<<<< Updated upstream
-      "x": 30,
-      "y": 15
-    },
-    "created_at": 1755685666.4652324
-  },
-  "4349800e-c61e-48ff-a07a-a1b7b4521567": {
-=======
-      "x": 25,
-      "y": 15
-    },
-    "created_at": 1755682664.3898475
-  },
-  "2f73789e-bbe9-4ff8-8d3d-b71b968f0a20": {
-    "item_id": "gold",
-    "quantity": 2,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "z_layer": 3,
-    "tile": {
-      "x": 26,
-      "y": 17
-    },
-    "created_at": 1755682664.7776628
-  },
-  "8fb6692f-ec40-4997-9996-f9af40782b46": {
-    "item_id": "gold",
-    "quantity": 5,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "z_layer": 3,
-    "tile": {
-      "x": 15,
-      "y": 8
-    },
-    "created_at": 1755682864.2492518
-  },
-  "93713ee2-ae42-4758-ac5b-5ed09f4cb703": {
->>>>>>> Stashed changes
-    "item_id": "wood",
-    "quantity": 1,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "z_layer": 3,
-    "tile": {
-<<<<<<< Updated upstream
-      "x": 30,
-      "y": 17
-    },
-    "created_at": 1755685666.4656029
-  },
-  "1c36fd7e-ff85-46d9-a3d7-52f5960dbbf6": {
-    "item_id": "experience_orb",
-=======
-      "x": 16,
-      "y": 8
-    },
-    "created_at": 1755682864.250476
-  },
-  "1e95db53-aa90-4015-8192-22d1a9050e29": {
-    "item_id": "gold",
-    "quantity": 5,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "z_layer": 3,
-    "tile": {
-      "x": 23,
-      "y": 18
-    },
-    "created_at": 1755682884.0028584
-  },
-  "4785eb43-1ab4-4245-a752-b5a5bf2d7710": {
-    "item_id": "wood",
->>>>>>> Stashed changes
-    "quantity": 1,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "z_layer": 3,
-<<<<<<< Updated upstream
-    "position": {
-      "x": 960,
-      "y": 2120
-    },
-    "created_at": 1755685666.4660008
-=======
-    "tile": {
-      "x": 24,
-      "y": 18
-    },
-    "created_at": 1755682884.0037665
->>>>>>> Stashed changes
+    "created_at": 1755686261.3922188
   }
 }

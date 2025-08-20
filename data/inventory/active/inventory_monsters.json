@@ -1,95 +1,112 @@
 {
-<<<<<<< Updated upstream
-  "dcd1f53c-0c9e-4aee-bb22-afe25b8d4c7a": {
+  "69ebef5f-d5d6-4238-8c24-2b75051aaeb7": {
+    "template_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+    "slots": [
+      {
+        "item": "gold",
+        "quantity": 3
+      },
+      {
+        "item": "experience_orb",
+        "quantity": 3
+      },
+      {
+        "item": "wood",
+        "quantity": 1
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "9aaf4dd1-6f1d-4d81-add5-91f239cf0062": {
+    "template_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+    "slots": [
+      {
+        "item": "gold",
+        "quantity": 6
+      },
+      {
+        "item": "experience_orb",
+        "quantity": 4
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "ad7bb972-542f-42f5-b817-295e41b91d41": {
+    "template_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    "slots": [
+      {
+        "item": "gold",
+        "quantity": 5
+      },
+      {
+        "item": "experience_orb",
+        "quantity": 2
+      },
+      {
+        "item": "wood",
+        "quantity": 1
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "9b1bbb1c-7a93-451d-8e27-b0b667e7a90f": {
     "template_id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
     "slots": [
       {
         "item": "gold",
         "quantity": 4
-=======
-  "a26c8dee-e269-484b-80ac-3f1fe64e6dcc": {
-    "template_id": "11111111-2222-3333-4444-555555555555",
-    "slots": [
-      {
-        "item": "wood",
-        "quantity": 2
-      },
-      {
-        "item": "gold",
-        "quantity": 2
->>>>>>> Stashed changes
-      },
-      {
-        "item": "experience_orb",
-        "quantity": 2
-      },
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-<<<<<<< Updated upstream
-      null,
-=======
->>>>>>> Stashed changes
-      null
-    ],
-    "schema_version": "1.0.0"
-  },
-<<<<<<< Updated upstream
-  "e6319295-765a-417b-8d94-fadd5e86c8db": {
-    "template_id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
-    "slots": [
-      {
-        "item": "gold",
-        "quantity": 3
-      },
-      {
-        "item": "experience_orb",
-        "quantity": 2
-      },
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "schema_version": "1.0.0"
-  },
-  "0b3fb440-c5af-49f2-8a4a-73b2ffada945": {
-    "template_id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
-=======
-  "829a3078-3375-4fb0-851f-e73a41f6a7f9": {
-    "template_id": "33333333-3333-3333-3333-333333333333",
->>>>>>> Stashed changes
-    "slots": [
-      {
-        "item": "gold",
-        "quantity": 2
       },
       {
         "item": "experience_orb",
@@ -116,112 +133,45 @@
     ],
     "schema_version": "1.0.0"
   },
-<<<<<<< Updated upstream
-  "11ec57e7-c5f4-4d2e-8982-338a80e80439": {
-    "template_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+  "4d841d7e-6760-4045-aaa3-155f014897cf": {
+    "template_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
     "slots": [
       {
         "item": "gold",
-        "quantity": 4
-=======
-  "adf5e826-6874-468c-8681-59524726cea3": {
-    "template_id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
-    "slots": [
-      {
-        "item": "gold",
-        "quantity": 2
->>>>>>> Stashed changes
+        "quantity": 5
       },
       {
         "item": "experience_orb",
-        "quantity": 1
-      },
-<<<<<<< Updated upstream
-      {
-        "item": "wood",
-        "quantity": 1
-      },
-=======
-      null,
->>>>>>> Stashed changes
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "schema_version": "1.0.0"
-  },
-<<<<<<< Updated upstream
-  "b80c4333-78ba-4a2d-b8e6-01553a7eb93a": {
-=======
-  "59a73106-94df-4da5-ab95-ddadcdad4472": {
->>>>>>> Stashed changes
-    "template_id": "11111111-2222-3333-4444-555555555555",
-    "slots": [
-      {
-        "item": "wood",
-        "quantity": 3
-      },
-      {
-        "item": "gold",
-<<<<<<< Updated upstream
-        "quantity": 3
-      },
-      {
-        "item": "experience_orb",
-        "quantity": 2
-=======
-        "quantity": 2
-      },
-      {
-        "item": "experience_orb",
-        "quantity": 1
->>>>>>> Stashed changes
-      },
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "schema_version": "1.0.0"
-  },
-<<<<<<< Updated upstream
-  "71ed6abc-48a5-49ae-8bf7-8dfcce2ae402": {
-=======
-  "4ee121a3-2e05-4bc4-90f7-f321c21078fd": {
->>>>>>> Stashed changes
-    "template_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-    "slots": [
-      {
-        "item": "gold",
         "quantity": 4
       },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "b3363176-9b19-42c9-9f65-e5f7c14d6f75": {
+    "template_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    "slots": [
+      {
+        "item": "gold",
+        "quantity": 2
+      },
       {
         "item": "experience_orb",
         "quantity": 1
@@ -249,92 +199,5 @@
       null
     ],
     "schema_version": "1.0.0"
-<<<<<<< Updated upstream
-  },
-  "76ce37b1-3db4-40e9-89b1-242a6cd0d9aa": {
-    "template_id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
-    "slots": [
-      {
-        "item": "gold",
-        "quantity": 2
-      },
-      {
-        "item": "experience_orb",
-        "quantity": 2
-      },
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "schema_version": "1.0.0"
-  },
-  "ddf8fc03-1071-4614-8a16-f7f3a0cee43b": {
-    "template_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-    "slots": [
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "schema_version": "1.0.0"
-  },
-  "67ece855-02cd-48f2-b0f5-34002f9e651a": {
-    "template_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-    "slots": [
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "schema_version": "1.0.0"
-=======
->>>>>>> Stashed changes
   }
 }

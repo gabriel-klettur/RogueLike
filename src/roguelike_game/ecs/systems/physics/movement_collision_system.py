@@ -4,20 +4,14 @@ Handles movement-based collision for entities using their 'feet' collider.
 Checks collisions against solid tiles and buildings, resolving movement per axis.
 """
 import pygame
-<<<<<<< Updated upstream
 from typing import Dict, Optional, Tuple
-=======
->>>>>>> Stashed changes
 from roguelike_game.ecs.utils.collider_utils import (
     build_collider_rect,
     get_circle_world,
     circle_overlaps_rect,
     circle_overlaps_circle,
-<<<<<<< Updated upstream
     circle_rect_mtv,
     circle_circle_mtv,
-=======
->>>>>>> Stashed changes
 )
 from roguelike_game.ecs.components.physics.circle_collider import CircleCollider
 from roguelike_engine.utils.benchmark import benchmark
@@ -172,7 +166,6 @@ class MovementCollisionSystem:
             if isinstance(feet, CircleCollider):
                 # Centro y radio actuales
                 cx, cy, r = get_circle_world(pos.x, pos.y, feet)
-<<<<<<< Updated upstream
                 # Preparar conjuntos de NPCs contra los que colisionar (excluyendo self y estabilizados)
                 others_circles = {i: c for i, c in npc_feet_circles.items() if i != eid and i not in stabilized_ids}
                 others_rects   = {i: rr for i, rr in npc_feet_rects.items() if i != eid and i not in stabilized_ids}
@@ -183,73 +176,6 @@ class MovementCollisionSystem:
                 pos.y += (ny - cy)
                 # Actualizar cache para siguientes entidades del mismo frame
                 npc_feet_circles[eid] = (nx, ny, r)
-=======
-
-                # 3) Resolver movimiento en X
-                if vel.vx != 0:
-                    nx = cx + vel.vx
-                    ny = cy
-                    # Query tiles con el AABB del círculo propuesto
-                    aabb = pygame.Rect(int(nx - r), int(ny - r), int(r * 2), int(r * 2))
-                    nearby = tile_query(aabb)
-                    blocked = any(circle_overlaps_rect(nx, ny, r, tile) for tile in nearby)
-                    if not blocked:
-                        # Verificar colisión con NPCs (omitidos si estabilizados)
-                        check_npc = eid not in stabilized_ids
-                        if check_npc:
-                            # contra círculos
-                            for id2, c in npc_feet_circles.items():
-                                if id2 == eid or id2 in stabilized_ids:
-                                    continue
-                                if circle_overlaps_circle((nx, ny, r), c):
-                                    blocked = True
-                                    break
-                            # contra rects (compatibilidad)
-                            if not blocked:
-                                for id2, rr in npc_feet_rects.items():
-                                    if id2 == eid or id2 in stabilized_ids:
-                                        continue
-                                    if circle_overlaps_rect(nx, ny, r, rr):
-                                        blocked = True
-                                        break
-                    if blocked:
-                        vel.vx = 0
-                    else:
-                        pos.x += vel.vx
-                        cx, cy = nx, ny
-                        npc_feet_circles[eid] = (cx, cy, r)
-
-                # 4) Resolver movimiento en Y
-                if vel.vy != 0:
-                    nx = cx
-                    ny = cy + vel.vy
-                    aabb = pygame.Rect(int(nx - r), int(ny - r), int(r * 2), int(r * 2))
-                    nearby = tile_query(aabb)
-                    blocked = any(circle_overlaps_rect(nx, ny, r, tile) for tile in nearby)
-                    if not blocked:
-                        check_npc = eid not in stabilized_ids
-                        if check_npc:
-                            for id2, c in npc_feet_circles.items():
-                                if id2 == eid or id2 in stabilized_ids:
-                                    continue
-                                if circle_overlaps_circle((nx, ny, r), c):
-                                    blocked = True
-                                    break
-                            if not blocked:
-                                for id2, rr in npc_feet_rects.items():
-                                    if id2 == eid or id2 in stabilized_ids:
-                                        continue
-                                    if circle_overlaps_rect(nx, ny, r, rr):
-                                        blocked = True
-                                        break
-                    if blocked:
-                        vel.vy = 0
-                    else:
-                        pos.y += vel.vy
-                        cx, cy = nx, ny
-                        npc_feet_circles[eid] = (cx, cy, r)
-
->>>>>>> Stashed changes
                 continue  # ya resuelto como círculo
 
             # Rectangular fallback
