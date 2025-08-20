@@ -167,6 +167,7 @@ class SpawnerDebugRenderSystem:
                 pygame.draw.circle(overlay, pink_outline, (sr, sr), sr, width=2)
                 screen.blit(overlay, (int(cx_s) - sr, int(cy_s) - sr))
 
+<<<<<<< Updated upstream
                 # Visualize the exact alignment counterpart: bottom-band center from body mask
                 body = multi.colliders.get('body')
                 if body is not None and getattr(body, 'mask', None) is not None:
@@ -186,6 +187,26 @@ class SpawnerDebugRenderSystem:
                     cross = 5
                     pygame.draw.line(screen, blue_debug, (ax - cross, ay), (ax + cross, ay), 2)
                     pygame.draw.line(screen, blue_debug, (ax, ay - cross), (ax, ay + cross), 2)
+=======
+                # Visualize the alignment counterpart: sprite bottom-center anchor
+                sprites = comps.get('Sprite', {})
+                scales = comps.get('Scale', {})
+                spr = sprites.get(nid)
+                if spr is not None and getattr(spr, 'image', None) is not None:
+                    sw, sh = spr.image.get_size()
+                    scale_val = getattr(scales.get(nid), 'scale', 1.0) if scales.get(nid) is not None else 1.0
+                    sw *= float(scale_val)
+                    sh *= float(scale_val)
+                    anchor_wx = pos.x + sw * 0.5
+                    anchor_wy = pos.y + sh - 1
+                    ax, ay = camera.apply((anchor_wx, anchor_wy))
+                    ax = int(ax); ay = int(ay)
+                    # small blue cross
+                    cross = 5
+                    pygame.draw.line(screen, blue_debug, (ax - cross, ay), (ax + cross, ay), 2)
+                    pygame.draw.line(screen, blue_debug, (ax, ay - cross), (ax, ay + cross), 2)
+                    # line from anchor to circle center
+>>>>>>> Stashed changes
                     pygame.draw.line(screen, blue_debug, (ax, ay), (int(cx_s), int(cy_s)), 1)
 
                 # Direction indicator using circle center and radius

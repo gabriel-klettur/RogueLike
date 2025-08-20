@@ -4,7 +4,11 @@
     "slots": [
       {
         "item": "gold",
+<<<<<<< Updated upstream
         "quantity": 38
+=======
+        "quantity": 182
+>>>>>>> Stashed changes
       },
       null,
       null,

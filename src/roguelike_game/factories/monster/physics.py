@@ -110,6 +110,7 @@ def create_collider_components(sprite, cfg: Dict[str, Any]) -> MultiCollider:
     # Compute size with minimum pixel constraints to avoid zero-sized boxes on small sprites
     feet_w = max(8, int(w * float(width_factor)))
     feet_h = max(6, int(h * float(height_factor)))
+<<<<<<< Updated upstream
     # Optional overrides from config
     stats = cfg.get("stats", {})
     cfg_radius = stats.get("feet_radius")
@@ -124,6 +125,13 @@ def create_collider_components(sprite, cfg: Dict[str, Any]) -> MultiCollider:
     # Auto center to detected bottom support; apply per-variant offset from JSON if needed
     center_x = auto_cx + cfg_dx
     center_y = (h - radius - 1) + cfg_dy
+=======
+    # Derive circle radius from the previous rectangular heuristic
+    radius = max(4, min(feet_w, feet_h) // 2)
+    # Center at bottom-center of the sprite, resting on the base
+    center_x = w // 2
+    center_y = h - radius - 1
+>>>>>>> Stashed changes
     feet = CircleCollider(radius=radius, offset_x=center_x, offset_y=center_y)
     return MultiCollider({"body": body, "feet": feet})
 
