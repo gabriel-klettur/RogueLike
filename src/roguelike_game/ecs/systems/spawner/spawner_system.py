@@ -240,6 +240,19 @@ class SpawnerRuntimeSystem:
                 fallback_max = int(entry.get('spread_fallback_max', max(spread, 8)))
                 min_px_dist = int(entry.get('min_px_distance', 0))
                 min_px_dist_sq = min_px_dist * min_px_dist
+                # Determine placement mode based on template-level spawn_radius
+                sr = getattr(cfg, 'spawn_radius', None)
+                shape = str(getattr(cfg, 'spawner_shape', 'circle') or 'circle').lower()
+                random_mode = False
+                random_radius = 0
+                if isinstance(sr, (int, float)):
+                    random_radius = int(sr)
+                    random_mode = random_radius > 0
+                elif isinstance(sr, str):
+                    s = sr.strip().lower()
+                    if s in {"random", "aleatorio", "aleatoreo"}:
+                        random_mode = True
+                        random_radius = max(1, int(fallback_max))
                 # Apply capacity limit if present
                 if capacity_left is not None:
                     if capacity_left <= 0:
@@ -248,57 +261,144 @@ class SpawnerRuntimeSystem:
                 attempted_total += count
                 for _ in range(count):
                     chosen = None
-                    for tx, ty in self._iter_spiral_tiles(cfg.anchor_tile[0], cfg.anchor_tile[1], fallback_max):
-                        if (tx, ty) in solid or (tx, ty) in building:
-                            continue
-                        if (tx, ty) in npc_tiles or (tx, ty) in reserved_tiles or (tx, ty) in reserved_global:
-                            continue
-                        if map_manager and hasattr(map_manager, 'is_walkable'):
-                            try:
-                                if not map_manager.is_walkable(tx, ty):
+                    ax, ay = cfg.anchor_tile
+                    # Try random-in-area first if enabled
+                    if random_mode:
+                        # Heuristic attempts: proportional to area; circle ~0.785 of square area
+                        square_area = (2 * random_radius + 1) * (2 * random_radius + 1)
+                        approx_area = square_area if shape == 'square' else max(1, int(square_area * 0.6))
+                        attempts = max(25, min(200, approx_area))
+                        for _try in range(attempts):
+                            dx = random.randint(-random_radius, random_radius)
+                            dy = random.randint(-random_radius, random_radius)
+                            if shape != 'square':
+                                # default circle
+                                if dx*dx + dy*dy > random_radius * random_radius:
                                     continue
-                            except Exception:
-                                # If walkability fails, fall back to solid/building checks only
-                                pass
-                        if min_px_dist > 0:
-                            # Candidate pixel center
-                            cx = tx * TILE_SIZE + TILE_SIZE // 2
-                            cy = ty * TILE_SIZE + TILE_SIZE // 2
-                            too_close = False
-                            # Against existing actors
-                            for ntx, nty in npc_tiles:
-                                nx = ntx * TILE_SIZE + TILE_SIZE // 2
-                                ny = nty * TILE_SIZE + TILE_SIZE // 2
-                                dx = cx - nx
-                                dy = cy - ny
-                                if dx*dx + dy*dy < min_px_dist_sq:
-                                    too_close = True
-                                    break
-                            if too_close:
+                            tx = ax + dx
+                            ty = ay + dy
+                            if (tx, ty) in solid or (tx, ty) in building:
                                 continue
-                            # Against already reserved tiles (this wave or globally)
-                            for rtx, rty in reserved_tiles.union(reserved_global):
-                                rx = rtx * TILE_SIZE + TILE_SIZE // 2
-                                ry = rty * TILE_SIZE + TILE_SIZE // 2
-                                dx = cx - rx
-                                dy = cy - ry
-                                if dx*dx + dy*dy < min_px_dist_sq:
-                                    too_close = True
-                                    break
-                            if too_close:
+                            if (tx, ty) in npc_tiles or (tx, ty) in reserved_tiles or (tx, ty) in reserved_global:
                                 continue
-                        chosen = (tx, ty)
-                        break
+                            if map_manager and hasattr(map_manager, 'is_walkable'):
+                                try:
+                                    if not map_manager.is_walkable(tx, ty):
+                                        continue
+                                except Exception:
+                                    pass
+                            if min_px_dist > 0:
+                                cx = tx * TILE_SIZE + TILE_SIZE // 2
+                                cy = ty * TILE_SIZE + TILE_SIZE // 2
+                                too_close = False
+                                for ntx, nty in npc_tiles:
+                                    nx = ntx * TILE_SIZE + TILE_SIZE // 2
+                                    ny = nty * TILE_SIZE + TILE_SIZE // 2
+                                    ddx = cx - nx
+                                    ddy = cy - ny
+                                    if ddx*ddx + ddy*ddy < min_px_dist_sq:
+                                        too_close = True
+                                        break
+                                if too_close:
+                                    continue
+                                for rtx, rty in reserved_tiles.union(reserved_global):
+                                    rx = rtx * TILE_SIZE + TILE_SIZE // 2
+                                    ry = rty * TILE_SIZE + TILE_SIZE // 2
+                                    ddx = cx - rx
+                                    ddy = cy - ry
+                                    if ddx*ddx + ddy*ddy < min_px_dist_sq:
+                                        too_close = True
+                                        break
+                                if too_close:
+                                    continue
+                            chosen = (tx, ty)
+                            break
+                    # If no random choice found (or random disabled), fall back to center-first spiral
+                    if chosen is None:
+                        for tx, ty in self._iter_spiral_tiles(ax, ay, fallback_max):
+                            if (tx, ty) in solid or (tx, ty) in building:
+                                continue
+                            if (tx, ty) in npc_tiles or (tx, ty) in reserved_tiles or (tx, ty) in reserved_global:
+                                continue
+                            if map_manager and hasattr(map_manager, 'is_walkable'):
+                                try:
+                                    if not map_manager.is_walkable(tx, ty):
+                                        continue
+                                except Exception:
+                                    # If walkability fails, fall back to solid/building checks only
+                                    pass
+                            if min_px_dist > 0:
+                                # Candidate pixel center
+                                cx = tx * TILE_SIZE + TILE_SIZE // 2
+                                cy = ty * TILE_SIZE + TILE_SIZE // 2
+                                too_close = False
+                                # Against existing actors
+                                for ntx, nty in npc_tiles:
+                                    nx = ntx * TILE_SIZE + TILE_SIZE // 2
+                                    ny = nty * TILE_SIZE + TILE_SIZE // 2
+                                    dx2 = cx - nx
+                                    dy2 = cy - ny
+                                    if dx2*dx2 + dy2*dy2 < min_px_dist_sq:
+                                        too_close = True
+                                        break
+                                if too_close:
+                                    continue
+                                # Against already reserved tiles (this wave or globally)
+                                for rtx, rty in reserved_tiles.union(reserved_global):
+                                    rx = rtx * TILE_SIZE + TILE_SIZE // 2
+                                    ry = rty * TILE_SIZE + TILE_SIZE // 2
+                                    dx2 = cx - rx
+                                    dy2 = cy - ry
+                                    if dx2*dx2 + dy2*dy2 < min_px_dist_sq:
+                                        too_close = True
+                                        break
+                                if too_close:
+                                    continue
+                            chosen = (tx, ty)
+                            break
                     if chosen is None:
                         continue
                     reserved_tiles.add(chosen)
                     reserved_global.add(chosen)
                     req_eid = world.create_entity()
+                    # Build optional defend area metadata
+                    defend_center = None
+                    defend_radius_px = None
+                    defend_leash = None
+                    defend_shape = None
+                    try:
+                        if getattr(cfg, 'defend_spawn', False):
+                            # Use the same radius decision used for placement
+                            defend_tiles = 0
+                            if isinstance(sr, (int, float)) and int(sr) > 0:
+                                defend_tiles = int(sr)
+                            elif isinstance(sr, str) and str(sr).strip().lower() in {"random", "aleatorio", "aleatoreo"}:
+                                defend_tiles = max(1, int(fallback_max))
+                            if defend_tiles > 0:
+                                ax, ay = cfg.anchor_tile
+                                cx = ax * TILE_SIZE + TILE_SIZE // 2
+                                cy = ay * TILE_SIZE + TILE_SIZE // 2
+                                defend_center = (float(cx), float(cy))
+                                defend_radius_px = float(defend_tiles * TILE_SIZE)
+                                # Leash flag from config (default True)
+                                defend_leash = bool(getattr(cfg, 'defend_leash', True))
+                                # Shape mirrors spawner shape (circle|square)
+                                defend_shape = str(shape)
+                    except Exception:
+                        defend_center = None
+                        defend_radius_px = None
+                        defend_leash = None
+                        defend_shape = None
+
                     comps['SpawnRequest'][req_eid] = SpawnRequest(
                         prototype=proto,
                         position=chosen,
                         spawner_eid=eid,
                         wave_idx=st.current_wave_idx,
+                        defend_center=defend_center,
+                        defend_radius_px=defend_radius_px,
+                        defend_leash=defend_leash,
+                        defend_shape=defend_shape,
                     )
                     total_expected += 1
                     if capacity_left is not None:

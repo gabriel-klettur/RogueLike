@@ -35,6 +35,22 @@ Archivo JSON que contiene una lista de plantillas de spawner.
 Campos por plantilla (MVP):
 - `id` (string): identificador único de la plantilla.
 - `spawner_type` (string): "invisible" | "building". MVP usa "invisible".
+- `spawn_radius` (int | string) OPCIONAL: controla el modo de colocación de spawns.
+  - Si falta, `null` o `0`: modo clásico "centro → espiral" (center-first spiral).
+  - Si es un entero > 0: modo "aleatorio en círculo" dentro de ese radio (en tiles) alrededor de `anchor_tile`.
+  - Si es string en {`"random"`, `"aleatorio"`, `"aleatoreo"`}: modo aleatorio con radio igual a `spread_fallback_max` de cada spawn (por ola).
+- `spawner_shape` (string) OPCIONAL: forma del área aleatoria cuando se usa `spawn_radius`. Valores: `"circle"` (default) o `"square"`.
+  - `"circle"`: los puntos aleatorios se eligen dentro de un círculo de radio `spawn_radius` (tiles).
+  - `"square"`: los puntos aleatorios se eligen dentro del cuadrado circunscrito de lado `2*spawn_radius+1` tiles, centrado en `anchor_tile`.
+- `defend_spawn` (bool) OPCIONAL: si `true`, los NPCs spawneados "defienden" el área del spawner.
+  - La forma del área de defensa respeta `spawner_shape` (`"circle"` por defecto o `"square"`).
+    - circle: radio en píxeles.
+    - square: medio lado en píxeles (el lado completo es `2*defend_radius_px`).
+  - Radio (px):
+    - Si `spawn_radius` es entero > 0: `defend_radius_px = spawn_radius * TILE_SIZE`.
+    - Si `spawn_radius` es `"random"`/`"aleatorio"`/`"aleatoreo"`: se usa el `spread_fallback_max` de la entrada de spawn activa (en tiles) convertido a píxeles.
+  - En runtime, los NPCs patrullan alrededor del área (círculo o cuadrado) y (si `defend_leash=true`) hacen "leash" en persecución para no salir de la forma definida.
+- `defend_leash` (bool) OPCIONAL: por defecto `true`. Si `false`, los defensores no hacen leash (perseguirán libremente fuera del radio de defensa).
 - `trigger` (objeto): ver sección Triggers.
 - `policy` (objeto): ver sección Policies.
 - `waves` (lista de objetos) OPCIONAL si usas `waves_id`:
@@ -46,6 +62,7 @@ Ejemplo mínimo de plantilla inline:
 {
   "id": "barbol_periodic_no_stack",
   "spawner_type": "invisible",
+  "spawn_radius": 0,
   "trigger": { "type": "proximity", "radius": 5, "auto_start": true },
   "policy": {
     "mode": "periodic",
@@ -56,6 +73,33 @@ Ejemplo mínimo de plantilla inline:
   },
   "waves": [
     { "spawns": [ { "kind": "monster", "id": "barbol", "count": 1, "spread_radius": 2 } ] }
+  ]
+}
+```
+
+Ejemplo con radio aleatorio fijo (tiles):
+```json
+{
+  "id": "barbol_random10",
+  "spawner_type": "invisible",
+  "spawn_radius": 10,
+  "trigger": { "type": "auto" },
+  "policy": { "mode": "periodic", "cooldown_s": 3.0 },
+  "waves": [ { "spawns": [ { "kind": "monster", "id": "barbol", "count": 3 } ] } ]
+}
+```
+
+Ejemplo con radio aleatorio dinámico por ola (`"random"` toma `spread_fallback_max` de cada spawn):
+```json
+{
+  "id": "barbol_random_by_wave",
+  "spawner_type": "invisible",
+  "spawn_radius": "random",
+  "trigger": { "type": "proximity", "radius": 6, "auto_start": true },
+  "policy": { "mode": "periodic", "cooldown_s": 5.0 },
+  "waves": [
+    { "spawns": [ { "kind": "monster", "id": "barbol", "count": 2, "spread_fallback_max": 6 } ] },
+    { "spawns": [ { "kind": "monster", "id": "barbol", "count": 2, "spread_fallback_max": 12 } ] }
   ]
 }
 ```
@@ -156,11 +200,12 @@ Entrada de spawn (MVP):
 - `min_px_distance` (int): distancia mínima en píxeles entre el centro del nuevo spawn y actores existentes/reservados (para evitar apelmazamiento). Default: 0.
 
 Colocación (runtime):
-- Se busca en espiral desde `anchor_tile` hasta `spread_fallback_max`.
-- Se descartan tiles sólidos (`map_manager.solid_tiles`) y colisiones de edificios (`building.collision_tiles`).
-- Si hay `map_manager.is_walkable(tx, ty)`, se valida caminabilidad.
-- Se evitan tiles ocupados por NPCs/jugador vivos y tiles ya reservados en el tick.
-- Si `min_px_distance > 0`, se aplica chequeo en píxeles entre centros de tiles.
+- Si `spawn_radius` del template es entero > 0: se intenta primero "aleatorio en área" dentro de ese radio (tiles), respetando `spawner_shape` (`circle` o `square`). Si no hay lugar válido tras varios intentos, se cae a la espiral.
+- Si `spawn_radius` es `"random"`/`"aleatorio"`/`"aleatoreo"`: se intenta "aleatorio en área" usando como radio el `spread_fallback_max` del spawn actual, respetando `spawner_shape`. Si falla, se cae a la espiral.
+- Si `spawn_radius` no está definido o es 0: se usa la espiral clásica desde `anchor_tile` hasta `spread_fallback_max`.
+- En todos los casos se descartan tiles sólidos/edificios, no caminables, ocupados o reservados, y se respeta `min_px_distance`.
+Notas:
+- El área de defensa (`defend_spawn`) usa la misma forma que `spawner_shape` (círculo o cuadrado).
 
 Resultados por ola:
 - Si no se pudo colocar ninguno (`placed = 0`), la ola se considera completada inmediatamente y se avanza.
@@ -189,23 +234,27 @@ Notas para `advance_on`:
 - Habilitado por `config.DEBUG_SPAWNER`.
 - Dibuja:
   - Ancla del spawner y círculo cian de proximidad (si `trigger.type == 'proximity'`).
+  - Área de `spawn_radius` (si numérico): círculo verde si `spawner_shape = 'circle'` o cuadrado verde si `spawner_shape = 'square'`.
   - Panel centrado (dentro del círculo) con:
     - `template_id`
     - Estado: `ON`/`OFF`/`DONE` y `wave X/Y`
     - `live/expected` y `cd` en segundos
-    - `policy.mode` y `loop:on/off` (detecta `restart_on_done`/`loop`/`repeat`)
+    - `policy.mode`, `loop:on/off` (detecta `restart_on_done`/`loop`/`repeat`) y `shape:circle|square`
+- Con `config.DEBUG` (F9): overlay general que incluye, entre otros:
+  - Rutas de patrulla (`PatrolRoute`) con puntos y polilíneas.
+  - Áreas de defensa `DefendArea`: círculo o cuadrado naranja (según `shape`) con etiqueta `shape` y `r=NNNpx`, y una línea que asocia al NPC.
 
 ---
 
 ## 9) Componentes (referencia rápida)
 `SpawnerConfig`:
-- `template_id`, `zone`, `anchor_tile` (global), `spawner_type`, `trigger`, `policy`, `waves`, `cooldown_frames`, `restart_cooldown_frames`.
+- `template_id`, `zone`, `anchor_tile` (global), `spawner_type`, `trigger`, `policy`, `waves`, `cooldown_frames`, `restart_cooldown_frames`, `spawn_radius`, `spawner_shape`, `defend_spawn`, `defend_leash`.
 
 `SpawnerState`:
 - `started`, `current_wave_idx`, `cooldown_remaining`, `spawned_entities` (no usado), `spawned_this_wave`, `current_wave_entities`, `expected_this_wave`, `finished`, `restart_cooldown_remaining`, `active_entities`.
 
 `SpawnRequest`:
-- `prototype` (string), `position` (tileX, tileY), `spawner_eid?`, `wave_idx?`.
+- `prototype` (string), `position` (tileX, tileY), `spawner_eid?`, `wave_idx?`, `defend_center?` (px), `defend_radius_px?`, `defend_leash?`, `defend_shape?` (`"circle"|"square"`, default: `"circle"`).
 
 ---
 

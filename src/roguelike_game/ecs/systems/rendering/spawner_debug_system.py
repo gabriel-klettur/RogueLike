@@ -123,6 +123,30 @@ class SpawnerDebugRenderSystem:
                 pygame.draw.circle(overlay, (0, 200, 255, 180), (r_px, r_px), r_px, width=2)
                 screen.blit(overlay, (cx - r_px, cy - r_px))
 
+            # Draw spawn_radius if numeric (>0) to visualize random-in-area (circle or square)
+            try:
+                sr = getattr(cfg, 'spawn_radius', None)
+                sr_val = int(sr) if isinstance(sr, (int, float)) else 0
+            except Exception:
+                sr_val = 0
+            if sr_val and sr_val > 0:
+                r_tiles = int(sr_val)
+                r_px_world = r_tiles * TILE_SIZE
+                r_px = max(1, int(r_px_world * zoom))
+                shape = str(getattr(cfg, 'spawner_shape', 'circle') or 'circle').lower()
+                size = r_px * 2
+                overlay = pygame.Surface((size, size), pygame.SRCALPHA)
+                # green overlay (different from proximity cyan)
+                if shape == 'square':
+                    rect = pygame.Rect(0, 0, size, size)
+                    overlay.fill((60, 220, 80, 40))
+                    screen.blit(overlay, (cx - r_px, cy - r_px))
+                    pygame.draw.rect(screen, (60, 220, 80, 180), pygame.Rect(cx - r_px, cy - r_px, size, size), width=2)
+                else:
+                    pygame.draw.circle(overlay, (60, 220, 80, 40), (r_px, r_px), r_px, width=0)
+                    pygame.draw.circle(overlay, (60, 220, 80, 180), (r_px, r_px), r_px, width=2)
+                    screen.blit(overlay, (cx - r_px, cy - r_px))
+
             # Optional label
             if self.font:
                 # Build compact multiline info centered on the spawner anchor (inside cyan circle)
@@ -151,11 +175,12 @@ class SpawnerDebugRenderSystem:
                 else:
                     cd_line = f"cd {cd_s:.2f}s"
 
+                shape = str(getattr(cfg, 'spawner_shape', 'circle') or 'circle').lower()
                 lines = [
                     f"{cfg.template_id}",
                     f"{status} | wave {wave_num}/{total_waves}",
                     f"live {live}/{exp} | {cd_line}",
-                    f"{mode} | loop:{'on' if loop_policy else 'off'}",
+                    f"{mode} | loop:{'on' if loop_policy else 'off'} | shape:{shape}",
                 ]
 
                 # Render multiline with translucent background, centered at (cx, cy)

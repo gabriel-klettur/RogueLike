@@ -76,6 +76,10 @@ class SpawnerPlacementSystem:
         # template base
         trigger = dict(tpl.get("trigger", {}))
         policy = dict(tpl.get("policy", {}))
+        spawn_radius = tpl.get("spawn_radius")
+        spawner_shape = str(tpl.get("spawner_shape", "circle")).lower()
+        defend_spawn = bool(tpl.get("defend_spawn", False))
+        defend_leash = bool(tpl.get("defend_leash", True))
         # waves can be external by id, inline list, or a bad string to parse
         waves_id = tpl.get("waves_id")
         raw_waves = tpl.get("waves", [])
@@ -114,6 +118,14 @@ class SpawnerPlacementSystem:
                 policy[key.split(".", 1)[1]] = value
             elif key == "spawner_type":
                 spawner_type = value
+            elif key == "spawn_radius":
+                spawn_radius = value
+            elif key == "spawner_shape":
+                spawner_shape = str(value).lower()
+            elif key == "defend_spawn":
+                defend_spawn = bool(value)
+            elif key == "defend_leash":
+                defend_leash = bool(value)
 
         # derive cooldown in frames (60 FPS default)
         fps = getattr(config, "FPS", 60)
@@ -139,6 +151,10 @@ class SpawnerPlacementSystem:
             waves=waves,
             cooldown_frames=cooldown_frames,
             restart_cooldown_frames=restart_cooldown_frames,
+            spawn_radius=spawn_radius,
+            spawner_shape=spawner_shape,
+            defend_spawn=defend_spawn,
+            defend_leash=defend_leash,
         )
 
     def update(self, world, camera=None):

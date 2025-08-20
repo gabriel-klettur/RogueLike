@@ -4,11 +4,11 @@
     "slots": [
       {
         "item": "gold",
-        "quantity": 30
+        "quantity": 377
       },
       {
-        "item": "experience_orb",
-        "quantity": 1
+        "item": "wood",
+        "quantity": 3
       },
       null,
       null,

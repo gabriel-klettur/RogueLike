@@ -67,6 +67,7 @@ class RendererManager:
         self._hitbox_debug_system = None
         self._spell_debug_system = None
         self._patrol_debug_system = None
+        self._defend_debug_system = None
         # Cache para help overlay: (mode_key, screen_size) -> (surface, rect)
         self._help_overlay_key = None
         self._help_overlay_surf = None
@@ -145,12 +146,17 @@ class RendererManager:
                     if self._patrol_debug_system is None:
                         from roguelike_game.ecs.systems.rendering.patrol_debug_system import PatrolDebugSystem
                         self._patrol_debug_system = PatrolDebugSystem(perf_log=perf_log)
+                    if self._defend_debug_system is None:
+                        from roguelike_game.ecs.systems.rendering.defend_area_debug_system import DefendAreaDebugSystem
+                        self._defend_debug_system = DefendAreaDebugSystem(perf_log=perf_log)
                     world = self.ecs.ecs_world
                     # Draw hitbox arcs and colliders, then spell-specific collision hints
                     self._hitbox_debug_system.update(world, screen, camera)
                     self._spell_debug_system.update(world, screen, camera)
                     # Draw patrol areas/targets for NPCs with PatrolRoute
                     self._patrol_debug_system.update(world, screen, camera)
+                    # Draw defend area circles for NPCs with DefendArea
+                    self._defend_debug_system.update(world, screen, camera)
                 except Exception:
                     # Never break main render due to optional debug overlays
                     pass

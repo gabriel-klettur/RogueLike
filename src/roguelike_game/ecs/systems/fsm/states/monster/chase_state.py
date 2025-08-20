@@ -32,6 +32,31 @@ class ChaseState(State):
         dx = player_pos.x - pos.x
         dy = player_pos.y - pos.y
         dist_sq = dx*dx + dy*dy
+        # Leash: no salir del área defendida si existe y leash está activo
+        try:
+            defend_cmp = world.components.get('DefendArea', {}).get(eid)
+            if defend_cmp is not None and bool(getattr(defend_cmp, 'leash', True)):
+                cx = float(getattr(defend_cmp, 'center_x', 0.0))
+                cy = float(getattr(defend_cmp, 'center_y', 0.0))
+                r = float(getattr(defend_cmp, 'radius_px', 0.0))
+                shape = str(getattr(defend_cmp, 'shape', 'circle') or 'circle').lower()
+                ddx = pos.x - cx
+                ddy = pos.y - cy
+                tol = 1.05
+                if shape == 'square':
+                    # Fuera si excede media-lado en cualquiera de los ejes (con tolerancia)
+                    if abs(ddx) > r * tol or abs(ddy) > r * tol:
+                        from roguelike_game.ecs.systems.fsm.states.monster.patrol_state import PatrolState
+                        world.components['NPCState'][eid].fsm.change_state(PatrolState(), entity)
+                        return
+                else:
+                    if ddx*ddx + ddy*ddy > (r * tol) * (r * tol):
+                        # Volver a patrullar si se sale ligeramente del radio
+                        from roguelike_game.ecs.systems.fsm.states.monster.patrol_state import PatrolState
+                        world.components['NPCState'][eid].fsm.change_state(PatrolState(), entity)
+                        return
+        except Exception:
+            pass
         # Actualizar animación de chase según dirección vía anim_map
         direction = primary_direction_from_vector(dx, dy)
         set_mapped_anim(entity, 'ChaseState', direction)
@@ -46,13 +71,15 @@ class ChaseState(State):
             from roguelike_game.ecs.systems.fsm.states.attack_state import AttackState
             world.components['NPCState'][eid].fsm.change_state(AttackState(), entity)
             return
-        # Si jugador sale de rango de aggro, volver a Idle
-        aggro_radius = world.components['AggroRange'][entity].radius * TILE_SIZE
-        if dist_sq > aggro_radius**2:            
-            npc_state = world.components['NPCState'][entity]            
-            from roguelike_game.ecs.systems.fsm.states.monster.patrol_state import PatrolState
-            npc_state.fsm.change_state(PatrolState(), entity)
-            return
+        # Si jugador sale de rango de aggro, volver a patrulla SOLO si no hay área de defensa
+        has_defend = world.components.get('DefendArea', {}).get(eid) is not None
+        if not has_defend:
+            aggro_radius = world.components['AggroRange'][entity].radius * TILE_SIZE
+            if dist_sq > aggro_radius**2:            
+                npc_state = world.components['NPCState'][entity]            
+                from roguelike_game.ecs.systems.fsm.states.monster.patrol_state import PatrolState
+                npc_state.fsm.change_state(PatrolState(), entity)
+                return
         speed_cmp = world.components['MovementSpeed'][eid]
         # Aumentar 50% de velocidad en chase
         chase_speed = speed_cmp.speed * 1.5
