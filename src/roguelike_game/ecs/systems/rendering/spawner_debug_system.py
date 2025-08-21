@@ -170,8 +170,12 @@ class SpawnerDebugRenderSystem:
                     status = 'DONE'
 
                 # Decide which cooldown to display
+                bw_frames = int(getattr(cfg, 'between_waves_cooldown_frames', 0) or 0)
                 if getattr(st, 'finished', False) and rc_frames > 0:
                     cd_line = f"rc {rc_s:.2f}s"
+                elif cd_frames > 0 and bw_frames > 0 and not getattr(st, 'spawned_this_wave', False) and not getattr(st, 'finished', False):
+                    # Between-waves fixed cooldown
+                    cd_line = f"bwc {cd_s:.2f}s"
                 else:
                     cd_line = f"cd {cd_s:.2f}s"
 

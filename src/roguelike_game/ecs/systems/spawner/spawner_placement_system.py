@@ -134,6 +134,9 @@ class SpawnerPlacementSystem:
         # separate restart cooldown (falls back to cooldown_s)
         restart_cooldown_s = float(policy.get("restart_cooldown_s", cooldown_s))
         restart_cooldown_frames = int(round(restart_cooldown_s * fps))
+        # fixed between-waves cooldown for mixed trigger mode (initial proximity only)
+        between_waves_cooldown_s = float(policy.get("between_waves_cooldown_s", 0.0) or 0.0)
+        between_waves_cooldown_frames = int(round(between_waves_cooldown_s * fps))
 
         # Convert zone-local tile -> global tile using zone offsets
         zone = inst.get("zone", "lobby")
@@ -151,6 +154,7 @@ class SpawnerPlacementSystem:
             waves=waves,
             cooldown_frames=cooldown_frames,
             restart_cooldown_frames=restart_cooldown_frames,
+            between_waves_cooldown_frames=between_waves_cooldown_frames,
             spawn_radius=spawn_radius,
             spawner_shape=spawner_shape,
             defend_spawn=defend_spawn,

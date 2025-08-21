@@ -76,6 +76,8 @@
     "policy": {
       "mode": "periodic",
       "cooldown_s": 1.0,
+      "proximity_initial_only": true,
+      "between_waves_cooldown_s": 10.0,
       "max_active": 0,
       "persistent": false,
       "restart_on_done": false

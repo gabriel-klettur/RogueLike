@@ -16,6 +16,8 @@ class SpawnerConfig:
     - waves: list of dicts, each with { spawns: [ { kind: "monster"|"item", id: str, count: int, spread_radius: int } ] }
     - cooldown_frames: derived from policy.cooldown_s using 60 FPS assumption
     - restart_cooldown_frames: derived from policy.restart_cooldown_s using 60 FPS (falls back to cooldown_s if not provided)
+    - between_waves_cooldown_frames: optional. If >0, after a wave is cleared, the next wave starts after this fixed cooldown
+      regardless of proximity (when used with proximity_initial_only policy). Defaults to 0 (fallback to cooldown_frames).
     - spawn_radius: optional. If None/0 -> center-first spiral (default). If int>0 -> pick spots randomly within that tile radius.
       If string in {"random", "aleatorio", "aleatoreo"} -> random within per-wave fallback_max.
     - spawner_shape: optional. "circle" (default) or "square". When random placement is used (via spawn_radius),
@@ -32,6 +34,7 @@ class SpawnerConfig:
     waves: List[Dict[str, Any]]
     cooldown_frames: int = 0
     restart_cooldown_frames: int = 0
+    between_waves_cooldown_frames: int = 0
     # New placement mode configuration
     spawn_radius: Optional[Any] = None
     # Shape for random placement area when spawn_radius is used (tiles): "circle" | "square"

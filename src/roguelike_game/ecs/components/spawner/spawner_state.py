@@ -16,6 +16,7 @@ class SpawnerState:
     - finished: whether all waves have completed
     - restart_cooldown_remaining: frames remaining before restarting after finishing all waves (separate from per-wave cooldown)
     - active_entities: live entity ids spawned by this spawner across waves (used for max_active enforcement)
+    - initial_proximity_done: whether the initial proximity trigger has already been consumed (for mixed trigger mode)
     """
     started: bool = False
     current_wave_idx: int = 0
@@ -27,3 +28,4 @@ class SpawnerState:
     finished: bool = False
     restart_cooldown_remaining: int = 0
     active_entities: Set[int] = field(default_factory=set)
+    initial_proximity_done: bool = False

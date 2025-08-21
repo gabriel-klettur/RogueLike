@@ -87,6 +87,7 @@ class SpawnerRuntimeSystem:
             max_active = int(policy.get('max_active', 0) or 0)
             advance_on = str(policy.get('advance_on', 'clear') or 'clear').lower()
             advance_on_cooldown = (advance_on == 'cooldown')
+            proximity_initial_only = bool(policy.get('proximity_initial_only'))
 
             # Handle finished: either stop or auto-restart if looping is enabled
             if getattr(st, 'finished', False):
@@ -105,6 +106,13 @@ class SpawnerRuntimeSystem:
                         st.current_wave_entities = set()
                     # No extra delay: first wave spawns immediately after restart cooldown
                     st.cooldown_remaining = 0
+                    # In mixed proximity mode, require proximity again for initial start
+                    if proximity_initial_only or getattr(cfg, 'between_waves_cooldown_frames', 0) > 0:
+                        st.started = False
+                        try:
+                            st.initial_proximity_done = False
+                        except Exception:
+                            pass
                 else:
                     continue
 
@@ -154,8 +162,11 @@ class SpawnerRuntimeSystem:
                             logger.info(f"[Spawner] {cfg.template_id}:{eid} all waves completed")
                             continue
                     else:
-                        # Small delay before next wave
-                        st.cooldown_remaining = max(st.cooldown_remaining, getattr(cfg, 'cooldown_frames', 0))
+                        # Delay before next wave: prefer between-waves fixed cooldown when configured
+                        bw = int(getattr(cfg, 'between_waves_cooldown_frames', 0) or 0)
+                        base_cd = int(getattr(cfg, 'cooldown_frames', 0) or 0)
+                        next_cd = bw if bw > 0 else base_cd
+                        st.cooldown_remaining = max(st.cooldown_remaining, next_cd)
                 else:
                     # Still waiting for monsters to be eliminated or none actually spawned yet
                     continue
@@ -203,7 +214,8 @@ class SpawnerRuntimeSystem:
                         st.finished = True
                         logger.info(f"[Spawner] {cfg.template_id}:{eid} all waves completed")
                 else:
-                    st.cooldown_remaining = cfg.cooldown_frames
+                    bw = int(getattr(cfg, 'between_waves_cooldown_frames', 0) or 0)
+                    st.cooldown_remaining = (bw if bw > 0 else getattr(cfg, 'cooldown_frames', 0))
                 continue
 
             # Issue spawn requests for this wave (avoid overlaps via spiral search)
@@ -440,7 +452,8 @@ class SpawnerRuntimeSystem:
                     st.cooldown_remaining = cfg.cooldown_frames
             else:
                 # After issuing requests
-                st.cooldown_remaining = cfg.cooldown_frames
+                bw = int(getattr(cfg, 'between_waves_cooldown_frames', 0) or 0)
+                st.cooldown_remaining = (bw if bw > 0 else getattr(cfg, 'cooldown_frames', 0))
                 if advance_on_cooldown:
                     # Immediately move to next wave; completion will be checked after all waves are spawned
                     st.current_wave_idx += 1

@@ -6,6 +6,7 @@ Rutas relevantes:
 - Plantillas: `data/spawners/spawners_templates.json`
 - Olas: `data/spawners/spawners_waves.json`
 - Instancias: `data/spawners/spawners_instances.json`
+ - Guía de desarrollador (detalles): `docs/developer_guide/ecs/spawner.md`
 
 Sistemas/Componentes:
 - `SpawnerPlacementSystem` (carga y crea entidades)
@@ -104,6 +105,23 @@ Ejemplo con radio aleatorio dinámico por ola (`"random"` toma `spread_fallback_
 }
 ```
 
+Ejemplo modo mixto (proximidad inicial + cooldown fijo entre olas):
+```json
+{
+  "id": "survival_10",
+  "spawner_type": "invisible",
+  "trigger": { "type": "proximity", "radius": 10, "auto_start": true },
+  "policy": {
+    "mode": "periodic",
+    "cooldown_s": 1.0,
+    "proximity_initial_only": true,
+    "between_waves_cooldown_s": 10.0,
+    "restart_on_done": false
+  },
+  "waves_id": "waves_survival_10"
+}
+```
+
 Notas:
 - También se acepta `waves` como string JSON (o literal Python) y se intentará parsear.
 - Si existen `waves` inline y `waves_id`, tiene prioridad `waves_id`.
@@ -166,6 +184,7 @@ Cálculos al cargar:
 Runtime (`SpawnerTriggerSystem`):
 - Proximidad: Calcula la distancia en tiles entre `anchor_tile` y la posición del jugador. Si `auto_start=true`, `SpawnerState.started` refleja si el jugador está dentro del radio.
 - Auto: `SpawnerState.started = true` de forma continua (no depende del jugador).
+- Modo mixto (proximidad inicial): si `policy.proximity_initial_only=true` o se define `policy.between_waves_cooldown_s`, la proximidad solo se usa para iniciar la PRIMERA ola; después se ignora entre olas. El flag `SpawnerState.initial_proximity_done` indica si ya se consumió esa proximidad inicial.
 
 ---
 
@@ -180,10 +199,13 @@ Runtime (`SpawnerTriggerSystem`):
 - `advance_on` (string): controla cómo avanza entre olas.
   - `"clear"` (default): la siguiente ola sólo inicia cuando todos los mobs de la ola actual han sido eliminados.
   - `"cooldown"`: avanza de ola tras aplicar `cooldown_frames` aunque sigan vivos los mobs de la ola anterior. El fin de ciclo (y el reinicio) se retrasa hasta que no quede ningún mob activo del spawner.
+- `proximity_initial_only` (bool): si `true`, la proximidad sólo se usa para iniciar la primera ola; entre olas se ignora la proximidad.
+- `between_waves_cooldown_s` (float): cooldown fijo entre olas (segundos). Cuando está definido (>0), se usa este valor entre olas en lugar de `cooldown_s` y se ignora la proximidad.
 
 Derivados:
 - `cooldown_frames` (int): precalculado en `SpawnerConfig` a partir de `cooldown_s` y `FPS`.
 - `restart_cooldown_frames` (int): precalculado a partir de `restart_cooldown_s` (o `cooldown_s`) y `FPS`.
+- `between_waves_cooldown_frames` (int): precalculado a partir de `between_waves_cooldown_s` y `FPS`.
 
 ---
 
@@ -219,10 +241,14 @@ Resultados por ola:
 - Tras spawnear, `expected_this_wave` = colocados y `spawned_this_wave = true`.
 - La ola termina cuando `current_wave_entities` queda vacía (todos eliminados) o cuando no se colocó ninguno.
 - Avance de olas:
-  - Si quedan más olas: se incrementa `current_wave_idx` y se aplica `cooldown_frames` antes de la siguiente.
+  - Si quedan más olas: se incrementa `current_wave_idx` y se aplica `between_waves_cooldown_frames` (si > 0) o, de lo contrario, `cooldown_frames` antes de la siguiente.
   - Si no quedan más olas:
     - Si `policy.restart_on_done` (o `loop`/`repeat`) es true: se programa reinicio tras `restart_cooldown_frames`. Durante este tiempo, el spawner queda en estado `DONE`.
     - Si no: `finished = true`.
+
+Notas para modo mixto (proximidad inicial):
+- Entre olas, la proximidad no se evalúa; se espera el cooldown fijo (`between_waves_cooldown_s`/frames) y se inicia la siguiente ola automáticamente.
+- En reinicio de ciclo (loop/restart): tras `restart_cooldown_frames`, se resetea el latch de proximidad (`initial_proximity_done=false` y `started=false`), por lo que se vuelve a requerir proximidad para iniciar la primera ola del nuevo ciclo.
 
 Notas para `advance_on`:
 - `advance_on = "clear"` (default): el punto anterior aplica tal cual. Cada ola espera a que sus mobs mueran para pasar a la siguiente.
@@ -236,10 +262,10 @@ Notas para `advance_on`:
   - Ancla del spawner y círculo cian de proximidad (si `trigger.type == 'proximity'`).
   - Área de `spawn_radius` (si numérico): círculo verde si `spawner_shape = 'circle'` o cuadrado verde si `spawner_shape = 'square'`.
   - Panel centrado (dentro del círculo) con:
-    - `template_id`
-    - Estado: `ON`/`OFF`/`DONE` y `wave X/Y`
-    - `live/expected` y `cd` en segundos
-    - `policy.mode`, `loop:on/off` (detecta `restart_on_done`/`loop`/`repeat`) y `shape:circle|square`
+  - `template_id`
+  - Estado: `ON`/`OFF`/`DONE` y `wave X/Y`
+  - `live/expected` y `cd`/`rc`/`bwc` en segundos
+  - `policy.mode`, `loop:on/off` (detecta `restart_on_done`/`loop`/`repeat`) y `shape:circle|square`
 - Con `config.DEBUG` (F9): overlay general que incluye, entre otros:
   - Rutas de patrulla (`PatrolRoute`) con puntos y polilíneas.
   - Áreas de defensa `DefendArea`: círculo o cuadrado naranja (según `shape`) con etiqueta `shape` y `r=NNNpx`, y una línea que asocia al NPC.
@@ -248,10 +274,10 @@ Notas para `advance_on`:
 
 ## 9) Componentes (referencia rápida)
 `SpawnerConfig`:
-- `template_id`, `zone`, `anchor_tile` (global), `spawner_type`, `trigger`, `policy`, `waves`, `cooldown_frames`, `restart_cooldown_frames`, `spawn_radius`, `spawner_shape`, `defend_spawn`, `defend_leash`.
+- `template_id`, `zone`, `anchor_tile` (global), `spawner_type`, `trigger`, `policy`, `waves`, `cooldown_frames`, `restart_cooldown_frames`, `between_waves_cooldown_frames`, `spawn_radius`, `spawner_shape`, `defend_spawn`, `defend_leash`.
 
 `SpawnerState`:
-- `started`, `current_wave_idx`, `cooldown_remaining`, `spawned_entities` (no usado), `spawned_this_wave`, `current_wave_entities`, `expected_this_wave`, `finished`, `restart_cooldown_remaining`, `active_entities`.
+- `started`, `current_wave_idx`, `cooldown_remaining`, `spawned_entities` (no usado), `spawned_this_wave`, `current_wave_entities`, `expected_this_wave`, `finished`, `restart_cooldown_remaining`, `active_entities`, `initial_proximity_done`.
 
 `SpawnRequest`:
 - `prototype` (string), `position` (tileX, tileY), `spawner_eid?`, `wave_idx?`, `defend_center?` (px), `defend_radius_px?`, `defend_leash?`, `defend_shape?` (`"circle"|"square"`, default: `"circle"`).
@@ -262,7 +288,7 @@ Notas para `advance_on`:
 1) Define una plantilla en `spawners_templates.json` (inline `waves` o `waves_id`).
 2) (Opcional) Añade olas en `spawners_waves.json` y referencia con `waves_id`.
 3) Coloca instancias en `spawners_instances.json` con `zone` y `tile`.
-4) Ajusta `policy.cooldown_s` y `policy.restart_on_done` según el comportamiento deseado.
+4) Ajusta `policy.cooldown_s`, `policy.restart_on_done`, `policy.proximity_initial_only` y `policy.between_waves_cooldown_s` según el comportamiento deseado.
 5) Activa `config.DEBUG_SPAWNER` para depurar visualmente.
 
 ---

@@ -56,9 +56,28 @@ class SpawnerTriggerSystem:
             within = (dx*dx + dy*dy) <= (radius * radius)
 
             auto = bool(trig.get('auto_start', True))
-            if auto:
-                st.started = within
+            policy = getattr(cfg, 'policy', {}) or {}
+            mixed_mode = bool(policy.get('proximity_initial_only')) or (getattr(cfg, 'between_waves_cooldown_frames', 0) > 0)
+
+            if not mixed_mode:
+                if auto:
+                    st.started = within
+                else:
+                    if within and not st.started:
+                        # Reserved for future manual confirmation
+                        pass
+                continue
+
+            # Mixed mode: use proximity only to start the first time; then ignore proximity
+            if not st.initial_proximity_done:
+                if auto and within:
+                    st.started = True
+                    st.initial_proximity_done = True
+                else:
+                    # Before latching, keep classic behavior for visibility (optional): do not force true
+                    if auto:
+                        st.started = False
             else:
-                if within and not st.started:
-                    # Reserved for future manual confirmation
-                    pass
+                # After initial start, do not force-off based on proximity
+                # Leave st.started as-is (runtime manages cooldowns between waves)
+                pass
