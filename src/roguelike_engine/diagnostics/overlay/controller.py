@@ -191,22 +191,45 @@ class DiagnosticsOverlayController:
 
         render_node(tree, 0)
 
+        # Build a set of normalized labels from loop-generated lines to avoid duplicates
+        def _norm(lbl: str) -> str:
+            s = (lbl or "").strip()
+            # Remove expand/collapse indicators
+            s = re.sub(r'^[▶▼]\s*', '', s)
+            # Remove numeric dotted prefixes
+            s = re.sub(r'^(\d+(?:\.\d+)*)\s*', '', s)
+            # Drop trailing colon
+            s = s.rstrip(':')
+            # Collapse internal whitespace
+            s = re.sub(r'\s+', ' ', s)
+            return s
+
+        existing_norms = { _norm(l) for (l, _r) in lines }
+
         if state and hasattr(state, 'clock'):
             fps = state.clock.get_fps()
             ft = (1000 / fps) if fps > 0 else 0
-            lines.insert(0, ("FrameTime:", f"{ft:0.1f} ms"))
-            line_levels.insert(0, None)
-            lines.insert(0, ("FPS:", f"{fps:0.1f}"))
-            line_levels.insert(0, None)
+            if _norm("FrameTime:") not in existing_norms:
+                lines.insert(0, ("FrameTime:", f"{ft:0.1f} ms"))
+                line_levels.insert(0, None)
+            if _norm("FPS:") not in existing_norms:
+                lines.insert(0, ("FPS:", f"{fps:0.1f}"))
+                line_levels.insert(0, None)
 
         if extra_lines is None and state and camera and map_manager and entities:
             extra_lines = self.get_custom_debug_lines(state, camera, map_manager, entities)
         if extra_lines:
-            lines.append(("", ""))
-            line_levels.append(None)
+            # Filter out custom/manual lines that duplicate existing loop-generated labels
+            filtered = []
             for text in extra_lines:
-                lines.append((text, ""))
+                if _norm(text) not in existing_norms:
+                    filtered.append(text)
+            if filtered:
+                lines.append(("", ""))
                 line_levels.append(None)
+                for text in filtered:
+                    lines.append((text, ""))
+                    line_levels.append(None)
 
         # Final width adjust for all lines (single pass)
         font = self.view._get_font(model.font_name, model.font_size)

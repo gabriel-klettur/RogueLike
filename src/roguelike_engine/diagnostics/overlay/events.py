@@ -9,6 +9,24 @@ def handle_event(model: DiagnosticsOverlayModel, view: DiagnosticsOverlayView, e
     # Scroll wheel moves panel content
     if et == pygame.MOUSEWHEEL:
         model.scroll_offset = max(0, model.scroll_offset - event.y * model.scroll_speed)
+        # Clamp to content height if possible
+        try:
+            if model.panel_surf is not None and model.panel_rect is not None:
+                content_h = model.panel_surf.get_height()
+                # Estimate visible height based on screen area available below panel top
+                screen = pygame.display.get_surface()
+                if screen is not None:
+                    screen_h = screen.get_height()
+                    visible_h = max(0, min(content_h, screen_h - model.panel_rect.top))
+                else:
+                    # Fallback: at least one line
+                    visible_h = view.line_height(model)
+                max_scroll = max(0, content_h - visible_h)
+                if model.scroll_offset > max_scroll:
+                    model.scroll_offset = max_scroll
+        except Exception:
+            # Be conservative if any issue occurs
+            pass
         return True
     # Click toggles collapse/expand per group
     if et == pygame.MOUSEBUTTONDOWN and event.button == 1:

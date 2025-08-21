@@ -434,7 +434,7 @@ def handle_events(game):
             else:
                 _open_editor_exclusive(game, 'items')
             return
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_F9:
+        if event.type == pygame.KEYDOWN and event.key == game.input_config.get_key('toggle_debug_overlay'):
             config.DEBUG = not config.DEBUG
             logger.debug(f"🧪 DEBUG {'activado' if config.DEBUG else 'desactivado'}")
             return
