@@ -7,7 +7,6 @@ import os
 from roguelike_game.ecs.systems.input.input_system import InputSystem
 from roguelike_game.ecs.systems.inventory.inventory_pickup_system import InventoryPickupSystem
 from roguelike_game.ecs.systems.inventory.inventory_drop_system import InventoryDropSystem
-from .spawn_manager import SpawnNPCManager
 
 import logging
 logger = logging.getLogger(__name__)
@@ -40,10 +39,6 @@ class ECSWorld:
 
         # 3) Instanciar sistemas (update + render)
         self._init_systems()
-
-        # 4) Crear spawn inicial
-        self.spawn_npc_manager = SpawnNPCManager(self)
-        # spawn_npc_initial se llamará después de crear el jugador en ECSManager
 
     @property
     def player_position(self):
