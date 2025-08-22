@@ -104,16 +104,21 @@ def circle_rect_mtv(cx: float, cy: float, r: float, rect: pygame.Rect) -> tuple[
         nx = dx / dist
         ny = dy / dist
         return (nx * overlap, ny * overlap)
-    # Centro dentro del rect o tangente exacto; empujar por el eje de menor penetración hacia el exterior
-    left_pen   = abs(cx - rect.left)
-    right_pen  = abs(rect.right - cx)
-    top_pen    = abs(cy - rect.top)
-    bottom_pen = abs(rect.bottom - cy)
-    min_pen = min(left_pen, right_pen, top_pen, bottom_pen)
-    if min_pen == left_pen:
-        return (-(r - left_pen), 0.0)
-    if min_pen == right_pen:
-        return ((r - right_pen), 0.0)
-    if min_pen == top_pen:
-        return (0.0, -(r - top_pen))
-    return (0.0, (r - bottom_pen))
+    # Centro dentro del rect o tangente exacto; empujar hacia el exterior por el eje más cercano
+    # Magnitud correcta: r + distancia desde el centro a la pared más cercana
+    dist_left   = cx - rect.left
+    dist_right  = rect.right - cx
+    dist_top    = cy - rect.top
+    dist_bottom = rect.bottom - cy
+    min_pen = min(dist_left, dist_right, dist_top, dist_bottom)
+    if min_pen == dist_left:
+        # Empujar hacia la izquierda (negativo X)
+        return (-(r + dist_left), 0.0)
+    if min_pen == dist_right:
+        # Empujar hacia la derecha (positivo X)
+        return ((r + dist_right), 0.0)
+    if min_pen == dist_top:
+        # Empujar hacia arriba (negativo Y)
+        return (0.0, -(r + dist_top))
+    # Empujar hacia abajo (positivo Y)
+    return (0.0, (r + dist_bottom))
