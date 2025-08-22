@@ -55,9 +55,10 @@ def test_utl_006_save_buildings_json_contains_expected_fields(tmp_path, surface_
     assert isinstance(data, list) and len(data) == 2
     e1, e2 = data
 
-    # Campos base presentes
+    # Campos base presentes (imagen ahora anidada en assets.idle)
     for e in (e1, e2):
-        assert set(["zone", "rel_x", "rel_y", "image_path", "solid", "scale", "original_scale", "split_ratio", "z_bottom", "z_top", "collider_scope"]).issubset(e.keys())
+        assert set(["zone", "rel_x", "rel_y", "assets", "solid", "scale", "original_scale", "split_ratio", "z_bottom", "z_top", "collider_scope"]).issubset(e.keys())
+        assert isinstance(e.get("assets"), dict) and "idle" in e["assets"]
 
     # 'scale' refleja tamaño actual de imagen
     assert e1["scale"] == [64, 48]

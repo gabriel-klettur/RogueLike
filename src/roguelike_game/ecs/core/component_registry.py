@@ -23,5 +23,7 @@ def create_empty_component_store():
         'FlashComponent': {}, 'TrailComponent': {}, 'GrayscaleComponent': {},
         # Spawner components
         'SpawnerConfig': {}, 'SpawnerState': {},
+        # Buildings
+        'BuildingHealth': {},            # key -> { current_hp, max_hp }
     }
 # Path: src/roguelike_game/ecs/core/component_registry.py

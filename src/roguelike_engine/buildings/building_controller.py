@@ -14,6 +14,7 @@ class BuildingController:
         camera: instancia de la cámara (para la vista)
         """
         self.model = model
+        self._camera = camera
         self.view = None
         if model.image is not None:            
             self.view = BuildingView(model, camera)
@@ -67,3 +68,27 @@ class BuildingController:
         """
         if self.view:
             self.view.clear_caches()
+
+    # ───────────────────── Visual state APIs ─────────────────────
+    def set_images_by_state(self, images_by_state: dict[str, str], initial_state: str | None = None):
+        """
+        Configura el mapeo de estados visuales -> rutas de imagen en el modelo.
+        Si initial_state está definido, intenta aplicarlo inmediatamente.
+        """
+        self.model.set_images_by_state(images_by_state, initial_state=initial_state)
+        if self.view:
+            # Limpiar caches por si cambió la imagen/escala
+            self.view.clear_caches()
+
+    def set_state_thresholds(self, thresholds: list[dict] | None):
+        """Configura los umbrales de estado visual en el modelo."""
+        self.model.set_state_thresholds(thresholds)
+
+    def set_visual_state(self, state: str) -> bool:
+        """
+        Cambia el estado visual actual. Devuelve True si hubo cambio de imagen.
+        """
+        changed = self.model.set_visual_state(state)
+        if changed and self.view:
+            self.view.clear_caches()
+        return changed

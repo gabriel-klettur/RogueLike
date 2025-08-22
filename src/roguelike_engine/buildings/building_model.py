@@ -41,6 +41,16 @@ class BuildingModel:
         self.image_path = image_path
         self.split_ratio = max(0.0, min(split_ratio, 1.0))
 
+        # ── Soporte de múltiples imágenes por estado visual ──
+        # images_by_state: { state_name -> image_path }
+        self.images_by_state: dict[str, str] = {}
+        # thresholds opcionales para mapear porcentaje de vida agregada -> estado
+        # Formato sugerido: lista ordenada desc por min_ratio, p.ej.
+        # [ {"state": "healthy", "min_ratio": 0.66}, {"state": "damaged", "min_ratio": 0.33}, {"state": "critical", "min_ratio": 0.0} ]
+        self.state_thresholds: list[dict] | None = None
+        # estado visual actual aplicado (si None, usa image_path base)
+        self.current_visual_state: str | None = None
+
         # ── Caches internos, inicializados en la "lógica de carga" ──
         self.image: pygame.Surface | None = None
         self.original_scale: tuple[int,int] | None = None
@@ -209,6 +219,68 @@ class BuildingModel:
         else:
             logger.warning("⚠️ No se encontró escala original para este edificio.")
 
+    # ───────────── Estados visuales (multi-imagen) ─────────────
+    def set_images_by_state(self, images_by_state: dict[str, str], initial_state: str | None = None):
+        """
+        Define el mapeo de estados visuales a rutas de imagen.
+        Si initial_state está presente y existe en el mapeo, aplica ese estado.
+        Mantiene el tamaño original al cambiar.
+        """
+        try:
+            self.images_by_state = dict(images_by_state or {})
+        except Exception:
+            self.images_by_state = {}
+        if initial_state and initial_state in self.images_by_state:
+            self.set_visual_state(initial_state)
+
+    def set_state_thresholds(self, thresholds: list[dict] | None):
+        """
+        Establece los umbrales opcionales para convertir un ratio [0..1] a nombre de estado.
+        Espera una lista de dicts con llaves {"state": str, "min_ratio": float} ordenada desc.
+        """
+        try:
+            if isinstance(thresholds, list):
+                self.state_thresholds = [dict(t) for t in thresholds]
+            else:
+                self.state_thresholds = None
+        except Exception:
+            self.state_thresholds = None
+
+    def _apply_image_path(self, new_image_path: str):
+        """
+        Cambia la imagen del modelo manteniendo la escala original si existe.
+        Invalida caches de colisión para forzar recálculo cuando corresponda.
+        """
+        try:
+            self.image_path = new_image_path
+            # Mantener tamaño previo si estaba definido
+            target_scale = self.original_scale
+            self._load_and_prepare_image(target_scale)
+            # Invalidate collision caches since geometry may map differently post-scale
+            self._collision_tiles_cache = None
+            self._collision_tile_objs = None
+        except Exception as ex:
+            logger.warning(f"[BuildingModel] No se pudo aplicar nueva imagen '{new_image_path}': {ex}")
+
+    def set_visual_state(self, state: str) -> bool:
+        """
+        Cambia el estado visual a 'state' si existe en images_by_state.
+        Retorna True si se aplicó un cambio de imagen.
+        """
+        if not isinstance(state, str) or not self.images_by_state:
+            return False
+        path = self.images_by_state.get(state)
+        if not path:
+            return False
+        if self.current_visual_state == state and self.image is not None:
+            return False
+        self.current_visual_state = state
+        self._apply_image_path(path)
+        # Recalcular corte vertical según split_ratio y nueva imagen
+        if self.image is not None:
+            self._cut_world = int(self.image.get_height() * self.split_ratio)
+        return True
+
     # ───────────── Colisiones (collision_map + collision_tiles) ─────────────
     @property
     def collision_rect(self) -> pygame.Rect:
@@ -347,6 +419,9 @@ class BuildingModel:
             'collision_map': self._collision_map,
             'original_scale': self.original_scale,
             'collider_scope': self.collider_scope,
+            'images_by_state': self.images_by_state,
+            'state_thresholds': self.state_thresholds,
+            'current_visual_state': self.current_visual_state,
         }
 
     def __setstate__(self, state):
@@ -365,5 +440,9 @@ class BuildingModel:
         self.original_scale = state.get('original_scale')
         # Restaurar alcance de colisión por edificio
         self.collider_scope = state.get('collider_scope', 'CG')
+        # Multi-state visual support
+        self.images_by_state = state.get('images_by_state', {}) or {}
+        self.state_thresholds = state.get('state_thresholds')
+        self.current_visual_state = state.get('current_visual_state')
         # Reload image using cached loader
         self._load_and_prepare_image(self.original_scale)
