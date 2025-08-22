@@ -41,6 +41,22 @@ class FsmSetsPanelView:
                     color = (255, 255, 255) if model.selected_index == i else (230, 230, 230)
                     text = font.render(f"• {item}", True, color)
                     surf.blit(text, (10, row_y))
+                    # Warning badge for highlighted set with linter warnings
+                    try:
+                        if getattr(model, 'highlighted_set_id', None) == item and getattr(model, 'highlighted_warnings', []) and len(model.highlighted_warnings) > 0:
+                            # Small amber circle with count, placed after text
+                            amber = (255, 180, 60)
+                            badge_d = 14
+                            bx = 10 + text.get_width() + 6
+                            by = row_y + (text.get_height() - badge_d) // 2
+                            pygame.draw.circle(surf, (35, 24, 0), (bx + badge_d // 2, by + badge_d // 2), badge_d // 2)
+                            pygame.draw.circle(surf, amber, (bx + badge_d // 2, by + badge_d // 2), badge_d // 2, width=2)
+                            # Count (max 9+)
+                            count = min(9, len(model.highlighted_warnings))
+                            lbl = small_font.render(str(count), True, amber)
+                            surf.blit(lbl, (bx + (badge_d - lbl.get_width()) // 2, by + (badge_d - lbl.get_height()) // 2))
+                    except Exception:
+                        pass
                     # Per-row action buttons (clone / delete)
                     btn_size = 16
                     gap = 4

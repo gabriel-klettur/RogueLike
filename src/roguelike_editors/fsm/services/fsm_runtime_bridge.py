@@ -35,6 +35,8 @@ class _Cached:
 
 
 _CACHE: Optional[_Cached] = None
+_HIGHLIGHT_SET_ID: Optional[str] = None
+_HIGHLIGHT_PARAMS: Optional[Dict[str, Any]] = None
 
 
 def _ensure_cache() -> _Cached:
@@ -64,6 +66,85 @@ def reload() -> int:
     global _CACHE
     _CACHE = None
     return publish_reload()
+
+
+def set_editor_highlight_set(set_id: Optional[str]) -> None:
+    """Optional: store a set_id for the Editor UI to highlight in the Sets panel.
+    Pass None to clear highlight.
+    """
+    global _HIGHLIGHT_SET_ID, _HIGHLIGHT_PARAMS
+    _HIGHLIGHT_SET_ID = set_id
+    # Back-compat: if only set is provided, clear params
+    _HIGHLIGHT_PARAMS = None
+
+
+def get_editor_highlight_set() -> Optional[str]:
+    """Return the currently highlighted set id, if any."""
+    return _HIGHLIGHT_SET_ID
+
+
+def set_editor_highlight_context(set_id: Optional[str], params: Optional[Dict[str, Any]]) -> None:
+    """Set highlight context (set_id + params) for Editor panels to reflect hover and lint.
+    Pass None to clear.
+    """
+    global _HIGHLIGHT_SET_ID, _HIGHLIGHT_PARAMS
+    _HIGHLIGHT_SET_ID = set_id
+    _HIGHLIGHT_PARAMS = dict(params) if isinstance(params, dict) else None
+
+
+def get_editor_highlight_context() -> Tuple[Optional[str], Optional[Dict[str, Any]]]:
+    """Return (set_id, params) of the current highlight context, if any."""
+    return _HIGHLIGHT_SET_ID, (_HIGHLIGHT_PARAMS if isinstance(_HIGHLIGHT_PARAMS, dict) else None)
+
+
+def lint_set_params(set_id: str, params: Optional[Dict[str, Any]]) -> list:
+    """Lightweight linter for Spawner_* set params. Returns a list of warning strings.
+    Rules are intentionally simple and non-fatal.
+    """
+    warnings: list = []
+    if not set_id:
+        return ["empty set_id"]
+    p = params or {}
+    sid = str(set_id)
+    try:
+        def _is_int(v):
+            return isinstance(v, int) and not isinstance(v, bool)
+        def _gte0(v):
+            return _is_int(v) and v >= 0
+        # Common checks
+        if 'max_active' in p and not _gte0(p['max_active']):
+            warnings.append("max_active must be integer >= 0")
+        if 'restart_cooldown_frames' in p and not _gte0(p['restart_cooldown_frames']):
+            warnings.append("restart_cooldown_frames must be integer >= 0")
+        if 'spawn_radius' in p:
+            sr = p['spawn_radius']
+            if isinstance(sr, (int, float)) and sr < 0:
+                warnings.append("spawn_radius must be >= 0")
+            elif isinstance(sr, str) and sr.lower() not in ("random", "aleatorio", "aleatoreo"):
+                warnings.append("spawn_radius string must be 'random'/'aleatorio'/'aleatoreo'")
+        # Per-set expectations
+        if sid == 'Spawner_Periodic_Cooldown':
+            if 'cooldown_frames' not in p:
+                warnings.append("cooldown_frames missing for Periodic_Cooldown")
+            elif not _gte0(p['cooldown_frames']):
+                warnings.append("cooldown_frames must be integer >= 0")
+        elif sid == 'Spawner_Periodic_BetweenWaves':
+            if 'between_waves_cooldown_frames' not in p:
+                warnings.append("between_waves_cooldown_frames missing for Periodic_BetweenWaves")
+            elif not _gte0(p['between_waves_cooldown_frames']):
+                warnings.append("between_waves_cooldown_frames must be integer >= 0")
+        elif sid == 'Spawner_Waves_Clear':
+            # advance_on should be 'clear' when compiled correctly
+            adv = p.get('advance_on')
+            if adv and str(adv) != 'clear':
+                warnings.append("advance_on should be 'clear' for Waves_Clear")
+        # Shape validation
+        if 'spawner_shape' in p:
+            if str(p['spawner_shape']).lower() not in ('circle', 'square'):
+                warnings.append("spawner_shape must be 'circle' or 'square'")
+    except Exception as ex:
+        warnings.append(f"linter error: {ex}")
+    return warnings
 
 
 def get_snapshot() -> Dict[str, Any]:
@@ -220,4 +301,9 @@ __all__ = [
     "build_fsm_from_set",
     "build_fsm_for_archetype",
     "publish_reload",
+    "set_editor_highlight_set",
+    "get_editor_highlight_set",
+    "set_editor_highlight_context",
+    "get_editor_highlight_context",
+    "lint_set_params",
 ]

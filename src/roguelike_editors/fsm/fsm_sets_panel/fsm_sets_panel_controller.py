@@ -17,6 +17,15 @@ from roguelike_editors.fsm.services.fsm_persistence import (
     default_sets_path,
     load_sets,
 )
+try:
+    # Optional: read hovered set context (id+params) from runtime and lint it
+    from roguelike_editors.fsm.services.fsm_runtime_bridge import (
+        get_editor_highlight_context as _fsm_get_highlight_ctx,
+        lint_set_params as _fsm_lint,
+    )
+except Exception:  # pragma: no cover - service may not be present in some contexts
+    _fsm_get_highlight_ctx = None
+    _fsm_lint = None
 
 LOGGER = logging.getLogger("roguelike_editors.fsm.fsm_sets_panel.controller")
 
@@ -37,6 +46,30 @@ class FsmSetsPanelController:
         self.delete_view = SetsPanelDeleteView()
 
     def render(self, screen, *, anchor=None):
+        # Sync hover highlight from runtime (if any)
+        if getattr(self.model, 'visible', False) and _fsm_get_highlight_ctx is not None:
+            try:
+                hid, params = _fsm_get_highlight_ctx()
+                self.model.highlighted_set_id = hid
+                # Compute warnings if we have a linter
+                if _fsm_lint is not None and hid:
+                    try:
+                        self.model.highlighted_warnings = list(_fsm_lint(hid, params) or [])
+                    except Exception:
+                        self.model.highlighted_warnings = []
+                else:
+                    self.model.highlighted_warnings = []
+                # Reflect as hovered row
+                if hid:
+                    items = getattr(self.model, 'items', [])
+                    try:
+                        self.model.hovered_index = items.index(hid)
+                    except ValueError:
+                        self.model.hovered_index = None
+                else:
+                    self.model.hovered_index = None
+            except Exception:
+                pass
         if anchor is None:
             return self.view.render(self.model, screen, controller=self)
         return self.view.render(self.model, screen, anchor=anchor, controller=self)

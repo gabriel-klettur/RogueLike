@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List, Set
+from typing import List, Set, Dict, Any, Optional
 
 
 @dataclass
@@ -29,3 +29,10 @@ class SpawnerState:
     restart_cooldown_remaining: int = 0
     active_entities: Set[int] = field(default_factory=set)
     initial_proximity_done: bool = False
+    # Phase 1: derived, observational FSM state (for debug/telemetry)
+    # Values used: 'await_trigger', 'spawning_wave', 'wait_cooldown', 'wait_clear', 'wait_restart', 'finished'
+    fsm_state: str = "await_trigger"
+    # Phase 2: metadata for FSM Editor visualization (compiled set + parameters)
+    # These do not drive behavior; they are informative for tools/UI.
+    fsm_set_id: Optional[str] = None
+    fsm_set_params: Dict[str, Any] = field(default_factory=dict)

@@ -267,6 +267,72 @@
           "when": "dead"
         }
       ]
+    },
+    {
+      "id": "Spawner_Periodic_Cooldown",
+      "label": "Spawner Periodic (Cooldown)",
+      "initial": "AwaitTrigger",
+      "states": [
+        { "id": "AwaitTrigger", "label": "AwaitTrigger", "class": "IdleState" },
+        { "id": "SpawningWave", "label": "SpawningWave", "class": "MoveState" },
+        { "id": "WaitCooldown", "label": "WaitCooldown", "class": "PlayerAttackState" },
+        { "id": "WaitRestart", "label": "WaitRestart", "class": "DamageState" },
+        { "id": "Finished", "label": "Finished", "class": "DeathState", "terminal": true }
+      ],
+      "transitions": [
+        { "from": "AwaitTrigger", "to": "SpawningWave", "when": "start" },
+        { "from": "SpawningWave", "to": "WaitCooldown", "when": "placed" },
+        { "from": "WaitCooldown", "to": "SpawningWave", "when": "cooldown_elapsed" },
+        { "from": "SpawningWave", "to": "Finished", "when": "no_next_wave" },
+        { "from": "WaitCooldown", "to": "Finished", "when": "end_of_sequence" },
+        { "from": "Finished", "to": "WaitRestart", "when": "loop" },
+        { "from": "WaitRestart", "to": "AwaitTrigger", "when": "restart_elapsed_proximity_mode" },
+        { "from": "WaitRestart", "to": "SpawningWave", "when": "restart_elapsed_auto_mode" }
+      ]
+    },
+    {
+      "id": "Spawner_Waves_Clear",
+      "label": "Spawner Waves (Advance on Clear)",
+      "initial": "AwaitTrigger",
+      "states": [
+        { "id": "AwaitTrigger", "label": "AwaitTrigger", "class": "IdleState" },
+        { "id": "SpawningWave", "label": "SpawningWave", "class": "MoveState" },
+        { "id": "WaitClear", "label": "WaitClear", "class": "PlayerSpellSelectState" },
+        { "id": "WaitRestart", "label": "WaitRestart", "class": "DamageState" },
+        { "id": "Finished", "label": "Finished", "class": "DeathState", "terminal": true }
+      ],
+      "transitions": [
+        { "from": "AwaitTrigger", "to": "SpawningWave", "when": "start" },
+        { "from": "SpawningWave", "to": "WaitClear", "when": "placed" },
+        { "from": "WaitClear", "to": "SpawningWave", "when": "cleared" },
+        { "from": "SpawningWave", "to": "Finished", "when": "no_next_wave" },
+        { "from": "WaitClear", "to": "Finished", "when": "end_of_sequence" },
+        { "from": "Finished", "to": "WaitRestart", "when": "loop" },
+        { "from": "WaitRestart", "to": "AwaitTrigger", "when": "restart_elapsed_proximity_mode" },
+        { "from": "WaitRestart", "to": "SpawningWave", "when": "restart_elapsed_auto_mode" }
+      ]
+    },
+    {
+      "id": "Spawner_Periodic_BetweenWaves",
+      "label": "Spawner Periodic (Between-Waves Cooldown)",
+      "initial": "AwaitTrigger",
+      "states": [
+        { "id": "AwaitTrigger", "label": "AwaitTrigger", "class": "IdleState" },
+        { "id": "SpawningWave", "label": "SpawningWave", "class": "MoveState" },
+        { "id": "WaitCooldown", "label": "WaitBWC", "class": "PlayerAttackState" },
+        { "id": "WaitRestart", "label": "WaitRestart", "class": "DamageState" },
+        { "id": "Finished", "label": "Finished", "class": "DeathState", "terminal": true }
+      ],
+      "transitions": [
+        { "from": "AwaitTrigger", "to": "SpawningWave", "when": "start" },
+        { "from": "SpawningWave", "to": "WaitCooldown", "when": "placed" },
+        { "from": "WaitCooldown", "to": "SpawningWave", "when": "bwc_elapsed" },
+        { "from": "SpawningWave", "to": "Finished", "when": "no_next_wave" },
+        { "from": "WaitCooldown", "to": "Finished", "when": "end_of_sequence" },
+        { "from": "Finished", "to": "WaitRestart", "when": "loop" },
+        { "from": "WaitRestart", "to": "AwaitTrigger", "when": "restart_elapsed_proximity_mode" },
+        { "from": "WaitRestart", "to": "SpawningWave", "when": "restart_elapsed_auto_mode" }
+      ]
     }
   ],
   "version": 1

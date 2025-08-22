@@ -12,6 +12,9 @@ class FsmSetsPanelModel:
     hovered_button_row: Optional[int] = None
     hovered_button_kind: Optional[str] = None  # 'clone' or 'delete'
     items: List[str] = field(default_factory=list)  # list of set ids
+    # Runtime highlight context coming from in-game hover (optional)
+    highlighted_set_id: Optional[str] = None
+    highlighted_warnings: List[str] = field(default_factory=list)
 
 
 __all__ = ["FsmSetsPanelModel"]

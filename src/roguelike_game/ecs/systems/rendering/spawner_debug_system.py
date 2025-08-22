@@ -10,6 +10,15 @@ from roguelike_engine.utils.benchmark import benchmark
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.ecs.utils.collider_utils import build_collider_rect, get_circle_world
 from roguelike_game.ecs.components.physics.circle_collider import CircleCollider
+try:
+    # Optional: highlight FSM set + params in Editor when hovering a spawner
+    from roguelike_editors.fsm.services.fsm_runtime_bridge import (
+        set_editor_highlight_context as _fsm_set_highlight_ctx,
+        lint_set_params as _fsm_lint,
+    )
+except Exception:  # pragma: no cover - editor/runtime bridge may be missing
+    _fsm_set_highlight_ctx = None
+    _fsm_lint = None
 
 
 class SpawnerDebugRenderSystem:
@@ -80,6 +89,9 @@ class SpawnerDebugRenderSystem:
             remove_candidate = getattr(getattr(world, 'state', None), 'spawner_remove_candidate_eid', None)
         except Exception:
             remove_candidate = None
+        highlight_sid = None
+        highlight_params = None
+        highlight_warnings = []
         for eid in world.get_entities_with('SpawnerConfig', 'SpawnerState'):
             cfg = comps['SpawnerConfig'][eid]
             st = comps['SpawnerState'][eid]
@@ -182,13 +194,52 @@ class SpawnerDebugRenderSystem:
 
                 shape = str(getattr(cfg, 'spawner_shape', 'circle') or 'circle').lower()
                 bld = getattr(cfg, 'building_id', None)
+                fsm = str(getattr(st, 'fsm_state', '') or '')
+                fsm_set = getattr(st, 'fsm_set_id', None)
+                if is_hover and fsm_set:
+                    highlight_sid = fsm_set
+                    # Build params view for linter from cfg/state (best-effort)
+                    params = {}
+                    try:
+                        # Common numeric/spawner fields
+                        for k in (
+                            'cooldown_frames',
+                            'between_waves_cooldown_frames',
+                            'restart_cooldown_frames',
+                            'max_active',
+                            'spawn_radius',
+                            'spawner_shape',
+                            'advance_on',
+                        ):
+                            v = getattr(cfg, k, None)
+                            if v is not None:
+                                params[k] = v
+                        # Some fields sometimes live under policy
+                        pol = getattr(cfg, 'policy', {}) or {}
+                        for k in ('advance_on',):
+                            if k in pol and pol[k] is not None:
+                                params.setdefault(k, pol[k])
+                    except Exception:
+                        pass
+                    highlight_params = params or None
+                    # Lint warnings for on-screen debug
+                    if _fsm_lint is not None:
+                        try:
+                            highlight_warnings = list(_fsm_lint(highlight_sid, highlight_params) or [])
+                        except Exception:
+                            highlight_warnings = []
                 lines = [
                     f"{cfg.template_id}"
                     + (f"  (bld:{bld})" if bld is not None else ""),
                     f"{status} | wave {wave_num}/{total_waves}",
                     f"live {live}/{exp} | {cd_line}",
+                    (f"fsm: {fsm}" if fsm else ""),
+                    (f"set: {fsm_set}" if fsm_set else ""),
                     f"{mode} | loop:{'on' if loop_policy else 'off'} | shape:{shape}",
                 ]
+
+                # Remove empty entries if FSM line is blank
+                lines = [t for t in lines if t]
 
                 # Render multiline with translucent background, centered at (cx, cy)
                 cyan = (0, 200, 255)
@@ -210,6 +261,31 @@ class SpawnerDebugRenderSystem:
                     box.blit(srf, (x, y))
                     y += srf.get_height() + line_gap
                 screen.blit(box, (cx - box_w // 2, cy - box_h // 2))
+                # If hovered and we have linter warnings, draw them near the anchor
+                if is_hover and highlight_warnings:
+                    warn_padding = 4
+                    warn_gap = 1
+                    amber = (255, 180, 60)
+                    warn_surfs = [self.font.render(f"! {w}", True, amber) for w in highlight_warnings[:4]]
+                    wmax = max((s.get_width() for s in warn_surfs), default=0)
+                    wh = sum((s.get_height() for s in warn_surfs)) + warn_gap * (len(warn_surfs) - 1 if warn_surfs else 0)
+                    wb = pygame.Surface((wmax + warn_padding * 2, wh + warn_padding * 2), pygame.SRCALPHA)
+                    wb.fill((30, 20, 0, 170))
+                    pygame.draw.rect(wb, amber, wb.get_rect(), width=1)
+                    wy = warn_padding
+                    for srf in warn_surfs:
+                        wx = warn_padding
+                        wb.blit(srf, (wx, wy))
+                        wy += srf.get_height() + warn_gap
+                    # Place to the right of the main box
+                    screen.blit(wb, (cx + box_w // 2 + 6, cy - (wb.get_height() // 2)))
+
+        # Update Editor highlight context once per frame
+        if _fsm_set_highlight_ctx is not None:
+            try:
+                _fsm_set_highlight_ctx(highlight_sid, highlight_params)
+            except Exception:
+                pass
 
         # Draw NPC 'feet' colliders in pink to visualize overlap hitboxes
         pos_map = comps.get('Position', {})

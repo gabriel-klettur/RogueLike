@@ -94,6 +94,11 @@ class SpawnerRuntimeSystem:
                 if looping:
                     # Count down restart delay, then reset
                     if getattr(st, 'restart_cooldown_remaining', 0) > 0:
+                        # Waiting for restart
+                        try:
+                            st.fsm_state = 'wait_restart'
+                        except Exception:
+                            pass
                         st.restart_cooldown_remaining -= 1
                         continue
                     st.finished = False
@@ -114,10 +119,19 @@ class SpawnerRuntimeSystem:
                         except Exception:
                             pass
                 else:
+                    try:
+                        st.fsm_state = 'finished'
+                    except Exception:
+                        pass
                     continue
 
             # Only run if started and there is at least one wave
             if not st.started or not cfg.waves:
+                # Awaiting trigger or missing waves data
+                try:
+                    st.fsm_state = 'await_trigger'
+                except Exception:
+                    pass
                 continue
 
             # Always prune dead/missing entities from the current wave tracking
@@ -155,10 +169,18 @@ class SpawnerRuntimeSystem:
                             st.expected_this_wave = 0
                             st.restart_cooldown_remaining = getattr(cfg, 'restart_cooldown_frames', getattr(cfg, 'cooldown_frames', 0))
                             st.finished = True
+                            try:
+                                st.fsm_state = 'wait_restart'
+                            except Exception:
+                                pass
                             logger.info(f"[Spawner] {cfg.template_id}:{eid} cycle completed; scheduling restart in {st.restart_cooldown_remaining} frames")
                             continue
                         else:
                             st.finished = True
+                            try:
+                                st.fsm_state = 'finished'
+                            except Exception:
+                                pass
                             logger.info(f"[Spawner] {cfg.template_id}:{eid} all waves completed")
                             continue
                     else:
@@ -169,6 +191,10 @@ class SpawnerRuntimeSystem:
                         st.cooldown_remaining = max(st.cooldown_remaining, next_cd)
                 else:
                     # Still waiting for monsters to be eliminated or none actually spawned yet
+                    try:
+                        st.fsm_state = 'wait_clear'
+                    except Exception:
+                        pass
                     continue
 
             # In cooldown-advance mode: if we already spawned all waves, wait until all active entities are cleared to finish/restart
@@ -182,19 +208,41 @@ class SpawnerRuntimeSystem:
                     if looping:
                         st.restart_cooldown_remaining = getattr(cfg, 'restart_cooldown_frames', getattr(cfg, 'cooldown_frames', 0))
                         st.finished = True
+                        try:
+                            st.fsm_state = 'wait_restart'
+                        except Exception:
+                            pass
                         logger.info(f"[Spawner] {cfg.template_id}:{eid} cycle completed; scheduling restart in {st.restart_cooldown_remaining} frames")
                     else:
                         st.finished = True
+                        try:
+                            st.fsm_state = 'finished'
+                        except Exception:
+                            pass
                         logger.info(f"[Spawner] {cfg.template_id}:{eid} all waves completed")
                 # Either way, do nothing else this tick while waiting
+                if active_count > 0:
+                    try:
+                        st.fsm_state = 'wait_clear'
+                    except Exception:
+                        pass
                 continue
 
             # Cooldown handling (only matters when spawning a new wave)
             if st.cooldown_remaining > 0:
+                try:
+                    st.fsm_state = 'wait_cooldown'
+                except Exception:
+                    pass
                 st.cooldown_remaining -= 1
                 continue
 
             # Determine current wave to spawn
+            # About to spawn a wave
+            try:
+                st.fsm_state = 'spawning_wave'
+            except Exception:
+                pass
             wave = cfg.waves[min(st.current_wave_idx, len(cfg.waves) - 1)]
             spawns = wave.get('spawns', [])
             if not spawns:

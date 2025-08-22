@@ -7,7 +7,7 @@ from __future__ import annotations
 import json
 import ast
 import os
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from roguelike_engine.config import config
 from roguelike_game.ecs.components.spawner.spawner_config import SpawnerConfig
@@ -18,6 +18,12 @@ from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.config.config_z_layer import Z_LAYERS, DEFAULT_Z
 from roguelike_engine.buildings.building import Building
 
+# Optional: FSM Editor bridge (for validation of set ids). Keep non-fatal.
+try:
+    from roguelike_editors.fsm.services.fsm_runtime_bridge import get_set as _fsm_get_set
+except Exception:  # pragma: no cover - editor may not be available in some contexts
+    _fsm_get_set = None
+
 logger = logging.getLogger(__name__)
 
 
@@ -27,6 +33,85 @@ class SpawnerPlacementSystem:
         self._loaded = False
         self._templates: Dict[str, Dict[str, Any]] = {}
         self._waves: Dict[str, List[Dict[str, Any]]] = {}
+
+    # Phase 2: compile a visual FSM set id for the FSM Editor based on the resolved config.
+    # This is purely metadata for tools/UI and does not change runtime behavior.
+    def _compile_fsm_set(self, cfg: SpawnerConfig) -> (str, Dict[str, Any]):
+        try:
+            pol = dict(getattr(cfg, 'policy', {}) or {})
+            trig = str(((getattr(cfg, 'trigger', {}) or {}).get('type') or 'proximity')).lower()
+            advance_on = str(pol.get('advance_on', 'cooldown') or 'cooldown').lower()
+            bwc_frames = int(getattr(cfg, 'between_waves_cooldown_frames', 0) or 0)
+            bwc = bwc_frames > 0
+            prox_init_only = bool(pol.get('proximity_initial_only', False))
+            loop = bool(pol.get('restart_on_done') or pol.get('loop') or pol.get('repeat'))
+            max_active = int(pol.get('max_active', 0) or 0)
+            mode = pol.get('mode', '')
+            # Select set id
+            if advance_on == 'clear':
+                set_id = 'Spawner_Waves_Clear'
+            elif bwc:
+                set_id = 'Spawner_Periodic_BetweenWaves'
+            else:
+                set_id = 'Spawner_Periodic_Cooldown'
+            params: Dict[str, Any] = {
+                'trigger': trig,
+                'advance_on': advance_on,
+                'between_waves_cooldown_frames': bwc_frames,
+                'proximity_initial_only': prox_init_only,
+                'loop': loop,
+                'cooldown_frames': int(getattr(cfg, 'cooldown_frames', 0) or 0),
+                'restart_cooldown_frames': int(getattr(cfg, 'restart_cooldown_frames', 0) or 0),
+                'max_active': max_active,
+                'mode': mode,
+                'spawner_shape': getattr(cfg, 'spawner_shape', 'circle'),
+                'spawn_radius': getattr(cfg, 'spawn_radius', None),
+                'template_id': getattr(cfg, 'template_id', ''),
+            }
+            return set_id, params
+        except Exception:
+            # Fallback to a sensible default
+            return 'Spawner_Periodic_Cooldown', {
+                'error': 'compile_failed'
+            }
+
+    # Phase 3: overrides from template/instance
+    def _fsm_override_from(self, tpl: Dict[str, Any], inst: Dict[str, Any]) -> (Optional[str], Dict[str, Any]):
+        """Read optional FSM override. Returns (set_id_or_None, params_dict). Supports:
+        - Template-level block: { "fsm": { "set_id": str, "params": {..} } }
+        - Instance-level block: { "fsm": { "set_id": str, "params": {..} } }
+        - Instance overrides dot-notation: overrides { "fsm.set_id": str, "fsm.params.X": any }
+        Instance has priority over template.
+        """
+        set_id: Optional[str] = None
+        params: Dict[str, Any] = {}
+        try:
+            # Template block
+            tfsm = tpl.get('fsm') if isinstance(tpl, dict) else None
+            if isinstance(tfsm, dict):
+                if isinstance(tfsm.get('params'), dict):
+                    params.update(tfsm['params'])
+                if isinstance(tfsm.get('set_id'), str):
+                    set_id = tfsm['set_id']
+            # Instance block
+            if isinstance(inst, dict) and isinstance(inst.get('fsm'), dict):
+                if isinstance(inst['fsm'].get('params'), dict):
+                    params.update(inst['fsm']['params'])
+                if isinstance(inst['fsm'].get('set_id'), str):
+                    set_id = inst['fsm']['set_id'] or set_id
+            # Dot-notation overrides
+            ov = inst.get('overrides', {}) if isinstance(inst, dict) else {}
+            if isinstance(ov, dict):
+                for k, v in ov.items():
+                    if k == 'fsm.set_id' and isinstance(v, str):
+                        set_id = v
+                    elif k.startswith('fsm.params.'):
+                        key = k.split('.', 2)[2] if '.' in k else None
+                        if key:
+                            params[key] = v
+        except Exception:
+            pass
+        return set_id, params
 
     def _load_templates(self) -> Dict[str, Dict[str, Any]]:
         base = config.DATA_DIR
@@ -199,10 +284,38 @@ class SpawnerPlacementSystem:
             tpl_id = inst.get("template_id")
             if not tpl_id or tpl_id not in self._templates:
                 continue
-            cfg = self._resolve_config(self._templates[tpl_id], inst)
+            tpl = self._templates[tpl_id]
+            cfg = self._resolve_config(tpl, inst)
             eid = world.create_entity()
             comps['SpawnerConfig'][eid] = cfg
-            comps['SpawnerState'][eid] = SpawnerState()
+            st = SpawnerState()
+            # Attach Phase 2 FSM set metadata for editor/overlay tools
+            try:
+                sid, params = self._compile_fsm_set(cfg)
+                # Phase 3: apply optional overrides (instance > template)
+                ov_sid, ov_params = self._fsm_override_from(tpl, inst)
+                if ov_sid:
+                    # Validate override set id if registry is available
+                    if _fsm_get_set is not None:
+                        try:
+                            if _fsm_get_set(ov_sid) is not None:
+                                sid = ov_sid
+                            else:
+                                logger.warning("[SpawnerPlacementSystem] Unknown FSM set override set_id='%s' (keeping compiled '%s')", ov_sid, sid)
+                        except Exception:
+                            sid = ov_sid  # best-effort if validation raised
+                    else:
+                        sid = ov_sid
+                if ov_params:
+                    try:
+                        params.update(ov_params)
+                    except Exception:
+                        pass
+                st.fsm_set_id = sid
+                st.fsm_set_params = params
+            except Exception:
+                pass
+            comps['SpawnerState'][eid] = st
             # Optional runtime visualization: link to an existing Building by building_id
             if getattr(cfg, 'visible_in_game', False) and getattr(cfg, 'building_id', None) is not None:
                 inst_id = inst.get("id")

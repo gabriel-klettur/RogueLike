@@ -4,7 +4,7 @@
     "zone": "Forest",
     "tile": [
       26,
-      16
+      15
     ],
     "overrides": {
       "building_id": 113

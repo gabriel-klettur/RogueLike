@@ -140,6 +140,96 @@
         "pan_y": 0.0,
         "zoom": 1.0
       }
+    },
+    "Spawner_Periodic_BetweenWaves": {
+      "nodes": {
+        "AwaitTrigger": {
+          "x": 56,
+          "y": 92
+        },
+        "Finished": {
+          "x": 532,
+          "y": 366
+        },
+        "SpawningWave": {
+          "x": 385,
+          "y": 110
+        },
+        "WaitCooldown": {
+          "x": 27,
+          "y": 290
+        },
+        "WaitRestart": {
+          "x": 329,
+          "y": 273
+        }
+      },
+      "viewport": {
+        "legend_collapsed": false,
+        "pan_x": 0.0,
+        "pan_y": 0.0,
+        "zoom": 1.0
+      }
+    },
+    "Spawner_Periodic_Cooldown": {
+      "nodes": {
+        "AwaitTrigger": {
+          "x": 85,
+          "y": 114
+        },
+        "Finished": {
+          "x": 613,
+          "y": 354
+        },
+        "SpawningWave": {
+          "x": 348,
+          "y": 97
+        },
+        "WaitCooldown": {
+          "x": 83,
+          "y": 420
+        },
+        "WaitRestart": {
+          "x": 337,
+          "y": 321
+        }
+      },
+      "viewport": {
+        "legend_collapsed": false,
+        "pan_x": 0.0,
+        "pan_y": 0.0,
+        "zoom": 1.0
+      }
+    },
+    "Spawner_Waves_Clear": {
+      "nodes": {
+        "AwaitTrigger": {
+          "x": 60,
+          "y": 109
+        },
+        "Finished": {
+          "x": 573,
+          "y": 358
+        },
+        "SpawningWave": {
+          "x": 410,
+          "y": 98
+        },
+        "WaitClear": {
+          "x": 247,
+          "y": 381
+        },
+        "WaitRestart": {
+          "x": 75,
+          "y": 259
+        }
+      },
+      "viewport": {
+        "legend_collapsed": false,
+        "pan_x": 0.0,
+        "pan_y": 0.0,
+        "zoom": 1.0
+      }
     }
   }
 }
