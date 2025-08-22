@@ -9,11 +9,11 @@ except Exception:
     TILE_SIZE = 32
 
 try:
-    from roguelike_engine.config.config import BUILDINGS_COLLISIONS_DATA_PATH
+    from roguelike_engine.config.config import BUILDINGS_COLLISIONS_DATA_PATH, BUILDINGS_TEMPLATES_PATH, BUILDINGS_INSTANCES_PATH
 except Exception:
     BUILDINGS_COLLISIONS_DATA_PATH = "data/buildings/buildings_collisions_data.json"
 
-from roguelike_editors.buildings.utils.save_buildings_to_json import save_buildings_to_json
+from roguelike_editors.buildings.utils.save_buildings_to_json import save_buildings_to_json, save_buildings_split
 
 logger = logging.getLogger(__name__)
 
@@ -193,8 +193,12 @@ class BuildingCollidersPanelEventHandler:
                         try:
                             save_rect = self.model.picker_rects.get('save_cu')
                             if save_rect and save_rect.collidepoint((mx, my)):
-                                save_buildings_to_json(buildings)
-                                logger.info("[Colliders][CU] Overrides guardados (si existen) en buildings_data.json")
+                                if os.path.exists(BUILDINGS_TEMPLATES_PATH) and os.path.exists(BUILDINGS_INSTANCES_PATH):
+                                    save_buildings_split(buildings)
+                                    logger.info("[Colliders][CU] Overrides guardados (si existen) en split files")
+                                else:
+                                    save_buildings_to_json(buildings)
+                                    logger.info("[Colliders][CU] Overrides guardados (si existen) en buildings_data.json")
                                 return True
                         except Exception:
                             pass
