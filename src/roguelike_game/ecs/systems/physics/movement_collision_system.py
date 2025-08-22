@@ -4,6 +4,7 @@ Handles movement-based collision for entities using their 'feet' collider.
 Checks collisions against solid tiles and buildings, resolving movement per axis.
 """
 import pygame
+import math
 from typing import Dict, Optional, Tuple
 from roguelike_game.ecs.utils.collider_utils import (
     build_collider_rect,
@@ -36,7 +37,7 @@ class MovementCollisionSystem:
                       tile_query,
                       npc_circles: Optional[Dict[int, Tuple[float, float, float]]],
                       npc_rects: Optional[Dict[int, pygame.Rect]],
-                      max_iters: int = 3) -> Tuple[float, float]:
+                      max_iters: int = 5) -> Tuple[float, float]:
         """Attempt to move a circle by (dx,dy), sliding along obstacles using MTV resolution.
         Returns new (cx, cy)."""
         if (dx == 0 and dy == 0) or r <= 0:
@@ -47,14 +48,24 @@ class MovementCollisionSystem:
                 break
             nx = cx + vx
             ny = cy + vy
-            # Broad-phase query via AABB
-            aabb = pygame.Rect(int(nx - r), int(ny - r), int(r * 2), int(r * 2))
+            # Broad-phase query via AABB (slightly expanded to avoid edge gaps)
+            left = math.floor(nx - r - 1)
+            top = math.floor(ny - r - 1)
+            w = math.ceil(2 * r) + 2
+            h = math.ceil(2 * r) + 2
+            aabb = pygame.Rect(left, top, w, h)
             tiles = tile_query(aabb)
 
-            # Find the most significant MTV among collisions
+            # Gather MTVs and pick the one that most opposes current velocity (reduces corner snag)
             collided = False
-            best_mtv = (0.0, 0.0)
-            best_len2 = 0.0
+            oppose_best_mtv = (0.0, 0.0)
+            oppose_best_dot = float('inf')  # most negative dot is best
+            mag_best_mtv = (0.0, 0.0)
+            mag_best_len2 = 0.0
+            # Accumulate MTVs to stabilize corner resolution
+            sum_mtv_x = 0.0
+            sum_mtv_y = 0.0
+            coll_count = 0
 
             # Tiles
             for tile in tiles:
@@ -62,9 +73,16 @@ class MovementCollisionSystem:
                     collided = True
                     mtv = circle_rect_mtv(nx, ny, r, tile)
                     ml2 = mtv[0]*mtv[0] + mtv[1]*mtv[1]
-                    if ml2 > best_len2:
-                        best_mtv = mtv
-                        best_len2 = ml2
+                    if ml2 > mag_best_len2:
+                        mag_best_mtv = mtv
+                        mag_best_len2 = ml2
+                    dot = vx * mtv[0] + vy * mtv[1]
+                    if dot < oppose_best_dot:
+                        oppose_best_dot = dot
+                        oppose_best_mtv = mtv
+                    sum_mtv_x += mtv[0]
+                    sum_mtv_y += mtv[1]
+                    coll_count += 1
 
             # Other NPC circles
             if npc_circles:
@@ -73,9 +91,16 @@ class MovementCollisionSystem:
                         collided = True
                         mtv = circle_circle_mtv((nx, ny, r), c)
                         ml2 = mtv[0]*mtv[0] + mtv[1]*mtv[1]
-                        if ml2 > best_len2:
-                            best_mtv = mtv
-                            best_len2 = ml2
+                        if ml2 > mag_best_len2:
+                            mag_best_mtv = mtv
+                            mag_best_len2 = ml2
+                        dot = vx * mtv[0] + vy * mtv[1]
+                        if dot < oppose_best_dot:
+                            oppose_best_dot = dot
+                            oppose_best_mtv = mtv
+                        sum_mtv_x += mtv[0]
+                        sum_mtv_y += mtv[1]
+                        coll_count += 1
 
             # Other NPC rectangles (compat)
             if npc_rects:
@@ -84,9 +109,16 @@ class MovementCollisionSystem:
                         collided = True
                         mtv = circle_rect_mtv(nx, ny, r, rr)
                         ml2 = mtv[0]*mtv[0] + mtv[1]*mtv[1]
-                        if ml2 > best_len2:
-                            best_mtv = mtv
-                            best_len2 = ml2
+                        if ml2 > mag_best_len2:
+                            mag_best_mtv = mtv
+                            mag_best_len2 = ml2
+                        dot = vx * mtv[0] + vy * mtv[1]
+                        if dot < oppose_best_dot:
+                            oppose_best_dot = dot
+                            oppose_best_mtv = mtv
+                        sum_mtv_x += mtv[0]
+                        sum_mtv_y += mtv[1]
+                        coll_count += 1
 
             if not collided:
                 # Free move
@@ -94,18 +126,30 @@ class MovementCollisionSystem:
                 vx, vy = 0.0, 0.0
                 break
 
+            # Choose MTV:
+            # 1) If multiple overlaps, use accumulated MTV for stability
+            # 2) Otherwise prefer the one that most opposes velocity; fallback to largest magnitude
+            if coll_count > 1 and (sum_mtv_x*sum_mtv_x + sum_mtv_y*sum_mtv_y) > 1e-8:
+                use_mtv = (sum_mtv_x, sum_mtv_y)
+            else:
+                use_mtv = oppose_best_mtv if oppose_best_dot < -1e-8 else mag_best_mtv
+
             # Apply separation push and slide remaining velocity along tangent
-            cx += best_mtv[0]
-            cy += best_mtv[1]
-            # normal is direction of MTV
-            ml = (best_len2 ** 0.5)
+            cx += use_mtv[0]
+            cy += use_mtv[1]
+            # normal is direction of MTV used
+            ml = (use_mtv[0]*use_mtv[0] + use_mtv[1]*use_mtv[1]) ** 0.5
             if ml > 1e-6:
-                nxn = best_mtv[0] / ml
-                nyn = best_mtv[1] / ml
+                nxn = use_mtv[0] / ml
+                nyn = use_mtv[1] / ml
                 dot = vx * nxn + vy * nyn
                 # remove normal component (slide along surface)
                 vx = vx - dot * nxn
                 vy = vy - dot * nyn
+                # Apply a small outward skin to avoid immediate re-collision due to rounding
+                skin = 0.5
+                cx += nxn * skin
+                cy += nyn * skin
             else:
                 # Degenerate MTV, abort remaining velocity
                 vx, vy = 0.0, 0.0
