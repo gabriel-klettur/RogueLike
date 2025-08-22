@@ -19,10 +19,18 @@ logger = logging.getLogger(__name__)
 SPAWN_PADDING_EXTRA = 1
 
 class SpawnNPCManager:
+    """
+    Deprecated: Legacy initial NPC spawn manager.
+    All NPCs must be spawned via the JSON spawner system (SpawnerRuntimeSystem + SpawnSystem).
+    This class is kept only for backward compatibility and will be removed in a future cleanup.
+    """
     def __init__(self, world):
         """
         :param world: instancia de ECSWorld (se asume que ya tiene spatial_index, map_manager y buildings).
         """
+        logger.warning(
+            "SpawnNPCManager is deprecated; NPCs must be spawned via the JSON spawner system (SpawnerRuntimeSystem)."
+        )
         self.world = world
         self.map_manager = world.map_manager
         self.buildings = world.buildings

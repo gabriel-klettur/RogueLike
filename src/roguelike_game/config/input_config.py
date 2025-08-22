@@ -58,6 +58,8 @@ class InputConfig:
                 "toggle_building_editor": "K_F10",
                 "toggle_map_editor": "K_F11",
                 "toggle_fsm_editor": "K_F12",
+                # Diagnostics overlay toggle
+                "toggle_debug_overlay": "K_F9",
                 "select_class": "K_F2",
                 # Gameplay inventory (not editor)
                 "toggle_inventory": "K_i"
@@ -86,6 +88,9 @@ class InputConfig:
             self.bindings["toggle_map_editor"] = "K_F11"; ensured = True
         if "toggle_fsm_editor" not in self.bindings:
             self.bindings["toggle_fsm_editor"] = "K_F12"; ensured = True
+        # Ensure diagnostics overlay toggle binding exists
+        if "toggle_debug_overlay" not in self.bindings:
+            self.bindings["toggle_debug_overlay"] = "K_F9"; ensured = True
         if ensured:
             self.save()
         if "toggle_inventory" not in self.bindings:
@@ -188,6 +193,7 @@ class InputConfig:
             "toggle_building_editor": pygame.K_F10,
             "toggle_map_editor": pygame.K_F11,
             "toggle_fsm_editor": pygame.K_F12,
+            "toggle_debug_overlay": pygame.K_F9,
             # Gameplay inventory (not editor)
             "toggle_inventory": pygame.K_i,
             "select_class": pygame.K_F2
@@ -284,6 +290,7 @@ class InputConfig:
             "toggle_building_editor": pygame.K_F10,
             "toggle_map_editor": pygame.K_F11,
             "toggle_fsm_editor": pygame.K_F12,
+            "toggle_debug_overlay": pygame.K_F9,
             "toggle_inventory": pygame.K_i,
             "select_class": pygame.K_F2,
         }
