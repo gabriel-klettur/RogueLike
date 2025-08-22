@@ -24,6 +24,8 @@ class SpawnerConfig:
       defines whether the area is a circle or the circumscribed square of the same radius.
     - defend_spawn: optional. If True, spawned NPCs will defend the spawner area (circle defined by spawn_radius).
     - defend_leash: optional. If True (default), defenders are leashed to the defend circle; if False, they won't leash back.
+    - visible_in_game: optional. If True and a building_id is provided, the spawner will link to that building at runtime.
+    - building_id: optional. If provided, identifies the Building instance used as the runtime visual for this spawner.
     """
     template_id: str
     zone: str
@@ -43,3 +45,7 @@ class SpawnerConfig:
     defend_spawn: bool = False
     # Whether defenders should be leashed back into the circle
     defend_leash: bool = True
+    # If True and building_id is set, link to a building visual in the normal renderer
+    visible_in_game: bool = False
+    # Linkage to a Building visual by its persistent id (from buildings_data.json)
+    building_id: Optional[int] = None

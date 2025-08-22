@@ -34,6 +34,11 @@ class InstancePropertiesController:
         # Optional callback for editor to refresh Instances list after persistence
         # Signature: () -> None
         self.on_persist: Optional[callable] = None
+        # Optional callback to notify editor about a saved instance with context
+        # Signature: (inst: Dict[str, Any], changed_key: Optional[str]) -> None
+        self.on_instance_saved: Optional[callable] = None
+        # Track last edited dotted key path (e.g., "overrides.building_id")
+        self._last_edit_key: Optional[str] = None
 
     # --- API -----------------------------------------------------------------
     def set_instance(self, inst: Optional[Dict[str, Any]], *, index: Optional[int] = None) -> None:
@@ -178,6 +183,11 @@ class InstancePropertiesController:
         key, value_str = rows[row_index]
         self.model.editing_key = key
         self.model.editing_row_index = row_index
+        # Initialize last edit key with the row key being edited
+        try:
+            self._last_edit_key = str(key)
+        except Exception:
+            self._last_edit_key = key
         if self._text_input is None:
             font = pygame.font.SysFont(None, 18)
             self._text_input = TextInput(font)
@@ -197,6 +207,11 @@ class InstancePropertiesController:
             new_value = self._parse_value(new_text, key_path)
             self._apply_edit(key_path, new_value)
             # Persist to spawners_instances.json
+            # Remember the changed key path for callbacks
+            try:
+                self._last_edit_key = str(key_path)
+            except Exception:
+                self._last_edit_key = key_path
             self._persist_instance()
             # Clear editing state and refresh rows
             self.model.editing_key = None
@@ -385,6 +400,14 @@ class InstancePropertiesController:
                 self.on_persist()
         except Exception:
             pass
+        # Notify editor about saved instance with context (changed key)
+        try:
+            if self.on_instance_saved is not None:
+                self.on_instance_saved(inst, getattr(self, '_last_edit_key', None))
+        except Exception:
+            pass
+        # Clear last edit key after notifying
+        self._last_edit_key = None
 
 
 __all__ = ["InstancePropertiesController"]

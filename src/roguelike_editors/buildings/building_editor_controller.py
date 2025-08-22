@@ -10,6 +10,8 @@ from roguelike_editors.buildings.tools.collider_scope_tool import ColliderScopeT
 from roguelike_ui.ui_blocker import is_blocked
 
 from roguelike_editors.buildings.utils.zone_helpers import assign_zone_and_relatives
+from roguelike_editors.spawner.services.persistence import find_instance_in_json, persist_drop
+from roguelike_engine.config.map_config import global_map_settings
 
 from roguelike_editors.buildings.buildings_picker.building_picker_controller import BuildingPickerController
 import logging
@@ -133,6 +135,7 @@ class BuildingEditorController:
 
         # Guarda el building para recalcularlo
         building = self.editor.selected_building
+        was_resizing = bool(self.editor.resizing)
 
         # 2) Reset de flags de arrastre
         self.editor.dragging = False
@@ -140,8 +143,18 @@ class BuildingEditorController:
         self.editor.split_dragging = False
 
         # 3) Si había un building arrastrado, le asignamos zona/relativos
-        if building is not None:            
+        if building is not None:
             assign_zone_and_relatives(building)
+            # Si está vinculado a un spawner, persistir el cambio a JSON
+            try:
+                eid = getattr(building, "_spawner_eid", None)
+                world = getattr(building, "_world_ref", None)
+                start_entry = getattr(self.editor, "_spawner_drag_start_entry", None)
+                if eid is not None and world is not None:
+                    # No persistimos tamaños de imagen legacy; overrides relevantes se manejan vía building_id
+                    persist_drop(world, eid, start_entry, overrides_update=None)
+            except Exception:
+                pass
 
         # 4) Ya podemos limpiar la selección
         self.editor.selected_building = None
@@ -227,6 +240,37 @@ class BuildingEditorController:
         self.editor.offset_y = world_y - building.y
         logger.info(f"🏗️ Arrastre de {building.image_path} iniciado")
         assign_zone_and_relatives(self.editor.selected_building)
+        # Si es un spawner, capturar snapshot para persistencia (zona/local_tile/original overrides/id)
+        try:
+            eid = getattr(building, "_spawner_eid", None)
+            world = getattr(building, "_world_ref", None)
+            if eid is not None and world is not None:
+                comps = getattr(world, 'components', {})
+                cfg = comps.get('SpawnerConfig', {}).get(eid)
+                if cfg is not None:
+                    zone = cfg.zone
+                    off_x, off_y = global_map_settings.zone_offsets.get(zone, (0, 0))
+                    tx, ty = cfg.anchor_tile
+                    local_start = (int(tx - off_x), int(ty - off_y))
+                    tpl_id = cfg.template_id
+                    data, idx, overrides = find_instance_in_json(tpl_id, zone, local_start)
+                    inst_id = None
+                    try:
+                        if idx is not None:
+                            inst_id = data[idx].get('id')
+                    except Exception:
+                        inst_id = None
+                    self.editor._spawner_drag_start_entry = {
+                        'template_id': tpl_id,
+                        'zone': zone,
+                        'local_tile': local_start,
+                        'overrides': overrides,
+                        'index': idx,
+                        'id': inst_id,
+                    }
+        except Exception:
+            # No romper flujo de editor por snapshot fallida
+            self.editor._spawner_drag_start_entry = None
 
     # ======================== ACTUALIZACIÓN ========================= #
     def update(self, camera):

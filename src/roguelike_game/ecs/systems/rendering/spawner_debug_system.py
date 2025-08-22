@@ -111,6 +111,7 @@ class SpawnerDebugRenderSystem:
             arm = 8
             pygame.draw.line(screen, cross_col, (cx - arm, cy), (cx + arm, cy), 2)
             pygame.draw.line(screen, cross_col, (cx, cy - arm), (cx, cy + arm), 2)
+
             # Draw proximity radius if applicable
             if (cfg.trigger or {}).get('type') == 'proximity':
                 radius_tiles = int((cfg.trigger or {}).get('radius', 5))
@@ -180,8 +181,10 @@ class SpawnerDebugRenderSystem:
                     cd_line = f"cd {cd_s:.2f}s"
 
                 shape = str(getattr(cfg, 'spawner_shape', 'circle') or 'circle').lower()
+                bld = getattr(cfg, 'building_id', None)
                 lines = [
-                    f"{cfg.template_id}",
+                    f"{cfg.template_id}"
+                    + (f"  (bld:{bld})" if bld is not None else ""),
                     f"{status} | wave {wave_num}/{total_waves}",
                     f"live {live}/{exp} | {cd_line}",
                     f"{mode} | loop:{'on' if loop_policy else 'off'} | shape:{shape}",

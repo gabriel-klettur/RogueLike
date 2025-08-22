@@ -57,6 +57,8 @@ Campos por plantilla (MVP):
 - `waves` (lista de objetos) OPCIONAL si usas `waves_id`:
   - Cada ola es `{ "spawns": [ SPAWN_ENTRY, ... ] }`. Ver sección Spawns.
 - `waves_id` (string) OPCIONAL: referencia a un conjunto de olas definido en `spawners_waves.json`.
+- `visible_in_game` (bool) OPCIONAL: si `true` y `building_id` está definido, el spawner se vinculará al edificio indicado en runtime para visualización (sin sprites propios).
+- `building_id` (int) OPCIONAL: id persistente del `Building` usado como visual del spawner.
 
 Ejemplo mínimo de plantilla inline:
 ```json
@@ -64,6 +66,8 @@ Ejemplo mínimo de plantilla inline:
   "id": "barbol_periodic_no_stack",
   "spawner_type": "invisible",
   "spawn_radius": 0,
+  "visible_in_game": true,
+  "building_id": 113,
   "trigger": { "type": "proximity", "radius": 5, "auto_start": true },
   "policy": {
     "mode": "periodic",
@@ -110,6 +114,8 @@ Ejemplo modo mixto (proximidad inicial + cooldown fijo entre olas):
 {
   "id": "survival_10",
   "spawner_type": "invisible",
+  "visible_in_game": true,
+  "building_id": 113,
   "trigger": { "type": "proximity", "radius": 10, "auto_start": true },
   "policy": {
     "mode": "periodic",
@@ -156,6 +162,7 @@ Campos por instancia:
   - `trigger.*` (ej.: `trigger.radius`)
   - `policy.*` (ej.: `policy.cooldown_s`, `policy.restart_on_done`)
   - `spawner_type`
+  - `building_id`, `visible_in_game`
 
 Ejemplo:
 ```json
@@ -165,7 +172,9 @@ Ejemplo:
   "tile": [10, 12],
   "overrides": {
     "policy.restart_on_done": true,
-    "trigger.radius": 6
+    "trigger.radius": 6,
+    "visible_in_game": true,
+    "building_id": 113
   }
 }
 ```
@@ -270,11 +279,14 @@ Notas para `advance_on`:
   - Rutas de patrulla (`PatrolRoute`) con puntos y polilíneas.
   - Áreas de defensa `DefendArea`: círculo o cuadrado naranja (según `shape`) con etiqueta `shape` y `r=NNNpx`, y una línea que asocia al NPC.
 
+Visualización en runtime (sin debug):
+- Si `visible_in_game=true` y se define `building_id`, el `SpawnerPlacementSystem` vincula el spawner a un `Building` existente con ese id, marcando el objeto con metadatos (`_is_spawner_visual`, `spawner_instance_id`) para evitar duplicados. No se crean sprites propios; se reutiliza el edificio como visual y estos vínculos no se persisten en `buildings_data.json`.
+
 ---
 
 ## 9) Componentes (referencia rápida)
 `SpawnerConfig`:
-- `template_id`, `zone`, `anchor_tile` (global), `spawner_type`, `trigger`, `policy`, `waves`, `cooldown_frames`, `restart_cooldown_frames`, `between_waves_cooldown_frames`, `spawn_radius`, `spawner_shape`, `defend_spawn`, `defend_leash`.
+- `template_id`, `zone`, `anchor_tile` (global), `spawner_type`, `trigger`, `policy`, `waves`, `cooldown_frames`, `restart_cooldown_frames`, `between_waves_cooldown_frames`, `spawn_radius`, `spawner_shape`, `defend_spawn`, `defend_leash`, `visible_in_game`, `building_id`.
 
 `SpawnerState`:
 - `started`, `current_wave_idx`, `cooldown_remaining`, `spawned_entities` (no usado), `spawned_this_wave`, `current_wave_entities`, `expected_this_wave`, `finished`, `restart_cooldown_remaining`, `active_entities`, `initial_proximity_done`.
@@ -289,7 +301,8 @@ Notas para `advance_on`:
 2) (Opcional) Añade olas en `spawners_waves.json` y referencia con `waves_id`.
 3) Coloca instancias en `spawners_instances.json` con `zone` y `tile`.
 4) Ajusta `policy.cooldown_s`, `policy.restart_on_done`, `policy.proximity_initial_only` y `policy.between_waves_cooldown_s` según el comportamiento deseado.
-5) Activa `config.DEBUG_SPAWNER` para depurar visualmente.
+5) (Opcional) Define `building_id` y pon `visible_in_game=true` para vincular el spawner a un `Building` existente como visual en el juego estándar (sin sprites propios).
+6) Activa `config.DEBUG_SPAWNER` para depurar visualmente.
 
 ---
 
@@ -297,4 +310,3 @@ Notas para `advance_on`:
 - Triggers soportados: `proximity` y `auto`.
 - Sólo `spawn.kind = 'monster'`.
 - `policy.persistent` aceptado pero no aplicado todavía.
-- `spread_radius` hoy sólo afecta el `spread_fallback_max` por defecto; la búsqueda real es en espiral.

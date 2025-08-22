@@ -356,7 +356,7 @@ class SpawnerEditorEventHandler:
                         setattr(world.state, 'spawner_input_suppressed', True)
                 except Exception:
                     pass
-                # Snapshot original instance entry for persistence
+                # Snapshot original instance entry for persistence (capture id too)
                 try:
                     cfg = world.components['SpawnerConfig'][eid]
                     zone = cfg.zone
@@ -364,13 +364,20 @@ class SpawnerEditorEventHandler:
                     cur_tx, cur_ty = cfg.anchor_tile
                     local_start = (int(cur_tx - off_x), int(cur_ty - off_y))
                     tpl_id = cfg.template_id
-                    _, idx, overrides = find_instance_in_json(tpl_id, zone, local_start)
+                    data, idx, overrides = find_instance_in_json(tpl_id, zone, local_start)
+                    inst_id = None
+                    try:
+                        if idx is not None:
+                            inst_id = data[idx].get('id')
+                    except Exception:
+                        inst_id = None
                     self._drag_start_entry = {
                         'template_id': tpl_id,
                         'zone': zone,
                         'local_tile': local_start,
                         'overrides': overrides,
                         'index': idx,
+                        'id': inst_id,
                     }
                 except Exception:
                     self._drag_start_entry = None

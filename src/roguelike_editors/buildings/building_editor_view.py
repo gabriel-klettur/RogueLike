@@ -23,6 +23,11 @@ class BuildingEditorView:
         self.picker_view = PickerView(editor_state)
         # Professional title bar (top-left)
         self.title_view = BuildingsTitleView(None, editor_state)
+        # Small font to render building ID labels
+        try:
+            self._id_font = pygame.font.Font(None, 16)
+        except Exception:
+            self._id_font = None
 
 
     def render(self, screen, camera, buildings):
@@ -79,6 +84,23 @@ class BuildingEditorView:
             rect = pygame.Rect(x, y, w, h)
             pygame.draw.rect(screen, (0, 255, 255), rect, 4)
             pygame.draw.rect(screen, (255, 255, 255), rect, 1)
+            # Render small ID label near the top-left of the building rect
+            try:
+                if self._id_font is not None:
+                    bid = getattr(b, 'id', None)
+                    if bid is not None:
+                        label = f"ID {bid}"
+                        text_surf = self._id_font.render(label, True, (255, 255, 255))
+                        shadow_surf = self._id_font.render(label, True, (0, 0, 0))
+                        lx = rect.left
+                        ly = rect.top - text_surf.get_height() - 2
+                        if ly < 0:
+                            ly = rect.top + 2
+                        # simple shadow for readability
+                        screen.blit(shadow_surf, (lx + 1, ly + 1))
+                        screen.blit(text_surf, (lx, ly))
+            except Exception:
+                pass
             # Ocultar handles de herramientas en modo colisiones (colliders_mode)
             if not getattr(self.editor, 'colliders_mode', False):
                 self.default_view.render_reset_handle(screen, b, camera)

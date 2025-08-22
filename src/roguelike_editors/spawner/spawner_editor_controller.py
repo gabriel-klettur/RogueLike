@@ -5,6 +5,8 @@ from types import SimpleNamespace
 import pygame
 import logging
 from roguelike_engine.config.map_config import global_map_settings
+from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_engine.config.config_z_layer import Z_LAYERS, DEFAULT_Z
 from roguelike_editors.spawner.services.persistence import find_instance_in_json
 
 from roguelike_editors.spawner.spawner_editor_model import SpawnerEditorModel
@@ -75,6 +77,11 @@ class SpawnerEditorController:
         # Wire persist callback from Instance Properties to refresh Instances list
         try:
             self.instance_properties.on_persist = lambda: self.spawner_instances.refresh_from_disk()
+        except Exception:
+            pass
+        # Live update of visuals when instance overrides are saved
+        try:
+            self.instance_properties.on_instance_saved = self._on_instance_saved
         except Exception:
             pass
 
@@ -474,5 +481,78 @@ class SpawnerEditorController:
             self.instance_properties.set_instance(inst, index=selected_index)
             # Visibility is controlled by the presence of a selection and the active tool
             self.instance_properties.model.visible = bool(instances_visible and inst is not None)
+        except Exception:
+            pass
+
+    # Instance change propagation (live visuals) -----------------------------
+    def _on_instance_saved(self, inst: dict, changed_key: Optional[str] = None) -> None:
+        """When an instance is saved, relink its visual based on building_id changes.
+
+        Supports:
+        - building_id at instance root or under overrides.building_id
+        """
+        # Quick filter: if a specific key changed, react only to building_id edits
+        try:
+            if changed_key is not None:
+                ck = str(changed_key)
+                if ('building_id' not in ck):
+                    return
+        except Exception:
+            pass
+        try:
+            world = getattr(getattr(self, 'game', None), 'ecs', None)
+            world = getattr(world, 'ecs_world', None)
+            if not world:
+                return
+            blds = getattr(world, 'buildings', None) or []
+            # Resolve instance id and desired building id
+            inst_id = None
+            try:
+                inst_id = str(inst.get('id')) if inst and inst.get('id') is not None else None
+            except Exception:
+                inst_id = None
+            bld_id = None
+            try:
+                ov = inst.get('overrides') if isinstance(inst, dict) else None
+                if isinstance(ov, dict) and ov.get('building_id') is not None:
+                    bld_id = int(ov.get('building_id'))
+                elif inst.get('building_id') is not None:
+                    bld_id = int(inst.get('building_id'))
+            except Exception:
+                # keep as None on parse errors
+                pass
+            if inst_id is None or bld_id is None:
+                return
+            # Find target building by id
+            target = None
+            for ob in blds:
+                try:
+                    if getattr(ob, 'id', None) == bld_id:
+                        target = ob
+                        break
+                except Exception:
+                    continue
+            if target is None:
+                return
+            # Tag and link
+            try:
+                setattr(target, '_is_spawner_visual', True)
+                setattr(target, 'spawner_instance_id', inst_id)
+                setattr(target, 'spawn_id', inst_id)
+                # Record back-link to ECS entity if present
+                comps = getattr(world, 'components', {})
+                if 'SpawnerConfig' in comps:
+                    for eid in world.get_entities_with('SpawnerConfig'):
+                        try:
+                            cfg = comps['SpawnerConfig'][eid]
+                            # Match by instance id if available via existing spawn_id
+                            if getattr(target, 'spawn_id', None) == inst_id:
+                                setattr(target, '_spawner_eid', eid)
+                                setattr(target, '_world_ref', world)
+                                break
+                        except Exception:
+                            continue
+            except Exception:
+                pass
         except Exception:
             pass

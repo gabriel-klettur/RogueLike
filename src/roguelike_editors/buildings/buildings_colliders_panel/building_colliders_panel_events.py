@@ -83,50 +83,100 @@ class BuildingCollidersPanelEventHandler:
         return False
 
     def _save_collisions(self, buildings, force: bool = False):
-        # Persistencia: por defecto sólo si el building activo está en modo CG.
-        # Si force=True, ignorar el alcance activo y guardar colisiones CG globales igualmente.
-        if not force:
-            active = getattr(self.model, 'active_building', None)
-            eff_scope = getattr(active, 'collider_scope', getattr(self.editor_state, 'collider_scope', 'CG')) if active else getattr(self.editor_state, 'collider_scope', 'CG')
-            if eff_scope != 'CG':
-                return
-        # Cargar datos existentes y mezclar solo las claves afectadas en esta sesión
-        existing = {}
-        updated_keys = []
+        # Persiste colisiones en un esquema robusto y backward-compatible:
+        # {
+        #   "global": { image_path: {width,height,collision} },
+        #   "instances": { spawn_id: {width,height,collision} },
+        #   "by_building_id": { "<id>": {width,height,collision} }
+        # }
+        active = getattr(self.model, 'active_building', None)
+        eff_scope = getattr(active, 'collider_scope', getattr(self.editor_state, 'collider_scope', 'CG')) if active else getattr(self.editor_state, 'collider_scope', 'CG')
+
+        # Cargar existente compatible con legacy
         try:
             with open(BUILDINGS_COLLISIONS_DATA_PATH, 'r', encoding='utf-8') as cf:
-                existing = json.load(cf) or {}
+                raw = json.load(cf) or {}
         except Exception:
-            existing = {}
-
-        # Actualizar únicamente entradas CG presentes en la escena
-        for b in buildings:
-            if getattr(b, 'collision_map', None) is None:
-                continue
-            # Sólo tomar como fuente las instancias CG para no sobreescribir con CU
-            if getattr(b, 'collider_scope', 'CG') != 'CG':
-                continue
-            key = getattr(b, 'image_path', '')
-            if not key:
-                continue
-            updated_keys.append(key)
-            existing[key] = {
-                'width': len(b.collision_map[0]) if b.collision_map else 0,
-                'height': len(b.collision_map),
-                'collision': b.collision_map,
+            raw = {}
+        if isinstance(raw, dict) and ("global" in raw or "instances" in raw or "by_building_id" in raw):
+            data = {
+                "global": raw.get("global", {}) or {},
+                "instances": raw.get("instances", {}) or {},
+                "by_building_id": raw.get("by_building_id", {}) or {},
             }
+        else:
+            data = {"global": raw if isinstance(raw, dict) else {}, "instances": {}, "by_building_id": {}}
 
-        # Persistir mezcla resultante sin borrar otras claves previamente guardadas
+        updated_global = []
+        updated_instances = []
+        updated_by_id = []
+
+        # Guardar CG globales (a menos que sea CU y no se fuerce)
+        if force or eff_scope == 'CG':
+            for b in buildings:
+                if getattr(b, 'collision_map', None) is None:
+                    continue
+                # No persistir CG global desde visuales de spawner; sus colisiones deben ir por instancia
+                if getattr(b, '_is_spawner_visual', False) or getattr(b, 'spawner_instance_id', None):
+                    continue
+                if getattr(b, 'collider_scope', 'CG') != 'CG':
+                    continue
+                key = getattr(b, 'image_path', '')
+                if not key:
+                    continue
+                data['global'][key] = {
+                    'width': len(b.collision_map[0]) if b.collision_map else 0,
+                    'height': len(b.collision_map),
+                    'collision': b.collision_map,
+                }
+                updated_global.append(key)
+                # Guardar también por building_id si existe
+                try:
+                    bid = getattr(b, 'id', None)
+                    if bid is not None:
+                        bid_str = str(bid)
+                        data['by_building_id'][bid_str] = {
+                            'width': len(b.collision_map[0]) if b.collision_map else 0,
+                            'height': len(b.collision_map),
+                            'collision': b.collision_map,
+                        }
+                        updated_by_id.append(bid_str)
+                except Exception:
+                    pass
+
+        # Guardar CU por instancia si hay spawn_id
+        if eff_scope == 'CU' and active is not None and getattr(active, 'collision_map', None) is not None:
+            sid = getattr(active, 'spawn_id', None) or getattr(active, 'spawner_instance_id', None)
+            if sid:
+                sid = str(sid)
+                data['instances'][sid] = {
+                    'width': len(active.collision_map[0]) if active.collision_map else 0,
+                    'height': len(active.collision_map),
+                    'collision': active.collision_map,
+                }
+                updated_instances.append(sid)
+
+        # Escribir archivo
         os.makedirs(os.path.dirname(BUILDINGS_COLLISIONS_DATA_PATH), exist_ok=True)
         with open(BUILDINGS_COLLISIONS_DATA_PATH, 'w', encoding='utf-8') as cf:
-            json.dump(existing, cf, indent=4)
-        if updated_keys:
-            try:
-                sample = ", ".join(updated_keys[:5])
-                more = "" if len(updated_keys) <= 5 else f" (+{len(updated_keys)-5} más)"
-                logger.info(f"[Colliders][CG] Guardadas/mezcladas {len(updated_keys)} entradas en collisions.json: {sample}{more}")
-            except Exception:
-                pass
+            json.dump(data, cf, indent=4)
+
+        # Logs
+        try:
+            if updated_global:
+                sample = ", ".join(updated_global[:5])
+                more = "" if len(updated_global) <= 5 else f" (+{len(updated_global)-5} más)"
+                logger.info(f"[Colliders][CG] Guardadas/mezcladas {len(updated_global)} entradas globales: {sample}{more}")
+            if updated_instances:
+                sample = ", ".join(updated_instances[:5])
+                more = "" if len(updated_instances) <= 5 else f" (+{len(updated_instances)-5} más)"
+                logger.info(f"[Colliders][CU] Guardadas {len(updated_instances)} entradas por instancia (spawn_id): {sample}{more}")
+            if updated_by_id:
+                sample = ", ".join(updated_by_id[:5])
+                more = "" if len(updated_by_id) <= 5 else f" (+{len(updated_by_id)-5} más)"
+                logger.info(f"[Colliders][ID] Guardadas/mezcladas {len(updated_by_id)} entradas por building_id: {sample}{more}")
+        except Exception:
+            pass
 
     def handle(self, event, camera, buildings) -> bool:
         if not self.model.active:

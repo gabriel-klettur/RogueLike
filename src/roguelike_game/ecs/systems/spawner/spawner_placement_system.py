@@ -14,6 +14,9 @@ from roguelike_game.ecs.components.spawner.spawner_config import SpawnerConfig
 from roguelike_game.ecs.components.spawner.spawner_state import SpawnerState
 from roguelike_engine.config.map_config import global_map_settings
 import logging
+from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_engine.config.config_z_layer import Z_LAYERS, DEFAULT_Z
+from roguelike_engine.buildings.building import Building
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +83,8 @@ class SpawnerPlacementSystem:
         spawner_shape = str(tpl.get("spawner_shape", "circle")).lower()
         defend_spawn = bool(tpl.get("defend_spawn", False))
         defend_leash = bool(tpl.get("defend_leash", True))
+        visible_in_game = bool(tpl.get("visible_in_game", False))
+        building_id = tpl.get("building_id")
         # waves can be external by id, inline list, or a bad string to parse
         waves_id = tpl.get("waves_id")
         raw_waves = tpl.get("waves", [])
@@ -126,6 +131,20 @@ class SpawnerPlacementSystem:
                 defend_spawn = bool(value)
             elif key == "defend_leash":
                 defend_leash = bool(value)
+            elif key == "visible_in_game":
+                visible_in_game = bool(value)
+            elif key == "building_id":
+                try:
+                    building_id = int(value) if value is not None else None
+                except Exception:
+                    building_id = value
+
+        # Allow instance root-level building_id to override as well
+        try:
+            if inst.get("building_id") is not None:
+                building_id = int(inst.get("building_id"))
+        except Exception:
+            building_id = inst.get("building_id", building_id)
 
         # derive cooldown in frames (60 FPS default)
         fps = getattr(config, "FPS", 60)
@@ -159,6 +178,8 @@ class SpawnerPlacementSystem:
             spawner_shape=spawner_shape,
             defend_spawn=defend_spawn,
             defend_leash=defend_leash,
+            visible_in_game=visible_in_game,
+            building_id=building_id,
         )
 
     def update(self, world, camera=None):
@@ -182,3 +203,39 @@ class SpawnerPlacementSystem:
             eid = world.create_entity()
             comps['SpawnerConfig'][eid] = cfg
             comps['SpawnerState'][eid] = SpawnerState()
+            # Optional runtime visualization: link to an existing Building by building_id
+            if getattr(cfg, 'visible_in_game', False) and getattr(cfg, 'building_id', None) is not None:
+                inst_id = inst.get("id")
+                blds = getattr(world, 'buildings', []) or []
+                target = None
+                # Prefer explicit building_id search
+                try:
+                    for ob in blds:
+                        try:
+                            if getattr(ob, 'id', None) == getattr(cfg, 'building_id', None):
+                                target = ob
+                                break
+                        except Exception:
+                            continue
+                except Exception:
+                    target = None
+                # Fallback: match by existing spawn_id tag
+                if target is None and inst_id is not None:
+                    sid = str(inst_id)
+                    for ob in blds:
+                        try:
+                            if getattr(ob, 'spawn_id', None) == sid:
+                                target = ob
+                                break
+                        except Exception:
+                            continue
+                if target is not None:
+                    try:
+                        setattr(target, "_spawner_eid", eid)
+                        setattr(target, "_world_ref", world)
+                        setattr(target, "_is_spawner_visual", True)
+                        if inst_id is not None:
+                            setattr(target, "spawner_instance_id", str(inst_id))
+                            setattr(target, "spawn_id", str(inst_id))
+                    except Exception:
+                        pass

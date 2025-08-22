@@ -60,7 +60,23 @@ def load_spawners_json() -> List[Dict[str, Any]]:
     try:
         with open(path, 'r', encoding='utf-8') as f:
             data = json.load(f)
-        return data if isinstance(data, list) else []
+        if not isinstance(data, list):
+            return []
+        # Sanitize legacy fields
+        for sp in data:
+            try:
+                if isinstance(sp, dict):
+                    sp.pop('spawner_img', None)
+                    sp.pop('spawner_img_size', None)
+                    # Normalize building_id to int if possible
+                    if sp.get('building_id') is not None:
+                        try:
+                            sp['building_id'] = int(sp['building_id'])
+                        except Exception:
+                            pass
+            except Exception:
+                continue
+        return data
     except FileNotFoundError:
         return []
 
@@ -69,8 +85,23 @@ def write_spawners_json(data: List[Dict[str, Any]]) -> None:
     """Write the full spawners list to data/spawners/spawners_templates.json."""
     path = spawners_path()
     os.makedirs(os.path.dirname(path), exist_ok=True)
+    # Sanitize legacy fields before persisting
+    cleaned: List[Dict[str, Any]] = []
+    for sp in data or []:
+        if not isinstance(sp, dict):
+            continue
+        sp2 = dict(sp)
+        sp2.pop('spawner_img', None)
+        sp2.pop('spawner_img_size', None)
+        # Normalize building_id
+        if sp2.get('building_id') is not None:
+            try:
+                sp2['building_id'] = int(sp2['building_id'])
+            except Exception:
+                pass
+        cleaned.append(sp2)
     with open(path, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+        json.dump(cleaned, f, ensure_ascii=False, indent=2)
 
 
 def save_spawner_template(updated: Dict[str, Any]) -> None:
@@ -152,8 +183,37 @@ def rename_spawner_template_id(old_id: str, new_id: str) -> Optional[Dict[str, A
 def write_instances_json(data: List[Dict[str, Any]]) -> None:
     path = instances_path()
     os.makedirs(os.path.dirname(path), exist_ok=True)
+    # Sanitize legacy fields and normalize building_id inside overrides/root
+    cleaned: List[Dict[str, Any]] = []
+    for inst in data or []:
+        if not isinstance(inst, dict):
+            continue
+        e = dict(inst)
+        # Remove legacy keys at root for safety
+        e.pop('spawner_img', None)
+        e.pop('spawner_img_size', None)
+        # Clean overrides
+        ov = e.get('overrides')
+        if isinstance(ov, dict):
+            ov2 = dict(ov)
+            ov2.pop('spawner_img', None)
+            ov2.pop('spawner_img_size', None)
+            # Normalize building_id
+            if ov2.get('building_id') is not None:
+                try:
+                    ov2['building_id'] = int(ov2['building_id'])
+                except Exception:
+                    pass
+            e['overrides'] = ov2
+        # Normalize root building_id
+        if e.get('building_id') is not None:
+            try:
+                e['building_id'] = int(e['building_id'])
+            except Exception:
+                pass
+        cleaned.append(e)
     with open(path, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+        json.dump(cleaned, f, ensure_ascii=False, indent=2)
 
 
 def slugify(s: str) -> str:
@@ -261,7 +321,8 @@ def persist_drop(world,
                  drag_start_entry: Optional[Dict[str, Any]],
                  *,
                  override_zone: Optional[str] = None,
-                 orig_zone: Optional[str] = None) -> None:
+                 orig_zone: Optional[str] = None,
+                 overrides_update: Optional[Dict[str, Any]] = None) -> None:
     """Persist a moved spawner's anchor tile back to spawners_instances.json.
 
     - Computes local tile with zone offset (using override_zone if provided, else cfg.zone)
@@ -279,6 +340,13 @@ def persist_drop(world,
     tx, ty = cfg.anchor_tile
     new_local = (int(tx - off_x), int(ty - off_y))
     tpl_id = cfg.template_id
+    # Optional stable identifier captured from snapshot
+    inst_id = None
+    try:
+        if drag_start_entry and drag_start_entry.get('id'):
+            inst_id = str(drag_start_entry.get('id'))
+    except Exception:
+        inst_id = None
 
     # Try to find by original local tile first (if we captured it)
     orig_local = None
@@ -287,26 +355,51 @@ def persist_drop(world,
 
     # Where to search the existing entry
     lookup_zone = orig_zone or (drag_start_entry.get('zone') if drag_start_entry else None) or zone
-    data, idx_found, _ = find_instance_in_json(tpl_id, lookup_zone, orig_local or new_local)
-    if idx_found is None:
-        # Try by new location in case snapshot is missing
-        _, idx_found, _ = find_instance_in_json(tpl_id, zone, new_local)
+    # 1) Prefer lookup by stable instance id if available
+    if inst_id:
+        data, idx_found, _ = find_instance_by_id(inst_id)
+    else:
+        data, idx_found, _ = find_instance_in_json(tpl_id, lookup_zone, orig_local or new_local)
+        if idx_found is None:
+            # Try by new location in case snapshot is missing
+            _, idx_found, _ = find_instance_in_json(tpl_id, zone, new_local)
 
     entry: Dict[str, Any] = {
         'template_id': tpl_id,
         'zone': zone,
         'tile': [int(new_local[0]), int(new_local[1])],
     }
-    # Preserve overrides (snapshot has priority)
-    overrides = None
+    # Preserve overrides (snapshot has priority) and merge with overrides_update if provided
+    overrides: Dict[str, Any] = {}
     if drag_start_entry and drag_start_entry.get('overrides') is not None:
-        overrides = drag_start_entry['overrides']
+        try:
+            src = drag_start_entry['overrides']
+            if isinstance(src, dict):
+                overrides.update(src)
+        except Exception:
+            pass
     elif idx_found is not None:
         try:
-            overrides = data[idx_found].get('overrides')
+            src = data[idx_found].get('overrides')
+            if isinstance(src, dict):
+                overrides.update(src)
         except Exception:
-            overrides = None
-    if overrides is not None:
+            pass
+    # Apply incoming updates (e.g., building_id or other overrides edited in the editor)
+    if isinstance(overrides_update, dict):
+        overrides.update(overrides_update)
+    # Sanitize overrides: drop legacy fields and normalize building_id
+    try:
+        overrides.pop('spawner_img', None)
+        overrides.pop('spawner_img_size', None)
+        if overrides.get('building_id') is not None:
+            try:
+                overrides['building_id'] = int(overrides['building_id'])
+            except Exception:
+                pass
+    except Exception:
+        pass
+    if overrides:
         entry['overrides'] = overrides
 
     # Preserve or assign instance id
@@ -315,9 +408,15 @@ def persist_drop(world,
             prev_id = data[idx_found].get('id')
             if prev_id:
                 entry['id'] = prev_id
+            elif inst_id:
+                entry['id'] = inst_id
         else:
+            # If snapshot had an id, reuse it as long as it's unique; otherwise generate
             existing_ids = {str(x.get('id')) for x in data if x.get('id')}
-            entry['id'] = generate_instance_id(entry, existing_ids)
+            if inst_id and inst_id not in existing_ids:
+                entry['id'] = inst_id
+            else:
+                entry['id'] = generate_instance_id(entry, existing_ids)
     except Exception:
         pass
 

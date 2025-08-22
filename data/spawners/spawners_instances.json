@@ -4,8 +4,11 @@
     "zone": "Forest",
     "tile": [
       25,
-      21
+      14
     ],
+    "overrides": {
+      "building_id": 113
+    },
     "id": "survival_10_forest_14_9"
   }
 ]

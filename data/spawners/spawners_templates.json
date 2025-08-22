@@ -68,6 +68,7 @@
     "spawn_radius": 20,
     "defend_spawn": true,
     "defend_leash": true,
+    "visible_in_game": true,
     "trigger": {
       "type": "proximity",
       "radius": 10,
