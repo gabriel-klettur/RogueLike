@@ -2491,8 +2491,8 @@
     },
     {
         "zone": "Forest",
-        "rel_x": 753,
-        "rel_y": 327,
+        "rel_x": 736,
+        "rel_y": 349,
         "image_path": "assets/items/totem_forest.png",
         "solid": false,
         "scale": [

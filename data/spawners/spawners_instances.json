@@ -3,8 +3,8 @@
     "template_id": "survival_10",
     "zone": "Forest",
     "tile": [
-      27,
-      15
+      26,
+      16
     ],
     "overrides": {
       "building_id": 113

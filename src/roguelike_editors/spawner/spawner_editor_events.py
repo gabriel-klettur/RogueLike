@@ -13,7 +13,7 @@ from roguelike_editors.spawner.services import (
     load_instances_json,
     write_instances_json,
 )
-from roguelike_editors.spawner.services.persistence import load_spawners_json
+from roguelike_editors.spawner.services.persistence import load_spawners_json, generate_instance_id
 
 
 class SpawnerEditorEventHandler:
@@ -211,7 +211,7 @@ class SpawnerEditorEventHandler:
             zone = zone_for_global_tile(int(tx), int(ty)) or 'lobby'
             off_x, off_y = global_map_settings.zone_offsets.get(zone, (0, 0))
             local_tx, local_ty = int(tx - off_x), int(ty - off_y)
-            # Persist instance
+            # Persist instance with deduplication by (template_id, zone, tile)
             try:
                 instances = load_instances_json()
             except Exception:
@@ -221,7 +221,30 @@ class SpawnerEditorEventHandler:
                 'zone': zone,
                 'tile': [local_tx, local_ty],
             }
-            instances.append(new_entry)
+            # If an entry already exists at this key, replace it and preserve id
+            try:
+                data2, idx, _ = find_instance_in_json(tpl_id, zone, (local_tx, local_ty))
+                if data2 is not None:
+                    instances = data2
+            except Exception:
+                idx = None
+            try:
+                if idx is not None:
+                    prev_id = instances[idx].get('id')
+                    if prev_id:
+                        new_entry['id'] = prev_id
+                    instances[idx] = new_entry
+                else:
+                    # Assign a unique id immediately to avoid transient duplicates without ids
+                    existing_ids = {str(e.get('id')) for e in instances if e.get('id')}
+                    new_entry['id'] = generate_instance_id(new_entry, existing_ids)
+                    instances.append(new_entry)
+            except Exception:
+                # Fallback: append
+                try:
+                    instances.append(new_entry)
+                except Exception:
+                    pass
             try:
                 write_instances_json(instances)
             except Exception:
