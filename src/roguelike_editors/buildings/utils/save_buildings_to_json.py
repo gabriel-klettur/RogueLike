@@ -49,7 +49,6 @@ def save_buildings_to_json(
     target = filepath or BUILDINGS_DATA_PATH
     data = []
     seen_spawn_ids = set()  # Deduplicate by spawn_id for spawner-linked buildings
-    seen_keys = set()  # Deduplicate non-spawner by (zone, rel_x, rel_y, image_path)
 
     # Preparar asignación de IDs únicos (auto-incremental y persistente)
     used_ids = set()
@@ -95,16 +94,6 @@ def save_buildings_to_json(
                         pass
                     continue
                 seen_spawn_ids.add(sid)
-            else:
-                key = (zone_norm, relx, rely, img)
-                if key in seen_keys:
-                    # Avoid duplicate rows for the same visual building
-                    try:
-                        logger.debug(f"[Buildings][Save] Skipping duplicate entry for {key}")
-                    except Exception:
-                        pass
-                    continue
-                seen_keys.add(key)
 
             building_data = {
                 "zone": zone_norm,
