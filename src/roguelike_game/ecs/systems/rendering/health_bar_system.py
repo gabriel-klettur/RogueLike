@@ -5,6 +5,11 @@ from roguelike_game.ecs.components.transform.scale import Scale
 from roguelike_game.ecs.components.rendering.sprite import Sprite
 from roguelike_engine.utils.benchmark import benchmark
 
+# Entities (Identity.name, lowercase) excluded from health bar rendering
+EXCLUDED_IN_HEALTH_BAR = {
+    'barbol',
+}
+
 class HealthBarSystem:
     """
     Sistema para renderizar barras de salud sobre entidades vivas.
@@ -39,6 +44,16 @@ class HealthBarSystem:
         for eid in world.get_entities_with('Position', 'Health'):
             # 2.1) Si la entidad está “muerta”, saltarla
             if eid in death_timers:
+                continue
+
+            # 2.2) Omitir ciertas clases por diseño usando lista de exclusión
+            identity = world.components.get('Identity', {}).get(eid)
+            name_lower = ''
+            try:
+                name_lower = str(getattr(identity, 'name', '')).lower()
+            except Exception:
+                name_lower = ''
+            if name_lower in EXCLUDED_IN_HEALTH_BAR:
                 continue
 
             # 3) Obtener componentes necesarios
