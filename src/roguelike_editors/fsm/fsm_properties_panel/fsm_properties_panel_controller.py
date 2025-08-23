@@ -5,6 +5,16 @@ from .fsm_properties_panel_models import FsmPropertiesPanelModel, Row
 from .fsm_properties_panel_view import FsmPropertiesPanelView
 from .fsm_properties_panel_events import FsmPropertiesPanelEventHandler
 
+# Optional: ids index helpers (may not be present in some contexts)
+try:  # pragma: no cover
+    from roguelike_editors.fsm.services.fsm_runtime_bridge import (
+        get_set_ids as _get_set_ids,
+        get_state_ids as _get_state_ids,
+    )
+except Exception:  # pragma: no cover
+    _get_set_ids = None
+    _get_state_ids = None
+
 
 class FsmPropertiesPanelController:
     def __init__(
@@ -61,10 +71,17 @@ class FsmPropertiesPanelController:
 
     def _refresh_sets(self) -> None:
         ids = []
-        for s in self._sets_list():
-            sid = s.get('id')
-            if isinstance(sid, str):
-                ids.append(sid)
+        # Prefer helper from runtime bridge; fallback to snapshot
+        if _get_set_ids is not None:
+            try:
+                ids = list(_get_set_ids() or [])
+            except Exception:
+                ids = []
+        if not ids:
+            for s in self._sets_list():
+                sid = s.get('id')
+                if isinstance(sid, str):
+                    ids.append(sid)
         self.model.set_ids = ids
         if not self.model.selected_set_id and ids:
             self.model.selected_set_id = ids[0]
@@ -91,10 +108,17 @@ class FsmPropertiesPanelController:
             return
         if self.model.active_tab == 'nodes':
             node_ids = []
-            for st in s.get('states', []) or []:
-                nid = st.get('id')
-                if isinstance(nid, str):
-                    node_ids.append(nid)
+            # Prefer helper from runtime bridge; fallback to snapshot
+            if _get_state_ids is not None and self.model.selected_set_id:
+                try:
+                    node_ids = list(_get_state_ids(self.model.selected_set_id) or [])
+                except Exception:
+                    node_ids = []
+            if not node_ids:
+                for st in s.get('states', []) or []:
+                    nid = st.get('id')
+                    if isinstance(nid, str):
+                        node_ids.append(nid)
             self.model.node_ids = node_ids
             if (not self.model.selected_node_id) and node_ids:
                 self.model.selected_node_id = node_ids[0]

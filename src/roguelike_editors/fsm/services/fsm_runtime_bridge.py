@@ -13,10 +13,12 @@ from .fsm_persistence import (
     default_sets_path,
     default_assignments_path,
     default_animation_map_path,
+    default_ids_path,
     load_animation_map,
 )
 from roguelike_game.ecs.systems.fsm.fsm import FiniteStateMachine
 
+import json
 import logging
 logger = logging.getLogger(__name__)
 
@@ -32,6 +34,8 @@ class _Cached:
     by_id: Dict[str, Dict[str, Any]]
     # animation mapping document
     anim_map: Dict[str, Any]
+    # ids index JSON (SET_IDS/STATES_BY_SET/TRANSITIONS_BY_SET)
+    ids_index: Dict[str, Any]
 
 
 _CACHE: Optional[_Cached] = None
@@ -50,14 +54,24 @@ def _ensure_cache() -> _Cached:
     except Exception as ex:
         logger.warning("[FSMBridge] failed to load animation_map.json: %s", ex)
         anim_map = {"default": {}, "overrides": {}}
+    # Load ids index (optional; compute from sets on failure)
+    try:
+        with open(str(default_ids_path()), "r", encoding="utf-8") as f:
+            ids_index = json.load(f) or {}
+        # Minimal shape guard
+        if not isinstance(ids_index, dict) or "SET_IDS" not in ids_index:
+            raise ValueError("invalid ids_index shape")
+    except Exception as ex:
+        logger.debug("[FSMBridge] ids_index not found/invalid, rebuilding from sets: %s", ex)
+        ids_index = _build_ids_index(sets)
     # Basic validation: initial state exists; state classes resolvable
     try:
         _validate_sets(sets)
     except Exception as ex:
         logger.warning("[FSMBridge] validation warnings: %s", ex)
     by_id = {s["id"]: s for s in sets.get("sets", [])}
-    _CACHE = _Cached(sets=sets, assignments=assignments, by_id=by_id, anim_map=anim_map)
-    logger.debug("[FSMBridge] cache loaded: %d sets", len(by_id))
+    _CACHE = _Cached(sets=sets, assignments=assignments, by_id=by_id, anim_map=anim_map, ids_index=ids_index)
+    logger.debug("[FSMBridge] cache loaded: %d sets; ids_index sets=%d", len(by_id), len(ids_index.get("SET_IDS", [])))
     return _CACHE
 
 
@@ -241,6 +255,66 @@ def build_fsm_from_set(set_def: Dict[str, Any]) -> Tuple[FiniteStateMachine, str
     return fsm, initial
 
 
+def _build_ids_index(sets_doc: Dict[str, Any]) -> Dict[str, Any]:
+    """Build ids index structure from sets.json content.
+    Output keys: SET_IDS, STATES_BY_SET, TRANSITIONS_BY_SET.
+    """
+    sets_list: list[str] = []
+    states_by_set: Dict[str, list[str]] = {}
+    trans_by_set: Dict[str, list[str]] = {}
+    try:
+        for s in (sets_doc or {}).get("sets", []) or []:
+            if not isinstance(s, dict):
+                continue
+            sid = s.get("id")
+            if not isinstance(sid, str):
+                continue
+            sets_list.append(sid)
+            states = s.get("states") or []
+            transitions = s.get("transitions") or []
+            states_by_set[sid] = [st.get("id") for st in states if isinstance(st, dict) and isinstance(st.get("id"), str)]
+            trans_by_set[sid] = [tr.get("id") for tr in transitions if isinstance(tr, dict) and isinstance(tr.get("id"), str)]
+    except Exception:
+        # Best-effort; keep partial data
+        pass
+    return {
+        "SET_IDS": sets_list,
+        "STATES_BY_SET": states_by_set,
+        "TRANSITIONS_BY_SET": trans_by_set,
+    }
+
+
+def get_ids_index() -> Dict[str, Any]:
+    """Return the cached ids index JSON for tooling/runtime.
+    Structure: {"SET_IDS": [...], "STATES_BY_SET": {...}, "TRANSITIONS_BY_SET": {...}}
+    """
+    return _ensure_cache().ids_index
+
+
+def get_set_ids() -> list:
+    """Return list of set ids (ordered as in JSON export)."""
+    try:
+        return list(_ensure_cache().ids_index.get("SET_IDS", []) or [])
+    except Exception:
+        return []
+
+
+def get_state_ids(set_id: str) -> list:
+    """Return list of state ids for a set id."""
+    try:
+        return list((_ensure_cache().ids_index.get("STATES_BY_SET", {}) or {}).get(set_id, []) or [])
+    except Exception:
+        return []
+
+
+def get_transition_ids(set_id: str) -> list:
+    """Return list of transition ids for a set id."""
+    try:
+        return list((_ensure_cache().ids_index.get("TRANSITIONS_BY_SET", {}) or {}).get(set_id, []) or [])
+    except Exception:
+        return []
+
+
 def _validate_sets(sets_doc: Dict[str, Any]) -> None:
     """Log warnings for common issues in sets.json."""
     from .fsm_registry import get_state_class
@@ -306,4 +380,8 @@ __all__ = [
     "set_editor_highlight_context",
     "get_editor_highlight_context",
     "lint_set_params",
+    "get_ids_index",
+    "get_set_ids",
+    "get_state_ids",
+    "get_transition_ids",
 ]

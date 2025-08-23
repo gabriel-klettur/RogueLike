@@ -107,12 +107,25 @@ class FsmToolbarView:
                 if getattr(model, 'active_tool', None) == 'sets_list':
                     pygame.draw.rect(screen, (80, 160, 240), sets_rect.inflate(4, 4), 2)
                 # Badge with number of sets loaded
+                count = 0
+                # Prefer runtime bridge helper when available
                 try:
-                    from roguelike_editors.fsm.services.fsm_runtime_bridge import get_snapshot
-                    snap = get_snapshot()
-                    count = len(snap.get('sets', []))
+                    from roguelike_editors.fsm.services.fsm_runtime_bridge import get_set_ids as _get_set_ids
                 except Exception:
-                    count = 0
+                    _get_set_ids = None
+                if _get_set_ids is not None:
+                    try:
+                        count = len(list(_get_set_ids() or []))
+                    except Exception:
+                        count = 0
+                # Fallback to snapshot if helper is missing or returned nothing
+                if count == 0:
+                    try:
+                        from roguelike_editors.fsm.services.fsm_runtime_bridge import get_snapshot
+                        snap = get_snapshot()
+                        count = len(snap.get('sets', []))
+                    except Exception:
+                        pass
                 if count > 0:
                     badge_r = 8
                     cx = sets_rect.right - 2

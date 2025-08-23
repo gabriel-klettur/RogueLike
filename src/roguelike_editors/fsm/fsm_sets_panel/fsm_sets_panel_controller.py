@@ -27,6 +27,12 @@ except Exception:  # pragma: no cover - service may not be present in some conte
     _fsm_get_highlight_ctx = None
     _fsm_lint = None
 
+# Optional: ids index helpers (may not be present in some contexts)
+try:  # pragma: no cover
+    from roguelike_editors.fsm.services.fsm_runtime_bridge import get_set_ids as _get_set_ids
+except Exception:  # pragma: no cover
+    _get_set_ids = None
+
 LOGGER = logging.getLogger("roguelike_editors.fsm.fsm_sets_panel.controller")
 
 
@@ -82,6 +88,11 @@ class FsmSetsPanelController:
     def _refresh_items_from_disk(self) -> None:
         """Reload sets.json and update model.items to match current disk state."""
         try:
+            # Prefer fast helper from runtime bridge
+            if _get_set_ids is not None:
+                self.model.items = list(_get_set_ids() or [])
+                return
+            # Fallback to reading sets.json
             data = load_sets(default_sets_path())
             set_ids = [s.get('id', '?') for s in (data.get('sets') or [])]
             self.model.items = set_ids

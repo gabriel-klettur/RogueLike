@@ -19,6 +19,11 @@ from .fsm_graph_panel.fsm_graph_panel_controller import FsmGraphPanelController
 from .fsm_properties_panel.fsm_properties_panel_controller import FsmPropertiesPanelController
 from .fsm_editor_view import FsmEditorView
 from roguelike_editors.fsm.services.fsm_runtime_bridge import get_snapshot
+# Optional ids index helper (may not be present in some contexts)
+try:  # pragma: no cover
+    from roguelike_editors.fsm.services.fsm_runtime_bridge import get_set_ids as _get_set_ids
+except Exception:  # pragma: no cover
+    _get_set_ids = None
 from roguelike_editors.fsm.services.editor_layout import (
     compute_panel_anchor_next_to_toolbar,
     compute_graph_canvas_anchor,
@@ -68,9 +73,17 @@ class FsmEditorController:
             try:
                 self.sets_panel_controller.model.visible = (tool == 'sets_list')
                 if self.sets_panel_controller.model.visible:
-                    # Populate items from runtime snapshot
-                    snap = get_snapshot()
-                    set_ids = [s.get('id', '?') for s in snap.get('sets', [])]
+                    # Populate items from ids index helper (fallback to snapshot)
+                    if _get_set_ids is not None:
+                        try:
+                            set_ids = list(_get_set_ids() or [])
+                        except Exception:
+                            set_ids = []
+                    else:
+                        set_ids = []
+                    if not set_ids:
+                        snap = get_snapshot()
+                        set_ids = [s.get('id', '?') for s in snap.get('sets', [])]
                     self.sets_panel_controller.model.items = set_ids
                     # Anchor next to toolbar
                     anchor = compute_panel_anchor_next_to_toolbar(

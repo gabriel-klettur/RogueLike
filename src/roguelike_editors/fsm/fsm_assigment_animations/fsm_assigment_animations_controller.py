@@ -5,6 +5,12 @@ from .fsm_assigment_animations_model import FsmAssigmentAnimationsModel, AnimRow
 from .fsm_assigment_animations_view import FsmAssigmentAnimationsView
 from .fsm_assigment_animations_events import FsmAssigmentAnimationsEventHandler
 
+# Optional ids index helper (may not be present in some contexts)
+try:  # pragma: no cover
+    from roguelike_editors.fsm.services.fsm_runtime_bridge import get_set_ids as _get_set_ids
+except Exception:  # pragma: no cover
+    _get_set_ids = None
+
 
 class FsmAssigmentAnimationsController:
     def __init__(
@@ -59,13 +65,20 @@ class FsmAssigmentAnimationsController:
             self.model.needs_reload = False
 
     def _refresh_targets(self) -> None:
-        # Build list of available targets: 'default' + all set ids from snapshot
-        try:
-            from roguelike_editors.fsm.services.fsm_runtime_bridge import get_snapshot
-            snap = get_snapshot()
-            set_ids = [s.get('id') for s in snap.get('sets', []) if isinstance(s.get('id'), str)]
-        except Exception:
-            set_ids = []
+        # Build list of available targets: 'default' + all set ids
+        set_ids: List[str] = []
+        if _get_set_ids is not None:
+            try:
+                set_ids = list(_get_set_ids() or [])
+            except Exception:
+                set_ids = []
+        if not set_ids:
+            try:
+                from roguelike_editors.fsm.services.fsm_runtime_bridge import get_snapshot
+                snap = get_snapshot()
+                set_ids = [s.get('id') for s in snap.get('sets', []) if isinstance(s.get('id'), str)]
+            except Exception:
+                set_ids = []
         targets = ['default'] + sorted({sid for sid in set_ids if isinstance(sid, str)})
         self.model.available_targets = targets
         if self.model.target_set_id not in targets:

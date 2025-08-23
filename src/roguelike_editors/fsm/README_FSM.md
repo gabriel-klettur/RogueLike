@@ -9,7 +9,7 @@ El FSM Editor permite autoría visual de comportamientos con nodos y transicione
 - __Edición visual__: nodos/estados y aristas/transiciones dirigidas con flechas, ancladas a bordes, soportando aristas paralelas curvadas, auto-bucles y etiquetas.
 - __Paneles dedicados__: Sets (lista/duplicar/renombrar), Graph (canvas con herramientas), Properties (estado/transición/acciones/condiciones/blackboard) con hints.
 - __Validación y linter__: validación por `schema.json`; el Properties Panel muestra contadores de warnings/errores y tooltips por fila.
-- __Persistencia profesional__: normaliza IDs, valida, y genera código `src/roguelike_game/fsm/fsm_ids.py` (SET_IDS/STATES_BY_SET/TRANSITIONS_BY_SET) para uso en runtime.
+- __Persistencia profesional__: normaliza IDs, valida, y exporta `data/fsm/fsm_ids.json` (SET_IDS/STATES_BY_SET/TRANSITIONS_BY_SET) para tooling/runtime.
 - __Hot-reload__: guardado (Ctrl+S) publica versión y el runtime recarga sin reiniciar.
 - __UX afinada__: pan solo con MMB; zoom con rueda del mouse y teclas `+`/`-`; UI blockers para evitar “hover bleed-through”.
 - __Integración UI__: al abrir el editor se ocultan minimapa y help overlay para no interferir con la vista del grafo.
@@ -115,11 +115,15 @@ Acciones concretas de alineación:
     - Leyenda de colores bajo la barra para estados especiales (p. ej., Damage/Alert/External) con botón clicable para minimizar/expandir.
   - `fsm_properties_panel/`: propiedades del estado o transición seleccionados; pestañas: ['state', 'transition', 'actions', 'conditions', 'blackboard'].
 - __Servicios__ (nuevo `services/`):
-  - `fsm_persistence.py`: load/save/validate contra `schema.json` y codegen de `src/roguelike_game/fsm/fsm_ids.py` (SET_IDS, STATES_BY_SET, TRANSITIONS_BY_SET).
+  - `fsm_persistence.py`: load/save/validate contra `schema.json` y export de `data/fsm/fsm_ids.json` (SET_IDS, STATES_BY_SET, TRANSITIONS_BY_SET).
   - `fsm_graph_layout.py`: snap a grid, auto-layout inicial, routing sencillo de aristas.
   - `fsm_history.py`: comandos (Command pattern) para undo/redo.
   - `fsm_id.py`: generación/validación de ids únicos.
-  - `fsm_runtime_bridge.py`: señalización de reload y mapeo set->runtime.
+  - `fsm_runtime_bridge.py`: señalización de reload y mapeo set->runtime. Expone helpers para el índice de ids:
+    - `get_ids_index()` → objeto con `SET_IDS`, `STATES_BY_SET`, `TRANSITIONS_BY_SET`.
+    - `get_set_ids()` → lista de ids de sets.
+    - `get_state_ids(set_id)` → lista de ids de estados por set.
+    - `get_transition_ids(set_id)` → lista de ids de transiciones por set.
 - __UI Blockers__: todos los paneles registran `ui_blocker` rect para suprimir hovers/drag del canvas cuando el ratón está sobre UI.
 
 ### fsm_toolbar (implementado)
