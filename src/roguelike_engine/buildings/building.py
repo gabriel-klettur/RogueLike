@@ -269,18 +269,6 @@ class Building:
         """Set solidity of building."""
         self.model.solid = value
 
-    @property
-    def zone(self) -> str | None:
-        """Zona asignada al edificio."""
-        return self.model.zone
-
-    @zone.setter
-    def zone(self, value: str | None):
-        """Setter para zona: actualiza modelo y controlador si existe."""
-        self.model.zone = value
-        if self.controller:
-            self.controller.assign_zone(value)
-
     def get_parts(self) -> list[types.SimpleNamespace]:
         """
         Retorna partes renderizables (bottom y top) para render z-ordenado.
@@ -310,7 +298,7 @@ class Building:
         caches de renderizado internos. Se delega en el modelo.
         """
         self.model.resize(new_width, new_height)
-        # Después de cambiar el tamaño en el modelo, hay que limpiar caches de vista:
+        # Después de cambiar el tamaño en el modelo, limpiar caches de vista
         self.update_on_camera_change()
 
     def reset_to_original_size(self):
@@ -319,6 +307,27 @@ class Building:
         """
         self.model.reset_to_original_size()
         self.update_on_camera_change()
+
+    # ───────────────────── Visual state (multi-image) APIs ─────────────────────
+    def set_images_by_state(self, images_by_state: dict[str, str], initial_state: str | None = None):
+        """Define mapping estado->ruta de imagen. Si hay controlador, limpiará caches."""
+        if self.controller:
+            self.controller.set_images_by_state(images_by_state, initial_state=initial_state)
+        else:
+            self.model.set_images_by_state(images_by_state, initial_state=initial_state)
+
+    def set_state_thresholds(self, thresholds: list[dict] | None):
+        """Configura umbrales de estado visual."""
+        if self.controller:
+            self.controller.set_state_thresholds(thresholds)
+        else:
+            self.model.set_state_thresholds(thresholds)
+
+    def set_visual_state(self, state: str) -> bool:
+        """Cambia el estado visual actual y retorna True si cambió la imagen."""
+        if self.controller:
+            return self.controller.set_visual_state(state)
+        return self.model.set_visual_state(state)
 
     def __repr__(self) -> str:
         return repr(self.model)

@@ -50,6 +50,48 @@ class HitboxSystem:
             hitmask = pygame.mask.from_surface(surf)
             r2 = r*r
             multi_map = world.components.get('MultiCollider', {})
+
+            # --- Buildings hit detection: generate BuildingDamageEvents ---
+            try:
+                arc_world_rect = pygame.Rect(int(left), int(top), int(w), int(h))
+                hit_buildings = set()
+                for b in getattr(world, 'buildings', []) or []:
+                    # Skip spawner visuals and non-solid check is not required for damage, but keep visuals optionally damageable
+                    if getattr(b, '_is_spawner_visual', False):
+                        continue
+                    # Quick reject by bounding box
+                    try:
+                        if not arc_world_rect.colliderect(b.collision_rect):
+                            continue
+                    except Exception:
+                        continue
+                    # Test per collision tile for precise overlap
+                    try:
+                        for rect_w in b.collision_tiles:
+                            if not arc_world_rect.colliderect(rect_w):
+                                continue
+                            sx, sy = camera.apply((rect_w.x, rect_w.y))
+                            off = (int(sx - screen_left), int(sy - screen_top))
+                            # Build a rectangular mask for the tile
+                            tmp = pygame.Surface((rect_w.width, rect_w.height))
+                            tmp.fill((255,255,255))
+                            target_mask = pygame.mask.from_surface(tmp)
+                            if hitmask.overlap(target_mask, off):
+                                # Identify building by spawn_id if present, else by id
+                                bid = getattr(b, 'spawn_id', None) or getattr(b, 'id', None)
+                                if bid is not None:
+                                    hit_buildings.add(bid)
+                                break
+                        # Early-out if already registered a hit for this building
+                    except Exception:
+                        continue
+                if hit_buildings:
+                    evts = world.components.setdefault('BuildingDamageEvents', [])
+                    for bid in hit_buildings:
+                        evts.append({'building_key': str(bid), 'damage': hb.damage})
+            except Exception:
+                # Never break combat on building processing issues
+                pass
             for target in list(healths.keys()):
                 if target == hb.owner or target in hb.hit_targets:
                     continue

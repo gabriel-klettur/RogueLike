@@ -1,14 +1,14 @@
 {
   "waves_survival_10": [
     { "spawns": [ { "kind": "monster", "id": "barbol", "count": 2, "spread_radius": 3, "spread_fallback_max": 12, "min_px_distance": 24 } ] },
-    { "spawns": [ { "kind": "monster", "id": "barbol", "count": 3, "spread_radius": 3, "spread_fallback_max": 12, "min_px_distance": 24 } ] },
-    { "spawns": [ { "kind": "monster", "id": "barbol", "count": 4, "spread_radius": 3, "spread_fallback_max": 12, "min_px_distance": 24 } ] },
     { "spawns": [ { "kind": "monster", "id": "barbol", "count": 5, "spread_radius": 3, "spread_fallback_max": 12, "min_px_distance": 24 } ] },
-    { "spawns": [ { "kind": "monster", "id": "barbol", "count": 6, "spread_radius": 3, "spread_fallback_max": 12, "min_px_distance": 24 } ] },
     { "spawns": [ { "kind": "monster", "id": "barbol", "count": 7, "spread_radius": 3, "spread_fallback_max": 12, "min_px_distance": 24 } ] },
-    { "spawns": [ { "kind": "monster", "id": "barbol", "count": 8, "spread_radius": 3, "spread_fallback_max": 12, "min_px_distance": 24 } ] },
-    { "spawns": [ { "kind": "monster", "id": "barbol", "count": 9, "spread_radius": 3, "spread_fallback_max": 12, "min_px_distance": 24 } ] },
     { "spawns": [ { "kind": "monster", "id": "barbol", "count": 10, "spread_radius": 3, "spread_fallback_max": 12, "min_px_distance": 24 } ] },
-    { "spawns": [ { "kind": "monster", "id": "barbol", "count": 12, "spread_radius": 3, "spread_fallback_max": 12, "min_px_distance": 24 } ] }
+    { "spawns": [ { "kind": "monster", "id": "barbol", "count": 15, "spread_radius": 3, "spread_fallback_max": 12, "min_px_distance": 24 } ] },
+    { "spawns": [ { "kind": "monster", "id": "barbol", "count": 20, "spread_radius": 3, "spread_fallback_max": 12, "min_px_distance": 24 } ] },
+    { "spawns": [ { "kind": "monster", "id": "barbol", "count": 25, "spread_radius": 3, "spread_fallback_max": 12, "min_px_distance": 24 } ] },
+    { "spawns": [ { "kind": "monster", "id": "barbol", "count": 30, "spread_radius": 3, "spread_fallback_max": 12, "min_px_distance": 24 } ] },
+    { "spawns": [ { "kind": "monster", "id": "barbol", "count": 35, "spread_radius": 3, "spread_fallback_max": 12, "min_px_distance": 24 } ] },
+    { "spawns": [ { "kind": "monster", "id": "barbol", "count": 50, "spread_radius": 3, "spread_fallback_max": 12, "min_px_distance": 24 } ] }
   ]
 }

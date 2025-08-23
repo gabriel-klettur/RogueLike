@@ -8,6 +8,20 @@ logger = logging.getLogger(__name__)
 
 from roguelike_engine.config.map_config import global_map_settings
 
+def _normalize_asset_path(p):
+    try:
+        if not p or not isinstance(p, str):
+            return p
+        q = p.replace("\\", "/")
+        while '//' in q:
+            q = q.replace('//', '/')
+        base, ext = os.path.splitext(q)
+        if ext:
+            q = f"{base}{ext.lower()}"
+        return q
+    except Exception:
+        return p
+
 def _canonicalize_zone(zone: str) -> str:
     """
     Ensure the zone label persisted to JSON matches the canonical key used by
@@ -82,7 +96,7 @@ def save_buildings_to_json(
             zone_norm = _canonicalize_zone(b.zone)
             relx = int(b.rel_x)
             rely = int(b.rel_y)
-            img = b.image_path
+            img = _normalize_asset_path(b.image_path)
             spawn_id = getattr(b, 'spawn_id', None) or getattr(b, 'spawner_instance_id', None)
 
             if spawn_id:
@@ -99,7 +113,7 @@ def save_buildings_to_json(
                 "zone": zone_norm,
                 "rel_x": relx,
                 "rel_y": rely,
-                "image_path": img,
+                "assets": {"idle": img},
                 "solid": b.solid,
                 "scale": [b.image.get_width(), b.image.get_height()],
                 "original_scale": list(b.original_scale) if getattr(b, "original_scale", None) else None,

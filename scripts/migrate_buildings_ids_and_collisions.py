@@ -75,8 +75,8 @@ def migrate_by_building_id(buildings: list[Dict[str, Any]], collisions: Dict[str
                 }
                 changed = True
                 continue
-        # fallback to global by image_path
-        img = b.get("image_path")
+        # fallback to global by image path (new 'idle' or legacy 'image_path')
+        img = b.get("idle") or b.get("image_path")
         if not img:
             continue
         g = global_maps.get(img)

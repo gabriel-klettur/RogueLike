@@ -11,6 +11,20 @@ from roguelike_engine.buildings.building import Building
 import logging
 logger = logging.getLogger(__name__)
 
+def _normalize_asset_path(p):
+    try:
+        if not p or not isinstance(p, str):
+            return p
+        q = p.replace("\\", "/")
+        while '//' in q:
+            q = q.replace('//', '/')
+        base, ext = os.path.splitext(q)
+        if ext:
+            q = f"{base}{ext.lower()}"
+        return q
+    except Exception:
+        return p
+
 def _canonicalize_zone(zone: str) -> str:
     """
     Map arbitrary zone label from JSON to the canonical key used in
@@ -54,7 +68,7 @@ def load_buildings_from_json(
 
     # Cargar colisiones de buildings (soporta esquema legacy y nuevo con secciones 'global', 'instances' y 'by_building_id')
     try:
-        with open(BUILDINGS_COLLISIONS_DATA_PATH, 'r', encoding='utf-8') as cf:
+        with open(BUILDINGS_COLLISIONS_DATA_PATH, 'r', encoding='utf-8-sig') as cf:
             raw_cd = json.load(cf) or {}
     except Exception:
         raw_cd = {}
@@ -73,7 +87,7 @@ def load_buildings_from_json(
         collisions_instances = {}
         collisions_by_id = {}
 
-    with open(BUILDINGS_DATA_PATH, "r", encoding="utf-8") as f:
+    with open(BUILDINGS_DATA_PATH, "r", encoding="utf-8-sig") as f:
         try:
             data = json.load(f)
         except json.JSONDecodeError as e:
@@ -108,10 +122,21 @@ def load_buildings_from_json(
         try:
             #logger.debug(f"📥 Entrada cruda desde JSON: {entry}")
 
+            # Require new JSON structure: assets.idle (no legacy fallbacks)
+            _img_path = None
+            try:
+                assets = entry.get("assets") or {}
+                if isinstance(assets, dict):
+                    _img_path = _normalize_asset_path(assets.get("idle"))
+            except Exception:
+                _img_path = None
+            if not _img_path:
+                raise ValueError(f"[Buildings][loader] Missing required assets.idle (id={entry.get('id')}, zone={entry.get('zone')}, rel=({entry.get('rel_x')},{entry.get('rel_y')}))")
+
             b = Building(
                 rel_x=entry.get("rel_x", 0),
                 rel_y=entry.get("rel_y", 0),
-                image_path=entry["image_path"],
+                image_path=_img_path,
                 solid=entry.get("solid", True),
                 scale=tuple(entry["scale"]) if "scale" in entry else None,
                 split_ratio=entry.get("split_ratio", 0.5),
@@ -128,7 +153,7 @@ def load_buildings_from_json(
                 pass
 
             # Inicializar collision_map (deep copy por instancia) asegurando tamaño por CEIL
-            # Selección de colisión: preferir instancia por spawn_id; luego por building_id; si no, usar global por image_path
+            # Selección de colisión: preferir instancia por spawn_id; luego por building_id; si no, usar global por idle/image_path
             coll_entry = None
             try:
                 sid = getattr(b, "spawn_id", None)
@@ -142,9 +167,9 @@ def load_buildings_from_json(
                         if bid_str in collisions_by_id:
                             coll_entry = collisions_by_id.get(bid_str)
                 if not coll_entry:
-                    coll_entry = collisions_global.get(entry.get("image_path"))
+                    coll_entry = collisions_global.get(_img_path) or collisions_global.get(_img_path.replace('/', '\\'))
             except Exception:
-                coll_entry = collisions_global.get(entry.get("image_path"))
+                coll_entry = collisions_global.get(_img_path) or collisions_global.get(_img_path.replace('/', '\\'))
 
             desired_cols = max(1, (b.image.get_width() + TILE_SIZE - 1) // TILE_SIZE)
             desired_rows = max(1, (b.image.get_height() + TILE_SIZE - 1) // TILE_SIZE)
@@ -218,6 +243,22 @@ def load_buildings_from_json(
             # Asignar zona si viene en JSON
             if entry.get("zone"):
                 b.zone = _canonicalize_zone(entry["zone"]) 
+
+            # ────────────────────────────────────────────────────────────────
+            # Multi-image visual support (backward compatible):
+            # If 'images_by_state' is present, configure the model mapping and optional initial state.
+            # If 'state_thresholds' present, store them for runtime mapping from damage ratio.
+            try:
+                images_by_state = entry.get("images_by_state")
+                if isinstance(images_by_state, dict) and images_by_state:
+                    initial_state = entry.get("initial_visual_state")
+                    # Apply mapping first; this will keep current displayed scale
+                    b.model.set_images_by_state(images_by_state, initial_state=initial_state)
+                thresholds = entry.get("state_thresholds")
+                if thresholds is not None:
+                    b.model.set_state_thresholds(thresholds if isinstance(thresholds, list) else None)
+            except Exception as _e:
+                logger.warning(f"[Buildings][loader] Could not apply images_by_state/state_thresholds: {_e}", exc_info=False)
 
             # Alcance de colisión por edificio (CG/CU)
             try:
