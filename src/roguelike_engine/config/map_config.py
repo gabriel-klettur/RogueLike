@@ -43,9 +43,9 @@ class MapSettings:
         Path(__file__).resolve().parent.parent.parent / 'data' / 'debug_maps'
     )
 
-    # Ruta al índice de zonas dinámico (data/zones/zones.json)
+    # Ruta al índice de zonas dinámico (data/map/zones/zones.json)
     ZONES_INDEX: Path = field(default_factory=lambda:
-        Path(DATA_DIR) / 'zones' / 'zones.json'
+        Path(DATA_DIR) / 'map' / 'zones' / 'zones.json'
     )    
 
     @property
@@ -57,7 +57,7 @@ class MapSettings:
     def zone_offsets(self) -> Dict[str, Tuple[int, int]]:
         """
         Offsets de cada zona en tiles.
-        Si use_zones_json es True, lee data/zones/zones.json;
+        Si use_zones_json es True, lee data/map/zones/zones.json;
         de lo contrario, calcula dinámicamente lobby y dungeon.
         """
         # Si no usamos JSON, fallback inmediato

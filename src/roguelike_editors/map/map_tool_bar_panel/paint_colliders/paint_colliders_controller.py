@@ -66,7 +66,7 @@ class PaintCollidersController:
         """
         w, h = global_map_settings.zone_size
         grid = [["#" for _ in range(w)] for _ in range(h)]
-        path = os.path.join(DATA_DIR, "collisions", f"{zone}.json")
+        path = os.path.join(DATA_DIR, "map", "collisions", f"{zone}.json")
         try:
             os.makedirs(os.path.dirname(path), exist_ok=True)
             with open(path, "w", encoding="utf-8") as f:

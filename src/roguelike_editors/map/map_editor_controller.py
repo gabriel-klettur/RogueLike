@@ -131,11 +131,11 @@ class MapEditorController:
         self._save_json(json_path, offsets)
 
         # Borrar archivo de colisiones de esta zona
-        coll_path = os.path.join(DATA_DIR, "collisions", f"{sel}.json")
+        coll_path = os.path.join(DATA_DIR, "map", "collisions", f"{sel}.json")
         self._safe_remove_file(coll_path, "[Controller.delete_zone]")
 
         # Borrar archivo de overlay de esta zona
-        overlay_path = os.path.join(DATA_DIR, "zones", "overlays", f"{sel}.overlay.json")
+        overlay_path = os.path.join(DATA_DIR, "map", "zones", "overlays", f"{sel}.overlay.json")
         self._safe_remove_file(overlay_path, "[Controller.delete_zone]")
 
         # Recargar offsets y mapa
@@ -181,8 +181,8 @@ class MapEditorController:
         logger.debug(f"[MapEditor] zones.json saved at {json_path}")
 
         # 2. Renombrar archivos de colisiones y overlays
-        self._rename_zone_file("collisions", old, new, "[Controller.rename_zone]")
-        self._rename_zone_file(os.path.join("zones", "overlays"), old, new, "[Controller.rename_zone]", suffix=".overlay.json")
+        self._rename_zone_file(os.path.join("map", "collisions"), old, new, "[Controller.rename_zone]")
+        self._rename_zone_file(os.path.join("map", "zones", "overlays"), old, new, "[Controller.rename_zone]", suffix=".overlay.json")
 
         # 3. Limpiar caché y actualizar map_manager
         global_map_settings.__dict__.pop("zone_offsets", None)
@@ -229,7 +229,7 @@ class MapEditorController:
     # -------------------------------------------------------------
     def _zones_json_path(self) -> str:
         """Devuelve la ruta al archivo principal de zonas (zones.json)."""
-        return os.path.join(DATA_DIR, "zones", "zones.json")
+        return os.path.join(DATA_DIR, "map", "zones", "zones.json")
 
     def _is_sentinel_zone(self, name: str) -> bool:
         """True si 'name' corresponde al centinela especial de 'no zone'."""
