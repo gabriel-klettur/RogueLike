@@ -6,6 +6,9 @@ from roguelike_engine.config.config import (
     BUILDINGS_COLLISIONS_DATA_PATH,
     BUILDINGS_TEMPLATES_PATH,
     BUILDINGS_INSTANCES_PATH,
+    BUILDINGS_COLLISIONS_BY_IMAGE_PATH,
+    BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH,
+    BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH,
 )
 from roguelike_engine.z_layer.persistence import extract_z_from_json
 from roguelike_engine.config.config_tiles import TILE_SIZE
@@ -61,18 +64,43 @@ def _canonicalize_zone(zone: str) -> str:
         return zone
 
 def _load_collisions_sources():
-    """Load collisions json supporting both new and legacy structured formats.
+    """Load collisions from split files if present, else fallback to legacy combined file.
 
-    New keys (preferred):
-      - by_image_path
-      - by_spawn_id
-      - by_building_instance_id
+    Split files format (each file is a plain dict):
+      - BUILDINGS_COLLISIONS_BY_IMAGE_PATH -> { image_path: {width,height,collision} }
+      - BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH -> { spawn_id: {width,height,collision} }
+      - BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH -> { id: {width,height,collision} }
 
-    Legacy keys (still supported on read):
-      - global
-      - instances
-      - by_building_id
+    Legacy combined file (supports both new keyed and legacy keyed variants) is used only if
+    none of the split files exist.
     """
+    try:
+        use_split = any(
+            os.path.exists(p) for p in (
+                BUILDINGS_COLLISIONS_BY_IMAGE_PATH,
+                BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH,
+                BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH,
+            )
+        )
+    except Exception:
+        use_split = False
+
+    if use_split:
+        def _read_dict(path):
+            try:
+                if os.path.exists(path):
+                    with open(path, 'r', encoding='utf-8-sig') as f:
+                        d = json.load(f) or {}
+                        return d if isinstance(d, dict) else {}
+            except Exception:
+                return {}
+            return {}
+        collisions_global = _read_dict(BUILDINGS_COLLISIONS_BY_IMAGE_PATH)
+        collisions_instances = _read_dict(BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH)
+        collisions_by_id = _read_dict(BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH)
+        return collisions_global, collisions_instances, collisions_by_id
+
+    # Fallback: legacy single file
     try:
         with open(BUILDINGS_COLLISIONS_DATA_PATH, 'r', encoding='utf-8-sig') as cf:
             raw_cd = json.load(cf) or {}
@@ -80,7 +108,6 @@ def _load_collisions_sources():
         raw_cd = {}
     try:
         if isinstance(raw_cd, dict):
-            # Prefer new schema if present
             if any(k in raw_cd for k in ("by_image_path", "by_spawn_id", "by_building_instance_id")):
                 collisions_global = raw_cd.get("by_image_path", {}) or {}
                 collisions_instances = raw_cd.get("by_spawn_id", {}) or {}
@@ -90,7 +117,6 @@ def _load_collisions_sources():
                 collisions_instances = raw_cd.get("instances", {}) or {}
                 collisions_by_id = raw_cd.get("by_building_id", {}) or {}
             else:
-                # Legacy flat: everything is global keyed by image_path
                 collisions_global = raw_cd
                 collisions_instances = {}
                 collisions_by_id = {}

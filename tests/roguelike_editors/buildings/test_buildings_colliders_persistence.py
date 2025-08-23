@@ -17,8 +17,12 @@ def test_col_001_cg_saves_by_image_path_and_ignores_spawner(monkeypatch, tmp_pat
 
     # Patch output path
     import roguelike_editors.buildings.buildings_colliders_panel.building_colliders_panel_events as ev_mod
-    out_path = tmp_path / "buildings_collisions_data.json"
-    monkeypatch.setattr(ev_mod, "BUILDINGS_COLLISIONS_DATA_PATH", str(out_path), raising=True)
+    out_by_image = tmp_path / "buildings_collisions_by_image.json"
+    out_by_spawn = tmp_path / "buildings_collisions_by_spawn_id.json"
+    out_by_binst = tmp_path / "buildings_collisions_by_building_instance_id.json"
+    monkeypatch.setattr(ev_mod, "BUILDINGS_COLLISIONS_BY_IMAGE_PATH", str(out_by_image), raising=True)
+    monkeypatch.setattr(ev_mod, "BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH", str(out_by_spawn), raising=True)
+    monkeypatch.setattr(ev_mod, "BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH", str(out_by_binst), raising=True)
 
     # Fake editor_state with UI scope = CG
     editor_state = types.SimpleNamespace(collider_scope="CG")
@@ -51,17 +55,16 @@ def test_col_001_cg_saves_by_image_path_and_ignores_spawner(monkeypatch, tmp_pat
     ev_up = pygame.event.Event(pygame.MOUSEBUTTONUP, {"button": 1, "pos": (10, 10)})
     h.handle(ev_up, camera, buildings)
 
-    # Verify file written with by_image_path only, and spawner visual was ignored
-    with open(out_path, "r", encoding="utf-8") as f:
+    # Verify by_image file written and spawner visual was ignored
+    with open(out_by_image, "r", encoding="utf-8") as f:
         data = json.load(f)
-    assert "by_image_path" in data
-    assert "/virtual/dummy.png" in data["by_image_path"]
-    cg_entry = data["by_image_path"]["/virtual/dummy.png"]
+    assert "/virtual/dummy.png" in data
+    cg_entry = data["/virtual/dummy.png"]
     assert cg_entry["width"] == 2 and cg_entry["height"] == 2
     # Saved collision should match normal.collision_map (not spawner_visual)
     assert cg_entry["collision"] == normal.collision_map
-    # CU area should remain empty in this CG save
-    assert data.get("by_building_instance_id", {}) == {}
+    # CU file should remain empty in this CG save
+    assert not out_by_binst.exists() or json.loads(out_by_binst.read_text(encoding="utf-8")) == {}
 
 
 @pytest.mark.usefixtures("pygame_context")
@@ -74,8 +77,12 @@ def test_col_002_cu_saves_by_building_instance_id(monkeypatch, tmp_path, surface
     )
 
     import roguelike_editors.buildings.buildings_colliders_panel.building_colliders_panel_events as ev_mod
-    out_path = tmp_path / "buildings_collisions_data.json"
-    monkeypatch.setattr(ev_mod, "BUILDINGS_COLLISIONS_DATA_PATH", str(out_path), raising=True)
+    out_by_image = tmp_path / "buildings_collisions_by_image.json"
+    out_by_spawn = tmp_path / "buildings_collisions_by_spawn_id.json"
+    out_by_binst = tmp_path / "buildings_collisions_by_building_instance_id.json"
+    monkeypatch.setattr(ev_mod, "BUILDINGS_COLLISIONS_BY_IMAGE_PATH", str(out_by_image), raising=True)
+    monkeypatch.setattr(ev_mod, "BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH", str(out_by_spawn), raising=True)
+    monkeypatch.setattr(ev_mod, "BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH", str(out_by_binst), raising=True)
 
     editor_state = types.SimpleNamespace(collider_scope="CU")
 
@@ -95,15 +102,14 @@ def test_col_002_cu_saves_by_building_instance_id(monkeypatch, tmp_path, surface
     h.handle(pygame.event.Event(pygame.MOUSEBUTTONDOWN, {"button": 1, "pos": (10, 10)}), camera, [b])
     h.handle(pygame.event.Event(pygame.MOUSEBUTTONUP, {"button": 1, "pos": (10, 10)}), camera, [b])
 
-    with open(out_path, "r", encoding="utf-8") as f:
+    with open(out_by_binst, "r", encoding="utf-8") as f:
         data = json.load(f)
-    assert "by_building_instance_id" in data
-    assert data["by_building_instance_id"].get("123") is not None
-    cu_entry = data["by_building_instance_id"]["123"]
+    assert data.get("123") is not None
+    cu_entry = data["123"]
     assert cu_entry["width"] == 2 and cu_entry["height"] == 2
     assert cu_entry["collision"] == b.collision_map
     # No CG saved when scope is CU
-    assert data.get("by_image_path", {}) == {}
+    assert not out_by_image.exists() or json.loads(out_by_image.read_text(encoding="utf-8")) == {}
 
 
 @pytest.mark.usefixtures("pygame_context")
@@ -166,6 +172,9 @@ def test_col_003_loader_priority_by_scope(monkeypatch, tmp_path, surface_factory
     monkeypatch.setattr(load_mod, "BUILDINGS_DATA_PATH", str(buildings_json), raising=True)
     monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_DATA_PATH", str(collisions_json), raising=True)
     # Force legacy combined path by making split files appear absent
+    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_BY_IMAGE_PATH", str(tmp_path / "no_by_image.json"), raising=True)
+    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH", str(tmp_path / "no_by_spawn.json"), raising=True)
+    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH", str(tmp_path / "no_by_binst.json"), raising=True)
     monkeypatch.setattr(load_mod, "BUILDINGS_TEMPLATES_PATH", str(tmp_path / "no_templates.json"), raising=True)
     monkeypatch.setattr(load_mod, "BUILDINGS_INSTANCES_PATH", str(tmp_path / "no_instances.json"), raising=True)
 
@@ -191,8 +200,12 @@ def test_col_004_ui_scope_overrides_building_scope_for_saving(monkeypatch, tmp_p
     )
 
     import roguelike_editors.buildings.buildings_colliders_panel.building_colliders_panel_events as ev_mod
-    out_path = tmp_path / "buildings_collisions_data.json"
-    monkeypatch.setattr(ev_mod, "BUILDINGS_COLLISIONS_DATA_PATH", str(out_path), raising=True)
+    out_by_image = tmp_path / "buildings_collisions_by_image.json"
+    out_by_spawn = tmp_path / "buildings_collisions_by_spawn_id.json"
+    out_by_binst = tmp_path / "buildings_collisions_by_building_instance_id.json"
+    monkeypatch.setattr(ev_mod, "BUILDINGS_COLLISIONS_BY_IMAGE_PATH", str(out_by_image), raising=True)
+    monkeypatch.setattr(ev_mod, "BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH", str(out_by_spawn), raising=True)
+    monkeypatch.setattr(ev_mod, "BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH", str(out_by_binst), raising=True)
 
     # Building marked CU but UI says CG
     editor_state = types.SimpleNamespace(collider_scope="CG")
@@ -212,8 +225,9 @@ def test_col_004_ui_scope_overrides_building_scope_for_saving(monkeypatch, tmp_p
     h.handle(pygame.event.Event(pygame.MOUSEBUTTONDOWN, {"button": 1, "pos": (10, 10)}), camera, [b])
     h.handle(pygame.event.Event(pygame.MOUSEBUTTONUP, {"button": 1, "pos": (10, 10)}), camera, [b])
 
-    with open(out_path, "r", encoding="utf-8") as f:
+    with open(out_by_image, "r", encoding="utf-8") as f:
         data = json.load(f)
     # Should have saved by image_path because UI scope is CG
-    assert "/virtual/dummy.png" in data.get("by_image_path", {})
-    assert data.get("by_building_instance_id", {}) == {}
+    assert "/virtual/dummy.png" in data
+    # by_instance file should remain empty
+    assert not out_by_binst.exists() or json.loads(out_by_binst.read_text(encoding="utf-8")) == {}

@@ -9,9 +9,19 @@ except Exception:
     TILE_SIZE = 32
 
 try:
-    from roguelike_engine.config.config import BUILDINGS_COLLISIONS_DATA_PATH, BUILDINGS_TEMPLATES_PATH, BUILDINGS_INSTANCES_PATH
+    from roguelike_engine.config.config import (
+        BUILDINGS_TEMPLATES_PATH,
+        BUILDINGS_INSTANCES_PATH,
+        BUILDINGS_COLLISIONS_DATA_PATH,
+        BUILDINGS_COLLISIONS_BY_IMAGE_PATH,
+        BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH,
+        BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH,
+    )
 except Exception:
     BUILDINGS_COLLISIONS_DATA_PATH = "data/buildings/buildings_collisions_data.json"
+    BUILDINGS_COLLISIONS_BY_IMAGE_PATH = "data/buildings/buildings_collisions_by_image.json"
+    BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH = "data/buildings/buildings_collisions_by_spawn_id.json"
+    BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH = "data/buildings/buildings_collisions_by_building_instance_id.json"
 
 from roguelike_editors.buildings.utils.save_buildings_to_json import save_buildings_to_json, save_buildings_split
 
@@ -83,41 +93,24 @@ class BuildingCollidersPanelEventHandler:
         return False
 
     def _save_collisions(self, buildings, force: bool = False):
-        # Persiste colisiones en un esquema robusto y backward-compatible:
-        # Nuevo esquema (preferido):
-        # {
-        #   "by_image_path": { image_path: {width,height,collision} },    # CG
-        #   "by_building_instance_id": { "<id>": {width,height,collision} }  # CU
-        #   "by_spawn_id": { spawn_id: {width,height,collision} }  # legacy/soportado si existe
-        # }
-        # Esquema legacy soportado en lectura:
-        # {
-        #   "global": { ... }, "instances": { ... }, "by_building_id": { ... }
-        # }
+        # Persistir ahora en archivos divididos.
         active = getattr(self.model, 'active_building', None)
-        # Usar SIEMPRE la selección de la UI para decidir cómo persistir (CG/CU)
         eff_scope = getattr(self.editor_state, 'collider_scope', 'CG')
 
-        # Cargar existente (aceptando nuevo y legacy)
-        try:
-            with open(BUILDINGS_COLLISIONS_DATA_PATH, 'r', encoding='utf-8') as cf:
-                raw = json.load(cf) or {}
-        except Exception:
-            raw = {}
-        data = {"by_image_path": {}, "by_spawn_id": {}, "by_building_instance_id": {}}
-        if isinstance(raw, dict):
-            # Preferir nuevas claves si existen
-            if any(k in raw for k in ("by_image_path", "by_spawn_id", "by_building_instance_id")):
-                data["by_image_path"] = raw.get("by_image_path", {}) or {}
-                data["by_spawn_id"] = raw.get("by_spawn_id", {}) or {}
-                data["by_building_instance_id"] = raw.get("by_building_instance_id", {}) or {}
-            elif any(k in raw for k in ("global", "instances", "by_building_id")):
-                data["by_image_path"] = raw.get("global", {}) or {}
-                data["by_spawn_id"] = raw.get("instances", {}) or {}
-                data["by_building_instance_id"] = raw.get("by_building_id", {}) or {}
-            elif raw:
-                # Plano legacy (todo por image_path)
-                data["by_image_path"] = raw
+        # Cargar existentes desde archivos split (si no existen, dict vacío)
+        def _read_dict(path):
+            try:
+                if os.path.exists(path):
+                    with open(path, 'r', encoding='utf-8') as f:
+                        d = json.load(f) or {}
+                        return d if isinstance(d, dict) else {}
+            except Exception:
+                return {}
+            return {}
+
+        by_image = _read_dict(BUILDINGS_COLLISIONS_BY_IMAGE_PATH)
+        by_spawn = _read_dict(BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH)
+        by_binst = _read_dict(BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH)
 
         updated_by_img = []
         updated_by_inst = []
@@ -128,16 +121,14 @@ class BuildingCollidersPanelEventHandler:
             for b in buildings:
                 if getattr(b, 'collision_map', None) is None:
                     continue
-                # No persistir CG global desde visuales de spawner; sus colisiones deben ir por instancia
                 if getattr(b, '_is_spawner_visual', False) or getattr(b, 'spawner_instance_id', None):
                     continue
-                # Restringir a la misma imagen que el activo para evitar guardar duplicados
                 if target_img and getattr(b, 'image_path', None) != target_img:
                     continue
                 key = getattr(b, 'image_path', '')
                 if not key:
                     continue
-                data['by_image_path'][key] = {
+                by_image[key] = {
                     'width': len(b.collision_map[0]) if b.collision_map else 0,
                     'height': len(b.collision_map),
                     'collision': b.collision_map,
@@ -150,7 +141,7 @@ class BuildingCollidersPanelEventHandler:
                 bid = getattr(active, 'id', None)
                 if bid is not None:
                     bid_str = str(bid)
-                    data['by_building_instance_id'][bid_str] = {
+                    by_binst[bid_str] = {
                         'width': len(active.collision_map[0]) if active.collision_map else 0,
                         'height': len(active.collision_map),
                         'collision': active.collision_map,
@@ -159,10 +150,20 @@ class BuildingCollidersPanelEventHandler:
             except Exception:
                 pass
 
-        # Escribir archivo
-        os.makedirs(os.path.dirname(BUILDINGS_COLLISIONS_DATA_PATH), exist_ok=True)
-        with open(BUILDINGS_COLLISIONS_DATA_PATH, 'w', encoding='utf-8') as cf:
-            json.dump(data, cf, indent=4)
+        # Crear carpeta destino
+        out_dir = os.path.dirname(BUILDINGS_COLLISIONS_BY_IMAGE_PATH) or os.path.dirname(BUILDINGS_COLLISIONS_DATA_PATH)
+        os.makedirs(out_dir, exist_ok=True)
+
+        # Escribir archivos split
+        try:
+            with open(BUILDINGS_COLLISIONS_BY_IMAGE_PATH, 'w', encoding='utf-8') as f:
+                json.dump(by_image, f, indent=4)
+            with open(BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH, 'w', encoding='utf-8') as f:
+                json.dump(by_spawn, f, indent=4)
+            with open(BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH, 'w', encoding='utf-8') as f:
+                json.dump(by_binst, f, indent=4)
+        except Exception as e:
+            logger.error(f"[Colliders] Error escribiendo archivos de colisiones: {e}")
 
         # Logs
         try:

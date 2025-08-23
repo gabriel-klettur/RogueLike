@@ -67,3 +67,53 @@ save_buildings_collisions(data_dir/"buildings_collisions_data.json", all_maps)
 Actualizar README/wiki con:
 Formato JSON.
 Uso del “collision brush” en el editor de edificios.
+
+---
+
+## Actualización 2025-08: Split de colisiones (by_image / by_spawn_id / by_building_instance_id)
+
+Para mejorar organización y evitar mezclas de ámbitos, las colisiones de edificios se separaron en tres ficheros bajo `data/buildings/`:
+
+- `buildings_collisions_by_image.json` (CG, global por `image_path`)
+- `buildings_collisions_by_spawn_id.json` (legado por `spawn_id`)
+- `buildings_collisions_by_building_instance_id.json` (CU, por instancia/`id` de building)
+
+Ejemplos de formato:
+
+1) Global por imagen (CG):
+```json
+{
+  "/virtual/dummy.png": {
+    "width": 2,
+    "height": 2,
+    "collision": [["#", "."], [".", "#"]]
+  }
+}
+```
+
+2) Por instancia (CU):
+```json
+{
+  "123": {
+    "width": 2,
+    "height": 2,
+    "collision": [[".", "."], ["#", "#"]]
+  }
+}
+```
+
+### Prioridad de lectura (loader)
+- Si `collider_scope == "CU"` y existe entrada en `by_building_instance_id`, se usa esa.
+- En caso contrario, si existe entrada en `by_image` por `image_path` (o `assets.idle`), se usa esa.
+- Como fallback de compatibilidad, si faltan los split, se intenta leer el combinado legado `buildings_collisions_data.json`.
+
+### Escritura (saver)
+- Si el UI está en modo CG, la persistencia salva en `by_image`.
+- Si el UI está en modo CU, salva en `by_building_instance_id`.
+- Visuales de spawner (marcados como `_is_spawner_visual`) se ignoran al guardar CG.
+
+### Migración
+Se añadió `scripts/split_buildings_collisions.py` que lee el combinado legado (si existe) y vuelca/mergea en los tres ficheros split. No elimina el combinado.
+
+### Tests
+Se añadieron pruebas que validan la lectura por prioridad y la escritura por scope (CG/CU), junto con el comportamiento de ignorar visuales de spawner.

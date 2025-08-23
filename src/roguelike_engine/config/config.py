@@ -45,10 +45,16 @@ BUILDINGS_DATA_PATH = str(BUILDINGS_DATA_PATH)
 BUILDINGS_COLLISIONS_DATA_PATH = Path(DATA_DIR) / "buildings" / "buildings_collisions_data.json"
 BUILDINGS_COLLISIONS_DATA_PATH = str(BUILDINGS_COLLISIONS_DATA_PATH)
 
-# Persistencia de colisiones de edificios
-BUILDINGS_COLLISIONS_DATA_PATH = Path(DATA_DIR) / "buildings" / "buildings_collisions_data.json"
-BUILDINGS_COLLISIONS_DATA_PATH = str(BUILDINGS_COLLISIONS_DATA_PATH)
-
+# Nuevos archivos divididos para colisiones de edificios
+# - Globales por image_path (CG)
+BUILDINGS_COLLISIONS_BY_IMAGE_PATH = Path(DATA_DIR) / "buildings" / "buildings_collisions_by_image.json"
+BUILDINGS_COLLISIONS_BY_IMAGE_PATH = str(BUILDINGS_COLLISIONS_BY_IMAGE_PATH)
+# - Legacy por spawn_id (soportado en lectura/escritura)
+BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH = Path(DATA_DIR) / "buildings" / "buildings_collisions_by_spawn_id.json"
+BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH = str(BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH)
+# - Por instancia de edificio (CU)
+BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH = Path(DATA_DIR) / "buildings" / "buildings_collisions_by_building_instance_id.json"
+BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH = str(BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH)
 
 # Rutas nuevas para la separación Templates/Instances de Buildings
 # Si existen, el sistema usará estos archivos en lugar del legacy BUILDINGS_DATA_PATH.

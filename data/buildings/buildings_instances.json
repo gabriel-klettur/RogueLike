@@ -496,8 +496,8 @@
         }
     },
     {
-        "id": 135,
-        "template_id": 98,
+        "id": 137,
+        "template_id": 100,
         "zone": "lobby",
         "rel_x": 142,
         "rel_y": 1007,
@@ -583,8 +583,8 @@
         "rel_y": 1378,
         "overrides": {
             "scale": [
-                190,
-                190
+                540,
+                540
             ],
             "z_bottom": 3,
             "z_top": 5,
@@ -640,11 +640,11 @@
         }
     },
     {
-        "id": 136,
+        "id": 138,
         "template_id": 31,
         "zone": "lobby",
-        "rel_x": 5,
-        "rel_y": 1149,
+        "rel_x": 15,
+        "rel_y": 1175,
         "overrides": {
             "scale": [
                 172,

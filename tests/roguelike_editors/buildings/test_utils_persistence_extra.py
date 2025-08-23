@@ -45,6 +45,10 @@ def test_utl_001_load_buildings_basic_fields(tmp_path, monkeypatch):
     load_mod = importlib.import_module("roguelike_editors.buildings.utils.load_buildings_from_json")
     monkeypatch.setattr(load_mod, "BUILDINGS_DATA_PATH", str(buildings_json), raising=True)
     monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_DATA_PATH", str(collisions_json), raising=True)
+    # Force legacy combined path by making split files appear absent
+    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_BY_IMAGE_PATH", str(tmp_path / "no_by_image.json"), raising=True)
+    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH", str(tmp_path / "no_by_spawn.json"), raising=True)
+    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH", str(tmp_path / "no_by_binst.json"), raising=True)
 
     buildings = load_mod.load_buildings_from_json()
     assert isinstance(buildings, list) and len(buildings) == 1

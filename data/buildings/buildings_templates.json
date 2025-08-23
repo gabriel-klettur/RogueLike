@@ -1285,5 +1285,18 @@
             8
         ],
         "id": 99
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/houses/orden_house_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.816,
+        "collider_scope": "CG",
+        "original_scale": [
+            391,
+            391
+        ],
+        "id": 100
     }
 ]
