@@ -169,19 +169,12 @@ class BuildingEditorEventHandler:
                 # Persist building changes if editor active
                 if self.editor.active:
                     try:
-                        if os.path.exists(BUILDINGS_TEMPLATES_PATH) and os.path.exists(BUILDINGS_INSTANCES_PATH):
-                            save_buildings_split(
-                                self.buildings,
-                                z_state=self.state.z_state,
-                                zone_offsets=self.zone_offsets,
-                            )
-                        else:
-                            save_buildings_to_json(
-                                self.buildings,
-                                BUILDINGS_DATA_PATH,
-                                z_state=self.state.z_state,
-                                zone_offsets=self.zone_offsets,
-                            )
+                        save_buildings_to_json(
+                            self.buildings,
+                            BUILDINGS_DATA_PATH,
+                            z_state=self.state.z_state,
+                            zone_offsets=self.zone_offsets,
+                        )
                     except Exception:
                         # avoid blocking quit on save failure
                         pass
@@ -215,19 +208,12 @@ class BuildingEditorEventHandler:
                     self.editor.split_dragging = False
                     
                     try:
-                        if os.path.exists(BUILDINGS_TEMPLATES_PATH) and os.path.exists(BUILDINGS_INSTANCES_PATH):
-                            save_buildings_split(
-                                entities.buildings,
-                                z_state=self.state.z_state,
-                                zone_offsets=self.zone_offsets,
-                            )
-                        else:
-                            save_buildings_to_json(
-                                entities.buildings,
-                                BUILDINGS_DATA_PATH,
-                                z_state=self.state.z_state,
-                                zone_offsets=self.zone_offsets,
-                            )
+                        save_buildings_to_json(
+                            entities.buildings,
+                            BUILDINGS_DATA_PATH,
+                            z_state=self.state.z_state,
+                            zone_offsets=self.zone_offsets,
+                        )
                     except Exception:
                         pass
                     return
@@ -255,19 +241,12 @@ class BuildingEditorEventHandler:
                     logger.info("Ctrl+S: saving buildings")
 
                     try:
-                        if os.path.exists(BUILDINGS_TEMPLATES_PATH) and os.path.exists(BUILDINGS_INSTANCES_PATH):
-                            save_buildings_split(
-                                entities.buildings,
-                                z_state=self.state.z_state,
-                                zone_offsets=self.zone_offsets,
-                            )
-                        else:
-                            save_buildings_to_json(
-                                entities.buildings,
-                                BUILDINGS_DATA_PATH,
-                                z_state=self.state.z_state,
-                                zone_offsets=self.zone_offsets,
-                            )
+                        save_buildings_to_json(
+                            entities.buildings,
+                            BUILDINGS_DATA_PATH,
+                            z_state=self.state.z_state,
+                            zone_offsets=self.zone_offsets,
+                        )
                     except Exception:
                         pass
 
@@ -292,19 +271,12 @@ class BuildingEditorEventHandler:
                 self.controller.on_mouse_up(ev.button, camera, entities.buildings)
                 # Persistir cambios de edificios (posición, tamaño, split)
                 try:
-                    if os.path.exists(BUILDINGS_TEMPLATES_PATH) and os.path.exists(BUILDINGS_INSTANCES_PATH):
-                        save_buildings_split(
-                            entities.buildings,
-                            z_state=self.state.z_state,
-                            zone_offsets=self.zone_offsets,
-                        )
-                    else:
-                        save_buildings_to_json(
-                            entities.buildings,
-                            BUILDINGS_DATA_PATH,
-                            z_state=self.state.z_state,
-                            zone_offsets=self.zone_offsets,
-                        )
+                    save_buildings_to_json(
+                        entities.buildings,
+                        BUILDINGS_DATA_PATH,
+                        z_state=self.state.z_state,
+                        zone_offsets=self.zone_offsets,
+                    )
                 except Exception:
                     pass
                 return

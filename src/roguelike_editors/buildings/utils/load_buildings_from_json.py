@@ -369,10 +369,12 @@ def load_buildings_from_json(
     Carga edificios desde JSON usando coordenadas relativas.
     - Si `z_state` se proporciona, inyecta la capa Z.
     """
-    # Prefer split files if both exist; fallback to legacy combined file
+    # Prefer explicitly provided combined file if it exists (tests may monkeypatch BUILDINGS_DATA_PATH);
+    # only fall back to split files when the combined file is not available.
     try:
-        if os.path.exists(BUILDINGS_TEMPLATES_PATH) and os.path.exists(BUILDINGS_INSTANCES_PATH):
-            return _load_from_split(z_state)
+        if not os.path.exists(BUILDINGS_DATA_PATH):
+            if os.path.exists(BUILDINGS_TEMPLATES_PATH) and os.path.exists(BUILDINGS_INSTANCES_PATH):
+                return _load_from_split(z_state)
     except Exception:
         pass
     if not os.path.exists(BUILDINGS_DATA_PATH):
@@ -417,7 +419,7 @@ def load_buildings_from_json(
         try:
             #logger.debug(f"📥 Entrada cruda desde JSON: {entry}")
 
-            # Require new JSON structure: assets.idle (no legacy fallbacks)
+            # Accept both new JSON structure (assets.idle) and legacy (image_path)
             _img_path = None
             try:
                 assets = entry.get("assets") or {}
@@ -426,7 +428,12 @@ def load_buildings_from_json(
             except Exception:
                 _img_path = None
             if not _img_path:
-                raise ValueError(f"[Buildings][loader] Missing required assets.idle (id={entry.get('id')}, zone={entry.get('zone')}, rel=({entry.get('rel_x')},{entry.get('rel_y')}))")
+                try:
+                    _img_path = _normalize_asset_path(entry.get("image_path"))
+                except Exception:
+                    _img_path = None
+            if not _img_path:
+                raise ValueError(f"[Buildings][loader] Missing required assets.idle/image_path (id={entry.get('id')}, zone={entry.get('zone')}, rel=({entry.get('rel_x')},{entry.get('rel_y')}))")
 
             b = Building(
                 rel_x=entry.get("rel_x", 0),
