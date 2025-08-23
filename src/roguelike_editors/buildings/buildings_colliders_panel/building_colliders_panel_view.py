@@ -96,7 +96,7 @@ class BuildingCollidersPanelView:
             lbl_surf = label_font.render(label, True, (255, 255, 255))
             surf.blit(lbl_surf, (x + (THUMB - lbl_surf.get_width()) // 2,
                                  y + THUMB + PAD))
-        # Botón 'Save CU' (guarda overrides por instancia en buildings_data.json)
+        # Botón 'Save CU' (guarda overrides por instancia; usa split primero y fallback a legacy)
         btn_w = w - 2 * PAD
         btn_x = PAD
         btn_y = top_h + PAD

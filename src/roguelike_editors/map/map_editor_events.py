@@ -1,10 +1,12 @@
 import pygame
+import os
 import logging
 logger = logging.getLogger(__name__)
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.config.config_editor import TILE_PAINT_BATCH, TILE_PAINT_TICK
-from roguelike_editors.buildings.utils.save_buildings_to_json import save_buildings_to_json
+from roguelike_engine.config.config import BUILDINGS_TEMPLATES_PATH, BUILDINGS_INSTANCES_PATH
+from roguelike_editors.buildings.utils.save_buildings_to_json import save_buildings_to_json, save_buildings_split
 from roguelike_engine.map.model.overlay.overlay_manager import load_layers, save_layers
 from roguelike_game.ecs.core.spatial_index import SpatialIndex
 from roguelike_ui.ui_blocker import is_blocked
@@ -381,11 +383,18 @@ class MapEditorEventHandler:
                     if getattr(b, "zone", None) == old_zone:
                         b.zone = new_name
                         logger.debug(f"[MapEditor] building {b} zone updated from {old_zone} to {new_name}")
-                save_buildings_to_json(
-                    self.manager.game.buildings.buildings,
-                    z_state=self.manager.game.z_state,
-                    zone_offsets=global_map_settings.zone_offsets,
-                )
+                if os.path.exists(BUILDINGS_TEMPLATES_PATH) and os.path.exists(BUILDINGS_INSTANCES_PATH):
+                    save_buildings_split(
+                        self.manager.game.buildings.buildings,
+                        z_state=self.manager.game.z_state,
+                        zone_offsets=global_map_settings.zone_offsets,
+                    )
+                else:
+                    save_buildings_to_json(
+                        self.manager.game.buildings.buildings,
+                        z_state=self.manager.game.z_state,
+                        zone_offsets=global_map_settings.zone_offsets,
+                    )
                 logger.debug("[MapEditor] persisted buildings_data.json after rename")
                 self.state.selected_zone = new_name
             else:
@@ -416,11 +425,18 @@ class MapEditorEventHandler:
                     if getattr(b, "zone", None) == old_zone:
                         b.zone = new_name
                         logger.debug(f"[MapEditor] building {b} zone updated from {old_zone} to {new_name}")
-                save_buildings_to_json(
-                    self.manager.game.buildings.buildings,
-                    z_state=self.manager.game.z_state,
-                    zone_offsets=global_map_settings.zone_offsets,
-                )
+                if os.path.exists(BUILDINGS_TEMPLATES_PATH) and os.path.exists(BUILDINGS_INSTANCES_PATH):
+                    save_buildings_split(
+                        self.manager.game.buildings.buildings,
+                        z_state=self.manager.game.z_state,
+                        zone_offsets=global_map_settings.zone_offsets,
+                    )
+                else:
+                    save_buildings_to_json(
+                        self.manager.game.buildings.buildings,
+                        z_state=self.manager.game.z_state,
+                        zone_offsets=global_map_settings.zone_offsets,
+                    )
                 logger.debug("[MapEditor] persisted buildings_data.json after rename")
                 self.state.selected_zone = new_name
             else:

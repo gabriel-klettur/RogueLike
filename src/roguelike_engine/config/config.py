@@ -50,6 +50,15 @@ BUILDINGS_COLLISIONS_DATA_PATH = Path(DATA_DIR) / "buildings" / "buildings_colli
 BUILDINGS_COLLISIONS_DATA_PATH = str(BUILDINGS_COLLISIONS_DATA_PATH)
 
 
+# Rutas nuevas para la separación Templates/Instances de Buildings
+# Si existen, el sistema usará estos archivos en lugar del legacy BUILDINGS_DATA_PATH.
+BUILDINGS_TEMPLATES_PATH = Path(DATA_DIR) / "buildings" / "buildings_templates.json"
+BUILDINGS_TEMPLATES_PATH = str(BUILDINGS_TEMPLATES_PATH)
+
+BUILDINGS_INSTANCES_PATH = Path(DATA_DIR) / "buildings" / "buildings_instances.json"
+BUILDINGS_INSTANCES_PATH = str(BUILDINGS_INSTANCES_PATH)
+
+
 #! ------------------------ Z-LAYER CONFIG -----------------------
 DEFAULT_Z = 1
 

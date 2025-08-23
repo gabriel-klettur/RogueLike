@@ -1,9 +1,17 @@
+import os
 import pygame
 import logging
 from roguelike_ui.ui_blocker import is_blocked
 
-from roguelike_editors.buildings.utils.save_buildings_to_json import save_buildings_to_json
-from roguelike_engine.config.config import BUILDINGS_DATA_PATH
+from roguelike_editors.buildings.utils.save_buildings_to_json import (
+    save_buildings_to_json,
+    save_buildings_split,
+)
+from roguelike_engine.config.config import (
+    BUILDINGS_DATA_PATH,
+    BUILDINGS_TEMPLATES_PATH,
+    BUILDINGS_INSTANCES_PATH,
+)
 from roguelike_editors.buildings.buildings_picker.building_picker_events import BuildingPickerEventHandler
 
 
@@ -160,12 +168,23 @@ class BuildingEditorEventHandler:
             if ev.type == pygame.QUIT:
                 # Persist building changes if editor active
                 if self.editor.active:
-                    save_buildings_to_json(
-                        self.buildings,
-                        BUILDINGS_DATA_PATH,
-                        z_state=self.state.z_state,
-                        zone_offsets=self.zone_offsets
-                    )
+                    try:
+                        if os.path.exists(BUILDINGS_TEMPLATES_PATH) and os.path.exists(BUILDINGS_INSTANCES_PATH):
+                            save_buildings_split(
+                                self.buildings,
+                                z_state=self.state.z_state,
+                                zone_offsets=self.zone_offsets,
+                            )
+                        else:
+                            save_buildings_to_json(
+                                self.buildings,
+                                BUILDINGS_DATA_PATH,
+                                z_state=self.state.z_state,
+                                zone_offsets=self.zone_offsets,
+                            )
+                    except Exception:
+                        # avoid blocking quit on save failure
+                        pass
                 self.state.running = False
                 return
             # --- Finaliza resize al soltar R ---
@@ -195,13 +214,22 @@ class BuildingEditorEventHandler:
                     self.editor.resizing = False
                     self.editor.split_dragging = False
                     
-                                        
-                    save_buildings_to_json(
-                        entities.buildings,
-                        BUILDINGS_DATA_PATH,
-                        z_state=self.state.z_state,
-                        zone_offsets=self.zone_offsets
-                    )
+                    try:
+                        if os.path.exists(BUILDINGS_TEMPLATES_PATH) and os.path.exists(BUILDINGS_INSTANCES_PATH):
+                            save_buildings_split(
+                                entities.buildings,
+                                z_state=self.state.z_state,
+                                zone_offsets=self.zone_offsets,
+                            )
+                        else:
+                            save_buildings_to_json(
+                                entities.buildings,
+                                BUILDINGS_DATA_PATH,
+                                z_state=self.state.z_state,
+                                zone_offsets=self.zone_offsets,
+                            )
+                    except Exception:
+                        pass
                     return
 
                 # D → reset (default) sobre hovered_building
@@ -226,12 +254,22 @@ class BuildingEditorEventHandler:
                 if ev.key == pygame.K_s and (ev.mod & pygame.KMOD_CTRL):
                     logger.info("Ctrl+S: saving buildings")
 
-                    save_buildings_to_json(
-                        entities.buildings,
-                        BUILDINGS_DATA_PATH,
-                        z_state=self.state.z_state,
-                        zone_offsets=self.zone_offsets
-                    )
+                    try:
+                        if os.path.exists(BUILDINGS_TEMPLATES_PATH) and os.path.exists(BUILDINGS_INSTANCES_PATH):
+                            save_buildings_split(
+                                entities.buildings,
+                                z_state=self.state.z_state,
+                                zone_offsets=self.zone_offsets,
+                            )
+                        else:
+                            save_buildings_to_json(
+                                entities.buildings,
+                                BUILDINGS_DATA_PATH,
+                                z_state=self.state.z_state,
+                                zone_offsets=self.zone_offsets,
+                            )
+                    except Exception:
+                        pass
 
                     return
 
@@ -253,12 +291,22 @@ class BuildingEditorEventHandler:
                 # 3) Delegar al controlador y guardar cambios de posición/tamaño
                 self.controller.on_mouse_up(ev.button, camera, entities.buildings)
                 # Persistir cambios de edificios (posición, tamaño, split)
-                save_buildings_to_json(
-                    entities.buildings,
-                    BUILDINGS_DATA_PATH,
-                    z_state=self.state.z_state,
-                    zone_offsets=self.zone_offsets
-                )
+                try:
+                    if os.path.exists(BUILDINGS_TEMPLATES_PATH) and os.path.exists(BUILDINGS_INSTANCES_PATH):
+                        save_buildings_split(
+                            entities.buildings,
+                            z_state=self.state.z_state,
+                            zone_offsets=self.zone_offsets,
+                        )
+                    else:
+                        save_buildings_to_json(
+                            entities.buildings,
+                            BUILDINGS_DATA_PATH,
+                            z_state=self.state.z_state,
+                            zone_offsets=self.zone_offsets,
+                        )
+                except Exception:
+                    pass
                 return
             elif ev.type == pygame.MOUSEMOTION:
                 mx, my = ev.pos
