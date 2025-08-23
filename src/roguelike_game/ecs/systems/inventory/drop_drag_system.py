@@ -27,7 +27,7 @@ class DropDragSystem:
         self.prev_mouse = False
         self.potential_drag_eid = None
         self.drag_press_time = None
-        self.drag_hold_threshold = 500  # ms, igual que inventario
+        self.drag_hold_threshold = 250  # ms, ground pickup hold time (half of previous 500ms)
         # Seguimiento de hover sobre slot del inventario durante el drag
         self.hover_slot_idx = None
         self.hover_start_time = None
@@ -209,7 +209,7 @@ class DropDragSystem:
             self.hover_start_time = None
             return            
 
-        # Si botón presionado pero sin drag activo: iniciar drag tras 0.5s de click
+        # Si botón presionado pero sin drag activo: tras el hold, recoger directamente al inventario
         if self.dragging_eid is None:
             hovered = None
             max_layer = -float('inf')
@@ -237,8 +237,8 @@ class DropDragSystem:
                     self.drag_press_time = now
                     self.potential_drag_eid = hovered
                 elif self.potential_drag_eid == hovered and active_pressed and now - self.drag_press_time >= self.drag_hold_threshold:
-                    # Antes de iniciar el drag, validar rango respecto al jugador
-                    allow_drag = True
+                    # Al completar el hold, recoger directamente al inventario (sin iniciar drag)
+                    allow_pickup = True
                     try:
                         player = getattr(world, 'player_entity', None)
                         if player is not None:
@@ -262,19 +262,30 @@ class DropDragSystem:
                                 dcx = dpos.x + dw * 0.5
                                 dcy = dpos.y + dh * 0.5
                                 rng = self._get_pickup_range(world)
-                                allow_drag = (math.hypot(dcx - pcx, dcy - pcy) <= rng)
+                                allow_pickup = (math.hypot(dcx - pcx, dcy - pcy) <= rng)
                     except Exception:
-                        allow_drag = True
-                    if allow_drag:
-                        self.dragging_eid = hovered
-                        pos2 = comps['Position'][hovered]
-                        # Guardar origen de drag en coords de mundo
-                        self.drag_origin = (pos2.x, pos2.y)
-                        self.offset_x = pos2.x - world_x
-                        self.offset_y = pos2.y - world_y
+                        allow_pickup = True
+                    if allow_pickup:
+                        phys = comps['PhysicalItemComponent'][hovered]
+                        player = getattr(world, 'player_entity', None)
+                        inv_comp = comps.get('InventoryComponent', {}).get(player) if player else None
+                        if inv_comp:
+                            inv_comp.add(phys.item_id, phys.quantity)
+                            pickup_sys = next((s for s in getattr(world, 'update_systems', []) if isinstance(s, InventoryPickupSystem)), None)
+                            if pickup_sys:
+                                pickup_sys._persist_inventory(player, inv_comp)
+                        self.drop_manager.pick_up(phys.drop_id)
+                        world.remove_entity(hovered)
+                        # limpiar estados tras recoger
                         self.potential_drag_eid = None
-            self.prev_mouse = active_pressed
-            return
+                        self.drag_press_time = None
+                        self.drag_origin = None
+                        self.hover_slot_idx = None
+                        self.hover_start_time = None
+                        self.prev_mouse = active_pressed
+                        return
+                self.prev_mouse = active_pressed
+                return
 
         # Drag activo: actualizar posición componente
         # Verificar que el componente Position exista (puede haber sido eliminado)
