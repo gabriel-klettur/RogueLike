@@ -12,6 +12,7 @@ from roguelike_ui.ui_blocker import is_blocked
 from roguelike_editors.buildings.utils.zone_helpers import assign_zone_and_relatives
 from roguelike_editors.spawner.services.persistence import find_instance_in_json, persist_drop
 from roguelike_engine.config.map_config import global_map_settings
+from roguelike_engine.buildings.building_model import BuildingModel
 
 from roguelike_editors.buildings.buildings_picker.building_picker_controller import BuildingPickerController
 import logging
@@ -32,10 +33,17 @@ class BuildingEditorController:
         self.z_tool_top    = ZTool(state, editor_state, target="top")        
         # Toggle CG/CU de alcance de colliders
         self.collider_scope_tool = ColliderScopeTool(state, editor_state)
+        # Elegir clase de building de forma segura aunque la lista esté vacía
+        try:
+            building_cls = type(buildings[0]) if buildings else BuildingModel
+        except Exception:
+            building_cls = BuildingModel
+        if building_cls is BuildingModel and not buildings:
+            logger.warning("BuildingEditorController: buildings list is empty; using BuildingModel as fallback for placer tool.")
         self.placer_tool = PlacerTool(
             state, editor_state,
-            building_class=type(buildings[0]),
-            default_image="assets/buildings/others/portal.png",
+            building_class=building_cls,
+            default_image="assets/buildings/dummy.png",
             default_scale=(512, 824),
             default_solid=True,
         )

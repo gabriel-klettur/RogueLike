@@ -7,12 +7,10 @@ MVP supports:
 """
 from __future__ import annotations
 
-import random
-from typing import Optional, Tuple
-
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.ecs.components.spawn.spawn_request import SpawnRequest
 import logging
+from roguelike_game.ecs.systems.spawner.placement_utils import collect_blocked_tiles as util_collect_blocked, collect_npc_tiles as util_collect_npcs, choose_spawn_tile
 
 logger = logging.getLogger(__name__)
 
@@ -22,53 +20,78 @@ class SpawnerRuntimeSystem:
         self.perf_log = perf_log
 
     def _collect_blocked_tiles(self, world):
-        solid_coords = {(t.rect.x // TILE_SIZE, t.rect.y // TILE_SIZE) for t in world.map_manager.solid_tiles}
-        building_coords = {(r.x // TILE_SIZE, r.y // TILE_SIZE) for b in world.buildings for r in getattr(b, 'collision_tiles', [])}
-        return solid_coords, building_coords
+        return util_collect_blocked(world)
 
-    def _find_local_spot(self, center: Tuple[int, int], radius: int, solid, building, attempts: int = 25) -> Optional[Tuple[int, int]]:
-        cx, cy = center
-        for _ in range(attempts):
-            tx = cx + random.randint(-radius, radius)
-            ty = cy + random.randint(-radius, radius)
-            if (tx, ty) in solid or (tx, ty) in building:
-                continue
-            return tx, ty
-        return None
-
-    def _iter_spiral_tiles(self, cx: int, cy: int, max_radius: int):
-        """Generate tiles in spiral rings around (cx, cy), starting at center."""
-        yield (cx, cy)
-        for r in range(1, max_radius + 1):
-            x0, x1 = cx - r, cx + r
-            y0, y1 = cy - r, cy + r
-            # top & bottom edges
-            for x in range(x0, x1 + 1):
-                yield (x, y0)
-                yield (x, y1)
-            # left & right edges (without corners to avoid duplicates)
-            for y in range(y0 + 1, y1):
-                yield (x0, y)
-                yield (x1, y)
+    # Nota: La lógica de colocación (random/espiral, forma, radio, distancia mínima)
+    # se ha extraído a placement_utils.py para mantener este sistema enfocado en
+    # progresión de oleadas y emisión de SpawnRequest.
 
     def _collect_npc_tiles(self, world):
         """Return set of global tile coords occupied by existing NPCs/Player (alive)."""
-        comps = world.components
-        pos_map = comps.get('Position', {})
-        multi_map = comps.get('MultiCollider', {})
-        death_map = comps.get('DeathTimer', {})
-        tiles = set()
-        # Consider all entities with Position+MultiCollider (player and NPCs)
-        for nid in world.get_entities_with('Position', 'MultiCollider'):
-            if nid in death_map:
-                continue
-            p = pos_map.get(nid)
-            if not p:
-                continue
-            tx = int(p.x // TILE_SIZE)
-            ty = int(p.y // TILE_SIZE)
-            tiles.add((tx, ty))
-        return tiles
+        return util_collect_npcs(world)
+
+    def _compute_defend_metadata(self, cfg, sr, fallback_max: int, shape: str):
+        """Build optional defend area metadata coupled to spawner placement settings.
+        Returns (defend_center, defend_radius_px, defend_leash, defend_shape).
+        """
+        defend_center = None
+        defend_radius_px = None
+        defend_leash = None
+        defend_shape = None
+        try:
+            if getattr(cfg, 'defend_spawn', False):
+                defend_tiles = 0
+                if isinstance(sr, (int, float)) and int(sr) > 0:
+                    defend_tiles = int(sr)
+                elif isinstance(sr, str) and str(sr).strip().lower() in {"random", "aleatorio", "aleatoreo"}:
+                    defend_tiles = max(1, int(fallback_max))
+                if defend_tiles > 0:
+                    ax, ay = cfg.anchor_tile
+                    cx = ax * TILE_SIZE + TILE_SIZE // 2
+                    cy = ay * TILE_SIZE + TILE_SIZE // 2
+                    defend_center = (float(cx), float(cy))
+                    defend_radius_px = float(defend_tiles * TILE_SIZE)
+                    defend_leash = bool(getattr(cfg, 'defend_leash', True))
+                    defend_shape = str(shape)
+        except Exception:
+            defend_center = None
+            defend_radius_px = None
+            defend_leash = None
+            defend_shape = None
+        return defend_center, defend_radius_px, defend_leash, defend_shape
+
+    # ---------------------- Helpers de legibilidad ----------------------
+    def _get_policy_flags(self, cfg):
+        """Extrae y normaliza flags de política del spawner.
+        Devuelve: (looping, max_active, advance_on_cooldown, proximity_initial_only)
+        """
+        policy = getattr(cfg, 'policy', {}) or {}
+        looping = bool(policy.get('loop') or policy.get('repeat') or policy.get('restart_on_done'))
+        max_active = int(policy.get('max_active', 0) or 0)
+        advance_on = str(policy.get('advance_on', 'clear') or 'clear').lower()
+        advance_on_cooldown = (advance_on == 'cooldown')
+        proximity_initial_only = bool(policy.get('proximity_initial_only'))
+        return looping, max_active, advance_on_cooldown, proximity_initial_only
+
+    def _prune_tracking_sets(self, world, st):
+        """Limpia entidades inexistentes de los trackers del spawner (oleada/activos)."""
+        # Always prune dead/missing entities from the current wave tracking
+        if getattr(st, 'current_wave_entities', None) is not None:
+            alive = set()
+            ents = set(world.entities)
+            for ent_id in list(st.current_wave_entities):
+                if ent_id in ents:
+                    alive.add(ent_id)
+            st.current_wave_entities = alive
+
+        # Prune active_entities as well (used for max_active enforcement)
+        if getattr(st, 'active_entities', None) is not None:
+            active_alive = set()
+            ents = set(world.entities)
+            for ent_id in list(st.active_entities):
+                if ent_id in ents:
+                    active_alive.add(ent_id)
+            st.active_entities = active_alive
 
     def update(self, world, camera=None):
         comps = world.components
@@ -82,12 +105,8 @@ class SpawnerRuntimeSystem:
         for eid in world.get_entities_with('SpawnerConfig', 'SpawnerState'):
             cfg = comps['SpawnerConfig'][eid]
             st = comps['SpawnerState'][eid]
-            policy = getattr(cfg, 'policy', {}) or {}
-            looping = bool(policy.get('loop') or policy.get('repeat') or policy.get('restart_on_done'))
-            max_active = int(policy.get('max_active', 0) or 0)
-            advance_on = str(policy.get('advance_on', 'clear') or 'clear').lower()
-            advance_on_cooldown = (advance_on == 'cooldown')
-            proximity_initial_only = bool(policy.get('proximity_initial_only'))
+            # Política normalizada (looping, capacidad, forma de avanzar, proximidad híbrida)
+            looping, max_active, advance_on_cooldown, proximity_initial_only = self._get_policy_flags(cfg)
 
             # Handle finished: either stop or auto-restart if looping is enabled
             if getattr(st, 'finished', False):
@@ -134,23 +153,8 @@ class SpawnerRuntimeSystem:
                     pass
                 continue
 
-            # Always prune dead/missing entities from the current wave tracking
-            if getattr(st, 'current_wave_entities', None) is not None:
-                alive = set()
-                ents = set(world.entities)
-                for ent_id in list(st.current_wave_entities):
-                    if ent_id in ents:
-                        alive.add(ent_id)
-                st.current_wave_entities = alive
-
-            # Prune active_entities as well (used for max_active enforcement)
-            if getattr(st, 'active_entities', None) is not None:
-                active_alive = set()
-                ents = set(world.entities)
-                for ent_id in list(st.active_entities):
-                    if ent_id in ents:
-                        active_alive.add(ent_id)
-                st.active_entities = active_alive
+            # Limpieza de trackers (oleada y activos)
+            self._prune_tracking_sets(world, st)
 
             # If we already spawned this wave and we advance on clear, wait until all are eliminated
             if st.spawned_this_wave and not advance_on_cooldown:
@@ -299,20 +303,9 @@ class SpawnerRuntimeSystem:
                 spread = int(entry.get('spread_radius', 3))
                 fallback_max = int(entry.get('spread_fallback_max', max(spread, 8)))
                 min_px_dist = int(entry.get('min_px_distance', 0))
-                min_px_dist_sq = min_px_dist * min_px_dist
-                # Determine placement mode based on template-level spawn_radius
+                # Determine placement shape/radius from config
                 sr = getattr(cfg, 'spawn_radius', None)
                 shape = str(getattr(cfg, 'spawner_shape', 'circle') or 'circle').lower()
-                random_mode = False
-                random_radius = 0
-                if isinstance(sr, (int, float)):
-                    random_radius = int(sr)
-                    random_mode = random_radius > 0
-                elif isinstance(sr, str):
-                    s = sr.strip().lower()
-                    if s in {"random", "aleatorio", "aleatoreo"}:
-                        random_mode = True
-                        random_radius = max(1, int(fallback_max))
                 # Apply capacity limit if present
                 if capacity_left is not None:
                     if capacity_left <= 0:
@@ -320,135 +313,30 @@ class SpawnerRuntimeSystem:
                     count = max(0, min(count, capacity_left))
                 attempted_total += count
                 for _ in range(count):
-                    chosen = None
                     ax, ay = cfg.anchor_tile
-                    # Try random-in-area first if enabled
-                    if random_mode:
-                        # Heuristic attempts: proportional to area; circle ~0.785 of square area
-                        square_area = (2 * random_radius + 1) * (2 * random_radius + 1)
-                        approx_area = square_area if shape == 'square' else max(1, int(square_area * 0.6))
-                        attempts = max(25, min(200, approx_area))
-                        for _try in range(attempts):
-                            dx = random.randint(-random_radius, random_radius)
-                            dy = random.randint(-random_radius, random_radius)
-                            if shape != 'square':
-                                # default circle
-                                if dx*dx + dy*dy > random_radius * random_radius:
-                                    continue
-                            tx = ax + dx
-                            ty = ay + dy
-                            if (tx, ty) in solid or (tx, ty) in building:
-                                continue
-                            if (tx, ty) in npc_tiles or (tx, ty) in reserved_tiles or (tx, ty) in reserved_global:
-                                continue
-                            if map_manager and hasattr(map_manager, 'is_walkable'):
-                                try:
-                                    if not map_manager.is_walkable(tx, ty):
-                                        continue
-                                except Exception:
-                                    pass
-                            if min_px_dist > 0:
-                                cx = tx * TILE_SIZE + TILE_SIZE // 2
-                                cy = ty * TILE_SIZE + TILE_SIZE // 2
-                                too_close = False
-                                for ntx, nty in npc_tiles:
-                                    nx = ntx * TILE_SIZE + TILE_SIZE // 2
-                                    ny = nty * TILE_SIZE + TILE_SIZE // 2
-                                    ddx = cx - nx
-                                    ddy = cy - ny
-                                    if ddx*ddx + ddy*ddy < min_px_dist_sq:
-                                        too_close = True
-                                        break
-                                if too_close:
-                                    continue
-                                for rtx, rty in reserved_tiles.union(reserved_global):
-                                    rx = rtx * TILE_SIZE + TILE_SIZE // 2
-                                    ry = rty * TILE_SIZE + TILE_SIZE // 2
-                                    ddx = cx - rx
-                                    ddy = cy - ry
-                                    if ddx*ddx + ddy*ddy < min_px_dist_sq:
-                                        too_close = True
-                                        break
-                                if too_close:
-                                    continue
-                            chosen = (tx, ty)
-                            break
-                    # If no random choice found (or random disabled), fall back to center-first spiral
-                    if chosen is None:
-                        for tx, ty in self._iter_spiral_tiles(ax, ay, fallback_max):
-                            if (tx, ty) in solid or (tx, ty) in building:
-                                continue
-                            if (tx, ty) in npc_tiles or (tx, ty) in reserved_tiles or (tx, ty) in reserved_global:
-                                continue
-                            if map_manager and hasattr(map_manager, 'is_walkable'):
-                                try:
-                                    if not map_manager.is_walkable(tx, ty):
-                                        continue
-                                except Exception:
-                                    # If walkability fails, fall back to solid/building checks only
-                                    pass
-                            if min_px_dist > 0:
-                                # Candidate pixel center
-                                cx = tx * TILE_SIZE + TILE_SIZE // 2
-                                cy = ty * TILE_SIZE + TILE_SIZE // 2
-                                too_close = False
-                                # Against existing actors
-                                for ntx, nty in npc_tiles:
-                                    nx = ntx * TILE_SIZE + TILE_SIZE // 2
-                                    ny = nty * TILE_SIZE + TILE_SIZE // 2
-                                    dx2 = cx - nx
-                                    dy2 = cy - ny
-                                    if dx2*dx2 + dy2*dy2 < min_px_dist_sq:
-                                        too_close = True
-                                        break
-                                if too_close:
-                                    continue
-                                # Against already reserved tiles (this wave or globally)
-                                for rtx, rty in reserved_tiles.union(reserved_global):
-                                    rx = rtx * TILE_SIZE + TILE_SIZE // 2
-                                    ry = rty * TILE_SIZE + TILE_SIZE // 2
-                                    dx2 = cx - rx
-                                    dy2 = cy - ry
-                                    if dx2*dx2 + dy2*dy2 < min_px_dist_sq:
-                                        too_close = True
-                                        break
-                                if too_close:
-                                    continue
-                            chosen = (tx, ty)
-                            break
+                    chosen = choose_spawn_tile(
+                        ax,
+                        ay,
+                        solid,
+                        building,
+                        npc_tiles,
+                        reserved_tiles,
+                        reserved_global,
+                        map_manager,
+                        min_px_dist,
+                        fallback_max,
+                        sr,
+                        shape,
+                    )
                     if chosen is None:
                         continue
                     reserved_tiles.add(chosen)
                     reserved_global.add(chosen)
                     req_eid = world.create_entity()
                     # Build optional defend area metadata
-                    defend_center = None
-                    defend_radius_px = None
-                    defend_leash = None
-                    defend_shape = None
-                    try:
-                        if getattr(cfg, 'defend_spawn', False):
-                            # Use the same radius decision used for placement
-                            defend_tiles = 0
-                            if isinstance(sr, (int, float)) and int(sr) > 0:
-                                defend_tiles = int(sr)
-                            elif isinstance(sr, str) and str(sr).strip().lower() in {"random", "aleatorio", "aleatoreo"}:
-                                defend_tiles = max(1, int(fallback_max))
-                            if defend_tiles > 0:
-                                ax, ay = cfg.anchor_tile
-                                cx = ax * TILE_SIZE + TILE_SIZE // 2
-                                cy = ay * TILE_SIZE + TILE_SIZE // 2
-                                defend_center = (float(cx), float(cy))
-                                defend_radius_px = float(defend_tiles * TILE_SIZE)
-                                # Leash flag from config (default True)
-                                defend_leash = bool(getattr(cfg, 'defend_leash', True))
-                                # Shape mirrors spawner shape (circle|square)
-                                defend_shape = str(shape)
-                    except Exception:
-                        defend_center = None
-                        defend_radius_px = None
-                        defend_leash = None
-                        defend_shape = None
+                    defend_center, defend_radius_px, defend_leash, defend_shape = self._compute_defend_metadata(
+                        cfg, sr, fallback_max, shape
+                    )
 
                     comps['SpawnRequest'][req_eid] = SpawnRequest(
                         prototype=proto,
