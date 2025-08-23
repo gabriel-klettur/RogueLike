@@ -1194,5 +1194,83 @@
             8
         ],
         "id": 92
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/houses/orden_house_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.718,
+        "collider_scope": "CG",
+        "original_scale": [
+            675,
+            675
+        ],
+        "id": 93
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/houses/orden_house_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.718,
+        "collider_scope": "CG",
+        "original_scale": [
+            594,
+            594
+        ],
+        "id": 94
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/houses/orden_house_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.718,
+        "collider_scope": "CG",
+        "original_scale": [
+            517,
+            517
+        ],
+        "id": 95
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/houses/orden_house_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.718,
+        "collider_scope": "CG",
+        "original_scale": [
+            458,
+            458
+        ],
+        "id": 96
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/houses/orden_house_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.718,
+        "collider_scope": "CG",
+        "original_scale": [
+            391,
+            391
+        ],
+        "id": 97
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/houses/orden_house_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.742,
+        "collider_scope": "CG",
+        "original_scale": [
+            391,
+            391
+        ],
+        "id": 98
     }
 ]

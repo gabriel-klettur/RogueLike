@@ -61,20 +61,41 @@ def _canonicalize_zone(zone: str) -> str:
         return zone
 
 def _load_collisions_sources():
-    """Load collisions json supporting both legacy and new structured formats."""
+    """Load collisions json supporting both new and legacy structured formats.
+
+    New keys (preferred):
+      - by_image_path
+      - by_spawn_id
+      - by_building_instance_id
+
+    Legacy keys (still supported on read):
+      - global
+      - instances
+      - by_building_id
+    """
     try:
         with open(BUILDINGS_COLLISIONS_DATA_PATH, 'r', encoding='utf-8-sig') as cf:
             raw_cd = json.load(cf) or {}
     except Exception:
         raw_cd = {}
     try:
-        if isinstance(raw_cd, dict) and ("global" in raw_cd or "instances" in raw_cd or "by_building_id" in raw_cd):
-            collisions_global = raw_cd.get("global", {}) or {}
-            collisions_instances = raw_cd.get("instances", {}) or {}
-            collisions_by_id = raw_cd.get("by_building_id", {}) or {}
+        if isinstance(raw_cd, dict):
+            # Prefer new schema if present
+            if any(k in raw_cd for k in ("by_image_path", "by_spawn_id", "by_building_instance_id")):
+                collisions_global = raw_cd.get("by_image_path", {}) or {}
+                collisions_instances = raw_cd.get("by_spawn_id", {}) or {}
+                collisions_by_id = raw_cd.get("by_building_instance_id", {}) or {}
+            elif any(k in raw_cd for k in ("global", "instances", "by_building_id")):
+                collisions_global = raw_cd.get("global", {}) or {}
+                collisions_instances = raw_cd.get("instances", {}) or {}
+                collisions_by_id = raw_cd.get("by_building_id", {}) or {}
+            else:
+                # Legacy flat: everything is global keyed by image_path
+                collisions_global = raw_cd
+                collisions_instances = {}
+                collisions_by_id = {}
         else:
-            # Legacy flat: everything is global keyed by image_path
-            collisions_global = raw_cd if isinstance(raw_cd, dict) else {}
+            collisions_global = {}
             collisions_instances = {}
             collisions_by_id = {}
     except Exception:
@@ -88,23 +109,35 @@ def _apply_collision_for_building(b: Building,
                                   collisions_global: dict,
                                   collisions_instances: dict,
                                   collisions_by_id: dict):
-    """Initialize collision_map on Building using priority: by spawn_id -> by id -> global image_path.
-    Also applies per-instance override if collider_scope == 'CU'."""
+    """Initialize collision_map respecting collider_scope.
+
+    - If scope == 'CU': prefer by_building_instance_id -> legacy by_spawn_id -> by_image_path
+    - If scope == 'CG' (default): use by_image_path only (ignore per-instance overrides)
+
+    Also applies additional inline per-instance override if collider_scope == 'CU'."""
     from roguelike_engine.config.config_tiles import TILE_SIZE as _TS
     _img_path = _normalize_asset_path((entry.get("assets") or {}).get("idle"))
-    # Select base collision entry
+    # Select base collision entry (depends on desired scope)
     coll_entry = None
     try:
-        sid = getattr(b, "spawn_id", None)
-        if sid and sid in collisions_instances:
-            coll_entry = collisions_instances.get(sid)
-        if not coll_entry:
+        scope = entry.get("collider_scope", "CG")
+        if scope == 'CU':
+            # 1) Per-building-instance collisions (new scheme)
             bid = entry.get("id")
             if bid is not None:
                 bid_str = str(bid)
                 if bid_str in collisions_by_id:
                     coll_entry = collisions_by_id.get(bid_str)
-        if not coll_entry:
+            # 2) Legacy per-spawn override (fallback)
+            if not coll_entry:
+                sid = getattr(b, "spawn_id", None)
+                if sid and sid in collisions_instances:
+                    coll_entry = collisions_instances.get(sid)
+            # 3) Global by image_path
+            if not coll_entry:
+                coll_entry = collisions_global.get(_img_path) or collisions_global.get((_img_path or '').replace('/', '\\'))
+        else:
+            # CG: only by image_path
             coll_entry = collisions_global.get(_img_path) or collisions_global.get((_img_path or '').replace('/', '\\'))
     except Exception:
         coll_entry = collisions_global.get(_img_path) or collisions_global.get((_img_path or '').replace('/', '\\'))
