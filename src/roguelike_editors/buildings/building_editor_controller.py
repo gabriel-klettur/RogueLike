@@ -6,8 +6,13 @@ from roguelike_editors.buildings.tools.split_z_tool.split_tool  import SplitTool
 from roguelike_editors.buildings.tools.placer_tool.placer_tool  import PlacerTool
 from roguelike_editors.buildings.tools.delete_tool.delete_tool  import DeleteTool
 from roguelike_editors.buildings.tools.default_tool.default_tool_view import DefaultToolView
+from roguelike_editors.buildings.tools.collider_scope_tool import ColliderScopeTool
+from roguelike_ui.ui_blocker import is_blocked
 
 from roguelike_editors.buildings.utils.zone_helpers import assign_zone_and_relatives
+from roguelike_editors.spawner.services.persistence import find_instance_in_json, persist_drop
+from roguelike_engine.config.map_config import global_map_settings
+from roguelike_engine.buildings.building_model import BuildingModel
 
 from roguelike_editors.buildings.buildings_picker.building_picker_controller import BuildingPickerController
 import logging
@@ -26,10 +31,19 @@ class BuildingEditorController:
         self.split_tool = SplitTool(state, editor_state)
         self.z_tool_bottom = ZTool(state, editor_state, target="bottom")
         self.z_tool_top    = ZTool(state, editor_state, target="top")        
+        # Toggle CG/CU de alcance de colliders
+        self.collider_scope_tool = ColliderScopeTool(state, editor_state)
+        # Elegir clase de building de forma segura aunque la lista esté vacía
+        try:
+            building_cls = type(buildings[0]) if buildings else BuildingModel
+        except Exception:
+            building_cls = BuildingModel
+        if building_cls is BuildingModel and not buildings:
+            logger.warning("BuildingEditorController: buildings list is empty; using BuildingModel as fallback for placer tool.")
         self.placer_tool = PlacerTool(
             state, editor_state,
-            building_class=type(buildings[0]),
-            default_image="assets/buildings/others/portal.png",
+            building_class=building_cls,
+            default_image="assets/buildings/dummy.png",
             default_scale=(512, 824),
             default_solid=True,
         )
@@ -42,8 +56,27 @@ class BuildingEditorController:
         """button: 1 = izq, 3 = der"""
         mx, my = pos
 
+        # Do not process building clicks when mouse is over any UI panel
+        try:
+            if is_blocked(mx, my):
+                return
+        except Exception:
+            pass
+
         world_x = mx / camera.zoom + camera.offset_x
         world_y = my / camera.zoom + camera.offset_y
+
+        # Si el panel de colisiones está activo, deshabilitar clics de herramientas
+        # excepto el toggle de alcance CG/CU
+        if getattr(self.editor, 'colliders_mode', False):
+            if button == 1:
+                ab = getattr(self.editor, 'active_building', None)
+                if ab is not None:
+                    scope_rect = self.collider_scope_tool.get_handle_rect(ab, camera)
+                    if scope_rect and scope_rect.collidepoint(mx, my):
+                        self.collider_scope_tool.toggle_scope(ab)
+                        return
+            return
 
 
         # 1) Barra split (clic izq o der indistinto)
@@ -52,8 +85,15 @@ class BuildingEditorController:
                 self.split_tool.start_drag(b)
                 return
 
-        # 2) Botón eliminar (clic izq)
+        # 2) Alcance colliders CG/CU (clic izq, esquina inferior derecha)
         if button == 1:
+            ab = getattr(self.editor, 'active_building', None)
+            if ab is not None:
+                scope_rect = self.collider_scope_tool.get_handle_rect(ab, camera)
+                if scope_rect and scope_rect.collidepoint(mx, my):
+                    self.collider_scope_tool.toggle_scope(ab)
+                    return
+            # Botón eliminar (clic izq)
             # Usar la vista para el botón rojo
             if hasattr(self, 'default_view'):
                 get_rect = self.default_view.get_delete_handle_rect
@@ -89,8 +129,10 @@ class BuildingEditorController:
 
         # 4) Paneles Z (+ / –) (clic izq)
         if button == 1:
-            self.z_tool_bottom.handle_mouse_click((mx, my), buildings)
-            self.z_tool_top.handle_mouse_click((mx, my), buildings)
+            if self.z_tool_bottom.handle_mouse_click((mx, my), buildings, camera):
+                return
+            if self.z_tool_top.handle_mouse_click((mx, my), buildings, camera):
+                return
 
     def on_mouse_up(self, button, camera, buildings):
         # 1) Finalizar resize / split (igual que antes)
@@ -101,6 +143,7 @@ class BuildingEditorController:
 
         # Guarda el building para recalcularlo
         building = self.editor.selected_building
+        was_resizing = bool(self.editor.resizing)
 
         # 2) Reset de flags de arrastre
         self.editor.dragging = False
@@ -108,8 +151,18 @@ class BuildingEditorController:
         self.editor.split_dragging = False
 
         # 3) Si había un building arrastrado, le asignamos zona/relativos
-        if building is not None:            
+        if building is not None:
             assign_zone_and_relatives(building)
+            # Si está vinculado a un spawner, persistir el cambio a JSON
+            try:
+                eid = getattr(building, "_spawner_eid", None)
+                world = getattr(building, "_world_ref", None)
+                start_entry = getattr(self.editor, "_spawner_drag_start_entry", None)
+                if eid is not None and world is not None:
+                    # No persistimos tamaños de imagen legacy; overrides relevantes se manejan vía building_id
+                    persist_drop(world, eid, start_entry, overrides_update=None)
+            except Exception:
+                pass
 
         # 4) Ya podemos limpiar la selección
         self.editor.selected_building = None
@@ -119,6 +172,15 @@ class BuildingEditorController:
         if self.editor.dragging or self.editor.resizing or self.editor.split_dragging:
             self.update(camera)
             return
+        # Bloquear hover si el ratón está sobre cualquier panel UI registrado
+        try:
+            mx, my = pos
+            if is_blocked(mx, my):
+                self.editor.hovered_buildings = []
+                self.editor.hovered_building = None
+                return
+        except Exception:
+            pass
         # Detectar todos los edificios bajo el mouse (orden arriba-abajo)
         hovered_list = self._buildings_under_mouse(pos, camera, buildings)
         self.editor.hovered_buildings = hovered_list
@@ -143,19 +205,6 @@ class BuildingEditorController:
             if rect.collidepoint(wx, wy):
                 result.append(b)
         return result
-
-    def _building_under_mouse(self, mouse_pos, camera, buildings):
-        mx, my = mouse_pos
-        wx = mx / camera.zoom + camera.offset_x
-        wy = my / camera.zoom + camera.offset_y
-        # buildings puede estar en self.state.entities.buildings o inyectarse, aquí usamos self.state.entities.buildings
-        for b in reversed(buildings):  # Reversed para priorizar el más arriba (por si se solapan)
-            x, y = b.x, b.y
-            w, h = b.image.get_size()
-            rect = pygame.Rect(x, y, w, h)
-            if rect.collidepoint(wx, wy):
-                return b
-        return None
 
     def toggle_editor(self):
         """Activa/desactiva los handles del Building Editor, sin tocar el picker."""
@@ -199,6 +248,37 @@ class BuildingEditorController:
         self.editor.offset_y = world_y - building.y
         logger.info(f"🏗️ Arrastre de {building.image_path} iniciado")
         assign_zone_and_relatives(self.editor.selected_building)
+        # Si es un spawner, capturar snapshot para persistencia (zona/local_tile/original overrides/id)
+        try:
+            eid = getattr(building, "_spawner_eid", None)
+            world = getattr(building, "_world_ref", None)
+            if eid is not None and world is not None:
+                comps = getattr(world, 'components', {})
+                cfg = comps.get('SpawnerConfig', {}).get(eid)
+                if cfg is not None:
+                    zone = cfg.zone
+                    off_x, off_y = global_map_settings.zone_offsets.get(zone, (0, 0))
+                    tx, ty = cfg.anchor_tile
+                    local_start = (int(tx - off_x), int(ty - off_y))
+                    tpl_id = cfg.template_id
+                    data, idx, overrides = find_instance_in_json(tpl_id, zone, local_start)
+                    inst_id = None
+                    try:
+                        if idx is not None:
+                            inst_id = data[idx].get('id')
+                    except Exception:
+                        inst_id = None
+                    self.editor._spawner_drag_start_entry = {
+                        'template_id': tpl_id,
+                        'zone': zone,
+                        'local_tile': local_start,
+                        'overrides': overrides,
+                        'index': idx,
+                        'id': inst_id,
+                    }
+        except Exception:
+            # No romper flujo de editor por snapshot fallida
+            self.editor._spawner_drag_start_entry = None
 
     # ======================== ACTUALIZACIÓN ========================= #
     def update(self, camera):

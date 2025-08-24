@@ -1,4 +1,5 @@
 import pygame
+from roguelike_ui.ui_blocker import register_blocker
 from roguelike_engine.map.model.layer import Layer
 from roguelike_editors.tiles.tiles_editor_config import BTN_W, BTN_H, PAD, CLR_SELECTION
 from roguelike_ui.panel import DraggablePanel
@@ -69,6 +70,9 @@ class LayersPanelView:
         Dibuja el fondo del panel usando la superficie del DraggablePanel.
         """
         screen.blit(self.panel.surface, self.panel.pos)
+        # Registrar bloqueador UI para suprimir hover debajo del panel
+        panel_rect = pygame.Rect(self.panel.pos, self.panel.surface.get_size())
+        register_blocker(panel_rect)
 
     def _render_layer_buttons(self, screen, mouse_pos, font, x0, y0):
         """

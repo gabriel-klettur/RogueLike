@@ -108,9 +108,28 @@ class ToolbarView:
                 hover_surf = pygame.Surface(rect.size, pygame.SRCALPHA)
                 hover_surf.fill(self.hover_color)
                 screen.blit(hover_surf, rect.topleft)
-            if self.controller.is_active(tool):
-
-                pygame.draw.rect(screen, self.selection_color, rect, self.selection_border_width)
+            # Be defensive: controllers in tests may not implement is_active
+            active = False
+            try:
+                if hasattr(self.controller, 'is_active') and callable(getattr(self.controller, 'is_active')):
+                    active = bool(self.controller.is_active(tool))
+            except Exception:
+                active = False
+            if active:
+                # Optional blinking when controller exposes blink_active(tool)
+                blink = False
+                try:
+                    if hasattr(self.controller, 'blink_active') and callable(getattr(self.controller, 'blink_active')):
+                        blink = bool(self.controller.blink_active(tool))
+                except Exception:
+                    blink = False
+                if blink:
+                    ticks = pygame.time.get_ticks()
+                    phase_on = ((ticks // 300) % 2) == 0
+                    if phase_on:
+                        pygame.draw.rect(screen, self.selection_color, rect, self.selection_border_width)
+                else:
+                    pygame.draw.rect(screen, self.selection_color, rect, self.selection_border_width)
 
     def handle_event(self, event):
         """
@@ -118,8 +137,8 @@ class ToolbarView:
         """
         header = pygame.Rect(self.panel.pos or (self.x, self.y), self.panel.surface.get_size())
         if event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 3 and header.collidepoint(event.pos):
-            logger.debug(f"[DEBUG][{self.name}][DRAG START]", event.pos)
+            logger.debug("[DEBUG][%s][DRAG START] pos=%s", self.name, event.pos)
         res = self.panel.handle_event(event, header)
         if event.type == pygame.MOUSEBUTTONUP and getattr(event, 'button', None) == 3:
-            logger.debug(f"[DEBUG][{self.name}][DRAG END] panel.pos", self.panel.pos)
+            logger.debug("[DEBUG][%s][DRAG END] panel.pos=%s", self.name, self.panel.pos)
         return res

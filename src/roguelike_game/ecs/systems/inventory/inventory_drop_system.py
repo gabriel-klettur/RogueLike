@@ -4,6 +4,7 @@ import json
 
 from roguelike_engine.map.utils import get_zone_for_tile
 from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_game.ecs.utils.map_utils import get_zone_offset
 from roguelike_game.managers.map.item_drop_manager import ItemDropManager
 from roguelike_game.ecs.components.inventory_component import InventoryComponent
 from roguelike_game.ecs.components.transform.position import Position
@@ -27,6 +28,23 @@ class InventoryDropSystem:
         invs = comps.get('InventoryComponent', {})
         inputs = comps.get('InputComponent', {})
         positions = comps.get('Position', {})
+        # Evitar dropeo si la UI de inventario está visible o hay drag activo
+        try:
+            from roguelike_game.ecs.systems.inventory.drop_drag_system import DropDragSystem
+            from roguelike_game.ecs.systems.inventory.inventory_drag_system import InventoryDragSystem
+            from roguelike_game.ecs.systems.inventory.inventory_ui_system import InventoryUISystem
+            render_systems = getattr(world, 'render_systems', [])
+            update_systems = getattr(world, 'update_systems', [])
+            inv_ui_visible = any(isinstance(s, InventoryUISystem) and getattr(s, 'visible', False) for s in render_systems)
+            dragging_map_drop = any(isinstance(s, DropDragSystem) and getattr(s, 'dragging_eid', None) is not None for s in update_systems)
+            dragging_inventory = any(isinstance(s, InventoryDragSystem) and getattr(s, 'dragging_idx', None) is not None for s in update_systems)
+            if inv_ui_visible or dragging_map_drop or dragging_inventory:
+                for _, inp in inputs.items():
+                    if getattr(inp, 'drop', False):
+                        inp.drop = False
+                return
+        except Exception:
+            pass
         # Process drop requests
         for eid, inp in inputs.items():
             if not getattr(inp, 'drop', False):
@@ -39,17 +57,32 @@ class InventoryDropSystem:
             # Find first non-empty slot to drop
             for stack in list(inv.slots):
                 if stack:
-                    # Create drop on map
-                    tx = int(pos.x // TILE_SIZE)
-                    ty = int(pos.y // TILE_SIZE)
-                    zone_id = get_zone_for_tile(tx, ty)
+                    # Create drop on nearest free walkable tile (no-collision by tile)
+                    g_tx = int(pos.x // TILE_SIZE)
+                    g_ty = int(pos.y // TILE_SIZE)
+                    zone_id = get_zone_for_tile(g_tx, g_ty)
+                    offx, offy = get_zone_offset(zone_id)
+                    # Collect occupied local tiles for this zone
+                    occupied = self._collect_occupied_tiles(world, zone_id, offx, offy)
+                    map_manager = getattr(world, 'map_manager', None)
+                    placed_local = None
+                    for cx, cy in self._iter_spiral_tiles(g_tx, g_ty, 12):
+                        l_tx, l_ty = cx - offx, cy - offy
+                        if (l_tx, l_ty) in occupied:
+                            continue
+                        if map_manager and not map_manager.is_walkable(cx, cy):
+                            continue
+                        placed_local = (l_tx, l_ty)
+                        break
+                    if placed_local is None:
+                        placed_local = (g_tx - offx, g_ty - offy)
                     drop_id = str(uuid.uuid4())
                     self.drop_manager.create_drop(
                         drop_id,
                         stack.item_id,
                         stack.quantity,
                         zone_id,
-                        position={'x': pos.x, 'y': pos.y}
+                        tile={'x': placed_local[0], 'y': placed_local[1]}
                     )
                     # Remove from inventory
                     inv.slots[inv.slots.index(stack)] = None
@@ -57,6 +90,54 @@ class InventoryDropSystem:
                     self._persist_inventory(eid, inv)
                     break
             inp.drop = False
+
+    def _collect_occupied_tiles(self, world, zone_id: str, offx: int, offy: int):
+        occupied = set()
+        try:
+            drops = self.drop_manager._data or {}
+            for _, data in drops.items():
+                if data.get('zone_id') != zone_id:
+                    continue
+                if 'tile' in data:
+                    lt = data['tile']
+                    occupied.add((int(lt['x']), int(lt['y'])))
+                elif 'position' in data:
+                    pos = data['position']
+                    gtx = int(pos['x'] // TILE_SIZE)
+                    gty = int(pos['y'] // TILE_SIZE)
+                    occupied.add((gtx - offx, gty - offy))
+        except Exception:
+            pass
+        # Entities already spawned
+        comps = getattr(world, 'components', {})
+        phys = comps.get('PhysicalItemComponent', {})
+        positions = comps.get('Position', {})
+        for deid, pic in list(phys.items()):
+            try:
+                if getattr(pic, 'zone_id', None) != zone_id:
+                    continue
+                p = positions.get(deid)
+                if not p:
+                    continue
+                gtx = int(p.x // TILE_SIZE)
+                gty = int(p.y // TILE_SIZE)
+                occupied.add((gtx - offx, gty - offy))
+            except Exception:
+                continue
+        return occupied
+
+    def _iter_spiral_tiles(self, cx: int, cy: int, max_radius: int):
+        # r = 0 -> center first
+        yield (cx, cy)
+        for r in range(1, max_radius + 1):
+            x0, x1 = cx - r, cx + r
+            y0, y1 = cy - r, cy + r
+            for x in range(x0, x1 + 1):
+                yield (x, y0)
+                yield (x, y1)
+            for y in range(y0 + 1, y1):
+                yield (x0, y)
+                yield (x1, y)
 
     def _persist_inventory(self, eid: int, inv: InventoryComponent):
         key = str(eid)

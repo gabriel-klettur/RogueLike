@@ -1,6 +1,5 @@
 import time
 from roguelike_game.ecs.systems.fsm.state import State
-from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
 from roguelike_engine.config.config_tiles import TILE_SIZE
 
 class IdleState(State):
@@ -18,6 +17,8 @@ class IdleState(State):
         if hp_cmp and hp_cmp.current_hp <= 0:
             npc_state = world.components.get('NPCState', {}).get(entity.id)
             if npc_state:
+                # Import local para evitar importación circular con DeathState
+                from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
                 npc_state.fsm.change_state(DeathState(), entity)
             return
         # Verificar aggro solo para NPCs con AggroRange
@@ -33,7 +34,7 @@ class IdleState(State):
         dx = pos.x - player_pos.x
         dy = pos.y - player_pos.y
         if dx*dx + dy*dy <= (rng_cmp.radius * TILE_SIZE)**2:
-            from roguelike_game.ecs.fsm.states.aggro_state import AggroState
+            from roguelike_game.ecs.systems.fsm.states.monster.aggro_state import AggroState
             npc_state = world.components.get('NPCState', {}).get(entity.id)
             if npc_state:
                 npc_state.fsm.change_state(AggroState(), entity)

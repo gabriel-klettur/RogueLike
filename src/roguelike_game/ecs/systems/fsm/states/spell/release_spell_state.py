@@ -30,11 +30,10 @@ class ReleaseSpellState(State):
             return
         if spell_type == 'aura':
             world = entity.world
-            world.components.setdefault('AuraComponent', {})[entity.id] = AuraComponent(
-                cfg.get('radius', 0),
-                cfg.get('buff', {}),
-                cfg.get('duration', 0)
-            )
+            # Use resolver so that flattened vfx/particles params and effect.buff are applied
+            resolver = SPELL_RESOLVERS.get('aura')
+            if resolver is not None:
+                resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
             return
         if spell_type == 'slash':
             world = entity.world

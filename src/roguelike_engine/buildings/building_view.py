@@ -1,5 +1,5 @@
 import pygame
-from roguelike_engine.debuger.debug import draw_debug_rect
+from roguelike_engine.diagnostics.helpers import draw_debug_rect
 
 class BuildingView:
     """
@@ -19,17 +19,24 @@ class BuildingView:
         # Caches por “zoom” redondeado (p. ej. 1.00, 1.25, 2.00)
         self._scaled_cache: dict[float, pygame.Surface] = {}
         self._render_part_cache: dict[float, tuple[pygame.Surface, pygame.Surface]] = {}
+        # Referencia a la última surface fuente usada; si cambia, invalidamos caches
+        self._last_image_ref: pygame.Surface | None = model.image
 
     def _get_scaled_image(self) -> pygame.Surface:
         """
         Devuelve la versión de self._model.image escalada al zoom actual.
         Mantiene un cache por zoom (~2 decimales).
         """
+        # Si la surface fuente cambió (p. ej., cambio de estado visual), limpiar caches
+        if self._model.image is not self._last_image_ref:
+            self.clear_caches()
+            self._last_image_ref = self._model.image
         zoom = round(self._camera.zoom, 2)
         if zoom not in self._scaled_cache:
             orig = self._model.image
             # Calculamos nuevo tamaño, usando camera.scale()
             new_size = self._camera.scale(orig.get_size())
+
             scaled = pygame.transform.scale(orig, new_size)
             self._scaled_cache[zoom] = scaled
 

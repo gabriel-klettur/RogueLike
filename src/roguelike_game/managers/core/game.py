@@ -50,12 +50,12 @@ class Game:
     #!-------------------------------------------------- LOOP PRINCIPAL ---------------------------------------------------
     #!---------------------------------------------------------------------------------------------------------------------
 
-    @benchmark(lambda self: self.perf_log, "1.TOTAL: HANDLE EVENTS")
+    @benchmark(lambda self: self.perf_log, "1.TOTAL: HANDLE EVENTS [CORE]")
     def handle_events(self):
         core_handle_events(self)
         return
  
-    @benchmark(lambda self: self.perf_log, "2.TOTAL: UPDATE")
+    @benchmark(lambda self: self.perf_log, "2.TOTAL: UPDATE [EDITORS]")
     def update(self):        
         if self.inventory_editor.model.visible:
             return
@@ -63,6 +63,12 @@ class Game:
             return
         if hasattr(self, 'spells_editor') and self.spells_editor.model.visible:
             return
+        # Propagar estado del Buildings Editor al state para que sistemas (InputSystem)
+        # puedan leerlo y suprimir hechizos/dash mientras permiten movimiento.
+        try:
+            self.state.buildings_editor_active = bool(self.buildings_editor.editor_state.active)
+        except Exception:
+            self.state.buildings_editor_active = False
         update_game(
             self.state,            
             self.camera,
@@ -75,12 +81,29 @@ class Game:
             self.map_editor,
             self.minimap,
             self.ecs,
-            self.perf_log
+            self.perf_log,
+            item_editor=self.item_editor,
         )
 
-    @benchmark(lambda self: self.perf_log, "3.TOTAL: RENDER")
+    @benchmark(lambda self: self.perf_log, "3.TOTAL: RENDER [EDITORS]")
     def render(self):
         # Renderiza el mundo
+        # Propaga visibilidad del Spells Editor al estado para que el renderer pueda ocultar minimapa/leyenda
+        try:
+            self.state.spells_editor_visible = bool(getattr(self, 'spells_editor', None) and self.spells_editor.model.visible)
+        except Exception:
+            self.state.spells_editor_visible = False
+        # Propaga visibilidad del FSM Editor (usa config.DEBUG_ENTITIES como flag global del editor FSM)
+        try:
+            import roguelike_engine.config.config as config
+            self.state.fsm_editor_visible = bool(getattr(config, 'DEBUG_ENTITIES', False))
+        except Exception:
+            self.state.fsm_editor_visible = False
+        # Propaga visibilidad del selector de clases para ocultar minimapa/leyendas cuando esté activo
+        try:
+            self.state.class_selector_visible = bool(getattr(self, 'class_selector', None) and self.class_selector.show)
+        except Exception:
+            self.state.class_selector_visible = False
         self.renderer.render_game(
             self.state,
             self.screen,
@@ -98,14 +121,16 @@ class Game:
         self.inventory_editor.draw(self.screen)
         self.entities_editor.draw(self.screen)
         self.spells_editor.draw(self.screen)
+        # Spawner Editor overlay
+        if hasattr(self, 'spawner_editor'):
+            self.spawner_editor.draw(self.screen)
         # Render consola
         self.console_view.render(self.screen)
 
     #!---------------------------------------------------------------------------------------------------------------------
     #!-------------------------------------------------- LOOP ECS ---------------------------------------------------------
     #!---------------------------------------------------------------------------------------------------------------------
-
-    @benchmark(lambda self: self.perf_log, "4.2. ECS - update")
+    
     def update_ecs(self):
         # Pause ECS update when inventory editor is open
         if self.inventory_editor.model.visible:
@@ -115,8 +140,7 @@ class Game:
         if hasattr(self, 'spells_editor') and self.spells_editor.model.visible:
             return
         self.ecs.update(self.clock, self.screen, self.camera)
-
-    @benchmark(lambda self: self.perf_log, "4.1 ECS - render")
+    
     def render_ecs(self):
         self.ecs.render(self.screen, self.camera)
     

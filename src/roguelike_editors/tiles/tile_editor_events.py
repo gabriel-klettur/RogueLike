@@ -108,16 +108,21 @@ class TileEditorEventHandler:
             self.editor_state.default_dragging = False
             self.editor_state.delete_dragging = False
         elif ev.key == pygame.K_F8:
-            new_val = not self.editor_state.active
-            self.editor_state.active = new_val            
-            if new_val:
-                # Al activar el editor con F8, abrir panel de vista y panel de tamaño
+            # Toggle Tile Editor visibility
+            if not self.editor_state.active:
+                self.editor_state.active = True
+                # Ensure panels expected by tests/UI are visible when activating
                 self.editor_state.toolbar_state.view_active = True
                 self.editor_state.size_panel_state.visible = True
-            if not new_val:
-                self.editor_state.picker_state.open = False
+            else:
+                # Deactivate and cleanup similar to ESC
+                self.editor_state.active = False
                 self.editor_state.selected_tile = None
+                self.editor_state.picker_state.open = False
                 self.editor_state.brush_dragging = False
+                self.editor_state.default_dragging = False
+                self.editor_state.delete_dragging = False
+                self.editor_state.size_panel_state.visible = False
         elif ev.key == pygame.K_b:
             self.editor_state.toolbar_state.show_buildings = not self.editor_state.toolbar_state.show_buildings
 

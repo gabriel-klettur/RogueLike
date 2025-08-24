@@ -1,12 +1,11 @@
 from roguelike_game.ecs.systems.fsm.state import State
 from roguelike_game.ecs.systems.fsm.states.idle_state import IdleState
+from roguelike_game.ecs.systems.fsm.anim_bridge import set_mapped_anim
 
 class MoveState(State):
     def enter(self, entity):
-        # Cambiar animación a 'walk'
-        animator = entity.world.components.get('Animator', {}).get(entity.id)
-        if animator:
-            animator.current_state = 'walk'
+        # Establecer animación base de movimiento si aplica (jugador será dirigido por PlayerFacingSystem)
+        set_mapped_anim(entity, 'MoveState', direction=None)
 
     def execute(self, entity, dt):
         # Si no hay input de movimiento, volver a IdleState
@@ -15,7 +14,5 @@ class MoveState(State):
             entity.world.components['NPCState'][entity.id].fsm.change_state(IdleState(), entity)
 
     def exit(self, entity):
-        # Restaurar animación a 'idle'
-        animator = entity.world.components.get('Animator', {}).get(entity.id)
-        if animator:
-            animator.current_state = 'idle'
+        # No forzar 'idle'; PlayerFacingSystem decidirá
+        pass

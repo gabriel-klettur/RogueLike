@@ -10,8 +10,7 @@ class LightningEmitterSystem:
     """
     def __init__(self, perf_log):
         self.perf_log = perf_log
-
-    @benchmark(lambda self: self.perf_log, "4.2.2.LightningEmitterSystem.update")
+    
     def update(self, world, camera=None):
         # For each entity with a LightningComponent, emit particles at each lightning vertex
         for eid, comp in world.components.get('LightningComponent', {}).items():

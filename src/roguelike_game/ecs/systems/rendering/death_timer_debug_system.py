@@ -31,8 +31,7 @@ class DeathTimerDebugSystem:
         self.text_cache = {i: self.font.render(str(i), True, self.color) for i in range(0, 61)}
         # Guardar perf_log para benchmark
         self.perf_log = perf_log
-
-    @benchmark(lambda self: self.perf_log, "4.2.2.DeathTimerDebugSystem.update")
+    
     def update(self, world, screen, camera):
         """
         Dibuja en pantalla los contadores sobre cada entidad con DeathTimer activo.

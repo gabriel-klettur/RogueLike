@@ -1,0 +1,1302 @@
+[
+    {
+        "id": 1,
+        "assets": {
+            "idle": "assets/buildings/temples/catholic.png"
+        },
+        "solid": true,
+        "split_ratio": 0.78,
+        "collider_scope": "CG",
+        "original_scale": [
+            1024,
+            1536
+        ]
+    },
+    {
+        "id": 2,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.632,
+        "collider_scope": "CG",
+        "original_scale": [
+            166,
+            225
+        ]
+    },
+    {
+        "id": 3,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.801,
+        "collider_scope": "CG",
+        "original_scale": [
+            456,
+            626
+        ]
+    },
+    {
+        "id": 4,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_3.png"
+        },
+        "solid": true,
+        "split_ratio": 0.664,
+        "collider_scope": "CG",
+        "original_scale": [
+            189,
+            239
+        ]
+    },
+    {
+        "id": 5,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_7.png"
+        },
+        "solid": true,
+        "split_ratio": 0.801,
+        "collider_scope": "CG",
+        "original_scale": [
+            227,
+            309
+        ]
+    },
+    {
+        "id": 6,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_8.png"
+        },
+        "solid": true,
+        "split_ratio": 0.681,
+        "collider_scope": "CG",
+        "original_scale": [
+            251,
+            308
+        ]
+    },
+    {
+        "id": 7,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_9.png"
+        },
+        "solid": true,
+        "split_ratio": 0.801,
+        "collider_scope": "CG",
+        "original_scale": [
+            241,
+            324
+        ]
+    },
+    {
+        "id": 8,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_10.png"
+        },
+        "solid": true,
+        "split_ratio": 0.585,
+        "collider_scope": "CG",
+        "original_scale": [
+            251,
+            324
+        ]
+    },
+    {
+        "id": 9,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_11.png"
+        },
+        "solid": true,
+        "split_ratio": 0.517,
+        "collider_scope": "CG",
+        "original_scale": [
+            233,
+            233
+        ]
+    },
+    {
+        "id": 10,
+        "assets": {
+            "idle": "assets/buildings/gardens/garden_5.png"
+        },
+        "solid": true,
+        "split_ratio": 0.801,
+        "collider_scope": "CG",
+        "original_scale": [
+            1024,
+            1024
+        ]
+    },
+    {
+        "id": 11,
+        "assets": {
+            "idle": "assets/buildings/castles/castle_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            3072,
+            2048
+        ]
+    },
+    {
+        "id": 12,
+        "assets": {
+            "idle": "assets/buildings/temples/satanist.png"
+        },
+        "solid": true,
+        "split_ratio": 0.683,
+        "collider_scope": "CG",
+        "original_scale": [
+            1024,
+            1024
+        ]
+    },
+    {
+        "id": 13,
+        "assets": {
+            "idle": "assets/buildings/statues/statue_olim_01.png"
+        },
+        "solid": true,
+        "split_ratio": 0.361,
+        "collider_scope": "CG",
+        "original_scale": [
+            1024,
+            1024
+        ]
+    },
+    {
+        "id": 14,
+        "assets": {
+            "idle": "assets/buildings/shops/magic_tower.png"
+        },
+        "solid": true,
+        "split_ratio": 0.679,
+        "collider_scope": "CG",
+        "original_scale": [
+            1024,
+            1536
+        ]
+    },
+    {
+        "id": 15,
+        "assets": {
+            "idle": "assets/buildings/shops/alchemy_tower.png"
+        },
+        "solid": true,
+        "split_ratio": 0.654,
+        "collider_scope": "CG",
+        "original_scale": [
+            550,
+            845
+        ]
+    },
+    {
+        "id": 16,
+        "assets": {
+            "idle": "assets/buildings/shops/healer_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.671,
+        "collider_scope": "CG",
+        "original_scale": [
+            600,
+            600
+        ]
+    },
+    {
+        "id": 17,
+        "assets": {
+            "idle": "assets/buildings/shops/healer.png"
+        },
+        "solid": true,
+        "split_ratio": 0.56,
+        "collider_scope": "CG",
+        "original_scale": [
+            768,
+            768
+        ]
+    },
+    {
+        "id": 18,
+        "assets": {
+            "idle": "assets/buildings/shops/blacksmith.png"
+        },
+        "solid": true,
+        "split_ratio": 0.618,
+        "collider_scope": "CG",
+        "original_scale": [
+            1200,
+            1200
+        ]
+    },
+    {
+        "id": 19,
+        "assets": {
+            "idle": "assets/buildings/shops/jewlery_shop.png"
+        },
+        "solid": true,
+        "split_ratio": 0.632,
+        "collider_scope": "CG",
+        "original_scale": [
+            1000,
+            1000
+        ]
+    },
+    {
+        "id": 20,
+        "assets": {
+            "idle": "assets/buildings/shops/banco.png"
+        },
+        "solid": true,
+        "split_ratio": 0.572,
+        "collider_scope": "CG",
+        "original_scale": [
+            1024,
+            1536
+        ]
+    },
+    {
+        "id": 21,
+        "assets": {
+            "idle": "assets/buildings/gardens/flowers_9.png"
+        },
+        "solid": true,
+        "split_ratio": 0.95,
+        "collider_scope": "CG",
+        "original_scale": [
+            169,
+            412
+        ]
+    },
+    {
+        "id": 22,
+        "assets": {
+            "idle": "assets/buildings/gardens/flowers_9.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            169,
+            412
+        ]
+    },
+    {
+        "id": 23,
+        "assets": {
+            "idle": "assets/buildings/gardens/garden_4.png"
+        },
+        "solid": true,
+        "split_ratio": 0.079,
+        "collider_scope": "CG",
+        "original_scale": [
+            1024,
+            1024
+        ]
+    },
+    {
+        "id": 24,
+        "assets": {
+            "idle": "assets/buildings/houses/orden_house_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.718,
+        "collider_scope": "CG",
+        "original_scale": [
+            1024,
+            1024
+        ]
+    },
+    {
+        "id": 25,
+        "assets": {
+            "idle": "assets/buildings/gardens/flowers_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.05,
+        "collider_scope": "CG",
+        "original_scale": [
+            412,
+            169
+        ]
+    },
+    {
+        "id": 26,
+        "assets": {
+            "idle": "assets/buildings/gardens/flowers_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            412,
+            169
+        ]
+    },
+    {
+        "id": 27,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_6.png"
+        },
+        "solid": true,
+        "split_ratio": 0.605,
+        "collider_scope": "CG",
+        "original_scale": [
+            540,
+            540
+        ]
+    },
+    {
+        "id": 28,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_6.png"
+        },
+        "solid": true,
+        "split_ratio": 0.601,
+        "collider_scope": "CG",
+        "original_scale": [
+            540,
+            540
+        ]
+    },
+    {
+        "id": 29,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_6.png"
+        },
+        "solid": true,
+        "split_ratio": 0.626,
+        "collider_scope": "CG",
+        "original_scale": [
+            540,
+            540
+        ]
+    },
+    {
+        "id": 30,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_3.png"
+        },
+        "solid": true,
+        "split_ratio": 0.67,
+        "collider_scope": "CG",
+        "original_scale": [
+            490,
+            627
+        ]
+    },
+    {
+        "id": 31,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_9.png"
+        },
+        "solid": true,
+        "split_ratio": 0.742,
+        "collider_scope": "CG",
+        "original_scale": [
+            172,
+            221
+        ]
+    },
+    {
+        "id": 32,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.632,
+        "collider_scope": "CG",
+        "original_scale": [
+            197,
+            269
+        ]
+    },
+    {
+        "id": 33,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_7.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            227,
+            309
+        ]
+    },
+    {
+        "id": 34,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            176,
+            240
+        ]
+    },
+    {
+        "id": 35,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            166,
+            227
+        ]
+    },
+    {
+        "id": 36,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.64,
+        "collider_scope": "CG",
+        "original_scale": [
+            177,
+            242
+        ]
+    },
+    {
+        "id": 37,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.635,
+        "collider_scope": "CG",
+        "original_scale": [
+            114,
+            156
+        ]
+    },
+    {
+        "id": 38,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.29,
+        "collider_scope": "CG",
+        "original_scale": [
+            164,
+            224
+        ]
+    },
+    {
+        "id": 39,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.371,
+        "collider_scope": "CG",
+        "original_scale": [
+            162,
+            221
+        ]
+    },
+    {
+        "id": 40,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            114,
+            156
+        ]
+    },
+    {
+        "id": 41,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.631,
+        "collider_scope": "CG",
+        "original_scale": [
+            173,
+            236
+        ]
+    },
+    {
+        "id": 42,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.69,
+        "collider_scope": "CG",
+        "original_scale": [
+            180,
+            245
+        ]
+    },
+    {
+        "id": 43,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.611,
+        "collider_scope": "CG",
+        "original_scale": [
+            139,
+            190
+        ]
+    },
+    {
+        "id": 44,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            129,
+            176
+        ]
+    },
+    {
+        "id": 45,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            141,
+            192
+        ]
+    },
+    {
+        "id": 46,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_10.png"
+        },
+        "solid": true,
+        "split_ratio": 0.691,
+        "collider_scope": "CG",
+        "original_scale": [
+            251,
+            324
+        ]
+    },
+    {
+        "id": 47,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_10.png"
+        },
+        "solid": true,
+        "split_ratio": 0.667,
+        "collider_scope": "CG",
+        "original_scale": [
+            251,
+            324
+        ]
+    },
+    {
+        "id": 48,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_10.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            251,
+            324
+        ]
+    },
+    {
+        "id": 49,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_11.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            233,
+            333
+        ]
+    },
+    {
+        "id": 50,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.698,
+        "collider_scope": "CG",
+        "original_scale": [
+            194,
+            265
+        ]
+    },
+    {
+        "id": 51,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            168,
+            229
+        ]
+    },
+    {
+        "id": 52,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            172,
+            235
+        ]
+    },
+    {
+        "id": 53,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_10.png"
+        },
+        "solid": true,
+        "split_ratio": 0.741,
+        "collider_scope": "CG",
+        "original_scale": [
+            251,
+            324
+        ]
+    },
+    {
+        "id": 54,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_3.png"
+        },
+        "solid": true,
+        "split_ratio": 0.685,
+        "collider_scope": "CG",
+        "original_scale": [
+            184,
+            235
+        ]
+    },
+    {
+        "id": 55,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            153,
+            207
+        ]
+    },
+    {
+        "id": 56,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.655,
+        "collider_scope": "CG",
+        "original_scale": [
+            182,
+            249
+        ]
+    },
+    {
+        "id": 57,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_10.png"
+        },
+        "solid": true,
+        "split_ratio": 0.698,
+        "collider_scope": "CG",
+        "original_scale": [
+            251,
+            324
+        ]
+    },
+    {
+        "id": 58,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_10.png"
+        },
+        "solid": true,
+        "split_ratio": 0.68,
+        "collider_scope": "CG",
+        "original_scale": [
+            196,
+            253
+        ]
+    },
+    {
+        "id": 59,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.662,
+        "collider_scope": "CG",
+        "original_scale": [
+            169,
+            231
+        ]
+    },
+    {
+        "id": 60,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            181,
+            247
+        ]
+    },
+    {
+        "id": 61,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_10.png"
+        },
+        "solid": true,
+        "split_ratio": 0.691,
+        "collider_scope": "CG",
+        "original_scale": [
+            238,
+            302
+        ]
+    },
+    {
+        "id": 62,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_3.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            246,
+            314
+        ]
+    },
+    {
+        "id": 63,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_3.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            201,
+            257
+        ]
+    },
+    {
+        "id": 64,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_10.png"
+        },
+        "solid": true,
+        "split_ratio": 0.678,
+        "collider_scope": "CU",
+        "original_scale": [
+            277,
+            354
+        ]
+    },
+    {
+        "id": 65,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_8.png"
+        },
+        "solid": true,
+        "split_ratio": 0.74,
+        "collider_scope": "CG",
+        "original_scale": [
+            251,
+            308
+        ]
+    },
+    {
+        "id": 66,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            154,
+            208
+        ]
+    },
+    {
+        "id": 67,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.637,
+        "collider_scope": "CG",
+        "original_scale": [
+            200,
+            273
+        ]
+    },
+    {
+        "id": 68,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.671,
+        "collider_scope": "CG",
+        "original_scale": [
+            158,
+            216
+        ]
+    },
+    {
+        "id": 69,
+        "assets": {
+            "idle": "assets/buildings/mine.png"
+        },
+        "solid": true,
+        "split_ratio": 0.275,
+        "collider_scope": "CG",
+        "original_scale": [
+            204,
+            204
+        ]
+    },
+    {
+        "id": 70,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_9.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            251,
+            324
+        ]
+    },
+    {
+        "id": 71,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_3.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            216,
+            276
+        ]
+    },
+    {
+        "id": 72,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_3.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            244,
+            311
+        ]
+    },
+    {
+        "id": 73,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_3.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            186,
+            237
+        ]
+    },
+    {
+        "id": 74,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_3.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            208,
+            265
+        ]
+    },
+    {
+        "id": 75,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_3.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            194,
+            248
+        ]
+    },
+    {
+        "id": 76,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_3.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            218,
+            277
+        ]
+    },
+    {
+        "id": 77,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_3.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            272,
+            347
+        ]
+    },
+    {
+        "id": 78,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_3.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            224,
+            286
+        ]
+    },
+    {
+        "id": 79,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_3.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            170,
+            217
+        ]
+    },
+    {
+        "id": 80,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_10.png"
+        },
+        "solid": true,
+        "split_ratio": 0.95,
+        "collider_scope": "CG",
+        "original_scale": [
+            251,
+            324
+        ]
+    },
+    {
+        "id": 81,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            226,
+            309
+        ]
+    },
+    {
+        "id": 82,
+        "assets": {
+            "idle": "assets/buildings/forest_decoration/natural/champinones_agrupados_marrones.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            88,
+            88
+        ]
+    },
+    {
+        "id": 83,
+        "assets": {
+            "idle": "assets/buildings/forest_decoration/natural/raiz_expuesta_suave.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            81,
+            81
+        ]
+    },
+    {
+        "id": 84,
+        "assets": {
+            "idle": "assets/buildings/forest_decoration/natural/Flor_silvestre_azul.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            71,
+            71
+        ]
+    },
+    {
+        "id": 85,
+        "assets": {
+            "idle": "assets/buildings/forest_decoration/natural/petalos_rosados_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.05,
+        "collider_scope": "CG",
+        "original_scale": [
+            53,
+            53
+        ]
+    },
+    {
+        "id": 86,
+        "assets": {
+            "idle": "assets/buildings/forest_decoration/natural/seta_blanca.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            50,
+            50
+        ]
+    },
+    {
+        "id": 87,
+        "assets": {
+            "idle": "assets/buildings/forest_decoration/natural/champinones_agrupados_marrones.png"
+        },
+        "solid": true,
+        "split_ratio": 0.95,
+        "collider_scope": "CG",
+        "original_scale": [
+            58,
+            58
+        ]
+    },
+    {
+        "id": 88,
+        "assets": {
+            "idle": "assets/buildings/forest_decoration/natural/seta_blanca.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            58,
+            58
+        ]
+    },
+    {
+        "id": 89,
+        "assets": {
+            "idle": "assets/buildings/forest_decoration/natural/mariposa rama caida.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            64,
+            64
+        ]
+    },
+    {
+        "id": 90,
+        "assets": {
+            "idle": "assets/buildings/forest_decoration/natural/petalos_rosados_3.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            55,
+            55
+        ]
+    },
+    {
+        "id": 91,
+        "assets": {
+            "idle": "assets/items/totem_forest.png"
+        },
+        "solid": false,
+        "split_ratio": 0.808,
+        "collider_scope": "CG",
+        "original_scale": [
+            227,
+            338
+        ]
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/dummy.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            8,
+            8
+        ],
+        "id": 92
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/houses/orden_house_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.718,
+        "collider_scope": "CG",
+        "original_scale": [
+            675,
+            675
+        ],
+        "id": 93
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/houses/orden_house_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.718,
+        "collider_scope": "CG",
+        "original_scale": [
+            594,
+            594
+        ],
+        "id": 94
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/houses/orden_house_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.718,
+        "collider_scope": "CG",
+        "original_scale": [
+            517,
+            517
+        ],
+        "id": 95
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/houses/orden_house_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.718,
+        "collider_scope": "CG",
+        "original_scale": [
+            458,
+            458
+        ],
+        "id": 96
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/houses/orden_house_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.718,
+        "collider_scope": "CG",
+        "original_scale": [
+            391,
+            391
+        ],
+        "id": 97
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/houses/orden_house_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.742,
+        "collider_scope": "CG",
+        "original_scale": [
+            391,
+            391
+        ],
+        "id": 98
+    },
+    {
+        "assets": {
+            "idle": "dummy.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            8,
+            8
+        ],
+        "id": 99
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/houses/orden_house_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.816,
+        "collider_scope": "CG",
+        "original_scale": [
+            391,
+            391
+        ],
+        "id": 100
+    }
+]

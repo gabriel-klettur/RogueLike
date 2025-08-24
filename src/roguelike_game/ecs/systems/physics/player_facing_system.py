@@ -1,6 +1,7 @@
 import pygame
 from roguelike_engine.utils.benchmark import benchmark
 import math
+from roguelike_game.ecs.systems.fsm.anim_bridge import set_mapped_anim_for
 
 def get_direction_name(dx, dy):
     """Return one of 8 directions based on vector dx, dy."""
@@ -29,8 +30,7 @@ class PlayerFacingSystem:
     """
     def __init__(self, perf_log):
         self.perf_log = perf_log
-
-    @benchmark(lambda self: self.perf_log, "4.2.2.PlayerFacingSystem.update")
+    
     def update(self, world, camera=None):
         comps = world.components
         pos_map = comps.get('Position', {})
@@ -43,6 +43,25 @@ class PlayerFacingSystem:
             pos = pos_map.get(eid)
             if not animator or not pos or camera is None:
                 continue
+            # Respetar animaciones accionadas por FSM (ataque/daño/muerte) usando el mapa de animaciones
+            try:
+                fsm = comps.get('NPCState', {}).get(eid).fsm
+                amap = (getattr(fsm, 'context', {}) or {}).get('anim_map') or {}
+                action_bases = []
+                for k in ('PlayerAttackState', 'AttackState', 'DamageState', 'DeathState'):
+                    b = amap.get(k)
+                    if b:
+                        action_bases.append(b)
+                if any(
+                    animator.current_state == base
+                    or animator.current_state.startswith(f"{base}_")
+                    or animator.current_state.endswith(f"_{base}")
+                    for base in action_bases
+                ):
+                    # No sobreescribir animación de acción activa
+                    continue
+            except Exception:
+                pass
             vel = vel_map.get(eid)
             vx = vel.vx if vel else 0
             vy = vel.vy if vel else 0
@@ -53,8 +72,6 @@ class PlayerFacingSystem:
             dy = world_y - pos.y
             # calcular dirección basada en ratón (8 direcciones)
             direction = get_direction_name(dx, dy)
-            # determinar estado idle o walk
-            state = f"{direction}_idle" if vx == 0 and vy == 0 else f"{direction}_walk"
-            # aplicar estado si existe la animación
-            if state in animator.animations and animator.current_state != state:
-                animator.current_state = state
+            # Determinar estado base a través del mapa de animaciones y aplicarlo
+            state_class = 'IdleState' if vx == 0 and vy == 0 else 'MoveState'
+            set_mapped_anim_for(world, eid, state_class, direction)

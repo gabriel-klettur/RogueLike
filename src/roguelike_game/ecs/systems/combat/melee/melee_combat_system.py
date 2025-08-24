@@ -6,10 +6,7 @@ and target defense.
 """
 from roguelike_game.ecs.components.combat.combat_stats import CombatStats
 from roguelike_engine.utils.benchmark import benchmark
-from roguelike_game.ecs.systems.fsm.states.monster.chase_state import ChaseState
-from roguelike_game.ecs.systems.fsm.states.damage_state import DamageState
-from roguelike_game.ecs.systems.fsm.states.attack_state import AttackState
-from roguelike_game.ecs.systems.fsm.fsm_system import _EntityProxy
+ 
 
 class MeleeCombatSystem:
     """
@@ -24,8 +21,7 @@ class MeleeCombatSystem:
 
     def __init__(self, perf_log):
         self.perf_log = perf_log
-
-    @benchmark(lambda self: self.perf_log, "4.2.2.MeleeCombatSystem.update")
+    
     def update(self, world, camera=None):
         """
         Recorre todos los eventos WantsToMelee registrados en el mundo,
@@ -49,19 +45,30 @@ class MeleeCombatSystem:
             # Aplicar daño al objetivo
             defender_stats.current_hp -= damage
             
-            # NPC recibe daño de jugador -> mostrar sprite y luego chase
+            # NPC recibe daño de jugador -> publicar evento OnHit y posible OnDeath
             if intent.attacker in world.components.get('PlayerTagComponent', {}):
                 target_eid = intent.target
                 # determinar dirección de daño
                 attacker_pos = world.components['Position'][intent.attacker]
                 defender_pos = world.components['Position'][target_eid]
                 from_left = attacker_pos.x < defender_pos.x
-                fsm = world.components['NPCState'][target_eid].fsm
-                proxy = _EntityProxy(world, target_eid)
-                # usar DamageState: si ya estaba en AttackState, volver a Attack, sino Chase
-                current = fsm.current_state
-                next_state = AttackState() if isinstance(current, AttackState) else ChaseState()
-                fsm.change_state(DamageState(next_state, from_left), proxy)
+                qmap = world.components.setdefault('FSMEventQueue', {})
+                q = qmap.setdefault(target_eid, [])
+                q.append({"type": "OnHit", "from_left": from_left})
+                if defender_stats.current_hp <= 0:
+                    q.append({"type": "OnDeath"})
+            # Jugador recibe daño de NPC/u otro -> publicar evento OnHit y posible OnDeath
+            elif intent.target in world.components.get('PlayerTagComponent', {}):
+                target_eid = intent.target
+                # determinar dirección de daño
+                attacker_pos = world.components['Position'][intent.attacker]
+                defender_pos = world.components['Position'][target_eid]
+                from_left = attacker_pos.x < defender_pos.x
+                qmap = world.components.setdefault('FSMEventQueue', {})
+                q = qmap.setdefault(target_eid, [])
+                q.append({"type": "OnHit", "from_left": from_left})
+                if defender_stats.current_hp <= 0:
+                    q.append({"type": "OnDeath"})
             
             # (Opcional) Aquí podrías disparar efectos secundarios,
             # p.ej. animaciones, sonidos o eventos de muerte si HP ≤ 0

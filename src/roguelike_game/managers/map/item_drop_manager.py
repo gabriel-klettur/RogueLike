@@ -35,7 +35,9 @@ class ItemDropManager:
     def create_drop(self, drop_id: str, item_id: str, quantity: int,
                     zone_id: str,
                     tile: Union[Dict[str, Union[int, float]], object] = None,
-                    position: Union[Dict[str, Union[int, float]], object] = None) -> None:
+                    position: Union[Dict[str, Union[int, float]], object] = None,
+                    z_layer: int | None = None,
+                    temp_z_layer: Dict | None = None) -> None:
         """
         Registra un drop en el mapa con su drop_id, zona y coordenadas de tile o posición relativa.
         """
@@ -46,6 +48,11 @@ class ItemDropManager:
             'zone_id': zone_id,
             'schema_version': '1.0.0'
         }
+        if z_layer is not None:
+            entry['z_layer'] = z_layer
+        if temp_z_layer is not None:
+            # Expected keys: {'layer': int, 'ttl_ms': int} or may include 'expires_at_ms'
+            entry['temp_z_layer'] = temp_z_layer
         if tile is not None:
             # Soporta tile dict o con atributos x,y
             if hasattr(tile, 'x') and hasattr(tile, 'y'):
@@ -62,6 +69,13 @@ class ItemDropManager:
             entry['position'] = coords
         else:
             raise ValueError("Debe especificar 'tile' o 'position'")
+        # Registrar tiempo de creación (epoch seconds) para soportar auto-despawn
+        try:
+            import time
+            entry['created_at'] = time.time()
+        except Exception:
+            # En caso de fallo inusual, omitir timestamp (el sistema lo inicializará al spawn)
+            pass
         self._data[drop_id] = entry
         self._persist()
 

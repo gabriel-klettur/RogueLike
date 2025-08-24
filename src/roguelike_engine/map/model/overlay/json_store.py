@@ -17,7 +17,7 @@ class JsonOverlayStore(OverlayStore):
     """
     def __init__(self, directory: str = None):
         # Directorio de overlays individuales por zona
-        self.zones_dir  = Path(DATA_DIR) / "zones" / "overlays"
+        self.zones_dir  = Path(DATA_DIR) / "map" / "zones" / "overlays"
 
         os.makedirs(self.zones_dir,  exist_ok=True)
 

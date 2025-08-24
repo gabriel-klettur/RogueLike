@@ -5,18 +5,19 @@ import types
 
 
 def update_game(
-    state,    
+    state,
     camera,
     clock,
     screen,
     map,
-    buildings,      
+    buildings,
     tiles_editor,
     buildings_editor,
     map_editor,
     minimap,
     ecs,
-    perf_log
+    perf_log,
+    item_editor=None,
 ):
     """
     Actualiza el juego en cada frame, incluyendo:
@@ -24,9 +25,6 @@ def update_game(
       2) Mecánicas core: cámara, sistemas, enemigos, jugador...
     """
     if not state.running:
-        return
-    # Pausar update si ItemEditor visible
-    if getattr(state, 'item_editor_state', None) and state.item_editor_state.visible:
         return
 
     # 1) Prioridad: si el Tile-Editor está activo, nada más se hace
@@ -64,9 +62,58 @@ def update_game(
         camera.offset_y += dy * pan_speed
         return
 
-    # 3.1) Cámara sigue al jugador si está vivo (tiene Position)
+    # 3.1) Cámara sigue al jugador si está vivo (tiene Position),
+    #      salvo cuando el Items Editor está reteniendo enfoque manual (hold-focus)
     @benchmark(perf_log, "2.1.camera.update")
     def _update_camera():
+        try:
+            # Defer camera follow for N frames when requested (e.g., after MMB pan)
+            if getattr(state, 'defer_follow_frames', 0) > 0:
+                state.defer_follow_frames -= 1
+                return
+        except Exception:
+            pass
+        try:
+            # Respetar defer de follow tras salir del Map Editor
+            if getattr(getattr(map_editor, 'editor_state', None), 'defer_follow_frames', 0) > 0:
+                map_editor.editor_state.defer_follow_frames -= 1
+                return
+        except Exception:
+            pass
+        try:
+            if item_editor is not None and getattr(getattr(item_editor, 'model', None), 'holding_pos_focus', False):
+                # Respetar enfoque manual del editor: no seguir jugador
+                return
+        except Exception:
+            pass
+        # No recentrar mientras hay editores overlay visibles (Item, Spawner, FSM)
+        try:
+            if item_editor is not None and getattr(getattr(item_editor, 'model', None), 'visible', False):
+                return
+        except Exception:
+            pass
+        try:
+            import roguelike_engine.config.config as cfg
+            if bool(getattr(cfg, 'DEBUG_SPAWNER', False)):
+                return
+            if bool(getattr(cfg, 'DEBUG_ENTITIES', False)):
+                return
+        except Exception:
+            pass
+        # Mientras el usuario arrastra con MMB, no recentrar la cámara al jugador
+        try:
+            if getattr(state, 'mmb_panning', False):
+                return
+        except Exception:
+            pass
+        # Respetar enfoque manual del Spawner Editor (hold-focus)
+        try:
+            if getattr(getattr(ecs, 'ecs_world', None), 'state', None) is not None:
+                st = ecs.ecs_world.state
+                if getattr(st, 'spawner_hold_focus', False):
+                    return
+        except Exception:
+            pass
         eid = ecs.ecs_world.player_entity
         pos_map = ecs.ecs_world.components.get('Position', {})
         if eid in pos_map:

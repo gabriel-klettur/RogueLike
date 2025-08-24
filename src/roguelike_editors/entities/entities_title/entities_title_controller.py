@@ -25,6 +25,6 @@ class EntitiesTitleController:
 
     def render(self, screen):
         """
-        Renderizar el panel de título.
+        Renderiza y devuelve el rect del título para layout (unificado con InventoryTitleController).
         """
-        self.view.render(screen)
+        return self.view.render(screen)

@@ -12,8 +12,7 @@ class PlayerDebugRenderSystem:
         self.last_pressed = False
         self.perf_log = perf_log
         self.font = pygame.font.Font(None, 24)
-
-    @benchmark(lambda self: self.perf_log, "4.2.2.PlayerDebugRenderSystem.update")
+    
     def update(self, world, screen, camera):
         # Toggle debug mode on F9 press
         keys = pygame.key.get_pressed()

@@ -28,6 +28,31 @@ def assign_zone_and_relatives(building) -> None:
     building.zone = zone
     building.rel_x = int(rel_x)
     building.rel_y = int(rel_y)
+    # 6) Si este building está vinculado a un spawner, sincronizar su posición/zona
+    try:
+        eid = getattr(building, "_spawner_eid", None)
+        world = getattr(building, "_world_ref", None)
+        if eid is not None and world is not None:
+            comps = getattr(world, 'components', {})
+            cfg_map = comps.get('SpawnerConfig') or {}
+            cfg = cfg_map.get(eid)
+            if cfg is not None:
+                # Calcular tile local a la zona usando el centro del sprite (coincide con lógica de colocación)
+                local_tx = int((building.rel_x + w_px / 2) // TILE_SIZE)
+                local_ty = int((building.rel_y + h_px / 2) // TILE_SIZE)
+                # Convertir a tiles globales usando el offset de la zona detectada
+                off_x, off_y = global_map_settings.zone_offsets.get(zone, (0, 0))
+                cfg.zone = zone
+                cfg.anchor_tile = (int(off_x + local_tx), int(off_y + local_ty))
+                # Invalida el índice espacial si existe, por si afecta a consultas
+                try:
+                    if hasattr(world, 'invalidate_spatial_index'):
+                        world.invalidate_spatial_index()
+                except Exception:
+                    pass
+    except Exception:
+        # No romper el editor por errores de sync
+        pass
 
 def detect_zone_from_px(x_px: float, y_px: float) -> tuple[str, tuple[int,int]]:
     """

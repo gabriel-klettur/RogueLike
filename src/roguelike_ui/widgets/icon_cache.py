@@ -1,4 +1,5 @@
-import pygame, os
+import pygame
+from roguelike_engine.utils.loader import load_image
 
 class IconCache:
     """
@@ -11,8 +12,8 @@ class IconCache:
         if path in cls._cache:
             return cls._cache[path]
         try:
-            raw = pygame.image.load(os.path.join(os.getcwd(), path)).convert_alpha()
-            img = pygame.transform.scale(raw, size)
+            # Usar el cargador centralizado que normaliza rutas con o sin prefijo "assets/"
+            img = load_image(path, size)
             cls._cache[path] = img
             return img
         except Exception:

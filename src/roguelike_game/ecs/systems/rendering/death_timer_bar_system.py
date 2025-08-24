@@ -4,6 +4,11 @@ import roguelike_engine.config.config as config
 from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
 from roguelike_engine.utils.benchmark import benchmark
 
+# Entities (Identity.name, lowercase) excluded from death timer bar rendering
+EXCLUDED_IN_DEATH_TIMER_BAR = {
+    'barbol',
+}
+
 class DeathTimerBarSystem:
     """
     Dibuja barras decrecientes para NPCs muertos:
@@ -34,8 +39,7 @@ class DeathTimerBarSystem:
         self.color_bg = color_bg
         self.color_fg = color_fg
         self.perf_log = perf_log
-
-    @benchmark(lambda self: self.perf_log, "4.2.2.DeathTimerBarSystem.update")
+    
     def update(self, world, screen, camera):
         """
         Recorre todos los DeathTimers activos y dibuja su barra.
@@ -57,6 +61,15 @@ class DeathTimerBarSystem:
             # Sólo renderizar para entidades en Estado de Muerte
             state_comp = world.components.get('NPCState', {}).get(eid)
             if not state_comp or not isinstance(state_comp.fsm.current_state, DeathState):
+                continue
+            # Omitir ciertas clases por diseño usando lista de exclusión
+            identity = world.components.get('Identity', {}).get(eid)
+            name_lower = ''
+            try:
+                name_lower = str(getattr(identity, 'name', '')).lower()
+            except Exception:
+                name_lower = ''
+            if name_lower in EXCLUDED_IN_DEATH_TIMER_BAR:
                 continue
             params = self._gather_draw_params(eid, world, now, dt, camera)
             if params:

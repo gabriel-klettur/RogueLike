@@ -1,5 +1,7 @@
 import pygame
-from roguelike_game.config.spells_config import SPELLS
+import logging
+from roguelike_game.config.spells_config import SPELLS, SPELLS_VERSION
+from roguelike_game.ecs.systems.combat.spells.spells_apply import apply_aura_cfg, log_aura_state
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.transform.velocity import Velocity
 from roguelike_game.ecs.components.abilities.fireball_component import FireballComponent
@@ -28,6 +30,8 @@ from roguelike_game.ecs.components.abilities.sphere_magic_shield_component impor
 from roguelike_game.ecs.systems.rendering.combat.spells.sphere_magic_shield.model import SphereMagicShieldModel
 from roguelike_game.ecs.components.abilities.teleport_component import TeleportComponent
 from roguelike_game.ecs.systems.rendering.combat.spells.teleport.model import TeleportModel
+
+logger = logging.getLogger(__name__)
 
 class BaseSpellResolver:
     def resolve(self, world, caster, spawn_meta, cfg, camera):
@@ -91,7 +95,16 @@ class AuraResolver(BaseSpellResolver):
         radius = cfg.get('radius', 100)
         buff = cfg.get('buff', {})
         duration = cfg.get('duration', 5.0)
-        world.components.setdefault('AuraComponent', {})[caster] = AuraComponent(radius, buff, duration)
+        spell_key = spawn_meta.get('spell') if isinstance(spawn_meta, dict) else None
+        comp = AuraComponent(radius, buff, duration, spell_key=spell_key or '', last_refresh_version=SPELLS_VERSION)
+        # Hacer que Aura use los parámetros comunes de partículas aplanados desde vfx.particles.*
+        try:
+            apply_aura_cfg(comp, cfg)
+        except Exception:
+            pass
+        # Debug logging unificado
+        log_aura_state("[AuraResolver]", caster, comp, spell_key=spell_key, version=SPELLS_VERSION)
+        world.components.setdefault('AuraComponent', {})[caster] = comp
 
 class BeamResolver(BaseSpellResolver):
     """
@@ -273,6 +286,14 @@ class TeleportResolver(BaseSpellResolver):
         # Resolver for teleport effect
         pos_cmp = world.components['Position'][caster]
         cx, cy = pos_cmp.x, pos_cmp.y
+        # Use sprite center if available so the VFX and target are centered
+        sprite_cmp = world.components.get('Sprite', {}).get(caster)
+        if sprite_cmp:
+            try:
+                w, h = sprite_cmp.image.get_size()
+                cx += w / 2; cy += h / 2
+            except Exception:
+                pass
         direction = spawn_meta.get('direction', (1, 0))
         distance = cfg.get('distance', 200)
         end_x = cx + direction[0] * distance
@@ -319,7 +340,6 @@ default_resolvers = {
     'firework_launch': FireworkLaunchResolver(),
     'smoke': SmokeResolver(),
     'smoke_emitter': SmokeEmitterResolver(),
-    'sphere_magic_shield': SphereMagicShieldResolver(),
 }
 SPELL_RESOLVERS = default_resolvers
 
