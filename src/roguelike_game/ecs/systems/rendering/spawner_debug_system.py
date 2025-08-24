@@ -68,8 +68,7 @@ class SpawnerDebugRenderSystem:
                 self.font = pygame.font.SysFont('Arial', 14)
             except Exception:
                 self.font = None
-
-    @benchmark(lambda self: self.perf_log, "4.2.[RENDER]SpawnerDebugRenderSystem")
+    
     def update(self, world, screen, camera):
         # Only render when the Spawner Editor is visible
         if not getattr(config, 'DEBUG_SPAWNER', False):

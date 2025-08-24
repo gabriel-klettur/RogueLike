@@ -19,8 +19,7 @@ class SpawnSystem:
 
     def __init__(self, perf_log):
         self.perf_log = perf_log
-
-    @benchmark(lambda self: self.perf_log, "4.2.2.SpawnSystem.update")
+    
     def update(self, world, camera=None):
         """
         1. Encuentra todas las entidades que solicitaron un spawn (SpawnRequest).

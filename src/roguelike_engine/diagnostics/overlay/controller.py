@@ -231,7 +231,35 @@ class DiagnosticsOverlayController:
                     lines.append((text, ""))
                     line_levels.append(None)
 
-        # Final width adjust for all lines (single pass)
+        # Safety: limit number of lines only when paging is disabled
+        truncated_count = 0
+        if not getattr(model, 'paging_enabled', False):
+            max_lines = getattr(model, 'max_lines', 400)
+            if len(lines) > max_lines:
+                truncated_count = len(lines) - max_lines
+                keep = max_lines - 1 if max_lines >= 1 else 0
+                if keep > 0:
+                    lines = lines[:keep] + [("...", f"{truncated_count} líneas ocultas")]  # notice line
+                    line_levels = line_levels[:keep] + [None]
+                else:
+                    lines = [("...", f"{truncated_count} líneas ocultas")]  # only notice
+                    line_levels = [None]
+
+        # Truncate fields to avoid creating huge text surfaces. Do NOT truncate header labels (ending with ':').
+        def _truncate_field(left: str, right: str) -> tuple[str, str]:
+            max_chars = getattr(model, 'max_chars_per_field', 256)
+            l = left
+            # Respect headers (used for group ids and interaction)
+            if not left.strip().endswith(':') and len(left) > max_chars:
+                l = left[: max_chars - 1] + '…'
+            r = right
+            if len(right) > max_chars:
+                r = right[: max_chars - 1] + '…'
+            return l, r
+
+        lines = [ _truncate_field(l, r) for (l, r) in lines ]
+
+        # Final width adjust for all lines (single pass) using possibly truncated values
         font = self.view._get_font(model.font_name, model.font_size)
         for left, right in lines:
             lw, _ = font.size(left)
@@ -272,9 +300,38 @@ class DiagnosticsOverlayController:
         rebuild = (now - self.model.last_update_time) >= self.model.update_interval
         if rebuild or self.model.panel_surf is None:
             lines, label_w, value_w, line_levels = self._build_lines(state, camera, map_manager, entities, extra_lines)
-            self.view.rebuild_panel(self.model, position, lines, label_w, value_w)
-            # Store levels aligned with rendered lines for hover highlighting
-            self.model.line_levels = line_levels
+
+            # Paging: slice lines according to current page and available height
+            if getattr(self.model, 'paging_enabled', False):
+                line_h = self.view.line_height(self.model)
+                screen_surf = pygame.display.get_surface()
+                if screen_surf is not None:
+                    screen_h = screen_surf.get_height()
+                    # Estimar alto visible coherente con view (usa +200 margen)
+                    visible_h = max(line_h, min(getattr(self.model, 'max_surface_height', 8000), screen_h - position[1] + 200))
+                else:
+                    visible_h = getattr(self.model, 'max_surface_height', 8000)
+                lines_per_page = max(1, int(visible_h // line_h))
+                total_lines = len(lines)
+                total_pages = max(1, (total_lines + lines_per_page - 1) // lines_per_page)
+                # Clamp y slice
+                pi = max(0, min(self.model.page_index, total_pages - 1))
+                i0 = pi * lines_per_page
+                i1 = min(total_lines, i0 + lines_per_page)
+                page_lines = lines[i0:i1]
+                page_levels = line_levels[i0:i1]
+                # Persist runtime paging metadata
+                self.model.page_index = pi
+                self.model.total_lines = total_lines
+                self.model.lines_per_page = lines_per_page
+                self.model.total_pages = total_pages
+                # Rebuild with just the page
+                self.view.rebuild_panel(self.model, position, page_lines, label_w, value_w)
+                self.model.line_levels = page_levels
+            else:
+                # No paging: render all (ya limitado por max_lines si aplica)
+                self.view.rebuild_panel(self.model, position, lines, label_w, value_w)
+                self.model.line_levels = line_levels
             self.model.last_update_time = now
 
         if self.model.panel_surf and self.model.panel_rect:

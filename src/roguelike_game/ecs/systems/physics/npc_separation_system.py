@@ -28,8 +28,7 @@ class NpcSeparationSystem:
     def __init__(self, perf_log=None, max_iters: int = 3):
         self.perf_log = perf_log
         self.max_iters = max_iters
-
-    @benchmark(lambda self: self.perf_log, "4.2.2.NpcSeparationSystem.update")
+    
     def update(self, world, camera=None):
         comps = world.components
         pos_map = comps.get('Position', {})

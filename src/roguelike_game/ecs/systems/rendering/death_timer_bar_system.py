@@ -39,8 +39,7 @@ class DeathTimerBarSystem:
         self.color_bg = color_bg
         self.color_fg = color_fg
         self.perf_log = perf_log
-
-    @benchmark(lambda self: self.perf_log, "4.2.2.DeathTimerBarSystem.update")
+    
     def update(self, world, screen, camera):
         """
         Recorre todos los DeathTimers activos y dibuja su barra.

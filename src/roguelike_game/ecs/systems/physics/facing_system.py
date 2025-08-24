@@ -36,8 +36,7 @@ class FacingSystem:
     """
     def __init__(self, perf_log):
         self.perf_log = perf_log
-
-    @benchmark(lambda self: self.perf_log, "4.2.2.FacingSystem.update")
+    
     def update(self, world, camera=None):
         """
         Recorre todas las entidades con Velocity y Animator, y:

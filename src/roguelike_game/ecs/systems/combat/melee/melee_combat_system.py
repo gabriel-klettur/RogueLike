@@ -21,8 +21,7 @@ class MeleeCombatSystem:
 
     def __init__(self, perf_log):
         self.perf_log = perf_log
-
-    @benchmark(lambda self: self.perf_log, "4.2.2.MeleeCombatSystem.update")
+    
     def update(self, world, camera=None):
         """
         Recorre todos los eventos WantsToMelee registrados en el mundo,

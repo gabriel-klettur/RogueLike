@@ -48,8 +48,7 @@ class InputSystem:
         self._prev_reload_spells = False
         # Per-entity cache to avoid spamming suppression logs each frame
         self._prev_suppressed = {}
-
-    @benchmark(lambda self: self.perf_log, "4.2.2.InputSystem.update")
+    
     def update(self, world, *args):
         # Suppress game clicks when Item Editor is open
         # world.state.item_editor_state is set by ItemsEditorManager

@@ -34,11 +34,24 @@ class DiagnosticsOverlayView:
         total_h = line_h * len(lines)
         total_w = label_w + value_w + model.padding_x * 2 + 8
 
+        # Clamp dimensions to avoid out-of-memory surfaces
+        screen = pygame.display.get_surface()
+        max_w = getattr(model, 'max_surface_width', 2000)
+        max_h = getattr(model, 'max_surface_height', 8000)
+        if screen is not None:
+            sw, sh = screen.get_size()
+            # No exceder pantalla + margen razonable
+            max_w = min(max_w, max(64, sw - position[0] + 50))
+            max_h = min(max_h, max(1 * line_h, sh - position[1] + 200))
+        total_w = max(64, min(total_w, max_w))
+        total_h = max(line_h, min(total_h, max_h))
+
         surf = pygame.Surface((total_w, total_h), pygame.SRCALPHA)
         surf.fill(model.bg_color)
 
         model.line_keys = []
         y = 0
+        used_label_w = min(label_w, total_w // 2)
         for left, right in lines:
             is_header = left.strip().endswith(':')
             # Render label
@@ -76,10 +89,10 @@ class DiagnosticsOverlayView:
                     else:
                         self._text_cache[cache_val] = font.render(right, True, model.value_color)
                 surf_r = self._text_cache[cache_val]
-                surf.blit(surf_r, (model.padding_x + label_w + 8, y + model.padding_y))
+                surf.blit(surf_r, (model.padding_x + used_label_w + 8, y + model.padding_y))
             y += line_h
 
         model.panel_surf = surf
         model.panel_rect = surf.get_rect(topleft=position)
-        model.label_w = label_w
-        model.value_w = value_w
+        model.label_w = used_label_w
+        model.value_w = min(value_w, total_w - model.label_w - model.padding_x * 2 - 8)

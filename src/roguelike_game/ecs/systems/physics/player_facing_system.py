@@ -30,8 +30,7 @@ class PlayerFacingSystem:
     """
     def __init__(self, perf_log):
         self.perf_log = perf_log
-
-    @benchmark(lambda self: self.perf_log, "4.2.2.PlayerFacingSystem.update")
+    
     def update(self, world, camera=None):
         comps = world.components
         pos_map = comps.get('Position', {})

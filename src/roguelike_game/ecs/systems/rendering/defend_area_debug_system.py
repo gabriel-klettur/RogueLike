@@ -55,8 +55,7 @@ class DefendAreaDebugSystem:
             pygame.draw.rect(surf, outline_rgb, rect, width=2)
             self._square_cache[key] = surf
         return surf
-
-    @benchmark(lambda self: self.perf_log, "4.2.4.DefendAreaDebugSystem.update")
+    
     def update(self, world, screen, camera):
         if not getattr(config, "DEBUG", False):
             return

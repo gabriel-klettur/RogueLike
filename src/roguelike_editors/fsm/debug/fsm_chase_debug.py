@@ -18,8 +18,7 @@ class ChaseDebugSystem:
         self.debug = False
         self.last_pressed = False
         self.perf_log = perf_log
-
-    @benchmark(lambda self: self.perf_log, "4.2.2.ChaseDebugSystem.update")
+    
     def update(self, world, screen, camera):
         # Renderizar cada frame sin frame skipping
 

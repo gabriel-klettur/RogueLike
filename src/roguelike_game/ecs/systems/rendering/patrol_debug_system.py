@@ -31,8 +31,7 @@ class PatrolDebugSystem:
             pygame.draw.circle(surf, color, (radius + 1, radius + 1), radius, 1)
             self._circle_cache[key] = surf
         return surf
-
-    @benchmark(lambda self: self.perf_log, "4.2.3.PatrolDebugSystem.update")
+    
     def update(self, world, screen, camera):
         if not getattr(config, "DEBUG", False):
             return

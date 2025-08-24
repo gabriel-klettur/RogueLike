@@ -37,6 +37,22 @@ class DiagnosticsOverlayModel:
     collapsed_groups: Set[str] = field(default_factory=set)
     initially_collapsed: bool = True
 
+    # Safety/config limits
+    # Máximo de líneas a renderizar en el panel para evitar superficies gigantes
+    max_lines: int = 400
+    # Máximo de caracteres por campo (izquierda/derecha) para evitar text surfaces descomunales
+    max_chars_per_field: int = 256
+    # Límites duros del tamaño del surface (se combinarán con el tamaño de pantalla si existe)
+    max_surface_width: int = 2000
+    max_surface_height: int = 8000
+
+    # Paging (para virtualizar contenido grande sin crear superficies enormes)
+    paging_enabled: bool = True
+    page_index: int = 0
+    total_lines: int = 0
+    lines_per_page: int = 0
+    total_pages: int = 1
+
     def reset_panel(self):
         self.panel_surf = None
         self.panel_rect = None

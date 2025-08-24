@@ -50,12 +50,12 @@ class Game:
     #!-------------------------------------------------- LOOP PRINCIPAL ---------------------------------------------------
     #!---------------------------------------------------------------------------------------------------------------------
 
-    @benchmark(lambda self: self.perf_log, "1.TOTAL: HANDLE EVENTS")
+    @benchmark(lambda self: self.perf_log, "1.TOTAL: HANDLE EVENTS [CORE]")
     def handle_events(self):
         core_handle_events(self)
         return
  
-    @benchmark(lambda self: self.perf_log, "2.TOTAL: UPDATE")
+    @benchmark(lambda self: self.perf_log, "2.TOTAL: UPDATE [EDITORS]")
     def update(self):        
         if self.inventory_editor.model.visible:
             return
@@ -85,7 +85,7 @@ class Game:
             item_editor=self.item_editor,
         )
 
-    @benchmark(lambda self: self.perf_log, "3.TOTAL: RENDER")
+    @benchmark(lambda self: self.perf_log, "3.TOTAL: RENDER [EDITORS]")
     def render(self):
         # Renderiza el mundo
         # Propaga visibilidad del Spells Editor al estado para que el renderer pueda ocultar minimapa/leyenda
@@ -130,8 +130,7 @@ class Game:
     #!---------------------------------------------------------------------------------------------------------------------
     #!-------------------------------------------------- LOOP ECS ---------------------------------------------------------
     #!---------------------------------------------------------------------------------------------------------------------
-
-    @benchmark(lambda self: self.perf_log, "4.2. ECS - update")
+    
     def update_ecs(self):
         # Pause ECS update when inventory editor is open
         if self.inventory_editor.model.visible:
@@ -141,8 +140,7 @@ class Game:
         if hasattr(self, 'spells_editor') and self.spells_editor.model.visible:
             return
         self.ecs.update(self.clock, self.screen, self.camera)
-
-    @benchmark(lambda self: self.perf_log, "4.1 ECS - render")
+    
     def render_ecs(self):
         self.ecs.render(self.screen, self.camera)
     

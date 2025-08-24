@@ -32,8 +32,7 @@ class SpawnStabilizationSystem:
         solid_coords = {(t.rect.x // TILE_SIZE, t.rect.y // TILE_SIZE) for t in world.map_manager.solid_tiles}
         building_coords = {(r.x // TILE_SIZE, r.y // TILE_SIZE) for b in world.buildings for r in getattr(b, 'collision_tiles', [])}
         return solid_coords, building_coords
-
-    @benchmark(lambda self: self.perf_log, "4.2.3.SpawnStabilizationSystem.update")
+    
     def update(self, world, camera=None):
         comps = world.components
         pos_map = comps.get('Position', {})

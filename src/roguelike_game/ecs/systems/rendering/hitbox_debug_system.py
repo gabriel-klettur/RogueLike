@@ -16,8 +16,7 @@ class HitboxDebugSystem:
         self.font_cache = {}
         # cache circle surfaces by radius to avoid per-frame draw
         self.circle_surfs = {}
-
-    @benchmark(lambda self: self.perf_log, "4.2.2.HitboxDebugSystem.update")
+    
     def update(self, world, screen, camera):
         # view frustum culling
         view_rect = pygame.Rect(0, 0, camera.screen_width, camera.screen_height)

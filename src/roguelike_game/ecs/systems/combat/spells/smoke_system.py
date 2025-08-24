@@ -7,8 +7,7 @@ class SmokeSystem:
     """
     def __init__(self, perf_log):
         self.perf_log = perf_log
-
-    @benchmark(lambda self: self.perf_log, "4.2.2.SmokeSystem.update")
+    
     def update(self, world, camera=None):
         for eid, comp in list(world.components.get('SmokeComponent', {}).items()):
             # Update each smoke particle

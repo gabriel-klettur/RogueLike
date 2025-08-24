@@ -26,8 +26,7 @@ class HealthBarSystem:
         No mantiene estado interno.
         """
         self.perf_log = perf_log
-
-    @benchmark(lambda self: self.perf_log, "4.2.2.HealthBarSystem.update")
+    
     def update(self, world, screen, camera):
         """
         Recorre todas las entidades vivas y dibuja su barra de salud.

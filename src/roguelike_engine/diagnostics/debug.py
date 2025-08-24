@@ -22,6 +22,13 @@ class DiagnosticsOverlay:
         border_width: int = 5,
         update_interval: float = 0.2,
         scroll_speed: int = 20,
+        # Safety limits
+        max_lines: int = 400,
+        max_chars_per_field: int = 256,
+        max_surface_width: int = 2000,
+        max_surface_height: int = 8000,
+        # Paging
+        paging_enabled: bool = True,
     ):
         self.model = DiagnosticsOverlayModel(
             perf_log=perf_log,
@@ -41,6 +48,11 @@ class DiagnosticsOverlay:
             border_width=border_width,
             update_interval=update_interval,
             scroll_speed=scroll_speed,
+            max_lines=max_lines,
+            max_chars_per_field=max_chars_per_field,
+            max_surface_width=max_surface_width,
+            max_surface_height=max_surface_height,
+            paging_enabled=paging_enabled,
         )
         # Load persisted UI state (collapsed groups)
         try:

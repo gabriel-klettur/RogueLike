@@ -155,8 +155,7 @@ class MovementCollisionSystem:
                 vx, vy = 0.0, 0.0
 
         return cx, cy
-
-    @benchmark(lambda self: self.perf_log, "4.2.2.MovementCollisionSystem.update")
+    
     def update(self, world, camera=None):
         """
         Recorre todas las entidades con Position, Velocity y MultiCollider, y para cada una:

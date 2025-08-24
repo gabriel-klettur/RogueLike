@@ -13,8 +13,7 @@ class StatesDebugRenderSystem:
         self.perf_log = perf_log
         # cache rendered labels per state
         self.text_cache = {}
-
-    @benchmark(lambda self: self.perf_log, "4.2.2.StatesDebugRenderSystem.update")
+    
     def update(self, world, screen, camera):
         # view frustum culling
         view_rect = pygame.Rect(0, 0, camera.screen_width, camera.screen_height)

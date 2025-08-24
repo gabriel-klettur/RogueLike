@@ -6,8 +6,7 @@ class ExplosionSystem:
     """
     def __init__(self, perf_log):
         self.perf_log = perf_log
-
-    @benchmark(lambda self: self.perf_log, "4.2.2.ExplosionSystem.update")
+    
     def update(self, world, camera=None):
         # Update each explosion model
         for eid, comp in list(world.components.get('ExplosionComponent', {}).items()):

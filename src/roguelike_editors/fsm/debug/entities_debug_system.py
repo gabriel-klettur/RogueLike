@@ -21,8 +21,7 @@ class EntitiesDebugSystem:
         self._debug_surface = None
         self.perf_log = perf_log
         self._frame_count = 0
-
-    @benchmark(lambda self: self.perf_log, "4.2.2. EntitiesDebugSystem.update")
+    
     def update(self, world, screen, camera):
         # frame skip counter
         self._frame_count += 1

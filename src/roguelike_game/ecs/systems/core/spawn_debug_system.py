@@ -18,8 +18,7 @@ class SpawnDebugSystem:
         # cache for fonts and text surfaces per zoom level and eid
         self.fonts = {}
         self.text_surfs = {}
-
-    @benchmark(lambda self: self.perf_log, "4.2.2.SpawnDebugSystem.update")
+    
     def update(self, world, screen, camera):
         """
         Recorre la lista world.spawn_tiles y dibuja:

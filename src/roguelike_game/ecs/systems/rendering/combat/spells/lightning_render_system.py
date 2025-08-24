@@ -8,8 +8,7 @@ class LightningRenderSystem:
     """
     def __init__(self, perf_log):
         self.perf_log = perf_log
-
-    @benchmark(lambda self: self.perf_log, "4.2.2.LightningRenderSystem.update")
+    
     def update(self, world, screen, camera):
         for eid, comp in world.components.get('LightningComponent', {}).items():
             model = comp.model

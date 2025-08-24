@@ -30,8 +30,7 @@ class NamePlateSystem:
         self.name_cache: dict[tuple[str, tuple[int,int,int]], pygame.Surface] = {}
         self.title_cache: dict[tuple[str, tuple[int,int,int]], pygame.Surface] = {}
         self.perf_log = perf_log
-
-    @benchmark(lambda self: self.perf_log, "4.2.2.NamePlateSystem.update")
+    
     def update(self, world, screen, camera):
         """
         Recorre todas las entidades con Position + Identity y dibuja:

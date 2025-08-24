@@ -14,8 +14,7 @@ logger = logging.getLogger(__name__)
 class ExpansionSystem:
     def __init__(self, perf_log):
         self.perf_log = perf_log
-
-    @benchmark(lambda self: self.perf_log, "4.2.2. expansion.update")
+    
     def update(self, world, camera):
         state = world.state
         game_map = world.map_manager

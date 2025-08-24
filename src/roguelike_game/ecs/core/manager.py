@@ -83,6 +83,7 @@ class ECSWorld:
             if all(eid in comps.get(ct, {}) for ct in component_types):
                 yield eid
 
+    @benchmark(lambda self: self.perf_log, "5.TOTAL [UPDATE] ECS:")
     def update(self, camera):
         # Reconstruir SpatialIndex sólo si ha sido invalidado
         if self._spatial_index_dirty:
@@ -90,13 +91,14 @@ class ECSWorld:
             self._spatial_index_dirty = False
         
         # Ejecutar cada sistema de update
-        for system in self.update_systems:
+        for i, system in enumerate(self.update_systems, start=1):
             name = type(system).__name__
-            @benchmark(self.perf_log, f"4.2.[UPDATE]{name}")
+            @benchmark(self.perf_log, f"5.{i:02d}.[UPDATE]{name}")
             def _update_sys(sys=system):
                 sys.update(self, camera)
             _update_sys()
 
+    @benchmark(lambda self: self.perf_log, "4.TOTAL [RENDER] ECS:")
     def render(self, screen, camera):
         # Si el Graph Panel del FSM Editor está visible, no dibujar overlays del ECS
         # (barras de vida, debug, etc.) para que no se vean por encima del panel.
@@ -112,9 +114,9 @@ class ECSWorld:
         except Exception:
             pass
         # Ejecutar cada sistema de render
-        for system in self.render_systems:
+        for i, system in enumerate(self.render_systems, start=1):
             name = type(system).__name__
-            @benchmark(self.perf_log, f"4.2.[RENDER]{name}")
+            @benchmark(self.perf_log, f"4.{i:02d}.[RENDER]{name}")
             def _render_sys(sys=system):
                 sys.update(self, screen, camera)
             _render_sys()

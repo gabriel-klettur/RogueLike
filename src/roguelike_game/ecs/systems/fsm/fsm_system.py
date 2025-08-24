@@ -26,8 +26,7 @@ class _EntityProxy:
 class FSMSystem:
     def __init__(self, perf_log):
         self.perf_log = perf_log
-
-    @benchmark(lambda self: self.perf_log, "4.2.1.FSMSystem.update")
+    
     def update(self, world, camera=None):
         # Iterar sobre copia para evitar modificación concurrente al remover entidades
         for eid in list(world.get_entities_with('NPCState')):

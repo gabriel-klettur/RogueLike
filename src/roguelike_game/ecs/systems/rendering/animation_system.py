@@ -22,8 +22,7 @@ class AnimationSystem:
         """
         # No hay estado interno por el momento
         self.perf_log = perf_log
-
-    @benchmark(lambda self: self.perf_log, "4.2.2.AnimationSystem.update")
+    
     def update(self, world, camera=None):
         """
         Avanza las animaciones de todas las entidades y actualiza su imagen de Sprite.

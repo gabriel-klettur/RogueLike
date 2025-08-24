@@ -13,8 +13,7 @@ class FireballSystem:
     """
     def __init__(self, perf_log):
         self.perf_log = perf_log
-
-    @benchmark(lambda self: self.perf_log, "4.2.2.FireballSystem.update")
+    
     def update(self, world, camera=None):
         # Actualizar cada fireball
         for eid in list(world.components.get('FireballComponent', {})):

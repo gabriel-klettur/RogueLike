@@ -65,8 +65,7 @@ class SpellCastingSystem:
         if comp_key:
             return len(world.components.get(comp_key, {}))
         return 0
-
-    @benchmark(lambda self: self.perf_log, "4.2.2.SpellCastingSystem.update")
+    
     def update(self, world, camera=None):
         """
         Recorre todas las entidades que tengan el componente 'WantsToCastSpell'.

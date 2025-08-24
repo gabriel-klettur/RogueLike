@@ -57,8 +57,7 @@ class BuildingDamageSystem:
         except Exception:
             return None
         return None
-
-    @benchmark(lambda self: self.perf_log, "4.7b. BuildingDamageSystem.update")
+    
     def update(self, world, camera=None):
         events = world.components.get('BuildingDamageEvents')
         if not events:
