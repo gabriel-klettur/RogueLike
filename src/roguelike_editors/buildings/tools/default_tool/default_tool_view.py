@@ -1,4 +1,5 @@
 import pygame
+from roguelike_ui.ui_blocker import is_blocked
 
 class DefaultToolView:
     def __init__(self, state, editor_state, handle_size=50):
@@ -22,6 +23,7 @@ class DefaultToolView:
 
         # Obtener posición del mouse
         mouse_pos = pygame.mouse.get_pos()
+        blocked = is_blocked(*mouse_pos)
 
         # Botón rojo de eliminar
         delete_rect = pygame.Rect(
@@ -30,7 +32,7 @@ class DefaultToolView:
             handle_size,
             handle_size
         )
-        is_hover_delete = delete_rect.collidepoint(mouse_pos)
+        is_hover_delete = (not blocked) and delete_rect.collidepoint(mouse_pos)
         pygame.draw.rect(screen, (220, 40, 40), delete_rect)  # rojo
         pygame.draw.rect(screen, (0, 0, 0), delete_rect, 2)   # borde negro
         if is_hover_delete:
@@ -50,7 +52,7 @@ class DefaultToolView:
             handle_size,
             handle_size
         )
-        is_hover_reset = reset_rect.collidepoint(mouse_pos)
+        is_hover_reset = (not blocked) and reset_rect.collidepoint(mouse_pos)
         pygame.draw.rect(screen, (255, 255, 255), reset_rect)  # blanco
         pygame.draw.rect(screen, (0, 0, 0), reset_rect, 2)      # borde negro
         if is_hover_reset:
@@ -67,7 +69,7 @@ class DefaultToolView:
             handle_size,
             handle_size
         )
-        is_hover_resize = resize_rect.collidepoint(mouse_pos)
+        is_hover_resize = (not blocked) and resize_rect.collidepoint(mouse_pos)
         pygame.draw.rect(screen, (80, 120, 255), resize_rect)  # azul
         pygame.draw.rect(screen, (0, 0, 0), resize_rect, 2)    # borde negro
         if is_hover_resize:

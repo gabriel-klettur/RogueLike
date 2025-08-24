@@ -29,6 +29,18 @@
         "required": ["x", "y"],
         "additionalProperties": false
       },
+      "z_layer": { "type": "integer", "description": "Capa Z de render opcional" },
+      "temp_z_layer": {
+        "type": "object",
+        "description": "Override temporal de z-layer",
+        "properties": {
+          "layer": { "type": "integer" },
+          "ttl_ms": { "type": "integer", "minimum": 0 },
+          "expires_at_ms": { "type": "integer", "minimum": 0 }
+        },
+        "additionalProperties": false
+      },
+      "created_at": { "type": "number", "description": "Timestamp UNIX (segundos) de creación del drop" },
       "schema_version": { "type": "string", "description": "Versión del esquema JSON" }
     },
     "required": ["item_id", "quantity", "zone_id"],

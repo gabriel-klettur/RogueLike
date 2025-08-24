@@ -6,8 +6,7 @@ class ParticleSystem:
     """
     def __init__(self, perf_log):
         self.perf_log = perf_log
-
-    @benchmark(lambda self: self.perf_log, "4.2.2. ParticleSystem.update")
+    
     def update(self, world, camera=None):
         # Obtener componentes de posición y partículas
         positions = world.components.get('Position', {})

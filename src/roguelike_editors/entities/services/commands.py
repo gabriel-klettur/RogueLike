@@ -238,11 +238,21 @@ class SetAssetCommand(Command):
         else:
             # Refresh monster ECS
             update_monster_assets(ecs_world, self.ent_id)
+            # Keep in-memory monsters model in sync so flatten_entity_data reads fresh assets
+            try:
+                self.controller.model.monsters[self.ent_id] = entry
+            except Exception:
+                pass
 
         # UI tweaks similar to controller flow
         self.controller.assets_picker_controller.hide()
         self.controller.grid_controller.model.last_entity_id = None
         self.controller.grid_controller.model.last_state_tab = None
+        # Clear thumbnails to force reload of updated paths
+        try:
+            self.controller.grid_controller.view.thumbnail_cache.clear()
+        except Exception:
+            pass
         try:
             self.controller.editor_controller.render(self.controller.editor_controller.game.screen)
         except Exception:
@@ -346,6 +356,16 @@ class SetAssetCommand(Command):
             update_player_assets(ecs_world, self.ent_id)
         else:
             update_monster_assets(ecs_world, self.ent_id)
+            # Mirror back into in-memory monsters dict for immediate UI reflect
+            try:
+                self.controller.model.monsters[self.ent_id] = entry
+            except Exception:
+                pass
+        # Clear thumbnails to avoid stale previews after undo
+        try:
+            self.controller.grid_controller.view.thumbnail_cache.clear()
+        except Exception:
+            pass
 
 
 @dataclass

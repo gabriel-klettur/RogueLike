@@ -1,9 +1,13 @@
 from roguelike_game.ecs.systems.fsm.state import State
 from roguelike_game.ecs.components.combat.death_timer import DeathTimer
 from roguelike_game.ecs.components.rendering.grayscale_component import GrayscaleComponent
+from roguelike_game.ecs.components.transform.z_layer import ZLayer
+from roguelike_engine.config.config_z_layer import Z_LAYERS
+
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.config.players_config import PLAYER_STATS
+from roguelike_game.factories.monster.config import MONSTER_STATS, MONSTER_DEFAULTS
 import time
 import json
 import os
@@ -19,14 +23,26 @@ class DeathState(State):
         """Registra temporizador."""
         world = entity.world
         eid = entity.id
+
         logger.debug(f"[DeathState.enter] eid={eid}, is_player={eid in world.components.get('PlayerTagComponent', {})}")
-        # Iniciar temporizador según configuración de players.json
+        # Determinar duración del temporizador de muerte
+        duration = None
+        # Preferencia: si es jugador, usar configuración de players.json
         pt = world.components.get('PlayerTagComponent', {}).get(eid)
-        cls_name = getattr(pt, 'class_name', None)
-        if cls_name in PLAYER_STATS:
-            duration = PLAYER_STATS[cls_name].get('basic_death_timer_duration', 60.0)
+        if pt:
+            cls_name = getattr(pt, 'class_name', None)
+            if cls_name and cls_name in PLAYER_STATS:
+                duration = PLAYER_STATS[cls_name].get('basic_death_timer_duration', 60.0)
         else:
-            duration = 60.0
+            # Si no es jugador, intentar leer duración por clase de monstruo desde MONSTER_STATS
+            identity = world.components.get('Identity', {}).get(eid)
+            monster_class = getattr(identity, 'name', None) if identity else None
+            stats = MONSTER_STATS.get(monster_class, {}) if (monster_class and monster_class in MONSTER_STATS) else {}
+            # Solo soportar la clave oficial: 'death_dissapear_time'. Fallback al DEFAULT del JSON.
+            duration = stats.get('death_dissapear_time')
+            if duration is None:
+                duration = MONSTER_DEFAULTS.get('death_dissapear_time')
+        logger.debug(f"[DeathState.enter] eid={eid} death_timer_duration={duration}")
         world.components['DeathTimer'][eid] = DeathTimer(time.time(), duration)
         # Cambiar el sprite al de muerte para ocultar el sprite anterior
         sprite = world.components.get('Sprite', {}).get(eid)
@@ -35,6 +51,8 @@ class DeathState(State):
             # Deshabilitar animación para no sobreescribir el sprite de muerte
             world.components.get('Animator', {}).pop(eid, None)
             world.components.get('AnimationTimer', {}).pop(eid, None)
+        # Bajar la capa Z del cadáver para que los drops puedan renderizar por encima sin tapar a vivos
+        world.components.setdefault('ZLayer', {})[eid] = ZLayer(Z_LAYERS.get('low_object', 2))
 
 
     def execute(self, entity, dt):
@@ -80,6 +98,8 @@ class DeathState(State):
                     hp = world.components.get('Health', {}).get(nid)
                     if hp:
                         hp.current_hp = hp.max_hp
+                    # Restaurar ZLayer del jugador
+                    comps.setdefault('ZLayer', {})[nid] = ZLayer(Z_LAYERS.get('player', 4))
                     # Cambiar FSM a IdleState
                     npc_state = comps.get('NPCState', {}).get(nid)
                     if npc_state:

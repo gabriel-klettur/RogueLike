@@ -1,0 +1,48 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "NewMonsters",
+    "type": "object",
+    "required": ["DEFAULT_DEATH_DISSAPEAR_TIME", "monsters"],
+    "properties": {
+      "DEFAULT_DEATH_DISSAPEAR_TIME": {
+        "type": "number",
+        "minimum": 0
+      },
+      "monsters": {
+        "type": "object",
+        "required": ["classes"],
+        "properties": {
+          "classes": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "required": ["stats", "assets"],
+              "properties": {
+                "fsm_set": { "type": ["string", "null"] },
+                "patrol": {
+                  "type": ["object", "null"],
+                  "properties": {
+                    "id": { "type": "string" },
+                    "type": { "type": "string" },
+                    "params": { "type": "object", "additionalProperties": true }
+                  },
+                  "additionalProperties": true
+                },
+                "stats": {
+                  "type": "object",
+                  "properties": {
+                    "death_dissapear_time": { "type": "number", "minimum": 0 }
+                  },
+                  "additionalProperties": true
+                },
+                "assets": { "type": "object" }
+              },
+              "additionalProperties": true
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "additionalProperties": true
+  }

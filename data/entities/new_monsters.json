@@ -19,6 +19,7 @@
   "FEET_HEIGHT_DIVISOR": 4,
   "ANIMATION_INTERVAL": 0.15,
   "INITIAL_ANIMATION_STATE": "down_idle",
+  "DEFAULT_DEATH_DISSAPEAR_TIME": 30.0,
   "MELEE_WEAPON": {
     "damage": 1,
     "cooldown": 1.0
@@ -42,7 +43,12 @@
           "feet_height_factor": 0.2,
           "spawn_padding": 3,
           "spawn_count": 10,
-          "spawn_margin": 0
+          "spawn_margin": 0,
+          "death_dissapear_time": 5.0
+        },
+        "fsm_set": "Monster_Default",
+        "patrol": {
+          "id": "line"        
         },
         "assets": {
           "active_set": "no-sets",
@@ -168,8 +174,11 @@
           "feet_height_factor": 0.2,
           "spawn_padding": 3,
           "spawn_count": 10,
-          "spawn_margin": 0
+          "spawn_margin": 0,
+          "death_dissapear_time": 2.5
         },
+        "fsm_set": "Monster_Default",
+        "patrol": { "id": "circle", "params": { "radius_tiles": 4, "points": 16, "clockwise": true } },
         "assets": {
           "active_set": "no-sets",
           "sets": {
@@ -298,8 +307,11 @@
           "feet_height_factor": 0.2,
           "spawn_padding": 3,
           "spawn_count": 10,
-          "spawn_margin": 0
+          "spawn_margin": 0,
+          "death_dissapear_time": 5.0
         },
+        "fsm_set": "Monster_Default",
+        "patrol": { "id": "square", "params": { "width_tiles": 6, "height_tiles": 6, "points_per_edge": 4 } },
         "assets": {
           "active_set": "no-sets",
           "sets": {
@@ -428,8 +440,10 @@
           "feet_height_factor": 0.2,
           "spawn_padding": 3,
           "spawn_count": 10,
-          "spawn_margin": 0
+          "spawn_margin": 0,
+          "death_dissapear_time": 5.0
         },
+        "fsm_set": "Monster_Default",
         "assets": {
           "active_set": "no-sets",
           "sets": {
@@ -537,6 +551,16 @@
                 0,
                 0
               ]
+            },
+            "cast": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
             }
           }
         }
@@ -558,8 +582,10 @@
           "feet_height_factor": 0.2,
           "spawn_padding": 3,
           "spawn_count": 10,
-          "spawn_margin": 0
+          "spawn_margin": 0,
+          "death_dissapear_time": 5.0
         },
+        "fsm_set": "Monster_Default",
         "assets": {
           "active_set": "no-sets",
           "sets": {
@@ -688,8 +714,10 @@
           "feet_height_factor": 0.2,
           "spawn_padding": 3,
           "spawn_count": 10,
-          "spawn_margin": 0
+          "spawn_margin": 0,
+          "death_dissapear_time": 5.0
         },
+        "fsm_set": "Monster_Default",
         "assets": {
           "active_set": "no-sets",
           "sets": {
@@ -818,8 +846,10 @@
           "feet_height_factor": 0.2,
           "spawn_padding": 3,
           "spawn_count": 10,
-          "spawn_margin": 0
+          "spawn_margin": 0,
+          "death_dissapear_time": 5.0
         },
+        "fsm_set": "Monster_Default",
         "assets": {
           "active_set": "no-sets",
           "sets": {
@@ -948,8 +978,10 @@
           "feet_height_factor": 0.2,
           "spawn_padding": 3,
           "spawn_count": 10,
-          "spawn_margin": 0
+          "spawn_margin": 0,
+          "death_dissapear_time": 5.0
         },
+        "fsm_set": "Monster_Default",
         "assets": {
           "active_set": "no-sets",
           "sets": {
@@ -1078,8 +1110,11 @@
           "feet_height_factor": 0.2,
           "spawn_padding": 3,
           "spawn_count": 10,
-          "spawn_margin": 0
+          "spawn_margin": 0,
+          "death_dissapear_time": 3.5
         },
+        "fsm_set": "Monster_Default",
+        "patrol": { "id": "zigzag", "params": { "segments": 6, "step_tiles": 2, "amplitude_tiles": 1, "axis": "x" } },
         "assets": {
           "active_set": "no-sets",
           "sets": {
@@ -1208,8 +1243,11 @@
           "feet_height_factor": 0.2,
           "spawn_padding": 3,
           "spawn_count": 10,
-          "spawn_margin": 0
+          "spawn_margin": 0,
+          "death_dissapear_time": 10.0
         },
+        "fsm_set": "Monster_Default",
+        "patrol": { "id": "figure_eight", "params": { "radius_tiles": 4, "points_per_loop": 16, "gap_tiles": 2 } },
         "assets": {
           "active_set": "no-sets",
           "sets": {

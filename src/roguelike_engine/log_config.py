@@ -7,6 +7,7 @@ import logging
 import logging.config
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
+import os
 
 # ANSI color codes
 RESET = "\033[0m"
@@ -89,3 +90,13 @@ def init_logging(config_path: str = None, level: str = "INFO", logfile: str = No
             level=getattr(logging, level.upper(), logging.INFO),
             handlers=handlers,
         )
+        # Optional per-module level overrides via env vars
+        # RL_LOG_LEVEL_SPELLS or RL_SPELLS_LOG_LEVEL -> applies to 'roguelike_editors.spells' and children
+        try:
+            spells_level = os.getenv('RL_LOG_LEVEL_SPELLS') or os.getenv('RL_SPELLS_LOG_LEVEL')
+            if spells_level:
+                lvl = getattr(logging, spells_level.upper(), None)
+                if isinstance(lvl, int):
+                    logging.getLogger('roguelike_editors.spells').setLevel(lvl)
+        except Exception:
+            pass

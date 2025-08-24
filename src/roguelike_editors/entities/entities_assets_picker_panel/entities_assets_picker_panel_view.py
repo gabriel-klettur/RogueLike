@@ -15,10 +15,9 @@ class EntitiesAssetsPickerPanelView:
         if not self.model.visible:
             return
         x, y = self.model.pos
-        # enforce width in number of columns
-        # calculate cols so that width fits
-        thumb, pad = self.fs_view.thumb_size, self.fs_view.pad
-        self.fs_view.cols = max(1, (self.model.width - pad) // (thumb + pad))
+        # Force a fixed 12-column grid for the assets picker
+        # Height limit (3 rows) and scrollbar are handled inside FileSystemPickerView
+        self.fs_view.cols = 12
         # draw file system picker
         hovered = self.fs_view.draw(surface, (x, y))
         # capture entry rects for interaction

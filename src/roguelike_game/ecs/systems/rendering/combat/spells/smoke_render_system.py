@@ -9,8 +9,7 @@ class SmokeRenderSystem:
     """
     def __init__(self, perf_log):
         self.perf_log = perf_log
-
-    @benchmark(lambda self: self.perf_log, "4.2.2.SmokeRenderSystem.update")
+    
     def update(self, world, screen: pygame.Surface, camera):
         for eid, comp in world.components.get('SmokeComponent', {}).items():
             view = SmokeView(comp.model)

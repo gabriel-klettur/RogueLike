@@ -8,8 +8,7 @@ class FlashSystem:
     """
     def __init__(self, perf_log=None):
         self.perf_log = perf_log
-
-    @benchmark(lambda self: self.perf_log, "4.2.2.FlashSystem.update")
+    
     def update(self, world, camera=None):
         flash_map = world.components.get('FlashComponent', {})
         sprite_map = world.components.get('Sprite', {})

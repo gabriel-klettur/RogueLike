@@ -23,8 +23,7 @@ class CombatSystem:
         weapon = world.components['MeleeWeapon'].get(attacker)
         cd = weapon.cooldown if weapon else 1.0
         world.components['AttackCooldown'][attacker] = AttackCooldown(now + cd)
-
-    @benchmark(lambda self: self.perf_log, "4.2.2.CombatSystem.update")
+    
     def update(self, world, camera=None):
         """
         Debe llamarse cada tick para resolver eventos de combate.

@@ -43,9 +43,9 @@ class MapSettings:
         Path(__file__).resolve().parent.parent.parent / 'data' / 'debug_maps'
     )
 
-    # Ruta al índice de zonas dinámico (data/zones/zones.json)
+    # Ruta al índice de zonas dinámico (data/map/zones/zones.json)
     ZONES_INDEX: Path = field(default_factory=lambda:
-        Path(DATA_DIR) / 'zones' / 'zones.json'
+        Path(DATA_DIR) / 'map' / 'zones' / 'zones.json'
     )    
 
     @property
@@ -57,7 +57,7 @@ class MapSettings:
     def zone_offsets(self) -> Dict[str, Tuple[int, int]]:
         """
         Offsets de cada zona en tiles.
-        Si use_zones_json es True, lee data/zones/zones.json;
+        Si use_zones_json es True, lee data/map/zones/zones.json;
         de lo contrario, calcula dinámicamente lobby y dungeon.
         """
         # Si no usamos JSON, fallback inmediato
@@ -69,7 +69,33 @@ class MapSettings:
             content = self.ZONES_INDEX.read_text(encoding='utf-8')
             data = json.loads(content)
             # Validar formato: cada offset es una secuencia de dos ints
-            return {zone: (int(offset[0]), int(offset[1])) for zone, offset in data.items()}
+            json_offsets = {zone: (int(offset[0]), int(offset[1])) for zone, offset in data.items()}
+            # Normalizar nombres base: 'Lobby'/'lObBy' -> 'lobby', idem 'dungeon'
+            offsets: Dict[str, Tuple[int, int]] = {}
+            for name, off in json_offsets.items():
+                low = name.lower()
+                if low == 'lobby':
+                    offsets['lobby'] = off
+                elif low == 'dungeon':
+                    offsets['dungeon'] = off
+                else:
+                    offsets[name] = off
+            # Asegurar zonas base si faltan
+            if 'lobby' not in offsets:
+                lobby_off = self.lobby_offset
+                offsets['lobby'] = lobby_off
+            if 'dungeon' not in offsets:
+                offsets['dungeon'] = self.calculate_dungeon_offset(offsets['lobby'])
+            # No inyectar zonas adicionales dinámicas aquí; dejamos que zones.json las defina
+            # Ajustar límites del world para incluir todas las zonas definidas
+            if self.auto_expand:
+                self.global_width, self.global_height, offsets = self.expand_limits(offsets)
+            else:
+                self.validate_limits(offsets)
+            # Inject sentinel after limits are finalized so it doesn't affect expansion/validation
+            offsets.setdefault('no zone', (0, 0))
+            offsets.setdefault('no-zone', (0, 0))
+            return offsets
         except Exception:
             # En caso de fallo, usar dinámico
             return self._dynamic_offsets()
@@ -105,6 +131,9 @@ class MapSettings:
             self.global_width, self.global_height, offsets = self.expand_limits(offsets)
         else:
             self.validate_limits(offsets)
+        # Inject sentinel after limits are finalized so it doesn't affect expansion/validation
+        offsets.setdefault('no zone', (0, 0))
+        offsets.setdefault('no-zone', (0, 0))
         return offsets
 
     @property

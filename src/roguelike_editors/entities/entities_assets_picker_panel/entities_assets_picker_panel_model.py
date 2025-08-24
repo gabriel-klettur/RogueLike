@@ -28,3 +28,5 @@ class EntitiesAssetsPickerPanelModel:
         # Optional provider for bottom label text (e.g., hovered/selected entity id)
         # Signature: () -> str
         self.label_provider: Optional[Callable[[], str]] = None
+        # Transient: avoid double-callbacks (select + open on double-click)
+        self._committed_once: bool = False

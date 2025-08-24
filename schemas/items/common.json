@@ -37,6 +37,7 @@
         "scale_map": { "type": "number", "minimum": 0 },
         "scale_inventory": { "type": "number", "minimum": 0 },
         "z_layer": { "type": "integer" },
+        "despawn_time": { "type": "number", "minimum": 0 },
         "default_params": { "$ref": "#/definitions/params" }
       },
       "required": ["id", "name", "description", "stackable"],

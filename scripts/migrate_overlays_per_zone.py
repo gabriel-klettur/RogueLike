@@ -18,7 +18,7 @@ def main():
     overlay = json.loads(global_path.read_text(encoding="utf-8"))
 
     # Directorio donde guardaremos por-zona
-    zones_dir = Path(DATA_DIR) / "zones" / "overlays"
+    zones_dir = Path(DATA_DIR) / "map" / "zones" / "overlays"
     zones_dir.mkdir(parents=True, exist_ok=True)
 
     w = global_map_settings.zone_width

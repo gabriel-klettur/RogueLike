@@ -88,7 +88,51 @@ class MapManager:
         self._local_state.update(data)
 
     def reload_map(self):
-        return type(self)(self.map_name)
+        """
+        Recarga el mapa EN SITIO, manteniendo referencias (renderer, view, etc.).
+        Importante para el editor: tras crear/renombrar/borrar zonas, necesitamos
+        recalcular el etiquetado por zonas (tiles_by_zone) usando los offsets
+        actualizados en global_map_settings.zone_offsets.
+
+        Devuelve self para compatibilidad con llamadas existentes que ignoran
+        el valor de retorno.
+        """
+        # Recargar datos base del mapa
+        result = self.loader.load(self.map_name)
+        self.result = result
+
+        # Propiedades básicas
+        self.name = result.name
+        self.matrix = result.matrix
+        self.layers = result.layers
+        self.tiles_by_layer = result.tiles_by_layer
+        self.overlay = self.layers.get(Layer.Ground)
+        self.tiles = result.tiles
+        self.solid_tiles = flatten_tiles(self.tiles)
+
+        # Recalcular etiquetado por zonas con offsets actualizados
+        self.tiles_by_zone.clear()
+        for row in self.tiles:
+            for tile in row:
+                tx = tile.x // TILE_SIZE
+                ty = tile.y // TILE_SIZE
+                zone = get_zone_for_tile(tx, ty)
+                tile.zone = zone
+                self.tiles_by_zone.setdefault(zone, []).append(tile)
+
+        # Actualizar colisiones con los nuevos datos
+        self.collision_layers = self.collision_manager.load(self)
+
+        # Cache auxiliar
+        self.tiles_in_region = flatten_tiles(self.tiles)
+
+        # Invalidate chunked view caches para forzar re-render
+        try:
+            self.view.invalidate_cache()
+        except Exception:
+            pass
+
+        return self
 
     def save_cache(self):
         # Forzar recacheo
@@ -104,7 +148,8 @@ class MapManager:
         return PathFinder().find(start, goal)
 
     def render(self, surface, camera) -> None:
-        self.renderer.render(surface, camera, self.tiles)
+        # Render passing the map model (self) to the chunked view
+        self.renderer.render(surface, camera, self)
 
     def get_zone_for(self, row: int, col: int) -> tuple[str, int, int]:
         """Return zone name and offsets for the given tile coordinates."""

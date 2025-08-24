@@ -1,5 +1,7 @@
 import pygame
 from pygame import Surface, Rect
+from roguelike_editors.map.map_title_panel.map_title_view import MapTitleView
+
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_editors.tiles.tiles_editor_config import BTN_W, BTN_H
@@ -45,6 +47,8 @@ class MapEditorView:
         self.font_medium = pygame.font.SysFont(None, 24)
         self.font_small = pygame.font.SysFont(None, 20)
         self.font_dropdown = pygame.font.SysFont("Arial", 14)
+        # Professional title bar
+        self.title_view = MapTitleView(None, state)
 
     def render(self, screen: Surface, camera, map_manager) -> None:
         """
@@ -56,7 +60,34 @@ class MapEditorView:
         # 1. Si hay herramienta asíncrona ejecutándose, mostrar overlay de carga y barra de progreso
         if self.state.executing_tool:
             self._draw_loading_overlay(screen)
+            # Title above the overlay for consistent branding
+            if self.title_view:
+                # Keep state reference up to date
+                self.title_view.state = self.state
+                self.title_view.render(screen)
             return
+
+        # Title bar in normal rendering path
+        title_rect = None
+        if self.title_view:
+            self.title_view.state = self.state
+            title_rect = self.title_view.render(screen)
+            # Align toolbar panel flush left (matching title's left) and just below the title (preserve dragging later)
+            try:
+                toolbar = getattr(self.controller, "toolbar", None)
+                tv = getattr(getattr(toolbar, "view", None), "widget", None)
+                panel = getattr(tv, "panel", None)
+                if tv and panel and not getattr(panel, "dragging", False):
+                    # If toolbar is still at its initial position, snap it under the title
+                    initial_pos = (getattr(tv, "x", 10), getattr(tv, "y", 10))
+                    if getattr(panel, "pos", None) in (None, initial_pos):
+                        gap = 8
+                        snap_x = int(title_rect.left)
+                        snap_y = int(title_rect.bottom + gap)
+                        panel.pos = (snap_x, snap_y)
+            except Exception:
+                # Non-fatal: keep previous toolbar position
+                pass
 
         # 2. Dibujar zonas
         self._draw_zones(screen, camera)
@@ -69,7 +100,12 @@ class MapEditorView:
         self._draw_toolbar(screen)
 
         if self.state.layers_view_open:
-            self._draw_layers_dropdown(screen)
+            # Delegar dropdown al MVC de ViewLayers
+            try:
+                self.controller.toolbar.view_layers.view.render_dropdown(screen)
+            except Exception:
+                # Falla no fatal: evita romper el render completo si algo ocurre en la vista de dropdown
+                pass
 
         # 5. Dibujar los diálogos de confirmación, si corresponde
         self._draw_confirmation_dialogs(screen)
@@ -116,6 +152,9 @@ class MapEditorView:
         zone_w, zone_h = global_map_settings.zone_size
 
         for zone_name, (ox, oy) in zones.items():
+            # Skip sentinel zone entries that represent "outside any defined zone"
+            if zone_name in ("no zone", "no-zone"):
+                continue
             # Determinar colores según estado
             hidden = zone_name in self.state.hidden_zones
             if hidden:
@@ -254,96 +293,12 @@ class MapEditorView:
     # 4. Toolbar: icono principal y botones de zona
     # -------------------------------------------------------------
     def _draw_toolbar(self, screen: Surface) -> None:
-        toolbar = self.controller.toolbar
-
-        # Dibujar icono principal (layers view)
-        screen.blit(toolbar.icon, (toolbar.x, toolbar.y))
-        toolbar.icon_rect = Rect(toolbar.x, toolbar.y, toolbar.size, toolbar.size)
-
-        # Dibujar botones secuenciales: Añadir, Borrar, Pintar Tiles, Vaciar Colliders, Pintar Colliders
-        buttons_info = [
-            ("add_zone_mode", toolbar.add_icon, toolbar.size),
-            ("delete_zone_mode", toolbar.delete_icon, toolbar.size),
-            ("paint_tiles_mode", toolbar.paint_tiles_icon, toolbar.size),
-            ("clear_colliders_mode", toolbar.clear_colliders_icon, toolbar.size),
-            ("paint_colliders_mode", toolbar.paint_colliders_icon, toolbar.size),
-        ]
-        for idx, (mode_attr, icon_surf, size) in enumerate(buttons_info, start=1):
-            btn_x = toolbar.x
-            btn_y = toolbar.y + idx * (size + toolbar.padding)
-            screen.blit(icon_surf, (btn_x, btn_y))
-        
-        # Determine rect attribute for each mode
-        rect_attr = {
-            "add_zone_mode": "add_rect",
-            "delete_zone_mode": "delete_rect",
-            "paint_tiles_mode": "paint_tiles_rect",
-            "clear_colliders_mode": "clear_colliders_rect",
-            "paint_colliders_mode": "paint_colliders_rect",
-        }
-        for idx, (mode_attr, icon_surf, size) in enumerate(buttons_info, start=1):
-            btn_x = toolbar.x
-            btn_y = toolbar.y + idx * (size + toolbar.padding)
-            setattr(toolbar, rect_attr[mode_attr], Rect(btn_x, btn_y, size, size))
-
-            # Resaltar si está en ese modo
-            if getattr(self.state, mode_attr):
-                highlight_color = {
-                    "add_zone_mode": self.COLOR_BORDER_SELECTED,
-                    "delete_zone_mode": self.COLOR_BORDER_DELETE,
-                    "paint_tiles_mode": (0, 0, 255),
-                    "clear_colliders_mode": (255, 165, 0),
-                    "paint_colliders_mode": (128, 0, 128),
-                }[mode_attr]
-                pygame.draw.rect(screen, highlight_color, getattr(toolbar, rect_attr[mode_attr]), 3)
+        # Delegar dibujo en el widget compartido a través de la vista del toolbar
+        self.controller.toolbar.view.render(screen)
 
     # -------------------------------------------------------------
-    # 5. Dropdown: vista de capas (capas de tiles, edificios, colliders)
+    # 5. Dropdown: la lógica y el render ahora viven en ViewLayersView
     # -------------------------------------------------------------
-    def _draw_layers_dropdown(self, screen: Surface) -> None:
-        toolbar = self.controller.toolbar
-        drop_x = toolbar.x + toolbar.size + toolbar.padding
-        drop_y = toolbar.y
-        toolbar.option_rects.clear()
-
-        # Claves: "show_all", "hide_all", cada Layer, "buildings", "colliders"
-        keys = ["show_all", "hide_all"] + list(Layer) + ["buildings", "colliders"]
-        for idx, key in enumerate(keys):
-            ry = drop_y + idx * BTN_H
-            rect = Rect(drop_x, ry, BTN_W, BTN_H)
-            toolbar.option_rects[key] = rect
-
-            # Fondo y borde según tipo
-            pygame.draw.rect(screen, (20, 20, 20), rect)
-            if key in ("show_all", "hide_all"):
-                border_color = self.COLOR_TEXT
-            elif isinstance(key, Layer):
-                border_color = (
-                    (0, 255, 0) if self.state.visible_layers[key] else (255, 0, 0)
-                )
-            elif key == "buildings":
-                border_color = (128, 0, 128) if self.state.show_buildings else (255, 0, 0)
-            else:  # "colliders"
-                border_color = (255, 255, 0) if self.state.show_colliders else (255, 0, 0)
-
-            pygame.draw.rect(screen, border_color, rect, 2)
-
-            # Texto descriptivo
-            if key == "show_all":
-                text = "Show All"
-            elif key == "hide_all":
-                text = "Hide All"
-            elif isinstance(key, Layer):
-                text = key.name
-            elif key == "buildings":
-                text = "Buildings"
-            else:
-                text = "Colliders"
-
-            text_surf = self.font_dropdown.render(text, True, self.COLOR_TEXT)
-            screen.blit(
-                text_surf, (drop_x + 5, ry + (BTN_H - text_surf.get_height()) // 2)
-            )
 
     # -------------------------------------------------------------
     # 5.1. Diálogos de confirmación (Delete, Paint Tiles, Clear Colliders, Paint Colliders, Add Zone)

@@ -1,5 +1,4 @@
-import pygame
-from typing import Optional, Tuple
+from typing import Optional, Tuple  # noqa: F401
 
 
 from roguelike_engine.map.model.layer import Layer
@@ -26,12 +25,12 @@ class TileToolbarState:
         self.collision_picker_dragging = False
         self.collision_picker_drag_offset = (0, 0)
         self.collision_picker_panel_size = (0, 0)
-        # Toolbar drag state
-        self.pos: Optional[Tuple[int, int]] = None
-        self.dragging: bool = False
-        self.drag_offset: Tuple[int, int] = (0, 0)
-        # Rects para botones Delete y Default
-        self.btn_delete_rect: Optional[pygame.Rect] = None
-        self.btn_default_rect: Optional[pygame.Rect] = None
         # Estado auxiliar: si ya aplicamos "default" desde la última activación
         self.default_applied_since_activation: bool = False
+        # Estado de arrastre del propio toolbar (tests esperan estos valores por defecto)
+        self.pos = None
+        self.dragging = False
+        self.drag_offset = (0, 0)
+        # Rects de botones comunes utilizados en algunos tests
+        self.btn_delete_rect = None
+        self.btn_default_rect = None

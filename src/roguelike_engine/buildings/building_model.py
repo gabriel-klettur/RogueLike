@@ -41,12 +41,25 @@ class BuildingModel:
         self.image_path = image_path
         self.split_ratio = max(0.0, min(split_ratio, 1.0))
 
+        # ── Soporte de múltiples imágenes por estado visual ──
+        # images_by_state: { state_name -> image_path }
+        self.images_by_state: dict[str, str] = {}
+        # thresholds opcionales para mapear porcentaje de vida agregada -> estado
+        # Formato sugerido: lista ordenada desc por min_ratio, p.ej.
+        # [ {"state": "healthy", "min_ratio": 0.66}, {"state": "damaged", "min_ratio": 0.33}, {"state": "critical", "min_ratio": 0.0} ]
+        self.state_thresholds: list[dict] | None = None
+        # estado visual actual aplicado (si None, usa image_path base)
+        self.current_visual_state: str | None = None
+
         # ── Caches internos, inicializados en la "lógica de carga" ──
         self.image: pygame.Surface | None = None
         self.original_scale: tuple[int,int] | None = None
         self._collision_map: list[list[str]] = []
         self._collision_tiles_cache: list[pygame.Rect] | None = None
         self._collision_tile_objs: list[types.SimpleNamespace] | None = None
+
+        # Alcance de colisión por edificio: 'CG' (global) o 'CU' (único)
+        self.collider_scope: str = 'CG'
 
         # ── Z-layers por defecto (se pueden sobreescribir) ──
         from roguelike_engine.config.config_z_layer import Z_LAYERS
@@ -67,23 +80,75 @@ class BuildingModel:
     # ───────────── Propiedades de posición absoluta ─────────────
     @property
     def x(self) -> int:        
-        ox, oy = global_map_settings.zone_offsets.get(self.zone, (0, 0))
+        offsets = global_map_settings.zone_offsets
+        zone = self.zone
+        if zone not in offsets and isinstance(zone, str):
+            low = zone.lower()
+            if low in offsets:
+                zone = low
+            else:
+                for k in offsets.keys():
+                    if k.lower() == low:
+                        zone = k
+                        break
+        ox, oy = offsets.get(zone, (0, 0))
+        if (ox, oy) == (0, 0) and zone not in offsets and zone and str(self.zone).lower() not in ("no zone", "no-zone"):
+            logger.warning(f"[BuildingModel] Zone '{self.zone}' not found in offsets. Using (0,0).")
         return ox * TILE_SIZE + self.rel_x
 
     @x.setter
     def x(self, value: int):
-        ox, oy = global_map_settings.zone_offsets.get(self.zone, (0, 0))
+        offsets = global_map_settings.zone_offsets
+        zone = self.zone
+        if zone not in offsets and isinstance(zone, str):
+            low = zone.lower()
+            if low in offsets:
+                zone = low
+            else:
+                for k in offsets.keys():
+                    if k.lower() == low:
+                        zone = k
+                        break
+        ox, oy = offsets.get(zone, (0, 0))
+        if (ox, oy) == (0, 0) and zone not in offsets and zone and str(self.zone).lower() not in ("no zone", "no-zone"):
+            logger.warning(f"[BuildingModel] Zone '{self.zone}' not found in offsets when setting x. Using (0,0).")
         px = int(value)
         self.rel_x = px - ox * TILE_SIZE
 
     @property
     def y(self) -> int:        
-        ox, oy = global_map_settings.zone_offsets.get(self.zone, (0, 0))
+        offsets = global_map_settings.zone_offsets
+        zone = self.zone
+        if zone not in offsets and isinstance(zone, str):
+            low = zone.lower()
+            if low in offsets:
+                zone = low
+            else:
+                for k in offsets.keys():
+                    if k.lower() == low:
+                        zone = k
+                        break
+        ox, oy = offsets.get(zone, (0, 0))
+        if (ox, oy) == (0, 0) and zone not in offsets and zone and str(self.zone).lower() not in ("no zone", "no-zone"):
+            logger.warning(f"[BuildingModel] Zone '{self.zone}' not found in offsets. Using (0,0).")
         return oy * TILE_SIZE + self.rel_y
 
     @y.setter
     def y(self, value: int):
-        ox, oy = global_map_settings.zone_offsets.get(self.zone, (0, 0))
+        offsets = global_map_settings.zone_offsets
+        zone = self.zone
+        if zone not in offsets and isinstance(zone, str):
+            low = zone.lower()
+            if low in offsets:
+                zone = low
+            else:
+                for k in offsets.keys():
+                    if k.lower() == low:
+                        zone = k
+                        break
+        ox, oy = offsets.get(zone, (0, 0))
+        if (ox, oy) == (0, 0) and zone not in offsets and zone and str(self.zone).lower() not in ("no zone", "no-zone"):
+            logger.warning(f"[BuildingModel] Zone '{self.zone}' not found in offsets when setting y. Using (0,0).")
         py = int(value)
         self.rel_y = py - oy * TILE_SIZE
 
@@ -132,6 +197,14 @@ class BuildingModel:
         self.image = surf
         self.original_scale = (new_width, new_height)
         self._cut_world = int(new_height * self.split_ratio)
+        # Ajustar el collision_map al nuevo tamaño de imagen (grid por TILE_SIZE)
+        try:
+            new_rows, new_cols = self._image_to_grid_size()
+            self._resample_collision_map(new_rows, new_cols)
+        except Exception:
+            # Si algo falla, al menos garantizamos un mapa válido
+            if not self._collision_map:
+                self._collision_map = [["."]]
         # Invalidar caches de colisión y renderizado (se regenerarán cuando sea necesario)
         self._collision_tiles_cache = None
         self._collision_tile_objs = None
@@ -145,6 +218,68 @@ class BuildingModel:
             self.resize(w, h)
         else:
             logger.warning("⚠️ No se encontró escala original para este edificio.")
+
+    # ───────────── Estados visuales (multi-imagen) ─────────────
+    def set_images_by_state(self, images_by_state: dict[str, str], initial_state: str | None = None):
+        """
+        Define el mapeo de estados visuales a rutas de imagen.
+        Si initial_state está presente y existe en el mapeo, aplica ese estado.
+        Mantiene el tamaño original al cambiar.
+        """
+        try:
+            self.images_by_state = dict(images_by_state or {})
+        except Exception:
+            self.images_by_state = {}
+        if initial_state and initial_state in self.images_by_state:
+            self.set_visual_state(initial_state)
+
+    def set_state_thresholds(self, thresholds: list[dict] | None):
+        """
+        Establece los umbrales opcionales para convertir un ratio [0..1] a nombre de estado.
+        Espera una lista de dicts con llaves {"state": str, "min_ratio": float} ordenada desc.
+        """
+        try:
+            if isinstance(thresholds, list):
+                self.state_thresholds = [dict(t) for t in thresholds]
+            else:
+                self.state_thresholds = None
+        except Exception:
+            self.state_thresholds = None
+
+    def _apply_image_path(self, new_image_path: str):
+        """
+        Cambia la imagen del modelo manteniendo la escala original si existe.
+        Invalida caches de colisión para forzar recálculo cuando corresponda.
+        """
+        try:
+            self.image_path = new_image_path
+            # Mantener tamaño previo si estaba definido
+            target_scale = self.original_scale
+            self._load_and_prepare_image(target_scale)
+            # Invalidate collision caches since geometry may map differently post-scale
+            self._collision_tiles_cache = None
+            self._collision_tile_objs = None
+        except Exception as ex:
+            logger.warning(f"[BuildingModel] No se pudo aplicar nueva imagen '{new_image_path}': {ex}")
+
+    def set_visual_state(self, state: str) -> bool:
+        """
+        Cambia el estado visual a 'state' si existe en images_by_state.
+        Retorna True si se aplicó un cambio de imagen.
+        """
+        if not isinstance(state, str) or not self.images_by_state:
+            return False
+        path = self.images_by_state.get(state)
+        if not path:
+            return False
+        if self.current_visual_state == state and self.image is not None:
+            return False
+        self.current_visual_state = state
+        self._apply_image_path(path)
+        # Recalcular corte vertical según split_ratio y nueva imagen
+        if self.image is not None:
+            self._cut_world = int(self.image.get_height() * self.split_ratio)
+        return True
 
     # ───────────── Colisiones (collision_map + collision_tiles) ─────────────
     @property
@@ -193,6 +328,65 @@ class BuildingModel:
         _ = self.collision_tiles
         return self._collision_tile_objs or []
 
+    # ───────────── Utilidades de grid para collision_map ─────────────
+    def _image_to_grid_size(self) -> tuple[int, int]:
+        """
+        Devuelve (rows, cols) de la grilla de colisión a partir del tamaño de la imagen.
+        Garantiza al menos 1×1 celdas para permitir edición incluso en tamaños pequeños.
+        """
+        w = int(self.image.get_width()) if self.image else 0
+        h = int(self.image.get_height()) if self.image else 0
+        # Ceil division para cubrir el borde parcial del asset
+        cols = max(1, (w + TILE_SIZE - 1) // TILE_SIZE) if w > 0 else 1
+        rows = max(1, (h + TILE_SIZE - 1) // TILE_SIZE) if h > 0 else 1
+        return rows, cols
+
+    def _resample_collision_map(self, new_rows: int, new_cols: int):
+        """
+        Redimensiona self._collision_map a (new_rows×new_cols) usando remuestreo
+        nearest-neighbor para preservar lo existente al escalar.
+        Si el mapa actual es vacío, inicializa con '.' (caminable).
+        """
+        if new_rows <= 0 or new_cols <= 0:
+            new_rows, new_cols = 1, 1
+        old_rows = len(self._collision_map)
+        old_cols = len(self._collision_map[0]) if old_rows > 0 else 0
+        if old_rows == 0 or old_cols == 0:
+            self._collision_map = [["." for _ in range(new_cols)] for _ in range(new_rows)]
+            return
+        # Si el tamaño no cambia, no hacer nada
+        if new_rows == old_rows and new_cols == old_cols:
+            return
+        # Area pooling: para cada celda destino, tomar el rectángulo fuente equivalente
+        # y marcar '#' si alguna celda fuente es '#'. Esto evita perder colisiones al reducir.
+        res: list[list[str]] = [["." for _ in range(new_cols)] for _ in range(new_rows)]
+        for r in range(new_rows):
+            r0 = int((r * old_rows) / new_rows)
+            r1 = int(((r + 1) * old_rows) / new_rows) - 1
+            if r0 >= old_rows:
+                r0 = old_rows - 1
+            if r1 < r0:
+                r1 = r0
+            for c in range(new_cols):
+                c0 = int((c * old_cols) / new_cols)
+                c1 = int(((c + 1) * old_cols) / new_cols) - 1
+                if c0 >= old_cols:
+                    c0 = old_cols - 1
+                if c1 < c0:
+                    c1 = c0
+                solid = False
+                # Explorar el bloque fuente y parar temprano si encontramos '#'
+                for sr in range(r0, r1 + 1):
+                    row = self._collision_map[sr]
+                    for sc in range(c0, c1 + 1):
+                        if row[sc] == "#":
+                            solid = True
+                            break
+                    if solid:
+                        break
+                res[r][c] = "#" if solid else "."
+        self._collision_map = res
+
     # ───────────── Acceso al mapa de colisión en bruto ─────────────
     @property
     def collision_map(self) -> list[list[str]]:
@@ -223,7 +417,11 @@ class BuildingModel:
             'z_bottom': self.z_bottom,
             'z_top': self.z_top,
             'collision_map': self._collision_map,
-            'original_scale': self.original_scale
+            'original_scale': self.original_scale,
+            'collider_scope': self.collider_scope,
+            'images_by_state': self.images_by_state,
+            'state_thresholds': self.state_thresholds,
+            'current_visual_state': self.current_visual_state,
         }
 
     def __setstate__(self, state):
@@ -240,5 +438,11 @@ class BuildingModel:
         self._collision_tiles_cache = None
         self._collision_tile_objs = None
         self.original_scale = state.get('original_scale')
+        # Restaurar alcance de colisión por edificio
+        self.collider_scope = state.get('collider_scope', 'CG')
+        # Multi-state visual support
+        self.images_by_state = state.get('images_by_state', {}) or {}
+        self.state_thresholds = state.get('state_thresholds')
+        self.current_visual_state = state.get('current_visual_state')
         # Reload image using cached loader
         self._load_and_prepare_image(self.original_scale)

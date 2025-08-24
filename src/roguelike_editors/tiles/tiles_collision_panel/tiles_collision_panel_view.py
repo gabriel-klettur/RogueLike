@@ -3,6 +3,7 @@ from roguelike_editors.tiles.tiles_editor_config import THUMB, PAD, CLR_SELECTIO
 from roguelike_ui.panel import DraggablePanel
 from roguelike_ui.widgets.hover import draw_selection_border
 from roguelike_ui.ui_helpers import draw_highlight_rect
+from roguelike_ui.ui_blocker import register_blocker
 
 
 class TilesCollisionPanelView:
@@ -69,6 +70,9 @@ class TilesCollisionPanelView:
         # Borde exterior
         draw_selection_border(self.panel.surface, self.panel.surface.get_rect(), CLR_SELECTION, thickness=3)
         screen.blit(self.panel.surface, (pos_x, pos_y))
+        # Registrar bloqueador UI para suprimir hover debajo del panel
+        panel_rect = pygame.Rect((pos_x, pos_y), self.panel.surface.get_size())
+        register_blocker(panel_rect)
 
     def _compute_dimensions(self, screen):
         """

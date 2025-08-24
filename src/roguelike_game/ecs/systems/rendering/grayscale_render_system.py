@@ -5,8 +5,7 @@ from roguelike_game.ecs.systems.rendering.render_system import RenderSystem
 class GrayscaleRenderSystem:
     def __init__(self, perf_log=None):
         self.perf_log = perf_log
-
-    @benchmark(lambda self: self.perf_log, "4.2.2. grayscale.render")
+    
     def update(self, world, screen, camera):
         # Aplicar escala de grises si el jugador está muerto
         grays = world.components.get('GrayscaleComponent', {})

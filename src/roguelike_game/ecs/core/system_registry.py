@@ -45,29 +45,36 @@ from roguelike_game.ecs.systems.rendering.trail_system import TrailSystem
 from roguelike_game.ecs.systems.fsm.fsm_system import FSMSystem
 from roguelike_game.ecs.systems.combat.spells.dash_system import DashSystem
 from roguelike_game.ecs.systems.combat.hitbox_system import HitboxSystem
+from roguelike_game.ecs.systems.combat.building_damage_system import BuildingDamageSystem
 from roguelike_game.ecs.systems.combat.spells.lightning_system import LightningSystem
-from roguelike_game.ecs.systems.debug.entities_debug_system import EntitiesDebugSystem
-from roguelike_game.ecs.systems.expansion_system import ExpansionSystem
-from roguelike_game.ecs.systems.experience_system import ExperienceSystem
-from roguelike_game.ecs.systems.magic_spell_bar_system import MagicSpellBarSystem
-from roguelike_game.ecs.systems.coin_pickup_system import CoinPickupSystem
+from roguelike_editors.fsm.debug.entities_debug_system import EntitiesDebugSystem
+from roguelike_game.ecs.systems.map.expansion_system import ExpansionSystem
+from roguelike_game.ecs.systems.experience.experience_system import ExperienceSystem
+from roguelike_game.ecs.systems.rendering.magic_spell_bar_system import MagicSpellBarSystem
+from roguelike_game.ecs.systems.physics.coin_pickup_system import CoinPickupSystem
+from roguelike_game.ecs.systems.core.spawn_stabilization_system import SpawnStabilizationSystem
 from roguelike_game.ecs.systems.experience.orb_attraction_system import OrbAttractionSystem
 from roguelike_game.ecs.systems.inventory.inventory_init_system import InventoryInitSystem
 from roguelike_game.ecs.systems.inventory.death_drop_system import DeathDropSystem
-from roguelike_game.ecs.systems.inventory.inventory_drop_system import InventoryDropSystem
 from roguelike_game.ecs.systems.inventory.inventory_pickup_system import InventoryPickupSystem
 from roguelike_game.ecs.systems.items.consume_system import ConsumeSystem
 from roguelike_game.ecs.systems.inventory.inventory_transfer_system import InventoryTransferSystem
 from roguelike_game.ecs.systems.inventory.map_load_drops_system import MapLoadDropsSystem
+from roguelike_game.ecs.systems.inventory.drop_despawn_system import DropDespawnSystem
 from roguelike_game.ecs.systems.inventory.drop_drag_system import DropDragSystem
 from roguelike_game.ecs.systems.inventory.inventory_drag_system import InventoryDragSystem
 from roguelike_game.ecs.systems.inventory.inventory_ui_system import InventoryUISystem
+from roguelike_game.ecs.systems.spawner.spawner_placement_system import SpawnerPlacementSystem
+from roguelike_game.ecs.systems.spawner.spawner_trigger_system import SpawnerTriggerSystem
+from roguelike_game.ecs.systems.spawner.spawner_system import SpawnerRuntimeSystem
+from roguelike_game.ecs.systems.rendering.temp_z_layer_system import TempZLayerSystem
 
 from roguelike_game.ecs.systems.rendering.drop_hover_system import DropHoverRenderSystem
 from roguelike_game.ecs.systems.rendering.grayscale_render_system import GrayscaleRenderSystem
 from roguelike_game.ecs.systems.rendering.resurrection_area_system import ResurrectionAreaSystem
 from roguelike_game.ecs.systems.rendering.experience_render_system import ExperienceRenderSystem
 from roguelike_game.ecs.systems.rendering.magic_spell_bar_render_system import MagicSpellBarRenderSystem
+from roguelike_game.ecs.systems.rendering.spawner_debug_system import SpawnerDebugRenderSystem
 
 def get_update_system_classes():
     """
@@ -75,11 +82,20 @@ def get_update_system_classes():
     """
     return [
         FSMSystem,
+        # Spawner systems (runtime M1)
+        SpawnerPlacementSystem, SpawnerTriggerSystem, SpawnerRuntimeSystem,
+        # Process spawn requests and immediately stabilize overlapped spawns
+        SpawnSystem,
+        SpawnStabilizationSystem,
+        # Player & input
         PlayerFacingSystem, FacingSystem, DropDragSystem, InputSystem,
         MovementCollisionSystem,
-        MeleeCombatSystem, SpellCastingSystem, ArcaneFlameSystem, SmokeSystem, SmokeEmitterSystem, SphereMagicShieldSystem, TeleportSystem, FireworkLaunchSystem, AuraSystem, ParticleSystem, ExplosionSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, LightningEmitterSystem, FireballSystem, LightningSystem, DashSystem, HitboxSystem,
+        # Combat & spells
+        MeleeCombatSystem, SpellCastingSystem, ArcaneFlameSystem, SmokeSystem, SmokeEmitterSystem, SphereMagicShieldSystem, TeleportSystem, FireworkLaunchSystem, AuraSystem, ParticleSystem, ExplosionSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, LightningEmitterSystem, FireballSystem, LightningSystem, DashSystem, HitboxSystem, BuildingDamageSystem,
         TrailSystem,
-        AnimationSystem, FlashSystem, SpawnSystem, InventoryInitSystem, DeathDropSystem, InventoryDropSystem, InventoryPickupSystem, ConsumeSystem, InventoryTransferSystem, InventoryDragSystem, MapLoadDropsSystem, CoinPickupSystem, OrbAttractionSystem, ExperienceSystem, MagicSpellBarSystem, ExpansionSystem,
+        AnimationSystem, FlashSystem, 
+        # Inventory & pickups (keyboard drop disabled; only drag-and-drop allowed)
+        InventoryInitSystem, DeathDropSystem, InventoryPickupSystem, ConsumeSystem, InventoryTransferSystem, InventoryDragSystem, MapLoadDropsSystem, TempZLayerSystem, DropDespawnSystem, CoinPickupSystem, OrbAttractionSystem, ExperienceSystem, MagicSpellBarSystem, ExpansionSystem,
     ]
 
 def get_render_system_classes():
@@ -94,12 +110,14 @@ def get_render_system_classes():
         # DropRenderSystem removed: drops rendered via RenderSystem
     ]
     # Render systems comunes
-    # Overlay unificado de debug de entidades (se activa/desactiva internamente con F12)
+    # Overlay unificado del FSM Editor (se activa/desactiva internamente con F12)
     base.append(EntitiesDebugSystem)
     base.append(GrayscaleRenderSystem)
     base.append(ResurrectionAreaSystem)
     # Otros sistemas de render (eliminados FlashSystem y TrailSystem de render)
     base.append(DropHoverRenderSystem)
     base.append(InventoryUISystem)
+    # Spawner debug overlay always visible above game objects
+    base.append(SpawnerDebugRenderSystem)
     # FlashSystem y TrailSystem son sistemas de update, no deben ir en render
     return base

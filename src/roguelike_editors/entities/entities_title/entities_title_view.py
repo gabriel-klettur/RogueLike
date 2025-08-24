@@ -1,5 +1,5 @@
 import pygame
-from roguelike_ui.widgets.title_panel import TitlePanel
+from roguelike_ui.widgets.title_bar import TitleBar
 
 class EntitiesTitleView:
     """
@@ -18,18 +18,14 @@ class EntitiesTitleView:
         # Configuración de posición
         self.x = 10
         self.y = 10
-        # Crear widget genérico TitlePanel
-        self.widget = TitlePanel(
-            text=self.model.title,
-            font=self.font,
-            x=self.x,
-            y=self.y
-        )
+        # Crear TitleBar reutilizable y exponer widget (TitlePanel) para compatibilidad
+        self.title_bar = TitleBar(text=self.model.title, x=self.x, y=self.y, font=self.font)
+        self.widget = self.title_bar.panel
 
-    def render(self, screen):
+    def render(self, screen) -> pygame.Rect:
         """
-        Renderiza el panel de título.
+        Renderiza el panel de título y devuelve su rect para layout.
         """
-        # Actualizar texto dinámicamente
-        self.widget.text = self.model.title
-        self.widget.render(screen)
+        # Actualizar texto dinámicamente y renderizar mediante TitleBar
+        self.title_bar.update_text(self.model.title)
+        return self.title_bar.render(screen)

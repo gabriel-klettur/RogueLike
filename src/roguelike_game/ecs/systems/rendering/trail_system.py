@@ -8,8 +8,7 @@ class TrailSystem:
     """
     def __init__(self, perf_log=None):
         self.perf_log = perf_log
-
-    @benchmark(lambda self: self.perf_log, "4.2.2.TrailSystem.update")
+    
     def update(self, world, camera=None):
         now = time.time()
         trail_map = world.components.get('TrailComponent', {})
