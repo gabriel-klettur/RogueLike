@@ -33,8 +33,7 @@ class GameLoop:
             or g.map_editor.editor_state.active
             or g.inventory_editor.model.visible
         )
-
-    @benchmark(lambda self: self.game.perf_log, "4.TOTAL: ECS")
+    
     def run_ecs_phase(self) -> None:
         """Actualiza y renderiza el sistema ECS."""
         self.game.update_ecs()

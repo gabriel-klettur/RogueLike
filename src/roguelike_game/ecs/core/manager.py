@@ -82,8 +82,7 @@ class ECSWorld:
         for eid in smallest:
             if all(eid in comps.get(ct, {}) for ct in component_types):
                 yield eid
-
-    @benchmark(lambda self: self.perf_log, "5.TOTAL [UPDATE] ECS:")
+    
     def update(self, camera):
         # Reconstruir SpatialIndex sólo si ha sido invalidado
         if self._spatial_index_dirty:
@@ -97,8 +96,7 @@ class ECSWorld:
             def _update_sys(sys=system):
                 sys.update(self, camera)
             _update_sys()
-
-    @benchmark(lambda self: self.perf_log, "4.TOTAL [RENDER] ECS:")
+    
     def render(self, screen, camera):
         # Si el Graph Panel del FSM Editor está visible, no dibujar overlays del ECS
         # (barras de vida, debug, etc.) para que no se vean por encima del panel.

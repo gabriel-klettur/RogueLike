@@ -2,7 +2,6 @@ import os
 import pygame
 import math
 import roguelike_game.config.players_config as players_config
-from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.transform.scale import Scale
 from roguelike_game.ecs.components.rendering.sprite import Sprite
@@ -24,8 +23,7 @@ class DropHoverRenderSystem:
         if items_path is None:
             items_path = os.path.join(os.getcwd(), 'data', 'items', 'items.json')
         self.items = load_items(items_path)
-
-    @benchmark(lambda self: self.perf_log, "DropHoverRenderSystem.update")
+    
     def update(self, world, screen, camera):
         # Bloqueo genérico para cualquier panel UI
         mouse_x, mouse_y = pygame.mouse.get_pos()

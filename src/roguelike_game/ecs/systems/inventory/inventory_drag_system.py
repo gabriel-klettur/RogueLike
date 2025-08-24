@@ -5,7 +5,6 @@ import pygame
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.map.utils import get_zone_for_tile
 from roguelike_game.ecs.utils.map_utils import get_zone_offset
-from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.ecs.components.inventory_component import InventoryComponent
 from roguelike_game.ecs.systems.inventory.inventory_pickup_system import InventoryPickupSystem
 from roguelike_game.managers.map.item_drop_manager import ItemDropManager
@@ -27,8 +26,7 @@ class InventoryDragSystem:
         self.drag_press_time = None
         self.potential_drag_idx = None
         self.drag_hold_threshold = 500  # ms
-
-    @benchmark(lambda self: self.perf_log, "InventoryDragSystem.update")
+    
     def update(self, world, camera=None):
         # Procesar solo para jugador
         player = getattr(world, 'player_entity', None)

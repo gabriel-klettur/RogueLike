@@ -89,7 +89,12 @@ class DiagnosticsOverlayView:
                     else:
                         self._text_cache[cache_val] = font.render(right, True, model.value_color)
                 surf_r = self._text_cache[cache_val]
-                surf.blit(surf_r, (model.padding_x + used_label_w + 8, y + model.padding_y))
+                # Alinear el valor a la derecha del panel cuando haya espacio suficiente;
+                # si no, mantenerlo inmediatamente después de la etiqueta.
+                x_right = total_w - model.padding_x - surf_r.get_width()
+                x_min = model.padding_x + used_label_w + 8
+                val_x = max(x_min, x_right)
+                surf.blit(surf_r, (val_x, y + model.padding_y))
             y += line_h
 
         model.panel_surf = surf

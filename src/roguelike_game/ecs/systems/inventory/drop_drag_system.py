@@ -1,7 +1,6 @@
 import os
 import math
 import pygame
-from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.ecs.systems.inventory.inventory_pickup_system import InventoryPickupSystem
 from roguelike_game.ecs.systems.inventory.inventory_ui_system import InventoryUISystem
 from roguelike_game.managers.map.item_drop_manager import ItemDropManager
@@ -49,8 +48,7 @@ class DropDragSystem:
             return float(rng) if rng is not None else 128.0
         except Exception:
             return 128.0
-
-    @benchmark(lambda self: self.perf_log, "DropDragSystem.update")
+    
     def update(self, world, camera):
         comps = world.components
         mouse_buttons = pygame.mouse.get_pressed()
