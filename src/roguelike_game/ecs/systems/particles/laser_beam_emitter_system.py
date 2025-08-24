@@ -15,7 +15,7 @@ class LaserBeamEmitterSystem:
     def __init__(self, perf_log):
         self.perf_log = perf_log
 
-    @benchmark(lambda self: self.perf_log, "4.2.2. LaserBeamEmitterSystem.update")
+
     def update(self, world, camera=None):
         now = time.time()
         # Remove beam when middle mouse is released

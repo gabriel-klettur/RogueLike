@@ -14,8 +14,7 @@ class SlashEmitterSystem:
     """
     def __init__(self, perf_log):
         self.perf_log = perf_log
-
-    @benchmark(lambda self: self.perf_log, "4.2.3.SlashEmitterSystem.update")
+    
     def update(self, world, camera=None):
         now = time.time()
         emitters = world.components.get('SlashEmitterComponent', {})

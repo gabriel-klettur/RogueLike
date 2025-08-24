@@ -11,6 +11,7 @@ from roguelike_engine.map.model.layer import Layer
 from roguelike_ui.panel import DraggablePanel
 from roguelike_ui.widgets.grid import ScrollableGrid
 from roguelike_ui.widgets.list_panel_ui import ListPanelUI
+from roguelike_ui.ui_blocker import register_blocker
 
 
 class TilesViewPanelView:
@@ -146,6 +147,9 @@ class TilesViewPanelView:
         # Actualizar estado y blit final
         self.state.size = (panel_w, panel_h)
         screen.blit(panel.surface, panel.pos)
+        # Registrar bloqueador UI para suprimir hover debajo del panel
+        panel_rect = pygame.Rect(panel.pos, panel.surface.get_size())
+        register_blocker(panel_rect)
 
     def _screen_to_world(self, mouse_pos, camera):
         """

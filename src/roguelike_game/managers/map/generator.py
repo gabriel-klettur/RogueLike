@@ -3,6 +3,7 @@ Módulo de generación incremental de zonas y regeneración de tiles.
 """
 from pathlib import Path
 import json
+import logging
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.map.model.generator.factory import get_generator
 from roguelike_engine.map.model.loader.text_loader_strategy import TextMapLoader
@@ -11,6 +12,8 @@ from roguelike_game.factories.player.config import RENDERED_SPRITE_SIZE
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.map.utils import get_zone_for_tile, calculate_dungeon_offset
 from roguelike_game.ecs.utils import map_utils, spawn_utils
+
+logger = logging.getLogger(__name__)
 
 class MapGenerator:
     """
@@ -41,13 +44,46 @@ class MapGenerator:
         grid = [['#' for _ in range(new_w)] for _ in range(new_h)]
         dx = new_offsets[parent_key][0] - old_offsets[parent_key][0]
         dy = new_offsets[parent_key][1] - old_offsets[parent_key][1]
+        # Preservar offsets existentes (p. ej. 'Forest') aplicando el mismo desplazamiento global
+        merged_offsets = new_offsets.copy()
+        for name, (ox, oy) in old_offsets.items():
+            if name not in merged_offsets:
+                merged_offsets[name] = (ox + dx, oy + dy)
+        # Asegurar sentinelas
+        merged_offsets.setdefault('no zone', (0, 0))
+        merged_offsets.setdefault('no-zone', (0, 0))
+        # Inyectar offsets fusionados en el cache del cached_property
+        global_map_settings.__dict__['zone_offsets'] = merged_offsets
+        truncated = False
         for y in range(old_h):
+            ny = y + dy
+            if ny < 0 or ny >= new_h:
+                truncated = True
+                continue
             for x in range(old_w):
-                grid[y + dy][x + dx] = old_matrix[y][x]
+                nx = x + dx
+                if 0 <= nx < new_w:
+                    grid[ny][nx] = old_matrix[y][x]
+                else:
+                    truncated = True
         off_x, off_y = new_offsets[zone_key]
         for ry, row in enumerate(zone_matrix):
+            ny = off_y + ry
+            if ny < 0 or ny >= new_h:
+                truncated = True
+                continue
             for rx, ch in enumerate(row):
-                grid[off_y + ry][off_x + rx] = ch
+                nx = off_x + rx
+                if 0 <= nx < new_w:
+                    grid[ny][nx] = ch
+                else:
+                    truncated = True
+
+        if truncated:
+            logger.warning(
+                "Map expand pasted outside bounds (clamped). new_w=%d new_h=%d dx=%d dy=%d off_x=%d off_y=%d old_w=%d old_h=%d",
+                new_w, new_h, dx, dy, off_x, off_y, old_w, old_h
+            )
 
         # Conectar zonas
         from roguelike_engine.map.model.generator.dungeon import DungeonGenerator
@@ -75,13 +111,16 @@ class MapGenerator:
                     DungeonGenerator._horiz_tunnel(grid, px, nx, ny)
 
         # Actualizar manager con nueva zona
+        # Guardar rooms por zona para sistemas que lo consumen (coordenadas relativas)
+        manager.zone_rooms[zone_key] = new_rooms
         manager.matrix = [''.join(r) for r in grid]
         loader = TextMapLoader()
         _, new_tiles_by_layer, new_raw_layers = loader.load(manager.matrix, manager.name)
         manager.layers = new_raw_layers
         manager.tiles_by_layer = new_tiles_by_layer
         manager.overlay = new_raw_layers.get(Layer.Ground)
-        manager.tiles = manager.overlay  # rebuild full tiles externally if needed
+        # Tiles deben ser objetos Tile (no strings). Usar la capa Ground de tiles_by_layer.
+        manager.tiles = new_tiles_by_layer.get(Layer.Ground, [])
         manager.solid_tiles = [t for row in manager.tiles for t in row if getattr(t, 'solid', False)]
 
         # Reetiquetar zonas

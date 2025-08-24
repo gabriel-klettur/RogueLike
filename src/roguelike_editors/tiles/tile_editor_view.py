@@ -1,6 +1,7 @@
 import pygame
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_editors.tiles.tiles_editor_config import OUTLINE_HOVER
+from roguelike_ui.ui_blocker import is_blocked
 
 class TileEditorView:
     def __init__(self, controller, editor_state):
@@ -38,20 +39,50 @@ class TileEditorView:
 
 
         # Brush preview rectangle (semi-transparent fill + border)
+        # Importante: suprimir cuando el cursor está sobre el toolbar o sobre cualquier panel UI
         if self.editor.current_tool in ("brush", "delete", "default"):
-            hp = self.controller._tile_under_mouse(pygame.mouse.get_pos(), camera, map)
-            if hp:
-                w, h = self.editor.size_panel_state.selected_size
-                x0, y0 = camera.apply((hp.x, hp.y))
-                x1, y1 = camera.apply((hp.x + TILE_SIZE * w, hp.y + TILE_SIZE * h))
-                rect = pygame.Rect(x0, y0, x1 - x0, y1 - y0)
-                fill_surf = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
-                fill_surf.fill((*OUTLINE_HOVER, 80))
-                screen.blit(fill_surf, rect.topleft)
-                pygame.draw.rect(screen, OUTLINE_HOVER, rect, 3)
+            mouse_pos = pygame.mouse.get_pos()
+            over_toolbar = False
+            try:
+                panel = self.controller.toolbar.view.widget.panel  # ToolbarView.panel
+                panel_pos = panel.pos or (self.controller.toolbar.x, self.controller.toolbar.y)
+                panel_rect = pygame.Rect(panel_pos, panel.surface.get_size())
+                over_toolbar = panel_rect.collidepoint(mouse_pos)
+            except Exception:
+                over_toolbar = False
 
-        # Render title panel
-        self.controller.title_controller.render(screen)
+            # También suprimir sobre el panel de colisiones de Tiles (antes de que registre su blocker)
+            over_collision_picker = False
+            try:
+                ts = self.editor.toolbar_state
+                if ts.collision_picker_open:
+                    # Preferir rect almacenado por la vista si existe
+                    if getattr(ts, 'collision_picker_pos', None) and getattr(ts, 'collision_picker_panel_size', None):
+                        cp_rect = pygame.Rect(ts.collision_picker_pos, ts.collision_picker_panel_size)
+                        over_collision_picker = cp_rect.collidepoint(mouse_pos)
+                    else:
+                        # Calcular rect aproximado usando la lógica de la vista
+                        cp_view = self.controller.collision_panel_controller.view
+                        w, h = cp_view._compute_dimensions(self.controller.screen if hasattr(self.controller, 'screen') else screen)
+                        x, y = cp_view._compute_position(self.controller.screen if hasattr(self.controller, 'screen') else screen, w, h)
+                        cp_rect = pygame.Rect((x, y), (w, h))
+                        over_collision_picker = cp_rect.collidepoint(mouse_pos)
+            except Exception:
+                over_collision_picker = False
+            if not over_toolbar and not over_collision_picker and not is_blocked(*mouse_pos):
+                hp = self.controller._tile_under_mouse(mouse_pos, camera, map)
+                if hp:
+                    w, h = self.editor.size_panel_state.selected_size
+                    x0, y0 = camera.apply((hp.x, hp.y))
+                    x1, y1 = camera.apply((hp.x + TILE_SIZE * w, hp.y + TILE_SIZE * h))
+                    rect = pygame.Rect(x0, y0, x1 - x0, y1 - y0)
+                    fill_surf = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+                    fill_surf.fill((*OUTLINE_HOVER, 80))
+                    screen.blit(fill_surf, rect.topleft)
+                    pygame.draw.rect(screen, OUTLINE_HOVER, rect, 3)
+
+        # Render title panel (returns rect for layout parity)
+        title_rect = self.controller.title_controller.render(screen)
         
         self.controller.toolbar.view.render(screen)
         # Render brush size panel if visible

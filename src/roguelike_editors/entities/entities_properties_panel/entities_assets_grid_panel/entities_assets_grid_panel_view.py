@@ -45,6 +45,9 @@ class AssetsGridPanelView:
         self._last_active_state: Optional[str] = None
         self._last_sub_tab: Optional[str] = None
         self._tint_logged_once: bool = False
+        # Debounce spammy logs: remember last hovered/selected asset cell and path
+        self._last_logged_asset_cell: Optional[str] = None
+        self._last_logged_path: Optional[str] = None
         # Atributos externos esperados:
         # - self.parent_model: AssetsGridPanelModel de nivel superior
         # - self.state_tabs_controller
@@ -253,9 +256,16 @@ class AssetsGridPanelView:
                         try:
                             import os
                             if model.hovered_asset_cell == asset_key or model.selected_asset_cell == asset_key:
-                                logger.debug(
-                                    f"[ASSETS GRID][NO-SET] key={asset_key} path='{path}' abs={os.path.isabs(path)} exists={os.path.isfile(path)}"
-                                )
+                                # Log only when key or resolved path changes to avoid per-frame spam
+                                if (
+                                    asset_key != getattr(self, "_last_logged_asset_cell", None)
+                                    or path != getattr(self, "_last_logged_path", None)
+                                ):
+                                    logger.debug(
+                                        f"[ASSETS GRID][NO-SET] key={asset_key} path='{path}' abs={os.path.isabs(path)} exists={os.path.isfile(path)}"
+                                    )
+                                    self._last_logged_asset_cell = asset_key
+                                    self._last_logged_path = path
                         except Exception:
                             pass
                         raw = self.thumbnail_cache.get(path)

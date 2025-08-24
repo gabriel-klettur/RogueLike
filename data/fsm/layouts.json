@@ -1,0 +1,235 @@
+{
+  "by_set": {
+    "Monster_Default": {
+      "nodes": {
+        "Aggro": {
+          "x": 315,
+          "y": 202
+        },
+        "AlertChase": {
+          "x": 22,
+          "y": 463
+        },
+        "Attack": {
+          "x": -89,
+          "y": -38
+        },
+        "Chase": {
+          "x": 714,
+          "y": -15
+        },
+        "Damage": {
+          "x": -315,
+          "y": 544
+        },
+        "Death": {
+          "x": 397,
+          "y": 532
+        },
+        "Flee": {
+          "x": 732,
+          "y": 334
+        },
+        "Patrol": {
+          "x": -210,
+          "y": 95
+        }
+      },
+      "viewport": {
+        "legend_collapsed": false,
+        "pan_x": 264.04142872327014,
+        "pan_y": 118.68908265366416,
+        "zoom": 0.4665073802097338
+      }
+    },
+    "Monster_Goblin": {
+      "nodes": {
+        "Attack": {
+          "x": 540,
+          "y": 211
+        },
+        "Chase": {
+          "x": 391,
+          "y": 33
+        },
+        "Patrol": {
+          "x": 90,
+          "y": 128
+        }
+      },
+      "viewport": {
+        "pan_x": -7.517830000000117,
+        "pan_y": 92.75692999999995,
+        "zoom": 1.1
+      }
+    },
+    "Monster_stupid": {
+      "nodes": {
+        "Damage": {
+          "x": 546,
+          "y": 290
+        },
+        "Patrol": {
+          "x": 183,
+          "y": 212
+        }
+      },
+      "viewport": {
+        "legend_collapsed": false,
+        "pan_x": -58.0,
+        "pan_y": -57.0,
+        "zoom": 1.0
+      }
+    },
+    "Player_Default": {
+      "nodes": {
+        "Attack": {
+          "x": 566,
+          "y": 37
+        },
+        "Damage": {
+          "x": -86,
+          "y": 381
+        },
+        "Idle": {
+          "x": 304,
+          "y": 273
+        },
+        "Move": {
+          "x": 619,
+          "y": 368
+        },
+        "SpellSelect": {
+          "x": -108,
+          "y": 40
+        }
+      },
+      "viewport": {
+        "legend_collapsed": false,
+        "pan_x": 187.61362338489636,
+        "pan_y": 73.41142418196375,
+        "zoom": 0.6830134553650712
+      }
+    },
+    "Player_Default_1": {
+      "nodes": {
+        "Attack": {
+          "x": 104,
+          "y": 131
+        },
+        "Damage": {
+          "x": 135,
+          "y": 350
+        },
+        "Idle": {
+          "x": 627,
+          "y": 88
+        },
+        "Move": {
+          "x": 304,
+          "y": 74
+        },
+        "SpellSelect": {
+          "x": 577,
+          "y": 333
+        }
+      },
+      "viewport": {
+        "legend_collapsed": false,
+        "pan_x": 0.0,
+        "pan_y": 0.0,
+        "zoom": 1.0
+      }
+    },
+    "Spawner_Periodic_BetweenWaves": {
+      "nodes": {
+        "AwaitTrigger": {
+          "x": 56,
+          "y": 92
+        },
+        "Finished": {
+          "x": 532,
+          "y": 366
+        },
+        "SpawningWave": {
+          "x": 312,
+          "y": 88
+        },
+        "WaitCooldown": {
+          "x": 600,
+          "y": 73
+        },
+        "WaitRestart": {
+          "x": 147,
+          "y": 348
+        }
+      },
+      "viewport": {
+        "legend_collapsed": false,
+        "pan_x": 0.0,
+        "pan_y": 0.0,
+        "zoom": 1.0
+      }
+    },
+    "Spawner_Periodic_Cooldown": {
+      "nodes": {
+        "AwaitTrigger": {
+          "x": 85,
+          "y": 114
+        },
+        "Finished": {
+          "x": 613,
+          "y": 354
+        },
+        "SpawningWave": {
+          "x": 317,
+          "y": 116
+        },
+        "WaitCooldown": {
+          "x": 632,
+          "y": 101
+        },
+        "WaitRestart": {
+          "x": 137,
+          "y": 389
+        }
+      },
+      "viewport": {
+        "legend_collapsed": false,
+        "pan_x": 0.0,
+        "pan_y": 0.0,
+        "zoom": 1.0
+      }
+    },
+    "Spawner_Waves_Clear": {
+      "nodes": {
+        "AwaitTrigger": {
+          "x": 60,
+          "y": 109
+        },
+        "Finished": {
+          "x": 551,
+          "y": 349
+        },
+        "SpawningWave": {
+          "x": 321,
+          "y": 114
+        },
+        "WaitClear": {
+          "x": 617,
+          "y": 107
+        },
+        "WaitRestart": {
+          "x": 84,
+          "y": 344
+        }
+      },
+      "viewport": {
+        "legend_collapsed": false,
+        "pan_x": 0.0,
+        "pan_y": 0.0,
+        "zoom": 1.0
+      }
+    }
+  }
+}

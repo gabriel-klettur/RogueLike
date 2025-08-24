@@ -8,8 +8,8 @@ MAX_DIRTY = 50
 # Debug Mode
 DEBUG = False
 DEBUG_HITBOX = False
-DEBUG_ENTITIES = False  # Debug de entidades (FSM, IA, etc.)
-DEBUG_ENTITIES_FRAME_SKIP = 2  # dibuja overlay de entidades cada N frames
+DEBUG_ENTITIES = False  # FSM Editor (FSM, IA, etc.)
+DEBUG_ENTITIES_FRAME_SKIP = 2  # dibuja el overlay del FSM Editor cada N frames
 
 # Pantalla
 SCREEN_WIDTH = 1600
@@ -45,9 +45,24 @@ BUILDINGS_DATA_PATH = str(BUILDINGS_DATA_PATH)
 BUILDINGS_COLLISIONS_DATA_PATH = Path(DATA_DIR) / "buildings" / "buildings_collisions_data.json"
 BUILDINGS_COLLISIONS_DATA_PATH = str(BUILDINGS_COLLISIONS_DATA_PATH)
 
-# Persistencia de colisiones de edificios
-BUILDINGS_COLLISIONS_DATA_PATH = Path(DATA_DIR) / "buildings" / "buildings_collisions_data.json"
-BUILDINGS_COLLISIONS_DATA_PATH = str(BUILDINGS_COLLISIONS_DATA_PATH)
+# Nuevos archivos divididos para colisiones de edificios
+# - Globales por image_path (CG)
+BUILDINGS_COLLISIONS_BY_IMAGE_PATH = Path(DATA_DIR) / "buildings" / "buildings_collisions_by_image.json"
+BUILDINGS_COLLISIONS_BY_IMAGE_PATH = str(BUILDINGS_COLLISIONS_BY_IMAGE_PATH)
+# - Legacy por spawn_id (soportado en lectura/escritura)
+BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH = Path(DATA_DIR) / "buildings" / "buildings_collisions_by_spawn_id.json"
+BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH = str(BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH)
+# - Por instancia de edificio (CU)
+BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH = Path(DATA_DIR) / "buildings" / "buildings_collisions_by_building_instance_id.json"
+BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH = str(BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH)
+
+# Rutas nuevas para la separación Templates/Instances de Buildings
+# Si existen, el sistema usará estos archivos en lugar del legacy BUILDINGS_DATA_PATH.
+BUILDINGS_TEMPLATES_PATH = Path(DATA_DIR) / "buildings" / "buildings_templates.json"
+BUILDINGS_TEMPLATES_PATH = str(BUILDINGS_TEMPLATES_PATH)
+
+BUILDINGS_INSTANCES_PATH = Path(DATA_DIR) / "buildings" / "buildings_instances.json"
+BUILDINGS_INSTANCES_PATH = str(BUILDINGS_INSTANCES_PATH)
 
 
 #! ------------------------ Z-LAYER CONFIG -----------------------

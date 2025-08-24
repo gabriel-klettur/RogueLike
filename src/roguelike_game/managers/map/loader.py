@@ -39,6 +39,15 @@ class MapLoader:
                     cache_file.unlink()
                     logger.info(f" Cache invalidated: {f.name}")
                     break
+            # Invalidar cache si el índice de zonas cambió (alta/baja/movimiento de zonas)
+            try:
+                zones_mtime = global_map_settings.ZONES_INDEX.stat().st_mtime
+                if zones_mtime > cache_mtime:
+                    cache_file.unlink()
+                    logger.info(" Cache invalidated: zones.json updated")
+            except FileNotFoundError:
+                # Si no existe zones.json, no invalidamos por este motivo
+                pass
         except Exception:
             pass
 

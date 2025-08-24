@@ -5,6 +5,8 @@ from roguelike_editors.entities.entities_picker_panel.entities_picker_panel_mode
 from roguelike_ui.panel import DraggablePanel
 from roguelike_ui.widgets.hover import draw_hover
 from roguelike_ui.ui_blocker import register_blocker
+from roguelike_ui.widgets.picker_panel import PickerPanel, PickerPanelState
+from typing import Optional
 
 import logging
 logger = logging.getLogger(__name__)
@@ -41,6 +43,24 @@ class EntityPickerPanelView:
 
         # Panel arrastrable
         self.draggable_panel = DraggablePanel(0, 0)
+
+        # Reusable PickerPanel (grid renderer)
+        # Cell height includes label area: icon cell + text margin + font height
+        cell_h_with_label = self.cell_size + self.text_margin + self.font.get_height()
+        self.picker = PickerPanel(
+            cell_size=(self.cell_size, cell_h_with_label),
+            margin=self.margin,
+            padding=self.margin,
+            draw_panel_bg=False,
+            allow_dragging=False,
+            draw_overlays=False,
+            grid_bg_color=None,
+        )
+        self._current_entity_ids: list[str] = []
+        self._last_model: Optional[EntityPickerPanelModel] = None
+        self.picker.set_item_count(lambda: len(self._current_entity_ids))
+        self.picker.set_draw_item(lambda surf, rect, idx, sel, hov: self._draw_entity_cell(surf, rect, self._current_entity_ids[idx]))
+        self.picker_state = PickerPanelState(rect=pygame.Rect(0, 0, 0, 0), visible=True)
 
     # ----------------------------
     # CÁLCULO DE POSICIONES
@@ -137,11 +157,29 @@ class EntityPickerPanelView:
             if (now // self.blink_interval) % 2 == 0:
                 pygame.draw.rect(screen, (255, 255, 0), (self.x - 3, self.y - 3, panel_w + 6, panel_h + 6), 4)
 
-        # Dibujar contenido (grid) bajo pestañas
+        # Dibujar contenido (grid) con PickerPanel bajo pestañas
         header_height = max(rect.height for rect in model.tab_rects.values()) if model.tab_rects else 0
         orig_y = self.y
         self.y = orig_y + header_height
-        self._draw_entity_grid(screen, model, entity_ids)
+
+        # Sync picker state with model
+        self._current_entity_ids = entity_ids
+        self._last_model = model
+        # Grid rect excluding header/footer
+        self.picker_state.rect = pygame.Rect(self.x, self.y, panel_w, grid_h)
+        # Map model selection/hover to indices
+        self.picker_state.selected_index = (
+            entity_ids.index(model.selected_id) if model.selected_id in entity_ids else None
+        )
+        self.picker_state.hovered_index = (
+            entity_ids.index(model.hovered_id) if model.hovered_id in entity_ids else None
+        )
+        # Convert row-based scroll to pixel-based scroll
+        cell_h_with_label = self.cell_size + self.text_margin + self.font.get_height()
+        self.picker_state.scroll_y = max(0, model.scroll_index) * (cell_h_with_label + self.margin)
+
+        # Render grid
+        self.picker.render(screen, self.picker_state)
         # Dibujar footer con etiqueta centrada (hovered o selected)
         # Use orig_y because self.y was temporarily offset by header_height
         footer_y = orig_y + header_height + grid_h
@@ -203,41 +241,24 @@ class EntityPickerPanelView:
         
         screen.blit(bg_surf, (self.x, self.y))
 
-    def _draw_entity_grid(self, screen: pygame.Surface, model: EntityPickerPanelModel, entity_ids: list[str]) -> None:
-        """Dibuja la grilla de entidades con íconos, hover y selección."""
-        font_h = self.font.get_height()
-        cell_height = self.cell_size + self.text_margin + font_h
-        screen_w, screen_h = screen.get_size()
-
-        total_rows = (len(entity_ids) + self.columns - 1) // self.columns
-        scroll = self._calculate_scroll(model, screen_h, total_rows, cell_height)
-        header_height = next(iter(model.tab_rects.values())).height if model.tab_rects else 0
-        y_start = self.y + header_height + self.margin
-
-        # Renderizado fila por fila
-        for idx, ent_id in enumerate(entity_ids):
-            col, row = idx % self.columns, idx // self.columns
-
-            # Saltar filas fuera de scroll
-            if row < scroll or row >= scroll + max(1, (screen_h - 2 * self.margin) // (cell_height + self.margin)):
-                continue
-
-            x = self.x + self.margin + col * (self.cell_size + self.margin)
-            y = self.y + self.margin + (row - scroll) * (cell_height + self.margin)
-            cell_rect = pygame.Rect(x, y, self.cell_size, cell_height)
-
-            # Fondo celda
-            pygame.draw.rect(screen, (50, 50, 50), cell_rect)
-
-            # Hover visual
-            if ent_id == model.hovered_id:
-                draw_hover(screen, cell_rect)
-
-            # Render icono con posible tintado
-            self._draw_entity_icon(screen, ent_id, x, y, model)
-
-        # Resaltar seleccionado o hover
-        self._highlight_selected(screen, model, entity_ids, scroll, screen_h, cell_height)
+    def _draw_entity_cell(self, screen: pygame.Surface, rect: pygame.Rect, ent_id: str) -> None:
+        """Dibuja una celda: fondo, icono y etiqueta, usando el rect provisto."""
+        # Fondo celda
+        pygame.draw.rect(screen, (50, 50, 50), rect)
+        # Render icono y etiqueta dentro de la celda
+        self._draw_entity_icon(screen, ent_id, rect.x, rect.y, self._last_model)
+        # Overlays de hover/selección
+        if not self._last_model:
+            return
+        if ent_id == self._last_model.hovered_id:
+            draw_hover(screen, rect)
+        if ent_id == self._last_model.selected_id:
+            if self._last_model.selection_blink:
+                now = pygame.time.get_ticks()
+                if (now // self.blink_interval) % 2 == 0:
+                    pygame.draw.rect(screen, (255, 255, 0), rect.inflate(4, 4), 3)
+            else:
+                pygame.draw.rect(screen, (255, 255, 0), rect.inflate(4, 4), 3)
 
     def _draw_entity_icon(self, screen: pygame.Surface, ent_id: str, x: int, y: int, model: EntityPickerPanelModel) -> None:
         icon = self.assets.get(ent_id)
@@ -284,28 +305,4 @@ class EntityPickerPanelView:
         text_y = y + self.cell_size + self.text_margin
         screen.blit(text_surf, (text_x, text_y))
 
-    def _highlight_selected(self, screen: pygame.Surface, model: EntityPickerPanelModel, entity_ids: list[str], scroll: int, screen_h: int, cell_height: int) -> None:
-        """Dibuja un rectángulo amarillo para resaltar la entidad seleccionada o hover."""
-        header_height = next(iter(model.tab_rects.values())).height if model.tab_rects else 0
-        y_start = self.y + header_height + self.margin
-        active = model.selected_id or model.hovered_id
-        if active not in entity_ids:
-            return
-
-        idx_h = entity_ids.index(active)
-        col, row = idx_h % self.columns, idx_h // self.columns
-
-        # Verificar si está en rango visible
-        max_visible_rows = max(1, (screen_h - 2 * self.margin) // (cell_height + self.margin))
-        if not (scroll <= row < scroll + max_visible_rows):
-            return
-
-        x = self.x + self.margin + col * (self.cell_size + self.margin)
-        y = self.y + self.margin + (row - scroll) * (cell_height + self.margin)
-
-        if model.selection_blink:
-            now = pygame.time.get_ticks()
-            if (now // self.blink_interval) % 2 == 0:
-                pygame.draw.rect(screen, (255, 255, 0), (x - 2, y - 2, self.cell_size + 4, cell_height + 4), 3)
-        else:
-            pygame.draw.rect(screen, (255, 255, 0), (x - 2, y - 2, self.cell_size + 4, cell_height + 4), 3)
+    # Nota: El resaltado de hover/selección ahora lo maneja PickerPanel con overlays.

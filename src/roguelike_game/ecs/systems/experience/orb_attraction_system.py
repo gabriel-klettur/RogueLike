@@ -1,12 +1,6 @@
 import os
 import math
-from roguelike_game.ecs.components.physical_item_component import PhysicalItemComponent
-from roguelike_game.ecs.components.collectible_component import CollectibleComponent
-from roguelike_game.ecs.components.transform.position import Position
-from roguelike_game.ecs.components.experience_component import ExperienceComponent
-from roguelike_game.ecs.components.core.player_tag import PlayerTagComponent
 from roguelike_game.ecs.components.item_models import load_items
-from roguelike_game.ecs.systems.experience_system import ExperienceSystem
 from roguelike_game.managers.map.item_drop_manager import ItemDropManager
 
 
@@ -75,11 +69,6 @@ class OrbAttractionSystem:
                     while xp_comp.xp >= xp_comp.xp_to_next_level:
                         xp_comp.xp -= xp_comp.xp_to_next_level
                         xp_comp.level += 1
-                    # Persistir XP tras absorber orbe
-                    for sys in world.update_systems:
-                        if isinstance(sys, ExperienceSystem):
-                            sys._persist_xp(xp_comps)
-                            break
                     # Persistir eliminación del orbe recogido
                     self.drop_manager.pick_up(phys.drop_id)
                     world.remove_entity(eid)

@@ -1,14 +1,11 @@
 import pygame
 from roguelike_engine.utils.benchmark import benchmark
-from roguelike_game.ecs.systems.fsm.fsm_system import _EntityProxy
-from roguelike_game.ecs.systems.fsm.states.damage_state import DamageState
-from roguelike_game.ecs.systems.fsm.states.attack_state import AttackState
 import math
 from roguelike_game.config.spells_config import SPELLS
-from roguelike_game.ecs.systems.fsm.states.monster.alert_chase_state import AlertChaseState
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.abilities.explosion_component import ExplosionComponent
 from roguelike_game.ecs.systems.combat.explosions_models import FireExplosionModel
+from roguelike_game.ecs.components.physics.mask_collider import MaskCollider
 
 class FireballSystem:
     """
@@ -16,8 +13,7 @@ class FireballSystem:
     """
     def __init__(self, perf_log):
         self.perf_log = perf_log
-
-    @benchmark(lambda self: self.perf_log, "4.2.2.FireballSystem.update")
+    
     def update(self, world, camera=None):
         # Actualizar cada fireball
         for eid in list(world.components.get('FireballComponent', {})):
@@ -44,7 +40,7 @@ class FireballSystem:
             if comp.age >= comp.lifespan:
                 world.remove_entity(eid)
                 continue
-            # Colisión con NPCs
+            # Colisión con NPCs (usar MaskCollider pixel-perfect siempre que exista)
             for target in world.get_entities_with('Position', 'MultiCollider', 'Health'):
                 # Saltar self, caster y cadáveres con DeathTimer
                 if target == eid or target == comp.caster:
@@ -52,35 +48,77 @@ class FireballSystem:
                 if target in world.components.get('DeathTimer', {}):
                     continue
                 multi = world.components['MultiCollider'][target]
-                body = multi.colliders.get('body')
-                if body:
-                    tpos = world.components['Position'][target]
-                    # Usar tamaño de mask si existe, sino width/height
-                    if hasattr(body, 'mask'):
-                        w, h = body.mask.get_size()
-                    else:
-                        w, h = body.width, body.height
-                    rect = pygame.Rect(tpos.x + body.offset_x,
-                                       tpos.y + body.offset_y,
-                                       w, h)
-                    if rect.collidepoint(pos.x, pos.y):
-                        hp = world.components['Health'][target]
-                        hp.current_hp = max(0, hp.current_hp - comp.damage)
-                        world.remove_entity(eid)
-                        # Si el daño viene de fireball de jugador, estado alerta de chase
-                        caster = comp.caster
-                        if caster in world.components.get('PlayerTagComponent', {}):
-                            fsm = world.components['NPCState'][target].fsm                            
-                            # determinar dirección de daño y siguiente estado
-                            attacker_pos = world.components['Position'][caster]
-                            defender_pos = world.components['Position'][target]
+                tpos = world.components['Position'][target]
+                hit = False
+                hit_pos = None
+                hit_shape = None
+                # Determinar si el target tiene al menos un MaskCollider
+                has_mask = any(isinstance(c, MaskCollider) for c in multi.colliders.values())
+                # 1) Intentar con máscaras (pixel-perfect) si existen
+                if has_mask:
+                    for col in multi.colliders.values():
+                        if isinstance(col, MaskCollider):
+                            bx = tpos.x + col.offset_x
+                            by = tpos.y + col.offset_y
+                            lx = int(pos.x - bx)
+                            ly = int(pos.y - by)
+                            mw, mh = col.mask.get_size()
+                            if 0 <= lx < mw and 0 <= ly < mh and col.mask.get_at((lx, ly)):
+                                hit = True
+                                hit_pos = (float(pos.x), float(pos.y))
+                                hit_shape = 'mask'
+                                break
+                # 2) Solo si NO hay máscaras, usar fallback a rectángulos
+                if not hit and not has_mask:
+                    for col in multi.colliders.values():
+                        if not isinstance(col, MaskCollider):
+                            rect = pygame.Rect(
+                                tpos.x + col.offset_x,
+                                tpos.y + col.offset_y,
+                                getattr(col, 'width', 0),
+                                getattr(col, 'height', 0)
+                            )
+                            if rect.collidepoint(pos.x, pos.y):
+                                hit = True
+                                hit_pos = (float(pos.x), float(pos.y))
+                                hit_shape = 'rect'
+                                break
+
+                if hit:
+                    hp = world.components['Health'][target]
+                    hp.current_hp = max(0, hp.current_hp - comp.damage)
+                    # Push debug event for outline persistence (consumed by SpellCollisionDebugSystem)
+                    dbg = world.components.setdefault('DebugSpellHits', {})
+                    queue = dbg.setdefault('_queue', [])
+                    queue.append({'type': 'FB', 'src': eid, 'target': target, 'pos': hit_pos, 'shape': hit_shape})
+                    world.remove_entity(eid)
+                    # Publicar eventos FSM para NPCs golpeados por jugador o jugador golpeado por NPC
+                    caster = comp.caster
+                    if caster in world.components.get('PlayerTagComponent', {}):
+                        # Jugador -> NPC
+                        attacker_pos = world.components['Position'][caster]
+                        defender_pos = world.components['Position'][target]
+                        from_left = attacker_pos.x < defender_pos.x
+                        qmap = world.components.setdefault('FSMEventQueue', {})
+                        q = qmap.setdefault(target, [])
+                        q.append({"type": "OnHit", "from_left": from_left})
+                        if hp.current_hp <= 0:
+                            q.append({"type": "OnDeath"})
+                    elif target in world.components.get('PlayerTagComponent', {}):
+                        # NPC -> Jugador
+                        attacker_pos = world.components['Position'].get(caster)
+                        defender_pos = world.components['Position'].get(target)
+                        if attacker_pos and defender_pos:
                             from_left = attacker_pos.x < defender_pos.x
-                            proxy = _EntityProxy(world, target)
-                            # Si ya estaba en AttackState, volver a Attack; sino AlertChase
-                            current = fsm.current_state
-                            next_state = AttackState() if isinstance(current, AttackState) else AlertChaseState()
-                            fsm.change_state(DamageState(next_state, from_left), proxy)
-                        break
+                        else:
+                            from_left = False
+                        qmap = world.components.setdefault('FSMEventQueue', {})
+                        q = qmap.setdefault(target, [])
+                        q.append({"type": "OnHit", "from_left": from_left})
+                        if hp.current_hp <= 0:
+                            q.append({"type": "OnDeath"})
+                    break
+
             # Colisión con tiles sólidos
             point = pygame.Rect(pos.x, pos.y, 1, 1)
             nearby = world.get_solid_tiles_for_rect(point)

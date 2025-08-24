@@ -33,9 +33,13 @@ class DraggablePanel(PanelSurface):
             ox = mx - (self.pos[0] if self.pos else 0)
             oy = my - (self.pos[1] if self.pos else 0)
             self.drag_offset = (ox, oy)
+            return True
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 3 and self.dragging:
             self.dragging = False
+            return True
         elif event.type == pygame.MOUSEMOTION and self.dragging:
             mx, my = event.pos
             dx, dy = self.drag_offset
             self.pos = (mx - dx, my - dy)
+            return True
+        return False

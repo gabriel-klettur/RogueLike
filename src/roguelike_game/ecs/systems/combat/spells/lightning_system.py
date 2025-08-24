@@ -10,8 +10,7 @@ class LightningSystem:
     """
     def __init__(self, perf_log):
         self.perf_log = perf_log
-
-    @benchmark(lambda self: self.perf_log, "4.2.2.LightningSystem.update")
+    
     def update(self, world, camera=None):
         to_remove = []
         for eid, comp in world.components.get('LightningComponent', {}).items():

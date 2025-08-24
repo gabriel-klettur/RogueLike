@@ -1,11 +1,13 @@
 import pygame
 from roguelike_editors.buildings.tools.default_tool.default_tool_view import DefaultToolView
+from roguelike_editors.buildings.buildings_title_panel.buildings_title_view import BuildingsTitleView
+from roguelike_ui.ui_blocker import is_blocked
 
 from roguelike_editors.buildings.tools.split_z_tool.split_tool_view   import SplitToolView
 from roguelike_editors.buildings.tools.z_tool.z_tool_view       import ZToolView
+from roguelike_editors.buildings.tools.collider_scope_tool.collider_scope_tool_view import ColliderScopeToolView
 
 from roguelike_editors.buildings.buildings_picker.building_picker_view      import PickerView
-from roguelike_editors.tiles.tiles_editor_config import THUMB, PAD, CLR_HOVER, CLR_SELECTION
 
 class BuildingEditorView:
     def __init__(self, state, editor_state):
@@ -16,79 +18,63 @@ class BuildingEditorView:
         self.split_view    = SplitToolView(state, editor_state)
         self.z_bottom_view = ZToolView(state, editor_state, target="bottom")
         self.z_top_view    = ZToolView(state, editor_state, target="top")
+        self.collider_scope_view = ColliderScopeToolView(state, editor_state)
                 
         self.picker_view = PickerView(editor_state)
+        # Professional title bar (top-left)
+        self.title_view = BuildingsTitleView(None, editor_state)
+        # Small font to render building ID labels
+        try:
+            self._id_font = pygame.font.Font(None, 16)
+        except Exception:
+            self._id_font = None
 
-    def _render_building_collision_overlay(self, screen, camera, building):
-        from roguelike_engine.config.config_tiles import TILE_SIZE
-        cell_w, cell_h = camera.scale((TILE_SIZE, TILE_SIZE))
-        for ry, row in enumerate(building.collision_map):
-            for cx, val in enumerate(row):
-                if val == "#":
-                    wx = building.x + cx * TILE_SIZE
-                    wy = building.y + ry * TILE_SIZE
-                    sx, sy = camera.apply((wx, wy))
-                    overlay = pygame.Surface((cell_w, cell_h), pygame.SRCALPHA)
-                    overlay.fill((255, 0, 0, 100))
-                    screen.blit(overlay, (sx, sy))
-
-    def _render_collision_picker(self, screen):
-        """Render collision brush picker (# solid, . walk)"""
-        options = [("#", "Solid"), (".", "Walk")]
-        w = len(options) * (THUMB + PAD) + PAD
-        label_font = pygame.font.SysFont("Arial", 14)
-        char_font = pygame.font.SysFont("Arial", THUMB)
-        h = THUMB + PAD + label_font.get_height() + PAD
-        mouse_pos = pygame.mouse.get_pos()
-        surf = pygame.Surface((w, h), pygame.SRCALPHA)
-        surf.fill((20, 20, 20, 235))
-        sw, sh = screen.get_size()
-        if self.editor.collision_picker_pos is None:
-            px = 0
-            py = 0
-            self.editor.collision_picker_pos = (px, py)
-        else:
-            px, py = self.editor.collision_picker_pos
-        self.editor.collision_picker_panel_size = (w, h)
-        self.editor.collision_picker_rects.clear()
-        for i, (ch, label) in enumerate(options):
-            x = PAD + i * (THUMB + PAD)
-            y = PAD
-            color = (255, 0, 0) if ch == "#" else (200, 200, 200)
-            text_surf = char_font.render(ch, True, color)
-            surf.blit(text_surf, (x + (THUMB - text_surf.get_width()) // 2,
-                                  y + (THUMB - text_surf.get_height()) // 2))
-            abs_rect = pygame.Rect(px + x, py + y, THUMB, THUMB)
-            self.editor.collision_picker_rects[ch] = abs_rect
-            # Mostrar selección
-            if abs_rect.collidepoint(mouse_pos):
-                pygame.draw.rect(surf, CLR_HOVER, (x, y, THUMB, THUMB), 3)
-            elif self.editor.collision_choice == ch:
-                pygame.draw.rect(surf, CLR_SELECTION, (x, y, THUMB, THUMB), 3)
-            lbl_surf = label_font.render(label, True, (255, 255, 255))
-            surf.blit(lbl_surf, (x + (THUMB - lbl_surf.get_width()) // 2,
-                                 y + THUMB + PAD))
-        screen.blit(surf, (px, py))
 
     def render(self, screen, camera, buildings):
         if not self.editor.active:
             return
 
-        # Collision brush mode: persist active collision building until exit or scroll
-        if self.editor.current_tool == 'collision_brush':
-            target = getattr(self.editor, 'collision_active_building', None)
-            if target and getattr(target, 'collision_map', None):
-                self._render_building_collision_overlay(screen, camera, target)
-                x, y = camera.apply((target.x, target.y))
-                w, h = camera.scale(target.image.get_size())
-                pygame.draw.rect(screen, (0, 255, 255), (x, y, w, h), 4)
-            if self.editor.collision_picker_open:
-                self._render_collision_picker(screen)
-            return
+        # Title bar always visible when editor is active
+        title_rect = self.title_view.render(screen)
+        # Expose last title rect for external layout (e.g., toolbars)
+        try:
+            self._last_title_rect = title_rect
+        except Exception:
+            pass
+        # Anchor picker: if user dragged the panel, use manual position.
+        # Else align next to Add/Remove panel if present; fallback to under title
+        try:
+            if getattr(self.editor, 'picker_manual_pos', None) is None:
+                add_remove_rect = getattr(self.editor, 'add_remove_panel_rect', None)
+                if add_remove_rect is not None:
+                    # Align to the right of the add/remove panel
+                    self.picker_view._left_anchor_x = add_remove_rect.right + 8
+                    self.picker_view._top_anchor_y = add_remove_rect.top
+                else:
+                    # Default: under the title bar
+                    self.picker_view._top_anchor_y = title_rect.bottom + 8
+                    self.picker_view._left_anchor_x = title_rect.left
+            else:
+                px, py = self.editor.picker_manual_pos
+                self.picker_view._left_anchor_x = int(px)
+                self.picker_view._top_anchor_y = int(py)
+        except Exception:
+            pass
+
+        # Collision overlays/picker are handled by the colliders panel now.
 
         # (Modo normal: renderizado completo con bordes y z-layer)
         if self.editor.picker_active:
             self.picker_view.render(screen, camera)
+
+        # Suppress building hover visuals (outline, handles) when UI is blocking
+        try:
+            mx, my = pygame.mouse.get_pos()
+            if is_blocked(mx, my):
+                return
+        except Exception:
+            pass
+
         for b in buildings:
             # Solo mostrar opciones en el edificio activo (persistente)
             if b != getattr(self.editor, 'active_building', None):
@@ -98,11 +84,31 @@ class BuildingEditorView:
             rect = pygame.Rect(x, y, w, h)
             pygame.draw.rect(screen, (0, 255, 255), rect, 4)
             pygame.draw.rect(screen, (255, 255, 255), rect, 1)
-            if self.editor.collision_picker_open and getattr(b, 'collision_map', None):
-                self._render_building_collision_overlay(screen, camera, b)
-            self.default_view.render_reset_handle(screen, b, camera)
-            self.split_view.render(screen, b, camera)
-            self.z_bottom_view.render(screen, b, camera)
-            self.z_top_view.render(screen, b, camera)
-        if self.editor.collision_picker_open:
-            self._render_collision_picker(screen)
+            # Render small ID label near the top-left of the building rect
+            try:
+                if self._id_font is not None:
+                    bid = getattr(b, 'id', None)
+                    if bid is not None:
+                        label = f"ID {bid}"
+                        text_surf = self._id_font.render(label, True, (255, 255, 255))
+                        shadow_surf = self._id_font.render(label, True, (0, 0, 0))
+                        lx = rect.left
+                        ly = rect.top - text_surf.get_height() - 2
+                        if ly < 0:
+                            ly = rect.top + 2
+                        # simple shadow for readability
+                        screen.blit(shadow_surf, (lx + 1, ly + 1))
+                        screen.blit(text_surf, (lx, ly))
+            except Exception:
+                pass
+            # Ocultar handles de herramientas en modo colisiones (colliders_mode)
+            if not getattr(self.editor, 'colliders_mode', False):
+                self.default_view.render_reset_handle(screen, b, camera)
+                self.split_view.render(screen, b, camera)
+                self.z_bottom_view.render(screen, b, camera)
+                self.z_top_view.render(screen, b, camera)
+            # Render toggle CG/CU bottom-right
+            try:
+                self.collider_scope_view.render(screen, b, camera)
+            except Exception:
+                pass

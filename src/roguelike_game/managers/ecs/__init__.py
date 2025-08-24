@@ -27,9 +27,8 @@ class ECSManager:
         # Crea ECSWorld
         self.ecs_world = self.loader.load(screen, map_manager, entities_manager.buildings, perf_log)
 
-        # Spawn jugador y NPCs
+        # Spawn jugador (NPCs se spawnean vía sistema de spawners JSON)
         self.spawner.spawn_player(self.ecs_world, map_manager)
-        self.spawner.spawn_initial_npcs(self.ecs_world)
 
         # Enlaza entidades
         self.entities_manager.ecs_manager = self

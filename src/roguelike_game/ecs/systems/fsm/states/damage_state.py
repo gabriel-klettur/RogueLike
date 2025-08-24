@@ -3,6 +3,7 @@ import logging
 from roguelike_game.ecs.systems.fsm.state import State
 from roguelike_game.ecs.components.transform.velocity import Velocity
 from roguelike_game.ecs.components.rendering.flash_component import FlashComponent
+from roguelike_game.ecs.systems.fsm.anim_bridge import set_mapped_anim
 
 import logging
 logger = logging.getLogger(__name__)
@@ -31,10 +32,8 @@ class DamageState(State):
         if anim:
             # store previous animation state
             self.prev_anim_state = anim.current_state
-            state = 'damage_left' if self.from_left else 'damage_right'
-            if state in anim.animations:
-                anim.current_state = state
-                anim.frame_idx = 0  # reset to first damage frame
+            direction = 'left' if self.from_left else 'right'
+            set_mapped_anim(entity, 'DamageState', direction, reset_frame=True)
         else:
             logging.warning(f"[DamageState] No Animator for eid {eid}, skipping animation")
 
@@ -44,7 +43,19 @@ class DamageState(State):
         damage_cfg = entity.world.components['DamageConfig'][entity.id]
         if elapsed >= damage_cfg.duration:
             logger.debug(f"[DamageState] Entity {entity.id} switching to next state after {elapsed:.2f}s")
-            entity.world.components['NPCState'][entity.id].fsm.change_state(self.next_state, entity)
+            fsm = entity.world.components['NPCState'][entity.id].fsm
+            # Intentar transición al siguiente estado definido por el sistema de combate
+            fsm.change_state(self.next_state, entity)
+            # Si fue bloqueada por el guard (seguimos en DamageState), aplicar fallback a Patrol si está permitido
+            try:
+                if isinstance(fsm.current_state, DamageState):
+                    allowed = (getattr(fsm, 'context', {}) or {}).get('allowed_state_classes')
+                    if allowed and 'PatrolState' in allowed:
+                        from roguelike_game.ecs.systems.fsm.states.monster.patrol_state import PatrolState
+                        logger.debug(f"[DamageState] Fallback to PatrolState for entity {entity.id}")
+                        fsm.change_state(PatrolState(), entity)
+            except Exception as ex:
+                logger.debug(f"[DamageState] Fallback check failed for entity {entity.id}: {ex}")
 
     def exit(self, entity):
         eid = entity.id

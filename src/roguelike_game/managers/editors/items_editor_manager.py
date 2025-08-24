@@ -1,5 +1,5 @@
 import pygame
-from roguelike_editors.items.items_picker_panel.editor_controller import ItemEditorController
+from roguelike_editors.items.items_editor_controller import ItemsEditorController
 
 class ItemsEditorManager:
     """
@@ -10,11 +10,12 @@ class ItemsEditorManager:
         items = game.items
         assets = game.item_assets
         font = game.font
-        # Instanciar controlador
-        self.controller = ItemEditorController(items, assets, font)
-        self.controller.game = game
-        self.model = self.controller.model
+        # Instanciar controlador orquestador del editor completo (picker + props + instancias)
+        self.controller = ItemsEditorController(items, assets, font)
+        # Permitir features que requieren acceso al juego (spawn RMB)
+        self.controller.set_game(game)
         # Exponer estado global
+        self.model = self.controller.model
         game.state.item_editor_state = self.model
 
     def handle_event(self, event: pygame.event.Event) -> None:
@@ -24,3 +25,13 @@ class ItemsEditorManager:
     def draw(self, screen: pygame.Surface) -> None:
         """Delegar renderizado"""
         self.controller.draw(screen)
+
+    # Exponer API de visibilidad para el sistema centralizado de toggles
+    def show(self) -> None:
+        self.controller.show()
+
+    def hide(self) -> None:
+        self.controller.hide()
+
+    def toggle(self) -> None:
+        self.controller.toggle()

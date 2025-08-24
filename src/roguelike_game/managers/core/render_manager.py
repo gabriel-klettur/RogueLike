@@ -1,7 +1,7 @@
 import pygame
 from roguelike_engine.utils.mouse import draw_mouse_crosshair
 from roguelike_engine.utils.benchmark import benchmark
-from roguelike_engine.debuger.debug import DebugOverlay, render_debug_overlay
+from roguelike_engine.diagnostics import DiagnosticsOverlay, render_diagnostics_overlay
 from roguelike_engine.config.config_tiles import TILE_SIZE
 import roguelike_engine.config.config as config
 from types import SimpleNamespace
@@ -47,10 +47,13 @@ class RendererManager:
         self.tiles_editor = tiles_editor
         self.map_editor = map_editor
         self._dirty_rects = []        
-        self.debug_overlay = DebugOverlay(perf_log=perf_log)
+        self.diagnostics_overlay = DiagnosticsOverlay(perf_log=perf_log)
         self.zone_view = ZoneView()
         self.minimap = minimap
         self.ecs = ecs
+
+        # FSM editor UI (lazy)
+        self._fsm_title_controller = None
 
         self._last_state = None  # almacenar último estado para editor
         
@@ -60,6 +63,11 @@ class RendererManager:
         self._collision_font = None
         self._collision_surf_solid = None
         self._collision_surf_walkable = None
+        # Debug systems (lazy init)
+        self._hitbox_debug_system = None
+        self._spell_debug_system = None
+        self._patrol_debug_system = None
+        self._defend_debug_system = None
         # Cache para help overlay: (mode_key, screen_size) -> (surface, rect)
         self._help_overlay_key = None
         self._help_overlay_surf = None
@@ -123,6 +131,37 @@ class RendererManager:
                 self._render_tile_editor_layer(state, screen, camera, map)
         _bench_tile_editor()
 
+        # Debug overlays for hitboxes, spells, and patrols (F9 toggles config.DEBUG)
+        @benchmark(perf_log, "3.55. spell_debug")
+        def _bench_spell_debug():
+            if getattr(config, "DEBUG", False):
+                try:
+                    # Lazy import and instantiate debug systems
+                    if self._hitbox_debug_system is None:
+                        from roguelike_game.ecs.systems.rendering.hitbox_debug_system import HitboxDebugSystem
+                        self._hitbox_debug_system = HitboxDebugSystem(perf_log=perf_log)
+                    if self._spell_debug_system is None:
+                        from roguelike_game.ecs.systems.rendering.spell_collision_debug_system import SpellCollisionDebugSystem
+                        self._spell_debug_system = SpellCollisionDebugSystem(perf_log=perf_log)
+                    if self._patrol_debug_system is None:
+                        from roguelike_game.ecs.systems.rendering.patrol_debug_system import PatrolDebugSystem
+                        self._patrol_debug_system = PatrolDebugSystem(perf_log=perf_log)
+                    if self._defend_debug_system is None:
+                        from roguelike_game.ecs.systems.rendering.defend_area_debug_system import DefendAreaDebugSystem
+                        self._defend_debug_system = DefendAreaDebugSystem(perf_log=perf_log)
+                    world = self.ecs.ecs_world
+                    # Draw hitbox arcs and colliders, then spell-specific collision hints
+                    self._hitbox_debug_system.update(world, screen, camera)
+                    self._spell_debug_system.update(world, screen, camera)
+                    # Draw patrol areas/targets for NPCs with PatrolRoute
+                    self._patrol_debug_system.update(world, screen, camera)
+                    # Draw defend area circles for NPCs with DefendArea
+                    self._defend_debug_system.update(world, screen, camera)
+                except Exception:
+                    # Never break main render due to optional debug overlays
+                    pass
+        _bench_spell_debug()
+
         # 6) Crosshair
         @benchmark(perf_log, "3.6. crosshair")
         def _bench_crosshair():
@@ -140,8 +179,14 @@ class RendererManager:
         def _bench_minimap():
             if (
                 not self.tiles_editor.editor_state.active
+                and not self.buildings_editor.editor_state.active
+                and not self.map_editor.editor_state.active
                 and not (hasattr(state, 'entities_editor_state') and state.entities_editor_state.visible)
                 and not (hasattr(state, 'inventory_editor_state') and getattr(state.inventory_editor_state, 'visible', False))
+                and not (hasattr(state, 'item_editor_state') and getattr(state.item_editor_state, 'visible', False))
+                and not getattr(state, 'spells_editor_visible', False)
+                and not getattr(state, 'fsm_editor_visible', False)
+                and not getattr(state, 'class_selector_visible', False)
             ):
                 self._render_minimap(screen)
         _bench_minimap()
@@ -155,7 +200,7 @@ class RendererManager:
 
         # Debug: overlay y bordes
         debug_entities = SimpleNamespace(player=self.ecs.ecs_world.player_position)
-        render_debug_overlay(self.debug_overlay, screen, state, camera, self.map, debug_entities, show_borders=True)
+        render_diagnostics_overlay(self.diagnostics_overlay, screen, state, camera, self.map, debug_entities, show_borders=True)
         # Resaltar área de expansión de dungeon
         self._render_expand_area(self._last_state)
         # Mostrar ayuda de controles según el modo
@@ -184,9 +229,9 @@ class RendererManager:
                 self.map
             )
 
-        # Render Building Editor UI
+        # Render Building Editor UI (use manager to include toolbar rendering)
         if self.buildings_editor.editor_state.active:
-            self.buildings_editor.view.render(
+            self.buildings_editor.render(
                 self.screen,
                 self.camera,
                 self.entities.buildings
@@ -194,6 +239,24 @@ class RendererManager:
         # Render Map Editor UI
         if self.map_editor.editor_state.active:
             self.map_editor.render(self.screen, self.camera, self.map)
+
+        # FSM Editor Title: mostrar cuando el FSM Editor está activo (F12)
+        try:
+            import roguelike_engine.config.config as config
+            if getattr(config, "DEBUG_ENTITIES", False):
+                self._render_fsm_editor_ui(self.screen)
+        except Exception:
+            # Evitar romper el render si la UI FSM falla
+            pass
+
+        # FSM Editor full UI render (lazy; draws when visible)
+        try:
+            # Lazy import to avoid circular deps on startup
+            from roguelike_editors.fsm.fsm_editor_events import FsmEditorEventHandler
+            FsmEditorEventHandler.render(self.screen)
+        except Exception:
+            # Never break main render if optional UI fails
+            pass
 
     def _render_effects(self, camera, screen, effects):
         dirty_rects = effects.render(screen, camera)
@@ -291,6 +354,24 @@ class RendererManager:
             rect = self.minimap.render(screen)
             self._dirty_rects.append(rect)
 
+    def _render_fsm_editor_ui(self, screen):
+        """Renderiza el título del editor FSM usando TitleBar reutilizable."""
+        try:
+            # Import perezoso para evitar dependencias circulares en importación
+            from roguelike_editors.fsm.fsm_title.fsm_title_model import FsmTitleModel
+            from roguelike_editors.fsm.fsm_title.fsm_title_controller import FsmTitleController
+            if self._fsm_title_controller is None:
+                self._fsm_title_controller = FsmTitleController(
+                    editor_state=None,
+                    model=FsmTitleModel(),
+                    font=None,
+                )
+            # Dibuja y devuelve rect (no usado aquí)
+            self._fsm_title_controller.render(screen)
+        except Exception:
+            # Silencioso: no bloquear el render principal por UI opcional
+            pass
+
     def _render_collisions(self, screen, camera, map):
         """Render collision grid (# solid, . walkable) efficiently"""
         dirty = []
@@ -331,9 +412,28 @@ class RendererManager:
         size = screen.get_size()
         # Ocultar la leyenda de comandos cuando un editor de superposición está visible
         # (Entities Editor, Inventory Editor, etc.)
+        # Ocultar también cuando el selector de clases está visible
+        if getattr(state, 'class_selector_visible', False):
+            return
         if hasattr(state, 'entities_editor_state') and getattr(state.entities_editor_state, 'visible', False):
             return
         if hasattr(state, 'inventory_editor_state') and getattr(state.inventory_editor_state, 'visible', False):
+            return
+        if hasattr(state, 'item_editor_state') and getattr(state.item_editor_state, 'visible', False):
+            return
+        # Ocultar también cuando el Buildings Editor está activo
+        if self.buildings_editor.editor_state.active:
+            return
+        # Ocultar también cuando el Tiles Editor o Map Editor están activos
+        if self.tiles_editor.editor_state.active:
+            return
+        if self.map_editor.editor_state.active:
+            return
+        # Ocultar cuando el Spells Editor está visible
+        if getattr(state, 'spells_editor_visible', False):
+            return
+        # Ocultar cuando el FSM Editor está visible
+        if getattr(state, 'fsm_editor_visible', False):
             return
         if self.map_editor.editor_state.active:
             mode = 'map'
@@ -369,7 +469,7 @@ class RendererManager:
                 lines = [
                     "Debug Mode:",
                     "F9: Toggle Debug Overlay",
-                    "F12: Toggle Hitbox Debug",
+                    "F12: Toggle FSM Editor",
                     "Mouse Wheel: Scroll Overlay"
                 ]
             else:

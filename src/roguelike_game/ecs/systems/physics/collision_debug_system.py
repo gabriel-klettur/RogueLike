@@ -21,8 +21,7 @@ class CollisionDebugSystem:
         self._pts = []
         self._mask_outline_cache = {}
         self.perf_log = perf_log
-
-    @benchmark(lambda self: self.perf_log, "4.2.2.CollisionDebugSystem.update")
+    
     def update(self, world, screen, camera):
         """
         Recorre todas las entidades con MultiCollider y Position. Siempre dibuja:

@@ -15,8 +15,8 @@ class EntitiesEditorView:
         Dibuja título, toolbar y panels de entidades según estado activo.
         """
         c = self.controller
-        # Título
-        c.title_controller.render(screen)
+        # Título: ahora devuelve rect para layout (paridad con Inventory Editor)
+        title_rect = c.title_controller.render(screen)
         # Toolbar
         c.toolbar_controller.render(screen)
         active = c.model.toolbar_model.active_tool

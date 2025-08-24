@@ -35,9 +35,9 @@ INTERNAL_TO_UI_STATE: Dict[str, str] = {
 }
 
 # UI -> JSON (no-sets) state mappings for player assets
-# player JSON uses 'walking'
+# Player JSON uses 'walk' (not 'walking') for the walking state
 UI_TO_NOSETS_JSON_STATE: Dict[str, str] = {
-    'chase': 'walking',
+    'chase': 'walk',
 }
 
 

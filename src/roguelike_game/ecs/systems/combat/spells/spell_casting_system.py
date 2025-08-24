@@ -33,7 +33,39 @@ class SpellCastingSystem:
         """
         self.perf_log = perf_log
 
-    @benchmark(lambda self: self.perf_log, "4.2.2.SpellCastingSystem.update")
+    # Mapping for simple type -> component counting
+    _TYPE_TO_COMPONENT = {
+        'aura': 'AuraComponent',
+        'beam': 'LaserBeamComponent',
+        'dash': 'DashComponent',
+        'lightning': 'LightningComponent',
+        'arcane_flame': 'ArcaneFlameComponent',
+        'firework_launch': 'FireworkLaunchComponent',
+        'smoke': 'SmokeComponent',
+        'smoke_emitter': 'SmokeEmitterComponent',
+        'sphere_magic_shield': 'SphereMagicShieldComponent',
+        'teleport': 'TeleportComponent',
+    }
+
+    def _count_active(self, world, eid, intent, spell_type: str) -> int:
+        """Count active instances for the given spell type, preserving current semantics.
+
+        Special cases:
+        - projectile: count FireballComponent filtered by spell_key
+        - slash: count HitboxComponent owned by the caster
+        Others: count all components of mapped type
+        """
+        if spell_type == 'projectile':
+            return sum(1 for comp in world.components.get('FireballComponent', {}).values()
+                       if getattr(comp, 'spell_key', '') == intent.spell)
+        if spell_type == 'slash':
+            return sum(1 for comp in world.components.get('HitboxComponent', {}).values()
+                       if getattr(comp, 'owner', None) == eid)
+        comp_key = self._TYPE_TO_COMPONENT.get(spell_type)
+        if comp_key:
+            return len(world.components.get(comp_key, {}))
+        return 0
+    
     def update(self, world, camera=None):
         """
         Recorre todas las entidades que tengan el componente 'WantsToCastSpell'.
@@ -59,21 +91,9 @@ class SpellCastingSystem:
             cfg = SPELLS.get(intent.spell, {})
             spell_type = cfg.get('type')
             max_inst = cfg.get('max_instances', 0)
-            # Contar instancias activas
-            if spell_type == 'projectile':
-                active = sum(1 for comp in world.components.get('FireballComponent', {}).values()
-                             if getattr(comp, 'spell_key', '') == intent.spell)
-            elif spell_type == 'aura':
-                active = len(world.components.get('AuraComponent', {}))
-            elif spell_type == 'beam':
-                active = len(world.components.get('LaserBeamComponent', {}))
-            elif spell_type == 'dash':
-                active = len(world.components.get('DashComponent', {}))
-            elif spell_type == 'slash':
-                active = sum(1 for comp in world.components.get('HitboxComponent', {}).values()
-                             if getattr(comp, 'owner', None) == eid)
-            else:
-                active = 0
+            # Contar instancias activas (centralizado)
+            active = self._count_active(world, eid, intent, spell_type)
+
             if max_inst and active >= max_inst:
                 continue
             allow_overlap = cfg.get('allow_overlap', True)

@@ -11,8 +11,7 @@ class DashEmitterSystem:
     """
     def __init__(self, perf_log=None):
         self.perf_log = perf_log
-
-    @benchmark(lambda self: self.perf_log, "4.2.4.DashEmitterSystem.update")
+    
     def update(self, world, camera=None):
         for eid, dash in list(world.components.get('DashComponent', {}).items()):
             pos_cmp = world.components.get('Position', {}).get(eid)

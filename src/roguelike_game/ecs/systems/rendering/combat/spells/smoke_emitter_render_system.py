@@ -9,8 +9,7 @@ class SmokeEmitterRenderSystem:
     """
     def __init__(self, perf_log):
         self.perf_log = perf_log
-
-    @benchmark(lambda self: self.perf_log, "4.2.2.SmokeEmitterRenderSystem.update")
+    
     def update(self, world, screen, camera):
         for eid, comp in world.components.get('SmokeEmitterComponent', {}).items():
             view = SmokeEmitterView(comp.model)

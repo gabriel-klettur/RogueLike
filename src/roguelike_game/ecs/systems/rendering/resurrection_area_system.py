@@ -6,8 +6,7 @@ from roguelike_engine.config.config_tiles import TILE_SIZE
 class ResurrectionAreaSystem:
     def __init__(self, perf_log=None):
         self.perf_log = perf_log
-
-    @benchmark(lambda self: self.perf_log, "4.2.2. resurrection_area.render")
+    
     def update(self, world, screen, camera):
         # Mostrar solo si el jugador está muerto (tiene GrayscaleComponent)
         grays = world.components.get('GrayscaleComponent', {})

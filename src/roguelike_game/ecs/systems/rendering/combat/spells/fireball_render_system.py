@@ -11,8 +11,7 @@ class FireballRenderSystem:
         self.radius = radius
         self.color = color
         self.perf_log = perf_log
-
-    @benchmark(lambda self: self.perf_log, "4.2.2.FireballRenderSystem.update")
+    
     def update(self, world, screen, camera):
         # Renderizar fireballs: sprite escalado o fallback círculo
         scale_map = world.components.get('Scale', {})

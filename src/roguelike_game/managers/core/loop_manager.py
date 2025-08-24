@@ -30,13 +30,10 @@ class GameLoop:
         return (
             g.menu.show_menu
             or g.tiles_editor.editor_state.active
-            or g.buildings_editor.editor_state.active
             or g.map_editor.editor_state.active
-            or g.item_editor.model.visible
             or g.inventory_editor.model.visible
         )
-
-    @benchmark(lambda self: self.game.perf_log, "4.TOTAL: ECS")
+    
     def run_ecs_phase(self) -> None:
         """Actualiza y renderiza el sistema ECS."""
         self.game.update_ecs()
@@ -60,7 +57,8 @@ class GameLoop:
         cfg = self.game.world.config
         now = time.time()
         if cfg.autosave_enabled and (now - self.game._last_autosave_time >= cfg.autosave_interval):
-            self.game.world.save_world()
+            # Usar el ShutdownManager para capturar posición e inventario actuales
+            self.game.shutdown_manager.shutdown()
             self.game._last_autosave_time = now
 
     def _cap_fps(self) -> None:
