@@ -1,10 +1,11 @@
 {
   "1": {
-    "player_id": null,
+    "player_id": "00000000-0000-0000-0000-000000000001",
+    "capacity": 20,
     "slots": [
       {
         "item": "gold",
-        "quantity": 1001
+        "quantity": 1002
       },
       {
         "item": "wood",

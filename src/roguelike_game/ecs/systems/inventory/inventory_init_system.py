@@ -1,6 +1,7 @@
 import os
 import json
 import random
+import uuid
 
 from roguelike_game.ecs.components.core.player_tag import PlayerTagComponent
 from roguelike_game.ecs.components.core.npc_tag import NPCTagComponent
@@ -95,9 +96,17 @@ class InventoryInitSystem:
                 # Cargar inventario persistido de activos si existe
                 if key in active_players:
                     pdata = active_players[key]
+                    # Normalizar player_id inexistente o inválido
+                    pid = pdata.get('player_id')
+                    try:
+                        uuid.UUID(str(pid)) if pid else (_ for _ in ()).throw(ValueError())
+                    except Exception:
+                        pid = str(uuid.uuid4())
+                        pdata['player_id'] = pid
+                        self.dirty_players = True
                     inv_comp = InventoryComponent(
                         capacity=self.player_template.get('capacity', 20),
-                        player_id=pdata.get('player_id', self.player_template.get('player_id'))
+                        player_id=pid
                     )
                     for slot in pdata.get('slots', []):
                         if slot:
@@ -105,7 +114,12 @@ class InventoryInitSystem:
                 else:
                     # Crear InventoryComponent con plantilla por defecto
                     capacity = self.player_template.get('capacity', 20)
+                    # Normalizar/generar player_id si plantilla no lo define
                     player_id = self.player_template.get('player_id')
+                    try:
+                        uuid.UUID(str(player_id)) if player_id else (_ for _ in ()).throw(ValueError())
+                    except Exception:
+                        player_id = str(uuid.uuid4())
                     inv_comp = InventoryComponent(capacity=capacity, player_id=player_id)
                     for slot in self.player_template.get('slots', []):
                         if slot:

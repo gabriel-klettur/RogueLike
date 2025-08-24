@@ -3,6 +3,9 @@ import time
 from datetime import datetime
 from pathlib import Path
 import pygame
+import json
+import uuid
+from roguelike_game.utils.inventory_sync import write_active_for_player
 
 from .menu_handler import MenuHandler
 from roguelike_ui.widgets.menu_renderer import MenuRenderer
@@ -576,6 +579,14 @@ class MenuManager:
                             inv.add(slot['item'], slot.get('quantity', 0))
                     eid = g.ecs.ecs_world.player_entity
                     g.ecs.ecs_world.components.setdefault("InventoryComponent", {})[eid] = inv
+                    # Sincronizar perfil activo con el snapshot cargado
+                    try:
+                        snap = inv.serialize() if hasattr(inv, 'serialize') else {}
+                        if 'player_id' not in snap:
+                            snap['player_id'] = pdata.get('player_id')
+                        write_active_for_player(eid, snap)
+                    except Exception:
+                        pass
             except Exception as e:
                 logger.warning("No se pudo restaurar inventario: %s", e)
             # 4b) Restaurar XP/Nivel desde metadatos del guardado
@@ -728,6 +739,36 @@ class MenuManager:
             try:
                 pdata = getattr(g.world, 'player_inventory', None)
                 if pdata:
+                    # Normalizar player_id: usar activo por eid o generar UUID si falta/ inválido
+                    def _valid_uuid(x):
+                        try:
+                            uuid.UUID(str(x))
+                            return True
+                        except Exception:
+                            return False
+                    pid = pdata.get('player_id')
+                    if not _valid_uuid(pid):
+                        try:
+                            eid = g.ecs.ecs_world.player_entity
+                            active_path = Path('data/inventory/active/inventory_player.json')
+                            active = json.loads(active_path.read_text(encoding='utf-8')) if active_path.exists() else {}
+                            apid = (active.get(str(eid)) or {}).get('player_id')
+                            if not _valid_uuid(apid):
+                                apid = active.get('player_id')
+                            pid = apid if _valid_uuid(apid) else str(uuid.uuid4())
+                        except Exception:
+                            pid = str(uuid.uuid4())
+                        # Persistir de vuelta al save para consistencia futura
+                        try:
+                            pdata['player_id'] = pid
+                            data = load_world_state(str(path))
+                            data.setdefault('player_inventory', {})
+                            data['player_inventory']['player_id'] = pid
+                            save_world_state(str(path), data)
+                            g.world.player_inventory = data.get('player_inventory', pdata)
+                        except Exception:
+                            # Si no se puede persistir, al menos continuar en runtime
+                            pass
                     from roguelike_game.ecs.components.inventory_component import InventoryComponent
                     inv = InventoryComponent(capacity=pdata.get('capacity', 20), player_id=pdata.get('player_id'))
                     for slot in pdata.get('slots', []):

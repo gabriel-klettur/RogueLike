@@ -2,6 +2,8 @@ from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.factories.player.config import RENDERED_SPRITE_SIZE
 from datetime import datetime
 from pathlib import Path
+from roguelike_game.utils.inventory_sync import write_active_for_player
+from roguelike_game.utils.inventory_registry import publish_inventory
 
 import logging
 logger = logging.getLogger(__name__)
@@ -45,6 +47,16 @@ class ShutdownManager:
                 inv = g.ecs.ecs_world.components.get("InventoryComponent", {}).get(eid)
                 if inv is not None and hasattr(inv, "serialize"):
                     g.world.player_inventory = inv.serialize()
+                    # Sincronizar también el perfil activo
+                    try:
+                        write_active_for_player(eid, g.world.player_inventory)
+                    except Exception:
+                        pass
+                    # Publicar snapshot en registro versionado (opcional)
+                    try:
+                        publish_inventory(g.world.player_inventory)
+                    except Exception:
+                        pass
             except Exception:
                 pass
 
