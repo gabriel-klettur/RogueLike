@@ -74,5 +74,46 @@ def draw_nodes(model: Any, surf: Any, W: Callable[[tuple[float, float]], tuple[i
                 view.node_label_rects[n.get('id')] = tr.copy()
             except Exception:
                 pass
+            # Per-node lint badges (non-intrusive) near top-right of node rect
+            try:
+                nid = n.get('id')
+                items = (getattr(model, 'node_lint_by_id', {}) or {}).get(nid) or []
+                if items:
+                    errs = [it for it in items if it.get('severity') == 'error']
+                    warns = [it for it in items if it.get('severity') == 'warning']
+                    if errs or warns:
+                        # Helper to draw a small badge with count
+                        def _badge(text: str, color_bg: tuple[int,int,int]):
+                            f = pygame.font.SysFont(None, 14)
+                            t = f.render(text, True, (255, 255, 255))
+                            pad_x, pad_y = 4, 2
+                            bw, bh = t.get_width() + pad_x * 2, t.get_height() + pad_y * 2
+                            s = pygame.Surface((bw, bh), pygame.SRCALPHA)
+                            s.fill((*color_bg, 230))
+                            pygame.draw.rect(s, (255, 255, 255), s.get_rect(), 1, border_radius=6)
+                            s.blit(t, (pad_x, pad_y))
+                            return s
+                        # Place error (red) then warning (amber) from top-right inward
+                        cx = rect.right - 6
+                        cy = rect.top + 6
+                        rects_map: dict[str, any] = {}
+                        if errs:
+                            b = _badge(str(len(errs)), (200, 60, 60))
+                            br = b.get_rect(); br.top = cy; br.right = cx
+                            surf.blit(b, br)
+                            rects_map['error'] = br
+                            cx = br.left - 4
+                        if warns:
+                            b = _badge(str(len(warns)), (220, 160, 60))
+                            br = b.get_rect(); br.top = cy; br.right = cx
+                            surf.blit(b, br)
+                            rects_map['warning'] = br
+                        # Save for tooltip detection
+                        try:
+                            view.node_badge_rects[nid] = rects_map
+                        except Exception:
+                            pass
+            except Exception:
+                pass
     except Exception:
         pass

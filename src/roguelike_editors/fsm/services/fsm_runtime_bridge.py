@@ -61,6 +61,20 @@ def _ensure_cache() -> _Cached:
         # Minimal shape guard
         if not isinstance(ids_index, dict) or "SET_IDS" not in ids_index:
             raise ValueError("invalid ids_index shape")
+        # Consistency check against current sets.json to avoid stale ids index
+        try:
+            built_index = _build_ids_index(sets)
+            if not _ids_index_consistent(ids_index, built_index):
+                logger.debug("[FSMBridge] ids_index is stale or mismatched; rebuilding from sets.json")
+                ids_index = built_index
+                # Best-effort: write back to disk to keep tools in sync
+                try:
+                    with open(str(default_ids_path()), "w", encoding="utf-8") as fw:
+                        json.dump(ids_index, fw, ensure_ascii=False, indent=2, sort_keys=True)
+                except Exception as exw:
+                    logger.debug("[FSMBridge] failed to write rebuilt ids_index: %s", exw)
+        except Exception as exb:
+            logger.debug("[FSMBridge] failed ids_index consistency check: %s", exb)
     except Exception as ex:
         logger.debug("[FSMBridge] ids_index not found/invalid, rebuilding from sets: %s", ex)
         ids_index = _build_ids_index(sets)
@@ -282,6 +296,36 @@ def _build_ids_index(sets_doc: Dict[str, Any]) -> Dict[str, Any]:
         "STATES_BY_SET": states_by_set,
         "TRANSITIONS_BY_SET": trans_by_set,
     }
+
+
+def _ids_index_consistent(a: Dict[str, Any], b: Dict[str, Any]) -> bool:
+    """Return True if two ids index structures are equivalent for our purposes.
+    We compare the set ids and per-set keys content-wise (order-insensitive for safety).
+    """
+    try:
+        aset = set(a.get("SET_IDS", []) or [])
+        bset = set(b.get("SET_IDS", []) or [])
+        if aset != bset:
+            return False
+        astates = a.get("STATES_BY_SET", {}) or {}
+        bstates = b.get("STATES_BY_SET", {}) or {}
+        atrans = a.get("TRANSITIONS_BY_SET", {}) or {}
+        btrans = b.get("TRANSITIONS_BY_SET", {}) or {}
+        # Ensure same keys for states/transitions
+        if set(astates.keys()) != set(bstates.keys()):
+            return False
+        if set(atrans.keys()) != set(btrans.keys()):
+            return False
+        # Optionally compare contents (order-insensitive)
+        for k in astates.keys():
+            if set(astates.get(k) or []) != set(bstates.get(k) or []):
+                return False
+        for k in atrans.keys():
+            if set(atrans.get(k) or []) != set(btrans.get(k) or []):
+                return False
+        return True
+    except Exception:
+        return False
 
 
 def get_ids_index() -> Dict[str, Any]:

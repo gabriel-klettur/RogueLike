@@ -20,6 +20,14 @@ class FsmGraphPanelView:
         self.edge_paths = {}
         # Last rendered edge endpoints in local (canvas) coordinates: {edge_idx: {"from": (x,y), "to": (x,y)}}
         self.edge_endpoints_local = {}
+        # Per-element lint badge rects (local canvas coords)
+        # node_badge_rects: {node_id: {"error": Rect, "warning": Rect}}
+        # edge_badge_rects: {edge_id_or_index: {"error": Rect, "warning": Rect}}
+        self.node_badge_rects = {}
+        self.edge_badge_rects = {}
+        # Lint badge rects (local to canvas)
+        self.lint_err_rect = None
+        self.lint_warn_rect = None
         # Legend overlay rects (screen-space)
         self.legend_rect = None
         self.legend_button_rect = None
@@ -55,6 +63,9 @@ class FsmGraphPanelView:
         self.edge_label_rects = {}
         self.edge_paths = {}
         self.edge_endpoints_local = {}
+        # Reset per-element badge rects
+        self.node_badge_rects = {}
+        self.edge_badge_rects = {}
         # Reset legend rects
         self.legend_rect = None
         self.legend_button_rect = None
@@ -105,6 +116,113 @@ class FsmGraphPanelView:
 
         # Border of canvas
         pygame.draw.rect(surf, (95, 95, 105), surf.get_rect(), 2)
+        # Lint badges (draw inside canvas, top-right)
+        try:
+            import pygame as _pg  # type: ignore
+            font = _pg.font.SysFont(None, 18)
+            errs = list(getattr(model, 'lint_errors', []) or [])
+            warns = list(getattr(model, 'lint_warnings', []) or [])
+            def _badge(text, color_bg, color_fg=(255, 255, 255)):
+                t = font.render(text, True, color_fg)
+                pad_x, pad_y = 6, 2
+                bw, bh = t.get_width() + pad_x * 2, t.get_height() + pad_y * 2
+                bsurf = _pg.Surface((bw, bh), _pg.SRCALPHA)
+                bsurf.fill((*color_bg, 230))
+                _pg.draw.rect(bsurf, (255, 255, 255), bsurf.get_rect(), 1, border_radius=6)
+                bsurf.blit(t, (pad_x, pad_y))
+                return bsurf
+            cx = w - 8
+            self.lint_err_rect = None
+            self.lint_warn_rect = None
+            if errs:
+                b = _badge(f"E:{len(errs)}", (200, 60, 60))
+                r = b.get_rect(); r.top = 4; r.right = cx
+                surf.blit(b, r)
+                self.lint_err_rect = r
+                cx = r.left - 6
+            if warns:
+                b = _badge(f"W:{len(warns)}", (220, 160, 60))
+                r = b.get_rect(); r.top = 4; r.right = cx
+                surf.blit(b, r)
+                self.lint_warn_rect = r
+                # cx = r.left - 6  # not needed unless more badges
+            # Tooltip when hovering badges
+            try:
+                mx, my = _pg.mouse.get_pos()
+                local_x, local_y = mx - x, my - y
+                def _tooltip(lines, bx: int, by: int):
+                    if not lines:
+                        return
+                    tip_font = _pg.font.SysFont(None, 18)
+                    pad = 6
+                    lines = list(lines)[:8]
+                    rendered = [tip_font.render(str(l), True, (240, 240, 240)) for l in lines]
+                    tw = max(r.get_width() for r in rendered)
+                    th = sum(r.get_height() for r in rendered) + (len(rendered) - 1) * 2
+                    bw2, bh2 = tw + pad * 2, th + pad * 2
+                    if bx + bw2 + 4 > w:
+                        bx = max(4, w - bw2 - 4)
+                    if by + bh2 + 4 > h:
+                        by = max(4, h - bh2 - 4)
+                    bg = _pg.Surface((bw2, bh2), _pg.SRCALPHA)
+                    bg.fill((20, 20, 20, 210))
+                    _pg.draw.rect(bg, (100, 100, 100), bg.get_rect(), 1)
+                    surf.blit(bg, (bx, by))
+                    ty = by + pad
+                    for r2 in rendered:
+                        surf.blit(r2, (bx + pad, ty))
+                        ty += r2.get_height() + 2
+                # Global badges tooltip
+                if self.lint_err_rect and self.lint_err_rect.collidepoint(local_x, local_y):
+                    _tooltip(errs, self.lint_err_rect.left, self.lint_err_rect.bottom + 4)
+                elif self.lint_warn_rect and self.lint_warn_rect.collidepoint(local_x, local_y):
+                    _tooltip(warns, self.lint_warn_rect.left, self.lint_warn_rect.bottom + 4)
+                else:
+                    # Node badges tooltip (per severity)
+                    try:
+                        nmap = getattr(self, 'node_badge_rects', {}) or {}
+                        enriched_nodes = getattr(model, 'node_lint_by_id', {}) or {}
+                        for nid, rmap in list(nmap.items()):
+                            # Check error first for priority
+                            er = rmap.get('error') if isinstance(rmap, dict) else None
+                            wr = rmap.get('warning') if isinstance(rmap, dict) else None
+                            if er is not None and er.collidepoint(local_x, local_y):
+                                lines = [str(i.get('message')) for i in (enriched_nodes.get(nid) or []) if (i.get('severity') == 'error')]
+                                _tooltip(lines, er.left, er.bottom + 4)
+                                raise StopIteration
+                            if wr is not None and wr.collidepoint(local_x, local_y):
+                                lines = [str(i.get('message')) for i in (enriched_nodes.get(nid) or []) if (i.get('severity') == 'warning')]
+                                _tooltip(lines, wr.left, wr.bottom + 4)
+                                raise StopIteration
+                    except StopIteration:
+                        pass
+                    except Exception:
+                        pass
+                    # Edge badges tooltip
+                    try:
+                        emap = getattr(self, 'edge_badge_rects', {}) or {}
+                        enriched_edges = getattr(model, 'edge_lint_by_id', {}) or {}
+                        for eid, rmap in list(emap.items()):
+                            er = rmap.get('error') if isinstance(rmap, dict) else None
+                            wr = rmap.get('warning') if isinstance(rmap, dict) else None
+                            if er is not None and er.collidepoint(local_x, local_y):
+                                lines = [str(i.get('message')) for i in (enriched_edges.get(eid) or []) if (i.get('severity') == 'error')]
+                                _tooltip(lines, er.left, er.bottom + 4)
+                                raise StopIteration
+                            if wr is not None and wr.collidepoint(local_x, local_y):
+                                lines = [str(i.get('message')) for i in (enriched_edges.get(eid) or []) if (i.get('severity') == 'warning')]
+                                _tooltip(lines, wr.left, wr.bottom + 4)
+                                raise StopIteration
+                    except StopIteration:
+                        pass
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+        except Exception:
+            # Best-effort; badges are optional
+            self.lint_err_rect = None
+            self.lint_warn_rect = None
         # Inline TextInput overlay (draw on top of canvas contents)
         try:
             # Determine if an edit is active

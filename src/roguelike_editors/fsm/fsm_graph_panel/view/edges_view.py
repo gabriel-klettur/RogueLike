@@ -104,6 +104,7 @@ def draw_edges(model: Any, surf: Any, W: Callable[[tuple[float, float]], tuple[i
         view.edge_paths = {}
         view.edge_endpoints_local = {}
         view.edge_label_rects = {}
+        view.edge_badge_rects = {}
 
         for idx, e in enumerate(edges):
             fr = e.get('from'); to = e.get('to')
@@ -166,14 +167,15 @@ def draw_edges(model: Any, surf: Any, W: Callable[[tuple[float, float]], tuple[i
                     pass
                 label = e.get('label') or e.get('on') or e.get('event')
                 is_editing = (getattr(model, 'editing_edge_index', None) == idx) or (isinstance(eid, str) and getattr(model, 'editing_edge_id', None) == eid)
+                # Compute a midpoint for label/badge placement on the loop
+                is_hover = (idx == getattr(model, 'hover_edge_index', None)) or (isinstance(eid, str) and getattr(model, 'hover_edge_id', None) == eid)
+                is_selected = (idx == getattr(model, 'selected_edge_index', None)) or (isinstance(eid, str) and getattr(model, 'selected_edge_id', None) == eid)
+                is_focus = is_hover or is_selected
+                font = pygame.font.SysFont(None, 20 if is_focus else 18)
+                mid = _quad_point(p0, ctrl, p2, 0.35)
+                mid = W(mid)
+                # Label (skip draw if editing)
                 if label or is_editing:
-                    is_hover = (idx == getattr(model, 'hover_edge_index', None)) or (isinstance(eid, str) and getattr(model, 'hover_edge_id', None) == eid)
-                    is_selected = (idx == getattr(model, 'selected_edge_index', None)) or (isinstance(eid, str) and getattr(model, 'selected_edge_id', None) == eid)
-                    is_focus = is_hover or is_selected
-                    font = pygame.font.SysFont(None, 20 if is_focus else 18)
-                    mid = _quad_point(p0, ctrl, p2, 0.35)
-                    mid = W(mid)
-                    # Compute rect (even when editing to place TextInput), but don't blit label during edit
                     text_for_rect = str(getattr(model, 'editing_text', '') or '') if is_editing else str(label or '')
                     txt = font.render(text_for_rect, True, (255,230,120) if is_focus else (210,210,210))
                     tr = txt.get_rect(center=(mid[0], mid[1]))
@@ -185,6 +187,46 @@ def draw_edges(model: Any, surf: Any, W: Callable[[tuple[float, float]], tuple[i
                             view.edge_label_rects[eid] = tr.copy()
                     except Exception:
                         pass
+                # Per-edge badges near loop midpoint
+                try:
+                    key = eid if isinstance(eid, str) else idx
+                    items = (getattr(model, 'edge_lint_by_id', {}) or {}).get(eid) if isinstance(eid, str) else None
+                    if items is None and not isinstance(eid, str):
+                        items = []
+                    if items:
+                        errs = [it for it in items if it.get('severity') == 'error']
+                        warns = [it for it in items if it.get('severity') == 'warning']
+                        if errs or warns:
+                            def _badge(text: str, color_bg: tuple[int,int,int]):
+                                f = pygame.font.SysFont(None, 14)
+                                t = f.render(text, True, (255, 255, 255))
+                                pad_x, pad_y = 4, 2
+                                bw, bh = t.get_width() + pad_x * 2, t.get_height() + pad_y * 2
+                                s = pygame.Surface((bw, bh), pygame.SRCALPHA)
+                                s.fill((*color_bg, 230))
+                                pygame.draw.rect(s, (255, 255, 255), s.get_rect(), 1, border_radius=6)
+                                s.blit(t, (pad_x, pad_y))
+                                return s
+                            cx = int(mid[0] + 6)
+                            cy = int(mid[1] - 6)
+                            rmap = {}
+                            if errs:
+                                b = _badge(str(len(errs)), (200, 60, 60))
+                                br = b.get_rect(); br.center = (cx, cy)
+                                surf.blit(b, br)
+                                rmap['error'] = br
+                                cx = br.right + 4
+                            if warns:
+                                b = _badge(str(len(warns)), (220, 160, 60))
+                                br = b.get_rect(); br.center = (cx, cy)
+                                surf.blit(b, br)
+                                rmap['warning'] = br
+                            try:
+                                view.edge_badge_rects[key] = rmap
+                            except Exception:
+                                pass
+                except Exception:
+                    pass
                 continue
 
             pair_key = tuple(sorted([fr, to]))
@@ -268,6 +310,46 @@ def draw_edges(model: Any, surf: Any, W: Callable[[tuple[float, float]], tuple[i
                             view.edge_label_rects[eid] = tr.copy()
                     except Exception:
                         pass
+                # Per-edge badges near mid label
+                try:
+                    key = eid if isinstance(eid, str) else idx
+                    items = (getattr(model, 'edge_lint_by_id', {}) or {}).get(eid) if isinstance(eid, str) else None
+                    if items is None and not isinstance(eid, str):
+                        items = []
+                    if items:
+                        errs = [it for it in items if it.get('severity') == 'error']
+                        warns = [it for it in items if it.get('severity') == 'warning']
+                        if errs or warns:
+                            def _badge(text: str, color_bg: tuple[int,int,int]):
+                                f = pygame.font.SysFont(None, 14)
+                                t = f.render(text, True, (255, 255, 255))
+                                pad_x, pad_y = 4, 2
+                                bw, bh = t.get_width() + pad_x * 2, t.get_height() + pad_y * 2
+                                s = pygame.Surface((bw, bh), pygame.SRCALPHA)
+                                s.fill((*color_bg, 230))
+                                pygame.draw.rect(s, (255, 255, 255), s.get_rect(), 1, border_radius=6)
+                                s.blit(t, (pad_x, pad_y))
+                                return s
+                            cx = int(mid_lbl[0] + 8)
+                            cy = int(mid_lbl[1] - 10)
+                            rmap = {}
+                            if errs:
+                                b = _badge(str(len(errs)), (200, 60, 60))
+                                br = b.get_rect(); br.center = (cx, cy)
+                                surf.blit(b, br)
+                                rmap['error'] = br
+                                cx = br.right + 4
+                            if warns:
+                                b = _badge(str(len(warns)), (220, 160, 60))
+                                br = b.get_rect(); br.center = (cx, cy)
+                                surf.blit(b, br)
+                                rmap['warning'] = br
+                            try:
+                                view.edge_badge_rects[key] = rmap
+                            except Exception:
+                                pass
+                except Exception:
+                    pass
             else:
                 # Straight edge drawing
                 p_start_l = W(p_start)
@@ -301,13 +383,13 @@ def draw_edges(model: Any, surf: Any, W: Callable[[tuple[float, float]], tuple[i
                 # Label at midpoint (skip while editing)
                 label = e.get('label') or e.get('on') or e.get('event')
                 is_editing = (getattr(model, 'editing_edge_index', None) == idx) or (isinstance(eid, str) and getattr(model, 'editing_edge_id', None) == eid)
+                is_hover = (idx == getattr(model, 'hover_edge_index', None)) or (isinstance(eid, str) and getattr(model, 'hover_edge_id', None) == eid)
+                is_selected = (idx == getattr(model, 'selected_edge_index', None)) or (isinstance(eid, str) and getattr(model, 'selected_edge_id', None) == eid)
+                is_focus = is_hover or is_selected
+                font = pygame.font.SysFont(None, 20 if is_focus else 18)
+                mid_lbl = ((p_start[0]+p_end[0])/2.0, (p_start[1]+p_end[1])/2.0)
+                mid_lbl = W(mid_lbl)
                 if label or is_editing:
-                    is_hover = (idx == getattr(model, 'hover_edge_index', None)) or (isinstance(eid, str) and getattr(model, 'hover_edge_id', None) == eid)
-                    is_selected = (idx == getattr(model, 'selected_edge_index', None)) or (isinstance(eid, str) and getattr(model, 'selected_edge_id', None) == eid)
-                    is_focus = is_hover or is_selected
-                    font = pygame.font.SysFont(None, 20 if is_focus else 18)
-                    mid_lbl = ((p_start[0]+p_end[0])/2.0, (p_start[1]+p_end[1])/2.0)
-                    mid_lbl = W(mid_lbl)
                     text_for_rect = str(getattr(model, 'editing_text', '') or '') if is_editing else str(label or '')
                     txt = font.render(text_for_rect, True, (255,230,120) if is_focus else (210,210,210))
                     tr = txt.get_rect(center=(mid_lbl[0], mid_lbl[1]))
@@ -319,6 +401,46 @@ def draw_edges(model: Any, surf: Any, W: Callable[[tuple[float, float]], tuple[i
                             view.edge_label_rects[eid] = tr.copy()
                     except Exception:
                         pass
+                # Per-edge badges near mid label
+                try:
+                    key = eid if isinstance(eid, str) else idx
+                    items = (getattr(model, 'edge_lint_by_id', {}) or {}).get(eid) if isinstance(eid, str) else None
+                    if items is None and not isinstance(eid, str):
+                        items = []
+                    if items:
+                        errs = [it for it in items if it.get('severity') == 'error']
+                        warns = [it for it in items if it.get('severity') == 'warning']
+                        if errs or warns:
+                            def _badge(text: str, color_bg: tuple[int,int,int]):
+                                f = pygame.font.SysFont(None, 14)
+                                t = f.render(text, True, (255, 255, 255))
+                                pad_x, pad_y = 4, 2
+                                bw, bh = t.get_width() + pad_x * 2, t.get_height() + pad_y * 2
+                                s = pygame.Surface((bw, bh), pygame.SRCALPHA)
+                                s.fill((*color_bg, 230))
+                                pygame.draw.rect(s, (255, 255, 255), s.get_rect(), 1, border_radius=6)
+                                s.blit(t, (pad_x, pad_y))
+                                return s
+                            cx = int(mid_lbl[0] + 8)
+                            cy = int(mid_lbl[1] - 10)
+                            rmap = {}
+                            if errs:
+                                b = _badge(str(len(errs)), (200, 60, 60))
+                                br = b.get_rect(); br.center = (cx, cy)
+                                surf.blit(b, br)
+                                rmap['error'] = br
+                                cx = br.right + 4
+                            if warns:
+                                b = _badge(str(len(warns)), (220, 160, 60))
+                                br = b.get_rect(); br.center = (cx, cy)
+                                surf.blit(b, br)
+                                rmap['warning'] = br
+                            try:
+                                view.edge_badge_rects[key] = rmap
+                            except Exception:
+                                pass
+                except Exception:
+                    pass
     except Exception:
         pass
 

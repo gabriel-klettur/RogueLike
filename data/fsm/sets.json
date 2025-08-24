@@ -45,44 +45,72 @@
       ],
       "transitions": [
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "input.move",
           "from": "Idle",
           "id": "tr_c1d3b0f3",
+          "priority": 0,
           "to": "Move",
           "when": "input.move"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "input.stop",
           "from": "Move",
           "id": "tr_3ac424bb",
+          "priority": 0,
           "to": "Idle",
           "when": "input.stop"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "input.attack",
           "from": "Idle",
           "id": "tr_c1ac0885",
+          "priority": 0,
           "to": "Attack",
           "when": "input.attack"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "after_attack",
           "from": "Attack",
           "id": "tr_a118f50f",
+          "priority": 0,
           "to": "Idle",
           "when": "after_attack"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "key.q_or_e_edge",
           "from": "Idle",
           "id": "tr_4456905b",
+          "priority": 0,
           "to": "SpellSelect",
           "when": "key.q_or_e_edge"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "key.escape",
           "from": "SpellSelect",
           "id": "tr_6bad833d",
+          "priority": 0,
           "to": "Idle",
           "when": "key.escape"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "after_damage",
           "from": "Damage",
           "id": "tr_b52b3ae2",
+          "priority": 0,
           "to": "Idle",
           "when": "after_damage"
         }
@@ -96,7 +124,8 @@
         {
           "class": "PatrolState",
           "id": "Patrol",
-          "props": {}
+          "props": {},
+          "terminal": true
         },
         {
           "class": "DamageState",
@@ -106,8 +135,12 @@
       ],
       "transitions": [
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "after_damage",
           "from": "Damage",
           "id": "tr_f5a59d54",
+          "priority": 0,
           "to": "Patrol",
           "when": "after_damage"
         }
@@ -172,97 +205,157 @@
           "id": "Death",
           "label": "Death",
           "props": {},
-          "terminal": false
+          "terminal": true
         }
       ],
       "transitions": [
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "player_in_aggro",
           "from": "Patrol",
           "id": "tr_d4aeff4d",
+          "priority": 0,
           "to": "Aggro",
           "when": "player_in_aggro"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "aggro_continue",
           "from": "Aggro",
           "id": "tr_920609f2",
+          "priority": 0,
           "to": "Chase",
           "when": "aggro_continue"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "melee_range",
           "from": "Aggro",
           "id": "tr_95c26df6",
+          "priority": 0,
           "to": "Attack",
           "when": "melee_range"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "low_health",
           "from": "Aggro",
           "id": "tr_b2319a5e",
+          "priority": 0,
           "to": "Flee",
           "when": "low_health"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "melee_range",
           "from": "Chase",
           "id": "tr_b56700bb",
+          "priority": 0,
           "to": "Attack",
           "when": "melee_range"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "lost_player",
           "from": "Chase",
           "id": "tr_a5fb0d53",
+          "priority": 0,
           "to": "Patrol",
           "when": "lost_player"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "out_of_melee_range",
           "from": "Attack",
           "id": "tr_072c53fd",
+          "priority": 0,
           "to": "Chase",
           "when": "out_of_melee_range"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "after_damage",
           "from": "Damage",
           "id": "tr_6170b805",
+          "priority": 0,
           "to": "AlertChase",
           "when": "after_damage"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "timer_5s",
           "from": "AlertChase",
           "id": "tr_6094fcde",
+          "priority": 0,
           "to": "Patrol",
           "when": "timer_5s"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "dead",
           "from": "Patrol",
           "id": "tr_5faeda85",
+          "priority": 0,
           "to": "Death",
           "when": "dead"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "dead",
           "from": "Aggro",
           "id": "tr_17ce0c09",
+          "priority": 0,
           "to": "Death",
           "when": "dead"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "dead",
           "from": "Chase",
           "id": "tr_755dbb1f",
+          "priority": 0,
           "to": "Death",
           "when": "dead"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "dead",
           "from": "Attack",
           "id": "tr_e536689f",
+          "priority": 0,
           "to": "Death",
           "when": "dead"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "dead",
           "from": "Flee",
           "id": "tr_79b31459",
+          "priority": 0,
           "to": "Death",
           "when": "dead"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "dead",
           "from": "AlertChase",
           "id": "tr_e001a8cc",
+          "priority": 0,
           "to": "Death",
           "when": "dead"
         }
@@ -277,25 +370,29 @@
           "class": "IdleState",
           "id": "AwaitTrigger",
           "label": "AwaitTrigger",
-          "props": {}
+          "props": {},
+          "terminal": false
         },
         {
           "class": "MoveState",
           "id": "SpawningWave",
           "label": "SpawningWave",
-          "props": {}
+          "props": {},
+          "terminal": false
         },
         {
           "class": "PlayerAttackState",
           "id": "WaitCooldown",
           "label": "WaitCooldown",
-          "props": {}
+          "props": {},
+          "terminal": false
         },
         {
           "class": "DamageState",
           "id": "WaitRestart",
           "label": "WaitRestart",
-          "props": {}
+          "props": {},
+          "terminal": false
         },
         {
           "class": "DeathState",
@@ -307,50 +404,82 @@
       ],
       "transitions": [
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "start",
           "from": "AwaitTrigger",
-          "id": "tr_4a23a79b",
+          "id": "tr_2a900349",
+          "priority": 0,
           "to": "SpawningWave",
           "when": "start"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "placed",
           "from": "SpawningWave",
-          "id": "tr_96eab16c",
+          "id": "tr_fc97db89",
+          "priority": 0,
           "to": "WaitCooldown",
           "when": "placed"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "cooldown_elapsed",
           "from": "WaitCooldown",
-          "id": "tr_597f69e6",
+          "id": "tr_a561f136",
+          "priority": 0,
           "to": "SpawningWave",
           "when": "cooldown_elapsed"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "no_next_wave",
           "from": "SpawningWave",
-          "id": "tr_ffce65c7",
+          "id": "tr_01a59110",
+          "priority": 0,
           "to": "Finished",
           "when": "no_next_wave"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "end_of_sequence",
           "from": "WaitCooldown",
-          "id": "tr_83314378",
+          "id": "tr_8a13c574",
+          "priority": 0,
           "to": "Finished",
           "when": "end_of_sequence"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "loop",
           "from": "Finished",
-          "id": "tr_e08707b9",
+          "id": "tr_7b908cad",
+          "priority": 0,
           "to": "WaitRestart",
           "when": "loop"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "restart_elapsed_proximity_mode",
           "from": "WaitRestart",
-          "id": "tr_cddb72c6",
+          "id": "tr_52658327",
+          "priority": 0,
           "to": "AwaitTrigger",
           "when": "restart_elapsed_proximity_mode"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "restart_elapsed_auto_mode",
           "from": "WaitRestart",
-          "id": "tr_89922649",
+          "id": "tr_884c0ade",
+          "priority": 0,
           "to": "SpawningWave",
           "when": "restart_elapsed_auto_mode"
         }
@@ -395,50 +524,82 @@
       ],
       "transitions": [
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "start",
           "from": "AwaitTrigger",
           "id": "tr_6af7b926",
+          "priority": 0,
           "to": "SpawningWave",
           "when": "start"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "placed",
           "from": "SpawningWave",
           "id": "tr_5bc18c24",
+          "priority": 0,
           "to": "WaitClear",
           "when": "placed"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "cleared",
           "from": "WaitClear",
           "id": "tr_903c8dd6",
+          "priority": 0,
           "to": "SpawningWave",
           "when": "cleared"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "no_next_wave",
           "from": "SpawningWave",
           "id": "tr_9705db01",
+          "priority": 0,
           "to": "Finished",
           "when": "no_next_wave"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "end_of_sequence",
           "from": "WaitClear",
           "id": "tr_31c0173a",
+          "priority": 0,
           "to": "Finished",
           "when": "end_of_sequence"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "loop",
           "from": "Finished",
           "id": "tr_60732508",
+          "priority": 0,
           "to": "WaitRestart",
           "when": "loop"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "restart_elapsed_proximity_mode",
           "from": "WaitRestart",
           "id": "tr_3a5a8c7b",
+          "priority": 0,
           "to": "AwaitTrigger",
           "when": "restart_elapsed_proximity_mode"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "restart_elapsed_auto_mode",
           "from": "WaitRestart",
           "id": "tr_a8ffc366",
+          "priority": 0,
           "to": "SpawningWave",
           "when": "restart_elapsed_auto_mode"
         }
@@ -483,50 +644,82 @@
       ],
       "transitions": [
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "start",
           "from": "AwaitTrigger",
           "id": "tr_b2edf240",
+          "priority": 0,
           "to": "SpawningWave",
           "when": "start"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "placed",
           "from": "SpawningWave",
           "id": "tr_9c867845",
+          "priority": 0,
           "to": "WaitCooldown",
           "when": "placed"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "bwc_elapsed",
           "from": "WaitCooldown",
           "id": "tr_6b5b77e2",
+          "priority": 0,
           "to": "SpawningWave",
           "when": "bwc_elapsed"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "no_next_wave",
           "from": "SpawningWave",
           "id": "tr_a35a81a6",
+          "priority": 0,
           "to": "Finished",
           "when": "no_next_wave"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "end_of_sequence",
           "from": "WaitCooldown",
           "id": "tr_2474bd1c",
+          "priority": 0,
           "to": "Finished",
           "when": "end_of_sequence"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "loop",
           "from": "Finished",
           "id": "tr_a82b5258",
+          "priority": 0,
           "to": "WaitRestart",
           "when": "loop"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "restart_elapsed_proximity_mode",
           "from": "WaitRestart",
           "id": "tr_d936810d",
+          "priority": 0,
           "to": "AwaitTrigger",
           "when": "restart_elapsed_proximity_mode"
         },
         {
+          "actions": [],
+          "cooldown_frames": 0,
+          "event": "restart_elapsed_auto_mode",
           "from": "WaitRestart",
           "id": "tr_3cf9cb39",
+          "priority": 0,
           "to": "SpawningWave",
           "when": "restart_elapsed_auto_mode"
         }

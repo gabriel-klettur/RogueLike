@@ -37,6 +37,14 @@ class FsmGraphPanelModel:
     dragging_edge_orig_from: Optional[str] = None
     dragging_edge_orig_to: Optional[str] = None
     selected_set_id: Optional[str] = None
+    # Lint results (populated by controller on render)
+    lint_warnings: List[str] = field(default_factory=list)
+    lint_errors: List[str] = field(default_factory=list)
+    # Enriched lint indexed for quick per-element lookups
+    # node_lint_by_id: node_id -> list of enriched items
+    node_lint_by_id: Dict[str, List[Dict[str, Any]]] = field(default_factory=dict)
+    # edge_lint_by_id: transition_id/edge_id -> list of enriched items
+    edge_lint_by_id: Dict[str, List[Dict[str, Any]]] = field(default_factory=dict)
     # Inline text editing state (labels)
     editing_node_id: Optional[str] = None
     editing_edge_index: Optional[int] = None

@@ -1,5 +1,7 @@
 from __future__ import annotations
 from typing import Optional, Dict, Any, List, Tuple
+import logging
+import time
 
 from .fsm_properties_panel_models import FsmPropertiesPanelModel, Row
 from .fsm_properties_panel_view import FsmPropertiesPanelView
@@ -29,6 +31,11 @@ class FsmPropertiesPanelController:
 
         # Cached snapshot for current frame
         self._snapshot: Dict[str, Any] = {}
+        # Logging guards to avoid spamming per frame
+        self._last_lint_counts: Tuple[int, int] | None = None  # (warnings, errors)
+        self._last_get_last_lint_error: str | None = None
+        self._last_get_last_lint_error_ts: float = 0.0
+        self._log_error_cooldown: float = 5.0  # seconds
 
     # --- Rendering ---
     def render(self, screen, *, anchor=None):
@@ -42,7 +49,30 @@ class FsmPropertiesPanelController:
             warns, errs = get_last_lint()
             self.model.lint_warnings = list(warns or [])
             self.model.lint_errors = list(errs or [])
-        except Exception:
+            try:
+                _w = len(self.model.lint_warnings)
+                _e = len(self.model.lint_errors)
+                _counts = (_w, _e)
+                if _counts != self._last_lint_counts:
+                    logging.getLogger("roguelike_editors.fsm.fsm_properties_panel.controller").debug(
+                        "[PropertiesPanel] Lint fetched: warnings=%d errors=%d",
+                        _w, _e,
+                    )
+                    self._last_lint_counts = _counts
+            except Exception:
+                pass
+        except Exception as e:
+            try:
+                _msg = repr(e)
+                _now = time.monotonic()
+                if (_msg != self._last_get_last_lint_error) or (_now - self._last_get_last_lint_error_ts > self._log_error_cooldown):
+                    logging.getLogger("roguelike_editors.fsm.fsm_properties_panel.controller").debug(
+                        "[PropertiesPanel] get_last_lint failed: %r", e,
+                    )
+                    self._last_get_last_lint_error = _msg
+                    self._last_get_last_lint_error_ts = _now
+            except Exception:
+                pass
             self.model.lint_warnings = []
             self.model.lint_errors = []
         self._refresh_sets()
@@ -363,13 +393,31 @@ class FsmPropertiesPanelController:
             try:
                 self.model.lint_warnings = list(warns or [])
                 self.model.lint_errors = list(errs or [])
+                try:
+                    logging.getLogger("roguelike_editors.fsm.fsm_properties_panel.controller").debug(
+                        "[PropertiesPanel] Lint after save_sets: warnings=%d errors=%d",
+                        len(self.model.lint_warnings), len(self.model.lint_errors),
+                    )
+                except Exception:
+                    pass
             except Exception:
                 try:
                     lw, le = get_last_lint()
                     self.model.lint_warnings = list(lw or [])
                     self.model.lint_errors = list(le or [])
+                    try:
+                        logging.getLogger("roguelike_editors.fsm.fsm_properties_panel.controller").debug(
+                            "[PropertiesPanel] Lint fallback from get_last_lint: warnings=%d errors=%d",
+                            len(self.model.lint_warnings), len(self.model.lint_errors),
+                        )
+                    except Exception:
+                        pass
                 except Exception:
-                    pass
+                    try:
+                        logging.getLogger("roguelike_editors.fsm.fsm_properties_panel.controller").debug(
+                            "[PropertiesPanel] Failed to update lint after save",)
+                    except Exception:
+                        pass
         except Exception:
             # swallow errors in editor
             pass

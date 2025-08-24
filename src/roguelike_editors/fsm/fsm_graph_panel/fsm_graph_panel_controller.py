@@ -1,5 +1,8 @@
 from __future__ import annotations
 from typing import Optional
+import logging
+import time
+from roguelike_editors.fsm.services.fsm_persistence import get_last_lint, get_last_lint_enriched
 
 from .fsm_graph_panel_model import FsmGraphPanelModel
 from .fsm_graph_panel_view import FsmGraphPanelView
@@ -24,12 +27,107 @@ class FsmGraphPanelController:
         self._active_tool_view = None
         self._active_tool_model = None
         self._active_tool_controller = None
+        # Logging guards to avoid spamming per frame
+        self._last_lint_counts: tuple[int, int] | None = None  # (warnings, errors)
+        self._last_enriched_counts: tuple[int, int] | None = None  # (nodes, edges)
+        self._last_get_last_lint_error: str | None = None
+        self._last_get_last_lint_error_ts: float = 0.0
+        self._last_get_last_lint_enriched_error: str | None = None
+        self._last_get_last_lint_enriched_error_ts: float = 0.0
+        self._log_error_cooldown: float = 5.0  # seconds
         try:
             self._activate_tool(getattr(self.model, 'active_graph_tool', 'select'))
         except Exception:
             pass
 
     def render(self, screen, *, anchor=None):
+        # Pull last lint results so the View can surface badges/tooltips
+        try:
+            warns, errs = get_last_lint()
+            self.model.lint_warnings = list(warns or [])
+            self.model.lint_errors = list(errs or [])
+            try:
+                _w = len(self.model.lint_warnings)
+                _e = len(self.model.lint_errors)
+                _counts = (_w, _e)
+                if _counts != self._last_lint_counts:
+                    logging.getLogger("roguelike_editors.fsm.fsm_graph_panel.controller").debug(
+                        "[GraphPanel] Lint fetched: warnings=%d errors=%d", _w, _e,
+                    )
+                    self._last_lint_counts = _counts
+            except Exception:
+                pass
+        except Exception as e:
+            try:
+                _msg = repr(e)
+                _now = time.monotonic()
+                if (_msg != self._last_get_last_lint_error) or (_now - self._last_get_last_lint_error_ts > self._log_error_cooldown):
+                    logging.getLogger("roguelike_editors.fsm.fsm_graph_panel.controller").debug(
+                        "[GraphPanel] get_last_lint failed: %r", e,
+                    )
+                    self._last_get_last_lint_error = _msg
+                    self._last_get_last_lint_error_ts = _now
+            except Exception:
+                pass
+            try:
+                # Clear if unavailable
+                self.model.lint_warnings = []
+                self.model.lint_errors = []
+            except Exception:
+                pass
+        # Fetch enriched lint and index by node/edge for contextual badges
+        try:
+            enriched = list(get_last_lint_enriched() or [])
+            node_map: dict[str, list[dict]] = {}
+            edge_map: dict[str, list[dict]] = {}
+            sel_set = getattr(self.model, 'selected_set_id', None)
+            for it in enriched:
+                try:
+                    # Filter by current set if specified
+                    sid = it.get('set_id')
+                    if isinstance(sel_set, str) and sel_set and sid is not None and sid != sel_set:
+                        continue
+                    scope = it.get('scope')
+                    if scope == 'state':
+                        nid = it.get('state_id')
+                        if isinstance(nid, str) and nid:
+                            node_map.setdefault(nid, []).append(it)
+                    elif scope == 'transition':
+                        tid = it.get('transition_id')
+                        if isinstance(tid, str) and tid:
+                            edge_map.setdefault(tid, []).append(it)
+                except Exception:
+                    continue
+            self.model.node_lint_by_id = node_map
+            self.model.edge_lint_by_id = edge_map
+            try:
+                _n = len(node_map)
+                _e = len(edge_map)
+                _counts = (_n, _e)
+                if _counts != self._last_enriched_counts:
+                    logging.getLogger("roguelike_editors.fsm.fsm_graph_panel.controller").debug(
+                        "[GraphPanel] Enriched lint indexed: nodes=%d edges=%d", _n, _e,
+                    )
+                    self._last_enriched_counts = _counts
+            except Exception:
+                pass
+        except Exception as e:
+            try:
+                _msg = repr(e)
+                _now = time.monotonic()
+                if (_msg != self._last_get_last_lint_enriched_error) or (_now - self._last_get_last_lint_enriched_error_ts > self._log_error_cooldown):
+                    logging.getLogger("roguelike_editors.fsm.fsm_graph_panel.controller").debug(
+                        "[GraphPanel] get_last_lint_enriched failed: %r", e,
+                    )
+                    self._last_get_last_lint_enriched_error = _msg
+                    self._last_get_last_lint_enriched_error_ts = _now
+            except Exception:
+                pass
+            try:
+                self.model.node_lint_by_id = {}
+                self.model.edge_lint_by_id = {}
+            except Exception:
+                pass
         # Base render
         if anchor is None:
             result = self.view.render(self.model, screen, toolbar=self.toolbar)
