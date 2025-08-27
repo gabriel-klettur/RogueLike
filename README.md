@@ -79,7 +79,6 @@ from roguelike_game.game.game import Game
 ## ▶️ Uso
 
 Puedes lanzar el juego de dos maneras:
-
 **Desde desarrollo:**
 
 ```bash
