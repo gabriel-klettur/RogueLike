@@ -24,4 +24,8 @@ class SplitToolView:
         handle.fill(self.bar_color)
         pygame.draw.rect(handle, (255, 255, 255), handle.get_rect(), 1)
         offset_x = (w_scaled - self.handle_size) // 2
-        screen.blit(handle, (bx + offset_x, y_split - self.handle_size // 2))
+        handle_left = bx + offset_x
+        handle_top  = y_split - self.handle_size // 2
+        screen.blit(handle, (handle_left, handle_top))
+        # Devolver el rect del handle en coordenadas de pantalla para overlays externos (tutorial)
+        return {"handle_rect": pygame.Rect(handle_left, handle_top, self.handle_size, self.handle_size)}

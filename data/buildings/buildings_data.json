@@ -1,8 +1,8 @@
 [
     {
         "zone": "lobby",
-        "rel_x": 961,
-        "rel_y": 383,
+        "rel_x": 957,
+        "rel_y": 373,
         "assets": {
             "idle": "assets/buildings/temples/catholic.png"
         },
@@ -176,7 +176,7 @@
             251,
             324
         ],
-        "split_ratio": 0.585,
+        "split_ratio": 0.698,
         "z_bottom": 3,
         "z_top": 8,
         "collider_scope": "CG",
@@ -415,8 +415,8 @@
     },
     {
         "zone": "lobby",
-        "rel_x": 450,
-        "rel_y": 946,
+        "rel_x": 442,
+        "rel_y": 923,
         "assets": {
             "idle": "assets/buildings/shops/jewlery_shop.png"
         },
@@ -429,7 +429,7 @@
             1000,
             1000
         ],
-        "split_ratio": 0.632,
+        "split_ratio": 0.626,
         "z_bottom": 2,
         "z_top": 6,
         "collider_scope": "CG",
@@ -912,7 +912,7 @@
             490,
             627
         ],
-        "split_ratio": 0.688,
+        "split_ratio": 0.67,
         "z_bottom": 3,
         "z_top": 5,
         "collider_scope": "CG",

@@ -1301,14 +1301,14 @@
     },
     {
         "assets": {
-            "idle": "assets/buildings/vegetation/tree_3.png"
+            "idle": "assets/buildings/shops/jewlery_shop.png"
         },
         "solid": true,
-        "split_ratio": 0.688,
+        "split_ratio": 0.626,
         "collider_scope": "CG",
         "original_scale": [
-            490,
-            627
+            1000,
+            1000
         ],
         "id": 101
     }

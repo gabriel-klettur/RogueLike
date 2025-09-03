@@ -1,10 +1,10 @@
 [
     {
-        "id": 1,
+        "id": 139,
         "template_id": 1,
         "zone": "lobby",
-        "rel_x": 961,
-        "rel_y": 383,
+        "rel_x": 957,
+        "rel_y": 373,
         "overrides": {
             "scale": [
                 353,
@@ -112,8 +112,8 @@
         }
     },
     {
-        "id": 8,
-        "template_id": 8,
+        "id": 140,
+        "template_id": 57,
         "zone": "lobby",
         "rel_x": 853,
         "rel_y": 584,
@@ -288,11 +288,11 @@
         }
     },
     {
-        "id": 19,
-        "template_id": 19,
+        "id": 142,
+        "template_id": 101,
         "zone": "lobby",
-        "rel_x": 450,
-        "rel_y": 946,
+        "rel_x": 442,
+        "rel_y": 923,
         "overrides": {
             "scale": [
                 302,

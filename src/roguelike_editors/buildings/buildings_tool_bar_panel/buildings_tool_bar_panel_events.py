@@ -20,6 +20,45 @@ class BuildingsToolBarPanelEventHandler:
             widget = getattr(toolbar_view, 'widget', None)
             icon_rects = getattr(widget, 'icon_rects', {}) if widget else {}
 
+            # Tutorial Building (toggle panel de tutorial)
+            rect = icon_rects.get('tutorial_building')
+            if rect and rect.collidepoint(pos):
+                st = self.controller.editor_state
+                tutorial = getattr(self.controller.editor_manager, 'tutorial', None)
+                if getattr(self.model, 'active_tool', None) == 'tutorial_building':
+                    # Apagar tutorial
+                    self.model.active_tool = None
+                    try:
+                        if tutorial:
+                            tutorial.deactivate()
+                    except Exception:
+                        pass
+                else:
+                    # Encender tutorial, desactivar otros modos que interfieran
+                    self.model.active_tool = 'tutorial_building'
+                    # Cerrar picker y Add/Remove
+                    try:
+                        st.picker_active = False
+                        add_remove = getattr(self.controller.editor_manager, 'add_remove', None)
+                        if add_remove and add_remove.is_active():
+                            add_remove.deactivate()
+                    except Exception:
+                        pass
+                    # Desactivar colliders si estuviera activo
+                    try:
+                        colliders = getattr(self.controller.editor_manager, 'colliders', None)
+                        if colliders and colliders.is_active():
+                            colliders.deactivate()
+                    except Exception:
+                        pass
+                    # Activar tutorial
+                    try:
+                        if tutorial:
+                            tutorial.activate()
+                    except Exception:
+                        pass
+                return True
+
             # Undo
             rect = icon_rects.get('undo')
             if rect and rect.collidepoint(pos):
@@ -56,12 +95,20 @@ class BuildingsToolBarPanelEventHandler:
                     except Exception:
                         pass
                 else:
+                    # Cambiar selección activa en la toolbar
                     self.model.active_tool = 'buildings_manager'
                     # Desactivar panel de colisiones si está activo
                     try:
                         colliders = getattr(self.controller.editor_manager, 'colliders', None)
                         if colliders and colliders.is_active():
                             colliders.deactivate()
+                    except Exception:
+                        pass
+                    # Si estaba activo el tutorial, desactivarlo para evitar superposición
+                    try:
+                        tutorial = getattr(self.controller.editor_manager, 'tutorial', None)
+                        if tutorial and tutorial.is_active():
+                            tutorial.deactivate()
                     except Exception:
                         pass
                     # Activar panel Add/Remove
@@ -97,6 +144,13 @@ class BuildingsToolBarPanelEventHandler:
                         add_remove = getattr(self.controller.editor_manager, 'add_remove', None)
                         if add_remove and add_remove.is_active():
                             add_remove.deactivate()
+                    except Exception:
+                        pass
+                    # Desactivar tutorial si estuviera activo
+                    try:
+                        tutorial = getattr(self.controller.editor_manager, 'tutorial', None)
+                        if tutorial and tutorial.is_active():
+                            tutorial.deactivate()
                     except Exception:
                         pass
                     try:

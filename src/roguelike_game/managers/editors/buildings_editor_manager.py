@@ -8,6 +8,7 @@ from roguelike_editors.buildings.buildings_tool_bar_panel.buildings_tool_bar_pan
 from roguelike_editors.buildings.buildings_tool_bar_panel.buildings_tool_bar_panel_view import BuildingsToolBarPanelView
 from roguelike_editors.buildings.buildings_tool_bar_panel.buildings_tool_bar_panel_events import BuildingsToolBarPanelEventHandler
 from roguelike_editors.buildings.buildings_tool_bar_panel.buildings_tool_bar_panel_controller import BuildingsToolBarPanelController
+from roguelike_editors.buildings.buildings_tutorial_panel import BuildingsTutorialPanelController
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_ui.ui_blocker import clear_blockers
 
@@ -27,6 +28,9 @@ class BuildingEditorManager:
         self.colliders    = BuildingCollidersPanelController(state, self.editor_state, self.view)
         # Panel de Add/Remove (abre picker y acciones rápidas)
         self.add_remove   = BuildingsAddRemovePanelController(state, self.editor_state, self.view, self)
+        # Panel de Tutorial (overlay con guía paso a paso)
+        self.tutorial     = BuildingsTutorialPanelController(state, self.editor_state, self.view, self)
+
         # Asegurar estado inicial: panel Add/Remove y Picker apagados al abrir el editor
         try:
             self.add_remove.deactivate()
@@ -58,6 +62,11 @@ class BuildingEditorManager:
             self.handler.add_remove = self.add_remove
         except Exception:
             pass
+        # Delegación al panel de tutorial
+        try:
+            self.handler.tutorial = self.tutorial
+        except Exception:
+            pass
 
         # --- Buildings Toolbar Panel ---
         # Crear toolbar (modelo, vista, eventos, controlador) siguiendo patrón Items
@@ -87,6 +96,12 @@ class BuildingEditorManager:
         try:
             if hasattr(self.colliders, 'view'):
                 self.colliders.view.toolbar_view = tmp_view
+        except Exception:
+            pass
+        # Permitir que el panel de Tutorial se alinee a la derecha del toolbar/título
+        try:
+            if hasattr(self.tutorial, 'view'):
+                self.tutorial.view.toolbar_view = tmp_view
         except Exception:
             pass
         # Permitir al event handler del editor delegar a la toolbar
@@ -125,5 +140,10 @@ class BuildingEditorManager:
             # Render del panel de colisiones por encima (overlay/picker)
             try:
                 self.colliders.render(screen, camera, buildings)
+            except Exception:
+                pass
+            # Render del panel de Tutorial por encima de todo
+            try:
+                self.tutorial.render(screen)
             except Exception:
                 pass
