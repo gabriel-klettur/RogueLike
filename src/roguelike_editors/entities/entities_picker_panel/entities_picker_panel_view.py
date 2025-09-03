@@ -15,7 +15,7 @@ class EntityPickerPanelView:
 
 
     """
-    Vista que renderiza el panel UI del editor de entidades (jugadores y monstruos).
+    Vista que renderiza el panel UI del editor de entidades (jugadores y hostiles).
 
     Características:
     - Panel dinámico con scroll.
@@ -104,12 +104,15 @@ class EntityPickerPanelView:
             self._picker_logged = False
             return
 
-        # Lista completa de entidades (jugador + monstruos)
+        # Lista completa de entidades (jugador + hostiles)
         if model.active_tab == "Players":
             entity_ids = list(model.player_stats.keys())
-        else:
-            # Ocultar entradas de monstruos marcadas como pendientes (no confirmadas)
+        elif model.active_tab == "Hostile":
+            # Ocultar entradas de hostiles marcadas como pendientes (no confirmadas)
             entity_ids = [mid for mid, m in model.monsters.items() if not (isinstance(m, dict) and m.get('__pending__'))]
+        else:
+            # Otras pestañas aún no implementadas
+            entity_ids = []
 
         # Reset debug flag on tab change
         if self._last_active_tab != model.active_tab:
@@ -201,13 +204,13 @@ class EntityPickerPanelView:
     # SUBRENDERIZADO
     # ----------------------------
     def _draw_tabs(self, screen: pygame.Surface, model: EntityPickerPanelModel) -> None:
-        """Dibuja las pestañas Players/Monsters en el encabezado del panel."""
+        """Dibuja las pestañas Players/Hostile/Neutral/Aliades/Specials en el encabezado del panel."""
         font_h = self.font.get_height()
         padding_x, padding_y = 10, 5
         x_cursor, y = self.x, self.y
         model.tab_rects.clear()
         mouse_pos = pygame.mouse.get_pos()
-        for label in ("Players", "Monsters"):
+        for label in ("Players", "Hostile", "Neutral", "Aliades", "Specials"):
             text_w, text_h = self.font.size(label)
             w = text_w + padding_x * 2
             h = text_h + padding_y * 2

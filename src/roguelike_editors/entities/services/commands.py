@@ -515,7 +515,7 @@ class DeleteEntityDefinitionCommand(Command):
     description: str = "Delete entity definition"
     _saved_entry: Any = None
     _saved_index: Optional[int] = None
-    _section: Optional[str] = None  # 'players' or 'monsters'
+    _section: Optional[str] = None  # 'players' or 'hostiles'
     _path: Optional[str] = None
     _saved_default: Any = None
 
@@ -524,7 +524,7 @@ class DeleteEntityDefinitionCommand(Command):
         path, _, entry = load_entity_data(self.ent_id, self.controller.model.player_stats, self.controller.model.monsters)
         self._path = path
         root = load_from_json(path)
-        self._section = 'players' if self.ent_id in self.controller.model.player_stats else 'monsters'
+        self._section = 'players' if self.ent_id in self.controller.model.player_stats else 'hostiles'
         classes = root.setdefault(self._section, {}).setdefault('classes', {})
         # Save state for undo
         self._saved_entry = copy.deepcopy(entry)

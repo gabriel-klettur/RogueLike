@@ -97,7 +97,7 @@ class MonsterBuilder:
             points=route.get("points", []),
             dwell_times=route.get("dwell_times"),
         )
-        # Try per-class FSM via fsm_set in new_monsters.json, then fallback to assignments.json, then Patrol
+        # Try per-class FSM via fsm_set in new_hostiles.json, then fallback to assignments.json, then Patrol
         fsm_set_id = cfg.get("fsm_set")
         if fsm_set_id:
             try:

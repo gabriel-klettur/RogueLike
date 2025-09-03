@@ -4,7 +4,7 @@ from pathlib import Path
 
 # Carga de configuración de jugadores en nuevo formato
 env_path = Path(__file__).resolve().parents[4] / "data" / "entities" / "new_players.json"
-with open(env_path, encoding="utf-8") as f:
+with open(env_path, encoding="utf-8-sig") as f:
     _player_cfg = json.load(f)
 
 # Tamaño original y renderizado de sprites

@@ -141,7 +141,7 @@ class EntityPropertiesPanelController:
         if in_add_system_mode:
             # Actualización en memoria para assets
             # Normalizamos ruta relativa como hace SetAssetCommand en persistencia; aquí podemos almacenar la ruta tal cual
-            # Estructura destino: entry['assets'] con active_set 'no-sets' por defecto en monstruos nuevos
+            # Estructura destino: entry['assets'] con active_set 'no-sets' por defecto en hostiles nuevos
             # Convertir cualquier PathLike a str y normalizar separadores para evitar problemas de serialización
             try:
                 path_str = os.fspath(path)
@@ -218,13 +218,13 @@ class EntityPropertiesPanelController:
             except Exception as e:
                 logging.error(f"[ERROR][PropertiesPanel] Error updating player ECS entities on active_set toggle for class {ent_id}: {e}")
         else:
-            # Monsters: recargar definiciones/cachés y actualizar ECS de monstruos
+            # Hostiles: recargar definiciones/cachés y actualizar ECS de hostiles
             try:
                 ecs_world = self.editor_controller.game.ecs.ecs_world
                 update_monster_assets(ecs_world, ent_id)
-                logger.debug(f" Monster ECS entities updated for type {ent_id} after active_set toggle")
+                logger.debug(f" Hostile ECS entities updated for type {ent_id} after active_set toggle")
             except Exception as e:
-                logging.error(f"[ERROR][PropertiesPanel] Error updating monster ECS entities on active_set toggle for type {ent_id}: {e}")
+                logging.error(f"[ERROR][PropertiesPanel] Error updating hostile ECS entities on active_set toggle for type {ent_id}: {e}")
         # Redraw properties panel UI
         try:
             self.editor_controller.render(self.editor_controller.game.screen)
@@ -250,9 +250,9 @@ class EntityPropertiesPanelController:
             in_add_system_mode = False
 
         if in_add_system_mode:
-            # Actualizar solo en memoria (ramifica por tipo Player/Monster)
+            # Actualizar solo en memoria (ramifica por tipo Player/Hostile)
             is_selector = getattr(self.model, 'show_add_system_selector', False)
-            sel_type = getattr(self.model, 'add_system_entity_type', 'Monster')
+            sel_type = getattr(self.model, 'add_system_entity_type', 'Hostile')
             target_is_player = (ent_id in self.model.player_stats) or (is_selector and sel_type == 'Player')
 
             if key == 'id':
@@ -289,7 +289,7 @@ class EntityPropertiesPanelController:
                     self._reset_edit_state()
                     return
 
-            # Otras propiedades: escribir en stats de Player o Monster (soporta claves con puntos)
+            # Otras propiedades: escribir en stats de Player o Hostile (soporta claves con puntos)
             if target_is_player:
                 stats = self.model.player_stats.setdefault(ent_id, {})
                 # Inferir tipo desde valor actual si existe
@@ -418,13 +418,13 @@ class EntityPropertiesPanelController:
                     if isinstance(cur, dict):
                         cur.pop('__pending__', None)
                 save_entity_data(sel_id, entry, path, self.model.player_stats, self.model.monsters)
-                logger.debug(f"Monster type '{sel_id}' confirmed and saved to JSON")
-                # Recargar definiciones de monstruos para habilitar spawn inmediato
+                logger.debug(f"Hostile type '{sel_id}' confirmed and saved to JSON")
+                # Recargar definiciones de hostiles (compatibilidad con 'monster' runtime)
                 try:
                     reload_monster_defs()
-                    logger.debug("Definiciones de monstruos recargadas tras confirmar")
+                    logger.debug("Definiciones de hostiles recargadas tras confirmar")
                 except Exception as e:
-                    logger.error(f"[WARN][PropertiesPanel] No se pudieron recargar definiciones de monstruos: {e}")
+                    logger.error(f"[WARN][PropertiesPanel] No se pudieron recargar definiciones de hostiles: {e}")
         except Exception as e:
             logger.error(f"[ERROR][PropertiesPanel] Error al confirmar entidad '{sel_id}': {e}")
         # Salir del modo 'add_entities_on_system' y ocultar selector/botón en UI

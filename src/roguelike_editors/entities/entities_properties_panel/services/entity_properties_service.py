@@ -7,7 +7,7 @@ from roguelike_ui.services.json_persistence import load_from_json
 
 def load_entity_data(ent_id: str, player_stats: dict, monsters: dict) -> Tuple[str, dict, dict]:
     """
-    Load the JSON data for the given entity id (player or monster).
+    Load the JSON data for the given entity id (player or hostile).
 
     Returns:
         (path, data, entry): absolute json path, classes dict, and the entity entry dict.
@@ -19,9 +19,9 @@ def load_entity_data(ent_id: str, player_stats: dict, monsters: dict) -> Tuple[s
         classes = root.get("players", {}).get("classes", {})
         data = classes
     else:
-        path = os.path.join(os.getcwd(), "data", "entities", "new_monsters.json")
+        path = os.path.join(os.getcwd(), "data", "entities", "new_hostiles.json")
         root = load_from_json(path)
-        data = root.setdefault("monsters", {}).setdefault("classes", {})
+        data = root.setdefault("hostiles", {}).setdefault("classes", {})
 
     entry = data.setdefault(ent_id, {})
     return path, data, entry
@@ -33,7 +33,7 @@ def save_entity_data(ent_id: str, entry: dict, path: str, player_stats: dict, mo
 
     Notes:
     - For players: writes under players.classes[ent_id]
-    - For monsters: writes under monsters.classes[ent_id]
+    - For hostiles: writes under hostiles.classes[ent_id]
     """
     if ent_id in player_stats:
         full = path
@@ -56,9 +56,9 @@ def save_entity_data(ent_id: str, entry: dict, path: str, player_stats: dict, mo
         entry['stats'] = _sanitize_stats(entry.get('stats', {}))
         # Sanitizar assets (convertir PathLike a str) antes de completar el esqueleto
         entry['assets'] = _sanitize_assets(entry.get('assets', {}))
-        # Asegurar esqueleto completo para monstruos (persistir nulls explícitos)
+        # Asegurar esqueleto completo para hostiles (persistir nulls explícitos)
         entry = ensure_monster_skeleton(entry)
-        root.setdefault("monsters", {}).setdefault("classes", {})[ent_id] = entry
+        root.setdefault("hostiles", {}).setdefault("classes", {})[ent_id] = entry
         with open(full, "w", encoding="utf-8") as f:
             json.dump(root, f, ensure_ascii=False, indent=2)
 

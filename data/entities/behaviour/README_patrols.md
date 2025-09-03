@@ -1,29 +1,29 @@
 # Catálogo de Patrullas (patrols.json)
 
-Este directorio define patrones reutilizables de patrullaje para los monstruos.
-El catálogo principal es `data/entities/behaviour/patrols.json`, mientras que la asignación de un patrón a cada clase de monstruo se hace en `data/entities/new_monsters.json` mediante la propiedad `patrol`.
+Este directorio define patrones reutilizables de patrullaje para los hostiles.
+El catálogo principal es `data/entities/behaviour/patrols.json`, mientras que la asignación de un patrón a cada clase de hostil se hace en `data/entities/new_hostiles.json` mediante la propiedad `patrol`.
 
 - Catálogo: `data/entities/behaviour/patrols.json`
-- Asignación por monstruo: `data/entities/new_monsters.json` (campo opcional `patrol`)
+- Asignación por hostil: `data/entities/new_hostiles.json` (campo opcional `patrol`)
 - Generación de puntos: `src/roguelike_game/factories/monster/behaviour_loader.py`
 - Construcción de entidad: `src/roguelike_game/factories/monster/builder.py`
 - Consumo en runtime: `src/roguelike_game/ecs/systems/fsm/states/monster/patrol_state.py` (recorre `PatrolRoute.points` en bucle)
 
 ## Cómo funciona
 
-1. Al crear un monstruo, `MonsterBuilder` lee `patrol` desde `MONSTER_DEFS` (expuesto por `config.py`).
+1. Al crear un hostil, `MonsterBuilder` lee `patrol` desde `MONSTER_DEFS` (expuesto por `config.py`).
 2. `behaviour_loader.build_patrol_points(px, py, patrol_cfg, TILE_SIZE)` genera la lista de waypoints (coordenadas en píxeles) a partir de:
    - el patrón (`id` o `type`),
-   - `params` del monstruo (si existen),
+   - `params` del hostil (si existen),
    - y los `default_params` del catálogo.
 3. Se construye el componente `PatrolRoute(points=...)` con estos waypoints.
-4. `PatrolState` mueve al monstruo de punto a punto y reinicia al llegar al final (patrulla en bucle).
+4. `PatrolState` mueve al hostil de punto a punto y reinicia al llegar al final (patrulla en bucle).
 
 Notas:
 - Las distancias en `params` están en tiles; se convierten a píxeles usando `TILE_SIZE` dentro de `behaviour_loader.py`.
 - Si no se define `patrol` o el patrón es desconocido, se usa un fallback lineal de dos puntos (ida y vuelta).
 
-## Estructura del campo `patrol` por monstruo
+## Estructura del campo `patrol` por hostil
 
 ```json
 "patrol": {
@@ -87,7 +87,7 @@ El catálogo (`patrols.json`) incluye 5 patrones con `default_params`. A continu
 
 ## Ejemplos de uso por monstruo
 
-En `data/entities/new_monsters.json` bajo cada clase:
+En `data/entities/new_hostiles.json` bajo cada clase:
 
 ```json
 "patrol": { "id": "line", "params": { "axis": "x", "length_tiles": 5 } }
@@ -106,7 +106,7 @@ En `data/entities/new_monsters.json` bajo cada clase:
 - **Extensión**: para añadir un nuevo patrón:
   1. Agrega su entrada en `patrols.json` con `default_params`.
   2. Implementa la generación en `behaviour_loader.py` (switch por `id`).
-  3. Asigna el patrón en `new_monsters.json`.
+  3. Asigna el patrón en `new_hostiles.json`.
 
 ## Depuración
 

@@ -6,7 +6,7 @@ from typing import List, Tuple
 
 @dataclass
 class EntityPickerPanelModel:
-    """Estado del editor de entidades: jugador y monstruos."""
+    """Estado del editor de entidades: jugador y hostiles."""
     player_stats: Dict[str, Any]
     monsters: Dict[str, Any]
     assets: Dict[str, pygame.Surface]
@@ -20,7 +20,7 @@ class EntityPickerPanelModel:
     scroll_index: int = 0
     hovered_id: Optional[str] = None
     selected_id: Optional[str] = None
-    # Pestaña activa: 'Players' o 'Monsters'
+    # Pestaña activa: 'Players', 'Hostile', 'Neutral', 'Aliades', 'Specials'
     active_tab: str = "Players"
     # Rectángulos de las pestañas para detectar clicks
     tab_rects: Dict[str, pygame.Rect] = field(default_factory=dict)

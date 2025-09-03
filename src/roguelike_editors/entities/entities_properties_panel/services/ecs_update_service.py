@@ -34,16 +34,16 @@ def update_player_assets(ecs_world: Any, ent_id: str) -> None:
 
 
 def update_monster_assets(ecs_world: Any, ent_id: str) -> None:
-    """Reload monster defs and caches, then update Sprite/Animator for matching entities."""
+    """Reload hostile defs (monster runtime) and caches, then update Sprite/Animator for matching entities."""
     try:
         reload_monster_defs()
         monster_cache._loaded_variants.discard(ent_id)
         monster_cache._SPRITE_SURFACES.pop(ent_id, None)
         monster_cache._DEATH_SURFACES.pop(ent_id, None)
         monster_cache.load_caches_for([ent_id])
-        logger.debug(f"[ecs_update_service] Monster defs reloaded and cache reset for {ent_id}")
+        logger.debug(f"[ecs_update_service] Hostile defs reloaded and cache reset for {ent_id}")
     except Exception as e:
-        logger.warning(f"[ecs_update_service][WARN] Problem reloading monster caches for {ent_id}: {e}")
+        logger.warning(f"[ecs_update_service][WARN] Problem reloading hostile caches for {ent_id}: {e}")
 
     # Update existing entities regardless of cache reload success
     try:
@@ -63,9 +63,9 @@ def update_monster_assets(ecs_world: Any, ent_id: str) -> None:
                     new_anims = {state: [surf.copy() if hasattr(surf, 'copy') else surf]
                                  for state, surf in base_map.items()}
                     animators[eid].animations = new_anims
-        logger.debug(f"[ecs_update_service] Monster ECS updated for type {ent_id}")
+        logger.debug(f"[ecs_update_service] Hostile ECS updated for type {ent_id}")
     except Exception as e:
-        logger.error(f"[ecs_update_service][ERROR] Failed to update monster ECS for {ent_id}: {e}")
+        logger.error(f"[ecs_update_service][ERROR] Failed to update hostile ECS for {ent_id}: {e}")
 
 
 def update_player_stats(ecs_world: Any, ent_id: str, key: str, value: Any) -> None:
@@ -112,7 +112,7 @@ def update_player_stats(ecs_world: Any, ent_id: str, key: str, value: Any) -> No
 
 
 def update_monster_stats(ecs_world: Any, ent_id: str, key: str, value: Any) -> None:
-    """Propagate monster stat changes to ECS components."""
+    """Propagate hostile stat changes to ECS components (monster runtime)."""
     try:
         idents = ecs_world.components.get('Identity', {})
         health_comps = ecs_world.components.get('Health', {})
@@ -149,6 +149,6 @@ def update_monster_stats(ecs_world: Any, ent_id: str, key: str, value: Any) -> N
                             ns.fsm.context['attack_duration'] = float(value) if value is not None else None
                     except Exception:
                         pass
-        logger.debug(f"[ecs_update_service] Monster ECS stats updated for type {ent_id}")
+        logger.debug(f"[ecs_update_service] Hostile ECS stats updated for type {ent_id}")
     except Exception as e:
-        logger.error(f"[ecs_update_service][ERROR] Failed to update monster ECS stats for {ent_id}: {e}")
+        logger.error(f"[ecs_update_service][ERROR] Failed to update hostile ECS stats for {ent_id}: {e}")

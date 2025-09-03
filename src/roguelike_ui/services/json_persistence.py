@@ -8,7 +8,7 @@ def save_to_json(path: str, key: str, value, indent: int = 2):
     full = os.path.abspath(path)
     data = {}
     if os.path.exists(full):
-        with open(full, encoding='utf-8') as f:
+        with open(full, encoding='utf-8-sig') as f:
             data = json.load(f)
     data[key] = value
     os.makedirs(os.path.dirname(full), exist_ok=True)
@@ -22,7 +22,7 @@ def load_from_json(path: str) -> dict:
     """
     full = os.path.abspath(path)
     if os.path.exists(full):
-        with open(full, encoding='utf-8') as f:
+        with open(full, encoding='utf-8-sig') as f:
             return json.load(f)
     return {}
 
@@ -34,7 +34,7 @@ def remove_from_json(path: str, key: str, indent: int = 2) -> bool:
     full = os.path.abspath(path)
     if not os.path.exists(full):
         return False
-    with open(full, encoding='utf-8') as f:
+    with open(full, encoding='utf-8-sig') as f:
         data = json.load(f)
     if key in data:
         del data[key]

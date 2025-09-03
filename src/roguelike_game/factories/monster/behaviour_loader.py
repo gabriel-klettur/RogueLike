@@ -14,7 +14,7 @@ def _load_catalog() -> Dict[str, Any]:
     global _catalog_cache
     if _catalog_cache is None:
         try:
-            with open(_CATALOG_PATH, encoding="utf-8") as f:
+            with open(_CATALOG_PATH, encoding="utf-8-sig") as f:
                 _catalog_cache = json.load(f)
         except FileNotFoundError:
             _catalog_cache = {"version": 1, "patrols": {}}
