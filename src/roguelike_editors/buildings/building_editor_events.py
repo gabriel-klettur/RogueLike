@@ -259,7 +259,13 @@ class BuildingEditorEventHandler:
 
                 # Ctrl+Z → undo eliminación de edificio
                 if ev.key == pygame.K_z and (ev.mod & pygame.KMOD_CTRL):
+                    logger.info("↩️ Ctrl+Z: solicitando undo de eliminación")
                     self._undo_delete(entities.buildings)
+                    # Emitir pulso para el tutorial
+                    try:
+                        setattr(self.editor, 'tutorial_undo_delete_pulse', True)
+                    except Exception:
+                        pass
                     return
 
                 # Ctrl+S → guardar sin salir
@@ -287,10 +293,16 @@ class BuildingEditorEventHandler:
                 if ev.key == pygame.K_DELETE and not getattr(self.editor, 'colliders_mode', False):
                     ab = getattr(self.editor, 'active_building', None)
                     if ab is not None:
+                        logger.info("⌫ Supr: eliminando edificio activo")
                         self.controller._delete_building(ab, entities.buildings)
                         # Limpiar selección si se eliminó
                         self.editor.active_building = None
                         self.editor.hovered_building = None
+                        # Emitir pulso para el tutorial
+                        try:
+                            setattr(self.editor, 'tutorial_deleted_pulse', True)
+                        except Exception:
+                            pass
                     return
             # --- Mouse en modo editor (handles y split) ---
             if ev.type == pygame.MOUSEBUTTONDOWN:
@@ -349,14 +361,42 @@ class BuildingEditorEventHandler:
         idx = (base_idx + delta) % len(hovered_list)
         self.editor.hovered_building_index = idx
         self.editor.hovered_building = hovered_list[idx]
-        # Also update active selection for clear visual feedback
-        if getattr(self.editor, 'current_tool', 'select') == 'select' and not getattr(self.editor, 'colliders_mode', False):
+        # Evitar auto-selección durante el tutorial: no promover hovered -> active con la rueda
+        tutorial_active = False
+        try:
+            t = getattr(self, 'tutorial', None)
+            tutorial_active = bool(t and t.is_active())
+        except Exception:
+            tutorial_active = False
+        # Solo auto-seleccionar si NO está activo el tutorial
+        if (not tutorial_active) and getattr(self.editor, 'current_tool', 'select') == 'select' and not getattr(self.editor, 'colliders_mode', False):
             self.editor.active_building = hovered_list[idx]
 
     def _undo_delete(self, buildings):
         if hasattr(self.editor, 'undo_stack') and self.editor.undo_stack:
-            building, idx = self.editor.undo_stack.pop()
-            buildings.insert(idx, building)
-            # Opcional: selecciona el edificio restaurado
+            try:
+                building, idx = self.editor.undo_stack.pop()
+            except Exception:
+                logger.info("⚠️ Undo: pila corrupta o elemento inválido")
+                return
+            try:
+                buildings.insert(idx, building)
+            except Exception:
+                buildings.append(building)
+            logger.info(f"✅ Undo: edificio restaurado en índice {idx}")
+            # Marcar hover para feedback, pero NO auto-seleccionar si el tutorial está activo
             self.editor.hovered_building = building
-            self.editor.selected_building = building
+            try:
+                t = getattr(self, 'tutorial', None)
+                if not (t and t.is_active()):
+                    self.editor.selected_building = building
+            except Exception:
+                # Si no hay info del tutorial, mantener el comportamiento previo
+                self.editor.selected_building = building
+            # Pulso para el tutorial (también cuando proviene del botón de toolbar)
+            try:
+                setattr(self.editor, 'tutorial_undo_delete_pulse', True)
+            except Exception:
+                pass
+        else:
+            logger.info("ℹ️ Undo: no hay operaciones de eliminación para deshacer")

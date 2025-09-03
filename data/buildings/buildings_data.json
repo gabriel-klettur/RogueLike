@@ -415,23 +415,23 @@
     },
     {
         "zone": "lobby",
-        "rel_x": 418,
-        "rel_y": 903,
+        "rel_x": 398,
+        "rel_y": 870,
         "assets": {
             "idle": "assets/buildings/shops/jewlery_shop.png"
         },
         "solid": true,
         "scale": [
-            302,
-            302
+            325,
+            325
         ],
         "original_scale": [
-            1000,
-            1000
+            325,
+            325
         ],
-        "split_ratio": 0.609,
+        "split_ratio": 0.618,
         "z_bottom": 2,
-        "z_top": 6,
+        "z_top": 7,
         "collider_scope": "CG",
         "id": 19,
         "z": 2
@@ -506,22 +506,22 @@
         "z": 3
     },
     {
-        "zone": "lobby",
-        "rel_x": 904,
-        "rel_y": 1012,
+        "zone": "zone_100_50",
+        "rel_x": 472,
+        "rel_y": 854,
         "assets": {
             "idle": "assets/buildings/gardens/garden_4.png"
         },
         "solid": true,
         "scale": [
-            584,
-            584
+            537,
+            537
         ],
         "original_scale": [
-            1024,
-            1024
+            537,
+            537
         ],
-        "split_ratio": 0.068,
+        "split_ratio": 0.592,
         "z_bottom": 4,
         "z_top": 6,
         "collider_scope": "CG",
@@ -2736,5 +2736,28 @@
         "id": 113,
         "spawn_id": "survival_10_forest_14_9",
         "z": 2
+    },
+    {
+        "zone": "zone_100_50",
+        "rel_x": 153,
+        "rel_y": 1177,
+        "assets": {
+            "idle": "assets/buildings/mine.png"
+        },
+        "solid": true,
+        "scale": [
+            256,
+            256
+        ],
+        "original_scale": [
+            256,
+            256
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 139,
+        "z": 3
     }
 ]

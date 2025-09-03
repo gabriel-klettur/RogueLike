@@ -49,9 +49,26 @@ def load_image(path: str, scale=None) -> pygame.Surface:
         logger.error(f"[loader.load_image] Imagen no encontrada: '{full_path}' (desde path='{path}')")
         raise FileNotFoundError(f"Imagen no encontrada: {full_path}")
 
-    img = pygame.image.load(full_path).convert_alpha()
-    if scale:
+    try:
+        img = pygame.image.load(full_path).convert_alpha()
+    except Exception as e:
+        # Manejar PNG corrupto u otros errores de lectura sin crashear el juego
+        logger.error(f"[loader.load_image] Error cargando PNG: '{full_path}': {e}")
+        # Crear un placeholder visible (magenta con cruces negras)
+        try:
+            w, h = (scale if scale else (32, 32))
+        except Exception:
+            w, h = (32, 32)
+        img = pygame.Surface((w, h), pygame.SRCALPHA)
+        img.fill((255, 0, 255, 255))
+        try:
+            pygame.draw.line(img, (0, 0, 0), (0, 0), (w - 1, h - 1), 2)
+            pygame.draw.line(img, (0, 0, 0), (0, h - 1), (w - 1, 0), 2)
+        except Exception:
+            pass
+    if scale and img.get_size() != scale:
         img = pygame.transform.scale(img, scale)
+
     _IMAGE_CACHE[key] = img
     return img
 

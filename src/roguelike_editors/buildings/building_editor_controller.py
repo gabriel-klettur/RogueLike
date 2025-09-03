@@ -105,6 +105,7 @@ class BuildingEditorController:
             if ab is not None:
                 delete_rect = get_rect(ab, camera)
                 if delete_rect and delete_rect.collidepoint(mx, my):
+                    logger.info("🗑️ Click en botón eliminar (handle rojo)")
                     self._delete_building(ab, buildings)
                     return
                 # Detect reset handle (click izquierdo)
@@ -237,6 +238,11 @@ class BuildingEditorController:
             self.editor.selected_building = None
         if self.editor.hovered_building == building:
             self.editor.hovered_building = None
+        # Pulso para el tutorial (cubre botón eliminar y cualquier llamada centralizada)
+        try:
+            setattr(self.editor, 'tutorial_deleted_pulse', True)
+        except Exception:
+            pass
 
     def _start_resize(self, building, mouse_start):
         self.editor.selected_building = building
