@@ -288,11 +288,11 @@
         }
     },
     {
-        "id": 142,
-        "template_id": 101,
+        "id": 145,
+        "template_id": 102,
         "zone": "lobby",
-        "rel_x": 442,
-        "rel_y": 923,
+        "rel_x": 418,
+        "rel_y": 903,
         "overrides": {
             "scale": [
                 302,
@@ -352,19 +352,19 @@
         }
     },
     {
-        "id": 23,
-        "template_id": 23,
+        "id": 146,
+        "template_id": 103,
         "zone": "lobby",
-        "rel_x": 908,
-        "rel_y": 999,
+        "rel_x": 904,
+        "rel_y": 1012,
         "overrides": {
             "scale": [
                 584,
                 584
             ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
+            "z_bottom": 4,
+            "z_top": 6,
+            "z": 4
         }
     },
     {
@@ -656,11 +656,11 @@
         }
     },
     {
-        "id": 42,
+        "id": 144,
         "template_id": 32,
         "zone": "lobby",
-        "rel_x": 556,
-        "rel_y": 569,
+        "rel_x": 558,
+        "rel_y": 551,
         "overrides": {
             "scale": [
                 197,

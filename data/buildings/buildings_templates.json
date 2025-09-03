@@ -1311,5 +1311,31 @@
             1000
         ],
         "id": 101
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/shops/jewlery_shop.png"
+        },
+        "solid": true,
+        "split_ratio": 0.609,
+        "collider_scope": "CG",
+        "original_scale": [
+            1000,
+            1000
+        ],
+        "id": 102
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/gardens/garden_4.png"
+        },
+        "solid": true,
+        "split_ratio": 0.068,
+        "collider_scope": "CG",
+        "original_scale": [
+            1024,
+            1024
+        ],
+        "id": 103
     }
 ]
