@@ -85,7 +85,7 @@ class InventoryEditorView:
         # Informar a TabsView su posición base configurable
         self.inventory_panel_view.tabs_view.set_base_pos(tabs_x, tabs_y)
         # Configurar pestañas secundarias (Show Default/Active) en el panel izquierdo
-        show_side = model.current_category in ('player', 'monsters')
+        show_side = model.current_category in ('player', 'monsters', 'hostile')
         self.inventory_panel_view.tabs_view.set_side_tabs(model.editing_side, show_side)
         # Altura exacta de tabs (coherente con TabsView: h + padding//2, padding=10)
         tab_sample_surf = self.inventory_panel_view.tabs_view.font.render("Player", True, (255, 255, 255))
@@ -129,7 +129,7 @@ class InventoryEditorView:
         self.tab_rects = panel_rects.get('tab_rects')
 
         # 3) Panel derecho: grid + flujo Add Item
-        if model.current_category in ('player', 'monsters'):
+        if model.current_category in ('player', 'monsters', 'hostile'):
             # 3.0) Fondo translúcido del panel derecho (ocupa grid + item selection panel)
             right_x = panel_rect.x + panel_rect.width + self.margin
             right_y = content_top
