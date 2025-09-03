@@ -16,8 +16,8 @@ class BuildingsTutorialPanelView:
         self.toolbar_view = None
 
         # Config visual
-        self.width = 520
-        self.height = 220
+        self.width = 520  # ancho base; la altura será dinámica
+        self.min_height = 200
         self.padding = 14
         self.spacing = 8
         self.title_color = (255, 255, 0)
@@ -75,19 +75,36 @@ class BuildingsTutorialPanelView:
             lines.append(current)
         return lines
 
+    def _measure_required_height(self, step: dict) -> int:
+        """Calcula la altura necesaria del panel en función del contenido."""
+        # Título
+        title_surf = self.title_font.render(step.get('title', ''), True, self.title_color)
+        ty = self.padding + title_surf.get_height() + self.spacing
+        # Texto envuelto
+        text_max_w = self.width - 2 * self.padding
+        wrapped = self._wrap_text(step.get('text', ''), self.text_font, text_max_w)
+        for line in wrapped:
+            line_h = self.text_font.size(line)[1]
+            ty += line_h + 2
+        # Checklist
+        checklist = step.get('checklist', []) or []
+        if checklist:
+            ty += self.spacing
+            box_size = 16
+            for item in checklist:
+                label = item.get('label', '')
+                text_h = self.text_font.size(label)[1]
+                ty += max(box_size, text_h) + 6
+        # Botones (debajo) + padding inferior
+        btn_h = 32
+        ty += self.padding + btn_h
+        # Margen inferior
+        ty += self.padding
+        return max(int(ty), self.min_height)
+
     def render(self, screen: pygame.Surface) -> None:
         if not getattr(self.model, 'active', False):
             return
-        x, y = self._compute_position(screen)
-        panel_rect = pygame.Rect(x, y, self.width, self.height)
-        draw_translucent_panel(screen, panel_rect)
-        self.model.panel_rect = panel_rect
-        # Registrar UI blocker para evitar interacciones con el mundo/editor debajo
-        try:
-            register_blocker(panel_rect)
-        except Exception:
-            pass
-
         # Contenido del paso actual
         idx = int(getattr(self.model, 'step_index', 0) or 0)
         steps = getattr(self.model, 'steps', [])
@@ -96,6 +113,23 @@ class BuildingsTutorialPanelView:
         is_last = (total > 0 and idx == total - 1)
         is_first = (idx == 0)
         step = steps[idx] if steps else {"title": "", "text": ""}
+        # Progreso del checklist para condicionar highlights
+        try:
+            done_set = self.model.checklist_done_by_step.get(idx, set())
+        except Exception:
+            done_set = set()
+
+        # Medir altura requerida antes de dibujar el panel para evitar solapamientos
+        x, y = self._compute_position(screen)
+        required_h = self._measure_required_height(step)
+        panel_rect = pygame.Rect(x, y, self.width, required_h)
+        draw_translucent_panel(screen, panel_rect)
+        self.model.panel_rect = panel_rect
+        # Registrar UI blocker para evitar interacciones con el mundo/editor debajo
+        try:
+            register_blocker(panel_rect)
+        except Exception:
+            pass
 
         # Título
         title_surf = self.title_font.render(step.get('title', ''), True, self.title_color)
@@ -124,10 +158,6 @@ class BuildingsTutorialPanelView:
         checklist = step.get('checklist', []) or []
         if checklist:
             ty += self.spacing
-            try:
-                done_set = self.model.checklist_done_by_step.get(idx, set())
-            except Exception:
-                done_set = set()
             box_size = 16
             for item in checklist:
                 label = item.get('label', '')
@@ -151,7 +181,7 @@ class BuildingsTutorialPanelView:
         # Botones: Prev, Next, Close (abajo derecha)
         btn_w, btn_h = 90, 32
         gap = 10
-        close_rect = pygame.Rect(x + self.width - self.padding - btn_w, y + self.height - self.padding - btn_h, btn_w, btn_h)
+        close_rect = pygame.Rect(x + self.width - self.padding - btn_w, y + panel_rect.height - self.padding - btn_h, btn_w, btn_h)
         next_rect = pygame.Rect(close_rect.left - gap - btn_w, close_rect.top, btn_w, btn_h)
         prev_rect = pygame.Rect(next_rect.left - gap - btn_w, close_rect.top, btn_w, btn_h)
 
@@ -179,36 +209,50 @@ class BuildingsTutorialPanelView:
 
         # Highlight/flash del objetivo del paso actual (toolbar o edificio)
         try:
-            hl = step.get('highlight', {"kind": "none"})
-            if hl and isinstance(hl, dict):
-                if hl.get('kind') == 'toolbar' and self.toolbar_view is not None and hasattr(self.toolbar_view, 'widget'):
-                    icon_rects = getattr(self.toolbar_view.widget, 'icon_rects', {}) or {}
-                    r = icon_rects.get(hl.get('item'))
-                    if r:
-                        self._draw_flash_highlight(screen, r.inflate(8, 8))
-                elif hl.get('kind') == 'editor_building':
-                    which = hl.get('which', 'hovered_or_active')
-                    r = None
-                    if which == 'hovered_or_active':
-                        r = getattr(self.editor_view, '_last_hovered_building_rect', None) or getattr(self.editor_view, '_last_active_building_rect', None)
-                    elif which == 'active':
-                        r = getattr(self.editor_view, '_last_active_building_rect', None)
-                    elif which == 'hovered':
-                        r = getattr(self.editor_view, '_last_hovered_building_rect', None)
-                    if r:
-                        self._draw_flash_highlight(screen, r.inflate(10, 10))
-                elif hl.get('kind') == 'tool_ui':
-                    item = hl.get('item')
-                    mapping = {
-                        'split_handle': getattr(self.editor_view, '_last_split_handle_rect', None),
-                        'z_bottom_minus': getattr(self.editor_view, '_last_z_bottom_minus_rect', None),
-                        'z_bottom_plus': getattr(self.editor_view, '_last_z_bottom_plus_rect', None),
-                        'z_top_minus': getattr(self.editor_view, '_last_z_top_minus_rect', None),
-                        'z_top_plus': getattr(self.editor_view, '_last_z_top_plus_rect', None),
-                    }
-                    r = mapping.get(item)
-                    if r:
-                        self._draw_flash_highlight(screen, r.inflate(8, 8))
+            highlights = step.get('highlight', {"kind": "none"})
+            # Permitir uno o varios descriptores
+            if isinstance(highlights, dict):
+                highlights = [highlights]
+            if isinstance(highlights, list):
+                for hl in highlights:
+                    if not isinstance(hl, dict):
+                        continue
+                    # Condiciones opcionales: ocultar si ciertos items ya están hechos,
+                    # o depender de que ciertos items estén hechos.
+                    hide_if = set(hl.get('hide_if_done') or [])
+                    deps = set(hl.get('depends_on_done') or [])
+                    if hide_if and (hide_if & done_set):
+                        continue
+                    if deps and not deps.issubset(done_set):
+                        continue
+                    if hl.get('kind') == 'toolbar' and self.toolbar_view is not None and hasattr(self.toolbar_view, 'widget'):
+                        icon_rects = getattr(self.toolbar_view.widget, 'icon_rects', {}) or {}
+                        r = icon_rects.get(hl.get('item'))
+                        if r:
+                            self._draw_flash_highlight(screen, r.inflate(8, 8))
+                    elif hl.get('kind') == 'editor_building':
+                        which = hl.get('which', 'hovered_or_active')
+                        r = None
+                        if which == 'hovered_or_active':
+                            r = getattr(self.editor_view, '_last_hovered_building_rect', None) or getattr(self.editor_view, '_last_active_building_rect', None)
+                        elif which == 'active':
+                            r = getattr(self.editor_view, '_last_active_building_rect', None)
+                        elif which == 'hovered':
+                            r = getattr(self.editor_view, '_last_hovered_building_rect', None)
+                        if r:
+                            self._draw_flash_highlight(screen, r.inflate(10, 10))
+                    elif hl.get('kind') == 'tool_ui':
+                        item = hl.get('item')
+                        mapping = {
+                            'split_handle': getattr(self.editor_view, '_last_split_handle_rect', None),
+                            'z_bottom_minus': getattr(self.editor_view, '_last_z_bottom_minus_rect', None),
+                            'z_bottom_plus': getattr(self.editor_view, '_last_z_bottom_plus_rect', None),
+                            'z_top_minus': getattr(self.editor_view, '_last_z_top_minus_rect', None),
+                            'z_top_plus': getattr(self.editor_view, '_last_z_top_plus_rect', None),
+                        }
+                        r = mapping.get(item)
+                        if r:
+                            self._draw_flash_highlight(screen, r.inflate(8, 8))
         except Exception:
             pass
 

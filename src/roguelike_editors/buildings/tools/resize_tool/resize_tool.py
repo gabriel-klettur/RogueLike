@@ -36,4 +36,14 @@ class ResizeTool:
         new_width = max(50, int(w0 + delta))
         new_height = max(50, int(new_width / aspect_ratio))
 
+        # Solo emitir pulso si el tamaño realmente cambia
+        try:
+            cur_size = b.image.get_size() if getattr(b, 'image', None) is not None else None
+        except Exception:
+            cur_size = None
         b.resize(new_width, new_height)
+        try:
+            if cur_size is not None and (new_width, new_height) != cur_size:
+                setattr(self.editor, 'tutorial_resized_pulse', True)
+        except Exception:
+            pass

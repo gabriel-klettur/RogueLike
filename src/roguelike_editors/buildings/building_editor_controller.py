@@ -79,10 +79,11 @@ class BuildingEditorController:
             return
 
 
-        # 1) Barra split (clic izq o der indistinto)
-        for b in reversed(buildings):
-            if self.split_tool.check_handle_click((mx, my), b, camera):
-                self.split_tool.start_drag(b)
+        # 1) Barra split (clic izq o der indistinto) SOLO sobre activo
+        ab = getattr(self.editor, 'active_building', None)
+        if ab is not None:
+            if self.split_tool.check_handle_click((mx, my), ab, camera):
+                self.split_tool.start_drag(ab)
                 return
 
         # 2) Alcance colliders CG/CU (clic izq, esquina inferior derecha)
@@ -100,39 +101,43 @@ class BuildingEditorController:
             else:
                 # fallback por si acaso
                 get_rect = lambda b, c: None
-            for b in reversed(buildings):
-                delete_rect = get_rect(b, camera)
+            # SOLO sobre edificio activo
+            if ab is not None:
+                delete_rect = get_rect(ab, camera)
                 if delete_rect and delete_rect.collidepoint(mx, my):
-                    self._delete_building(b, buildings)
+                    logger.info("🗑️ Click en botón eliminar (handle rojo)")
+                    self._delete_building(ab, buildings)
                     return
                 # Detect reset handle (click izquierdo)
-                reset_rect = self.default_view.get_reset_handle_rect(b, camera)
+                reset_rect = self.default_view.get_reset_handle_rect(ab, camera)
                 if reset_rect.collidepoint(mx, my):
-                    self.default_tool.apply_reset(b)
+                    self.default_tool.apply_reset(ab)
                     return
                 # Detect resize handle (click izquierdo)
-                if self.resize_tool.check_resize_handle_click(mx, my, b, camera):
-                    self._start_resize(b, (mx, my))
+                if self.resize_tool.check_resize_handle_click(mx, my, ab, camera):
+                    self._start_resize(ab, (mx, my))
                     return
 
-        # 3) Selección / drag de edificio (clic der)
+        # 3) Drag de edificio (clic der) SOLO sobre activo
         if button == 3:
-            hovered = self.editor.hovered_building
-            if hovered and hovered.rect.collidepoint(world_x, world_y):
-                self._start_drag(hovered, world_x, world_y)
-                return
-            # Si no hay hovered_building, comportamiento clásico
-            for b in reversed(buildings):
-                if b.rect.collidepoint(world_x, world_y):
-                    self._start_drag(b, world_x, world_y)
-                    return
+            ab = getattr(self.editor, 'active_building', None)
+            if ab and ab.rect.collidepoint(world_x, world_y):
+                self._start_drag(ab, world_x, world_y)
+            return
 
         # 4) Paneles Z (+ / –) (clic izq)
         if button == 1:
-            if self.z_tool_bottom.handle_mouse_click((mx, my), buildings, camera):
+            ab = getattr(self.editor, 'active_building', None)
+            targets = [ab] if ab is not None else []
+            if ab and self.z_tool_bottom.handle_mouse_click((mx, my), targets, camera):
                 return
-            if self.z_tool_top.handle_mouse_click((mx, my), buildings, camera):
+            if ab and self.z_tool_top.handle_mouse_click((mx, my), targets, camera):
                 return
+            # 5) Selección persistente con clic izquierdo (si no consumieron otros handles)
+            for b in reversed(buildings):
+                if b.rect.collidepoint(world_x, world_y):
+                    self.editor.active_building = b
+                    return
 
     def on_mouse_up(self, button, camera, buildings):
         # 1) Finalizar resize / split (igual que antes)
@@ -233,6 +238,11 @@ class BuildingEditorController:
             self.editor.selected_building = None
         if self.editor.hovered_building == building:
             self.editor.hovered_building = None
+        # Pulso para el tutorial (cubre botón eliminar y cualquier llamada centralizada)
+        try:
+            setattr(self.editor, 'tutorial_deleted_pulse', True)
+        except Exception:
+            pass
 
     def _start_resize(self, building, mouse_start):
         self.editor.selected_building = building

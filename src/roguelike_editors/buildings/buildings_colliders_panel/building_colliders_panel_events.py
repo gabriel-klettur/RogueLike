@@ -51,6 +51,11 @@ class BuildingCollidersPanelEventHandler:
                 if 0 <= row < len(b.collision_map) and 0 <= col < len(b.collision_map[0]):
                     # Pinta en el edificio activo
                     b.collision_map[row][col] = self.model.choice
+                    # Tutorial: marcar pulso de pintado
+                    try:
+                        setattr(self.editor_state, 'tutorial_colliders_painted_pulse', True)
+                    except Exception:
+                        pass
                     # Invalida caches
                     try:
                         b.model._collision_tiles_cache = None
@@ -199,12 +204,26 @@ class BuildingCollidersPanelEventHandler:
                                 else:
                                     save_buildings_to_json(buildings)
                                     logger.info("[Colliders][CU] Overrides guardados (si existen) en buildings_data.json")
+                                # Tutorial: pulso de guardado por botón
+                                try:
+                                    setattr(self.editor_state, 'tutorial_colliders_saved_button_pulse', True)
+                                except Exception:
+                                    pass
                                 return True
                         except Exception:
                             pass
                         for ch, rect in self.model.picker_rects.items():
                             if rect.collidepoint((mx, my)):
                                 self.model.choice = ch
+                                # Tutorial: selección de brocha
+                                try:
+                                    setattr(self.editor_state, 'tutorial_colliders_choice_pulse', True)
+                                except Exception:
+                                    pass
+                                try:
+                                    logger.info(f"[Colliders] Seleccionado tipo '{ch}' en el picker")
+                                except Exception:
+                                    pass
                                 return True
                     elif event.button == 3:
                         self.model.picker_dragging = True
@@ -230,6 +249,11 @@ class BuildingCollidersPanelEventHandler:
             if self.model.picker_dragging:
                 dx, dy = self.model.picker_drag_offset
                 self.model.picker_pos = (mx - dx, my - dy)
+                # Tutorial: movimiento del picker
+                try:
+                    setattr(self.editor_state, 'tutorial_colliders_picker_moved_pulse', True)
+                except Exception:
+                    pass
                 return True
             if self.model.brush_dragging and self.model.choice:
                 self._paint_at_mouse(camera, buildings)

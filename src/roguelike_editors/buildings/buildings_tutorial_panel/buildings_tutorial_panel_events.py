@@ -34,7 +34,13 @@ class BuildingsTutorialPanelEventHandler:
                     if r and r.collidepoint(pos):
                         if self.model.step_index <= 0:
                             return True
-                        self.model.step_index = max(0, self.model.step_index - 1)
+                        new_idx = max(0, self.model.step_index - 1)
+                        # Notificar cambio de paso para limpiar selecciones/estado
+                        try:
+                            self.controller.on_step_changed(new_idx)
+                        except Exception:
+                            pass
+                        self.model.step_index = new_idx
                         return True
                     # Next
                     r = rects.get('next')
@@ -43,7 +49,13 @@ class BuildingsTutorialPanelEventHandler:
                             # Deshabilitado en el último paso: consumir sin avanzar
                             return True
                         max_idx = max(0, len(self.model.steps) - 1)
-                        self.model.step_index = min(max_idx, self.model.step_index + 1)
+                        new_idx = min(max_idx, self.model.step_index + 1)
+                        # Notificar cambio de paso para limpiar selecciones/estado
+                        try:
+                            self.controller.on_step_changed(new_idx)
+                        except Exception:
+                            pass
+                        self.model.step_index = new_idx
                         return True
                     # Close
                     r = rects.get('close')

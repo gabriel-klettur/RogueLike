@@ -97,6 +97,18 @@ class BuildingEditorView:
         except Exception:
             pass
 
+        # Draw hover outline (cyan, thinner) only as visual hint, without any handles
+        try:
+            hb = getattr(self.editor, 'hovered_building', None)
+            ab = getattr(self.editor, 'active_building', None)
+            if hb is not None and hb is not ab:
+                x, y = camera.apply((hb.x, hb.y))
+                w, h = camera.scale(hb.image.get_size())
+                hover_rect = pygame.Rect(x, y, w, h)
+                pygame.draw.rect(screen, (0, 255, 255), hover_rect, 2)  # cyan, thin
+        except Exception:
+            pass
+
         for b in buildings:
             # Solo mostrar opciones en el edificio activo (persistente)
             if b != getattr(self.editor, 'active_building', None):
@@ -109,8 +121,8 @@ class BuildingEditorView:
                 self._last_active_building_rect = rect
             except Exception:
                 pass
-            pygame.draw.rect(screen, (0, 255, 255), rect, 4)
-            pygame.draw.rect(screen, (255, 255, 255), rect, 1)
+            # Active selection outline: yellow, thicker
+            pygame.draw.rect(screen, (255, 215, 0), rect, 5)
             # Render small ID label near the top-left of the building rect
             try:
                 if self._id_font is not None:

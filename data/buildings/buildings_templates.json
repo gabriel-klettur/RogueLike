@@ -1311,5 +1311,83 @@
             1000
         ],
         "id": 101
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/shops/jewlery_shop.png"
+        },
+        "solid": true,
+        "split_ratio": 0.609,
+        "collider_scope": "CG",
+        "original_scale": [
+            1000,
+            1000
+        ],
+        "id": 102
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/gardens/garden_4.png"
+        },
+        "solid": true,
+        "split_ratio": 0.068,
+        "collider_scope": "CG",
+        "original_scale": [
+            1024,
+            1024
+        ],
+        "id": 103
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/shops/jewlery_shop.png"
+        },
+        "solid": true,
+        "split_ratio": 0.609,
+        "collider_scope": "CG",
+        "original_scale": [
+            346,
+            346
+        ],
+        "id": 104
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/shops/jewlery_shop.png"
+        },
+        "solid": true,
+        "split_ratio": 0.618,
+        "collider_scope": "CG",
+        "original_scale": [
+            325,
+            325
+        ],
+        "id": 105
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/gardens/garden_4.png"
+        },
+        "solid": true,
+        "split_ratio": 0.592,
+        "collider_scope": "CG",
+        "original_scale": [
+            537,
+            537
+        ],
+        "id": 106
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/mine.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 107
     }
 ]

@@ -240,22 +240,32 @@ class BuildingEditorEventHandler:
                         pass
                     return
 
-                # D → reset (default) sobre hovered_building
-                if ev.key == pygame.K_d and not getattr(self.editor, 'colliders_mode', False) and self.editor.hovered_building:
-                    self.controller.default_tool.apply_reset(self.editor.hovered_building)
-                    logger.info("🔄 Reset (default) aplicado con D sobre hovered_building")
-                    return
+                # D → reset (default) SOLO sobre active_building
+                if ev.key == pygame.K_d and not getattr(self.editor, 'colliders_mode', False):
+                    ab = getattr(self.editor, 'active_building', None)
+                    if ab is not None:
+                        self.controller.default_tool.apply_reset(ab)
+                        logger.info("🔄 Reset (default) aplicado con D sobre active_building")
+                        return
 
-                # R → iniciar resize sobre hovered_building (al presionar)
-                if ev.key == pygame.K_r and not getattr(self.editor, 'colliders_mode', False) and self.editor.hovered_building:
-                    mx, my = pygame.mouse.get_pos()
-                    self.controller._start_resize(self.editor.hovered_building, (mx, my))
-                    logger.info("🔧 Resize iniciado con R sobre hovered_building")
-                    return
+                # R → iniciar resize SOLO sobre active_building (al presionar)
+                if ev.key == pygame.K_r and not getattr(self.editor, 'colliders_mode', False):
+                    ab = getattr(self.editor, 'active_building', None)
+                    if ab is not None:
+                        mx, my = pygame.mouse.get_pos()
+                        self.controller._start_resize(ab, (mx, my))
+                        logger.info("🔧 Resize iniciado con R sobre active_building")
+                        return
 
                 # Ctrl+Z → undo eliminación de edificio
                 if ev.key == pygame.K_z and (ev.mod & pygame.KMOD_CTRL):
+                    logger.info("↩️ Ctrl+Z: solicitando undo de eliminación")
                     self._undo_delete(entities.buildings)
+                    # Emitir pulso para el tutorial
+                    try:
+                        setattr(self.editor, 'tutorial_undo_delete_pulse', True)
+                    except Exception:
+                        pass
                     return
 
                 # Ctrl+S → guardar sin salir
@@ -279,10 +289,21 @@ class BuildingEditorEventHandler:
                     self.controller.placer_tool.place_building_at_mouse(entities.buildings)
                     return
 
-                # Supr → borrar edificio bajo el ratón
+                # Supr → borrar SOLO active_building
                 if ev.key == pygame.K_DELETE and not getattr(self.editor, 'colliders_mode', False):
-                    self.controller.delete_tool.delete_building_at_mouse(entities)
-
+                    ab = getattr(self.editor, 'active_building', None)
+                    if ab is not None:
+                        logger.info("⌫ Supr: eliminando edificio activo")
+                        self.controller._delete_building(ab, entities.buildings)
+                        # Limpiar selección si se eliminó
+                        self.editor.active_building = None
+                        self.editor.hovered_building = None
+                        # Emitir pulso para el tutorial
+                        try:
+                            setattr(self.editor, 'tutorial_deleted_pulse', True)
+                        except Exception:
+                            pass
+                    return
             # --- Mouse en modo editor (handles y split) ---
             if ev.type == pygame.MOUSEBUTTONDOWN:
                 mx, my = pygame.mouse.get_pos()
@@ -315,37 +336,67 @@ class BuildingEditorEventHandler:
                 except Exception:
                     pass
 
-                # Clear active building if mouse leaves its bounds in editor mode
-                if self.editor.current_tool == 'select':
-                    world_x = mx / camera.zoom + camera.offset_x
-                    world_y = my / camera.zoom + camera.offset_y
-                    ab = getattr(self.editor, 'active_building', None)
-                    if ab and not ab.rect.collidepoint(world_x, world_y):
-                        self.editor.active_building = None
-                # Delegate motion and update hover list
+                # Do NOT clear active_building on mouse leave; selection should persist until changed explicitly
+                # Delegate motion and update hover list (no auto-select on hover)
                 self.controller.on_mouse_motion(ev.pos, camera, entities.buildings)
-                # Focus active building for select mode
-                if self.editor.current_tool == 'select' and getattr(self.editor, 'active_building', None) is None:
-                    hb = getattr(self.editor, 'hovered_building', None)
-                    if hb:
-                        self.editor.active_building = hb
             elif ev.type == pygame.MOUSEWHEEL:
-                self._handle_mouse_wheel(ev, entities.buildings)
+                self._handle_mouse_wheel(ev, camera, entities.buildings)
 
 
-    def _handle_mouse_wheel(self, ev, buildings):
-        """Cycle hovered building when multiple under cursor."""
-        hovered_list = self.editor.hovered_buildings
-        if len(hovered_list) > 1:
-            idx = self.editor.hovered_building_index
-            idx = (idx + (-1 if ev.y < 0 else 1)) % len(hovered_list)
-            self.editor.hovered_building_index = idx
-            self.editor.hovered_building = hovered_list[idx]
+    def _handle_mouse_wheel(self, ev, camera, buildings):
+        """Recompute overlapped buildings under cursor and cycle selection."""
+        mx, my = pygame.mouse.get_pos()
+        # Refresh hovered list under current cursor taking zoom/offset into account
+        hovered_list = self.controller._buildings_under_mouse((mx, my), camera, buildings)
+        self.editor.hovered_buildings = hovered_list
+        if not hovered_list:
+            return
+        # Try to keep continuity with current hovered building if present
+        cur = getattr(self.editor, 'hovered_building', None)
+        try:
+            base_idx = hovered_list.index(cur) if cur in hovered_list else self.editor.hovered_building_index
+        except Exception:
+            base_idx = 0
+        delta = -1 if getattr(ev, 'y', 0) < 0 else 1
+        idx = (base_idx + delta) % len(hovered_list)
+        self.editor.hovered_building_index = idx
+        self.editor.hovered_building = hovered_list[idx]
+        # Evitar auto-selección durante el tutorial: no promover hovered -> active con la rueda
+        tutorial_active = False
+        try:
+            t = getattr(self, 'tutorial', None)
+            tutorial_active = bool(t and t.is_active())
+        except Exception:
+            tutorial_active = False
+        # Solo auto-seleccionar si NO está activo el tutorial
+        if (not tutorial_active) and getattr(self.editor, 'current_tool', 'select') == 'select' and not getattr(self.editor, 'colliders_mode', False):
+            self.editor.active_building = hovered_list[idx]
 
     def _undo_delete(self, buildings):
         if hasattr(self.editor, 'undo_stack') and self.editor.undo_stack:
-            building, idx = self.editor.undo_stack.pop()
-            buildings.insert(idx, building)
-            # Opcional: selecciona el edificio restaurado
+            try:
+                building, idx = self.editor.undo_stack.pop()
+            except Exception:
+                logger.info("⚠️ Undo: pila corrupta o elemento inválido")
+                return
+            try:
+                buildings.insert(idx, building)
+            except Exception:
+                buildings.append(building)
+            logger.info(f"✅ Undo: edificio restaurado en índice {idx}")
+            # Marcar hover para feedback, pero NO auto-seleccionar si el tutorial está activo
             self.editor.hovered_building = building
-            self.editor.selected_building = building
+            try:
+                t = getattr(self, 'tutorial', None)
+                if not (t and t.is_active()):
+                    self.editor.selected_building = building
+            except Exception:
+                # Si no hay info del tutorial, mantener el comportamiento previo
+                self.editor.selected_building = building
+            # Pulso para el tutorial (también cuando proviene del botón de toolbar)
+            try:
+                setattr(self.editor, 'tutorial_undo_delete_pulse', True)
+            except Exception:
+                pass
+        else:
+            logger.info("ℹ️ Undo: no hay operaciones de eliminación para deshacer")
