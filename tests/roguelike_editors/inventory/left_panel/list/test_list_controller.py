@@ -40,7 +40,7 @@ def test_get_items_list_monsters_empty():
     ec = editor_controller_fixture()
     ec.model.active_data = {'monsters': {}}
     ec.world.components = {}
-    panel_model = SimpleNamespace(current_category='monsters')
+    panel_model = SimpleNamespace(current_category='hostile')
     lc = ListController(ec, panel_model)
     items = lc.get_items_list()
     assert items == []

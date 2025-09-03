@@ -48,7 +48,7 @@ def test_draw_monsters_highlight_no_error(monkeypatch):
     base_rect = pygame.Rect(0, 0, 50, 50)
     items = ['E1', '  Slot x1']
     surface = pygame.Surface((100, 100))
-    model = SimpleNamespace(current_category='monsters', selected_eid='E1')
+    model = SimpleNamespace(current_category='hostile', selected_eid='E1')
     # stub mouse position inside panel
     monkeypatch.setattr(pygame.mouse, 'get_pos', lambda: (10, 10))
     # ensure scroll_offset

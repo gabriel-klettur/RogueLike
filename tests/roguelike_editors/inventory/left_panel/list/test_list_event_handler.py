@@ -37,7 +37,7 @@ def make_view(panel_rect, font=None, scroll_offset=0):
 
 
 def test_click_outside():
-    model = SimpleNamespace(current_category='monsters', editing_side=None)
+    model = SimpleNamespace(current_category='hostile', editing_side=None)
     ec = DummyEditorController(model)
     controller = DummyController([])
     view = make_view(pygame.Rect(0, 0, 10, 10))
@@ -60,7 +60,7 @@ def test_click_inside_non_monsters():
 
 
 def test_single_click_monsters():
-    model = SimpleNamespace(current_category='monsters', editing_side=None)
+    model = SimpleNamespace(current_category='hostile', editing_side=None)
     ec = DummyEditorController(model)
     items = ['E1', '  Item']
     controller = DummyController(items)
@@ -75,7 +75,7 @@ def test_single_click_monsters():
 
 
 def test_double_click_pos_monsters(monkeypatch):
-    model = SimpleNamespace(current_category='monsters', editing_side=None, camera_focus_target=None)
+    model = SimpleNamespace(current_category='hostile', editing_side=None, camera_focus_target=None)
     ec = DummyEditorController(model)
     items = ['E1', '  Pos: (3.0,4.0)']
     controller = DummyController(items)

@@ -28,11 +28,18 @@ def test_load_data_populates_model(monkeypatch, tmp_path):
     for cat in ctrl.paths:
         ctrl.paths[cat] = {'default': str(tmp_path/f"{cat}_d.json"), 'active': str(tmp_path/f"{cat}_a.json")}    
     ctrl.load_data()
-    assert set(model.default_data.keys()) == set(ctrl.paths.keys())
-    assert set(model.active_data.keys()) == set(ctrl.paths.keys())
+    # Debe contener al menos las claves declaradas en paths
+    assert set(ctrl.paths.keys()).issubset(set(model.default_data.keys()))
+    assert set(ctrl.paths.keys()).issubset(set(model.active_data.keys()))
+    # Validar carga por categoría base
     for cat, p in ctrl.paths.items():
         assert model.default_data[cat] == {'value': p['default']}
         assert model.active_data[cat] == {'value': p['active']}
+    # Alias 'hostile' debe existir y referenciar los mismos datos que 'monsters'
+    if 'hostile' in model.default_data:
+        assert model.default_data['hostile'] == model.default_data['monsters']
+    if 'hostile' in model.active_data:
+        assert model.active_data['hostile'] == model.active_data['monsters']
 
 
 def test_nested_map_active_data_key_extracted(monkeypatch, tmp_path):
@@ -61,4 +68,6 @@ def test_nested_map_active_data_key_extracted(monkeypatch, tmp_path):
     assert model.active_data['map'] == {'k': 'v'}
     # Others should be the 'active' stub
     for cat in ('player', 'monsters'):
-        assert model.active_data[cat] == {'active': True}  # stub logic not applicable
+        assert model.active_data[cat] == {'active': True}
+    # Alias 'hostile' apunta a los mismos datos que 'monsters'
+    assert model.active_data.get('hostile') == model.active_data.get('monsters')

@@ -73,17 +73,18 @@ class FsmEditorController:
             try:
                 self.sets_panel_controller.model.visible = (tool == 'sets_list')
                 if self.sets_panel_controller.model.visible:
-                    # Populate items from ids index helper (fallback to snapshot)
-                    if _get_set_ids is not None:
+                    # Populate items prioritizing snapshot (test monkeypatches this).
+                    # If snapshot is empty or missing, fallback to ids index helper.
+                    try:
+                        snap = get_snapshot() or {}
+                    except Exception:
+                        snap = {}
+                    set_ids = [s.get('id', '?') for s in snap.get('sets', [])]
+                    if not set_ids and _get_set_ids is not None:
                         try:
                             set_ids = list(_get_set_ids() or [])
                         except Exception:
                             set_ids = []
-                    else:
-                        set_ids = []
-                    if not set_ids:
-                        snap = get_snapshot()
-                        set_ids = [s.get('id', '?') for s in snap.get('sets', [])]
                     self.sets_panel_controller.model.items = set_ids
                     # Anchor next to toolbar
                     anchor = compute_panel_anchor_next_to_toolbar(

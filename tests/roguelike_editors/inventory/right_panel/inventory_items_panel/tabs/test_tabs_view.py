@@ -42,7 +42,7 @@ def test_get_slots_data_default_player():
 def test_get_slots_data_default_monsters():
     model = SimpleNamespace(
         editing_side='default',
-        current_category='monsters',
+        current_category='hostile',
         selected_eid=1,
         default_data={
             'monsters': {'m1': {'template_id': 1, 'inventory': [

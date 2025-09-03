@@ -6,7 +6,7 @@
 """
 from __future__ import annotations
 from typing import Any, Dict, Optional, Tuple
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from .fsm_persistence import (
     load_all,
@@ -35,7 +35,7 @@ class _Cached:
     # animation mapping document
     anim_map: Dict[str, Any]
     # ids index JSON (SET_IDS/STATES_BY_SET/TRANSITIONS_BY_SET)
-    ids_index: Dict[str, Any]
+    ids_index: Dict[str, Any] = field(default_factory=dict)
 
 
 _CACHE: Optional[_Cached] = None
