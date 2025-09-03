@@ -1298,5 +1298,18 @@
             391
         ],
         "id": 100
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_3.png"
+        },
+        "solid": true,
+        "split_ratio": 0.688,
+        "collider_scope": "CG",
+        "original_scale": [
+            490,
+            627
+        ],
+        "id": 101
     }
 ]

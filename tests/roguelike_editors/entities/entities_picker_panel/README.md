@@ -1,6 +1,6 @@
 # Tests: Entities Picker Panel
 
-Valida la interacción del panel de selección (Players/Monsters).
+Valida la interacción del panel de selección (Players/Hostile).
 
 Archivos de test:
 - test_events.py

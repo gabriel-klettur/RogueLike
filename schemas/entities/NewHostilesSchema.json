@@ -1,14 +1,14 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "NewMonsters",
+    "title": "NewHostiles",
     "type": "object",
-    "required": ["DEFAULT_DEATH_DISSAPEAR_TIME", "monsters"],
+    "required": ["DEFAULT_DEATH_DISSAPEAR_TIME", "hostiles"],
     "properties": {
       "DEFAULT_DEATH_DISSAPEAR_TIME": {
         "type": "number",
         "minimum": 0
       },
-      "monsters": {
+      "hostiles": {
         "type": "object",
         "required": ["classes"],
         "properties": {

@@ -52,7 +52,7 @@ class EntitiesEditorController:
         )
         # Picker
         self.picker_controller = EntityPickerPanelController(
-            self.model.player_stats, self.model.monsters, self.model.assets, self.font
+            self.model.player_stats, self.model.hostiles, self.model.assets, self.font
         )
         # Inicializar posición del picker panel a la derecha del add/remove panel
         margin = UI_MARGIN
@@ -63,7 +63,7 @@ class EntitiesEditorController:
         self.picker_controller.view.y = add_pos[1]
         # Properties
         self.properties_controller = EntityPropertiesPanelController(
-            self, self.model.player_stats, self.model.monsters, self.model.player_assets, self.font
+            self, self.model.player_stats, self.model.hostiles, self.model.player_assets, self.font
         )
         # Vista (separa render)
         from roguelike_editors.entities.entities_editor_view import EntitiesEditorView
@@ -156,6 +156,10 @@ class EntitiesEditorController:
             self.render(self.game.screen)
         except Exception:
             pass
+
+    def open_new_hostile_properties(self) -> None:
+        """Alias de compatibilidad: abre creación de Hostile (antes Monster)."""
+        self.open_new_monster_properties()
 
     def enter_spawn_mode(self, entity_type=None):
         """

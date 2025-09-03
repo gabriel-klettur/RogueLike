@@ -26,7 +26,7 @@ Este subpaquete contiene todo lo necesario para crear la entidad **monstruo** en
 
 - `behaviour_loader.py`  
   Genera rutas de patrulla (`PatrolRoute.points`) y tiempos de espera opcionales (`dwell_times`) a partir de una configuración declarativa:
-  lee `data/entities/behaviour/patrols.json` (catálogo) y la propiedad `patrol` del monstruo en `data/entities/new_monsters.json`.
+  lee `data/entities/behaviour/patrols.json` (catálogo) y la propiedad `patrol` del hostil en `data/entities/new_hostiles.json`.
   Patrones soportados: `line`, `circle`, `square`, `zigzag`, `figure_eight`.
 
 - `physics.py`  
@@ -37,7 +37,7 @@ Este subpaquete contiene todo lo necesario para crear la entidad **monstruo** en
   - `create_zlayer_component(cfg)`: crea `ZLayer` según configuración.
 
 - `config.py`  
-  Carga definiciones `MONSTER_DEFS` desde `data/monsters.json`.
+  Carga definiciones `MONSTER_DEFS` desde `data/entities/new_hostiles.json` y valida contra `schemas/entities/NewHostilesSchema.json`.
   Expone opcionalmente `patrol` por clase de monstruo para que `builder.py` construya la ruta.
 
 - `cache.py`  
@@ -55,7 +55,7 @@ monster_id = get_factory("monster").create(world, tile_x=5, tile_y=7, monster_ty
 
 - Catálogo de patrones: `data/entities/behaviour/patrols.json`
   - Define patrones y `default_params` (ej.: `circle.radius_tiles`, `square.points_per_edge`, etc.)
-- Asignación por monstruo: `data/entities/new_monsters.json`
+- Asignación por hostil: `data/entities/new_hostiles.json`
   - Cada clase puede incluir:
 
 ```json

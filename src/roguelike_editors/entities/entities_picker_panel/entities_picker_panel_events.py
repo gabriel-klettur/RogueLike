@@ -175,8 +175,12 @@ class EntitiesPickerEventHandler:
         row = my_rel // (ch + margin) + self.model.scroll_index
         if self.model.active_tab == "Players":
             entity_ids = list(self.model.player_stats.keys())
+        elif self.model.active_tab == "Hostile":
+            # Ocultar entradas '__pending__' (no confirmadas)
+            entity_ids = [mid for mid, m in self.model.monsters.items() if not (isinstance(m, dict) and m.get('__pending__'))]
         else:
-            entity_ids = list(self.model.monsters.keys())
+            # Otras pestañas aún no implementadas
+            entity_ids = []
         idx = row * cols + col
 
         return col, row, idx, entity_ids

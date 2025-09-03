@@ -6,18 +6,18 @@ from jsonschema import validate
 # Carga de definiciones de monstruos desde JSON
 _DATA_DIR = Path(__file__).resolve().parents[4] / "data"
 _SCHEMAS_DIR = Path(__file__).resolve().parents[4] / "schemas" / "entities"
-with open(_DATA_DIR / "entities/new_monsters.json", encoding="utf-8") as f:
+with open(_DATA_DIR / "entities/new_hostiles.json", encoding="utf-8-sig") as f:
     _monster_cfg = json.load(f)
 
 # Validate against schema
-_schema_path = _SCHEMAS_DIR / "NewMonstersSchema.json"
+_schema_path = _SCHEMAS_DIR / "NewHostilesSchema.json"
 if _schema_path.exists():
-    with open(_schema_path, encoding="utf-8") as sf:
+    with open(_schema_path, encoding="utf-8-sig") as sf:
         _schema = json.load(sf)
     validate(instance=_monster_cfg, schema=_schema)
 
 # Extract raw monster classes
-_raw_classes = _monster_cfg.get("monsters", {}).get("classes", {})
+_raw_classes = _monster_cfg.get("hostiles", {}).get("classes", {})
 
 # Flatten stats into top-level and keep assets nested; include optional fsm_set per class
 MONSTER_DEFS: Dict[str, Any] = {}
@@ -46,14 +46,14 @@ def reload_monster_defs() -> None:
     import json
     from jsonschema import validate
     global MONSTER_DEFS, MONSTER_STATS, MONSTER_ASSETS, MONSTER_DEFAULTS
-    with open(_DATA_DIR / "entities/new_monsters.json", encoding="utf-8") as f:
+    with open(_DATA_DIR / "entities/new_hostiles.json", encoding="utf-8-sig") as f:
         monster_cfg = json.load(f)
     # Validate against schema if present
     if _schema_path.exists():
-        with open(_schema_path, encoding="utf-8") as sf:
+        with open(_schema_path, encoding="utf-8-sig") as sf:
             schema = json.load(sf)
         validate(instance=monster_cfg, schema=schema)
-    _raw_classes = monster_cfg.get("monsters", {}).get("classes", {})
+    _raw_classes = monster_cfg.get("hostiles", {}).get("classes", {})
     # Flatten stats into top-level and keep assets nested; include optional fsm_set per class
     MONSTER_DEFS.clear()
     for class_name, class_cfg in _raw_classes.items():

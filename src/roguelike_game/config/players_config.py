@@ -5,7 +5,7 @@ import json
 top = Path(__file__).resolve().parents[3]
 # Cargar configuración de jugadores
 # Cargar configuración de jugadores en nuevo formato
-with open(top / "data" / "entities" / "new_players.json", "r", encoding="utf-8") as f:
+with open(top / "data" / "entities" / "new_players.json", "r", encoding="utf-8-sig") as f:
     PLAYER_CFG = json.load(f)
 
 # Extraer clases de jugador

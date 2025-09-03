@@ -246,15 +246,15 @@ class EntityPropertiesPanelView:
         """
         ent_id = model.hovered_entity_id or model.selected_id
         # En modo "Add Entities on System" con selector visible, mostrar SOLO las propiedades
-        # de la sección 'stats' según el tipo elegido (Player/Monster).
+        # de la sección 'stats' según el tipo elegido (Player/Hostile).
         if getattr(model, 'show_add_system_selector', False):
-            sel_type = getattr(model, 'add_system_entity_type', 'Monster')
+            sel_type = getattr(model, 'add_system_entity_type', 'Hostile')
             if sel_type == 'Player':
                 # Para jugadores, los stats del modelo ya están disponibles a nivel de clase
                 # en model.player_stats[ent_id]. Si no existe, devolver dict vacío.
                 return dict(model.player_stats.get(ent_id, {}))
             else:
-                # Para monstruos, los stats viven dentro de la entrada de monstruo.
+                # Para hostiles, los stats viven dentro de la entrada de monstruo.
                 monster = model.monsters.get(ent_id, {}) if model.monsters else {}
                 return dict(monster.get('stats', {}))
         # Comportamiento normal: aplanar toda la entidad (stats + assets en claves 'asset_*')
@@ -272,7 +272,7 @@ class EntityPropertiesPanelView:
         anidados simples (p. ej., 'basic_trail.interval').
 
         - Player: plantilla PLAYER_STATS_TEMPLATE + stats jugador
-        - Monster: plantilla MONSTER_STATS_TEMPLATE + stats monstruo
+        - Hostile: plantilla MONSTER_STATS_TEMPLATE + stats hostil
         """
         def _flatten(d: dict) -> dict:
             flat: dict = {}
@@ -286,10 +286,10 @@ class EntityPropertiesPanelView:
 
         ent_id = model.hovered_entity_id or model.selected_id
         if getattr(model, 'show_add_system_selector', False):
-            sel_type = getattr(model, 'add_system_entity_type', 'Monster')
+            sel_type = getattr(model, 'add_system_entity_type', 'Hostile')
         else:
             # Inferir tipo por pertenencia del id
-            sel_type = 'Player' if ent_id in model.player_stats else 'Monster'
+            sel_type = 'Player' if ent_id in model.player_stats else 'Hostile'
         if sel_type == 'Player':
             tmpl = PLAYER_STATS_TEMPLATE
             src = model.player_stats.get(ent_id, {})
@@ -412,7 +412,7 @@ class EntityPropertiesPanelView:
         label_surf = self.font.render(label, True, (255, 255, 255))
         screen.blit(label_surf, (tx, ty))
         # Combobox
-        value = getattr(model, 'add_system_entity_type', 'Monster')
+        value = getattr(model, 'add_system_entity_type', 'Hostile')
         value_text = str(value)
         value_surf = self.font.render(value_text, True, (0, 0, 0))
         cb_pad_x = 8
