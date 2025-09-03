@@ -46,6 +46,15 @@ class DataController:
             self.model.active_data[cat] = active
             logger.debug(f" Loaded active_data['{cat}']: {active}")
 
+        # Alias: exponer 'hostile' como sinónimo de 'monsters' para transición
+        try:
+            if 'monsters' in self.model.default_data:
+                self.model.default_data['hostile'] = self.model.default_data['monsters']
+            if 'monsters' in self.model.active_data:
+                self.model.active_data['hostile'] = self.model.active_data['monsters']
+        except Exception:
+            pass
+
         # Ensure player defaults support per-class templates (non-destructive migration in-memory)
         try:
             self._ensure_player_classes()
@@ -70,12 +79,14 @@ class DataController:
             # Validate default_data
             for c, data in self.model.default_data.items():
                 try:
-                    jsonschema.validate(data, schemas.get(c, {}))
+                    schema_key = 'monsters' if c == 'hostile' else c
+                    jsonschema.validate(data, schemas.get(schema_key, {}))
                 except Exception as ve:
                     self.logger.warning(f"Default data for '{c}' invalid: {ve}")
             # Validate active_data entries
             for c, entries in self.model.active_data.items():
-                schema = schemas.get(c, {})
+                schema_key = 'monsters' if c == 'hostile' else c
+                schema = schemas.get(schema_key, {})
                 if c == 'map' and isinstance(entries, dict):
                     try:
                         jsonschema.validate(entries, schema)
@@ -84,7 +95,7 @@ class DataController:
                 elif isinstance(entries, dict):
                     for key, entry in entries.items():
                         try:
-                            entry_schema = schemas.get('monsters_active', {}) if c == 'monsters' else schema
+                            entry_schema = schemas.get('monsters_active', {}) if c in ('monsters', 'hostile') else schema
                             jsonschema.validate(entry, entry_schema)
                         except Exception as ve:
                             self.logger.warning(f'Active entry "{key}" for "{c}" invalid: {ve}')

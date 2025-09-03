@@ -33,8 +33,8 @@ class ListView:
         self.scroll_panel.draw(surface, self.panel_rect)
         results['list_rect'] = self.panel_rect
 
-        # Highlight permanente para monsters
-        if model.current_category == 'monsters' and model.selected_eid:
+        # Highlight permanente para monsters/hostile
+        if model.current_category in ('monsters', 'hostile') and model.selected_eid:
             line_h = self.font.get_linesize()
             y0 = self.panel_rect.y - self.scroll_panel.scroll_offset
             # Encontrar índice raíz del grupo
@@ -51,7 +51,7 @@ class ListView:
 
         # Highlight on hover para monsters
         mx, my = pygame.mouse.get_pos()
-        if model.current_category == 'monsters' and self.panel_rect.collidepoint(mx, my):
+        if model.current_category in ('monsters', 'hostile') and self.panel_rect.collidepoint(mx, my):
             line_h = self.font.get_linesize()
             idx = (my - self.panel_rect.y + self.scroll_panel.scroll_offset) // line_h
             if 0 <= idx < len(items):

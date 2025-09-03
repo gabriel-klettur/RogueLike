@@ -6,9 +6,13 @@ from typing import List, Tuple
 
 @dataclass
 class EntityPickerPanelModel:
-    """Estado del editor de entidades: jugador y hostiles."""
+    """Estado del editor de entidades: jugador y hostiles.
+
+    Nota: 'monsters' ha sido renombrado a 'hostiles'. Se mantiene un alias
+    de compatibilidad temporal mediante una propiedad 'monsters'.
+    """
     player_stats: Dict[str, Any]
-    monsters: Dict[str, Any]
+    hostiles: Dict[str, Any]
     assets: Dict[str, pygame.Surface]
     # Área del panel para interacción y arrastre
     panel_rect: Optional[pygame.Rect] = None
@@ -28,3 +32,15 @@ class EntityPickerPanelModel:
     blink: bool = False
     # Parpadeo de la selección
     selection_blink: bool = False
+
+    # ----------------------------
+    # Compatibilidad temporal
+    # ----------------------------
+    @property
+    def monsters(self) -> Dict[str, Any]:
+        """Alias temporal para compatibilidad hacia atrás."""
+        return self.hostiles
+
+    @monsters.setter
+    def monsters(self, value: Dict[str, Any]) -> None:
+        self.hostiles = value
