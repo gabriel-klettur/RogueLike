@@ -41,6 +41,14 @@ class BuildingEditorEventHandler:
         if events is None:
             events = pygame.event.get()
         for ev in events:
+            # Si el panel de Tutorial está activo, delegar primero sus eventos de mouse
+            if ev.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP, pygame.MOUSEMOTION, pygame.MOUSEWHEEL):
+                try:
+                    tutorial = getattr(self, 'tutorial', None)
+                    if tutorial and tutorial.is_active() and tutorial.handle_event(ev):
+                        continue
+                except Exception:
+                    pass
             # Early guard: iniciar drag del panel del picker con RMB dentro del panel pero fuera del grid/scrollbar
             if (
                 ev.type == pygame.MOUSEBUTTONDOWN
@@ -137,6 +145,13 @@ class BuildingEditorEventHandler:
                         continue
                 except Exception:
                     pass
+                # Delegar al panel de Tutorial si está activo (por si clicks fuera de botones deban ser ignorados)
+                try:
+                    tutorial = getattr(self, 'tutorial', None)
+                    if tutorial and tutorial.is_active() and tutorial.handle_event(ev):
+                        continue
+                except Exception:
+                    pass
             # Delegar al panel de colisiones (si está activo). Consume el evento si corresponde.
             try:
                 colliders = getattr(self, 'colliders', None)
@@ -193,6 +208,13 @@ class BuildingEditorEventHandler:
 
             # --- Teclas cuando estoy en modo “editor” sin picker ---
             if ev.type == pygame.KEYDOWN:
+                # Si el Tutorial está activo, permitirle consumir teclas (ESC para cerrar)
+                try:
+                    tutorial = getattr(self, 'tutorial', None)
+                    if tutorial and tutorial.is_active() and tutorial.handle_event(ev):
+                        continue
+                except Exception:
+                    pass
                 # Ctrl+P (o simplemente P) → toggle picker
                 if ev.key == pygame.K_p:
                     self.controller.toggle_picker()

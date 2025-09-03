@@ -67,11 +67,33 @@ class BuildingEditorView:
         if self.editor.picker_active:
             self.picker_view.render(screen, camera)
 
+        # Cachear el rect del edificio hovered para superposiciones externas (p.ej., tutorial)
+        try:
+            hb = getattr(self.editor, 'hovered_building', None)
+            if hb:
+                x, y = camera.apply((hb.x, hb.y))
+                w, h = camera.scale(hb.image.get_size())
+                self._last_hovered_building_rect = pygame.Rect(x, y, w, h)
+            else:
+                self._last_hovered_building_rect = None
+        except Exception:
+            pass
+
         # Suppress building hover visuals (outline, handles) when UI is blocking
         try:
             mx, my = pygame.mouse.get_pos()
             if is_blocked(mx, my):
                 return
+        except Exception:
+            pass
+
+        # Reset per-frame tool UI rect caches for overlays
+        try:
+            self._last_split_handle_rect = None
+            self._last_z_bottom_minus_rect = None
+            self._last_z_bottom_plus_rect = None
+            self._last_z_top_minus_rect = None
+            self._last_z_top_plus_rect = None
         except Exception:
             pass
 
@@ -82,6 +104,11 @@ class BuildingEditorView:
             x, y = camera.apply((b.x, b.y))
             w, h = camera.scale(b.image.get_size())
             rect = pygame.Rect(x, y, w, h)
+            # Exponer el rect del edificio activo para overlays (tutorial)
+            try:
+                self._last_active_building_rect = rect
+            except Exception:
+                pass
             pygame.draw.rect(screen, (0, 255, 255), rect, 4)
             pygame.draw.rect(screen, (255, 255, 255), rect, 1)
             # Render small ID label near the top-left of the building rect
@@ -104,9 +131,41 @@ class BuildingEditorView:
             # Ocultar handles de herramientas en modo colisiones (colliders_mode)
             if not getattr(self.editor, 'colliders_mode', False):
                 self.default_view.render_reset_handle(screen, b, camera)
-                self.split_view.render(screen, b, camera)
-                self.z_bottom_view.render(screen, b, camera)
-                self.z_top_view.render(screen, b, camera)
+                # Split handle
+                try:
+                    split_bounds = self.split_view.render(screen, b, camera)
+                    if isinstance(split_bounds, dict):
+                        hr = split_bounds.get('handle_rect')
+                        if hr is not None:
+                            self._last_split_handle_rect = hr.copy()
+                except Exception:
+                    pass
+                # Z bottom
+                try:
+                    zb = self.z_bottom_view.render(screen, b, camera)
+                    if isinstance(zb, dict):
+                        px, py = zb.get('panel_pos', (0, 0))
+                        m = zb.get('minus_rect')
+                        p = zb.get('plus_rect')
+                        if m is not None:
+                            self._last_z_bottom_minus_rect = pygame.Rect(px + m.x, py + m.y, m.w, m.h)
+                        if p is not None:
+                            self._last_z_bottom_plus_rect = pygame.Rect(px + p.x, py + p.y, p.w, p.h)
+                except Exception:
+                    pass
+                # Z top
+                try:
+                    zt = self.z_top_view.render(screen, b, camera)
+                    if isinstance(zt, dict):
+                        px, py = zt.get('panel_pos', (0, 0))
+                        m = zt.get('minus_rect')
+                        p = zt.get('plus_rect')
+                        if m is not None:
+                            self._last_z_top_minus_rect = pygame.Rect(px + m.x, py + m.y, m.w, m.h)
+                        if p is not None:
+                            self._last_z_top_plus_rect = pygame.Rect(px + p.x, py + p.y, p.w, p.h)
+                except Exception:
+                    pass
             # Render toggle CG/CU bottom-right
             try:
                 self.collider_scope_view.render(screen, b, camera)
