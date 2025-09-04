@@ -1,10 +1,13 @@
 """
 Controlador del panel de Tutorial (Buildings Editor).
 """
+import logging
+import traceback
 from .buildings_tutorial_panel_model import BuildingsTutorialPanelModel
 from .buildings_tutorial_panel_view import BuildingsTutorialPanelView
 from .buildings_tutorial_panel_events import BuildingsTutorialPanelEventHandler
 
+logger = logging.getLogger("buildings.tutorial")
 
 class BuildingsTutorialPanelController:
     def __init__(self, state, editor_state, editor_view, editor_manager):
@@ -27,6 +30,17 @@ class BuildingsTutorialPanelController:
         return bool(getattr(self.model, 'active', False))
 
     def activate(self) -> None:
+        # Log activation intent with context
+        try:
+            logger.info(
+                "[Tutorial] activate() called; colliders_mode=%s, picker_active=%s, step_index=%s\n%s",
+                getattr(self.editor_state, 'colliders_mode', None),
+                getattr(self.editor_state, 'picker_active', None),
+                getattr(self.model, 'step_index', None),
+                self._short_stack()
+            )
+        except Exception:
+            pass
         self.model.active = True
         self.model.reset_runtime()
         # Comenzar desde el primer paso si deseamos
@@ -72,6 +86,10 @@ class BuildingsTutorialPanelController:
             except Exception:
                 pass
             try:
+                setattr(self.editor_state, 'tutorial_colliders_painted_on_selected_pulse', False)
+            except Exception:
+                pass
+            try:
                 setattr(self.editor_state, 'tutorial_colliders_picker_moved_pulse', False)
             except Exception:
                 pass
@@ -89,6 +107,17 @@ class BuildingsTutorialPanelController:
             pass
 
     def deactivate(self) -> None:
+        # Log deactivation intent with context
+        try:
+            logger.info(
+                "[Tutorial] deactivate() called; colliders_mode=%s, picker_active=%s, step_index=%s\n%s",
+                getattr(self.editor_state, 'colliders_mode', None),
+                getattr(self.editor_state, 'picker_active', None),
+                getattr(self.model, 'step_index', None),
+                self._short_stack()
+            )
+        except Exception:
+            pass
         self.model.active = False
         self.model.reset_runtime()
         # Reset tracking
@@ -130,6 +159,10 @@ class BuildingsTutorialPanelController:
             except Exception:
                 pass
             try:
+                setattr(self.editor_state, 'tutorial_colliders_painted_on_selected_pulse', False)
+            except Exception:
+                pass
+            try:
                 setattr(self.editor_state, 'tutorial_colliders_picker_moved_pulse', False)
             except Exception:
                 pass
@@ -157,6 +190,20 @@ class BuildingsTutorialPanelController:
             self.deactivate()
         else:
             self.activate()
+
+    def _short_stack(self, depth: int = 6) -> str:
+        """Return a short formatted call stack (excluding this helper)."""
+        try:
+            # Exclude the current frame (this function) from the stack
+            frames = traceback.extract_stack(limit=depth + 2)[:-2]
+            lines = []
+            for fr in frames:
+                # Keep file tail for brevity
+                file_tail = fr.filename.replace('\\', '/').split('/')[-1]
+                lines.append(f"  at {file_tail}:{fr.lineno} in {fr.name}")
+            return "Call stack:\n" + "\n".join(lines)
+        except Exception:
+            return "Call stack: <unavailable>"
 
     # Integración
     def handle_event(self, event) -> bool:
@@ -220,6 +267,10 @@ class BuildingsTutorialPanelController:
                 pass
             try:
                 setattr(self.editor_state, 'tutorial_colliders_painted_pulse', False)
+            except Exception:
+                pass
+            try:
+                setattr(self.editor_state, 'tutorial_colliders_painted_on_selected_pulse', False)
             except Exception:
                 pass
             try:
@@ -311,6 +362,7 @@ class BuildingsTutorialPanelController:
         # Pulsos del panel de colisiones
         colliders_choice_pulse = False
         colliders_painted_pulse = False
+        colliders_painted_on_selected_pulse = False
         colliders_picker_moved_pulse = False
         colliders_saved_button_pulse = False
 
@@ -405,6 +457,12 @@ class BuildingsTutorialPanelController:
         except Exception:
             pass
         try:
+            if bool(getattr(es, 'tutorial_colliders_painted_on_selected_pulse', False)):
+                colliders_painted_on_selected_pulse = True
+                setattr(es, 'tutorial_colliders_painted_on_selected_pulse', False)
+        except Exception:
+            pass
+        try:
             if bool(getattr(es, 'tutorial_colliders_picker_moved_pulse', False)):
                 colliders_picker_moved_pulse = True
                 setattr(es, 'tutorial_colliders_picker_moved_pulse', False)
@@ -485,6 +543,8 @@ class BuildingsTutorialPanelController:
                 ok = colliders_choice_pulse
             elif kind == 'colliders_painted':
                 ok = colliders_painted_pulse
+            elif kind == 'colliders_painted_on_selected':
+                ok = colliders_painted_on_selected_pulse
             elif kind == 'colliders_picker_moved':
                 ok = colliders_picker_moved_pulse
             elif kind == 'colliders_saved_button':
@@ -492,9 +552,11 @@ class BuildingsTutorialPanelController:
             elif kind == 'colliders_scope_toggled':
                 ok = scope_toggled
             elif kind == 'colliders_scope_cg':
-                ok = (current_scope == 'CG')
+                # Requiere acción explícita del usuario: solo cuenta si se cambió el alcance en esta sesión
+                ok = scope_toggled and (current_scope == 'CG')
             elif kind == 'colliders_scope_cu':
-                ok = (current_scope == 'CU')
+                # Requiere acción explícita del usuario: solo cuenta si se cambió el alcance en esta sesión
+                ok = scope_toggled and (current_scope == 'CU')
 
             if ok:
                 done_set.add(iid)

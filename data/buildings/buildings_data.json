@@ -507,21 +507,21 @@
     },
     {
         "zone": "zone_100_50",
-        "rel_x": 472,
-        "rel_y": 854,
+        "rel_x": 496,
+        "rel_y": 683,
         "assets": {
             "idle": "assets/buildings/gardens/garden_4.png"
         },
         "solid": true,
         "scale": [
-            537,
-            537
+            528,
+            528
         ],
         "original_scale": [
-            537,
-            537
+            528,
+            528
         ],
-        "split_ratio": 0.592,
+        "split_ratio": 0.617,
         "z_bottom": 4,
         "z_top": 6,
         "collider_scope": "CG",
@@ -2739,8 +2739,8 @@
     },
     {
         "zone": "zone_100_50",
-        "rel_x": 153,
-        "rel_y": 1177,
+        "rel_x": 143,
+        "rel_y": 1105,
         "assets": {
             "idle": "assets/buildings/mine.png"
         },

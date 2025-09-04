@@ -82,10 +82,9 @@ class BuildingEditorView:
         # Suppress building hover visuals (outline, handles) when UI is blocking
         try:
             mx, my = pygame.mouse.get_pos()
-            if is_blocked(mx, my):
-                return
+            ui_blocked = bool(is_blocked(mx, my))
         except Exception:
-            pass
+            ui_blocked = False
 
         # Reset per-frame tool UI rect caches for overlays
         try:
@@ -97,15 +96,16 @@ class BuildingEditorView:
         except Exception:
             pass
 
-        # Draw hover outline (cyan, thinner) only as visual hint, without any handles
+        # Draw hover outline (cyan, thinner) only as visual hint when UI is NOT blocking
         try:
-            hb = getattr(self.editor, 'hovered_building', None)
-            ab = getattr(self.editor, 'active_building', None)
-            if hb is not None and hb is not ab:
-                x, y = camera.apply((hb.x, hb.y))
-                w, h = camera.scale(hb.image.get_size())
-                hover_rect = pygame.Rect(x, y, w, h)
-                pygame.draw.rect(screen, (0, 255, 255), hover_rect, 2)  # cyan, thin
+            if not ui_blocked:
+                hb = getattr(self.editor, 'hovered_building', None)
+                ab = getattr(self.editor, 'active_building', None)
+                if hb is not None and hb is not ab:
+                    x, y = camera.apply((hb.x, hb.y))
+                    w, h = camera.scale(hb.image.get_size())
+                    hover_rect = pygame.Rect(x, y, w, h)
+                    pygame.draw.rect(screen, (0, 255, 255), hover_rect, 2)  # cyan, thin
         except Exception:
             pass
 
@@ -140,8 +140,8 @@ class BuildingEditorView:
                         screen.blit(text_surf, (lx, ly))
             except Exception:
                 pass
-            # Ocultar handles de herramientas en modo colisiones (colliders_mode)
-            if not getattr(self.editor, 'colliders_mode', False):
+            # Ocultar handles de herramientas en modo colisiones o cuando la UI bloquea
+            if (not getattr(self.editor, 'colliders_mode', False)) and (not ui_blocked):
                 self.default_view.render_reset_handle(screen, b, camera)
                 # Split handle
                 try:

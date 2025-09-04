@@ -195,7 +195,9 @@ class BuildingModel:
         surf = load_image(self.image_path)
         surf = pygame.transform.scale(surf, (new_width, new_height))
         self.image = surf
-        self.original_scale = (new_width, new_height)
+        # Importante: no sobrescribir original_scale aquí.
+        # original_scale representa el tamaño inicial al cargar el edificio
+        # y es el objetivo de reset_to_original_size().
         self._cut_world = int(new_height * self.split_ratio)
         # Ajustar el collision_map al nuevo tamaño de imagen (grid por TILE_SIZE)
         try:

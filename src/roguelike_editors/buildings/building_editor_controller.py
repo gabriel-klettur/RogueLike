@@ -67,7 +67,7 @@ class BuildingEditorController:
         world_y = my / camera.zoom + camera.offset_y
 
         # Si el panel de colisiones está activo, deshabilitar clics de herramientas
-        # excepto el toggle de alcance CG/CU
+        # excepto el toggle de alcance CG/CU y permitir seleccionar el edificio activo con LMB.
         if getattr(self.editor, 'colliders_mode', False):
             if button == 1:
                 ab = getattr(self.editor, 'active_building', None)
@@ -75,6 +75,11 @@ class BuildingEditorController:
                     scope_rect = self.collider_scope_tool.get_handle_rect(ab, camera)
                     if scope_rect and scope_rect.collidepoint(mx, my):
                         self.collider_scope_tool.toggle_scope(ab)
+                        return
+                # Permitir selección persistente del edificio bajo el cursor en modo colisiones
+                for b in reversed(buildings):
+                    if b.rect.collidepoint(world_x, world_y):
+                        self.editor.active_building = b
                         return
             return
 

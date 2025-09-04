@@ -98,6 +98,12 @@ class BuildingEditorManager:
                 self.colliders.view.toolbar_view = tmp_view
         except Exception:
             pass
+        # Permitir coordinación cruzada: Colliders necesita el manager para mantener vivo el Tutorial
+        try:
+            if hasattr(self, 'colliders') and self.colliders is not None:
+                self.colliders.editor_manager = self
+        except Exception:
+            pass
         # Permitir que el panel de Tutorial se alinee a la derecha del toolbar/título
         try:
             if hasattr(self.tutorial, 'view'):
