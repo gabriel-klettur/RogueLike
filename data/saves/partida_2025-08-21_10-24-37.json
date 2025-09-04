@@ -2,16 +2,16 @@
   "player": {
     "level": "global_map",
     "pos": [
-      118,
-      81
+      125,
+      56
     ]
   },
   "npcs": {},
   "levels": {
     "global_map": {
       "player_pos": [
-        118,
-        81
+        125,
+        56
       ],
       "npc_states": {}
     }
@@ -22,11 +22,11 @@
     "slots": [
       {
         "item": "gold",
-        "quantity": 1007
+        "quantity": 1016.0
       },
       {
         "item": "wood",
-        "quantity": 18
+        "quantity": 10
       },
       null,
       null,
@@ -51,7 +51,7 @@
   "meta": {
     "name": "partida_2025-08-21_10-24-37",
     "created_at": "2025-08-21T10:24:37",
-    "last_played": "2025-09-04T19:18:27",
+    "last_played": "2025-09-04T22:25:56",
     "player": {
       "xp": 0,
       "level": 0

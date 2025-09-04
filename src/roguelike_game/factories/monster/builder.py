@@ -31,7 +31,6 @@ from roguelike_game.ecs.components.core.npc_tag import NPCTagComponent
 from roguelike_game.ecs.components.monster_instance_component import MonsterInstanceComponent
 from roguelike_game.ecs.components.chat.chat_component import ChatComponent
 from roguelike_game.ecs.components.chat.vendor_component import VendorComponent
-from pathlib import Path
 
 
 class MonsterBuilder:
@@ -95,10 +94,9 @@ class MonsterBuilder:
             chat_range_tiles = 0.0
         if chat_range_tiles > 0:
             chat_range_px = float(chat_range_tiles) * float(TILE_SIZE)
-            # Heurística para rol vendor: nombre que contenga 'vendor' o archivo de vendor existente
+            # Heurística para rol vendor: nombre que contenga 'vendor'
             lower_name = str(monster_type).lower()
-            vendor_file = Path(__file__).resolve().parents[4] / "data" / "entities" / "vendors" / f"{monster_type}.json"
-            is_vendor = ("vendor" in lower_name) or vendor_file.exists()
+            is_vendor = ("vendor" in lower_name)
             role = "vendor" if is_vendor else "generic"
             world.components["ChatComponent"][eid] = ChatComponent(
                 chat_range=chat_range_px,

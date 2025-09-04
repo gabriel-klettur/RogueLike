@@ -9,6 +9,7 @@ from roguelike_game.ecs.components.core.npc_tag import NPCTagComponent
 from roguelike_game.ecs.components.inventory_component import InventoryComponent
 from roguelike_game.ecs.components.monster_instance_component import MonsterInstanceComponent
 from roguelike_game.ecs.components.experience_component import ExperienceComponent
+from roguelike_game.ecs.components.core.identity import Faction
 
 
 class InventoryInitSystem:
@@ -21,12 +22,16 @@ class InventoryInitSystem:
                  active_monster_path: str = 'data/inventory/active/inventory_monsters.json',
                  default_player_path: str = 'data/inventory/defaults/inventory_player.json',
                  active_player_path: str = 'data/inventory/active/inventory_player.json',
+                 default_neutral_path: str = 'data/inventory/defaults/inventory_neutrals.json',
+                 active_neutral_path: str = 'data/inventory/active/inventory_neutrals.json',
                  schema_version: str = '1.0.0'):
         self.perf_log = perf_log
         self.default_monster_path = default_monster_path
         self.active_monster_path = active_monster_path
         self.default_player_path = default_player_path
         self.active_player_path = active_player_path
+        self.default_neutral_path = default_neutral_path
+        self.active_neutral_path = active_neutral_path
         self.schema_version = schema_version
         self.initialized = set()
 
@@ -35,6 +40,12 @@ class InventoryInitSystem:
             self.monster_templates = json.load(f)
         with open(self.default_player_path, 'r') as f:
             self.player_template = json.load(f)
+        # Plantillas neutrales (si no existe archivo, usar vacío)
+        try:
+            with open(self.default_neutral_path, 'r') as f:
+                self.neutral_templates = json.load(f)
+        except Exception:
+            self.neutral_templates = {}
 
         # Asegurar archivos activos existan
         os.makedirs(os.path.dirname(self.active_monster_path), exist_ok=True)
@@ -44,6 +55,10 @@ class InventoryInitSystem:
         os.makedirs(os.path.dirname(self.active_player_path), exist_ok=True)
         if not os.path.exists(self.active_player_path):
             with open(self.active_player_path, 'w') as f:
+                json.dump({}, f, indent=2)
+        os.makedirs(os.path.dirname(self.active_neutral_path), exist_ok=True)
+        if not os.path.exists(self.active_neutral_path):
+            with open(self.active_neutral_path, 'w') as f:
                 json.dump({}, f, indent=2)
 
         # Load active inventories into memory with fallback
@@ -61,9 +76,17 @@ class InventoryInitSystem:
             self.active_players = {}
             with open(self.active_player_path, 'w') as f:
                 json.dump(self.active_players, f, indent=2)
+        try:
+            with open(self.active_neutral_path, 'r') as f:
+                self.active_neutrals = json.load(f)
+        except (json.JSONDecodeError, FileNotFoundError):
+            self.active_neutrals = {}
+            with open(self.active_neutral_path, 'w') as f:
+                json.dump(self.active_neutrals, f, indent=2)
         # Initialize dirty flags
         self.dirty_monsters = False
         self.dirty_players = False
+        self.dirty_neutrals = False
 
         # Registry & Schemas
         self.vendors_registry_path = os.path.join('data', 'vendors', 'registry', 'vendors.json')
@@ -89,6 +112,10 @@ class InventoryInitSystem:
         active_players = self.active_players
         # Reset dirty flag for players
         self.dirty_players = False
+        # Use in-memory active_neutrals
+        active_neutrals = self.active_neutrals
+        # Reset dirty flag for neutrals
+        self.dirty_neutrals = False
 
         # Inicializar jugadores
         for eid in list(player_tag_store.keys()):
@@ -146,7 +173,7 @@ class InventoryInitSystem:
                 world.components['ExperienceComponent'][eid] = ExperienceComponent()
             self.initialized.add(eid)
 
-        # Inicializar NPCs
+        # Inicializar NPCs (hostiles y neutrales)
         for eid in list(npc_tag_store.keys()):
             inst = instance_store.get(eid)
             if not inst:
@@ -157,16 +184,27 @@ class InventoryInitSystem:
                 continue
             if eid in self.initialized:
                 continue
-            # Determinar plantilla a partir de Identity.name
+            # Determinar plantilla a partir de Identity.name y facción
             identity = comps.get('Identity', {}).get(eid)
             template_key = identity.name.lower() if identity else None
-            template = self.monster_templates.get(template_key)
+            is_neutral = False
+            try:
+                is_neutral = (identity is not None and identity.faction == Faction.NEUTRAL)
+            except Exception:
+                is_neutral = False
+            # Seleccionar plantilla y almacén activo según facción
+            template = None
+            if template_key:
+                template = (self.neutral_templates.get(template_key) if is_neutral else self.monster_templates.get(template_key))
             if not template:
-                continue
+                # Si no hay plantilla (p.ej., neutrales sin entry), continuar pero permitir semillas para vendors
+                template = {}
+            active_store = active_neutrals if is_neutral else active_monsters
+
             template_id = template.get('template_id')
-            if iid in active_monsters:
+            if iid in active_store:
                 # Cargar inventario activo existente
-                saved = active_monsters.get(iid, {})
+                saved = active_store.get(iid, {})
                 inv_comp = InventoryComponent(player_id=saved.get('template_id', template_id))
                 for slot in saved.get('slots', []):
                     if slot:
@@ -216,12 +254,15 @@ class InventoryInitSystem:
                                         if slot:
                                             inv_comp.add(slot.get('item'), int(slot.get('quantity', 0)))
                                     # Persistir inventario inicializado en activos para esta instancia
-                                    active_monsters[iid] = {
+                                    active_store[iid] = {
                                         'template_id': file_tid,
                                         'slots': inv_comp.serialize().get('slots'),
                                         'schema_version': self.schema_version
                                     }
-                                    self.dirty_monsters = True
+                                    if is_neutral:
+                                        self.dirty_neutrals = True
+                                    else:
+                                        self.dirty_monsters = True
                                     loaded_from_seed = True
                                     break
                 except Exception:
@@ -236,22 +277,29 @@ class InventoryInitSystem:
                             if qty > 0:
                                 inv_comp.add(entry['item'], qty)
                     # Persistir inventario generado
-                    active_monsters[iid] = {
+                    active_store[iid] = {
                         'template_id': template_id,
                         'slots': inv_comp.serialize().get('slots'),
                         'schema_version': self.schema_version
                     }
-                    self.dirty_monsters = True
+                    if is_neutral:
+                        self.dirty_neutrals = True
+                    else:
+                        self.dirty_monsters = True
             # Asignar componente e inicializar marcado
             world.components['InventoryComponent'][eid] = inv_comp
             self.initialized.add(eid)
 
-        # Remove entries for monsters no longer present
+        # Remove entries for monsters/neutrals no longer present
         current_npc_keys = set(inst.instance_id for eid, inst in instance_store.items() if eid in npc_tag_store)
         for key in list(active_monsters.keys()):
             if key not in current_npc_keys:
                 active_monsters.pop(key)
                 self.dirty_monsters = True
+        for key in list(active_neutrals.keys()):
+            if key not in current_npc_keys:
+                active_neutrals.pop(key)
+                self.dirty_neutrals = True
         # Guardar archivos activos solo si hay cambios
         if self.dirty_monsters:
             with open(self.active_monster_path, 'w') as f:
@@ -259,6 +307,9 @@ class InventoryInitSystem:
         if self.dirty_players:
             with open(self.active_player_path, 'w') as f:
                 json.dump(self.active_players, f, indent=2)
+        if self.dirty_neutrals:
+            with open(self.active_neutral_path, 'w') as f:
+                json.dump(self.active_neutrals, f, indent=2)
 
     # --- Helpers: Vendors Registry & Schemas -------------------------------
     def _ensure_seed_schema_loaded(self):
