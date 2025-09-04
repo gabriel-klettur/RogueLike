@@ -7,6 +7,7 @@
           "speed": 0.8,
           "faction": "NEUTRAL",
           "aggro_range": 0,
+          "chat_range": 5,
           "melee_range": 0,
           "melee_damage": 0,
           "melee_cooldown": 999.0,
