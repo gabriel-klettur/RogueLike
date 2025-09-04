@@ -11,6 +11,7 @@ from roguelike_engine.config.config import BUILDINGS_DATA_PATH, BUILDINGS_TEMPLA
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_editors.fsm.fsm_editor_events import FsmEditorEventHandler
 from roguelike_ui.ui_blocker import is_blocked
+from roguelike_game.ecs.systems.chat.chat_input_controller import ChatInputController
 
 import logging
 logger = logging.getLogger(__name__)
@@ -247,6 +248,26 @@ def handle_events(game):
 
     # Capturar eventos
     events = pygame.event.get()
+    # Si el chat está abierto, enrutar todos los eventos al controlador de chat
+    try:
+        world = getattr(getattr(game, 'ecs', None), 'ecs_world', None)
+        state = getattr(world, 'state', None)
+        if state is not None and bool(getattr(state, 'chat_open', False)):
+            ctrl = getattr(world, '_chat_input_ctrl', None)
+            if ctrl is None:
+                ctrl = ChatInputController()
+                setattr(world, '_chat_input_ctrl', ctrl)
+            # Asegurar que el controlador esté activo y sincronizado con el buffer
+            ctrl.ensure_open(world)
+            # Enviar todos los eventos al chat y no propagar al gameplay
+            try:
+                ctrl.handle_events(world, events)
+            except Exception:
+                pass
+            # Retornar temprano: impedir propagación al gameplay mientras el chat está abierto
+            return
+    except Exception:
+        pass
     # Pre-despacho: permitir que el DiagnosticsOverlay consuma eventos de ratón siempre
     # incluso si luego retornamos temprano por menús/editores.
     # Use the Diagnostics overlay instance
@@ -667,10 +688,128 @@ def handle_events(game):
         game.buildings_editor.handle(game.camera, game.buildings, events)
         return
 
-    # Si el editor de mapa está activo, delegar antes de bloquear eventos por UI
+    # Si un editor de mapa está activo, delegar antes de bloquear eventos por UI
     if hasattr(game, 'map_editor') and getattr(game.map_editor.editor_state, 'active', False):
         game.map_editor.handle(game.camera, game.map, events)
         return
+
+    # Detección de clic en halo de NPC para abrir chat y consumir el evento (antes del motor)
+    try:
+        world = getattr(getattr(game, 'ecs', None), 'ecs_world', None)
+        state = getattr(world, 'state', None) if world else None
+        camera = getattr(game, 'camera', None)
+        if world and state and camera and not bool(getattr(state, 'chat_open', False)):
+            comps = getattr(world, 'components', {})
+            pos_map = comps.get('Position', {}) or {}
+            chat_map = comps.get('ChatComponent', {}) or {}
+            sprite_map = comps.get('Sprite', {}) or {}
+            scale_map = comps.get('Scale', {}) or {}
+            multi_map = comps.get('MultiCollider', {}) or {}
+            player_eid = getattr(world, 'player_entity', None)
+            player_pos = pos_map.get(player_eid)
+            if player_pos and chat_map:
+                # Procesar solo MOUSEBUTTONDOWN de botón izquierdo
+                for i, ev in enumerate(events):
+                    if ev.type == pygame.MOUSEBUTTONDOWN and getattr(ev, 'button', None) == 1:
+                        mx, my = getattr(ev, 'pos', pygame.mouse.get_pos())
+                        # Ignorar si está sobre una UI bloqueante
+                        try:
+                            if is_blocked(mx, my):
+                                continue
+                        except Exception:
+                            pass
+                        # Buscar un NPC cuyo halo incluya el clic y que esté en rango de chat
+                        for eid, chat in list(chat_map.items()):
+                            npc_pos = pos_map.get(eid)
+                            if not npc_pos:
+                                continue
+                            # Comprobar rango jugador-NPC
+                            try:
+                                dx = float(getattr(npc_pos, 'x', 0.0)) - float(getattr(player_pos, 'x', 0.0))
+                                dy = float(getattr(npc_pos, 'y', 0.0)) - float(getattr(player_pos, 'y', 0.0))
+                                dist = (dx*dx + dy*dy) ** 0.5
+                                rng = float(getattr(chat, 'chat_range', 0.0) or 0.0)
+                                if dist > rng:
+                                    continue
+                            except Exception:
+                                continue
+                            # Centro del halo: preferir centro del sprite con escala
+                            try:
+                                wx = float(getattr(npc_pos, 'x', 0.0))
+                                wy = float(getattr(npc_pos, 'y', 0.0))
+                            except Exception:
+                                continue
+                            spr = sprite_map.get(eid)
+                            scl_comp = scale_map.get(eid)
+                            scl = float(getattr(scl_comp, 'scale', 1.0) or 1.0)
+                            world_cx = world_cy = None
+                            base_size = None
+                            if spr and hasattr(spr, 'image') and spr.image:
+                                try:
+                                    sw, sh = spr.image.get_size()
+                                    world_cx = wx + (sw * scl) / 2.0
+                                    world_cy = wy + (sh * scl) / 2.0
+                                    base_size = min(sw, sh) * scl
+                                except Exception:
+                                    world_cx = world_cy = None
+                                    base_size = None
+                            # Fallback a collider de pies
+                            feet_r = None
+                            if world_cx is None or world_cy is None:
+                                try:
+                                    mc = multi_map.get(eid)
+                                    if mc and hasattr(mc, 'colliders'):
+                                        feet = mc.colliders.get('feet')
+                                        if feet is not None:
+                                            if hasattr(feet, 'offset_x') and hasattr(feet, 'offset_y'):
+                                                world_cx = wx + float(feet.offset_x)
+                                                world_cy = wy + float(feet.offset_y)
+                                            if hasattr(feet, 'radius'):
+                                                feet_r = float(getattr(feet, 'radius', 0.0) or 0.0)
+                                except Exception:
+                                    pass
+                            if world_cx is None or world_cy is None:
+                                world_cx, world_cy = wx, wy
+                            # Radio base del halo
+                            halo_r_world = None
+                            if base_size is not None:
+                                try:
+                                    halo_r_world = max(12.0, float(base_size) * 0.25)
+                                except Exception:
+                                    halo_r_world = None
+                            if halo_r_world is None and feet_r is not None:
+                                halo_r_world = feet_r
+                            if halo_r_world is None:
+                                halo_r_world = 18.0
+                            # Algo más grande (10%) como en el render
+                            halo_r_screen = int(max(6.0, halo_r_world * 1.1) * (getattr(camera, 'zoom', 1.0) or 1.0))
+                            # Convertir a pantalla y probar hit
+                            try:
+                                cx, cy = camera.apply((world_cx, world_cy))
+                            except Exception:
+                                continue
+                            dxs = float(mx - cx)
+                            dys = float(my - cy)
+                            if (dxs*dxs + dys*dys) <= float(halo_r_screen * halo_r_screen):
+                                # Abrir chat con este NPC y consumir evento
+                                try:
+                                    state.chat_open = True
+                                    state.chat_target_eid = eid
+                                    state.chat_input_buffer = ""
+                                    greeting = getattr(chat, 'greeting', None)
+                                    if greeting:
+                                        state.chat_add_message('NPC', str(greeting))
+                                except Exception:
+                                    pass
+                                consumed_idx.add(i)
+                                # No seguir buscando más NPCs por este clic
+                                break
+                        # Si ya fue consumido, saltar a siguiente evento
+                        if i in consumed_idx:
+                            continue
+    except Exception:
+        # No romper el flujo de eventos por errores en detección de halo
+        pass
 
     # Por defecto, delegar al handle de engine
     # Pasar solo eventos no consumidos y no bloqueados por UI al motor.

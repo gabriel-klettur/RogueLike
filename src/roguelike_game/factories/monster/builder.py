@@ -29,6 +29,9 @@ from roguelike_editors.fsm.services.fsm_runtime_bridge import build_fsm_for_arch
 from roguelike_game.ecs.components.fsm.npc_state import NPCState
 from roguelike_game.ecs.components.core.npc_tag import NPCTagComponent
 from roguelike_game.ecs.components.monster_instance_component import MonsterInstanceComponent
+from roguelike_game.ecs.components.chat.chat_component import ChatComponent
+from roguelike_game.ecs.components.chat.vendor_component import VendorComponent
+from pathlib import Path
 
 
 class MonsterBuilder:
@@ -83,6 +86,28 @@ class MonsterBuilder:
         world.components["NPCTagComponent"][eid] = NPCTagComponent()
         # Identificador único de instancia para persistencia de inventario
         world.components["MonsterInstanceComponent"][eid] = MonsterInstanceComponent()
+
+        # Chat & Vendor: si el JSON define chat_range (>0), añadimos ChatComponent.
+        # Interpretamos chat_range como tiles y lo convertimos a píxeles (coordinado con Position/distancias en px).
+        try:
+            chat_range_tiles = float(cfg.get("chat_range", 0) or 0)
+        except Exception:
+            chat_range_tiles = 0.0
+        if chat_range_tiles > 0:
+            chat_range_px = float(chat_range_tiles) * float(TILE_SIZE)
+            # Heurística para rol vendor: nombre que contenga 'vendor' o archivo de vendor existente
+            lower_name = str(monster_type).lower()
+            vendor_file = Path(__file__).resolve().parents[4] / "data" / "entities" / "vendors" / f"{monster_type}.json"
+            is_vendor = ("vendor" in lower_name) or vendor_file.exists()
+            role = "vendor" if is_vendor else "generic"
+            world.components["ChatComponent"][eid] = ChatComponent(
+                chat_range=chat_range_px,
+                role=role,
+                greeting=None,
+            )
+            if is_vendor:
+                # Precios por defecto definidos en VendorComponent: {"wood": 1} usando moneda "gold".
+                world.components["VendorComponent"][eid] = VendorComponent()
 
         # Combat & CombatStats
         world.components["CombatStats"][eid] = CombatStats(current_hp=cfg["hp"], max_hp=cfg["hp"], power=cfg["power"], defense=cfg["defense"])

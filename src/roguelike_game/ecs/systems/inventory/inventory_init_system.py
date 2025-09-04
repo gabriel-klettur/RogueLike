@@ -2,6 +2,7 @@ import os
 import json
 import random
 import uuid
+import jsonschema
 
 from roguelike_game.ecs.components.core.player_tag import PlayerTagComponent
 from roguelike_game.ecs.components.core.npc_tag import NPCTagComponent
@@ -63,6 +64,13 @@ class InventoryInitSystem:
         # Initialize dirty flags
         self.dirty_monsters = False
         self.dirty_players = False
+
+        # Registry & Schemas
+        self.vendors_registry_path = os.path.join('data', 'vendors', 'registry', 'vendors.json')
+        self._vendors_registry = None
+        self._vendors_registry_mtime = None
+        self.inventory_seed_schema_path = os.path.join('schemas', 'vendors', 'InventorySeedSchema.json')
+        self._inventory_seed_schema = None
 
     
     def update(self, world, *args):
@@ -164,20 +172,76 @@ class InventoryInitSystem:
                     if slot:
                         inv_comp.add(slot['item'], slot.get('quantity', 0))
             else:
-                # Generar ítems según rangos y probabilidades
-                inv_comp = InventoryComponent(player_id=template_id)
-                for entry in template.get('inventory', []):
-                    if random.random() <= entry.get('chance', 1.0):
-                        qty = random.randint(entry.get('min', 1), entry.get('max', 1))
-                        if qty > 0:
-                            inv_comp.add(entry['item'], qty)
-                # Persistir inventario generado
-                active_monsters[iid] = {
-                    'template_id': template_id,
-                    'slots': inv_comp.serialize().get('slots'),
-                    'schema_version': self.schema_version
-                }
-                self.dirty_monsters = True
+                # Si no hay activo persistido, intentar cargar semilla específica de vendor
+                loaded_from_seed = False
+                try:
+                    identity_key = (template_key or '').lower()
+                    is_vendor = (eid in comps.get('VendorComponent', {})) or ('vendor' in identity_key)
+                    if is_vendor and identity_key:
+                        # Cargar registry para obtener semilla específica y grupo
+                        candidates = []
+                        entry = self._get_vendor_entry(identity_key)
+                        if entry:
+                            spath = entry.get('seed_specific')
+                            if spath:
+                                candidates.append(spath)
+                            group = entry.get('seed_group') or entry.get('economy_group')
+                            if group:
+                                seed_group = os.path.join('data', 'vendors', 'inventory_seed', 'groups', f'{group}_default.json')
+                                candidates.append(seed_group)
+                        # Fallback heurístico: semilla específica basada en identity
+                        candidates.append(os.path.join('data', 'vendors', 'inventory_seed', f'inventory_{identity_key}.json'))
+                        for path in candidates:
+                            if os.path.exists(path) and os.path.getsize(path) > 0:
+                                with open(path, 'r', encoding='utf-8') as f:
+                                    data = json.load(f)
+                                # Validar contra schema de semillas si está disponible
+                                try:
+                                    self._ensure_seed_schema_loaded()
+                                    if self._inventory_seed_schema is not None:
+                                        jsonschema.validate(instance=data, schema=self._inventory_seed_schema)
+                                except Exception:
+                                    # Semilla inválida; intentar siguiente candidato
+                                    continue
+                                slots = data.get('slots')
+                                if isinstance(slots, list):
+                                    file_tid = data.get('template_id')
+                                    # Normalizar template_id si falta/incorrecto
+                                    try:
+                                        uuid.UUID(str(file_tid)) if file_tid else (_ for _ in ()).throw(ValueError())
+                                    except Exception:
+                                        file_tid = template_id or str(uuid.uuid4())
+                                    inv_comp = InventoryComponent(player_id=file_tid)
+                                    for slot in slots:
+                                        if slot:
+                                            inv_comp.add(slot.get('item'), int(slot.get('quantity', 0)))
+                                    # Persistir inventario inicializado en activos para esta instancia
+                                    active_monsters[iid] = {
+                                        'template_id': file_tid,
+                                        'slots': inv_comp.serialize().get('slots'),
+                                        'schema_version': self.schema_version
+                                    }
+                                    self.dirty_monsters = True
+                                    loaded_from_seed = True
+                                    break
+                except Exception:
+                    # Si hay cualquier problema al cargar semillas, continuamos con plantilla por defecto
+                    pass
+                if not loaded_from_seed:
+                    # Generar ítems según rangos y probabilidades (plantilla por defecto)
+                    inv_comp = InventoryComponent(player_id=template_id)
+                    for entry in template.get('inventory', []):
+                        if random.random() <= entry.get('chance', 1.0):
+                            qty = random.randint(entry.get('min', 1), entry.get('max', 1))
+                            if qty > 0:
+                                inv_comp.add(entry['item'], qty)
+                    # Persistir inventario generado
+                    active_monsters[iid] = {
+                        'template_id': template_id,
+                        'slots': inv_comp.serialize().get('slots'),
+                        'schema_version': self.schema_version
+                    }
+                    self.dirty_monsters = True
             # Asignar componente e inicializar marcado
             world.components['InventoryComponent'][eid] = inv_comp
             self.initialized.add(eid)
@@ -195,3 +259,39 @@ class InventoryInitSystem:
         if self.dirty_players:
             with open(self.active_player_path, 'w') as f:
                 json.dump(self.active_players, f, indent=2)
+
+    # --- Helpers: Vendors Registry & Schemas -------------------------------
+    def _ensure_seed_schema_loaded(self):
+        if self._inventory_seed_schema is not None:
+            return
+        try:
+            with open(self.inventory_seed_schema_path, 'r', encoding='utf-8') as f:
+                self._inventory_seed_schema = json.load(f)
+        except Exception:
+            self._inventory_seed_schema = None
+
+    def _load_vendors_registry(self):
+        path = self.vendors_registry_path
+        try:
+            st = os.stat(path)
+            mtime = st.st_mtime
+        except FileNotFoundError:
+            self._vendors_registry = None
+            self._vendors_registry_mtime = None
+            return None
+        if self._vendors_registry is None or self._vendors_registry_mtime != mtime:
+            try:
+                with open(path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                self._vendors_registry = data
+            except Exception:
+                self._vendors_registry = None
+            self._vendors_registry_mtime = mtime
+        return self._vendors_registry
+
+    def _get_vendor_entry(self, identity_key: str):
+        reg = self._load_vendors_registry()
+        if not isinstance(reg, dict):
+            return None
+        vendors = reg.get('vendors') or {}
+        return vendors.get(identity_key)

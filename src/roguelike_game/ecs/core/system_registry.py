@@ -75,6 +75,11 @@ from roguelike_game.ecs.systems.rendering.resurrection_area_system import Resurr
 from roguelike_game.ecs.systems.rendering.experience_render_system import ExperienceRenderSystem
 from roguelike_game.ecs.systems.rendering.magic_spell_bar_render_system import MagicSpellBarRenderSystem
 from roguelike_game.ecs.systems.rendering.spawner_debug_system import SpawnerDebugRenderSystem
+from roguelike_game.ecs.systems.chat.chat_proximity_system import ChatProximitySystem
+from roguelike_game.ecs.systems.chat.chat_router_system import ChatRouterSystem
+from roguelike_game.ecs.systems.chat.chat_ui_system import ChatUISystem
+from roguelike_game.ecs.systems.chat.vendor_trade_system import VendorTradeSystem
+from roguelike_game.ecs.systems.rendering.chat_proximity_render_system import ChatProximityRenderSystem
 
 def get_update_system_classes():
     """
@@ -88,7 +93,7 @@ def get_update_system_classes():
         SpawnSystem,
         SpawnStabilizationSystem,
         # Player & input
-        PlayerFacingSystem, FacingSystem, DropDragSystem, InputSystem,
+        PlayerFacingSystem, FacingSystem, DropDragSystem, InputSystem, ChatProximitySystem,
         MovementCollisionSystem,
         # Combat & spells
         MeleeCombatSystem, SpellCastingSystem, ArcaneFlameSystem, SmokeSystem, SmokeEmitterSystem, SphereMagicShieldSystem, TeleportSystem, FireworkLaunchSystem, AuraSystem, ParticleSystem, ExplosionSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, LightningEmitterSystem, FireballSystem, LightningSystem, DashSystem, HitboxSystem, BuildingDamageSystem,
@@ -96,6 +101,8 @@ def get_update_system_classes():
         AnimationSystem, FlashSystem, 
         # Inventory & pickups (keyboard drop disabled; only drag-and-drop allowed)
         InventoryInitSystem, DeathDropSystem, InventoryPickupSystem, ConsumeSystem, InventoryTransferSystem, InventoryDragSystem, MapLoadDropsSystem, TempZLayerSystem, DropDespawnSystem, CoinPickupSystem, OrbAttractionSystem, ExperienceSystem, MagicSpellBarSystem, ExpansionSystem,
+        # Chat & Trade
+        ChatRouterSystem, VendorTradeSystem,
     ]
 
 def get_render_system_classes():
@@ -116,7 +123,11 @@ def get_render_system_classes():
     base.append(ResurrectionAreaSystem)
     # Otros sistemas de render (eliminados FlashSystem y TrailSystem de render)
     base.append(DropHoverRenderSystem)
+    # Halo de proximidad de chat (círculo amarillo)
+    base.append(ChatProximityRenderSystem)
     base.append(InventoryUISystem)
+    # Chat UI overlay
+    base.append(ChatUISystem)
     # Spawner debug overlay always visible above game objects
     base.append(SpawnerDebugRenderSystem)
     # FlashSystem y TrailSystem son sistemas de update, no deben ir en render
