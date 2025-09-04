@@ -8,6 +8,15 @@ _DATA_DIR = Path(__file__).resolve().parents[4] / "data"
 _SCHEMAS_DIR = Path(__file__).resolve().parents[4] / "schemas" / "entities"
 with open(_DATA_DIR / "entities/new_hostiles.json", encoding="utf-8-sig") as f:
     _monster_cfg = json.load(f)
+    # Try to also load neutrals and merge their classes into a combined view
+    _neutrals_path = _DATA_DIR / "entities/new_neutrals.json"
+    _neutrals_cfg = None
+    if _neutrals_path.exists():
+        try:
+            with open(_neutrals_path, encoding="utf-8-sig") as nf:
+                _neutrals_cfg = json.load(nf)
+        except Exception:
+            _neutrals_cfg = None
 
 # Validate against schema
 _schema_path = _SCHEMAS_DIR / "NewHostilesSchema.json"
@@ -16,8 +25,11 @@ if _schema_path.exists():
         _schema = json.load(sf)
     validate(instance=_monster_cfg, schema=_schema)
 
-# Extract raw monster classes
-_raw_classes = _monster_cfg.get("hostiles", {}).get("classes", {})
+# Extract raw classes from hostiles and neutrals (if present) and merge
+_raw_classes: Dict[str, Any] = {}
+_raw_classes.update(_monster_cfg.get("hostiles", {}).get("classes", {}))
+if '_neutrals_cfg' in locals() and _neutrals_cfg:
+    _raw_classes.update(_neutrals_cfg.get("neutrals", {}).get("classes", {}))
 
 # Flatten stats into top-level and keep assets nested; include optional fsm_set per class
 MONSTER_DEFS: Dict[str, Any] = {}
@@ -48,12 +60,23 @@ def reload_monster_defs() -> None:
     global MONSTER_DEFS, MONSTER_STATS, MONSTER_ASSETS, MONSTER_DEFAULTS
     with open(_DATA_DIR / "entities/new_hostiles.json", encoding="utf-8-sig") as f:
         monster_cfg = json.load(f)
+    neutrals_cfg = None
+    neutrals_path = _DATA_DIR / "entities/new_neutrals.json"
+    if neutrals_path.exists():
+        try:
+            with open(neutrals_path, encoding="utf-8-sig") as nf:
+                neutrals_cfg = json.load(nf)
+        except Exception:
+            neutrals_cfg = None
     # Validate against schema if present
     if _schema_path.exists():
         with open(_schema_path, encoding="utf-8-sig") as sf:
             schema = json.load(sf)
         validate(instance=monster_cfg, schema=schema)
-    _raw_classes = monster_cfg.get("hostiles", {}).get("classes", {})
+    _raw_classes: Dict[str, Any] = {}
+    _raw_classes.update(monster_cfg.get("hostiles", {}).get("classes", {}))
+    if neutrals_cfg:
+        _raw_classes.update(neutrals_cfg.get("neutrals", {}).get("classes", {}))
     # Flatten stats into top-level and keep assets nested; include optional fsm_set per class
     MONSTER_DEFS.clear()
     for class_name, class_cfg in _raw_classes.items():

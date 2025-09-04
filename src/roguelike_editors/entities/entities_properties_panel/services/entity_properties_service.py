@@ -7,7 +7,7 @@ from roguelike_ui.services.json_persistence import load_from_json
 
 def load_entity_data(ent_id: str, player_stats: dict, monsters: dict) -> Tuple[str, dict, dict]:
     """
-    Load the JSON data for the given entity id (player or hostile).
+    Load the JSON data for the given entity id (player, hostile or neutral).
 
     Returns:
         (path, data, entry): absolute json path, classes dict, and the entity entry dict.
@@ -19,9 +19,49 @@ def load_entity_data(ent_id: str, player_stats: dict, monsters: dict) -> Tuple[s
         classes = root.get("players", {}).get("classes", {})
         data = classes
     else:
-        path = os.path.join(os.getcwd(), "data", "entities", "new_hostiles.json")
-        root = load_from_json(path)
-        data = root.setdefault("hostiles", {}).setdefault("classes", {})
+        # Detect whether the non-player entity is hostile or neutral
+        base_dir = os.path.join(os.getcwd(), "data", "entities")
+        hostiles_path = os.path.join(base_dir, "new_hostiles.json")
+        neutrals_path = os.path.join(base_dir, "new_neutrals.json")
+
+        # Try to detect by existing JSON membership first
+        host_root = load_from_json(hostiles_path)
+        neu_root = load_from_json(neutrals_path)
+        host_classes = host_root.get("hostiles", {}).get("classes", {})
+        neu_classes = neu_root.get("neutrals", {}).get("classes", {})
+
+        section = None
+        if ent_id in neu_classes:
+            path = neutrals_path
+            root = neu_root
+            data = neu_classes
+            section = "neutrals"
+        elif ent_id in host_classes:
+            path = hostiles_path
+            root = host_root
+            data = host_classes
+            section = "hostiles"
+        else:
+            # Fallback: infer from in-memory faction if available
+            faction = None
+            try:
+                m = monsters.get(ent_id)
+                if isinstance(m, dict):
+                    stats = m.get('stats', {})
+                    if isinstance(stats, dict):
+                        faction = stats.get('faction')
+            except Exception:
+                faction = None
+            if faction == 'NEUTRAL':
+                path = neutrals_path
+                root = neu_root
+                data = neu_root.setdefault("neutrals", {}).setdefault("classes", {})
+                section = "neutrals"
+            else:
+                path = hostiles_path
+                root = host_root
+                data = host_root.setdefault("hostiles", {}).setdefault("classes", {})
+                section = "hostiles"
 
     entry = data.setdefault(ent_id, {})
     return path, data, entry
@@ -34,6 +74,7 @@ def save_entity_data(ent_id: str, entry: dict, path: str, player_stats: dict, mo
     Notes:
     - For players: writes under players.classes[ent_id]
     - For hostiles: writes under hostiles.classes[ent_id]
+    - For neutrals: writes under neutrals.classes[ent_id]
     """
     if ent_id in player_stats:
         full = path
@@ -56,9 +97,25 @@ def save_entity_data(ent_id: str, entry: dict, path: str, player_stats: dict, mo
         entry['stats'] = _sanitize_stats(entry.get('stats', {}))
         # Sanitizar assets (convertir PathLike a str) antes de completar el esqueleto
         entry['assets'] = _sanitize_assets(entry.get('assets', {}))
-        # Asegurar esqueleto completo para hostiles (persistir nulls explícitos)
+        # Asegurar esqueleto completo para no-jugadores (hostiles/neurales)
         entry = ensure_monster_skeleton(entry)
-        root.setdefault("hostiles", {}).setdefault("classes", {})[ent_id] = entry
+        # Elegir sección correcta por path
+        base = os.path.basename(full).lower()
+        if base == 'new_neutrals.json':
+            section = 'neutrals'
+        elif base == 'new_hostiles.json':
+            section = 'hostiles'
+        else:
+            # Fallback por facción si el nombre no es estándar
+            faction = None
+            try:
+                stats = entry.get('stats', {})
+                if isinstance(stats, dict):
+                    faction = stats.get('faction')
+            except Exception:
+                faction = None
+            section = 'neutrals' if faction == 'NEUTRAL' else 'hostiles'
+        root.setdefault(section, {}).setdefault("classes", {})[ent_id] = entry
         with open(full, "w", encoding="utf-8") as f:
             json.dump(root, f, ensure_ascii=False, indent=2)
 

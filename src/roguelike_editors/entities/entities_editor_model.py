@@ -35,8 +35,14 @@ class EntitiesEditorModel:
         hostiles_root = load_from_json(str(hostiles_path))
         # Extraer solo las clases de hostiles anidadas
         self.hostiles = hostiles_root.get('hostiles', {}).get('classes', {})
-        # Alias de compatibilidad: mantener 'monsters' apuntando a hostiles
-        self.monsters = self.hostiles
+
+        # Neutrals (nuevo archivo)
+        neutrals_path = data_dir / 'entities' / 'new_neutrals.json'
+        neutrals_root = load_from_json(str(neutrals_path)) if neutrals_path.exists() else {"neutrals": {"classes": {}}}
+        self.neutrals = neutrals_root.get('neutrals', {}).get('classes', {})
+
+        # Alias de compatibilidad: 'monsters' referencia combinada para consumo general
+        self.monsters = {**self.hostiles, **self.neutrals}
 
         # Carga de assets
         self.assets: dict[str, pygame.Surface] = {}
@@ -72,8 +78,8 @@ class EntitiesEditorModel:
             except Exception:
                 pass
                 # Monstruos: cargar imagenes de idle y aplicar tint desde JSON
-        # Hostiles: cargar sprites con la factory
-        for mid in self.hostiles.keys():
+        # Hostiles + Neutrales: cargar sprites con la factory
+        for mid in self.monsters.keys():
             try:
                 sprite, _ = create_sprite_component(mid)
                 self.assets[mid] = sprite.image
@@ -83,8 +89,9 @@ class EntitiesEditorModel:
         self.title_model = EntitiesTitleModel()
         self.toolbar_model = EntitiesToolBarPanelModel()
         self.add_remove_model = EntitiesAddRemovePanelModel()
-        self.picker_model = EntityPickerPanelModel(self.player_stats, self.hostiles, self.assets)
-        self.properties_model = EntityPropertiesPanelModel(self.player_stats, self.player_assets, self.hostiles)
+        self.picker_model = EntityPickerPanelModel(self.player_stats, self.hostiles, self.neutrals, self.assets)
+        # Properties usa el conjunto combinado para editar tanto hostiles como neutrales
+        self.properties_model = EntityPropertiesPanelModel(self.player_stats, self.player_assets, self.monsters)
         # Cámara y arrastre
         self.panning: bool = False
         self.pan_start: tuple[int, int] = (0, 0)

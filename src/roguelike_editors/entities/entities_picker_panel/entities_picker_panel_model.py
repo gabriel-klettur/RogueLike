@@ -6,13 +6,14 @@ from typing import List, Tuple
 
 @dataclass
 class EntityPickerPanelModel:
-    """Estado del editor de entidades: jugador y hostiles.
+    """Estado del editor de entidades: jugadores, hostiles y neutrales.
 
-    Nota: 'monsters' ha sido renombrado a 'hostiles'. Se mantiene un alias
-    de compatibilidad temporal mediante una propiedad 'monsters'.
+    Nota: 'monsters' fue un alias hacia 'hostiles'. Se mantiene por compatibilidad,
+    pero para neutrales se usa el campo dedicado 'neutrals'.
     """
     player_stats: Dict[str, Any]
     hostiles: Dict[str, Any]
+    neutrals: Dict[str, Any]
     assets: Dict[str, pygame.Surface]
     # Área del panel para interacción y arrastre
     panel_rect: Optional[pygame.Rect] = None

@@ -109,7 +109,16 @@ class EntityPickerPanelView:
             entity_ids = list(model.player_stats.keys())
         elif model.active_tab == "Hostile":
             # Ocultar entradas de hostiles marcadas como pendientes (no confirmadas)
-            entity_ids = [mid for mid, m in model.monsters.items() if not (isinstance(m, dict) and m.get('__pending__'))]
+            entity_ids = [
+                mid for mid, m in model.monsters.items()
+                if not (isinstance(m, dict) and m.get('__pending__'))
+            ]
+        elif model.active_tab == "Neutral":
+            # Mostrar neutrales directamente desde el dataset dedicado, ocultando '__pending__'
+            entity_ids = [
+                mid for mid, m in model.neutrals.items()
+                if not (isinstance(m, dict) and m.get('__pending__'))
+            ]
         else:
             # Otras pestañas aún no implementadas
             entity_ids = []

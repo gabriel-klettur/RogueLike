@@ -96,6 +96,10 @@ class InputConfig:
         if "toggle_inventory" not in self.bindings:
             self.bindings["toggle_inventory"] = "K_i"
             self.save()
+        # Ensure interact binding exists (contextual interactions like vendors, doors)
+        if "interact" not in self.bindings:
+            self.bindings["interact"] = "K_RETURN"
+            self.save()
 
         # Asegurar binding para lightning
         if "spell_lightning" not in self.bindings:
@@ -196,6 +200,7 @@ class InputConfig:
             "toggle_debug_overlay": pygame.K_F9,
             # Gameplay inventory (not editor)
             "toggle_inventory": pygame.K_i,
+            "interact": pygame.K_RETURN,
             "select_class": pygame.K_F2
         }
 
@@ -292,6 +297,7 @@ class InputConfig:
             "toggle_fsm_editor": pygame.K_F12,
             "toggle_debug_overlay": pygame.K_F9,
             "toggle_inventory": pygame.K_i,
+            "interact": pygame.K_RETURN,
             "select_class": pygame.K_F2,
         }
         if action in defaults:

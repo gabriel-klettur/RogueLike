@@ -1,0 +1,125 @@
+{
+  "neutrals": {
+    "classes": {
+      "vendor_wood_gatita": {
+        "stats": {
+          "hp": 50,
+          "speed": 0.8,
+          "faction": "NEUTRAL",
+          "aggro_range": 0,
+          "melee_range": 0,
+          "melee_damage": 0,
+          "melee_cooldown": 999.0,
+          "defense": 0,
+          "power": 0,
+          "damage_duration": 0.0,
+          "chasing_speed": 0.0,
+          "feet_width_factor": 0.5,
+          "feet_height_factor": 0.2,
+          "spawn_padding": 0,
+          "spawn_count": 1,
+          "spawn_margin": 0,
+          "death_dissapear_time": 9999.0
+        },
+        "fsm_set": null,
+        "patrol": null,
+        "assets": {
+          "active_set": "no-sets",
+          "sets": {
+            "sprites_set": {
+              "idle": [],
+              "walk": [],
+              "chase": [],
+              "cast": [],
+              "attack": [],
+              "damage": [],
+              "death": []
+            },
+            "sprites_data_set": {
+              "scale_idle": 0.15,
+              "scale_walk": 0.15,
+              "scale_chase": 0.15,
+              "scale_cast": 0.15,
+              "scale_attack": 0.15,
+              "scale_damage": 0.15,
+              "scale_death": 0.15,
+              "tint": null
+            }
+          },
+          "no-sets": {
+            "idle": {
+              "s": "assets/npc/neutral/vendors/wooden/gatita_chanchita/normal/gatitachanchita_down.png",
+              "se": null,
+              "e": "assets/npc/neutral/vendors/wooden/gatita_chanchita/normal/gatitachanchita_right.png",
+              "ne": null,
+              "n": "assets/npc/neutral/vendors/wooden/gatita_chanchita/normal/gatitachanchita_top.png",
+              "nw": null,
+              "w": "assets/npc/neutral/vendors/wooden/gatita_chanchita/normal/gatitachanchita_left.png",
+              "sw": null
+            },
+            "walk": {
+              "s": "assets/npc/neutral/vendors/wooden/gatita_chanchita/normal/gatitachanchita_down.png",
+              "se": null,
+              "e": "assets/npc/neutral/vendors/wooden/gatita_chanchita/normal/gatitachanchita_right.png",
+              "ne": null,
+              "n": "assets/npc/neutral/vendors/wooden/gatita_chanchita/normal/gatitachanchita_top.png",
+              "nw": null,
+              "w": "assets/npc/neutral/vendors/wooden/gatita_chanchita/normal/gatitachanchita_left.png",
+              "sw": null
+            },
+            "attack": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "death": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "damage": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "casting": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "sprites_data_no-set": {
+              "scale_idle": 0.05,
+              "scale_walk": 0.05,
+              "scale_chase": 0.05,
+              "scale_cast": 0.05,
+              "scale_attack": 0.05,
+              "scale_damage": 0.05,
+              "scale_death": 0.05,
+              "tint": null
+            }
+          }
+        }
+      }
+    }
+  }
+}

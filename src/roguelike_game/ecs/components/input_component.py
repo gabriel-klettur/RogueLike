@@ -29,6 +29,8 @@ class InputComponent:
         self.drop: bool = False
         self.toggle_editor: bool = False
         self.toggle_inventory: bool = False
+        # Interacción contextual (vendedores, puertas, etc.) en flanco ascendente
+        self.interact: bool = False
         self.show_all_drops: bool = False
         # Uso de consumibles desde la UI
         self.use_item = None

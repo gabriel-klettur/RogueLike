@@ -24,6 +24,7 @@ from roguelike_game.ecs.components.ai.damage_config import DamageConfig
 from roguelike_game.ecs.components.fsm.patrol_route import PatrolRoute
 from roguelike_game.ecs.systems.fsm.states.monster.patrol_state import PatrolState
 from roguelike_game.ecs.systems.fsm.fsm import FiniteStateMachine
+from roguelike_game.ecs.systems.fsm.states.idle_state import IdleState
 from roguelike_editors.fsm.services.fsm_runtime_bridge import build_fsm_for_archetype, get_set, build_fsm_from_set
 from roguelike_game.ecs.components.fsm.npc_state import NPCState
 from roguelike_game.ecs.components.core.npc_tag import NPCTagComponent
@@ -92,11 +93,15 @@ class MonsterBuilder:
 
         # FSM: PatrolRoute & NPCState
         patrol_cfg = cfg.get("patrol")
-        route = build_patrol_route(x, y, patrol_cfg, TILE_SIZE)
-        world.components["PatrolRoute"][eid] = PatrolRoute(
-            points=route.get("points", []),
-            dwell_times=route.get("dwell_times"),
-        )
+        # Distinguir entre 'patrol' ausente (usar comportamiento previo) y 'patrol': null explícito
+        explicit_null_patrol = ("patrol" in cfg) and (patrol_cfg is None)
+        route = None
+        if not explicit_null_patrol:
+            route = build_patrol_route(x, y, patrol_cfg, TILE_SIZE)
+            world.components["PatrolRoute"][eid] = PatrolRoute(
+                points=route.get("points", []),
+                dwell_times=route.get("dwell_times"),
+            )
         # Try per-class FSM via fsm_set in new_hostiles.json, then fallback to assignments.json, then Patrol
         fsm_set_id = cfg.get("fsm_set")
         if fsm_set_id:
@@ -129,9 +134,15 @@ class MonsterBuilder:
                 fsm.context["attack_duration"] = float(attack_duration)
             world.components["NPCState"][eid] = NPCState(fsm, initial_name)
         else:
-            fsm = FiniteStateMachine(PatrolState())
-            world.components["NPCState"][eid] = NPCState(fsm, "PatrolState")
-            # Also make attack_duration available even in Patrol fallback
+            if explicit_null_patrol:
+                # Si el JSON especifica "patrol": null, arrancar en Idle
+                fsm = FiniteStateMachine(IdleState())
+                world.components["NPCState"][eid] = NPCState(fsm, "IdleState")
+            else:
+                # Comportamiento previo: patrulla por defecto
+                fsm = FiniteStateMachine(PatrolState())
+                world.components["NPCState"][eid] = NPCState(fsm, "PatrolState")
+            # Also make attack_duration available even in Idle/Patrol fallback
             attack_duration = cfg.get("damage_duration")
             if attack_duration is not None:
                 fsm.context["attack_duration"] = float(attack_duration)

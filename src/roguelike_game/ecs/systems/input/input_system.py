@@ -38,6 +38,8 @@ class InputSystem:
 
         self.prev_toggle = {}
         self.prev_toggle_inventory = {}
+        # Estado previo para interacción contextual (flanco ascendente)
+        self.prev_interact = {}
         # Estado previo de hechizos para detección de flancos
         self.prev_spell_keys = {}
         # Estado previo de ataque para detección de flanco ascendente
@@ -61,6 +63,7 @@ class InputSystem:
                 inp.move_x = 0
                 inp.move_y = 0
                 inp.attack = False
+                inp.interact = False
                 inp.show_all_drops = False
                 for name in spell_attrs:
                     setattr(inp, f'spell_{name}', False)
@@ -78,6 +81,7 @@ class InputSystem:
                 self.prev_mouse[(eid, 'dash')] = False
                 self.prev_toggle[eid] = False
                 self.prev_toggle_inventory[eid] = False
+                self.prev_interact[eid] = False
                 for name in spell_attrs:
                     self.prev_spell_keys[(eid, name)] = 0
                 # Reset attack edge state
@@ -97,6 +101,7 @@ class InputSystem:
                 inp.move_x = 0
                 inp.move_y = 0
                 inp.attack = False
+                inp.interact = False
                 inp.show_all_drops = False
                 for name in spell_attrs:
                     setattr(inp, f'spell_{name}', False)
@@ -114,6 +119,7 @@ class InputSystem:
                 self.prev_mouse[(eid, 'dash')] = False
                 self.prev_toggle[eid] = False
                 self.prev_toggle_inventory[eid] = False
+                self.prev_interact[eid] = False
                 for name in spell_attrs:
                     self.prev_spell_keys[(eid, name)] = 0
                 # Reset attack edge state
@@ -128,6 +134,7 @@ class InputSystem:
                 inp.move_x = 0
                 inp.move_y = 0
                 inp.attack = False
+                inp.interact = False
                 inp.show_all_drops = False
                 for name in spell_attrs:
                     setattr(inp, f'spell_{name}', False)
@@ -143,6 +150,7 @@ class InputSystem:
                 self.prev_mouse[(eid, 'dash')] = False
                 self.prev_toggle[eid] = False
                 self.prev_toggle_inventory[eid] = False
+                self.prev_interact[eid] = False
                 for name in spell_attrs:
                     self.prev_spell_keys[(eid, name)] = 0
                 self.prev_attack[eid] = False
@@ -299,6 +307,15 @@ class InputSystem:
                 inp.toggle_inventory = False
             self.prev_toggle_inventory[eid] = curr_inv
 
+            # Interact action: rising-edge detection (OR of multiple bindings)
+            curr_interact = any_pressed("interact")
+            prev_inter = self.prev_interact.get(eid, False)
+            if curr_interact and not prev_inter:
+                inp.interact = True
+            else:
+                inp.interact = False
+            self.prev_interact[eid] = curr_interact
+
             # Control de click: desactivar cuando se arrastra un ítem o el panel de inventario
             dragging_items = any(isinstance(s, DropDragSystem) and s.dragging_eid is not None for s in getattr(world, 'update_systems', []))
             dragging_ui = any(isinstance(s, InventoryUISystem) and s.dragging for s in getattr(world, 'render_systems', []))
@@ -321,6 +338,8 @@ class InputSystem:
                 inp.click = False
                 self.prev_click[eid] = False
                 self.prev_right[eid] = False
+                inp.interact = False
+                self.prev_interact[eid] = False
                 # Reset mouse action edges
                 self.prev_mouse[(eid, 'fireball')] = False
                 self.prev_mouse[(eid, 'dash')] = False
