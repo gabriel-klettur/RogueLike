@@ -10,5 +10,23 @@
       "building_id": 113
     },
     "id": "survival_10_forest_14_9"
+  },
+  {
+    "template_id": "barbol_periodic_no_stack",
+    "zone": "zone_100_50",
+    "tile": [
+      17,
+      10
+    ],
+    "id": "barbol_periodic_no_stack_zone_100_50_17_10"
+  },
+  {
+    "template_id": "barbol_periodic_faster",
+    "zone": "zone_100_50",
+    "tile": [
+      4,
+      9
+    ],
+    "id": "barbol_periodic_faster_zone_100_50_4_9"
   }
 ]

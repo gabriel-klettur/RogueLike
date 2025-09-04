@@ -1,5 +1,6 @@
 import pygame
 from roguelike_ui.widgets.text_input import TextInput
+from roguelike_game.ecs.systems.chat.chat_bubble_utils import push_bubble
 
 class ChatInputController:
     """
@@ -68,6 +69,13 @@ class ChatInputController:
                         self._commits.append(msg)
                         try:
                             world.state.chat_add_message('Tú', msg)
+                        except Exception:
+                            pass
+                        # Burbuja flotante sobre el jugador
+                        try:
+                            player_eid = getattr(world, 'player_entity', None)
+                            if player_eid is not None:
+                                push_bubble(world, player_eid, msg, color=(220, 255, 220), ttl_ms=2800)
                         except Exception:
                             pass
                         # Reset buffer y re-activar para siguiente línea

@@ -80,6 +80,7 @@ from roguelike_game.ecs.systems.chat.chat_router_system import ChatRouterSystem
 from roguelike_game.ecs.systems.chat.chat_ui_system import ChatUISystem
 from roguelike_game.ecs.systems.chat.vendor_trade_system import VendorTradeSystem
 from roguelike_game.ecs.systems.rendering.chat_proximity_render_system import ChatProximityRenderSystem
+from roguelike_game.ecs.systems.rendering.chat_bubble_render_system import ChatBubbleRenderSystem
 
 def get_update_system_classes():
     """
@@ -111,7 +112,7 @@ def get_render_system_classes():
     Se añade dinámicamente SpawnDebug y DeathTimerDebug si estamos en DEBUG.
     """
     base = [
-        HealthBarSystem, NamePlateSystem, ExperienceRenderSystem, MagicSpellBarRenderSystem,
+        HealthBarSystem, NamePlateSystem, ChatBubbleRenderSystem, ExperienceRenderSystem, MagicSpellBarRenderSystem,
         FireballRenderSystem, ArcaneFlameRenderSystem, FireworkLaunchRenderSystem, SmokeRenderSystem, SmokeEmitterRenderSystem, SphereMagicShieldRenderSystem, TeleportRenderSystem, ParticleRenderSystem, LightningRenderSystem,
         DeathTimerBarSystem,
         # DropRenderSystem removed: drops rendered via RenderSystem

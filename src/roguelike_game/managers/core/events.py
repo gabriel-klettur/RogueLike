@@ -12,6 +12,7 @@ from roguelike_engine.config.map_config import global_map_settings
 from roguelike_editors.fsm.fsm_editor_events import FsmEditorEventHandler
 from roguelike_ui.ui_blocker import is_blocked
 from roguelike_game.ecs.systems.chat.chat_input_controller import ChatInputController
+from roguelike_game.ecs.systems.chat.chat_bubble_utils import push_bubble
 
 import logging
 logger = logging.getLogger(__name__)
@@ -517,6 +518,57 @@ def handle_events(game):
             else:
                 _open_editor_exclusive(game, 'map')
             return
+        # Abrir chat por proximidad/general con la acción 'interact' (ENTER)
+        if event.type == pygame.KEYDOWN and event.key == game.input_config.get_key('interact'):
+            try:
+                world = getattr(getattr(game, 'ecs', None), 'ecs_world', None)
+                state = getattr(world, 'state', None)
+                if world and state and not bool(getattr(state, 'chat_open', False)):
+                    comps = getattr(world, 'components', {})
+                    pos_map = comps.get('Position', {}) or {}
+                    chat_map = comps.get('ChatComponent', {}) or {}
+                    player_eid = getattr(world, 'player_entity', None)
+                    player_pos = pos_map.get(player_eid)
+                    target_eid = None
+                    if player_pos and chat_map:
+                        # Buscar NPC más cercano dentro de su chat_range
+                        try:
+                            px = float(getattr(player_pos, 'x', 0.0))
+                            py = float(getattr(player_pos, 'y', 0.0))
+                        except Exception:
+                            px = py = 0.0
+                        best_d2 = None
+                        for eid, chat in list(chat_map.items()):
+                            npc_pos = pos_map.get(eid)
+                            if not npc_pos:
+                                continue
+                            try:
+                                dx = float(getattr(npc_pos, 'x', 0.0)) - px
+                                dy = float(getattr(npc_pos, 'y', 0.0)) - py
+                                d2 = dx*dx + dy*dy
+                                rng = float(getattr(chat, 'chat_range', 0.0) or 0.0)
+                                if d2 <= (rng * rng):
+                                    if best_d2 is None or d2 < best_d2:
+                                        best_d2 = d2
+                                        target_eid = eid
+                            except Exception:
+                                continue
+                    # Abrir chat con target o general
+                    state.chat_open = True
+                    state.chat_input_buffer = ""
+                    state.chat_target_eid = target_eid
+                    if target_eid is not None:
+                        greeting = getattr(chat_map.get(target_eid, None), 'greeting', None)
+                        if greeting:
+                            state.chat_add_message('NPC', str(greeting))
+                            try:
+                                push_bubble(world, target_eid, str(greeting), color=(255, 235, 180), ttl_ms=2600)
+                            except Exception:
+                                pass
+                    # Consumir para no propagar al motor
+                    return
+            except Exception:
+                pass
 
     # Si el editor de ítems está activo, permitir MMB pan (pase al engine) y delegar sus eventos
     if game.item_editor.model.visible:
@@ -799,6 +851,10 @@ def handle_events(game):
                                     greeting = getattr(chat, 'greeting', None)
                                     if greeting:
                                         state.chat_add_message('NPC', str(greeting))
+                                        try:
+                                            push_bubble(world, eid, str(greeting), color=(255, 235, 180), ttl_ms=2600)
+                                        except Exception:
+                                            pass
                                 except Exception:
                                     pass
                                 consumed_idx.add(i)
