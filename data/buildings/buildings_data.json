@@ -521,7 +521,7 @@
             528,
             528
         ],
-        "split_ratio": 0.617,
+        "split_ratio": 0.057,
         "z_bottom": 4,
         "z_top": 6,
         "collider_scope": "CG",

@@ -1415,5 +1415,18 @@
             528
         ],
         "id": 109
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/gardens/garden_4.png"
+        },
+        "solid": true,
+        "split_ratio": 0.057,
+        "collider_scope": "CG",
+        "original_scale": [
+            528,
+            528
+        ],
+        "id": 110
     }
 ]

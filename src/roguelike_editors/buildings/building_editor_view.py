@@ -178,8 +178,9 @@ class BuildingEditorView:
                             self._last_z_top_plus_rect = pygame.Rect(px + p.x, py + p.y, p.w, p.h)
                 except Exception:
                     pass
-            # Render toggle CG/CU bottom-right
+            # Render toggle CG/CU bottom-right when UI is not blocked (also visible in colliders_mode)
             try:
-                self.collider_scope_view.render(screen, b, camera)
+                if not ui_blocked:
+                    self.collider_scope_view.render(screen, b, camera)
             except Exception:
                 pass

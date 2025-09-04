@@ -93,6 +93,10 @@ def test_col_002_cu_saves_by_building_instance_id(monkeypatch, tmp_path, surface
         _is_spawner_visual=False, spawner_instance_id=None,
     )
 
+    # Enforced behavior: brush paints only on the currently selected (active) building.
+    # Set the active building so that CU saves by building_instance_id.
+    editor_state.active_building = b
+
     model = Model(active=True)
     model.choice = '#'
     h = Handler(state=types.SimpleNamespace(), editor_state=editor_state, model=model)

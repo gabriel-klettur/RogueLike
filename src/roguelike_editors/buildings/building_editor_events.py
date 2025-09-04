@@ -344,12 +344,15 @@ class BuildingEditorEventHandler:
 
     def _handle_mouse_wheel(self, ev, camera, buildings):
         """Recompute overlapped buildings under cursor and cycle selection."""
-        mx, my = pygame.mouse.get_pos()
-        # Refresh hovered list under current cursor taking zoom/offset into account
-        hovered_list = self.controller._buildings_under_mouse((mx, my), camera, buildings)
-        self.editor.hovered_buildings = hovered_list
+        # Prefer existing precomputed hovered list (e.g., set during motion or by tests)
+        hovered_list = list(getattr(self.editor, 'hovered_buildings', []) or [])
         if not hovered_list:
-            return
+            # Seed from current mouse position only when no list is present
+            mx, my = pygame.mouse.get_pos()
+            hovered_list = self.controller._buildings_under_mouse((mx, my), camera, buildings)
+            self.editor.hovered_buildings = hovered_list
+            if not hovered_list:
+                return
         # Try to keep continuity with current hovered building if present
         cur = getattr(self.editor, 'hovered_building', None)
         try:
