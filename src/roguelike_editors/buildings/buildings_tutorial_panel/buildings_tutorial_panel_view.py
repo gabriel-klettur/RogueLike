@@ -38,26 +38,83 @@ class BuildingsTutorialPanelView:
             self.text_font = pygame.font.Font(None, 18)
             self.button_font = pygame.font.Font(None, 18)
 
-    def _compute_position(self, screen: pygame.Surface) -> tuple[int, int]:
-        # Anclar preferentemente a la derecha del toolbar, debajo del título
+    def _compute_position(self, screen: pygame.Surface, required_h: int) -> tuple[int, int]:
+        """
+        Calcula la posición del panel del tutorial teniendo en cuenta otros paneles.
+        Reglas:
+        - Si colliders_mode está activo, anclar a la DERECHA de la pantalla para no obstruir el centro.
+        - Si el picker de Buildings está visible, colocar a la DERECHA del picker sin solaparse. Si no hay espacio, colocar DEBAJO del picker.
+        - En caso contrario, anclar a la derecha del toolbar, bajo el título.
+        Siempre respetar márgenes de pantalla y mantener el panel completamente visible.
+        """
+        margin = 16
+        sw, sh = screen.get_size()
+        # Utilidad: rect del título si existe
+        def get_title_rect():
+            try:
+                r = getattr(self.editor_view, '_last_title_rect', None)
+                if r is None and hasattr(self.editor_view, 'title_view'):
+                    title_widget = getattr(self.editor_view.title_view, 'widget', None)
+                    if title_widget is not None and hasattr(title_widget, 'rect'):
+                        r = title_widget.rect
+                return r
+            except Exception:
+                return None
+
+        title_rect = get_title_rect()
+
+        # 1) Si colliders está activo, acoplar a la derecha de la pantalla
         try:
-            title_rect = getattr(self.editor_view, '_last_title_rect', None)
-            if title_rect is None and hasattr(self.editor_view, 'title_view'):
-                title_widget = getattr(self.editor_view.title_view, 'widget', None)
-                if title_widget is not None and hasattr(title_widget, 'rect'):
-                    title_rect = title_widget.rect
+            colliders_mode = bool(getattr(self.editor, 'colliders_mode', False))
         except Exception:
-            title_rect = None
+            colliders_mode = False
+        if colliders_mode:
+            x = max(margin, sw - self.width - margin)
+            # Alinear verticalmente cerca del título si es posible
+            y = (title_rect.bottom + 8) if title_rect is not None else margin
+            # Ajustes para que no se salga por abajo
+            y = max(margin, min(y, max(margin, sh - required_h - margin)))
+            return (x, y)
+
+        # 2) Si el picker de Buildings está abierto, colocar a su derecha
+        try:
+            picker_active = bool(getattr(self.editor, 'picker_active', False))
+            picker_rect = getattr(self.editor, 'picker_panel_rect', None)
+        except Exception:
+            picker_active = False
+            picker_rect = None
+        if picker_active and isinstance(picker_rect, pygame.Rect):
+            # Preferencia: a la derecha del picker
+            pref_x = picker_rect.right + 12
+            x = min(max(margin, pref_x), max(margin, sw - self.width - margin))
+            # Alinear top con el picker, respetando límites verticales
+            y = max(margin, picker_rect.top)
+            if y + required_h > sh - margin:
+                y = max(margin, sh - required_h - margin)
+            # Verificar solapamiento con el picker; si aún solapa (no hay ancho suficiente), colocar debajo
+            tutorial_rect = pygame.Rect(x, y, self.width, required_h)
+            if tutorial_rect.colliderect(picker_rect):
+                # Fallback: debajo del picker, intentando mantener mismo x del picker si cabe
+                y2 = picker_rect.bottom + 12
+                y2 = min(max(margin, y2), max(margin, sh - required_h - margin))
+                x2 = min(max(margin, picker_rect.left), max(margin, sw - self.width - margin))
+                return (x2, y2)
+            return (x, y)
+
+        # 3) Por defecto: anclar a la derecha del toolbar, debajo del título
         if title_rect is not None and self.toolbar_view is not None and hasattr(self.toolbar_view, 'widget'):
             try:
                 tb_w = self.toolbar_view.widget.panel.surface.get_width()
-                x = title_rect.left + tb_w + 8
-                y = title_rect.bottom + 8
+                x = min(max(margin, title_rect.left + tb_w + 8), max(margin, sw - self.width - margin))
+                y = (title_rect.bottom + 8) if title_rect is not None else margin
+                y = max(margin, min(y, max(margin, sh - required_h - margin)))
                 return (x, y)
             except Exception:
                 pass
-        # Fallback: margen superior izquierdo
-        return (16, 96)
+        # Fallback: margen superior izquierdo con límites
+        x = max(margin, min(sw - self.width - margin, margin))
+        y = max(margin, min(sh - required_h - margin, 96))
+        return (x, y)
 
     def _wrap_text(self, text: str, font: pygame.font.Font, max_width: int) -> list[str]:
         words = text.split(' ')
@@ -119,9 +176,9 @@ class BuildingsTutorialPanelView:
         except Exception:
             done_set = set()
 
-        # Medir altura requerida antes de dibujar el panel para evitar solapamientos
-        x, y = self._compute_position(screen)
+        # Medir altura requerida antes de calcular la posición final (evita solapamientos)
         required_h = self._measure_required_height(step)
+        x, y = self._compute_position(screen, required_h)
         panel_rect = pygame.Rect(x, y, self.width, required_h)
         draw_translucent_panel(screen, panel_rect)
         self.model.panel_rect = panel_rect
@@ -234,7 +291,9 @@ class BuildingsTutorialPanelView:
                         which = hl.get('which', 'hovered_or_active')
                         r = None
                         if which == 'hovered_or_active':
-                            r = getattr(self.editor_view, '_last_hovered_building_rect', None) or getattr(self.editor_view, '_last_active_building_rect', None)
+                            # Preferir SIEMPRE el edificio seleccionado (activo) para el parpadeo.
+                            # Solo si no hay activo, usar el hovered como fallback.
+                            r = getattr(self.editor_view, '_last_active_building_rect', None) or getattr(self.editor_view, '_last_hovered_building_rect', None)
                         elif which == 'active':
                             r = getattr(self.editor_view, '_last_active_building_rect', None)
                         elif which == 'hovered':

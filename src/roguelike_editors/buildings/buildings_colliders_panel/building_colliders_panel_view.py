@@ -140,19 +140,22 @@ class BuildingCollidersPanelView:
         except Exception:
             blocked = False
 
-        # Hovered building overlay (only when not blocked)
-        if not blocked:
-            hb = getattr(self.editor_state, 'hovered_building', None)
-            drawn_for = None
-            if hb and getattr(hb, 'collision_map', None):
-                self._render_building_collision_overlay(screen, camera, hb)
-                drawn_for = hb
-        else:
-            drawn_for = None
+        # Determine active building (persistent selection) for overlay rendering
+        try:
+            sb = getattr(self.editor_state, 'active_building', None)
+        except Exception:
+            sb = None
+        drawn_for = None
 
-        # Active panel overlays and cyan outline (only when not blocked)
-        if self.model.active and not blocked:
-            b = self.model.active_building
+        # Show colliders overlay and cyan outline only for the active building
+        # when colliders mode is active, avoiding hover-based overlays. Active visuals
+        # persist even if the mouse is over a UI blocker (hover is the only thing cleared).
+        try:
+            colliders_mode = bool(getattr(self.editor_state, 'colliders_mode', False))
+        except Exception:
+            colliders_mode = False
+        if colliders_mode:
+            b = sb
             if b and getattr(b, 'collision_map', None) and b is not drawn_for:
                 self._render_building_collision_overlay(screen, camera, b)
             if b and getattr(b, 'collision_map', None):

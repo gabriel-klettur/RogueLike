@@ -54,7 +54,10 @@ class BuildingsTutorialPanelModel:
         {
             "title": "Barra de Split",
             "text": (
-                "Arrastra la barra de split para ajustar el split_ratio del edificio activo."
+                "Arrastra la barra de split para ajustar el split_ratio del edificio activo. "
+                "El split define la línea de corte entre la parte superior (decorativa/sin colisión, donde el jugador puede quedar 'detrás') "
+                "y la parte inferior (con colisión y apoyo en el suelo). Úsalo para que el personaje pase por detrás de techos/copas "
+                "y para delimitar correctamente la zona que colisiona."
             ),
             # Resaltar el handle de split con highlight preciso
             "highlight": {"kind": "tool_ui", "item": "split_handle"},
@@ -67,7 +70,9 @@ class BuildingsTutorialPanelModel:
         {
             "title": "Capas Z (Bottom)",
             "text": (
-                "Usa los botones + y − alrededor del edificio activo para ajustar la capa Z inferior (bottom)."
+                "Usa los botones + y − alrededor del edificio activo para ajustar la capa Z inferior (bottom). "
+                "Las capas Z determinan el orden de dibujo y superposición entre edificios y otros elementos; valores Z más altos se dibujan por encima. "
+                "La capa Z inferior posiciona la base del edificio dentro de ese orden (suelo/pies). Ajusta con +/− para encajar con el entorno."
             ),
             # Resaltar control inferior (bottom) como ejemplo
             "highlight": [
@@ -84,7 +89,9 @@ class BuildingsTutorialPanelModel:
         {
             "title": "Capas Z (Top)",
             "text": (
-                "Ajusta la capa Z superior (top) usando los botones + y −."
+                "Ajusta la capa Z superior (top) usando los botones + y −. "
+                "Las capas Z controlan el orden de superposición. La capa Z superior define dónde se dibuja la parte alta del edificio, "
+                "permitiendo que el personaje pase por detrás de techos/copas sin afectar la base. Ajusta 'top' en relación a otros edificios altos."
             ),
             # Resaltar control superior (top)
             "highlight": [
@@ -122,6 +129,7 @@ class BuildingsTutorialPanelModel:
             "text": (
                 "Activa el botón de colisiones en la toolbar para editar colliders. "
                 "Selecciona el tipo en el picker (# sólido o . caminable) y pinta sobre el edificio. "
+                "Nota: solo puedes pintar sobre el edificio seleccionado/activo; selecciona primero y luego pinta. "
                 "Puedes mover el picker (RMB) y alternar alcance CG/CU para aplicar a todos los de la misma imagen o solo a esta instancia. "
                 "Si usas CU, guarda overrides con 'Save CU'."
             ),
@@ -131,6 +139,7 @@ class BuildingsTutorialPanelModel:
                 {"id": "colliders_mode", "label": "Activar modo de colisiones", "condition": {"kind": "colliders_mode_on"}},
                 {"id": "colliders_choice", "label": "Elegir tipo en el picker (# o .)", "condition": {"kind": "colliders_choice_selected"}},
                 {"id": "colliders_painted", "label": "Pintar una celda de colisión en el edificio", "condition": {"kind": "colliders_painted"}},
+                {"id": "colliders_painted_on_selected", "label": "Pintar en el edificio seleccionado/activo", "condition": {"kind": "colliders_painted_on_selected"}},
                 {"id": "colliders_picker_moved", "label": "Mover el panel del picker (RMB y arrastrar)", "condition": {"kind": "colliders_picker_moved"}},
                 {"id": "colliders_scope_toggled", "label": "Alternar alcance entre CG y CU", "condition": {"kind": "colliders_scope_toggled"}},
                 {"id": "colliders_scope_cg", "label": "Establecer alcance CG (global por image_path)", "condition": {"kind": "colliders_scope_cg"}},

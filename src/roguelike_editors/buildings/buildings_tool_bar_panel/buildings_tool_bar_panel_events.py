@@ -104,13 +104,6 @@ class BuildingsToolBarPanelEventHandler:
                             colliders.deactivate()
                     except Exception:
                         pass
-                    # Si estaba activo el tutorial, desactivarlo para evitar superposición
-                    try:
-                        tutorial = getattr(self.controller.editor_manager, 'tutorial', None)
-                        if tutorial and tutorial.is_active():
-                            tutorial.deactivate()
-                    except Exception:
-                        pass
                     # Activar panel Add/Remove
                     try:
                         add_remove = getattr(self.controller.editor_manager, 'add_remove', None)
@@ -144,13 +137,6 @@ class BuildingsToolBarPanelEventHandler:
                         add_remove = getattr(self.controller.editor_manager, 'add_remove', None)
                         if add_remove and add_remove.is_active():
                             add_remove.deactivate()
-                    except Exception:
-                        pass
-                    # Desactivar tutorial si estuviera activo
-                    try:
-                        tutorial = getattr(self.controller.editor_manager, 'tutorial', None)
-                        if tutorial and tutorial.is_active():
-                            tutorial.deactivate()
                     except Exception:
                         pass
                     try:

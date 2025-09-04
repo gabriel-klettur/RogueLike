@@ -1389,5 +1389,31 @@
             256
         ],
         "id": 107
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/gardens/garden_4.png"
+        },
+        "solid": true,
+        "split_ratio": 0.592,
+        "collider_scope": "CG",
+        "original_scale": [
+            528,
+            528
+        ],
+        "id": 108
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/gardens/garden_4.png"
+        },
+        "solid": true,
+        "split_ratio": 0.617,
+        "collider_scope": "CG",
+        "original_scale": [
+            528,
+            528
+        ],
+        "id": 109
     }
 ]

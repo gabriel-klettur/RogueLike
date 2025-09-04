@@ -326,12 +326,11 @@ class BuildingEditorEventHandler:
             elif ev.type == pygame.MOUSEMOTION:
                 mx, my = ev.pos
                 # If mouse is over any registered UI panel (Tiles/Buildings/Map),
-                # suppress Buildings Editor hover/active states to avoid bleed-through visuals.
+                # suppress ONLY hover state to avoid bleed-through visuals, but KEEP active selection.
                 try:
                     if is_blocked(mx, my):
                         self.editor.hovered_buildings = []
                         self.editor.hovered_building = None
-                        self.editor.active_building = None
                         return
                 except Exception:
                     pass

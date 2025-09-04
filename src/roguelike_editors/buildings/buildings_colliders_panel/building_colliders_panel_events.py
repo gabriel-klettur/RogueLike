@@ -45,6 +45,18 @@ class BuildingCollidersPanelEventHandler:
             w_img, h_img = b.image.get_size()
             rect = pygame.Rect(x_b, y_b, w_img, h_img)
             if rect.collidepoint(world_x, world_y):
+                # Restringir el pintado únicamente al edificio actualmente activo (selección persistente)
+                try:
+                    active = getattr(self.editor_state, 'active_building', None)
+                except Exception:
+                    active = None
+                if active is None or active is not b:
+                    try:
+                        logger.info("[Colliders] Ignorado pintado: el edificio bajo el cursor no es el activo")
+                    except Exception:
+                        pass
+                    # Continuar buscando por si hay otro edificio solapado que sí sea el seleccionado
+                    continue
                 self.model.active_building = b
                 col = int((world_x - x_b) // TILE_SIZE)
                 row = int((world_y - y_b) // TILE_SIZE)
@@ -54,12 +66,13 @@ class BuildingCollidersPanelEventHandler:
                     # Tutorial: marcar pulso de pintado
                     try:
                         setattr(self.editor_state, 'tutorial_colliders_painted_pulse', True)
+                        setattr(self.editor_state, 'tutorial_colliders_painted_on_selected_pulse', True)
                     except Exception:
                         pass
-                    # Invalida caches
+                    # Invalida caches de colisión del edificio editado
                     try:
-                        b.model._collision_tiles_cache = None
-                        b.model._collision_tile_objs = None
+                        b._collision_tiles_cache = None
+                        b._collision_tile_objs = None
                     except Exception:
                         pass
                     # Según alcance seleccionado en la UI (editor_state), propagar a todos los que comparten image_path
@@ -87,8 +100,8 @@ class BuildingCollidersPanelEventHandler:
                                 if c2 >= cols2: c2 = cols2 - 1
                                 other.collision_map[r2][c2] = self.model.choice
                                 try:
-                                    other.model._collision_tiles_cache = None
-                                    other.model._collision_tile_objs = None
+                                    other._collision_tiles_cache = None
+                                    other._collision_tile_objs = None
                                 except Exception:
                                     pass
                             except Exception:
