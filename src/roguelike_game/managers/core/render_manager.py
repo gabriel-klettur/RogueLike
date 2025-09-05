@@ -1,4 +1,5 @@
 import pygame
+import logging
 from roguelike_engine.utils.mouse import draw_mouse_crosshair
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_engine.diagnostics import DiagnosticsOverlay, render_diagnostics_overlay
@@ -71,6 +72,10 @@ class RendererManager:
         # Cache para help overlay: (mode_key, screen_size) -> (surface, rect)
         self._help_overlay_key = None
         self._help_overlay_surf = None
+        # Debug logging state caches to avoid spam
+        self._last_render_debug_key = None
+        self._last_current_layer = None
+        self._last_collision_only = None
 
     def render_game(
         self,
@@ -86,6 +91,12 @@ class RendererManager:
 
         # guardar state para _render_editors
         self._last_state = state
+        # Sync latest references in case the game swapped map/entities (e.g., load/save)
+        # This ensures editor redraw paths that use self.map/self.entities point to current objects
+        if map is not None:
+            self.map = map
+        if entities is not None:
+            self.entities = entities
 
         @benchmark(perf_log, "3.0. init_and_cleaning")
         def _init_and_cleaning():
@@ -97,6 +108,28 @@ class RendererManager:
         # 1) Map
         @benchmark(perf_log, "3.1. map")
         def _bench_map():
+            try:
+                logger = logging.getLogger(__name__)
+                es = getattr(self.tiles_editor, 'editor_state', None)
+                tc = es.toolbar_state if es else None
+                key = (
+                    bool(es and es.active),
+                    bool(getattr(tc, 'show_collisions', False)),
+                    bool(getattr(tc, 'show_collisions_overlay', False)),
+                    getattr(es, 'current_tool', None),
+                    round(float(getattr(camera, 'zoom', 1.0)), 2),
+                )
+                if key != self._last_render_debug_key:
+                    if key[0]:
+                        logger.debug(
+                            "[Render] TileEditor active: collisions=%s overlay=%s tool=%s zoom=%.2f",
+                            key[1], key[2], key[3], key[4]
+                        )
+                    else:
+                        logger.debug("[Render] TileEditor inactive; zoom=%.2f", key[4])
+                    self._last_render_debug_key = key
+            except Exception:
+                pass
             self._render_map(camera, screen, map)
         _bench_map()
 
@@ -265,11 +298,17 @@ class RendererManager:
     def _render_map(self, camera, screen, map):
         # Filter tile layers in Map Editor mode using visible_layers state
         if self.map_editor.editor_state.active:
-            # Invalidate cache on layer visibility change
             visible = self.map_editor.editor_state.visible_layers
+            # Invalidate cache and log only on visibility change
             if visible != self._last_map_visible_layers:
                 self.map.view.invalidate_cache()
                 self._last_map_visible_layers = visible.copy()
+                try:
+                    logger = logging.getLogger(__name__)
+                    vis_names = {getattr(k, 'name', str(k)): v for k, v in visible.items()}
+                    logger.debug("[Render][MapEditor] visible_layers=%s", vis_names)
+                except Exception:
+                    pass
             orig = map.tiles_by_layer
             filtered = {layer: tiles for layer, tiles in orig.items() if visible.get(layer, True)}
             map.tiles_by_layer = filtered
@@ -279,10 +318,21 @@ class RendererManager:
                 map.tiles_by_layer = orig
             self._dirty_rects.extend(dirty_rects)
             return
-        # Collision-only mode: render only collision grid
-        if self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.toolbar_state.show_collisions and not self.tiles_editor.editor_state.toolbar_state.show_collisions_overlay:
+        # Collision-only mode: render only collision grid (log only on toggle)
+        co_mode = (
+            self.tiles_editor.editor_state.active
+            and self.tiles_editor.editor_state.toolbar_state.show_collisions
+            and not self.tiles_editor.editor_state.toolbar_state.show_collisions_overlay
+        )
+        if co_mode and co_mode != self._last_collision_only:
+            try:
+                logging.getLogger(__name__).debug("[Render] Collision-only mode active -> skipping tile layers")
+            except Exception:
+                pass
+        if co_mode:
             dirty = self._render_collisions(screen, camera, map)
             self._dirty_rects.extend(dirty)
+            self._last_collision_only = co_mode
             return
         # Layer visibility filter when tile editor is active
         editor_state = getattr(self.tiles_editor, 'editor_state', None)
@@ -292,6 +342,20 @@ class RendererManager:
             if visible != self._last_visible_layers:
                 self.map.view.invalidate_cache()
                 self._last_visible_layers = visible.copy()
+                try:
+                    logger = logging.getLogger(__name__)
+                    vis_names = {getattr(k, 'name', str(k)): v for k, v in visible.items()}
+                    logger.debug("[Render][TilesEditor] visible_layers=%s", vis_names)
+                except Exception:
+                    pass
+            # Log current layer only when it changes
+            try:
+                current_layer = getattr(editor_state, 'current_layer', None)
+                if current_layer != self._last_current_layer:
+                    logging.getLogger(__name__).debug("[Render][TilesEditor] current_layer=%s", current_layer)
+                    self._last_current_layer = current_layer
+            except Exception:
+                pass
             # Temporarily filter map layers mapping for rendering
             orig_layers = map.layers
             filtered_layers = {layer: orig_layers[layer] for layer in orig_layers if visible.get(layer, True)}
@@ -301,6 +365,9 @@ class RendererManager:
         else:
             dirty_rects = self.map.view.render(screen, camera, map)
         self._dirty_rects.extend(dirty_rects)
+        # Update collision-only toggle state when not in collision-only mode
+        if self._last_collision_only != co_mode:
+            self._last_collision_only = co_mode
         # Overlay collision grid in overlay mode
         if self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.toolbar_state.show_collisions_overlay:
             dirty2 = self._render_collisions(screen, camera, map)

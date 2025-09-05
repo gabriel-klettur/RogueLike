@@ -2,16 +2,16 @@
   "player": {
     "level": "global_map",
     "pos": [
-      108,
-      64
+      111,
+      74
     ]
   },
   "npcs": {
     "df504d8e-022f-4d14-8b16-ae573c4555fa": {
       "level": "global_map",
       "tile": [
-        136,
-        57
+        161,
+        63
       ],
       "hp": 100,
       "dead": false,
@@ -21,25 +21,25 @@
       "level": "global_map",
       "tile": [
         115,
-        69
+        71
       ],
-      "hp": 50,
-      "dead": false,
+      "hp": 0,
+      "dead": true,
       "prototype": "vendor_wood_gatita"
     }
   },
   "levels": {
     "global_map": {
       "player_pos": [
-        108,
-        64
+        111,
+        74
       ],
       "npc_states": {
         "df504d8e-022f-4d14-8b16-ae573c4555fa": {
           "level": "global_map",
           "tile": [
-            132,
-            56
+            158,
+            62
           ],
           "hp": 100,
           "dead": false,
@@ -49,10 +49,10 @@
           "level": "global_map",
           "tile": [
             115,
-            68
+            71
           ],
-          "hp": 50,
-          "dead": false,
+          "hp": 0,
+          "dead": true,
           "prototype": "vendor_wood_gatita"
         }
       }
@@ -107,9 +107,9 @@
   "meta": {
     "name": "partida_2025-09-05_17-32-35",
     "created_at": "2025-09-05T17:32:35",
-    "last_played": "2025-09-05T17:33:16",
+    "last_played": "2025-09-05T19:23:26",
     "player": {
-      "xp": 0,
+      "xp": 10,
       "level": 0
     },
     "items_summary": {

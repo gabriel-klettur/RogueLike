@@ -319,5 +319,13 @@ class TileEditorController:
                 map.view.update_chunks(map, camera, cells)
         except Exception:
             map.view.invalidate_cache()
+        # Ensure immediate on-screen refresh regardless of partial update path
+        # Some scenarios (very short strokes, throttled updates, or layer filters)
+        # may leave stale chunk caches; force a full cache invalidation so the
+        # next render rebuilds the affected zoom surfaces from current in-memory layers.
+        try:
+            map.view.invalidate_cache()
+        except Exception:
+            pass
         if hasattr(self, "ecs_world"):
             self.ecs_world.invalidate_spatial_index()
