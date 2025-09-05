@@ -80,7 +80,14 @@ class MonsterBuilder:
 
         # Health & Identity
         world.components["Health"][eid] = Health(cfg["hp"], cfg["hp"])
-        world.components["Identity"][eid] = Identity(id=eid, name=monster_type, title="", faction=getattr(Faction, cfg.get("faction"), None))
+        # Usar default_name si está disponible en el JSON; si no, usar el id de clase
+        display_name = cfg.get("default_name") or monster_type
+        world.components["Identity"][eid] = Identity(
+            id=eid,
+            name=str(display_name),
+            title="",
+            faction=getattr(Faction, cfg.get("faction"), None)
+        )
         # Etiqueta NPC para gestión de inventario
         world.components["NPCTagComponent"][eid] = NPCTagComponent()
         # Identificador único de instancia para persistencia de inventario
