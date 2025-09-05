@@ -83,6 +83,12 @@ class BuildingEditorController:
                         return
             return
 
+        # Modo eliminar: con LMB borra el edificio bajo el cursor inmediatamente
+        if button == 1 and getattr(self.editor, 'remove_mode_active', False):
+            for b in reversed(buildings):
+                if b.rect.collidepoint(world_x, world_y):
+                    self._delete_building(b, buildings)
+                    return
 
         # 1) Barra split (clic izq o der indistinto) SOLO sobre activo
         ab = getattr(self.editor, 'active_building', None)

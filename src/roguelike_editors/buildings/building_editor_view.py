@@ -96,7 +96,8 @@ class BuildingEditorView:
         except Exception:
             pass
 
-        # Draw hover outline (cyan, thinner) only as visual hint when UI is NOT blocking
+        # Draw hover outline only when UI is NOT blocking. If remove mode is active, use red border
+        # and a semi-transparent red fill; otherwise, use the standard cyan outline.
         try:
             if not ui_blocked:
                 hb = getattr(self.editor, 'hovered_building', None)
@@ -105,7 +106,15 @@ class BuildingEditorView:
                     x, y = camera.apply((hb.x, hb.y))
                     w, h = camera.scale(hb.image.get_size())
                     hover_rect = pygame.Rect(x, y, w, h)
-                    pygame.draw.rect(screen, (0, 255, 255), hover_rect, 2)  # cyan, thin
+                    if getattr(self.editor, 'remove_mode_active', False):
+                        # Semi-transparent red fill
+                        fill = pygame.Surface((hover_rect.width, hover_rect.height), pygame.SRCALPHA)
+                        fill.fill((255, 0, 0, 60))  # 60 alpha for subtle overlay
+                        screen.blit(fill, (hover_rect.left, hover_rect.top))
+                        # Red border
+                        pygame.draw.rect(screen, (255, 0, 0), hover_rect, 3)
+                    else:
+                        pygame.draw.rect(screen, (0, 255, 255), hover_rect, 2)  # cyan, thin
         except Exception:
             pass
 

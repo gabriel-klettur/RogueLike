@@ -42,6 +42,10 @@ class BuildingsEditorModel:
         self.picker_dragging_panel: bool = False
         self.picker_drag_offset: tuple[int, int] = (0, 0)
 
+        # --- NUEVO: Modo eliminar (desde Add/Remove) ---
+        # Cuando está activo, el LMB elimina el edificio bajo el cursor y el hover se muestra en rojo
+        self.remove_mode_active: bool = False
+
         # --- NUEVO: Flag para indicar si el panel de colisiones está activo ---
         # Usado para ocultar/deshabilitar herramientas visuales cuando se edita colisiones
         self.colliders_mode: bool = False

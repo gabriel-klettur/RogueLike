@@ -77,4 +77,9 @@ class BuildingPickerController:
             # Usamos el placer_tool, pasándole la ruta seleccionada
             # Se asume que placer_tool tiene un método adaptado para recibir path
             self.placer.place_building_at_path(buildings, wx, wy, self.editor.selected_entry.path)
+            # Pulso de tutorial: se colocó un building con el picker (RMB drop)
+            try:
+                setattr(self.editor, 'tutorial_picker_placed_pulse', True)
+            except Exception:
+                pass
             self.stop_drag()

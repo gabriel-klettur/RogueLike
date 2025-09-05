@@ -2,16 +2,16 @@
   "player": {
     "level": "global_map",
     "pos": [
-      136,
-      62
+      113,
+      65
     ]
   },
   "npcs": {},
   "levels": {
     "global_map": {
       "player_pos": [
-        136,
-        62
+        113,
+        65
       ],
       "npc_states": {}
     }
@@ -22,16 +22,13 @@
     "slots": [
       {
         "item": "gold",
-        "quantity": 1234.0
+        "quantity": 1015.0
       },
       {
         "item": "wood",
         "quantity": 15
       },
-      {
-        "item": "iron_sword",
-        "quantity": 1
-      },
+      null,
       null,
       null,
       null,
@@ -54,17 +51,16 @@
   "meta": {
     "name": "partida_2025-08-21_10-24-37",
     "created_at": "2025-08-21T10:24:37",
-    "last_played": "2025-09-05T16:23:30",
+    "last_played": "2025-09-05T15:59:37",
     "player": {
-      "xp": 10,
-      "level": 0
+      "xp": 40,
+      "level": 3
     },
     "items_summary": {
-      "stacks": 3,
+      "stacks": 2,
       "top_items": [
         "gold",
-        "wood",
-        "iron_sword"
+        "wood"
       ]
     }
   }
