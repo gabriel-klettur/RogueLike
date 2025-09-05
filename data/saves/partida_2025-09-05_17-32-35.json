@@ -1,0 +1,122 @@
+{
+  "player": {
+    "level": "global_map",
+    "pos": [
+      108,
+      64
+    ]
+  },
+  "npcs": {
+    "df504d8e-022f-4d14-8b16-ae573c4555fa": {
+      "level": "global_map",
+      "tile": [
+        136,
+        57
+      ],
+      "hp": 100,
+      "dead": false,
+      "prototype": "barbol"
+    },
+    "036973de-63f8-41ec-8381-6a8cdfdfbfca": {
+      "level": "global_map",
+      "tile": [
+        115,
+        69
+      ],
+      "hp": 50,
+      "dead": false,
+      "prototype": "vendor_wood_gatita"
+    }
+  },
+  "levels": {
+    "global_map": {
+      "player_pos": [
+        108,
+        64
+      ],
+      "npc_states": {
+        "df504d8e-022f-4d14-8b16-ae573c4555fa": {
+          "level": "global_map",
+          "tile": [
+            132,
+            56
+          ],
+          "hp": 100,
+          "dead": false,
+          "prototype": "barbol"
+        },
+        "036973de-63f8-41ec-8381-6a8cdfdfbfca": {
+          "level": "global_map",
+          "tile": [
+            115,
+            68
+          ],
+          "hp": 50,
+          "dead": false,
+          "prototype": "vendor_wood_gatita"
+        }
+      }
+    }
+  },
+  "player_inventory": {
+    "player_id": "6de4fe5c-3288-48e1-8f00-01dd8bed9895",
+    "capacity": 20,
+    "slots": [
+      {
+        "item": "gold",
+        "quantity": 10
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "npc_inventories": {
+    "df504d8e-022f-4d14-8b16-ae573c4555fa": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": [
+        {
+          "item": "experience_orb",
+          "quantity": 1
+        }
+      ]
+    },
+    "036973de-63f8-41ec-8381-6a8cdfdfbfca": {
+      "player_id": null,
+      "capacity": 20,
+      "slots": []
+    }
+  },
+  "meta": {
+    "name": "partida_2025-09-05_17-32-35",
+    "created_at": "2025-09-05T17:32:35",
+    "last_played": "2025-09-05T17:33:16",
+    "player": {
+      "xp": 0,
+      "level": 0
+    },
+    "items_summary": {
+      "stacks": 1,
+      "top_items": [
+        "gold"
+      ]
+    }
+  }
+}

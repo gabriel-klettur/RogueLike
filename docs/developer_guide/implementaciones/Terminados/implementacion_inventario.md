@@ -62,15 +62,15 @@ Este documento describe el roadmap de alto nivel para llevar a producción la gu
 ## 5. Integración de NPCs y Player
 
 1. Plantillas base y archivos activos (runtime):
-    - Base NPCs: `data/defaults/inventory_monsters.json` (plantillas por `template_id`).
-    - Activo NPCs: `data/inventory_monsters.json` (mapea `entity_id` → instancia de inventario).
-    - Base Player: `data/defaults/inventory_player.json` (plantilla por `player_id`).
-    - Activo Player: `data/inventory_player.json` (mapea `entity_id` → instancia de inventario).
+    - Base NPCs: `data/inventory/defaults/inventory_monsters.json` (plantillas por `template_id`).
+    - Activo NPCs: `data/inventory/active/inventory_monsters.json` (mapea `entity_id` → instancia de inventario).
+    - Base Player: `data/inventory/defaults/inventory_player.json` (plantilla por `player_id`).
+    - Activo Player: `data/inventory/active/inventory_player.json` (mapea `entity_id` → instancia de inventario).
 
 2. Implementar `InventoryInitSystem` en `src/roguelike_game/ecs/systems/inventory/inventory_init_system.py` con:
     - Detectar entidades con `PlayerTag` y `NPCTag`.
-    - Cargar plantilla base desde `data/defaults/inventory_*.json` y poblar `InventoryComponent` con `add(item_id, qty)`.
-    - Registrar el inventario inicial en `data/inventory_monsters.json` o `data/inventory_player.json` usando `entity_id` como clave. El registro incluye:
+    - Cargar plantilla base desde `data/inventory/defaults/inventory_*.json` y poblar `InventoryComponent` con `add(item_id, qty)`.
+    - Registrar el inventario inicial en `data/inventory/active/inventory_monsters.json` o `data/inventory/active/inventory_player.json` usando `entity_id` como clave. El registro incluye:
         - `template_id` o `player_id`.
         - `slots`: serialización de `InventoryComponent.serialize()`.
         - `schema_version`. 
@@ -88,7 +88,7 @@ Este documento describe el roadmap de alto nivel para llevar a producción la gu
     - Capturar acción de dropeo (p.ej. tecla D o botón UI) en `InventoryInputSystem`.
     - Llamar a `ItemDropManager.create_drop(drop_id, item_id, quantity, zone_id, position)` para cada ítem seleccionado.
     - Remover el ítem del `InventoryComponent` con `remove(item_id, quantity)`.
-    - Persistir en `data/inventory_monsters.json` o `data/inventory_player.json` mapeando `entity_id`.
+    - Persistir el cambio en `data/inventory/active/inventory_monsters.json` o `data/inventory/active/inventory_player.json` mapeando `entity_id`.
 
 6. Implementar `InventoryPickupSystem` en `src/roguelike_game/ecs/systems/inventory/inventory_pickup_system.py` con:
     - Detectar colisión/interacción con drops (`CollectibleComponent`).
@@ -105,7 +105,7 @@ Este documento describe el roadmap de alto nivel para llevar a producción la gu
         - Botones “Guardar plantilla” y “Aplicar cambios”.
 
 8. Persistencia y eventos:
-    - Al guardar cambios de inventario (editor o runtime), actualizar los archivos activos (`data/inventory_monsters.json` / `data/inventory_player.json`) mapeando `entity_id` → datos serializados de `InventoryComponent`.
+    - Al guardar cambios de inventario (editor o runtime), actualizar los archivos activos (`data/inventory/active/inventory_monsters.json` / `data/inventory/active/inventory_player.json`) mapeando `entity_id` → datos serializados de `InventoryComponent`.
     - Aplicar cambios runtime en `InventoryComponent`.
     - Despachar eventos ECS: `InventoryEditorOpened`, `InventoryChanged`, `InventoryEditorClosed`.
 

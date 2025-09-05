@@ -17,7 +17,7 @@ Este documento describe el diseño e implementación del sistema de inventario p
 
 ## Getting Started
 1. Instala dependencias: `pip install -r requirements.txt`
-2. Valida esquemas: `check-jsonschema --schemafile schemas/ItemsSchema.json data/items.json`
+2. Valida esquemas: `check-jsonschema --schemafile schemas/ItemsSchema.json data/items/items.json`
 3. Ejecuta tests: `pytest`
 
 ## Estructura de directorios
@@ -26,10 +26,17 @@ project_root/
   assets/
     items/
   data/
-    items.json
-    inventory_monsters.json
-    inventory_player.json
-    inventory_map.json
+    inventory/
+      defaults/
+        inventory_monsters.json
+        inventory_player.json
+        inventory_map.json
+      active/
+        inventory_monsters.json
+        inventory_player.json
+        inventory_map.json
+    items/
+      items.json
   schemas/
     ItemsSchema.json
     InventoryMonstersSchema.json
@@ -72,7 +79,7 @@ La definición y metadatos de los ítems se documenta en [`items.md`](items.md).
 
 
 ### 2.2 Plantillas de NPCs
-Plantillas base en `data/defaults/inventory_monsters.json`. Archivo activo en `data/inventory_monsters.json`. Cada plantilla NPC incluye un campo `template_id` único (string):
+Plantillas base en `data/inventory/defaults/inventory_monsters.json`. Archivo activo en `data/inventory/active/inventory_monsters.json`. Cada plantilla NPC incluye un campo `template_id` único (string):
 
 > **template_id**: UUID que identifica la plantilla de inventario de un NPC, usado para vincular esta configuración JSON con la entidad NPC correspondiente en el juego.
 ```json
@@ -88,7 +95,7 @@ Plantillas base en `data/defaults/inventory_monsters.json`. Archivo activo en `d
 ```
 
 ### 2.3 Plantilla de Player
-Plantilla base en `data/defaults/inventory_player.json`. Archivo activo en `data/inventory_player.json`. Incluye un campo `player_id` único (string):
+Plantilla base en `data/inventory/defaults/inventory_player.json`. Archivo activo en `data/inventory/active/inventory_player.json`. Incluye un campo `player_id` único (string):
 ```json
 {
   "player_id": "uuid-v4",
@@ -130,14 +137,14 @@ Subclases o componentes ECS:
 Este apartado describe la integración de plantillas de inventario y gestión unificada para NPCs y Player:
 
 1. **Plantillas base y activas**:
-    - Base NPCs: `data/defaults/inventory_monsters.json`; activo: `data/inventory_monsters.json`.
-    - Base Player: `data/defaults/inventory_player.json`; activo: `data/inventory_player.json`.
+    - Base NPCs: `data/inventory/defaults/inventory_monsters.json`; activo: `data/inventory/active/inventory_monsters.json`.
+    - Base Player: `data/inventory/defaults/inventory_player.json`; activo: `data/inventory/active/inventory_player.json`.
 
 2. **Inicialización de inventarios**:
-    - `InventoryInitSystem` carga la plantilla base desde `data/defaults/...`.
+    - `InventoryInitSystem` carga la plantilla base desde `data/inventory/defaults/...`.
     - Crea entidades con `InventoryComponent` y `PlayerTag` o `NPCTag`.
     - Puebla el componente con `add(item_id, qty)`.
-    - Persiste el inventario inicial en los archivos activos (`data/inventory_monsters.json` o `data/inventory_player.json`).
+    - Persiste el inventario inicial en los archivos activos (`data/inventory/active/inventory_monsters.json` o `data/inventory/active/inventory_player.json`).
 
 3. **DeathDropSystem (NPC y Player)**:
     - Implementar `DeathDropSystem` en `src/roguelike_game/ecs/systems/inventory/death_drop_system.py` que suscriba al evento de muerte para entidades con `PlayerTag` y `NPCTag`.
@@ -151,14 +158,14 @@ Este apartado describe la integración de plantillas de inventario y gestión un
         - Capturar acción de dropeo (p.ej. tecla D o botón UI) en `InventoryInputSystem`.
         - Llamar a `ItemDropManager.create_drop(drop_id, item_id, quantity, zone_id, position)`.
         - Remover el ítem del `InventoryComponent` con `remove(item_id, quantity)`.
-        - Persistir cambio en `data/inventory_monsters.json` o `data/inventory_player.json` mapeando `entity_id`.
+        - Persistir el cambio en `data/inventory/active/inventory_monsters.json` o `data/inventory/active/inventory_player.json` mapeando `entity_id`.
 
 5. **InventoryPickupSystem**:
     - Implementar `InventoryPickupSystem` en `src/roguelike_game/ecs/systems/inventory/inventory_pickup_system.py` con:
         - Detectar colisión/interacción con drops (`CollectibleComponent`).
         - Añadir al inventario con `InventoryComponent.add(item_id, quantity)`.
         - Usar `ItemDropManager.pick_up(drop_id)` y eliminar la entidad de drop.
-        - Persistir cambio en JSON activo.
+        - Persistir inventario actualizado en el JSON activo (`data/inventory/active/...`).
 
 6. **Transferencia de ítems**:
     - Crear `InventoryTransferSystem` en `src/roguelike_game/ecs/systems/inventory/inventory_transfer_system.py` con:
@@ -347,7 +354,7 @@ import json
 
 with open('schemas/ItemsSchema.json') as f:
     schema = json.load(f)
-items = json.load(open('data/items.json'))
+items = json.load(open('data/items/items.json'))
 validate(instance=items, schema=schema)
 # Mapear a objetos de juego
 from models import ItemModel
@@ -418,8 +425,10 @@ jobs:
         run: pip install -r requirements.txt
       - name: Validate Schemas
         run: |
-          check-jsonschema --schemafile schemas/ItemsSchema.json data/items.json
-          check-jsonschema --schemafile schemas/InventoryMonstersSchema.json data/inventory_monsters.json
+          check-jsonschema --schemafile schemas/ItemsSchema.json data/items/items.json
+          check-jsonschema --schemafile schemas/inventory/InventoryMonstersSchema.json data/inventory/defaults/inventory_monsters.json
+          check-jsonschema --schemafile schemas/inventory/InventoryPlayerSchema.json data/inventory/defaults/inventory_player.json
+          check-jsonschema --schemafile schemas/inventory/InventoryMapSchema.json data/inventory/defaults/inventory_map.json
       - name: Run tests
         run: pytest
 ```

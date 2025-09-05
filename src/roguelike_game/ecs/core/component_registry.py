@@ -19,6 +19,7 @@ def create_empty_component_store():
         'DefendArea': {},
         'ChaseTarget': {}, 'FacingCooldown': {}, 'InputComponent': {}, 'InventoryComponent': {}, 'PhysicalItemComponent': {}, 'CollectibleComponent': {}, 'ExperienceComponent': {},
         'CameraFollowComponent': {}, 'PlayerTagComponent': {}, 'NPCTagComponent': {}, 'MonsterInstanceComponent': {}, 'InCombat': {},
+        'MonsterArchetype': {},
         # Chat & Vendor
         'ChatComponent': {}, 'VendorComponent': {},
         'TempZLayer': {},

@@ -4,6 +4,7 @@ from datetime import datetime
 from pathlib import Path
 from roguelike_game.utils.inventory_sync import write_active_for_player
 from roguelike_game.utils.inventory_registry import publish_inventory
+from roguelike_game.ecs.utils.position_utils import compute_foot_tile
 
 import logging
 logger = logging.getLogger(__name__)
@@ -23,6 +24,7 @@ class ShutdownManager:
         try:
             # 1) Obtener la entidad del jugador
             eid = g.ecs.ecs_world.player_entity
+
             pos = g.ecs.ecs_world.components["Position"][eid]
 
             # 2) Calcular coordenadas de tile usando el centro del collider 'feet'
@@ -111,7 +113,112 @@ class ShutdownManager:
             except Exception:
                 pass
 
-            # 5) Salvar el mundo en disco
+            # 4d) Persistir estado de NPCs (vida, posición en tiles y su inventario)
+            try:
+                ecs_world = g.ecs.ecs_world
+                comps = ecs_world.components
+                npc_tags = comps.get("NPCTagComponent", {}) or {}
+                inst_store = comps.get("MonsterInstanceComponent", {}) or {}
+                health_store = comps.get("Health", {}) or {}
+                death_store = comps.get("DeathTimer", {}) or {}
+                inv_store = comps.get("InventoryComponent", {}) or {}
+                archetype_store = comps.get("MonsterArchetype", {}) or {}
+                identity_store = comps.get("Identity", {}) or {}
+
+                # Asegurar estructuras en WorldManager
+                if getattr(g.world, 'npc_memory', None) is None:
+                    g.world.npc_memory = {}
+                if getattr(g.world, 'npc_inventories', None) is None:
+                    g.world.npc_inventories = {}
+
+                # Nivel actual
+                current_level = getattr(g.world, 'current_level', None) or getattr(g.map, 'name', None)
+
+                for neid in list(npc_tags.keys()):
+                    inst = inst_store.get(neid)
+                    if not inst:
+                        continue
+                    instance_id = getattr(inst, 'instance_id', None)
+                    if not instance_id:
+                        continue
+
+                    # Posición en tiles usando pies del sprite
+                    try:
+                        tx, ty = compute_foot_tile(ecs_world, neid, TILE_SIZE) or (None, None)
+                    except Exception:
+                        tx, ty = (None, None)
+
+                    # Vida actual y estado de muerte
+                    hp_cmp = health_store.get(neid)
+                    current_hp = getattr(hp_cmp, 'current_hp', None) if hp_cmp is not None else None
+                    dead_flag = False
+                    try:
+                        dead_flag = (current_hp is not None and current_hp <= 0) or (neid in death_store)
+                    except Exception:
+                        pass
+
+                    # Determinar prototipo/arquetipo
+                    proto = None
+                    try:
+                        at = archetype_store.get(neid)
+                        if at is not None:
+                            proto = getattr(at, 'type', None)
+                    except Exception:
+                        proto = None
+                    if not proto:
+                        try:
+                            ident = identity_store.get(neid)
+                            if ident is not None:
+                                proto = str(getattr(ident, 'name', None) or '')
+                        except Exception:
+                            pass
+
+                    # Guardar memoria mínima del NPC
+                    g.world.npc_memory[str(instance_id)] = {
+                        "level": current_level,
+                        "tile": [int(tx), int(ty)] if tx is not None and ty is not None else None,
+                        "hp": int(current_hp) if isinstance(current_hp, (int, float)) else current_hp,
+                        "dead": bool(dead_flag),
+                        "prototype": proto,
+                    }
+
+                    # Snapshot de inventario (si tiene)
+                    inv_cmp = inv_store.get(neid)
+                    if inv_cmp is not None and hasattr(inv_cmp, 'serialize'):
+                        try:
+                            snap = inv_cmp.serialize() or {}
+                            # Normalizar slots: cantidades como int
+                            slots = []
+                            for s in snap.get('slots', []) or []:
+                                if s:
+                                    qty = s.get('quantity', 0)
+                                    try:
+                                        qty = int(qty)
+                                    except Exception:
+                                        pass
+                                    slots.append({"item": s.get('item'), "quantity": qty})
+                            norm = {k: v for k, v in snap.items() if k != 'slots'}
+                            norm['slots'] = slots
+                            g.world.npc_inventories[str(instance_id)] = norm
+                        except Exception:
+                            pass
+            except Exception:
+                pass
+
+            # 5) Log de resumen previo al guardado
+            try:
+                level_name = getattr(g.world, 'current_level', None) or getattr(g.map, 'name', None)
+                player_tile = (tx, ty)
+                npc_cnt = len(getattr(g.world, 'npc_memory', {}) or {})
+                inv_cnt = len(getattr(g.world, 'npc_inventories', {}) or {})
+                slot_hint = getattr(g.world, 'current_save_path', None)
+                logger.info(
+                    f"[Save] Preparando guardado: nivel={level_name}, player_tile={player_tile}, npcs={npc_cnt}, npc_inventarios={inv_cnt}, slot={slot_hint}"
+                )
+            except Exception:
+                pass
+
+            # 6) Salvar el mundo en disco
             g.world.save_world()
 
         except Exception as exc:

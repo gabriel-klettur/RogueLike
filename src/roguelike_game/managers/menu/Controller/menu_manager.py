@@ -589,6 +589,15 @@ class MenuManager:
                         pass
             except Exception as e:
                 logger.warning("No se pudo restaurar inventario: %s", e)
+
+            # 4a) Inyectar snapshot de inventarios de NPCs en ECS para que InventoryInitSystem los restaure
+            try:
+                npc_snap = getattr(g.world, 'npc_inventories', None) or {}
+                if npc_snap:
+                    g.ecs.ecs_world.components['NPCInventorySnapshot'] = dict(npc_snap)
+                    logger.info("NPCInventorySnapshot inyectado (%d NPCs)", len(npc_snap))
+            except Exception as e:
+                logger.warning("No se pudo inyectar NPCInventorySnapshot: %s", e)
             # 4b) Restaurar XP/Nivel desde metadatos del guardado
             try:
                 meta = getattr(g.world, 'save_metadata', {}) or {}
