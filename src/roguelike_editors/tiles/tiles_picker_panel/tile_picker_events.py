@@ -191,6 +191,11 @@ class TilePickerEventHandler:
 
         self.editor_state.current_choice = value
         self.picker_state.current_choice = value
+        # Tutorial pulse: choice selected
+        try:
+            setattr(self.editor_state, 'tutorial_choice_selected_pulse', True)
+        except Exception:
+            pass
         return True
 
     def handle_event(self, ev, camera=None, map=None):

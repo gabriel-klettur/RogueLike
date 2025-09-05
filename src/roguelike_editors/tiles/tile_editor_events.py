@@ -80,6 +80,12 @@ class TileEditorEventHandler:
             elif ev.type == pygame.MOUSEWHEEL:
                 self._on_mouse_wheel(ev, camera)
             # Delegate to panel event handlers
+            # Tutorial overlay events (consume clicks inside panel and ESC to close)
+            try:
+                if self.controller.tutorial_controller.handle_event(ev):
+                    continue
+            except Exception:
+                pass
             # Toolbar drag events
             self.toolbar_tool.handle_event(ev)
             if self.editor_state.toolbar_state.view_active:
@@ -255,8 +261,16 @@ class TileEditorEventHandler:
         # Ciclar capas si estamos en modo brush
         if self.editor_state.current_tool == "brush":
             self.editor_state.current_layer = cycle_enum(self.editor_state.current_layer, 1 if ev.y > 0 else -1, Layer)
+            try:
+                setattr(self.editor_state, 'tutorial_layer_changed_pulse', True)
+            except Exception:
+                pass
             return
         # Cambiar layer seleccionado con rueda cuando panel de vista activo
         if self.editor_state.toolbar_state.view_active:
             self.editor_state.current_layer = cycle_enum(self.editor_state.current_layer, 1 if ev.y > 0 else -1, Layer)
+            try:
+                setattr(self.editor_state, 'tutorial_layer_changed_pulse', True)
+            except Exception:
+                pass
             return
