@@ -58,6 +58,17 @@ class BuildingsTutorialPanelController:
             self.model.last_z_top = None
             self.model.last_image_size = None
             self.model.last_collider_scope = None
+            self.model.last_picker_dragging = None
+            # Inicializar tracking de navegación del picker al estado actual
+            try:
+                self.model.last_picker_dir = getattr(self.editor_state, 'current_dir', None)
+            except Exception:
+                self.model.last_picker_dir = None
+            try:
+                hist = getattr(self.editor_state, 'history', None)
+                self.model.last_picker_history_len = (len(hist) if hist is not None else None)
+            except Exception:
+                self.model.last_picker_history_len = None
             # Limpiar pulsos tutorial (resize/reset)
             try:
                 setattr(self.editor_state, 'tutorial_resized_pulse', False)
@@ -98,6 +109,11 @@ class BuildingsTutorialPanelController:
             except Exception:
                 pass
             # (limpieza) duplicados de reseteo de colliders eliminados
+            # Limpiar pulso del picker (colocación con RMB)
+            try:
+                setattr(self.editor_state, 'tutorial_picker_placed_pulse', False)
+            except Exception:
+                pass
         except Exception:
             pass
         # Limpiar cualquier highlight por hover al iniciar el tutorial
@@ -131,6 +147,9 @@ class BuildingsTutorialPanelController:
             self.model.last_z_bottom = None
             self.model.last_z_top = None
             self.model.last_image_size = None
+            self.model.last_picker_dragging = None
+            self.model.last_picker_dir = None
+            self.model.last_picker_history_len = None
             # Limpiar pulsos tutorial (resize/reset)
             try:
                 setattr(self.editor_state, 'tutorial_resized_pulse', False)
@@ -168,6 +187,11 @@ class BuildingsTutorialPanelController:
                 pass
             try:
                 setattr(self.editor_state, 'tutorial_colliders_saved_button_pulse', False)
+            except Exception:
+                pass
+            # Limpiar pulso del picker (colocación con RMB)
+            try:
+                setattr(self.editor_state, 'tutorial_picker_placed_pulse', False)
             except Exception:
                 pass
         except Exception:
@@ -242,6 +266,9 @@ class BuildingsTutorialPanelController:
             self.model.last_z_top = None
             self.model.last_image_size = None
             self.model.last_collider_scope = None
+            self.model.last_picker_dragging = None
+            self.model.last_picker_dir = None
+            self.model.last_picker_history_len = None
             # Limpiar pulsos tutorial (resize/reset)
             try:
                 setattr(self.editor_state, 'tutorial_resized_pulse', False)
@@ -359,6 +386,8 @@ class BuildingsTutorialPanelController:
         resized_pulse = False
         deleted_pulse = False
         undo_delete_pulse = False
+        # Pulsos del picker (colocación)
+        picker_placed_pulse = False
         # Pulsos del panel de colisiones
         colliders_choice_pulse = False
         colliders_painted_pulse = False
@@ -373,6 +402,9 @@ class BuildingsTutorialPanelController:
         prev_zb = self.model.last_z_bottom
         prev_zt = self.model.last_z_top
         prev_size = self.model.last_image_size
+        prev_picker_dragging = self.model.last_picker_dragging
+        prev_picker_dir = self.model.last_picker_dir
+        prev_picker_hist_len = self.model.last_picker_history_len
 
         if active is not None:
             bid = getattr(active, 'id', None)
@@ -418,7 +450,7 @@ class BuildingsTutorialPanelController:
             self.model.last_z_top = zt
             self.model.last_image_size = current_size
 
-        # Consumir pulsos del editor_state para distinguir resize/reset y delete/undo
+        # Consumir pulsos del editor_state para distinguir resize/reset, delete/undo y picker
         try:
             if bool(getattr(es, 'tutorial_reset_pulse', False)):
                 reset_done_pulse = True
@@ -474,6 +506,45 @@ class BuildingsTutorialPanelController:
                 setattr(es, 'tutorial_colliders_saved_button_pulse', False)
         except Exception:
             pass
+        # Pulso del picker (colocar edificio con RMB)
+        try:
+            if bool(getattr(es, 'tutorial_picker_placed_pulse', False)):
+                picker_placed_pulse = True
+                setattr(es, 'tutorial_picker_placed_pulse', False)
+        except Exception:
+            pass
+
+        # Estado de navegación del picker
+        try:
+            current_picker_dir = getattr(es, 'current_dir', None)
+        except Exception:
+            current_picker_dir = None
+        try:
+            current_picker_hist_len = len(getattr(es, 'history', []) or [])
+        except Exception:
+            current_picker_hist_len = None
+        picker_nav_into = False
+        picker_nav_back = False
+        if prev_picker_dir is None:
+            # Inicializar tracking en la primera pasada
+            self.model.last_picker_dir = current_picker_dir
+            self.model.last_picker_history_len = current_picker_hist_len
+        else:
+            if current_picker_dir is not None and current_picker_dir != prev_picker_dir:
+                # Determinar dirección por tamaño del historial
+                if (
+                    current_picker_hist_len is not None and prev_picker_hist_len is not None
+                    and current_picker_hist_len > prev_picker_hist_len
+                ):
+                    picker_nav_into = True
+                elif (
+                    current_picker_hist_len is not None and prev_picker_hist_len is not None
+                    and current_picker_hist_len < prev_picker_hist_len
+                ):
+                    picker_nav_back = True
+                # Actualizar tracking
+                self.model.last_picker_dir = current_picker_dir
+                self.model.last_picker_history_len = current_picker_hist_len
 
         # Estado actual de alcance de colisiones (CG/CU)
         try:
@@ -534,6 +605,21 @@ class BuildingsTutorialPanelController:
                 ok = bool(getattr(es, 'colliders_mode', False))
             elif kind == 'picker_visible':
                 ok = bool(getattr(es, 'picker_active', False))
+            elif kind == 'picker_navigate_into':
+                ok = picker_nav_into
+            elif kind == 'picker_navigate_back':
+                ok = picker_nav_back
+            elif kind == 'picker_drag_started':
+                try:
+                    current_dragging = bool(getattr(es, 'dragging_building', False))
+                except Exception:
+                    current_dragging = False
+                # marcar solo el flanco de subida (inicio de drag)
+                ok = (prev_picker_dragging is not True) and current_dragging is True
+                # actualizar tracking para siguiente iteración
+                self.model.last_picker_dragging = current_dragging
+            elif kind == 'picker_building_placed':
+                ok = picker_placed_pulse
             elif kind == 'deleted_building':
                 ok = deleted_pulse
             elif kind == 'undo_delete':

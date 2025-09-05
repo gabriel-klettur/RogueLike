@@ -150,13 +150,21 @@ class BuildingsTutorialPanelModel:
         {
             "title": "Add/Remove y Picker",
             "text": (
-                "Con el botón de manager abres Add/Remove y el Picker. "
-                "Haz RMB en un asset para arrastrar y suéltalo con RMB en el mapa para colocarlo."
+                "El panel Add/Remove centraliza la gestión de edificios. Con Add se abre el Picker de assets: "
+                "navega con click izquierdo por carpetas y usa la flecha roja para volver; inicia un arrastre con RMB sobre un asset y "
+                "suéltalo con RMB en el mapa para colocarlo. Con Remove se activa el modo de eliminación: mientras esté activo, "
+                "el edificio bajo el cursor se resalta en rojo y un clic izquierdo lo elimina; si hay un edificio seleccionado al "
+                "activar Remove, se elimina de inmediato."
             ),
             # Primero, señalar el botón de manager. (El picker se abre desde aquí)
             "highlight": {"kind": "toolbar", "item": "buildings_manager"},
             "checklist": [
                 {"id": "picker_visible", "label": "Abrir Add/Remove y Picker", "condition": {"kind": "picker_visible"}},
+                {"id": "picker_navigate_into", "label": "Entrar en una carpeta (click izquierdo sobre carpeta)", "condition": {"kind": "picker_navigate_into"}},
+                {"id": "picker_navigate_back", "label": "Volver al directorio anterior (flecha roja)", "condition": {"kind": "picker_navigate_back"}},
+                {"id": "picker_drag_started", "label": "Iniciar drag de un asset con RMB en el Picker", "condition": {"kind": "picker_drag_started"}},
+                {"id": "picker_building_placed", "label": "Soltar con RMB en el mapa para colocar el edificio", "condition": {"kind": "picker_building_placed"}},
+                {"id": "picker_removed_building", "label": "Eliminar un edificio usando el botón 'Remove' en Add/Remove", "condition": {"kind": "deleted_building"}},
             ],
         },
         {
@@ -186,6 +194,11 @@ class BuildingsTutorialPanelModel:
     last_image_size: Optional[tuple[int, int]] = None
     # Alcance de colisiones (CG/CU) para detectar toggles en el tutorial
     last_collider_scope: Optional[str] = None
+    # Picker: tracking para detectar transición de drag (False->True)
+    last_picker_dragging: Optional[bool] = None
+    # Picker: tracking de navegación
+    last_picker_dir: Optional[str] = None
+    last_picker_history_len: Optional[int] = None
 
     def reset_runtime(self) -> None:
         self.button_rects.clear()

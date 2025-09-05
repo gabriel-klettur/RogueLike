@@ -240,34 +240,6 @@ class BuildingEditorEventHandler:
                         pass
                     return
 
-                # D → reset (default) SOLO sobre active_building
-                if ev.key == pygame.K_d and not getattr(self.editor, 'colliders_mode', False):
-                    ab = getattr(self.editor, 'active_building', None)
-                    if ab is not None:
-                        self.controller.default_tool.apply_reset(ab)
-                        logger.info("🔄 Reset (default) aplicado con D sobre active_building")
-                        return
-
-                # R → iniciar resize SOLO sobre active_building (al presionar)
-                if ev.key == pygame.K_r and not getattr(self.editor, 'colliders_mode', False):
-                    ab = getattr(self.editor, 'active_building', None)
-                    if ab is not None:
-                        mx, my = pygame.mouse.get_pos()
-                        self.controller._start_resize(ab, (mx, my))
-                        logger.info("🔧 Resize iniciado con R sobre active_building")
-                        return
-
-                # Ctrl+Z → undo eliminación de edificio
-                if ev.key == pygame.K_z and (ev.mod & pygame.KMOD_CTRL):
-                    logger.info("↩️ Ctrl+Z: solicitando undo de eliminación")
-                    self._undo_delete(entities.buildings)
-                    # Emitir pulso para el tutorial
-                    try:
-                        setattr(self.editor, 'tutorial_undo_delete_pulse', True)
-                    except Exception:
-                        pass
-                    return
-
                 # Ctrl+S → guardar sin salir
                 if ev.key == pygame.K_s and (ev.mod & pygame.KMOD_CTRL):
                     logger.info("Ctrl+S: saving buildings")
