@@ -20,6 +20,8 @@ class WorldManager:
         self.npc_memory: Dict[str, dict] = {}
         # Estado persistente de inventario del jugador (serializado)
         self.player_inventory: Optional[dict] = None
+        # Snapshots de inventarios de NPCs por instance_id
+        self.npc_inventories: Optional[dict] = None
         # Ruta actual del archivo de guardado (slot). Si es None, usa config.save_path
         self.current_save_path: Optional[str] = None
         # Metadatos del guardado actual (nombre, timestamps, resumen)
@@ -53,6 +55,8 @@ class WorldManager:
         self.npc_memory = data.get("npcs", {})
         # Inventario del jugador (serializado)
         self.player_inventory = data.get("player_inventory")
+        # Inventarios de NPCs (snapshots por instance_id)
+        self.npc_inventories = data.get("npc_inventories")
         # Metadatos del guardado
         self.save_metadata = data.get("meta")
         # Niveles serializados
@@ -73,6 +77,13 @@ class WorldManager:
         Carga o construye el mapa indicado, descarga si es ndecesario
         y restaura estado de jugador/NPCs.
         """
+        # Log de inicio de carga de nivel
+        try:
+            logger.info(
+                f"[World] Cargando nivel: {level_name} (maps_cargados={len(self.maps)}, pendientes={len(self._pending_levels)})"
+            )
+        except Exception:
+            pass
         # Descargar exceso de niveles según max_loaded_levels
         self._enforce_level_limit()
 
@@ -94,6 +105,18 @@ class WorldManager:
         if last_pos is not None:
             mgr.spawn_player(last_pos)
         mgr.restore_npc_states(self.npc_memory)
+        # Log de fin de carga de nivel
+        try:
+            npc_for_level = 0
+            try:
+                npc_for_level = sum(1 for st in (self.npc_memory or {}).values() if st and st.get('level') == level_name)
+            except Exception:
+                npc_for_level = 0
+            logger.info(
+                f"[World] Nivel cargado: {level_name}, player_pos={last_pos}, npcs_en_estado={npc_for_level}"
+            )
+        except Exception:
+            pass
 
     def _enforce_level_limit(self):
         """
@@ -132,15 +155,36 @@ class WorldManager:
         # Inventario de jugador si disponible
         if getattr(self, 'player_inventory', None) is not None:
             state["player_inventory"] = self.player_inventory
+        # Inventarios de NPCs si disponibles
+        if getattr(self, 'npc_inventories', None) is not None:
+            state["npc_inventories"] = self.npc_inventories
         # Metadatos del guardado (si fueron preparados por ShutdownManager/Menu)
         if getattr(self, 'save_metadata', None) is not None:
             state["meta"] = self.save_metadata
         # Log informativo del guardado
         try:
-            logger.info(f"[World] Guardando mundo en {save_path} (niveles={len(self.maps)}, nivel_actual={self.current_level})")
+            levels_cnt = len(self.maps)
+            npc_cnt = len(self.npc_memory or {})
+            inv_cnt = len(self.npc_inventories or {})
+            player_pos = None
+            try:
+                player_pos = (state.get("player") or {}).get("pos")
+            except Exception:
+                player_pos = None
+            logger.info(
+                f"[World] Guardando mundo: path={save_path}, niveles={levels_cnt}, nivel_actual={self.current_level}, "
+                f"npcs={npc_cnt}, npc_inventarios={inv_cnt}, player_pos={player_pos}"
+            )
         except Exception:
             pass
         save_world_state(save_path, state)
+
+        # Log de tamaño de archivo resultante
+        try:
+            size = Path(save_path).stat().st_size
+            logger.info(f"[World] Guardado completado: bytes={size}")
+        except Exception:
+            pass
 
         # Actualizar autosave
         # En modo multi-slot no replicamos al archivo global por defecto
@@ -161,6 +205,12 @@ class WorldManager:
                     pass
             else:
                 raise FileNotFoundError("No hay slot de guardado activo para cargar.")
+        else:
+            # Log explícito si el path es provisto o ya existe en current_save_path
+            try:
+                logger.info(f"[World] Cargando mundo desde: {load_path}")
+            except Exception:
+                pass
         # Recordar slot activo si se pasa un path explícito
         self.current_save_path = load_path
         data = load_world_state(load_path)
@@ -175,6 +225,16 @@ class WorldManager:
         self.current_level = None
         # Aplicar nuevo estado
         self._apply_loaded_state(data)
+        # Resumen de carga
+        try:
+            levels_cnt = len(data.get("levels", {}))
+            npc_cnt = len(data.get("npcs", {}))
+            inv_cnt = len(data.get("npc_inventories", {}) or {})
+            logger.info(
+                f"[World] Carga completada: niveles={levels_cnt}, nivel_actual={self.current_level}, npcs={npc_cnt}, npc_inventarios={inv_cnt}"
+            )
+        except Exception:
+            pass
 
     def _load_pending_level(self, level_name: str):
         """

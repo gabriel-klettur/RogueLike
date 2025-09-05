@@ -26,6 +26,6 @@ El panel derecho gestiona la visualización y edición del inventario de la enti
 ## Persistencia
 
 - Los cambios se guardan en:
-  - `data/defaults/inventory_<categoria>.json` para plantillas.
-  - `data/inventory/inventory_<categoria>.json` para inventario activo.
+  - `data/inventory/defaults/inventory_<categoria>.json` para plantillas (defaults).
+  - `data/inventory/active/inventory_<categoria>.json` para inventario activo.
 - La acción **Save** persiste siempre la vista actual (default o active).

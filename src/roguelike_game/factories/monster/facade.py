@@ -16,10 +16,11 @@ class MonsterFactory(Factory):
 
     def create(self, world, *, x: int | None = None, y: int | None = None,
                tile_x: int | None = None, tile_y: int | None = None,
-               monster_type: str = DEFAULT_MONSTER) -> int:
+               monster_type: str = DEFAULT_MONSTER,
+               instance_id: str | None = None) -> int:
         # Calibrar si usan coords de tile
         if tile_x is not None and tile_y is not None:
             x, y = calibrate_tile_position(tile_x, tile_y, monster_type)
         if x is None or y is None:
             raise ValueError("Debe proveer x,y o tile_x,tile_y al crear el monstruo.")
-        return MonsterBuilder(world).build(x, y, monster_type)
+        return MonsterBuilder(world).build(x, y, monster_type, instance_id=instance_id)

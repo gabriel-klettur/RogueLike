@@ -2,6 +2,7 @@
   "neutrals": {
     "classes": {
       "vendor_wood_gatita": {
+        "default_name": "Gatita",        
         "stats": {
           "hp": 50,
           "speed": 0.8,

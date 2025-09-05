@@ -201,8 +201,39 @@ class InventoryInitSystem:
                 template = {}
             active_store = active_neutrals if is_neutral else active_monsters
 
+            # Preferir snapshot desde el save actual expuesto en ECSWorld.components
+            # a través de la clave 'NPCInventorySnapshot' (inyectada post-load).
+            try:
+                world_snapshots = comps.get('NPCInventorySnapshot', {}) or {}
+            except Exception:
+                world_snapshots = {}
             template_id = template.get('template_id')
-            if iid in active_store:
+            if iid in world_snapshots:
+                # Cargar inventario desde snapshot del save
+                saved = world_snapshots.get(iid, {}) or {}
+                try:
+                    file_tid = saved.get('template_id') or template_id
+                except Exception:
+                    file_tid = template_id
+                inv_comp = InventoryComponent(player_id=file_tid)
+                for slot in saved.get('slots', []) or []:
+                    if slot:
+                        try:
+                            qty = int(slot.get('quantity', 0))
+                        except Exception:
+                            qty = slot.get('quantity', 0)
+                        inv_comp.add(slot.get('item'), qty)
+                # Persistir inventario restaurado en activos para coherencia de runtime
+                active_store[iid] = {
+                    'template_id': file_tid,
+                    'slots': inv_comp.serialize().get('slots'),
+                    'schema_version': self.schema_version
+                }
+                if is_neutral:
+                    self.dirty_neutrals = True
+                else:
+                    self.dirty_monsters = True
+            elif iid in active_store:
                 # Cargar inventario activo existente
                 saved = active_store.get(iid, {})
                 inv_comp = InventoryComponent(player_id=saved.get('template_id', template_id))

@@ -35,7 +35,18 @@ class SpawnSystem:
         for req_eid, req in requests:
             # req.prototype: identificador del tipo de NPC a generar
             # req.position: tupla (x, y) de coordenadas donde spawnar
-            new_eid = get_factory("monster").create(world, tile_x=req.position[0], tile_y=req.position[1], monster_type=req.prototype)
+            # Respetar instance_id si el SpawnRequest lo aporta para persistencia
+            try:
+                inst_id = getattr(req, 'instance_id', None)
+            except Exception:
+                inst_id = None
+            new_eid = get_factory("monster").create(
+                world,
+                tile_x=req.position[0],
+                tile_y=req.position[1],
+                monster_type=req.prototype,
+                instance_id=inst_id,
+            )
             # Marcar para estabilización pos-spawn (evitar solapes iniciales sin jitter)
             world.components.setdefault('SpawnStabilizer', {})[new_eid] = SpawnStabilizer()
 

@@ -254,7 +254,13 @@ class GameInitializer:
         with open(logf, 'w') as pf:
             p = pstats.Stats(pr, stream=pf)
             p.sort_stats('tottime').print_stats(30)
-        
+        # Inyectar snapshot de inventarios de NPCs (si fue cargado desde el save)
+        try:
+            snap = getattr(g.world, 'npc_inventories', None) or {}
+            if snap:
+                g.ecs.ecs_world.components['NPCInventorySnapshot'] = dict(snap)
+        except Exception:
+            pass
 
     def _init_items(self):
         """Carga catálogo de ítems y assets de ítems para todo el juego"""

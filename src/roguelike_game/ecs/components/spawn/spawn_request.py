@@ -6,6 +6,8 @@ class SpawnRequest:
     """Componente que solicita creación de un NPC en una posición dada."""
     prototype: str
     position: Tuple[int, int]
+    # Si se provee, la entidad creada usará este instance_id persistente
+    instance_id: Optional[str] = None
     # Metadata opcional para rastrear oleadas
     spawner_eid: Optional[int] = None
     wave_idx: Optional[int] = None

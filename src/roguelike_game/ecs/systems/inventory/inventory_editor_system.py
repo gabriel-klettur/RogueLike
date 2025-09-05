@@ -19,10 +19,26 @@ class InventoryEditorSystem:
         self.selected_eid = None
         self.entities = []
         cwd = os.getcwd()
-        self.default_monster_path = os.path.join(cwd, 'data', 'defaults', 'inventory_monsters.json')
-        self.default_player_path = os.path.join(cwd, 'data', 'defaults', 'inventory_player.json')
+        # Unificar rutas: usar data/inventory/defaults en vez de data/defaults
+        self.default_monster_path = os.path.join(cwd, 'data', 'inventory', 'defaults', 'inventory_monsters.json')
+        self.default_player_path = os.path.join(cwd, 'data', 'inventory', 'defaults', 'inventory_player.json')
         self.active_monster_path = os.path.join(cwd, 'data', 'inventory', 'active', 'inventory_monsters.json')
         self.active_player_path = os.path.join(cwd, 'data', 'inventory', 'active', 'inventory_player.json')
+        # Asegurar que los archivos de defaults existan para evitar fallos en arranque sin defaults
+        try:
+            os.makedirs(os.path.dirname(self.default_monster_path), exist_ok=True)
+            if not os.path.exists(self.default_monster_path):
+                with open(self.default_monster_path, 'w', encoding='utf-8') as f:
+                    json.dump({}, f, ensure_ascii=False, indent=2)
+                logger.info(f"[InventoryEditor] Creado defaults de monstruos en: {self.default_monster_path}")
+            os.makedirs(os.path.dirname(self.default_player_path), exist_ok=True)
+            if not os.path.exists(self.default_player_path):
+                with open(self.default_player_path, 'w', encoding='utf-8') as f:
+                    json.dump({}, f, ensure_ascii=False, indent=2)
+                logger.info(f"[InventoryEditor] Creado defaults de player en: {self.default_player_path}")
+        except Exception:
+            # No bloquear el editor por permisos/rutas; se manejará al usar los archivos
+            pass
         # Load item models
         items_path = os.path.join(cwd, 'data', 'items', 'items.json')
         self.items = load_items(items_path)
@@ -215,6 +231,12 @@ class InventoryEditorSystem:
         }
         with open(self.default_player_path, 'w', encoding='utf-8') as f:
             json.dump(out, f, indent=2)
+        try:
+            total_slots = len(out.get('slots') or [])
+            non_empty = sum(1 for s in (out.get('slots') or []) if s)
+            logger.info(f"[InventoryEditor] Guardada plantilla por defecto: path={self.default_player_path}, slots={total_slots}, ocupados={non_empty}")
+        except Exception:
+            pass
 
     def _apply_changes(self, inv):
         try:
@@ -237,4 +259,10 @@ class InventoryEditorSystem:
         }
         with open(self.active_player_path, 'w', encoding='utf-8') as f:
             json.dump(d, f, indent=2)
+        try:
+            slots = d[key].get('slots') or []
+            non_empty = sum(1 for s in slots if s)
+            logger.info(f"[InventoryEditor] Aplicados cambios a inventario activo: path={self.active_player_path}, entity_id={key}, stacks={non_empty}")
+        except Exception:
+            pass
 

@@ -31,6 +31,7 @@ from roguelike_game.ecs.components.core.npc_tag import NPCTagComponent
 from roguelike_game.ecs.components.monster_instance_component import MonsterInstanceComponent
 from roguelike_game.ecs.components.chat.chat_component import ChatComponent
 from roguelike_game.ecs.components.chat.vendor_component import VendorComponent
+from roguelike_game.ecs.components.monster_archetype import MonsterArchetype
 
 
 class MonsterBuilder:
@@ -39,7 +40,7 @@ class MonsterBuilder:
     def __init__(self, world):
         self.world = world
 
-    def build(self, x: int, y: int, monster_type: str) -> int:
+    def build(self, x: int, y: int, monster_type: str, instance_id: str | None = None) -> int:
         world = self.world
 
         _load_caches_once()
@@ -80,11 +81,20 @@ class MonsterBuilder:
 
         # Health & Identity
         world.components["Health"][eid] = Health(cfg["hp"], cfg["hp"])
-        world.components["Identity"][eid] = Identity(id=eid, name=monster_type, title="", faction=getattr(Faction, cfg.get("faction"), None))
+        # Usar default_name si está disponible en el JSON; si no, usar el id de clase
+        display_name = cfg.get("default_name") or monster_type
+        world.components["Identity"][eid] = Identity(
+            id=eid,
+            name=str(display_name),
+            title="",
+            faction=getattr(Faction, cfg.get("faction"), None)
+        )
         # Etiqueta NPC para gestión de inventario
         world.components["NPCTagComponent"][eid] = NPCTagComponent()
         # Identificador único de instancia para persistencia de inventario
-        world.components["MonsterInstanceComponent"][eid] = MonsterInstanceComponent()
+        # Guardar tipo de arquetipo y respetar instance_id si se provee
+        world.components["MonsterInstanceComponent"][eid] = MonsterInstanceComponent(instance_id=instance_id)
+        world.components["MonsterArchetype"][eid] = MonsterArchetype(type=str(monster_type))
 
         # Chat & Vendor: si el JSON define chat_range (>0), añadimos ChatComponent.
         # Interpretamos chat_range como tiles y lo convertimos a píxeles (coordinado con Position/distancias en px).
