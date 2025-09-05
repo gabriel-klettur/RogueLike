@@ -52,6 +52,9 @@ from roguelike_editors.spells.services.particle_preview import (
     ParticlePreviewHealingAura,
     ParticlePreviewTeleport,
 )
+from roguelike_editors.spells.spells_tutorial_panel.spells_tutorial_panel_controller import (
+    SpellsTutorialPanelController,
+)
 
 logger = logging.getLogger(__name__)
 # Env-gated spelling editor preview debug
@@ -98,6 +101,11 @@ class SpellEditorController:
             self.spells_properties_controller.editor_controller = self
         except Exception:
             pass
+        # Tutorial panel controller (overlay)
+        try:
+            self.spells_tutorial = SpellsTutorialPanelController(self)
+        except Exception:
+            self.spells_tutorial = None
 
         # Provide callbacks
         def _get_assets_anchor_rect():
@@ -217,6 +225,13 @@ class SpellEditorController:
     def handle_event(self, event: pygame.event.Event) -> None:
         # Route to toolbar first, then add/remove, only if editor visible
         if self.model.visible:
+            # Tutorial overlay consumes clicks inside its panel and ESC while active
+            try:
+                if getattr(self, 'spells_tutorial', None) is not None and self.spells_tutorial.is_active():
+                    if self.spells_tutorial.handle_event(event):
+                        return
+            except Exception:
+                pass
             if self.spells_toolbar_controller.handle_event(event):
                 return
             if self.spells_add_remove_controller.handle_event(event):
@@ -277,6 +292,13 @@ class SpellEditorController:
                     now = pygame.time.get_ticks()
                     if (now // 500) % 2 == 0:
                         pygame.draw.rect(screen, (255, 255, 0), panel_rect.inflate(6, 6), 3)
+        except Exception:
+            pass
+
+        # Render tutorial overlay on top
+        try:
+            if getattr(self, 'spells_tutorial', None) is not None:
+                self.spells_tutorial.render(screen)
         except Exception:
             pass
 
