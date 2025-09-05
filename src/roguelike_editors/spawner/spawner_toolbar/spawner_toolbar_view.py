@@ -29,6 +29,7 @@ class SpawnerToolbarView:
             'undo': 'assets/ui/undo.png',
             'spawner_list': 'assets/ui/spawner_editor/spawner_list.png',
             'spawner_manager': 'assets/ui/spawner_editor/spawner_manager.png',
+            'tutorial_spawner': 'assets/ui/tutorials_button.png',
             'redo': 'assets/ui/redo.png',
         }
         icons = {}

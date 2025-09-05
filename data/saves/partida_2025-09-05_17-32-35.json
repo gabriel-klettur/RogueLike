@@ -10,8 +10,8 @@
     "df504d8e-022f-4d14-8b16-ae573c4555fa": {
       "level": "global_map",
       "tile": [
-        136,
-        57
+        145,
+        60
       ],
       "hp": 100,
       "dead": false,
@@ -21,7 +21,7 @@
       "level": "global_map",
       "tile": [
         115,
-        69
+        72
       ],
       "hp": 50,
       "dead": false,
@@ -38,8 +38,8 @@
         "df504d8e-022f-4d14-8b16-ae573c4555fa": {
           "level": "global_map",
           "tile": [
-            132,
-            56
+            141,
+            59
           ],
           "hp": 100,
           "dead": false,
@@ -49,7 +49,7 @@
           "level": "global_map",
           "tile": [
             115,
-            68
+            71
           ],
           "hp": 50,
           "dead": false,
@@ -107,7 +107,7 @@
   "meta": {
     "name": "partida_2025-09-05_17-32-35",
     "created_at": "2025-09-05T17:32:35",
-    "last_played": "2025-09-05T17:33:16",
+    "last_played": "2025-09-05T22:06:53",
     "player": {
       "xp": 0,
       "level": 0

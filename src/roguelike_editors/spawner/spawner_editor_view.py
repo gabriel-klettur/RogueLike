@@ -21,11 +21,25 @@ class SpawnerEditorView:
                 return
         except Exception:
             pass
+        # Reset last rects each frame
+        try:
+            self._last_title_rect = None
+            self._last_toolbar_rect = None
+            self._last_instance_toolbar_rect = None
+            self._last_manager_rect = None
+            self._last_instances_rect = None
+            self._last_properties_rect = None
+        except Exception:
+            pass
         # 1) Title bar (always renders with its own font)
         try:
             title_rect = c.title_controller.render(screen)
         except Exception:
             title_rect = None
+        try:
+            self._last_title_rect = title_rect
+        except Exception:
+            pass
         # 2) Spawner toolbar just below title
         tb_rect = None
         try:
@@ -36,6 +50,10 @@ class SpawnerEditorView:
                     anchor = (20, 60)
                 c.spawner_toolbar.render(screen, anchor=anchor)
                 tb_rect = getattr(getattr(c.spawner_toolbar, 'view', None), 'last_rect', None)
+        except Exception:
+            pass
+        try:
+            self._last_toolbar_rect = tb_rect
         except Exception:
             pass
         # 2b) Instance Toolbar to the RIGHT of main toolbar when Instances tool is active
@@ -50,6 +68,10 @@ class SpawnerEditorView:
                     anchor = (base_x, (title_rect.bottom + 8) if title_rect else 90)
                 c.instance_toolbar.render(screen, anchor=anchor)
                 inst_tb_rect = getattr(getattr(c.instance_toolbar, 'view', None), 'last_rect', None)
+        except Exception:
+            pass
+        try:
+            self._last_instance_toolbar_rect = inst_tb_rect
         except Exception:
             pass
         # 3) Spawner Manager (Templates list) to the RIGHT of toolbar/instance toolbar when active
@@ -69,6 +91,10 @@ class SpawnerEditorView:
                 mgr_rect = c.spawner_manager.render(screen, anchor=anchor)
         except Exception:
             pass
+        try:
+            self._last_manager_rect = mgr_rect
+        except Exception:
+            pass
         # 3b) Spawner Instances list (spawners_instances.json) when active, same placement
         inst_rect = None
         try:
@@ -86,6 +112,10 @@ class SpawnerEditorView:
                     inst_rect = c.spawner_instances.render(screen, anchor=anchor)
         except Exception:
             pass
+        try:
+            self._last_instances_rect = inst_rect
+        except Exception:
+            pass
         # 3c) Instance Properties panel to the RIGHT of Instances list when a selection exists
         try:
             ip = getattr(c, 'instance_properties', None)
@@ -99,7 +129,11 @@ class SpawnerEditorView:
                 else:
                     base_x = title_rect.left if title_rect else 20
                     anchor = (base_x + 420, (title_rect.bottom + 8) if title_rect else 90)
-                ip.render(screen, anchor=anchor)
+                props_rect = ip.render(screen, anchor=anchor)
+                try:
+                    self._last_properties_rect = props_rect
+                except Exception:
+                    pass
         except Exception:
             pass
         # 4) Hint overlay (only if editor font is available); place below title/toolbar/manager

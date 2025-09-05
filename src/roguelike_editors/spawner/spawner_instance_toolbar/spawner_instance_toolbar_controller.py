@@ -72,6 +72,12 @@ class SpawnerInstanceToolbarController:
             self.model.add_mode_active = new_state
         except Exception:
             pass
+        # Tutorial pulse when entering Add Mode
+        if new_state:
+            try:
+                setattr(self.editor_controller.model, 'tutorial_add_mode_on_pulse', True)
+            except Exception:
+                pass
         # Ensure remove mode is OFF when entering add mode
         if new_state:
             try:
@@ -115,6 +121,12 @@ class SpawnerInstanceToolbarController:
             self.model.remove_mode_active = new_state
         except Exception:
             pass
+        # Tutorial pulse when turning ON Remove Mode
+        if new_state:
+            try:
+                setattr(self.editor_controller.model, 'tutorial_remove_mode_on_pulse', True)
+            except Exception:
+                pass
         # Reflect to ECS world state for render systems
         try:
             world = getattr(getattr(self.editor_controller, 'game', None), 'ecs', None)
@@ -170,6 +182,11 @@ class SpawnerInstanceToolbarController:
                 self.model.add_templates = []
                 # Begin placement
                 self.editor_controller._begin_place_template(str(template_id))
+                # Tutorial pulse: template chosen
+                try:
+                    setattr(self.editor_controller.model, 'tutorial_template_selected_pulse', True)
+                except Exception:
+                    pass
         except Exception:
             pass
 
