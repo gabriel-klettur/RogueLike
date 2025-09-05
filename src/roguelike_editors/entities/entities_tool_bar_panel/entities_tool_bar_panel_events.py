@@ -26,18 +26,47 @@ class EntitiesToolBarPanelEventHandler:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             pos = event.pos
             icon_rects = self.controller.toolbar_view.widget.icon_rects
+            # Tutorial (toggle panel de tutorial)
+            rect = icon_rects.get('tutorial_entities')
+            if rect and rect.collidepoint(pos):
+                tutorial = getattr(self.controller, 'tutorial_controller', None)
+                if getattr(self.model, 'active_tool', None) == 'tutorial_entities':
+                    # Apagar tutorial
+                    self.model.active_tool = None
+                    try:
+                        if tutorial:
+                            tutorial.deactivate()
+                    except Exception:
+                        pass
+                else:
+                    # Encender tutorial
+                    self.model.active_tool = 'tutorial_entities'
+                    try:
+                        if tutorial:
+                            tutorial.activate()
+                    except Exception:
+                        pass
+                return True
             # Undo
             rect = icon_rects.get('undo')
             if rect and rect.collidepoint(pos):
                 # Ejecutar undo si hay disponible
                 if getattr(self.controller.history, 'undo', None):
-                    self.controller.history.undo()
+                    if self.controller.history.undo():
+                        try:
+                            setattr(self.controller.model, 'tutorial_undo_pulse', True)
+                        except Exception:
+                            pass
                 return True
             # Redo
             rect = icon_rects.get('redo')
             if rect and rect.collidepoint(pos):
                 if getattr(self.controller.history, 'redo', None):
-                    self.controller.history.redo()
+                    if self.controller.history.redo():
+                        try:
+                            setattr(self.controller.model, 'tutorial_redo_pulse', True)
+                        except Exception:
+                            pass
                 return True
             # Evaluar herramienta de mapa
             rect = icon_rects.get(ENTITIES_TOOL_ON_MAP)

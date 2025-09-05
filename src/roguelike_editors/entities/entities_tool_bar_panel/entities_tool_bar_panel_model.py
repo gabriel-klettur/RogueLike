@@ -11,6 +11,7 @@ class EntitiesToolBarPanelModel:
     def __init__(self):
         # Claves de botones disponibles en la toolbar
         self.tools = [
+            'tutorial_entities',
             ENTITIES_TOOL_ON_MAP,
             'undo',
             'redo',

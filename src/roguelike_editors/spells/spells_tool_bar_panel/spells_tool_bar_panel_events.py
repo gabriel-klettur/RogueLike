@@ -17,6 +17,25 @@ class SpellsToolBarPanelEventHandler:
             toolbar_view = getattr(self.controller, 'spells_toolbar_view', None)
             widget = getattr(toolbar_view, 'widget', None)
             icon_rects = getattr(widget, 'icon_rects', {}) if widget else {}
+            # Tutorial (toggle)
+            rect = icon_rects.get('tutorial_spells')
+            if rect and rect.collidepoint(pos):
+                tutorial = getattr(self.controller, 'spells_tutorial', None)
+                if getattr(self.model, 'active_tool', None) == 'tutorial_spells':
+                    self.model.active_tool = None
+                    try:
+                        if tutorial:
+                            tutorial.deactivate()
+                    except Exception:
+                        pass
+                else:
+                    self.model.active_tool = 'tutorial_spells'
+                    try:
+                        if tutorial:
+                            tutorial.activate()
+                    except Exception:
+                        pass
+                return True
             # Undo (placeholder)
             rect = icon_rects.get('undo')
             if rect and rect.collidepoint(pos):

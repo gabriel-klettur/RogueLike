@@ -25,6 +25,7 @@ from roguelike_editors.entities.entities_add_remove_panel.entities_add_remove_pa
 from roguelike_editors.entities.entities_add_remove_panel.entities_add_remove_panel_events import EntitiesAddRemovePanelEventHandler
 from roguelike_editors.entities.entities_picker_panel.entities_picker_panel_controller import EntityPickerPanelController
 from roguelike_editors.entities.entities_properties_panel.entities_properties_panel_controller import EntityPropertiesPanelController
+from roguelike_editors.entities.entities_tutorial_panel.entities_tutorial_panel_controller import EntitiesTutorialPanelController
 
 class EntitiesEditorController:
     """
@@ -68,6 +69,8 @@ class EntitiesEditorController:
         # Vista (separa render)
         from roguelike_editors.entities.entities_editor_view import EntitiesEditorView
         self.view = EntitiesEditorView(self)
+        # Tutorial panel controller
+        self.tutorial_controller = EntitiesTutorialPanelController(self)
 
     def open_new_monster_properties(self) -> None:
         """
@@ -264,15 +267,29 @@ class EntitiesEditorController:
             if mods & pygame.KMOD_CTRL and event.key == pygame.K_z:
                 if self.history.undo():
                     logger.debug(" Undo executed")
+                    try:
+                        setattr(self.model, 'tutorial_undo_pulse', True)
+                    except Exception:
+                        pass
                 return True
             if mods & pygame.KMOD_CTRL and (event.key == pygame.K_y or (mods & pygame.KMOD_SHIFT and event.key == pygame.K_z)):
                 if self.history.redo():
                     logger.debug(" Redo executed")
+                    try:
+                        setattr(self.model, 'tutorial_redo_pulse', True)
+                    except Exception:
+                        pass
                 return True
         if self.title_controller.handle_event(event):
             return True
         if self.toolbar_controller.handle_event(event):
             return True
+        # Tutorial panel events (consume clicks dentro del panel y ESC para cerrar)
+        try:
+            if self.tutorial_controller.handle_event(event):
+                return True
+        except Exception:
+            pass
         active = self.model.toolbar_model.active_tool
         if active in ENTITIES_TOOLS:
             # Add/Remove panel
@@ -319,6 +336,10 @@ class EntitiesEditorController:
                     self.picker_controller.model.selection_blink = True
                     # Cambiar cursor a crosshair
                     pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_CROSSHAIR)
+                    try:
+                        setattr(self.model, 'tutorial_spawn_selection_pulse', True)
+                    except Exception:
+                        pass
                     return True
             # Si el ratón está sobre el panel de picker, consumir el evento y no propagar al mapa
             if hasattr(event, 'pos') and self.picker_controller.model.visible:
@@ -337,6 +358,10 @@ class EntitiesEditorController:
                     # Push undoable delete command
                     self.history.push(DeleteEntityCommand(self, eid))
                     logger.debug(f" Entity {eid} delete command queued via click at ({mx},{my})")
+                    try:
+                        setattr(self.model, 'tutorial_entity_deleted_pulse', True)
+                    except Exception:
+                        pass
                     self.exit_delete_mode()
                     return True
             # Completando spawn: click en mapa finaliza spawn_mode
@@ -348,6 +373,10 @@ class EntitiesEditorController:
                 self.history.push(SpawnEntityCommand(self, etype, tx, ty))
                 logger.debug(f" Spawn command for '{etype}' at tile ({tx},{ty}) queued")
                 self.exit_spawn_mode()
+                try:
+                    setattr(self.model, 'tutorial_entity_spawned_pulse', True)
+                except Exception:
+                    pass
                 return True
         return False
 
@@ -363,3 +392,8 @@ class EntitiesEditorController:
         Delegar render a la vista especializada.
         """
         self.view.render(screen)
+        # Renderizar tutorial por encima
+        try:
+            self.tutorial_controller.render(screen)
+        except Exception:
+            pass

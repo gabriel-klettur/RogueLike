@@ -18,6 +18,7 @@ class SpellsToolBarPanelView:
         self.size = 64
         self.padding = 8
         icon_paths = {
+            'tutorial_spells': 'assets/ui/tutorials_button.png',
             'spells_on_map': 'assets/ui/spells_on_map_icon.png',
             'undo': 'assets/ui/undo.png',
             'redo': 'assets/ui/redo.png',
