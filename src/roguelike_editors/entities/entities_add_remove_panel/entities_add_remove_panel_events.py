@@ -108,6 +108,11 @@ class EntitiesAddRemovePanelEventHandler:
                                     pp_model.add_system_entity_type = 'Hostile'
                                     # Activar layout expandido y ocultar picker
                                     self.controller.enter_add_entities_on_system_mode()
+                                    # Pulso de tutorial para modo Add on System
+                                    try:
+                                        setattr(self.controller.model, 'tutorial_add_system_mode_pulse', True)
+                                    except Exception:
+                                        pass
                                 except Exception as e:
                                     logger.error(f" Error opening new monster properties: {e}")
                         return True
