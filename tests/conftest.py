@@ -52,3 +52,14 @@ def ensure_pygame_initialized():
         except pygame.error:
             # Some environments may still fail; tests that don't render fonts won't depend on it
             pass
+
+
+# Avoid filesystem writes from tile overlay saving in tests
+@pytest.fixture(autouse=True)
+def patch_overlay_save_layers(monkeypatch):
+    try:
+        import roguelike_engine.map.model.overlay.overlay_manager as om
+        monkeypatch.setattr(om, "save_layers", lambda *a, **k: None, raising=False)
+    except Exception:
+        # If the module cannot be imported in the current test, ignore
+        pass

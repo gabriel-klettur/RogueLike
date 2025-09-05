@@ -256,6 +256,22 @@ class BuildingEditorEventHandler:
 
                     return
 
+                # Ctrl+Z → Undo delete (restaurar edificio)
+                if ev.key == pygame.K_z and (ev.mod & pygame.KMOD_CTRL):
+                    self._undo_delete(entities.buildings)
+                    return
+
+                # R → iniciar resize SOLO sobre active_building (no en modo colliders)
+                if ev.key == pygame.K_r and not getattr(self.editor, 'colliders_mode', False):
+                    ab = getattr(self.editor, 'active_building', None)
+                    if ab is not None:
+                        try:
+                            mouse_pos = pygame.mouse.get_pos()
+                        except Exception:
+                            mouse_pos = (0, 0)
+                        self.controller._start_resize(ab, mouse_pos)
+                    return
+
                 # N → colocar edificio aleatorio sin picker
                 if ev.key == pygame.K_n and not getattr(self.editor, 'colliders_mode', False):
                     self.controller.placer_tool.place_building_at_mouse(entities.buildings)
@@ -274,6 +290,16 @@ class BuildingEditorEventHandler:
                         try:
                             setattr(self.editor, 'tutorial_deleted_pulse', True)
                         except Exception:
+                            pass
+                    return
+                # D → reset SOLO sobre active_building (no en modo colliders)
+                if ev.key == pygame.K_d and not getattr(self.editor, 'colliders_mode', False):
+                    ab = getattr(self.editor, 'active_building', None)
+                    if ab is not None:
+                        try:
+                            self.controller.default_tool.apply_reset(ab)
+                        except Exception:
+                            # No romper flujo del editor si la herramienta falla
                             pass
                     return
             # --- Mouse en modo editor (handles y split) ---

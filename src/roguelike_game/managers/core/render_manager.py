@@ -301,7 +301,7 @@ class RendererManager:
             visible = self.map_editor.editor_state.visible_layers
             # Invalidate cache and log only on visibility change
             if visible != self._last_map_visible_layers:
-                self.map.view.invalidate_cache()
+                map.view.invalidate_cache()
                 self._last_map_visible_layers = visible.copy()
                 try:
                     logger = logging.getLogger(__name__)
@@ -313,7 +313,7 @@ class RendererManager:
             filtered = {layer: tiles for layer, tiles in orig.items() if visible.get(layer, True)}
             map.tiles_by_layer = filtered
             try:
-                dirty_rects = self.map.view.render(screen, camera, map)
+                dirty_rects = map.view.render(screen, camera, map)
             finally:
                 map.tiles_by_layer = orig
             self._dirty_rects.extend(dirty_rects)
@@ -324,7 +324,8 @@ class RendererManager:
             and self.tiles_editor.editor_state.toolbar_state.show_collisions
             and not self.tiles_editor.editor_state.toolbar_state.show_collisions_overlay
         )
-        if co_mode and co_mode != self._last_collision_only:
+        last_co = getattr(self, '_last_collision_only', None)
+        if co_mode and co_mode != last_co:
             try:
                 logging.getLogger(__name__).debug("[Render] Collision-only mode active -> skipping tile layers")
             except Exception:
@@ -340,7 +341,7 @@ class RendererManager:
             visible = editor_state.toolbar_state.visible_layers
             # Only invalidate cache on visibility change
             if visible != self._last_visible_layers:
-                self.map.view.invalidate_cache()
+                map.view.invalidate_cache()
                 self._last_visible_layers = visible.copy()
                 try:
                     logger = logging.getLogger(__name__)
@@ -360,13 +361,13 @@ class RendererManager:
             orig_layers = map.layers
             filtered_layers = {layer: orig_layers[layer] for layer in orig_layers if visible.get(layer, True)}
             map.layers = filtered_layers
-            dirty_rects = self.map.view.render(screen, camera, map)
+            dirty_rects = map.view.render(screen, camera, map)
             map.layers = orig_layers
         else:
-            dirty_rects = self.map.view.render(screen, camera, map)
+            dirty_rects = map.view.render(screen, camera, map)
         self._dirty_rects.extend(dirty_rects)
         # Update collision-only toggle state when not in collision-only mode
-        if self._last_collision_only != co_mode:
+        if getattr(self, '_last_collision_only', None) != co_mode:
             self._last_collision_only = co_mode
         # Overlay collision grid in overlay mode
         if self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.toolbar_state.show_collisions_overlay:
