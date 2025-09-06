@@ -1,6 +1,6 @@
 import pygame
 import time
-from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
+from roguelike_game.ecs.systems.fsm.states.unconscious_state import UnconsciousState
 from roguelike_engine.utils.benchmark import benchmark
 
 """
@@ -53,10 +53,11 @@ class DeathTimerDebugSystem:
         dt_store = world.components.get('DeathTimer', {})
 
         for eid, dt in dt_store.items():
-            # Sólo renderizar para entidades en Estado de Muerte
+            # Sólo renderizar para entidades en estado de Inconsciencia (cadáver en suelo)
             state_comp = world.components.get('NPCState', {}).get(eid)
-            if not state_comp or not isinstance(state_comp.fsm.current_state, DeathState):
+            if not state_comp or not isinstance(state_comp.fsm.current_state, UnconsciousState):
                 continue
+
             # Tiempo restante en segundos (entero)
             remaining = int(dt.duration - (now - dt.start_time))
             if remaining <= 0:

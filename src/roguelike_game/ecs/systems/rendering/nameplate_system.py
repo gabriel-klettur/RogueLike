@@ -5,6 +5,7 @@ from roguelike_game.ecs.components.transform.scale import Scale
 import roguelike_engine.config.config as config
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.factories.monster.config import MONSTER_DEFS
+from roguelike_game.ecs.systems.fsm.states.unconscious_state import UnconsciousState
 
 class NamePlateSystem:
     """
@@ -120,6 +121,27 @@ class NamePlateSystem:
                 # 11) Posicionar título justo encima del nombre
                 title_rect.bottom = name_rect.top - 1
                 screen.blit(title_surf, title_rect)
+
+            # 12) Mostrar estado '(Inconsciente)' por encima de título o nombre si aplica
+            npc_state = comps.get('NPCState', {}).get(eid)
+            is_unconscious = bool(npc_state and isinstance(npc_state.fsm.current_state, UnconsciousState))
+            if is_unconscious:
+                status_text = "(Inconsciente)"
+                status_key = (status_text, color, outline_color, outline_w, bg_rgba, self.title_font.get_height())
+                if status_key not in self.title_cache:
+                    self.title_cache[status_key] = self._render_label_surface(
+                        self.title_font, status_text, color, outline_color, outline_w, bg_rgba
+                    )
+                status_surf = self.title_cache[status_key]
+                status_rect = status_surf.get_rect()
+                # Alinear con el nombre
+                status_rect.centerx = name_rect.centerx
+                # Colocar por encima del elemento más alto (título si existe, si no el nombre)
+                top_anchor = name_rect.top
+                if 'title_rect' in locals():
+                    top_anchor = min(top_anchor, title_rect.top)
+                status_rect.bottom = top_anchor - 1
+                screen.blit(status_surf, status_rect)
 
     def _render_label_surface(self, font: pygame.font.Font, text: str,
                                fg: tuple[int, int, int],

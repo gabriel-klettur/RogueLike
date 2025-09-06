@@ -15,6 +15,7 @@ from roguelike_game.ecs.systems.fsm.states.idle_state import IdleState
 from roguelike_game.ecs.systems.fsm.states.player.move_state import MoveState
 from roguelike_game.ecs.systems.fsm.states.player.player_attack_state import PlayerAttackState
 from roguelike_game.ecs.systems.fsm.states.player.player_spell_select_state import PlayerSpellSelectState
+from roguelike_game.ecs.systems.fsm.states.unconscious_state import UnconsciousState
 from roguelike_game.ecs.systems.fsm.fsm_system import _EntityProxy
 from roguelike_game.config.input_config import InputConfig
 from roguelike_game.config.spells_config import reload_spells
@@ -227,6 +228,47 @@ class InputSystem:
         # Flag para mostrar todos los drops
         alt_down = bool(pygame.key.get_mods() & pygame.KMOD_ALT)
         for eid, inp in world.components.get('InputComponent', {}).items():
+            # 0) Si el jugador está inconsciente: bloquear completamente entradas y movimiento
+            if eid in world.components.get('PlayerTagComponent', {}):
+                state_comp = world.components.get('NPCState', {}).get(eid)
+                if state_comp and isinstance(state_comp.fsm.current_state, UnconsciousState):
+                    # Limpiar inputs actuales
+                    inp.click = False
+                    inp.move_x = 0
+                    inp.move_y = 0
+                    inp.attack = False
+                    inp.interact = False
+                    inp.show_all_drops = False
+                    # Desactivar hechizos
+                    for name in ['lightball','slash','healing_aura','darkball','iceball','lightning','arcane_flame','firework_launch','smoke','smoke_emitter','sphere_magic_shield','teleport']:
+                        setattr(inp, f'spell_{name}', False)
+                    # Bloquear toggles
+                    inp.toggle_editor = False
+                    inp.toggle_inventory = False
+                    # Zero velocity para no moverse
+                    vel = world.components.get('Velocity', {}).get(eid)
+                    if vel:
+                        vel.vx = 0
+                        vel.vy = 0
+                    # Cancelar acciones pendientes (hechizos/dash) del frame
+                    try:
+                        world.components.get('WantsToCastSpell', {}).pop(eid, None)
+                    except Exception:
+                        pass
+                    # Resetear memorias de flancos para no disparar al salir
+                    self.prev_click[eid] = False
+                    self.prev_right[eid] = False
+                    self.prev_toggle[eid] = False
+                    self.prev_toggle_inventory[eid] = False
+                    self.prev_interact[eid] = False
+                    for name in ['lightball','slash','healing_aura','darkball','iceball','lightning','arcane_flame','firework_launch','smoke','smoke_emitter','sphere_magic_shield','teleport']:
+                        self.prev_spell_keys[(eid, name)] = 0
+                    self.prev_attack[eid] = False
+                    for base in ('fireball','laser_beam','dash'):
+                        self.prev_action_slots[(eid, f'{base}_kb_a')] = False
+                        self.prev_action_slots[(eid, f'{base}_kb_b')] = False
+                    # Saltar procesamiento de esta entidad en este frame
+                    continue
             # Asignar flag show_all_drops
             inp.show_all_drops = alt_down
             # Movimiento en ejes X e Y (soporta múltiples teclas por acción)
