@@ -6,6 +6,8 @@ and target defense.
 """
 from roguelike_game.ecs.components.combat.combat_stats import CombatStats
 from roguelike_engine.utils.benchmark import benchmark
+from roguelike_game.ecs.components.combat.last_attacker import LastAttacker
+import time
  
 
 class MeleeCombatSystem:
@@ -18,7 +20,7 @@ class MeleeCombatSystem:
       3. Reduce los puntos de vida del objetivo.
       4. Elimina el componente WantsToMelee para limpiar el evento.      
     """
-
+ 
     def __init__(self, perf_log):
         self.perf_log = perf_log
     
@@ -44,6 +46,8 @@ class MeleeCombatSystem:
             
             # Aplicar daño al objetivo
             defender_stats.current_hp -= damage
+            # Registrar último atacante del objetivo
+            world.components.setdefault('LastAttacker', {})[intent.target] = LastAttacker(intent.attacker, time.time())
             
             # NPC recibe daño de jugador -> publicar evento OnHit y posible OnDeath
             if intent.attacker in world.components.get('PlayerTagComponent', {}):
@@ -57,6 +61,18 @@ class MeleeCombatSystem:
                 q.append({"type": "OnHit", "from_left": from_left})
                 if defender_stats.current_hp <= 0:
                     q.append({"type": "OnDeath"})
+                    # Evento de kill para combo basado en muertes
+                    combo_q = world.components.setdefault('ComboEventQueue', [])
+                    combo_q.append({'type': 'kill', 'entity': intent.attacker, 'target': target_eid})
+                    world.components.setdefault('ComboKillCounted', set()).add(target_eid)
+                # Publicar evento de COMBO para el atacante (jugador)
+                combo_q = world.components.setdefault('ComboEventQueue', [])
+                combo_q.append({
+                    'attacker': intent.attacker,
+                    'target': target_eid,
+                    'damage': float(damage),
+                    'source': 'melee'
+                })
             # Jugador recibe daño de NPC/u otro -> publicar evento OnHit y posible OnDeath
             elif intent.target in world.components.get('PlayerTagComponent', {}):
                 target_eid = intent.target
@@ -69,6 +85,9 @@ class MeleeCombatSystem:
                 q.append({"type": "OnHit", "from_left": from_left})
                 if defender_stats.current_hp <= 0:
                     q.append({"type": "OnDeath"})
+                # Romper combo del jugador al recibir daño
+                combo_q = world.components.setdefault('ComboEventQueue', [])
+                combo_q.append({'type': 'break', 'entity': target_eid})
             
             # (Opcional) Aquí podrías disparar efectos secundarios,
             # p.ej. animaciones, sonidos o eventos de muerte si HP ≤ 0

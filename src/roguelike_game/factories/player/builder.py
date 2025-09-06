@@ -32,6 +32,8 @@ from roguelike_game.ecs.systems.fsm.fsm import FiniteStateMachine
 from roguelike_editors.fsm.services.fsm_runtime_bridge import build_fsm_for_archetype
 from roguelike_game.config.spells_config import SPELLS
 from roguelike_game.ecs.components.abilities.dash_meter_component import DashMeterComponent
+from roguelike_game.ecs.components.abilities.combo_counter_component import ComboCounterComponent
+from roguelike_game.ecs.components.abilities.combo_rules_component import ComboRulesComponent
 
 
 class PlayerBuilder:
@@ -115,6 +117,20 @@ class PlayerBuilder:
             current=max(1, dash_total),
             recharge_s=float(dash_recharge_s),
             policy='sequential'
+        )
+        # Combo: contador y reglas por defecto
+        comps.setdefault("ComboCounterComponent", {})[eid] = ComboCounterComponent(
+            window_s=2.0,
+            same_target_cooldown_s=0.5,
+            min_window_s=0.3,
+            difficulty_increase_per_hit=0.05,
+            break_flash_duration_s=0.3,
+        )
+        comps.setdefault("ComboRulesComponent", {})[eid] = ComboRulesComponent(
+            allowed_sources={'melee': True, 'hitbox': True, 'fireball': True},
+            min_damage=1.0,
+            require_enemy=True,
+            require_unique_target=True,
         )
         # FSM (JSON-driven with fallback)
         built = None

@@ -108,6 +108,9 @@ class AttackState(State):
                     q.append({"type": "OnHit", "from_left": from_left})
                     if ph.current_hp <= 0:
                         q.append({"type": "OnDeath"})
+                    # Break player's combo upon taking damage
+                    combo_q = world.components.setdefault('ComboEventQueue', [])
+                    combo_q.append({'type': 'break', 'entity': world.player_entity})
                 except Exception:
                     pass
                 # reset cooldown

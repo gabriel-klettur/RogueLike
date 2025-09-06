@@ -61,6 +61,20 @@ class UnconsciousState(State):
             world.components.get('AnimationTimer', {}).pop(eid, None)
         # Bajar la capa Z del cadáver para que drops pasen por encima
         world.components.setdefault('ZLayer', {})[eid] = ZLayer(Z_LAYERS.get('low_object', 2))
+        # Atribuir KO al último atacante para el sistema de combos (si aplica)
+        try:
+            last_attacker = world.components.get('LastAttacker', {}).get(eid)
+            if last_attacker is not None:
+                attacker_eid = getattr(last_attacker, 'attacker_eid', None)
+                if attacker_eid in world.components.get('PlayerTagComponent', {}):
+                    counted = world.components.setdefault('ComboKillCounted', set())
+                    if eid not in counted:
+                        combo_q = world.components.setdefault('ComboEventQueue', [])
+                        combo_q.append({'type': 'kill', 'entity': attacker_eid, 'target': eid, 'time': float(time.time())})
+                        counted.add(eid)
+        except Exception:
+            # Nunca romper transición por contabilidad de combos
+            pass
 
     def execute(self, entity, dt):
         world = entity.world
