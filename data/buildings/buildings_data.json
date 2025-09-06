@@ -208,8 +208,8 @@
     },
     {
         "zone": "lobby",
-        "rel_x": 34,
-        "rel_y": 371,
+        "rel_x": 32,
+        "rel_y": 434,
         "assets": {
             "idle": "assets/buildings/gardens/garden_5.png"
         },
@@ -300,8 +300,8 @@
     },
     {
         "zone": "lobby",
-        "rel_x": 136,
-        "rel_y": 122,
+        "rel_x": 146,
+        "rel_y": 224,
         "assets": {
             "idle": "assets/buildings/shops/magic_tower.png"
         },

@@ -83,6 +83,8 @@ from roguelike_game.ecs.systems.chat.chat_ui_system import ChatUISystem
 from roguelike_game.ecs.systems.chat.vendor_trade_system import VendorTradeSystem
 from roguelike_game.ecs.systems.rendering.chat_proximity_render_system import ChatProximityRenderSystem
 from roguelike_game.ecs.systems.rendering.chat_bubble_render_system import ChatBubbleRenderSystem
+from roguelike_game.ecs.systems.abilities.dash_resource_system import DashResourceSystem
+from roguelike_game.ecs.systems.rendering.dash_bar_render_system import DashBarRenderSystem
 
 def get_update_system_classes():
     """
@@ -100,7 +102,7 @@ def get_update_system_classes():
         # Apply restored state (position/hp) once entities exist and are stabilized
         NpcRestoreSystem,
         # Player & input
-        PlayerFacingSystem, FacingSystem, DropDragSystem, InputSystem, ChatProximitySystem,
+        PlayerFacingSystem, FacingSystem, DropDragSystem, InputSystem, ChatProximitySystem, DashResourceSystem,
         MovementCollisionSystem,
         # Combat & spells
         MeleeCombatSystem, SpellCastingSystem, ArcaneFlameSystem, SmokeSystem, SmokeEmitterSystem, SphereMagicShieldSystem, TeleportSystem, FireworkLaunchSystem, AuraSystem, ParticleSystem, ExplosionSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, LightningEmitterSystem, FireballSystem, LightningSystem, DashSystem, HitboxSystem, BuildingDamageSystem,
@@ -118,7 +120,7 @@ def get_render_system_classes():
     Se añade dinámicamente SpawnDebug y DeathTimerDebug si estamos en DEBUG.
     """
     base = [
-        HealthBarSystem, NamePlateSystem, ChatBubbleRenderSystem, ExperienceRenderSystem, MagicSpellBarRenderSystem,
+        HealthBarSystem, DashBarRenderSystem, NamePlateSystem, ChatBubbleRenderSystem, ExperienceRenderSystem, MagicSpellBarRenderSystem,
         FireballRenderSystem, ArcaneFlameRenderSystem, FireworkLaunchRenderSystem, SmokeRenderSystem, SmokeEmitterRenderSystem, SphereMagicShieldRenderSystem, TeleportRenderSystem, ParticleRenderSystem, LightningRenderSystem,
         DeathTimerBarSystem,
         # DropRenderSystem removed: drops rendered via RenderSystem

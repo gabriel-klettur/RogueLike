@@ -24,6 +24,8 @@ def create_empty_component_store():
         'ChatComponent': {}, 'VendorComponent': {},
         'TempZLayer': {},
         'FlashComponent': {}, 'TrailComponent': {}, 'GrayscaleComponent': {},
+        # Abilities / Resources
+        'DashMeterComponent': {},
         # Spawner components
         'SpawnerConfig': {}, 'SpawnerState': {},
         # Buildings
