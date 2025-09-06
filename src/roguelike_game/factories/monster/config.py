@@ -47,7 +47,9 @@ MONSTER_ASSETS: Dict[str, Any] = {class_name: class_cfg.get("assets", {}) for cl
 
 # Defaults from file (no hardcoded constants here)
 MONSTER_DEFAULTS: Dict[str, Any] = {
-    "death_dissapear_time": _monster_cfg.get("DEFAULT_DEATH_DISSAPEAR_TIME")
+    "death_dissapear_time": _monster_cfg.get("DEFAULT_DEATH_DISSAPEAR_TIME"),
+    # Probabilidad por defecto de quedarse quieto al recibir daño
+    "damage_stop_probability": _monster_cfg.get("DEFAULT_DAMAGE_STOP_PROBABILITY", 0.25),
 }
 
 # Dynamic reload of monster definitions
@@ -95,5 +97,6 @@ def reload_monster_defs() -> None:
     MONSTER_ASSETS.update({class_name: class_cfg.get("assets", {}) for class_name, class_cfg in _raw_classes.items()})
     MONSTER_DEFAULTS.clear()
     MONSTER_DEFAULTS.update({
-        "death_dissapear_time": monster_cfg.get("DEFAULT_DEATH_DISSAPEAR_TIME")
+        "death_dissapear_time": monster_cfg.get("DEFAULT_DEATH_DISSAPEAR_TIME"),
+        "damage_stop_probability": monster_cfg.get("DEFAULT_DAMAGE_STOP_PROBABILITY", 0.25),
     })

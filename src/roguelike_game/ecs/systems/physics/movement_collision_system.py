@@ -196,6 +196,9 @@ class MovementCollisionSystem:
 
         # 2) Iterar sobre entidades que puedan moverse y colisionar
         for eid in world.get_entities_with('Position', 'Velocity', 'MultiCollider'):
+            # No mover entidades que están en proceso de muerte (cadáveres)
+            if eid in comps.get('DeathTimer', {}):
+                continue
             pos   = pos_map[eid]
             vel   = vel_map[eid]
             multi = multi_map[eid]

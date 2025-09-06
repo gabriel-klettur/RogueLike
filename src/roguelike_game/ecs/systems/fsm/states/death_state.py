@@ -3,6 +3,7 @@ from roguelike_game.ecs.components.combat.death_timer import DeathTimer
 from roguelike_game.ecs.components.rendering.grayscale_component import GrayscaleComponent
 from roguelike_game.ecs.components.transform.z_layer import ZLayer
 from roguelike_engine.config.config_z_layer import Z_LAYERS
+from roguelike_game.ecs.components.transform.velocity import Velocity
 
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
@@ -44,10 +45,27 @@ class DeathState(State):
                 duration = MONSTER_DEFAULTS.get('death_dissapear_time')
         logger.debug(f"[DeathState.enter] eid={eid} death_timer_duration={duration}")
         world.components['DeathTimer'][eid] = DeathTimer(time.time(), duration)
+        # Asegurar que no quede parpadeo activo: eliminar FlashComponent si existe
+        world.components.get('FlashComponent', {}).pop(eid, None)
+        # Anular cualquier movimiento residual
+        vel_map = world.components.get('Velocity', {})
+        if eid in vel_map:
+            try:
+                vel_map[eid].vx = 0
+                vel_map[eid].vy = 0
+            except Exception:
+                world.components.setdefault('Velocity', {})[eid] = Velocity(0, 0)
+        else:
+            world.components.setdefault('Velocity', {})[eid] = Velocity(0, 0)
         # Cambiar el sprite al de muerte para ocultar el sprite anterior
         sprite = world.components.get('Sprite', {}).get(eid)
         if sprite and hasattr(sprite, 'death_image'):
-            sprite.image = sprite.death_image
+            # Usar una copia para no mutar el surface base accidentalmente
+            death_img = sprite.death_image
+            try:
+                sprite.image = death_img.copy()
+            except Exception:
+                sprite.image = death_img
             # Deshabilitar animación para no sobreescribir el sprite de muerte
             world.components.get('Animator', {}).pop(eid, None)
             world.components.get('AnimationTimer', {}).pop(eid, None)

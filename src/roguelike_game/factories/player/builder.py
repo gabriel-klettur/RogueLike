@@ -4,7 +4,7 @@ Builder para crear la entidad jugador usando coordenadas en píxeles.
 import time
 import pygame
 from roguelike_game.factories.player.loader import load_and_scale_sprites, extract_initial_frame, build_animator_map, build_masks_map
-from roguelike_game.factories.player.config import DEFAULT_CLASS, ANIMATION_INTERVAL, INITIAL_ANIMATION_STATE, PLAYER_STATS, MELEE_WEAPON_CFG, DEFAULT_TRAIL, DEFAULT_DAMAGE_DURATION
+from roguelike_game.factories.player.config import DEFAULT_CLASS, ANIMATION_INTERVAL, INITIAL_ANIMATION_STATE, PLAYER_STATS, MELEE_WEAPON_CFG, DEFAULT_TRAIL, DEFAULT_DAMAGE_DURATION, DEFAULT_DAMAGE_STOP_PROBABILITY
 from roguelike_game.factories.player.collider import create_body_and_feet
 from roguelike_engine.config.config_z_layer import Z_LAYERS
 from roguelike_engine.config.config_tiles import TILE_SIZE
@@ -79,7 +79,8 @@ class PlayerBuilder:
         comps["Health"][eid] = Health(max_hp, max_hp)
         # Daño configurable (duración del estado Damage) desde JSON
         dmg_duration = PLAYER_STATS[class_player].get("damage_duration", DEFAULT_DAMAGE_DURATION)
-        comps["DamageConfig"][eid] = DamageConfig(float(dmg_duration))
+        stop_prob = float(PLAYER_STATS[class_player].get("damage_stop_probability", DEFAULT_DAMAGE_STOP_PROBABILITY))
+        comps["DamageConfig"][eid] = DamageConfig(float(dmg_duration), stop_probability=stop_prob)
         comps["CombatStats"][eid] = CombatStats(current_hp=max_hp, max_hp=max_hp,
                                                 power=PLAYER_STATS[class_player]["basic_attack"],
                                                 defense=PLAYER_STATS[class_player]["basic_armor"])

@@ -8,6 +8,8 @@ from roguelike_game.ecs.systems.fsm.states.attack_state import AttackState
 from roguelike_game.ecs.systems.fsm.states.damage_state import DamageState
 from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
 import time
+import random
+from roguelike_game.ecs.components.rendering.flash_component import FlashComponent
 
 # Wrapper para pasar entidad con acceso a world e id como key en componentes
 class _EntityProxy:
@@ -50,6 +52,14 @@ class FSMSystem:
             etype = ev.get('type')
             if etype == 'OnHit':
                 from_left = bool(ev.get('from_left', False))
+                # Política: probabilidad configurable de detenerse (stun) al recibir daño.
+                dmg_cfg = world.components.get('DamageConfig', {}).get(eid)
+                stop_prob = float(getattr(dmg_cfg, 'stop_probability', 0.25))
+                duration = float(getattr(dmg_cfg, 'duration', 0.25))
+                # Si NO cae en la probabilidad de stun, solo aplicar flash y continuar sin cambiar de estado.
+                if random.random() >= stop_prob:
+                    world.components.setdefault('FlashComponent', {})[eid] = FlashComponent((255, 255, 255), duration)
+                    continue
                 # Política de siguiente estado tras Damage
                 current = fsm.current_state
                 if isinstance(current, AttackState):
