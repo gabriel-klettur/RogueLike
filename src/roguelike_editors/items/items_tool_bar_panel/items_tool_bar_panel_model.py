@@ -13,6 +13,7 @@ class ItemsToolBarPanelModel:
             'items_on_map',  # botón principal que abre el sub-toolbar
             'undo',            
             'redo',
+            'tutorial_items',
         ]
         # Herramienta activa
         self.active_tool = None

@@ -39,6 +39,7 @@ class ItemsToolBarPanelView:
             'items_on_map': 'assets/ui/items_on_map_icon.png',
             'undo': 'assets/ui/undo.png',
             'redo': 'assets/ui/redo.png',
+            'tutorial_items': 'assets/ui/tutorials_button.png',
         }
         self.icons = {}
         for tool in self.model.tools:

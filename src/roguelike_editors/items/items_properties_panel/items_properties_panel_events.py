@@ -168,6 +168,13 @@ class ItemsPropertiesPanelEventHandler:
                         self.model.editing_text = initial
                         self.model.editing_cursor = len(initial)
                         self.text_input.activate(initial)
+                        # Tutorial pulse: edit started
+                        try:
+                            editor = getattr(self.controller, 'editor_controller', None)
+                            if editor is not None:
+                                setattr(editor.model, 'tutorial_edit_started_pulse', True)
+                        except Exception:
+                            pass
                     else:
                         self.model.focused_property = key
                         # Actualizar hovered también para feedback inmediato
