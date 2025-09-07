@@ -170,6 +170,8 @@ class SpawnerPlacementSystem:
         defend_leash = bool(tpl.get("defend_leash", True))
         visible_in_game = bool(tpl.get("visible_in_game", False))
         building_id = tpl.get("building_id")
+        # Optional visuals mapping by FSM state id -> building_id
+        state_visuals: Dict[str, int] = {}
         # waves can be external by id, inline list, or a bad string to parse
         waves_id = tpl.get("waves_id")
         raw_waves = tpl.get("waves", [])
@@ -201,6 +203,22 @@ class SpawnerPlacementSystem:
         spawner_type = tpl.get("spawner_type", "invisible")
 
         # apply overrides in dot-notation
+        # Instance-level visuals block (full dict)
+        try:
+            ivis = inst.get("visuals")
+            if isinstance(ivis, dict):
+                for sk, sv in ivis.items():
+                    try:
+                        state_visuals[str(sk)] = int(sv) if sv is not None else sv
+                    except Exception:
+                        # keep as-is if not int-castable
+                        try:
+                            state_visuals[str(sk)] = sv  # type: ignore
+                        except Exception:
+                            pass
+        except Exception:
+            pass
+
         for key, value in inst.get("overrides", {}).items():
             if key.startswith("trigger."):
                 trigger[key.split(".", 1)[1]] = value
@@ -223,6 +241,20 @@ class SpawnerPlacementSystem:
                     building_id = int(value) if value is not None else None
                 except Exception:
                     building_id = value
+            elif key.startswith("visuals."):
+                # Dot-notation: visuals.StateId -> building_id
+                try:
+                    st_id = key.split(".", 1)[1]
+                except Exception:
+                    st_id = None
+                if st_id:
+                    try:
+                        state_visuals[str(st_id)] = int(value) if value is not None else value  # type: ignore
+                    except Exception:
+                        try:
+                            state_visuals[str(st_id)] = value  # type: ignore
+                        except Exception:
+                            pass
 
         # Allow instance root-level building_id to override as well
         try:
@@ -230,6 +262,22 @@ class SpawnerPlacementSystem:
                 building_id = int(inst.get("building_id"))
         except Exception:
             building_id = inst.get("building_id", building_id)
+
+        # Template-level visuals block
+        try:
+            tv = tpl.get("visuals")
+            if isinstance(tv, dict):
+                for sk, sv in tv.items():
+                    if str(sk) not in state_visuals:
+                        try:
+                            state_visuals[str(sk)] = int(sv) if sv is not None else sv
+                        except Exception:
+                            try:
+                                state_visuals[str(sk)] = sv  # type: ignore
+                            except Exception:
+                                pass
+        except Exception:
+            pass
 
         # derive cooldown in frames (60 FPS default)
         fps = getattr(config, "FPS", 60)
@@ -265,6 +313,7 @@ class SpawnerPlacementSystem:
             defend_leash=defend_leash,
             visible_in_game=visible_in_game,
             building_id=building_id,
+            state_visuals=state_visuals or None,
         )
 
     def update(self, world, camera=None):

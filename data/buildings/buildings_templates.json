@@ -96,7 +96,7 @@
             "idle": "assets/buildings/vegetation/tree_10.png"
         },
         "solid": true,
-        "split_ratio": 0.585,
+        "split_ratio": 0.698,
         "collider_scope": "CG",
         "original_scale": [
             251,
@@ -239,11 +239,11 @@
             "idle": "assets/buildings/shops/jewlery_shop.png"
         },
         "solid": true,
-        "split_ratio": 0.632,
+        "split_ratio": 0.618,
         "collider_scope": "CG",
         "original_scale": [
-            1000,
-            1000
+            325,
+            325
         ]
     },
     {
@@ -291,11 +291,11 @@
             "idle": "assets/buildings/gardens/garden_4.png"
         },
         "solid": true,
-        "split_ratio": 0.079,
+        "split_ratio": 0.057,
         "collider_scope": "CG",
         "original_scale": [
-            1024,
-            1024
+            528,
+            528
         ]
     },
     {
@@ -304,11 +304,11 @@
             "idle": "assets/buildings/houses/orden_house_2.png"
         },
         "solid": true,
-        "split_ratio": 0.718,
+        "split_ratio": 0.816,
         "collider_scope": "CG",
         "original_scale": [
-            1024,
-            1024
+            391,
+            391
         ]
     },
     {
@@ -733,19 +733,6 @@
             "idle": "assets/buildings/vegetation/tree_10.png"
         },
         "solid": true,
-        "split_ratio": 0.698,
-        "collider_scope": "CG",
-        "original_scale": [
-            251,
-            324
-        ]
-    },
-    {
-        "id": 58,
-        "assets": {
-            "idle": "assets/buildings/vegetation/tree_10.png"
-        },
-        "solid": true,
         "split_ratio": 0.68,
         "collider_scope": "CG",
         "original_scale": [
@@ -754,7 +741,7 @@
         ]
     },
     {
-        "id": 59,
+        "id": 58,
         "assets": {
             "idle": "assets/buildings/vegetation/tree_1.png"
         },
@@ -767,7 +754,7 @@
         ]
     },
     {
-        "id": 60,
+        "id": 59,
         "assets": {
             "idle": "assets/buildings/vegetation/tree_1.png"
         },
@@ -780,7 +767,7 @@
         ]
     },
     {
-        "id": 61,
+        "id": 60,
         "assets": {
             "idle": "assets/buildings/vegetation/tree_10.png"
         },
@@ -793,7 +780,7 @@
         ]
     },
     {
-        "id": 62,
+        "id": 61,
         "assets": {
             "idle": "assets/buildings/vegetation/tree_3.png"
         },
@@ -806,7 +793,7 @@
         ]
     },
     {
-        "id": 63,
+        "id": 62,
         "assets": {
             "idle": "assets/buildings/vegetation/tree_3.png"
         },
@@ -819,7 +806,7 @@
         ]
     },
     {
-        "id": 64,
+        "id": 63,
         "assets": {
             "idle": "assets/buildings/vegetation/tree_10.png"
         },
@@ -832,7 +819,7 @@
         ]
     },
     {
-        "id": 65,
+        "id": 64,
         "assets": {
             "idle": "assets/buildings/vegetation/tree_8.png"
         },
@@ -845,7 +832,7 @@
         ]
     },
     {
-        "id": 66,
+        "id": 65,
         "assets": {
             "idle": "assets/buildings/vegetation/tree_1.png"
         },
@@ -858,7 +845,7 @@
         ]
     },
     {
-        "id": 67,
+        "id": 66,
         "assets": {
             "idle": "assets/buildings/vegetation/tree_1.png"
         },
@@ -871,7 +858,7 @@
         ]
     },
     {
-        "id": 68,
+        "id": 67,
         "assets": {
             "idle": "assets/buildings/vegetation/tree_1.png"
         },
@@ -884,7 +871,7 @@
         ]
     },
     {
-        "id": 69,
+        "id": 68,
         "assets": {
             "idle": "assets/buildings/mine.png"
         },
@@ -897,7 +884,7 @@
         ]
     },
     {
-        "id": 70,
+        "id": 69,
         "assets": {
             "idle": "assets/buildings/vegetation/tree_9.png"
         },
@@ -910,7 +897,7 @@
         ]
     },
     {
-        "id": 71,
+        "id": 70,
         "assets": {
             "idle": "assets/buildings/vegetation/tree_3.png"
         },
@@ -923,7 +910,7 @@
         ]
     },
     {
-        "id": 72,
+        "id": 71,
         "assets": {
             "idle": "assets/buildings/vegetation/tree_3.png"
         },
@@ -936,7 +923,7 @@
         ]
     },
     {
-        "id": 73,
+        "id": 72,
         "assets": {
             "idle": "assets/buildings/vegetation/tree_3.png"
         },
@@ -949,7 +936,7 @@
         ]
     },
     {
-        "id": 74,
+        "id": 73,
         "assets": {
             "idle": "assets/buildings/vegetation/tree_3.png"
         },
@@ -962,7 +949,7 @@
         ]
     },
     {
-        "id": 75,
+        "id": 74,
         "assets": {
             "idle": "assets/buildings/vegetation/tree_3.png"
         },
@@ -975,7 +962,7 @@
         ]
     },
     {
-        "id": 76,
+        "id": 75,
         "assets": {
             "idle": "assets/buildings/vegetation/tree_3.png"
         },
@@ -988,7 +975,7 @@
         ]
     },
     {
-        "id": 77,
+        "id": 76,
         "assets": {
             "idle": "assets/buildings/vegetation/tree_3.png"
         },
@@ -1001,7 +988,7 @@
         ]
     },
     {
-        "id": 78,
+        "id": 77,
         "assets": {
             "idle": "assets/buildings/vegetation/tree_3.png"
         },
@@ -1014,7 +1001,7 @@
         ]
     },
     {
-        "id": 79,
+        "id": 78,
         "assets": {
             "idle": "assets/buildings/vegetation/tree_3.png"
         },
@@ -1027,7 +1014,7 @@
         ]
     },
     {
-        "id": 80,
+        "id": 79,
         "assets": {
             "idle": "assets/buildings/vegetation/tree_10.png"
         },
@@ -1040,7 +1027,7 @@
         ]
     },
     {
-        "id": 81,
+        "id": 80,
         "assets": {
             "idle": "assets/buildings/vegetation/tree_2.png"
         },
@@ -1053,7 +1040,7 @@
         ]
     },
     {
-        "id": 82,
+        "id": 81,
         "assets": {
             "idle": "assets/buildings/forest_decoration/natural/champinones_agrupados_marrones.png"
         },
@@ -1066,7 +1053,7 @@
         ]
     },
     {
-        "id": 83,
+        "id": 82,
         "assets": {
             "idle": "assets/buildings/forest_decoration/natural/raiz_expuesta_suave.png"
         },
@@ -1079,7 +1066,7 @@
         ]
     },
     {
-        "id": 84,
+        "id": 83,
         "assets": {
             "idle": "assets/buildings/forest_decoration/natural/Flor_silvestre_azul.png"
         },
@@ -1092,7 +1079,7 @@
         ]
     },
     {
-        "id": 85,
+        "id": 84,
         "assets": {
             "idle": "assets/buildings/forest_decoration/natural/petalos_rosados_2.png"
         },
@@ -1105,7 +1092,7 @@
         ]
     },
     {
-        "id": 86,
+        "id": 85,
         "assets": {
             "idle": "assets/buildings/forest_decoration/natural/seta_blanca.png"
         },
@@ -1118,7 +1105,7 @@
         ]
     },
     {
-        "id": 87,
+        "id": 86,
         "assets": {
             "idle": "assets/buildings/forest_decoration/natural/champinones_agrupados_marrones.png"
         },
@@ -1131,7 +1118,7 @@
         ]
     },
     {
-        "id": 88,
+        "id": 87,
         "assets": {
             "idle": "assets/buildings/forest_decoration/natural/seta_blanca.png"
         },
@@ -1144,7 +1131,7 @@
         ]
     },
     {
-        "id": 89,
+        "id": 88,
         "assets": {
             "idle": "assets/buildings/forest_decoration/natural/mariposa rama caida.png"
         },
@@ -1157,7 +1144,7 @@
         ]
     },
     {
-        "id": 90,
+        "id": 89,
         "assets": {
             "idle": "assets/buildings/forest_decoration/natural/petalos_rosados_3.png"
         },
@@ -1170,9 +1157,9 @@
         ]
     },
     {
-        "id": 91,
+        "id": 90,
         "assets": {
-            "idle": "assets/items/totem_forest.png"
+            "idle": "assets/buildings/totems/totem_forest.png"
         },
         "solid": false,
         "split_ratio": 0.808,
@@ -1183,201 +1170,7 @@
         ]
     },
     {
-        "assets": {
-            "idle": "assets/buildings/dummy.png"
-        },
-        "solid": true,
-        "split_ratio": 0.5,
-        "collider_scope": "CG",
-        "original_scale": [
-            8,
-            8
-        ],
-        "id": 92
-    },
-    {
-        "assets": {
-            "idle": "assets/buildings/houses/orden_house_2.png"
-        },
-        "solid": true,
-        "split_ratio": 0.718,
-        "collider_scope": "CG",
-        "original_scale": [
-            675,
-            675
-        ],
-        "id": 93
-    },
-    {
-        "assets": {
-            "idle": "assets/buildings/houses/orden_house_2.png"
-        },
-        "solid": true,
-        "split_ratio": 0.718,
-        "collider_scope": "CG",
-        "original_scale": [
-            594,
-            594
-        ],
-        "id": 94
-    },
-    {
-        "assets": {
-            "idle": "assets/buildings/houses/orden_house_2.png"
-        },
-        "solid": true,
-        "split_ratio": 0.718,
-        "collider_scope": "CG",
-        "original_scale": [
-            517,
-            517
-        ],
-        "id": 95
-    },
-    {
-        "assets": {
-            "idle": "assets/buildings/houses/orden_house_2.png"
-        },
-        "solid": true,
-        "split_ratio": 0.718,
-        "collider_scope": "CG",
-        "original_scale": [
-            458,
-            458
-        ],
-        "id": 96
-    },
-    {
-        "assets": {
-            "idle": "assets/buildings/houses/orden_house_2.png"
-        },
-        "solid": true,
-        "split_ratio": 0.718,
-        "collider_scope": "CG",
-        "original_scale": [
-            391,
-            391
-        ],
-        "id": 97
-    },
-    {
-        "assets": {
-            "idle": "assets/buildings/houses/orden_house_2.png"
-        },
-        "solid": true,
-        "split_ratio": 0.742,
-        "collider_scope": "CG",
-        "original_scale": [
-            391,
-            391
-        ],
-        "id": 98
-    },
-    {
-        "assets": {
-            "idle": "dummy.png"
-        },
-        "solid": true,
-        "split_ratio": 0.5,
-        "collider_scope": "CG",
-        "original_scale": [
-            8,
-            8
-        ],
-        "id": 99
-    },
-    {
-        "assets": {
-            "idle": "assets/buildings/houses/orden_house_2.png"
-        },
-        "solid": true,
-        "split_ratio": 0.816,
-        "collider_scope": "CG",
-        "original_scale": [
-            391,
-            391
-        ],
-        "id": 100
-    },
-    {
-        "assets": {
-            "idle": "assets/buildings/shops/jewlery_shop.png"
-        },
-        "solid": true,
-        "split_ratio": 0.626,
-        "collider_scope": "CG",
-        "original_scale": [
-            1000,
-            1000
-        ],
-        "id": 101
-    },
-    {
-        "assets": {
-            "idle": "assets/buildings/shops/jewlery_shop.png"
-        },
-        "solid": true,
-        "split_ratio": 0.609,
-        "collider_scope": "CG",
-        "original_scale": [
-            1000,
-            1000
-        ],
-        "id": 102
-    },
-    {
-        "assets": {
-            "idle": "assets/buildings/gardens/garden_4.png"
-        },
-        "solid": true,
-        "split_ratio": 0.068,
-        "collider_scope": "CG",
-        "original_scale": [
-            1024,
-            1024
-        ],
-        "id": 103
-    },
-    {
-        "assets": {
-            "idle": "assets/buildings/shops/jewlery_shop.png"
-        },
-        "solid": true,
-        "split_ratio": 0.609,
-        "collider_scope": "CG",
-        "original_scale": [
-            346,
-            346
-        ],
-        "id": 104
-    },
-    {
-        "assets": {
-            "idle": "assets/buildings/shops/jewlery_shop.png"
-        },
-        "solid": true,
-        "split_ratio": 0.618,
-        "collider_scope": "CG",
-        "original_scale": [
-            325,
-            325
-        ],
-        "id": 105
-    },
-    {
-        "assets": {
-            "idle": "assets/buildings/gardens/garden_4.png"
-        },
-        "solid": true,
-        "split_ratio": 0.592,
-        "collider_scope": "CG",
-        "original_scale": [
-            537,
-            537
-        ],
-        "id": 106
-    },
-    {
+        "id": 91,
         "assets": {
             "idle": "assets/buildings/mine.png"
         },
@@ -1387,46 +1180,474 @@
         "original_scale": [
             256,
             256
-        ],
-        "id": 107
+        ]
     },
     {
+        "id": 92,
         "assets": {
-            "idle": "assets/buildings/gardens/garden_4.png"
+            "idle": "assets/buildings/backgrounds/background lobby.png"
         },
         "solid": true,
-        "split_ratio": 0.592,
-        "collider_scope": "CG",
-        "original_scale": [
-            528,
-            528
-        ],
-        "id": 108
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
     },
     {
+        "id": 93,
         "assets": {
-            "idle": "assets/buildings/gardens/garden_4.png"
+            "idle": "assets/buildings/castles/castle_1.png"
         },
         "solid": true,
-        "split_ratio": 0.617,
-        "collider_scope": "CG",
-        "original_scale": [
-            528,
-            528
-        ],
-        "id": 109
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
     },
     {
+        "id": 94,
         "assets": {
-            "idle": "assets/buildings/gardens/garden_4.png"
+            "idle": "assets/buildings/combat/ChatGPT Image Apr 3, 2025, 05_12_38 AM.png"
         },
         "solid": true,
-        "split_ratio": 0.057,
-        "collider_scope": "CG",
-        "original_scale": [
-            528,
-            528
-        ],
-        "id": 110
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 95,
+        "assets": {
+            "idle": "assets/buildings/combat/coliseo.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 96,
+        "assets": {
+            "idle": "assets/buildings/combat/coliseo_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 97,
+        "assets": {
+            "idle": "assets/buildings/combat/training.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 98,
+        "assets": {
+            "idle": "assets/buildings/dummy.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 99,
+        "assets": {
+            "idle": "assets/buildings/forest_decoration/corrupto/craneo_muzgo.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 100,
+        "assets": {
+            "idle": "assets/buildings/forest_decoration/corrupto/flor_carnivora.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 101,
+        "assets": {
+            "idle": "assets/buildings/forest_decoration/corrupto/hojas_marchitas.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 102,
+        "assets": {
+            "idle": "assets/buildings/forest_decoration/corrupto/hongos_liminiscentes_venenosos.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 103,
+        "assets": {
+            "idle": "assets/buildings/forest_decoration/corrupto/monton_ramas_afiladas.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 104,
+        "assets": {
+            "idle": "assets/buildings/forest_decoration/corrupto/piedra_runica_musgosa.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 105,
+        "assets": {
+            "idle": "assets/buildings/forest_decoration/corrupto/pozo_savia_corrupta.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 106,
+        "assets": {
+            "idle": "assets/buildings/forest_decoration/corrupto/raiz_retorcida.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 107,
+        "assets": {
+            "idle": "assets/buildings/forest_decoration/corrupto/semilla_reventada.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 108,
+        "assets": {
+            "idle": "assets/buildings/forest_decoration/corrupto/totem_podrido.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 109,
+        "assets": {
+            "idle": "assets/buildings/forest_decoration/natural/hojas_frescas.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 110,
+        "assets": {
+            "idle": "assets/buildings/forest_decoration/natural/nido_huevos.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 111,
+        "assets": {
+            "idle": "assets/buildings/forest_decoration/natural/petalos_rosados_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 112,
+        "assets": {
+            "idle": "assets/buildings/forest_decoration/natural/piedras_musgo.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 113,
+        "assets": {
+            "idle": "assets/buildings/gardens/flowers_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 114,
+        "assets": {
+            "idle": "assets/buildings/gardens/flowers_3.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 115,
+        "assets": {
+            "idle": "assets/buildings/gardens/flowers_4.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 116,
+        "assets": {
+            "idle": "assets/buildings/gardens/flowers_5.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 117,
+        "assets": {
+            "idle": "assets/buildings/gardens/flowers_6.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 118,
+        "assets": {
+            "idle": "assets/buildings/gardens/flowers_7.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 119,
+        "assets": {
+            "idle": "assets/buildings/gardens/flowers_8.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 120,
+        "assets": {
+            "idle": "assets/buildings/gardens/garden_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 121,
+        "assets": {
+            "idle": "assets/buildings/gardens/garden_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 122,
+        "assets": {
+            "idle": "assets/buildings/gardens/garden_3.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 123,
+        "assets": {
+            "idle": "assets/buildings/others/fuente.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 124,
+        "assets": {
+            "idle": "assets/buildings/others/guillotina.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 125,
+        "assets": {
+            "idle": "assets/buildings/portals/portal.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 126,
+        "assets": {
+            "idle": "assets/buildings/portals/portal_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 127,
+        "assets": {
+            "idle": "assets/buildings/portals/portal_dudgeon_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 128,
+        "assets": {
+            "idle": "assets/buildings/portals/portal_dudgeon_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 129,
+        "assets": {
+            "idle": "assets/buildings/shops/ChatGPT Image Apr 3, 2025, 05_11_07 AM.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 130,
+        "assets": {
+            "idle": "assets/buildings/shops/ChatGPT Image Apr 3, 2025, 05_11_17 AM.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 131,
+        "assets": {
+            "idle": "assets/buildings/shops/ChatGPT Image Apr 3, 2025, 05_11_32 AM.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 132,
+        "assets": {
+            "idle": "assets/buildings/statues/ChatGPT Image May 1, 2025, 11_04_33 AM.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 133,
+        "assets": {
+            "idle": "assets/buildings/statues/ChatGPT Image May 1, 2025, 11_04_43 AM.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 134,
+        "assets": {
+            "idle": "assets/buildings/temples/ChatGPT Image Apr 3, 2025, 05_11_11 AM.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 135,
+        "assets": {
+            "idle": "assets/buildings/temples/ChatGPT Image Apr 3, 2025, 05_11_14 AM.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 136,
+        "assets": {
+            "idle": "assets/buildings/temples/ChatGPT Image May 5, 2025, 09_14_51 PM.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 137,
+        "assets": {
+            "idle": "assets/buildings/totems/totem_cargando_energia.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 138,
+        "assets": {
+            "idle": "assets/buildings/totems/totem_destruido.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 139,
+        "assets": {
+            "idle": "assets/buildings/totems/totem_riendo.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 140,
+        "assets": {
+            "idle": "assets/buildings/totems/totem_sufriendo.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 141,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_4.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 142,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_5.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 143,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_azul.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
     }
 ]

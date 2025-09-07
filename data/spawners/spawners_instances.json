@@ -6,8 +6,12 @@
       26,
       15
     ],
-    "overrides": {
-      "building_id": 113
+    "visuals": {
+      "AwaitTrigger": 113,
+      "SpawningWave": 113,
+      "WaitCooldown": 113,
+      "WaitRestart": 113,
+      "Finished": 113
     },
     "id": "survival_10_forest_14_9"
   }

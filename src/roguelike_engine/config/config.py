@@ -38,6 +38,7 @@ DATA_DIR = str(DATA_DIR)
 
 #!------------------------ BUILDINGS CONFIG ------------------------
 # Persistencia de edificios
+
 BUILDINGS_DATA_PATH = Path(DATA_DIR) / "buildings" / "buildings_data.json"
 BUILDINGS_DATA_PATH = str(BUILDINGS_DATA_PATH)
 
@@ -63,6 +64,23 @@ BUILDINGS_TEMPLATES_PATH = str(BUILDINGS_TEMPLATES_PATH)
 
 BUILDINGS_INSTANCES_PATH = Path(DATA_DIR) / "buildings" / "buildings_instances.json"
 BUILDINGS_INSTANCES_PATH = str(BUILDINGS_INSTANCES_PATH)
+
+
+#! ------------------------ DEV/TOOLS FLAGS -----------------------
+# Auto-importar nuevas imágenes de assets/buildings como plantillas al iniciar (solo DEV)
+DEV_AUTO_IMPORT_BUILDINGS = True
+# Patrones a excluir (fnmatch) al escanear assets/buildings
+DEV_AUTO_IMPORT_EXCLUDES = [
+    "**/WIP/**",
+    "**/_wip/**",
+    "**/tmp/**",
+    "**/*.aseprite",
+]
+# Crear instancias placeholder automáticamente para nuevas plantillas (no recomendado por defecto)
+DEV_AUTO_IMPORT_CREATE_INSTANCES = False
+# Zona y posición por defecto si se crean instancias automáticamente
+DEV_AUTO_IMPORT_DEFAULT_ZONE = "no zone"
+DEV_AUTO_IMPORT_DEFAULT_REL_POS = (0, 0)
 
 
 #! ------------------------ Z-LAYER CONFIG -----------------------
