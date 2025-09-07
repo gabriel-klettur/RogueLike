@@ -38,6 +38,7 @@ class FsmToolbarView:
                 'set_properties': 'assets/ui/fsm_editor/tool_panel/set_properties.png',
                 'undo': 'assets/ui/undo.png',
                 'redo': 'assets/ui/redo.png',
+                'tutorial_fsm': 'assets/ui/help.png',
             }
             icons = {}
             for tool in model.buttons:
