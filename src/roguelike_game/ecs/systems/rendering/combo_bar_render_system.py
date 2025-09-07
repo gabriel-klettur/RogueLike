@@ -36,12 +36,12 @@ class ComboBarRenderSystem:
         now = time.time()
         if not counter.is_active(now):
             return
-        # HUD: encima de la barra de experiencia y con el mismo ancho
+        # HUD: encima de la barra de experiencia y con el mismo ancho (mitad de pantalla, centrado)
         screen_w, screen_h = screen.get_size()
         xp_margin = 20
         xp_bar_h = 10
-        xp_bar_w = screen_w - xp_margin * 2
-        xp_x = xp_margin
+        xp_bar_w = int(screen_w * 0.5)
+        xp_x = (screen_w - xp_bar_w) // 2
         xp_y = screen_h - xp_bar_h - xp_margin
         bar_width = xp_bar_w
         bar_x = xp_x
@@ -67,7 +67,7 @@ class ComboBarRenderSystem:
         rect.midleft = (bar_x + bar_width + 10, bar_y + self.bar_height // 2)
         screen.blit(surf, rect)
         # Texto de combos (basado en muertes dentro del combo activo)
-        done_txt = f"Combos {counter.kill_combo_current}"
+        done_txt = f"combo enemies in a row {counter.kill_combo_current}"
         done_surf = self.font.render(done_txt, True, self.text_color)
         done_rect = done_surf.get_rect()
         done_rect.bottomleft = (bar_x, bar_y - 2)

@@ -829,15 +829,15 @@
     },
     {
         "zone": "lobby",
-        "rel_x": 97,
-        "rel_y": 1378,
+        "rel_x": 78,
+        "rel_y": 1350,
         "assets": {
             "idle": "assets/buildings/vegetation/tree_6.png"
         },
         "solid": true,
         "scale": [
-            540,
-            540
+            210,
+            210
         ],
         "original_scale": [
             540,

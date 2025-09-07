@@ -576,15 +576,15 @@
         }
     },
     {
-        "id": 37,
+        "id": 156,
         "template_id": 27,
         "zone": "lobby",
-        "rel_x": 97,
-        "rel_y": 1378,
+        "rel_x": 78,
+        "rel_y": 1350,
         "overrides": {
             "scale": [
-                540,
-                540
+                210,
+                210
             ],
             "z_bottom": 3,
             "z_top": 5,
