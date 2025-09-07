@@ -61,6 +61,9 @@ class SpellCastingSystem:
         if spell_type == 'slash':
             return sum(1 for comp in world.components.get('HitboxComponent', {}).values()
                        if getattr(comp, 'owner', None) == eid)
+        # Per-caster counting for dash: component vive en el caster
+        if spell_type == 'dash':
+            return 1 if eid in world.components.get('DashComponent', {}) else 0
         comp_key = self._TYPE_TO_COMPONENT.get(spell_type)
         if comp_key:
             return len(world.components.get(comp_key, {}))

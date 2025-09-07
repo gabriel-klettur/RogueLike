@@ -6,6 +6,8 @@ from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.abilities.explosion_component import ExplosionComponent
 from roguelike_game.ecs.systems.combat.explosions_models import FireExplosionModel
 from roguelike_game.ecs.components.physics.mask_collider import MaskCollider
+import time
+from roguelike_game.ecs.components.combat.last_attacker import LastAttacker
 
 class FireballSystem:
     """
@@ -87,6 +89,8 @@ class FireballSystem:
                 if hit:
                     hp = world.components['Health'][target]
                     hp.current_hp = max(0, hp.current_hp - comp.damage)
+                    # Registrar último atacante para atribuir KO si entra en UnconsciousState
+                    world.components.setdefault('LastAttacker', {})[target] = LastAttacker(comp.caster, time.time())
                     # Push debug event for outline persistence (consumed by SpellCollisionDebugSystem)
                     dbg = world.components.setdefault('DebugSpellHits', {})
                     queue = dbg.setdefault('_queue', [])
@@ -104,6 +108,20 @@ class FireballSystem:
                         q.append({"type": "OnHit", "from_left": from_left})
                         if hp.current_hp <= 0:
                             q.append({"type": "OnDeath"})
+                            # Evento de kill para combo basado en muertes
+                            combo_q = world.components.setdefault('ComboEventQueue', [])
+                            combo_q.append({'type': 'kill', 'entity': caster, 'target': target})
+                            world.components.setdefault('ComboKillCounted', set()).add(target)
+                        # Evento de COMBO
+                        combo_q = world.components.setdefault('ComboEventQueue', [])
+                        combo_q.append({
+                            'attacker': caster,
+                            'target': target,
+                            'damage': float(comp.damage),
+                            'source': 'fireball',
+                            'time': float(time.time()),
+                        })
+
                     elif target in world.components.get('PlayerTagComponent', {}):
                         # NPC -> Jugador
                         attacker_pos = world.components['Position'].get(caster)
@@ -117,6 +135,9 @@ class FireballSystem:
                         q.append({"type": "OnHit", "from_left": from_left})
                         if hp.current_hp <= 0:
                             q.append({"type": "OnDeath"})
+                        # Romper combo del jugador al recibir daño
+                        combo_q = world.components.setdefault('ComboEventQueue', [])
+                        combo_q.append({'type': 'break', 'entity': target})
                     break
 
             # Colisión con tiles sólidos

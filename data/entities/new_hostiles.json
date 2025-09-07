@@ -19,7 +19,8 @@
   "FEET_HEIGHT_DIVISOR": 4,
   "ANIMATION_INTERVAL": 0.15,
   "INITIAL_ANIMATION_STATE": "down_idle",
-  "DEFAULT_DEATH_DISSAPEAR_TIME": 30.0,
+  "DEFAULT_DEATH_DISSAPEAR_TIME": 10.0,
+  "DEFAULT_DAMAGE_STOP_PROBABILITY": 0.10,
   "MELEE_WEAPON": {
     "damage": 1,
     "cooldown": 1.0
@@ -27,7 +28,7 @@
   "hostiles": {
     "classes": {
       "barbol": {
-        "default_name": "Barbol",        
+        "default_name": "Barbol",
         "stats": {
           "hp": 100,
           "speed": 1.0,
@@ -45,7 +46,8 @@
           "spawn_padding": 3,
           "spawn_count": 10,
           "spawn_margin": 0,
-          "death_dissapear_time": 5.0
+          "death_dissapear_time": 5.0,
+          "damage_stop_probability": 0.10
         },
         "fsm_set": "Monster_Default",
         "patrol": {
@@ -159,7 +161,7 @@
         }
       },
       "barbol_oscuro": {
-        "default_name": "Barbol Oscuro",        
+        "default_name": "Barbol Oscuro",
         "stats": {
           "hp": 30,
           "speed": 10.0,
@@ -177,7 +179,8 @@
           "spawn_padding": 3,
           "spawn_count": 10,
           "spawn_margin": 0,
-          "death_dissapear_time": 2.5
+          "death_dissapear_time": 2.5,
+          "damage_stop_probability": 0.25
         },
         "fsm_set": "Monster_Default",
         "patrol": {
@@ -300,7 +303,7 @@
         }
       },
       "barbol_morado": {
-        "default_name": "Barbol Morado",        
+        "default_name": "Barbol Morado",
         "stats": {
           "hp": 100,
           "speed": 1.0,
@@ -318,7 +321,8 @@
           "spawn_padding": 3,
           "spawn_count": 10,
           "spawn_margin": 0,
-          "death_dissapear_time": 5.0
+          "death_dissapear_time": 5.0,
+          "damage_stop_probability": 0.25
         },
         "fsm_set": "Monster_Default",
         "patrol": {
@@ -441,7 +445,7 @@
         }
       },
       "barbol_boss": {
-        "default_name": "Barbol Boss",        
+        "default_name": "Barbol Boss",
         "stats": {
           "hp": 2000,
           "speed": 4.0,
@@ -459,7 +463,8 @@
           "spawn_padding": 3,
           "spawn_count": 10,
           "spawn_margin": 0,
-          "death_dissapear_time": 5.0
+          "death_dissapear_time": 5.0,
+          "damage_stop_probability": 0.25
         },
         "fsm_set": "Monster_Default",
         "assets": {
@@ -584,7 +589,7 @@
         }
       },
       "barbol_cyan": {
-        "default_name": "Barbol Cyan",        
+        "default_name": "Barbol Cyan",
         "stats": {
           "hp": 100,
           "speed": 1.0,
@@ -602,7 +607,8 @@
           "spawn_padding": 3,
           "spawn_count": 10,
           "spawn_margin": 0,
-          "death_dissapear_time": 5.0
+          "death_dissapear_time": 5.0,
+          "damage_stop_probability": 0.25
         },
         "fsm_set": "Monster_Default",
         "assets": {
@@ -717,7 +723,7 @@
         }
       },
       "barbol_gris": {
-        "default_name": "Barbol Gris",        
+        "default_name": "Barbol Gris",
         "stats": {
           "hp": 100,
           "speed": 1.0,
@@ -735,7 +741,8 @@
           "spawn_padding": 3,
           "spawn_count": 10,
           "spawn_margin": 0,
-          "death_dissapear_time": 5.0
+          "death_dissapear_time": 5.0,
+          "damage_stop_probability": 0.25
         },
         "fsm_set": "Monster_Default",
         "assets": {
@@ -850,7 +857,7 @@
         }
       },
       "barbol_musgo": {
-        "default_name": "Barbol Musgo",        
+        "default_name": "Barbol Musgo",
         "stats": {
           "hp": 300,
           "speed": 1.0,
@@ -868,7 +875,8 @@
           "spawn_padding": 3,
           "spawn_count": 10,
           "spawn_margin": 0,
-          "death_dissapear_time": 5.0
+          "death_dissapear_time": 5.0,
+          "damage_stop_probability": 0.25
         },
         "fsm_set": "Monster_Default",
         "assets": {
@@ -983,7 +991,7 @@
         }
       },
       "barbol_amarillo_4": {
-        "default_name": "Barbol Amarillo 4",        
+        "default_name": "Barbol Amarillo 4",
         "stats": {
           "hp": 100,
           "speed": 1.0,
@@ -1001,7 +1009,8 @@
           "spawn_padding": 3,
           "spawn_count": 10,
           "spawn_margin": 0,
-          "death_dissapear_time": 5.0
+          "death_dissapear_time": 5.0,
+          "damage_stop_probability": 0.25
         },
         "fsm_set": "Monster_Default",
         "assets": {
@@ -1116,7 +1125,7 @@
         }
       },
       "barbol_baby": {
-        "default_name": "Barbol Baby",        
+        "default_name": "Barbol Baby",
         "stats": {
           "hp": 10,
           "speed": 2.0,
@@ -1134,7 +1143,8 @@
           "spawn_padding": 3,
           "spawn_count": 10,
           "spawn_margin": 0,
-          "death_dissapear_time": 3.5
+          "death_dissapear_time": 3.5,
+          "damage_stop_probability": 0.25
         },
         "fsm_set": "Monster_Default",
         "patrol": {
@@ -1258,7 +1268,7 @@
         }
       },
       "barbol_gigante": {
-        "default_name": "Barbol Gigante",        
+        "default_name": "Barbol Gigante",
         "stats": {
           "hp": 1000,
           "speed": 0.75,
@@ -1276,7 +1286,8 @@
           "spawn_padding": 3,
           "spawn_count": 10,
           "spawn_margin": 0,
-          "death_dissapear_time": 10.0
+          "death_dissapear_time": 10.0,
+          "damage_stop_probability": 0.25
         },
         "fsm_set": "Monster_Default",
         "patrol": {

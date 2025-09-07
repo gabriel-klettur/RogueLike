@@ -140,6 +140,20 @@ class BeamResolver(BaseSpellResolver):
 class DashResolver(BaseSpellResolver):
     """Resolver for dash spells: registers DashComponent for continuous dash movement."""
     def resolve(self, world, caster, spawn_meta, cfg, camera):
+        # Gating por cargas: consumir 1 carga si hay disponible
+        meter = world.components.get('DashMeterComponent', {}).get(caster)
+        if meter is not None:
+            if getattr(meter, 'current', 0) <= 0:
+                logger.debug("[DashResolver] Sin cargas de dash: abortar resolución")
+                return
+            # Consumir una carga y reiniciar progreso de recarga (sequential)
+            meter.current = max(0, int(meter.current) - 1)
+            try:
+                # resetear el progreso para iniciar de inmediato la recarga de la siguiente carga
+                meter.progress = 0.0
+                meter.ensure_timer()
+            except Exception:
+                pass
         pos_cmp = world.components['Position'][caster]
         cx, cy = pos_cmp.x, pos_cmp.y
         sprite_cmp = world.components['Sprite'].get(caster)

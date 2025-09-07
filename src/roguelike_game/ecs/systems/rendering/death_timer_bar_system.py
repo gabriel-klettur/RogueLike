@@ -1,7 +1,7 @@
 import pygame
 import time
 import roguelike_engine.config.config as config
-from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
+from roguelike_game.ecs.systems.fsm.states.unconscious_state import UnconsciousState
 from roguelike_engine.utils.benchmark import benchmark
 
 # Entities (Identity.name, lowercase) excluded from death timer bar rendering
@@ -58,10 +58,11 @@ class DeathTimerBarSystem:
 
         # 2) Para cada temporizador, obtener parámetros de dibujo
         for eid, dt in active.items():
-            # Sólo renderizar para entidades en Estado de Muerte
+            # Sólo renderizar para entidades inconscientes (cadáver en suelo)
             state_comp = world.components.get('NPCState', {}).get(eid)
-            if not state_comp or not isinstance(state_comp.fsm.current_state, DeathState):
+            if not state_comp or not isinstance(state_comp.fsm.current_state, UnconsciousState):
                 continue
+
             # Omitir ciertas clases por diseño usando lista de exclusión
             identity = world.components.get('Identity', {}).get(eid)
             name_lower = ''

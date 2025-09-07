@@ -13,6 +13,7 @@ def create_empty_component_store():
         'ExplosionComponent': {},
         'AuraComponent': {}, 'LaserBeamComponent': {}, 'ParticleComponent': {}, 'SlashEmitterComponent': {},
         'HitboxComponent': {},
+        'LastAttacker': {},
         'SpawnRequest': {}, 'CombatStats': {}, 'MeleeWeapon': {}, 'MeleeRange': {},
         'WantsToMelee': {}, 'AttackCooldown': {}, 'WantsToCastSpell': {}, 'AggroRange': {},
         # AI defend/leash area per NPC
@@ -24,6 +25,10 @@ def create_empty_component_store():
         'ChatComponent': {}, 'VendorComponent': {},
         'TempZLayer': {},
         'FlashComponent': {}, 'TrailComponent': {}, 'GrayscaleComponent': {},
+        # Abilities / Resources
+        'DashMeterComponent': {},
+        # Combo system
+        'ComboCounterComponent': {}, 'ComboRulesComponent': {},
         # Spawner components
         'SpawnerConfig': {}, 'SpawnerState': {},
         # Buildings

@@ -71,9 +71,10 @@ class PlayerManager:
         stats = player_cfg.PLAYER_STATS[new_class]
         max_hp = stats["max_strength"]
         comps["Health"][eid] = Health(max_hp, max_hp)
-        # Update damage config duration based on class stats (fallback to default)
+        # Update damage config: duration and stop_probability based on class stats (fallback to defaults)
         dmg_duration = stats.get("damage_duration", player_cfg.DEFAULT_DAMAGE_DURATION)
-        comps["DamageConfig"][eid] = DamageConfig(float(dmg_duration))
+        stop_prob = float(stats.get("damage_stop_probability", getattr(player_cfg, "DEFAULT_DAMAGE_STOP_PROBABILITY", 0.25)))
+        comps["DamageConfig"][eid] = DamageConfig(float(dmg_duration), stop_probability=stop_prob)
         comps["CombatStats"][eid] = CombatStats(
             current_hp=max_hp,
             max_hp=max_hp,

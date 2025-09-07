@@ -132,7 +132,19 @@ class ECSWorld:
         if eid in self.entities:
             self.entities.remove(eid)
         for comp_dict in self.components.values():
-            comp_dict.pop(eid, None)
+            # Algunos "component stores" no son dicts (p.ej., colas de eventos como listas).
+            # Asegurar eliminación segura según el tipo de contenedor.
+            try:
+                if isinstance(comp_dict, dict):
+                    comp_dict.pop(eid, None)
+                elif isinstance(comp_dict, set):
+                    comp_dict.discard(eid)
+                else:
+                    # listas/otros tipos: no están indexados por eid, ignorar
+                    pass
+            except Exception:
+                # Nunca romper la eliminación de entidad por un componente anómalo
+                pass
 
     def get_solid_tiles_for_rect(self, rect):
         # Delegamos totalmente al spatial_index

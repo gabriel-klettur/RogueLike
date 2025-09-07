@@ -2,6 +2,8 @@ import math
 import pygame
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.ecs.utils.collider_utils import build_collider_rect
+import time
+from roguelike_game.ecs.components.combat.last_attacker import LastAttacker
 
 import logging
 logger = logging.getLogger(__name__)
@@ -132,6 +134,8 @@ class HitboxSystem:
                 # apply damage
                 health = healths[target]
                 health.current_hp = max(0, health.current_hp - hb.damage)
+                # record last attacker for KO attribution
+                world.components.setdefault('LastAttacker', {})[target] = LastAttacker(hb.owner, time.time())
                 hb.hit_targets.add(target)
                 if hb.owner in world.components.get('PlayerTagComponent', {}):
                     attacker_pos = world.components['Position'][hb.owner]
@@ -142,6 +146,17 @@ class HitboxSystem:
                     q.append({"type": "OnHit", "from_left": from_left})
                     if health.current_hp <= 0:
                         q.append({"type": "OnDeath"})
+                        # Evento de kill para combo basado en muertes
+                        combo_q = world.components.setdefault('ComboEventQueue', [])
+                        combo_q.append({'type': 'kill', 'entity': hb.owner, 'target': target})
+                    combo_q = world.components.setdefault('ComboEventQueue', [])
+                    combo_q.append({
+                        'attacker': hb.owner,
+                        'target': target,
+                        'damage': float(hb.damage),
+                        'source': 'hitbox',
+                        'time': float(time.time()),
+                    })
                 elif target in world.components.get('PlayerTagComponent', {}):
                     # NPC or other entity hit the player -> publish OnHit/OnDeath for player
                     attacker_pos = positions.get(hb.owner)
@@ -155,3 +170,6 @@ class HitboxSystem:
                     q.append({"type": "OnHit", "from_left": from_left})
                     if health.current_hp <= 0:
                         q.append({"type": "OnDeath"})
+                    # Break player's combo upon taking damage
+                    combo_q = world.components.setdefault('ComboEventQueue', [])
+                    combo_q.append({'type': 'break', 'entity': target})

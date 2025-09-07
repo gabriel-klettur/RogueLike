@@ -15,7 +15,11 @@ class TilesTutorialPanelController:
         self.view = TilesTutorialPanelView(self, self.model)
         self.events = TilesTutorialPanelEventHandler(self, self.model)
         # Inyección para highlights
-        self.view.toolbar_view = self.editor_controller.toolbar.view
+        try:
+            self.view.toolbar_view = self.editor_controller.toolbar.view
+        except Exception:
+            # Tests may stub toolbar without a 'view'; degrade gracefully
+            self.view.toolbar_view = None
         # Tracking de paso
         self._last_step_index = None
 

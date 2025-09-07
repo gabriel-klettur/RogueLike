@@ -467,7 +467,7 @@
         "multi_tiles/tiles/rock/multi_108",
         "multi_tiles/tiles/rock/multi_108",
         "multi_tiles/tiles/rock/multi_108",
-        "floor"
+        "multi_tiles/tiles/rock/multi_108"
       ],
       [
         "multi_tiles/tiles/rock/multi_108",
@@ -1503,11 +1503,11 @@
         "multi_tiles/tiles/rock/multi_108",
         "multi_tiles/tiles/rock/multi_108",
         "multi_tiles/tiles/rock/multi_108",
-        "tileset_1/rock_grass/rock_grass_32_8",
-        "floor",
-        "floor",
-        "floor",
-        "floor"
+        "multi_tiles/tiles/rock/multi_108",
+        "multi_tiles/tiles/rock/multi_108",
+        "multi_tiles/tiles/rock/multi_108",
+        "multi_tiles/tiles/rock/multi_108",
+        "multi_tiles/tiles/rock/multi_108"
       ],
       [
         "multi_tiles/tiles/rock/multi_108",
@@ -1555,11 +1555,11 @@
         "multi_tiles/tiles/rock/multi_108",
         "multi_tiles/tiles/rock/multi_108",
         "multi_tiles/tiles/rock/multi_108",
-        "tileset_1/rock_grass/rock_grass_32_8",
-        "floor",
-        "floor",
-        "floor",
-        "floor"
+        "multi_tiles/tiles/rock/multi_108",
+        "multi_tiles/tiles/rock/multi_108",
+        "multi_tiles/tiles/rock/multi_108",
+        "multi_tiles/tiles/rock/multi_108",
+        "multi_tiles/tiles/rock/multi_108"
       ],
       [
         "multi_tiles/tiles/rock/multi_108",
@@ -1607,11 +1607,11 @@
         "multi_tiles/tiles/rock/multi_108",
         "multi_tiles/tiles/rock/multi_108",
         "multi_tiles/tiles/rock/multi_108",
-        "tileset_1/rock_grass/rock_grass_32_8",
-        "floor",
-        "floor",
-        "floor",
-        "floor"
+        "multi_tiles/tiles/rock/multi_108",
+        "multi_tiles/tiles/rock/multi_108",
+        "multi_tiles/tiles/rock/multi_108",
+        "multi_tiles/tiles/rock/multi_108",
+        "multi_tiles/tiles/rock/multi_108"
       ],
       [
         "multi_tiles/tiles/rock/multi_108",
@@ -1659,11 +1659,11 @@
         "multi_tiles/tiles/rock/multi_108",
         "multi_tiles/tiles/rock/multi_108",
         "multi_tiles/tiles/rock/multi_108",
-        "tileset_1/rock_grass/rock_grass_32_8",
-        "floor",
-        "floor",
-        "floor",
-        "floor"
+        "multi_tiles/tiles/rock/multi_108",
+        "multi_tiles/tiles/rock/multi_108",
+        "multi_tiles/tiles/rock/multi_108",
+        "multi_tiles/tiles/rock/multi_108",
+        "multi_tiles/tiles/rock/multi_108"
       ],
       [
         "",
@@ -1702,10 +1702,10 @@
         "tileset_1/rock_grass/rock_grass_32_12",
         "tileset_1/rock_grass/rock_grass_32_12",
         "tileset_1/rock_grass/rock_grass_32_12",
-        "multi_tiles/tiles/rock/multi_108",
-        "multi_tiles/tiles/rock/multi_108",
-        "multi_tiles/tiles/rock/multi_108",
-        "tileset_1/rock_grass/rock_grass_32_12",
+        "floor",
+        "floor",
+        "floor",
+        "floor",
         "tileset_1/rock_grass/rock_grass_32_12",
         "tileset_1/rock_grass/rock_grass_32_12",
         "tileset_1/rock_grass/rock_grass_32_12",

@@ -53,18 +53,34 @@ class AttackState(State):
     def execute(self, entity, dt):
         world = entity.world
         eid = entity.id
-        # Verificar muerte
+        # Verificar muerte del propio NPC
         hp_cmp = world.components['Health'][eid]
         if hp_cmp.current_hp <= 0:
-            # Import local para evitar importación circular con DeathState
-            from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
-            world.components['NPCState'][eid].fsm.change_state(DeathState(), entity)
+            # Import local para evitar importación circular con UnconsciousState
+            from roguelike_game.ecs.systems.fsm.states.unconscious_state import UnconsciousState
+            world.components['NPCState'][eid].fsm.change_state(UnconsciousState(), entity)
+            return
+        # Si el jugador está inconsciente (HP<=0) o ya tiene DeathTimer, dejar de atacar
+        try:
+            player_id = world.player_entity
+            ph = world.components.get('Health', {}).get(player_id)
+            player_dead = (ph is None) or (ph.current_hp <= 0)
+            has_death_timer = player_id in world.components.get('DeathTimer', {})
+            if player_dead or has_death_timer:
+                from roguelike_game.ecs.systems.fsm.states.monster.patrol_state import PatrolState
+                world.components['NPCState'][eid].fsm.change_state(PatrolState(), entity)
+                return
+        except Exception:
+            # Si algo falla, por seguridad no atacar
+            from roguelike_game.ecs.systems.fsm.states.monster.patrol_state import PatrolState
+            world.components['NPCState'][eid].fsm.change_state(PatrolState(), entity)
             return
         # Obtener posiciones del NPC y jugador
         pos = world.components['Position'][eid]
         player_pos = world.player_position
         if not player_pos:
             return
+
         dx = player_pos.x - pos.x
         dy = player_pos.y - pos.y
         dist_sq = dx*dx + dy*dy
@@ -92,6 +108,9 @@ class AttackState(State):
                     q.append({"type": "OnHit", "from_left": from_left})
                     if ph.current_hp <= 0:
                         q.append({"type": "OnDeath"})
+                    # Break player's combo upon taking damage
+                    combo_q = world.components.setdefault('ComboEventQueue', [])
+                    combo_q.append({'type': 'break', 'entity': world.player_entity})
                 except Exception:
                     pass
                 # reset cooldown

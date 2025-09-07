@@ -2,7 +2,7 @@
 Builder para crear la entidad monstruo usando coordenadas en píxeles.
 """
 from roguelike_game.factories.monster.cache import _load_caches_once
-from roguelike_game.factories.monster.config import MONSTER_DEFS
+from roguelike_game.factories.monster.config import MONSTER_DEFS, MONSTER_DEFAULTS
 from roguelike_game.factories.monster.sprite_loader import create_sprite_component, create_movement_components
 from roguelike_game.factories.monster.physics import create_physics_components, create_collider_components, create_zlayer_component
 from roguelike_game.factories.monster.calibrator import calibrate_tile_position
@@ -122,7 +122,9 @@ class MonsterBuilder:
         world.components["MeleeWeapon"][eid] = MeleeWeapon(cfg["melee_damage"], cfg["melee_cooldown"])
         world.components["AggroRange"][eid] = AggroRange(cfg["aggro_range"])
         world.components["MeleeRange"][eid] = MeleeRange(cfg["melee_range"])
-        world.components["DamageConfig"][eid] = DamageConfig(cfg["damage_duration"])
+        # Configuración de daño: duración y probabilidad de detenerse al recibir daño
+        stop_prob = float(cfg.get("damage_stop_probability", MONSTER_DEFAULTS.get("damage_stop_probability", 0.25)))
+        world.components["DamageConfig"][eid] = DamageConfig(cfg["damage_duration"], stop_probability=stop_prob)
 
         # FSM: PatrolRoute & NPCState
         patrol_cfg = cfg.get("patrol")
