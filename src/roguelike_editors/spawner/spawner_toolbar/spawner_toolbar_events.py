@@ -49,6 +49,23 @@ class SpawnerToolbarEventHandler:
             if not pos or not panel_rect.collidepoint(pos):
                 return False
             icon_rects = getattr(toolbar, 'icon_rects', {})
+            # Tutorial (toggle Spawner Tutorial panel)
+            rect = icon_rects.get('tutorial_spawner')
+            if rect and rect.collidepoint(pos):
+                try:
+                    editor = getattr(controller, 'editor_controller', None)
+                    tut = getattr(editor, 'tutorial', None)
+                    if tut is not None:
+                        # Toggle toolbar active state
+                        new_state = None if controller.is_active('tutorial_spawner') else 'tutorial_spawner'
+                        controller.set_active(new_state)
+                        if new_state is None:
+                            tut.deactivate()
+                        else:
+                            tut.activate()
+                except Exception:
+                    pass
+                return True
             # Undo
             rect = icon_rects.get('undo')
             if rect and rect.collidepoint(pos):

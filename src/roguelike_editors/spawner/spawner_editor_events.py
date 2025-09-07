@@ -288,6 +288,11 @@ class SpawnerEditorEventHandler:
                 pass
             # Exit placement mode, stop Add button blinking, re-enable input, and restore Instances panel
             self.model.placing_template_id = None
+            # Tutorial pulse: placement done
+            try:
+                setattr(self.model, 'tutorial_placement_done_pulse', True)
+            except Exception:
+                pass
             try:
                 self.model.add_mode_active = False
                 if hasattr(self.controller, 'instance_toolbar') and getattr(self.controller.instance_toolbar, 'model', None) is not None:
@@ -352,6 +357,11 @@ class SpawnerEditorEventHandler:
                     'zone': zone,
                     'local_tile': (local_tx, local_ty),
                 }
+                # Tutorial pulse: open delete confirmation
+                try:
+                    setattr(self.model, 'tutorial_delete_confirm_open_pulse', True)
+                except Exception:
+                    pass
                 # Suppress gameplay input while prompt is open
                 try:
                     if hasattr(world, 'state'):
@@ -373,6 +383,11 @@ class SpawnerEditorEventHandler:
             if eid is not None:
                 self.model.dragging = True
                 self.model.dragging_eid = eid
+                # Tutorial pulse: drag started
+                try:
+                    setattr(self.model, 'tutorial_drag_started_pulse', True)
+                except Exception:
+                    pass
                 # Suppress gameplay input (dash/spells) while dragging
                 try:
                     if hasattr(world, 'state'):
@@ -444,10 +459,20 @@ class SpawnerEditorEventHandler:
                                 'proposed_zone': proposed_zone,
                                 'orig_local': orig_local,
                             }
+                            # Tutorial pulse: zone confirm dialog opened
+                            try:
+                                setattr(self.model, 'tutorial_zone_confirm_open_pulse', True)
+                            except Exception:
+                                pass
                             # Keep input suppressed until decision
                             return True
                         # Otherwise persist directly
                         persist_drop(world, eid, self._drag_start_entry)
+                        # Tutorial pulse: persisted new position
+                        try:
+                            setattr(self.model, 'tutorial_persist_drop_pulse', True)
+                        except Exception:
+                            pass
                         # Refresh instances list UI if visible
                         try:
                             self.controller.spawner_instances.refresh_from_disk()
@@ -512,6 +537,11 @@ class SpawnerEditorEventHandler:
                 try:
                     if hasattr(world, 'state'):
                         setattr(world.state, 'spawner_input_suppressed', False)
+                except Exception:
+                    pass
+                # Tutorial pulse: confirmed zone change
+                try:
+                    setattr(self.model, 'tutorial_zone_confirm_yes_pulse', True)
                 except Exception:
                     pass
                 return True
@@ -589,6 +619,11 @@ class SpawnerEditorEventHandler:
                 try:
                     if hasattr(world, 'state'):
                         setattr(world.state, 'spawner_input_suppressed', False)
+                except Exception:
+                    pass
+                # Tutorial pulse: deletion confirmed
+                try:
+                    setattr(self.model, 'tutorial_delete_done_pulse', True)
                 except Exception:
                     pass
                 return True

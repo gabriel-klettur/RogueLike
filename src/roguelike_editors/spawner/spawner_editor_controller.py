@@ -18,6 +18,7 @@ from roguelike_editors.spawner.spawner_templates_panel.spawner_manager_controlle
 from roguelike_editors.spawner.spawner_instances_panel.spawner_list_instances_controller import SpawnerListInstancesController
 from roguelike_editors.spawner.spawner_instance_properties_panel.instance_properties_controller import InstancePropertiesController
 from roguelike_editors.spawner.spawner_instance_toolbar.spawner_instance_toolbar_controller import SpawnerInstanceToolbarController
+from roguelike_editors.spawner.spawner_tutorial_panel import SpawnerTutorialPanelController
 
 
 class SpawnerEditorController:
@@ -48,6 +49,8 @@ class SpawnerEditorController:
         self._instances_visible_last: bool = False
         self.events = SpawnerEditorEventHandler(self)
         self.view = SpawnerEditorView(self)
+        # Tutorial overlay (created after view for alignment)
+        self.tutorial = SpawnerTutorialPanelController(self, self.view)
         # Wire Add button callback from Templates list to begin placement mode
         try:
             self.spawner_manager.list_controller.on_add_template = self._begin_place_template
@@ -84,6 +87,8 @@ class SpawnerEditorController:
             self.instance_properties.on_instance_saved = self._on_instance_saved
         except Exception:
             pass
+        # Track last manager visible state for pulses
+        self._manager_visible_last: bool = False
 
     # Hold-to-focus integration ------------------------------------------------
     def _on_start_hold_focus(self, x_px: float, y_px: float) -> None:
@@ -106,6 +111,11 @@ class SpawnerEditorController:
                 cam.update(SimpleNamespace(x=float(x_px), y=float(y_px)))
         except Exception:
             pass
+        # Tutorial pulse
+        try:
+            setattr(self.model, 'tutorial_hold_focus_started_pulse', True)
+        except Exception:
+            pass
 
     def _on_end_hold_focus(self) -> None:
         self.model.hold_focus_active = False
@@ -117,6 +127,11 @@ class SpawnerEditorController:
             if world is not None and hasattr(world, 'state'):
                 setattr(world.state, 'spawner_input_suppressed', False)
                 setattr(world.state, 'spawner_hold_focus', False)
+        except Exception:
+            pass
+        # Tutorial pulse
+        try:
+            setattr(self.model, 'tutorial_hold_focus_ended_pulse', True)
         except Exception:
             pass
         return
@@ -258,7 +273,8 @@ class SpawnerEditorController:
             active_tool = getattr(active_tool, 'active_tool', None)
             # Gate subpanels by editor visibility
             hold = bool(getattr(self.model, 'hold_focus_active', False))
-            self.spawner_manager.set_visible(self.model.visible and (active_tool == 'spawner_manager') and not hold)
+            mgr_visible = bool(self.model.visible and (active_tool == 'spawner_manager') and not hold)
+            self.spawner_manager.set_visible(mgr_visible)
             # Hide Instances panel while Add Mode, Remove Mode, or Placement is active
             placing_active = bool(getattr(self.model, 'placing_template_id', None))
             instances_visible = bool(
@@ -309,6 +325,17 @@ class SpawnerEditorController:
                     )
             except Exception:
                 pass
+            # Tutorial pulses for visibility toggles
+            try:
+                # Instances panel newly opened
+                if (self.model.visible and (active_tool == 'spawner_list') and not hold and not getattr(self.model, 'add_mode_active', False)
+                        and not getattr(self.model, 'remove_mode_active', False) and not placing_active and not self._instances_visible_last):
+                    setattr(self.model, 'tutorial_instances_open_pulse', True)
+                # Manager newly opened
+                if mgr_visible and not self._manager_visible_last:
+                    setattr(self.model, 'tutorial_manager_open_pulse', True)
+            except Exception:
+                pass
             # Refresh instances list on first show
             if (self.model.visible and (active_tool == 'spawner_list')) and not self._instances_visible_last:
                 try:
@@ -316,6 +343,13 @@ class SpawnerEditorController:
                 except Exception:
                     pass
             self._instances_visible_last = bool(self.model.visible and (active_tool == 'spawner_list'))
+            self._manager_visible_last = bool(mgr_visible)
+            # Route Tutorial panel early so it can consume ESC and clicks inside
+            try:
+                if hasattr(self, 'tutorial') and self.tutorial.handle_event(event):
+                    return True
+            except Exception:
+                pass
             # Route toolbar first to consume UI interactions
             if hasattr(self, 'spawner_toolbar') and self.spawner_toolbar.handle_event(event):
                 return True
@@ -413,6 +447,12 @@ class SpawnerEditorController:
                 except Exception:
                     pass
             self.view.render(screen)
+            # Render tutorial overlay on top
+            try:
+                if hasattr(self, 'tutorial'):
+                    self.tutorial.render(screen)
+            except Exception:
+                pass
         except Exception:
             pass
 
@@ -481,6 +521,12 @@ class SpawnerEditorController:
             self.instance_properties.set_instance(inst, index=selected_index)
             # Visibility is controlled by the presence of a selection and the active tool
             self.instance_properties.model.visible = bool(instances_visible and inst is not None)
+        except Exception:
+            pass
+        # Tutorial pulse on selection
+        try:
+            if inst is not None:
+                setattr(self.model, 'tutorial_instance_selected_pulse', True)
         except Exception:
             pass
 
