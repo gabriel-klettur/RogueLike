@@ -206,6 +206,10 @@ class SpellsPropertiesPanelView:
             keys += [
                 "timings.prepare", "timings.channel", "timings.cooldown",
             ]
+            # Casting costs/rules
+            keys += [
+                "mana_cost",
+            ]
             keys += [
                 "rules.allow_movement", "rules.lock_cast_direction", "rules.interruptible",
                 "rules.automatic", "rules.automatic_cast_punish",

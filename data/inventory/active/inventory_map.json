@@ -1,62 +1,74 @@
 {
-  "6b7246e9-474b-4442-bcdf-48792c91ac4c": {
+  "a3dd5a1f-9462-47b5-ba44-bb11a7848ec4": {
     "item_id": "gold",
     "quantity": 1,
     "zone_id": "Forest",
     "schema_version": "1.0.0",
     "z_layer": 3,
     "tile": {
-      "x": 41,
-      "y": 37
+      "x": 43,
+      "y": 16
     },
-    "created_at": 1757249303.6251342
+    "created_at": 1757257181.106682
   },
-  "c1067cb9-e764-4593-b0fa-8e3730407129": {
-    "item_id": "wood",
-    "quantity": 1,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "z_layer": 3,
-    "tile": {
-      "x": 26,
-      "y": 25
-    },
-    "created_at": 1757249564.6133761
-  },
-  "7b034fba-d661-4d1c-825b-0724e383910b": {
-    "item_id": "wood",
-    "quantity": 1,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "z_layer": 3,
-    "tile": {
-      "x": 24,
-      "y": 13
-    },
-    "created_at": 1757249566.4240685
-  },
-  "3b16e7dc-ef5d-4e0d-8b71-77537b47391f": {
+  "befc6ecf-5016-4f73-8df6-b180c6d9dc3a": {
     "item_id": "gold",
     "quantity": 1,
     "zone_id": "Forest",
     "schema_version": "1.0.0",
     "z_layer": 3,
     "tile": {
-      "x": 9,
-      "y": 1
+      "x": 22,
+      "y": 17
     },
-    "created_at": 1757249577.3125963
+    "created_at": 1757257182.6975994
   },
-  "995e51a9-269f-4598-a315-c1f01c3f55db": {
+  "bc3a1229-b0f0-44f3-8d2c-6ba91c498515": {
+    "item_id": "gold",
+    "quantity": 1,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "z_layer": 3,
+    "tile": {
+      "x": 13,
+      "y": 10
+    },
+    "created_at": 1757257298.4826689
+  },
+  "0fbc28d7-20a4-4ff0-ba3b-57e069c37b93": {
+    "item_id": "experience_orb",
+    "quantity": 1,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "z_layer": 3,
+    "tile": {
+      "x": 13,
+      "y": 12
+    },
+    "created_at": 1757257298.4831731
+  },
+  "63b2da86-3a6a-4c5e-b1d4-3c6b98f0c4cf": {
     "item_id": "experience_orb",
     "quantity": 1,
     "zone_id": "Forest",
     "schema_version": "1.0.0",
     "z_layer": 3,
     "position": {
-      "x": 325,
-      "y": 1610
+      "x": 457,
+      "y": 1943
     },
-    "created_at": 1757249577.313095
+    "created_at": 1757257298.483535
+  },
+  "eb3d1a25-736d-4dff-b1eb-6382c5087d56": {
+    "item_id": "gold",
+    "quantity": 16,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "z_layer": 3,
+    "tile": {
+      "x": 39,
+      "y": 8
+    },
+    "created_at": 1757257302.5556054
   }
 }

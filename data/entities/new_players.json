@@ -47,7 +47,8 @@
           "drag_drop_range": 128,
           "attack_duration": null,
           "dash_charges": 4,
-          "damage_stop_probability": 0.25
+          "damage_stop_probability": 0.25,
+          "mana_regen_per_second": 1.0
         },
         "assets": {
           "active_set": "sets",
@@ -181,7 +182,8 @@
           "basic_death_timer_duration": 8.0,
           "drag_drop_range": 128,
           "dash_charges": 1,
-          "damage_stop_probability": 0.25
+          "damage_stop_probability": 0.25,
+          "mana_regen_per_second": 1.0
         },
         "assets": {
           "active_set": "sets",
@@ -307,7 +309,8 @@
           "basic_death_timer_duration": 8.0,
           "drag_drop_range": 128,
           "dash_charges": 1,
-          "damage_stop_probability": 0.25
+          "damage_stop_probability": 0.25,
+          "mana_regen_per_second": 1.0
         },
         "assets": {
           "active_set": "sets",
@@ -423,7 +426,8 @@
           "basic_death_timer_duration": 8.0,
           "drag_drop_range": 128,
           "dash_charges": 1,
-          "damage_stop_probability": 0.25
+          "damage_stop_probability": 0.25,
+          "mana_regen_per_second": 1.0
         },
         "assets": {
           "active_set": "sets",
@@ -549,7 +553,8 @@
           "basic_death_timer_duration": 8.0,
           "drag_drop_range": 128,
           "dash_charges": 1,
-          "damage_stop_probability": 0.25
+          "damage_stop_probability": 0.25,
+          "mana_regen_per_second": 1.0
         },
         "assets": {
           "active_set": "sets",

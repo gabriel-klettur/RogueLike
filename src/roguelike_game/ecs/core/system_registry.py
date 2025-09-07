@@ -5,6 +5,9 @@ from roguelike_game.ecs.systems.physics.movement_collision_system import Movemen
 from roguelike_game.ecs.systems.rendering.animation_system import AnimationSystem
 from roguelike_game.ecs.systems.rendering.health_bar_system import HealthBarSystem
 from roguelike_game.ecs.systems.rendering.nameplate_system import NamePlateSystem
+from roguelike_game.ecs.systems.rendering.mana_bar_render_system import ManaBarRenderSystem
+from roguelike_game.ecs.systems.rendering.mana_regen_aura_render_system import ManaRegenAuraRenderSystem
+from roguelike_game.ecs.systems.rendering.hud_stats_render_system import HUDStatsRenderSystem
 from roguelike_game.ecs.systems.combat.melee.melee_combat_system import MeleeCombatSystem
 from roguelike_game.ecs.systems.physics.facing_system import FacingSystem
 from roguelike_game.ecs.systems.physics.player_facing_system import PlayerFacingSystem
@@ -84,6 +87,7 @@ from roguelike_game.ecs.systems.chat.vendor_trade_system import VendorTradeSyste
 from roguelike_game.ecs.systems.rendering.chat_proximity_render_system import ChatProximityRenderSystem
 from roguelike_game.ecs.systems.rendering.chat_bubble_render_system import ChatBubbleRenderSystem
 from roguelike_game.ecs.systems.abilities.dash_resource_system import DashResourceSystem
+from roguelike_game.ecs.systems.abilities.mana_regen_system import ManaRegenSystem
 from roguelike_game.ecs.systems.rendering.dash_bar_render_system import DashBarRenderSystem
 from roguelike_game.ecs.systems.abilities.combo_system import ComboSystem
 from roguelike_game.ecs.systems.rendering.combo_bar_render_system import ComboBarRenderSystem
@@ -104,7 +108,7 @@ def get_update_system_classes():
         # Apply restored state (position/hp) once entities exist and are stabilized
         NpcRestoreSystem,
         # Player & input
-        PlayerFacingSystem, FacingSystem, DropDragSystem, InputSystem, ChatProximitySystem, DashResourceSystem,
+        PlayerFacingSystem, FacingSystem, DropDragSystem, InputSystem, ChatProximitySystem, DashResourceSystem, ManaRegenSystem,
         MovementCollisionSystem,
         # Combat & spells
         MeleeCombatSystem, SpellCastingSystem, ArcaneFlameSystem, SmokeSystem, SmokeEmitterSystem, SphereMagicShieldSystem, TeleportSystem, FireworkLaunchSystem, AuraSystem, ParticleSystem, ExplosionSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, LightningEmitterSystem, FireballSystem, LightningSystem, DashSystem, HitboxSystem, ComboSystem, BuildingDamageSystem,
@@ -122,7 +126,7 @@ def get_render_system_classes():
     Se añade dinámicamente SpawnDebug y DeathTimerDebug si estamos en DEBUG.
     """
     base = [
-        HealthBarSystem, DashBarRenderSystem, NamePlateSystem, ChatBubbleRenderSystem, ExperienceRenderSystem, ComboBarRenderSystem, MagicSpellBarRenderSystem,
+        HealthBarSystem, DashBarRenderSystem, ManaBarRenderSystem, ManaRegenAuraRenderSystem, NamePlateSystem, ChatBubbleRenderSystem, ExperienceRenderSystem, ComboBarRenderSystem, MagicSpellBarRenderSystem,
         FireballRenderSystem, ArcaneFlameRenderSystem, FireworkLaunchRenderSystem, SmokeRenderSystem, SmokeEmitterRenderSystem, SphereMagicShieldRenderSystem, TeleportRenderSystem, ParticleRenderSystem, LightningRenderSystem,
         DeathTimerBarSystem,
         # DropRenderSystem removed: drops rendered via RenderSystem
@@ -132,6 +136,8 @@ def get_render_system_classes():
     base.append(EntitiesDebugSystem)
     base.append(GrayscaleRenderSystem)
     base.append(ResurrectionAreaSystem)
+    # HUD textual overlay (bottom-left): HP/MP values
+    base.append(HUDStatsRenderSystem)
     # Otros sistemas de render (eliminados FlashSystem y TrailSystem de render)
     base.append(DropHoverRenderSystem)
     # Halo de proximidad de chat (círculo amarillo)

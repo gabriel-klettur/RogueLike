@@ -2,6 +2,7 @@
   "fireball": {
     "id": "fireball",
     "type": "projectile",
+    "mana_cost": 1,
     "name": "Bola de Fuego",
     "timings": {
       "prepare": 0.015,
@@ -35,6 +36,7 @@
   "iceball": {
     "id": "iceball",
     "type": "projectile",
+    "mana_cost": 10,
     "name": "Bola de Hielo",
     "timings": {
       "prepare": 0.2,
@@ -68,6 +70,7 @@
   "lightball": {
     "id": "lightball",
     "type": "projectile",
+    "mana_cost": 10,
     "name": "Bola de Luz",
     "timings": {
       "prepare": 0.5,
@@ -101,6 +104,7 @@
   "darkball": {
     "id": "darkball",
     "type": "projectile",
+    "mana_cost": 10,
     "name": "Bola de Oscuridad",
     "timings": {
       "prepare": 0.2,
@@ -134,6 +138,7 @@
   "healing_aura": {
     "id": "healing_aura",
     "type": "aura",
+    "mana_cost": 10,
     "name": "Aura de Curación",
     "timings": {
       "prepare": 0.2,
@@ -193,6 +198,7 @@
   "laser_beam": {
     "id": "laser_beam",
     "type": "beam",
+    "mana_cost": 10,
     "name": "Laser",
     "timings": {
       "prepare": 0.1,
@@ -245,6 +251,7 @@
   "dash": {
     "id": "dash",
     "type": "dash",
+    "mana_cost": 0,
     "name": "Dash",
     "timings": {
       "prepare": 0.0,
@@ -270,6 +277,7 @@
   "teleport": {
     "id": "teleport",
     "type": "teleport",
+    "mana_cost": 10,
     "name": "Teleport",
     "timings": {
       "prepare": 0.0,
@@ -295,6 +303,7 @@
   "slash": {
     "id": "slash",
     "type": "slash",
+    "mana_cost": 0,
     "name": "Slash",
     "timings": {
       "prepare": 0.0,
@@ -340,6 +349,7 @@
   "lightning": {
     "id": "lightning",
     "type": "lightning",
+    "mana_cost": 10,
     "name": "Lightning",
     "timings": {
       "prepare": 0.1,
@@ -362,6 +372,7 @@
   "arcane_flame": {
     "id": "arcane_flame",
     "type": "arcane_flame",
+    "mana_cost": 10,
     "name": "Arcane Flame",
     "timings": {
       "prepare": 0.1,
@@ -435,6 +446,7 @@
   "firework_launch": {
     "id": "firework_launch",
     "type": "firework_launch",
+    "mana_cost": 10,
     "name": "Firework Launch",
     "timings": {
       "prepare": 0.2,
@@ -481,6 +493,7 @@
   "smoke": {
     "id": "smoke",
     "type": "smoke",
+    "mana_cost": 10,
     "name": "Smoke",
     "timings": {
       "prepare": 0.15,
@@ -506,6 +519,7 @@
   "smoke_emitter": {
     "id": "smoke_emitter",
     "type": "smoke_emitter",
+    "mana_cost": 10,
     "name": "Smoke Emitter",
     "timings": {
       "prepare": 0.1,
@@ -538,6 +552,7 @@
   "sphere_magic_shield": {
     "id": "sphere_magic_shield",
     "type": "sphere_magic_shield",
+    "mana_cost": 10,
     "name": "Sphere Magic Shield",
     "timings": {
       "prepare": 0.2,
