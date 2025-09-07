@@ -1870,8 +1870,8 @@
         "id": 113,
         "template_id": 90,
         "zone": "Forest",
-        "rel_x": 726,
-        "rel_y": 287,
+        "rel_x": 742,
+        "rel_y": 305,
         "spawn_id": "survival_10_forest_14_9",
         "overrides": {
             "scale": [

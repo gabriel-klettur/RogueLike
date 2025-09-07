@@ -14,6 +14,12 @@ from roguelike_editors.spawner.services.persistence import (
     generate_instance_id,
     load_spawners_json,
 )
+from roguelike_engine.config import config as _cfg
+from roguelike_engine.config.map_config import global_map_settings
+from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_engine.config.config import BUILDINGS_INSTANCES_PATH, BUILDINGS_TEMPLATES_PATH
+import os
+import json
 from .instance_properties_model import InstancePropertiesModel
 from .instance_properties_view import InstancePropertiesView
 from .instance_properties_events import InstancePropertiesEventHandler
@@ -39,6 +45,11 @@ class InstancePropertiesController:
         self.on_instance_saved: Optional[callable] = None
         # Track last edited dotted key path (e.g., "overrides.building_id")
         self._last_edit_key: Optional[str] = None
+        # Cache of building instance id -> template_id (string)
+        self._building_index: Dict[int, str] | None = None
+        # Cache of valid building template ids
+        self._building_template_ids: set[int] | None = None
+        self.game = None
 
     # --- API -----------------------------------------------------------------
     def set_instance(self, inst: Optional[Dict[str, Any]], *, index: Optional[int] = None) -> None:
@@ -71,12 +82,26 @@ class InstancePropertiesController:
         self.model.template_scroll_offset = 0
         self._load_template_options()
         self._rows = self._flatten_instance()
+        # Load visuals map and build rows
+        visuals = {}
+        try:
+            if inst is not None and isinstance(inst.get('visuals'), dict):
+                visuals = dict(inst.get('visuals') or {})
+        except Exception:
+            visuals = {}
+        self.model.visuals = visuals
+        # Ensure buildings index is ready
+        self._ensure_buildings_index()
+        self._ensure_building_templates()
+        self._build_visuals_rows()
 
     def render(self, screen, *, anchor=None):
         if not self.model.visible:
             return None
         # Keep rows up to date
         self._rows = self._flatten_instance()
+        # Rebuild visuals rows if visuals changed externally
+        self._build_visuals_rows()
         return self.view.render(self, screen, anchor=anchor)
 
     def handle_event(self, event) -> bool:
@@ -120,6 +145,393 @@ class InstancePropertiesController:
 
     def get_rows(self) -> List[Tuple[str, str]]:
         return list(self._rows)
+
+    # Visuals helpers ---------------------------------------------------------
+    def _ensure_buildings_index(self) -> None:
+        if self._building_index is not None:
+            return
+        path = BUILDINGS_INSTANCES_PATH
+        idx: Dict[int, str] = {}
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                arr = json.load(f)
+            if isinstance(arr, list):
+                for e in arr:
+                    try:
+                        bid = int(e.get('id'))
+                        tpl = e.get('template_id')
+                        # Store as string for display
+                        idx[bid] = str(tpl)
+                    except Exception:
+                        continue
+        except Exception:
+            idx = {}
+        self._building_index = idx
+
+    def _ensure_building_templates(self) -> None:
+        if self._building_template_ids is not None:
+            return
+        ids: set[int] = set()
+        try:
+            with open(BUILDINGS_TEMPLATES_PATH, 'r', encoding='utf-8') as f:
+                arr = json.load(f)
+            if isinstance(arr, list):
+                for e in arr:
+                    try:
+                        tid = int(e.get('id'))
+                        ids.add(tid)
+                    except Exception:
+                        continue
+        except Exception:
+            ids = set()
+        self._building_template_ids = ids
+
+    def _build_visuals_rows(self) -> None:
+        visuals = getattr(self.model, 'visuals', {}) or {}
+        idx = self._building_index or {}
+        rows: List[tuple[str, str, str]] = []
+        try:
+            # Preserve insertion order of dict for stable UX
+            for state, inst_id in visuals.items():
+                try:
+                    inst_int = int(inst_id)
+                except Exception:
+                    # If not parseable, keep string
+                    inst_int = None
+                inst_str = str(inst_id)
+                tpl_str = 'N/A'
+                if inst_int is not None and inst_int in idx:
+                    tpl_str = idx.get(inst_int, 'N/A')
+                rows.append((str(state), inst_str, tpl_str))
+        except Exception:
+            rows = []
+        self.model.visuals_rows = rows
+
+    def get_visuals_rows(self) -> List[tuple[str, str, str]]:
+        return list(getattr(self.model, 'visuals_rows', []) or [])
+
+    def _parse_int(self, s: str) -> Optional[int]:
+        try:
+            return int(float(str(s).strip()))
+        except Exception:
+            return None
+
+    def _validate_template_text(self, text: str) -> tuple[bool, Optional[str], Optional[int]]:
+        """Return (is_valid, error_msg, parsed_id). Empty text returns (True, None, None)."""
+        t = (text or '').strip()
+        if t == '':
+            return True, None, None
+        tpl_id = self._parse_int(t)
+        if tpl_id is None:
+            return False, "Debe ser un número de template", None
+        self._ensure_building_templates()
+        valid_ids = self._building_template_ids or set()
+        if tpl_id not in valid_ids:
+            return False, "Template no existe", tpl_id
+        return True, None, tpl_id
+
+    def get_visual_input_validation(self, state_key: str) -> tuple[bool, Optional[str]]:
+        """Check current text being edited for a given state."""
+        txt = (self.model.visuals_pending_templates or {}).get(state_key, '')
+        if getattr(self.model, 'visuals_editing_state', None) == state_key and self._text_input is not None:
+            try:
+                txt = self._text_input.text
+            except Exception:
+                pass
+        ok, msg, _ = self._validate_template_text(txt)
+        return ok, msg
+
+    # --- Visuals editing API -------------------------------------------------
+    def set_game(self, game) -> None:
+        self.game = game
+
+    def begin_edit_visual(self, state_key: str) -> None:
+        self.model.visuals_editing_state = str(state_key)
+        # Pre-fill pending template with current template text
+        cur_tpl = 'N/A'
+        try:
+            rows = self.get_visuals_rows()
+            for st, _iid, tpl in rows:
+                if st == state_key:
+                    cur_tpl = str(tpl)
+                    break
+        except Exception:
+            pass
+        # If template is N/A, start empty
+        if cur_tpl.upper() == 'N/A':
+            cur_tpl = ''
+        self.model.visuals_pending_templates[state_key] = cur_tpl
+        # Activate text input
+        if self._text_input is None:
+            font = pygame.font.SysFont(None, 18)
+            self._text_input = TextInput(font)
+        self._text_input.activate(cur_tpl, select_all=True)
+        # Ensure OS text input is started for proper TEXTINPUT events
+        try:
+            import pygame as _pg
+            _pg.key.start_text_input()
+        except Exception:
+            pass
+
+    def cancel_edit_visual(self) -> None:
+        self.model.visuals_editing_state = None
+        try:
+            import pygame as _pg
+            _pg.key.stop_text_input()
+        except Exception:
+            pass
+
+    def _load_buildings_instances(self) -> List[Dict[str, Any]]:
+        path = BUILDINGS_INSTANCES_PATH
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                if isinstance(data, list):
+                    return data
+        except FileNotFoundError:
+            return []
+        except Exception:
+            return []
+        return []
+
+    def _write_buildings_instances(self, data: List[Dict[str, Any]]) -> None:
+        path = BUILDINGS_INSTANCES_PATH
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(data or [], f, ensure_ascii=False, indent=2)
+
+    def _count_instance_refs_in_visuals(self, inst_id: int) -> int:
+        visuals = getattr(self.model, 'visuals', {}) or {}
+        cnt = 0
+        for k, v in visuals.items():
+            try:
+                if int(v) == inst_id:
+                    cnt += 1
+            except Exception:
+                continue
+        return cnt
+
+    def _clone_instance_with_new_template(self, source_id: int, new_template_id: int) -> Optional[int]:
+        data = self._load_buildings_instances()
+        src = None
+        for e in data:
+            try:
+                if int(e.get('id')) == source_id:
+                    src = e
+                    break
+            except Exception:
+                continue
+        if src is None:
+            return None
+        # Compute next id
+        next_id = 1
+        try:
+            ids = [int(e.get('id')) for e in data if e.get('id') is not None]
+            if ids:
+                next_id = max(ids) + 1
+        except Exception:
+            pass
+        clone = {
+            'id': next_id,
+            'template_id': int(new_template_id),
+            'zone': src.get('zone'),
+            'rel_x': src.get('rel_x'),
+            'rel_y': src.get('rel_y'),
+        }
+        # Copy overrides if present
+        if isinstance(src.get('overrides'), dict):
+            clone['overrides'] = src['overrides']
+        data.append(clone)
+        self._write_buildings_instances(data)
+        # Refresh index
+        self._building_index = None
+        self._ensure_buildings_index()
+        return next_id
+
+    def commit_visual_edit_if_finished(self) -> bool:
+        state = getattr(self.model, 'visuals_editing_state', None)
+        if not state:
+            return False
+        if self._text_input is None or self._text_input.active:
+            return False
+        # Read new template id
+        new_txt = self._text_input.text if self._text_input else ''
+        self.model.visuals_pending_templates[state] = new_txt
+        ok, msg, new_tpl_id = self._validate_template_text(new_txt)
+        # If invalid (not number or no existe) -> keep editing and show error
+        if not ok and new_txt.strip() != '':
+            # Re-activate input so user can correct
+            try:
+                self._text_input.activate(new_txt, select_all=False)
+            except Exception:
+                pass
+            # Keep editing state
+            return True
+        # Resolve current building instance id (if any)
+        visuals = getattr(self.model, 'visuals', {}) or {}
+        cur_inst_id = visuals.get(state)
+        cur_inst_int = None
+        if cur_inst_id is not None:
+            try:
+                cur_inst_int = int(cur_inst_id)
+            except Exception:
+                cur_inst_int = None
+        # If there is an existing instance id and a valid template id
+        if cur_inst_int is not None and new_tpl_id is not None:
+            # If the instance is only referenced by this state, update in-place
+            if self._count_instance_refs_in_visuals(cur_inst_int) <= 1:
+                data = self._load_buildings_instances()
+                changed = False
+                for e in data:
+                    try:
+                        if int(e.get('id')) == cur_inst_int:
+                            e['template_id'] = new_tpl_id
+                            changed = True
+                            break
+                    except Exception:
+                        continue
+                if changed:
+                    self._write_buildings_instances(data)
+                    # refresh index/rows
+                    self._building_index = None
+                    self._ensure_buildings_index()
+                    self._build_visuals_rows()
+            else:
+                # Shared by multiple states: clone and rewire only this state
+                new_id = self._clone_instance_with_new_template(cur_inst_int, new_tpl_id)
+                if new_id is not None:
+                    visuals[state] = new_id
+                    self.model.visuals = visuals
+                    try:
+                        if self.model.selected_instance is not None:
+                            self.model.selected_instance['visuals'] = visuals
+                    except Exception:
+                        pass
+                    self._persist_instance()
+                    # Rebuild views/indexes
+                    self._ensure_buildings_index()
+                    self._build_visuals_rows()
+        # If existing instance and template cleared -> remove visuals mapping and delete instance if unused
+        elif cur_inst_int is not None and new_tpl_id is None:
+            # Remove mapping for this state
+            try:
+                if state in visuals:
+                    visuals.pop(state)
+                    # Persist spawner instance
+                    self.model.selected_instance['visuals'] = visuals
+                    self._persist_instance()
+            except Exception:
+                pass
+            # Check if other states still reference the instance
+            still_used = False
+            for k, v in (visuals or {}).items():
+                try:
+                    if int(v) == cur_inst_int:
+                        still_used = True
+                        break
+                except Exception:
+                    continue
+            if not still_used:
+                data = self._load_buildings_instances()
+                data2 = []
+                removed = False
+                for e in data:
+                    try:
+                        if not removed and int(e.get('id')) == cur_inst_int:
+                            removed = True
+                            continue
+                    except Exception:
+                        pass
+                    data2.append(e)
+                if removed:
+                    self._write_buildings_instances(data2)
+                # refresh
+                self._building_index = None
+                self._ensure_buildings_index()
+                self._build_visuals_rows()
+        # If there was no instance id: Enter only updates pending text; creation via '+'
+        # Clear editing flag and stop text input
+        self.model.visuals_editing_state = None
+        try:
+            import pygame as _pg
+            _pg.key.stop_text_input()
+        except Exception:
+            pass
+        return True
+
+    def add_building_instance_for_visual(self, state_key: str) -> Optional[int]:
+        # Need a template id: prefer current text input if editing this state
+        txt = (self.model.visuals_pending_templates or {}).get(state_key, '')
+        if getattr(self.model, 'visuals_editing_state', None) == state_key and self._text_input is not None:
+            try:
+                txt = self._text_input.text
+            except Exception:
+                pass
+        ok, msg, tpl_id = self._validate_template_text(txt)
+        if tpl_id is None or not ok:
+            return None
+        # Load buildings instances and compute next id
+        data = self._load_buildings_instances()
+        next_id = 1
+        try:
+            ids = [int(e.get('id')) for e in data if e.get('id') is not None]
+            if ids:
+                next_id = max(ids) + 1
+        except Exception:
+            pass
+        # Determine zone and rel_x/rel_y from camera center relative to zone
+        zone = None
+        try:
+            zone = str((self.model.selected_instance or {}).get('zone'))
+        except Exception:
+            zone = None
+        if not zone:
+            zone = 'lobby'
+        cx = cy = 0
+        try:
+            cam = getattr(self.game, 'camera', None)
+            if cam is not None:
+                zoom = getattr(cam, 'zoom', 1.0) or 1.0
+                cx = int(getattr(cam, 'offset_x', 0.0) + (cam.screen_width / (2 * zoom)))
+                cy = int(getattr(cam, 'offset_y', 0.0) + (cam.screen_height / (2 * zoom)))
+        except Exception:
+            pass
+        # Convert zone offsets to pixels (offsets likely in tiles)
+        off_x, off_y = 0, 0
+        try:
+            oz = global_map_settings.zone_offsets.get(zone, (0, 0))
+            off_x = int(oz[0] * TILE_SIZE)
+            off_y = int(oz[1] * TILE_SIZE)
+        except Exception:
+            pass
+        rel_x = int(cx - off_x)
+        rel_y = int(cy - off_y)
+        entry = {
+            'id': next_id,
+            'template_id': tpl_id,
+            'zone': zone,
+            'rel_x': int(rel_x),
+            'rel_y': int(rel_y),
+        }
+        data.append(entry)
+        self._write_buildings_instances(data)
+        # Update visuals mapping and persist spawner instance
+        visuals = getattr(self.model, 'visuals', {}) or {}
+        visuals[state_key] = next_id
+        self.model.visuals = visuals
+        try:
+            if self.model.selected_instance is not None:
+                self.model.selected_instance['visuals'] = visuals
+        except Exception:
+            pass
+        self._persist_instance()
+        # Refresh indexes/rows
+        self._building_index = None
+        self._ensure_buildings_index()
+        self._build_visuals_rows()
+        # Exit edit mode
+        self.model.visuals_editing_state = None
+        return next_id
 
     # --- Template combobox helpers ------------------------------------------
     def _load_template_options(self) -> None:

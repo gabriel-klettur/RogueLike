@@ -1,0 +1,2763 @@
+[
+    {
+        "zone": "lobby",
+        "rel_x": 957,
+        "rel_y": 373,
+        "assets": {
+            "idle": "assets/buildings/temples/catholic.png"
+        },
+        "solid": true,
+        "scale": [
+            353,
+            528
+        ],
+        "original_scale": [
+            1024,
+            1536
+        ],
+        "split_ratio": 0.78,
+        "z_bottom": 3,
+        "z_top": 9,
+        "collider_scope": "CG",
+        "id": 1,
+        "z": 3
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 974,
+        "rel_y": 878,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "scale": [
+            166,
+            225
+        ],
+        "original_scale": [
+            166,
+            225
+        ],
+        "split_ratio": 0.632,
+        "z_bottom": 2,
+        "z_top": 6,
+        "collider_scope": "CG",
+        "id": 2,
+        "z": 2
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 1410,
+        "rel_y": -172,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_2.png"
+        },
+        "solid": true,
+        "scale": [
+            180,
+            244
+        ],
+        "original_scale": [
+            456,
+            626
+        ],
+        "split_ratio": 0.801,
+        "z_bottom": 2,
+        "z_top": 2,
+        "collider_scope": "CG",
+        "id": 3,
+        "z": 2
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 565,
+        "rel_y": 189,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_3.png"
+        },
+        "solid": true,
+        "scale": [
+            189,
+            239
+        ],
+        "original_scale": [
+            189,
+            239
+        ],
+        "split_ratio": 0.664,
+        "z_bottom": 4,
+        "z_top": 6,
+        "collider_scope": "CG",
+        "id": 4,
+        "z": 4
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 1485,
+        "rel_y": 654,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_7.png"
+        },
+        "solid": true,
+        "scale": [
+            131,
+            177
+        ],
+        "original_scale": [
+            227,
+            309
+        ],
+        "split_ratio": 0.801,
+        "z_bottom": 1,
+        "z_top": 6,
+        "collider_scope": "CG",
+        "id": 5,
+        "z": 1
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 854,
+        "rel_y": 180,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_8.png"
+        },
+        "solid": true,
+        "scale": [
+            231,
+            282
+        ],
+        "original_scale": [
+            251,
+            308
+        ],
+        "split_ratio": 0.681,
+        "z_bottom": 1,
+        "z_top": 7,
+        "collider_scope": "CG",
+        "id": 6,
+        "z": 1
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 1428,
+        "rel_y": -109,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_9.png"
+        },
+        "solid": true,
+        "scale": [
+            189,
+            241
+        ],
+        "original_scale": [
+            241,
+            324
+        ],
+        "split_ratio": 0.801,
+        "z_bottom": 1,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 7,
+        "z": 1
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 853,
+        "rel_y": 584,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_10.png"
+        },
+        "solid": true,
+        "scale": [
+            201,
+            258
+        ],
+        "original_scale": [
+            251,
+            324
+        ],
+        "split_ratio": 0.698,
+        "z_bottom": 3,
+        "z_top": 8,
+        "collider_scope": "CG",
+        "id": 8,
+        "z": 3
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 1041,
+        "rel_y": 210,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_11.png"
+        },
+        "solid": true,
+        "scale": [
+            232,
+            232
+        ],
+        "original_scale": [
+            233,
+            233
+        ],
+        "split_ratio": 0.517,
+        "z_bottom": 1,
+        "z_top": 4,
+        "collider_scope": "CG",
+        "id": 9,
+        "z": 1
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 32,
+        "rel_y": 434,
+        "assets": {
+            "idle": "assets/buildings/gardens/garden_5.png"
+        },
+        "solid": true,
+        "scale": [
+            499,
+            499
+        ],
+        "original_scale": [
+            1024,
+            1024
+        ],
+        "split_ratio": 0.801,
+        "z_bottom": 1,
+        "z_top": 0,
+        "collider_scope": "CG",
+        "id": 10,
+        "z": 1
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 141,
+        "rel_y": -833,
+        "assets": {
+            "idle": "assets/buildings/castles/castle_2.png"
+        },
+        "solid": true,
+        "scale": [
+            1322,
+            879
+        ],
+        "original_scale": [
+            3072,
+            2048
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 11,
+        "z": 3
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 935,
+        "rel_y": -177,
+        "assets": {
+            "idle": "assets/buildings/temples/satanist.png"
+        },
+        "solid": true,
+        "scale": [
+            414,
+            414
+        ],
+        "original_scale": [
+            1024,
+            1024
+        ],
+        "split_ratio": 0.683,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 12,
+        "z": 3
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 730,
+        "rel_y": 141,
+        "assets": {
+            "idle": "assets/buildings/statues/statue_olim_01.png"
+        },
+        "solid": true,
+        "scale": [
+            158,
+            158
+        ],
+        "original_scale": [
+            1024,
+            1024
+        ],
+        "split_ratio": 0.361,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 13,
+        "z": 3
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 146,
+        "rel_y": 224,
+        "assets": {
+            "idle": "assets/buildings/shops/magic_tower.png"
+        },
+        "solid": true,
+        "scale": [
+            316,
+            473
+        ],
+        "original_scale": [
+            1024,
+            1536
+        ],
+        "split_ratio": 0.679,
+        "z_bottom": 2,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 14,
+        "z": 2
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 503,
+        "rel_y": 1154,
+        "assets": {
+            "idle": "assets/buildings/shops/healer_1.png"
+        },
+        "solid": true,
+        "scale": [
+            234,
+            234
+        ],
+        "original_scale": [
+            600,
+            600
+        ],
+        "split_ratio": 0.671,
+        "z_bottom": 1,
+        "z_top": 7,
+        "collider_scope": "CG",
+        "id": 16,
+        "z": 1
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 18,
+        "rel_y": 936,
+        "assets": {
+            "idle": "assets/buildings/shops/healer.png"
+        },
+        "solid": true,
+        "scale": [
+            222,
+            222
+        ],
+        "original_scale": [
+            768,
+            768
+        ],
+        "split_ratio": 0.56,
+        "z_bottom": 3,
+        "z_top": 6,
+        "collider_scope": "CG",
+        "id": 17,
+        "z": 3
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 211,
+        "rel_y": -222,
+        "assets": {
+            "idle": "assets/buildings/shops/blacksmith.png"
+        },
+        "solid": true,
+        "scale": [
+            505,
+            505
+        ],
+        "original_scale": [
+            1200,
+            1200
+        ],
+        "split_ratio": 0.618,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 18,
+        "z": 3
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 398,
+        "rel_y": 870,
+        "assets": {
+            "idle": "assets/buildings/shops/jewlery_shop.png"
+        },
+        "solid": true,
+        "scale": [
+            325,
+            325
+        ],
+        "original_scale": [
+            325,
+            325
+        ],
+        "split_ratio": 0.618,
+        "z_bottom": 2,
+        "z_top": 7,
+        "collider_scope": "CG",
+        "id": 19,
+        "z": 2
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 1179,
+        "rel_y": 221,
+        "assets": {
+            "idle": "assets/buildings/shops/banco.png"
+        },
+        "solid": true,
+        "scale": [
+            389,
+            579
+        ],
+        "original_scale": [
+            1024,
+            1536
+        ],
+        "split_ratio": 0.572,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 20,
+        "z": 3
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 630,
+        "rel_y": 447,
+        "assets": {
+            "idle": "assets/buildings/gardens/flowers_9.png"
+        },
+        "solid": true,
+        "scale": [
+            73,
+            177
+        ],
+        "original_scale": [
+            169,
+            412
+        ],
+        "split_ratio": 0.95,
+        "z_bottom": 3,
+        "z_top": 3,
+        "collider_scope": "CG",
+        "id": 21,
+        "z": 3
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 901,
+        "rel_y": 491,
+        "assets": {
+            "idle": "assets/buildings/gardens/flowers_9.png"
+        },
+        "solid": true,
+        "scale": [
+            75,
+            182
+        ],
+        "original_scale": [
+            169,
+            412
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 3,
+        "collider_scope": "CG",
+        "id": 22,
+        "z": 3
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 934,
+        "rel_y": 1065,
+        "assets": {
+            "idle": "assets/buildings/gardens/garden_4.png"
+        },
+        "solid": true,
+        "scale": [
+            528,
+            528
+        ],
+        "original_scale": [
+            528,
+            528
+        ],
+        "split_ratio": 0.057,
+        "z_bottom": 4,
+        "z_top": 6,
+        "collider_scope": "CG",
+        "id": 23,
+        "z": 4
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 883,
+        "rel_y": 1032,
+        "assets": {
+            "idle": "assets/buildings/gardens/flowers_9.png"
+        },
+        "solid": true,
+        "scale": [
+            50,
+            121
+        ],
+        "original_scale": [
+            169,
+            412
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 3,
+        "collider_scope": "CG",
+        "id": 24,
+        "z": 3
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 878,
+        "rel_y": 1443,
+        "assets": {
+            "idle": "assets/buildings/gardens/flowers_9.png"
+        },
+        "solid": true,
+        "scale": [
+            50,
+            121
+        ],
+        "original_scale": [
+            169,
+            412
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 3,
+        "collider_scope": "CG",
+        "id": 25,
+        "z": 3
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 879,
+        "rel_y": 1155,
+        "assets": {
+            "idle": "assets/buildings/gardens/flowers_9.png"
+        },
+        "solid": true,
+        "scale": [
+            50,
+            121
+        ],
+        "original_scale": [
+            169,
+            412
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 3,
+        "collider_scope": "CG",
+        "id": 26,
+        "z": 3
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 1473,
+        "rel_y": 1052,
+        "assets": {
+            "idle": "assets/buildings/gardens/flowers_9.png"
+        },
+        "solid": true,
+        "scale": [
+            50,
+            121
+        ],
+        "original_scale": [
+            169,
+            412
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 3,
+        "collider_scope": "CG",
+        "id": 27,
+        "z": 3
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 881,
+        "rel_y": 1318,
+        "assets": {
+            "idle": "assets/buildings/gardens/flowers_9.png"
+        },
+        "solid": true,
+        "scale": [
+            50,
+            120
+        ],
+        "original_scale": [
+            169,
+            412
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 3,
+        "collider_scope": "CG",
+        "id": 28,
+        "z": 3
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 1472,
+        "rel_y": 1437,
+        "assets": {
+            "idle": "assets/buildings/gardens/flowers_9.png"
+        },
+        "solid": true,
+        "scale": [
+            50,
+            121
+        ],
+        "original_scale": [
+            169,
+            412
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 3,
+        "collider_scope": "CG",
+        "id": 29,
+        "z": 3
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 1476,
+        "rel_y": 1169,
+        "assets": {
+            "idle": "assets/buildings/gardens/flowers_9.png"
+        },
+        "solid": true,
+        "scale": [
+            50,
+            121
+        ],
+        "original_scale": [
+            169,
+            412
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 3,
+        "collider_scope": "CG",
+        "id": 30,
+        "z": 3
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 1474,
+        "rel_y": 1315,
+        "assets": {
+            "idle": "assets/buildings/gardens/flowers_9.png"
+        },
+        "solid": true,
+        "scale": [
+            50,
+            121
+        ],
+        "original_scale": [
+            169,
+            412
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 3,
+        "collider_scope": "CG",
+        "id": 31,
+        "z": 3
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 56,
+        "rel_y": 1513,
+        "assets": {
+            "idle": "assets/buildings/gardens/flowers_1.png"
+        },
+        "solid": true,
+        "scale": [
+            109,
+            51
+        ],
+        "original_scale": [
+            412,
+            169
+        ],
+        "split_ratio": 0.05,
+        "z_bottom": 1,
+        "z_top": 3,
+        "collider_scope": "CG",
+        "id": 33,
+        "z": 1
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 228,
+        "rel_y": 1512,
+        "assets": {
+            "idle": "assets/buildings/gardens/flowers_1.png"
+        },
+        "solid": true,
+        "scale": [
+            133,
+            54
+        ],
+        "original_scale": [
+            412,
+            169
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 1,
+        "z_top": 3,
+        "collider_scope": "CG",
+        "id": 34,
+        "z": 1
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 422,
+        "rel_y": 1513,
+        "assets": {
+            "idle": "assets/buildings/gardens/flowers_1.png"
+        },
+        "solid": true,
+        "scale": [
+            122,
+            50
+        ],
+        "original_scale": [
+            412,
+            169
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 1,
+        "z_top": 3,
+        "collider_scope": "CG",
+        "id": 35,
+        "z": 1
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 584,
+        "rel_y": 1508,
+        "assets": {
+            "idle": "assets/buildings/gardens/flowers_1.png"
+        },
+        "solid": true,
+        "scale": [
+            137,
+            56
+        ],
+        "original_scale": [
+            412,
+            169
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 1,
+        "z_top": 1,
+        "collider_scope": "CG",
+        "id": 36,
+        "z": 1
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 78,
+        "rel_y": 1350,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_6.png"
+        },
+        "solid": true,
+        "scale": [
+            210,
+            210
+        ],
+        "original_scale": [
+            540,
+            540
+        ],
+        "split_ratio": 0.605,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 37,
+        "z": 3
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 289,
+        "rel_y": 1379,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_6.png"
+        },
+        "solid": true,
+        "scale": [
+            188,
+            188
+        ],
+        "original_scale": [
+            540,
+            540
+        ],
+        "split_ratio": 0.601,
+        "z_bottom": 3,
+        "z_top": 6,
+        "collider_scope": "CG",
+        "id": 38,
+        "z": 3
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 469,
+        "rel_y": 1370,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_6.png"
+        },
+        "solid": true,
+        "scale": [
+            206,
+            206
+        ],
+        "original_scale": [
+            540,
+            540
+        ],
+        "split_ratio": 0.626,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 39,
+        "z": 3
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 558,
+        "rel_y": 551,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "scale": [
+            197,
+            269
+        ],
+        "original_scale": [
+            197,
+            269
+        ],
+        "split_ratio": 0.632,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 42,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 781,
+        "rel_y": 683,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_7.png"
+        },
+        "solid": true,
+        "scale": [
+            227,
+            309
+        ],
+        "original_scale": [
+            227,
+            309
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 43,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 909,
+        "rel_y": -104,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "scale": [
+            176,
+            240
+        ],
+        "original_scale": [
+            176,
+            240
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 44,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 1003,
+        "rel_y": -14,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "scale": [
+            166,
+            227
+        ],
+        "original_scale": [
+            166,
+            227
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 0,
+        "collider_scope": "CG",
+        "id": 45,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 1103,
+        "rel_y": -96,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "scale": [
+            177,
+            242
+        ],
+        "original_scale": [
+            177,
+            242
+        ],
+        "split_ratio": 0.64,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 46,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 1242,
+        "rel_y": -79,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "scale": [
+            114,
+            156
+        ],
+        "original_scale": [
+            114,
+            156
+        ],
+        "split_ratio": 0.635,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 47,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 679,
+        "rel_y": -52,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "scale": [
+            164,
+            224
+        ],
+        "original_scale": [
+            164,
+            224
+        ],
+        "split_ratio": 0.29,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 48,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 831,
+        "rel_y": -46,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "scale": [
+            162,
+            221
+        ],
+        "original_scale": [
+            162,
+            221
+        ],
+        "split_ratio": 0.371,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 49,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 837,
+        "rel_y": 84,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "scale": [
+            114,
+            156
+        ],
+        "original_scale": [
+            114,
+            156
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 4,
+        "collider_scope": "CG",
+        "id": 50,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 727,
+        "rel_y": 68,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "scale": [
+            173,
+            236
+        ],
+        "original_scale": [
+            173,
+            236
+        ],
+        "split_ratio": 0.631,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 51,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 578,
+        "rel_y": 14,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "scale": [
+            114,
+            156
+        ],
+        "original_scale": [
+            114,
+            156
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 0,
+        "collider_scope": "CG",
+        "id": 52,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 537,
+        "rel_y": 46,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "scale": [
+            114,
+            156
+        ],
+        "original_scale": [
+            114,
+            156
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 53,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 477,
+        "rel_y": -17,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "scale": [
+            114,
+            156
+        ],
+        "original_scale": [
+            114,
+            156
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 4,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 54,
+        "z": 4
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 732,
+        "rel_y": -144,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "scale": [
+            180,
+            245
+        ],
+        "original_scale": [
+            180,
+            245
+        ],
+        "split_ratio": 0.69,
+        "z_bottom": 1,
+        "z_top": 3,
+        "collider_scope": "CG",
+        "id": 55,
+        "z": 1
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 1298,
+        "rel_y": -47,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "scale": [
+            139,
+            190
+        ],
+        "original_scale": [
+            139,
+            190
+        ],
+        "split_ratio": 0.611,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 56,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 644,
+        "rel_y": 51,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "scale": [
+            129,
+            176
+        ],
+        "original_scale": [
+            129,
+            176
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 57,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 568,
+        "rel_y": -90,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "scale": [
+            141,
+            192
+        ],
+        "original_scale": [
+            141,
+            192
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 58,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 895,
+        "rel_y": -48,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_10.png"
+        },
+        "solid": true,
+        "scale": [
+            251,
+            324
+        ],
+        "original_scale": [
+            251,
+            324
+        ],
+        "split_ratio": 0.691,
+        "z_bottom": 3,
+        "z_top": 6,
+        "collider_scope": "CG",
+        "id": 59,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 1335,
+        "rel_y": -221,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_10.png"
+        },
+        "solid": true,
+        "scale": [
+            251,
+            324
+        ],
+        "original_scale": [
+            251,
+            324
+        ],
+        "split_ratio": 0.667,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 60,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 325,
+        "rel_y": -228,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_10.png"
+        },
+        "solid": true,
+        "scale": [
+            251,
+            324
+        ],
+        "original_scale": [
+            251,
+            324
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 61,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 225,
+        "rel_y": -247,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_11.png"
+        },
+        "solid": true,
+        "scale": [
+            233,
+            333
+        ],
+        "original_scale": [
+            233,
+            333
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 62,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 73,
+        "rel_y": -236,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_10.png"
+        },
+        "solid": true,
+        "scale": [
+            251,
+            324
+        ],
+        "original_scale": [
+            251,
+            324
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 2,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 63,
+        "z": 2
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 181,
+        "rel_y": 344,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_11.png"
+        },
+        "solid": true,
+        "scale": [
+            233,
+            333
+        ],
+        "original_scale": [
+            233,
+            333
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 64,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": -11,
+        "rel_y": -101,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_2.png"
+        },
+        "solid": true,
+        "scale": [
+            194,
+            265
+        ],
+        "original_scale": [
+            194,
+            265
+        ],
+        "split_ratio": 0.698,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 65,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 18,
+        "rel_y": 94,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "scale": [
+            168,
+            229
+        ],
+        "original_scale": [
+            168,
+            229
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 66,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 38,
+        "rel_y": 208,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "scale": [
+            172,
+            235
+        ],
+        "original_scale": [
+            172,
+            235
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 67,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 28,
+        "rel_y": 236,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_10.png"
+        },
+        "solid": true,
+        "scale": [
+            251,
+            324
+        ],
+        "original_scale": [
+            251,
+            324
+        ],
+        "split_ratio": 0.741,
+        "z_bottom": 3,
+        "z_top": 6,
+        "collider_scope": "CG",
+        "id": 68,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 385,
+        "rel_y": 515,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_3.png"
+        },
+        "solid": true,
+        "scale": [
+            184,
+            235
+        ],
+        "original_scale": [
+            184,
+            235
+        ],
+        "split_ratio": 0.685,
+        "z_bottom": 3,
+        "z_top": 9,
+        "collider_scope": "CG",
+        "id": 69,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 246,
+        "rel_y": 472,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "scale": [
+            153,
+            207
+        ],
+        "original_scale": [
+            153,
+            207
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 70,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 416,
+        "rel_y": 434,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "scale": [
+            182,
+            249
+        ],
+        "original_scale": [
+            182,
+            249
+        ],
+        "split_ratio": 0.655,
+        "z_bottom": 1,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 71,
+        "z": 1
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 276,
+        "rel_y": 404,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_10.png"
+        },
+        "solid": true,
+        "scale": [
+            251,
+            324
+        ],
+        "original_scale": [
+            251,
+            324
+        ],
+        "split_ratio": 0.698,
+        "z_bottom": 3,
+        "z_top": 7,
+        "collider_scope": "CG",
+        "id": 72,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 1421,
+        "rel_y": 229,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_10.png"
+        },
+        "solid": true,
+        "scale": [
+            196,
+            253
+        ],
+        "original_scale": [
+            196,
+            253
+        ],
+        "split_ratio": 0.68,
+        "z_bottom": 4,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 73,
+        "z": 4
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 1294,
+        "rel_y": 239,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "scale": [
+            169,
+            231
+        ],
+        "original_scale": [
+            169,
+            231
+        ],
+        "split_ratio": 0.662,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 74,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 1193,
+        "rel_y": 294,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "scale": [
+            181,
+            247
+        ],
+        "original_scale": [
+            181,
+            247
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 75,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 1413,
+        "rel_y": 396,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_10.png"
+        },
+        "solid": true,
+        "scale": [
+            238,
+            302
+        ],
+        "original_scale": [
+            238,
+            302
+        ],
+        "split_ratio": 0.691,
+        "z_bottom": 4,
+        "z_top": 9,
+        "collider_scope": "CG",
+        "id": 76,
+        "z": 4
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 681,
+        "rel_y": 738,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_3.png"
+        },
+        "solid": true,
+        "scale": [
+            246,
+            314
+        ],
+        "original_scale": [
+            246,
+            314
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 77,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 1157,
+        "rel_y": 595,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_3.png"
+        },
+        "solid": true,
+        "scale": [
+            201,
+            257
+        ],
+        "original_scale": [
+            201,
+            257
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 78,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 1080,
+        "rel_y": 247,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_10.png"
+        },
+        "solid": true,
+        "scale": [
+            277,
+            354
+        ],
+        "original_scale": [
+            277,
+            354
+        ],
+        "split_ratio": 0.678,
+        "z_bottom": 3,
+        "z_top": 6,
+        "collider_scope": "CU",
+        "id": 79,
+        "z": 3,
+        "collision_override": {
+            "width": 9,
+            "height": 12,
+            "collision": [
+                [
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    "."
+                ],
+                [
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    "."
+                ],
+                [
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    "."
+                ],
+                [
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    "."
+                ],
+                [
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    "."
+                ],
+                [
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    "."
+                ],
+                [
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    "."
+                ],
+                [
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    "."
+                ],
+                [
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    "."
+                ],
+                [
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    "."
+                ],
+                [
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    "."
+                ],
+                [
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    ".",
+                    "."
+                ]
+            ]
+        }
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 1284,
+        "rel_y": 260,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_8.png"
+        },
+        "solid": true,
+        "scale": [
+            251,
+            308
+        ],
+        "original_scale": [
+            251,
+            308
+        ],
+        "split_ratio": 0.74,
+        "z_bottom": 3,
+        "z_top": 6,
+        "collider_scope": "CG",
+        "id": 80,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 1264,
+        "rel_y": 346,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "scale": [
+            154,
+            208
+        ],
+        "original_scale": [
+            154,
+            208
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 81,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 1265,
+        "rel_y": 595,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "scale": [
+            200,
+            273
+        ],
+        "original_scale": [
+            200,
+            273
+        ],
+        "split_ratio": 0.637,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 82,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 1412,
+        "rel_y": 655,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "scale": [
+            158,
+            216
+        ],
+        "original_scale": [
+            158,
+            216
+        ],
+        "split_ratio": 0.671,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 83,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 157,
+        "rel_y": 724,
+        "assets": {
+            "idle": "assets/buildings/mine.png"
+        },
+        "solid": true,
+        "scale": [
+            204,
+            204
+        ],
+        "original_scale": [
+            204,
+            204
+        ],
+        "split_ratio": 0.275,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 84,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 36,
+        "rel_y": 389,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_9.png"
+        },
+        "solid": true,
+        "scale": [
+            251,
+            324
+        ],
+        "original_scale": [
+            251,
+            324
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 6,
+        "collider_scope": "CG",
+        "id": 85,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 317,
+        "rel_y": 1301,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_3.png"
+        },
+        "solid": true,
+        "scale": [
+            216,
+            276
+        ],
+        "original_scale": [
+            216,
+            276
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 86,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 507,
+        "rel_y": 1274,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_3.png"
+        },
+        "solid": true,
+        "scale": [
+            244,
+            311
+        ],
+        "original_scale": [
+            244,
+            311
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 8,
+        "collider_scope": "CG",
+        "id": 87,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 783,
+        "rel_y": 1329,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_3.png"
+        },
+        "solid": true,
+        "scale": [
+            186,
+            237
+        ],
+        "original_scale": [
+            186,
+            237
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 88,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 623,
+        "rel_y": 1254,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_3.png"
+        },
+        "solid": true,
+        "scale": [
+            208,
+            265
+        ],
+        "original_scale": [
+            208,
+            265
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 89,
+        "z": 3
+    },
+    {
+        "zone": "no zone",
+        "rel_x": 253,
+        "rel_y": 2955,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_3.png"
+        },
+        "solid": true,
+        "scale": [
+            194,
+            248
+        ],
+        "original_scale": [
+            194,
+            248
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 90,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 763,
+        "rel_y": 957,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_3.png"
+        },
+        "solid": true,
+        "scale": [
+            218,
+            277
+        ],
+        "original_scale": [
+            218,
+            277
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 91,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 875,
+        "rel_y": 820,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_3.png"
+        },
+        "solid": true,
+        "scale": [
+            272,
+            347
+        ],
+        "original_scale": [
+            272,
+            347
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 92,
+        "z": 3
+    },
+    {
+        "zone": "no zone",
+        "rel_x": 415,
+        "rel_y": 2915,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_3.png"
+        },
+        "solid": true,
+        "scale": [
+            224,
+            286
+        ],
+        "original_scale": [
+            224,
+            286
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 93,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 31,
+        "rel_y": 1365,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_3.png"
+        },
+        "solid": true,
+        "scale": [
+            170,
+            217
+        ],
+        "original_scale": [
+            170,
+            217
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 94,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 53,
+        "rel_y": 1213,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_3.png"
+        },
+        "solid": true,
+        "scale": [
+            186,
+            237
+        ],
+        "original_scale": [
+            186,
+            237
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 95,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 871,
+        "rel_y": 1212,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_10.png"
+        },
+        "solid": true,
+        "scale": [
+            251,
+            324
+        ],
+        "original_scale": [
+            251,
+            324
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 96,
+        "z": 3
+    },
+    {
+        "zone": "no zone",
+        "rel_x": 1001,
+        "rel_y": 2886,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_10.png"
+        },
+        "solid": true,
+        "scale": [
+            251,
+            324
+        ],
+        "original_scale": [
+            251,
+            324
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 97,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 1167,
+        "rel_y": 1209,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_10.png"
+        },
+        "solid": true,
+        "scale": [
+            251,
+            324
+        ],
+        "original_scale": [
+            251,
+            324
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 98,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 1323,
+        "rel_y": 1101,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_11.png"
+        },
+        "solid": true,
+        "scale": [
+            233,
+            333
+        ],
+        "original_scale": [
+            233,
+            333
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 99,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 1367,
+        "rel_y": 1242,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_11.png"
+        },
+        "solid": true,
+        "scale": [
+            233,
+            333
+        ],
+        "original_scale": [
+            233,
+            333
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 100,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 15,
+        "rel_y": 869,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_10.png"
+        },
+        "solid": true,
+        "scale": [
+            251,
+            324
+        ],
+        "original_scale": [
+            251,
+            324
+        ],
+        "split_ratio": 0.95,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 101,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 651,
+        "rel_y": 842,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_11.png"
+        },
+        "solid": true,
+        "scale": [
+            233,
+            333
+        ],
+        "original_scale": [
+            233,
+            333
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 102,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 133,
+        "rel_y": 1264,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_2.png"
+        },
+        "solid": true,
+        "scale": [
+            226,
+            309
+        ],
+        "original_scale": [
+            226,
+            309
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 103,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 187,
+        "rel_y": 609,
+        "assets": {
+            "idle": "assets/buildings/forest_decoration/natural/champinones_agrupados_marrones.png"
+        },
+        "solid": true,
+        "scale": [
+            88,
+            88
+        ],
+        "original_scale": [
+            88,
+            88
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 104,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 1291,
+        "rel_y": 513,
+        "assets": {
+            "idle": "assets/buildings/forest_decoration/natural/raiz_expuesta_suave.png"
+        },
+        "solid": true,
+        "scale": [
+            81,
+            81
+        ],
+        "original_scale": [
+            81,
+            81
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 105,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 896,
+        "rel_y": 209,
+        "assets": {
+            "idle": "assets/buildings/forest_decoration/natural/Flor_silvestre_azul.png"
+        },
+        "solid": true,
+        "scale": [
+            71,
+            71
+        ],
+        "original_scale": [
+            71,
+            71
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 106,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 1265,
+        "rel_y": 74,
+        "assets": {
+            "idle": "assets/buildings/forest_decoration/natural/petalos_rosados_2.png"
+        },
+        "solid": true,
+        "scale": [
+            53,
+            53
+        ],
+        "original_scale": [
+            53,
+            53
+        ],
+        "split_ratio": 0.05,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 107,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 449,
+        "rel_y": 58,
+        "assets": {
+            "idle": "assets/buildings/forest_decoration/natural/seta_blanca.png"
+        },
+        "solid": true,
+        "scale": [
+            50,
+            50
+        ],
+        "original_scale": [
+            50,
+            50
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 108,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 124,
+        "rel_y": 82,
+        "assets": {
+            "idle": "assets/buildings/forest_decoration/natural/champinones_agrupados_marrones.png"
+        },
+        "solid": true,
+        "scale": [
+            58,
+            58
+        ],
+        "original_scale": [
+            58,
+            58
+        ],
+        "split_ratio": 0.95,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 109,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 631,
+        "rel_y": 148,
+        "assets": {
+            "idle": "assets/buildings/forest_decoration/natural/seta_blanca.png"
+        },
+        "solid": true,
+        "scale": [
+            58,
+            58
+        ],
+        "original_scale": [
+            58,
+            58
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 110,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 52,
+        "rel_y": 683,
+        "assets": {
+            "idle": "assets/buildings/forest_decoration/natural/mariposa rama caida.png"
+        },
+        "solid": true,
+        "scale": [
+            64,
+            64
+        ],
+        "original_scale": [
+            64,
+            64
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 111,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 132,
+        "rel_y": 937,
+        "assets": {
+            "idle": "assets/buildings/forest_decoration/natural/petalos_rosados_3.png"
+        },
+        "solid": true,
+        "scale": [
+            55,
+            55
+        ],
+        "original_scale": [
+            55,
+            55
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 112,
+        "z": 3
+    },
+    {
+        "zone": "Forest",
+        "rel_x": 742,
+        "rel_y": 305,
+        "assets": {
+            "idle": "assets/buildings/totems/totem_forest.png"
+        },
+        "solid": false,
+        "scale": [
+            227,
+            338
+        ],
+        "original_scale": [
+            227,
+            338
+        ],
+        "split_ratio": 0.808,
+        "z_bottom": 2,
+        "z_top": 6,
+        "collider_scope": "CG",
+        "id": 113,
+        "spawn_id": "survival_10_forest_14_9",
+        "z": 2
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 1334,
+        "rel_y": -86,
+        "assets": {
+            "idle": "assets/buildings/shops/alchemy_tower.png"
+        },
+        "solid": true,
+        "scale": [
+            227,
+            346
+        ],
+        "original_scale": [
+            550,
+            845
+        ],
+        "split_ratio": 0.654,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 116,
+        "z": 3
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 550,
+        "rel_y": 716,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_3.png"
+        },
+        "solid": true,
+        "scale": [
+            172,
+            218
+        ],
+        "original_scale": [
+            490,
+            627
+        ],
+        "split_ratio": 0.67,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 122,
+        "z": 3
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 142,
+        "rel_y": 1007,
+        "assets": {
+            "idle": "assets/buildings/houses/orden_house_2.png"
+        },
+        "solid": true,
+        "scale": [
+            391,
+            391
+        ],
+        "original_scale": [
+            391,
+            391
+        ],
+        "split_ratio": 0.816,
+        "z_bottom": 2,
+        "z_top": 6,
+        "collider_scope": "CG",
+        "id": 137,
+        "z": 2
+    },
+    {
+        "zone": "lobby",
+        "rel_x": 15,
+        "rel_y": 1175,
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_9.png"
+        },
+        "solid": true,
+        "scale": [
+            172,
+            221
+        ],
+        "original_scale": [
+            172,
+            221
+        ],
+        "split_ratio": 0.742,
+        "z_bottom": 2,
+        "z_top": 6,
+        "collider_scope": "CG",
+        "id": 138,
+        "z": 2
+    },
+    {
+        "zone": "zone_100_50",
+        "rel_x": 143,
+        "rel_y": 1105,
+        "assets": {
+            "idle": "assets/buildings/mine.png"
+        },
+        "solid": true,
+        "scale": [
+            256,
+            256
+        ],
+        "original_scale": [
+            256,
+            256
+        ],
+        "split_ratio": 0.5,
+        "z_bottom": 3,
+        "z_top": 5,
+        "collider_scope": "CG",
+        "id": 139,
+        "z": 3
+    }
+]
