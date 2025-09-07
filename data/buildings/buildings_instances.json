@@ -16,11 +16,11 @@
         }
     },
     {
-        "id": 2,
+        "id": 158,
         "template_id": 2,
         "zone": "lobby",
-        "rel_x": 1427,
-        "rel_y": 833,
+        "rel_x": 974,
+        "rel_y": 878,
         "overrides": {
             "scale": [
                 166,
@@ -352,11 +352,11 @@
         }
     },
     {
-        "id": 151,
+        "id": 157,
         "template_id": 110,
-        "zone": "zone_100_50",
-        "rel_x": 496,
-        "rel_y": 683,
+        "zone": "lobby",
+        "rel_x": 934,
+        "rel_y": 1065,
         "overrides": {
             "scale": [
                 528,

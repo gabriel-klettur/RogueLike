@@ -3,24 +3,22 @@ from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.tile.model.tile_model import Tile
 from roguelike_engine.diagnostics.helpers import draw_zone_border
+from roguelike_engine.config.config_minimap import MINIMAP_ZONE_COLORS, MINIMAP_ZONE_BORDER_WIDTH
 
 
 class ZoneView:
     """
     Renderiza una sola zona: todos sus tiles y opcionalmente su contorno.
     """
-    def __init__(self, border_width: int = 3):
+    def __init__(self, border_width: int = MINIMAP_ZONE_BORDER_WIDTH):
+        # Mantener ancho por defecto para el render del mundo; se puede pasar otro valor.
         self.border_width = border_width
-        # Colores por zona, personalizables
+        # Unificar paleta con el minimapa: usar MINIMAP_ZONE_COLORS por nombre de zona
+        default_col = MINIMAP_ZONE_COLORS.get('default', (200, 200, 200))
         self.colors = {
-            zone: (200, 200, 200)
+            zone: MINIMAP_ZONE_COLORS.get(str(zone).lower(), default_col)
             for zone in global_map_settings.zone_offsets
         }
-        # Ejemplos de colores especiales
-        if 'lobby' in self.colors:
-            self.colors['lobby'] = (255, 255, 0)
-        if 'dungeon' in self.colors:
-            self.colors['dungeon'] = (0, 255, 0)
 
     def render_zone(
         self,

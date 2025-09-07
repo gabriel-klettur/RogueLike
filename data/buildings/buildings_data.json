@@ -24,8 +24,8 @@
     },
     {
         "zone": "lobby",
-        "rel_x": 1427,
-        "rel_y": 833,
+        "rel_x": 974,
+        "rel_y": 878,
         "assets": {
             "idle": "assets/buildings/vegetation/tree_1.png"
         },
@@ -506,9 +506,9 @@
         "z": 3
     },
     {
-        "zone": "zone_100_50",
-        "rel_x": 496,
-        "rel_y": 683,
+        "zone": "lobby",
+        "rel_x": 934,
+        "rel_y": 1065,
         "assets": {
             "idle": "assets/buildings/gardens/garden_4.png"
         },

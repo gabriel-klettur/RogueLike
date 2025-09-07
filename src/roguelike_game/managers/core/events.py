@@ -249,6 +249,7 @@ def handle_events(game):
 
     # Capturar eventos
     events = pygame.event.get()
+
     # Si el chat está abierto, enrutar todos los eventos al controlador de chat
     try:
         world = getattr(getattr(game, 'ecs', None), 'ecs_world', None)
@@ -281,7 +282,27 @@ def handle_events(game):
                 if overlay.hit_test(pos):
                     if overlay.handle_event(ev):
                         consumed_idx.add(i)
+    # Filtrar eventos consumidos por el minimapa (botones de capas)
+    try:
+        mm = getattr(game, 'minimap', None)
+        if mm is not None:
+            filtered = []
+            for ev in events:
+                try:
+                    # Solo interesa hover/click del mouse para los botones
+                    if ev.type in (pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN):
+                        if mm.handle_event(ev, game.screen):
+                            # Consumido por minimapa: no propagar
+                            continue
+                except Exception:
+                    pass
+                filtered.append(ev)
+            events = filtered
+    except Exception:
+        pass
+
     # Priorizar consola
+
     for event in events:
         if game.console_events.process_event(event):
             return
