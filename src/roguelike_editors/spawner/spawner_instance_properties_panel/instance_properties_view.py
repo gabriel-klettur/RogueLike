@@ -17,6 +17,8 @@ class InstancePropertiesView:
         # Visuals per-row rects (local to panel surface)
         self.visuals_template_rects: list[pygame.Rect] = []
         self.visuals_plus_rects: list[pygame.Rect] = []
+        # Track first column (State) rects for hover tooltips
+        self.visuals_state_rects: list[pygame.Rect] = []
 
     def _flatten(self, data: Dict[str, Any], prefix: str = "") -> List[Tuple[str, str]]:
         items: List[Tuple[str, str]] = []
@@ -163,6 +165,7 @@ class InstancePropertiesView:
             # Reset rects
             self.visuals_template_rects = []
             self.visuals_plus_rects = []
+            self.visuals_state_rects = []
             if len(visuals_rows) == 0:
                 if not (y_rows + row_h < viewport_top or y_rows > viewport_bottom):
                     txt = font.render("(sin visuals)", True, (160, 160, 160))
@@ -175,6 +178,7 @@ class InstancePropertiesView:
                         # Keep rects length aligned
                         self.visuals_template_rects.append(pygame.Rect(0, 0, 0, 0))
                         self.visuals_plus_rects.append(pygame.Rect(0, 0, 0, 0))
+                        self.visuals_state_rects.append(pygame.Rect(0, 0, 0, 0))
                         continue
                     col1_x, col2_x, col3_x = 10, 210, 310
                     t1 = font.render(str(state), True, (230, 230, 230))
@@ -184,6 +188,9 @@ class InstancePropertiesView:
                     plus_rect = pygame.Rect(template_rect.right - 18, template_rect.y + 2, 16, template_rect.height - 4)
                     self.visuals_template_rects.append(template_rect)
                     self.visuals_plus_rects.append(plus_rect)
+                    # State label cell rect for hover detection
+                    state_rect = pygame.Rect(col1_x, ry - 1, (col2_x - col1_x) - 4, row_h - 2)
+                    self.visuals_state_rects.append(state_rect)
                     # Draw label cells
                     surf.blit(t1, (col1_x, ry))
                     surf.blit(t2, (col2_x, ry))
@@ -234,6 +241,28 @@ class InstancePropertiesView:
                     key, _ = rows[hi]
                     mx, my = pygame.mouse.get_pos()
                     draw_tooltip(screen, mx, my, [key])
+        except Exception:
+            pass
+        # Hover tooltip for Visuals state names: show TitleCase ↔ snake_case equivalence
+        try:
+            mx, my = pygame.mouse.get_pos()
+            if self.panel_rect and self.visuals_state_rects:
+                local = (mx - self.panel_rect.left, my - self.panel_rect.top)
+                for j, r in enumerate(self.visuals_state_rects):
+                    if r and r.collidepoint(local):
+                        vis_rows = controller.get_visuals_rows()
+                        if 0 <= j < len(vis_rows):
+                            state = str(vis_rows[j][0])
+                            # Build snake_case equivalent
+                            s = state
+                            snake = []
+                            for i, ch in enumerate(s):
+                                if ch.isupper() and i > 0:
+                                    snake.append('_')
+                                snake.append(ch.lower())
+                            snake_str = ''.join(snake)
+                            draw_tooltip(screen, mx, my, [f"{state} ↔ {snake_str}"])
+                        break
         except Exception:
             pass
         return self.panel_rect

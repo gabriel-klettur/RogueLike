@@ -190,13 +190,88 @@ class InstancePropertiesController:
         visuals = getattr(self.model, 'visuals', {}) or {}
         idx = self._building_index or {}
         rows: List[tuple[str, str, str]] = []
+
+        # Canonical state order to display always (TitleCase)
+        canonical_states: List[str] = [
+            'AwaitTrigger',
+            'SpawningWave',
+            'WaitCooldown',
+            'WaitClear',
+            'WaitRestart',
+            'Finished',
+        ]
+
+        def _to_snake(title: str) -> str:
+            s = str(title or '')
+            out = []
+            for i, ch in enumerate(s):
+                if ch.isupper() and i > 0:
+                    out.append('_')
+                out.append(ch.lower())
+            return ''.join(out)
+
+        def _candidates_for(canon: str) -> List[str]:
+            snake = _to_snake(canon)
+            return [
+                str(canon),                  # TitleCase
+                snake,                        # snake_case
+                snake.replace('_', ''),       # condensed snake
+                str(canon).lower(),           # lowercase title
+            ]
+
+        matched_keys: set[str] = set()
+        # Map displayed canonical state -> actual key present in JSON (or None if missing)
+        key_map: dict[str, str] = {}
+
+        # 1) Emit rows for the canonical states, even if missing
+        for canon in canonical_states:
+            inst_val = None
+            chosen_key = None
+            for key in _candidates_for(canon):
+                if key in visuals:
+                    inst_val = visuals.get(key)
+                    chosen_key = key
+                    matched_keys.add(key)
+                    break
+            # Resolve instance id and template label
+            inst_str = ''
+            tpl_str = 'N/A'
+            try:
+                if inst_val is not None:
+                    try:
+                        inst_int = int(inst_val)
+                    except Exception:
+                        inst_int = None
+                    inst_str = str(inst_val)
+                    if inst_int is not None and inst_int in idx:
+                        tpl_str = idx.get(inst_int, 'N/A')
+            except Exception:
+                pass
+            # Record mapping for later editing/commit operations
+            try:
+                if chosen_key is not None:
+                    key_map[str(canon)] = str(chosen_key)
+            except Exception:
+                pass
+            rows.append((str(canon), inst_str, tpl_str))
+
+        # 2) Append any extra custom states present in JSON that are not in canonical list
         try:
-            # Preserve insertion order of dict for stable UX
             for state, inst_id in visuals.items():
+                if state in matched_keys:
+                    continue
+                # Skip if this state is equivalent to a canonical one (e.g., snake vs TitleCase)
+                is_equiv = False
+                for canon in canonical_states:
+                    if state in _candidates_for(canon):
+                        is_equiv = True
+                        break
+                if is_equiv:
+                    continue
+                # Compute template label
                 try:
                     inst_int = int(inst_id)
                 except Exception:
-                    # If not parseable, keep string
                     inst_int = None
                 inst_str = str(inst_id)
                 tpl_str = 'N/A'
@@ -204,8 +279,14 @@ class InstancePropertiesController:
                     tpl_str = idx.get(inst_int, 'N/A')
                 rows.append((str(state), inst_str, tpl_str))
         except Exception:
-            rows = []
+            pass
+
         self.model.visuals_rows = rows
+        # Expose the display->JSON key mapping for event handlers/commits
+        try:
+            self.model.visuals_key_map = key_map
+        except Exception:
+            pass
 
     def get_visuals_rows(self) -> List[tuple[str, str, str]]:
         return list(getattr(self.model, 'visuals_rows', []) or [])
@@ -246,6 +327,7 @@ class InstancePropertiesController:
         self.game = game
 
     def begin_edit_visual(self, state_key: str) -> None:
+        # Keep the displayed state key for UI matching
         self.model.visuals_editing_state = str(state_key)
         # Pre-fill pending template with current template text
         cur_tpl = 'N/A'
@@ -311,6 +393,32 @@ class InstancePropertiesController:
                 continue
         return cnt
 
+    def _find_existing_visual_instance_by_template(self, template_id: int) -> Optional[int]:
+        """Return an instance id already referenced by this spawner's visuals that uses the given template_id.
+        This ensures we reuse the same building instance across states when they share the same template.
+        """
+        visuals = getattr(self.model, 'visuals', {}) or {}
+        if not visuals:
+            return None
+        data = self._load_buildings_instances()
+        # Build id -> template_id map for quick lookup
+        tpl_by_id: dict[int, int] = {}
+        for e in data:
+            try:
+                iid = int(e.get('id'))
+                tid = int(e.get('template_id'))
+                tpl_by_id[iid] = tid
+            except Exception:
+                continue
+        for _, val in visuals.items():
+            try:
+                vid = int(val)
+            except Exception:
+                continue
+            if vid in tpl_by_id and tpl_by_id[vid] == int(template_id):
+                return vid
+        return None
+
     def _clone_instance_with_new_template(self, source_id: int, new_template_id: int) -> Optional[int]:
         data = self._load_buildings_instances()
         src = None
@@ -349,14 +457,14 @@ class InstancePropertiesController:
         return next_id
 
     def commit_visual_edit_if_finished(self) -> bool:
-        state = getattr(self.model, 'visuals_editing_state', None)
-        if not state:
+        display_state = getattr(self.model, 'visuals_editing_state', None)
+        if not display_state:
             return False
         if self._text_input is None or self._text_input.active:
             return False
         # Read new template id
         new_txt = self._text_input.text if self._text_input else ''
-        self.model.visuals_pending_templates[state] = new_txt
+        self.model.visuals_pending_templates[display_state] = new_txt
         ok, msg, new_tpl_id = self._validate_template_text(new_txt)
         # If invalid (not number or no existe) -> keep editing and show error
         if not ok and new_txt.strip() != '':
@@ -368,7 +476,10 @@ class InstancePropertiesController:
             # Keep editing state
             return True
         # Resolve current building instance id (if any)
+        # Map displayed state to actual JSON key if present
         visuals = getattr(self.model, 'visuals', {}) or {}
+        key_map = getattr(self.model, 'visuals_key_map', {}) or {}
+        state = key_map.get(display_state, display_state)
         cur_inst_id = visuals.get(state)
         cur_inst_int = None
         if cur_inst_id is not None:
@@ -378,6 +489,53 @@ class InstancePropertiesController:
                 cur_inst_int = None
         # If there is an existing instance id and a valid template id
         if cur_inst_int is not None and new_tpl_id is not None:
+            # 0) Prefer reusing an existing instance already used by another state with same template
+            reuse_id = self._find_existing_visual_instance_by_template(int(new_tpl_id))
+            if reuse_id is not None and reuse_id != cur_inst_int:
+                # Rewire this state to reuse the existing instance
+                visuals[state] = reuse_id
+                self.model.visuals = visuals
+                try:
+                    if self.model.selected_instance is not None:
+                        self.model.selected_instance['visuals'] = visuals
+                except Exception:
+                    pass
+                self._persist_instance()
+                # If the old instance becomes unused, remove it from buildings_instances.json
+                still_used = False
+                for k, v in (visuals or {}).items():
+                    try:
+                        if int(v) == cur_inst_int:
+                            still_used = True
+                            break
+                    except Exception:
+                        continue
+                if not still_used:
+                    data = self._load_buildings_instances()
+                    data2 = []
+                    removed = False
+                    for e in data:
+                        try:
+                            if not removed and int(e.get('id')) == cur_inst_int:
+                                removed = True
+                                continue
+                        except Exception:
+                            pass
+                        data2.append(e)
+                    if removed:
+                        self._write_buildings_instances(data2)
+                # refresh indexes/rows
+                self._building_index = None
+                self._ensure_buildings_index()
+                self._build_visuals_rows()
+                # End here
+                self.model.visuals_editing_state = None
+                try:
+                    import pygame as _pg
+                    _pg.key.stop_text_input()
+                except Exception:
+                    pass
+                return True
             # If the instance is only referenced by this state, update in-place
             if self._count_instance_refs_in_visuals(cur_inst_int) <= 1:
                 data = self._load_buildings_instances()
@@ -449,7 +607,29 @@ class InstancePropertiesController:
                 self._building_index = None
                 self._ensure_buildings_index()
                 self._build_visuals_rows()
-        # If there was no instance id: Enter only updates pending text; creation via '+'
+        # If there was no instance id and user provided a valid template id: auto-create instance and wire mapping
+        elif cur_inst_int is None and new_tpl_id is not None:
+            # Prefer reuse: if any other state already uses an instance with this template, just rewire
+            reuse_id = self._find_existing_visual_instance_by_template(int(new_tpl_id))
+            if reuse_id is not None:
+                key_map = getattr(self.model, 'visuals_key_map', {}) or {}
+                json_key = key_map.get(display_state, display_state)
+                visuals[json_key] = reuse_id
+                self.model.visuals = visuals
+                try:
+                    if self.model.selected_instance is not None:
+                        self.model.selected_instance['visuals'] = visuals
+                except Exception:
+                    pass
+                self._persist_instance()
+                self._ensure_buildings_index()
+                self._build_visuals_rows()
+            else:
+                # Reuse the '+' path to create instance at camera center using pending text
+                try:
+                    self.add_building_instance_for_visual(display_state)
+                except Exception:
+                    pass
         # Clear editing flag and stop text input
         self.model.visuals_editing_state = None
         try:
@@ -470,6 +650,25 @@ class InstancePropertiesController:
         ok, msg, tpl_id = self._validate_template_text(txt)
         if tpl_id is None or not ok:
             return None
+        # Prefer reuse: check if another state already uses an instance with this template
+        reuse_id = self._find_existing_visual_instance_by_template(int(tpl_id))
+        if reuse_id is not None:
+            visuals = getattr(self.model, 'visuals', {}) or {}
+            key_map = getattr(self.model, 'visuals_key_map', {}) or {}
+            json_key = key_map.get(state_key, state_key)
+            visuals[json_key] = reuse_id
+            self.model.visuals = visuals
+            try:
+                if self.model.selected_instance is not None:
+                    self.model.selected_instance['visuals'] = visuals
+            except Exception:
+                pass
+            self._persist_instance()
+            self._ensure_buildings_index()
+            self._build_visuals_rows()
+            # Exit edit mode
+            self.model.visuals_editing_state = None
+            return reuse_id
         # Load buildings instances and compute next id
         data = self._load_buildings_instances()
         next_id = 1
@@ -517,7 +716,10 @@ class InstancePropertiesController:
         self._write_buildings_instances(data)
         # Update visuals mapping and persist spawner instance
         visuals = getattr(self.model, 'visuals', {}) or {}
-        visuals[state_key] = next_id
+        # Map displayed canonical to actual JSON key if present; otherwise use the displayed key
+        key_map = getattr(self.model, 'visuals_key_map', {}) or {}
+        json_key = key_map.get(state_key, state_key)
+        visuals[json_key] = next_id
         self.model.visuals = visuals
         try:
             if self.model.selected_instance is not None:

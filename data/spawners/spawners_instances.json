@@ -10,18 +10,10 @@
       "AwaitTrigger": 113,
       "SpawningWave": 113,
       "WaitCooldown": 113,
-      "WaitRestart": 141,
-      "Finished": 140
+      "WaitClear": 113,
+      "Finished": 113,
+      "WaitRestart": 113
     },
     "id": "survival_10_forest_14_9"
-  },
-  {
-    "template_id": "survival_10",
-    "zone": "Forest",
-    "tile": [
-      26,
-      14
-    ],
-    "id": "survival_10_forest_26_14"
   }
 ]

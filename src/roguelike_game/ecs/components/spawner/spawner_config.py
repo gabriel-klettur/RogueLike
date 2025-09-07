@@ -50,7 +50,7 @@ class SpawnerConfig:
     defend_leash: bool = True
     # If True and building_id is set, link to a building visual in the normal renderer
     visible_in_game: bool = False
-    # Linkage to a Building visual by its persistent id (from buildings_data.json)
+    # Linkage to a Building visual by its persistent id (from buildings_instances.json)
     building_id: Optional[int] = None
     # Optional per-state visuals mapping: { state_id: building_id }
     state_visuals: Optional[Dict[str, int]] = None

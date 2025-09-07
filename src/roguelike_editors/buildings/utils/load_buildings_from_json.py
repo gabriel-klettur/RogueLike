@@ -2,13 +2,11 @@ import os
 import json
 from typing import List
 from roguelike_engine.config.config import (
-    BUILDINGS_DATA_PATH,
-    BUILDINGS_COLLISIONS_DATA_PATH,
-    BUILDINGS_TEMPLATES_PATH,
-    BUILDINGS_INSTANCES_PATH,
     BUILDINGS_COLLISIONS_BY_IMAGE_PATH,
     BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH,
     BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH,
+    BUILDINGS_TEMPLATES_PATH,
+    BUILDINGS_INSTANCES_PATH,
 )
 from roguelike_engine.z_layer.persistence import extract_z_from_json
 from roguelike_engine.config.config_tiles import TILE_SIZE
@@ -392,139 +390,13 @@ def load_buildings_from_json(
     z_state=None
 ) -> List:
     """
-    Carga edificios desde JSON usando coordenadas relativas.
-    - Si `z_state` se proporciona, inyecta la capa Z.
+    Carga edificios desde JSON en modo split (templates + instances) usando coordenadas relativas.
+    - Si `z_state` se proporciona, inyecta la capa Z en los objetos creados.
+    - Si faltan los archivos split requeridos, devuelve lista vacía con warning (no hay fallback legacy).
     """
-    # Prefer explicitly provided combined file if it exists (tests may monkeypatch BUILDINGS_DATA_PATH);
-    # only fall back to split files when the combined file is not available.
-    try:
-        if not os.path.exists(BUILDINGS_DATA_PATH):
-            if os.path.exists(BUILDINGS_TEMPLATES_PATH) and os.path.exists(BUILDINGS_INSTANCES_PATH):
-                return _load_from_split(z_state)
-    except Exception:
-        pass
-    if not os.path.exists(BUILDINGS_DATA_PATH):
-        logger.warning(f"⚠️ Archivo no encontrado: {BUILDINGS_DATA_PATH}")
-        return []
-
-    # Cargar colisiones (legacy path)
-    collisions_global, collisions_instances, collisions_by_id = _load_collisions_sources()
-
-    with open(BUILDINGS_DATA_PATH, "r", encoding="utf-8-sig") as f:
-        try:
-            data = json.load(f)
-        except json.JSONDecodeError as e:
-            logger.error(f"❌ Error al leer JSON: {e}")
-            return []
-
-    # Auto-asignación de IDs faltantes (persistente y backward-compatible)
-    changed_ids = False
-    try:
-        existing_ids = [int(e.get("id")) for e in data if isinstance(e, dict) and str(e.get("id")).isdigit()]
-        next_id = (max(existing_ids) + 1) if existing_ids else 1
-        for e in data:
-            if "id" not in e or e.get("id") is None or (isinstance(e.get("id"), str) and not str(e.get("id")).isdigit()):
-                e["id"] = next_id
-                next_id += 1
-                changed_ids = True
-    except Exception:
-        # Si algo falla, no impedimos la carga; simplemente no persistimos
-        changed_ids = False
-
-    if changed_ids:
-        try:
-            with open(BUILDINGS_DATA_PATH, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=4)
-            logger.info("[Buildings] IDs auto-asignados y persistidos en buildings_data.json")
-        except Exception as _e:
-            logger.warning(f"[Buildings] No se pudo persistir IDs auto-asignados: {_e}")
-
-    buildings: List[Building] = []
-
-    for entry in data:
-        try:
-            #logger.debug(f"📥 Entrada cruda desde JSON: {entry}")
-
-            # Accept both new JSON structure (assets.idle) and legacy (image_path)
-            _img_path = None
-            try:
-                assets = entry.get("assets") or {}
-                if isinstance(assets, dict):
-                    _img_path = _normalize_asset_path(assets.get("idle"))
-            except Exception:
-                _img_path = None
-            if not _img_path:
-                try:
-                    _img_path = _normalize_asset_path(entry.get("image_path"))
-                except Exception:
-                    _img_path = None
-            if not _img_path:
-                raise ValueError(f"[Buildings][loader] Missing required assets.idle/image_path (id={entry.get('id')}, zone={entry.get('zone')}, rel=({entry.get('rel_x')},{entry.get('rel_y')}))")
-
-            b = Building(
-                rel_x=entry.get("rel_x", 0),
-                rel_y=entry.get("rel_y", 0),
-                image_path=_img_path,
-                solid=entry.get("solid", True),
-                scale=tuple(entry["scale"]) if "scale" in entry else None,
-                split_ratio=entry.get("split_ratio", 0.5),
-                z_bottom=entry.get("z_bottom"),
-                z_top=entry.get("z_top"),
-            )
-            # spawn_id (enlaza con spawner instance)
-            try:
-                sid = entry.get("spawn_id")
-                if sid is not None:
-                    setattr(b, "spawn_id", str(sid))
-                    setattr(b, "spawner_instance_id", str(sid))
-            except Exception:
-                pass
-
-            # Inicializar collision_map y aplicar overrides
-            _apply_collision_for_building(b, entry, collisions_global, collisions_instances, collisions_by_id)
-
-            # Aplicar capa Z
-            if z_state:
-                extract_z_from_json(entry, z_state, b)
-
-            # Asignar zona si viene en JSON
-            if entry.get("zone"):
-                b.zone = _canonicalize_zone(entry["zone"]) 
-
-            # ────────────────────────────────────────────────────────────────
-            # Multi-image visual support (backward compatible):
-            # If 'images_by_state' is present, configure the model mapping and optional initial state.
-            # If 'state_thresholds' present, store them for runtime mapping from damage ratio.
-            try:
-                images_by_state = entry.get("images_by_state")
-                if isinstance(images_by_state, dict) and images_by_state:
-                    initial_state = entry.get("initial_visual_state")
-                    # Apply mapping first; this will keep current displayed scale
-                    b.model.set_images_by_state(images_by_state, initial_state=initial_state)
-                thresholds = entry.get("state_thresholds")
-                if thresholds is not None:
-                    b.model.set_state_thresholds(thresholds if isinstance(thresholds, list) else None)
-            except Exception as _e:
-                logger.warning(f"[Buildings][loader] Could not apply images_by_state/state_thresholds: {_e}", exc_info=False)
-
-            # Alcance de colisión por edificio (CG/CU)
-            try:
-                b.collider_scope = entry.get("collider_scope", "CG")
-            except Exception:
-                pass
-
-            # Asignar ID del edificio al objeto cargado
-            try:
-                setattr(b, "id", entry.get("id"))
-            except Exception:
-                pass
-
-            # Restaurar escala original si estaba en JSON
-            if entry.get("original_scale"):
-                b.original_scale = tuple(entry["original_scale"])
-
-            buildings.append(b)
-        except Exception as e:
-            logger.error(f"[Buildings][loader] Error creando edificio desde entrada legacy: {e}")
-            continue
-    return buildings
+    if os.path.exists(BUILDINGS_TEMPLATES_PATH) and os.path.exists(BUILDINGS_INSTANCES_PATH):
+        return _load_from_split(z_state)
+    logger.warning(
+        f"[Buildings][split] Archivos requeridos no encontrados: templates={BUILDINGS_TEMPLATES_PATH} instances={BUILDINGS_INSTANCES_PATH}. No se cargan edificios."
+    )
+    return []

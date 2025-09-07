@@ -6,8 +6,8 @@ import pygame
 import os
 import roguelike_engine.config.config as config
 from roguelike_engine.input.events import handle_events as engine_handle_events
-from roguelike_editors.buildings.utils.save_buildings_to_json import save_buildings_to_json, save_buildings_split
-from roguelike_engine.config.config import BUILDINGS_DATA_PATH, BUILDINGS_TEMPLATES_PATH, BUILDINGS_INSTANCES_PATH
+from roguelike_editors.buildings.utils.save_buildings_to_json import save_buildings_split
+from roguelike_engine.config.config import BUILDINGS_TEMPLATES_PATH, BUILDINGS_INSTANCES_PATH
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_editors.fsm.fsm_editor_events import FsmEditorEventHandler
 from roguelike_ui.ui_blocker import is_blocked
@@ -94,19 +94,12 @@ def _close_all_editors(game) -> None:
                 pass
             # Guardar buildings con overrides CU
             try:
-                if os.path.exists(BUILDINGS_TEMPLATES_PATH) and os.path.exists(BUILDINGS_INSTANCES_PATH):
-                    save_buildings_split(
-                        bm.buildings,
-                        z_state=getattr(game.state, 'z_state', None),
-                        zone_offsets=getattr(global_map_settings, 'zone_offsets', None),
-                    )
-                else:
-                    save_buildings_to_json(
-                        bm.buildings,
-                        BUILDINGS_DATA_PATH,
-                        z_state=getattr(game.state, 'z_state', None),
-                        zone_offsets=getattr(global_map_settings, 'zone_offsets', None),
-                    )
+                # Always persist using split files
+                save_buildings_split(
+                    bm.buildings,
+                    z_state=getattr(game.state, 'z_state', None),
+                    zone_offsets=getattr(global_map_settings, 'zone_offsets', None),
+                )
             except Exception:
                 pass
             # Invalidate spatial index para respetar colisiones inmediatamente en gameplay
@@ -225,23 +218,15 @@ def handle_events(game):
                 be.colliders.events._save_collisions(bm.buildings, force=True)
         except Exception:
             pass
-        # Guardar buildings con overrides CU
+        # Guardar buildings con overrides CU (siempre en archivos split)
         try:
             bm = getattr(game, 'buildings', None)
             if bm and hasattr(bm, 'buildings'):
-                if os.path.exists(BUILDINGS_TEMPLATES_PATH) and os.path.exists(BUILDINGS_INSTANCES_PATH):
-                    save_buildings_split(
-                        bm.buildings,
-                        z_state=getattr(game.state, 'z_state', None),
-                        zone_offsets=getattr(global_map_settings, 'zone_offsets', None),
-                    )
-                else:
-                    save_buildings_to_json(
-                        bm.buildings,
-                        BUILDINGS_DATA_PATH,
-                        z_state=getattr(game.state, 'z_state', None),
-                        zone_offsets=getattr(global_map_settings, 'zone_offsets', None),
-                    )
+                save_buildings_split(
+                    bm.buildings,
+                    z_state=getattr(game.state, 'z_state', None),
+                    zone_offsets=getattr(global_map_settings, 'zone_offsets', None),
+                )
         except Exception:
             pass
         game.state.running = False
