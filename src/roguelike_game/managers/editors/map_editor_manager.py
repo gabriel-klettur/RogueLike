@@ -2,6 +2,7 @@ from roguelike_editors.map.map_editor_state import MapEditorState
 from roguelike_editors.map.map_editor_controller import MapEditorController
 from roguelike_editors.map.map_editor_events import MapEditorEventHandler
 from roguelike_editors.map.map_editor_view import MapEditorView
+from roguelike_editors.map.map_tutorial_panel import MapTutorialPanelController
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.map.utils import get_zone_for_tile
 from roguelike_engine.config.map_config import global_map_settings
@@ -24,11 +25,30 @@ class MapEditorManager:
         self.view = MapEditorView(self.controller, self.editor_state, game.map)
         # Pass self to handler so toggle logic resets zoom and recenter on exit
         self.handler = MapEditorEventHandler(self, self.editor_state, self.controller, game.map)
+        # Panel de Tutorial (overlay con guía paso a paso)
+        self.tutorial = MapTutorialPanelController(game.state, self.editor_state, self.view, self)
         # Load persisted camera for the editor (if any)
         try:
             self._load_persisted_camera()
         except Exception:
             # Never break initialization due to persistence issues
+            pass
+        # Inyecciones cruzadas
+        try:
+            # Permitir al event handler del editor delegar al panel de tutorial
+            self.handler.tutorial = self.tutorial
+        except Exception:
+            pass
+        try:
+            # Permitir que el panel de Tutorial se alinee a la derecha del toolbar/título
+            if hasattr(self.controller, 'toolbar') and hasattr(self.controller.toolbar, 'view'):
+                self.tutorial.view.toolbar_view = self.controller.toolbar.view
+                # Inyectar referencia al manager en el toolbar para que el botón 'map_tutorial' pueda togglear
+                try:
+                    self.controller.toolbar.editor_manager = self
+                except Exception:
+                    pass
+        except Exception:
             pass
 
     # --- Persistence helpers (camera state across sessions) ---
@@ -132,3 +152,8 @@ class MapEditorManager:
     def render(self, screen, camera, map_manager):
         if self.editor_state.active:
             self.view.render(screen, camera, map_manager)
+            # Render del panel de Tutorial por encima de todo
+            try:
+                self.tutorial.render(screen)
+            except Exception:
+                pass

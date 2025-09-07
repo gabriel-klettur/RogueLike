@@ -22,6 +22,8 @@ class MapToolBarPanelController:
         self.editor = editor_state
         # Optional back-reference to the MapEditorController for tool actions
         self.map_controller = map_controller
+        # Will be injected by MapEditorManager to allow toolbar to toggle tutorial
+        self.editor_manager = None
 
         # Model: geometry, icons, and rects
         self.model = MapToolBarPanelModel(editor_state, x=10, y=10, size=64, padding=8)
@@ -74,6 +76,12 @@ class MapToolBarPanelController:
         """
         Indicates to ToolbarView whether a button should be rendered as active.
         """
+        if tool == "map_tutorial":
+            try:
+                tm = getattr(self, 'editor_manager', None)
+                return bool(tm and getattr(tm, 'tutorial', None) and tm.tutorial.is_active())
+            except Exception:
+                return False
         if tool == "view_layers":
             return bool(self.editor.layers_view_open)
         if tool == "add_zone":
