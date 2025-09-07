@@ -416,6 +416,11 @@ class ItemsPropertiesPanelController:
                     self.editor_controller._refresh_items_catalog()
                 except Exception:
                     logger.exception("[ItemsPropertiesPanel] Failed to refresh items catalog after confirm")
+                # Tutorial pulse: add system confirm
+                try:
+                    setattr(self.editor_controller.model, 'tutorial_add_system_confirm_pulse', True)
+                except Exception:
+                    pass
         except Exception:
             pass
 
@@ -485,6 +490,13 @@ class ItemsPropertiesPanelController:
             return (self._selected_id or self._hovered_id) or ""
         # Usamos la clave lógica 'icon'; el callback ajustará la clave real a actualizar
         self.assets_picker.show(key="icon", x=x, y=y, width=width, callback=self._on_asset_chosen, label_provider=_label_provider)
+        # Tutorial pulse: assets picker opened
+        try:
+            editor = getattr(self, 'editor_controller', None)
+            if editor is not None:
+                setattr(editor.model, 'tutorial_assets_picker_open_pulse', True)
+        except Exception:
+            pass
 
     def _on_asset_chosen(self, cell_key: str, path) -> None:
         """Callback cuando el usuario elige una imagen en el picker.
@@ -578,6 +590,13 @@ class ItemsPropertiesPanelController:
                     self.on_after_commit_edit(target_key, item_id, None, asset_value)
             except Exception:
                 logger.exception("[ItemsPropertiesPanel] on_after_commit_edit callback failed tras cambio de asset")
+            # Tutorial pulse: asset changed
+            try:
+                editor = getattr(self, 'editor_controller', None)
+                if editor is not None:
+                    setattr(editor.model, 'tutorial_asset_changed_pulse', True)
+            except Exception:
+                pass
         finally:
             # Ocultar picker en cualquier caso
             try:

@@ -2,6 +2,7 @@ from roguelike_ui.widgets.toolbar_panel import ToolbarView
 
 # Ordered list of tools for the Map toolbar
 TOOLS = [
+    "map_tutorial",
     "view_layers",
     "add_zone",
     "delete_zone",

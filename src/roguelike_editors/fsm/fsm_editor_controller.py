@@ -19,6 +19,8 @@ from .fsm_graph_panel.fsm_graph_panel_controller import FsmGraphPanelController
 from .fsm_properties_panel.fsm_properties_panel_controller import FsmPropertiesPanelController
 from .fsm_editor_view import FsmEditorView
 from roguelike_editors.fsm.services.fsm_runtime_bridge import get_snapshot
+# Tutorial panel (FSM)
+from roguelike_editors.fsm.fsm_tutorial_panel import FsmTutorialPanelController
 # Optional ids index helper (may not be present in some contexts)
 try:  # pragma: no cover
     from roguelike_editors.fsm.services.fsm_runtime_bridge import get_set_ids as _get_set_ids
@@ -47,6 +49,13 @@ class FsmEditorController:
         # View/Event handler can be split; keep placeholders for now
         self.view: Optional[FsmEditorView] = FsmEditorView()
         self.events = None
+        # Tutorial panel controller (lazy UI overlay)
+        self.tutorial_panel_controller: Optional[FsmTutorialPanelController] = FsmTutorialPanelController(self)
+        # Allow toolbar events to access the owning editor (for tutorial toggle)
+        try:
+            setattr(self.toolbar_controller, 'owner_editor', self)
+        except Exception:
+            pass
 
     # --- Lifecycle ---
     def render(self, screen) -> None:
@@ -170,6 +179,12 @@ class FsmEditorController:
                     self.graph_panel_controller.render(screen, anchor=g_anchor)
             except Exception:
                 pass
+        # Tutorial panel overlay: independent toggle via toolbar events
+        try:
+            if self.tutorial_panel_controller is not None and self.tutorial_panel_controller.is_active():
+                self.tutorial_panel_controller.render(screen)
+        except Exception:
+            pass
         # Shared chrome (e.g., Title) rendered by view
         try:
             if self.view:
@@ -184,6 +199,13 @@ class FsmEditorController:
         # Toolbar first, so drag/clicks don't leak to canvas
         if self.toolbar_controller and self.toolbar_controller.handle_event(event):
             return True
+        # Tutorial panel events (ESC close, button clicks). Handle early so clicks over panel don't leak.
+        try:
+            if self.tutorial_panel_controller and self.tutorial_panel_controller.is_active():
+                if self.tutorial_panel_controller.handle_event(event):
+                    return True
+        except Exception:
+            pass
         # Sets panel events if visible
         try:
             if self.sets_panel_controller and getattr(self.sets_panel_controller.model, 'visible', False):

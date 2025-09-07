@@ -15,6 +15,14 @@ class ItemsEditorEvents:
         # Atajos globales (funcionan incluso si no es visible para abrir/cerrar)
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE and model.visible:
+                # If tutorial panel is active, close it first
+                try:
+                    tut = getattr(controller, 'tutorial_controller', None)
+                    if tut is not None and getattr(tut, 'is_active', lambda: False)():
+                        tut.deactivate()
+                        return True
+                except Exception:
+                    pass
                 controller.hide()
                 return True
 

@@ -2,18 +2,18 @@
   "player": {
     "level": "global_map",
     "pos": [
-      40,
-      60
+      111,
+      61
     ]
   },
   "npcs": {
     "df504d8e-022f-4d14-8b16-ae573c4555fa": {
       "level": "global_map",
       "tile": [
-        177,
-        72
+        156,
+        67
       ],
-      "hp": 60,
+      "hp": 100,
       "dead": false,
       "prototype": "barbol"
     },
@@ -21,297 +21,27 @@
       "level": "global_map",
       "tile": [
         115,
-        84
-      ],
-      "hp": 50,
-      "dead": false,
-      "prototype": "vendor_wood_gatita"
-    },
-    "9c8fd0f4-449d-49b8-b838-93d3c1990da3": {
-      "level": "global_map",
-      "tile": [
-        57,
-        82
-      ],
-      "hp": 0,
-      "dead": true,
-      "prototype": "barbol"
-    },
-    "734dae03-dd0b-4f82-a732-6a4d2de8e8f7": {
-      "level": "global_map",
-      "tile": [
-        13,
-        76
-      ],
-      "hp": 0,
-      "dead": true,
-      "prototype": "barbol"
-    },
-    "325191ff-ef4f-4822-934f-43d6f93fa970": {
-      "level": "global_map",
-      "tile": [
-        24,
-        74
-      ],
-      "hp": 40,
-      "dead": false,
-      "prototype": "barbol"
-    },
-    "27920933-72de-409f-ba64-ffaecec46b9f": {
-      "level": "global_map",
-      "tile": [
-        14,
-        55
-      ],
-      "hp": 60,
-      "dead": false,
-      "prototype": "barbol"
-    },
-    "0fb68b83-a62b-4ab1-82fe-80827cbb7c64": {
-      "level": "global_map",
-      "tile": [
-        40,
-        68
-      ],
-      "hp": 40,
-      "dead": false,
-      "prototype": "barbol"
-    },
-    "c02adb1f-8cf1-4aac-9a0b-1c5fd3501eb2": {
-      "level": "global_map",
-      "tile": [
-        37,
-        72
-      ],
-      "hp": 0,
-      "dead": true,
-      "prototype": "barbol"
-    },
-    "95218e5e-51b6-4db0-ab7b-3da4bfafc1a8": {
-      "level": "global_map",
-      "tile": [
-        30,
-        66
-      ],
-      "hp": 0,
-      "dead": true,
-      "prototype": "barbol"
-    },
-    "0d9d149a-83ef-4b36-a75a-2a38927a114c": {
-      "level": "global_map",
-      "tile": [
-        38,
-        64
-      ],
-      "hp": 40,
-      "dead": false,
-      "prototype": "barbol"
-    },
-    "70fcf707-b955-4068-9d29-3eeb455a6956": {
-      "level": "global_map",
-      "tile": [
-        36,
-        72
-      ],
-      "hp": 0,
-      "dead": true,
-      "prototype": "barbol"
-    },
-    "bd1a0a6b-d686-41d4-a5da-777e97f87fcc": {
-      "level": "global_map",
-      "tile": [
-        33,
-        67
-      ],
-      "hp": 0,
-      "dead": true,
-      "prototype": "barbol"
-    },
-    "36bbad92-7df9-4c9b-949a-29d6ad3e0e98": {
-      "level": "global_map",
-      "tile": [
-        15,
-        54
-      ],
-      "hp": 80,
-      "dead": false,
-      "prototype": "barbol"
-    },
-    "7ffc4552-6216-4487-bf51-c035e521588a": {
-      "level": "global_map",
-      "tile": [
-        35,
-        73
-      ],
-      "hp": 0,
-      "dead": true,
-      "prototype": "barbol"
-    },
-    "8eb9e582-417c-4a03-be46-243501dcefaf": {
-      "level": "global_map",
-      "tile": [
-        14,
-        64
-      ],
-      "hp": 0,
-      "dead": true,
-      "prototype": "barbol"
-    },
-    "f3b82e43-3c77-40f2-8e32-82569080c696": {
-      "level": "global_map",
-      "tile": [
-        23,
-        67
-      ],
-      "hp": 100,
-      "dead": false,
-      "prototype": "barbol"
-    },
-    "de6d282d-4115-4164-b919-b20bb44a1450": {
-      "level": "global_map",
-      "tile": [
-        53,
-        51
-      ],
-      "hp": 20,
-      "dead": false,
-      "prototype": "barbol"
-    },
-    "8ca93c34-bee2-4a87-a184-a8ca812ef372": {
-      "level": "global_map",
-      "tile": [
-        24,
-        67
-      ],
-      "hp": 40,
-      "dead": false,
-      "prototype": "barbol"
-    },
-    "e147cc25-97f8-4d3d-908b-604ab6f50538": {
-      "level": "global_map",
-      "tile": [
-        23,
-        66
-      ],
-      "hp": 100,
-      "dead": false,
-      "prototype": "barbol"
-    },
-    "c2f7950a-621c-4ed9-acc1-7a1075ed7885": {
-      "level": "global_map",
-      "tile": [
-        33,
         77
       ],
-      "hp": 0,
-      "dead": true,
-      "prototype": "barbol"
-    },
-    "196f3322-7815-47bf-93b8-50f435e054af": {
-      "level": "global_map",
-      "tile": [
-        67,
-        119
-      ],
-      "hp": 20,
+      "hp": 30,
       "dead": false,
-      "prototype": "barbol"
-    },
-    "03ad3137-265d-46c7-9131-c72f37a611d2": {
-      "level": "global_map",
-      "tile": [
-        24,
-        73
-      ],
-      "hp": 20,
-      "dead": false,
-      "prototype": "barbol"
-    },
-    "d7c35862-ec55-415f-aeff-ae3f9a60c670": {
-      "level": "global_map",
-      "tile": [
-        23,
-        73
-      ],
-      "hp": 20,
-      "dead": false,
-      "prototype": "barbol"
-    },
-    "c7636e43-31b1-4266-8a7f-80c978abcfd5": {
-      "level": "global_map",
-      "tile": [
-        38,
-        65
-      ],
-      "hp": 60,
-      "dead": false,
-      "prototype": "barbol"
-    },
-    "d83a2f71-f090-4e16-9f0e-9031495c6ea3": {
-      "level": "global_map",
-      "tile": [
-        39,
-        64
-      ],
-      "hp": 100,
-      "dead": false,
-      "prototype": "barbol"
-    },
-    "e195068e-4502-4822-ae4c-55b072e68176": {
-      "level": "global_map",
-      "tile": [
-        39,
-        63
-      ],
-      "hp": 60,
-      "dead": false,
-      "prototype": "barbol"
-    },
-    "407ea411-e94a-4974-9dae-6d4325c32fdb": {
-      "level": "global_map",
-      "tile": [
-        39,
-        63
-      ],
-      "hp": 100,
-      "dead": false,
-      "prototype": "barbol"
-    },
-    "bd268ad7-dc43-4902-b0b5-53c5561ad890": {
-      "level": "global_map",
-      "tile": [
-        8,
-        51
-      ],
-      "hp": 100,
-      "dead": false,
-      "prototype": "barbol"
-    },
-    "cb263f10-80f7-44d6-9cba-10af447a210d": {
-      "level": "global_map",
-      "tile": [
-        125,
-        57
-      ],
-      "hp": 100,
-      "dead": false,
-      "prototype": "barbol"
+      "prototype": "vendor_wood_gatita"
     }
   },
   "levels": {
     "global_map": {
       "player_pos": [
-        40,
-        60
+        111,
+        61
       ],
       "npc_states": {
         "df504d8e-022f-4d14-8b16-ae573c4555fa": {
           "level": "global_map",
           "tile": [
-            173,
-            71
+            151,
+            66
           ],
-          "hp": 60,
+          "hp": 100,
           "dead": false,
           "prototype": "barbol"
         },
@@ -319,221 +49,11 @@
           "level": "global_map",
           "tile": [
             115,
-            83
-          ],
-          "hp": 50,
-          "dead": false,
-          "prototype": "vendor_wood_gatita"
-        },
-        "9c8fd0f4-449d-49b8-b838-93d3c1990da3": {
-          "level": "global_map",
-          "tile": [
-            57,
-            82
-          ],
-          "hp": 0,
-          "dead": true,
-          "prototype": "barbol"
-        },
-        "734dae03-dd0b-4f82-a732-6a4d2de8e8f7": {
-          "level": "global_map",
-          "tile": [
-            13,
             76
           ],
-          "hp": 0,
-          "dead": true,
-          "prototype": "barbol"
-        },
-        "325191ff-ef4f-4822-934f-43d6f93fa970": {
-          "level": "global_map",
-          "tile": [
-            24,
-            74
-          ],
-          "hp": 40,
+          "hp": 30,
           "dead": false,
-          "prototype": "barbol"
-        },
-        "27920933-72de-409f-ba64-ffaecec46b9f": {
-          "level": "global_map",
-          "tile": [
-            12,
-            54
-          ],
-          "hp": 60,
-          "dead": false,
-          "prototype": "barbol"
-        },
-        "0fb68b83-a62b-4ab1-82fe-80827cbb7c64": {
-          "level": "global_map",
-          "tile": [
-            40,
-            68
-          ],
-          "hp": 40,
-          "dead": false,
-          "prototype": "barbol"
-        },
-        "c02adb1f-8cf1-4aac-9a0b-1c5fd3501eb2": {
-          "level": "global_map",
-          "tile": [
-            37,
-            72
-          ],
-          "hp": 0,
-          "dead": true,
-          "prototype": "barbol"
-        },
-        "95218e5e-51b6-4db0-ab7b-3da4bfafc1a8": {
-          "level": "global_map",
-          "tile": [
-            31,
-            64
-          ],
-          "hp": 60,
-          "dead": false,
-          "prototype": "barbol"
-        },
-        "0d9d149a-83ef-4b36-a75a-2a38927a114c": {
-          "level": "global_map",
-          "tile": [
-            38,
-            63
-          ],
-          "hp": 100,
-          "dead": false,
-          "prototype": "barbol"
-        },
-        "70fcf707-b955-4068-9d29-3eeb455a6956": {
-          "level": "global_map",
-          "tile": [
-            36,
-            72
-          ],
-          "hp": 0,
-          "dead": true,
-          "prototype": "barbol"
-        },
-        "bd1a0a6b-d686-41d4-a5da-777e97f87fcc": {
-          "level": "global_map",
-          "tile": [
-            33,
-            67
-          ],
-          "hp": 0,
-          "dead": true,
-          "prototype": "barbol"
-        },
-        "36bbad92-7df9-4c9b-949a-29d6ad3e0e98": {
-          "level": "global_map",
-          "tile": [
-            12,
-            53
-          ],
-          "hp": 80,
-          "dead": false,
-          "prototype": "barbol"
-        },
-        "7ffc4552-6216-4487-bf51-c035e521588a": {
-          "level": "global_map",
-          "tile": [
-            35,
-            73
-          ],
-          "hp": 0,
-          "dead": true,
-          "prototype": "barbol"
-        },
-        "8eb9e582-417c-4a03-be46-243501dcefaf": {
-          "level": "global_map",
-          "tile": [
-            13,
-            62
-          ],
-          "hp": 100,
-          "dead": false,
-          "prototype": "barbol"
-        },
-        "f3b82e43-3c77-40f2-8e32-82569080c696": {
-          "level": "global_map",
-          "tile": [
-            23,
-            67
-          ],
-          "hp": 100,
-          "dead": false,
-          "prototype": "barbol"
-        },
-        "de6d282d-4115-4164-b919-b20bb44a1450": {
-          "level": "global_map",
-          "tile": [
-            50,
-            51
-          ],
-          "hp": 20,
-          "dead": false,
-          "prototype": "barbol"
-        },
-        "8ca93c34-bee2-4a87-a184-a8ca812ef372": {
-          "level": "global_map",
-          "tile": [
-            24,
-            67
-          ],
-          "hp": 40,
-          "dead": false,
-          "prototype": "barbol"
-        },
-        "e147cc25-97f8-4d3d-908b-604ab6f50538": {
-          "level": "global_map",
-          "tile": [
-            23,
-            66
-          ],
-          "hp": 100,
-          "dead": false,
-          "prototype": "barbol"
-        },
-        "c2f7950a-621c-4ed9-acc1-7a1075ed7885": {
-          "level": "global_map",
-          "tile": [
-            33,
-            77
-          ],
-          "hp": 0,
-          "dead": true,
-          "prototype": "barbol"
-        },
-        "196f3322-7815-47bf-93b8-50f435e054af": {
-          "level": "global_map",
-          "tile": [
-            66,
-            118
-          ],
-          "hp": 20,
-          "dead": false,
-          "prototype": "barbol"
-        },
-        "03ad3137-265d-46c7-9131-c72f37a611d2": {
-          "level": "global_map",
-          "tile": [
-            24,
-            73
-          ],
-          "hp": 20,
-          "dead": false,
-          "prototype": "barbol"
-        },
-        "d7c35862-ec55-415f-aeff-ae3f9a60c670": {
-          "level": "global_map",
-          "tile": [
-            23,
-            73
-          ],
-          "hp": 20,
-          "dead": false,
-          "prototype": "barbol"
+          "prototype": "vendor_wood_gatita"
         }
       }
     }
@@ -542,7 +62,10 @@
     "player_id": "6de4fe5c-3288-48e1-8f00-01dd8bed9895",
     "capacity": 20,
     "slots": [
-      null,
+      {
+        "item": "gold",
+        "quantity": 10
+      },
       null,
       null,
       null,
@@ -579,212 +102,21 @@
       "player_id": null,
       "capacity": 20,
       "slots": []
-    },
-    "9c8fd0f4-449d-49b8-b838-93d3c1990da3": {
-      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-      "capacity": 20,
-      "slots": []
-    },
-    "734dae03-dd0b-4f82-a732-6a4d2de8e8f7": {
-      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-      "capacity": 20,
-      "slots": []
-    },
-    "325191ff-ef4f-4822-934f-43d6f93fa970": {
-      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-      "capacity": 20,
-      "slots": [
-        {
-          "item": "experience_orb",
-          "quantity": 1
-        }
-      ]
-    },
-    "27920933-72de-409f-ba64-ffaecec46b9f": {
-      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-      "capacity": 20,
-      "slots": [
-        {
-          "item": "wood",
-          "quantity": 1
-        }
-      ]
-    },
-    "0fb68b83-a62b-4ab1-82fe-80827cbb7c64": {
-      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-      "capacity": 20,
-      "slots": [
-        {
-          "item": "gold",
-          "quantity": 1
-        },
-        {
-          "item": "wood",
-          "quantity": 1
-        }
-      ]
-    },
-    "c02adb1f-8cf1-4aac-9a0b-1c5fd3501eb2": {
-      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-      "capacity": 20,
-      "slots": []
-    },
-    "95218e5e-51b6-4db0-ab7b-3da4bfafc1a8": {
-      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-      "capacity": 20,
-      "slots": []
-    },
-    "0d9d149a-83ef-4b36-a75a-2a38927a114c": {
-      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-      "capacity": 20,
-      "slots": [
-        {
-          "item": "gold",
-          "quantity": 1
-        },
-        {
-          "item": "experience_orb",
-          "quantity": 1
-        }
-      ]
-    },
-    "70fcf707-b955-4068-9d29-3eeb455a6956": {
-      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-      "capacity": 20,
-      "slots": []
-    },
-    "bd1a0a6b-d686-41d4-a5da-777e97f87fcc": {
-      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-      "capacity": 20,
-      "slots": []
-    },
-    "36bbad92-7df9-4c9b-949a-29d6ad3e0e98": {
-      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-      "capacity": 20,
-      "slots": [
-        {
-          "item": "gold",
-          "quantity": 1
-        }
-      ]
-    },
-    "7ffc4552-6216-4487-bf51-c035e521588a": {
-      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-      "capacity": 20,
-      "slots": []
-    },
-    "8eb9e582-417c-4a03-be46-243501dcefaf": {
-      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-      "capacity": 20,
-      "slots": []
-    },
-    "f3b82e43-3c77-40f2-8e32-82569080c696": {
-      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-      "capacity": 20,
-      "slots": []
-    },
-    "de6d282d-4115-4164-b919-b20bb44a1450": {
-      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-      "capacity": 20,
-      "slots": []
-    },
-    "8ca93c34-bee2-4a87-a184-a8ca812ef372": {
-      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-      "capacity": 20,
-      "slots": []
-    },
-    "e147cc25-97f8-4d3d-908b-604ab6f50538": {
-      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-      "capacity": 20,
-      "slots": [
-        {
-          "item": "gold",
-          "quantity": 1
-        }
-      ]
-    },
-    "c2f7950a-621c-4ed9-acc1-7a1075ed7885": {
-      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-      "capacity": 20,
-      "slots": []
-    },
-    "196f3322-7815-47bf-93b8-50f435e054af": {
-      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-      "capacity": 20,
-      "slots": []
-    },
-    "03ad3137-265d-46c7-9131-c72f37a611d2": {
-      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-      "capacity": 20,
-      "slots": [
-        {
-          "item": "experience_orb",
-          "quantity": 1
-        }
-      ]
-    },
-    "d7c35862-ec55-415f-aeff-ae3f9a60c670": {
-      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-      "capacity": 20,
-      "slots": []
-    },
-    "c7636e43-31b1-4266-8a7f-80c978abcfd5": {
-      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-      "capacity": 20,
-      "slots": []
-    },
-    "d83a2f71-f090-4e16-9f0e-9031495c6ea3": {
-      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-      "capacity": 20,
-      "slots": []
-    },
-    "e195068e-4502-4822-ae4c-55b072e68176": {
-      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-      "capacity": 20,
-      "slots": [
-        {
-          "item": "experience_orb",
-          "quantity": 1
-        }
-      ]
-    },
-    "407ea411-e94a-4974-9dae-6d4325c32fdb": {
-      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-      "capacity": 20,
-      "slots": []
-    },
-    "bd268ad7-dc43-4902-b0b5-53c5561ad890": {
-      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-      "capacity": 20,
-      "slots": [
-        {
-          "item": "experience_orb",
-          "quantity": 1
-        }
-      ]
-    },
-    "cb263f10-80f7-44d6-9cba-10af447a210d": {
-      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-      "capacity": 20,
-      "slots": [
-        {
-          "item": "experience_orb",
-          "quantity": 1
-        }
-      ]
     }
   },
   "meta": {
     "name": "partida_2025-09-05_17-32-35",
     "created_at": "2025-09-05T17:32:35",
-    "last_played": "2025-09-07T15:01:45",
+    "last_played": "2025-09-07T14:11:56",
     "player": {
-      "xp": 20,
-      "level": 5
+      "xp": 0,
+      "level": 0
     },
     "items_summary": {
-      "stacks": 0,
-      "top_items": []
+      "stacks": 1,
+      "top_items": [
+        "gold"
+      ]
     }
   }
 }

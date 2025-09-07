@@ -6,6 +6,7 @@ from types import SimpleNamespace
 from .items_editor_models import ItemsEditorModel
 from .items_editor_events import ItemsEditorEvents
 from .items_editor_view import ItemsEditorView
+from .items_tutorial_panel import ItemsTutorialPanelController
 from .items_tool_bar_panel.items_tool_bar_panel_model import ItemsToolBarPanelModel
 from .items_tool_bar_panel.items_tool_bar_panel_view import ItemsToolBarPanelView
 from .items_tool_bar_panel.items_tool_bar_panel_events import ItemsToolBarPanelEventHandler
@@ -59,6 +60,9 @@ class ItemsEditorController:
         self.events = ItemsEditorEvents()
         self.view = ItemsEditorView()
 
+        # Tutorial controller (MVC) for Items Editor
+        self.tutorial_controller = ItemsTutorialPanelController(self, self.view)
+
         # Título propio del Items Editor: siempre visible cuando el editor está abierto
         class _ItemsTitleController:
             def __init__(self, state_model):
@@ -98,6 +102,11 @@ class ItemsEditorController:
             self.picker_controller.model.selected_item_id = item_id
             # Sincronizar inmediatamente el panel de propiedades para mostrar el ítem seleccionado
             self.properties_controller.update_context(self.model.items, self.model.selected_item_id, self.model.hovered_item_id)
+            # Tutorial pulse: user selected an item in the picker
+            try:
+                setattr(self.model, 'tutorial_spawn_selection_pulse', True)
+            except Exception:
+                pass
 
         def _on_open_id(item_id: str) -> None:
             # Si estamos en modo eliminar, borrar directamente al abrir
@@ -247,7 +256,13 @@ class ItemsEditorController:
 
     # --- Ciclo principal ---
     def handle_event(self, event: pygame.event.Event) -> None:
-        # Delegación centralizada (ItemsEditorEvents maneja F7/ESC siempre)
+        # 1) Dar prioridad al Tutorial: ESC y clicks dentro del panel deben consumirse aquí
+        try:
+            if getattr(self, 'tutorial_controller', None) and self.tutorial_controller.handle_event(event):
+                return
+        except Exception:
+            pass
+        # 2) Enrutador general del Items Editor (F7/ESC y el resto de la UI)
         handled = self.events.handle_event(self, event)
         if handled:
             return
@@ -381,6 +396,12 @@ class ItemsEditorController:
             self.items_add_remove_controller.render(screen)
         except Exception:
             pass
+        # Render tutorial panel last so highlights and panel are on top
+        try:
+            if getattr(self, 'tutorial_controller', None):
+                self.tutorial_controller.render(screen)
+        except Exception:
+            pass
         # Render standard drop hover (highlight + tooltip) under editor UI using the shared system
         # Evitar duplicación: si el mundo ya tiene DropHoverRenderSystem, no dibujar el del editor
         try:
@@ -508,6 +529,11 @@ class ItemsEditorController:
                 self._refresh_items_catalog()
             except Exception:
                 logging.getLogger(__name__).exception("[ItemsEditorController] Failed to refresh items catalog after edit")
+            # Tutorial pulse: properties saved
+            try:
+                setattr(self.model, 'tutorial_properties_saved_pulse', True)
+            except Exception:
+                pass
 
     def _refresh_items_catalog(self) -> None:
         """Recarga items.json y assets, y sincroniza caches en:

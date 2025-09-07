@@ -112,6 +112,11 @@ class MapEditorController:
         self.state.selected_zone = new_name
 
         logger.debug(f"[MapEditor] Added zone '{new_name}' at offset ({offx}, {offy})")
+        # Tutorial pulse
+        try:
+            setattr(self.state, 'tutorial_zone_added_pulse', True)
+        except Exception:
+            pass
         return new_name
 
     def delete_zone(self) -> bool:
@@ -144,6 +149,11 @@ class MapEditorController:
         self.state.selected_zone = None
 
         logger.debug(f"[MapEditor] Removed zone '{sel}'")
+        # Tutorial pulse
+        try:
+            setattr(self.state, 'tutorial_zone_deleted_pulse', True)
+        except Exception:
+            pass
         return True
 
     def rename_zone(self, old_name: str, new_name: str) -> bool:
@@ -195,6 +205,11 @@ class MapEditorController:
         self.map_manager.tiles_by_zone[new] = tiles
 
         logger.debug(f"[MapEditor] Completed rename from '{old}' to '{new}'")
+        # Tutorial pulse
+        try:
+            setattr(self.state, 'tutorial_zone_renamed_pulse', True)
+        except Exception:
+            pass
         return True
 
     def save_zones(self) -> None:
@@ -206,6 +221,11 @@ class MapEditorController:
         # Filtrar el centinela 'no zone'/'no-zone' para no persistirlo como zona real
         filtered = {k: v for k, v in global_map_settings.zone_offsets.items() if k not in ("no zone", "no-zone")}
         self._save_json(json_path, filtered)
+        # Tutorial pulse
+        try:
+            setattr(self.state, 'tutorial_zones_saved_pulse', True)
+        except Exception:
+            pass
 
     def load_zones(self) -> None:
         """
