@@ -31,8 +31,9 @@ class ExperienceRenderSystem:
             screen_w, screen_h = screen.get_size()
             margin = 20
             bar_height = 10
-            bar_width = screen_w - margin * 2
-            x = margin
+            # Usar mitad del ancho de la pantalla y centrar
+            bar_width = int(screen_w * 0.5)
+            x = (screen_w - bar_width) // 2
             y = screen_h - bar_height - margin
             # Fondo
             pygame.draw.rect(screen, (50, 50, 50), (x, y, bar_width, bar_height))

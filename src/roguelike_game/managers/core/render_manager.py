@@ -69,9 +69,6 @@ class RendererManager:
         self._spell_debug_system = None
         self._patrol_debug_system = None
         self._defend_debug_system = None
-        # Cache para help overlay: (mode_key, screen_size) -> (surface, rect)
-        self._help_overlay_key = None
-        self._help_overlay_surf = None
         # Debug logging state caches to avoid spam
         self._last_render_debug_key = None
         self._last_current_layer = None
@@ -236,8 +233,6 @@ class RendererManager:
         render_diagnostics_overlay(self.diagnostics_overlay, screen, state, camera, self.map, debug_entities, show_borders=True)
         # Resaltar área de expansión de dungeon
         self._render_expand_area(self._last_state)
-        # Mostrar ayuda de controles según el modo
-        self._render_help_overlay(state)
 
         # Reemplazar dirty rects por flip completo para rendimiento constante
         return self._dirty_rects
@@ -473,96 +468,6 @@ class RendererManager:
                 screen.blit(surf, text_rect.topleft)
                 dirty.append(text_rect)
         return dirty
-
-    def _render_help_overlay(self, state):
-        # Cachea el overlay de ayuda para evitar renderizado de texto cada frame
-        screen = self.screen
-        size = screen.get_size()
-        # Ocultar la leyenda de comandos cuando un editor de superposición está visible
-        # (Entities Editor, Inventory Editor, etc.)
-        # Ocultar también cuando el selector de clases está visible
-        if getattr(state, 'class_selector_visible', False):
-            return
-        if hasattr(state, 'entities_editor_state') and getattr(state.entities_editor_state, 'visible', False):
-            return
-        if hasattr(state, 'inventory_editor_state') and getattr(state.inventory_editor_state, 'visible', False):
-            return
-        if hasattr(state, 'item_editor_state') and getattr(state.item_editor_state, 'visible', False):
-            return
-        # Ocultar también cuando el Buildings Editor está activo
-        if self.buildings_editor.editor_state.active:
-            return
-        # Ocultar también cuando el Tiles Editor o Map Editor están activos
-        if self.tiles_editor.editor_state.active:
-            return
-        if self.map_editor.editor_state.active:
-            return
-        # Ocultar cuando el Spells Editor está visible
-        if getattr(state, 'spells_editor_visible', False):
-            return
-        # Ocultar cuando el FSM Editor está visible
-        if getattr(state, 'fsm_editor_visible', False):
-            return
-        if self.map_editor.editor_state.active:
-            mode = 'map'
-        elif self.buildings_editor.editor_state.active:
-            mode = 'buildings'
-        elif self.tiles_editor.editor_state.active:
-            mode = 'tiles'
-        elif config.DEBUG:
-            mode = 'debug'
-        else:
-            mode = 'normal'
-        key = (mode, size)
-        if key != self._help_overlay_key:
-            # Reconstruir overlay            
-            screen_w, screen_h = size
-            if mode == 'map':
-                lines = ["Modo Edición Mapas:", "F11: modo", "ESC: salir",
-                         "N: duplicar zona", "L: cargar zonas", "Ctrl+S: guardar zonas",
-                         "D: borrar zona", "H: ocultar zona", "Click Izq: toolbar",
-                         "Click Medio: arrastrar", "Rueda: zoom"]
-            elif mode == 'buildings':
-                lines = [
-                    "Modo Edición Edificios:", "F10: modo", "P: selector edificio",
-                    "ESC: salir", "D: reset", "R: redimensionar",
-                    "Ctrl+S: guardar", "Ctrl+Z: deshacer", "N: aleatorio",
-                    "Supr: borrar"
-                ]
-            elif mode == 'tiles':
-                lines = ["Modo Edición Tiles:", "F8: editor tiles", "ESC: salir",
-                         "B: alternar edificios", "Click Izq: pintar", "Rueda: capa",
-                         "Click Der: arrastrar"]
-            elif mode == 'debug':
-                lines = [
-                    "Debug Mode:",
-                    "F9: Toggle Debug Overlay",
-                    "F12: Toggle FSM Editor",
-                    "Mouse Wheel: Scroll Overlay"
-                ]
-            else:
-                lines = ["Normal Mode:", "ESC: Menu", "[IN DUNGEON] Red area expand dungeon", "F8:Tiles Editor", "F9: Debug Mode","F10: Buildings Editor",
-                         "F11: Map Editor", "F5: Entities Editor",                         
-                         "E: Slash","X: Healing", "Mouse left: Fire Ball", "Mouse right: Slash",
-                         "Mouse middle: Laser Beam"
-                         ]
-            font = pygame.font.SysFont("Arial", 14)
-            pad = 5
-            texts = [font.render(l, True, (255,255,255)) for l in lines]
-            lh = texts[0].get_height() if texts else 0
-            bw = max((t.get_width() for t in texts), default=0) + pad*2
-            bh = len(texts)*lh + pad*2
-            overlay = pygame.Surface((bw, bh), flags=pygame.SRCALPHA)
-            overlay.fill((0,0,0,128))
-            for i, t in enumerate(texts):
-                overlay.blit(t, (pad, pad + i*lh))
-            rect = overlay.get_rect()
-            rect.bottomright = (screen_w - pad, screen_h - pad)
-            self._help_overlay_surf = (overlay, rect)
-            self._help_overlay_key = key
-        # Blitear overlay cacheado
-        surf, rect = self._help_overlay_surf
-        screen.blit(surf, rect)
 
     def _render_expand_area(self, state):
         """Dibuja overlay semitransparente en los 9 tiles del trigger de expansión."""
