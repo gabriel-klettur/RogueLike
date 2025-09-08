@@ -8,6 +8,20 @@ from typing import Dict, Tuple, Optional
 import logging
 logger = logging.getLogger(__name__)
 
+# Shared services and types for buildings package
+from roguelike_engine.buildings.services.zones import zone_offset
+from roguelike_engine.buildings.services.types import (
+    CollisionMap,
+    VisualStateMap,
+    StateThresholds,
+    RectList,
+    ColliderScope,
+)
+from roguelike_engine.buildings.services.collisions import (
+    image_to_grid_size,
+    resample_collision_map,
+)
+
 # Cache for building images: key = (image_path, scale)
 _BUILDING_IMAGE_CACHE: Dict[Tuple[str, Optional[Tuple[int,int]]], pygame.Surface] = {}
 
@@ -59,7 +73,7 @@ class BuildingModel:
         self._collision_tile_objs: list[types.SimpleNamespace] | None = None
 
         # Alcance de colisión por edificio: 'CG' (global) o 'CU' (único)
-        self.collider_scope: str = 'CG'
+        self.collider_scope: ColliderScope = 'CG'
 
         # ── Z-layers por defecto (se pueden sobreescribir) ──
         from roguelike_engine.config.config_z_layer import Z_LAYERS
@@ -77,78 +91,28 @@ class BuildingModel:
                 f"size=({w}x{h}) split={self.split_ratio:.2f} "
                 f"Zs=({self.z_bottom},{self.z_top}) solid={self.solid}>")
 
+    # ---- Zona helpers delegados a services.zones ----
+
     # ───────────── Propiedades de posición absoluta ─────────────
     @property
-    def x(self) -> int:        
-        offsets = global_map_settings.zone_offsets
-        zone = self.zone
-        if zone not in offsets and isinstance(zone, str):
-            low = zone.lower()
-            if low in offsets:
-                zone = low
-            else:
-                for k in offsets.keys():
-                    if k.lower() == low:
-                        zone = k
-                        break
-        ox, oy = offsets.get(zone, (0, 0))
-        if (ox, oy) == (0, 0) and zone not in offsets and zone and str(self.zone).lower() not in ("no zone", "no-zone"):
-            logger.warning(f"[BuildingModel] Zone '{self.zone}' not found in offsets. Using (0,0).")
+    def x(self) -> int:
+        ox, _ = zone_offset(self.zone, global_map_settings.zone_offsets)
         return ox * TILE_SIZE + self.rel_x
 
     @x.setter
     def x(self, value: int):
-        offsets = global_map_settings.zone_offsets
-        zone = self.zone
-        if zone not in offsets and isinstance(zone, str):
-            low = zone.lower()
-            if low in offsets:
-                zone = low
-            else:
-                for k in offsets.keys():
-                    if k.lower() == low:
-                        zone = k
-                        break
-        ox, oy = offsets.get(zone, (0, 0))
-        if (ox, oy) == (0, 0) and zone not in offsets and zone and str(self.zone).lower() not in ("no zone", "no-zone"):
-            logger.warning(f"[BuildingModel] Zone '{self.zone}' not found in offsets when setting x. Using (0,0).")
+        ox, _ = zone_offset(self.zone, global_map_settings.zone_offsets, warn_context="x_set")
         px = int(value)
         self.rel_x = px - ox * TILE_SIZE
 
     @property
-    def y(self) -> int:        
-        offsets = global_map_settings.zone_offsets
-        zone = self.zone
-        if zone not in offsets and isinstance(zone, str):
-            low = zone.lower()
-            if low in offsets:
-                zone = low
-            else:
-                for k in offsets.keys():
-                    if k.lower() == low:
-                        zone = k
-                        break
-        ox, oy = offsets.get(zone, (0, 0))
-        if (ox, oy) == (0, 0) and zone not in offsets and zone and str(self.zone).lower() not in ("no zone", "no-zone"):
-            logger.warning(f"[BuildingModel] Zone '{self.zone}' not found in offsets. Using (0,0).")
+    def y(self) -> int:
+        _, oy = zone_offset(self.zone, global_map_settings.zone_offsets)
         return oy * TILE_SIZE + self.rel_y
 
     @y.setter
     def y(self, value: int):
-        offsets = global_map_settings.zone_offsets
-        zone = self.zone
-        if zone not in offsets and isinstance(zone, str):
-            low = zone.lower()
-            if low in offsets:
-                zone = low
-            else:
-                for k in offsets.keys():
-                    if k.lower() == low:
-                        zone = k
-                        break
-        ox, oy = offsets.get(zone, (0, 0))
-        if (ox, oy) == (0, 0) and zone not in offsets and zone and str(self.zone).lower() not in ("no zone", "no-zone"):
-            logger.warning(f"[BuildingModel] Zone '{self.zone}' not found in offsets when setting y. Using (0,0).")
+        _, oy = zone_offset(self.zone, global_map_settings.zone_offsets, warn_context="y_set")
         py = int(value)
         self.rel_y = py - oy * TILE_SIZE
 
@@ -191,7 +155,6 @@ class BuildingModel:
         • Limpia caches relacionados con el renderizado.
         • Recalcula self._cut_world para el split.
         """
-        from roguelike_engine.utils.loader import load_image
         surf = load_image(self.image_path)
         surf = pygame.transform.scale(surf, (new_width, new_height))
         self.image = surf
@@ -291,7 +254,7 @@ class BuildingModel:
         del edificio (después de aplicar el split en self._cut_world).
         """
         full_h = self.image.get_height()
-        cut_h = int(full_h * self.split_ratio)
+        cut_h = self._cut_world
         return pygame.Rect(
             self.x,
             self.y + cut_h,
@@ -336,12 +299,7 @@ class BuildingModel:
         Devuelve (rows, cols) de la grilla de colisión a partir del tamaño de la imagen.
         Garantiza al menos 1×1 celdas para permitir edición incluso en tamaños pequeños.
         """
-        w = int(self.image.get_width()) if self.image else 0
-        h = int(self.image.get_height()) if self.image else 0
-        # Ceil division para cubrir el borde parcial del asset
-        cols = max(1, (w + TILE_SIZE - 1) // TILE_SIZE) if w > 0 else 1
-        rows = max(1, (h + TILE_SIZE - 1) // TILE_SIZE) if h > 0 else 1
-        return rows, cols
+        return image_to_grid_size(self.image, TILE_SIZE)
 
     def _resample_collision_map(self, new_rows: int, new_cols: int):
         """
@@ -349,49 +307,11 @@ class BuildingModel:
         nearest-neighbor para preservar lo existente al escalar.
         Si el mapa actual es vacío, inicializa con '.' (caminable).
         """
-        if new_rows <= 0 or new_cols <= 0:
-            new_rows, new_cols = 1, 1
-        old_rows = len(self._collision_map)
-        old_cols = len(self._collision_map[0]) if old_rows > 0 else 0
-        if old_rows == 0 or old_cols == 0:
-            self._collision_map = [["." for _ in range(new_cols)] for _ in range(new_rows)]
-            return
-        # Si el tamaño no cambia, no hacer nada
-        if new_rows == old_rows and new_cols == old_cols:
-            return
-        # Area pooling: para cada celda destino, tomar el rectángulo fuente equivalente
-        # y marcar '#' si alguna celda fuente es '#'. Esto evita perder colisiones al reducir.
-        res: list[list[str]] = [["." for _ in range(new_cols)] for _ in range(new_rows)]
-        for r in range(new_rows):
-            r0 = int((r * old_rows) / new_rows)
-            r1 = int(((r + 1) * old_rows) / new_rows) - 1
-            if r0 >= old_rows:
-                r0 = old_rows - 1
-            if r1 < r0:
-                r1 = r0
-            for c in range(new_cols):
-                c0 = int((c * old_cols) / new_cols)
-                c1 = int(((c + 1) * old_cols) / new_cols) - 1
-                if c0 >= old_cols:
-                    c0 = old_cols - 1
-                if c1 < c0:
-                    c1 = c0
-                solid = False
-                # Explorar el bloque fuente y parar temprano si encontramos '#'
-                for sr in range(r0, r1 + 1):
-                    row = self._collision_map[sr]
-                    for sc in range(c0, c1 + 1):
-                        if row[sc] == "#":
-                            solid = True
-                            break
-                    if solid:
-                        break
-                res[r][c] = "#" if solid else "."
-        self._collision_map = res
+        self._collision_map = resample_collision_map(self._collision_map, new_rows, new_cols)
 
     # ───────────── Acceso al mapa de colisión en bruto ─────────────
     @property
-    def collision_map(self) -> list[list[str]]:
+    def collision_map(self) -> CollisionMap:
         """
         El collision_map se debe cargar por fuera (p. ej. desde JSON) antes de utilizarlo.
         Aquí sólo devolvemos la referencia. No se modifica internamente en este modelo.
@@ -399,11 +319,17 @@ class BuildingModel:
         return self._collision_map
 
     @collision_map.setter
-    def collision_map(self, data: list[list[str]]):
+    def collision_map(self, data: CollisionMap):
         """
         Setter que invalida el cache de collision_tiles cuando cambia el mapa.
         """
         self._collision_map = data
+        self._collision_tiles_cache = None
+        self._collision_tile_objs = None
+
+    # ───────────── Invalidation helpers ─────────────
+    def invalidate_collision_caches(self) -> None:
+        """Invalida caches derivados de collision_map (rects y objetos)."""
         self._collision_tiles_cache = None
         self._collision_tile_objs = None
 

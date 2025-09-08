@@ -1,4 +1,7 @@
+import pygame
 from roguelike_engine.buildings.building_view import BuildingView
+from roguelike_engine.buildings.building_model import BuildingModel
+from roguelike_engine.buildings.services.types import CameraProtocol
 
 class BuildingController:
     """
@@ -8,31 +11,23 @@ class BuildingController:
     • Proporciona métodos para renderizar ambas partes, en el orden correcto de Z.
     """
 
-    def __init__(self, model, camera):
+    def __init__(self, model: BuildingModel, camera: CameraProtocol) -> None:
         """
         model: instancia de BuildingModel
-        camera: instancia de la cámara (para la vista)
+        camera: implementación de CameraProtocol (para la vista)
         """
-        self.model = model
-        self._camera = camera
-        self.view = None
-        if model.image is not None:            
+        self.model: BuildingModel = model
+        self._camera: CameraProtocol = camera
+        self.view: BuildingView | None = None
+        if model.image is not None:
             self.view = BuildingView(model, camera)
 
     def assign_zone(self, zone_name: str):
         """
         Asigna la zona al modelo y actualiza sus coordenadas relativas→absolutas.
-        Llama a self.update_rect() para que la rect de colisión se sincronice.
+        (La rect del Building se calcula on-demand, no es necesario sincronizar estado.)
         """
         self.model.zone = zone_name
-        # Al cambiar zona, debemos mover rect:
-        abs_x, abs_y = self.model.x, self.model.y
-        # Si existe un rect, lo actualizamos:
-        try:
-            self.model.rect.x = abs_x
-            self.model.rect.y = abs_y
-        except AttributeError:
-            pass
 
     def load_collision_map(self, collision_data: list[list[str]]):
         """
@@ -41,7 +36,7 @@ class BuildingController:
         """
         self.model.collision_map = collision_data
 
-    def render(self, screen):
+    def render(self, screen: pygame.Surface) -> None:
         """
         Método público para que el “game loop” llame:
         1. Dibuja la parte inferior (o “bottom”) en su z_layer correspondiente.
@@ -49,10 +44,7 @@ class BuildingController:
         """
         if not self.view:
             return
-
-        # Importar Z_LAYERS para decidir el orden de llamada al render de cada parte
-        from roguelike_engine.config.config_z_layer import Z_LAYERS
-
+        
         # ─ Primero parte “bottom” ─
         # asumiendo que el world renderer (RenderSystem) va a agrupar por z-layer:
         # aquí simplemente lo dibujamos en pantalla, pero hay que asegurarse de que la llamada 
