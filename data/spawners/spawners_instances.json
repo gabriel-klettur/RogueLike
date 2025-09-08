@@ -6,18 +6,14 @@
       26,
       15
     ],
-    "overrides": {
-      "building_id": 113
+    "visuals": {
+      "AwaitTrigger": 113,
+      "SpawningWave": 113,
+      "WaitCooldown": 113,
+      "WaitClear": 113,
+      "Finished": 113,
+      "WaitRestart": 113
     },
     "id": "survival_10_forest_14_9"
-  },
-  {
-    "template_id": "barbol_periodic_faster",
-    "zone": "zone_100_50",
-    "tile": [
-      24,
-      6
-    ],
-    "id": "barbol_periodic_faster_zone_100_50_24_6"
   }
 ]

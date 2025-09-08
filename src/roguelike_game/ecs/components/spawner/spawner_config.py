@@ -26,6 +26,9 @@ class SpawnerConfig:
     - defend_leash: optional. If True (default), defenders are leashed to the defend circle; if False, they won't leash back.
     - visible_in_game: optional. If True and a building_id is provided, the spawner will link to that building at runtime.
     - building_id: optional. If provided, identifies the Building instance used as the runtime visual for this spawner.
+    - state_visuals: optional. Mapping from FSM state id (e.g., "AwaitTrigger", "SpawningWave", "WaitCooldown",
+      "WaitRestart", "Finished", etc.) to a building_id to use while in that state. If present, it takes precedence
+      over the top-level building_id when the spawner is in that state.
     """
     template_id: str
     zone: str
@@ -47,5 +50,7 @@ class SpawnerConfig:
     defend_leash: bool = True
     # If True and building_id is set, link to a building visual in the normal renderer
     visible_in_game: bool = False
-    # Linkage to a Building visual by its persistent id (from buildings_data.json)
+    # Linkage to a Building visual by its persistent id (from buildings_instances.json)
     building_id: Optional[int] = None
+    # Optional per-state visuals mapping: { state_id: building_id }
+    state_visuals: Optional[Dict[str, int]] = None

@@ -4,13 +4,7 @@ import logging
 from roguelike_ui.ui_blocker import is_blocked
 
 from roguelike_editors.buildings.utils.save_buildings_to_json import (
-    save_buildings_to_json,
     save_buildings_split,
-)
-from roguelike_engine.config.config import (
-    BUILDINGS_DATA_PATH,
-    BUILDINGS_TEMPLATES_PATH,
-    BUILDINGS_INSTANCES_PATH,
 )
 from roguelike_editors.buildings.buildings_picker.building_picker_events import BuildingPickerEventHandler
 
@@ -184,9 +178,8 @@ class BuildingEditorEventHandler:
                 # Persist building changes if editor active
                 if self.editor.active:
                     try:
-                        save_buildings_to_json(
+                        save_buildings_split(
                             self.buildings,
-                            BUILDINGS_DATA_PATH,
                             z_state=self.state.z_state,
                             zone_offsets=self.zone_offsets,
                         )
@@ -230,9 +223,8 @@ class BuildingEditorEventHandler:
                     self.editor.split_dragging = False
                     
                     try:
-                        save_buildings_to_json(
+                        save_buildings_split(
                             entities.buildings,
-                            BUILDINGS_DATA_PATH,
                             z_state=self.state.z_state,
                             zone_offsets=self.zone_offsets,
                         )
@@ -245,9 +237,8 @@ class BuildingEditorEventHandler:
                     logger.info("Ctrl+S: saving buildings")
 
                     try:
-                        save_buildings_to_json(
+                        save_buildings_split(
                             entities.buildings,
-                            BUILDINGS_DATA_PATH,
                             z_state=self.state.z_state,
                             zone_offsets=self.zone_offsets,
                         )
@@ -312,9 +303,8 @@ class BuildingEditorEventHandler:
                 self.controller.on_mouse_up(ev.button, camera, entities.buildings)
                 # Persistir cambios de edificios (posición, tamaño, split)
                 try:
-                    save_buildings_to_json(
+                    save_buildings_split(
                         entities.buildings,
-                        BUILDINGS_DATA_PATH,
                         z_state=self.state.z_state,
                         zone_offsets=self.zone_offsets,
                     )

@@ -18,6 +18,115 @@ logger = logging.getLogger(__name__)
 class SpawnerRuntimeSystem:
     def __init__(self, perf_log=None):
         self.perf_log = perf_log
+        # Cache of last applied building id per spawner eid to avoid redundant work
+        self._last_visual_id: dict[int, int | None] = {}
+
+    # ---------------------- Visual helpers ----------------------
+    def _current_state_key(self, st) -> str | None:
+        """Return a canonical lowercase key for the current FSM-ish state in runtime.
+        Values set in this system are like 'await_trigger', 'spawning_wave', 'wait_cooldown', 'wait_restart', 'finished'.
+        """
+        try:
+            cur = getattr(st, 'fsm_state', None)
+            return str(cur).strip().lower() if cur is not None else None
+        except Exception:
+            return None
+
+    def _desired_building_for_state(self, cfg, st) -> int | None:
+        """Resolve desired building_id for the current state using cfg.state_visuals if present,
+        falling back to cfg.building_id.
+        Accepts keys in cfg.state_visuals either as exact state ids (e.g., 'AwaitTrigger') or
+        lowercase runtime tokens (e.g., 'await_trigger')."""
+        # Fallback first
+        desired = getattr(cfg, 'building_id', None)
+        mapping = getattr(cfg, 'state_visuals', None)
+        if not mapping:
+            return desired
+        # Normalize mapping keys once per lookup (small dict)
+        norm: dict[str, int] = {}
+        try:
+            for k, v in mapping.items():
+                try:
+                    norm[str(k).strip().lower()] = int(v) if v is not None else None  # type: ignore
+                except Exception:
+                    norm[str(k).strip().lower()] = v  # type: ignore
+        except Exception:
+            norm = {}
+        key = self._current_state_key(st)
+        if key and key in norm:
+            return norm[key]
+        # Try mapping runtime tokens to set ids (title case without underscores)
+        # e.g., 'await_trigger' -> 'awaittrigger', check also 'AwaitTrigger'
+        if key:
+            try:
+                camel = ''.join(part.title() for part in key.split('_'))
+                if camel.lower() in norm:
+                    return norm[camel.lower()]
+                # Direct title-case key
+                if camel in mapping:
+                    val = mapping[camel]
+                    try:
+                        return int(val) if val is not None else None
+                    except Exception:
+                        return val  # type: ignore
+            except Exception:
+                pass
+        return desired
+
+    def _find_linked_building(self, world, eid: int):
+        blds = getattr(world, 'buildings', []) or []
+        for ob in blds:
+            try:
+                if getattr(ob, '_spawner_eid', None) == eid:
+                    return ob
+            except Exception:
+                continue
+        return None
+
+    def _find_building_by_id(self, world, building_id: int):
+        if building_id is None:
+            return None
+        blds = getattr(world, 'buildings', []) or []
+        for ob in blds:
+            try:
+                if getattr(ob, 'id', None) == building_id:
+                    return ob
+            except Exception:
+                continue
+        return None
+
+    def _sync_spawner_visual(self, world, eid: int, cfg, st) -> None:
+        # Only when visible visuals are enabled
+        if not getattr(cfg, 'visible_in_game', False):
+            return
+        desired = self._desired_building_for_state(cfg, st)
+        prev = self._last_visual_id.get(eid)
+        if desired == prev:
+            return
+        # Update linkage
+        cur = self._find_linked_building(world, eid)
+        if cur is not None and getattr(cur, 'id', None) != desired:
+            # Detach previous link
+            try:
+                if getattr(cur, '_spawner_eid', None) == eid:
+                    setattr(cur, '_spawner_eid', None)
+                if getattr(cur, '_world_ref', None) is world:
+                    setattr(cur, '_world_ref', None)
+                if getattr(cur, '_is_spawner_visual', False):
+                    setattr(cur, '_is_spawner_visual', False)
+            except Exception:
+                pass
+            cur = None
+        if desired is not None:
+            target = cur if cur and getattr(cur, 'id', None) == desired else self._find_building_by_id(world, int(desired))
+            if target is not None:
+                try:
+                    setattr(target, '_spawner_eid', eid)
+                    setattr(target, '_world_ref', world)
+                    setattr(target, '_is_spawner_visual', True)
+                except Exception:
+                    pass
+        self._last_visual_id[eid] = desired
 
     def _collect_blocked_tiles(self, world):
         return util_collect_blocked(world)
@@ -105,6 +214,8 @@ class SpawnerRuntimeSystem:
         for eid in world.get_entities_with('SpawnerConfig', 'SpawnerState'):
             cfg = comps['SpawnerConfig'][eid]
             st = comps['SpawnerState'][eid]
+            # Sync per-state visual once per frame (uses last known fsm_state)
+            self._sync_spawner_visual(world, eid, cfg, st)
             # Política normalizada (looping, capacidad, forma de avanzar, proximidad híbrida)
             looping, max_active, advance_on_cooldown, proximity_initial_only = self._get_policy_flags(cfg)
 

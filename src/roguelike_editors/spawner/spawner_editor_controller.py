@@ -224,6 +224,12 @@ class SpawnerEditorController:
             self.events.set_game(game)
         except Exception:
             pass
+        # Allow Instance Properties controller to access game (camera/world)
+        try:
+            if hasattr(self, 'instance_properties') and hasattr(self.instance_properties, 'set_game'):
+                self.instance_properties.set_game(game)
+        except Exception:
+            pass
 
     def toggle_visible(self) -> None:
         # Delegate to event handler for consistent cleanup

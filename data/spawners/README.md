@@ -280,7 +280,7 @@ Notas para `advance_on`:
   - Áreas de defensa `DefendArea`: círculo o cuadrado naranja (según `shape`) con etiqueta `shape` y `r=NNNpx`, y una línea que asocia al NPC.
 
 Visualización en runtime (sin debug):
-- Si `visible_in_game=true` y se define `building_id`, el `SpawnerPlacementSystem` vincula el spawner a un `Building` existente con ese id, marcando el objeto con metadatos (`_is_spawner_visual`, `spawner_instance_id`) para evitar duplicados. No se crean sprites propios; se reutiliza el edificio como visual y estos vínculos no se persisten en `buildings_data.json`.
+- Si `visible_in_game=true` y se define `building_id`, el `SpawnerPlacementSystem` vincula el spawner a un `Building` existente con ese id, marcando el objeto con metadatos (`_is_spawner_visual`, `spawner_instance_id`) para evitar duplicados. No se crean sprites propios; se reutiliza el edificio como visual y estos vínculos no se persisten en los archivos de persistencia de buildings (templates/instances).
 
 ---
 

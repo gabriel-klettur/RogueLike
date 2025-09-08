@@ -23,7 +23,7 @@ except Exception:
     BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH = "data/buildings/buildings_collisions_by_spawn_id.json"
     BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH = "data/buildings/buildings_collisions_by_building_instance_id.json"
 
-from roguelike_editors.buildings.utils.save_buildings_to_json import save_buildings_to_json, save_buildings_split
+from roguelike_editors.buildings.utils.save_buildings_to_json import save_buildings_split
 
 logger = logging.getLogger(__name__)
 
@@ -207,16 +207,13 @@ class BuildingCollidersPanelEventHandler:
                 w, h = self.model.picker_panel_size
                 if x0 <= mx <= x0 + w and y0 <= my <= y0 + h:
                     if event.button == 1:
-                        # Botón 'Save CU' (guardar overrides por instancia en buildings_data.json)
+                        # Botón 'Save CU' (guardar overrides por instancia en archivos split)
                         try:
                             save_rect = self.model.picker_rects.get('save_cu')
                             if save_rect and save_rect.collidepoint((mx, my)):
-                                if os.path.exists(BUILDINGS_TEMPLATES_PATH) and os.path.exists(BUILDINGS_INSTANCES_PATH):
-                                    save_buildings_split(buildings)
-                                    logger.info("[Colliders][CU] Overrides guardados (si existen) en split files")
-                                else:
-                                    save_buildings_to_json(buildings)
-                                    logger.info("[Colliders][CU] Overrides guardados (si existen) en buildings_data.json")
+                                # Persistir SIEMPRE en archivos split
+                                save_buildings_split(buildings)
+                                logger.info("[Colliders][CU] Overrides guardados en archivos split")
                                 # Tutorial: pulso de guardado por botón
                                 try:
                                     setattr(self.editor_state, 'tutorial_colliders_saved_button_pulse', True)

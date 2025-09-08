@@ -136,6 +136,33 @@ class SpawnerEditorView:
                     pass
         except Exception:
             pass
+        # 3d) Visual focus overlay when editing a Visuals Template cell: dim the world and re-render properties
+        try:
+            ip = getattr(c, 'instance_properties', None)
+            if ip is not None and getattr(getattr(ip, 'model', None), 'visible', False):
+                if getattr(getattr(ip, 'model', None), 'visuals_editing_state', None) is not None:
+                    overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+                    overlay.fill((0, 0, 0, 140))
+                    screen.blit(overlay, (0, 0))
+                    # Re-render properties panel on top for clarity
+                    # Use last known rect as anchor to avoid layout shift
+                    last_rect = getattr(self, '_last_properties_rect', None)
+                    if last_rect is not None:
+                        ip.render(screen, anchor=(last_rect.left, last_rect.top))
+                    else:
+                        # Fallback to anchor calculation above
+                        if inst_rect is not None:
+                            anchor = (inst_rect.right + 8, inst_rect.top)
+                        elif inst_tb_rect is not None:
+                            anchor = (inst_tb_rect.right + 8, inst_tb_rect.top)
+                        elif tb_rect is not None:
+                            anchor = (tb_rect.right + 8, tb_rect.top)
+                        else:
+                            base_x = title_rect.left if title_rect else 20
+                            anchor = (base_x + 420, (title_rect.bottom + 8) if title_rect else 90)
+                        ip.render(screen, anchor=anchor)
+        except Exception:
+            pass
         # 4) Hint overlay (only if editor font is available); place below title/toolbar/manager
         try:
             if c.font:

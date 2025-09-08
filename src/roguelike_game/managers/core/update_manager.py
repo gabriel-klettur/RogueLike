@@ -137,6 +137,8 @@ def update_game(
             pos = pos_map[eid]
             minimap.update(
                 player_pos=(pos.x, pos.y),
-                tiles=map.tiles_in_region
+                tiles=map.tiles_in_region,
+                buildings=getattr(buildings, 'buildings', None),
+                world=ecs.ecs_world,
             )
     _update_minimap()

@@ -36,6 +36,31 @@ class InstancePropertiesEventHandler:
                 return gi
             return None
 
+        # Visuals table geometry (matches view): compute header and rows areas
+        base_rows_h = len(rows) * row_h
+        visuals_spacing = 8
+        y_start_visuals = y_off + base_rows_h - scroll + visuals_spacing
+        y_header = y_start_visuals + row_h
+        y_rows = y_header + row_h
+        # Locals for hit-testing inside visuals per-row rects
+        def hit_visuals_template_index(local_pos):
+            tr_list = getattr(view, 'visuals_template_rects', []) or []
+            if not tr_list:
+                return None
+            for j, r in enumerate(tr_list):
+                if r and r.collidepoint(local_pos):
+                    return j
+            return None
+
+        def hit_visuals_plus_index(local_pos):
+            pr_list = getattr(view, 'visuals_plus_rects', []) or []
+            if not pr_list:
+                return None
+            for j, r in enumerate(pr_list):
+                if r and r.collidepoint(local_pos):
+                    return j
+            return None
+
         if et == pygame.MOUSEWHEEL and rect.collidepoint(pos):
             # If combo is open and mouse is over its list, scroll combo list
             local = (pos[0] - rect.left, pos[1] - rect.top)
@@ -81,11 +106,12 @@ class InstancePropertiesEventHandler:
                             model.template_hovered_index = None
                     else:
                         model.template_hovered_index = None
+                # No explicit hover state for visuals rows for now
                 return True
             else:
                 model.hovered_index = None
 
-        # If editing, route to text input first
+        # If editing normal row, route to text input first
         if controller.is_editing():
             # ESC cancels
             if et == pygame.KEYDOWN and getattr(event, 'key', None) == pygame.K_ESCAPE:
@@ -125,9 +151,83 @@ class InstancePropertiesEventHandler:
                         controller.commit_edit_if_finished()
                         return True
 
+        # If editing a Visuals Template cell, route to its text input
+        if getattr(model, 'visuals_editing_state', None) is not None:
+            state = model.visuals_editing_state
+            ti = controller.get_text_input()
+            # Handle ESC / ENTER
+            if et == pygame.KEYDOWN:
+                key = getattr(event, 'key', None)
+                if key == pygame.K_ESCAPE:
+                    if ti is not None:
+                        ti.deactivate()
+                    controller.cancel_edit_visual()
+                    return True
+                if key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+                    if ti is not None:
+                        ti.deactivate()
+                    controller.commit_visual_edit_if_finished()
+                    return True
+                # Other keys should be forwarded to the text input for live editing
+                if ti is not None:
+                    handled = ti.handle_event(event)
+                    if handled:
+                        return True
+            # Also forward KEYUP/TEXTINPUT events (if TextInput uses them)
+            if et in (pygame.KEYUP, pygame.TEXTINPUT):
+                if ti is not None:
+                    handled = ti.handle_event(event)
+                    if handled:
+                        return True
+            if et in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEMOTION):
+                local = (pos[0] - rect.left, pos[1] - rect.top)
+                # Plus button click creates instance at camera center
+                if et == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
+                    j = hit_visuals_plus_index(local)
+                    if j is not None:
+                        rows_v = controller.get_visuals_rows()
+                        if 0 <= j < len(rows_v):
+                            st = rows_v[j][0]
+                            controller.add_building_instance_for_visual(st)
+                            return True
+                # Route pointer events to text input when inside template rect
+                handled = False
+                if ti is not None:
+                    j = hit_visuals_template_index(local)
+                    if j is not None:
+                        payload = {k: getattr(event, k) for k in ('button','rel','x','y') if hasattr(event, k)}
+                        # Translate to local coords relative to text input origin
+                        payload['pos'] = local
+                        fake = pygame.event.Event(et, payload)
+                        handled = ti.handle_event(fake)
+                if handled:
+                    return True
+                # Click outside: commit then exit
+                if et == pygame.MOUSEBUTTONDOWN:
+                    if ti is not None:
+                        ti.deactivate()
+                    controller.commit_visual_edit_if_finished()
+                    return True
+
         # Consume mouse clicks inside the panel
         if et in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP) and rect.collidepoint(pos):
             local = (pos[0] - rect.left, pos[1] - rect.top)
+            # Visuals interactions: '+' button and starting edit on Template cell
+            if et == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
+                j = hit_visuals_plus_index(local)
+                if j is not None:
+                    rows_v = controller.get_visuals_rows()
+                    if 0 <= j < len(rows_v):
+                        st = rows_v[j][0]
+                        controller.add_building_instance_for_visual(st)
+                        return True
+                j = hit_visuals_template_index(local)
+                if j is not None:
+                    rows_v = controller.get_visuals_rows()
+                    if 0 <= j < len(rows_v):
+                        st = rows_v[j][0]
+                        controller.begin_edit_visual(st)
+                        return True
             if et == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
                 # If combo is open, prioritize clicks on its UI
                 if getattr(model, 'template_combo_open', False):
@@ -143,12 +243,12 @@ class InstancePropertiesEventHandler:
                         model.template_combo_open = False
                         model.template_hovered_index = None
                         return True
-                    # Click outside list closes combo unless on combo rect
-                    crect = getattr(view, 'template_combo_rect', None)
-                    if crect is None or not crect.collidepoint(local):
-                        model.template_combo_open = False
-                        model.template_hovered_index = None
-                        return True
+                # Click outside list closes combo unless on combo rect
+                crect = getattr(view, 'template_combo_rect', None)
+                if crect is None or not crect.collidepoint(local):
+                    model.template_combo_open = False
+                    model.template_hovered_index = None
+                    # Do not return; keep processing
                 # Toggle combo if clicking on template_id row's combo rect
                 crect = getattr(view, 'template_combo_rect', None)
                 if crect is not None and crect.collidepoint(local):
