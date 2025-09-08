@@ -64,12 +64,12 @@ class ChunkedMapView:
                 tile_w = min(cs, width  - cx*cs)
                 tile_h = min(cs, height - cy*cs)
 
-                # tamaño en píxeles tras escalar
-                pix_w = int(tile_w * TILE_SIZE * zoom)
-                pix_h = int(tile_h * TILE_SIZE * zoom)
+                # tamaño en píxeles tras escalar (usar redondeo para evitar acumulación de truncado)
+                pix_w = int(round(tile_w * TILE_SIZE * zoom))
+                pix_h = int(round(tile_h * TILE_SIZE * zoom))
 
                 surf = pygame.Surface((pix_w, pix_h), pygame.SRCALPHA)
-                zkey = round(zoom * 10) / 10.0
+                zkey = float(zoom)
 
                 # dibujar cada tile por capa en orden usando raw_layers
                 for ty in range(cy*cs, cy*cs + tile_h):
@@ -90,11 +90,11 @@ class ChunkedMapView:
                             scaled = _SCALED_CACHE.get(skey)
                             if scaled is None:
                                 sw, sh = sprite.get_size()
-                                scaled = pygame.transform.scale(sprite, (int(sw * zoom), int(sh * zoom)))
+                                scaled = pygame.transform.scale(sprite, (int(round(sw * zoom)), int(round(sh * zoom))))
                                 _SCALED_CACHE[skey] = scaled
                             # posición dentro del chunk
-                            px = int((tx - cx*cs) * TILE_SIZE * zoom)
-                            py = int((ty - cy*cs) * TILE_SIZE * zoom)
+                            px = int(round((tx - cx*cs) * TILE_SIZE * zoom))
+                            py = int(round((ty - cy*cs) * TILE_SIZE * zoom))
                             surf.blit(scaled, (px, py))
 
                 chunk_dict[(cx, cy)] = surf
@@ -110,8 +110,9 @@ class ChunkedMapView:
         """
         Rebuild only the chunks containing the given tile coordinates.
         """
-        # Determine zoom level (quantized)
-        zoom = max(round(camera.zoom * 10) / 10.0, 0.1)
+        # Determine zoom level (exact)
+        zoom = max(float(getattr(camera, 'zoom', 1.0)) or 1.0, 0.1)
+
         # Ensure base cache exists
         if zoom not in self.chunks_by_zoom:
             self._build_chunk_surfaces(map_model, zoom)
@@ -140,8 +141,9 @@ class ChunkedMapView:
             height = len(matrix)
             tile_w = min(cs, width - cx*cs)
             tile_h = min(cs, height - cy*cs)
-            pix_w = int(tile_w * TILE_SIZE * zoom)
-            pix_h = int(tile_h * TILE_SIZE * zoom)
+            pix_w = int(round(tile_w * TILE_SIZE * zoom))
+            pix_h = int(round(tile_h * TILE_SIZE * zoom))
+
             surf = pygame.Surface((pix_w, pix_h), pygame.SRCALPHA)
             for ty in range(cy*cs, cy*cs + tile_h):
                 for tx in range(cx*cs, cx*cs + tile_w):
@@ -157,10 +159,11 @@ class ChunkedMapView:
                         scaled = _SCALED_CACHE.get(skey)
                         if scaled is None:
                             sw, sh = sprite.get_size()
-                            scaled = pygame.transform.scale(sprite, (int(sw * zoom), int(sh * zoom)))
+                            scaled = pygame.transform.scale(sprite, (int(round(sw * zoom)), int(round(sh * zoom))))
                             _SCALED_CACHE[skey] = scaled
-                        px = int((tx - cx*cs) * TILE_SIZE * zoom)
-                        py = int((ty - cy*cs) * TILE_SIZE * zoom)
+                        px = int(round((tx - cx*cs) * TILE_SIZE * zoom))
+                        py = int(round((ty - cy*cs) * TILE_SIZE * zoom))
+
                         surf.blit(scaled, (px, py))
             # Store updated chunk
             self.chunks_by_zoom[zoom][(cx, cy)] = surf
@@ -178,8 +181,8 @@ class ChunkedMapView:
         """
         dirty_rects: list[pygame.Rect] = []
         screen_w, screen_h = screen.get_size()
-        # Quantize zoom for caching and clamp to minimum to avoid division by zero
-        zoom = max(round(camera.zoom * 10) / 10.0, 0.1)
+        # Use exact zoom and clamp to minimum to avoid division by zero
+        zoom = max(float(getattr(camera, 'zoom', 1.0)) or 1.0, 0.1)
 
         # rebuild cache para este zoom si falta
         if zoom not in self.chunks_by_zoom:

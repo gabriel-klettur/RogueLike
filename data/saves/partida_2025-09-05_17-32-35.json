@@ -2,16 +2,16 @@
   "player": {
     "level": "global_map",
     "pos": [
-      118,
-      84
+      147,
+      79
     ]
   },
   "npcs": {
     "df504d8e-022f-4d14-8b16-ae573c4555fa": {
       "level": "global_map",
       "tile": [
-        214,
-        138
+        225,
+        152
       ],
       "hp": 100,
       "dead": false,
@@ -21,7 +21,7 @@
       "level": "global_map",
       "tile": [
         115,
-        110
+        115
       ],
       "hp": 10,
       "dead": false,
@@ -30,8 +30,8 @@
     "7797982e-c829-479a-948f-9cf6c4eb88c0": {
       "level": "global_map",
       "tile": [
-        79,
-        147
+        99,
+        155
       ],
       "hp": 20,
       "dead": false,
@@ -40,8 +40,8 @@
     "17b8de6a-cb16-4296-9b37-39fd559becd1": {
       "level": "global_map",
       "tile": [
-        51,
-        79
+        71,
+        84
       ],
       "hp": 40,
       "dead": false,
@@ -60,8 +60,8 @@
     "f2c08c2d-05f4-4953-b0cf-7d2f15170f3c": {
       "level": "global_map",
       "tile": [
-        60,
-        122
+        75,
+        132
       ],
       "hp": 100,
       "dead": false,
@@ -80,8 +80,8 @@
     "cbbfa90e-19b0-43d8-9991-daadcdba1e11": {
       "level": "global_map",
       "tile": [
-        61,
-        126
+        76,
+        135
       ],
       "hp": 40,
       "dead": false,
@@ -110,8 +110,8 @@
     "768f9d2f-3fa0-4bce-aefc-c52fcec4da22": {
       "level": "global_map",
       "tile": [
-        40,
-        161
+        63,
+        166
       ],
       "hp": 20,
       "dead": false,
@@ -130,8 +130,8 @@
     "ba4c3a56-19cc-4b4a-982c-b43d5fcdf750": {
       "level": "global_map",
       "tile": [
-        79,
-        113
+        86,
+        127
       ],
       "hp": 80,
       "dead": false,
@@ -140,8 +140,8 @@
     "a88ec4a5-8f14-48c1-8c57-42d2e8e1371e": {
       "level": "global_map",
       "tile": [
-        77,
-        113
+        84,
+        127
       ],
       "hp": 100,
       "dead": false,
@@ -150,8 +150,8 @@
     "32d970a5-d11f-4a09-a6d0-b13192811fc9": {
       "level": "global_map",
       "tile": [
-        96,
-        76
+        119,
+        81
       ],
       "hp": 20,
       "dead": false,
@@ -160,8 +160,8 @@
     "5c67f9eb-4fb7-4cd1-a425-e6c5cc4db667": {
       "level": "global_map",
       "tile": [
-        84,
-        113
+        92,
+        124
       ],
       "hp": 100,
       "dead": false,
@@ -170,8 +170,8 @@
     "c98c958a-f1ee-48c1-b605-1d396d92c3a8": {
       "level": "global_map",
       "tile": [
-        62,
-        83
+        85,
+        88
       ],
       "hp": 100,
       "dead": false,
@@ -180,8 +180,8 @@
     "ccffbc3c-527d-438a-a9b0-02584f188a07": {
       "level": "global_map",
       "tile": [
-        52,
-        76
+        72,
+        83
       ],
       "hp": 100,
       "dead": false,
@@ -190,10 +190,10 @@
     "ab1d253b-e0c2-413a-9d07-1a45963b1f52": {
       "level": "global_map",
       "tile": [
-        64,
-        85
+        82,
+        92
       ],
-      "hp": 80,
+      "hp": 60,
       "dead": false,
       "prototype": "barbol"
     },
@@ -210,8 +210,8 @@
     "c63c6af0-67a2-4222-ad0f-e2076578a5a3": {
       "level": "global_map",
       "tile": [
-        80,
-        93
+        103,
+        98
       ],
       "hp": 100,
       "dead": false,
@@ -220,8 +220,8 @@
     "42c42a09-493e-4d1c-9167-c1450da9e13a": {
       "level": "global_map",
       "tile": [
-        69,
-        94
+        88,
+        101
       ],
       "hp": 40,
       "dead": false,
@@ -240,8 +240,8 @@
     "538d3094-a90d-4c22-8803-dd584554a41b": {
       "level": "global_map",
       "tile": [
-        63,
-        84
+        83,
+        91
       ],
       "hp": 60,
       "dead": false,
@@ -250,8 +250,8 @@
     "d3cb7fd1-7c0c-48cd-a1b5-f2251b4b60df": {
       "level": "global_map",
       "tile": [
-        86,
-        96
+        99,
+        107
       ],
       "hp": 100,
       "dead": false,
@@ -260,8 +260,8 @@
     "0b9452c2-bf23-4629-9763-903db655e0f7": {
       "level": "global_map",
       "tile": [
-        52,
-        72
+        66,
+        79
       ],
       "hp": 80,
       "dead": false,
@@ -270,8 +270,8 @@
     "5e5c18f5-390d-4091-b3ef-c56e939094de": {
       "level": "global_map",
       "tile": [
-        52,
-        73
+        66,
+        80
       ],
       "hp": 100,
       "dead": false,
@@ -280,8 +280,8 @@
     "dbc7f584-f662-4ba3-8253-8c93de178f63": {
       "level": "global_map",
       "tile": [
-        52,
-        99
+        67,
+        108
       ],
       "hp": 100,
       "dead": false,
@@ -290,8 +290,8 @@
     "f2ce91a1-1a0b-42c7-9e15-b1454168ccf6": {
       "level": "global_map",
       "tile": [
-        51,
-        101
+        61,
+        111
       ],
       "hp": 100,
       "dead": false,
@@ -300,8 +300,8 @@
     "59dfcf00-03d0-43ab-94d0-35318a03beec": {
       "level": "global_map",
       "tile": [
-        53,
-        105
+        70,
+        113
       ],
       "hp": 100,
       "dead": false,
@@ -310,8 +310,8 @@
     "6f0615f2-736c-43db-aa3e-a0d4485f672e": {
       "level": "global_map",
       "tile": [
-        58,
-        117
+        72,
+        128
       ],
       "hp": 100,
       "dead": false,
@@ -320,8 +320,8 @@
     "a697dabe-b00d-4590-ad73-5ef870ac587c": {
       "level": "global_map",
       "tile": [
-        55,
-        113
+        62,
+        126
       ],
       "hp": 100,
       "dead": false,
@@ -330,8 +330,8 @@
     "c732b429-ab32-4108-ab70-6b245419072d": {
       "level": "global_map",
       "tile": [
-        57,
-        114
+        68,
+        127
       ],
       "hp": 100,
       "dead": false,
@@ -340,8 +340,8 @@
     "f7957988-ca62-48f0-b69e-5af9da88319b": {
       "level": "global_map",
       "tile": [
-        53,
-        108
+        59,
+        120
       ],
       "hp": 100,
       "dead": false,
@@ -350,8 +350,8 @@
     "ffea0f1a-cbf5-4c91-b66b-a1419b04fef3": {
       "level": "global_map",
       "tile": [
-        52,
-        70
+        67,
+        75
       ],
       "hp": 80,
       "dead": false,
@@ -360,8 +360,8 @@
     "73a7230d-dd85-4089-9f54-01082b92c1dc": {
       "level": "global_map",
       "tile": [
-        52,
-        71
+        67,
+        79
       ],
       "hp": 100,
       "dead": false,
@@ -370,8 +370,8 @@
     "c2898927-7541-407c-9183-09d20668a468": {
       "level": "global_map",
       "tile": [
-        33,
-        79
+        51,
+        86
       ],
       "hp": 100,
       "dead": false,
@@ -380,8 +380,8 @@
     "15193701-bc4d-47d0-8fa0-074a5fde02e3": {
       "level": "global_map",
       "tile": [
-        32,
-        69
+        52,
+        74
       ],
       "hp": 100,
       "dead": false,
@@ -390,8 +390,8 @@
     "c61b92cd-2212-4ad4-a419-ae146b924c1a": {
       "level": "global_map",
       "tile": [
-        58,
-        90
+        69,
+        97
       ],
       "hp": 80,
       "dead": false,
@@ -400,8 +400,8 @@
     "bdb4f61b-bf15-457d-a732-08b7a9ee2523": {
       "level": "global_map",
       "tile": [
-        8,
-        79
+        31,
+        84
       ],
       "hp": 80,
       "dead": false,
@@ -410,8 +410,8 @@
     "18a62ffe-aeac-4c32-a3a0-f56c7e6a6dd6": {
       "level": "global_map",
       "tile": [
-        30,
-        72
+        50,
+        77
       ],
       "hp": 100,
       "dead": false,
@@ -420,8 +420,8 @@
     "75d4bff2-05d5-417b-b2da-d5d7e98ceb75": {
       "level": "global_map",
       "tile": [
-        16,
-        67
+        39,
+        72
       ],
       "hp": 100,
       "dead": false,
@@ -430,8 +430,8 @@
     "341c2651-86c4-451d-a8fb-0422bd08582f": {
       "level": "global_map",
       "tile": [
-        16,
-        70
+        39,
+        75
       ],
       "hp": 80,
       "dead": false,
@@ -441,15 +441,15 @@
   "levels": {
     "global_map": {
       "player_pos": [
-        118,
-        84
+        147,
+        79
       ],
       "npc_states": {
         "df504d8e-022f-4d14-8b16-ae573c4555fa": {
           "level": "global_map",
           "tile": [
-            213,
-            135
+            220,
+            151
           ],
           "hp": 100,
           "dead": false,
@@ -459,7 +459,7 @@
           "level": "global_map",
           "tile": [
             115,
-            109
+            114
           ],
           "hp": 10,
           "dead": false,
@@ -468,8 +468,8 @@
         "7797982e-c829-479a-948f-9cf6c4eb88c0": {
           "level": "global_map",
           "tile": [
-            78,
-            144
+            94,
+            154
           ],
           "hp": 20,
           "dead": false,
@@ -478,8 +478,8 @@
         "17b8de6a-cb16-4296-9b37-39fd559becd1": {
           "level": "global_map",
           "tile": [
-            50,
-            77
+            66,
+            83
           ],
           "hp": 40,
           "dead": false,
@@ -498,8 +498,8 @@
         "f2c08c2d-05f4-4953-b0cf-7d2f15170f3c": {
           "level": "global_map",
           "tile": [
-            59,
-            122
+            74,
+            129
           ],
           "hp": 100,
           "dead": false,
@@ -518,8 +518,8 @@
         "cbbfa90e-19b0-43d8-9991-daadcdba1e11": {
           "level": "global_map",
           "tile": [
-            59,
-            124
+            75,
+            132
           ],
           "hp": 40,
           "dead": false,
@@ -548,8 +548,8 @@
         "768f9d2f-3fa0-4bce-aefc-c52fcec4da22": {
           "level": "global_map",
           "tile": [
-            38,
-            160
+            58,
+            165
           ],
           "hp": 20,
           "dead": false,
@@ -568,8 +568,8 @@
         "ba4c3a56-19cc-4b4a-982c-b43d5fcdf750": {
           "level": "global_map",
           "tile": [
-            78,
-            110
+            85,
+            125
           ],
           "hp": 80,
           "dead": false,
@@ -578,8 +578,8 @@
         "a88ec4a5-8f14-48c1-8c57-42d2e8e1371e": {
           "level": "global_map",
           "tile": [
-            76,
-            110
+            83,
+            125
           ],
           "hp": 100,
           "dead": false,
@@ -588,8 +588,8 @@
         "32d970a5-d11f-4a09-a6d0-b13192811fc9": {
           "level": "global_map",
           "tile": [
-            96,
-            76
+            114,
+            80
           ],
           "hp": 20,
           "dead": false,
@@ -598,8 +598,8 @@
         "5c67f9eb-4fb7-4cd1-a425-e6c5cc4db667": {
           "level": "global_map",
           "tile": [
-            83,
-            110
+            91,
+            121
           ],
           "hp": 100,
           "dead": false,
@@ -608,8 +608,8 @@
         "c98c958a-f1ee-48c1-b605-1d396d92c3a8": {
           "level": "global_map",
           "tile": [
-            60,
-            82
+            80,
+            87
           ],
           "hp": 100,
           "dead": false,
@@ -618,8 +618,8 @@
         "ccffbc3c-527d-438a-a9b0-02584f188a07": {
           "level": "global_map",
           "tile": [
-            50,
-            75
+            67,
+            82
           ],
           "hp": 100,
           "dead": false,
@@ -628,10 +628,10 @@
         "ab1d253b-e0c2-413a-9d07-1a45963b1f52": {
           "level": "global_map",
           "tile": [
-            62,
-            84
+            77,
+            91
           ],
-          "hp": 100,
+          "hp": 60,
           "dead": false,
           "prototype": "barbol"
         },
@@ -648,8 +648,8 @@
         "c63c6af0-67a2-4222-ad0f-e2076578a5a3": {
           "level": "global_map",
           "tile": [
-            78,
-            92
+            98,
+            97
           ],
           "hp": 100,
           "dead": false,
@@ -658,8 +658,8 @@
         "42c42a09-493e-4d1c-9167-c1450da9e13a": {
           "level": "global_map",
           "tile": [
-            68,
-            90
+            87,
+            98
           ],
           "hp": 40,
           "dead": false,
@@ -678,18 +678,18 @@
         "538d3094-a90d-4c22-8803-dd584554a41b": {
           "level": "global_map",
           "tile": [
-            61,
-            83
+            78,
+            90
           ],
-          "hp": 100,
+          "hp": 60,
           "dead": false,
           "prototype": "barbol"
         },
         "d3cb7fd1-7c0c-48cd-a1b5-f2251b4b60df": {
           "level": "global_map",
           "tile": [
-            84,
-            95
+            98,
+            104
           ],
           "hp": 100,
           "dead": false,
@@ -698,8 +698,8 @@
         "0b9452c2-bf23-4629-9763-903db655e0f7": {
           "level": "global_map",
           "tile": [
-            50,
-            71
+            65,
+            76
           ],
           "hp": 80,
           "dead": false,
@@ -708,8 +708,8 @@
         "5e5c18f5-390d-4091-b3ef-c56e939094de": {
           "level": "global_map",
           "tile": [
-            50,
-            72
+            64,
+            79
           ],
           "hp": 100,
           "dead": false,
@@ -718,8 +718,8 @@
         "dbc7f584-f662-4ba3-8253-8c93de178f63": {
           "level": "global_map",
           "tile": [
-            50,
-            98
+            62,
+            107
           ],
           "hp": 100,
           "dead": false,
@@ -728,8 +728,8 @@
         "f2ce91a1-1a0b-42c7-9e15-b1454168ccf6": {
           "level": "global_map",
           "tile": [
-            50,
-            99
+            56,
+            110
           ],
           "hp": 100,
           "dead": false,
@@ -738,8 +738,8 @@
         "59dfcf00-03d0-43ab-94d0-35318a03beec": {
           "level": "global_map",
           "tile": [
-            52,
-            102
+            65,
+            112
           ],
           "hp": 100,
           "dead": false,
@@ -748,8 +748,8 @@
         "6f0615f2-736c-43db-aa3e-a0d4485f672e": {
           "level": "global_map",
           "tile": [
-            57,
-            114
+            67,
+            127
           ],
           "hp": 100,
           "dead": false,
@@ -758,8 +758,8 @@
         "a697dabe-b00d-4590-ad73-5ef870ac587c": {
           "level": "global_map",
           "tile": [
-            54,
-            110
+            61,
+            123
           ],
           "hp": 100,
           "dead": false,
@@ -768,8 +768,8 @@
         "c732b429-ab32-4108-ab70-6b245419072d": {
           "level": "global_map",
           "tile": [
-            55,
-            113
+            63,
+            126
           ],
           "hp": 100,
           "dead": false,
@@ -778,8 +778,8 @@
         "f7957988-ca62-48f0-b69e-5af9da88319b": {
           "level": "global_map",
           "tile": [
-            52,
-            105
+            58,
+            117
           ],
           "hp": 100,
           "dead": false,
@@ -788,8 +788,8 @@
         "ffea0f1a-cbf5-4c91-b66b-a1419b04fef3": {
           "level": "global_map",
           "tile": [
-            50,
-            69
+            65,
+            74
           ],
           "hp": 80,
           "dead": false,
@@ -798,8 +798,8 @@
         "73a7230d-dd85-4089-9f54-01082b92c1dc": {
           "level": "global_map",
           "tile": [
-            50,
-            70
+            65,
+            75
           ],
           "hp": 100,
           "dead": false,
@@ -808,8 +808,8 @@
         "c2898927-7541-407c-9183-09d20668a468": {
           "level": "global_map",
           "tile": [
-            31,
-            78
+            50,
+            83
           ],
           "hp": 100,
           "dead": false,
@@ -818,8 +818,8 @@
         "15193701-bc4d-47d0-8fa0-074a5fde02e3": {
           "level": "global_map",
           "tile": [
-            30,
-            68
+            50,
+            73
           ],
           "hp": 100,
           "dead": false,
@@ -828,8 +828,8 @@
         "c61b92cd-2212-4ad4-a419-ae146b924c1a": {
           "level": "global_map",
           "tile": [
-            57,
-            89
+            68,
+            96
           ],
           "hp": 80,
           "dead": false,
@@ -838,8 +838,8 @@
         "bdb4f61b-bf15-457d-a732-08b7a9ee2523": {
           "level": "global_map",
           "tile": [
-            6,
-            78
+            26,
+            83
           ],
           "hp": 80,
           "dead": false,
@@ -848,8 +848,8 @@
         "18a62ffe-aeac-4c32-a3a0-f56c7e6a6dd6": {
           "level": "global_map",
           "tile": [
-            28,
-            71
+            48,
+            76
           ],
           "hp": 100,
           "dead": false,
@@ -858,8 +858,8 @@
         "75d4bff2-05d5-417b-b2da-d5d7e98ceb75": {
           "level": "global_map",
           "tile": [
-            14,
-            66
+            34,
+            71
           ],
           "hp": 100,
           "dead": false,
@@ -868,8 +868,8 @@
         "341c2651-86c4-451d-a8fb-0422bd08582f": {
           "level": "global_map",
           "tile": [
-            14,
-            69
+            34,
+            74
           ],
           "hp": 80,
           "dead": false,
@@ -1265,7 +1265,7 @@
   "meta": {
     "name": "partida_2025-09-05_17-32-35",
     "created_at": "2025-09-05T17:32:35",
-    "last_played": "2025-09-08T12:51:59",
+    "last_played": "2025-09-08T13:55:38",
     "player": {
       "xp": 10,
       "level": 1

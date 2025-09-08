@@ -1,13 +1,30 @@
 import pygame
+from logging import getLogger
 import logging
+from roguelike_engine.config.config_camera import ALLOWED_ZOOMS, next_allowed_zoom
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 def handle_mouse(event, state, camera, clock, map, entities, *, mmb_pan_enabled: bool = False):
     
     if event.type == pygame.MOUSEWHEEL:
-        if event.y > 0: camera.zoom = min(camera.zoom + 0.1, 2.0)
-        else:          camera.zoom = max(camera.zoom - 0.1, 0.5)
+        try:
+            mx, my = pygame.mouse.get_pos()
+            z = float(getattr(camera, 'zoom', 1.0)) or 1.0
+            # World coords under cursor before zoom
+            wx = mx / z + float(getattr(camera, 'offset_x', 0.0) or 0.0)
+            wy = my / z + float(getattr(camera, 'offset_y', 0.0) or 0.0)
+            allowed = ALLOWED_ZOOMS
+            new_z = next_allowed_zoom(z, +1, allowed) if event.y > 0 else next_allowed_zoom(z, -1, allowed)
+            if abs(new_z - z) > 1e-9:
+                camera.zoom = new_z
+                # Keep stable world point under cursor
+                camera.offset_x = wx - mx / camera.zoom
+                camera.offset_y = wy - my / camera.zoom
+                logger.debug("[Mouse] Zoom wheel z=%.3f -> %.3f at (%d,%d) -> cam_off=(%.2f,%.2f)", z, new_z, mx, my, camera.offset_x, camera.offset_y)
+        except Exception:
+            # Silent fail to avoid crashing input loop
+            pass
     elif event.type == pygame.MOUSEBUTTONDOWN:
         if event.button == 3:
             # Right-click dash handled by ECS InputSystem; no legacy action
