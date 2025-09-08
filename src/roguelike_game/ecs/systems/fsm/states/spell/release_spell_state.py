@@ -20,7 +20,8 @@ class ReleaseSpellState(State):
         # Consumir maná del caster si corresponde (evitar doble cobro si ya se cobró en SpellCastingSystem)
         try:
             world = entity.world
-            if not ctx.get('__mana_charged__', False):
+            godmode = bool(getattr(getattr(world, 'state', None), 'godmode', False)) and (entity.id == getattr(world, 'player_entity', None))
+            if not godmode and not ctx.get('__mana_charged__', False):
                 mana_cost = float(getattr(cfg, 'mana_cost', cfg.get('mana_cost', 0)))
                 if mana_cost > 0:
                     mana_dict = world.components.get('Mana', {})

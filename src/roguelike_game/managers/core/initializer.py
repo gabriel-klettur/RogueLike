@@ -19,11 +19,11 @@ from roguelike_game.managers.map import MapManager
 from roguelike_game.managers.buildings import BuildingsManager
 from roguelike_game.managers.z_layer import ZLayerManager
 from types import SimpleNamespace
-from roguelike_engine.console.model.model import ConsoleState, CommandRegistry
-from roguelike_engine.console.controller.controller import ConsoleController
-from roguelike_engine.console.events.events import ConsoleEvents
-from roguelike_engine.console.view.view import ConsoleView
-from roguelike_engine.console.commands import register_commands
+from roguelike_engine.console.console_model import ConsoleState, CommandRegistry
+from roguelike_engine.console.console_controller import ConsoleController
+from roguelike_engine.console.console_events import ConsoleEvents
+from roguelike_engine.console.console_view import ConsoleView
+from roguelike_engine.console import register_commands
 
 from roguelike_game.managers.menu import MenuManager
 from roguelike_game.managers.player.class_selector_manager import ClassSelectorManager

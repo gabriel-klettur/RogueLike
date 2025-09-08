@@ -57,6 +57,11 @@ class DashBarRenderSystem:
         # dejar pequeños gaps entre segmentos
         seg_w = (bar_width - self.segment_gap * (total - 1)) / total if total > 0 else bar_width
 
+        # Tinte amarillo si godmode
+        godmode = bool(getattr(getattr(world, 'state', None), 'godmode', False))
+        fill_color = (255, 230, 100) if godmode else self.fill_color
+        recharge_color = (255, 230, 140) if godmode else self.recharge_color
+
         # Dibujo por segmento
         for i in range(total):
             x0 = bar_x + i * (seg_w + self.segment_gap)
@@ -65,12 +70,12 @@ class DashBarRenderSystem:
             pygame.draw.rect(screen, self.bg_color, rect)
             # relleno completo si la carga está disponible
             if i < current:
-                pygame.draw.rect(screen, self.fill_color, rect)
+                pygame.draw.rect(screen, fill_color, rect)
             # si es la siguiente en recarga, dibujar relleno parcial
             elif i == current and current < total and meter.policy == 'sequential':
                 width = int(seg_w * max(0.0, min(1.0, meter.progress)))
                 if width > 0:
                     part = pygame.Rect(rect.x, rect.y, width, rect.height)
-                    pygame.draw.rect(screen, self.recharge_color, part)
+                    pygame.draw.rect(screen, recharge_color, part)
             # borde
             pygame.draw.rect(screen, self.border_color, rect, 1)

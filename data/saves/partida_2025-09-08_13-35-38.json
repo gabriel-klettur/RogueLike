@@ -1,0 +1,317 @@
+{
+  "player": {
+    "level": "global_map",
+    "pos": [
+      29,
+      69
+    ]
+  },
+  "npcs": {
+    "3b36a6a0-3d60-45c1-89c3-0a77ca8b3a28": {
+      "level": "global_map",
+      "tile": [
+        31,
+        72
+      ],
+      "hp": 0,
+      "dead": true,
+      "prototype": "barbol"
+    },
+    "f2655fd7-b2e6-4c9d-aab9-a44335650b04": {
+      "level": "global_map",
+      "tile": [
+        23,
+        75
+      ],
+      "hp": 0,
+      "dead": true,
+      "prototype": "barbol"
+    },
+    "fd9fd9df-8467-4563-b068-4dc3edf58982": {
+      "level": "global_map",
+      "tile": [
+        31,
+        73
+      ],
+      "hp": 0,
+      "dead": true,
+      "prototype": "barbol"
+    },
+    "184f8073-8c59-48d2-bae9-c40bdb69b2fe": {
+      "level": "global_map",
+      "tile": [
+        30,
+        70
+      ],
+      "hp": 0,
+      "dead": true,
+      "prototype": "barbol"
+    },
+    "8a7f9eef-8e50-4ad6-a27c-2cd5caf4f7a9": {
+      "level": "global_map",
+      "tile": [
+        28,
+        66
+      ],
+      "hp": 0,
+      "dead": true,
+      "prototype": "barbol"
+    },
+    "fb0d8181-e428-4b37-a3f2-261e9d969d14": {
+      "level": "global_map",
+      "tile": [
+        35,
+        76
+      ],
+      "hp": 0,
+      "dead": true,
+      "prototype": "barbol"
+    },
+    "9bbffdf0-5475-4db9-b61d-af68b5f8d76a": {
+      "level": "global_map",
+      "tile": [
+        34,
+        74
+      ],
+      "hp": 0,
+      "dead": true,
+      "prototype": "barbol"
+    },
+    "bd5155be-1615-4efa-82c2-e90575291ab0": {
+      "level": "global_map",
+      "tile": [
+        39,
+        68
+      ],
+      "hp": 0,
+      "dead": true,
+      "prototype": "barbol"
+    },
+    "41cf4da7-9f44-41a9-847a-0af46360560f": {
+      "level": "global_map",
+      "tile": [
+        41,
+        71
+      ],
+      "hp": 0,
+      "dead": true,
+      "prototype": "barbol"
+    },
+    "88bd28ec-84b3-402d-b3e7-f713952b2050": {
+      "level": "global_map",
+      "tile": [
+        21,
+        64
+      ],
+      "hp": 0,
+      "dead": true,
+      "prototype": "barbol"
+    },
+    "f0be9c54-b945-4e51-8966-7c5f559213dd": {
+      "level": "global_map",
+      "tile": [
+        25,
+        65
+      ],
+      "hp": 0,
+      "dead": true,
+      "prototype": "barbol"
+    },
+    "c7967c25-1746-4ea4-849a-776da7af04d4": {
+      "level": "global_map",
+      "tile": [
+        22,
+        75
+      ],
+      "hp": 0,
+      "dead": true,
+      "prototype": "barbol"
+    }
+  },
+  "levels": {
+    "global_map": {
+      "player_pos": [
+        29,
+        69
+      ],
+      "npc_states": {
+        "3b36a6a0-3d60-45c1-89c3-0a77ca8b3a28": {
+          "level": "global_map",
+          "tile": [
+            31,
+            72
+          ],
+          "hp": 0,
+          "dead": true,
+          "prototype": "barbol"
+        },
+        "f2655fd7-b2e6-4c9d-aab9-a44335650b04": {
+          "level": "global_map",
+          "tile": [
+            23,
+            75
+          ],
+          "hp": 0,
+          "dead": true,
+          "prototype": "barbol"
+        },
+        "fd9fd9df-8467-4563-b068-4dc3edf58982": {
+          "level": "global_map",
+          "tile": [
+            31,
+            73
+          ],
+          "hp": 0,
+          "dead": true,
+          "prototype": "barbol"
+        },
+        "184f8073-8c59-48d2-bae9-c40bdb69b2fe": {
+          "level": "global_map",
+          "tile": [
+            30,
+            70
+          ],
+          "hp": 0,
+          "dead": true,
+          "prototype": "barbol"
+        },
+        "8a7f9eef-8e50-4ad6-a27c-2cd5caf4f7a9": {
+          "level": "global_map",
+          "tile": [
+            28,
+            66
+          ],
+          "hp": 0,
+          "dead": true,
+          "prototype": "barbol"
+        },
+        "fb0d8181-e428-4b37-a3f2-261e9d969d14": {
+          "level": "global_map",
+          "tile": [
+            35,
+            76
+          ],
+          "hp": 0,
+          "dead": true,
+          "prototype": "barbol"
+        },
+        "9bbffdf0-5475-4db9-b61d-af68b5f8d76a": {
+          "level": "global_map",
+          "tile": [
+            34,
+            74
+          ],
+          "hp": 0,
+          "dead": true,
+          "prototype": "barbol"
+        }
+      }
+    }
+  },
+  "player_inventory": {
+    "player_id": "424a39e5-e33c-4418-aeff-dd8cc12a8269",
+    "capacity": 20,
+    "slots": [
+      {
+        "item": "gold",
+        "quantity": 11
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "npc_inventories": {
+    "3b36a6a0-3d60-45c1-89c3-0a77ca8b3a28": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": []
+    },
+    "f2655fd7-b2e6-4c9d-aab9-a44335650b04": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": []
+    },
+    "fd9fd9df-8467-4563-b068-4dc3edf58982": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": []
+    },
+    "184f8073-8c59-48d2-bae9-c40bdb69b2fe": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": []
+    },
+    "8a7f9eef-8e50-4ad6-a27c-2cd5caf4f7a9": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": []
+    },
+    "fb0d8181-e428-4b37-a3f2-261e9d969d14": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": []
+    },
+    "9bbffdf0-5475-4db9-b61d-af68b5f8d76a": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": []
+    },
+    "bd5155be-1615-4efa-82c2-e90575291ab0": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": []
+    },
+    "41cf4da7-9f44-41a9-847a-0af46360560f": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": []
+    },
+    "88bd28ec-84b3-402d-b3e7-f713952b2050": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": []
+    },
+    "f0be9c54-b945-4e51-8966-7c5f559213dd": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": []
+    },
+    "c7967c25-1746-4ea4-849a-776da7af04d4": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": []
+    }
+  },
+  "meta": {
+    "name": "partida_2025-09-08_13-35-38",
+    "created_at": "2025-09-08T13:35:38",
+    "last_played": "2025-09-08T15:52:07",
+    "player": {
+      "xp": 30,
+      "level": 0
+    },
+    "items_summary": {
+      "stacks": 1,
+      "top_items": [
+        "gold"
+      ]
+    }
+  }
+}

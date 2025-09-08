@@ -44,10 +44,18 @@ class MeleeCombatSystem:
             raw_damage = attacker_stats.power + weapon_bonus - defender_stats.defense
             damage = max(0, raw_damage)
             
-            # Aplicar daño al objetivo
-            defender_stats.current_hp -= damage
-            # Registrar último atacante del objetivo
-            world.components.setdefault('LastAttacker', {})[intent.target] = LastAttacker(intent.attacker, time.time())
+            # Inmortalidad del jugador en godmode
+            is_player_target = intent.target in world.components.get('PlayerTagComponent', {})
+            try:
+                godmode = bool(getattr(getattr(world, 'state', None), 'godmode', False)) and is_player_target
+            except Exception:
+                godmode = False
+            
+            # Aplicar daño al objetivo (omitir si es jugador y godmode)
+            if not godmode:
+                defender_stats.current_hp -= damage
+                # Registrar último atacante del objetivo
+                world.components.setdefault('LastAttacker', {})[intent.target] = LastAttacker(intent.attacker, time.time())
             
             # NPC recibe daño de jugador -> publicar evento OnHit y posible OnDeath
             if intent.attacker in world.components.get('PlayerTagComponent', {}):
@@ -59,35 +67,37 @@ class MeleeCombatSystem:
                 qmap = world.components.setdefault('FSMEventQueue', {})
                 q = qmap.setdefault(target_eid, [])
                 q.append({"type": "OnHit", "from_left": from_left})
-                if defender_stats.current_hp <= 0:
+                if not godmode and defender_stats.current_hp <= 0:
                     q.append({"type": "OnDeath"})
                     # Evento de kill para combo basado en muertes
                     combo_q = world.components.setdefault('ComboEventQueue', [])
                     combo_q.append({'type': 'kill', 'entity': intent.attacker, 'target': target_eid})
                     world.components.setdefault('ComboKillCounted', set()).add(target_eid)
                 # Publicar evento de COMBO para el atacante (jugador)
-                combo_q = world.components.setdefault('ComboEventQueue', [])
-                combo_q.append({
-                    'attacker': intent.attacker,
-                    'target': target_eid,
-                    'damage': float(damage),
-                    'source': 'melee'
-                })
+                if not godmode:
+                    combo_q = world.components.setdefault('ComboEventQueue', [])
+                    combo_q.append({
+                        'attacker': intent.attacker,
+                        'target': target_eid,
+                        'damage': float(damage),
+                        'source': 'melee'
+                    })
             # Jugador recibe daño de NPC/u otro -> publicar evento OnHit y posible OnDeath
-            elif intent.target in world.components.get('PlayerTagComponent', {}):
-                target_eid = intent.target
-                # determinar dirección de daño
-                attacker_pos = world.components['Position'][intent.attacker]
-                defender_pos = world.components['Position'][target_eid]
-                from_left = attacker_pos.x < defender_pos.x
-                qmap = world.components.setdefault('FSMEventQueue', {})
-                q = qmap.setdefault(target_eid, [])
-                q.append({"type": "OnHit", "from_left": from_left})
-                if defender_stats.current_hp <= 0:
-                    q.append({"type": "OnDeath"})
-                # Romper combo del jugador al recibir daño
-                combo_q = world.components.setdefault('ComboEventQueue', [])
-                combo_q.append({'type': 'break', 'entity': target_eid})
+            elif is_player_target:
+                if not godmode:
+                    target_eid = intent.target
+                    # determinar dirección de daño
+                    attacker_pos = world.components['Position'][intent.attacker]
+                    defender_pos = world.components['Position'][target_eid]
+                    from_left = attacker_pos.x < defender_pos.x
+                    qmap = world.components.setdefault('FSMEventQueue', {})
+                    q = qmap.setdefault(target_eid, [])
+                    q.append({"type": "OnHit", "from_left": from_left})
+                    if defender_stats.current_hp <= 0:
+                        q.append({"type": "OnDeath"})
+                    # Romper combo del jugador al recibir daño
+                    combo_q = world.components.setdefault('ComboEventQueue', [])
+                    combo_q.append({'type': 'break', 'entity': target_eid})
             
             # (Opcional) Aquí podrías disparar efectos secundarios,
             # p.ej. animaciones, sonidos o eventos de muerte si HP ≤ 0

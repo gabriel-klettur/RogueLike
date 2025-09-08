@@ -104,29 +104,31 @@ class SpellCastingSystem:
                 continue
             # Verificar coste de maná (si el caster tiene maná)
             try:
-                mana_comp = world.components.get('Mana', {}).get(eid)
-                mana_cost = float(getattr(cfg, 'mana_cost', cfg.get('mana_cost', 0)))
-                if mana_comp is not None and mana_cost > 0:
-                    if float(mana_comp.current_mana) < mana_cost:
-                        # Notificar falta de maná al jugador mediante burbuja
-                        try:
-                            from roguelike_game.ecs.systems.chat.chat_bubble_utils import push_bubble
-                            push_bubble(world, eid, 'No tengo suficiente maná', color=(240, 200, 200), ttl_ms=1800)
-                        except Exception:
-                            pass
-                        # Disparar flash azul en la barra de maná durante 600ms
-                        try:
-                            import time as _time
-                            flash_store = getattr(world, '_mana_flash_until', None)
-                            if not isinstance(flash_store, dict):
-                                flash_store = {}
-                                setattr(world, '_mana_flash_until', flash_store)
-                            flash_store[eid] = _time.time() + 0.6
-                        except Exception:
-                            pass
-                        # Descartar intención y continuar
-                        wants.pop(eid, None)
-                        continue
+                godmode = bool(getattr(getattr(world, 'state', None), 'godmode', False)) and (eid == getattr(world, 'player_entity', None))
+                if not godmode:
+                    mana_comp = world.components.get('Mana', {}).get(eid)
+                    mana_cost = float(getattr(cfg, 'mana_cost', cfg.get('mana_cost', 0)))
+                    if mana_comp is not None and mana_cost > 0:
+                        if float(mana_comp.current_mana) < mana_cost:
+                            # Notificar falta de maná al jugador mediante burbuja
+                            try:
+                                from roguelike_game.ecs.systems.chat.chat_bubble_utils import push_bubble
+                                push_bubble(world, eid, 'No tengo suficiente maná', color=(240, 200, 200), ttl_ms=1800)
+                            except Exception:
+                                pass
+                            # Disparar flash azul en la barra de maná durante 600ms
+                            try:
+                                import time as _time
+                                flash_store = getattr(world, '_mana_flash_until', None)
+                                if not isinstance(flash_store, dict):
+                                    flash_store = {}
+                                    setattr(world, '_mana_flash_until', flash_store)
+                                flash_store[eid] = _time.time() + 0.6
+                            except Exception:
+                                pass
+                            # Descartar intención y continuar
+                            wants.pop(eid, None)
+                            continue
             except Exception:
                 # fallback duro: no bloquear por errores de lectura
                 pass

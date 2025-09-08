@@ -286,8 +286,27 @@ def handle_events(game):
     except Exception:
         pass
 
-    # Priorizar consola
+    # Priorizar consola: si está ABIERTA, marcar estado global y no propagar al gameplay
+    try:
+        if getattr(game, 'console_state', None) is not None:
+            # Propagar flag a world.state para que sistemas (p.ej. InputSystem) puedan suprimir inputs continuos
+            try:
+                world = getattr(game, 'ecs', None).ecs_world
+                if world and hasattr(world, 'state'):
+                    world.state.console_open = bool(game.console_state.is_open)
+            except Exception:
+                pass
+            if bool(game.console_state.is_open):
+                for event in events:
+                    try:
+                        game.console_events.process_event(event)
+                    except Exception:
+                        pass
+                return
+    except Exception:
+        pass
 
+    # Priorizar consola (modo compatibilidad): si algún evento es consumido por la consola, no propagar
     for event in events:
         if game.console_events.process_event(event):
             return

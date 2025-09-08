@@ -140,9 +140,10 @@ class BeamResolver(BaseSpellResolver):
 class DashResolver(BaseSpellResolver):
     """Resolver for dash spells: registers DashComponent for continuous dash movement."""
     def resolve(self, world, caster, spawn_meta, cfg, camera):
-        # Gating por cargas: consumir 1 carga si hay disponible
+        # Gating por cargas: consumir 1 carga si hay disponible (omitir en godmode jugador)
+        godmode = bool(getattr(getattr(world, 'state', None), 'godmode', False)) and (caster == getattr(world, 'player_entity', None))
         meter = world.components.get('DashMeterComponent', {}).get(caster)
-        if meter is not None:
+        if meter is not None and not godmode:
             if getattr(meter, 'current', 0) <= 0:
                 logger.debug("[DashResolver] Sin cargas de dash: abortar resolución")
                 return

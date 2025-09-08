@@ -54,6 +54,42 @@ class InputSystem:
     
     def update(self, world, *args):
 
+        # Suppress ALL gameplay input when Console is open (keyboard focus is for console)
+        if hasattr(world, 'state') and bool(getattr(world.state, 'console_open', False)):
+            spell_attrs = ['lightball','slash','healing_aura','darkball','iceball','lightning','arcane_flame','firework_launch','smoke','smoke_emitter','sphere_magic_shield','teleport']
+            for eid, inp in world.components.get('InputComponent', {}).items():
+                # Anular entradas de gameplay mientras se escribe en la consola
+                inp.click = False
+                inp.move_x = 0
+                inp.move_y = 0
+                inp.attack = False
+                inp.interact = False
+                inp.show_all_drops = False
+                for name in spell_attrs:
+                    setattr(inp, f'spell_{name}', False)
+                inp.toggle_editor = False
+                inp.toggle_inventory = False
+                # Detener movimiento del jugador sin pausar la simulación global
+                vel = world.components.get('Velocity', {}).get(eid)
+                if vel:
+                    vel.vx = 0
+                    vel.vy = 0
+                # Limpiar memorias de flancos para evitar disparos al cerrar la consola
+                self.prev_click[eid] = False
+                self.prev_right[eid] = False
+                self.prev_mouse[(eid, 'fireball')] = False
+                self.prev_mouse[(eid, 'dash')] = False
+                self.prev_toggle[eid] = False
+                self.prev_toggle_inventory[eid] = False
+                self.prev_interact[eid] = False
+                for name in spell_attrs:
+                    self.prev_spell_keys[(eid, name)] = 0
+                self.prev_attack[eid] = False
+                for base in ('fireball','laser_beam','dash'):
+                    self.prev_action_slots[(eid, f'{base}_kb_a')] = False
+                    self.prev_action_slots[(eid, f'{base}_kb_b')] = False
+            return
+
         # Suppress game clicks when Item Editor is open
         # world.state.item_editor_state is set by ItemsEditorManager
         if hasattr(world, 'state') and getattr(world.state, 'item_editor_state', None) and world.state.item_editor_state.visible:
