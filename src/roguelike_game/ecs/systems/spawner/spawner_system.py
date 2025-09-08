@@ -8,6 +8,7 @@ MVP supports:
 from __future__ import annotations
 
 from roguelike_engine.config.config_tiles import TILE_SIZE
+import roguelike_engine.config.config as config
 from roguelike_game.ecs.components.spawn.spawn_request import SpawnRequest
 import logging
 from roguelike_game.ecs.systems.spawner.placement_utils import collect_blocked_tiles as util_collect_blocked, collect_npc_tiles as util_collect_npcs, choose_spawn_tile
@@ -20,6 +21,15 @@ class SpawnerRuntimeSystem:
         self.perf_log = perf_log
         # Cache of last applied building id per spawner eid to avoid redundant work
         self._last_visual_id: dict[int, int | None] = {}
+        # Frame counter for lightweight per-tick caches
+        self._frame_idx: int = 0
+        # Blocked tiles cache (recompute every N frames to avoid scanning buildings each tick)
+        self._blocked_cache_last: tuple[set, set] | None = None
+        self._blocked_cache_updated_frame: int = -999999
+        self._blocked_cache_ttl_frames: int = 6  # recompute roughly every 0.1s at 60 FPS
+        # NPC tiles cache (once per frame)
+        self._npc_tiles_cache: set | None = None
+        self._npc_tiles_frame: int = -1
 
     # ---------------------- Visual helpers ----------------------
     def _current_state_key(self, st) -> str | None:
@@ -129,15 +139,31 @@ class SpawnerRuntimeSystem:
         self._last_visual_id[eid] = desired
 
     def _collect_blocked_tiles(self, world):
-        return util_collect_blocked(world)
+        """Return (solid, building) blocked tiles using a short TTL cache to reduce work."""
+        if (
+            self._blocked_cache_last is not None
+            and (self._frame_idx - self._blocked_cache_updated_frame) < self._blocked_cache_ttl_frames
+        ):
+            return self._blocked_cache_last
+        blocked = util_collect_blocked(world)
+        self._blocked_cache_last = blocked
+        self._blocked_cache_updated_frame = self._frame_idx
+        return blocked
 
     # Nota: La lógica de colocación (random/espiral, forma, radio, distancia mínima)
     # se ha extraído a placement_utils.py para mantener este sistema enfocado en
     # progresión de oleadas y emisión de SpawnRequest.
 
     def _collect_npc_tiles(self, world):
-        """Return set of global tile coords occupied by existing NPCs/Player (alive)."""
-        return util_collect_npcs(world)
+        """Return set of global tile coords occupied by existing NPCs/Player (alive).
+        Cached once per frame across all spawners to avoid repeated scans.
+        """
+        if self._npc_tiles_frame == self._frame_idx and self._npc_tiles_cache is not None:
+            return self._npc_tiles_cache
+        tiles = util_collect_npcs(world)
+        self._npc_tiles_cache = tiles
+        self._npc_tiles_frame = self._frame_idx
+        return tiles
 
     def _compute_defend_metadata(self, cfg, sr, fallback_max: int, shape: str):
         """Build optional defend area metadata coupled to spawner placement settings.
@@ -182,34 +208,39 @@ class SpawnerRuntimeSystem:
         proximity_initial_only = bool(policy.get('proximity_initial_only'))
         return looping, max_active, advance_on_cooldown, proximity_initial_only
 
-    def _prune_tracking_sets(self, world, st):
+    def _prune_tracking_sets(self, st, ents_set):
         """Limpia entidades inexistentes de los trackers del spawner (oleada/activos)."""
         # Always prune dead/missing entities from the current wave tracking
         if getattr(st, 'current_wave_entities', None) is not None:
             alive = set()
-            ents = set(world.entities)
             for ent_id in list(st.current_wave_entities):
-                if ent_id in ents:
+                if ent_id in ents_set:
                     alive.add(ent_id)
             st.current_wave_entities = alive
 
         # Prune active_entities as well (used for max_active enforcement)
         if getattr(st, 'active_entities', None) is not None:
             active_alive = set()
-            ents = set(world.entities)
             for ent_id in list(st.active_entities):
-                if ent_id in ents:
+                if ent_id in ents_set:
                     active_alive.add(ent_id)
             st.active_entities = active_alive
 
     def update(self, world, camera=None):
+        # Advance frame index and reset per-frame caches
+        self._frame_idx += 1
         comps = world.components
-        # Gather blocked tiles once
+        # Gather blocked tiles with TTL cache
         solid, building = self._collect_blocked_tiles(world)
         # Global reserved tiles for this tick to avoid cross-spawner overlaps
         reserved_global = set()
         # Map walkability helper
         map_manager = getattr(world, 'map_manager', None)
+        # Compute entities set once for all spawners this frame
+        try:
+            ents_set = set(world.entities)
+        except Exception:
+            ents_set = set()
 
         for eid in world.get_entities_with('SpawnerConfig', 'SpawnerState'):
             cfg = comps['SpawnerConfig'][eid]
@@ -264,16 +295,18 @@ class SpawnerRuntimeSystem:
                     pass
                 continue
 
-            # Limpieza de trackers (oleada y activos)
-            self._prune_tracking_sets(world, st)
-
             # If we already spawned this wave and we advance on clear, wait until all are eliminated
             if st.spawned_this_wave and not advance_on_cooldown:
+                # Only prune when we need to evaluate completion of the wave
+                self._prune_tracking_sets(st, ents_set)
                 if st.expected_this_wave > 0 and len(st.current_wave_entities) == 0:
                     # Wave completed
                     wave_num = st.current_wave_idx + 1
                     total_waves = len(cfg.waves)
-                    logger.info(f"[Spawner] {cfg.template_id}:{eid} wave {wave_num}/{total_waves} completed")
+                    if getattr(config, 'DEBUG_SPAWNER', False):
+                        logger.info(f"[Spawner] {cfg.template_id}:{eid} wave {wave_num}/{total_waves} completed")
+                    else:
+                        logger.debug(f"[Spawner] {cfg.template_id}:{eid} wave {wave_num}/{total_waves} completed")
                     st.current_wave_idx += 1
                     st.spawned_this_wave = False
                     st.expected_this_wave = 0
@@ -288,7 +321,10 @@ class SpawnerRuntimeSystem:
                                 st.fsm_state = 'wait_restart'
                             except Exception:
                                 pass
-                            logger.info(f"[Spawner] {cfg.template_id}:{eid} cycle completed; scheduling restart in {st.restart_cooldown_remaining} frames")
+                            if getattr(config, 'DEBUG_SPAWNER', False):
+                                logger.info(f"[Spawner] {cfg.template_id}:{eid} cycle completed; scheduling restart in {st.restart_cooldown_remaining} frames")
+                            else:
+                                logger.debug(f"[Spawner] {cfg.template_id}:{eid} cycle completed; scheduling restart in {st.restart_cooldown_remaining} frames")
                             continue
                         else:
                             st.finished = True
@@ -296,7 +332,10 @@ class SpawnerRuntimeSystem:
                                 st.fsm_state = 'finished'
                             except Exception:
                                 pass
-                            logger.info(f"[Spawner] {cfg.template_id}:{eid} all waves completed")
+                            if getattr(config, 'DEBUG_SPAWNER', False):
+                                logger.info(f"[Spawner] {cfg.template_id}:{eid} all waves completed")
+                            else:
+                                logger.debug(f"[Spawner] {cfg.template_id}:{eid} all waves completed")
                             continue
                     else:
                         # Delay before next wave: prefer between-waves fixed cooldown when configured
@@ -314,6 +353,8 @@ class SpawnerRuntimeSystem:
 
             # In cooldown-advance mode: if we already spawned all waves, wait until all active entities are cleared to finish/restart
             if advance_on_cooldown and st.current_wave_idx >= len(cfg.waves):
+                # Prune only when we need to check active_entities
+                self._prune_tracking_sets(st, ents_set)
                 active_count = 0
                 try:
                     active_count = len(getattr(st, 'active_entities', set()) or [])
@@ -327,14 +368,20 @@ class SpawnerRuntimeSystem:
                             st.fsm_state = 'wait_restart'
                         except Exception:
                             pass
-                        logger.info(f"[Spawner] {cfg.template_id}:{eid} cycle completed; scheduling restart in {st.restart_cooldown_remaining} frames")
+                        if getattr(config, 'DEBUG_SPAWNER', False):
+                            logger.info(f"[Spawner] {cfg.template_id}:{eid} cycle completed; scheduling restart in {st.restart_cooldown_remaining} frames")
+                        else:
+                            logger.debug(f"[Spawner] {cfg.template_id}:{eid} cycle completed; scheduling restart in {st.restart_cooldown_remaining} frames")
                     else:
                         st.finished = True
                         try:
                             st.fsm_state = 'finished'
                         except Exception:
                             pass
-                        logger.info(f"[Spawner] {cfg.template_id}:{eid} all waves completed")
+                        if getattr(config, 'DEBUG_SPAWNER', False):
+                            logger.info(f"[Spawner] {cfg.template_id}:{eid} all waves completed")
+                        else:
+                            logger.debug(f"[Spawner] {cfg.template_id}:{eid} all waves completed")
                 # Either way, do nothing else this tick while waiting
                 if active_count > 0:
                     try:
@@ -364,7 +411,10 @@ class SpawnerRuntimeSystem:
                 # Nothing to spawn -> consider wave instantly completed and advance
                 wave_num = st.current_wave_idx + 1
                 total_waves = len(cfg.waves)
-                logger.info(f"[Spawner] {cfg.template_id}:{eid} wave {wave_num}/{total_waves} completed (empty)")
+                if getattr(config, 'DEBUG_SPAWNER', False):
+                    logger.info(f"[Spawner] {cfg.template_id}:{eid} wave {wave_num}/{total_waves} completed (empty)")
+                else:
+                    logger.debug(f"[Spawner] {cfg.template_id}:{eid} wave {wave_num}/{total_waves} completed (empty)")
                 st.current_wave_idx += 1
                 if st.current_wave_idx >= len(cfg.waves):
                     if looping:
@@ -372,10 +422,16 @@ class SpawnerRuntimeSystem:
                         st.expected_this_wave = 0
                         st.restart_cooldown_remaining = getattr(cfg, 'restart_cooldown_frames', getattr(cfg, 'cooldown_frames', 0))
                         st.finished = True
-                        logger.info(f"[Spawner] {cfg.template_id}:{eid} cycle completed; scheduling restart in {st.restart_cooldown_remaining} frames")
+                        if getattr(config, 'DEBUG_SPAWNER', False):
+                            logger.info(f"[Spawner] {cfg.template_id}:{eid} cycle completed; scheduling restart in {st.restart_cooldown_remaining} frames")
+                        else:
+                            logger.debug(f"[Spawner] {cfg.template_id}:{eid} cycle completed; scheduling restart in {st.restart_cooldown_remaining} frames")
                     else:
                         st.finished = True
-                        logger.info(f"[Spawner] {cfg.template_id}:{eid} all waves completed")
+                        if getattr(config, 'DEBUG_SPAWNER', False):
+                            logger.info(f"[Spawner] {cfg.template_id}:{eid} all waves completed")
+                        else:
+                            logger.debug(f"[Spawner] {cfg.template_id}:{eid} all waves completed")
                 else:
                     bw = int(getattr(cfg, 'between_waves_cooldown_frames', 0) or 0)
                     st.cooldown_remaining = (bw if bw > 0 else getattr(cfg, 'cooldown_frames', 0))
@@ -386,7 +442,7 @@ class SpawnerRuntimeSystem:
             st.current_wave_entities.clear()
             total_expected = 0
             attempted_total = 0
-            # Tiles currently occupied by actors
+            # Tiles currently occupied by actors (compute once per frame)
             npc_tiles = self._collect_npc_tiles(world)
             # Reserve tiles chosen in this wave to prevent duplicates
             reserved_tiles = set()
@@ -394,6 +450,8 @@ class SpawnerRuntimeSystem:
             # Enforce max_active across waves if configured
             capacity_left = None
             if max_active > 0 and getattr(st, 'active_entities', None) is not None:
+                # Prune only when we need to evaluate active_entities for capacity
+                self._prune_tracking_sets(st, ents_set)
                 try:
                     capacity_left = max(0, max_active - len(st.active_entities))
                 except Exception:
@@ -467,7 +525,11 @@ class SpawnerRuntimeSystem:
             try:
                 wave_num = st.current_wave_idx + 1
                 total_waves = len(cfg.waves)
-                logger.info(f"[Spawner] {cfg.template_id}:{eid} wave {wave_num}/{total_waves} placed {total_expected}/{attempted_total} spawns")
+                msg = f"[Spawner] {cfg.template_id}:{eid} wave {wave_num}/{total_waves} placed {total_expected}/{attempted_total} spawns"
+                if getattr(config, 'DEBUG_SPAWNER', False):
+                    logger.info(msg)
+                else:
+                    logger.debug(msg)
             except Exception:
                 pass
 
@@ -478,7 +540,10 @@ class SpawnerRuntimeSystem:
                 # No entities actually spawned -> mark as completed immediately
                 wave_num = st.current_wave_idx + 1
                 total_waves = len(cfg.waves)
-                logger.info(f"[Spawner] {cfg.template_id}:{eid} wave {wave_num}/{total_waves} completed (no spots)")
+                if getattr(config, 'DEBUG_SPAWNER', False):
+                    logger.info(f"[Spawner] {cfg.template_id}:{eid} wave {wave_num}/{total_waves} completed (no spots)")
+                else:
+                    logger.debug(f"[Spawner] {cfg.template_id}:{eid} wave {wave_num}/{total_waves} completed (no spots)")
                 st.current_wave_idx += 1
                 st.spawned_this_wave = False
                 st.expected_this_wave = 0
@@ -491,10 +556,16 @@ class SpawnerRuntimeSystem:
                         st.expected_this_wave = 0
                         st.restart_cooldown_remaining = getattr(cfg, 'restart_cooldown_frames', getattr(cfg, 'cooldown_frames', 0))
                         st.finished = True
-                        logger.info(f"[Spawner] {cfg.template_id}:{eid} cycle completed; scheduling restart in {st.restart_cooldown_remaining} frames")
+                        if getattr(config, 'DEBUG_SPAWNER', False):
+                            logger.info(f"[Spawner] {cfg.template_id}:{eid} cycle completed; scheduling restart in {st.restart_cooldown_remaining} frames")
+                        else:
+                            logger.debug(f"[Spawner] {cfg.template_id}:{eid} cycle completed; scheduling restart in {st.restart_cooldown_remaining} frames")
                     else:
                         st.finished = True
-                        logger.info(f"[Spawner] {cfg.template_id}:{eid} all waves completed")
+                        if getattr(config, 'DEBUG_SPAWNER', False):
+                            logger.info(f"[Spawner] {cfg.template_id}:{eid} all waves completed")
+                        else:
+                            logger.debug(f"[Spawner] {cfg.template_id}:{eid} all waves completed")
                 else:
                     st.cooldown_remaining = cfg.cooldown_frames
             else:

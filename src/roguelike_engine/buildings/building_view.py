@@ -1,5 +1,7 @@
 import pygame
 from roguelike_engine.diagnostics.helpers import draw_debug_rect
+from roguelike_engine.buildings.services.types import CameraProtocol
+from roguelike_engine.buildings.building_model import BuildingModel
 
 class BuildingView:
     """
@@ -7,14 +9,14 @@ class BuildingView:
     según el zoom de la cámara. Mantiene caches locales para cada nivel de zoom.
     """
 
-    def __init__(self, model, camera):
+    def __init__(self, model: BuildingModel, camera: CameraProtocol) -> None:
         """
         Recibe:
         • model: instancia de BuildingModel (con self.image ya cargada).
-        • camera: objeto cámara, con propiedades .zoom y método scale().
+        • camera: objeto que implementa CameraProtocol (zoom, scale, apply).
         """
-        self._model = model
-        self._camera = camera
+        self._model: BuildingModel = model
+        self._camera: CameraProtocol = camera
 
         # Caches por “zoom” redondeado (p. ej. 1.00, 1.25, 2.00)
         self._scaled_cache: dict[float, pygame.Surface] = {}
@@ -48,7 +50,7 @@ class BuildingView:
             self._render_part_cache[zoom] = (top_surf, bot_surf)
         return self._scaled_cache[zoom]
 
-    def render_part(self, screen: pygame.Surface, *, top: bool):
+    def render_part(self, screen: pygame.Surface, *, top: bool) -> None:
         """
         Dibuja en pantalla la parte indicada (parte “top” o “bottom”) del edificio:
         • Calcula el offset vertical para la parte inferior.
@@ -76,7 +78,7 @@ class BuildingView:
                 rect = self._model.collision_rect
                 draw_debug_rect(screen, self._camera, rect, color=(255,255,255), width=1)
 
-    def clear_caches(self):
+    def clear_caches(self) -> None:
         """
         Limpia los caches de escalado (por si la imagen en el modelo cambió de tamaño).
         """
