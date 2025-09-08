@@ -37,7 +37,7 @@ from roguelike_game.managers.editors.items_editor_manager import ItemsEditorMana
 from roguelike_game.managers.editors.inventory_editor_manager import InventoryEditorManager
 from roguelike_game.managers.editors.spawner_editor_manager import SpawnerEditorManager
         
-from roguelike_engine.minimap.minimap import Minimap
+from roguelike_engine.minimap import Minimap
 from roguelike_engine.z_layer.state import ZState
 from roguelike_game.managers.ecs import ECSManager
 from roguelike_game.managers.items.loader import ItemsLoader
