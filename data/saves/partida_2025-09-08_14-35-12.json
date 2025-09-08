@@ -2,22 +2,22 @@
   "player": {
     "level": "global_map",
     "pos": [
-      75,
-      77
+      120,
+      74
     ]
   },
   "npcs": {},
   "levels": {
     "global_map": {
       "player_pos": [
-        75,
-        77
+        120,
+        74
       ],
       "npc_states": {}
     }
   },
   "player_inventory": {
-    "player_id": "player",
+    "player_id": "b09949dc-aa8f-4aca-89ec-b131a1f99bbe",
     "capacity": 20,
     "slots": [
       {
@@ -49,7 +49,7 @@
   "meta": {
     "name": "partida_2025-09-08_14-35-12",
     "created_at": "2025-09-08T14:35:12",
-    "last_played": "2025-09-08T14:35:32",
+    "last_played": "2025-09-08T16:12:11",
     "player": {
       "xp": 0,
       "level": 0
