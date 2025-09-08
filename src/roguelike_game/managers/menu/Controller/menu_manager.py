@@ -6,6 +6,10 @@ import pygame
 import json
 import uuid
 from roguelike_game.utils.inventory_sync import write_active_for_player
+from roguelike_game.managers.map import MapManager
+from roguelike_game.ecs.systems.spawner.spawner_placement_system import SpawnerPlacementSystem
+from roguelike_game.ecs.systems.core.npc_restore_system import NpcRestoreSystem
+from roguelike_game.ecs.systems.core.npc_respawn_system import NpcRespawnSystem
 
 from .menu_handler import MenuHandler
 from roguelike_ui.widgets.menu_renderer import MenuRenderer
@@ -458,20 +462,95 @@ class MenuManager:
             logger.info("Partida guardada correctamente.")
         except Exception as e:
             logger.warning("Error al guardar partida: %s", e)
-
     def _action_new_game(self):
         """Inicia una partida nueva en memoria (sin borrar archivos)."""
         g = self.game
         try:
-            # 1) Reset de estado del mundo en memoria: limpiar posición de jugador actual
-            if hasattr(g, 'map') and hasattr(g.map, '_local_state'):
-                g.map._local_state["player_pos"] = None
-            # 2) Teletransportar jugador al centro del lobby
-            off_x, off_y = g.map.lobby_offset
-            from roguelike_engine.config.map_config import global_map_settings
-            tx = off_x + global_map_settings.zone_width // 2
-            ty = off_y + global_map_settings.zone_height // 2
-            # Aplicar al mapa y a ECS
+            # 0) Resolución de nivel base
+            try:
+                level_name = getattr(g.map, 'name', None)
+            except Exception:
+                level_name = None
+            if not level_name:
+                level_name = getattr(getattr(g, 'world', None), 'current_level', None) or 'global_map'
+
+            # 1) Limpiar estado persistente del mundo (NPCs, inventarios)
+            try:
+                g.world.npc_memory = {}
+                g.world.npc_inventories = {}
+                g.world.player_inventory = None
+            except Exception:
+                pass
+
+            # 2) Reset de niveles cargados y diferidos
+            try:
+                if hasattr(g.world, 'maps'):
+                    g.world.maps.clear()
+                if hasattr(g.world, '_pending_levels'):
+                    g.world._pending_levels = {}
+                g.world.current_level = None
+            except Exception:
+                pass
+
+            # 3) Crear mapa limpio y sincronizar ECS
+            try:
+                # Saltar colocación de spawners SOLO este frame
+                try:
+                    setattr(g.ecs.ecs_world, 'skip_spawners_on_first_load', True)
+                except Exception:
+                    pass
+                new_map = MapManager(level_name)
+                g.map = new_map
+                g.world.maps[level_name] = new_map
+                g.world.current_level = level_name
+                if hasattr(g.map, '_local_state'):
+                    g.map._local_state["player_pos"] = None
+
+                # Sincronizar ECS con el nuevo mapa y limpiar entidades previas (NPCs/Spawners/Requests)
+                try:
+                    ecs = g.ecs.ecs_world
+                    try:
+                        ecs.map_manager = new_map
+                        ecs.invalidate_spatial_index()
+                    except Exception:
+                        pass
+                    comps = ecs.components
+                    for eid in list(comps.get('NPCTagComponent', {}).keys()):
+                        ecs.remove_entity(eid)
+                    for eid in list(comps.get('SpawnerConfig', {}).keys()):
+                        ecs.remove_entity(eid)
+                    for eid in list(comps.get('SpawnRequest', {}).keys()):
+                        ecs.remove_entity(eid)
+                    # Reset de flags internos para que los sistemas apliquen en el siguiente frame
+                    try:
+                        for sys in getattr(ecs, 'update_systems', []) or []:
+                            if isinstance(sys, SpawnerPlacementSystem):
+                                sys._loaded = False
+                            elif isinstance(sys, NpcRestoreSystem):
+                                try:
+                                    sys._applied.clear()
+                                except Exception:
+                                    sys._applied = set()
+                            elif isinstance(sys, NpcRespawnSystem):
+                                try:
+                                    sys._requested.clear()
+                                except Exception:
+                                    sys._requested = set()
+                    except Exception:
+                        pass
+                except Exception:
+                    pass
+            except Exception:
+                pass
+
+            # 4) Posicionar jugador en el centro del lobby
+            try:
+                off_x, off_y = g.map.lobby_offset
+                from roguelike_engine.config.map_config import global_map_settings
+                tx = off_x + global_map_settings.zone_width // 2
+                ty = off_y + global_map_settings.zone_height // 2
+            except Exception:
+                tx, ty = 0, 0
             g.map.spawn_player((tx, ty))
             # Convertir a píxeles y mover componente Position
             px, py = g.map.get_spawn_pixel((tx, ty))
@@ -727,6 +806,67 @@ class MenuManager:
             g.world.load_level(level)
             g.map = g.world.maps[level]
             g.world.current_level = level
+            # --- Limpieza robusta para evitar solapamiento entre slots ---
+            try:
+                ecs = g.ecs.ecs_world
+                comps = ecs.components
+                # 1) Eliminar NPCs existentes del slot previo
+                for eid in list(comps.get('NPCTagComponent', {}).keys()):
+                    ecs.remove_entity(eid)
+                # 2) Eliminar entidades de Spawner (config/estado) y requests pendientes
+                for eid in list(comps.get('SpawnerConfig', {}).keys()):
+                    ecs.remove_entity(eid)
+                for eid in list(comps.get('SpawnRequest', {}).keys()):
+                    ecs.remove_entity(eid)
+                # 3) Resetear banderas internas de sistemas relacionados para forzar recolocación/aplicación
+                try:
+                    for sys in getattr(ecs, 'update_systems', []) or []:
+                        if isinstance(sys, SpawnerPlacementSystem):
+                            try:
+                                sys._loaded = False
+                            except Exception:
+                                pass
+                        elif isinstance(sys, NpcRestoreSystem):
+                            try:
+                                sys._applied.clear()
+                            except Exception:
+                                sys._applied = set()
+                        elif isinstance(sys, NpcRespawnSystem):
+                            try:
+                                sys._requested.clear()
+                            except Exception:
+                                sys._requested = set()
+                except Exception:
+                    pass
+                # 4) Inyectar snapshot de inventarios de NPCs del nuevo save para coherencia con InventoryInitSystem
+                try:
+                    ecs.components['NPCInventorySnapshot'] = dict(getattr(g.world, 'npc_inventories', {}) or {})
+                except Exception:
+                    pass
+                # 5) Limpiar vínculos visuales de spawners en buildings (si los hubiera)
+                try:
+                    blds = getattr(g, 'buildings', None)
+                    if blds is not None:
+                        for ob in getattr(blds, 'buildings', []) or []:
+                            try:
+                                if hasattr(ob, '_spawner_eid'):
+                                    setattr(ob, '_spawner_eid', None)
+                                if hasattr(ob, '_world_ref'):
+                                    setattr(ob, '_world_ref', None)
+                                if hasattr(ob, '_is_spawner_visual'):
+                                    setattr(ob, '_is_spawner_visual', False)
+                            except Exception:
+                                continue
+                except Exception:
+                    pass
+                # 6) Marcar el índice espacial para reconstrucción
+                try:
+                    ecs.invalidate_spatial_index()
+                except Exception:
+                    pass
+            except Exception:
+                # No bloquear carga de partida por fallo en limpieza
+                pass
             # Restaurar posición del jugador
             tile = g.map._local_state.get("player_pos")
             if tile is None:
@@ -919,7 +1059,23 @@ class MenuManager:
         # Refrescar lista y ajustar selección
         self._refresh_save_list()
         if not self.save_entries:
+            # Sin partidas: volver al menú principal para ofrecer 'Nueva Partida'
             self.load_selected = 0
+            self._saves_show_confirm_delete = False
+            self._saves_hover_confirm_yes = False
+            self._saves_hover_confirm_cancel = False
+            self._saves_hover_delete_button = False
+            # Reset de scroll/hover de la lista
+            self._saves_row_scroll_offset = 0
+            self._saves_hovered_idx = None
+            self._saves_hover_details_name = False
+            self._saves_editing_name = False
+            # Cambiar a modo 'start' (menú principal)
+            try:
+                self.set_mode("start")
+            except Exception:
+                self.mode = "start"
+            return
         else:
             self.load_selected = min(self.load_selected, len(self.save_entries) - 1)
         # Cerrar modal y limpiar hovers

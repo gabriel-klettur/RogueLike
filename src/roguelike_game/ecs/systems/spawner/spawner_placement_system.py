@@ -317,6 +317,19 @@ class SpawnerPlacementSystem:
         )
 
     def update(self, world, camera=None):
+        # Robust option: allow MenuManager to request an empty start without spawners
+        # by setting a transient flag on the ECS world. If present, consume it and
+        # skip this frame only, without marking the system as loaded. This allows
+        # spawners to be placed on the very next frame without requiring a reload.
+        try:
+            if getattr(world, 'skip_spawners_on_first_load', False):
+                try:
+                    delattr(world, 'skip_spawners_on_first_load')
+                except Exception:
+                    pass
+                return
+        except Exception:
+            pass
         # Only run once per map load
         if self._loaded:
             return
