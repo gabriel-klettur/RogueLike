@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict
-from roguelike_engine.tile.model.tile_model import Tile
+from roguelike_engine.tile.tile_model import Tile
 from roguelike_engine.map.model.layer import Layer
 from roguelike_engine.tile.utils.loader import load_tiles_from_text
 

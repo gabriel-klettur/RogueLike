@@ -1,7 +1,6 @@
 import pygame
-from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.config.map_config import global_map_settings
-from roguelike_engine.tile.model.tile_model import Tile
+from roguelike_engine.tile.tile_model import Tile
 from roguelike_engine.diagnostics.helpers import draw_zone_border
 from roguelike_engine.config.config_minimap import MINIMAP_ZONE_COLORS, MINIMAP_ZONE_BORDER_WIDTH
 
