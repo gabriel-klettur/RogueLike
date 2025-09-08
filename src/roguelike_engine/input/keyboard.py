@@ -1,15 +1,23 @@
 import pygame
+import logging
 from roguelike_engine.config.config_camera import ALLOWED_ZOOMS, next_allowed_zoom
 
+logger = logging.getLogger(__name__)
 
-def handle_keyboard(event, state, camera, clock, menu, entities, tiles_editor, buildings_editor, map_editor, map_manager):
+
+def handle_keyboard(event, state, camera, clock, menu, entities, tiles_editor, buildings_editor, map_editor, map_manager) -> bool:
     """
     Engine-level keyboard handler for generic gameplay keys.
-    Global shortcuts (ESC/menu, F-keys, editor toggles, debug) are handled in
-    `roguelike_game.managers.core.events.handle_events`.
+
+    Returns:
+        bool: True if the event was consumed, False otherwise.
+
+    Notes:
+        Global shortcuts (ESC/menu, F-keys, editor toggles, debug) are handled in
+        `roguelike_game.managers.core.events.handle_events`.
     """
     if event.type != pygame.KEYDOWN:
-        return
+        return False
 
     key = event.key
     # Zoom in/out with + / - keys (main and numpad). Keep screen center stable.
@@ -18,7 +26,7 @@ def handle_keyboard(event, state, camera, clock, menu, entities, tiles_editor, b
     elif key in (pygame.K_MINUS, pygame.K_UNDERSCORE, pygame.K_KP_MINUS):
         direction = -1
     else:
-        return
+        return False
 
     try:
         # Screen center in pixels
@@ -30,11 +38,13 @@ def handle_keyboard(event, state, camera, clock, menu, entities, tiles_editor, b
         wy = my / z + float(getattr(camera, 'offset_y', 0.0) or 0.0)
         new_z = next_allowed_zoom(z, direction, ALLOWED_ZOOMS)
         if abs(new_z - z) < 1e-9:
-            return
+            return False
         camera.zoom = new_z
         # Keep the center point stable
         camera.offset_x = wx - mx / camera.zoom
         camera.offset_y = wy - my / camera.zoom
+        return True
     except Exception:
         # Never break input handling on errors
-        return
+        logger.debug("[Keyboard] Error handling key event", exc_info=True)
+        return False
