@@ -1,5 +1,8 @@
+"""
+High-level map view that orchestrates zone rendering via ZoneView.
+"""
 import pygame
-from roguelike_engine.map.view.zone_view import ZoneView
+from roguelike_engine.zone.view.zone_view import ZoneView
 from roguelike_engine.config.config_tiles import TILE_SIZE
 
 class MapView:

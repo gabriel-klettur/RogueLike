@@ -5,8 +5,9 @@ from roguelike_engine.config.config_camera import ALLOWED_ZOOMS, next_allowed_zo
 
 logger = getLogger(__name__)
 
-def handle_mouse(event, state, camera, clock, map, entities, *, mmb_pan_enabled: bool = False):
-    
+def handle_mouse(event, state, camera, clock, map, entities, *, mmb_pan_enabled: bool = False) -> bool:
+    """Return True if the event is consumed by engine-level mouse handling."""
+
     if event.type == pygame.MOUSEWHEEL:
         try:
             mx, my = pygame.mouse.get_pos()
@@ -22,13 +23,14 @@ def handle_mouse(event, state, camera, clock, map, entities, *, mmb_pan_enabled:
                 camera.offset_x = wx - mx / camera.zoom
                 camera.offset_y = wy - my / camera.zoom
                 logger.debug("[Mouse] Zoom wheel z=%.3f -> %.3f at (%d,%d) -> cam_off=(%.2f,%.2f)", z, new_z, mx, my, camera.offset_x, camera.offset_y)
+                return True
         except Exception:
             # Silent fail to avoid crashing input loop
-            pass
+            return False
     elif event.type == pygame.MOUSEBUTTONDOWN:
         if event.button == 3:
             # Right-click dash handled by ECS InputSystem; no legacy action
-            pass
+            return False
         elif event.button == 2:
             # Begin MMB camera panning
             if mmb_pan_enabled:
@@ -37,17 +39,19 @@ def handle_mouse(event, state, camera, clock, map, entities, *, mmb_pan_enabled:
                     state.mmb_start = getattr(event, 'pos', pygame.mouse.get_pos())
                     state.mmb_cam_start = (camera.offset_x, camera.offset_y)
                     logger.debug("[Mouse] MMB DOWN start pan at pos=%s cam_start=(%.2f,%.2f)", state.mmb_start, camera.offset_x, camera.offset_y)
+                    return True
                 except Exception:
                     # Fallbacks if state/camera are not fully formed
-                    pass
+                    return False
     elif event.type == pygame.MOUSEMOTION:
         # If context no longer allows MMB panning, cancel immediately
         if getattr(state, 'mmb_panning', False) and not mmb_pan_enabled:
             try:
                 state.mmb_panning = False
                 logger.debug("[Mouse] MMB MOVE cancel pan (context disabled)")
+                return True
             except Exception:
-                pass
+                return False
         # Update camera while panning with MMB
         if getattr(state, 'mmb_panning', False):
             try:
@@ -60,8 +64,9 @@ def handle_mouse(event, state, camera, clock, map, entities, *, mmb_pan_enabled:
                 camera.offset_x = cx - dx / z
                 camera.offset_y = cy - dy / z
                 logger.debug("[Mouse] MMB MOVE pos=(%d,%d) dx=%.1f dy=%.1f zoom=%.2f -> cam=(%.2f,%.2f)", mx, my, dx, dy, z, camera.offset_x, camera.offset_y)
+                return True
             except Exception:
-                pass
+                return False
     elif event.type == pygame.MOUSEBUTTONUP:
         if event.button == 2:
             # End MMB camera panning
@@ -78,5 +83,7 @@ def handle_mouse(event, state, camera, clock, map, entities, *, mmb_pan_enabled:
                             state.defer_follow_frames = max(current, 12)
                     except Exception:
                         pass
+                    return True
                 except Exception:
-                    pass
+                    return False
+    return False
