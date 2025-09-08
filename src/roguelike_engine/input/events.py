@@ -83,4 +83,6 @@ def handle_events(
                 active_tiles or active_buildings or active_map or
                 active_spawner or active_spells or active_items or active_fsm
             )
-            ms(ev, state, camera, clock, map, entities, mmb_pan_enabled=mmb_pan_enabled)
+            # Avoid double-processing of wheel when Map/Tiles editor already handled it
+            if not (et == pygame.MOUSEWHEEL and (active_map or active_tiles)):
+                ms(ev, state, camera, clock, map, entities, mmb_pan_enabled=mmb_pan_enabled)

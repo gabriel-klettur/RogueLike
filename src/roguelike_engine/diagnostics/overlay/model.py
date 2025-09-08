@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
-import os
-import json
 from typing import Dict, List, Optional, Set, Tuple
+
+from .services import persistence as persist
 
 
 @dataclass
@@ -59,39 +59,20 @@ class DiagnosticsOverlayModel:
         self.line_keys.clear()
         self.line_levels.clear()
 
-    # --- Persistence helpers ---
-    def _state_file_path(self) -> str:
-        # src/roguelike_engine/diagnostics/overlay/model.py -> project_root/data/diagnostics/overlay_state.json
-        here = os.path.abspath(os.path.dirname(__file__))
-        # overlay -> diagnostics -> roguelike_engine -> src -> RogueLike (project root)
-        project_root = os.path.abspath(os.path.join(here, '..', '..', '..', '..'))
-        path = os.path.join(project_root, 'data', 'diagnostics')
-        os.makedirs(path, exist_ok=True)
-        return os.path.join(path, 'overlay_state.json')
-
     def load_persisted_state(self) -> None:
         try:
-            fp = self._state_file_path()
-            if os.path.exists(fp):
-                with open(fp, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                cols = data.get('collapsed_groups', [])
-                if isinstance(cols, list):
-                    self.collapsed_groups = set(cols)
-                    # Disable auto-collapse if we have a persisted state
-                    self.initially_collapsed = False
+            cols = persist.load_overlay_state()
+            if isinstance(cols, list) and cols:
+                self.collapsed_groups = set(cols)
+                # Disable auto-collapse if we have a persisted state
+                self.initially_collapsed = False
         except Exception:
             # Fail silently; diagnostics overlay should not crash the game
             pass
 
     def save_persisted_state(self) -> None:
         try:
-            fp = self._state_file_path()
-            data = {
-                'collapsed_groups': sorted(list(self.collapsed_groups)),
-            }
-            with open(fp, 'w', encoding='utf-8') as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
+            persist.save_overlay_state(self.collapsed_groups)
         except Exception:
             # Fail silently to avoid impacting runtime
             pass

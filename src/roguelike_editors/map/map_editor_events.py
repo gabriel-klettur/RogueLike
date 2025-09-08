@@ -5,6 +5,7 @@ logger = logging.getLogger(__name__)
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.config.config_editor import TILE_PAINT_BATCH, TILE_PAINT_TICK
+from roguelike_engine.config.config_camera import ALLOWED_ZOOMS, next_allowed_zoom
 from roguelike_editors.buildings.utils.save_buildings_to_json import save_buildings_split
 
 from roguelike_engine.map.model.overlay.overlay_manager import load_layers, save_layers
@@ -371,18 +372,25 @@ class MapEditorEventHandler:
     # -------------------------------------------------------------
     def _handle_zoom(self, ev, camera):
         mx, my = pygame.mouse.get_pos()
+        # World point under cursor before zoom
         wx = mx / camera.zoom + camera.offset_x
         wy = my / camera.zoom + camera.offset_y
-        zoom_step = 0.1
-        new_zoom = camera.zoom + zoom_step if ev.y > 0 else camera.zoom - zoom_step
-        camera.zoom = max(new_zoom, 0.01)
-        camera.offset_x = wx - mx / camera.zoom
-        camera.offset_y = wy - my / camera.zoom
-        # Pulso tutorial
-        try:
-            setattr(self.state, 'tutorial_camera_zoom_changed_pulse', True)
-        except Exception:
-            pass
+        # Allowed discrete zoom scales to avoid rendering artifacts
+        allowed = ALLOWED_ZOOMS
+        z = float(getattr(camera, 'zoom', 1.0)) or 1.0
+        # Choose next/prev scale centrally
+        new_z = next_allowed_zoom(z, +1, allowed) if ev.y > 0 else next_allowed_zoom(z, -1, allowed)
+        # Apply only if changed
+        if abs(new_z - z) > 1e-9:
+            camera.zoom = new_z
+            # Keep the same world point under the cursor
+            camera.offset_x = wx - mx / camera.zoom
+            camera.offset_y = wy - my / camera.zoom
+            # Pulso tutorial
+            try:
+                setattr(self.state, 'tutorial_camera_zoom_changed_pulse', True)
+            except Exception:
+                pass
 
     def _start_panning(self, ev, camera):
         self.state.panning = True
