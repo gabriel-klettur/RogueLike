@@ -80,14 +80,17 @@ class HealthBarSystem:
             ratio = max(0, health.current_hp) / health.max_hp
             fill_width = int(bar_width * ratio)
 
-            # 8) Dibujar la barra de fondo (gris)
-            pygame.draw.rect(screen, (50, 50, 50), (bar_x, bar_y, bar_width, bar_height))
+            # 8) Colores (tinte amarillo en godmode)
+            is_player = eid == getattr(world, 'player_entity', None)
+            godmode = bool(getattr(getattr(world, 'state', None), 'godmode', False)) and is_player
+            bg_color = (50, 50, 50)
+            fill_color = (255, 230, 100) if godmode else (0, 255, 0)
+            border_color = (0, 0, 0)
 
-            # 9) Dibujar el relleno de la barra (verde)
-            pygame.draw.rect(screen, (0, 255, 0), (bar_x, bar_y, fill_width, bar_height))
-
-            # 10) Dibujar borde exterior de la barra (negro)
-            pygame.draw.rect(screen, (0, 0, 0), (bar_x, bar_y, bar_width, bar_height), 1)
+            # 9) Dibujar la barra
+            pygame.draw.rect(screen, bg_color, (bar_x, bar_y, bar_width, bar_height))
+            pygame.draw.rect(screen, fill_color, (bar_x, bar_y, fill_width, bar_height))
+            pygame.draw.rect(screen, border_color, (bar_x, bar_y, bar_width, bar_height), 1)
 
             # 11) Opcional: segmentar la barra cada 20 puntos de vida
             num_segments = health.max_hp // 20

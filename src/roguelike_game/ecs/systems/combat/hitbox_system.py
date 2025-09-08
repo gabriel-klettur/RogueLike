@@ -131,11 +131,14 @@ class HitboxSystem:
                 identity = world.components.get('Identity', {}).get(target)
                 name = identity.name if identity else 'Unknown'
                 logger.debug(f"[DEBUG][HitboxSystem] Hit! target {target} ({name}), hp_before={healths[target].current_hp}, damage={hb.damage}")
-                # apply damage
+                # apply damage (omit if player in godmode)
+                is_player_target = target in world.components.get('PlayerTagComponent', {})
+                godmode = bool(getattr(getattr(world, 'state', None), 'godmode', False)) and is_player_target
                 health = healths[target]
-                health.current_hp = max(0, health.current_hp - hb.damage)
-                # record last attacker for KO attribution
-                world.components.setdefault('LastAttacker', {})[target] = LastAttacker(hb.owner, time.time())
+                if not godmode:
+                    health.current_hp = max(0, health.current_hp - hb.damage)
+                    # record last attacker for KO attribution
+                    world.components.setdefault('LastAttacker', {})[target] = LastAttacker(hb.owner, time.time())
                 hb.hit_targets.add(target)
                 if hb.owner in world.components.get('PlayerTagComponent', {}):
                     attacker_pos = world.components['Position'][hb.owner]
@@ -157,7 +160,7 @@ class HitboxSystem:
                         'source': 'hitbox',
                         'time': float(time.time()),
                     })
-                elif target in world.components.get('PlayerTagComponent', {}):
+                elif target in world.components.get('PlayerTagComponent', {}) and not godmode:
                     # NPC or other entity hit the player -> publish OnHit/OnDeath for player
                     attacker_pos = positions.get(hb.owner)
                     defender_pos = positions.get(target)

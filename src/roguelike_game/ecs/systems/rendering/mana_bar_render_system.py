@@ -63,11 +63,14 @@ class ManaBarRenderSystem:
         ratio = max(0.0, min(1.0, float(current) / float(max_mana)))
         fill_width = int(bar_width * ratio)
 
+        # Colores (tinte amarillo si godmode)
+        godmode = bool(getattr(getattr(world, 'state', None), 'godmode', False))
+        fill_color = (255, 230, 100) if godmode else self.fill_color
         # Fondo
         pygame.draw.rect(screen, self.bg_color, (bar_x, bar_y, bar_width, self.bar_height))
         # Relleno
         if fill_width > 0:
-            pygame.draw.rect(screen, self.fill_color, (bar_x, bar_y, fill_width, self.bar_height))
+            pygame.draw.rect(screen, fill_color, (bar_x, bar_y, fill_width, self.bar_height))
         # Borde
         pygame.draw.rect(screen, self.border_color, (bar_x, bar_y, bar_width, self.bar_height), 1)
 

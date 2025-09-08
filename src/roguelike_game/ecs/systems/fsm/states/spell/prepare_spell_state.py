@@ -23,16 +23,25 @@ class PrepareSpellState(State):
         # Penalización x multiplicador si es auto-cast
         punish = self.fsm.context.get('automatic_cast_punish', 1.0) if self.fsm.context.get('automatic', False) else 1.0
         duration = base * punish
-        # Guard: suficiente maná para proceder hacia Channel/Release
+        # Guard: suficiente maná para proceder hacia Channel/Release (ignorar en godmode jugador)
         try:
             world = entity.world
-            mana_comp = world.components.get('Mana', {}).get(entity.id)
-            mana_cost = float(SPELLS.get(spell, {}).get('mana_cost', 0))
-            cur = float(getattr(mana_comp, 'current_mana', 0)) if mana_comp is not None else 0.0
+            godmode = bool(getattr(getattr(world, 'state', None), 'godmode', False)) and (entity.id == getattr(world, 'player_entity', None))
+        except Exception:
+            godmode = False
+        try:
+            if not godmode:
+                world = entity.world
+                mana_comp = world.components.get('Mana', {}).get(entity.id)
+                mana_cost = float(SPELLS.get(spell, {}).get('mana_cost', 0))
+                cur = float(getattr(mana_comp, 'current_mana', 0)) if mana_comp is not None else 0.0
+            else:
+                mana_cost = 0.0
+                cur = 0.0
         except Exception:
             mana_cost = 0.0
             cur = 0.0
-        if mana_cost > 0 and cur < mana_cost:
+        if not godmode and mana_cost > 0 and cur < mana_cost:
             # Feedback antispam cada 1s
             now = time.time()
             last_warn = float(self.fsm.context.get('_no_mana_warn_prepare_ts', 0.0))
