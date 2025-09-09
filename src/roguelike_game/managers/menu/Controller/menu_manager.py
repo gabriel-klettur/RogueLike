@@ -14,7 +14,7 @@ from roguelike_game.ecs.systems.core.npc_respawn_system import NpcRespawnSystem
 from .menu_handler import MenuHandler
 from roguelike_ui.widgets.menu_renderer import MenuRenderer
 from roguelike_ui.widgets.menu_configurator import MenuConfigurator
-from roguelike_engine.world.persistence import load_world_state, save_world_state
+from roguelike_engine.world.models import WorldSnapshot
 from roguelike_game.ecs.components.experience_component import ExperienceComponent
 
 logger = logging.getLogger(__name__)
@@ -51,7 +51,6 @@ class MenuManager:
         self._saves_fixed_screen_size: tuple[int, int] | None = None
         self._saves_row_scroll_offset: int = 0
         self._saves_hovered_idx: int | None = None
-        # Renombrado inline en detalles
         self._saves_hover_details_name: bool = False
         self._saves_editing_name: bool = False
         self._saves_edit_name_text: str = ""
@@ -462,6 +461,7 @@ class MenuManager:
             logger.info("Partida guardada correctamente.")
         except Exception as e:
             logger.warning("Error al guardar partida: %s", e)
+
     def _action_new_game(self):
         """Inicia una partida nueva en memoria (sin borrar archivos)."""
         g = self.game
@@ -472,8 +472,10 @@ class MenuManager:
             except Exception:
                 level_name = None
             if not level_name:
-                level_name = getattr(getattr(g, 'world', None), 'current_level', None) or 'global_map'
-
+                # Si no está resuelto aún, intentar desde player en pending
+                pdata = getattr(g, 'world', None)
+                # Fallback al nombre actual del mapa si no hay nada
+                level_name = g.map.name
             # 1) Limpiar estado persistente del mundo (NPCs, inventarios)
             try:
                 g.world.npc_memory = {}
@@ -540,7 +542,7 @@ class MenuManager:
                         pass
                 except Exception:
                     pass
-            except Exception:
+            except Exception as e:
                 pass
 
             # 4) Posicionar jugador en el centro del lobby
@@ -622,7 +624,7 @@ class MenuManager:
             level = getattr(g.world, 'current_level', None)
             if not level:
                 # Si no está resuelto aún, intentar desde player en pending
-                pdata = getattr(g.world, '_pending_levels', {})
+                pdata = getattr(g, 'world', None)
                 # Fallback al nombre actual del mapa si no hay nada
                 level = g.map.name
             # 2) Cargar nivel (MapManager) y asignarlo a game
@@ -729,7 +731,7 @@ class MenuManager:
         # Buscar archivos que empiecen con 'partida_' y terminen en .json
         for path in sorted(save_dir.glob('partida_*.json'), reverse=True):
             try:
-                data = load_world_state(str(path))
+                data = self.game.world.repository.load_from_path(str(path))
             except Exception:
                 data = {}
             meta = data.get("meta") or {}
@@ -910,10 +912,20 @@ class MenuManager:
                         # Persistir de vuelta al save para consistencia futura
                         try:
                             pdata['player_id'] = pid
-                            data = load_world_state(str(path))
+                            repo = g.world.repository
+                            data = repo.load_from_path(str(path))
                             data.setdefault('player_inventory', {})
                             data['player_inventory']['player_id'] = pid
-                            save_world_state(str(path), data)
+                            snapshot = WorldSnapshot(
+                                version=data.get('version', 1),
+                                player=data.get('player'),
+                                npcs=data.get('npcs', {}),
+                                levels=data.get('levels', {}),
+                                player_inventory=data.get('player_inventory'),
+                                npc_inventories=data.get('npc_inventories'),
+                                meta=data.get('meta'),
+                            )
+                            repo.save_to_path(str(path), snapshot)
                             g.world.player_inventory = data.get('player_inventory', pdata)
                         except Exception:
                             # Si no se puede persistir, al menos continuar en runtime
@@ -925,8 +937,17 @@ class MenuManager:
                             inv.add(slot['item'], slot.get('quantity', 0))
                     eid = g.ecs.ecs_world.player_entity
                     g.ecs.ecs_world.components.setdefault("InventoryComponent", {})[eid] = inv
+                    # Sincronizar perfil activo con el snapshot cargado para consistencia con _action_load_game
+                    try:
+                        snap = inv.serialize() if hasattr(inv, 'serialize') else {}
+                        if 'player_id' not in snap:
+                            snap['player_id'] = pdata.get('player_id')
+                        write_active_for_player(eid, snap)
+                    except Exception:
+                        pass
             except Exception as e:
                 logger.warning("No se pudo restaurar inventario: %s", e)
+            
             # Restaurar XP/Nivel desde metadatos del guardado
             try:
                 meta = getattr(g.world, 'save_metadata', {}) or {}
@@ -1009,14 +1030,24 @@ class MenuManager:
         entry = self.save_entries[self.load_selected]
         path = entry.get('path')
         try:
-            data = load_world_state(str(path))
+            data = self.game.world.repository.load_from_path(str(path))
         except Exception:
             data = {}
         meta = data.get('meta') or {}
         meta['name'] = new_name
         data['meta'] = meta
         try:
-            save_world_state(str(path), data)
+            repo = self.game.world.repository
+            snapshot = WorldSnapshot(
+                version=data.get('version', 1),
+                player=data.get('player'),
+                npcs=data.get('npcs', {}),
+                levels=data.get('levels', {}),
+                player_inventory=data.get('player_inventory'),
+                npc_inventories=data.get('npc_inventories'),
+                meta=data.get('meta'),
+            )
+            repo.save_to_path(str(path), snapshot)
             # Actualizar en memoria
             entry['label'] = new_name
             entry['meta'] = meta
