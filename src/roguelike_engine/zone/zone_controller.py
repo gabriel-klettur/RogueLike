@@ -6,7 +6,7 @@ from typing import Optional, Dict, List, Tuple
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config import DATA_DIR
 from roguelike_engine.map.model.layer import Layer
-from roguelike_engine.map.model.overlay.overlay_manager import load_layers as _load_layers, save_layers as _save_layers
+import roguelike_engine.map.model.overlay.overlay_manager as overlay_manager
 from .zone_model import Zone
 
 logger = logging.getLogger(__name__)
@@ -196,12 +196,12 @@ class ZonesService:
     def load_layers(self, zone_name: str) -> Dict[Layer, List[List[str]]]:
         if self._is_sentinel(zone_name):
             return {}
-        return _load_layers(zone_name)
+        return overlay_manager.load_layers(zone_name)
 
     def save_layers(self, zone_name: str, layers: Dict[Layer, List[List[str]]]) -> None:
         if self._is_sentinel(zone_name):
             return
-        _save_layers(zone_name, layers)
+        overlay_manager.save_layers(zone_name, layers)
 
     def save_zones(self) -> None:
         """Persiste zone_offsets filtrando el centinela en zones.json."""

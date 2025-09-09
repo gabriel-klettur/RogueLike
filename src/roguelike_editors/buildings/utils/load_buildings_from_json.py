@@ -62,70 +62,39 @@ def _canonicalize_zone(zone: str) -> str:
         return zone
 
 def _load_collisions_sources():
-    """Load collisions from split files if present, else fallback to legacy combined file.
+    """Load collisions exclusively from split files. No legacy fallback.
 
     Split files format (each file is a plain dict):
       - BUILDINGS_COLLISIONS_BY_IMAGE_PATH -> { image_path: {width,height,collision} }
       - BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH -> { spawn_id: {width,height,collision} }
       - BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH -> { id: {width,height,collision} }
 
-    Legacy combined file (supports both new keyed and legacy keyed variants) is used only if
-    none of the split files exist.
+    If none of the split files exist, returns empty dicts and logs a warning.
     """
-    try:
-        use_split = any(
-            os.path.exists(p) for p in (
-                BUILDINGS_COLLISIONS_BY_IMAGE_PATH,
-                BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH,
-                BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH,
-            )
-        )
-    except Exception:
-        use_split = False
-
-    if use_split:
-        def _read_dict(path):
-            try:
-                if os.path.exists(path):
-                    with open(path, 'r', encoding='utf-8-sig') as f:
-                        d = json.load(f) or {}
-                        return d if isinstance(d, dict) else {}
-            except Exception:
-                return {}
+    def _read_dict(path):
+        try:
+            if os.path.exists(path):
+                with open(path, 'r', encoding='utf-8-sig') as f:
+                    d = json.load(f) or {}
+                    return d if isinstance(d, dict) else {}
+        except Exception:
             return {}
-        collisions_global = _read_dict(BUILDINGS_COLLISIONS_BY_IMAGE_PATH)
-        collisions_instances = _read_dict(BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH)
-        collisions_by_id = _read_dict(BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH)
-        return collisions_global, collisions_instances, collisions_by_id
+        return {}
 
-    # Fallback: legacy single file
-    try:
-        with open(BUILDINGS_COLLISIONS_DATA_PATH, 'r', encoding='utf-8-sig') as cf:
-            raw_cd = json.load(cf) or {}
-    except Exception:
-        raw_cd = {}
-    try:
-        if isinstance(raw_cd, dict):
-            if any(k in raw_cd for k in ("by_image_path", "by_spawn_id", "by_building_instance_id")):
-                collisions_global = raw_cd.get("by_image_path", {}) or {}
-                collisions_instances = raw_cd.get("by_spawn_id", {}) or {}
-                collisions_by_id = raw_cd.get("by_building_instance_id", {}) or {}
-            elif any(k in raw_cd for k in ("global", "instances", "by_building_id")):
-                collisions_global = raw_cd.get("global", {}) or {}
-                collisions_instances = raw_cd.get("instances", {}) or {}
-                collisions_by_id = raw_cd.get("by_building_id", {}) or {}
-            else:
-                collisions_global = raw_cd
-                collisions_instances = {}
-                collisions_by_id = {}
-        else:
-            collisions_global = {}
-            collisions_instances = {}
-            collisions_by_id = {}
-    except Exception:
-        collisions_global = {}
-        collisions_instances = {}
-        collisions_by_id = {}
+    exists_any = any(
+        os.path.exists(p) for p in (
+            BUILDINGS_COLLISIONS_BY_IMAGE_PATH,
+            BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH,
+            BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH,
+        )
+    )
+    if not exists_any:
+        logger.warning("[Buildings] Split collisions files not found; using empty collisions maps.")
+        return {}, {}, {}
+
+    collisions_global = _read_dict(BUILDINGS_COLLISIONS_BY_IMAGE_PATH)
+    collisions_instances = _read_dict(BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH)
+    collisions_by_id = _read_dict(BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH)
     return collisions_global, collisions_instances, collisions_by_id
 
 def _apply_collision_for_building(b: Building,
@@ -147,7 +116,10 @@ def _apply_collision_for_building(b: Building,
         scope = entry.get("collider_scope", "CG")
         if scope == 'CU':
             # 1) Per-building-instance collisions (new scheme)
-            bid = entry.get("id")
+            # Prefer instance id on the Building object; fallback to any id in entry (template id)
+            bid = getattr(b, "id", None)
+            if bid is None:
+                bid = entry.get("id")
             if bid is not None:
                 bid_str = str(bid)
                 if bid_str in collisions_by_id:
@@ -312,6 +284,13 @@ def _load_from_split(z_state=None) -> List[Building]:
             entry['rel_y'] = rel_y
             if inst.get('zone'):
                 entry['zone'] = _canonicalize_zone(inst['zone'])
+
+            # Bind instance id into merged entry to support per-instance lookups
+            try:
+                if inst.get('id') is not None:
+                    entry['id'] = inst.get('id')
+            except Exception:
+                pass
 
             # Ensure assets.idle exists after merge
             assets = entry.get('assets') or {}
