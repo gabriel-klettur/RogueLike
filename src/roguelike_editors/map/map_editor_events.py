@@ -1,5 +1,4 @@
 import pygame
-import os
 import logging
 logger = logging.getLogger(__name__)
 from roguelike_engine.config.map_config import global_map_settings
@@ -8,6 +7,7 @@ from roguelike_engine.config.config_editor import TILE_PAINT_BATCH, TILE_PAINT_T
 from roguelike_engine.config.config_camera import ALLOWED_ZOOMS, next_allowed_zoom
 from roguelike_editors.buildings.utils.save_buildings_to_json import save_buildings_split
 
+from roguelike_engine.map.model.overlay.overlay_manager import load_layers, save_layers
 from roguelike_game.ecs.core.spatial_index import SpatialIndex
 from roguelike_ui.ui_blocker import is_blocked
 from roguelike_engine.map.model.layer import Layer
@@ -329,9 +329,8 @@ class MapEditorEventHandler:
             try:
                 self.controller.toolbar.clear_colliders.finalize(zone)
             finally:
-                self.manager.game.ecs.ecs_world.spatial_index = SpatialIndex(
-                    self.map_manager, self.manager.game.buildings.buildings
-                )
+                # Reconstruir el índice espacial mediante la API del mundo
+                self.manager.game.ecs.ecs_world.rebuild_spatial_index()
                 self._clear_async_state()
                 # Pulso para el tutorial: finalizado
                 try:
@@ -348,9 +347,8 @@ class MapEditorEventHandler:
             try:
                 self.controller.toolbar.paint_colliders.finalize(zone)
             finally:
-                self.manager.game.ecs.ecs_world.spatial_index = SpatialIndex(
-                    self.map_manager, self.manager.game.buildings.buildings
-                )
+                # Reconstruir el índice espacial mediante la API del mundo
+                self.manager.game.ecs.ecs_world.rebuild_spatial_index()
                 self._clear_async_state()
                 # Pulso para el tutorial: finalizado
                 try:

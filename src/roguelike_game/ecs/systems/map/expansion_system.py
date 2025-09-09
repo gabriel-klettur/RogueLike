@@ -1,10 +1,8 @@
 from collections import deque
 import time
 
-from roguelike_engine.utils.benchmark import benchmark
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.config.map_config import global_map_settings
-from roguelike_game.ecs.core.spatial_index import SpatialIndex
 from roguelike_game.ecs.utils.collider_utils import build_collider_rect
 from roguelike_engine.map.services.expansion_service import expand_dungeon
 
@@ -93,8 +91,8 @@ class ExpansionSystem:
                 elif now - state.expand_area_start_time >= 3.0:
                     # Ejecutar expansión directamente y mover área roja a nuevo dungeon
                     expand_dungeon(world)
-                    # Actualizar índice espacial tras expansión para colisiones
-                    world.spatial_index = SpatialIndex(game_map, entities_manager.buildings)
+                    # Actualizar índice espacial tras la expansión para colisiones
+                    world.rebuild_spatial_index()
                     # Recalcular área de expansión usando ruta más larga desde lobby
                     # Construir conjunto de tiles caminables
                     walkable = set()

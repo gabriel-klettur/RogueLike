@@ -127,7 +127,7 @@ class ChatRouterSystem:
             if type(s).__name__ == 'VendorTradeSystem':
                 return s
         # Fallback: crear uno ad-hoc
-        from .vendor_trade_system import VendorTradeSystem
+        from roguelike_game.ecs.systems.vendors.vendor_trade_system import VendorTradeSystem
         inst = VendorTradeSystem()
         world.update_systems.append(inst)
         return inst

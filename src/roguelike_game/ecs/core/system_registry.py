@@ -83,7 +83,7 @@ from roguelike_game.ecs.systems.rendering.spawner_debug_system import SpawnerDeb
 from roguelike_game.ecs.systems.chat.chat_proximity_system import ChatProximitySystem
 from roguelike_game.ecs.systems.chat.chat_router_system import ChatRouterSystem
 from roguelike_game.ecs.systems.chat.chat_ui_system import ChatUISystem
-from roguelike_game.ecs.systems.chat.vendor_trade_system import VendorTradeSystem
+from roguelike_game.ecs.systems.vendors.vendor_trade_system import VendorTradeSystem
 from roguelike_game.ecs.systems.rendering.chat_proximity_render_system import ChatProximityRenderSystem
 from roguelike_game.ecs.systems.rendering.chat_bubble_render_system import ChatBubbleRenderSystem
 from roguelike_game.ecs.systems.abilities.dash_resource_system import DashResourceSystem
