@@ -8,7 +8,6 @@ from roguelike_engine.config.config_editor import TILE_PAINT_BATCH, TILE_PAINT_T
 from roguelike_engine.config.config_camera import ALLOWED_ZOOMS, next_allowed_zoom
 from roguelike_editors.buildings.utils.save_buildings_to_json import save_buildings_split
 
-from roguelike_engine.map.model.overlay.overlay_manager import load_layers, save_layers
 from roguelike_game.ecs.core.spatial_index import SpatialIndex
 from roguelike_ui.ui_blocker import is_blocked
 from roguelike_engine.map.model.layer import Layer
@@ -258,7 +257,7 @@ class MapEditorEventHandler:
 
     def _finalize_paint_tiles(self, zone):
         start = pygame.time.get_ticks()
-        layers = load_layers(zone)
+        layers = self.controller.zones.load_layers(zone)
         off_x, off_y = global_map_settings.zone_offsets.get(zone)
         wz, hz = global_map_settings.zone_size
         grid = [["" for _ in range(wz)] for _ in range(hz)]
@@ -269,7 +268,7 @@ class MapEditorEventHandler:
                 grid[ly][lx] = t.overlay_code
         painted = sum(1 for row in grid for code in row if code)
         layers[Layer.Ground] = grid
-        save_layers(zone, layers)
+        self.controller.zones.save_layers(zone, layers)
         # Merge the zone-sized grid back into the world-sized Ground layer
         merge_zone_to_world(self.map_manager, zone, grid)
         elapsed = pygame.time.get_ticks() - start

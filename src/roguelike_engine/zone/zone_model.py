@@ -1,6 +1,4 @@
-from typing import List, Tuple, Optional
-from roguelike_engine.config.map_config import global_map_settings
-from roguelike_engine.map.model.map_model import Map as MapModel
+from typing import List, Tuple
 
 class Zone:
     """
@@ -11,22 +9,20 @@ class Zone:
         self,
         name: str,
         offset: Tuple[int, int],
-        width: Optional[int] = None,
-        height: Optional[int] = None,
+        width: int,
+        height: int,
     ):
         self.name = name
         self.offset_x, self.offset_y = offset
-        # Usar configuración por defecto si no se proporciona
-        self.width = width or global_map_settings.zone_width
-        self.height = height or global_map_settings.zone_height
+        self.width = width
+        self.height = height
         # Matriz local de caracteres (#, ., O, etc.)
         self.matrix: List[List[str]] = [
             ["#" for _ in range(self.width)]
             for _ in range(self.height)
         ]
-        # Contenedores para Tiles y overlay de esta zona
-        self.tiles: Optional[List[List[object]]] = None
-        self.overlay: Optional[List[List[str]]] = None
+        # El modelo no mantiene referencias a recursos de render ni overlays.
+        # Dichos datos deben ser gestionados por servicios/controladores externos.
 
     def set_matrix_from_rows(self, rows: List[str]) -> None:
         """
@@ -45,6 +41,25 @@ class Zone:
         gx = self.offset_x + x
         gy = self.offset_y + y
         return gx, gy
+
+    def local_coords(self, gx: int, gy: int) -> Tuple[int, int]:
+        """
+        Convierte coordenadas globales a locales relativas a esta zona.
+        """
+        return gx - self.offset_x, gy - self.offset_y
+
+    def is_inside_local(self, x: int, y: int) -> bool:
+        """
+        Verifica si (x, y) locales caen dentro de los límites de la zona.
+        """
+        return 0 <= x < self.width and 0 <= y < self.height
+
+    def is_inside_global(self, gx: int, gy: int) -> bool:
+        """
+        Verifica si (gx, gy) globales caen dentro de los límites de la zona.
+        """
+        lx, ly = self.local_coords(gx, gy)
+        return self.is_inside_local(lx, ly)
 
     def __repr__(self):
         return (

@@ -12,7 +12,7 @@ from roguelike_ui.ui_blocker import clear_blockers
 from roguelike_engine.z_layer.render import render_z_ordered
 
 # Importar el decorador centralizado de benchmark
-from roguelike_engine.zone.view.zone_view import ZoneView
+from roguelike_engine.zone.zone_view import ZoneView
 
 
 class RendererManager:
