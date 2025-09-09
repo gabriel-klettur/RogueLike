@@ -70,7 +70,7 @@ def test_evt_012_persist_on_mouse_up(camera, surface_factory, monkeypatch):
         calls.append((buildings, filepath, z_state, zone_offsets))
         return True
 
-    monkeypatch.setattr(ev_mod, "save_buildings_to_json", _fake_save, raising=True)
+    monkeypatch.setattr(ev_mod, "save_buildings_split", _fake_save, raising=True)
 
     up = pygame.event.Event(pygame.MOUSEBUTTONUP, {"button": 1, "pos": (0, 0)})
     handler.handle(camera, entities, [up])
@@ -116,7 +116,7 @@ def test_evt_002_quit_persists_and_stops(camera, surface_factory, monkeypatch):
         calls.append((buildings, filepath, z_state, zone_offsets))
         return True
 
-    monkeypatch.setattr(ev_mod, "save_buildings_to_json", _fake_save, raising=True)
+    monkeypatch.setattr(ev_mod, "save_buildings_split", _fake_save, raising=True)
 
     ev = pygame.event.Event(pygame.QUIT)
     handler.handle(camera, entities, [ev])
@@ -140,7 +140,7 @@ def test_evt_003_escape_closes_and_saves(camera, surface_factory, monkeypatch):
         calls.append((buildings, filepath, z_state, zone_offsets))
         return True
 
-    monkeypatch.setattr(ev_mod, "save_buildings_to_json", _fake_save, raising=True)
+    monkeypatch.setattr(ev_mod, "save_buildings_split", _fake_save, raising=True)
 
     ev = pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_ESCAPE})
     handler.handle(camera, entities, [ev])
@@ -262,7 +262,7 @@ def test_evt_008_ctrl_s_persists_without_closing(camera, surface_factory, monkey
         calls.append((buildings, filepath, z_state, zone_offsets))
         return True
 
-    monkeypatch.setattr(ev_mod, "save_buildings_to_json", _fake_save, raising=True)
+    monkeypatch.setattr(ev_mod, "save_buildings_split", _fake_save, raising=True)
 
     ev = pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_s, "mod": pygame.KMOD_CTRL})
     handler.handle(camera, entities, [ev])
@@ -334,7 +334,7 @@ def test_evt_011_mouse_events_delegated_to_controller(camera, surface_factory, m
 
     # Avoid disk IO on MOUSEBUTTONUP persistence
     import roguelike_editors.buildings.building_editor_events as ev_mod
-    monkeypatch.setattr(ev_mod, "save_buildings_to_json", lambda *a, **k: True, raising=True)
+    monkeypatch.setattr(ev_mod, "save_buildings_split", lambda *a, **k: True, raising=True)
 
     evs = [
         pygame.event.Event(pygame.MOUSEBUTTONDOWN, {"button": 1, "pos": (10, 10)}),
