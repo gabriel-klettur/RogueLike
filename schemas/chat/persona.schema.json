@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Persona",
+  "type": "object",
+  "required": ["name", "tone", "background", "goals", "style"],
+  "properties": {
+    "name": {"type": "string"},
+    "origin": {"type": "string"},
+    "tone": {"type": "string"},
+    "background": {"type": "string"},
+    "goals": {"type": "array", "items": {"type": "string"}},
+    "humor": {
+      "type": "object",
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "frequency": {"type": "string", "enum": ["never", "rarely", "sometimes", "often"]},
+        "topics": {"type": "array", "items": {"type": "string"}},
+        "style": {"type": "string"},
+        "examples": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    },
+    "style": {
+      "type": "object",
+      "required": ["emoji", "verbosity", "sentences_max"],
+      "properties": {
+        "emoji": {"type": "boolean"},
+        "verbosity": {"type": "string", "enum": ["short", "medium", "long"]},
+        "sentences_max": {"type": "integer", "minimum": 1}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

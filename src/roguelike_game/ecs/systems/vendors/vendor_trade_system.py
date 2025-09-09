@@ -123,6 +123,42 @@ class VendorTradeSystem:
             return f"Transacción cancelada: no pude pagarte {total} {currency_id}."
         return f"Hecho. Vendiste {qty}x {item_id} por {total} {currency_id}."
 
+    def restock(self, world, vendor_eid: int, item_id: str, qty: int) -> str:
+        """Incrementa el stock del vendedor en `qty` unidades del `item_id`.
+        Uso: utilitario para debug o herramientas administrativas.
+        """
+        if qty <= 0:
+            return "Cantidad inválida."
+        item_id, _ = self._normalize_ids(world, vendor_eid, item_id)
+        invs = world.components.get('InventoryComponent', {})
+        inv = invs.get(vendor_eid)
+        if not inv:
+            return "El vendedor no tiene inventario."
+        try:
+            ok = inv.add(item_id, qty)
+            if not ok:
+                return "Sin espacio para añadir stock."
+            return f"Stock actualizado: +{qty} {item_id}."
+        except Exception as e:
+            logger.exception("Fallo en restock")
+            return f"No pude actualizar stock: {e}"
+
+    def get_stock(self, world, vendor_eid: int, item_id: str) -> int:
+        """Devuelve el stock actual del `item_id` en el vendedor."""
+        item_id, _ = self._normalize_ids(world, vendor_eid, item_id)
+        invs = world.components.get('InventoryComponent', {})
+        inv = invs.get(vendor_eid)
+        if not inv:
+            return 0
+        try:
+            total = 0
+            for st in getattr(inv, 'slots', []) or []:
+                if st and str(getattr(st, 'item_id', '')).lower() == item_id:
+                    total += int(getattr(st, 'quantity', 0) or 0)
+            return total
+        except Exception:
+            return 0
+
     # --- Helpers --------------------------------------------------------------
     def _get_transfer_system(self, world):
         for s in getattr(world, 'update_systems', []):

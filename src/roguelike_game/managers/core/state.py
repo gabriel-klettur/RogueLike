@@ -32,6 +32,10 @@ class GameState:
         self.chat_block_rect = None
         # Rectángulo del botón de cerrar (X) del chat
         self.chat_close_rect = None
+        # Indicador de escritura (IA "pensando")
+        self.chat_typing: bool = False
+        self.chat_typing_phase: int = 0  # 0..2 para '.', '..', '...'
+        self.chat_typing_last_ms: int | None = None
 
     # Helpers de chat mínimos (opcionales)
     def chat_add_message(self, sender: str, text: str) -> None:
@@ -53,4 +57,7 @@ class GameState:
         self.chat_input_buffer = ""
         self.chat_block_rect = None
         self.chat_close_rect = None
+        self.chat_typing = False
+        self.chat_typing_phase = 0
+        self.chat_typing_last_ms = None
 

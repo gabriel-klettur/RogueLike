@@ -1,1 +1,34 @@
-{}
+{
+  "9ce93ec7-aca0-4778-8ebf-01bf0ed67b44": {
+    "template_id": null,
+    "slots": [
+      {
+        "item": "wood",
+        "quantity": 90
+      },
+      {
+        "item": "gold",
+        "quantity": 110
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  }
+}

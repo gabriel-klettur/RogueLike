@@ -1,0 +1,12 @@
+{
+  "tools": ["vendor.buy", "vendor.sell", "vendor.stock"],
+  "limits": {"max_tokens": 384, "temperature": 0.2},
+  "guardrails": {"no_insults": true, "no_private_info": true},
+  "dialogue": {
+    "greet_on_open": true,
+    "goodbye_on_close": true,
+    "greet_lines": ["¡Hola, corazón! ¿Buscas madera fresca?"],
+    "goodbye_lines": ["Vuelve pronto, tesoro."]
+  },
+  "online_style": {"humanize": true, "decorate_sales_pitch": true}
+}

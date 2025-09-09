@@ -9,6 +9,7 @@ class ChatComponent:
 
     - chat_range: distancia máxima (en unidades del juego) para iniciar chat.
     - role: rol del chat para enrutamiento (e.g., 'vendor', 'generic', 'quest_giver').
+    - persona_id: identificador de persona en data/chat/personas/{persona_id}.json.
 
     Nota: El estado de UI del chat (abierto, buffer de texto, mensajes mostrados) se
     maneja de forma global en GameState para coordinar bloqueo de input y renderizado.
@@ -16,5 +17,6 @@ class ChatComponent:
     """
     chat_range: float = 10.0
     role: str = "generic"
+    persona_id: Optional[str] = None
     greeting: Optional[str] = None
     recent_messages: List[str] = field(default_factory=list)

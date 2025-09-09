@@ -12,6 +12,7 @@ from roguelike_engine.config.map_config import global_map_settings
 from roguelike_editors.fsm.fsm_editor_events import FsmEditorEventHandler
 from roguelike_ui.ui_blocker import is_blocked
 from roguelike_game.ecs.systems.chat.chat_input_controller import ChatInputController
+from roguelike_game.ecs.systems.chat.chat_ui_system import handle_chat_ui_events
 from roguelike_game.ecs.systems.chat.chat_bubble_utils import push_bubble
 
 import logging
@@ -249,6 +250,11 @@ def handle_events(game):
             # Enviar todos los eventos al chat y no propagar al gameplay
             try:
                 ctrl.handle_events(world, events)
+            except Exception:
+                pass
+            # Manejo de scroll, scrollbar y resize del panel de chat
+            try:
+                handle_chat_ui_events(world, events)
             except Exception:
                 pass
             # Retornar temprano: impedir propagación al gameplay mientras el chat está abierto
