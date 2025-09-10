@@ -298,14 +298,32 @@ class GameInitializer:
         # Configurar carrusel de fondos del menú principal (pantalla de inicio)
         try:
             g.menu.set_backgrounds([
-                "assets/ui/intro/Intro_barbarian.png",
-                "assets/ui/intro/Intro_drwaft.png",
-                "assets/ui/intro/Intro_elven.png",
+                "assets/ui/intro/Intro_elven.png",                
+                "assets/ui/intro/Intro_drwaft.png",                
                 "assets/ui/intro/intro_mague.png",
                 "assets/ui/intro/Intro_valkyrie.png",
+                "assets/ui/intro/Intro_barbarian.png",
             ], interval_s=2.0, transition_s=0.6, slide_px=24)
         except Exception:
             # No bloquear si no existe alguna ruta; el menú seguirá mostrando overlay sin fondo
+            pass
+        # Configurar música de intro (se reproducirá cuando el menú esté visible)
+        try:
+            # Usar el archivo MP3 solicitado
+            g.menu.set_music("assets/audio/music/intro_theme.mp3", loop=True, volume=0.6)
+        except Exception:
+            # Silencioso si falla audio o no existe el archivo
+            pass
+        # Configurar logo del juego (centrado sobre el panel del menú)
+        try:
+            # Mostrar al tamaño original (solo reducir si supera la pantalla)
+            g.menu.set_logo("assets/ui/intro/game_name.png", max_width_ratio=1.0, max_height_ratio=1.0, gap_px=12)
+        except Exception:
+            pass
+        # Activar pantalla previa: "Pulsa para comenzar"
+        try:
+            g.menu.enable_press_to_start(text="Pulsa para comenzar", blink_interval_s=0.8)
+        except Exception:
             pass
         # Arrancar en menú principal (start)
         try:

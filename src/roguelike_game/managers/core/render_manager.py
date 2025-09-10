@@ -217,6 +217,7 @@ class RendererManager:
                 and not getattr(state, 'spells_editor_visible', False)
                 and not getattr(state, 'fsm_editor_visible', False)
                 and not getattr(state, 'class_selector_visible', False)
+                and not (menu and getattr(menu, 'show_menu', False))
             ):
                 self._render_minimap(screen)
         _bench_minimap()

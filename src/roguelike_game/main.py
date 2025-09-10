@@ -14,7 +14,16 @@ logger = logging.getLogger(__name__)
 def init_pygame() -> None:
     """Inicializa Pygame y hace visible el cursor."""
     logger.info("Initializing Pygame...")
-    pygame.init()
+    try:
+        # Preajuste opcional para latencia/compatibilidad
+        # pygame.mixer.pre_init(44100, -16, 2, 512)
+        pygame.init()
+        # Algunas plataformas requieren init explícito del mixer
+        if not pygame.mixer.get_init():
+            pygame.mixer.init()  # usa defaults seguros
+    except Exception as e:
+        logger.warning(f"No se pudo inicializar pygame.mixer: {e}")
+        pygame.init()
     pygame.mouse.set_visible(True)
 
 

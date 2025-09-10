@@ -81,7 +81,7 @@ class MenuRenderer:
         return pygame.Rect(x, y, w, h)
 
     # ---- Render principal ----
-    def draw(self, screen, selected, options, scroll_offset: int = 0):
+    def draw(self, screen, selected, options, scroll_offset: int = 0, panel_top_min: int | None = None):
         """
         Dibuja el menú principal con estilo profesional.
         Devuelve el rect total actualizado (usamos el overlay a pantalla completa).
@@ -96,6 +96,11 @@ class MenuRenderer:
         w = min(w, int(sw * 0.9))
         h = min(h, int(sh * 0.85))
         panel_rect = self._center_rect(screen, (w, h))
+        # Si se pide que el panel no suba de cierta Y, empujarlo hacia abajo
+        if isinstance(panel_top_min, int) and panel_rect.top < panel_top_min:
+            panel_rect.top = panel_top_min
+        # Exponer el rect del panel para overlays externos (logo, etc.)
+        self.last_menu_panel_rect = panel_rect
 
         # 3) Sombra y panel
         self._draw_shadow(screen, panel_rect)
@@ -253,7 +258,8 @@ class MenuRenderer:
                           caret_pos: int = 0,
                           hover_load_button: bool = False,
                           hover_delete_button: bool = False,
-                          select_all_edit: bool = False) -> pygame.Rect:
+                          select_all_edit: bool = False,
+                          panel_top_min: int | None = None) -> pygame.Rect:
         """
         Dibuja un panel de "cargar partida" con estilo profesional, tamaño fijo opcional,
         scroll vertical en la lista y layout expuesto para hit-testing.

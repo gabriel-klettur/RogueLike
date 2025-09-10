@@ -95,6 +95,30 @@ class MenuManager:
         self._bg_transition_start: float | None = None
         self._bg_slide_px: int = 24
 
+        # Música del menú
+        self.music_path: str | None = None
+        self._music_loop: bool = True
+        self._music_volume: float = 0.6
+        self._music_active: bool = False
+
+        # Logo del juego (para menú de inicio)
+        self.logo_path: str | None = None
+        self._logo_surface: pygame.Surface | None = None
+        self._logo_scaled: pygame.Surface | None = None
+        self._logo_scaled_screen_size: tuple[int, int] | None = None
+        self._logo_max_w_ratio: float = 0.6
+        self._logo_max_h_ratio: float = 0.22
+        self._logo_gap_px: int = 16
+        self._logo_initial_scale: float = 1.0
+        self._logo_top_ratio: float = 0.08  # porcentaje de la altura de pantalla desde arriba
+
+        # "Pulsa para comenzar" (gate previo al menú)
+        self._press_start_active: bool = False
+        self._press_start_text: str = "Pulsa para comenzar"
+        self._press_blink_interval_s: float = 0.85
+        self._press_last_toggle: float = time.time()
+        self._press_visible: bool = True
+
     # ---- Configuración de fondo ----
     def set_background(self, path: str | None, *, scale_mode: str | None = None):
         """Configura la ruta del fondo del menú de inicio y reinicia la caché de escala."""
@@ -311,10 +335,135 @@ class MenuManager:
         # Fallback: fondo único
         self._blit_background_if_any(screen)
 
+    # ---- Música del menú ----
+    def set_music(self, path: str | None, *, loop: bool = True, volume: float = 0.6):
+        """Configura la música del menú. No reproduce inmediatamente."""
+        self.music_path = path
+        self._music_loop = bool(loop)
+        self._music_volume = max(0.0, min(1.0, float(volume)))
+        # No cargamos aún; pygame.mixer.music.load() carga al vuelo cuando se llama play
+        # Reseteamos estado activo; se re-habilitará en ensure
+        self._music_active = False
+
+    def _ensure_music_for_menu(self):
+        """Garantiza que la música esté sonando si estamos en menú de inicio o lista de partidas."""
+        try:
+            if self.music_path and self.show_menu and self.mode in ("start", "load_list"):
+                if not self._music_active:
+                    pygame.mixer.music.load(self.music_path)
+                    pygame.mixer.music.set_volume(self._music_volume)
+                    loops = -1 if self._music_loop else 0
+                    pygame.mixer.music.play(loops)
+                    self._music_active = True
+            else:
+                if self._music_active:
+                    # Fade-out breve para transición suave
+                    try:
+                        pygame.mixer.music.fadeout(300)
+                    except Exception:
+                        pygame.mixer.music.stop()
+                    self._music_active = False
+        except Exception:
+            # No interrumpir UI por errores de audio
+            pass
+
+    def stop_music(self, fade_ms: int = 300):
+        """Detiene la música del menú (con fade opcional)."""
+        try:
+            if self._music_active:
+                if fade_ms > 0:
+                    pygame.mixer.music.fadeout(int(fade_ms))
+                else:
+                    pygame.mixer.music.stop()
+        finally:
+            self._music_active = False
+
+    # ---- Logo ----
+    def set_logo(self, path: str | None, *, max_width_ratio: float = 0.6, max_height_ratio: float = 0.22, gap_px: int = 16, initial_scale: float = 0.5, top_ratio: float = 0.08):
+        """Configura el logo que se mostrará centrado sobre el panel del menú.
+        - max_width_ratio: porcentaje del ancho de pantalla máximo para el logo
+        - max_height_ratio: porcentaje del alto de pantalla máximo para el logo
+        - gap_px: separación vertical entre el borde superior del panel y el logo
+        - initial_scale: escala multiplicativa sobre el tamaño original (<=1.0 para reducir de inicio)
+        - top_ratio: posición vertical del logo respecto a la pantalla (0.0-1.0)
+        """
+        self.logo_path = path
+        self._logo_surface = None
+        self._logo_scaled = None
+        self._logo_scaled_screen_size = None
+        self._logo_max_w_ratio = max(0.1, min(1.0, float(max_width_ratio)))
+        self._logo_max_h_ratio = max(0.1, min(1.0, float(max_height_ratio)))
+        self._logo_gap_px = max(0, int(gap_px))
+        self._logo_initial_scale = max(0.05, float(initial_scale))
+        self._logo_top_ratio = max(0.0, min(0.9, float(top_ratio)))
+
+    def _ensure_logo_loaded_and_scaled(self, screen):
+        if not self.logo_path:
+            return False
+        if self._logo_surface is None:
+            try:
+                surf = pygame.image.load(self.logo_path)
+                try:
+                    surf = surf.convert_alpha()
+                except Exception:
+                    surf = surf.convert()
+                self._logo_surface = surf
+            except Exception:
+                self._logo_surface = None
+                return False
+        sw, sh = screen.get_size()
+        if self._logo_scaled is None or self._logo_scaled_screen_size != (sw, sh):
+            iw, ih = self._logo_surface.get_size()
+            if iw <= 0 or ih <= 0:
+                return False
+            max_w = int(sw * self._logo_max_w_ratio)
+            max_h = int(sh * self._logo_max_h_ratio)
+            # Solo reducir si excede el máximo permitido; nunca hacer upscale, y aplicar escala inicial
+            scale_base = min(max_w / iw, max_h / ih)
+            scale = min(1.0, scale_base) * self._logo_initial_scale
+            new_w = max(1, int(iw * scale))
+            new_h = max(1, int(ih * scale))
+            try:
+                self._logo_scaled = pygame.transform.scale(self._logo_surface, (new_w, new_h))
+            except Exception:
+                self._logo_scaled = self._logo_surface
+            self._logo_scaled_screen_size = (sw, sh)
+        return True
+
+    def _compute_logo_layout(self, screen):
+        """Devuelve (surf, (x,y), bottom_y) si hay logo, si no None."""
+        if not self._ensure_logo_loaded_and_scaled(screen):
+            return None
+        sw, sh = screen.get_size()
+        lw, lh = self._logo_scaled.get_size()
+        x = (sw - lw) // 2
+        y = max(8, int(sh * self._logo_top_ratio))
+        surf = self._logo_scaled._surf if hasattr(self._logo_scaled, '_surf') else self._logo_scaled
+        return surf, (x, y), y + lh
+
+    # ---- Press to Start ----
+    def enable_press_to_start(self, text: str | None = None, blink_interval_s: float = 0.85):
+        self._press_start_active = True
+        if text:
+            self._press_start_text = text
+        self._press_blink_interval_s = max(0.1, float(blink_interval_s))
+        self._press_last_toggle = time.time()
+        self._press_visible = True
+
+    def disable_press_to_start(self):
+        self._press_start_active = False
+
     def handle_input(self, event):
         """
         Procesa la entrada del menú y devuelve la opción seleccionada o None.
         """
+        # Gate: si está activo "Pulsa para comenzar", cualquier pulsación lo desactiva
+        if self.show_menu and self.mode == "start" and self._press_start_active:
+            if event.type in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN, pygame.MOUSEWHEEL):
+                self.disable_press_to_start()
+                return None
+            # Mientras esté activo, no procesar más entradas del menú
+            return None
         # Modo especial: lista de partidas
         if self.mode == "load_list":
             if event.type == pygame.KEYDOWN:
@@ -613,6 +762,48 @@ class MenuManager:
         # Fondo (único o carrusel) para menú de inicio (y lista de partidas) antes del overlay
         if self.mode in ("start", "load_list"):
             self._blit_backgrounds(screen)
+        # Asegurar música acorde al modo del menú
+        self._ensure_music_for_menu()
+        # Calcular layout del logo (para posicionar el panel debajo)
+        logo_layout = self._compute_logo_layout(screen) if self.logo_path else None
+        panel_top_min = None
+        if logo_layout is not None:
+            _, (_, y), bottom = logo_layout
+            panel_top_min = bottom + self._logo_gap_px
+
+        # Pantalla previa: "Pulsa para comenzar" en modo start
+        if self.mode == "start" and self._press_start_active:
+            # Overlay suave
+            sw, sh = screen.get_size()
+            overlay = pygame.Surface((sw, sh), pygame.SRCALPHA)
+            overlay.fill((0, 0, 0, 140))
+            surface_to_blit = overlay._surf if hasattr(overlay, '_surf') else overlay
+            screen.blit(surface_to_blit, (0, 0))
+            # Logo
+            if logo_layout is not None:
+                surf, pos, bottom = logo_layout
+                screen.blit(surf, pos)
+            # Blink del texto
+            now = time.time()
+            if (now - self._press_last_toggle) >= self._press_blink_interval_s:
+                self._press_visible = not self._press_visible
+                self._press_last_toggle = now
+            if self._press_visible:
+                text_surf = self.renderer.font.render(self._press_start_text, True, (255, 220, 0))
+                # sombra
+                shadow = self.renderer.font.render(self._press_start_text, True, (0, 0, 0))
+                tx = (sw - text_surf.get_width()) // 2
+                # colocar debajo del logo si existe, si no, centrado vertical
+                if logo_layout is not None:
+                    ty = bottom + max(12, self._logo_gap_px)
+                    ty = min(ty, sh - text_surf.get_height() - 24)
+                else:
+                    ty = (sh - text_surf.get_height()) // 2
+                screen.blit(shadow, (tx + 2, ty + 2))
+                screen.blit(text_surf, (tx, ty))
+            # Devolver rect de pantalla completa (overlay)
+            return pygame.Rect(0, 0, sw, sh)
+
         # Vista especial: lista de partidas
         if self.mode == "load_list":
             # Recalcular layout fijo si cambia tamaño de ventana
@@ -638,7 +829,12 @@ class MenuManager:
                 hover_load_button=self._saves_hover_load_button,
                 hover_delete_button=self._saves_hover_delete_button,
                 select_all_edit=self._saves_select_all_edit,
+                panel_top_min=panel_top_min if panel_top_min is not None else None,
             )
+            # Dibujar el logo por encima del panel, ya con el panel empujado hacia abajo
+            if logo_layout is not None:
+                surf, pos, _ = logo_layout
+                screen.blit(surf, pos)
             # Si hay confirmación de borrado, dibujar modal por encima
             if self._saves_show_confirm_delete:
                 # Construir líneas del mensaje con el nombre del guardado seleccionado
@@ -662,7 +858,12 @@ class MenuManager:
         self.handler.mode = self.mode
         options = self.handler.get_options()
         selected = self.handler.selected
-        return self.renderer.draw(screen, selected, options)
+        overlay_rect = self.renderer.draw(screen, selected, options, panel_top_min=panel_top_min if panel_top_min is not None else None)
+        # Dibujar logo después del panel
+        if logo_layout is not None:
+            surf, pos, _ = logo_layout
+            screen.blit(surf, pos)
+        return overlay_rect
 
     def execute_menu_option(self, selected, state):
         """
@@ -670,12 +871,16 @@ class MenuManager:
         """
         # Opción 'Continuar': cerrar menú y reanudar juego
         if selected == "Continuar":
+            # Salimos del menú, detener música
+            self.stop_music()
             self.show_menu = False
             return
         # Resto de acciones
         if selected == "Guardar partida":
             self._action_save()
         elif selected in ("Nuevo juego", "Nueva Partida"):
+            # Nueva partida -> salir del menú; detener música
+            self.stop_music(fade_ms=500)
             self._action_new_game()
         elif selected == "Cargar juego":
             # Cambiar a submenú de selección de partidas

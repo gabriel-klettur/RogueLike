@@ -348,26 +348,36 @@ def handle_events(game):
             elif event.type == pygame.MOUSEMOTION:
                 # Hover como flechas: actualizar seleccionado según posición del ratón
                 mx, my = event.pos
+                # Si está activa la pantalla "Pulsa para comenzar", ignorar hover
+                try:
+                    if getattr(game.menu, '_press_start_active', False) and getattr(game.menu, 'mode', '') == 'start':
+                        continue
+                except Exception:
+                    pass
                 try:
                     options = game.menu.handler.get_options()
                 except Exception:
                     options = []
-                try:
-                    width, height = game.menu.renderer._measure_menu(options)
-                except Exception:
-                    width, height = 320, 200
-                screen_w, screen_h = game.screen.get_size()
-                width = min(width, int(screen_w * 0.9))
-                height = min(height, int(screen_h * 0.85))
-                x = (screen_w - width) // 2
-                y = (screen_h - height) // 2
-                panel_rect = pygame.Rect(x, y, width, height)
+                # Usar el rect real dibujado por el renderer si está disponible
+                panel_rect = getattr(game.menu.renderer, 'last_menu_panel_rect', None)
+                if panel_rect is None:
+                    # Fallback conservador si aún no existe el rect
+                    try:
+                        width, height = game.menu.renderer._measure_menu(options)
+                    except Exception:
+                        width, height = 320, 200
+                    screen_w, screen_h = game.screen.get_size()
+                    width = min(width, int(screen_w * 0.9))
+                    height = min(height, int(screen_h * 0.85))
+                    x = (screen_w - width) // 2
+                    y = (screen_h - height) // 2
+                    panel_rect = pygame.Rect(x, y, width, height)
                 if panel_rect.collidepoint(mx, my) and options:
                     pad_y = getattr(game.menu.renderer, 'padding_y', 24)
                     line_h = getattr(game.menu.renderer, 'line_height', 36)
                     gap = getattr(game.menu.renderer, 'item_gap', 12)
                     block_h = line_h + gap
-                    inner_top = y + pad_y
+                    inner_top = panel_rect.top + pad_y
                     inner_y = my - inner_top
                     rows_h = len(options) * line_h + max(0, (len(options) - 1)) * gap
                     if 0 <= inner_y <= rows_h:
@@ -379,31 +389,38 @@ def handle_events(game):
                             logger.debug("[Menu Hover] pos=(%s,%s) -> idx=%s", mx, my, idx)
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mx, my = event.pos
+                # Si está activa la pantalla "Pulsa para comenzar", ignorar clicks
+                try:
+                    if getattr(game.menu, '_press_start_active', False) and getattr(game.menu, 'mode', '') == 'start':
+                        continue
+                except Exception:
+                    pass
                 # Calcular rect del panel usando el renderer y las opciones actuales
                 try:
                     options = game.menu.handler.get_options()
                 except Exception:
                     options = []
-                # Medidas dinámicas base del menú
-                try:
-                    width, height = game.menu.renderer._measure_menu(options)
-                except Exception:
+                # Usar el rect real dibujado por el renderer si está disponible
+                panel_rect = getattr(game.menu.renderer, 'last_menu_panel_rect', None)
+                if panel_rect is None:
                     # Fallback conservador
-                    width, height = 300, 200
-                # Limitar a la pantalla como en draw()
-                screen_w, screen_h = game.screen.get_size()
-                width = min(width, int(screen_w * 0.9))
-                height = min(height, int(screen_h * 0.85))
-                x = (screen_w - width) // 2
-                y = (screen_h - height) // 2
-                panel_rect = pygame.Rect(x, y, width, height)
+                    try:
+                        width, height = game.menu.renderer._measure_menu(options)
+                    except Exception:
+                        width, height = 300, 200
+                    screen_w, screen_h = game.screen.get_size()
+                    width = min(width, int(screen_w * 0.9))
+                    height = min(height, int(screen_h * 0.85))
+                    x = (screen_w - width) // 2
+                    y = (screen_h - height) // 2
+                    panel_rect = pygame.Rect(x, y, width, height)
                 if panel_rect.collidepoint(mx, my):
                     # Calcular índice clicado usando padding y alturas del renderer
                     pad_y = getattr(game.menu.renderer, 'padding_y', 24)
                     line_h = getattr(game.menu.renderer, 'line_height', 36)
                     gap = getattr(game.menu.renderer, 'item_gap', 12)
                     block_h = line_h + gap
-                    inner_top = y + pad_y
+                    inner_top = panel_rect.top + pad_y
                     inner_y = my - inner_top
                     total = len(options)
                     rows_h = (total or 1) * line_h + max(0, (total - 1)) * gap

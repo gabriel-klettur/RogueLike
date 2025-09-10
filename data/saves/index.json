@@ -1,5 +1,5 @@
 {
-  "current_path": "D:\\Python\\RogueLike\\data\\saves\\partida_2025-09-10_09-00-19.json",
+  "current_path": "D:\\Python\\RogueLike\\data\\saves\\partida_2025-09-10_13-08-46.json",
   "slots": [
     {
       "slot_id": "partida_2025-09-08_14-35-12",
@@ -33,6 +33,48 @@
       "slot_id": "partida_2025-09-10_10-20-09",
       "path": "D:\\Python\\RogueLike\\data\\saves\\partida_2025-09-10_10-20-09.json",
       "created_at": "2025-09-10T10:20:09",
+      "size_bytes": 5554,
+      "summary": null
+    },
+    {
+      "slot_id": "partida_2025-09-10_13-08-46",
+      "path": "D:\\Python\\RogueLike\\data\\saves\\partida_2025-09-10_13-08-46.json",
+      "created_at": "2025-09-10T13:26:26",
+      "size_bytes": 519,
+      "summary": null
+    },
+    {
+      "slot_id": "partida_2025-09-10_13-16-07",
+      "path": "D:\\Python\\RogueLike\\data\\saves\\partida_2025-09-10_13-16-07.json",
+      "created_at": "2025-09-10T13:16:07",
+      "size_bytes": 941,
+      "summary": null
+    },
+    {
+      "slot_id": "partida_2025-09-10_13-19-10",
+      "path": "D:\\Python\\RogueLike\\data\\saves\\partida_2025-09-10_13-19-10.json",
+      "created_at": "2025-09-10T13:19:10",
+      "size_bytes": 941,
+      "summary": null
+    },
+    {
+      "slot_id": "partida_2025-09-10_13-20-52",
+      "path": "D:\\Python\\RogueLike\\data\\saves\\partida_2025-09-10_13-20-52.json",
+      "created_at": "2025-09-10T13:20:52",
+      "size_bytes": 941,
+      "summary": null
+    },
+    {
+      "slot_id": "partida_2025-09-10_13-22-07",
+      "path": "D:\\Python\\RogueLike\\data\\saves\\partida_2025-09-10_13-22-07.json",
+      "created_at": "2025-09-10T13:22:07",
+      "size_bytes": 941,
+      "summary": null
+    },
+    {
+      "slot_id": "partida_2025-09-10_13-27-24",
+      "path": "D:\\Python\\RogueLike\\data\\saves\\partida_2025-09-10_13-27-24.json",
+      "created_at": "2025-09-10T13:27:24",
       "size_bytes": 941,
       "summary": null
     }
