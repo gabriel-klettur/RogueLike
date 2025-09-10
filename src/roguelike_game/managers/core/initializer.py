@@ -295,6 +295,18 @@ class GameInitializer:
         g = self.game
         g.input_config = InputConfig()
         g.menu = MenuManager(g, g.state, g.screen, g.input_config)
+        # Configurar carrusel de fondos del menú principal (pantalla de inicio)
+        try:
+            g.menu.set_backgrounds([
+                "assets/ui/intro/Intro_barbarian.png",
+                "assets/ui/intro/Intro_drwaft.png",
+                "assets/ui/intro/Intro_elven.png",
+                "assets/ui/intro/intro_mague.png",
+                "assets/ui/intro/Intro_valkyrie.png",
+            ], interval_s=2.0, transition_s=0.6, slide_px=24)
+        except Exception:
+            # No bloquear si no existe alguna ruta; el menú seguirá mostrando overlay sin fondo
+            pass
         # Arrancar en menú principal (start)
         try:
             g.menu.set_mode("start")

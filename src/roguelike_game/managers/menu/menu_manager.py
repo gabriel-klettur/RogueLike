@@ -24,7 +24,7 @@ class MenuManager:
     """
     Orquesta la lógica, entrada y renderizado del menú.
     """
-    def __init__(self, game, state, screen, input_config, font_size=36):
+    def __init__(self, game, state, screen, input_config, font_size=36, background_path: str | None = None):
         # Referencias básicas
         self.game = game
         self.state = state
@@ -69,6 +69,247 @@ class MenuManager:
         self._saves_select_all_edit: bool = False
         # Guardar configuración previa de key repeat para restaurar al salir de edición
         self._prev_key_repeat: tuple[int, int] | None = None
+
+        # Fondo opcional del menú (pantalla de inicio)
+        self.background_path: str | None = background_path
+        self._bg_surface: pygame.Surface | None = None
+        self._bg_scaled_cache: pygame.Surface | None = None
+        # Tamaño del surface escalado (w,h) y de la pantalla para la que fue calculado
+        self._bg_scaled_size: tuple[int, int] | None = None
+        self._bg_scaled_screen_size: tuple[int, int] | None = None
+        # Offset donde blitear el fondo escalado para centrarlo
+        self._bg_scaled_offset: tuple[int, int] = (0, 0)
+        # Modo de escala: 'cover' (rellena pantalla, puede recortar) o 'contain' (encaja, puede dejar bandas)
+        self._bg_scale_mode: str = "cover"
+
+        # Carrusel de fondos (varias imágenes)
+        self.backgrounds: list[str] = []
+        self._bg_surfaces_list: list[pygame.Surface] = []
+        self._bg_scaled_list: list[pygame.Surface] = []
+        self._bg_last_screen_size: tuple[int, int] | None = None
+        self._bg_index: int = 0
+        self._bg_prev_index: int | None = None
+        self._bg_last_switch_time: float = time.time()
+        self._bg_interval_s: float = 2.0
+        self._bg_transition_s: float = 0.6
+        self._bg_transition_start: float | None = None
+        self._bg_slide_px: int = 24
+
+    # ---- Configuración de fondo ----
+    def set_background(self, path: str | None, *, scale_mode: str | None = None):
+        """Configura la ruta del fondo del menú de inicio y reinicia la caché de escala."""
+        self.background_path = path
+        if scale_mode in ("cover", "contain"):
+            self._bg_scale_mode = scale_mode
+        self._bg_surface = None
+        self._bg_scaled_cache = None
+        self._bg_scaled_size = None
+        self._bg_scaled_screen_size = None
+        self._bg_scaled_offset = (0, 0)
+
+    def _ensure_background_loaded(self):
+        if self._bg_surface is None and self.background_path:
+            try:
+                surf = pygame.image.load(self.background_path)
+                # Si tiene alpha, mantenerla
+                try:
+                    surf = surf.convert_alpha()
+                except Exception:
+                    surf = surf.convert()
+                self._bg_surface = surf
+            except Exception as e:
+                logging.getLogger(__name__).warning("No se pudo cargar el fondo del menú: %s", e)
+                self._bg_surface = None
+
+    def _blit_background_if_any(self, screen):
+        """Dibuja el fondo manteniendo aspect ratio con modo 'cover' o 'contain'."""
+        if not self.background_path:
+            return
+        self._ensure_background_loaded()
+        if self._bg_surface is None:
+            return
+        sw, sh = screen.get_size()
+        iw, ih = self._bg_surface.get_size()
+        # Recalcular caché si cambia pantalla o no existe
+        if (
+            self._bg_scaled_cache is None
+            or self._bg_scaled_screen_size != (sw, sh)
+            or self._bg_scaled_size is None
+        ):
+            try:
+                if iw == 0 or ih == 0:
+                    return
+                if self._bg_scale_mode == "contain":
+                    scale = min(sw / iw, sh / ih)
+                else:
+                    scale = max(sw / iw, sh / ih)
+                new_w = max(1, int(iw * scale))
+                new_h = max(1, int(ih * scale))
+                self._bg_scaled_cache = pygame.transform.scale(self._bg_surface, (new_w, new_h))
+                self._bg_scaled_size = (new_w, new_h)
+                self._bg_scaled_screen_size = (sw, sh)
+                # Centrar; si es 'cover' y new_w/h > screen, quedará negativo (recorte natural)
+                off_x = (sw - new_w) // 2
+                off_y = (sh - new_h) // 2
+                self._bg_scaled_offset = (off_x, off_y)
+            except Exception:
+                # Fallback: usar la original si falla el escalado
+                self._bg_scaled_cache = self._bg_surface
+                self._bg_scaled_size = self._bg_surface.get_size()
+                self._bg_scaled_screen_size = (sw, sh)
+                off_x = (sw - self._bg_scaled_size[0]) // 2
+                off_y = (sh - self._bg_scaled_size[1]) // 2
+                self._bg_scaled_offset = (off_x, off_y)
+        surface_to_blit = self._bg_scaled_cache._surf if hasattr(self._bg_scaled_cache, '_surf') else self._bg_scaled_cache
+        screen.blit(surface_to_blit, self._bg_scaled_offset)
+
+    # ---- Carrusel de fondos ----
+    def set_backgrounds(self, paths: list[str], interval_s: float = 2.0, transition_s: float = 0.6, slide_px: int = 24, scale_mode: str = "cover"):
+        """Configura un carrusel de imágenes de fondo.
+        - paths: lista de rutas relativas/absolutas
+        - interval_s: segundos visibles por imagen antes de transicionar
+        - transition_s: duración del crossfade/slide
+        - slide_px: desplazamiento horizontal ligero durante la transición
+        """
+        self.backgrounds = [p for p in paths if p]
+        if scale_mode in ("cover", "contain"):
+            self._bg_scale_mode = scale_mode
+        self._bg_interval_s = max(0.1, float(interval_s))
+        self._bg_transition_s = max(0.0, float(transition_s))
+        self._bg_slide_px = int(slide_px)
+        self._bg_index = 0
+        self._bg_prev_index = None
+        self._bg_last_switch_time = time.time()
+        self._bg_transition_start = None
+        # Limpiar cachés
+        self._bg_surfaces_list = []
+        self._bg_scaled_list = []
+        self._bg_offsets_list = []
+        self._bg_last_screen_size = None
+        # Anular fondo único para que prevalezca el carrusel
+        if self.backgrounds:
+            self.background_path = None
+            self._bg_surface = None
+            self._bg_scaled_cache = None
+            self._bg_scaled_size = None
+            self._bg_scaled_screen_size = None
+            self._bg_scaled_offset = (0, 0)
+
+    def _reset_backgrounds_cache(self):
+        self._bg_surfaces_list = []
+        self._bg_scaled_list = []
+        self._bg_offsets_list = []
+        self._bg_last_screen_size = None
+
+    def _ensure_backgrounds_loaded_and_scaled(self, screen):
+        if not self.backgrounds:
+            return False
+        # Cargar originales si aún no
+        if not self._bg_surfaces_list:
+            for p in self.backgrounds:
+                try:
+                    surf = pygame.image.load(p)
+                    try:
+                        surf = surf.convert_alpha()
+                    except Exception:
+                        surf = surf.convert()
+                    self._bg_surfaces_list.append(surf)
+                except Exception as e:
+                    logging.getLogger(__name__).warning("No se pudo cargar fondo '%s': %s", p, e)
+                    # Placeholder: superficie negra
+                    ph = pygame.Surface(screen.get_size())
+                    ph.fill((0, 0, 0))
+                    self._bg_surfaces_list.append(ph)
+        # Escalar si cambia el tamaño de pantalla o aún no hay escalados
+        sw, sh = screen.get_size()
+        if (not self._bg_scaled_list) or (self._bg_last_screen_size != (sw, sh)):
+            self._bg_scaled_list = []
+            self._bg_offsets_list = []
+            for s in self._bg_surfaces_list:
+                try:
+                    iw, ih = s.get_size()
+                    if iw == 0 or ih == 0:
+                        iw, ih = 1, 1
+                    if self._bg_scale_mode == "contain":
+                        scale = min(sw / iw, sh / ih)
+                    else:
+                        scale = max(sw / iw, sh / ih)
+                    new_w = max(1, int(iw * scale))
+                    new_h = max(1, int(ih * scale))
+                    scaled = pygame.transform.scale(s, (new_w, new_h))
+                except Exception:
+                    scaled = s
+                    new_w, new_h = scaled.get_size()
+                off_x = (sw - new_w) // 2
+                off_y = (sh - new_h) // 2
+                self._bg_scaled_list.append(scaled)
+                self._bg_offsets_list.append((off_x, off_y))
+            self._bg_last_screen_size = (sw, sh)
+        return True
+
+    def _update_background_cycle_state(self):
+        if not self.backgrounds:
+            return
+        now = time.time()
+        # Si hay transición en curso, finalizar si terminó
+        if self._bg_transition_start is not None:
+            t = now - self._bg_transition_start
+            if t >= self._bg_transition_s:
+                # Fin de transición
+                self._bg_prev_index = None
+                self._bg_transition_start = None
+                self._bg_last_switch_time = now
+            return
+        # Iniciar transición si venció el intervalo
+        if (now - self._bg_last_switch_time) >= self._bg_interval_s and len(self.backgrounds) > 1:
+            self._bg_prev_index = self._bg_index
+            self._bg_index = (self._bg_index + 1) % len(self.backgrounds)
+            self._bg_transition_start = now
+
+    def _blit_backgrounds(self, screen):
+        """Dibuja el fondo (carrusel si está configurado, si no fondo único)."""
+        if self.backgrounds:
+            if not self._ensure_backgrounds_loaded_and_scaled(screen):
+                return
+            self._update_background_cycle_state()
+            # Si no hay transición, dibujar imagen actual centrada
+            cur = self._bg_scaled_list[self._bg_index]
+            cur_off = self._bg_offsets_list[self._bg_index] if len(self._bg_offsets_list) > self._bg_index else (0, 0)
+            if self._bg_transition_start is None or self._bg_prev_index is None or self._bg_transition_s <= 0.0:
+                surf = cur._surf if hasattr(cur, '_surf') else cur
+                screen.blit(surf, cur_off)
+                return
+            # Transición cruzada con pequeño slide
+            prev = self._bg_scaled_list[self._bg_prev_index]
+            prev_off = self._bg_offsets_list[self._bg_prev_index] if len(self._bg_offsets_list) > self._bg_prev_index else (0, 0)
+            now = time.time()
+            t = (now - self._bg_transition_start) / max(1e-6, self._bg_transition_s)
+            t = max(0.0, min(1.0, t))
+            alpha_prev = int(255 * (1.0 - t))
+            alpha_next = int(255 * t)
+            dx_prev = int(-self._bg_slide_px * t)
+            dx_next = int(self._bg_slide_px * (1.0 - t))
+            try:
+                prev.set_alpha(alpha_prev)
+                surf_prev = prev._surf if hasattr(prev, '_surf') else prev
+                screen.blit(surf_prev, (prev_off[0] + dx_prev, prev_off[1]))
+            finally:
+                try:
+                    prev.set_alpha(None)
+                except Exception:
+                    pass
+            try:
+                cur.set_alpha(alpha_next)
+                surf_cur = cur._surf if hasattr(cur, '_surf') else cur
+                screen.blit(surf_cur, (cur_off[0] + dx_next, cur_off[1]))
+            finally:
+                try:
+                    cur.set_alpha(None)
+                except Exception:
+                    pass
+            return
+        # Fallback: fondo único
+        self._blit_background_if_any(screen)
 
     def handle_input(self, event):
         """
@@ -369,6 +610,9 @@ class MenuManager:
         """
         Dibuja el menú y devuelve el rect para dirty rects.
         """
+        # Fondo (único o carrusel) para menú de inicio (y lista de partidas) antes del overlay
+        if self.mode in ("start", "load_list"):
+            self._blit_backgrounds(screen)
         # Vista especial: lista de partidas
         if self.mode == "load_list":
             # Recalcular layout fijo si cambia tamaño de ventana
