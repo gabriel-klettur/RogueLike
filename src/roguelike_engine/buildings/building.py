@@ -293,6 +293,16 @@ class Building:
             parts.append(part)
         return parts
 
+    def resize(self, new_width: int, new_height: int) -> None:
+        """
+        Redimensiona la imagen del edificio delegando en el modelo y refresca
+        los caches de vista/controlador para que el cambio se refleje de inmediato.
+        """
+        self.model.resize(new_width, new_height)
+        if self.controller:
+            # Limpiar caches de la vista y forzar re-escalado en próximo render
+            self.controller.update_on_camera_change()
+
     def reset_to_original_size(self):
         """
         Restaura el tamaño original que tenía la imagen al cargarse. Se delega en el modelo.
