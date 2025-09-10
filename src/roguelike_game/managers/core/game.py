@@ -93,17 +93,16 @@ class Game:
             self.state.spells_editor_visible = bool(getattr(self, 'spells_editor', None) and self.spells_editor.model.visible)
         except Exception:
             self.state.spells_editor_visible = False
-        # Propaga visibilidad del FSM Editor (usa config.DEBUG_ENTITIES como flag global del editor FSM)
-        try:
-            import roguelike_engine.config.config as config
-            self.state.fsm_editor_visible = bool(getattr(config, 'DEBUG_ENTITIES', False))
-        except Exception:
-            self.state.fsm_editor_visible = False
         # Propaga visibilidad del selector de clases para ocultar minimapa/leyendas cuando esté activo
         try:
             self.state.class_selector_visible = bool(getattr(self, 'class_selector', None) and self.class_selector.show)
         except Exception:
             self.state.class_selector_visible = False
+        # Suprimir HUD textual (HP/MP) cuando UI de menú o selector está activa
+        try:
+            self.ecs.ecs_world.suppress_hud = bool((self.menu and getattr(self.menu, 'show_menu', False)) or getattr(self.state, 'class_selector_visible', False))
+        except Exception:
+            pass
         self.renderer.render_game(
             self.state,
             self.screen,

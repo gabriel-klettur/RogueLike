@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "player": {
+    "level": "global_map",
+    "pos": [
+      74,
+      63
+    ]
+  },
+  "npcs": {},
+  "levels": {
+    "global_map": {
+      "player_pos": [
+        74,
+        63
+      ],
+      "npc_states": {}
+    }
+  },
+  "player_inventory": {
+    "player_id": "player",
+    "capacity": 20,
+    "slots": [
+      {
+        "item": "gold",
+        "quantity": 10
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "npc_inventories": {},
+  "meta": {
+    "name": "partida_2025-09-10_17-17-50",
+    "created_at": "2025-09-10T17:17:50",
+    "last_played": "2025-09-10T17:22:37",
+    "player": {
+      "xp": 0,
+      "level": 0
+    },
+    "items_summary": {
+      "stacks": 1,
+      "top_items": [
+        "gold"
+      ]
+    }
+  }
+}

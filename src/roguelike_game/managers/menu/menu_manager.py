@@ -879,8 +879,7 @@ class MenuManager:
         if selected == "Guardar partida":
             self._action_save()
         elif selected in ("Nuevo juego", "Nueva Partida"):
-            # Nueva partida -> salir del menú; detener música
-            self.stop_music(fade_ms=500)
+            # Nueva partida -> no detener música aún; continuará durante selección de clase
             self._action_new_game()
         elif selected == "Cargar juego":
             # Cambiar a submenú de selección de partidas
@@ -910,9 +909,9 @@ class MenuManager:
             logger.info("Partida guardada correctamente.")
         except Exception as e:
             logger.warning("Error al guardar partida: %s", e)
-
+    
     def _action_new_game(self):
-        """Inicia una partida nueva en memoria (sin borrar archivos)."""
+        """Inicia una partida nueva en memoria (sin borrar archivos) y abre el selector de personaje."""
         g = self.game
         try:
             # 0) Resolución de nivel base
@@ -1054,6 +1053,23 @@ class MenuManager:
             self.show_menu = False
             # Asegurar modo pausa en siguientes aperturas
             self.mode = "pause"
+            # 4b) Abrir selector de personaje inmediatamente con fondo específico
+            try:
+                if hasattr(g, 'class_selector') and g.class_selector:
+                    # Configurar background solicitado por el usuario
+                    g.class_selector.set_background(
+                        "assets/ui/character_selection/taberna.png",
+                        scale_mode="cover",
+                    )
+                    g.class_selector.show = True
+                    # Señalizar en el estado para ocultar HUD/minimapa mientras está activo
+                    try:
+                        g.state.class_selector_visible = True
+                    except Exception:
+                        pass
+            except Exception:
+                # No bloquear flujo si el selector no está disponible
+                pass
             # Guardado inicial para crear archivo del slot
             try:
                 g.shutdown_manager.shutdown()

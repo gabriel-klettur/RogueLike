@@ -69,6 +69,9 @@ class HUDStatsRenderSystem:
 
     def update(self, world, screen: pygame.Surface, camera):
         try:
+            # No mostrar HUD cuando UI de menú/selector esté activa
+            if bool(getattr(world, 'suppress_hud', False)):
+                return
             player_eid = self._find_player_eid(world)
             if player_eid is None:
                 return

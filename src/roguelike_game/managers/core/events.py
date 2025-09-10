@@ -446,11 +446,24 @@ def handle_events(game):
             result = game.class_selector.handle_input(event)
             if result:
                 game.player_manager.change_class(result)
+                # Al elegir clase, detener música del menú
+                try:
+                    if hasattr(game, 'menu') and game.menu:
+                        game.menu.stop_music(fade_ms=500)
+                except Exception:
+                    pass
         # Reflect current visibility after handling inputs (may have closed)
         try:
             game.state.class_selector_open = bool(getattr(game.class_selector, 'show', False))
         except Exception:
             pass
+        # Si el selector se ha cerrado (por ESC u otra vía), detener música del menú
+        if not getattr(game.class_selector, 'show', False):
+            try:
+                if hasattr(game, 'menu') and game.menu:
+                    game.menu.stop_music(fade_ms=500)
+            except Exception:
+                pass
         return
 
     # Debug overlay ya pudo haber consumido algunos eventos arriba.

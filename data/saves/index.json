@@ -77,6 +77,27 @@
       "created_at": "2025-09-10T13:27:24",
       "size_bytes": 941,
       "summary": null
+    },
+    {
+      "slot_id": "partida_2025-09-10_17-17-50",
+      "path": "D:\\Python\\RogueLike\\data\\saves\\partida_2025-09-10_17-17-50.json",
+      "created_at": "2025-09-10T17:17:50",
+      "size_bytes": 941,
+      "summary": null
+    },
+    {
+      "slot_id": "partida_2025-09-10_17-24-18",
+      "path": "D:\\Python\\RogueLike\\data\\saves\\partida_2025-09-10_17-24-18.json",
+      "created_at": "2025-09-10T17:24:18",
+      "size_bytes": 941,
+      "summary": null
+    },
+    {
+      "slot_id": "partida_2025-09-10_17-43-05",
+      "path": "D:\\Python\\RogueLike\\data\\saves\\partida_2025-09-10_17-43-05.json",
+      "created_at": "2025-09-10T17:43:05",
+      "size_bytes": 941,
+      "summary": null
     }
   ]
 }
