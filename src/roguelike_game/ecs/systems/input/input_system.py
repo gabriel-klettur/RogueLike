@@ -88,6 +88,8 @@ class InputSystem:
                 for base in ('fireball','laser_beam','dash'):
                     self.prev_action_slots[(eid, f'{base}_kb_a')] = False
                     self.prev_action_slots[(eid, f'{base}_kb_b')] = False
+                # Resetear memorias de ratón de hechizos mapeados por mouse (p.ej. slash)
+                self.prev_mouse[(eid, 'spell_slash')] = False
             return
 
         # Suppress game clicks when Item Editor is open
@@ -128,6 +130,8 @@ class InputSystem:
                 for base in ('fireball','laser_beam','dash'):
                     self.prev_action_slots[(eid, f'{base}_kb_a')] = False
                     self.prev_action_slots[(eid, f'{base}_kb_b')] = False
+                # Resetear memorias de ratón de hechizos mapeados por mouse (p.ej. slash)
+                self.prev_mouse[(eid, 'spell_slash')] = False
             return
 
         # Suppress ALL gameplay input when Class Selector is open
@@ -459,6 +463,8 @@ class InputSystem:
                 # Reset mouse action edges
                 self.prev_mouse[(eid, 'fireball')] = False
                 self.prev_mouse[(eid, 'dash')] = False
+                # Resetear memorias de ratón de hechizos mapeados por mouse (p.ej. slash)
+                self.prev_mouse[(eid, 'spell_slash')] = False
                 # Reset keyboard slot edges
                 for base in ('fireball','laser_beam','dash'):
                     self.prev_action_slots[(eid, f'{base}_kb_a')] = False
@@ -544,3 +550,15 @@ class InputSystem:
                     logger.debug(f"[DEBUG][{time.time():.3f}] eid={eid} mouse-button({dash_btn}) -> dash")
                     world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='dash')
                 self.prev_mouse[(eid, 'dash')] = curr_dash_mouse
+
+                # --- Hechizos activados por ratón (genérico): mouse_spell_<name> ---
+                # Permite mapear, por ejemplo, 'mouse_spell_slash': 'M_RIGHT'
+                for name in ['lightball','slash','healing_aura','darkball','iceball','lightning','arcane_flame','firework_launch','smoke','smoke_emitter','sphere_magic_shield','teleport']:
+                    btn = self.config.get_mouse_button_for_binding(f"mouse_spell_{name}")
+                    if isinstance(btn, int):
+                        curr_spell_mouse = bool(mouse_pressed[btn]) and not ui_blocked
+                        prev_spell_mouse = self.prev_mouse.get((eid, f'spell_{name}'), False)
+                        edge = (curr_spell_mouse and not prev_spell_mouse)
+                        if eid in world.components.get('PlayerTagComponent', {}) and edge:
+                            world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell=name)
+                        self.prev_mouse[(eid, f'spell_{name}')] = curr_spell_mouse
