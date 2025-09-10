@@ -316,7 +316,7 @@ def handle_events(game):
     for event in events:
         if game.console_events.process_event(event):
             return
-    # ESC: si el selector de clase está abierto, ciérralo; si no, toggle menú
+    # ESC: si el selector de clase está abierto, ciérralo; si no, comportamiento según modo de menú
     for event in events:
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
             if hasattr(game, 'class_selector') and getattr(game.class_selector, 'show', False):
@@ -327,6 +327,22 @@ def handle_events(game):
                 except Exception:
                     pass
                 return
+            # Si estamos en el menú principal (start), no debemos entrar al juego con ESC
+            try:
+                mode = getattr(game.menu, 'mode', '')
+            except Exception:
+                mode = ''
+            if mode == 'start':
+                # Ignorar ESC en el menú principal
+                return
+            if mode == 'load_list':
+                # En lista de partidas, ESC vuelve al menú principal
+                try:
+                    game.menu.set_mode('start')
+                except Exception:
+                    game.menu.mode = 'start'
+                return
+            # En otros modos (pausa), alternar visibilidad del menú
             game.menu.show_menu = not game.menu.show_menu
             return
 
@@ -445,7 +461,12 @@ def handle_events(game):
         for event in events:
             result = game.class_selector.handle_input(event)
             if result:
-                game.player_manager.change_class(result)
+                # Inicializar nuevo juego solo tras elegir la clase
+                try:
+                    if hasattr(game, 'menu') and game.menu and hasattr(game.menu, 'finalize_new_game_with_class'):
+                        game.menu.finalize_new_game_with_class(result)
+                except Exception:
+                    pass
                 # Al elegir clase, detener música del menú
                 try:
                     if hasattr(game, 'menu') and game.menu:

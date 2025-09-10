@@ -9,10 +9,11 @@ class MenuHandler:
     """
     Gestiona las opciones del menú, la navegación y la ejecución de acciones.
     """
-    def __init__(self, state, input_config, configurator):
+    def __init__(self, state, input_config, configurator, options_configurator=None):
         self.state = state
         self.input_config = input_config
         self.configurator = configurator
+        self.options_configurator = options_configurator
         self.selected = 0
         self.mode = "pause"  # 'start' | 'pause'
 
@@ -60,7 +61,18 @@ class MenuHandler:
         if selected == "Salir":
             self.state.running = False
         elif selected in ("Configurar Botones", "Opciones"):
-            self.configurator.configure()
+            # Limpiar eventos que dispararon la entrada (ENTER/click) para evitar
+            # que el primer frame del submenú consuma esa misma tecla/click.
+            try:
+                pygame.event.clear([pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP])
+            except Exception:
+                pygame.event.clear()
+            # Si existe un configurador de opciones (Inputs/Sounds), úsalo.
+            if self.options_configurator is not None:
+                self.options_configurator.configure()
+            else:
+                # Fallback: configurador clásico de inputs
+                self.configurator.configure()
             # Borrar eventos pendientes (p.ej. ESC) para no alternar menú principal
             pygame.event.clear(pygame.KEYDOWN)
         elif selected in ("Modo multijugador", "Modo local"):

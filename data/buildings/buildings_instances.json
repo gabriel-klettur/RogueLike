@@ -1523,11 +1523,11 @@
         }
     },
     {
-        "id": 84,
+        "id": 141,
         "template_id": 69,
         "zone": "Forest",
-        "rel_x": 157,
-        "rel_y": 724,
+        "rel_x": 1072,
+        "rel_y": 929,
         "overrides": {
             "scale": [
                 204,

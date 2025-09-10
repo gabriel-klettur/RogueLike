@@ -13,6 +13,7 @@ from roguelike_engine.world.world import WorldManager
 from roguelike_engine.world.world_config import WORLD_CONFIG
 
 from roguelike_game.config.input_config import InputConfig
+from roguelike_game.config.audio_config import AudioConfig
 from roguelike_game.managers.core.state import GameState
 from roguelike_game.managers.core.render_manager import RendererManager
 from roguelike_game.managers.map import MapManager
@@ -41,6 +42,7 @@ from roguelike_engine.minimap import Minimap
 from roguelike_engine.z_layer.state import ZState
 from roguelike_game.managers.ecs import ECSManager
 from roguelike_game.managers.items.loader import ItemsLoader
+from roguelike_game.managers.core.audio_manager import AudioManager
 
 import logging
 logger = logging.getLogger(__name__)
@@ -294,7 +296,15 @@ class GameInitializer:
     def _init_menu(self):
         g = self.game
         g.input_config = InputConfig()
-        g.menu = MenuManager(g, g.state, g.screen, g.input_config)
+        # Audio config + manager
+        g.audio_config = AudioConfig()
+        g.audio_manager = AudioManager(g.audio_config)
+        g.menu = MenuManager(
+            g, g.state, g.screen, g.input_config,
+            audio_config=g.audio_config,
+            audio_manager=g.audio_manager,
+            font_size=18,
+        )
         # Configurar carrusel de fondos del menú principal (pantalla de inicio)
         try:
             g.menu.set_backgrounds([
@@ -310,7 +320,12 @@ class GameInitializer:
         # Configurar música de intro (se reproducirá cuando el menú esté visible)
         try:
             # Usar el archivo MP3 solicitado
-            g.menu.set_music("assets/audio/music/intro_theme.mp3", loop=True, volume=0.6)
+            # Volumen desde audio_config
+            try:
+                mv = float(g.audio_config.get('music'))
+            except Exception:
+                mv = 0.6
+            g.menu.set_music("assets/audio/music/intro_theme.mp3", loop=True, volume=mv)
         except Exception:
             # Silencioso si falla audio o no existe el archivo
             pass

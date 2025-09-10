@@ -14,6 +14,7 @@ from roguelike_game.ecs.systems.core.npc_respawn_system import NpcRespawnSystem
 from .menu_handler import MenuHandler
 from roguelike_ui.widgets.menu_renderer import MenuRenderer
 from roguelike_ui.widgets.menu_configurator import MenuConfigurator
+from roguelike_ui.widgets.options_configurator import OptionsConfigurator
 from roguelike_engine.world.models import WorldSnapshot
 from roguelike_game.ecs.components.experience_component import ExperienceComponent
 
@@ -24,17 +25,39 @@ class MenuManager:
     """
     Orquesta la lógica, entrada y renderizado del menú.
     """
-    def __init__(self, game, state, screen, input_config, font_size=36, background_path: str | None = None):
+    def __init__(self, game, state, screen, input_config, *, audio_config=None, audio_manager=None, font_size=36, background_path: str | None = None):
         # Referencias básicas
         self.game = game
         self.state = state
         self.screen = screen
         self.input_config = input_config
+        # Audio (config + manager para aplicar cambios en vivo)
+        self.audio_config = audio_config
+        self.audio_manager = audio_manager
 
         # Componentes del menú
         self.renderer = MenuRenderer(font_size)
-        self.configurator = MenuConfigurator(input_config, screen, self.renderer.font)
-        self.handler = MenuHandler(state, input_config, self.configurator)
+        self.configurator = MenuConfigurator(
+            input_config,
+            screen,
+            self.renderer.font,
+            underlay_provider=self._underlay_for_options,
+            base_font_size=self.renderer.font_size,
+        )
+        # Submenú de opciones (Inputs / Sounds)
+        try:
+            self.options_configurator = OptionsConfigurator(
+                screen=screen,
+                font=self.renderer.font,
+                input_configurator=self.configurator,
+                audio_config=self.audio_config,
+                on_audio_change=self._on_audio_change,
+                underlay_provider=self._underlay_for_options,
+                base_font_size=self.renderer.font_size,
+            )
+        except Exception:
+            self.options_configurator = None
+        self.handler = MenuHandler(state, input_config, self.configurator, options_configurator=self.options_configurator)
 
         # Flag para mostrar/ocultar menú y modo (start|pause|load_list)
         self.show_menu = False
@@ -98,7 +121,13 @@ class MenuManager:
         # Música del menú
         self.music_path: str | None = None
         self._music_loop: bool = True
+        # Volumen de música del menú (inicial desde audio_config si existe)
         self._music_volume: float = 0.6
+        try:
+            if self.audio_config is not None:
+                self._music_volume = float(self.audio_config.get('music'))
+        except Exception:
+            pass
         self._music_active: bool = False
 
         # Logo del juego (para menú de inicio)
@@ -377,6 +406,56 @@ class MenuManager:
                     pygame.mixer.music.stop()
         finally:
             self._music_active = False
+
+    # ---- Audio live update ----
+    def _on_audio_change(self, kind: str, value: float):
+        """Callback para aplicar cambios de volumen desde el configurador de sonidos."""
+        v = max(0.0, min(1.0, float(value)))
+        if kind == 'music':
+            self._music_volume = v
+            try:
+                pygame.mixer.music.set_volume(v)
+            except Exception:
+                pass
+            try:
+                if self.audio_manager is not None:
+                    self.audio_manager.set_music_volume(v)
+            except Exception:
+                pass
+        elif kind == 'sfx':
+            try:
+                if self.audio_manager is not None:
+                    self.audio_manager.set_sfx_volume(v)
+            except Exception:
+                pass
+        elif kind == 'ambient':
+            try:
+                if self.audio_manager is not None:
+                    self.audio_manager.set_ambient_volume(v)
+            except Exception:
+                pass
+
+    # ---- Underlay para submenús (Opciones / Sounds) ----
+    def _underlay_for_options(self, screen) -> int | None:
+        """
+        Dibuja el fondo/Logo si estamos en el menú de inicio y devuelve un panel_top_min
+        (Y mínima) para que el panel del submenú no solape el logo.
+        En modo pausa no hace nada (se mantiene el juego de fondo transparente).
+        """
+        try:
+            if self.mode in ("start", "load_list"):
+                # Fondo dinámico (carrusel)
+                self._blit_backgrounds(screen)
+                # Logo si configurado
+                if self.logo_path:
+                    logo_layout = self._compute_logo_layout(screen)
+                    if logo_layout is not None:
+                        surf, pos, bottom = logo_layout
+                        screen.blit(surf, pos)
+                        return bottom + self._logo_gap_px
+        except Exception:
+            pass
+        return None
 
     # ---- Logo ----
     def set_logo(self, path: str | None, *, max_width_ratio: float = 0.6, max_height_ratio: float = 0.22, gap_px: int = 16, initial_scale: float = 0.5, top_ratio: float = 0.08):
@@ -885,8 +964,16 @@ class MenuManager:
             # Cambiar a submenú de selección de partidas
             self._enter_load_list()
         elif selected == "Opciones":
-            # Abrir configurador de botones (opciones)
-            self.configurator.configure()
+            # Abrir submenú de Opciones (Inputs/Sounds) en el menú principal
+            try:
+                pygame.event.clear([pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP])
+            except Exception:
+                pygame.event.clear()
+            if getattr(self, 'options_configurator', None) is not None:
+                self.options_configurator.configure()
+            else:
+                # Fallback al configurador de inputs clásico si no hay OptionsConfigurator
+                self.configurator.configure()
         else:
             # Delegar en handler para opciones existentes (modo, salir, configurar botones)
             self.handler.execute_option(selected)
@@ -911,7 +998,29 @@ class MenuManager:
             logger.warning("Error al guardar partida: %s", e)
     
     def _action_new_game(self):
-        """Inicia una partida nueva en memoria (sin borrar archivos) y abre el selector de personaje."""
+        """Abrir selector de personaje SIN inicializar mundo ni spawnear jugador."""
+        g = self.game
+        try:
+            # Cerrar menú y mostrar selector de clase sobre fondo específico
+            self.show_menu = False
+            self.mode = "pause"
+            if hasattr(g, 'class_selector') and g.class_selector:
+                g.class_selector.set_background(
+                    "assets/ui/character_selection/taberna.png",
+                    scale_mode="cover",
+                )
+                g.class_selector.show = True
+                # Flag para ocultar HUD/minimapa mientras esté activo
+                try:
+                    g.state.class_selector_visible = True
+                except Exception:
+                    pass
+            logger.info("Selector de clase abierto (inicialización diferida hasta elegir clase)")
+        except Exception as e:
+            logger.error("Error al abrir selector de clase: %s", e)
+
+    def finalize_new_game_with_class(self, class_key: str):
+        """Inicializa el mundo y el jugador tras elegir la clase en el selector."""
         g = self.game
         try:
             # 0) Resolución de nivel base
@@ -920,10 +1029,10 @@ class MenuManager:
             except Exception:
                 level_name = None
             if not level_name:
-                # Si no está resuelto aún, intentar desde player en pending
-                pdata = getattr(g, 'world', None)
-                # Fallback al nombre actual del mapa si no hay nada
-                level_name = g.map.name
+                try:
+                    level_name = g.map.name
+                except Exception:
+                    level_name = None
             # 1) Limpiar estado persistente del mundo (NPCs, inventarios)
             try:
                 g.world.npc_memory = {}
@@ -931,7 +1040,6 @@ class MenuManager:
                 g.world.player_inventory = None
             except Exception:
                 pass
-
             # 2) Reset de niveles cargados y diferidos
             try:
                 if hasattr(g.world, 'maps'):
@@ -941,10 +1049,8 @@ class MenuManager:
                 g.world.current_level = None
             except Exception:
                 pass
-
             # 3) Crear mapa limpio y sincronizar ECS
             try:
-                # Saltar colocación de spawners SOLO este frame
                 try:
                     setattr(g.ecs.ecs_world, 'skip_spawners_on_first_load', True)
                 except Exception:
@@ -955,8 +1061,7 @@ class MenuManager:
                 g.world.current_level = level_name
                 if hasattr(g.map, '_local_state'):
                     g.map._local_state["player_pos"] = None
-
-                # Sincronizar ECS con el nuevo mapa y limpiar entidades previas (NPCs/Spawners/Requests)
+                # Sincronizar ECS y limpiar entidades previas
                 try:
                     ecs = g.ecs.ecs_world
                     try:
@@ -971,7 +1076,6 @@ class MenuManager:
                         ecs.remove_entity(eid)
                     for eid in list(comps.get('SpawnRequest', {}).keys()):
                         ecs.remove_entity(eid)
-                    # Reset de flags internos para que los sistemas apliquen en el siguiente frame
                     try:
                         for sys in getattr(ecs, 'update_systems', []) or []:
                             if isinstance(sys, SpawnerPlacementSystem):
@@ -990,9 +1094,8 @@ class MenuManager:
                         pass
                 except Exception:
                     pass
-            except Exception as e:
+            except Exception:
                 pass
-
             # 4) Posicionar jugador en el centro del lobby
             try:
                 off_x, off_y = g.map.lobby_offset
@@ -1002,7 +1105,6 @@ class MenuManager:
             except Exception:
                 tx, ty = 0, 0
             g.map.spawn_player((tx, ty))
-            # Convertir a píxeles y mover componente Position
             px, py = g.map.get_spawn_pixel((tx, ty))
             try:
                 eid = g.ecs.ecs_world.player_entity
@@ -1010,19 +1112,23 @@ class MenuManager:
                 pos.x, pos.y = px, py
             except Exception:
                 pass
-            # 3) Resetear inventario del jugador a 10 monedas de oro
+            # 4a) Aplicar clase elegida al jugador (tras existir la entidad)
+            try:
+                g.player_manager.change_class(class_key)
+            except Exception:
+                pass
+            # 5) Inventario inicial
             try:
                 from roguelike_game.ecs.components.inventory_component import InventoryComponent
                 eid = g.ecs.ecs_world.player_entity
                 inv = InventoryComponent(capacity=20, player_id="player")
                 inv.add("gold", 10)
                 g.ecs.ecs_world.components.setdefault("InventoryComponent", {})[eid] = inv
-                # Reflejar en WorldManager para persistencia inmediata en próximos guardados
                 if hasattr(g, 'world'):
                     g.world.player_inventory = inv.serialize()
             except Exception as e:
                 logger.warning("No se pudo inicializar inventario de nuevo juego: %s", e)
-            # 3c) Resetear experiencia/nivel del jugador a 0
+            # 6) XP/Nivel
             try:
                 eid = g.ecs.ecs_world.player_entity
                 xp_comp = g.ecs.ecs_world.components.setdefault("ExperienceComponent", {}).get(eid)
@@ -1031,17 +1137,15 @@ class MenuManager:
                     g.ecs.ecs_world.components.setdefault("ExperienceComponent", {})[eid] = xp_comp
                 xp_comp.xp = 0
                 xp_comp.level = 0
-                # xp_to_next_level se mantiene por defecto
             except Exception as e:
                 logger.warning("No se pudo reiniciar experiencia de nuevo juego: %s", e)
-            # 3b) Establecer un nuevo slot de guardado con nombre 'partida_YYYY-MM-DD_HH-MM-SS.json'
+            # 7) Crear slot de guardado
             try:
                 ts = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
                 save_dir: Path = g.world.config.save_dir
                 save_dir.mkdir(parents=True, exist_ok=True)
                 slot_path = save_dir / f"partida_{ts}.json"
                 g.world.current_save_path = str(slot_path)
-                # Preparar metadatos iniciales
                 g.world.save_metadata = {
                     "name": f"partida_{ts}",
                     "created_at": datetime.now().isoformat(timespec='seconds'),
@@ -1049,35 +1153,21 @@ class MenuManager:
                 }
             except Exception as e:
                 logger.warning("No se pudo preparar slot de guardado: %s", e)
-            # 4) Salir al juego
-            self.show_menu = False
-            # Asegurar modo pausa en siguientes aperturas
-            self.mode = "pause"
-            # 4b) Abrir selector de personaje inmediatamente con fondo específico
+            # 8) Cerrar selector y limpiar flags
             try:
                 if hasattr(g, 'class_selector') and g.class_selector:
-                    # Configurar background solicitado por el usuario
-                    g.class_selector.set_background(
-                        "assets/ui/character_selection/taberna.png",
-                        scale_mode="cover",
-                    )
-                    g.class_selector.show = True
-                    # Señalizar en el estado para ocultar HUD/minimapa mientras está activo
-                    try:
-                        g.state.class_selector_visible = True
-                    except Exception:
-                        pass
+                    g.class_selector.show = False
+                g.state.class_selector_visible = False
             except Exception:
-                # No bloquear flujo si el selector no está disponible
                 pass
-            # Guardado inicial para crear archivo del slot
+            # 9) Guardado inicial del slot
             try:
                 g.shutdown_manager.shutdown()
             except Exception:
                 pass
-            logger.info("Nuevo juego iniciado (en memoria)")
+            logger.info("Nuevo juego inicializado tras selección de clase: %s", class_key)
         except Exception as e:
-            logger.error("Error al iniciar nuevo juego: %s", e)
+            logger.error("Error al finalizar nuevo juego: %s", e)
 
     def _action_load_game(self):
         """Carga partida desde el slot actual (modo legacy). Preferir _enter_load_list."""
