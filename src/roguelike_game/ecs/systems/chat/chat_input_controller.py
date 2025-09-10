@@ -1,6 +1,8 @@
 import pygame
 from roguelike_ui.widgets.text_input import TextInput
 from roguelike_game.ecs.systems.chat.chat_bubble_utils import push_bubble
+from roguelike_game.chat.service.memory_store import MemoryStore
+from pathlib import Path
 
 class ChatInputController:
     """
@@ -35,6 +37,8 @@ class ChatInputController:
             if ev.type == pygame.MOUSEBUTTONDOWN and getattr(ev, 'button', None) == 1:
                 try:
                     close_rect = getattr(world.state, 'chat_close_rect', None)
+                    lang_rect = getattr(world.state, 'chat_lang_rect', None)
+                    dd_rects = list(getattr(world.state, 'chat_lang_dropdown_rects', []) or [])
                     if close_rect is not None:
                         mx, my = ev.pos
                         if close_rect.collidepoint(mx, my):
@@ -46,6 +50,65 @@ class ChatInputController:
                             consumed_any = True
                             # No seguir procesando el evento en el TextInput
                             continue
+                        # Toggle del dropdown de idioma
+                        if lang_rect is not None and lang_rect.collidepoint(mx, my):
+                            cur = bool(getattr(world.state, 'chat_lang_dropdown_open', False))
+                            world.state.chat_lang_dropdown_open = not cur
+                            consumed_any = True
+                            continue
+                        # Selección de idioma en el dropdown
+                        if dd_rects:
+                            for rect, label, code in dd_rects:
+                                if rect.collidepoint(mx, my):
+                                    # Aplicar preferencia en estado y persistir por NPC
+                                    try:
+                                        world.state.chat_lang_preference = code
+                                        target = getattr(world.state, 'chat_target_eid', None)
+                                        if target is not None:
+                                            # Resolver raíz de repo buscando data/config/chat.json
+                                            def _find_repo_root() -> Path:
+                                                here = Path(__file__).resolve()
+                                                candidates = list(here.parents)
+                                                try:
+                                                    cwd = Path.cwd().resolve()
+                                                    candidates.append(cwd)
+                                                    candidates.extend(list(cwd.parents))
+                                                except Exception:
+                                                    pass
+                                                for p in candidates:
+                                                    if (p / 'data' / 'config' / 'chat.json').exists():
+                                                        return p
+                                                # Fallback
+                                                return here.parents[5] if len(here.parents) > 5 else Path('.')
+                                            root = _find_repo_root()
+                                            ms = MemoryStore(root)
+                                            ms.set_language(str(target), code)
+                                    except Exception:
+                                        pass
+                                    # Cerrar dropdown
+                                    world.state.chat_lang_dropdown_open = False
+                                    consumed_any = True
+                                    # Feedback opcional mínimo en burbuja sobre jugador
+                                    try:
+                                        player_eid = getattr(world, 'player_entity', None)
+                                        if player_eid is not None:
+                                            txt = f"Idioma del chat: {label}"
+                                            push_bubble(world, player_eid, txt, color=(220, 220, 255), ttl_ms=1600)
+                                    except Exception:
+                                        pass
+                                    break
+                        # Si el dropdown está abierto y se clicó fuera de botón u opciones, cerrarlo
+                        if bool(getattr(world.state, 'chat_lang_dropdown_open', False)):
+                            inside_any = False
+                            if lang_rect is not None and lang_rect.collidepoint(mx, my):
+                                inside_any = True
+                            else:
+                                for rect, _, _ in dd_rects:
+                                    if rect.collidepoint(mx, my):
+                                        inside_any = True
+                                        break
+                            if not inside_any:
+                                world.state.chat_lang_dropdown_open = False
                 except Exception:
                     pass
             # Cerrar con ESC
@@ -106,5 +169,14 @@ class ChatInputController:
         self._commits = []
         return commits
 
-    def draw_input(self, surface: pygame.Surface, x: int, y: int, color=(255,255,255)):
-        self.text.draw(surface, x, y, color=color)
+    def draw_input(self, surface: pygame.Surface, x: int, y: int, color=(255,255,255), max_width: int | None = None, align_bottom: bool = True):
+        """Dibuja el campo de entrada.
+
+        - Si max_width es None: modo una sola línea (legado).
+        - Si max_width está definido: renderiza con word-wrap multi-línea dentro de ese ancho,
+          alineando desde abajo para crecer hacia arriba dentro del panel.
+        """
+        if max_width is not None and max_width > 0:
+            self.text.draw_wrapped(surface, x, y, max_width, color=color, align_bottom=align_bottom)
+        else:
+            self.text.draw(surface, x, y, color=color)

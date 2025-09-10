@@ -1,0 +1,223 @@
+{
+  "version": 1,
+  "player": {
+    "level": "global_map",
+    "pos": [
+      22,
+      64
+    ]
+  },
+  "npcs": {
+    "762c34bd-5e40-45b4-af5f-86dd0b86c60a": {
+      "level": "global_map",
+      "tile": [
+        124,
+        75
+      ],
+      "hp": 50,
+      "dead": false,
+      "prototype": "vendor_wood_gatita"
+    },
+    "42af8165-25fb-49bc-af2d-2a7324e3a0df": {
+      "level": "global_map",
+      "tile": [
+        123,
+        78
+      ],
+      "hp": 30,
+      "dead": false,
+      "prototype": "vendor_wood_gatita"
+    },
+    "5af35540-8aac-4135-8f9c-b4762706af61": {
+      "level": "global_map",
+      "tile": [
+        21,
+        66
+      ],
+      "hp": 0,
+      "dead": true,
+      "prototype": "barbol"
+    },
+    "08a51f79-14e3-4dd5-900d-97c7072e9f3e": {
+      "level": "global_map",
+      "tile": [
+        29,
+        70
+      ],
+      "hp": 0,
+      "dead": true,
+      "prototype": "barbol"
+    },
+    "644c9398-d0f6-4035-a3e3-482cfa6c5ae4": {
+      "level": "global_map",
+      "tile": [
+        30,
+        71
+      ],
+      "hp": 0,
+      "dead": true,
+      "prototype": "barbol"
+    },
+    "194a0a57-02b0-4300-88b5-7640cd0ddaba": {
+      "level": "global_map",
+      "tile": [
+        31,
+        66
+      ],
+      "hp": 0,
+      "dead": true,
+      "prototype": "barbol"
+    },
+    "03590eae-cd97-4b63-8115-ea081d0308c7": {
+      "level": "global_map",
+      "tile": [
+        32,
+        65
+      ],
+      "hp": 0,
+      "dead": true,
+      "prototype": "barbol"
+    },
+    "84b36cae-58a2-4d48-b896-4d0be89d1627": {
+      "level": "global_map",
+      "tile": [
+        29,
+        72
+      ],
+      "hp": 0,
+      "dead": true,
+      "prototype": "barbol"
+    },
+    "5ba40c26-7e2a-4772-b49b-e7e6dd4d298c": {
+      "level": "global_map",
+      "tile": [
+        31,
+        72
+      ],
+      "hp": 0,
+      "dead": true,
+      "prototype": "barbol"
+    }
+  },
+  "levels": {
+    "global_map": {
+      "player_pos": [
+        22,
+        64
+      ],
+      "npc_states": {
+        "762c34bd-5e40-45b4-af5f-86dd0b86c60a": {
+          "level": "global_map",
+          "tile": [
+            124,
+            74
+          ],
+          "hp": 50,
+          "dead": false,
+          "prototype": "vendor_wood_gatita"
+        },
+        "42af8165-25fb-49bc-af2d-2a7324e3a0df": {
+          "level": "global_map",
+          "tile": [
+            123,
+            77
+          ],
+          "hp": 30,
+          "dead": false,
+          "prototype": "vendor_wood_gatita"
+        }
+      }
+    }
+  },
+  "player_inventory": {
+    "player_id": "7d81e9bd-d4b9-4308-952e-ae96eba18a56",
+    "capacity": 20,
+    "slots": [
+      {
+        "item": "gold",
+        "quantity": 12
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "npc_inventories": {
+    "762c34bd-5e40-45b4-af5f-86dd0b86c60a": {
+      "player_id": null,
+      "capacity": 20,
+      "slots": []
+    },
+    "42af8165-25fb-49bc-af2d-2a7324e3a0df": {
+      "player_id": null,
+      "capacity": 20,
+      "slots": []
+    },
+    "5af35540-8aac-4135-8f9c-b4762706af61": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": []
+    },
+    "08a51f79-14e3-4dd5-900d-97c7072e9f3e": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": []
+    },
+    "644c9398-d0f6-4035-a3e3-482cfa6c5ae4": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": []
+    },
+    "194a0a57-02b0-4300-88b5-7640cd0ddaba": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": []
+    },
+    "03590eae-cd97-4b63-8115-ea081d0308c7": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": []
+    },
+    "84b36cae-58a2-4d48-b896-4d0be89d1627": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": []
+    },
+    "5ba40c26-7e2a-4772-b49b-e7e6dd4d298c": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": []
+    }
+  },
+  "meta": {
+    "name": "partida_2025-09-10_09-00-19",
+    "created_at": "2025-09-10T09:00:19",
+    "last_played": "2025-09-10T09:57:04",
+    "player": {
+      "xp": 60,
+      "level": 0
+    },
+    "items_summary": {
+      "stacks": 1,
+      "top_items": [
+        "gold"
+      ]
+    }
+  }
+}

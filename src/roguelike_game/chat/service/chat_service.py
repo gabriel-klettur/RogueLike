@@ -5,9 +5,11 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+import re
 import logging
 
 from ..providers.base import LLMMessage, LLMProvider, LLMResult, LLMToolCall
+from .safety import sanitize_text
 from ..providers.dummy import DummyProvider
 from .context_builder import ContextBuilder
 from .tool_registry import ToolRegistry, ToolExecResult
@@ -71,6 +73,9 @@ class ChatService:
             npc_id=str(job.npc_id),
         )
         offline = False
+        # Determinar idioma objetivo para este turno (persistente por NPC)
+        npc_key = str(job.npc_id)
+        target_code = self._target_language(npc_key, job.user_text or "")
 
         try:
             logger.debug("[ChatService] Calling provider=%s offline_pre=%s", self.provider_name, offline)
@@ -91,6 +96,58 @@ class ChatService:
             llm_res = dummy.generate(messages, tools=self.tools_spec)
 
         text, effects, calls = self._handle_result(llm_res)
+        # Si la respuesta textual no coincide con el idioma objetivo y no estamos offline, realizar hasta dos reintentos
+        try:
+            res_code = self._detect_language(text or "")
+            if not offline and res_code and target_code and res_code != target_code:
+                # Reintento 1: añadir enforcement a la conversación actual
+                enforce = (
+                    "Language enforcement: Answer this user's last message exclusively in English. "
+                    "Do not mix languages, do not include translations or bilingual phrasing."
+                    if target_code == "en"
+                    else
+                    "Enforzamiento de idioma: Responde este último mensaje del usuario exclusivamente en español. "
+                    "No mezcles idiomas, no incluyas traducciones ni frases bilingües."
+                )
+                messages_retry_1 = list(messages) + [LLMMessage(role="system", content=enforce)]
+                llm_res2 = self.provider.generate(messages_retry_1, tools=self.tools_spec)
+                text2, effects2, calls2 = self._handle_result(llm_res2)
+                res_code2 = self._detect_language(text2 or "")
+                if res_code2 == target_code:
+                    text, effects, calls = text2, effects2, calls2
+                else:
+                    # Reintento 2: conversación mínima (solo enforcement + último mensaje del usuario)
+                    minimal_enforce = (
+                        "Language enforcement: Answer exclusively in English. Do not mix languages or include translations."
+                        if target_code == "en"
+                        else
+                        "Enforzamiento de idioma: Responde exclusivamente en español. No mezcles idiomas ni incluyas traducciones."
+                    )
+                    minimal_msgs = [
+                        LLMMessage(role="system", content=minimal_enforce),
+                        LLMMessage(role="user", content=job.user_text or ""),
+                    ]
+                    llm_res3 = self.provider.generate(minimal_msgs, tools=self.tools_spec)
+                    text3, effects3, calls3 = self._handle_result(llm_res3)
+                    res_code3 = self._detect_language(text3 or "")
+                    if res_code3 != target_code:
+                        # Reintento 3: reescritura del texto previo al idioma objetivo
+                        if target_code == "en":
+                            rewrite_sys = "Rewrite the following text into English only. Do not add or remove meaning. Do not include any translation or bilingual phrasing."
+                        else:
+                            rewrite_sys = "Reescribe el siguiente texto en español únicamente. No agregues ni quites significado. No incluyas traducciones ni frases bilingües."
+                        rewrite_msgs = [
+                            LLMMessage(role="system", content=rewrite_sys),
+                            LLMMessage(role="user", content=(text3 or text2 or text or "")),
+                        ]
+                        llm_res4 = self.provider.generate(rewrite_msgs, tools=self.tools_spec)
+                        text4, effects4, calls4 = self._handle_result(llm_res4)
+                        text, effects, calls = text4 or text3 or text2 or text, effects4 or effects3 or effects2 or effects, calls4 or calls3 or calls2 or calls
+                    else:
+                        # Preferir el último intento válido
+                        text, effects, calls = text3 or text2 or text, effects3 or effects2 or effects, calls3 or calls2 or calls
+        except Exception:
+            pass
         return ChatResult(text=text, effects=effects, tool_calls=calls or [], provider=self.provider_name, offline=offline)
 
     # --- Internals ---
@@ -199,11 +256,13 @@ class ChatService:
         calls: List[LLMToolCall] = []
         if res.tool_calls:
             merged_effects: Dict[str, Any] = {}
-            last_msg = res.text or ""
+            last_msg = sanitize_text(res.text or "")
             for call in res.tool_calls:
                 calls.append(call)
                 tr: ToolExecResult = self.registry.execute(call.name, call.arguments)
-                last_msg = tr.message or last_msg
+                # Sanear mensaje de tool si aporta texto
+                msg = sanitize_text(tr.message or "")
+                last_msg = msg or last_msg
                 # Merge naive de efectos
                 for k, v in (tr.effects or {}).items():
                     if k not in merged_effects:
@@ -215,6 +274,32 @@ class ChatService:
                                 merged_effects[k][ik] = merged_effects[k].get(ik, 0) + iv
                         else:
                             merged_effects[k] = v
-            return last_msg or (res.text or ""), merged_effects, calls
+            return sanitize_text(last_msg) or sanitize_text(res.text or ""), merged_effects, calls
         # Sin tools: devolver texto simple
-        return res.text or "", {}, calls
+        return sanitize_text(res.text or ""), {}, calls
+
+    # --- Idioma helpers (solo verificación/enforcement; el objetivo lo define el selector) ---
+    def _detect_language(self, text: str) -> str:
+        t = (text or "").strip().lower()
+        if not t:
+            return "es"
+        if re.search(r"[áéíóúñü]", t):
+            return "es"
+        toks = re.findall(r"[a-zA-Z']+", t)
+        es_sw = {"hola","qué","que","como","cómo","de","la","el","y","por","para","gracias","quiero","comprar","vender","madera"}
+        en_sw = {"the","and","you","hi","hello","please","would","like","about","to","buy","sell","wood"}
+        es_count = sum(1 for w in toks if w in es_sw)
+        en_count = sum(1 for w in toks if w in en_sw)
+        return "en" if en_count > es_count else "es"
+
+    def _target_language(self, npc_id: str, user_text: str) -> str:
+        """Idioma objetivo puramente dirigido por preferencia UI.
+
+        - Si hay preferencia persistida para el NPC, usarla.
+        - Si no, fallback a 'es'.
+        """
+        try:
+            stored = self.ctx_builder.memory.get_language(npc_id)
+        except Exception:
+            stored = ""
+        return stored or "es"

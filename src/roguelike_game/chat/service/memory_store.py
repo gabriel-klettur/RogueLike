@@ -16,11 +16,13 @@ class ConversationMemory:
 
     friendship_score: int = 0
     ephemeral_history: List[Dict[str, str]] = None  # [{role, content}]
+    preferred_language: str = ""  # 'es', 'en', etc. (opcional)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
             "friendship_score": self.friendship_score,
             "ephemeral_history": self.ephemeral_history or [],
+            "preferred_language": self.preferred_language or "",
         }
 
     @staticmethod
@@ -28,6 +30,7 @@ class ConversationMemory:
         cm = ConversationMemory()
         cm.friendship_score = int(data.get("friendship_score", 0))
         cm.ephemeral_history = list(data.get("ephemeral_history", []))
+        cm.preferred_language = str(data.get("preferred_language", "") or "")
         return cm
 
 
@@ -70,3 +73,16 @@ class MemoryStore:
             hist = hist[-max_len:]
         mem.ephemeral_history = hist
         self.save(entity_id, mem)
+
+    # --- Language helpers ---
+    def set_language(self, entity_id: str, lang_code: str) -> None:
+        mem = self.load(entity_id)
+        lc = (lang_code or "").strip().lower()
+        if lc not in {"es", "en"}:
+            lc = "es"
+        mem.preferred_language = lc
+        self.save(entity_id, mem)
+
+    def get_language(self, entity_id: str) -> str:
+        mem = self.load(entity_id)
+        return (mem.preferred_language or "").strip().lower()

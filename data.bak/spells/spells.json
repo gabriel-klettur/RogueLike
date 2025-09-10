@@ -1,0 +1,578 @@
+{
+  "fireball": {
+    "id": "fireball",
+    "type": "projectile",
+    "mana_cost": 1,
+    "name": "Bola de Fuego",
+    "timings": {
+      "prepare": 0.015,
+      "channel": 0.015,
+      "cooldown": 0.033
+    },
+    "rules": {
+      "lock_cast_direction": false,
+      "interruptible": true,
+      "automatic_cast_punish": 1.0,
+      "allow_movement": true,
+      "automatic": true
+    },
+    "constraints": {
+      "max_instances": 20,
+      "allow_overlap": true
+    },
+    "effect": {
+      "damage": 20,
+      "range": 1800,
+      "speed": 30,
+      "lifetime": 60
+    },
+    "vfx": {
+      "sprite": {
+        "path": "assets/projectiles/fireball.png",
+        "scale": 0.05
+      }
+    }
+  },
+  "iceball": {
+    "id": "iceball",
+    "type": "projectile",
+    "mana_cost": 10,
+    "name": "Bola de Hielo",
+    "timings": {
+      "prepare": 0.2,
+      "channel": 0.5,
+      "cooldown": 1.0
+    },
+    "rules": {
+      "lock_cast_direction": false,
+      "interruptible": true,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": true,
+      "automatic": true
+    },
+    "constraints": {
+      "max_instances": 20,
+      "allow_overlap": true
+    },
+    "effect": {
+      "damage": 10,
+      "range": 900,
+      "speed": 15,
+      "lifetime": 60
+    },
+    "vfx": {
+      "sprite": {
+        "path": "assets/projectiles/iceball.png",
+        "scale": 0.1
+      }
+    }
+  },
+  "lightball": {
+    "id": "lightball",
+    "type": "projectile",
+    "mana_cost": 10,
+    "name": "Bola de Luz",
+    "timings": {
+      "prepare": 0.5,
+      "channel": 0.5,
+      "cooldown": 0.5
+    },
+    "rules": {
+      "lock_cast_direction": false,
+      "interruptible": true,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": true,
+      "automatic": true
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": true
+    },
+    "effect": {
+      "damage": 10,
+      "range": 7200,
+      "speed": 60,
+      "lifetime": 120
+    },
+    "vfx": {
+      "sprite": {
+        "path": "assets/projectiles/lightball.png",
+        "scale": 0.1
+      }
+    }
+  },
+  "darkball": {
+    "id": "darkball",
+    "type": "projectile",
+    "mana_cost": 10,
+    "name": "Bola de Oscuridad",
+    "timings": {
+      "prepare": 0.2,
+      "channel": 0.5,
+      "cooldown": 1.0
+    },
+    "rules": {
+      "lock_cast_direction": false,
+      "interruptible": false,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": true,
+      "automatic": true
+    },
+    "constraints": {
+      "max_instances": 20,
+      "allow_overlap": true
+    },
+    "effect": {
+      "damage": 10,
+      "range": 600,
+      "speed": 10,
+      "lifetime": 60
+    },
+    "vfx": {
+      "sprite": {
+        "path": "assets/projectiles/darkball.png",
+        "scale": 0.1
+      }
+    }
+  },
+  "healing_aura": {
+    "id": "healing_aura",
+    "type": "aura",
+    "mana_cost": 10,
+    "name": "Aura de Curación",
+    "timings": {
+      "prepare": 0.2,
+      "channel": 0.5,
+      "cooldown": 1.0
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": true,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": false
+    },
+    "effect": {
+      "duration": 1.0,
+      "radius": 10,
+      "buff": {
+        "heal_per_second": 20
+      }
+    },
+    "vfx": {
+      "sprite": {
+        "scale": 0.3
+      },
+      "particles": {
+        "emit_rate": 3,
+        "speed": 1.2,
+        "lifespan": 60,
+        "size_range": [
+          1,
+          2
+        ],
+        "colors": [
+          [
+            0,
+            255,
+            100
+          ],
+          [
+            100,
+            255,
+            150
+          ],
+          [
+            0,
+            200,
+            100
+          ]
+        ]
+      }
+    }
+  },
+  "laser_beam": {
+    "id": "laser_beam",
+    "type": "beam",
+    "mana_cost": 10,
+    "name": "Laser",
+    "timings": {
+      "prepare": 0.1,
+      "channel": 0.2,
+      "cooldown": 1.0
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": true,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": true
+    },
+    "effect": {
+      "damage": 0.25,
+      "range": 1000,
+      "lifetime": 1.0
+    },
+    "vfx": {
+      "sprite": {
+        "scale": 2.0
+      },
+      "particles": {
+        "count": 60,
+        "dispersion": 4,
+        "colors": [
+          [
+            0,
+            255,
+            255
+          ],
+          [
+            150,
+            255,
+            255
+          ],
+          [
+            255,
+            255,
+            255
+          ]
+        ]
+      }
+    }
+  },
+  "dash": {
+    "id": "dash",
+    "type": "dash",
+    "mana_cost": 0,
+    "name": "Dash",
+    "timings": {
+      "prepare": 0.0,
+      "channel": 0.0,
+      "cooldown": 1.0
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": true,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": false
+    },
+    "effect": {
+      "duration": 0.1,
+      "speed": 2000
+    }
+  },
+  "teleport": {
+    "id": "teleport",
+    "type": "teleport",
+    "mana_cost": 10,
+    "name": "Teleport",
+    "timings": {
+      "prepare": 0.0,
+      "channel": 0.0,
+      "cooldown": 1.0
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": true,
+      "automatic_cast_punish": 1.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": false
+    },
+    "effect": {
+      "distance": 200,
+      "lifetime": 0.5
+    }
+  },
+  "slash": {
+    "id": "slash",
+    "type": "slash",
+    "mana_cost": 0,
+    "name": "Slash",
+    "timings": {
+      "prepare": 0.0,
+      "channel": 0.0,
+      "cooldown": 0.5
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": true,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": false
+    },
+    "effect": {
+      "damage": 20,
+      "arc_range_degrees": 120,
+      "radius": 28,
+      "lifetime": 15
+    },
+    "vfx": {
+      "particles": {
+        "count": 30,
+        "size_range": [
+          4,
+          12
+        ],
+        "color": [
+          100,
+          220,
+          255
+        ]
+      }
+    },
+    "meta": {
+      "speed_multiplier": 1.0,
+      "offset": 0
+    }
+  },
+  "lightning": {
+    "id": "lightning",
+    "type": "lightning",
+    "mana_cost": 10,
+    "name": "Lightning",
+    "timings": {
+      "prepare": 0.1,
+      "channel": 0.2,
+      "cooldown": 1.0
+    },
+    "rules": {
+      "interruptible": true,
+      "automatic_cast_punish": 2.0,
+      "automatic": false
+    },
+    "effect": {
+      "lifetime": 8
+    },
+    "meta": {
+      "segments": 12,
+      "offset": 15
+    }
+  },
+  "arcane_flame": {
+    "id": "arcane_flame",
+    "type": "arcane_flame",
+    "mana_cost": 10,
+    "name": "Arcane Flame",
+    "timings": {
+      "prepare": 0.1,
+      "channel": 0.2,
+      "cooldown": 2.0
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": false,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": false
+    },
+    "effect": {
+      "duration": 5.0,
+      "radius": 128
+    },
+    "vfx": {
+      "particles": {
+        "count": 20,
+        "colors": [
+          [
+            230,
+            230,
+            250
+          ],
+          [
+            255,
+            255,
+            0
+          ],
+          [
+            255,
+            215,
+            0
+          ],
+          [
+            255,
+            105,
+            180
+          ],
+          [
+            255,
+            99,
+            71
+          ],
+          [
+            72,
+            61,
+            139
+          ],
+          [
+            34,
+            34,
+            34
+          ]
+        ],
+        "lifespan": 60,
+        "speed": 100,
+        "size_range": [
+          2,
+          6
+        ]
+      }
+    }
+  },
+  "firework_launch": {
+    "id": "firework_launch",
+    "type": "firework_launch",
+    "mana_cost": 10,
+    "name": "Firework Launch",
+    "timings": {
+      "prepare": 0.2,
+      "channel": 0.5,
+      "cooldown": 1.0
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": false,
+      "automatic_cast_punish": 1.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 3,
+      "allow_overlap": true
+    },
+    "effect": {
+      "speed": 12
+    },
+    "vfx": {
+      "particles": {
+        "count": 4,
+        "colors": [
+          [
+            255,
+            255,
+            255
+          ],
+          [
+            255,
+            200,
+            150
+          ]
+        ],
+        "lifespan": 20,
+        "size_range": [
+          1,
+          3
+        ]
+      }
+    }
+  },
+  "smoke": {
+    "id": "smoke",
+    "type": "smoke",
+    "mana_cost": 10,
+    "name": "Smoke",
+    "timings": {
+      "prepare": 0.15,
+      "channel": 0.2,
+      "cooldown": 1.0
+    },
+    "rules": {
+      "lock_cast_direction": false,
+      "interruptible": false,
+      "automatic_cast_punish": 1.0,
+      "allow_movement": true,
+      "automatic": false
+    },
+    "constraints": {
+      "allow_overlap": true
+    },
+    "vfx": {
+      "particles": {
+        "count": 15
+      }
+    }
+  },
+  "smoke_emitter": {
+    "id": "smoke_emitter",
+    "type": "smoke_emitter",
+    "mana_cost": 10,
+    "name": "Smoke Emitter",
+    "timings": {
+      "prepare": 0.1,
+      "channel": 0.2,
+      "cooldown": 1.5
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": false,
+      "automatic_cast_punish": 1.0,
+      "allow_movement": true,
+      "automatic": false
+    },
+    "constraints": {
+      "allow_overlap": true
+    },
+    "vfx": {
+      "particles": {
+        "emit_rate": 3
+      }
+    },
+    "meta": {
+      "particle_color": [
+        200,
+        200,
+        200
+      ]
+    }
+  },
+  "sphere_magic_shield": {
+    "id": "sphere_magic_shield",
+    "type": "sphere_magic_shield",
+    "mana_cost": 10,
+    "name": "Sphere Magic Shield",
+    "timings": {
+      "prepare": 0.2,
+      "channel": 0.2,
+      "cooldown": 5.0
+    },
+    "rules": {
+      "lock_cast_direction": false,
+      "interruptible": false,
+      "automatic_cast_punish": 3.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": false
+    },
+    "effect": {
+      "duration": 5.0,
+      "radius": 80
+    }
+  }
+}

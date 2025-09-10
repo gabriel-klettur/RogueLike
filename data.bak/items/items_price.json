@@ -1,0 +1,5 @@
+{
+  "wood": { "buy": 1, "sell": 1 },
+  "health_potion": { "buy": 25, "sell": 25 },
+  "iron_sword": { "buy": 50, "sell": 50 }
+}

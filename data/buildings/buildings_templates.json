@@ -1675,5 +1675,31 @@
             64
         ],
         "id": 145
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/forest_decoration/corrupto/flor_carnivora.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            391,
+            391
+        ],
+        "id": 146
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_8.png"
+        },
+        "solid": true,
+        "split_ratio": 0.74,
+        "collider_scope": "CU",
+        "original_scale": [
+            251,
+            308
+        ],
+        "id": 147
     }
 ]

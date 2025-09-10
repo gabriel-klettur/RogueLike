@@ -33,6 +33,16 @@ class ContextBuilder:
         npc_id: str | None = None,
     ) -> List[LLMMessage]:
         msgs: List[LLMMessage] = []
+        # Cargar memoria para persistencia de idioma por NPC
+        mem = self.memory.load(npc_id) if npc_id else None
+        stored_code = (mem.preferred_language if mem else "") or ""
+        if stored_code not in {"es", "en"}:
+            stored_code = "es"
+        # Elegir idioma objetivo: preferencia persistida > por defecto 'es' (no detectar)
+        target_code = stored_code or "es"
+        # Solo soportamos 'es' y 'en' desde el selector
+        target_name = "español" if target_code == "es" else "inglés"
+        # No actualizamos memoria aquí a partir de detección; solo UI la cambia
         # System base
         sys_txt = self._read_text(self.root / "data" / "chat" / "prompts" / "system.txt")
         safety_txt = self._read_text(self.root / "data" / "chat" / "prompts" / "safety.txt")
@@ -58,6 +68,23 @@ class ContextBuilder:
                 system_parts.append("Humor:\n" + json.dumps(persona["humor"], ensure_ascii=False))
         if role_cfg:
             system_parts.append("Role:\n" + json.dumps(role_cfg, ensure_ascii=False))
+
+        # Preferencia de idioma dinámica y prioritaria (persistente por NPC)
+        lang_header = (
+            "Idioma (prioritario absoluto):\n"
+            f"Idioma objetivo: {target_name} (código: {target_code}). "
+            "RESPONDE EXCLUSIVAMENTE en este idioma, INDEPENDIENTEMENTE del idioma del mensaje del usuario. "
+            "No mezcles idiomas, no incluyas traducciones ni frases bilingües salvo petición explícita. "
+            "No uses emojis, emoticonos, pictogramas ni iconos; usa solo letras, números y puntuación estándar."
+        )
+        # Insertar al inicio para máxima precedencia frente a otros prompts de sistema
+        system_parts.insert(0, lang_header)
+        if target_code in {"es", "en"}:
+            system_parts.append(
+                f"Preferencia de idioma (prioritaria):\n"
+                f"Responde EXCLUSIVAMENTE en {target_name}. No mezcles idiomas, no incluyas traducciones ni frases bilingües. "
+                f"Esta preferencia prevalece sobre persona, estilo y cualquier configuración previa."
+            )
 
         # Memory (friendship level, brief context)
         if npc_id:
@@ -92,6 +119,24 @@ class ContextBuilder:
         # Último input del jugador
         if user_text:
             msgs.append(LLMMessage(role="user", content=sanitize_text(user_text)))
+            # Mensaje de sistema final para reforzar el idioma del turno
+            if target_code == "en":
+                msgs.append(LLMMessage(
+                    role="system",
+                    content=(
+                        "Language enforcement: Answer this user's last message exclusively in English. "
+                        "Do not mix languages, do not include translations or bilingual phrasing."
+                    )
+                ))
+            elif target_code == "es":
+                msgs.append(LLMMessage(
+                    role="system",
+                    content=(
+                        "Enforzamiento de idioma: Responde este último mensaje del usuario exclusivamente en español. "
+                        "No mezcles idiomas, no incluyas traducciones ni frases bilingües."
+                    )
+                ))
+            
 
         return msgs
 
