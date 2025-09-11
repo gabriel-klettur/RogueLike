@@ -274,6 +274,31 @@ class SpawnerEditorController:
 
     def handle_event(self, event: pygame.event.Event) -> bool:
         try:
+            # If the Visuals Picker overlay is open, delegate to it FIRST so it behaves modally
+            try:
+                ip = getattr(self, 'instance_properties', None)
+                if ip is not None and getattr(getattr(ip, 'model', None), 'visuals_picker_open', False):
+                    # Obtain camera if available
+                    try:
+                        cam = getattr(self, 'game', None)
+                        cam = getattr(cam, 'camera', None)
+                    except Exception:
+                        cam = None
+                    handled = False
+                    try:
+                        handled = bool(ip.handle_visuals_picker_event(event, cam))
+                    except Exception:
+                        handled = False
+                    # Always consume common input types while overlay is open to avoid UI underneath reacting
+                    if handled:
+                        return True
+                    if event.type in (
+                        pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP, pygame.MOUSEMOTION,
+                        pygame.MOUSEWHEEL, pygame.KEYDOWN, pygame.KEYUP,
+                    ):
+                        return True
+            except Exception:
+                pass
             # Sync visibility with toolbar active tool
             active_tool = getattr(getattr(self, 'spawner_toolbar', None), 'model', None)
             active_tool = getattr(active_tool, 'active_tool', None)

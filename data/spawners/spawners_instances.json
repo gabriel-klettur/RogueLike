@@ -7,7 +7,9 @@
       15
     ],
     "visuals": {
-      "AwaitTrigger": 141
+      "AwaitTrigger": 141,
+      "SpawningWave": 141,
+      "Finished": 142
     },
     "id": "survival_10_forest_14_9"
   }
