@@ -159,6 +159,13 @@ class Game:
     def shutdown(self):
         """Guarda todo y cierra."""
         self.shutdown_manager.shutdown()
+        # Parar servicio de audio si está activo
+        try:
+            svc = getattr(self, 'audio_service', None)
+            if svc is not None:
+                svc.stop(fade_music_ms=300, timeout_s=1.0)
+        except Exception:
+            pass
 
 
 

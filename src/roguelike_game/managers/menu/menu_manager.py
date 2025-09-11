@@ -25,7 +25,7 @@ class MenuManager:
     """
     Orquesta la lógica, entrada y renderizado del menú.
     """
-    def __init__(self, game, state, screen, input_config, *, audio_config=None, audio_manager=None, font_size=36, background_path: str | None = None):
+    def __init__(self, game, state, screen, input_config, *, audio_config=None, audio_manager=None, audio_bus=None, font_size=36, background_path: str | None = None):
         # Referencias básicas
         self.game = game
         self.state = state
@@ -34,6 +34,7 @@ class MenuManager:
         # Audio (config + manager para aplicar cambios en vivo)
         self.audio_config = audio_config
         self.audio_manager = audio_manager
+        self.audio_bus = audio_bus
 
         # Componentes del menú
         self.renderer = MenuRenderer(font_size)
@@ -379,6 +380,15 @@ class MenuManager:
         try:
             if self.music_path and self.show_menu and self.mode in ("start", "load_list"):
                 if not self._music_active:
+                    # Preferir AudioBus si existe
+                    if getattr(self, 'audio_bus', None) is not None:
+                        try:
+                            self.audio_bus.play_music(path=self.music_path, loop=self._music_loop, volume=self._music_volume, fade_in_ms=300)
+                            self._music_active = True
+                            return
+                        except Exception:
+                            pass
+                    # Fallback a pygame directo
                     pygame.mixer.music.load(self.music_path)
                     pygame.mixer.music.set_volume(self._music_volume)
                     loops = -1 if self._music_loop else 0
@@ -388,9 +398,15 @@ class MenuManager:
                 if self._music_active:
                     # Fade-out breve para transición suave
                     try:
-                        pygame.mixer.music.fadeout(300)
+                        if getattr(self, 'audio_bus', None) is not None:
+                            self.audio_bus.stop_music(fade_ms=300)
+                        else:
+                            pygame.mixer.music.fadeout(300)
                     except Exception:
-                        pygame.mixer.music.stop()
+                        try:
+                            pygame.mixer.music.stop()
+                        except Exception:
+                            pass
                     self._music_active = False
         except Exception:
             # No interrumpir UI por errores de audio
@@ -400,10 +416,16 @@ class MenuManager:
         """Detiene la música del menú (con fade opcional)."""
         try:
             if self._music_active:
-                if fade_ms > 0:
-                    pygame.mixer.music.fadeout(int(fade_ms))
+                if getattr(self, 'audio_bus', None) is not None:
+                    try:
+                        self.audio_bus.stop_music(fade_ms=int(fade_ms))
+                    except Exception:
+                        pass
                 else:
-                    pygame.mixer.music.stop()
+                    if fade_ms > 0:
+                        pygame.mixer.music.fadeout(int(fade_ms))
+                    else:
+                        pygame.mixer.music.stop()
         finally:
             self._music_active = False
 
@@ -414,7 +436,10 @@ class MenuManager:
         if kind == 'music':
             self._music_volume = v
             try:
-                pygame.mixer.music.set_volume(v)
+                if getattr(self, 'audio_bus', None) is not None:
+                    self.audio_bus.set_music_volume(v)
+                else:
+                    pygame.mixer.music.set_volume(v)
             except Exception:
                 pass
             try:
@@ -424,12 +449,16 @@ class MenuManager:
                 pass
         elif kind == 'sfx':
             try:
+                if getattr(self, 'audio_bus', None) is not None:
+                    self.audio_bus.set_sfx_volume(v)
                 if self.audio_manager is not None:
                     self.audio_manager.set_sfx_volume(v)
             except Exception:
                 pass
         elif kind == 'ambient':
             try:
+                if getattr(self, 'audio_bus', None) is not None:
+                    self.audio_bus.set_ambient_volume(v)
                 if self.audio_manager is not None:
                     self.audio_manager.set_ambient_volume(v)
             except Exception:
@@ -1166,6 +1195,12 @@ class MenuManager:
             except Exception:
                 pass
             logger.info("Nuevo juego inicializado tras selección de clase: %s", class_key)
+            # Audio: entrar al juego (crossfade a tema principal + ambient)
+            try:
+                aq = g.ecs.ecs_world.components.setdefault('AudioEventQueue', [])
+                aq.append({'type': 'enter_game_default', 'duration_ms': 600})
+            except Exception:
+                pass
         except Exception as e:
             logger.error("Error al finalizar nuevo juego: %s", e)
 
@@ -1258,6 +1293,17 @@ class MenuManager:
             # 5) Cerrar menú y pasar a modo pausa para próximas aperturas
             self.show_menu = False
             self.mode = "pause"
+            # Detener música del menú con un fade suave (consistente con nuevo juego)
+            try:
+                self.stop_music(fade_ms=500)
+            except Exception:
+                pass
+            # Audio: entrar al juego (crossfade a tema principal + ambient)
+            try:
+                aq = g.ecs.ecs_world.components.setdefault('AudioEventQueue', [])
+                aq.append({'type': 'enter_game_default', 'duration_ms': 600})
+            except Exception:
+                pass
             logger.info("Partida cargada: nivel=%s", level)
         except Exception as e:
             logger.error("Error al cargar partida: %s", e)
@@ -1527,6 +1573,17 @@ class MenuManager:
             # Cerrar menú y dejarlo en modo pausa para próximas aperturas
             self.show_menu = False
             self.mode = "pause"
+            # Detener música del menú con un fade suave (consistente con nuevo juego)
+            try:
+                self.stop_music(fade_ms=500)
+            except Exception:
+                pass
+            # Audio: entrar al juego (crossfade a tema principal + ambient)
+            try:
+                aq = g.ecs.ecs_world.components.setdefault('AudioEventQueue', [])
+                aq.append({'type': 'enter_game_default', 'duration_ms': 600})
+            except Exception:
+                pass
             logger.info("Partida cargada desde %s", path)
         except Exception as e:
             logger.error("Error al cargar partida desde lista: %s", e)

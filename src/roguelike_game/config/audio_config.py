@@ -64,7 +64,21 @@ class AudioConfig:
 
     def save(self) -> None:
         try:
+            # Cargar JSON existente para preservar catálogo y defaults
+            data = {}
+            if os.path.exists(self.path):
+                try:
+                    with open(self.path, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                        if not isinstance(data, dict):
+                            data = {}
+                except Exception:
+                    data = {}
+            # Actualizar solo claves top-level de volumen
+            data['music'] = float(self.settings.get('music', 0.6))
+            data['ambient'] = float(self.settings.get('ambient', 0.6))
+            data['sfx'] = float(self.settings.get('sfx', 0.7))
             with open(self.path, 'w', encoding='utf-8') as f:
-                json.dump(self.settings, f, indent=4)
+                json.dump(data, f, indent=2)
         except Exception:
             pass

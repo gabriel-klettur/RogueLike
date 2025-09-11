@@ -43,6 +43,8 @@ from roguelike_engine.z_layer.state import ZState
 from roguelike_game.managers.ecs import ECSManager
 from roguelike_game.managers.items.loader import ItemsLoader
 from roguelike_game.managers.core.audio_manager import AudioManager
+from roguelike_engine.audio.service import AudioService, AudioBus
+from roguelike_engine.audio.config import load_audio_catalog
 
 import logging
 logger = logging.getLogger(__name__)
@@ -129,6 +131,7 @@ class GameInitializer:
             ("Cargando minimapa"                , partial(self._init_minimap)),
 
             ("Inicializando renderizador"       , partial(self._init_renderer)),
+            ("Inicializando audio"              , partial(self._init_audio)),
             ("Inicializando menú"               , partial(self._init_menu))            
         ]
         stages.extend(defaults)
@@ -303,6 +306,7 @@ class GameInitializer:
             g, g.state, g.screen, g.input_config,
             audio_config=g.audio_config,
             audio_manager=g.audio_manager,
+            audio_bus=getattr(g, 'audio_bus', None),
             font_size=18,
         )
         # Configurar carrusel de fondos del menú principal (pantalla de inicio)
@@ -319,13 +323,23 @@ class GameInitializer:
             pass
         # Configurar música de intro (se reproducirá cuando el menú esté visible)
         try:
-            # Usar el archivo MP3 solicitado
             # Volumen desde audio_config
             try:
                 mv = float(g.audio_config.get('music'))
             except Exception:
                 mv = 0.6
-            g.menu.set_music("assets/audio/music/intro_theme.mp3", loop=True, volume=mv)
+            # Intentar desde catálogo de audio (startup_track_id) y hacer fallback
+            intro_path = None
+            try:
+                from roguelike_engine.audio.config import load_audio_catalog
+                catalog = load_audio_catalog()
+                defaults = catalog.get_default_music() if catalog else {}
+                startup_id = (defaults or {}).get('startup_track_id')
+                if startup_id:
+                    intro_path = catalog.track_path(startup_id)
+            except Exception:
+                intro_path = None
+            g.menu.set_music(intro_path or "assets/audio/music/intro_theme.mp3", loop=True, volume=mv)
         except Exception:
             # Silencioso si falla audio o no existe el archivo
             pass
@@ -350,3 +364,59 @@ class GameInitializer:
             g.menu.show_menu = True
         g.class_selector = ClassSelectorManager(g.state, g.input_config, g.screen)
         g.player_manager = PlayerManager(g.ecs.ecs_world)
+
+    def _init_audio(self):
+        """Inicializa el servicio de audio (hilo) y registra un AudioBus global."""
+        g = self.game
+        # Crear y arrancar servicio
+        try:
+            catalog = load_audio_catalog()
+        except Exception:
+            catalog = None
+        svc = AudioService(catalog)
+        try:
+            svc.start()
+        except Exception:
+            # Continuar silenciosamente si mixer falla (entornos sin audio)
+            pass
+        bus = AudioBus(svc)
+        # Registrar bus global para acceso opcional
+        try:
+            from roguelike_engine.audio.api import set_bus as _set_audio_bus
+            _set_audio_bus(bus)
+        except Exception:
+            pass
+        # Aplicar volúmenes iniciales (si aún no hay audio_config, usar defaults)
+        try:
+            mv = float(getattr(getattr(g, 'audio_config', None), 'get', lambda *_: 0.6)('music')) if getattr(g, 'audio_config', None) else 0.6
+        except Exception:
+            mv = 0.6
+        try:
+            sv = float(getattr(getattr(g, 'audio_config', None), 'get', lambda *_: 0.7)('sfx')) if getattr(g, 'audio_config', None) else 0.7
+        except Exception:
+            sv = 0.7
+        try:
+            av = float(getattr(getattr(g, 'audio_config', None), 'get', lambda *_: 0.6)('ambient')) if getattr(g, 'audio_config', None) else 0.6
+        except Exception:
+            av = 0.6
+        try:
+            bus.set_music_volume(mv)
+            bus.set_sfx_volume(sv)
+            bus.set_ambient_volume(av)
+        except Exception:
+            pass
+        # Exponer en game
+        g.audio_service = svc
+        g.audio_bus = bus
+        # Hook para "Aplicar ahora" desde el configurador de sonidos
+        try:
+            from roguelike_engine.audio.api import set_apply_hook as _set_apply_hook
+            def _apply_now():
+                try:
+                    aq = g.ecs.ecs_world.components.setdefault('AudioEventQueue', [])
+                    aq.append({'type': 'reload_audio_catalog'})
+                except Exception:
+                    pass
+            _set_apply_hook(_apply_now)
+        except Exception:
+            pass
