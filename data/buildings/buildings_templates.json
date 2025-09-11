@@ -1704,41 +1704,80 @@
     },
     {
         "assets": {
-            "idle": "assets/buildings/vegetation/tree_3.png"
+            "idle": "assets/buildings/portals/portal_dudgeon_1.png"
         },
         "solid": true,
-        "split_ratio": 0.686,
+        "split_ratio": 0.5,
         "collider_scope": "CG",
         "original_scale": [
-            224,
-            286
+            256,
+            256
         ],
         "id": 148
     },
     {
         "assets": {
-            "idle": "assets/buildings/vegetation/tree_3.png"
+            "idle": "assets/buildings/others/fuente.png"
         },
         "solid": true,
-        "split_ratio": 0.643,
+        "split_ratio": 0.5,
         "collider_scope": "CG",
         "original_scale": [
-            272,
-            347
+            256,
+            256
         ],
         "id": 149
     },
     {
         "assets": {
-            "idle": "assets/buildings/vegetation/tree_7.png"
+            "idle": "assets/buildings/others/guillotina.png"
         },
         "solid": true,
-        "split_ratio": 0.599,
+        "split_ratio": 0.5,
         "collider_scope": "CG",
         "original_scale": [
-            227,
-            309
+            256,
+            256
         ],
         "id": 150
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/shops/ChatGPT Image Apr 3, 2025, 05_11_17 AM.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 151
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_4.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            96,
+            192
+        ],
+        "id": 152
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/portals/portal_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            384
+        ],
+        "id": 153
     }
 ]

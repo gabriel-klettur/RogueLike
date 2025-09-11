@@ -7,12 +7,9 @@
       15
     ],
     "visuals": {
-      "AwaitTrigger": 113,
-      "SpawningWave": 113,
-      "WaitCooldown": 113,
-      "WaitClear": 113,
-      "Finished": 113,
-      "WaitRestart": 113
+      "AwaitTrigger": 141,
+      "SpawningWave": 141,
+      "Finished": 142
     },
     "id": "survival_10_forest_14_9"
   }

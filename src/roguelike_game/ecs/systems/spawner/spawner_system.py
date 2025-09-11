@@ -106,12 +106,36 @@ class SpawnerRuntimeSystem:
         return None
 
     def _sync_spawner_visual(self, world, eid: int, cfg, st) -> None:
-        # Only when visible visuals are enabled
+        """Ensure only the active state's visual building is runtime-visible for this spawner.
+        Uses a 'runtime_hidden' flag on Building objects to let the renderer skip them.
+        When cfg.visible_in_game is False, any previously linked or matching buildings are hidden.
+        """
+        # If visuals are disabled, hide any linked building for this spawner and return
         if not getattr(cfg, 'visible_in_game', False):
+            try:
+                for ob in getattr(world, 'buildings', []) or []:
+                    try:
+                        if getattr(ob, '_spawner_eid', None) == eid:
+                            setattr(ob, 'runtime_hidden', True)
+                    except Exception:
+                        continue
+            except Exception:
+                pass
+            self._last_visual_id[eid] = None
             return
         desired = self._desired_building_for_state(cfg, st)
         prev = self._last_visual_id.get(eid)
         if desired == prev:
+            # Even if id didn't change, ensure exclusive visibility according to desired
+            try:
+                for ob in getattr(world, 'buildings', []) or []:
+                    try:
+                        if getattr(ob, '_spawner_eid', None) == eid:
+                            setattr(ob, 'runtime_hidden', getattr(ob, 'id', None) != desired)
+                    except Exception:
+                        continue
+            except Exception:
+                pass
             return
         # Update linkage
         cur = self._find_linked_building(world, eid)
@@ -134,8 +158,20 @@ class SpawnerRuntimeSystem:
                     setattr(target, '_spawner_eid', eid)
                     setattr(target, '_world_ref', world)
                     setattr(target, '_is_spawner_visual', True)
+                    # Make it visible at runtime and hide siblings for this spawner
+                    setattr(target, 'runtime_hidden', False)
                 except Exception:
                     pass
+        # Hide any other building linked to this spawner eid (exclusive runtime visibility)
+        try:
+            for ob in getattr(world, 'buildings', []) or []:
+                try:
+                    if getattr(ob, '_spawner_eid', None) == eid and getattr(ob, 'id', None) != desired:
+                        setattr(ob, 'runtime_hidden', True)
+                except Exception:
+                    continue
+        except Exception:
+            pass
         self._last_visual_id[eid] = desired
 
     def _collect_blocked_tiles(self, world):

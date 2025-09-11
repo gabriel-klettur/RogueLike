@@ -17,6 +17,8 @@ class InstancePropertiesView:
         # Visuals per-row rects (local to panel surface)
         self.visuals_template_rects: list[pygame.Rect] = []
         self.visuals_plus_rects: list[pygame.Rect] = []
+        self.visuals_browse_rects: list[pygame.Rect] = []
+        self.visuals_eye_rects: list[pygame.Rect] = []
         # Track first column (State) rects for hover tooltips
         self.visuals_state_rects: list[pygame.Rect] = []
 
@@ -165,6 +167,7 @@ class InstancePropertiesView:
             # Reset rects
             self.visuals_template_rects = []
             self.visuals_plus_rects = []
+            self.visuals_browse_rects = []
             self.visuals_state_rects = []
             if len(visuals_rows) == 0:
                 if not (y_rows + row_h < viewport_top or y_rows > viewport_bottom):
@@ -178,6 +181,8 @@ class InstancePropertiesView:
                         # Keep rects length aligned
                         self.visuals_template_rects.append(pygame.Rect(0, 0, 0, 0))
                         self.visuals_plus_rects.append(pygame.Rect(0, 0, 0, 0))
+                        self.visuals_browse_rects.append(pygame.Rect(0, 0, 0, 0))
+                        self.visuals_eye_rects.append(pygame.Rect(0, 0, 0, 0))
                         self.visuals_state_rects.append(pygame.Rect(0, 0, 0, 0))
                         continue
                     col1_x, col2_x, col3_x = 10, 210, 310
@@ -185,22 +190,34 @@ class InstancePropertiesView:
                     t2 = font.render(str(inst_id), True, (230, 230, 230))
                     # Template cell rect and optional editing input + '+' button
                     template_rect = pygame.Rect(col3_x, ry - 1, width - col3_x - 10, row_h - 2)
-                    plus_rect = pygame.Rect(template_rect.right - 18, template_rect.y + 2, 16, template_rect.height - 4)
+                    # Right-side controls inside template cell: [eye][browse][+] con separaciones de 2px
+                    control_h = template_rect.height - 4
+                    plus_rect = pygame.Rect(template_rect.right - 18, template_rect.y + 2, 16, control_h)
+                    browse_rect = pygame.Rect(plus_rect.left - 18, template_rect.y + 2, 16, control_h)
+                    eye_rect = pygame.Rect(browse_rect.left - 18, template_rect.y + 2, 16, control_h)
                     self.visuals_template_rects.append(template_rect)
                     self.visuals_plus_rects.append(plus_rect)
+                    self.visuals_browse_rects.append(browse_rect)
+                    self.visuals_eye_rects.append(eye_rect)
                     # State label cell rect for hover detection
                     state_rect = pygame.Rect(col1_x, ry - 1, (col2_x - col1_x) - 4, row_h - 2)
                     self.visuals_state_rects.append(state_rect)
                     # Draw label cells
                     surf.blit(t1, (col1_x, ry))
                     surf.blit(t2, (col2_x, ry))
-                    # If this row is being edited -> draw input and '+' button
+                    # If this row is being edited -> draw input and action buttons
                     if editing_state is not None and str(editing_state) == str(state) and controller.get_text_input() is not None and controller.get_text_input().active:
                         pygame.draw.rect(surf, (40, 40, 40), template_rect)
                         # Validation: check current input and paint border accordingly
                         ok, msg = controller.get_visual_input_validation(str(state))
                         border_col = (120, 120, 120) if ok else (200, 80, 80)
                         pygame.draw.rect(surf, border_col, template_rect, 1)
+                        # Subtle overlay if this row is hidden in editor
+                        try:
+                            if not controller.is_visual_building_visible(str(state)):
+                                draw_hover(surf, template_rect, color=(120, 40, 40, 70))
+                        except Exception:
+                            pass
                         # Draw text input inside the template_rect (padding)
                         ti = controller.get_text_input()
                         if ti is not None:
@@ -208,21 +225,72 @@ class InstancePropertiesView:
                         # '+' button
                         pygame.draw.rect(surf, (60, 60, 60), plus_rect)
                         pygame.draw.rect(surf, (150, 150, 150), plus_rect, 1)
-                        plus_color = (120, 220, 120) if ok else (110, 110, 110)
                         cx, cy = plus_rect.centerx, plus_rect.centery
-                        pygame.draw.line(surf, plus_color, (cx - 4, cy), (cx + 4, cy), 2)
-                        pygame.draw.line(surf, plus_color, (cx, cy - 4), (cx, cy + 4), 2)
-                        # Inline error message below the input if invalid
-                        if not ok and msg:
-                            err_txt = font.render(str(msg), True, (220, 100, 100))
-                            ey = template_rect.bottom + 2
-                            if not (ey + row_h < viewport_top or ey > viewport_bottom):
-                                surf.blit(err_txt, (template_rect.x, ey))
+                        pygame.draw.line(surf, (120, 220, 120), (cx - 4, cy), (cx + 4, cy), 2)
+                        pygame.draw.line(surf, (120, 220, 120), (cx, cy - 4), (cx, cy + 4), 2)
+                        # 'browse' button (folder)
+                        pygame.draw.rect(surf, (60, 60, 60), browse_rect)
+                        pygame.draw.rect(surf, (150, 150, 150), browse_rect, 1)
+                        bx, by = browse_rect.x + 3, browse_rect.y + 3
+                        pygame.draw.rect(surf, (230, 200, 120), (bx, by + 4, browse_rect.w - 6, browse_rect.h - 8), 0)
+                        pygame.draw.rect(surf, (160, 130, 60), (bx, by + 4, browse_rect.w - 6, browse_rect.h - 8), 1)
+                        pygame.draw.rect(surf, (230, 200, 120), (bx + 2, by + 2, 8, 6), 0)
+                        # 'eye' button (toggle visible en edición)
+                        visible = True
+                        try:
+                            visible = bool(controller.is_visual_building_visible(str(state)))
+                        except Exception:
+                            visible = True
+                        pygame.draw.rect(surf, (60, 60, 60), eye_rect)
+                        pygame.draw.rect(surf, (150, 150, 150), eye_rect, 1)
+                        ex, ey = eye_rect.centerx, eye_rect.centery
+                        pygame.draw.ellipse(surf, (220, 220, 220), (eye_rect.x + 3, eye_rect.y + 4, eye_rect.w - 6, eye_rect.h - 8), 1)
+                        pygame.draw.circle(surf, (220, 220, 220) if visible else (120,120,120), (ex, ey), 3)
+                        if not visible:
+                            pygame.draw.line(surf, (200, 80, 80), (eye_rect.left + 3, eye_rect.bottom - 3), (eye_rect.right - 3, eye_rect.top + 3), 2)
                     else:
-                        # Render template id as text; N/A in amber
-                        c3 = (230, 230, 230) if str(tpl_id).upper() != 'N/A' else (220, 180, 120)
+                        # Render template id as text; N/A en ámbar, y atenuado si está oculto en edición
+                        visible = True
+                        try:
+                            visible = bool(controller.is_visual_building_visible(str(state)))
+                        except Exception:
+                            visible = True
+                        # Subtle overlay if hidden in editor
+                        if not visible:
+                            try:
+                                draw_hover(surf, template_rect, color=(120, 40, 40, 70))
+                            except Exception:
+                                pass
+                        base_c = (230, 230, 230) if str(tpl_id).upper() != 'N/A' else (220, 180, 120)
+                        c3 = base_c if visible else (150, 150, 150)
                         t3 = font.render(str(tpl_id), True, c3)
                         surf.blit(t3, (col3_x, ry))
+                        # Draw action buttons even when not editing: +, folder, eye
+                        pygame.draw.rect(surf, (60, 60, 60), plus_rect)
+                        pygame.draw.rect(surf, (150, 150, 150), plus_rect, 1)
+                        cx, cy = plus_rect.centerx, plus_rect.centery
+                        pygame.draw.line(surf, (120, 220, 120), (cx - 4, cy), (cx + 4, cy), 2)
+                        pygame.draw.line(surf, (120, 220, 120), (cx, cy - 4), (cx, cy + 4), 2)
+                        # Folder
+                        pygame.draw.rect(surf, (60, 60, 60), browse_rect)
+                        pygame.draw.rect(surf, (150, 150, 150), browse_rect, 1)
+                        bx, by = browse_rect.x + 3, browse_rect.y + 3
+                        pygame.draw.rect(surf, (230, 200, 120), (bx, by + 4, browse_rect.w - 6, browse_rect.h - 8), 0)
+                        pygame.draw.rect(surf, (160, 130, 60), (bx, by + 4, browse_rect.w - 6, browse_rect.h - 8), 1)
+                        pygame.draw.rect(surf, (230, 200, 120), (bx + 2, by + 2, 8, 6), 0)
+                        # Eye
+                        visible = True
+                        try:
+                            visible = bool(controller.is_visual_building_visible(str(state)))
+                        except Exception:
+                            visible = True
+                        pygame.draw.rect(surf, (60, 60, 60), eye_rect)
+                        pygame.draw.rect(surf, (150, 150, 150), eye_rect, 1)
+                        ex, ey = eye_rect.centerx, eye_rect.centery
+                        pygame.draw.ellipse(surf, (220, 220, 220), (eye_rect.x + 3, eye_rect.y + 4, eye_rect.w - 6, eye_rect.h - 8), 1)
+                        pygame.draw.circle(surf, (220, 220, 220) if visible else (120,120,120), (ex, ey), 3)
+                        if not visible:
+                            pygame.draw.line(surf, (200, 80, 80), (eye_rect.left + 3, eye_rect.bottom - 3), (eye_rect.right - 3, eye_rect.top + 3), 2)
         except Exception:
             pass
         screen.blit(surf, self.panel_rect.topleft)
@@ -263,6 +331,85 @@ class InstancePropertiesView:
                             snake_str = ''.join(snake)
                             draw_tooltip(screen, mx, my, [f"{state} ↔ {snake_str}"])
                         break
+        except Exception:
+            pass
+        # Hover tooltip for Visuals controls (folder/eye/plus)
+        try:
+            mx, my = pygame.mouse.get_pos()
+            if self.panel_rect:
+                local = (mx - self.panel_rect.left, my - self.panel_rect.top)
+                # Plus tooltip
+                for j, r in enumerate(self.visuals_plus_rects or []):
+                    try:
+                        if r and r.collidepoint(local):
+                            draw_tooltip(screen, mx, my, ["Crear instancia de building para este estado"])
+                            raise StopIteration
+                    except StopIteration:
+                        break
+                    except Exception:
+                        continue
+                # Folder tooltip
+                for j, r in enumerate(self.visuals_browse_rects or []):
+                    try:
+                        if r and r.collidepoint(local):
+                            draw_tooltip(screen, mx, my, ["Abrir selector de templates (Buildings Picker)"])
+                            raise StopIteration
+                    except StopIteration:
+                        break
+                    except Exception:
+                        continue
+                # Eye tooltip (toggle)
+                for j, r in enumerate(self.visuals_eye_rects or []):
+                    try:
+                        if r and r.collidepoint(local):
+                            # Decide label based on current visibility
+                            vis_rows = controller.get_visuals_rows()
+                            state = str(vis_rows[j][0]) if 0 <= j < len(vis_rows) else None
+                            show_label = "Mostrar en edición"
+                            hide_label = "Ocultar en edición"
+                            label = hide_label
+                            try:
+                                if state is not None and not controller.is_visual_building_visible(state):
+                                    label = show_label
+                            except Exception:
+                                label = hide_label
+                            draw_tooltip(screen, mx, my, [label])
+                            raise StopIteration
+                    except StopIteration:
+                        break
+                    except Exception:
+                        continue
+        except Exception:
+            pass
+        # Ephemeral toast (bottom-right of the panel)
+        try:
+            msg = getattr(model, 'toast_message', None)
+            until_ms = int(getattr(model, 'toast_until_ms', 0) or 0)
+            now = 0
+            try:
+                now = pygame.time.get_ticks()
+            except Exception:
+                now = 0
+            if msg and now < until_ms and self.panel_rect is not None:
+                toast_font = pygame.font.SysFont(None, 18)
+                txt = toast_font.render(str(msg), True, (255, 255, 255))
+                pad_x, pad_y = 10, 6
+                box_w = txt.get_width() + pad_x * 2
+                box_h = txt.get_height() + pad_y * 2
+                bx = self.panel_rect.right - box_w - 12
+                by = self.panel_rect.bottom - box_h - 12
+                box = pygame.Surface((box_w, box_h), pygame.SRCALPHA)
+                box.fill((20, 20, 20, 210))
+                pygame.draw.rect(box, (200, 200, 200), box.get_rect(), 1)
+                # subtle shadow
+                try:
+                    shadow = pygame.Surface((box_w, box_h), pygame.SRCALPHA)
+                    shadow.fill((0, 0, 0, 100))
+                    screen.blit(shadow, (bx + 2, by + 2))
+                except Exception:
+                    pass
+                box.blit(txt, (pad_x, pad_y))
+                screen.blit(box, (bx, by))
         except Exception:
             pass
         return self.panel_rect
