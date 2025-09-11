@@ -1,5 +1,126 @@
 {
-    "music": 0.28933701657458566,
-    "ambient": 0.44999999999999996,
-    "sfx": 0.7
+  "music": 0.26933701657458564,
+  "ambient": 0.44999999999999996,
+  "sfx": 0.7,
+  "tracks": {
+    "menu_intro": {
+      "path": "assets/audio/music/intro_theme.mp3"
+    },
+    "main_theme": {
+      "path": "assets/audio/music/pepitoria_main_theme.mp3"
+    }
+  },
+  "sfx_map": {
+    "inv_open": {
+      "path": "assets/audio/sfx/inventory/open_inventory.wav"
+    },
+    "fireball": {
+      "path": "assets/audio/sfx/spells/fireball/fireball.wav"
+    },
+    "sword_clash_1": {
+      "path": "assets/audio/sfx/clash/sword/sword_clash.1.ogg"
+    },
+    "sword_clash_2": {
+      "path": "assets/audio/sfx/clash/sword/sword_clash.2.ogg"
+    },
+    "sword_clash_3": {
+      "path": "assets/audio/sfx/clash/sword/sword_clash.3.ogg"
+    },
+    "sword_clash_4": {
+      "path": "assets/audio/sfx/clash/sword/sword_clash.4.ogg"
+    },
+    "sword_clash_5": {
+      "path": "assets/audio/sfx/clash/sword/sword_clash.5.ogg"
+    },
+    "sword_clash_6": {
+      "path": "assets/audio/sfx/clash/sword/sword_clash.6.ogg"
+    },
+    "sword_clash_7": {
+      "path": "assets/audio/sfx/clash/sword/sword_clash.7.ogg"
+    },
+    "sword_clash_8": {
+      "path": "assets/audio/sfx/clash/sword/sword_clash.8.ogg"
+    },
+    "sword_clash_9": {
+      "path": "assets/audio/sfx/clash/sword/sword_clash.9.ogg"
+    },
+    "sword_clash_10": {
+      "path": "assets/audio/sfx/clash/sword/sword_clash.10.ogg"
+    },
+    "ambient_bird_1": {
+      "path": "assets/audio/ambient/animals/amb_bird_1.flac"
+    },
+    "ambient_bird_2": {
+      "path": "assets/audio/ambient/animals/amb_bird_2.flac"
+    },
+    "ambient_cricket_1": {
+      "path": "assets/audio/ambient/animals/amb_cricket_1.flac"
+    },
+    "ambient_frog_1": {
+      "path": "assets/audio/ambient/animals/amb_frog_1.flac"
+    }
+  },
+  "groups": {
+    "music": {
+      "volume": 0.26933701657458564
+    },
+    "sfx": {
+      "volume": 0.7
+    },
+    "ambient": {
+      "volume": 0.44999999999999996
+    }
+  },
+  "defaults": {
+    "music": {
+      "startup_track_id": "menu_intro",
+      "ingame_track_id": "main_theme",
+      "crossfade_ms": 600
+    },
+    "ambient": {
+      "choices": [
+        "ambient_bird_1",
+        "ambient_bird_2",
+        "ambient_cricket_1",
+        "ambient_frog_1"
+      ],
+      "min_interval": 6.0,
+      "max_interval": 18.0,
+      "group": "ambient",
+      "volume": null
+    },
+    "ducking": {
+      "amount_db": -4.0,
+      "hold_ms": 250,
+      "release_ms": 200,
+      "auto_on_sfx_prefixes": [
+        "sword_clash_",
+        "fireball"
+      ]
+    }
+  },
+  "biomes": {
+    "forest": {
+      "music_track_id": "main_theme",
+      "ambient": {
+        "choices": [
+          "ambient_bird_1",
+          "ambient_bird_2",
+          "ambient_cricket_1"
+        ],
+        "min_interval": 5.0,
+        "max_interval": 16.0
+      }
+    }
+  },
+  "levels": {
+    "global_map": {
+      "music_track_id": "main_theme"
+    }
+  },
+  "zones": {
+    "lobby": {
+      "music_track_id": "main_theme"
+    }
+  }
 }

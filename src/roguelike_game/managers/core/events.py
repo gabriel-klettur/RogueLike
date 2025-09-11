@@ -52,6 +52,12 @@ def _close_all_editors(game) -> None:
     try:
         if getattr(getattr(game, 'inventory_editor', None), 'model', None) and getattr(game.inventory_editor.model, 'visible', False):
             game.inventory_editor.model.visible = False
+            # Audio: sfx abrir/cerrar inventario (usar mismo sonido)
+            try:
+                aq = game.ecs.ecs_world.components.setdefault('AudioEventQueue', [])
+                aq.append({'type': 'play_sfx', 'sfx_id': 'inv_open', 'group': 'ui'})
+            except Exception:
+                pass
     except Exception:
         pass
     # Items Editor
@@ -166,6 +172,12 @@ def _open_editor_exclusive(game, target: str) -> None:
             logger.debug(f"[Controller] Selected EID: {selected}")
             try:
                 game.inventory_editor.debug_dump()
+            except Exception:
+                pass
+            # Audio: sfx abrir/cerrar inventario (usar mismo sonido para ambos)
+            try:
+                aq = game.ecs.ecs_world.components.setdefault('AudioEventQueue', [])
+                aq.append({'type': 'play_sfx', 'sfx_id': 'inv_open', 'group': 'ui'})
             except Exception:
                 pass
         except Exception:
