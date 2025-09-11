@@ -656,8 +656,8 @@
         }
     },
     {
-        "id": 43,
-        "template_id": 33,
+        "id": 143,
+        "template_id": 150,
         "zone": "Forest",
         "rel_x": 781,
         "rel_y": 683,
@@ -1619,8 +1619,8 @@
         }
     },
     {
-        "id": 91,
-        "template_id": 76,
+        "id": 142,
+        "template_id": 149,
         "zone": "Forest",
         "rel_x": 763,
         "rel_y": 957,
@@ -1635,8 +1635,8 @@
         }
     },
     {
-        "id": 92,
-        "template_id": 77,
+        "id": 141,
+        "template_id": 148,
         "zone": "Forest",
         "rel_x": 875,
         "rel_y": 820,
