@@ -81,6 +81,23 @@ class SpawnerEditorEventHandler:
         if not world or not camera:
             return False
 
+        # While the Visuals Picker overlay is open, delegate events to it and block world input
+        try:
+            ip = getattr(self.controller, 'instance_properties', None)
+            if ip is not None and getattr(getattr(ip, 'model', None), 'visuals_picker_open', False):
+                handled = False
+                try:
+                    handled = bool(ip.handle_visuals_picker_event(event, camera))
+                except Exception:
+                    handled = False
+                # Always consume to avoid gameplay interactions under the overlay
+                return True if handled or event.type in (
+                    pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP, pygame.MOUSEMOTION,
+                    pygame.MOUSEWHEEL, pygame.KEYDOWN, pygame.KEYUP
+                ) else False
+        except Exception:
+            pass
+
         # Add Mode: while active (and before a template is chosen -> placing_template_id is None),
         # block world interactions and allow ESC to cancel, BUT allow MMB panning.
         if getattr(self.model, 'add_mode_active', False) and not getattr(self.model, 'placing_template_id', None):

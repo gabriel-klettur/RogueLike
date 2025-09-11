@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 
 class InstancePropertiesEventHandler:
     def handle_event(self, controller, event) -> bool:
@@ -57,6 +59,24 @@ class InstancePropertiesEventHandler:
             if not pr_list:
                 return None
             for j, r in enumerate(pr_list):
+                if r and r.collidepoint(local_pos):
+                    return j
+            return None
+
+        def hit_visuals_browse_index(local_pos):
+            br_list = getattr(view, 'visuals_browse_rects', []) or []
+            if not br_list:
+                return None
+            for j, r in enumerate(br_list):
+                if r and r.collidepoint(local_pos):
+                    return j
+            return None
+
+        def hit_visuals_eye_index(local_pos):
+            er_list = getattr(view, 'visuals_eye_rects', []) or []
+            if not er_list:
+                return None
+            for j, r in enumerate(er_list):
                 if r and r.collidepoint(local_pos):
                     return j
             return None
@@ -162,11 +182,19 @@ class InstancePropertiesEventHandler:
                     if ti is not None:
                         ti.deactivate()
                     controller.cancel_edit_visual()
+                    try:
+                        logging.getLogger(__name__).debug(f"[InstancePropsEvents] Cancel edit visuals for state={state}")
+                    except Exception:
+                        pass
                     return True
                 if key in (pygame.K_RETURN, pygame.K_KP_ENTER):
                     if ti is not None:
                         ti.deactivate()
                     controller.commit_visual_edit_if_finished()
+                    try:
+                        logging.getLogger(__name__).info(f"[InstancePropsEvents] Commit edit visuals for state={state}")
+                    except Exception:
+                        pass
                     return True
                 # Other keys should be forwarded to the text input for live editing
                 if ti is not None:
@@ -189,6 +217,32 @@ class InstancePropertiesEventHandler:
                         if 0 <= j < len(rows_v):
                             st = rows_v[j][0]
                             controller.add_building_instance_for_visual(st)
+                            try:
+                                logging.getLogger(__name__).info(f"[InstancePropsEvents] Click + to add instance for state={st}")
+                            except Exception:
+                                pass
+                            return True
+                    j = hit_visuals_browse_index(local)
+                    if j is not None:
+                        rows_v = controller.get_visuals_rows()
+                        if 0 <= j < len(rows_v):
+                            st = rows_v[j][0]
+                            controller.open_visuals_picker_for_state(st)
+                            try:
+                                logging.getLogger(__name__).info(f"[InstancePropsEvents] Open VisualsPicker for state={st} (editing)")
+                            except Exception:
+                                pass
+                            return True
+                    j = hit_visuals_eye_index(local)
+                    if j is not None:
+                        rows_v = controller.get_visuals_rows()
+                        if 0 <= j < len(rows_v):
+                            st = rows_v[j][0]
+                            controller.toggle_visual_building_visibility(st)
+                            try:
+                                logging.getLogger(__name__).info(f"[InstancePropsEvents] Toggle eye for state={st}")
+                            except Exception:
+                                pass
                             return True
                 # Route pointer events to text input when inside template rect
                 handled = False
@@ -220,6 +274,32 @@ class InstancePropertiesEventHandler:
                     if 0 <= j < len(rows_v):
                         st = rows_v[j][0]
                         controller.add_building_instance_for_visual(st)
+                        try:
+                            logging.getLogger(__name__).info(f"[InstancePropsEvents] Click + to add instance for state={st}")
+                        except Exception:
+                            pass
+                        return True
+                j = hit_visuals_browse_index(local)
+                if j is not None:
+                    rows_v = controller.get_visuals_rows()
+                    if 0 <= j < len(rows_v):
+                        st = rows_v[j][0]
+                        controller.open_visuals_picker_for_state(st)
+                        try:
+                            logging.getLogger(__name__).info(f"[InstancePropsEvents] Open VisualsPicker for state={st}")
+                        except Exception:
+                            pass
+                        return True
+                j = hit_visuals_eye_index(local)
+                if j is not None:
+                    rows_v = controller.get_visuals_rows()
+                    if 0 <= j < len(rows_v):
+                        st = rows_v[j][0]
+                        controller.toggle_visual_building_visibility(st)
+                        try:
+                            logging.getLogger(__name__).info(f"[InstancePropsEvents] Toggle eye for state={st}")
+                        except Exception:
+                            pass
                         return True
                 j = hit_visuals_template_index(local)
                 if j is not None:

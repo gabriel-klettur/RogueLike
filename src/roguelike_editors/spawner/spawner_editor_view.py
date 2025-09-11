@@ -221,6 +221,25 @@ class SpawnerEditorView:
         except Exception:
             pass
 
+        # 7) Visuals Picker overlay (uses Buildings Picker UI)
+        try:
+            ip = getattr(c, 'instance_properties', None)
+            if ip is not None and getattr(getattr(ip, 'model', None), 'visuals_picker_open', False):
+                cam = getattr(c, 'game', None)
+                cam = getattr(cam, 'camera', None)
+                if cam is not None:
+                    # Anchor the picker just below the Spawner Instances panel if available
+                    try:
+                        inst_rect_anchor = getattr(self, '_last_instances_rect', None)
+                        picker = ip.get_visuals_picker()
+                        if picker is not None and inst_rect_anchor is not None:
+                            picker.set_anchors(left_x=int(inst_rect_anchor.left), top_y=int(inst_rect_anchor.bottom + 6), reserved_bottom_h=0)
+                    except Exception:
+                        pass
+                    ip.render_visuals_picker(screen, cam)
+        except Exception:
+            pass
+
         # 6) Delete instance confirmation overlay
         try:
             pending_del = getattr(c.model, 'pending_delete_confirm', None)

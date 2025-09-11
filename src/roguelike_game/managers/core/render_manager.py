@@ -394,6 +394,17 @@ class RendererManager:
         if not ((editor_state.active and not editor_state.toolbar_state.show_buildings)
                 or (editor_state.active and editor_state.toolbar_state.show_collisions and not editor_state.toolbar_state.show_collisions_overlay)):
             for b in entities.buildings:
+                # Respect editor/runtime visibility flags and basic visibility toggle
+                try:
+                    if getattr(b, 'editor_hidden', False) or getattr(b, 'runtime_hidden', False):
+                        continue
+                except Exception:
+                    pass
+                try:
+                    if hasattr(b, 'visible') and not getattr(b, 'visible', True):
+                        continue
+                except Exception:
+                    pass
                 if not camera.is_in_view(b.x, b.y, b.image.get_size()):
                     continue
                 for part in b.get_parts():
