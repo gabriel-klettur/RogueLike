@@ -5,6 +5,7 @@ from pathlib import Path
 from roguelike_game.utils.inventory_sync import write_active_for_player
 from roguelike_game.utils.inventory_registry import publish_inventory
 from roguelike_game.ecs.utils.position_utils import compute_foot_tile
+from roguelike_game.ecs.components.spawner.spawner_child import SpawnerChild
 
 import logging
 logger = logging.getLogger(__name__)
@@ -124,6 +125,7 @@ class ShutdownManager:
                 inv_store = comps.get("InventoryComponent", {}) or {}
                 archetype_store = comps.get("MonsterArchetype", {}) or {}
                 identity_store = comps.get("Identity", {}) or {}
+                sp_children = comps.get("SpawnerChild", {}) or {}
 
                 # Asegurar estructuras en WorldManager
                 if getattr(g.world, 'npc_memory', None) is None:
@@ -134,7 +136,37 @@ class ShutdownManager:
                 # Nivel actual
                 current_level = getattr(g.world, 'current_level', None) or getattr(g.map, 'name', None)
 
+                # Limpiar memoria previa del nivel actual para evitar acumulación y duplicados
+                try:
+                    prev_mem = len(getattr(g.world, 'npc_memory', {}) or {})
+                    prev_inv = len(getattr(g.world, 'npc_inventories', {}) or {})
+                    if isinstance(g.world.npc_memory, dict):
+                        g.world.npc_memory = {
+                            k: v for k, v in g.world.npc_memory.items()
+                            if (v or {}).get('level') != current_level
+                        }
+                    if isinstance(g.world.npc_inventories, dict):
+                        g.world.npc_inventories = {
+                            k: v for k, v in g.world.npc_inventories.items()
+                            if (g.world.npc_memory.get(k, {}) or {}).get('level') != current_level
+                        }
+                    try:
+                        logger.debug(
+                            "[Save] Cleared previous npc_memory entries for level=%s (prev_npcs=%s prev_inventories=%s)",
+                            current_level, prev_mem, prev_inv
+                        )
+                    except Exception:
+                        pass
+                except Exception:
+                    pass
+
+                skipped_children = 0
+                persisted_npcs = 0
                 for neid in list(npc_tags.keys()):
+                    # Omitir NPCs hijos de spawner (ephemerales). Su reaparición la gestiona el spawner.
+                    if neid in sp_children:
+                        skipped_children += 1
+                        continue
                     inst = inst_store.get(neid)
                     if not inst:
                         continue
@@ -181,6 +213,7 @@ class ShutdownManager:
                         "dead": bool(dead_flag),
                         "prototype": proto,
                     }
+                    persisted_npcs += 1
 
                     # Snapshot de inventario (si tiene)
                     inv_cmp = inv_store.get(neid)
@@ -202,6 +235,57 @@ class ShutdownManager:
                             g.world.npc_inventories[str(instance_id)] = norm
                         except Exception:
                             pass
+            except Exception:
+                pass
+
+            # 4d summary logging
+            try:
+                logger.info(
+                    "[Save] NPC persistence summary: level=%s skipped_spawner_children=%s persisted_npcs=%s total_memory=%s",
+                    current_level, skipped_children, persisted_npcs, len(getattr(g.world, 'npc_memory', {}) or {})
+                )
+            except Exception:
+                pass
+
+            # 4e) Sincronizar npc_states locales de cada mapa cargado con npc_memory global
+            try:
+                npc_mem = getattr(g.world, 'npc_memory', {}) or {}
+                synced_levels = 0
+                for lvl_name, mgr in (getattr(g.world, 'maps', {}) or {}).items():
+                    try:
+                        ls = getattr(mgr, '_local_state', None)
+                        if not isinstance(ls, dict):
+                            continue
+                        filtered = {iid: st for iid, st in npc_mem.items() if (st or {}).get('level') == lvl_name}
+                        prev_cnt = len(ls.get('npc_states', {}) or {})
+                        ls['npc_states'] = dict(filtered)
+                        synced_levels += 1
+                        try:
+                            logger.info(
+                                "[Save] Synced map npc_states for level=%s: prev=%s now=%s",
+                                lvl_name, prev_cnt, len(filtered)
+                            )
+                        except Exception:
+                            pass
+                    except Exception:
+                        continue
+                if synced_levels == 0:
+                    try:
+                        # Si no hay mapas en memoria, al menos sincronizar el mapa actual si existe referencia directa
+                        mgr = getattr(g, 'map', None)
+                        if mgr is not None:
+                            lvl_name = getattr(mgr, 'name', None)
+                            ls = getattr(mgr, '_local_state', None)
+                            if isinstance(ls, dict) and lvl_name:
+                                filtered = {iid: st for iid, st in npc_mem.items() if (st or {}).get('level') == lvl_name}
+                                prev_cnt = len(ls.get('npc_states', {}) or {})
+                                ls['npc_states'] = dict(filtered)
+                                logger.info(
+                                    "[Save] Synced map npc_states for current level=%s: prev=%s now=%s",
+                                    lvl_name, prev_cnt, len(filtered)
+                                )
+                    except Exception:
+                        pass
             except Exception:
                 pass
 

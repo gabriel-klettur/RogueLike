@@ -10,6 +10,7 @@ from __future__ import annotations
 from typing import Set, Tuple
 
 import logging
+import time
 logger = logging.getLogger(__name__)
 
 
@@ -18,6 +19,10 @@ class NpcRestoreSystem:
         self.perf_log = perf_log
         # Evitar re-aplicar repetidamente
         self._applied: Set[str] = set()
+        # Throttling del resumen de debug
+        self._last_summary_sig = None
+        self._last_summary_t = 0.0
+        self._summary_interval = 1.0  # seconds
 
     def update(self, world, *args):
         try:
@@ -42,6 +47,21 @@ class NpcRestoreSystem:
             except Exception:
                 return None
 
+        # Resumen con throttling
+        now = time.time()
+        summary_sig = (len(states), len(self._applied))
+        if (now - self._last_summary_t) >= self._summary_interval or summary_sig != self._last_summary_sig:
+            try:
+                logger.debug(
+                    "[NpcRestore] level=%s states_total=%s already_applied=%s",
+                    current_level, summary_sig[0], summary_sig[1]
+                )
+            except Exception:
+                pass
+            self._last_summary_t = now
+            self._last_summary_sig = summary_sig
+
+        applied_count = 0
         for eid in list(npc_tags.keys()):
             inst = inst_store.get(eid)
             if not inst:
@@ -91,6 +111,15 @@ class NpcRestoreSystem:
             if applied_any:
                 self._applied.add(str(instance_id))
                 try:
-                    logger.debug(f"[NpcRestore] Applied state to npc instance={instance_id}")
+                    logger.info(
+                        "[NpcRestore] Applied state to npc instance_id=%s pos_tile=%s hp=%s",
+                        instance_id, st.get('tile'), st.get('hp')
+                    )
                 except Exception:
                     pass
+                applied_count += 1
+        try:
+            if applied_count:
+                logger.info("[NpcRestore] total applied=%s for level=%s", applied_count, current_level)
+        except Exception:
+            pass

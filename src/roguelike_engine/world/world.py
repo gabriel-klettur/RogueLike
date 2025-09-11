@@ -131,6 +131,21 @@ class WorldManager:
             last_pos = None
         if last_pos is not None:
             mgr.spawn_player(last_pos)
+        # Importante: limpiar npc_states locales del nivel antes de fusionar memoria global
+        try:
+            ls = getattr(mgr, "_local_state", None)
+            if isinstance(ls, dict):
+                prev_cnt = len(ls.get("npc_states", {}) or {})
+                ls["npc_states"] = {}
+                try:
+                    logger.info(
+                        "[World] Cleared level-local npc_states before merge: level=%s prev=%s",
+                        level_name, prev_cnt
+                    )
+                except Exception:
+                    pass
+        except Exception:
+            pass
         mgr.restore_npc_states(self.npc_memory)
         # Log de fin de carga de nivel
         try:

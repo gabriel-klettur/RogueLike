@@ -1,50 +1,86 @@
 {
-  "ff2592b2-3ccc-4346-aefc-27744177c32d": {
-    "item_id": "gold",
-    "quantity": 1,
-    "zone_id": "lobby",
-    "schema_version": "1.0.0",
-    "z_layer": 3,
-    "tile": {
-      "x": -1,
-      "y": 17
-    },
-    "created_at": 1757622928.6736414
-  },
-  "9e3e6ba7-6f17-4cc8-a07c-989fa5b89477": {
-    "item_id": "wood",
-    "quantity": 1,
-    "zone_id": "lobby",
-    "schema_version": "1.0.0",
-    "z_layer": 3,
-    "tile": {
-      "x": 1,
-      "y": 15
-    },
-    "created_at": 1757622928.6746476
-  },
-  "f086409f-e66e-469c-aa4d-d87fba72951c": {
+  "b7d7c4de-8298-4e4a-9426-9b49d3a416bd": {
     "item_id": "gold",
     "quantity": 1,
     "zone_id": "Forest",
     "schema_version": "1.0.0",
     "z_layer": 3,
     "tile": {
-      "x": 17,
-      "y": 27
+      "x": 30,
+      "y": 25
     },
-    "created_at": 1757622935.4500878
+    "created_at": 1757627446.3514504
   },
-  "8c9b9d2f-a1ea-476e-9b22-50813fe42bb5": {
-    "item_id": "gold",
+  "87aeced2-4e27-46b4-984f-517db16aea8f": {
+    "item_id": "wood",
     "quantity": 1,
-    "zone_id": "lobby",
+    "zone_id": "Forest",
     "schema_version": "1.0.0",
     "z_layer": 3,
     "tile": {
-      "x": -1,
-      "y": 18
+      "x": 18,
+      "y": 7
     },
-    "created_at": 1757622962.2702515
+    "created_at": 1757627481.0613678
+  },
+  "5363d90d-2aae-49e4-8585-e5c132e90bef": {
+    "item_id": "gold",
+    "quantity": 1,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "z_layer": 3,
+    "tile": {
+      "x": 36,
+      "y": 10
+    },
+    "created_at": 1757627483.7018402
+  },
+  "1203077a-7667-4ec0-bb13-ac29f53e56da": {
+    "item_id": "wood",
+    "quantity": 1,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "z_layer": 3,
+    "tile": {
+      "x": 22,
+      "y": 20
+    },
+    "created_at": 1757627486.0140138
+  },
+  "36c1905d-c08f-4205-907e-154041835520": {
+    "item_id": "gold",
+    "quantity": 1,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "z_layer": 3,
+    "tile": {
+      "x": 38,
+      "y": 8
+    },
+    "created_at": 1757627519.2372742
+  },
+  "1f276f42-64df-46eb-8b2f-53ada45cdd79": {
+    "item_id": "wood",
+    "quantity": 1,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "z_layer": 3,
+    "tile": {
+      "x": 38,
+      "y": 10
+    },
+    "created_at": 1757627519.2387981
+  },
+  "c6aa24c6-7e31-4e26-bebb-42894102d8de": {
+    "item_id": "experience_orb",
+    "quantity": 1,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "z_layer": 3,
+    "position": {
+      "x": 1253,
+      "y": 1889
+    },
+    "created_at": 1757627519.2398221
   }
 }

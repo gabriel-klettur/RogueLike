@@ -7391,17 +7391,8 @@
         ]
     },
     "assets/buildings/totems/totem_forest.png": {
-        "width": 2,
-        "height": 2,
-        "collision": [
-            [
-                ".",
-                "."
-            ],
-            [
-                ".",
-                "."
-            ]
-        ]
+        "width": 0,
+        "height": 0,
+        "collision": []
     }
 }
