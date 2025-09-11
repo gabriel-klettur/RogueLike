@@ -1,6 +1,7 @@
 import time
 import random
 import logging
+import os
 from roguelike_engine.utils.benchmark import benchmark
 
 try:
@@ -28,6 +29,51 @@ class AudioSystem:
         self._last_zone = None
         self._last_biome = None
         self._last_music_track = None
+        # Playlist state
+        self._playlist_enabled = False
+        self._playlist = None
+        self._playlist_index = 0
+        self._playlist_interval_s = 120.0
+        self._next_playlist_at = None
+        self._playlist_mode = 'loop'  # 'loop' | 'once' | 'shuffle'
+
+    def _enqueue_song_toast(self, comps, track_id: str, *, duration_s: float = 3.5) -> None:
+        try:
+            title = None
+            try:
+                title = (self._catalog.tracks.get(track_id) or {}).get('title')
+            except Exception:
+                title = None
+            name = None
+            p = self._catalog.track_path(track_id) if self._catalog else None
+            if p:
+                name = os.path.basename(str(p))
+            # Preferir título si existe; si no, archivo con extensión
+            disp = str(title) if title else (str(name) if name else str(track_id))
+            tq = comps.setdefault('ToastQueue', [])
+            tq.append({'text': f"Song: '{disp}'", 'until': time.time() + float(duration_s)})
+        except Exception:
+            pass
+
+    def _track_duration_s(self, track_id: str) -> float:
+        # Intentar leer duración desde config; evitar E/S en hilo principal
+        try:
+            rec = (self._catalog.tracks or {}).get(track_id) if self._catalog else None
+        except Exception:
+            rec = None
+        # 1) Campo explícito en config
+        try:
+            if rec and rec.get('duration_s') is not None:
+                d = float(rec.get('duration_s'))
+                if d > 0:
+                    return d
+        except Exception:
+            pass
+        # 2) Fallback: usar intervalo fijo configurable (no hacer I/O aquí)
+        try:
+            return float(self._playlist_interval_s)
+        except Exception:
+            return 120.0
 
     @benchmark(lambda self: self.perf_log, "AudioSystem.update")
     def update(self, world, camera=None):
@@ -79,6 +125,8 @@ class AudioSystem:
                 if track_id and track_id != self._last_music_track:
                     bus.crossfade(to_track_id=track_id, duration_ms=int((self._catalog.get_default_music() or {}).get('crossfade_ms', 600)))
                     self._last_music_track = track_id
+                    # Toast canción
+                    self._enqueue_song_toast(comps, track_id)
                 # Resolver ambient deseado y programar scheduler
                 amb = self._catalog.resolve_ambient_for(level=level, zone=zone, biome=biome)
                 aq = comps.setdefault('AudioEventQueue', [])
@@ -90,6 +138,33 @@ class AudioSystem:
                     'group': amb.get('group', 'ambient'),
                     'volume': amb.get('volume'),
                 })
+                # (Re)configurar playlist según ámbito
+                try:
+                    defaults_music = (self._catalog.get_default_music() or {})
+                    self._playlist_interval_s = float(defaults_music.get('playlist_interval_s', 120))
+                    playlist = list(defaults_music.get('ingame_playlist') or [])
+                    default_id = defaults_music.get('ingame_track_id')
+                    self._playlist_mode = str(defaults_music.get('playlist_mode') or 'loop').lower()
+                    # Habilitar playlist solo si el ámbito NO fija un tema específico distinto del default
+                    # i.e., si resolve_music_for devolvió el default y tenemos una playlist válida
+                    self._playlist_enabled = bool(track_id and default_id and track_id == default_id and len(playlist) >= 2)
+                    if self._playlist_enabled:
+                        self._playlist = playlist
+                        try:
+                            self._playlist_index = max(0, playlist.index(track_id))
+                        except Exception:
+                            self._playlist_index = 0
+                        # Programar cambio al final de la canción actual (o fallback al intervalo)
+                        dur = self._track_duration_s(track_id)
+                        self._next_playlist_at = time.time() + max(5.0, float(dur))
+                    else:
+                        self._playlist = None
+                        self._next_playlist_at = None
+                except Exception:
+                    # No romper si la config no trae playlist
+                    self._playlist_enabled = False
+                    self._playlist = None
+                    self._next_playlist_at = None
         # 1) Procesar cola de eventos
         queue = comps.setdefault('AudioEventQueue', [])
         while queue:
@@ -159,6 +234,8 @@ class AudioSystem:
                         if track_id and track_id != self._last_music_track:
                             bus.crossfade(to_track_id=track_id, duration_ms=int((self._catalog.get_default_music() or {}).get('crossfade_ms', 600)))
                             self._last_music_track = track_id
+                            # Toast canción
+                            self._enqueue_song_toast(comps, track_id)
                         # Ambient
                         amb = self._catalog.resolve_ambient_for(level=level, zone=zone, biome=biome)
                         aq2 = comps.setdefault('AudioEventQueue', [])
@@ -193,6 +270,8 @@ class AudioSystem:
                     if track_id:
                         bus.crossfade(to_track_id=track_id, duration_ms=dur)
                         self._last_music_track = track_id
+                        # Toast canción
+                        self._enqueue_song_toast(comps, track_id)
                     if amb is not None:
                         aq = comps.setdefault('AudioEventQueue', [])
                         aq.append({
@@ -224,3 +303,41 @@ class AudioSystem:
                 except Exception:
                     mi, ma = 8.0, 20.0
                 st['next_at'] = now + random.uniform(mi, ma)
+
+        # 3) Playlist rotation (si habilitada)
+        try:
+            if self._playlist_enabled and self._playlist and len(self._playlist) >= 2:
+                now = time.time()
+                if self._next_playlist_at and now >= self._next_playlist_at:
+                    try:
+                        current = self._last_music_track
+                        # Asegurar índice consistente con track actual
+                        if current in self._playlist:
+                            self._playlist_index = self._playlist.index(current)
+                        if self._playlist_mode == 'shuffle':
+                            # Elegir al azar evitando repetir el actual si hay más de 1 opción
+                            choices = [t for t in self._playlist if t != current] or list(self._playlist)
+                            next_id = random.choice(choices)
+                            nxt_idx = self._playlist.index(next_id)
+                        else:
+                            nxt_idx = (self._playlist_index + 1) % len(self._playlist)
+                            next_id = self._playlist[nxt_idx]
+                        if next_id != current:
+                            bus.crossfade(to_track_id=next_id, duration_ms=int((self._catalog.get_default_music() or {}).get('crossfade_ms', 600)))
+                            self._last_music_track = next_id
+                            self._playlist_index = nxt_idx
+                            # Toast canción
+                            self._enqueue_song_toast(comps, next_id)
+                        # Reprogramar siguiente cambio al final de la canción siguiente
+                        dur_next = self._track_duration_s(next_id)
+                        self._next_playlist_at = now + max(5.0, float(dur_next))
+                        # Si el modo es 'once' y hemos vuelto al inicio, deshabilitar playlist
+                        if self._playlist_mode == 'once' and nxt_idx == 0:
+                            self._playlist_enabled = False
+                            self._next_playlist_at = None
+                    except Exception:
+                        # Si algo falla, deshabilitar playlist para no spamear
+                        self._playlist_enabled = False
+                        self._next_playlist_at = None
+        except Exception:
+            pass

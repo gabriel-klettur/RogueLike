@@ -47,6 +47,27 @@ class PygameAudioBackend:
         except Exception:
             pass
 
+    def prepare_music(self, path: str) -> None:
+        """Carga el archivo de música sin iniciarla (preparación anticipada)."""
+        try:
+            pygame.mixer.music.load(path)
+        except Exception:
+            pass
+
+    def play_prepared_music(self, loop: bool = True, volume: Optional[float] = None, fade_in_ms: int = 0) -> None:
+        """Reproduce la música previamente cargada con prepare_music."""
+        try:
+            if volume is not None:
+                self._music_volume = float(max(0.0, min(1.0, volume)))
+            pygame.mixer.music.set_volume(self._music_volume)
+            loops = -1 if loop else 0
+            if fade_in_ms > 0:
+                pygame.mixer.music.play(loops, fade_ms=int(fade_in_ms))
+            else:
+                pygame.mixer.music.play(loops)
+        except Exception:
+            pass
+
     def stop_music(self, fade_ms: int = 300) -> None:
         try:
             if fade_ms > 0:
