@@ -8,6 +8,7 @@ from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
 import json
 import os
+from roguelike_game.ecs.utils.position_utils import compute_foot_tile
 
 import logging
 logger = logging.getLogger(__name__)
@@ -38,8 +39,56 @@ class DeathState(State):
         # Deshabilitar animación para no sobreescribir
         world.components.get('Animator', {}).pop(eid, None)
         world.components.get('AnimationTimer', {}).pop(eid, None)
-        # NPCs: eliminar inmediatamente
+        # NPCs: persist quick-death flag and remove immediately
         if eid not in world.components.get('PlayerTagComponent', {}):
+            # Registrar muerte en el estado local del mapa para evitar respawns no deseados
+            try:
+                inst_cmp = world.components.get('MonsterInstanceComponent', {}).get(eid)
+                instance_id = getattr(inst_cmp, 'instance_id', None) if inst_cmp is not None else None
+                if instance_id:
+                    tile = compute_foot_tile(world, eid, TILE_SIZE)
+                    tx, ty = (int(tile[0]), int(tile[1])) if tile else (None, None)
+                    level_name = getattr(world.map_manager, 'name', None)
+                    # Determinar prototipo
+                    proto = None
+                    at = world.components.get('MonsterArchetype', {}).get(eid)
+                    if at is not None:
+                        try:
+                            proto = getattr(at, 'type', None)
+                        except Exception:
+                            proto = None
+                    if not proto:
+                        ident = world.components.get('Identity', {}).get(eid)
+                        if ident is not None:
+                            try:
+                                proto = str(getattr(ident, 'name', None) or '')
+                            except Exception:
+                                proto = None
+                    st = {
+                        'level': level_name,
+                        'tile': [int(tx), int(ty)] if tx is not None and ty is not None else None,
+                        'hp': 0,
+                        'dead': True,
+                        'prototype': proto,
+                    }
+                    try:
+                        m = getattr(world, 'map_manager', None)
+                        if m is not None:
+                            ls = getattr(m, '_local_state', None)
+                            if isinstance(ls, dict):
+                                npc_states = ls.setdefault('npc_states', {})
+                                npc_states[str(instance_id)] = st
+                                try:
+                                    logger.info(
+                                        "[DeathState] Marked NPC instance_id=%s dead at level=%s tile=%s",
+                                        instance_id, level_name, st.get('tile')
+                                    )
+                                except Exception:
+                                    pass
+                    except Exception:
+                        pass
+            except Exception:
+                pass
             world.remove_entity(eid)
             # Limpiar inventario activo para este monstruo
             try:

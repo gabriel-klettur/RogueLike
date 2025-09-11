@@ -30,7 +30,7 @@ def create_empty_component_store():
         # Combo system
         'ComboCounterComponent': {}, 'ComboRulesComponent': {},
         # Spawner components
-        'SpawnerConfig': {}, 'SpawnerState': {},
+        'SpawnerConfig': {}, 'SpawnerState': {}, 'SpawnerChild': {},
         # Buildings
         'BuildingHealth': {},            # key -> { current_hp, max_hp }
     }
