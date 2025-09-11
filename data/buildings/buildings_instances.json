@@ -656,22 +656,6 @@
         }
     },
     {
-        "id": 43,
-        "template_id": 33,
-        "zone": "Forest",
-        "rel_x": 781,
-        "rel_y": 683,
-        "overrides": {
-            "scale": [
-                227,
-                309
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
         "id": 44,
         "template_id": 34,
         "zone": "Forest",
@@ -1612,38 +1596,6 @@
             "scale": [
                 194,
                 248
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 91,
-        "template_id": 76,
-        "zone": "Forest",
-        "rel_x": 763,
-        "rel_y": 957,
-        "overrides": {
-            "scale": [
-                218,
-                277
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 92,
-        "template_id": 77,
-        "zone": "Forest",
-        "rel_x": 875,
-        "rel_y": 820,
-        "overrides": {
-            "scale": [
-                272,
-                347
             ],
             "z_bottom": 3,
             "z_top": 5,

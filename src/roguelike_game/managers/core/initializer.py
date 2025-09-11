@@ -113,7 +113,9 @@ class GameInitializer:
         for msg, fn in self.extra_systems_stages:
             stages.append((msg, fn))
 
+        # Reordenado: inicializar audio temprano para que la música suene durante la carga
         defaults = [
+            ("Inicializando audio"              , partial(self._init_audio)),
             ("Inicializando estado Principal"   , partial(self._init_state)),
             ("Cargando mapa"                    , partial(self._init_map)),
             ("Cargando edificios"               , partial(self._init_buildings)),
@@ -131,7 +133,6 @@ class GameInitializer:
             ("Cargando minimapa"                , partial(self._init_minimap)),
 
             ("Inicializando renderizador"       , partial(self._init_renderer)),
-            ("Inicializando audio"              , partial(self._init_audio)),
             ("Inicializando menú"               , partial(self._init_menu))            
         ]
         stages.extend(defaults)
@@ -309,6 +310,34 @@ class GameInitializer:
             audio_bus=getattr(g, 'audio_bus', None),
             font_size=18,
         )
+        # Si la música de intro ya venía sonando (arrancada temprano), avisar al menú para no reiniciarla
+        try:
+            if getattr(g, 'menu_music_prestarted', False):
+                setattr(g.menu, '_music_already_playing_externally', True)
+        except Exception:
+            pass
+        # Pasar parámetros de FX de startup al menú (flash y carrusel)
+        try:
+            fx = getattr(g, 'startup_ui_fx', {}) or {}
+            g.menu._startup_flash_enabled = bool(fx.get('flash_enabled', True))
+            g.menu._startup_flash_at_s = float(fx.get('flash_at_s', 6.0))
+            g.menu._startup_flash_duration_s = float(fx.get('flash_duration_s', 0.25))
+            g.menu._startup_flash_color_rgba = tuple(fx.get('flash_color_rgba', (255, 255, 255, 255)))
+            g.menu._startup_flash_ease = str(fx.get('flash_ease', 'linear'))
+            g.menu._startup_flash_trigger = str(fx.get('flash_trigger', 'time'))
+            g.menu._startup_enable_cycle_after_flash = bool(fx.get('enable_carousel_after_flash', True))
+            g.menu._startup_block_cycle_until_flash = bool(fx.get('block_carousel_until_flash', True))
+            g.menu._startup_fade_in_ms = int(fx.get('fade_in_ms', 300))
+            # Ajustar loop para el caso en que el menú deba iniciar música por sí mismo
+            try:
+                g.menu._music_loop = bool(fx.get('loop', True))
+            except Exception:
+                pass
+            # Habilitar ciclo inmediato si no se bloquea hasta el destello o si el destello está deshabilitado
+            if (not g.menu._startup_block_cycle_until_flash) or (not g.menu._startup_flash_enabled):
+                g.menu._bg_cycle_enabled = True
+        except Exception:
+            pass
         # Configurar carrusel de fondos del menú principal (pantalla de inicio)
         try:
             g.menu.set_backgrounds([
@@ -321,14 +350,13 @@ class GameInitializer:
         except Exception:
             # No bloquear si no existe alguna ruta; el menú seguirá mostrando overlay sin fondo
             pass
-        # Configurar música de intro (se reproducirá cuando el menú esté visible)
+        # Configurar música de intro en el menú solo como metadato (no la reproduce si ya suena)
         try:
-            # Volumen desde audio_config
+            # Volumen desde audio_config (o mantener el del bus)
             try:
                 mv = float(g.audio_config.get('music'))
             except Exception:
-                mv = 0.6
-            # Intentar desde catálogo de audio (startup_track_id) y hacer fallback
+                mv = None
             intro_path = None
             try:
                 from roguelike_engine.audio.config import load_audio_catalog
@@ -339,7 +367,7 @@ class GameInitializer:
                     intro_path = catalog.track_path(startup_id)
             except Exception:
                 intro_path = None
-            g.menu.set_music(intro_path or "assets/audio/music/intro_theme.mp3", loop=True, volume=mv)
+            g.menu.set_music(intro_path or "assets/audio/music/intro_theme.mp3", loop=True, volume=(mv if mv is not None else g.menu._music_volume))
         except Exception:
             # Silencioso si falla audio o no existe el archivo
             pass
@@ -351,7 +379,8 @@ class GameInitializer:
             pass
         # Activar pantalla previa: "Pulsa para comenzar"
         try:
-            g.menu.enable_press_to_start(text="Pulsa para comenzar", blink_interval_s=0.8)
+            # Respetar completamente data/config/intro.json (texto, blink, etc.)
+            g.menu.enable_press_to_start()
         except Exception:
             pass
         # Arrancar en menú principal (start)
@@ -386,7 +415,7 @@ class GameInitializer:
             _set_audio_bus(bus)
         except Exception:
             pass
-        # Aplicar volúmenes iniciales (si aún no hay audio_config, usar defaults)
+        # Aplicar volúmenes iniciales (si aún no hay audio_config, usar defaults o el catálogo)
         try:
             mv = float(getattr(getattr(g, 'audio_config', None), 'get', lambda *_: 0.6)('music')) if getattr(g, 'audio_config', None) else 0.6
         except Exception:
@@ -399,6 +428,14 @@ class GameInitializer:
             av = float(getattr(getattr(g, 'audio_config', None), 'get', lambda *_: 0.6)('ambient')) if getattr(g, 'audio_config', None) else 0.6
         except Exception:
             av = 0.6
+        # Si el catálogo define volúmenes por grupo, preferirlos cuando no haya audio_config
+        try:
+            if getattr(g, 'audio_config', None) is None and catalog is not None and getattr(catalog, 'groups', None):
+                mv = float((catalog.groups.get('music') or {}).get('volume', mv))
+                sv = float((catalog.groups.get('sfx') or {}).get('volume', sv))
+                av = float((catalog.groups.get('ambient') or {}).get('volume', av))
+        except Exception:
+            pass
         try:
             bus.set_music_volume(mv)
             bus.set_sfx_volume(sv)
@@ -418,5 +455,57 @@ class GameInitializer:
                 except Exception:
                     pass
             _set_apply_hook(_apply_now)
+        except Exception:
+            pass
+        # Reproducir música de inicio inmediatamente (durante la carga) usando parámetros de audio.json
+        try:
+            import time as _time
+            # Leer configuración de startup desde el catálogo (defaults.startup)
+            startup_cfg = {}
+            try:
+                startup_cfg = (getattr(catalog, 'defaults', {}) or {}).get('startup', {}) or {}
+            except Exception:
+                startup_cfg = {}
+            play_on_boot = bool(startup_cfg.get('play_on_boot', True))
+            fade_in_ms = int(startup_cfg.get('fade_in_ms', 300))
+            startup_loop = bool(startup_cfg.get('loop', True))
+            flash_enabled = bool(startup_cfg.get('flash_enabled', True))
+            flash_at_s = float(startup_cfg.get('flash_at_s', 6.0))
+            flash_duration_s = float(startup_cfg.get('flash_duration_s', 0.25))
+            flash_color_rgba = tuple(startup_cfg.get('flash_color_rgba', [255, 255, 255, 255]))
+            flash_ease = str(startup_cfg.get('flash_ease', 'linear'))
+            flash_trigger = str(startup_cfg.get('flash_trigger', 'time'))  # 'time' | 'on_menu_show' | 'on_carousel_start'
+            enable_cycle_after_flash = bool(startup_cfg.get('enable_carousel_after_flash', True))
+            block_cycle_until_flash = bool(startup_cfg.get('block_carousel_until_flash', True))
+            # Exponer para el menú/renderer
+            g.startup_ui_fx = {
+                'flash_at_s': flash_at_s,
+                'flash_duration_s': flash_duration_s,
+                'flash_enabled': flash_enabled,
+                'flash_color_rgba': flash_color_rgba,
+                'flash_ease': flash_ease,
+                'flash_trigger': flash_trigger,
+                'enable_carousel_after_flash': enable_cycle_after_flash,
+                'block_carousel_until_flash': block_cycle_until_flash,
+                'fade_in_ms': fade_in_ms,
+                'loop': startup_loop,
+            }
+            if play_on_boot:
+                startup_id = None
+                intro_path = None
+                try:
+                    defaults = catalog.get_default_music() if catalog else {}
+                    startup_id = (defaults or {}).get('startup_track_id')
+                except Exception:
+                    startup_id = None
+                if startup_id:
+                    bus.play_music(track_id=startup_id, loop=startup_loop, volume=mv, fade_in_ms=fade_in_ms)
+                else:
+                    # Fallback directo a ruta conocida
+                    intro_path = "assets/audio/music/intro_theme.mp3"
+                    bus.play_music(path=intro_path, loop=startup_loop, volume=mv, fade_in_ms=fade_in_ms)
+                # Marcar inicio para sincronizar destello y habilitar carrusel más tarde
+                g.intro_music_started_at = _time.time()
+                g.menu_music_prestarted = True
         except Exception:
             pass

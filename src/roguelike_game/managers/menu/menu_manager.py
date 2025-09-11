@@ -13,6 +13,7 @@ from roguelike_game.ecs.systems.core.npc_respawn_system import NpcRespawnSystem
 
 from .menu_handler import MenuHandler
 from roguelike_ui.widgets.menu_renderer import MenuRenderer
+from roguelike_engine.audio.config import load_audio_catalog
 from roguelike_ui.widgets.menu_configurator import MenuConfigurator
 from roguelike_ui.widgets.options_configurator import OptionsConfigurator
 from roguelike_engine.world.models import WorldSnapshot
@@ -118,6 +119,11 @@ class MenuManager:
         self._bg_transition_s: float = 0.6
         self._bg_transition_start: float | None = None
         self._bg_slide_px: int = 24
+        # Control de carrusel: deshabilitado hasta que ocurra el destello inicial
+        self._bg_cycle_enabled: bool = False
+        # Flag/tiempo para el destello blanco de inicio
+        self._intro_flash_done: bool = False
+        self._intro_flash_start_time: float | None = None
 
         # Música del menú
         self.music_path: str | None = None
@@ -148,6 +154,134 @@ class MenuManager:
         self._press_blink_interval_s: float = 0.85
         self._press_last_toggle: float = time.time()
         self._press_visible: bool = True
+        # Ajustes visuales del texto "Pulsa para comenzar"
+        self._press_font_scale: float = 1.5  # 1.0 = tamaño base del renderer
+        self._press_extra_offset_px: int = 28  # bajar un poco más el texto
+        self._press_color: tuple[int, int, int] = (255, 220, 0)
+        self._press_shadow_color: tuple[int, int, int] = (0, 0, 0)
+        self._press_font_size: int | None = None  # si se define, tiene prioridad sobre font_scale
+        # Cargar overrides desde data/config/intro.json si existe
+        self._load_intro_config()
+        # Estado para recarga en caliente de intro.json
+        try:
+            self._intro_cfg_path = Path('data/config/intro.json')
+            self._intro_cfg_mtime = self._intro_cfg_path.stat().st_mtime if self._intro_cfg_path.exists() else None
+        except Exception:
+            self._intro_cfg_path = None
+            self._intro_cfg_mtime = None
+        self._intro_cfg_last_check = 0.0
+
+    # ---- Helpers de audio/config ----
+    def _load_intro_config(self):
+        """Carga configuración visual del mensaje de inicio desde data/config/intro.json."""
+        try:
+            cfg_path = Path('data/config/intro.json')
+            if not cfg_path.exists():
+                return
+            with cfg_path.open('r', encoding='utf-8') as f:
+                cfg = json.load(f)
+            press = cfg.get('press', {}) or {}
+            if 'text' in press:
+                self._press_start_text = str(press.get('text'))
+            if 'font_scale' in press:
+                try:
+                    self._press_font_scale = max(0.1, float(press.get('font_scale')))
+                except Exception:
+                    pass
+            if 'font_size' in press:
+                try:
+                    val = int(press.get('font_size'))
+                    self._press_font_size = max(8, val)
+                except Exception:
+                    pass
+            if 'extra_offset_px' in press:
+                try:
+                    self._press_extra_offset_px = int(press.get('extra_offset_px'))
+                except Exception:
+                    pass
+            if 'blink_interval_s' in press:
+                try:
+                    self._press_blink_interval_s = max(0.1, float(press.get('blink_interval_s')))
+                except Exception:
+                    pass
+            if 'color' in press:
+                try:
+                    col = tuple(press.get('color') or [])
+                    if len(col) >= 3:
+                        self._press_color = (int(col[0]), int(col[1]), int(col[2]))
+                except Exception:
+                    pass
+            if 'shadow_color' in press:
+                try:
+                    scol = tuple(press.get('shadow_color') or [])
+                    if len(scol) >= 3:
+                        self._press_shadow_color = (int(scol[0]), int(scol[1]), int(scol[2]))
+                except Exception:
+                    pass
+        except Exception:
+            # Silencioso: no romper el menú por config inválida
+            pass
+
+    def _maybe_reload_intro_config(self):
+        """Comprueba cada ~1s si cambió intro.json y recarga si es necesario."""
+        try:
+            now = time.time()
+            if (now - self._intro_cfg_last_check) < 1.0:
+                return
+            self._intro_cfg_last_check = now
+            p = getattr(self, '_intro_cfg_path', None)
+            if not p or not p.exists():
+                return
+            mtime = p.stat().st_mtime
+            if getattr(self, '_intro_cfg_mtime', None) != mtime:
+                # Recargar y actualizar marca de tiempo
+                self._load_intro_config()
+                self._intro_cfg_mtime = mtime
+        except Exception:
+            pass
+    def _get_menu_fade_out_ms(self) -> int:
+        """Obtiene el fade-out del menú desde audio.json (defaults.music.menu_fade_out_ms)."""
+        try:
+            catalog = load_audio_catalog()
+            d = getattr(catalog, 'defaults', {}) or {}
+            music_d = d.get('music', {}) or {}
+            v = int(music_d.get('menu_fade_out_ms', 500))
+            return max(0, v)
+        except Exception:
+            return 500
+
+    def _get_crossfade_ms(self) -> int:
+        """Obtiene el crossfade por defecto (defaults.music.crossfade_ms)."""
+        try:
+            catalog = load_audio_catalog()
+            d = getattr(catalog, 'defaults', {}) or {}
+            music_d = d.get('music', {}) or {}
+            v = int(music_d.get('crossfade_ms', 600))
+            return max(0, v)
+        except Exception:
+            return 600
+
+    def _flash_alpha_factor(self, t: float, duration: float, ease: str) -> float:
+        """Devuelve un factor [0..1] para atenuar el destello desde 1 -> 0 según la función de easing.
+        t es tiempo transcurrido, duration la duración total.
+        """
+        if duration <= 0:
+            return 0.0
+        u = max(0.0, min(1.0, t / max(1e-6, duration)))
+        k = 1.0 - u  # lineal por defecto (decay)
+        e = (ease or 'linear').lower()
+        try:
+            if e in ('linear',):
+                return k
+            if e in ('ease_out', 'ease_out_quad', 'quad_out'):
+                return k * k
+            if e in ('ease_in_out', 'ease_in_out_sine', 'sine_in_out'):
+                # medio seno para suavidad simétrica
+                import math
+                return (1.0 - 0.5 * (1.0 - math.cos(math.pi * u)))
+        except Exception:
+            pass
+        return k
 
     # ---- Configuración de fondo ----
     def set_background(self, path: str | None, *, scale_mode: str | None = None):
@@ -304,6 +438,9 @@ class MenuManager:
     def _update_background_cycle_state(self):
         if not self.backgrounds:
             return
+        # Si el ciclo está deshabilitado, no avanzar índices
+        if not getattr(self, '_bg_cycle_enabled', False):
+            return
         now = time.time()
         # Si hay transición en curso, finalizar si terminó
         if self._bg_transition_start is not None:
@@ -324,6 +461,14 @@ class MenuManager:
         """Dibuja el fondo (carrusel si está configurado, si no fondo único)."""
         if self.backgrounds:
             if not self._ensure_backgrounds_loaded_and_scaled(screen):
+                return
+            # Si el ciclo aún no está habilitado, mostrar la primera imagen estática sin transición
+            if not getattr(self, '_bg_cycle_enabled', False):
+                idx = max(0, min(self._bg_index, len(self._bg_scaled_list) - 1))
+                cur = self._bg_scaled_list[idx]
+                cur_off = self._bg_offsets_list[idx] if len(self._bg_offsets_list) > idx else (0, 0)
+                surf = cur._surf if hasattr(cur, '_surf') else cur
+                screen.blit(surf, cur_off)
                 return
             self._update_background_cycle_state()
             # Si no hay transición, dibujar imagen actual centrada
@@ -380,11 +525,23 @@ class MenuManager:
         try:
             if self.music_path and self.show_menu and self.mode in ("start", "load_list"):
                 if not self._music_active:
+                    # Si el launcher ya inició la música, considerarla activa pero no reiniciarla
+                    if getattr(self, '_music_already_playing_externally', False):
+                        self._music_active = True
+                        return
                     # Preferir AudioBus si existe
                     if getattr(self, 'audio_bus', None) is not None:
                         try:
-                            self.audio_bus.play_music(path=self.music_path, loop=self._music_loop, volume=self._music_volume, fade_in_ms=300)
+                            fade_ms = int(getattr(self, '_startup_fade_in_ms', 300))
+                            self.audio_bus.play_music(path=self.music_path, loop=self._music_loop, volume=self._music_volume, fade_in_ms=fade_ms)
                             self._music_active = True
+                            # Registrar inicio para sincronizar flash/carrusel si no estaba
+                            try:
+                                import time as _time
+                                if getattr(self.game, 'intro_music_started_at', None) is None:
+                                    self.game.intro_music_started_at = _time.time()
+                            except Exception:
+                                pass
                             return
                         except Exception:
                             pass
@@ -392,16 +549,34 @@ class MenuManager:
                     pygame.mixer.music.load(self.music_path)
                     pygame.mixer.music.set_volume(self._music_volume)
                     loops = -1 if self._music_loop else 0
-                    pygame.mixer.music.play(loops)
+                    try:
+                        fade_ms = int(getattr(self, '_startup_fade_in_ms', 300))
+                        if fade_ms > 0:
+                            pygame.mixer.music.play(loops, fade_ms=fade_ms)
+                        else:
+                            pygame.mixer.music.play(loops)
+                    except Exception:
+                        pygame.mixer.music.play(loops)
                     self._music_active = True
+                    # Registrar inicio
+                    try:
+                        import time as _time
+                        if getattr(self.game, 'intro_music_started_at', None) is None:
+                            self.game.intro_music_started_at = _time.time()
+                    except Exception:
+                        pass
             else:
                 if self._music_active:
-                    # Fade-out breve para transición suave
+                    # Fade-out suave controlado por configuración
                     try:
+                        fade = int(self._get_menu_fade_out_ms())
                         if getattr(self, 'audio_bus', None) is not None:
-                            self.audio_bus.stop_music(fade_ms=300)
+                            self.audio_bus.stop_music(fade_ms=fade)
                         else:
-                            pygame.mixer.music.fadeout(300)
+                            if fade > 0:
+                                pygame.mixer.music.fadeout(fade)
+                            else:
+                                pygame.mixer.music.stop()
                     except Exception:
                         try:
                             pygame.mixer.music.stop()
@@ -412,18 +587,20 @@ class MenuManager:
             # No interrumpir UI por errores de audio
             pass
 
-    def stop_music(self, fade_ms: int = 300):
+    def stop_music(self, fade_ms: int | None = None):
         """Detiene la música del menú (con fade opcional)."""
         try:
             if self._music_active:
                 if getattr(self, 'audio_bus', None) is not None:
                     try:
-                        self.audio_bus.stop_music(fade_ms=int(fade_ms))
+                        fade = self._get_menu_fade_out_ms() if fade_ms is None else int(fade_ms)
+                        self.audio_bus.stop_music(fade_ms=fade)
                     except Exception:
                         pass
                 else:
-                    if fade_ms > 0:
-                        pygame.mixer.music.fadeout(int(fade_ms))
+                    fade = self._get_menu_fade_out_ms() if fade_ms is None else int(fade_ms)
+                    if fade > 0:
+                        pygame.mixer.music.fadeout(fade)
                     else:
                         pygame.mixer.music.stop()
         finally:
@@ -473,8 +650,66 @@ class MenuManager:
         """
         try:
             if self.mode in ("start", "load_list"):
-                # Fondo dinámico (carrusel)
+                # Fondo dinámico (carrusel). Retrasar el ciclo hasta el destello de intro
+                try:
+                    intro_t0 = getattr(self.game, 'intro_music_started_at', None)
+                except Exception:
+                    intro_t0 = None
+                now = time.time()
+                elapsed = (now - intro_t0) if intro_t0 else None
+                # Disparar destello según trigger configurado (time | on_menu_show | on_carousel_start)
+                try:
+                    flash_enabled = bool(getattr(self, '_startup_flash_enabled', True))
+                    trigger = str(getattr(self, '_startup_flash_trigger', 'time'))
+                    if flash_enabled and not self._intro_flash_done:
+                        if trigger == 'time':
+                            flash_at = float(getattr(self, '_startup_flash_at_s', 6.0))
+                            if (intro_t0 is not None) and (elapsed is not None) and (elapsed >= flash_at):
+                                self._intro_flash_done = True
+                                self._intro_flash_start_time = now
+                                if bool(getattr(self, '_startup_enable_cycle_after_flash', True)):
+                                    self._bg_cycle_enabled = True
+                                self._bg_last_switch_time = now
+                        elif trigger == 'on_menu_show':
+                            self._intro_flash_done = True
+                            self._intro_flash_start_time = now
+                            if bool(getattr(self, '_startup_enable_cycle_after_flash', True)):
+                                self._bg_cycle_enabled = True
+                            self._bg_last_switch_time = now
+                        elif trigger == 'on_carousel_start':
+                            if not getattr(self, '_bg_cycle_enabled', False):
+                                if bool(getattr(self, '_startup_enable_cycle_after_flash', True)):
+                                    self._bg_cycle_enabled = True
+                                self._bg_last_switch_time = now
+                                self._intro_flash_done = True
+                                self._intro_flash_start_time = now
+                except Exception:
+                    pass
+                # Dibujar fondos según el estado del ciclo
                 self._blit_backgrounds(screen)
+                # Pintar destello (duración, color y easing configurables)
+                if self._intro_flash_start_time is not None and bool(getattr(self, '_startup_flash_enabled', True)):
+                    dt = now - self._intro_flash_start_time
+                    flash_dur = float(getattr(self, '_startup_flash_duration_s', 0.25))
+                    if flash_dur <= 0:
+                        self._intro_flash_start_time = None
+                    elif 0.0 <= dt <= flash_dur:
+                        ease = str(getattr(self, '_startup_flash_ease', 'linear'))
+                        fac = self._flash_alpha_factor(dt, flash_dur, ease)
+                        color_rgba = tuple(getattr(self, '_startup_flash_color_rgba', (255, 255, 255, 255)))
+                        base_rgb = (int(color_rgba[0]), int(color_rgba[1]), int(color_rgba[2]))
+                        alpha = int(255 * max(0.0, min(1.0, fac)))
+                        try:
+                            w, h = screen.get_size()
+                            flash = pygame.Surface((w, h), pygame.SRCALPHA)
+                            flash.fill((base_rgb[0], base_rgb[1], base_rgb[2], alpha))
+                            surface_to_blit = flash._surf if hasattr(flash, '_surf') else flash
+                            screen.blit(surface_to_blit, (0, 0))
+                        except Exception:
+                            pass
+                    elif dt > flash_dur:
+                        # Finalizar destello
+                        self._intro_flash_start_time = None
                 # Logo si configurado
                 if self.logo_path:
                     logo_layout = self._compute_logo_layout(screen)
@@ -869,7 +1104,68 @@ class MenuManager:
         """
         # Fondo (único o carrusel) para menú de inicio (y lista de partidas) antes del overlay
         if self.mode in ("start", "load_list"):
+            # Control de destello sincronizado con música de intro y habilitación del carrusel
+            try:
+                intro_t0 = getattr(self.game, 'intro_music_started_at', None)
+            except Exception:
+                intro_t0 = None
+            now = time.time()
+            elapsed = (now - intro_t0) if intro_t0 else None
+            # Disparar destello según trigger configurado
+            try:
+                flash_enabled = bool(getattr(self, '_startup_flash_enabled', True))
+                trigger = str(getattr(self, '_startup_flash_trigger', 'time'))
+                if flash_enabled and not self._intro_flash_done:
+                    if trigger == 'time':
+                        flash_at = float(getattr(self, '_startup_flash_at_s', 6.0))
+                        if (intro_t0 is not None) and (elapsed is not None) and (elapsed >= flash_at):
+                            self._intro_flash_done = True
+                            self._intro_flash_start_time = now
+                            if bool(getattr(self, '_startup_enable_cycle_after_flash', True)):
+                                self._bg_cycle_enabled = True
+                            self._bg_last_switch_time = now
+                    elif trigger == 'on_menu_show':
+                        # Primera vez que dibujamos el menú -> destello ahora y arranque de carrusel
+                        self._intro_flash_done = True
+                        self._intro_flash_start_time = now
+                        if bool(getattr(self, '_startup_enable_cycle_after_flash', True)):
+                            self._bg_cycle_enabled = True
+                        self._bg_last_switch_time = now
+                    elif trigger == 'on_carousel_start':
+                        # Arrancar carrusel y destello en el mismo instante si estaba bloqueado
+                        if not getattr(self, '_bg_cycle_enabled', False):
+                            if bool(getattr(self, '_startup_enable_cycle_after_flash', True)):
+                                self._bg_cycle_enabled = True
+                            self._bg_last_switch_time = now
+                            self._intro_flash_done = True
+                            self._intro_flash_start_time = now
+            except Exception:
+                pass
             self._blit_backgrounds(screen)
+            # Pintar destello (duración configurable)
+            if self._intro_flash_start_time is not None:
+                dt = now - self._intro_flash_start_time
+                flash_dur = float(getattr(self, '_startup_flash_duration_s', 0.25))
+                if flash_dur <= 0:
+                    self._intro_flash_start_time = None
+                elif 0.0 <= dt <= flash_dur:
+                    ease = str(getattr(self, '_startup_flash_ease', 'linear'))
+                    fac = self._flash_alpha_factor(dt, flash_dur, ease)
+                    # Color desde config (RGBA), sustituimos alpha por el calculado
+                    color_rgba = tuple(getattr(self, '_startup_flash_color_rgba', (255, 255, 255, 255)))
+                    base_rgb = (int(color_rgba[0]), int(color_rgba[1]), int(color_rgba[2]))
+                    alpha = int(255 * max(0.0, min(1.0, fac)))
+                    try:
+                        sw, sh = screen.get_size()
+                        flash = pygame.Surface((sw, sh), pygame.SRCALPHA)
+                        flash.fill((base_rgb[0], base_rgb[1], base_rgb[2], alpha))
+                        surface_to_blit = flash._surf if hasattr(flash, '_surf') else flash
+                        screen.blit(surface_to_blit, (0, 0))
+                    except Exception:
+                        pass
+                elif dt > flash_dur:
+                    # Finalizar destello
+                    self._intro_flash_start_time = None
         # Asegurar música acorde al modo del menú
         self._ensure_music_for_menu()
         # Calcular layout del logo (para posicionar el panel debajo)
@@ -897,16 +1193,32 @@ class MenuManager:
                 self._press_visible = not self._press_visible
                 self._press_last_toggle = now
             if self._press_visible:
-                text_surf = self.renderer.font.render(self._press_start_text, True, (255, 220, 0))
+                # Recarga en caliente del intro.json (si el usuario lo editó en tiempo real)
+                self._maybe_reload_intro_config()
+                # Fuente escalada para el mensaje de inicio
+                try:
+                    base_size = int(getattr(self.renderer, 'font_size', 24))
+                except Exception:
+                    base_size = 24
+                cfg_size = int(getattr(self, '_press_font_size', 0) or 0)
+                if cfg_size > 0:
+                    press_size = max(8, cfg_size)
+                else:
+                    press_size = max(8, int(base_size * float(getattr(self, '_press_font_scale', 1.5))))
+                try:
+                    press_font = pygame.font.Font(None, press_size)
+                except Exception:
+                    press_font = self.renderer.font
+                text_surf = press_font.render(self._press_start_text, True, self._press_color)
                 # sombra
-                shadow = self.renderer.font.render(self._press_start_text, True, (0, 0, 0))
+                shadow = press_font.render(self._press_start_text, True, self._press_shadow_color)
                 tx = (sw - text_surf.get_width()) // 2
                 # colocar debajo del logo si existe, si no, centrado vertical
                 if logo_layout is not None:
-                    ty = bottom + max(12, self._logo_gap_px)
+                    ty = bottom + max(12, self._logo_gap_px) + int(getattr(self, '_press_extra_offset_px', 28))
                     ty = min(ty, sh - text_surf.get_height() - 24)
                 else:
-                    ty = (sh - text_surf.get_height()) // 2
+                    ty = (sh - text_surf.get_height()) // 2 + int(getattr(self, '_press_extra_offset_px', 28))
                 screen.blit(shadow, (tx + 2, ty + 2))
                 screen.blit(text_surf, (tx, ty))
             # Devolver rect de pantalla completa (overlay)
@@ -979,8 +1291,8 @@ class MenuManager:
         """
         # Opción 'Continuar': cerrar menú y reanudar juego
         if selected == "Continuar":
-            # Salimos del menú, detener música
-            self.stop_music()
+            # Salimos del menú, detener música con fade configurado
+            self.stop_music(fade_ms=None)
             self.show_menu = False
             return
         # Resto de acciones
@@ -1293,9 +1605,9 @@ class MenuManager:
             # 5) Cerrar menú y pasar a modo pausa para próximas aperturas
             self.show_menu = False
             self.mode = "pause"
-            # Detener música del menú con un fade suave (consistente con nuevo juego)
+            # Detener música del menú con fade parametrizado (defaults.music.menu_fade_out_ms)
             try:
-                self.stop_music(fade_ms=500)
+                self.stop_music(fade_ms=None)
             except Exception:
                 pass
             # Audio: entrar al juego (crossfade a tema principal + ambient)
@@ -1573,9 +1885,9 @@ class MenuManager:
             # Cerrar menú y dejarlo en modo pausa para próximas aperturas
             self.show_menu = False
             self.mode = "pause"
-            # Detener música del menú con un fade suave (consistente con nuevo juego)
+            # Detener música del menú con fade parametrizado (defaults.music.menu_fade_out_ms)
             try:
-                self.stop_music(fade_ms=500)
+                self.stop_music(fade_ms=None)
             except Exception:
                 pass
             # Audio: entrar al juego (crossfade a tema principal + ambient)

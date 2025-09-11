@@ -1,7 +1,7 @@
 {
-  "music": 0.26933701657458564,
-  "ambient": 0.44999999999999996,
-  "sfx": 0.7,
+  "music": 0.20673813169984687,
+  "ambient": 0.06431852986217458,
+  "sfx": 0.14241960183767227,
   "tracks": {
     "menu_intro": {
       "path": "assets/audio/music/intro_theme.mp3"
@@ -75,7 +75,8 @@
     "music": {
       "startup_track_id": "menu_intro",
       "ingame_track_id": "main_theme",
-      "crossfade_ms": 600
+      "crossfade_ms": 600,
+      "menu_fade_out_ms": 500
     },
     "ambient": {
       "choices": [
@@ -97,6 +98,16 @@
         "sword_clash_",
         "fireball"
       ]
+    },
+    "startup": {
+      "play_on_boot": true,
+      "fade_in_ms": 600,
+      "flash_at_s": 5.0,
+      "flash_duration_s": 2.0,
+      "flash_trigger": "on_menu_show",
+      "flash_ease": "ease_out",
+      "enable_carousel_after_flash": true,
+      "block_carousel_until_flash": true
     }
   },
   "biomes": {

@@ -1,0 +1,11 @@
+{
+  "press": {
+    "text": "Pulsa para comenzar",
+    "font_size": 42,
+    "font_scale": 1.6,
+    "extra_offset_px": 32,
+    "color": [255, 220, 0],
+    "shadow_color": [0, 0, 0],
+    "blink_interval_s": 0.7
+  }
+}

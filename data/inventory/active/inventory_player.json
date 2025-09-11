@@ -1,13 +1,16 @@
 {
   "1": {
-    "player_id": "7a944a28-2ce4-4935-bf99-4f4d46be288d",
+    "player_id": "b013fc51-f081-45a9-92e5-2d1198405302",
     "capacity": 20,
     "slots": [
       {
         "item": "gold",
-        "quantity": 10
+        "quantity": 17
       },
-      null,
+      {
+        "item": "wood",
+        "quantity": 1
+      },
       null,
       null,
       null,
