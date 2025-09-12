@@ -118,6 +118,29 @@ class SpawnerRuntimeSystem:
         Uses a 'runtime_hidden' flag on Building objects to let the renderer skip them.
         When cfg.visible_in_game is False, any previously linked or matching buildings are hidden.
         """
+        # Gather all building_ids referenced by this spawner for any visual state (plus fallback building_id)
+        mapping_ids: set[int] = set()
+        try:
+            vis_map = getattr(cfg, 'state_visuals', None) or {}
+            if isinstance(vis_map, dict):
+                for _k, _v in vis_map.items():
+                    try:
+                        if isinstance(_v, dict):
+                            # Best-effort: allow richer mapping objects
+                            bid = int(_v.get('instance_id') or _v.get('id') or _v.get('building_instance_id'))
+                        else:
+                            bid = int(_v)
+                        mapping_ids.add(int(bid))
+                    except Exception:
+                        continue
+            # Include root-level building_id as a candidate as well
+            if getattr(cfg, 'building_id', None) is not None:
+                try:
+                    mapping_ids.add(int(getattr(cfg, 'building_id')))
+                except Exception:
+                    pass
+        except Exception:
+            mapping_ids = set()
         # If visuals are disabled, hide any linked building for this spawner and return
         if not getattr(cfg, 'visible_in_game', False):
             # Log only on transition to disabled
@@ -131,8 +154,16 @@ class SpawnerRuntimeSystem:
             try:
                 for ob in getattr(world, 'buildings', []) or []:
                     try:
-                        if getattr(ob, '_spawner_eid', None) == eid:
+                        # Hide any object already linked to this spawner OR belonging to its mapping set
+                        if getattr(ob, '_spawner_eid', None) == eid or (getattr(ob, 'id', None) in mapping_ids):
                             setattr(ob, 'runtime_hidden', True)
+                            # Keep linkage and tagging consistent for renderer/debug
+                            try:
+                                setattr(ob, '_spawner_eid', eid)
+                                setattr(ob, '_world_ref', world)
+                                setattr(ob, '_is_spawner_visual', True)
+                            except Exception:
+                                pass
                     except Exception:
                         continue
             except Exception:
@@ -153,25 +184,31 @@ class SpawnerRuntimeSystem:
             self._visual_enabled_last[eid] = True
         except Exception:
             pass
+        # Ensure all mapped buildings are tagged to this spawner and set exclusive runtime visibility
+        try:
+            dup_count = 0
+            for ob in getattr(world, 'buildings', []) or []:
+                try:
+                    if getattr(ob, 'id', None) in mapping_ids:
+                        # Tag linkage and editor/runtime markers for renderer
+                        setattr(ob, '_spawner_eid', eid)
+                        setattr(ob, '_world_ref', world)
+                        setattr(ob, '_is_spawner_visual', True)
+                        # Exclusive visibility: only desired remains visible
+                        setattr(ob, 'runtime_hidden', getattr(ob, 'id', None) != desired)
+                    if getattr(ob, 'id', None) == desired:
+                        dup_count += 1
+                except Exception:
+                    continue
+            if desired is not None and dup_count > 1:
+                key = (eid, int(desired))
+                if key not in self._dup_warned:
+                    logger.warning(f"[SpawnerRuntime] Duplicate Building objects in world with id={desired} for eid={eid}: count={dup_count}")
+                    self._dup_warned.add(key)
+        except Exception:
+            pass
         if desired == prev:
-            # Even if id didn't change, ensure exclusive visibility according to desired
-            try:
-                dup_count = 0
-                for ob in getattr(world, 'buildings', []) or []:
-                    try:
-                        if getattr(ob, '_spawner_eid', None) == eid:
-                            setattr(ob, 'runtime_hidden', getattr(ob, 'id', None) != desired)
-                        if getattr(ob, 'id', None) == desired:
-                            dup_count += 1
-                    except Exception:
-                        continue
-                if desired is not None and dup_count > 1:
-                    key = (eid, int(desired))
-                    if key not in self._dup_warned:
-                        logger.warning(f"[SpawnerRuntime] Duplicate Building objects in world with id={desired} for eid={eid}: count={dup_count}")
-                        self._dup_warned.add(key)
-            except Exception:
-                pass
+            # We've already enforced exclusivity above; no further relink needed this frame
             return
         # Update linkage
         cur = self._find_linked_building(world, eid)

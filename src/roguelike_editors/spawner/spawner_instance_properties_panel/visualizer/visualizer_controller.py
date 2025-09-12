@@ -273,13 +273,11 @@ class VisualizerController:
             pass
 
     def _set_building_visible(self, bid: int, visible: bool) -> None:
+        # Cache intended editor visibility
         self.model.editor_visibility[int(bid)] = bool(visible)
         ob = self._find_building_entity_by_id(int(bid))
         if ob is not None:
-            try:
-                setattr(ob, 'visible', bool(visible))
-            except Exception:
-                pass
+            # Do NOT touch runtime 'visible' flag; restrict to editor-only flag so gameplay is unaffected
             try:
                 setattr(ob, 'editor_hidden', not bool(visible))
             except Exception:
@@ -397,12 +395,8 @@ class VisualizerController:
         if ob is not None:
             try:
                 # Decide current effective visibility
-                cur = bool(getattr(ob, 'visible', True)) and not bool(getattr(ob, 'editor_hidden', False))
+                cur = (not bool(getattr(ob, 'editor_hidden', False)))
                 new_vis = not cur
-                try:
-                    setattr(ob, 'visible', bool(new_vis))
-                except Exception:
-                    pass
                 try:
                     setattr(ob, 'editor_hidden', not bool(new_vis))
                 except Exception:

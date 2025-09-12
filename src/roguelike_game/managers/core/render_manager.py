@@ -393,10 +393,18 @@ class RendererManager:
         editor_state = self.tiles_editor.editor_state
         if not ((editor_state.active and not editor_state.toolbar_state.show_buildings)
                 or (editor_state.active and editor_state.toolbar_state.show_collisions and not editor_state.toolbar_state.show_collisions_overlay)):
+            # Determine if Spawner Editor is active to gate editor_hidden
+            spawner_editor_active = False
+            try:
+                w = self.ecs.ecs_world
+                spawner_editor_active = bool(getattr(getattr(w, 'state', None), 'spawner_editor_active', False))
+            except Exception:
+                spawner_editor_active = False
             for b in entities.buildings:
                 # Respect editor/runtime visibility flags and basic visibility toggle
                 try:
-                    if getattr(b, 'editor_hidden', False) or getattr(b, 'runtime_hidden', False):
+                    # editor_hidden only applies while spawner editor is active; runtime_hidden always applies
+                    if (spawner_editor_active and getattr(b, 'editor_hidden', False)) or getattr(b, 'runtime_hidden', False):
                         continue
                 except Exception:
                     pass

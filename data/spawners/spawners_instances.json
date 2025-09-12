@@ -9,7 +9,28 @@
     "overrides": {
       "visible_in_game": true
     },
-    "visuals": {},
+    "visuals": {
+      "AwaitTrigger": {
+        "instance_id": 143,
+        "template_id": 157
+      },
+      "WaitCooldown": {
+        "instance_id": 144,
+        "template_id": 155
+      },
+      "WaitClear": {
+        "instance_id": 143,
+        "template_id": 157
+      },
+      "Finished": {
+        "instance_id": 139,
+        "template_id": 138
+      },
+      "WaitRestart": {
+        "instance_id": 140,
+        "template_id": 139
+      }
+    },
     "id": "survival_10_forest_14_9"
   }
 ]

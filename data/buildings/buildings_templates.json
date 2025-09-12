@@ -1831,5 +1831,31 @@
             384
         ],
         "id": 157
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/totems/totem_destruido.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            384
+        ],
+        "id": 158
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/totems/totem_riendo.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            384
+        ],
+        "id": 159
     }
 ]
