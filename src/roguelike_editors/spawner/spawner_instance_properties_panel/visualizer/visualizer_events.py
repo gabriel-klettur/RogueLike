@@ -38,9 +38,23 @@ class VisualizerEvents:
             # Still allow keyboard commits when editing
             if getattr(model, 'visuals_editing_state', None) is not None and et in (pygame.KEYDOWN, pygame.KEYUP, pygame.TEXTINPUT):
                 return self._handle_edit_keyboard(controller, event)
+            # Clear hover when moving outside
+            if et == pygame.MOUSEMOTION:
+                try:
+                    controller.model.hover_row_index = None
+                except Exception:
+                    pass
             return False
         # Translate to panel-local coordinates
         local = (pos[0] - panel_rect.left, pos[1] - panel_rect.top)
+
+        # Update hover index on mouse move
+        if et == pygame.MOUSEMOTION:
+            try:
+                j = self._hit_index(getattr(controller.model, 'visuals_row_rects', []) or [], local)
+                controller.model.hover_row_index = j
+            except Exception:
+                pass
 
         # If editing a Visuals Template cell, route to its text input first
         if getattr(model, 'visuals_editing_state', None) is not None:
@@ -59,7 +73,7 @@ class VisualizerEvents:
                 return True
             return False
 
-        # Not editing: handle button hits (plus/browse/eye) and starting edit
+        # Not editing: handle button hits (plus/browse/eye/clear) and starting edit
         if et == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
             # '+' button
             j = self._hit_index(getattr(vmodel, 'visuals_plus_rects', []) or [], local)
@@ -85,6 +99,14 @@ class VisualizerEvents:
                     st = rows_v[j][0]
                     controller.toggle_building_visibility_for_state(st)
                     return True
+            # Clear (X)
+            j = self._hit_index(getattr(vmodel, 'visuals_clear_rects', []) or [], local)
+            if j is not None:
+                rows_v = pc.get_visuals_rows()
+                if 0 <= j < len(rows_v):
+                    st = rows_v[j][0]
+                    controller.clear_visual_for_state(st)
+                    return True
             # Click on template cell begins text edit
             j = self._hit_index(getattr(vmodel, 'visuals_template_rects', []) or [], local)
             if j is not None:
@@ -93,6 +115,40 @@ class VisualizerEvents:
                     st = rows_v[j][0]
                     controller.begin_edit_visual(st)
                     return True
+            # Row hold-to-center: clicking on empty row space starts hold
+            j = self._hit_index(getattr(vmodel, 'visuals_row_rects', []) or [], local)
+            if j is not None:
+                # Avoid starting hold if the click was on any control
+                hit_any_control = False
+                try:
+                    if (self._hit_index(getattr(vmodel, 'visuals_plus_rects', []) or [], local) is not None or
+                        self._hit_index(getattr(vmodel, 'visuals_browse_rects', []) or [], local) is not None or
+                        self._hit_index(getattr(vmodel, 'visuals_eye_rects', []) or [], local) is not None or
+                        self._hit_index(getattr(vmodel, 'visuals_clear_rects', []) or [], local) is not None or
+                        self._hit_index(getattr(vmodel, 'visuals_template_rects', []) or [], local) is not None):
+                        hit_any_control = True
+                except Exception:
+                    hit_any_control = False
+                if not hit_any_control:
+                    rows_v = pc.get_visuals_rows()
+                    if 0 <= j < len(rows_v):
+                        st = rows_v[j][0]
+                        try:
+                            controller.model.hold_active = True
+                            controller.model.hold_row_index = j
+                            # Immediately center once
+                            controller.center_camera_on_state(st)
+                            # Suppress gameplay camera follow if available
+                            try:
+                                world = getattr(getattr(pc, 'game', None), 'ecs', None)
+                                world = getattr(world, 'ecs_world', None)
+                                if world is not None and hasattr(world, 'state'):
+                                    setattr(world.state, 'spawner_hold_focus', True)
+                            except Exception:
+                                pass
+                        except Exception:
+                            pass
+                        return True
 
         return False
 
@@ -157,6 +213,14 @@ class VisualizerEvents:
                 if 0 <= j < len(rows_v):
                     st = rows_v[j][0]
                     controller.toggle_building_visibility_for_state(st)
+                    return True
+            # Clear (X) while editing
+            j = self._hit_index(getattr(vmodel, 'visuals_clear_rects', []) or [], local)
+            if j is not None:
+                rows_v = pc.get_visuals_rows()
+                if 0 <= j < len(rows_v):
+                    st = rows_v[j][0]
+                    controller.clear_visual_for_state(st)
                     return True
         # Route pointer events inside template rect to TextInput
         vti = getattr(controller.model, 'text_input', None)

@@ -6,6 +6,8 @@ from ..services.buildings_service import (
     load_buildings_instances,
     get_template_image_path,
 )
+from roguelike_engine.config.map_config import global_map_settings
+from roguelike_engine.config.config_tiles import TILE_SIZE
 
 from .visualizer_model import VisualizerModel
 from .visualizer_view import VisualizerView
@@ -70,6 +72,55 @@ class VisualizerController:
                         return ob
                 except Exception:
                     continue
+        except Exception:
+            pass
+
+    def center_camera_on_state(self, state_key: str) -> None:
+        """Center camera on the building instance mapped to the given visuals state key.
+        Best-effort: ensures the building is loaded, then computes world pixel position
+        from buildings_instances.json using zone offsets and rel_x/rel_y.
+        """
+        visuals = getattr(self.parent.model, 'visuals', {}) or {}
+        key_map = getattr(self.parent.model, 'visuals_key_map', {}) or {}
+        json_key = key_map.get(state_key, state_key)
+        raw = visuals.get(json_key)
+        if raw is None:
+            return
+        try:
+            if isinstance(raw, dict):
+                bid = int(raw.get('instance_id') or raw.get('id') or raw.get('building_instance_id'))
+            else:
+                bid = int(raw)
+        except Exception:
+            return
+        # Ensure it's loaded
+        try:
+            self._ensure_building_loaded(int(bid))
+        except Exception:
+            pass
+        # Center camera
+        try:
+            cam = getattr(self.parent.game, 'camera', None)
+            if cam is None:
+                return
+            bx = by = None
+            bzone = 'lobby'
+            for e in load_buildings_instances():
+                try:
+                    if int(e.get('id')) == int(bid):
+                        bzone = str(e.get('zone') or 'lobby')
+                        rx = int(e.get('rel_x') or 0)
+                        ry = int(e.get('rel_y') or 0)
+                        off = global_map_settings.zone_offsets.get(bzone, (0, 0))
+                        bx = int(off[0] * TILE_SIZE) + int(rx)
+                        by = int(off[1] * TILE_SIZE) + int(ry)
+                        break
+                except Exception:
+                    continue
+            if bx is not None and by is not None:
+                zoom = getattr(cam, 'zoom', 1.0) or 1.0
+                cam.offset_x = float(bx) - (cam.screen_width / (2 * zoom))
+                cam.offset_y = float(by) - (cam.screen_height / (2 * zoom))
         except Exception:
             pass
         return None
@@ -165,7 +216,14 @@ class VisualizerController:
     def tag_and_reveal_building(self, bid: int, state_key: str) -> None:
         ob = self._find_building_entity_by_id(int(bid))
         if ob is None:
-            return
+            # Attempt to load the building instance into the world and retry
+            try:
+                self._ensure_building_loaded(int(bid))
+            except Exception:
+                pass
+            ob = self._find_building_entity_by_id(int(bid))
+            if ob is None:
+                return
         try:
             setattr(ob, '_is_spawner_visual', True)
         except Exception:
@@ -190,7 +248,8 @@ class VisualizerController:
                 for eid in world.get_entities_with('SpawnerConfig'):
                     try:
                         cfg = comps['SpawnerConfig'][eid]
-                        if getattr(ob, 'spawn_id', None) == str(getattr(cfg, 'template_id', '')):
+                        # Match by spawner instance id if available
+                        if getattr(ob, 'spawn_id', None) == str(getattr(cfg, 'instance_id', getattr(cfg, 'template_id', ''))):
                             setattr(ob, '_spawner_eid', eid)
                             setattr(ob, '_world_ref', world)
                             break
@@ -199,6 +258,31 @@ class VisualizerController:
         except Exception:
             pass
         self._set_building_visible(int(bid), True)
+        # Center camera on the revealed building for user feedback
+        try:
+            cam = getattr(self.parent.game, 'camera', None)
+            if cam is not None:
+                # Find the building instance entry to compute world pixel position
+                bx = by = None
+                bzone = 'lobby'
+                for e in load_buildings_instances():
+                    try:
+                        if int(e.get('id')) == int(bid):
+                            bzone = str(e.get('zone') or 'lobby')
+                            rx = int(e.get('rel_x') or 0)
+                            ry = int(e.get('rel_y') or 0)
+                            off = global_map_settings.zone_offsets.get(bzone, (0, 0))
+                            bx = int(off[0] * TILE_SIZE) + int(rx)
+                            by = int(off[1] * TILE_SIZE) + int(ry)
+                            break
+                    except Exception:
+                        continue
+                if bx is not None and by is not None:
+                    zoom = getattr(cam, 'zoom', 1.0) or 1.0
+                    cam.offset_x = float(bx) - (cam.screen_width / (2 * zoom))
+                    cam.offset_y = float(by) - (cam.screen_height / (2 * zoom))
+        except Exception:
+            pass
 
     def is_building_visible_for_state(self, state_key: str) -> bool:
         visuals = getattr(self.parent.model, 'visuals', {}) or {}
@@ -252,6 +336,10 @@ class VisualizerController:
 
     def validate_template_text(self, text: str):
         return self.parent.get_visual_input_validation(str(text))
+
+    def clear_visual_for_state(self, state_key: str) -> None:
+        """Delegate clearing a visual mapping back to the parent controller."""
+        self.parent.clear_visual_for_state(state_key)
 
 
 __all__ = ["VisualizerController"]

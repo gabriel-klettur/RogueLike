@@ -162,6 +162,17 @@ class InstancePropertiesController:
             self._sanitize_visuals_instances()
         except Exception:
             pass
+        # While holding on a visuals row, keep camera centered on its building
+        try:
+            vmodel = getattr(self.visualizer, 'model', None)
+            if vmodel is not None and getattr(vmodel, 'hold_active', False):
+                j = getattr(vmodel, 'hold_row_index', None)
+                vis_rows = self.get_visuals_rows()
+                if j is not None and 0 <= int(j) < len(vis_rows):
+                    st = str(vis_rows[int(j)][0])
+                    self.visualizer.center_camera_on_state(st)
+        except Exception:
+            pass
         return self.view.render(self, screen, anchor=anchor)
 
     def handle_event(self, event) -> bool:
@@ -649,6 +660,19 @@ class InstancePropertiesController:
                         'rel_x': int(rel_x),
                         'rel_y': int(rel_y),
                     }
+                    # Tag as spawner visual to protect from global building saves
+                    try:
+                        inst = self.model.selected_instance or {}
+                        sid = str(inst.get('id')) if inst.get('id') is not None else None
+                    except Exception:
+                        sid = None
+                    try:
+                        entry['overrides'] = entry.get('overrides') or {}
+                        entry['overrides']['_is_spawner_visual'] = True
+                        if sid:
+                            entry['overrides']['spawner_instance_id'] = sid
+                    except Exception:
+                        pass
                     data.append(entry)
                     self._write_buildings_instances(data)
                     # Refresh index and mark as repaired
@@ -1337,6 +1361,98 @@ class InstancePropertiesController:
             except Exception:
                 pass
         return next_id
+
+    def clear_visual_for_state(self, state_key: str) -> None:
+        """Remove the visual mapping for a given state and clean JSON files.
+        - Removes visuals[state_key] from the selected spawner instance and persists
+          to data/spawners/spawners_instances.json
+        - If that mapping referenced a building instance id, and the corresponding
+          buildings_instances.json entry is tagged as a spawner visual for this
+          spawner instance, remove it from data/buildings/buildings_instances.json
+        - Hides the building in the world (editor visibility) if present
+        """
+        visuals = dict(getattr(self.model, 'visuals', {}) or {})
+        if not visuals:
+            return
+        # Map display key -> JSON key
+        key_map = getattr(self.model, 'visuals_key_map', {}) or {}
+        json_key = key_map.get(state_key, state_key)
+        v = visuals.get(json_key)
+        if v is None:
+            return
+        # Parse building instance id if present
+        bid = None
+        try:
+            if isinstance(v, dict):
+                bid = int(v.get('instance_id') or v.get('id') or v.get('building_instance_id'))
+            else:
+                bid = int(v)
+        except Exception:
+            bid = None
+        # Remove mapping and persist spawner instance
+        visuals.pop(json_key, None)
+        self.model.visuals = visuals
+        try:
+            if self.model.selected_instance is not None:
+                self.model.selected_instance['visuals'] = visuals
+        except Exception:
+            pass
+        # Persist to spawners_instances.json
+        self._persist_instance()
+        # Reload from disk to ensure UI reflects persisted state
+        try:
+            self._reload_selected_from_json()
+        except Exception:
+            pass
+        # Attempt to remove the building instance from buildings_instances.json if it is ours
+        if bid is not None:
+            data = self._load_buildings_instances()
+            sid = None
+            try:
+                inst = self.model.selected_instance or {}
+                sid = str(inst.get('id')) if inst.get('id') is not None else None
+            except Exception:
+                sid = None
+            kept = []
+            removed = False
+            for e in data:
+                try:
+                    eid = int(e.get('id'))
+                except Exception:
+                    kept.append(e)
+                    continue
+                if eid != int(bid):
+                    kept.append(e)
+                    continue
+                # Match only tagged spawner visuals for this spawner instance
+                ov = e.get('overrides') if isinstance(e, dict) else None
+                is_tagged = False
+                try:
+                    if isinstance(ov, dict) and ov.get('_is_spawner_visual') and (sid is None or str(ov.get('spawner_instance_id')) == str(sid)):
+                        is_tagged = True
+                except Exception:
+                    is_tagged = False
+                if is_tagged:
+                    removed = True
+                    continue  # drop this entry
+                # If not tagged, keep it to avoid deleting user buildings
+                kept.append(e)
+            if removed:
+                self._write_buildings_instances(kept)
+                # Refresh index for subsequent checks
+                self._building_index = None
+                self._ensure_buildings_index()
+                # Hide building in editor view if still present
+                try:
+                    self._set_building_visible(int(bid), False)
+                except Exception:
+                    pass
+        # Rebuild rows/UI (already reloaded from disk above)
+        self._build_visuals_rows()
+        try:
+            self._log.info(f"[InstanceProps] Cleared visual for state={state_key}; removed_building_id={bid}")
+        except Exception:
+            pass
 
     # --- Template combobox helpers ------------------------------------------
     def _load_template_options(self) -> None:

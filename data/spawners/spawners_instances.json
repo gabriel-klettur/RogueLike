@@ -6,12 +6,7 @@
       27,
       16
     ],
-    "visuals": {
-      "AwaitTrigger": {
-        "instance_id": 141,
-        "template_id": 154
-      }
-    },
+    "visuals": {},
     "id": "survival_10_forest_14_9",
     "overrides": {
       "visible_in_game": true

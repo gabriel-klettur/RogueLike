@@ -44,7 +44,9 @@ class VisualizerView:
         m.visuals_plus_rects = []
         m.visuals_browse_rects = []
         m.visuals_eye_rects = []
+        m.visuals_clear_rects = []
         m.visuals_state_rects = []
+        m.visuals_row_rects = []
 
         # Geometry
         visuals_title_h = row_h
@@ -92,7 +94,9 @@ class VisualizerView:
                     m.visuals_plus_rects.append(z)
                     m.visuals_browse_rects.append(z)
                     m.visuals_eye_rects.append(z)
+                    m.visuals_clear_rects.append(z)
                     m.visuals_state_rects.append(z)
+                    m.visuals_row_rects.append(z)
                 continue
 
             col1_x, col2_x, col3_x = 10, 210, 310
@@ -104,13 +108,18 @@ class VisualizerView:
             plus_rect = pygame.Rect(template_rect.right - 18, template_rect.y + 2, 16, control_h)
             browse_rect = pygame.Rect(plus_rect.left - 18, template_rect.y + 2, 16, control_h)
             eye_rect = pygame.Rect(browse_rect.left - 18, template_rect.y + 2, 16, control_h)
+            clear_rect = pygame.Rect(eye_rect.left - 18, template_rect.y + 2, 16, control_h)
             m.visuals_template_rects.append(template_rect)
             m.visuals_plus_rects.append(plus_rect)
             m.visuals_browse_rects.append(browse_rect)
             m.visuals_eye_rects.append(eye_rect)
+            m.visuals_clear_rects.append(clear_rect)
             # State cell rect
             state_rect = pygame.Rect(col1_x, ry - 1, (col2_x - col1_x) - 4, row_h - 2)
             m.visuals_state_rects.append(state_rect)
+            # Full row rect (left-right padding like header line)
+            row_rect = pygame.Rect(8, ry - 1, width - 16, row_h - 2)
+            m.visuals_row_rects.append(row_rect)
 
             # Draw label cells
             surf.blit(t1, (col1_x, ry))
@@ -195,6 +204,19 @@ class VisualizerView:
                 pygame.draw.circle(surf, (220, 220, 220) if visible else (120, 120, 120), (ex, ey), 3)
                 if not visible:
                     pygame.draw.line(surf, (200, 80, 80), (eye_rect.left + 3, eye_rect.bottom - 3), (eye_rect.right - 3, eye_rect.top + 3), 2)
+                # Clear (X)
+                pygame.draw.rect(surf, (60, 60, 60), clear_rect)
+                pygame.draw.rect(surf, (150, 150, 150), clear_rect, 1)
+                cx, cy = clear_rect.centerx, clear_rect.centery
+                pygame.draw.line(surf, (220, 120, 120), (cx - 4, cy - 4), (cx + 4, cy + 4), 2)
+                pygame.draw.line(surf, (220, 120, 120), (cx - 4, cy + 4), (cx + 4, cy - 4), 2)
+
+            # Hover highlight (orange border) over full row
+            try:
+                if m.hover_row_index is not None and int(m.hover_row_index) == j:
+                    pygame.draw.rect(surf, (255, 160, 64), row_rect, 2)
+            except Exception:
+                pass
 
         return visuals_total_h
 

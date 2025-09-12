@@ -33,7 +33,14 @@ class VisualizerModel:
         self.visuals_plus_rects: List["pygame.Rect"] = [] if pygame else []
         self.visuals_browse_rects: List["pygame.Rect"] = [] if pygame else []
         self.visuals_eye_rects: List["pygame.Rect"] = [] if pygame else []
+        self.visuals_clear_rects: List["pygame.Rect"] = [] if pygame else []
         self.visuals_state_rects: List["pygame.Rect"] = [] if pygame else []
+        # Row-wide rects to support hover/hold interactions and highlighting
+        self.visuals_row_rects: List["pygame.Rect"] = [] if pygame else []
+        # Hover/hold state for rows
+        self.hover_row_index: Optional[int] = None
+        self.hold_row_index: Optional[int] = None
+        self.hold_active: bool = False
 
 
 __all__ = ["VisualizerModel"]
