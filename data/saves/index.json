@@ -1,5 +1,5 @@
 {
-  "current_path": "C:\\Project\\RogueLike\\data\\saves\\partida_2025-09-11_21-49-28.json",
+  "current_path": "D:\\Python\\RogueLike\\data\\saves\\partida_2025-09-12_01-49-08.json",
   "slots": [
     {
       "slot_id": "partida_2025-09-08_14-35-12",
@@ -173,14 +173,21 @@
       "slot_id": "partida_2025-09-11_21-17-35",
       "path": "D:\\Python\\RogueLike\\data\\saves\\partida_2025-09-11_21-17-35.json",
       "created_at": "2025-09-11T21:17:35",
-      "size_bytes": 7330,
+      "size_bytes": 9693,
       "summary": null
     },
     {
       "slot_id": "partida_2025-09-11_21-49-28",
-      "path": "C:\\Project\\RogueLike\\data\\saves\\partida_2025-09-11_21-49-28.json",
+      "path": "D:\\Python\\RogueLike\\data\\saves\\partida_2025-09-11_21-49-28.json",
       "created_at": "2025-09-11T21:49:28",
-      "size_bytes": 1558,
+      "size_bytes": 972,
+      "summary": null
+    },
+    {
+      "slot_id": "partida_2025-09-12_01-49-08",
+      "path": "D:\\Python\\RogueLike\\data\\saves\\partida_2025-09-12_01-49-08.json",
+      "created_at": "2025-09-12T01:49:08",
+      "size_bytes": 971,
       "summary": null
     }
   ]

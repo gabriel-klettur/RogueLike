@@ -1792,5 +1792,44 @@
             384
         ],
         "id": 154
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/totems/totem_cargando_energia.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            384
+        ],
+        "id": 155
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/totems/totem_forest.png"
+        },
+        "solid": true,
+        "split_ratio": 0.842,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            384
+        ],
+        "id": 156
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/totems/totem_forest.png"
+        },
+        "solid": true,
+        "split_ratio": 0.737,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            384
+        ],
+        "id": 157
     }
 ]

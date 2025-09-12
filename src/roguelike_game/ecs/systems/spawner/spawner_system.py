@@ -30,6 +30,14 @@ class SpawnerRuntimeSystem:
         # NPC tiles cache (once per frame)
         self._npc_tiles_cache: set | None = None
         self._npc_tiles_frame: int = -1
+        # Logging throttle: only emit visual DEBUG when desired/state changes or every N frames
+        self._log_interval_frames: int = 30
+        # eid -> (last_desired_id, last_state_token, last_logged_frame)
+        self._visual_log_state: dict[int, tuple[int | None, str | None, int]] = {}
+        # Duplicate warning guard: remember (eid, building_id) we've warned for
+        self._dup_warned: set[tuple[int, int]] = set()
+        # Remember last 'visible_in_game' flag per eid to log disable/enable transitions once
+        self._visual_enabled_last: dict[int, bool] = {}
 
     # ---------------------- Visual helpers ----------------------
     def _current_state_key(self, st) -> str | None:
@@ -112,6 +120,14 @@ class SpawnerRuntimeSystem:
         """
         # If visuals are disabled, hide any linked building for this spawner and return
         if not getattr(cfg, 'visible_in_game', False):
+            # Log only on transition to disabled
+            try:
+                prev_enabled = self._visual_enabled_last.get(eid, True)
+                if prev_enabled and getattr(config, 'DEBUG_SPAWNER', False):
+                    logger.debug(f"[SpawnerRuntime] eid={eid} visuals disabled -> hiding any linked buildings")
+                self._visual_enabled_last[eid] = False
+            except Exception:
+                pass
             try:
                 for ob in getattr(world, 'buildings', []) or []:
                     try:
@@ -125,15 +141,40 @@ class SpawnerRuntimeSystem:
             return
         desired = self._desired_building_for_state(cfg, st)
         prev = self._last_visual_id.get(eid)
+        # Throttled DEBUG: only if changed or every _log_interval_frames frames
+        try:
+            state_tok = getattr(st, 'fsm_state', None)
+            last = self._visual_log_state.get(eid)
+            now = self._frame_idx
+            should_log = False
+            if last is None or last[0] != desired or last[1] != state_tok:
+                should_log = True
+            elif (now - last[2]) >= self._log_interval_frames:
+                should_log = True
+            if should_log and getattr(config, 'DEBUG_SPAWNER', False):
+                logger.debug(f"[SpawnerRuntime] eid={eid} visual desired={desired} prev={prev} state={state_tok}")
+                self._visual_log_state[eid] = (desired, state_tok, now)
+            # Track enable/disable transitions
+            self._visual_enabled_last[eid] = True
+        except Exception:
+            pass
         if desired == prev:
             # Even if id didn't change, ensure exclusive visibility according to desired
             try:
+                dup_count = 0
                 for ob in getattr(world, 'buildings', []) or []:
                     try:
                         if getattr(ob, '_spawner_eid', None) == eid:
                             setattr(ob, 'runtime_hidden', getattr(ob, 'id', None) != desired)
+                        if getattr(ob, 'id', None) == desired:
+                            dup_count += 1
                     except Exception:
                         continue
+                if desired is not None and dup_count > 1:
+                    key = (eid, int(desired))
+                    if key not in self._dup_warned:
+                        logger.warning(f"[SpawnerRuntime] Duplicate Building objects in world with id={desired} for eid={eid}: count={dup_count}")
+                        self._dup_warned.add(key)
             except Exception:
                 pass
             return
@@ -160,6 +201,18 @@ class SpawnerRuntimeSystem:
                     setattr(target, '_is_spawner_visual', True)
                     # Make it visible at runtime and hide siblings for this spawner
                     setattr(target, 'runtime_hidden', False)
+                    # Sanity: detect duplicates with same id in world
+                    try:
+                        copies = [ob for ob in getattr(world, 'buildings', []) or [] if getattr(ob, 'id', None) == desired]
+                        if len(copies) > 1:
+                            key = (eid, int(desired))
+                            if key not in self._dup_warned:
+                                logger.warning(f"[SpawnerRuntime] Found {len(copies)} Building objects with id={desired} when linking to eid={eid}")
+                                self._dup_warned.add(key)
+                    except Exception:
+                        pass
+                    if getattr(config, 'DEBUG_SPAWNER', False):
+                        logger.debug(f"[SpawnerRuntime] Linked spawner eid={eid} to building id={desired}")
                 except Exception:
                     pass
         # Hide any other building linked to this spawner eid (exclusive runtime visibility)

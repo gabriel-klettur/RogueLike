@@ -15,15 +15,10 @@ def init_pygame() -> None:
     """Inicializa Pygame y hace visible el cursor."""
     logger.info("Initializing Pygame...")
     try:
-        # Preajuste opcional para latencia/compatibilidad
-        # pygame.mixer.pre_init(44100, -16, 2, 512)
+        # Preajuste opcional para latencia/compatibilidad (lo maneja el backend de audio)
         pygame.init()
-        # Algunas plataformas requieren init explícito del mixer
-        if not pygame.mixer.get_init():
-            pygame.mixer.init()  # usa defaults seguros
     except Exception as e:
-        logger.warning(f"No se pudo inicializar pygame.mixer: {e}")
-        pygame.init()
+        logger.exception(f"No se pudo inicializar Pygame: {e}")
     pygame.mouse.set_visible(True)
 
 

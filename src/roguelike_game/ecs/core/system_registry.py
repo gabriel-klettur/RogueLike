@@ -92,6 +92,7 @@ from roguelike_game.ecs.systems.abilities.mana_regen_system import ManaRegenSyst
 from roguelike_game.ecs.systems.rendering.dash_bar_render_system import DashBarRenderSystem
 from roguelike_game.ecs.systems.abilities.combo_system import ComboSystem
 from roguelike_game.ecs.systems.rendering.combo_bar_render_system import ComboBarRenderSystem
+from roguelike_game.ecs.systems.rendering.toast_render_system import ToastRenderSystem
 
 def get_update_system_classes():
     """
@@ -146,6 +147,8 @@ def get_render_system_classes():
     # Halo de proximidad de chat (círculo amarillo)
     base.append(ChatProximityRenderSystem)
     base.append(InventoryUISystem)
+    # Toasts HUD (esquina inferior derecha)
+    base.append(ToastRenderSystem)
     # Chat UI overlay
     base.append(ChatUISystem)
     # Spawner debug overlay always visible above game objects

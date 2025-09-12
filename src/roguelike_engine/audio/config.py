@@ -44,6 +44,20 @@ class AudioCatalog:
     def get_default_ducking(self) -> Dict[str, Any]:
         return self.defaults.get('ducking', {}) or {}
 
+    def get_default_audio(self) -> Dict[str, Any]:
+        """Devuelve defaults.audio si existe, o {}.
+        Estructura esperada: {
+            enabled: bool,
+            driver_preference: list[str],
+            suppress_warning_when_dummy: bool,
+            mixer: {frequency,size,channels,buffer}
+        }
+        """
+        try:
+            return self.defaults.get('audio', {}) or {}
+        except Exception:
+            return {}
+
     def resolve_music_for(self, *, level: Optional[str] = None, zone: Optional[str] = None, biome: Optional[str] = None) -> Optional[str]:
         # Prioridad: zone > level > biome > defaults
         if zone:

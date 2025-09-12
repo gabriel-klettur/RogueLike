@@ -8,6 +8,20 @@ import uuid
 
 from roguelike_engine.config import config
 from roguelike_engine.config.map_config import global_map_settings
+import logging
+
+# Module logger
+logger = logging.getLogger(__name__)
+try:
+    if not logger.handlers:
+        _h = logging.StreamHandler()
+        _h.setLevel(logging.DEBUG)
+        _h.setFormatter(logging.Formatter('[%(levelname)s] %(name)s: %(message)s'))
+        logger.addHandler(_h)
+    logger.setLevel(logging.DEBUG)
+    logger.propagate = False
+except Exception:
+    pass
 
 
 def instances_path() -> str:
@@ -29,6 +43,10 @@ def load_instances_json() -> List[Dict[str, Any]]:
             return []
         # Ensure every instance has a unique 'id' for robust identification
         changed, fixed = ensure_instance_ids(data)
+        try:
+            logger.debug(f"[spawner.persistence] load_instances_json: read {len(data)} entries from {path}; changed_ids={changed}")
+        except Exception:
+            pass
         if changed:
             write_instances_json(fixed)
             return fixed
@@ -102,6 +120,10 @@ def write_spawners_json(data: List[Dict[str, Any]]) -> None:
         cleaned.append(sp2)
     with open(path, 'w', encoding='utf-8') as f:
         json.dump(cleaned, f, ensure_ascii=False, indent=2)
+    try:
+        logger.debug(f"[spawner.persistence] write_spawners_json: wrote {len(cleaned)} templates to {path}")
+    except Exception:
+        pass
 
 
 def save_spawner_template(updated: Dict[str, Any]) -> None:
@@ -293,6 +315,10 @@ def find_instance_by_id(target_id: str) -> tuple[List[Dict[str, Any]], Optional[
                 break
         except Exception:
             continue
+    try:
+        logger.debug(f"[spawner.persistence] find_instance_by_id('{target_id}') -> idx={idx_found}")
+    except Exception:
+        pass
     return data, idx_found, overrides
 
 
@@ -313,6 +339,10 @@ def find_instance_in_json(template_id: str, zone: str, local_tile: Tuple[int, in
                     break
         except Exception:
             continue
+    try:
+        logger.debug(f"[spawner.persistence] find_instance_in_json(tpl={template_id}, zone={zone}, tile={local_tile}) -> idx={idx_found}")
+    except Exception:
+        pass
     return data, idx_found, overrides
 
 
@@ -402,6 +432,29 @@ def persist_drop(world,
     if overrides:
         entry['overrides'] = overrides
 
+    # Preserve visuals from previous entry if present (avoid losing visuals on move)
+    try:
+        prev_visuals = None
+        if idx_found is not None:
+            prev_visuals = data[idx_found].get('visuals')
+        elif inst_id:
+            # try lookup by id to preserve visuals
+            for e in data:
+                try:
+                    if str(e.get('id')) == str(inst_id):
+                        prev_visuals = e.get('visuals')
+                        break
+                except Exception:
+                    continue
+        if isinstance(prev_visuals, dict) and prev_visuals:
+            entry['visuals'] = prev_visuals
+        try:
+            logger.debug(f"[spawner.persistence] persist_drop: tpl={tpl_id} zone={zone} new_local={new_local} idx_found={idx_found} preserved_visuals_len={len(prev_visuals or {})}")
+        except Exception:
+            pass
+    except Exception:
+        pass
+
     # Preserve or assign instance id
     try:
         if idx_found is not None:
@@ -426,3 +479,7 @@ def persist_drop(world,
         data.append(entry)
 
     write_instances_json(data)
+    try:
+        logger.info(f"[spawner.persistence] persist_drop: wrote entry id={entry.get('id')} visuals_len={len((entry.get('visuals') or {}))}")
+    except Exception:
+        pass

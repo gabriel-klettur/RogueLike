@@ -208,8 +208,16 @@ def save_buildings_split(
     templates_needed: dict[int, dict] = dict(tid_to_entry)  # start with existing
     instances_out = []
 
+    skipped_spawner_visuals = 0
     for b in buildings:
         try:
+            # Do not persist spawner visuals (runtime/link-only)
+            try:
+                if getattr(b, '_is_spawner_visual', False) or getattr(b, '_spawner_eid', None) is not None:
+                    skipped_spawner_visuals += 1
+                    continue
+            except Exception:
+                pass
             # Dedup spawner-linked visuals
             spawn_id = getattr(b, 'spawn_id', None) or getattr(b, 'spawner_instance_id', None)
             if spawn_id:
@@ -304,7 +312,44 @@ def save_buildings_split(
     with open(t_path, 'w', encoding='utf-8') as tf:
         json.dump(templates_list, tf, indent=4)
 
-    # Write instances
+    # Deduplicate instances_out by position/template
+    try:
+        before = len(instances_out)
+        seen: dict[str, dict] = {}
+        def _key(e: dict) -> str:
+            try:
+                return f"{e.get('zone')}|{int(e.get('rel_x') or 0)}|{int(e.get('rel_y') or 0)}|{int(e.get('template_id') or -1)}"
+            except Exception:
+                return str(id(e))
+        def _score(e: dict) -> tuple:
+            has_sid = 1 if (e.get('spawn_id') is not None) else 0
+            try:
+                neg_id = -int(e.get('id') or 0)
+            except Exception:
+                neg_id = 0
+            return (has_sid, neg_id)
+        for e in instances_out:
+            k = _key(e)
+            cur = seen.get(k)
+            if cur is None:
+                seen[k] = e
+            else:
+                if _score(e) > _score(cur):
+                    seen[k] = e
+        instances_out = list(seen.values())
+        after = len(instances_out)
+        if skipped_spawner_visuals:
+            logger.info(f"[Buildings][SaveSplit] Skipped spawner visuals: {skipped_spawner_visuals}")
+        if after != before:
+            logger.debug(f"[Buildings][SaveSplit] Dedup instances by pos/tpl: {before}->{after} (removed={before-after})")
+    except Exception:
+        pass
+
+    # Write instances (ordered by id for stability)
+    try:
+        instances_out.sort(key=lambda x: int(x.get('id') or 0))
+    except Exception:
+        pass
     with open(i_path, 'w', encoding='utf-8') as inf:
         json.dump(instances_out, inf, indent=4)
 

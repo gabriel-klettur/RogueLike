@@ -3,6 +3,7 @@ import threading
 import time
 import queue
 from typing import Optional, List, Callable, Tuple
+import os
 
 from .events import (
     PlayMusic, StopMusic, Crossfade, SetMusicVolume,
@@ -31,7 +32,14 @@ class AudioService:
         if self._running:
             return
         self._running = True
-        self.backend.init()
+        # Inicializar backend con preferencias de audio desde el catálogo (defaults.audio)
+        prefs = {}
+        try:
+            if self.catalog is not None and hasattr(self.catalog, 'get_default_audio'):
+                prefs = self.catalog.get_default_audio() or {}
+        except Exception:
+            prefs = {}
+        self.backend.init(prefs)
         self._thread = threading.Thread(target=self._run_loop, name="AudioService", daemon=True)
         self._thread.start()
 
@@ -85,13 +93,40 @@ class AudioService:
             time.sleep(tick)
 
     # --- Handlers ---
+    def _prefetch_file(self, path: Optional[str], bytes_hint: int = 65536) -> None:
+        """Lee una pequeña porción del archivo para calentar la caché del SO.
+        Ejecutado en el hilo de audio para evitar bloquear el hilo principal.
+        """
+        try:
+            if not path:
+                return
+            # Evitar hacer trabajo si el archivo es muy pequeño: aún así se beneficia, pero limitamos el hint
+            hint = max(4096, int(bytes_hint))
+            with open(path, 'rb') as f:
+                _ = f.read(hint)
+        except Exception:
+            # Silencioso: es una optimización best-effort
+            pass
     def _handle_event(self, ev: object) -> None:
         if isinstance(ev, PlayMusic):
             path = ev.path
             if not path and ev.track_id:
                 path = self.catalog.track_path(ev.track_id)
             if path:
-                self.backend.play_music(path, loop=ev.loop, volume=ev.volume, fade_in_ms=ev.fade_in_ms)
+                # Prefetch inmediato (rápido) para reducir latencias de I/O
+                try:
+                    cfg = self.catalog.get_default_music() if self.catalog else {}
+                except Exception:
+                    cfg = {}
+                prefetch_bytes = int((cfg or {}).get('prefetch_bytes', 65536))
+                self._prefetch_file(path, bytes_hint=prefetch_bytes)
+                # Preparar buffer en mixer y luego iniciar sin coste de carga
+                try:
+                    self.backend.prepare_music(path)
+                    self.backend.play_prepared_music(loop=ev.loop, volume=ev.volume, fade_in_ms=ev.fade_in_ms)
+                except Exception:
+                    # Fallback: reproducción directa
+                    self.backend.play_music(path, loop=ev.loop, volume=ev.volume, fade_in_ms=ev.fade_in_ms)
                 if ev.volume is not None:
                     try:
                         self._music_current_volume = float(ev.volume)
@@ -108,8 +143,26 @@ class AudioService:
                 dur = max(0, int(ev.duration_ms))
                 self.backend.stop_music(fade_ms=dur)
                 when = time.time() + (dur / 1000.0)
+                # Programar un prefetch un poco antes de iniciar la nueva pista
+                try:
+                    cfg = self.catalog.get_default_music() if self.catalog else {}
+                except Exception:
+                    cfg = {}
+                lead_ms = int((cfg or {}).get('prefetch_lead_ms', 250))
+                prefetch_at = max(time.time(), when - (lead_ms / 1000.0))
+                prefetch_bytes = int((cfg or {}).get('prefetch_bytes', 65536))
+                def _prefetch(path=path):
+                    self._prefetch_file(path, bytes_hint=prefetch_bytes)
+                    try:
+                        self.backend.prepare_music(path)
+                    except Exception:
+                        pass
+                self._delayed.append((prefetch_at, _prefetch))
                 def _start_new(path=path, vol=ev.target_volume):
-                    self.backend.play_music(path, loop=True, volume=vol, fade_in_ms=dur)
+                    try:
+                        self.backend.play_prepared_music(loop=True, volume=vol, fade_in_ms=dur)
+                    except Exception:
+                        self.backend.play_music(path, loop=True, volume=vol, fade_in_ms=dur)
                     if vol is not None:
                         try:
                             self._music_current_volume = float(vol)

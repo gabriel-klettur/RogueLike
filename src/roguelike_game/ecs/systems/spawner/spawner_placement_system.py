@@ -25,6 +25,16 @@ except Exception:  # pragma: no cover - editor may not be available in some cont
     _fsm_get_set = None
 
 logger = logging.getLogger(__name__)
+try:
+    if not logger.handlers:
+        _h = logging.StreamHandler()
+        _h.setLevel(logging.DEBUG)
+        _h.setFormatter(logging.Formatter('[%(levelname)s] %(name)s: %(message)s'))
+        logger.addHandler(_h)
+    logger.setLevel(logging.DEBUG)
+    logger.propagate = False
+except Exception:
+    pass
 
 
 class SpawnerPlacementSystem:
@@ -156,7 +166,14 @@ class SpawnerPlacementSystem:
         try:
             with open(path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-            return data if isinstance(data, list) else []
+            out = data if isinstance(data, list) else []
+            try:
+                num = len(out)
+                with_vis = sum(1 for e in out if isinstance(e.get('visuals'), dict) and len(e.get('visuals') or {}) > 0)
+                logger.debug(f"[SpawnerPlacementSystem] _load_instances: read {num} entries (visuals>0 in {with_vis}) from {path}")
+            except Exception:
+                pass
+            return out
         except FileNotFoundError:
             return []
 
@@ -209,13 +226,30 @@ class SpawnerPlacementSystem:
             if isinstance(ivis, dict):
                 for sk, sv in ivis.items():
                     try:
-                        state_visuals[str(sk)] = int(sv) if sv is not None else sv
+                        # New format: dict {instance_id, template_id}
+                        if isinstance(sv, dict):
+                            bid = None
+                            try:
+                                bid = int(sv.get('instance_id') or sv.get('id') or sv.get('building_instance_id'))
+                            except Exception:
+                                bid = None
+                            if bid is not None:
+                                state_visuals[str(sk)] = bid
+                            else:
+                                # Fallback keep as-is
+                                state_visuals[str(sk)] = sv  # type: ignore
+                        else:
+                            state_visuals[str(sk)] = int(sv) if sv is not None else sv
                     except Exception:
                         # keep as-is if not int-castable
                         try:
                             state_visuals[str(sk)] = sv  # type: ignore
                         except Exception:
                             pass
+            try:
+                logger.debug(f"[SpawnerPlacementSystem] _resolve_config: inst_id={inst.get('id')} visuals_len={len((ivis or {})) if isinstance(ivis, dict) else 'N/A'} visible_in_game={inst.get('overrides',{}).get('visible_in_game')}")
+            except Exception:
+                pass
         except Exception:
             pass
 
@@ -348,6 +382,10 @@ class SpawnerPlacementSystem:
                 continue
             tpl = self._templates[tpl_id]
             cfg = self._resolve_config(tpl, inst)
+            try:
+                logger.debug(f"[SpawnerPlacementSystem] update: creating spawner entity for inst_id={inst.get('id')} tpl={tpl_id} visuals_present={(cfg.state_visuals is not None)}")
+            except Exception:
+                pass
             eid = world.create_entity()
             comps['SpawnerConfig'][eid] = cfg
             st = SpawnerState()

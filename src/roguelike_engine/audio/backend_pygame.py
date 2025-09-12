@@ -1,4 +1,6 @@
 from __future__ import annotations
+import os
+import logging
 import pygame
 from typing import Optional, Dict, Any
 
@@ -9,6 +11,7 @@ class PygameAudioBackend:
     fadeout + fadein secuenciales.
     """
     def __init__(self) -> None:
+        self._log = logging.getLogger(__name__)
         self._music_volume: float = 0.6
         self._sfx_volume: float = 0.7
         self._ambient_volume: float = 0.6
@@ -19,23 +22,114 @@ class PygameAudioBackend:
         self._channel_group_map: Dict[int, str] = {}
         self._channels: Dict[int, pygame.mixer.Channel] = {}
         self._max_channels: int = 32
+        self._driver_used: Optional[str] = None
+        self._dummy: bool = False
+        self._disabled: bool = False
 
-    def init(self) -> None:
-        try:
-            if not pygame.mixer.get_init():
-                pygame.mixer.init()
-        except Exception:
-            # Intentar continuar si ya está inicializado o en headless
-            pass
+    def init(self, prefs: Optional[Dict[str, Any]] = None) -> None:
+        """Inicializa pygame.mixer con fallback de drivers.
+
+        prefs admite claves opcionales:
+          - enabled: bool
+          - driver_preference: list[str]
+          - suppress_warning_when_dummy: bool (controla el nivel de log)
+          - mixer: {frequency, size, channels, buffer}
+        """
+        prefs = prefs or {}
+        enabled = bool(prefs.get('enabled', True))
+        if not enabled:
+            self._disabled = True
+            self._log.info("Audio desactivado por configuración (defaults.audio.enabled = false).")
+            return
+
+        # Si ya está inicializado (por código externo), respetarlo
+        if pygame.mixer.get_init():
+            try:
+                pygame.mixer.set_num_channels(self._max_channels)
+            except Exception:
+                pass
+            self._driver_used = os.environ.get('SDL_AUDIODRIVER') or '(preinit)'
+            self._dummy = (self._driver_used == 'dummy')
+            lvl = logging.DEBUG if (self._dummy and prefs.get('suppress_warning_when_dummy', True)) else logging.INFO
+            self._log.log(lvl, f"Mixer ya inicializado (driver='{self._driver_used}').")
+            return
+
+        # Preparar preferencias
+        default_order = ["wasapi", "directsound", "winmm", "dummy"]
+        order = list(prefs.get('driver_preference') or default_order)
+
+        mx = prefs.get('mixer') or {}
+        freq = int(mx.get('frequency', 44100))
+        size = int(mx.get('size', -16))
+        chs = int(mx.get('channels', 2))
+        buf = int(mx.get('buffer', 1024))
+
+        last_err: Optional[Exception] = None
+        for drv in order:
+            try:
+                os.environ['SDL_AUDIODRIVER'] = drv
+                pygame.mixer.init(frequency=freq, size=size, channels=chs, buffer=buf)
+                self._driver_used = drv
+                self._dummy = (drv == 'dummy')
+                break
+            except Exception as e:
+                last_err = e
+                try:
+                    pygame.mixer.quit()
+                except Exception:
+                    pass
+                continue
+
+        if not pygame.mixer.get_init():
+            # No se pudo inicializar ningún driver; dejar backend en modo no operativo
+            msg = f"No se pudo inicializar ningún driver de audio. Último error: {last_err}"
+            # Mantener silencioso en producción: usar WARNING solo si el usuario no pidió suprimir
+            lvl = logging.WARNING
+            self._log.log(lvl, msg)
+            return
+
+        # Configurar canales y loguear driver
         try:
             pygame.mixer.set_num_channels(self._max_channels)
         except Exception:
             pass
 
+        if self._dummy and prefs.get('suppress_warning_when_dummy', True):
+            self._log.info("Audio no disponible: usando driver 'dummy' (silencioso).")
+        else:
+            self._log.info(f"Audio inicializado con driver '{self._driver_used}'.")
+
     # --- Música ---
     def play_music(self, path: str, loop: bool = True, volume: Optional[float] = None, fade_in_ms: int = 0) -> None:
         try:
+            if self._disabled or not pygame.mixer.get_init():
+                return
             pygame.mixer.music.load(path)
+            if volume is not None:
+                self._music_volume = float(max(0.0, min(1.0, volume)))
+            pygame.mixer.music.set_volume(self._music_volume)
+            loops = -1 if loop else 0
+            if fade_in_ms > 0:
+                pygame.mixer.music.play(loops, fade_ms=int(fade_in_ms))
+            else:
+                pygame.mixer.music.play(loops)
+        except Exception:
+            pass
+
+    def prepare_music(self, path: str) -> None:
+        """Carga el archivo de música sin iniciarla (preparación anticipada)."""
+        try:
+            if self._disabled or not pygame.mixer.get_init():
+                return
+            pygame.mixer.music.load(path)
+        except Exception:
+            pass
+
+    def play_prepared_music(self, loop: bool = True, volume: Optional[float] = None, fade_in_ms: int = 0) -> None:
+        """Reproduce la música previamente cargada con prepare_music."""
+        try:
+            if self._disabled or not pygame.mixer.get_init():
+                return
             if volume is not None:
                 self._music_volume = float(max(0.0, min(1.0, volume)))
             pygame.mixer.music.set_volume(self._music_volume)
@@ -49,6 +143,8 @@ class PygameAudioBackend:
 
     def stop_music(self, fade_ms: int = 300) -> None:
         try:
+            if self._disabled or not pygame.mixer.get_init():
+                return
             if fade_ms > 0:
                 pygame.mixer.music.fadeout(int(fade_ms))
             else:
@@ -59,6 +155,8 @@ class PygameAudioBackend:
     def set_music_volume(self, v: float) -> None:
         self._music_volume = float(max(0.0, min(1.0, v)))
         try:
+            if self._disabled or not pygame.mixer.get_init():
+                return
             pygame.mixer.music.set_volume(self._music_volume)
         except Exception:
             pass
@@ -66,6 +164,8 @@ class PygameAudioBackend:
     # --- SFX ---
     def load_sfx(self, path: str) -> Optional[pygame.mixer.Sound]:
         try:
+            if self._disabled or not pygame.mixer.get_init():
+                return None
             snd = pygame.mixer.Sound(path)
             return snd
         except Exception:
@@ -77,6 +177,8 @@ class PygameAudioBackend:
         Groups conocidos: 'sfx' (incluye ui/combat) y 'ambient'.
         """
         try:
+            if self._disabled or not pygame.mixer.get_init():
+                return
             # Elegir canal manualmente para conocer su índice
             try:
                 n = pygame.mixer.get_num_channels()
@@ -142,6 +244,8 @@ class PygameAudioBackend:
         self._sfx_volume = float(max(0.0, min(1.0, v)))
         # Aplicar a canales de grupos sfx/ui/combat
         try:
+            if self._disabled or not pygame.mixer.get_init():
+                return
             groups = ('sfx', 'ui', 'combat')
             for g in groups:
                 for idx in list(self._channels_per_group.get(g, [])):
@@ -158,6 +262,8 @@ class PygameAudioBackend:
         self._ambient_volume = float(max(0.0, min(1.0, v)))
         # Aplicar solo a los canales registrados como 'ambient'
         try:
+            if self._disabled or not pygame.mixer.get_init():
+                return
             for idx in list(self._channels_per_group.get('ambient', [])):
                 try:
                     ch = self._channels.get(idx) or pygame.mixer.Channel(idx)

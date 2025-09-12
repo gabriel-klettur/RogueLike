@@ -3,9 +3,12 @@
     "template_id": "survival_10",
     "zone": "Forest",
     "tile": [
-      26,
-      15
+      27,
+      16
     ],
+    "overrides": {
+      "visible_in_game": true
+    },
     "visuals": {},
     "id": "survival_10_forest_14_9"
   }
