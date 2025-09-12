@@ -32,7 +32,14 @@ class AudioService:
         if self._running:
             return
         self._running = True
-        self.backend.init()
+        # Inicializar backend con preferencias de audio desde el catálogo (defaults.audio)
+        prefs = {}
+        try:
+            if self.catalog is not None and hasattr(self.catalog, 'get_default_audio'):
+                prefs = self.catalog.get_default_audio() or {}
+        except Exception:
+            prefs = {}
+        self.backend.init(prefs)
         self._thread = threading.Thread(target=self._run_loop, name="AudioService", daemon=True)
         self._thread.start()
 

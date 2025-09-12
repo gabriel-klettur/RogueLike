@@ -6,7 +6,9 @@
       26,
       15
     ],
-    "visuals": {},
+    "visuals": {
+      "AwaitTrigger": 141
+    },
     "id": "survival_10_forest_14_9"
   }
 ]

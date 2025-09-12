@@ -122,6 +122,12 @@
         "fireball"
       ]
     },
+    "audio": {
+      "enabled": true,
+      "driver_preference": ["wasapi", "directsound", "winmm", "dummy"],
+      "suppress_warning_when_dummy": true,
+      "mixer": { "frequency": 44100, "size": -16, "channels": 2, "buffer": 1024 }
+    },
     "startup": {
       "play_on_boot": true,
       "fade_in_ms": 600,
