@@ -1,9 +1,14 @@
 import pygame
 from logging import getLogger
 import logging
+import time as _time
 from roguelike_engine.config.config_camera import ALLOWED_ZOOMS, next_allowed_zoom
 
 logger = getLogger(__name__)
+
+# Lightweight throttling for chatty debug logs
+_LAST_WHEEL_DBG_MS: int = 0
+_LAST_MMB_MOVE_DBG_MS: int = 0
 
 def handle_mouse(event, state, camera, clock, map, entities, *, mmb_pan_enabled: bool = False) -> bool:
     """Return True if the event is consumed by engine-level mouse handling."""
@@ -22,8 +27,16 @@ def handle_mouse(event, state, camera, clock, map, entities, *, mmb_pan_enabled:
                 # Keep stable world point under cursor
                 camera.offset_x = wx - mx / camera.zoom
                 camera.offset_y = wy - my / camera.zoom
-                logger.debug("[Mouse] Zoom wheel z=%.3f -> %.3f at (%d,%d) -> cam_off=(%.2f,%.2f)", z, new_z, mx, my, camera.offset_x, camera.offset_y)
+                try:
+                    now_ms = int(_time.monotonic() * 1000)
+                except Exception:
+                    now_ms = 0
+                global _LAST_WHEEL_DBG_MS
+                if now_ms - _LAST_WHEEL_DBG_MS >= 300:
+                    logger.debug("[Mouse] Zoom wheel z=%.3f -> %.3f at (%d,%d) -> cam_off=(%.2f,%.2f)", z, new_z, mx, my, camera.offset_x, camera.offset_y)
+                    _LAST_WHEEL_DBG_MS = now_ms
                 return True
+
         except Exception:
             # Silent fail to avoid crashing input loop
             return False
@@ -63,8 +76,16 @@ def handle_mouse(event, state, camera, clock, map, entities, *, mmb_pan_enabled:
                 dy = my - sy
                 camera.offset_x = cx - dx / z
                 camera.offset_y = cy - dy / z
-                logger.debug("[Mouse] MMB MOVE pos=(%d,%d) dx=%.1f dy=%.1f zoom=%.2f -> cam=(%.2f,%.2f)", mx, my, dx, dy, z, camera.offset_x, camera.offset_y)
+                try:
+                    now_ms = int(_time.monotonic() * 1000)
+                except Exception:
+                    now_ms = 0
+                global _LAST_MMB_MOVE_DBG_MS
+                if now_ms - _LAST_MMB_MOVE_DBG_MS >= 120:
+                    logger.debug("[Mouse] MMB MOVE pos=(%d,%d) dx=%.1f dy=%.1f zoom=%.2f -> cam=(%.2f,%.2f)", mx, my, dx, dy, z, camera.offset_x, camera.offset_y)
+                    _LAST_MMB_MOVE_DBG_MS = now_ms
                 return True
+
             except Exception:
                 return False
     elif event.type == pygame.MOUSEBUTTONUP:

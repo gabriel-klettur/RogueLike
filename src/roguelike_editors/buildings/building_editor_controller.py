@@ -11,6 +11,11 @@ from roguelike_ui.ui_blocker import is_blocked
 
 from roguelike_editors.buildings.utils.zone_helpers import assign_zone_and_relatives
 from roguelike_editors.spawner.services.persistence import find_instance_in_json, persist_drop
+from roguelike_editors.spawner.services.persistence import remove_visual_refs_by_building_id
+from roguelike_editors.spawner.spawner_instance_properties_panel.services.buildings_service import (
+    load_buildings_instances as _svc_load_buildings_instances,
+    write_buildings_instances as _svc_write_buildings_instances,
+)
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.buildings.building_model import BuildingModel
 
@@ -252,6 +257,41 @@ class BuildingEditorController:
         # Pulso para el tutorial (cubre botón eliminar y cualquier llamada centralizada)
         try:
             setattr(self.editor, 'tutorial_deleted_pulse', True)
+        except Exception:
+            pass
+        # Persistencia cruzada: eliminar de buildings_instances.json y limpiar Visuals de spawners
+        try:
+            bid = getattr(building, 'id', None)
+            if bid is not None:
+                try:
+                    bid_int = int(bid)
+                except Exception:
+                    bid_int = None
+                if bid_int is not None:
+                    # 1) Eliminar entrada en data/buildings/buildings_instances.json
+                    try:
+                        data = _svc_load_buildings_instances()
+                        before = len(data or [])
+                        kept = []
+                        for e in (data or []):
+                            try:
+                                if int(e.get('id')) == int(bid_int):
+                                    continue
+                            except Exception:
+                                pass
+                            kept.append(e)
+                        if len(kept) != before:
+                            _svc_write_buildings_instances(kept)
+                            logger.info(f"[BuildingsEditor] Removed building instance id={bid_int} from buildings_instances.json")
+                    except Exception:
+                        pass
+                    # 2) Limpiar referencias en spawners_instances.json (visuals -> instance_id)
+                    try:
+                        removed = remove_visual_refs_by_building_id(int(bid_int))
+                        if removed:
+                            logger.info(f"[BuildingsEditor] Cleared {removed} visuals refs to building id={bid_int} from spawners_instances.json")
+                    except Exception:
+                        pass
         except Exception:
             pass
 

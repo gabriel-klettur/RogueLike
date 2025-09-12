@@ -141,19 +141,14 @@ class SpawnerRuntimeSystem:
             return
         desired = self._desired_building_for_state(cfg, st)
         prev = self._last_visual_id.get(eid)
-        # Throttled DEBUG: only if changed or every _log_interval_frames frames
+        # DEBUG: only when desired or state token changes (no periodic emission)
         try:
             state_tok = getattr(st, 'fsm_state', None)
             last = self._visual_log_state.get(eid)
-            now = self._frame_idx
-            should_log = False
-            if last is None or last[0] != desired or last[1] != state_tok:
-                should_log = True
-            elif (now - last[2]) >= self._log_interval_frames:
-                should_log = True
-            if should_log and getattr(config, 'DEBUG_SPAWNER', False):
+            if (last is None or last[0] != desired or last[1] != state_tok) and getattr(config, 'DEBUG_SPAWNER', False):
                 logger.debug(f"[SpawnerRuntime] eid={eid} visual desired={desired} prev={prev} state={state_tok}")
-                self._visual_log_state[eid] = (desired, state_tok, now)
+                # Store new snapshot (frame index kept for potential future use)
+                self._visual_log_state[eid] = (desired, state_tok, self._frame_idx)
             # Track enable/disable transitions
             self._visual_enabled_last[eid] = True
         except Exception:

@@ -7,21 +7,41 @@ import re
 import uuid
 
 from roguelike_engine.config import config
+import time as _time
 from roguelike_engine.config.map_config import global_map_settings
 import logging
 
-# Module logger
+# Module logger (respect global configuration)
 logger = logging.getLogger(__name__)
-try:
-    if not logger.handlers:
-        _h = logging.StreamHandler()
-        _h.setLevel(logging.DEBUG)
-        _h.setFormatter(logging.Formatter('[%(levelname)s] %(name)s: %(message)s'))
-        logger.addHandler(_h)
-    logger.setLevel(logging.DEBUG)
-    logger.propagate = False
-except Exception:
-    pass
+
+# Lightweight throttling state for noisy debug logs (see _DEDUP_TIMERS below)
+
+# Generic de-duplication for noisy logs (keyed windows)
+_DEDUP_TIMERS: Dict[str, Tuple[int, int]] = {}  # key -> (last_ms, suppressed_count)
+
+def _now_ms() -> int:
+    try:
+        return int(_time.monotonic() * 1000)
+    except Exception:
+        return 0
+
+def _dedup_should_log(key: str, window_ms: int = 2000) -> Tuple[bool, int]:
+    """Return (allow, suppressed_count).
+
+    If called repeatedly within window_ms for the same key, we suppress logs and
+    accumulate a counter. On the first call after the window elapses, we allow the
+    log and return how many duplicates were suppressed in that period.
+    """
+    now = _now_ms()
+    last, count = _DEDUP_TIMERS.get(key, (-10_000_000, 0))
+    if now - last >= window_ms:
+        # allow log; return suppressed count and reset counter
+        _DEDUP_TIMERS[key] = (now, 0)
+        return True, count
+    else:
+        # suppress and accumulate
+        _DEDUP_TIMERS[key] = (last, count + 1)
+        return False, 0
 
 
 def instances_path() -> str:
@@ -43,8 +63,15 @@ def load_instances_json() -> List[Dict[str, Any]]:
             return []
         # Ensure every instance has a unique 'id' for robust identification
         changed, fixed = ensure_instance_ids(data)
+        # Debug: de-duplicate noisy logs within a short window
         try:
-            logger.debug(f"[spawner.persistence] load_instances_json: read {len(data)} entries from {path}; changed_ids={changed}")
+            key = f"load_instances_json:{path}"
+            allow, suppressed = _dedup_should_log(key, window_ms=2000)
+            if changed:
+                logger.debug(f"[spawner.persistence] load_instances_json: read {len(data)} entries from {path}; changed_ids=True")
+            elif allow:
+                extra = f"; suppressed={suppressed}" if suppressed else ""
+                logger.debug(f"[spawner.persistence] load_instances_json: read {len(data)} entries from {path}{extra}")
         except Exception:
             pass
         if changed:
@@ -315,10 +342,16 @@ def find_instance_by_id(target_id: str) -> tuple[List[Dict[str, Any]], Optional[
                 break
         except Exception:
             continue
+    # Debug: de-duplicate lookups by id
     try:
-        logger.debug(f"[spawner.persistence] find_instance_by_id('{target_id}') -> idx={idx_found}")
+        key = f"find_by_id:{target_id}"
+        allow, suppressed = _dedup_should_log(key, window_ms=2000)
+        if allow:
+            extra = f"; suppressed={suppressed}" if suppressed else ""
+            logger.debug(f"[spawner.persistence] find_instance_by_id('{target_id}') -> idx={idx_found}{extra}")
     except Exception:
         pass
+
     return data, idx_found, overrides
 
 
@@ -340,9 +373,14 @@ def find_instance_in_json(template_id: str, zone: str, local_tile: Tuple[int, in
         except Exception:
             continue
     try:
-        logger.debug(f"[spawner.persistence] find_instance_in_json(tpl={template_id}, zone={zone}, tile={local_tile}) -> idx={idx_found}")
+        key = f"find_in_json:{template_id}:{zone}:{local_tile}"
+        allow, suppressed = _dedup_should_log(key, window_ms=2000)
+        if allow:
+            extra = f"; suppressed={suppressed}" if suppressed else ""
+            logger.debug(f"[spawner.persistence] find_instance_in_json(tpl={template_id}, zone={zone}, tile={local_tile}) -> idx={idx_found}{extra}")
     except Exception:
         pass
+
     return data, idx_found, overrides
 
 
@@ -483,3 +521,50 @@ def persist_drop(world,
         logger.info(f"[spawner.persistence] persist_drop: wrote entry id={entry.get('id')} visuals_len={len((entry.get('visuals') or {}))}")
     except Exception:
         pass
+
+
+def remove_visual_refs_by_building_id(bid: int) -> int:
+    """Remove any visuals entries across all spawner instances that reference a given
+    building instance id. Returns the number of visuals entries removed.
+
+    A visuals mapping value can be either an int (legacy) or a dict containing
+    'instance_id'/'id'/'building_instance_id'.
+    """
+    try:
+        bid = int(bid)
+    except Exception:
+        return 0
+    data = load_instances_json()
+    removed = 0
+    changed = False
+    for inst in data:
+        try:
+            vis = inst.get('visuals')
+            if not isinstance(vis, dict) or not vis:
+                continue
+            keys = list(vis.keys())
+            for k in keys:
+                v = vis.get(k)
+                try:
+                    if isinstance(v, dict):
+                        vid = v.get('instance_id') or v.get('id') or v.get('building_instance_id')
+                        vid = int(vid) if vid is not None else None
+                    else:
+                        vid = int(v)
+                except Exception:
+                    vid = None
+                if vid is not None and int(vid) == int(bid):
+                    vis.pop(k, None)
+                    removed += 1
+                    changed = True
+            if changed:
+                inst['visuals'] = vis
+        except Exception:
+            continue
+    if changed:
+        write_instances_json(data)
+        try:
+            logger.info(f"[spawner.persistence] remove_visual_refs_by_building_id({bid}) -> removed={removed}")
+        except Exception:
+            pass
+    return removed

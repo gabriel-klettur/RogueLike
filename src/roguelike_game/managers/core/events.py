@@ -414,7 +414,8 @@ def handle_events(game):
                         idx = max(0, min(idx, len(options) - 1))
                         if game.menu.handler.selected != idx:
                             game.menu.handler.selected = idx
-                            logger.debug("[Menu Hover] pos=(%s,%s) -> idx=%s", mx, my, idx)
+                            if getattr(config, 'DEBUG', False):
+                                logger.debug("[Menu Hover] pos=(%s,%s) -> idx=%s", mx, my, idx)
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mx, my = event.pos
                 # Si está activa la pantalla "Pulsa para comenzar", ignorar clicks
@@ -454,13 +455,16 @@ def handle_events(game):
                     rows_h = (total or 1) * line_h + max(0, (total - 1)) * gap
                     if 0 <= inner_y <= rows_h:
                         idx = int(inner_y // block_h)
-                        logger.debug("[Menu Click] pos=(%s,%s) panel=%s idx=%s total=%s", mx, my, panel_rect, idx, total)
+                        if getattr(config, 'DEBUG', False):
+                            logger.debug("[Menu Click] pos=(%s,%s) panel=%s idx=%s total=%s", mx, my, panel_rect, idx, total)
                         if 0 <= idx < total:
                             game.menu.execute_menu_option(options[idx], game.state)
                         else:
-                            logger.debug("[Menu Click] idx fuera de rango: %s", idx)
+                            if getattr(config, 'DEBUG', False):
+                                logger.debug("[Menu Click] idx fuera de rango: %s", idx)
                     else:
-                        logger.debug("[Menu Click] fuera del área de items: inner_y=%s rows_h=%s", inner_y, rows_h)
+                        if getattr(config, 'DEBUG', False):
+                            logger.debug("[Menu Click] fuera del área de items: inner_y=%s rows_h=%s", inner_y, rows_h)
         return
 
     # Si el selector de clase está abierto
@@ -985,11 +989,13 @@ def handle_events(game):
                 fsm_vis = False
             allow_mmb_ui = sp_vis or spells_vis or items_vis or fsm_vis
             if btn == 2 and allow_mmb_ui:
-                logger.debug("[Events] Allowing MMB event=%s over UI passthrough (down/up) [editor visible]", ev.type)
+                if getattr(config, 'DEBUG', False):
+                    logger.debug("[Events] Allowing MMB event=%s over UI passthrough (down/up) [editor visible]", ev.type)
                 continue
             mx, my = getattr(ev, 'pos', (None, None))
             if mx is not None and is_blocked(mx, my):
-                logger.debug("[Events] Blocked MOUSEBUTTON event=%s (button=%s) over UI at (%s,%s)", ev.type, btn, mx, my)
+                if getattr(config, 'DEBUG', False):
+                    logger.debug("[Events] Blocked MOUSEBUTTON event=%s (button=%s) over UI at (%s,%s)", ev.type, btn, mx, my)
                 blocked_idx.add(i)
         # Bloquear MOUSEMOTION sobre UI salvo cuando se arrastra con MMB
         elif ev.type == pygame.MOUSEMOTION:

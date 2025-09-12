@@ -75,34 +75,106 @@ class VisualizerController:
         except Exception:
             pass
 
+    def _get_selected_spawner_id(self) -> str | None:
+        try:
+            inst = getattr(self.parent.model, 'selected_instance', None)
+            if isinstance(inst, dict) and inst.get('id') is not None:
+                return str(inst.get('id'))
+        except Exception:
+            return None
+        return None
+
+    def _find_visual_entity_for_state(self, state_key: str):
+        """Best-effort resolver for the visual entity of a given state.
+        Priority:
+        1) World object tagged as spawner visual for this spawner and state
+        2) Fallback to instance_id mapping if present
+        """
+        sid = self._get_selected_spawner_id()
+        # 1) Try tags (_is_spawner_visual + spawner_instance_id + state_key)
+        if sid is not None:
+            for ob in self._iter_building_entities():
+                try:
+                    if not getattr(ob, '_is_spawner_visual', False):
+                        continue
+                    if str(getattr(ob, 'spawner_instance_id', getattr(ob, 'spawn_id', ''))) != str(sid):
+                        continue
+                    if str(getattr(ob, 'spawner_state_key', '')) == str(state_key):
+                        return ob
+                except Exception:
+                    continue
+        # 2) Fallback by instance_id from visuals mapping
+        try:
+            visuals = getattr(self.parent.model, 'visuals', {}) or {}
+            key_map = getattr(self.parent.model, 'visuals_key_map', {}) or {}
+            json_key = key_map.get(state_key, state_key)
+            raw = visuals.get(json_key)
+            if raw is not None:
+                if isinstance(raw, dict):
+                    bid = int(raw.get('instance_id') or raw.get('id') or raw.get('building_instance_id'))
+                else:
+                    bid = int(raw)
+                return self._find_building_entity_by_id(int(bid))
+        except Exception:
+            pass
+        return None
+
     def center_camera_on_state(self, state_key: str) -> None:
         """Center camera on the building instance mapped to the given visuals state key.
         Best-effort: ensures the building is loaded, then computes world pixel position
         from buildings_instances.json using zone offsets and rel_x/rel_y.
         """
-        visuals = getattr(self.parent.model, 'visuals', {}) or {}
-        key_map = getattr(self.parent.model, 'visuals_key_map', {}) or {}
-        json_key = key_map.get(state_key, state_key)
-        raw = visuals.get(json_key)
-        if raw is None:
-            return
+        # Prefer the live world entity if present (robust across restarts)
         try:
+            cam = getattr(self.parent.game, 'camera', None)
+            if cam is None:
+                return None
+            ob = self._find_visual_entity_for_state(state_key)
+            if ob is not None:
+                try:
+                    zone = getattr(ob, 'zone', None)
+                    if zone is None:
+                        zone = getattr(getattr(ob, 'model', ob), 'zone', None)
+                    if not zone:
+                        zone = 'lobby'
+                    rx = getattr(getattr(ob, 'model', ob), 'rel_x', None)
+                    ry = getattr(getattr(ob, 'model', ob), 'rel_y', None)
+                    if rx is None or ry is None:
+                        # Fallback to JSON if coords are missing
+                        raise RuntimeError('missing rel coords on entity')
+                    off = global_map_settings.zone_offsets.get(str(zone), (0, 0))
+                    bx = int(off[0] * TILE_SIZE) + int(rx)
+                    by = int(off[1] * TILE_SIZE) + int(ry)
+                    zoom = getattr(cam, 'zoom', 1.0) or 1.0
+                    cam.offset_x = float(bx) - (cam.screen_width / (2 * zoom))
+                    cam.offset_y = float(by) - (cam.screen_height / (2 * zoom))
+                    return None
+                except Exception:
+                    pass
+        except Exception:
+            pass
+        # Fallback: try to center using the instance id mapping and JSON
+        try:
+            visuals = getattr(self.parent.model, 'visuals', {}) or {}
+            key_map = getattr(self.parent.model, 'visuals_key_map', {}) or {}
+            json_key = key_map.get(state_key, state_key)
+            raw = visuals.get(json_key)
+            if raw is None:
+                return None
             if isinstance(raw, dict):
                 bid = int(raw.get('instance_id') or raw.get('id') or raw.get('building_instance_id'))
             else:
                 bid = int(raw)
         except Exception:
-            return
-        # Ensure it's loaded
+            return None
         try:
             self._ensure_building_loaded(int(bid))
         except Exception:
             pass
-        # Center camera
         try:
             cam = getattr(self.parent.game, 'camera', None)
             if cam is None:
-                return
+                return None
             bx = by = None
             bzone = 'lobby'
             for e in load_buildings_instances():
@@ -285,6 +357,23 @@ class VisualizerController:
             pass
 
     def is_building_visible_for_state(self, state_key: str) -> bool:
+        # Prefer reading from the live entity (robust across restarts)
+        ob = self._find_visual_entity_for_state(state_key)
+        if ob is not None:
+            try:
+                hidden = bool(getattr(ob, 'editor_hidden', False))
+                vis = bool(getattr(ob, 'visible', True)) and not hidden
+                # Keep cache in model if id is available
+                try:
+                    bid = getattr(ob, 'id', None)
+                    if bid is not None:
+                        self.model.editor_visibility[int(bid)] = vis
+                except Exception:
+                    pass
+                return vis
+            except Exception:
+                return True
+        # Fallback to cached visibility by instance id
         visuals = getattr(self.parent.model, 'visuals', {}) or {}
         key_map = getattr(self.parent.model, 'visuals_key_map', {}) or {}
         json_key = key_map.get(state_key, state_key)
@@ -292,7 +381,6 @@ class VisualizerController:
         if raw is None:
             return True
         try:
-            # Support new format {instance_id, template_id}
             if isinstance(raw, dict):
                 bid_int = int(raw.get('instance_id') or raw.get('id') or raw.get('building_instance_id'))
             else:
@@ -303,8 +391,32 @@ class VisualizerController:
 
     def toggle_building_visibility_for_state(self, state_key: str) -> None:
         """Toggle only the editor rendering visibility for the building mapped to state_key.
-        No persistence, no world deletion.
+        Robust even if the instance id is stale because global saver skipped it.
         """
+        ob = self._find_visual_entity_for_state(state_key)
+        if ob is not None:
+            try:
+                # Decide current effective visibility
+                cur = bool(getattr(ob, 'visible', True)) and not bool(getattr(ob, 'editor_hidden', False))
+                new_vis = not cur
+                try:
+                    setattr(ob, 'visible', bool(new_vis))
+                except Exception:
+                    pass
+                try:
+                    setattr(ob, 'editor_hidden', not bool(new_vis))
+                except Exception:
+                    pass
+                try:
+                    bid = getattr(ob, 'id', None)
+                    if bid is not None:
+                        self.model.editor_visibility[int(bid)] = bool(new_vis)
+                except Exception:
+                    pass
+                return
+            except Exception:
+                pass
+        # Fallback by instance id
         visuals = getattr(self.parent.model, 'visuals', {}) or {}
         key_map = getattr(self.parent.model, 'visuals_key_map', {}) or {}
         json_key = key_map.get(state_key, state_key)

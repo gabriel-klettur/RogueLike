@@ -601,6 +601,19 @@ class InstancePropertiesController:
         self._ensure_buildings_index()
         # Ensure we have valid building template ids to allow template-only mappings
         self._ensure_building_templates()
+        # Prefer disk truth: load current visuals for the selected instance and do not recreate
+        # mappings that were already removed on disk (e.g., after deletion via Building Editor).
+        disk_visuals_keys: set[str] = set()
+        try:
+            sid = getattr(self.model, 'original_id', None)
+            if sid:
+                data, idx, _ = find_instance_by_id(str(sid))
+                if idx is not None:
+                    vis_disk = data[idx].get('visuals')
+                    if isinstance(vis_disk, dict):
+                        disk_visuals_keys = {str(k) for k in vis_disk.keys()}
+        except Exception:
+            disk_visuals_keys = set()
         # Skip sanitization during the debounce window after user changes
         try:
             import pygame as _pg
@@ -637,6 +650,18 @@ class InstancePropertiesController:
             v = visuals.get(k)
             if v is None:
                 continue
+            # If the mapping is no longer present on disk for this instance, drop it without repair
+            try:
+                if disk_visuals_keys and (str(k) not in disk_visuals_keys):
+                    try:
+                        self._log.info(f"[InstanceProps] sanitize_visuals: dropping state='{k}' (absent on disk)")
+                    except Exception:
+                        pass
+                    visuals.pop(k, None)
+                    removed_any = True
+                    continue
+            except Exception:
+                pass
             vid = None
             vtpl = None
             try:
@@ -658,72 +683,8 @@ class InstancePropertiesController:
             if vid is not None and _building_exists(int(vid)):
                 keep = True
             elif isinstance(v, dict) and vtpl is not None and vtpl in valid_tpls:
-                # Attempt self-heal: recreate missing building instance for valid template
-                try:
-                    data = self._load_buildings_instances()
-                    # Compute next id
-                    next_id = 1
-                    try:
-                        ids = [int(e.get('id')) for e in data if e.get('id') is not None]
-                        if ids:
-                            next_id = max(ids) + 1
-                    except Exception:
-                        pass
-                    # Determine zone and rel position from the selected spawner instance tile
-                    zone = None
-                    local_tile = (0, 0)
-                    try:
-                        zone = str((self.model.selected_instance or {}).get('zone'))
-                    except Exception:
-                        zone = None
-                    try:
-                        t = (self.model.selected_instance or {}).get('tile', (0, 0))
-                        if isinstance(t, (list, tuple)) and len(t) >= 2:
-                            local_tile = (int(t[0]), int(t[1]))
-                    except Exception:
-                        local_tile = (0, 0)
-                    if not zone:
-                        zone = 'lobby'
-                    rel_x = int(local_tile[0] * TILE_SIZE)
-                    rel_y = int(local_tile[1] * TILE_SIZE)
-                    entry = {
-                        'id': next_id,
-                        'template_id': int(vtpl),
-                        'zone': zone,
-                        'rel_x': int(rel_x),
-                        'rel_y': int(rel_y),
-                    }
-                    # Tag as spawner visual to protect from global building saves
-                    try:
-                        inst = self.model.selected_instance or {}
-                        sid = str(inst.get('id')) if inst.get('id') is not None else None
-                    except Exception:
-                        sid = None
-                    try:
-                        entry['overrides'] = entry.get('overrides') or {}
-                        entry['overrides']['_is_spawner_visual'] = True
-                        if sid:
-                            entry['overrides']['spawner_instance_id'] = sid
-                        # Add root-level spawn identifiers for persistence stability
-                        if sid:
-                            entry['spawn_id'] = str(sid)
-                            entry['spawner_instance_id'] = str(sid)
-                    except Exception:
-                        pass
-                    data.append(entry)
-                    self._write_buildings_instances(data)
-                    # Refresh index and mark as repaired
-                    self._building_index = None
-                    self._ensure_buildings_index()
-                    visuals[k] = {'instance_id': next_id, 'template_id': int(vtpl)}
-                    repaired_any = True
-                    keep = True
-                    try:
-                        self._log.warning(f"[InstanceProps] sanitize_visuals: repaired missing instance for state='{k}' -> new_id={next_id} tpl={vtpl}")
-                    except Exception:
-                        pass
-                except Exception:
-                    keep = True  # keep mapping as template-only even if repair failed
+                # Keep template-only mapping; do not auto-recreate missing building instances here.
+                keep = True
             if not keep:
                 try:
                     reason = 'invalid' if vid is None else 'missing in buildings and no valid template_id'

@@ -25,16 +25,6 @@ except Exception:  # pragma: no cover - editor may not be available in some cont
     _fsm_get_set = None
 
 logger = logging.getLogger(__name__)
-try:
-    if not logger.handlers:
-        _h = logging.StreamHandler()
-        _h.setLevel(logging.DEBUG)
-        _h.setFormatter(logging.Formatter('[%(levelname)s] %(name)s: %(message)s'))
-        logger.addHandler(_h)
-    logger.setLevel(logging.DEBUG)
-    logger.propagate = False
-except Exception:
-    pass
 
 
 class SpawnerPlacementSystem:
@@ -168,9 +158,10 @@ class SpawnerPlacementSystem:
                 data = json.load(f)
             out = data if isinstance(data, list) else []
             try:
-                num = len(out)
-                with_vis = sum(1 for e in out if isinstance(e.get('visuals'), dict) and len(e.get('visuals') or {}) > 0)
-                logger.debug(f"[SpawnerPlacementSystem] _load_instances: read {num} entries (visuals>0 in {with_vis}) from {path}")
+                if getattr(config, 'DEBUG_SPAWNER', False):
+                    num = len(out)
+                    with_vis = sum(1 for e in out if isinstance(e.get('visuals'), dict) and len(e.get('visuals') or {}) > 0)
+                    logger.debug(f"[SpawnerPlacementSystem] _load_instances: read {num} entries (visuals>0 in {with_vis}) from {path}")
             except Exception:
                 pass
             return out
@@ -247,7 +238,8 @@ class SpawnerPlacementSystem:
                         except Exception:
                             pass
             try:
-                logger.debug(f"[SpawnerPlacementSystem] _resolve_config: inst_id={inst.get('id')} visuals_len={len((ivis or {})) if isinstance(ivis, dict) else 'N/A'} visible_in_game={inst.get('overrides',{}).get('visible_in_game')}")
+                if getattr(config, 'DEBUG_SPAWNER', False):
+                    logger.debug(f"[SpawnerPlacementSystem] _resolve_config: inst_id={inst.get('id')} visuals_len={len((ivis or {})) if isinstance(ivis, dict) else 'N/A'} visible_in_game={inst.get('overrides',{}).get('visible_in_game')}")
             except Exception:
                 pass
         except Exception:
@@ -383,7 +375,8 @@ class SpawnerPlacementSystem:
             tpl = self._templates[tpl_id]
             cfg = self._resolve_config(tpl, inst)
             try:
-                logger.debug(f"[SpawnerPlacementSystem] update: creating spawner entity for inst_id={inst.get('id')} tpl={tpl_id} visuals_present={(cfg.state_visuals is not None)}")
+                if getattr(config, 'DEBUG_SPAWNER', False):
+                    logger.debug(f"[SpawnerPlacementSystem] update: creating spawner entity for inst_id={inst.get('id')} tpl={tpl_id} visuals_present={(cfg.state_visuals is not None)}")
             except Exception:
                 pass
             eid = world.create_entity()

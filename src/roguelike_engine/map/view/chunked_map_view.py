@@ -7,6 +7,8 @@ from roguelike_engine.tile.utils.loader import get_sprite_for_tile
 
 import logging
 logger = logging.getLogger(__name__)
+# Disable very chatty map chunk build logs by default
+DEBUG_CHUNKED: bool = False
 
 # Cache scaled sprites per (sprite, zoom)
 _SCALED_CACHE: dict[tuple[pygame.Surface, float], pygame.Surface] = {}
@@ -23,7 +25,9 @@ class ChunkedMapView:
         self.chunks_by_zoom: dict[float, dict[tuple[int,int], pygame.Surface]] = {}
 
     def _build_chunk_surfaces(self, map_model: MapModel, zoom: float):
-        logger.debug(f" _build_chunk_surfaces called for zoom {zoom}")
+        if DEBUG_CHUNKED:
+            logger.debug(f" _build_chunk_surfaces called for zoom {zoom}")
+
         """
         Pre-dibuja cada chunk (bloque de tiles) en una surface escalada
         y la guarda en self.chunks_by_zoom[zoom].
@@ -54,9 +58,11 @@ class ChunkedMapView:
                     if key not in sprite_map:
                         sprite_map[key] = get_sprite_for_tile(char, code)
 
-        # Debug: imprimir claves sin sprite en sprite_map
-        missing = [k for k, s in sprite_map.items() if s is None]
-        logger.debug(f" claves sin sprite: {missing}")
+        # Debug opcional: imprimir claves sin sprite en sprite_map
+        if DEBUG_CHUNKED:
+            missing = [k for k, s in sprite_map.items() if s is None]
+            logger.debug(f" claves sin sprite: {missing}")
+
         layers_ordered = sorted(map_model.layers.keys(), key=lambda l: l.value)
         for cy in range(n_chunks_y):
             for cx in range(n_chunks_x):
@@ -81,8 +87,9 @@ class ChunkedMapView:
                             if not code and layer != Layer.Ground:
                                 continue
                             sprite = sprite_map.get((char, code))
-                            if sprite is None:
+                            if sprite is None and DEBUG_CHUNKED:
                                 logger.debug(f" sin sprite para tile ({ty},{tx}) char={char}, code={code}")
+
                             if not sprite:
                                 continue
                             # scaled cache
@@ -102,7 +109,9 @@ class ChunkedMapView:
         self.chunks_by_zoom[zoom] = chunk_dict
 
     def invalidate_cache(self):
-        logger.debug(f" invalidate_cache called")
+        if DEBUG_CHUNKED:
+            logger.debug(f" invalidate_cache called")
+
         """Forzar reconstrucción de todos los chunks en el próximo render."""
         self.chunks_by_zoom.clear()
 
