@@ -202,11 +202,17 @@ def save_buildings_split(
                 max_iid = iid
         except Exception:
             continue
+    try:
+        logger.debug(f"[Buildings][SaveSplit] Existing instances indexed: max_iid={max_iid} by_spawn_id={len(by_spawn_id)} by_pos_key={len(by_pos_key)}")
+    except Exception:
+        pass
 
     # Build new templates/instances
     seen_spawn_ids = set()
     templates_needed: dict[int, dict] = dict(tid_to_entry)  # start with existing
     instances_out = []
+    # Track IDs assigned during this pass to avoid duplicates
+    used_ids: set[int] = set()
 
     skipped_spawner_visuals = 0
     for b in buildings:
@@ -274,14 +280,54 @@ def save_buildings_split(
 
             # Determine instance id (preserve if exists)
             iid = None
-            if spawn_id is not None and str(spawn_id) in by_spawn_id:
+            # 0) Prefer the in-memory BuildingModel.id if present and not yet used in this pass
+            try:
+                cur_id_attr = getattr(b, 'id', None)
+                cur_id = int(cur_id_attr) if cur_id_attr is not None and str(cur_id_attr).isdigit() else None
+            except Exception:
+                cur_id = None
+            if cur_id is not None:
+                if cur_id in used_ids:
+                    try:
+                        logger.warning(f"[Buildings][SaveSplit] Preserve-id conflict: id={cur_id} already used in this pass; will reassign for building at zone={zone_norm} rel=({relx},{rely}) tpl={tid}")
+                    except Exception:
+                        pass
+                else:
+                    iid = cur_id
+                    try:
+                        logger.info(f"[Buildings][SaveSplit] Preserving existing building.id -> iid={iid} (zone={zone_norm} rel=({relx},{rely}) tpl={tid})")
+                    except Exception:
+                        pass
+            if iid is None and (spawn_id is not None and str(spawn_id) in by_spawn_id):
                 iid = by_spawn_id[str(spawn_id)]
+                try:
+                    logger.info(f"[Buildings][SaveSplit] ID reuse by spawn_id: spawn_id={spawn_id} -> iid={iid}")
+                except Exception:
+                    pass
             if iid is None:
                 pos_key = f"{zone_norm}|{relx}|{rely}|{tid}"
                 iid = by_pos_key.get(pos_key)
-            if iid is None:
+                if iid is not None:
+                    try:
+                        logger.info(f"[Buildings][SaveSplit] ID reuse by pos_key: key={pos_key} -> iid={iid}")
+                    except Exception:
+                        pass
+            if iid is None or iid in used_ids:
                 iid = max_iid + 1
                 max_iid = iid
+                try:
+                    img_dbg = getattr(b, 'image_path', None)
+                except Exception:
+                    img_dbg = None
+                try:
+                    logger.warning(f"[Buildings][SaveSplit] New ID assigned: iid={iid} (prev_max={iid-1}) zone={zone_norm} rel=({relx},{rely}) tpl={tid} img={img_dbg}")
+                except Exception:
+                    pass
+            # Mark id as used in this pass
+            try:
+                used_ids.add(int(iid))
+            except Exception:
+                pass
 
             inst_obj = {
                 'id': int(iid),
@@ -355,3 +401,43 @@ def save_buildings_split(
 
     logger.info(f"✅ {len(templates_list)} templates guardados en {t_path}")
     logger.info(f"✅ {len(instances_out)} instancias guardadas en {i_path}")
+
+    # Audit: diff previous vs new instances to detect added/removed/modified IDs
+    try:
+        def _as_id_map(arr: list[dict]) -> dict[int, dict]:
+            out: dict[int, dict] = {}
+            for e in arr or []:
+                try:
+                    eid = int(e.get('id'))
+                except Exception:
+                    continue
+                out[eid] = e
+            return out
+        old_map = _as_id_map(existing_instances)
+        new_map = _as_id_map(instances_out)
+        old_ids = set(old_map.keys())
+        new_ids = set(new_map.keys())
+        added = sorted(new_ids - old_ids)
+        removed = sorted(old_ids - new_ids)
+        common = sorted(new_ids & old_ids)
+        if added:
+            logger.info(f"[Buildings][SaveSplit][Audit] Added IDs: {added}")
+        if removed:
+            logger.info(f"[Buildings][SaveSplit][Audit] Removed IDs: {removed}")
+        # Field-level modifications for common IDs
+        for iid in common:
+            o = old_map.get(iid, {})
+            n = new_map.get(iid, {})
+            diffs = {}
+            try:
+                for key in ('template_id', 'zone', 'rel_x', 'rel_y'):
+                    ov = o.get(key)
+                    nv = n.get(key)
+                    if ov != nv:
+                        diffs[key] = {'old': ov, 'new': nv}
+            except Exception:
+                pass
+            if diffs:
+                logger.info(f"[Buildings][SaveSplit][Audit] Modified ID {iid}: {diffs}")
+    except Exception:
+        pass

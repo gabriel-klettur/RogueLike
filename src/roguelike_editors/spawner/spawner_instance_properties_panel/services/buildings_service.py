@@ -26,6 +26,11 @@ def write_buildings_instances(data: List[Dict[str, Any]]) -> None:
     """Write buildings instances JSON with indent and UTF-8. Creates parent dir."""
     path = BUILDINGS_INSTANCES_PATH
     os.makedirs(os.path.dirname(path), exist_ok=True)
+    # Audit: load previous snapshot for diff logging
+    try:
+        _old = load_buildings_instances()
+    except Exception:
+        _old = []
     # Deduplicate by (zone, rel_x, rel_y, template_id)
     try:
         _before = len(data or [])
@@ -49,6 +54,14 @@ def write_buildings_instances(data: List[Dict[str, Any]]) -> None:
             except Exception:
                 neg_id = 0
             return (is_spawn_vis, neg_id)
+        # Gather duplicates for logging
+        _dups: dict[str, list[Dict[str, Any]]] = {}
+        for e in list(data or []):
+            try:
+                k = _key(e)
+            except Exception:
+                k = str(id(e))
+            _dups.setdefault(k, []).append(e)
         for e in list(data or []):
             k = _key(e)
             cur = seen.get(k)
@@ -62,6 +75,21 @@ def write_buildings_instances(data: List[Dict[str, Any]]) -> None:
         _after = len(data)
         try:
             _log.debug(f"[BuildingsService] write_buildings_instances: dedup {_before}->{_after} entries (removed={_before-_after})")
+            # Log dedup selection details (keys with >1 candidates)
+            for k, candidates in _dups.items():
+                if len(candidates) > 1:
+                    try:
+                        chosen = seen.get(k)
+                        chosen_id = int(chosen.get('id')) if isinstance(chosen, dict) and chosen.get('id') is not None else None
+                    except Exception:
+                        chosen_id = None
+                    ids = []
+                    for c in candidates:
+                        try:
+                            ids.append(int(c.get('id')))
+                        except Exception:
+                            ids.append(c.get('id'))
+                    _log.info(f"[BuildingsService][Dedup] key={k} candidates={ids} -> chosen={chosen_id}")
         except Exception:
             pass
         # Stable order by id if present
@@ -72,6 +100,49 @@ def write_buildings_instances(data: List[Dict[str, Any]]) -> None:
     except Exception:
         # Best-effort: fall back to original data
         data = list(data or [])
+    # Audit: compute diff old vs new (by id)
+    try:
+        def _as_id_map(arr: List[Dict[str, Any]]) -> Dict[int, Dict[str, Any]]:
+            out: Dict[int, Dict[str, Any]] = {}
+            for e in arr or []:
+                try:
+                    eid = int(e.get('id'))
+                except Exception:
+                    continue
+                out[eid] = e
+            return out
+        old_map = _as_id_map(_old)
+        new_map = _as_id_map(data)
+        old_ids = set(old_map.keys())
+        new_ids = set(new_map.keys())
+        added = sorted(new_ids - old_ids)
+        removed = sorted(old_ids - new_ids)
+        common = sorted(new_ids & old_ids)
+        if added:
+            _log.info(f"[BuildingsService][Audit] Added IDs: {added}")
+        if removed:
+            _log.info(f"[BuildingsService][Audit] Removed IDs: {removed}")
+        # Detect field-level modifications for common IDs (core placement fields)
+        modified: list[tuple[int, dict]] = []
+        for iid in common:
+            o = old_map.get(iid, {})
+            n = new_map.get(iid, {})
+            diffs = {}
+            try:
+                for key in ('template_id', 'zone', 'rel_x', 'rel_y'):
+                    ov = o.get(key)
+                    nv = n.get(key)
+                    if ov != nv:
+                        diffs[key] = {'old': ov, 'new': nv}
+            except Exception:
+                pass
+            if diffs:
+                modified.append((iid, diffs))
+        if modified:
+            for iid, diffs in modified:
+                _log.info(f"[BuildingsService][Audit] Modified ID {iid}: {diffs}")
+    except Exception:
+        pass
     with open(path, 'w', encoding='utf-8') as f:
         json.dump(data or [], f, ensure_ascii=False, indent=2)
 
