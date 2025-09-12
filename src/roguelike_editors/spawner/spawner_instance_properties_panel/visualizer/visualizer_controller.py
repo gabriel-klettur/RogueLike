@@ -204,11 +204,16 @@ class VisualizerController:
         visuals = getattr(self.parent.model, 'visuals', {}) or {}
         key_map = getattr(self.parent.model, 'visuals_key_map', {}) or {}
         json_key = key_map.get(state_key, state_key)
-        bid = visuals.get(json_key)
-        if bid is None:
+        raw = visuals.get(json_key)
+        if raw is None:
             return True
         try:
-            return bool(self.model.editor_visibility.get(int(bid), True))
+            # Support new format {instance_id, template_id}
+            if isinstance(raw, dict):
+                bid_int = int(raw.get('instance_id') or raw.get('id') or raw.get('building_instance_id'))
+            else:
+                bid_int = int(raw)
+            return bool(self.model.editor_visibility.get(int(bid_int), True))
         except Exception:
             return True
 
@@ -216,11 +221,14 @@ class VisualizerController:
         visuals = getattr(self.parent.model, 'visuals', {}) or {}
         key_map = getattr(self.parent.model, 'visuals_key_map', {}) or {}
         json_key = key_map.get(state_key, state_key)
-        bid = visuals.get(json_key)
-        if bid is None:
+        raw = visuals.get(json_key)
+        if raw is None:
             return
         try:
-            bid_int = int(bid)
+            if isinstance(raw, dict):
+                bid_int = int(raw.get('instance_id') or raw.get('id') or raw.get('building_instance_id'))
+            else:
+                bid_int = int(raw)
         except Exception:
             return
         cur = bool(self.model.editor_visibility.get(bid_int, True))

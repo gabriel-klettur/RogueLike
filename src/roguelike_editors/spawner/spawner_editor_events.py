@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Optional
 import pygame
+import logging
 
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_editors.spawner.services import (
@@ -247,15 +248,27 @@ class SpawnerEditorEventHandler:
                 idx = None
             try:
                 if idx is not None:
-                    prev_id = instances[idx].get('id')
+                    prev = instances[idx]
+                    prev_id = prev.get('id')
                     if prev_id:
                         new_entry['id'] = prev_id
+                    # Preserve previous visuals mapping if present to avoid wiping it
+                    try:
+                        prev_visuals = prev.get('visuals')
+                        if isinstance(prev_visuals, dict) and prev_visuals:
+                            new_entry['visuals'] = prev_visuals
+                    except Exception:
+                        pass
                     instances[idx] = new_entry
                 else:
                     # Assign a unique id immediately to avoid transient duplicates without ids
                     existing_ids = {str(e.get('id')) for e in instances if e.get('id')}
                     new_entry['id'] = generate_instance_id(new_entry, existing_ids)
                     instances.append(new_entry)
+                try:
+                    logging.getLogger(__name__).debug(f"[SpawnerEditorEvents] placement: saving tpl={tpl_id} zone={zone} tile={(local_tx, local_ty)} idx={idx} visuals_len={len((new_entry.get('visuals') or {}))}")
+                except Exception:
+                    pass
             except Exception:
                 # Fallback: append
                 try:
@@ -264,6 +277,10 @@ class SpawnerEditorEventHandler:
                     pass
             try:
                 write_instances_json(instances)
+                try:
+                    logging.getLogger(__name__).info(f"[SpawnerEditorEvents] placement: wrote instances ({len(instances)}) last_entry_id={new_entry.get('id')} visuals_len={len((new_entry.get('visuals') or {}))}")
+                except Exception:
+                    pass
             except Exception:
                 pass
             # Spawn entity immediately

@@ -3,10 +3,18 @@
     "template_id": "survival_10",
     "zone": "Forest",
     "tile": [
-      26,
-      15
+      27,
+      16
     ],
-    "visuals": {},
-    "id": "survival_10_forest_14_9"
+    "visuals": {
+      "AwaitTrigger": {
+        "instance_id": 141,
+        "template_id": 154
+      }
+    },
+    "id": "survival_10_forest_14_9",
+    "overrides": {
+      "visible_in_game": true
+    }
   }
 ]
