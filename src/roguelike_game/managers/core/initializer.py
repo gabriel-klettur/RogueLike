@@ -300,9 +300,11 @@ class GameInitializer:
     def _init_menu(self):
         g = self.game
         g.input_config = InputConfig()
-        # Audio config + manager
-        g.audio_config = AudioConfig()
-        g.audio_manager = AudioManager(g.audio_config)
+        # Audio config + manager (reutilizar si ya fueron creados en _init_audio)
+        if not hasattr(g, 'audio_config') or g.audio_config is None:
+            g.audio_config = AudioConfig()
+        if not hasattr(g, 'audio_manager') or g.audio_manager is None:
+            g.audio_manager = AudioManager(g.audio_config)
         g.menu = MenuManager(
             g, g.state, g.screen, g.input_config,
             audio_config=g.audio_config,
@@ -397,6 +399,14 @@ class GameInitializer:
     def _init_audio(self):
         """Inicializa el servicio de audio (hilo) y registra un AudioBus global."""
         g = self.game
+        # Asegurar configuración de audio desde el inicio para respetar volúmenes guardados
+        try:
+            if not hasattr(g, 'audio_config') or g.audio_config is None:
+                g.audio_config = AudioConfig()
+            if not hasattr(g, 'audio_manager') or g.audio_manager is None:
+                g.audio_manager = AudioManager(g.audio_config)
+        except Exception:
+            pass
         # Crear y arrancar servicio
         try:
             catalog = load_audio_catalog()
