@@ -17,14 +17,16 @@ from roguelike_editors.spawner.services.persistence import (
 from roguelike_engine.config import config as _cfg
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
-from roguelike_engine.config.config import BUILDINGS_INSTANCES_PATH, BUILDINGS_TEMPLATES_PATH
-import os
-import json
 from .instance_properties_model import InstancePropertiesModel
 from .instance_properties_view import InstancePropertiesView
 from .instance_properties_events import InstancePropertiesEventHandler
+from .visualizer.visualizer_controller import VisualizerController
 from roguelike_editors.spawner.visuals_picker import VisualsPicker
-from roguelike_engine.buildings.factory import build_from_config
+from .services.buildings_service import (
+    load_buildings_instances as svc_load_buildings_instances,
+    write_buildings_instances as svc_write_buildings_instances,
+    load_buildings_templates as svc_load_buildings_templates,
+)
 import logging
 
 class InstancePropertiesController:
@@ -36,9 +38,10 @@ class InstancePropertiesController:
         self.events = InstancePropertiesEventHandler()
         # UI helpers
         self._dbl = DoubleClickDetector(interval_ms=450)
-        self._text_input: Optional[TextInput] = None
         # Cache flattened rows (key, value_str)
         self._rows: List[Tuple[str, str]] = []
+        # Visualizer (Visuals table MVC)
+        self.visualizer = VisualizerController(self)
         # Optional callback for editor to refresh Instances list after persistence
         # Signature: () -> None
         self.on_persist: Optional[callable] = None
@@ -54,8 +57,7 @@ class InstancePropertiesController:
         self.game = None
         # Visuals Picker orchestrator (lazy)
         self._visuals_picker: VisualsPicker | None = None
-        # Editor-only visibility map for building instances (id -> visible)
-        self._editor_visibility: Dict[int, bool] = {}
+        # Editor-only visibility moved to visualizer.model
         # Toast defaults
         try:
             self._toast_ms = 1600
@@ -241,6 +243,11 @@ class InstancePropertiesController:
 
     def render_visuals_picker(self, screen, camera) -> None:
         if not getattr(self.model, 'visuals_picker_open', False) or self._visuals_picker is None:
+            # Ensure UI reloads from persisted disk state
+            try:
+                self._reload_selected_from_json()
+            except Exception:
+                pass
             return
         try:
             self._visuals_picker.render(screen, camera)
@@ -278,236 +285,37 @@ class InstancePropertiesController:
 
     # --- Editor visibility helpers -----------------------------------------
     def _get_world(self):
-        try:
-            return getattr(getattr(self.game, 'ecs', None), 'ecs_world', None)
-        except Exception:
-            return None
+        # Delegated to visualizer
+        return getattr(self.visualizer, '_get_world')()
 
     def _iter_building_entities(self):
-        world = self._get_world()
-        try:
-            for ob in getattr(world, 'buildings', []) or []:
-                yield ob
-        except Exception:
-            return
+        # Delegated to visualizer
+        yield from self.visualizer._iter_building_entities()
 
     def _find_building_entity_by_id(self, bid: int):
-        for ob in self._iter_building_entities():
-            try:
-                if getattr(ob, 'id', None) == int(bid):
-                    return ob
-            except Exception:
-                continue
-        # Try to load on demand if not found
-        try:
-            self._ensure_building_loaded(int(bid))
-            for ob in self._iter_building_entities():
-                try:
-                    if getattr(ob, 'id', None) == int(bid):
-                        return ob
-                except Exception:
-                    continue
-        except Exception:
-            pass
-        return None
+        return self.visualizer._find_building_entity_by_id(int(bid))
 
-    # JSON loaders for buildings data
-    def _load_buildings_instances(self) -> list[dict]:
-        try:
-            with open(BUILDINGS_INSTANCES_PATH, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-            return data if isinstance(data, list) else []
-        except Exception:
-            return []
-
-    def _write_buildings_instances(self, data: list[dict]) -> None:
-        try:
-            with open(BUILDINGS_INSTANCES_PATH, 'w', encoding='utf-8') as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
-        except Exception:
-            pass
-
-    def _load_buildings_templates(self) -> list[dict]:
-        try:
-            with open(BUILDINGS_TEMPLATES_PATH, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-            return data if isinstance(data, list) else []
-        except Exception:
-            return []
-
-    def _get_template_image_path(self, template_id: int) -> str | None:
-        for e in self._load_buildings_templates():
-            try:
-                if int(e.get('id')) == int(template_id):
-                    # Prefer assets.idle, fallback to assets.image or image
-                    assets = e.get('assets') if isinstance(e.get('assets'), dict) else {}
-                    path = assets.get('idle') or assets.get('image') or e.get('image')
-                    return str(path) if path else None
-            except Exception:
-                continue
-        return None
+    # Obsolete building JSON/template helpers were removed. The Visualizer
+    # now owns world/buildings operations, and this controller keeps only the
+    # robust loaders used for persistence further below.
 
     def _ensure_building_loaded(self, bid: int) -> None:
-        """If building with id 'bid' is not present in world.buildings, load it from instances/templates and append it.
-        This is editor-only best-effort to make a just-created/reused instance visible immediately."""
-        world = self._get_world()
-        if world is None:
-            return
-        # Already loaded?
-        for ob in getattr(world, 'buildings', []) or []:
-            try:
-                if getattr(ob, 'id', None) == int(bid):
-                    return
-            except Exception:
-                continue
-        # Find instance entry
-        inst_entry = None
-        for e in self._load_buildings_instances():
-            try:
-                if int(e.get('id')) == int(bid):
-                    inst_entry = e
-                    break
-            except Exception:
-                continue
-        if not inst_entry:
-            return
-        # Build config for factory
-        cfg: dict[str, Any] = {}
-        try:
-            cfg['image_path'] = self._get_template_image_path(int(inst_entry.get('template_id')))
-            cfg['rel_x'] = int(inst_entry.get('rel_x', 0) or 0)
-            cfg['rel_y'] = int(inst_entry.get('rel_y', 0) or 0)
-            # Zone
-            if inst_entry.get('zone') is not None:
-                cfg['zone'] = str(inst_entry.get('zone'))
-            # Overrides
-            ov = inst_entry.get('overrides') or {}
-            if isinstance(ov, dict):
-                if isinstance(ov.get('scale'), (list, tuple)) and len(ov.get('scale')) == 2:
-                    cfg['scale'] = (int(ov['scale'][0]), int(ov['scale'][1]))
-                if 'z_bottom' in ov:
-                    cfg['z_bottom'] = int(ov['z_bottom'])
-                if 'z_top' in ov:
-                    cfg['z_top'] = int(ov['z_top'])
-        except Exception:
-            pass
-        if not cfg.get('image_path'):
-            return
-        # Create Building and append to world
-        try:
-            cam = getattr(self.game, 'camera', None)
-            b = build_from_config(cfg, camera=cam)
-            # Attach persistent id and defaults
-            try:
-                setattr(b, 'id', int(bid))
-            except Exception:
-                pass
-            # Optional flags used by editor/runtime
-            try:
-                setattr(b, 'visible', True)
-                setattr(b, 'editor_hidden', False)
-                setattr(b, 'runtime_hidden', False)
-            except Exception:
-                pass
-            # Append to world list
-            try:
-                if not hasattr(world, 'buildings') or world.buildings is None:
-                    setattr(world, 'buildings', [])
-                world.buildings.append(b)
-            except Exception:
-                pass
-            # Also append to game.entities.buildings if present (renderer may use it)
-            try:
-                ents = getattr(self.game, 'entities', None)
-                if ents is not None and hasattr(ents, 'buildings') and ents.buildings is not None:
-                    ents.buildings.append(b)
-            except Exception:
-                pass
-        except Exception:
-            # Best-effort: do nothing on failure
-            pass
+        # Delegated to visualizer
+        self.visualizer._ensure_building_loaded(int(bid))
 
     def _set_building_visible(self, bid: int, visible: bool) -> None:
-        self._editor_visibility[int(bid)] = bool(visible)
-        ob = self._find_building_entity_by_id(int(bid))
-        if ob is not None:
-            # Try common visibility flags
-            try:
-                setattr(ob, 'visible', bool(visible))
-            except Exception:
-                pass
-            try:
-                setattr(ob, 'editor_hidden', not bool(visible))
-            except Exception:
-                pass
+        # Delegated to visualizer
+        self.visualizer._set_building_visible(int(bid), bool(visible))
 
     def _tag_and_reveal_building(self, bid: int, state_key: str) -> None:
-        """Attach spawner tags to the building entity and ensure it's visible for editing."""
-        ob = self._find_building_entity_by_id(int(bid))
-        if ob is None:
-            return
-        # Tag
-        try:
-            setattr(ob, '_is_spawner_visual', True)
-        except Exception:
-            pass
-        try:
-            inst = self.model.selected_instance or {}
-            sid = str(inst.get('id')) if inst.get('id') is not None else None
-            if sid is not None:
-                setattr(ob, 'spawner_instance_id', sid)
-                setattr(ob, 'spawn_id', sid)
-        except Exception:
-            pass
-        try:
-            setattr(ob, 'spawner_state_key', str(state_key))
-        except Exception:
-            pass
-        # Link back to ECS entity if present (best-effort, similar to editor controller)
-        try:
-            world = self._get_world()
-            comps = getattr(world, 'components', {}) if world else {}
-            if world and 'SpawnerConfig' in comps:
-                for eid in world.get_entities_with('SpawnerConfig'):
-                    try:
-                        cfg = comps['SpawnerConfig'][eid]
-                        if getattr(ob, 'spawn_id', None) == str(getattr(cfg, 'template_id', '')):
-                            setattr(ob, '_spawner_eid', eid)
-                            setattr(ob, '_world_ref', world)
-                            break
-                    except Exception:
-                        continue
-        except Exception:
-            pass
-        # Reveal
-        self._set_building_visible(int(bid), True)
+        # Delegated to visualizer
+        self.visualizer.tag_and_reveal_building(int(bid), str(state_key))
 
     def is_visual_building_visible(self, state_key: str) -> bool:
-        """Query current editor-visible state for the building instance wired to a given visuals state."""
-        visuals = getattr(self.model, 'visuals', {}) or {}
-        key_map = getattr(self.model, 'visuals_key_map', {}) or {}
-        json_key = key_map.get(state_key, state_key)
-        bid = visuals.get(json_key)
-        if bid is None:
-            return True
-        try:
-            return bool(self._editor_visibility.get(int(bid), True))
-        except Exception:
-            return True
+        return self.visualizer.is_building_visible_for_state(str(state_key))
 
     def toggle_visual_building_visibility(self, state_key: str) -> None:
-        visuals = getattr(self.model, 'visuals', {}) or {}
-        key_map = getattr(self.model, 'visuals_key_map', {}) or {}
-        json_key = key_map.get(state_key, state_key)
-        bid = visuals.get(json_key)
-        if bid is None:
-            return
-        try:
-            bid_int = int(bid)
-        except Exception:
-            return
-        cur = bool(self._editor_visibility.get(bid_int, True))
-        self._set_building_visible(bid_int, not cur)
+        self.visualizer.toggle_building_visibility_for_state(str(state_key))
 
     # --- Rows & Editing ------------------------------------------------------
     def _flatten_instance(self) -> List[Tuple[str, str]]:
@@ -550,18 +358,15 @@ class InstancePropertiesController:
     def _ensure_buildings_index(self) -> None:
         if self._building_index is not None:
             return
-        path = BUILDINGS_INSTANCES_PATH
-        idx: Dict[int, str] = {}
         try:
-            with open(path, 'r', encoding='utf-8') as f:
-                arr = json.load(f)
+            arr = svc_load_buildings_instances()
+            idx = {}
             if isinstance(arr, list):
                 for e in arr:
                     try:
                         bid = int(e.get('id'))
-                        tpl = e.get('template_id')
-                        # Store as string for display
-                        idx[bid] = str(tpl)
+                        tid = str(e.get('template_id'))
+                        idx[bid] = tid
                     except Exception:
                         continue
         except Exception:
@@ -573,8 +378,7 @@ class InstancePropertiesController:
             return
         ids: set[int] = set()
         try:
-            with open(BUILDINGS_TEMPLATES_PATH, 'r', encoding='utf-8') as f:
-                arr = json.load(f)
+            arr = svc_load_buildings_templates()
             if isinstance(arr, list):
                 for e in arr:
                     try:
@@ -806,11 +610,13 @@ class InstancePropertiesController:
     def get_visual_input_validation(self, state_key: str) -> tuple[bool, Optional[str]]:
         """Check current text being edited for a given state."""
         txt = (self.model.visuals_pending_templates or {}).get(state_key, '')
-        if getattr(self.model, 'visuals_editing_state', None) == state_key and self._text_input is not None:
-            try:
-                txt = self._text_input.text
-            except Exception:
-                pass
+        if getattr(self.model, 'visuals_editing_state', None) == state_key:
+            vti = getattr(self.visualizer.model, 'text_input', None)
+            if vti is not None:
+                try:
+                    txt = vti.text
+                except Exception:
+                    pass
         ok, msg, _ = self._validate_template_text(txt)
         return ok, msg
 
@@ -823,6 +629,7 @@ class InstancePropertiesController:
         self.model.visuals_editing_state = str(state_key)
         # Pre-fill pending template with current template text
         cur_tpl = 'N/A'
+
         try:
             rows = self.get_visuals_rows()
             for st, _iid, tpl in rows:
@@ -835,11 +642,13 @@ class InstancePropertiesController:
         if cur_tpl.upper() == 'N/A':
             cur_tpl = ''
         self.model.visuals_pending_templates[state_key] = cur_tpl
-        # Activate text input
-        if self._text_input is None:
+        # Activate visualizer's dedicated text input
+        vti = getattr(self.visualizer.model, 'text_input', None)
+        if vti is None:
             font = pygame.font.SysFont(None, 18)
-            self._text_input = TextInput(font)
-        self._text_input.activate(cur_tpl, select_all=True)
+            vti = TextInput(font)
+            self.visualizer.model.text_input = vti
+        vti.activate(cur_tpl, select_all=True)
         # Ensure OS text input is started for proper TEXTINPUT events
         try:
             import pygame as _pg
@@ -856,23 +665,10 @@ class InstancePropertiesController:
             pass
 
     def _load_buildings_instances(self) -> List[Dict[str, Any]]:
-        path = BUILDINGS_INSTANCES_PATH
-        try:
-            with open(path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                if isinstance(data, list):
-                    return data
-        except FileNotFoundError:
-            return []
-        except Exception:
-            return []
-        return []
+        return svc_load_buildings_instances()
 
     def _write_buildings_instances(self, data: List[Dict[str, Any]]) -> None:
-        path = BUILDINGS_INSTANCES_PATH
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, 'w', encoding='utf-8') as f:
-            json.dump(data or [], f, ensure_ascii=False, indent=2)
+        svc_write_buildings_instances(data)
         # Post-write GC to ensure consistency
         try:
             self._gc_invalid_building_instances()
@@ -957,21 +753,61 @@ class InstancePropertiesController:
         display_state = getattr(self.model, 'visuals_editing_state', None)
         if not display_state:
             return False
-        if self._text_input is None or self._text_input.active:
+        vti = getattr(self.visualizer.model, 'text_input', None)
+        if vti is None or vti.active:
             return False
-        # Read new template id
-        new_txt = self._text_input.text if self._text_input else ''
+        new_txt = vti.text if vti else ''
         self.model.visuals_pending_templates[display_state] = new_txt
         ok, msg, new_tpl_id = self._validate_template_text(new_txt)
-        # If invalid (not number or no existe) -> keep editing and show error
         if not ok and new_txt.strip() != '':
-            # Re-activate input so user can correct
             try:
-                self._text_input.activate(new_txt, select_all=False)
+                if vti is not None:
+                    vti.activate(new_txt, select_all=False)
             except Exception:
                 pass
-            # Keep editing state
             return True
+        # If empty text -> clear mapping for this state
+        if new_txt.strip() == '':
+            try:
+                key_map = getattr(self.model, 'visuals_key_map', {}) or {}
+                json_key = key_map.get(display_state, display_state)
+                visuals = dict(getattr(self.model, 'visuals', {}) or {})
+                if json_key in visuals:
+                    visuals.pop(json_key, None)
+                    self.model.visuals = visuals
+                    try:
+                        if self.model.selected_instance is not None:
+                            self.model.selected_instance['visuals'] = visuals
+                    except Exception:
+                        pass
+                    # Persist and refresh
+                    self._persist_instance()
+                    self._build_visuals_rows()
+            except Exception:
+                pass
+            # Exit edit mode and stop OS text input
+            self.model.visuals_editing_state = None
+            try:
+                import pygame as _pg
+                _pg.key.stop_text_input()
+            except Exception:
+                pass
+            return True
+
+        # Apply the new template id using the same helper as the picker flow
+        try:
+            if new_tpl_id is not None:
+                self.set_visual_template_via_picker(str(display_state), int(new_tpl_id))
+        except Exception:
+            pass
+        # Exit edit mode and stop OS text input
+        self.model.visuals_editing_state = None
+        try:
+            import pygame as _pg
+            _pg.key.stop_text_input()
+        except Exception:
+            pass
+        return True
 
     def set_visual_template_via_picker(self, state_key: str, new_tpl_id: int) -> None:
         """Apply a template selection coming from the visuals picker overlay.
@@ -1023,6 +859,11 @@ class InstancePropertiesController:
                     self._building_index = None
                     self._ensure_buildings_index()
                     self._build_visuals_rows()
+                    # Persist spawner instance as well to keep ids/keys consistent
+                    try:
+                        self._persist_instance()
+                    except Exception:
+                        pass
                     self._log.info(f"[InstanceProps] Updated instance {cur_inst_int} -> template {desired}")
                     try:
                         # Log current row for state
@@ -1085,6 +926,11 @@ class InstancePropertiesController:
                             break
                 except Exception:
                     pass
+                # Reload disk snapshot to ensure selection reflects persisted changes
+                try:
+                    self._reload_selected_from_json()
+                except Exception:
+                    pass
             else:
                 # Reuse the '+' flow helper to create instance at camera center
                 try:
@@ -1102,6 +948,11 @@ class InstancePropertiesController:
                             break
                 except Exception:
                     pass
+                # Reload disk snapshot too (add_building_instance_for_visual already attempts it, but ensure)
+                try:
+                    self._reload_selected_from_json()
+                except Exception:
+                    pass
         # also toast here as a safety (if picker flow ends here)
         try:
             self._show_toast(f"Template aplicado: {int(new_tpl_id)} → {state_key}")
@@ -1113,11 +964,13 @@ class InstancePropertiesController:
     def add_building_instance_for_visual(self, state_key: str, reveal: bool = True) -> Optional[int]:
         # Need a template id: prefer current text input if editing this state
         txt = (self.model.visuals_pending_templates or {}).get(state_key, '')
-        if getattr(self.model, 'visuals_editing_state', None) == state_key and self._text_input is not None:
-            try:
-                txt = self._text_input.text
-            except Exception:
-                pass
+        if getattr(self.model, 'visuals_editing_state', None) == state_key:
+            vti = getattr(self.visualizer.model, 'text_input', None)
+            if vti is not None:
+                try:
+                    txt = vti.text
+                except Exception:
+                    pass
         ok, msg, tpl_id = self._validate_template_text(txt)
         if tpl_id is None or not ok:
             return None
@@ -1435,6 +1288,19 @@ class InstancePropertiesController:
             self._log.debug(f"[InstanceProps] _persist_instance: about to persist id={inst.get('id')} visuals={inst.get('visuals')}")
         except Exception:
             pass
+        # Ensure the in-memory visuals map from the model is applied before persisting
+        try:
+            visuals_model = getattr(self.model, 'visuals', None)
+            if isinstance(visuals_model, dict):
+                if inst.get('visuals') != visuals_model:
+                    inst['visuals'] = visuals_model
+        except Exception:
+            try:
+                visuals_model = getattr(self.model, 'visuals', None)
+                if isinstance(visuals_model, dict):
+                    inst['visuals'] = visuals_model
+            except Exception:
+                pass
         # Reload data fresh
         data = load_instances_json()
 

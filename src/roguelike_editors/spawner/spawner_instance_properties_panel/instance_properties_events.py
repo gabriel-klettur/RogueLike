@@ -19,7 +19,17 @@ class InstancePropertiesEventHandler:
         et = getattr(event, 'type', None)
         pos = getattr(event, 'pos', None) or pygame.mouse.get_pos()
 
-        # Helpers
+        # First, allow the Visualizer to intercept events for the Visuals table.
+        # If it handles the event, stop here.
+        try:
+            vctrl = getattr(controller, 'visualizer', None)
+            if vctrl is not None:
+                if vctrl.events.handle_event(vctrl, event, rect):
+                    return True
+        except Exception:
+            pass
+
+        # Helpers for the rest of the panel (non-visuals)
         y_off = 30
         row_h = 20
         rows = controller.get_rows()
