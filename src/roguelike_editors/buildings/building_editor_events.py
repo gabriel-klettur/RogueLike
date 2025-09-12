@@ -35,6 +35,34 @@ class BuildingEditorEventHandler:
         if events is None:
             events = pygame.event.get()
         for ev in events:
+            # Si hay confirmación de borrado visible, interceptar todo aquí
+            try:
+                if getattr(self.editor, 'confirm_delete_visible', False):
+                    et = getattr(ev, 'type', None)
+                    if et == pygame.MOUSEBUTTONDOWN and getattr(ev, 'button', None) == 1:
+                        mx, my = getattr(ev, 'pos', (0, 0))
+                        yesr = getattr(self.editor, 'confirm_yes_rect', None)
+                        nor = getattr(self.editor, 'confirm_no_rect', None)
+                        if yesr is not None and pygame.Rect(yesr).collidepoint(mx, my):
+                            self.controller.confirm_delete_yes(entities.buildings)
+                            continue
+                        if nor is not None and pygame.Rect(nor).collidepoint(mx, my):
+                            self.controller.confirm_delete_no()
+                            continue
+                        # Clic fuera: no hacer nada, mantener modal
+                        continue
+                    if et == pygame.KEYDOWN:
+                        key = getattr(ev, 'key', None)
+                        if key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+                            self.controller.confirm_delete_yes(entities.buildings)
+                            continue
+                        if key == pygame.K_ESCAPE:
+                            self.controller.confirm_delete_no()
+                            continue
+                    # Mientras está visible, suprimir resto de manejadores
+                    continue
+            except Exception:
+                pass
             # Si el panel de Tutorial está activo, delegar primero sus eventos de mouse
             if ev.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP, pygame.MOUSEMOTION, pygame.MOUSEWHEEL):
                 try:
@@ -272,16 +300,8 @@ class BuildingEditorEventHandler:
                 if ev.key == pygame.K_DELETE and not getattr(self.editor, 'colliders_mode', False):
                     ab = getattr(self.editor, 'active_building', None)
                     if ab is not None:
-                        logger.info("⌫ Supr: eliminando edificio activo")
-                        self.controller._delete_building(ab, entities.buildings)
-                        # Limpiar selección si se eliminó
-                        self.editor.active_building = None
-                        self.editor.hovered_building = None
-                        # Emitir pulso para el tutorial
-                        try:
-                            setattr(self.editor, 'tutorial_deleted_pulse', True)
-                        except Exception:
-                            pass
+                        logger.info("⌫ Supr: confirmar eliminación de edificio activo")
+                        self.controller._ask_confirm_delete(ab)
                     return
                 # D → reset SOLO sobre active_building (no en modo colliders)
                 if ev.key == pygame.K_d and not getattr(self.editor, 'colliders_mode', False):

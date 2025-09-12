@@ -49,3 +49,12 @@ class BuildingsEditorModel:
         # --- NUEVO: Flag para indicar si el panel de colisiones está activo ---
         # Usado para ocultar/deshabilitar herramientas visuales cuando se edita colisiones
         self.colliders_mode: bool = False
+
+        # --- NUEVO: Confirmación de borrado (modal simple) ---
+        self.confirm_delete_visible: bool = False
+        self.confirm_delete_text: str = ""
+        self.confirm_delete_target_id: int | None = None
+        self.confirm_delete_refs_count: int = 0
+        # Botones renderizados (actualizados por la vista cada frame cuando el modal está visible)
+        self.confirm_yes_rect = None
+        self.confirm_no_rect = None

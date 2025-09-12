@@ -193,3 +193,83 @@ class BuildingEditorView:
                     self.collider_scope_view.render(screen, b, camera)
             except Exception:
                 pass
+
+        # --- Confirmation modal overlay (render last, on top) ---
+        try:
+            if getattr(self.editor, 'confirm_delete_visible', False):
+                self._render_confirm_delete_modal(screen)
+        except Exception:
+            pass
+
+    def _render_confirm_delete_modal(self, screen) -> None:
+        # Backdrop dim
+        try:
+            w, h = screen.get_size()
+        except Exception:
+            return
+        try:
+            dim = pygame.Surface((w, h), pygame.SRCALPHA)
+            dim.fill((0, 0, 0, 140))
+            screen.blit(dim, (0, 0))
+        except Exception:
+            pass
+        # Panel
+        panel_w = min(520, int(w * 0.8))
+        panel_h = 200
+        px = (w - panel_w) // 2
+        py = (h - panel_h) // 2
+        panel_rect = pygame.Rect(px, py, panel_w, panel_h)
+        try:
+            pygame.draw.rect(screen, (30, 30, 30), panel_rect, border_radius=8)
+            pygame.draw.rect(screen, (220, 220, 220), panel_rect, 2, border_radius=8)
+        except Exception:
+            pass
+        # Text (multi-line)
+        text = getattr(self.editor, 'confirm_delete_text', "¿Eliminar?") or "¿Eliminar?"
+        try:
+            font = pygame.font.Font(None, 24)
+        except Exception:
+            font = None
+        lines = []
+        if font is not None:
+            for raw in str(text).split("\n"):
+                try:
+                    surf = font.render(raw, True, (240, 240, 240))
+                    lines.append(surf)
+                except Exception:
+                    continue
+        y = panel_rect.top + 16
+        for s in lines:
+            try:
+                screen.blit(s, (panel_rect.left + 16, y))
+                y += s.get_height() + 6
+            except Exception:
+                continue
+        # Buttons
+        btn_w = 140
+        btn_h = 36
+        gap = 20
+        bx = panel_rect.centerx - btn_w - (gap // 2)
+        by = panel_rect.bottom - btn_h - 16
+        yes_rect = pygame.Rect(bx, by, btn_w, btn_h)
+        no_rect = pygame.Rect(panel_rect.centerx + (gap // 2), by, btn_w, btn_h)
+        try:
+            # Yes button (Eliminar)
+            pygame.draw.rect(screen, (180, 40, 40), yes_rect, border_radius=6)
+            pygame.draw.rect(screen, (255, 255, 255), yes_rect, 2, border_radius=6)
+            yfont = pygame.font.Font(None, 28)
+            ys = yfont.render("Eliminar", True, (255, 255, 255))
+            screen.blit(ys, (yes_rect.centerx - ys.get_width() // 2, yes_rect.centery - ys.get_height() // 2))
+            # No button (Cancelar)
+            pygame.draw.rect(screen, (60, 60, 60), no_rect, border_radius=6)
+            pygame.draw.rect(screen, (255, 255, 255), no_rect, 2, border_radius=6)
+            ns = yfont.render("Cancelar", True, (255, 255, 255))
+            screen.blit(ns, (no_rect.centerx - ns.get_width() // 2, no_rect.centery - ns.get_height() // 2))
+        except Exception:
+            pass
+        # Expose rects for event handler
+        try:
+            self.editor.confirm_yes_rect = yes_rect
+            self.editor.confirm_no_rect = no_rect
+        except Exception:
+            pass

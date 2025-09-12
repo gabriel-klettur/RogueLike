@@ -64,6 +64,14 @@ class InstancePropertiesController:
             self._toast_ms = 1600
         except Exception:
             pass
+        # Strict cleanup policy: when clearing Visuals, also remove untagged
+        # building instances that are tied to this spawner via root-level
+        # identifiers (spawn_id/spawner_instance_id). Default ON as per user
+        # request ("modo estricto").
+        try:
+            self.strict_visuals_cleanup = True
+        except Exception:
+            pass
         # Reduce repeated logs: keep a signature of last visuals we logged
         self._last_visuals_log_sig: tuple | None = None
         # Debounce window to avoid sanitizing right after creating/reusing/assigning
@@ -1675,6 +1683,34 @@ class InstancePropertiesController:
             pass
         # Attempt to remove the building instance from buildings_instances.json if it is ours
         if bid is not None:
+            # Strict mode safety: if no other spawner instance references this building id,
+            # we can delete it even if it lacks tagging/root linkage.
+            referenced_elsewhere = False
+            try:
+                all_inst = load_instances_json()
+                for _inst in all_inst or []:
+                    try:
+                        vis = _inst.get('visuals')
+                        if not isinstance(vis, dict) or not vis:
+                            continue
+                        for _k, _v in list(vis.items()):
+                            try:
+                                if isinstance(_v, dict):
+                                    _vid = _v.get('instance_id') or _v.get('id') or _v.get('building_instance_id')
+                                    _vid = int(_vid) if _vid is not None else None
+                                else:
+                                    _vid = int(_v)
+                            except Exception:
+                                _vid = None
+                            if _vid is not None and int(_vid) == int(bid):
+                                referenced_elsewhere = True
+                                break
+                        if referenced_elsewhere:
+                            break
+                    except Exception:
+                        continue
+            except Exception:
+                referenced_elsewhere = False
             data = self._load_buildings_instances()
             sid = None
             try:
@@ -1701,7 +1737,16 @@ class InstancePropertiesController:
                         is_tagged = True
                 except Exception:
                     is_tagged = False
-                if is_tagged:
+                # Strict mode: also consider root-level identifiers as linkage to this spawner
+                is_root_linked = False
+                try:
+                    if sid is not None and (str(e.get('spawner_instance_id')) == str(sid) or str(e.get('spawn_id')) == str(sid)):
+                        is_root_linked = True
+                except Exception:
+                    is_root_linked = False
+                # Remove if explicitly tagged, or in strict mode if root linkage matches,
+                # or if in strict mode and no other spawner references this building id anymore
+                if is_tagged or (bool(getattr(self, 'strict_visuals_cleanup', False)) and (is_root_linked or not referenced_elsewhere)):
                     removed = True
                     continue  # drop this entry
                 # If not tagged, keep it to avoid deleting user buildings

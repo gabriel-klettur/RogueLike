@@ -12,6 +12,7 @@ from roguelike_ui.ui_blocker import is_blocked
 from roguelike_editors.buildings.utils.zone_helpers import assign_zone_and_relatives
 from roguelike_editors.spawner.services.persistence import find_instance_in_json, persist_drop
 from roguelike_editors.spawner.services.persistence import remove_visual_refs_by_building_id
+from roguelike_editors.spawner.services.persistence import load_instances_json
 from roguelike_editors.spawner.spawner_instance_properties_panel.services.buildings_service import (
     load_buildings_instances as _svc_load_buildings_instances,
     write_buildings_instances as _svc_write_buildings_instances,
@@ -121,8 +122,8 @@ class BuildingEditorController:
             if ab is not None:
                 delete_rect = get_rect(ab, camera)
                 if delete_rect and delete_rect.collidepoint(mx, my):
-                    logger.info("🗑️ Click en botón eliminar (handle rojo)")
-                    self._delete_building(ab, buildings)
+                    logger.info("🗑️ Click en botón eliminar (handle rojo) → abrir confirmación")
+                    self._ask_confirm_delete(ab)
                     return
                 # Detect reset handle (click izquierdo)
                 reset_rect = self.default_view.get_reset_handle_rect(ab, camera)
@@ -227,6 +228,105 @@ class BuildingEditorController:
                 result.append(b)
         return result
 
+    # ======================== CONFIRM DELETE ======================== #
+    def _count_spawner_refs(self, bid: int) -> int:
+        """Count how many visuals across all spawner instances reference this building id."""
+        try:
+            bid = int(bid)
+        except Exception:
+            return 0
+        try:
+            inst = load_instances_json()
+        except Exception:
+            inst = []
+        count = 0
+        for it in (inst or []):
+            try:
+                vis = it.get('visuals')
+                if not isinstance(vis, dict) or not vis:
+                    continue
+                for _k, _v in vis.items():
+                    try:
+                        if isinstance(_v, dict):
+                            _vid = _v.get('instance_id') or _v.get('id') or _v.get('building_instance_id')
+                            _vid = int(_vid) if _vid is not None else None
+                        else:
+                            _vid = int(_v)
+                    except Exception:
+                        _vid = None
+                    if _vid is not None and int(_vid) == int(bid):
+                        count += 1
+            except Exception:
+                continue
+        return count
+
+    def _ask_confirm_delete(self, building) -> None:
+        """Open a lightweight confirmation modal before deleting the active building.
+        Shows how many Visuals references will be limpiadas en cascada.
+        """
+        try:
+            bid = getattr(building, 'id', None)
+            if bid is None:
+                return
+            refs = self._count_spawner_refs(bid)
+            self.editor.confirm_delete_visible = True
+            try:
+                self.editor.confirm_delete_target_id = int(bid)
+            except Exception:
+                self.editor.confirm_delete_target_id = bid
+            self.editor.confirm_delete_refs_count = int(refs)
+            # Texto en español, consistente con confirmaciones existentes
+            if refs > 0:
+                self.editor.confirm_delete_text = (
+                    f"¿Eliminar edificio ID {bid}?\n"
+                    f"Se limpiarán también {refs} referencia(s) en Visuals de Spawners.\n"
+                    f"Esta acción no se puede deshacer."
+                )
+            else:
+                self.editor.confirm_delete_text = (
+                    f"¿Eliminar edificio ID {bid}?\n"
+                    f"Esta acción no se puede deshacer."
+                )
+        except Exception:
+            # Si falla, no bloquear la UI
+            self.editor.confirm_delete_visible = False
+            self.editor.confirm_delete_text = ""
+            self.editor.confirm_delete_target_id = None
+            self.editor.confirm_delete_refs_count = 0
+
+    def confirm_delete_yes(self, buildings):
+        """User confirmed: perform cascade delete now."""
+        try:
+            tid = getattr(self.editor, 'confirm_delete_target_id', None)
+            target = None
+            if tid is not None:
+                for b in buildings:
+                    try:
+                        if str(getattr(b, 'id', None)) == str(tid):
+                            target = b
+                            break
+                    except Exception:
+                        continue
+            if target is not None:
+                self._delete_building(target, buildings)
+        except Exception:
+            pass
+        finally:
+            # Cerrar modal siempre
+            self.confirm_delete_no()
+
+    def confirm_delete_no(self) -> None:
+        """Dismiss confirmation modal."""
+        try:
+            self.editor.confirm_delete_visible = False
+            self.editor.confirm_delete_text = ""
+            self.editor.confirm_delete_target_id = None
+            self.editor.confirm_delete_refs_count = 0
+            self.editor.confirm_yes_rect = None
+            self.editor.confirm_no_rect = None
+        except Exception:
+            pass
+
     def toggle_editor(self):
         """Activa/desactiva los handles del Building Editor, sin tocar el picker."""
         new_val = not self.editor.active
@@ -259,7 +359,7 @@ class BuildingEditorController:
             setattr(self.editor, 'tutorial_deleted_pulse', True)
         except Exception:
             pass
-        # Persistencia cruzada: eliminar de buildings_instances.json y limpiar Visuals de spawners
+        # Persistencia cruzada: limpiar Visuals de spawners y eliminar de buildings_instances.json
         try:
             bid = getattr(building, 'id', None)
             if bid is not None:
@@ -268,7 +368,14 @@ class BuildingEditorController:
                 except Exception:
                     bid_int = None
                 if bid_int is not None:
-                    # 1) Eliminar entrada en data/buildings/buildings_instances.json
+                    # 1) Primero, limpiar referencias en spawners_instances.json (cascada inmediata)
+                    try:
+                        removed_refs = remove_visual_refs_by_building_id(int(bid_int))
+                        if removed_refs:
+                            logger.info(f"[BuildingsEditor] Cleared {removed_refs} visual refs in spawners for building id={bid_int}")
+                    except Exception:
+                        pass
+                    # 2) Luego, eliminar entrada(s) en data/buildings/buildings_instances.json
                     try:
                         data = _svc_load_buildings_instances()
                         before = len(data or [])
@@ -283,13 +390,35 @@ class BuildingEditorController:
                         if len(kept) != before:
                             _svc_write_buildings_instances(kept)
                             logger.info(f"[BuildingsEditor] Removed building instance id={bid_int} from buildings_instances.json")
+                        else:
+                            # Si no hubo cambios aparentes, reintenta tras la limpieza de spawners
+                            # (protege contra estados intermedios)
+                            try:
+                                data2 = _svc_load_buildings_instances()
+                                kept2 = []
+                                for e in (data2 or []):
+                                    try:
+                                        if int(e.get('id')) == int(bid_int):
+                                            continue
+                                    except Exception:
+                                        pass
+                                    kept2.append(e)
+                                if len(kept2) != len(data2 or []):
+                                    _svc_write_buildings_instances(kept2)
+                                    logger.info(f"[BuildingsEditor] Forced removal retry for id={bid_int} (post spawners cleanup)")
+                            except Exception:
+                                pass
                     except Exception:
                         pass
-                    # 2) Limpiar referencias en spawners_instances.json (visuals -> instance_id)
+                    # Verificación: asegurar que el id ya no exista en el JSON
                     try:
-                        removed = remove_visual_refs_by_building_id(int(bid_int))
-                        if removed:
-                            logger.info(f"[BuildingsEditor] Cleared {removed} visuals refs to building id={bid_int} from spawners_instances.json")
+                        cur = _svc_load_buildings_instances() or []
+                        left = [e for e in cur if str(e.get('id')) == str(bid_int)]
+                        if left:
+                            logger.warning(f"[BuildingsEditor] Warning: building id={bid_int} still present after delete attempts ({len(left)} left) → forcing final removal")
+                            forced = [e for e in cur if str(e.get('id')) != str(bid_int)]
+                            _svc_write_buildings_instances(forced)
+                            logger.info(f"[BuildingsEditor] Forced removal succeeded for id={bid_int}")
                     except Exception:
                         pass
         except Exception:
