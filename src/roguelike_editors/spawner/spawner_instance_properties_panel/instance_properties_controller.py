@@ -676,16 +676,41 @@ class InstancePropertiesController:
             except Exception:
                 # Non-integer/invalid mapping is invalid
                 vid = None
-            # Keep mapping if:
-            # - Building instance exists either in file index or currently spawned in world
-            # - OR mapping has a valid template_id (template-only mapping allowed to persist)
-            keep = False
+            # Keep or repair mapping:
+            # - If building instance exists either on disk or currently spawned in world -> keep
+            # - If mapping has a valid template_id but instance is missing -> auto-repair by creating/reusando una instancia
+            # - Otherwise -> remove
+            repaired = False
             if vid is not None and _building_exists(int(vid)):
                 keep = True
             elif isinstance(v, dict) and vtpl is not None and vtpl in valid_tpls:
-                # Keep template-only mapping; do not auto-recreate missing building instances here.
-                keep = True
-            if not keep:
+                # Auto-repair: crear/reutilizar instancia para este estado usando el template_id
+                try:
+                    # Sembrar el template pendiente para reutilizar el helper estándar
+                    try:
+                        if not hasattr(self.model, 'visuals_pending_templates') or self.model.visuals_pending_templates is None:
+                            self.model.visuals_pending_templates = {}
+                    except Exception:
+                        pass
+                    self.model.visuals_pending_templates[str(k)] = str(int(vtpl))
+                    new_id = self.add_building_instance_for_visual(str(k), reveal=False)
+                    if new_id is not None:
+                        visuals[str(k)] = {'instance_id': int(new_id), 'template_id': int(vtpl)}
+                        repaired = True
+                        repaired_any = True
+                        try:
+                            self._log.info(f"[InstanceProps] sanitize_visuals: repaired state='{k}' -> instance_id={new_id} tpl={vtpl}")
+                        except Exception:
+                            pass
+                    else:
+                        # No pudo repararse; se eliminará más abajo
+                        repaired = False
+                except Exception:
+                    repaired = False
+                keep = repaired
+            else:
+                keep = False
+            if not keep and not repaired:
                 try:
                     reason = 'invalid' if vid is None else 'missing in buildings and no valid template_id'
                     self._log.warning(f"[InstanceProps] sanitize_visuals: removing state='{k}' reason={reason} value={v}")
@@ -1075,6 +1100,23 @@ class InstancePropertiesController:
                     cur_inst_int = None
                 break
         self._log.debug(f"[InstanceProps] set_visual_template_via_picker: state={state_key} tpl={new_tpl_id} cur_inst={cur_inst_int}")
+        # Validación extra: si el instance_id actual no existe en el índice de buildings ni en el mundo,
+        # trátalo como ausente para forzar la ruta de creación de una nueva instancia coherente.
+        try:
+            self._ensure_buildings_index()
+            _exists_on_disk = bool((self._building_index or {}).get(int(cur_inst_int)) is not None) if cur_inst_int is not None else False
+        except Exception:
+            _exists_on_disk = False
+        try:
+            _exists_in_world = self._find_building_entity_by_id(int(cur_inst_int)) is not None if cur_inst_int is not None else False
+        except Exception:
+            _exists_in_world = False
+        if cur_inst_int is not None and not (_exists_on_disk or _exists_in_world):
+            try:
+                self._log.warning(f"[InstanceProps] set_visual_template_via_picker: instance_id {cur_inst_int} no existe (disco/mundo). Se creará uno nuevo.")
+            except Exception:
+                pass
+            cur_inst_int = None
         # If there was an instance id and user provided a valid template id
         if cur_inst_int is not None and new_tpl_id is not None:
             # Check if current instance already has the desired template -> nothing to do
