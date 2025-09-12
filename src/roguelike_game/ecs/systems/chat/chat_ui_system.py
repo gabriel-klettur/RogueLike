@@ -3,7 +3,7 @@ import json
 import os
 from roguelike_ui.ui_blocker import register_blocker
 from .chat_input_controller import ChatInputController
-from roguelike_game.chat.service.memory_store import MemoryStore
+from roguelike_engine.chat.service.memory_store import MemoryStore
 from pathlib import Path
 
 import logging

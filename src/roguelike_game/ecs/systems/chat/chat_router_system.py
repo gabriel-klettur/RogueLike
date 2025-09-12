@@ -5,9 +5,9 @@ from pathlib import Path
 import os
 import pygame
 from roguelike_game.ecs.systems.chat.chat_bubble_utils import push_bubble
-from roguelike_game.chat.service.chat_service import ChatService, ChatJob
-from roguelike_game.chat.service.chat_worker import ChatAsyncWorker
-from roguelike_game.chat.service.memory_store import MemoryStore
+from roguelike_engine.chat.service.chat_service import ChatService, ChatJob
+from roguelike_engine.chat.service.chat_worker import ChatAsyncWorker
+from roguelike_engine.chat.service.memory_store import MemoryStore
 
 logger = logging.getLogger(__name__)
 

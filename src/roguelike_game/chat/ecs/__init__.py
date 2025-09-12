@@ -1,1 +1,0 @@
-# Chat ECS package

@@ -1,7 +1,7 @@
 import pygame
 from roguelike_ui.widgets.text_input import TextInput
 from roguelike_game.ecs.systems.chat.chat_bubble_utils import push_bubble
-from roguelike_game.chat.service.memory_store import MemoryStore
+from roguelike_engine.chat.service.memory_store import MemoryStore
 from pathlib import Path
 
 class ChatInputController:
