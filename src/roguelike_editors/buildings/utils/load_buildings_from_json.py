@@ -242,6 +242,67 @@ def _load_from_split(z_state=None) -> List[Building]:
         logger.error(f"[Buildings] Error reading instances: {e}")
         instances_raw = []
 
+    # Diagnostics: duplicates and tagging status
+    try:
+        total = len(instances_raw)
+        key_counts = {}
+        root_spawn = 0
+        tagged_override = 0
+        for e in instances_raw:
+            try:
+                k = f"{str(e.get('zone') or 'lobby')}|{int(e.get('rel_x') or 0)}|{int(e.get('rel_y') or 0)}|{int(e.get('template_id') or -1)}"
+            except Exception:
+                k = str(id(e))
+            key_counts[k] = key_counts.get(k, 0) + 1
+            try:
+                if e.get('spawn_id') is not None or e.get('spawner_instance_id') is not None:
+                    root_spawn += 1
+            except Exception:
+                pass
+            try:
+                ov = e.get('overrides') if isinstance(e, dict) else None
+                if isinstance(ov, dict) and bool(ov.get('_is_spawner_visual')):
+                    tagged_override += 1
+            except Exception:
+                pass
+        dups = sum(1 for c in key_counts.values() if c > 1)
+        logger.debug(f"[Buildings][split] instances file: total={total}, duplicate_pos_tpl_keys={dups}, root_spawn_tags={root_spawn}, override_spawner_visual_tags={tagged_override}")
+    except Exception:
+        pass
+
+    # Best-effort dedup on load to avoid double-building objects in memory
+    try:
+        before = len(instances_raw)
+        seen: dict[str, dict] = {}
+        def _key(e: dict) -> str:
+            try:
+                return f"{str(e.get('zone') or 'lobby')}|{int(e.get('rel_x') or 0)}|{int(e.get('rel_y') or 0)}|{int(e.get('template_id') or -1)}"
+            except Exception:
+                return str(id(e))
+        def _score(e: dict) -> tuple:
+            has_root_sid = 1 if (e.get('spawn_id') is not None or e.get('spawner_instance_id') is not None) else 0
+            ov = e.get('overrides') if isinstance(e, dict) else None
+            has_tag = 1 if (isinstance(ov, dict) and bool(ov.get('_is_spawner_visual'))) else 0
+            try:
+                neg_id = -int(e.get('id') or 0)
+            except Exception:
+                neg_id = 0
+            return (has_root_sid, has_tag, neg_id)
+        for e in list(instances_raw):
+            k = _key(e)
+            cur = seen.get(k)
+            if cur is None:
+                seen[k] = e
+            else:
+                if _score(e) > _score(cur):
+                    seen[k] = e
+        instances_dedup = list(seen.values())
+        if len(instances_dedup) != before:
+            logger.warning(f"[Buildings][split] Dedup on load by pos/tpl: {before}->{len(instances_dedup)} (removed={before-len(instances_dedup)})")
+        instances_raw = instances_dedup
+    except Exception:
+        pass
+
     buildings: List[Building] = []
     for inst in instances_raw:
         try:
@@ -362,6 +423,26 @@ def _load_from_split(z_state=None) -> List[Building]:
         except Exception as e:
             logger.error(f"[Buildings][split] Error creating building from instance: {e}")
 
+    # Final safety: deduplicate by building id in memory
+    try:
+        seen_ids = set()
+        unique = []
+        removed = 0
+        for b in buildings:
+            bid = getattr(b, 'id', None)
+            if bid is None:
+                unique.append(b)
+                continue
+            if bid in seen_ids:
+                removed += 1
+                continue
+            seen_ids.add(bid)
+            unique.append(b)
+        if removed:
+            logger.warning(f"[Buildings][split] Removed {removed} duplicated Building objects by id in memory")
+        buildings = unique
+    except Exception:
+        pass
     logger.info(f"[Buildings][Cargando Edificios SPLIT] {len(buildings)} edificios (templates+instances)")
     return buildings
 

@@ -329,6 +329,48 @@ class InstancePropertiesController:
     def toggle_visual_building_visibility(self, state_key: str) -> None:
         self.visualizer.toggle_building_visibility_for_state(str(state_key))
 
+    def _remove_building_entity_by_id(self, bid: int) -> bool:
+        """Hard-remove a Building object with the given id from the running world/editor.
+        Returns True if any object was removed.
+        """
+        removed_any = False
+        # Remove from ECS world list
+        try:
+            world = self._get_world()
+            if world is not None and hasattr(world, 'buildings') and isinstance(world.buildings, list):
+                arr = world.buildings
+                for i in range(len(arr) - 1, -1, -1):
+                    try:
+                        if getattr(arr[i], 'id', None) == int(bid):
+                            arr.pop(i)
+                            removed_any = True
+                    except Exception:
+                        continue
+        except Exception:
+            pass
+        # Remove from editor/game registry
+        try:
+            ents = getattr(self, 'game', None)
+            ents = getattr(ents, 'entities', None)
+            if ents is not None and hasattr(ents, 'buildings') and isinstance(ents.buildings, list):
+                arr2 = ents.buildings
+                for i in range(len(arr2) - 1, -1, -1):
+                    try:
+                        if getattr(arr2[i], 'id', None) == int(bid):
+                            arr2.pop(i)
+                            removed_any = True
+                    except Exception:
+                        continue
+        except Exception:
+            pass
+        # Best-effort: clear any cached visibility flags
+        try:
+            if int(bid) in self.visualizer.model.editor_visibility:
+                self.visualizer.model.editor_visibility.pop(int(bid), None)
+        except Exception:
+            pass
+        return removed_any
+
     # --- Rows & Editing ------------------------------------------------------
     def _flatten_instance(self) -> List[Tuple[str, str]]:
         data = self.model.selected_instance or {}
@@ -662,6 +704,10 @@ class InstancePropertiesController:
                         entry['overrides']['_is_spawner_visual'] = True
                         if sid:
                             entry['overrides']['spawner_instance_id'] = sid
+                        # Add root-level spawn identifiers for persistence stability
+                        if sid:
+                            entry['spawn_id'] = str(sid)
+                            entry['spawner_instance_id'] = str(sid)
                     except Exception:
                         pass
                     data.append(entry)
@@ -706,6 +752,7 @@ class InstancePropertiesController:
         """Remove entries from buildings_instances.json with invalid id or template_id.
         - Drops entries where 'id' is missing or non-integer
         - Drops entries where 'template_id' is missing, non-integer, or not present in templates
+        - Deduplicates entries by (zone, rel_x, rel_y, template_id) keeping the best candidate
         Persists cleaned list and refreshes building index if any were removed.
         """
         # Ensure template ids
@@ -716,6 +763,7 @@ class InstancePropertiesController:
             return
         kept = []
         removed = False
+        # First filter invalids
         for e in data:
             try:
                 eid = int(e.get('id'))
@@ -731,7 +779,55 @@ class InstancePropertiesController:
                 removed = True
                 continue
             kept.append(e)
+        # Then deduplicate by (zone,rel_x,rel_y,template_id)
+        try:
+            seen: dict[str, dict] = {}
+            def _key(e: dict) -> str:
+                try:
+                    zone = str(e.get('zone') or 'lobby')
+                    rx = int(e.get('rel_x') or 0)
+                    ry = int(e.get('rel_y') or 0)
+                    tid = int(e.get('template_id') or -1)
+                    return f"{zone}|{rx}|{ry}|{tid}"
+                except Exception:
+                    return str(id(e))
+            def _score(e: dict) -> tuple:
+                ov = e.get('overrides') if isinstance(e, dict) else None
+                is_spawn_vis = 1 if (isinstance(ov, dict) and bool(ov.get('_is_spawner_visual'))) else 0
+                # Prefer entries tied to current selected spawner if available
+                tied_to_me = 0
+                try:
+                    inst = self.model.selected_instance or {}
+                    sid = str(inst.get('id')) if inst.get('id') is not None else None
+                    if sid and (str(e.get('spawner_instance_id')) == sid or str((ov or {}).get('spawner_instance_id')) == sid):
+                        tied_to_me = 1
+                except Exception:
+                    tied_to_me = 0
+                try:
+                    neg_id = -int(e.get('id') or 0)
+                except Exception:
+                    neg_id = 0
+                return (tied_to_me, is_spawn_vis, neg_id)
+            deduped = []
+            for e in kept:
+                k = _key(e)
+                cur = seen.get(k)
+                if cur is None:
+                    seen[k] = e
+                else:
+                    if _score(e) > _score(cur):
+                        seen[k] = e
+            deduped = list(seen.values())
+            if len(deduped) != len(kept):
+                kept = deduped
+                removed = True
+        except Exception:
+            pass
         if removed:
+            try:
+                self._log.warning(f"[InstanceProps] GC/Dedup buildings_instances: before={len(data)} after={len(kept)} removed={len(data)-len(kept)}")
+            except Exception:
+                pass
             self._write_buildings_instances(kept)
             # Refresh index to reflect removals
             self._building_index = None
@@ -914,6 +1010,10 @@ class InstancePropertiesController:
                 clone['overrides']['_is_spawner_visual'] = True
                 if sid:
                     clone['overrides']['spawner_instance_id'] = sid
+            # Also persist root-level spawn identifiers so loader/saver can preserve IDs
+            if sid:
+                clone['spawn_id'] = str(sid)
+                clone['spawner_instance_id'] = str(sid)
         except Exception:
             pass
         data.append(clone)
@@ -1038,6 +1138,32 @@ class InstancePropertiesController:
                     # refresh index/rows
                     self._building_index = None
                     self._ensure_buildings_index()
+                    # Also ensure the updated entry carries root-level spawn identifiers
+                    try:
+                        sid = None
+                        try:
+                            inst_sel = self.model.selected_instance
+                            if isinstance(inst_sel, dict) and inst_sel.get('id') is not None:
+                                sid = str(inst_sel.get('id'))
+                        except Exception:
+                            sid = None
+                        if sid:
+                            for e in data:
+                                try:
+                                    if int(e.get('id')) == cur_inst_int:
+                                        e['spawn_id'] = sid
+                                        e['spawner_instance_id'] = sid
+                                        # mirror in overrides tag
+                                        ov = e.get('overrides') or {}
+                                        ov['_is_spawner_visual'] = True
+                                        ov['spawner_instance_id'] = sid
+                                        e['overrides'] = ov
+                                        break
+                                except Exception:
+                                    continue
+                            self._write_buildings_instances(data)
+                    except Exception:
+                        pass
                     # Ensure visuals mapping stores template as well
                     visuals = getattr(self.model, 'visuals', {}) or {}
                     key_map = getattr(self.model, 'visuals_key_map', {}) or {}
@@ -1234,6 +1360,66 @@ class InstancePropertiesController:
         except Exception:
             rel_x = 0
             rel_y = 0
+        # Attempt to reuse an existing instance in the same spot and template to avoid duplicates
+        try:
+            zone_norm = zone
+            desired_tid = int(tpl_id)
+            best_id = None
+            best_score = (-1, -1)
+            for e in data:
+                try:
+                    if int(e.get('template_id')) != desired_tid:
+                        continue
+                    if str(e.get('zone') or 'lobby') != str(zone_norm):
+                        continue
+                    if int(e.get('rel_x') or 0) != int(local_tile[0] * TILE_SIZE):
+                        continue
+                    if int(e.get('rel_y') or 0) != int(local_tile[1] * TILE_SIZE):
+                        continue
+                    ov = e.get('overrides') if isinstance(e, dict) else {}
+                    # Score: prefer tagged spawner visuals tied to this spawner, then any tagged, then lowest id
+                    tied = 0
+                    try:
+                        sid = str((self.model.selected_instance or {}).get('id')) if (self.model.selected_instance or {}).get('id') is not None else None
+                        if sid and (str(e.get('spawner_instance_id')) == sid or str((ov or {}).get('spawner_instance_id')) == sid):
+                            tied = 1
+                    except Exception:
+                        tied = 0
+                    is_tag = 1 if (isinstance(ov, dict) and bool(ov.get('_is_spawner_visual'))) else 0
+                    score = (tied, is_tag)
+                    if score > best_score:
+                        best_score = score
+                        best_id = int(e.get('id'))
+                except Exception:
+                    continue
+            if best_id is not None:
+                visuals = getattr(self.model, 'visuals', {}) or {}
+                key_map = getattr(self.model, 'visuals_key_map', {}) or {}
+                json_key = key_map.get(state_key, state_key)
+                visuals[json_key] = {'instance_id': best_id, 'template_id': int(tpl_id)}
+                self.model.visuals = visuals
+                try:
+                    if self.model.selected_instance is not None:
+                        self.model.selected_instance['visuals'] = visuals
+                except Exception:
+                    pass
+                self._persist_instance()
+                # Refresh indexes/rows
+                self._building_index = None
+                self._ensure_buildings_index()
+                self._build_visuals_rows()
+                if reveal:
+                    try:
+                        self._tag_and_reveal_building(int(best_id), state_key)
+                    except Exception:
+                        pass
+                return best_id
+        except Exception:
+            pass
+        try:
+            self._log.debug(f"[InstanceProps] No reusable instance found -> creating new (zone={zone}, tile={local_tile}, tpl={tpl_id})")
+        except Exception:
+            pass
         # Center the new building on the spawner center (tile center), using the alpha bounding box
         # of the scaled sprite (so transparent margins don't bias centering)
         try:
@@ -1334,6 +1520,13 @@ class InstancePropertiesController:
                     # Persist the scale we used for centering so runtime matches
                     if locals().get('w') is not None and locals().get('h') is not None and int(locals()['w']) > 0 and int(locals()['h']) > 0:
                         entry['overrides']['scale'] = [int(locals()['w']), int(locals()['h'])]
+            except Exception:
+                pass
+            # Also include root-level identifiers so save_buildings_split preserves this instance id
+            try:
+                if sid:
+                    entry['spawn_id'] = str(sid)
+                    entry['spawner_instance_id'] = str(sid)
             except Exception:
                 pass
         except Exception:
@@ -1515,17 +1708,17 @@ class InstancePropertiesController:
                 # Refresh index for subsequent checks
                 self._building_index = None
                 self._ensure_buildings_index()
-                # Hide building in editor view if still present
+                # Remove building from world/editor entirely
                 try:
-                    self._set_building_visible(int(bid), False)
+                    self._remove_building_entity_by_id(int(bid))
                 except Exception:
                     pass
-        # Rebuild rows/UI (already reloaded from disk above)
-        self._build_visuals_rows()
-        try:
-            self._log.info(f"[InstanceProps] Cleared visual for state={state_key}; removed_building_id={bid}")
-        except Exception:
-            pass
+            # Rebuild rows/UI (already reloaded from disk above)
+            self._build_visuals_rows()
+            try:
+                self._log.info(f"[InstanceProps] Cleared visual for state={state_key}; removed_building_id={bid}")
+            except Exception:
+                pass
 
     # --- Template combobox helpers ------------------------------------------
     def _load_template_options(self) -> None:

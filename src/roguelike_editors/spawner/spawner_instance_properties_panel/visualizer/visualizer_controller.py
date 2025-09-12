@@ -302,6 +302,9 @@ class VisualizerController:
             return True
 
     def toggle_building_visibility_for_state(self, state_key: str) -> None:
+        """Toggle only the editor rendering visibility for the building mapped to state_key.
+        No persistence, no world deletion.
+        """
         visuals = getattr(self.parent.model, 'visuals', {}) or {}
         key_map = getattr(self.parent.model, 'visuals_key_map', {}) or {}
         json_key = key_map.get(state_key, state_key)
@@ -315,15 +318,12 @@ class VisualizerController:
                 bid_int = int(raw)
         except Exception:
             return
-        cur = bool(self.model.editor_visibility.get(bid_int, True))
-        self._set_building_visible(bid_int, not cur)
+        cur = bool(self.model.editor_visibility.get(int(bid_int), True))
+        self._set_building_visible(int(bid_int), not cur)
 
-    # --- Actions that change data are delegated back to parent ----------------
     def open_picker(self, state_key: str) -> None:
+        """Delegates to parent to open the Visuals Picker for the given state."""
         self.parent.open_visuals_picker_for_state(state_key)
-
-    def add_instance_for_state(self, state_key: str, *, reveal: bool = True) -> None:
-        self.parent.add_building_instance_for_visual(state_key, reveal=reveal)
 
     def begin_edit_visual(self, state_key: str) -> None:
         self.parent.begin_edit_visual(state_key)
@@ -340,6 +340,42 @@ class VisualizerController:
     def clear_visual_for_state(self, state_key: str) -> None:
         """Delegate clearing a visual mapping back to the parent controller."""
         self.parent.clear_visual_for_state(state_key)
+
+    # --- Hard removal helper --------------------------------------------------
+    def _remove_building_entity_by_id(self, bid: int) -> bool:
+        """Remove any Building object with id 'bid' from the live world and editor lists.
+        Returns True if any object was removed.
+        """
+        removed_any = False
+        # ECS world list
+        try:
+            world = self._get_world()
+            if world is not None and hasattr(world, 'buildings') and isinstance(world.buildings, list):
+                arr = world.buildings
+                for i in range(len(arr) - 1, -1, -1):
+                    try:
+                        if getattr(arr[i], 'id', None) == int(bid):
+                            arr.pop(i)
+                            removed_any = True
+                    except Exception:
+                        continue
+        except Exception:
+            pass
+        # Editor/game registry if present
+        try:
+            ents = getattr(self.parent.game, 'entities', None)
+            if ents is not None and hasattr(ents, 'buildings') and isinstance(ents.buildings, list):
+                arr2 = ents.buildings
+                for i in range(len(arr2) - 1, -1, -1):
+                    try:
+                        if getattr(arr2[i], 'id', None) == int(bid):
+                            arr2.pop(i)
+                            removed_any = True
+                    except Exception:
+                        continue
+        except Exception:
+            pass
+        return removed_any
 
 
 __all__ = ["VisualizerController"]

@@ -1,5 +1,5 @@
 {
-  "music": 0.555895865237366,
+  "music": 0.0,
   "ambient": 0.11179173047473201,
   "sfx": 0.41347626339969373,
   "tracks": {
@@ -124,9 +124,19 @@
     },
     "audio": {
       "enabled": true,
-      "driver_preference": ["wasapi", "directsound", "winmm", "dummy"],
+      "driver_preference": [
+        "wasapi",
+        "directsound",
+        "winmm",
+        "dummy"
+      ],
       "suppress_warning_when_dummy": true,
-      "mixer": { "frequency": 44100, "size": -16, "channels": 2, "buffer": 1024 }
+      "mixer": {
+        "frequency": 44100,
+        "size": -16,
+        "channels": 2,
+        "buffer": 1024
+      }
     },
     "startup": {
       "play_on_boot": true,
