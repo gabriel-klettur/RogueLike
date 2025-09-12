@@ -3,16 +3,16 @@
   "player": {
     "level": "global_map",
     "pos": [
-      41,
-      82
+      35,
+      78
     ]
   },
   "npcs": {},
   "levels": {
     "global_map": {
       "player_pos": [
-        41,
-        82
+        35,
+        78
       ],
       "npc_states": {}
     }
@@ -23,7 +23,7 @@
     "slots": [
       {
         "item": "gold",
-        "quantity": 10
+        "quantity": 1
       },
       null,
       null,
@@ -50,10 +50,10 @@
   "meta": {
     "name": "partida_2025-09-12_01-49-08",
     "created_at": "2025-09-12T01:49:08",
-    "last_played": "2025-09-12T05:25:11",
+    "last_played": "2025-09-12T12:39:27",
     "player": {
-      "xp": 10,
-      "level": 0
+      "xp": 60,
+      "level": 1
     },
     "items_summary": {
       "stacks": 1,

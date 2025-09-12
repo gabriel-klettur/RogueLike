@@ -41,7 +41,6 @@ class VisualizerView:
         # Prepare rows and reset rects
         visuals_rows = pc.get_visuals_rows()
         m.visuals_template_rects = []
-        m.visuals_plus_rects = []
         m.visuals_browse_rects = []
         m.visuals_eye_rects = []
         m.visuals_clear_rects = []
@@ -91,7 +90,6 @@ class VisualizerView:
                 if pygame:
                     z = pygame.Rect(0, 0, 0, 0)
                     m.visuals_template_rects.append(z)
-                    m.visuals_plus_rects.append(z)
                     m.visuals_browse_rects.append(z)
                     m.visuals_eye_rects.append(z)
                     m.visuals_clear_rects.append(z)
@@ -105,12 +103,11 @@ class VisualizerView:
             # Template cell
             template_rect = pygame.Rect(col3_x, ry - 1, width - col3_x - 10, row_h - 2)
             control_h = template_rect.height - 4
-            plus_rect = pygame.Rect(template_rect.right - 18, template_rect.y + 2, 16, control_h)
-            browse_rect = pygame.Rect(plus_rect.left - 18, template_rect.y + 2, 16, control_h)
+            # Controls order (right to left): browse, eye, clear
+            browse_rect = pygame.Rect(template_rect.right - 18, template_rect.y + 2, 16, control_h)
             eye_rect = pygame.Rect(browse_rect.left - 18, template_rect.y + 2, 16, control_h)
             clear_rect = pygame.Rect(eye_rect.left - 18, template_rect.y + 2, 16, control_h)
             m.visuals_template_rects.append(template_rect)
-            m.visuals_plus_rects.append(plus_rect)
             m.visuals_browse_rects.append(browse_rect)
             m.visuals_eye_rects.append(eye_rect)
             m.visuals_clear_rects.append(clear_rect)
@@ -141,12 +138,6 @@ class VisualizerView:
                 # Draw text input
                 if vti is not None:
                     vti.draw(surf, template_rect.x + 4, template_rect.y + 2, color=(255, 255, 255))
-                # '+' button
-                pygame.draw.rect(surf, (60, 60, 60), plus_rect)
-                pygame.draw.rect(surf, (150, 150, 150), plus_rect, 1)
-                cx, cy = plus_rect.centerx, plus_rect.centery
-                pygame.draw.line(surf, (120, 220, 120), (cx - 4, cy), (cx + 4, cy), 2)
-                pygame.draw.line(surf, (120, 220, 120), (cx, cy - 4), (cx, cy + 4), 2)
                 # 'browse' button
                 pygame.draw.rect(surf, (60, 60, 60), browse_rect)
                 pygame.draw.rect(surf, (150, 150, 150), browse_rect, 1)
@@ -183,12 +174,6 @@ class VisualizerView:
                 c3 = base_c if visible else (150, 150, 150)
                 t3 = font.render(str(tpl_id), True, c3)
                 surf.blit(t3, (col3_x, ry))
-                # '+' button
-                pygame.draw.rect(surf, (60, 60, 60), plus_rect)
-                pygame.draw.rect(surf, (150, 150, 150), plus_rect, 1)
-                cx, cy = plus_rect.centerx, plus_rect.centery
-                pygame.draw.line(surf, (120, 220, 120), (cx - 4, cy), (cx + 4, cy), 2)
-                pygame.draw.line(surf, (120, 220, 120), (cx, cy - 4), (cx, cy + 4), 2)
                 # Folder
                 pygame.draw.rect(surf, (60, 60, 60), browse_rect)
                 pygame.draw.rect(surf, (150, 150, 150), browse_rect, 1)

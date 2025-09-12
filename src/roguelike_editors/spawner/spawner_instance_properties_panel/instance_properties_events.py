@@ -64,14 +64,7 @@ class InstancePropertiesEventHandler:
                     return j
             return None
 
-        def hit_visuals_plus_index(local_pos):
-            pr_list = getattr(view, 'visuals_plus_rects', []) or []
-            if not pr_list:
-                return None
-            for j, r in enumerate(pr_list):
-                if r and r.collidepoint(local_pos):
-                    return j
-            return None
+        # deprecated: '+' button removed
 
         def hit_visuals_browse_index(local_pos):
             br_list = getattr(view, 'visuals_browse_rects', []) or []
@@ -219,19 +212,8 @@ class InstancePropertiesEventHandler:
                         return True
             if et in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEMOTION):
                 local = (pos[0] - rect.left, pos[1] - rect.top)
-                # Plus button click creates instance at camera center
+                # '+' button removed; keep browse/eye available while editing
                 if et == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
-                    j = hit_visuals_plus_index(local)
-                    if j is not None:
-                        rows_v = controller.get_visuals_rows()
-                        if 0 <= j < len(rows_v):
-                            st = rows_v[j][0]
-                            controller.add_building_instance_for_visual(st)
-                            try:
-                                logging.getLogger(__name__).info(f"[InstancePropsEvents] Click + to add instance for state={st}")
-                            except Exception:
-                                pass
-                            return True
                     j = hit_visuals_browse_index(local)
                     if j is not None:
                         rows_v = controller.get_visuals_rows()
@@ -276,19 +258,8 @@ class InstancePropertiesEventHandler:
         # Consume mouse clicks inside the panel
         if et in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP) and rect.collidepoint(pos):
             local = (pos[0] - rect.left, pos[1] - rect.top)
-            # Visuals interactions: '+' button and starting edit on Template cell
+            # Visuals interactions: starting edit on Template cell (browse/eye handled above)
             if et == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
-                j = hit_visuals_plus_index(local)
-                if j is not None:
-                    rows_v = controller.get_visuals_rows()
-                    if 0 <= j < len(rows_v):
-                        st = rows_v[j][0]
-                        controller.add_building_instance_for_visual(st)
-                        try:
-                            logging.getLogger(__name__).info(f"[InstancePropsEvents] Click + to add instance for state={st}")
-                        except Exception:
-                            pass
-                        return True
                 j = hit_visuals_browse_index(local)
                 if j is not None:
                     rows_v = controller.get_visuals_rows()

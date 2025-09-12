@@ -30,7 +30,6 @@ class VisualizerModel:
         self.text_input: Optional[TextInput] = None  # type: ignore
         # Cached rects (panel-local coordinates) for hit testing and tooltips
         self.visuals_template_rects: List["pygame.Rect"] = [] if pygame else []
-        self.visuals_plus_rects: List["pygame.Rect"] = [] if pygame else []
         self.visuals_browse_rects: List["pygame.Rect"] = [] if pygame else []
         self.visuals_eye_rects: List["pygame.Rect"] = [] if pygame else []
         self.visuals_clear_rects: List["pygame.Rect"] = [] if pygame else []

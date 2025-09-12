@@ -33,6 +33,47 @@ class VisualizerEvents:
         vmodel = controller.model
         et = getattr(event, 'type', None)
         pos = getattr(event, 'pos', None) or pygame.mouse.get_pos()
+        # Global: end hold on mouse button up anywhere
+        if et == pygame.MOUSEBUTTONUP and getattr(event, 'button', None) == 1 and bool(getattr(vmodel, 'hold_active', False)):
+            try:
+                controller.model.hold_active = False
+                controller.model.hold_row_index = None
+            except Exception:
+                pass
+            # Restore gameplay follow/input if we had suppressed it
+            try:
+                world = getattr(getattr(pc, 'game', None), 'ecs', None)
+                world = getattr(world, 'ecs_world', None)
+                if world is not None and hasattr(world, 'state'):
+                    setattr(world.state, 'spawner_input_suppressed', False)
+                    setattr(world.state, 'spawner_hold_focus', False)
+            except Exception:
+                pass
+            # Immediately recenter camera on Player for feedback
+            try:
+                cam = getattr(pc.game, 'camera', None)
+                world = getattr(getattr(pc, 'game', None), 'ecs', None)
+                world = getattr(world, 'ecs_world', None)
+                if cam is not None and world is not None:
+                    comps = getattr(world, 'components', {}) or {}
+                    # Prefer explicit world.player_entity if available
+                    eid = getattr(world, 'player_entity', None)
+                    if not isinstance(eid, int):
+                        tags = comps.get('PlayerTagComponent', {}) or {}
+                        try:
+                            eid = next(iter(tags.keys())) if tags else None
+                        except Exception:
+                            eid = None
+                    if isinstance(eid, int):
+                        pos_map = comps.get('Position', {}) or {}
+                        pos = pos_map.get(eid)
+                        if pos is not None and hasattr(pos, 'x') and hasattr(pos, 'y'):
+                            zoom = getattr(cam, 'zoom', 1.0) or 1.0
+                            cam.offset_x = float(getattr(pos, 'x', 0.0)) - (cam.screen_width / (2 * zoom))
+                            cam.offset_y = float(getattr(pos, 'y', 0.0)) - (cam.screen_height / (2 * zoom))
+            except Exception:
+                pass
+            return True
         if not panel_rect.collidepoint(pos):
             # Only care about events inside the panel
             # Still allow keyboard commits when editing
@@ -73,16 +114,8 @@ class VisualizerEvents:
                 return True
             return False
 
-        # Not editing: handle button hits (plus/browse/eye/clear) and starting edit
+        # Not editing: handle button hits (browse/eye/clear) and starting edit
         if et == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
-            # '+' button
-            j = self._hit_index(getattr(vmodel, 'visuals_plus_rects', []) or [], local)
-            if j is not None:
-                rows_v = pc.get_visuals_rows()
-                if 0 <= j < len(rows_v):
-                    st = rows_v[j][0]
-                    controller.add_instance_for_state(st)
-                    return True
             # Browse (folder)
             j = self._hit_index(getattr(vmodel, 'visuals_browse_rects', []) or [], local)
             if j is not None:
@@ -121,8 +154,7 @@ class VisualizerEvents:
                 # Avoid starting hold if the click was on any control
                 hit_any_control = False
                 try:
-                    if (self._hit_index(getattr(vmodel, 'visuals_plus_rects', []) or [], local) is not None or
-                        self._hit_index(getattr(vmodel, 'visuals_browse_rects', []) or [], local) is not None or
+                    if (self._hit_index(getattr(vmodel, 'visuals_browse_rects', []) or [], local) is not None or
                         self._hit_index(getattr(vmodel, 'visuals_eye_rects', []) or [], local) is not None or
                         self._hit_index(getattr(vmodel, 'visuals_clear_rects', []) or [], local) is not None or
                         self._hit_index(getattr(vmodel, 'visuals_template_rects', []) or [], local) is not None):
@@ -138,11 +170,12 @@ class VisualizerEvents:
                             controller.model.hold_row_index = j
                             # Immediately center once
                             controller.center_camera_on_state(st)
-                            # Suppress gameplay camera follow if available
+                            # Suppress gameplay input and camera follow if available (match Instances list behavior)
                             try:
                                 world = getattr(getattr(pc, 'game', None), 'ecs', None)
                                 world = getattr(world, 'ecs_world', None)
                                 if world is not None and hasattr(world, 'state'):
+                                    setattr(world.state, 'spawner_input_suppressed', True)
                                     setattr(world.state, 'spawner_hold_focus', True)
                             except Exception:
                                 pass
@@ -191,15 +224,8 @@ class VisualizerEvents:
         if pygame is None:
             return False
         et = getattr(event, 'type', None)
-        # Allow mouse interactions on buttons while editing
+        # Allow mouse interactions on buttons while editing (browse/eye/clear)
         if et == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
-            j = self._hit_index(getattr(vmodel, 'visuals_plus_rects', []) or [], local)
-            if j is not None:
-                rows_v = pc.get_visuals_rows()
-                if 0 <= j < len(rows_v):
-                    st = rows_v[j][0]
-                    controller.add_instance_for_state(st)
-                    return True
             j = self._hit_index(getattr(vmodel, 'visuals_browse_rects', []) or [], local)
             if j is not None:
                 rows_v = pc.get_visuals_rows()

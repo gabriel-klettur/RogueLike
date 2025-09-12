@@ -26,6 +26,7 @@ from .services.buildings_service import (
     load_buildings_instances as svc_load_buildings_instances,
     write_buildings_instances as svc_write_buildings_instances,
     load_buildings_templates as svc_load_buildings_templates,
+    get_template_image_path as svc_get_template_image_path,
 )
 import logging
 
@@ -626,33 +627,23 @@ class InstancePropertiesController:
                             next_id = max(ids) + 1
                     except Exception:
                         pass
-                    # Determine zone and pick a reasonable rel position (camera center in zone)
+                    # Determine zone and rel position from the selected spawner instance tile
                     zone = None
+                    local_tile = (0, 0)
                     try:
                         zone = str((self.model.selected_instance or {}).get('zone'))
                     except Exception:
                         zone = None
+                    try:
+                        t = (self.model.selected_instance or {}).get('tile', (0, 0))
+                        if isinstance(t, (list, tuple)) and len(t) >= 2:
+                            local_tile = (int(t[0]), int(t[1]))
+                    except Exception:
+                        local_tile = (0, 0)
                     if not zone:
                         zone = 'lobby'
-                    cx = cy = 0
-                    try:
-                        cam = getattr(self.game, 'camera', None)
-                        if cam is not None:
-                            zoom = getattr(cam, 'zoom', 1.0) or 1.0
-                            cx = int(getattr(cam, 'offset_x', 0.0) + (cam.screen_width / (2 * zoom)))
-                            cy = int(getattr(cam, 'offset_y', 0.0) + (cam.screen_height / (2 * zoom)))
-                    except Exception:
-                        pass
-                    # Convert zone offsets to pixels
-                    off_x, off_y = 0, 0
-                    try:
-                        oz = global_map_settings.zone_offsets.get(zone, (0, 0))
-                        off_x = int(oz[0] * TILE_SIZE)
-                        off_y = int(oz[1] * TILE_SIZE)
-                    except Exception:
-                        pass
-                    rel_x = int(cx - off_x)
-                    rel_y = int(cy - off_y)
+                    rel_x = int(local_tile[0] * TILE_SIZE)
+                    rel_y = int(local_tile[1] * TILE_SIZE)
                     entry = {
                         'id': next_id,
                         'template_id': int(vtpl),
@@ -1128,73 +1119,29 @@ class InstancePropertiesController:
                     except Exception:
                         pass
             return
-        # If there was no instance id and user provided a valid template id: reuse or create
+        # If there was no instance id and user provided a valid template id: ALWAYS create centered
         if cur_inst_int is None and new_tpl_id is not None:
             desired = int(new_tpl_id)
-            reuse_id = self._find_existing_visual_instance_by_template(desired)
-            if reuse_id is not None:
-                visuals = getattr(self.model, 'visuals', {}) or {}
-                key_map = getattr(self.model, 'visuals_key_map', {}) or {}
-                json_key = key_map.get(state_key, state_key)
-                visuals[json_key] = {'instance_id': reuse_id, 'template_id': int(desired)}
-                self.model.visuals = visuals
-                # Ensure runtime will render spawner visuals
-                try:
-                    inst = self.model.selected_instance
-                    if isinstance(inst, dict):
-                        ov = dict(inst.get('overrides') or {})
-                        ov['visible_in_game'] = True
-                        inst['overrides'] = ov
-                except Exception:
-                    pass
-                try:
-                    if self.model.selected_instance is not None:
-                        self.model.selected_instance['visuals'] = visuals
-                except Exception:
-                    pass
-                self._persist_instance()
-                self._ensure_buildings_index()
-                self._build_visuals_rows()
-                self._log.info(f"[InstanceProps] Reused existing instance {reuse_id} for state {state_key} tpl {desired}")
-                # Reveal reused building in editor
-                try:
-                    self._tag_and_reveal_building(int(reuse_id), state_key)
-                except Exception:
-                    pass
-                try:
-                    for r in (self.model.visuals_rows or []):
-                        if r[0] == state_key:
-                            self._log.debug(f"[InstanceProps] Row after reuse: {r}")
-                            break
-                except Exception:
-                    pass
-                # Reload disk snapshot to ensure selection reflects persisted changes
-                try:
-                    self._reload_selected_from_json()
-                except Exception:
-                    pass
-            else:
-                # Reuse the '+' flow helper to create instance at camera center
-                try:
-                    # Prime pending input so add_building_instance_for_visual uses it
-                    self.model.visuals_pending_templates[state_key] = str(desired)
-                except Exception:
-                    pass
-                # Do not reveal/spawn when selecting via picker
-                new_id = self.add_building_instance_for_visual(state_key, reveal=False)
-                self._log.info(f"[InstanceProps] Created new instance {new_id} for state {state_key} tpl {desired}")
-                try:
-                    for r in (self.model.visuals_rows or []):
-                        if r[0] == state_key:
-                            self._log.debug(f"[InstanceProps] Row after create: {r}")
-                            break
-                except Exception:
-                    pass
-                # Reload disk snapshot too (add_building_instance_for_visual already attempts it, but ensure)
-                try:
-                    self._reload_selected_from_json()
-                except Exception:
-                    pass
+            # Prime pending input so add_building_instance_for_visual uses it
+            try:
+                self.model.visuals_pending_templates[state_key] = str(desired)
+            except Exception:
+                pass
+            # Create a new instance centered on the owning spawner
+            new_id = self.add_building_instance_for_visual(state_key, reveal=False)
+            self._log.info(f"[InstanceProps] Created new centered instance {new_id} for state {state_key} tpl {desired}")
+            try:
+                for r in (self.model.visuals_rows or []):
+                    if r[0] == state_key:
+                        self._log.debug(f"[InstanceProps] Row after create: {r}")
+                        break
+            except Exception:
+                pass
+            # Reload disk snapshot (add_building_instance_for_visual already attempts it)
+            try:
+                self._reload_selected_from_json()
+            except Exception:
+                pass
         # also toast here as a safety (if picker flow ends here)
         try:
             self._show_toast(f"Template aplicado: {int(new_tpl_id)} → {state_key}")
@@ -1265,33 +1212,105 @@ class InstancePropertiesController:
                 next_id = max(ids) + 1
         except Exception:
             pass
-        # Determine zone and rel_x/rel_y from camera center relative to zone
+        # Determine zone and rel_x/rel_y from the selected spawner instance tile (zone-local)
         zone = None
+        local_tile = (0, 0)
         try:
             zone = str((self.model.selected_instance or {}).get('zone'))
         except Exception:
             zone = None
+        try:
+            t = (self.model.selected_instance or {}).get('tile', (0, 0))
+            if isinstance(t, (list, tuple)) and len(t) >= 2:
+                local_tile = (int(t[0]), int(t[1]))
+        except Exception:
+            local_tile = (0, 0)
         if not zone:
             zone = 'lobby'
-        cx = cy = 0
+        # Convert the zone-local tile to pixels relative to the zone origin
         try:
-            cam = getattr(self.game, 'camera', None)
-            if cam is not None:
-                zoom = getattr(cam, 'zoom', 1.0) or 1.0
-                cx = int(getattr(cam, 'offset_x', 0.0) + (cam.screen_width / (2 * zoom)))
-                cy = int(getattr(cam, 'offset_y', 0.0) + (cam.screen_height / (2 * zoom)))
+            rel_x = int(local_tile[0] * TILE_SIZE)
+            rel_y = int(local_tile[1] * TILE_SIZE)
         except Exception:
-            pass
-        # Convert zone offsets to pixels (offsets likely in tiles)
-        off_x, off_y = 0, 0
+            rel_x = 0
+            rel_y = 0
+        # Center the new building on the spawner center (tile center), using the alpha bounding box
+        # of the scaled sprite (so transparent margins don't bias centering)
         try:
-            oz = global_map_settings.zone_offsets.get(zone, (0, 0))
-            off_x = int(oz[0] * TILE_SIZE)
-            off_y = int(oz[1] * TILE_SIZE)
+            spawn_cx = int(rel_x + (TILE_SIZE // 2))
+            spawn_cy = int(rel_y + (TILE_SIZE // 2))
+            # Determine desired visual size (width,height)
+            w: int | None = None
+            h: int | None = None
+            brx = bry = 0
+            brw = brh = None
+            anchor_mode = 'content_center'
+            # Prefer templates original_scale
+            try:
+                for tentry in svc_load_buildings_templates():
+                    try:
+                        if int(tentry.get('id')) == int(tpl_id):
+                            oscale = tentry.get('original_scale')
+                            try:
+                                am = str(tentry.get('anchor_mode') or '')
+                                if am:
+                                    anchor_mode = am
+                            except Exception:
+                                pass
+                            if isinstance(oscale, (list, tuple)) and len(oscale) >= 2:
+                                w = int(oscale[0]); h = int(oscale[1])
+                                # Compute bounding box at that scale
+                                try:
+                                    img_path = svc_get_template_image_path(int(tpl_id))
+                                    if img_path:
+                                        import pygame as _pg
+                                        raw = _pg.image.load(img_path)
+                                        surf = _pg.transform.scale(raw, (int(w), int(h)))
+                                        br = surf.get_bounding_rect(min_alpha=1)
+                                        brx, bry, brw, brh = br.x, br.y, br.w, br.h
+                                except Exception:
+                                    brw = brh = None
+                            break
+                    except Exception:
+                        continue
+            except Exception:
+                pass
+            # Fallback: probe image size and apply same auto-downscale rule (>512 -> quarter)
+            if w is None or h is None:
+                try:
+                    img_path = svc_get_template_image_path(int(tpl_id))
+                    if img_path:
+                        import pygame as _pg
+                        raw = _pg.image.load(img_path)
+                        iw, ih = raw.get_size()
+                        if iw > 512 or ih > 512:
+                            iw //= 4; ih //= 4
+                        w, h = int(iw), int(ih)
+                        # Bounding rect from scaled surface
+                        try:
+                            surf = _pg.transform.scale(raw, (int(w), int(h)))
+                            br = surf.get_bounding_rect(min_alpha=1)
+                            brx, bry, brw, brh = br.x, br.y, br.w, br.h
+                        except Exception:
+                            brw = brh = None
+                except Exception:
+                    w = None; h = None
+            if w is not None and h is not None and w > 0 and h > 0:
+                if anchor_mode == 'base_center' and brw is not None and brh is not None and brw > 0 and brh > 0:
+                    # Align bottom-center of visible content to spawn center
+                    rel_x = int(spawn_cx - (brx + brw // 2))
+                    rel_y = int(spawn_cy - (bry + brh))
+                elif brw is not None and brh is not None and brw > 0 and brh > 0 and anchor_mode == 'content_center':
+                    # Align bounding-rect center to spawn center
+                    rel_x = int(spawn_cx - (brx + brw // 2))
+                    rel_y = int(spawn_cy - (bry + brh // 2))
+                else:
+                    # Fallback: align image geometric center
+                    rel_x = int(spawn_cx - (w // 2))
+                    rel_y = int(spawn_cy - (h // 2))
         except Exception:
+            # If centering fails, keep top-left at tile origin as fallback
             pass
-        rel_x = int(cx - off_x)
-        rel_y = int(cy - off_y)
         entry = {
             'id': next_id,
             'template_id': tpl_id,
@@ -1309,10 +1328,64 @@ class InstancePropertiesController:
             entry['overrides']['_is_spawner_visual'] = True
             if sid:
                 entry['overrides']['spawner_instance_id'] = sid
+            # Persist computed scale if available so runtime size matches centering
+            try:
+                if 'overrides' in entry:
+                    # Persist the scale we used for centering so runtime matches
+                    if locals().get('w') is not None and locals().get('h') is not None and int(locals()['w']) > 0 and int(locals()['h']) > 0:
+                        entry['overrides']['scale'] = [int(locals()['w']), int(locals()['h'])]
+            except Exception:
+                pass
         except Exception:
             pass
         data.append(entry)
         self._write_buildings_instances(data)
+        # Post-create correction: load the building and recenter using its actual scaled image's
+        # alpha bounding box (avoid transparent margins)
+        try:
+            # Ensure building is present in world
+            try:
+                self.visualizer._ensure_building_loaded(int(next_id))
+            except Exception:
+                pass
+            ob = None
+            try:
+                ob = self.visualizer._find_building_entity_by_id(int(next_id))
+            except Exception:
+                ob = None
+            if ob is not None:
+                # Get the actual scaled surface and its alpha bounding rect
+                surf = getattr(getattr(ob, 'model', None), 'image', None)
+                br = None
+                try:
+                    if surf is not None:
+                        br = surf.get_bounding_rect(min_alpha=1)
+                except Exception:
+                    br = None
+                if br is not None and br.w > 0 and br.h > 0:
+                    # Recompute spawn center (tile center) and correct rels to align bounding center
+                    spawn_cx = int((local_tile[0] * TILE_SIZE) + (TILE_SIZE // 2))
+                    spawn_cy = int((local_tile[1] * TILE_SIZE) + (TILE_SIZE // 2))
+                    corr_rx = int(spawn_cx - (br.x + br.w // 2))
+                    corr_ry = int(spawn_cy - (br.y + br.h // 2))
+                    # Patch JSON entry
+                    for e in data:
+                        try:
+                            if int(e.get('id')) == int(next_id):
+                                e['rel_x'] = corr_rx
+                                e['rel_y'] = corr_ry
+                                break
+                        except Exception:
+                            continue
+                    self._write_buildings_instances(data)
+                    # Update in-world object
+                    try:
+                        setattr(getattr(ob, 'model', ob), 'rel_x', corr_rx)
+                        setattr(getattr(ob, 'model', ob), 'rel_y', corr_ry)
+                    except Exception:
+                        pass
+        except Exception:
+            pass
         # Update visuals mapping and persist spawner instance
         visuals = getattr(self.model, 'visuals', {}) or {}
         # Map displayed canonical to actual JSON key if present; otherwise use the displayed key

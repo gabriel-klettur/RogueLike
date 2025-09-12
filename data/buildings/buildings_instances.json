@@ -1889,5 +1889,37 @@
             "z_top": 5,
             "z": 3
         }
+    },
+    {
+        "id": 141,
+        "template_id": 154,
+        "zone": "Forest",
+        "rel_x": 753,
+        "rel_y": 336,
+        "overrides": {
+            "scale": [
+                256,
+                384
+            ],
+            "z_bottom": 3,
+            "z_top": 5,
+            "z": 1
+        }
+    },
+    {
+        "id": 141,
+        "template_id": 154,
+        "zone": "Forest",
+        "rel_x": 753,
+        "rel_y": 336,
+        "overrides": {
+            "scale": [
+                256,
+                384
+            ],
+            "z_bottom": 3,
+            "z_top": 5,
+            "z": 1
+        }
     }
 ]

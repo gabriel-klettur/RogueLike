@@ -17,7 +17,6 @@ class InstancePropertiesView:
         # Visuals table rects are now owned by VisualizerModel; these fields remain
         # only for backward compatibility and are no longer updated here.
         self.visuals_template_rects: list[pygame.Rect] = []
-        self.visuals_plus_rects: list[pygame.Rect] = []
         self.visuals_browse_rects: list[pygame.Rect] = []
         self.visuals_eye_rects: list[pygame.Rect] = []
         self.visuals_state_rects: list[pygame.Rect] = []
@@ -199,22 +198,12 @@ class InstancePropertiesView:
                         break
         except Exception:
             pass
-        # Hover tooltip for Visuals controls (folder/eye/plus)
+        # Hover tooltip for Visuals controls (folder/eye)
         try:
             mx, my = pygame.mouse.get_pos()
             if self.panel_rect:
                 local = (mx - self.panel_rect.left, my - self.panel_rect.top)
                 vmodel = getattr(controller.visualizer, 'model', None)
-                # Plus tooltip
-                for j, r in enumerate(getattr(vmodel, 'visuals_plus_rects', []) or []):
-                    try:
-                        if r and r.collidepoint(local):
-                            draw_tooltip(screen, mx, my, ["Crear instancia de building para este estado"])
-                            raise StopIteration
-                    except StopIteration:
-                        break
-                    except Exception:
-                        continue
                 # Folder tooltip
                 for j, r in enumerate(getattr(vmodel, 'visuals_browse_rects', []) or []):
                     try:
