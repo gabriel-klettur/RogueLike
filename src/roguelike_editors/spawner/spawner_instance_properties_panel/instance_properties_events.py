@@ -19,10 +19,10 @@ class InstancePropertiesEventHandler:
         et = getattr(event, 'type', None)
         pos = getattr(event, 'pos', None) or pygame.mouse.get_pos()
 
-        # First, allow the Visualizer to intercept events for the Visuals table.
+        # First, allow the visuals to intercept events for the Visuals table.
         # If it handles the event, stop here.
         try:
-            vctrl = getattr(controller, 'visualizer', None)
+            vctrl = getattr(controller, 'visuals', None)
             if vctrl is not None:
                 if vctrl.events.handle_event(vctrl, event, rect):
                     return True

@@ -10,11 +10,11 @@ except Exception:  # pragma: no cover
 from roguelike_ui.widgets.hover import draw_hover
 
 
-class VisualizerView:
+class VisualsView:
     """Responsible for rendering the Visuals table inside Instance Properties.
 
     It draws into the parent panel surface and updates rect caches in the
-    VisualizerModel for hit-testing. Returns the total vertical space used by
+    VisualsModel for hit-testing. Returns the total vertical space used by
     the visuals section (spacing + title + header + rows).
     """
 
@@ -206,4 +206,4 @@ class VisualizerView:
         return visuals_total_h
 
 
-__all__ = ["VisualizerView"]
+__all__ = ["VisualsView"]

@@ -13,7 +13,7 @@ except Exception:  # pragma: no cover
     pygame = None  # type: ignore
 
 
-class VisualizerModel:
+class VisualsModel:
     """UI state for the Visuals table inside the Instance Properties panel.
 
     This model does NOT duplicate the spawner instance visuals mapping; that remains
@@ -42,4 +42,4 @@ class VisualizerModel:
         self.hold_active: bool = False
 
 
-__all__ = ["VisualizerModel"]
+__all__ = ["VisualsModel"]

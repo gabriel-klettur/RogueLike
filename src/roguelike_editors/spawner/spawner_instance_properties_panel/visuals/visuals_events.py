@@ -8,7 +8,7 @@ except Exception:  # pragma: no cover
     pygame = None  # type: ignore
 
 
-class VisualizerEvents:
+class VisualsEvents:
     """Event handler for the Visuals table (buttons, text input) inside the
     Instance Properties panel. Delegates data changes to the parent controller.
     """
@@ -25,7 +25,7 @@ class VisualizerEvents:
         return None
 
     def handle_event(self, controller, event, panel_rect) -> bool:
-        # controller is VisualizerController
+        # controller is visualsController
         if pygame is None or panel_rect is None:
             return False
         pc = controller.parent
@@ -265,4 +265,4 @@ class VisualizerEvents:
         return False
 
 
-__all__ = ["VisualizerEvents"]
+__all__ = ["VisualsEvents"]

@@ -20,7 +20,7 @@ from roguelike_engine.config.config_tiles import TILE_SIZE
 from .instance_properties_model import InstancePropertiesModel
 from .instance_properties_view import InstancePropertiesView
 from .instance_properties_events import InstancePropertiesEventHandler
-from .visualizer.visualizer_controller import VisualizerController
+from .visuals.visuals_controller import VisualsController
 from roguelike_editors.spawner.visuals_picker import VisualsPicker
 from .services.buildings_service import (
     load_buildings_instances as svc_load_buildings_instances,
@@ -41,8 +41,8 @@ class InstancePropertiesController:
         self._dbl = DoubleClickDetector(interval_ms=450)
         # Cache flattened rows (key, value_str)
         self._rows: List[Tuple[str, str]] = []
-        # Visualizer (Visuals table MVC)
-        self.visualizer = VisualizerController(self)
+        # visuals (Visuals table MVC)
+        self.visuals = VisualsController(self)
         # Optional callback for editor to refresh Instances list after persistence
         # Signature: () -> None
         self.on_persist: Optional[callable] = None
@@ -58,7 +58,7 @@ class InstancePropertiesController:
         self.game = None
         # Visuals Picker orchestrator (lazy)
         self._visuals_picker: VisualsPicker | None = None
-        # Editor-only visibility moved to visualizer.model
+        # Editor-only visibility moved to visuals.model
         # Toast defaults
         try:
             self._toast_ms = 1600
@@ -173,13 +173,13 @@ class InstancePropertiesController:
             pass
         # While holding on a visuals row, keep camera centered on its building
         try:
-            vmodel = getattr(self.visualizer, 'model', None)
+            vmodel = getattr(self.visuals, 'model', None)
             if vmodel is not None and getattr(vmodel, 'hold_active', False):
                 j = getattr(vmodel, 'hold_row_index', None)
                 vis_rows = self.get_visuals_rows()
                 if j is not None and 0 <= int(j) < len(vis_rows):
                     st = str(vis_rows[int(j)][0])
-                    self.visualizer.center_camera_on_state(st)
+                    self.visuals.center_camera_on_state(st)
         except Exception:
             pass
         return self.view.render(self, screen, anchor=anchor)
@@ -305,37 +305,37 @@ class InstancePropertiesController:
 
     # --- Editor visibility helpers -----------------------------------------
     def _get_world(self):
-        # Delegated to visualizer
-        return getattr(self.visualizer, '_get_world')()
+        # Delegated to visuals
+        return getattr(self.visuals, '_get_world')()
 
     def _iter_building_entities(self):
-        # Delegated to visualizer
-        yield from self.visualizer._iter_building_entities()
+        # Delegated to visuals
+        yield from self.visuals._iter_building_entities()
 
     def _find_building_entity_by_id(self, bid: int):
-        return self.visualizer._find_building_entity_by_id(int(bid))
+        return self.visuals._find_building_entity_by_id(int(bid))
 
-    # Obsolete building JSON/template helpers were removed. The Visualizer
+    # Obsolete building JSON/template helpers were removed. The visuals
     # now owns world/buildings operations, and this controller keeps only the
     # robust loaders used for persistence further below.
 
     def _ensure_building_loaded(self, bid: int) -> None:
-        # Delegated to visualizer
-        self.visualizer._ensure_building_loaded(int(bid))
+        # Delegated to visuals
+        self.visuals._ensure_building_loaded(int(bid))
 
     def _set_building_visible(self, bid: int, visible: bool) -> None:
-        # Delegated to visualizer
-        self.visualizer._set_building_visible(int(bid), bool(visible))
+        # Delegated to visuals
+        self.visuals._set_building_visible(int(bid), bool(visible))
 
     def _tag_and_reveal_building(self, bid: int, state_key: str) -> None:
-        # Delegated to visualizer
-        self.visualizer.tag_and_reveal_building(int(bid), str(state_key))
+        # Delegated to visuals
+        self.visuals.tag_and_reveal_building(int(bid), str(state_key))
 
     def is_visual_building_visible(self, state_key: str) -> bool:
-        return self.visualizer.is_building_visible_for_state(str(state_key))
+        return self.visuals.is_building_visible_for_state(str(state_key))
 
     def toggle_visual_building_visibility(self, state_key: str) -> None:
-        self.visualizer.toggle_building_visibility_for_state(str(state_key))
+        self.visuals.toggle_building_visibility_for_state(str(state_key))
 
     def _remove_building_entity_by_id(self, bid: int) -> bool:
         """Hard-remove a Building object with the given id from the running world/editor.
@@ -373,8 +373,8 @@ class InstancePropertiesController:
             pass
         # Best-effort: clear any cached visibility flags
         try:
-            if int(bid) in self.visualizer.model.editor_visibility:
-                self.visualizer.model.editor_visibility.pop(int(bid), None)
+            if int(bid) in self.visuals.model.editor_visibility:
+                self.visuals.model.editor_visibility.pop(int(bid), None)
         except Exception:
             pass
         return removed_any
@@ -854,7 +854,7 @@ class InstancePropertiesController:
         """Check current text being edited for a given state."""
         txt = (self.model.visuals_pending_templates or {}).get(state_key, '')
         if getattr(self.model, 'visuals_editing_state', None) == state_key:
-            vti = getattr(self.visualizer.model, 'text_input', None)
+            vti = getattr(self.visuals.model, 'text_input', None)
             if vti is not None:
                 try:
                     txt = vti.text
@@ -885,12 +885,12 @@ class InstancePropertiesController:
         if cur_tpl.upper() == 'N/A':
             cur_tpl = ''
         self.model.visuals_pending_templates[state_key] = cur_tpl
-        # Activate visualizer's dedicated text input
-        vti = getattr(self.visualizer.model, 'text_input', None)
+        # Activate visuals's dedicated text input
+        vti = getattr(self.visuals.model, 'text_input', None)
         if vti is None:
             font = pygame.font.SysFont(None, 18)
             vti = TextInput(font)
-            self.visualizer.model.text_input = vti
+            self.visuals.model.text_input = vti
         vti.activate(cur_tpl, select_all=True)
         # Ensure OS text input is started for proper TEXTINPUT events
         try:
@@ -1021,7 +1021,7 @@ class InstancePropertiesController:
         display_state = getattr(self.model, 'visuals_editing_state', None)
         if not display_state:
             return False
-        vti = getattr(self.visualizer.model, 'text_input', None)
+        vti = getattr(self.visuals.model, 'text_input', None)
         if vti is None or vti.active:
             return False
         new_txt = vti.text if vti else ''
@@ -1291,7 +1291,7 @@ class InstancePropertiesController:
         # Need a template id: prefer current text input if editing this state
         txt = (self.model.visuals_pending_templates or {}).get(state_key, '')
         if getattr(self.model, 'visuals_editing_state', None) == state_key:
-            vti = getattr(self.visualizer.model, 'text_input', None)
+            vti = getattr(self.visuals.model, 'text_input', None)
             if vti is not None:
                 try:
                     txt = vti.text
@@ -1549,12 +1549,12 @@ class InstancePropertiesController:
         try:
             # Ensure building is present in world
             try:
-                self.visualizer._ensure_building_loaded(int(next_id))
+                self.visuals._ensure_building_loaded(int(next_id))
             except Exception:
                 pass
             ob = None
             try:
-                ob = self.visualizer._find_building_entity_by_id(int(next_id))
+                ob = self.visuals._find_building_entity_by_id(int(next_id))
             except Exception:
                 ob = None
             if ob is not None:

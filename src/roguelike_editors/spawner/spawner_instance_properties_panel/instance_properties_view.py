@@ -14,7 +14,7 @@ class InstancePropertiesView:
         # Combobox rects (screen-local to panel surface coordinates)
         self.template_combo_rect: pygame.Rect | None = None
         self.template_list_rect: pygame.Rect | None = None
-        # Visuals table rects are now owned by VisualizerModel; these fields remain
+        # Visuals table rects are now owned by visualsModel; these fields remain
         # only for backward compatibility and are no longer updated here.
         self.visuals_template_rects: list[pygame.Rect] = []
         self.visuals_browse_rects: list[pygame.Rect] = []
@@ -66,7 +66,7 @@ class InstancePropertiesView:
             rows = controller.get_rows()
             row_h = 20
             padding_bottom = 6
-            # Compute Visuals section height via visualizer view (delegation)
+            # Compute Visuals section height via visuals view (delegation)
             visuals_rows = controller.get_visuals_rows()
             visuals_spacing = 8  # spacing before visuals section
             # y where the visuals section begins
@@ -144,10 +144,10 @@ class InstancePropertiesView:
                         val_text = font.render(str(v), True, (230, 230, 230))
                         surf.blit(val_text, (210, row_y))
 
-            # Visuals section (delegated to VisualizerView)
+            # Visuals section (delegated to visualsView)
             base_rows_h = len(rows) * row_h
             y_start_visuals = y_off + base_rows_h - scroll + visuals_spacing
-            visuals_total_h = controller.visualizer.view.render_table(
+            visuals_total_h = controller.visuals.view.render_table(
                 surf,
                 self.panel_rect,
                 title_font=title_font,
@@ -181,8 +181,8 @@ class InstancePropertiesView:
         # Hover tooltip for Visuals state names: show TitleCase ↔ snake_case equivalence
         try:
             mx, my = pygame.mouse.get_pos()
-            # Visuals state tooltip uses rects from VisualizerModel
-            vmodel = getattr(controller.visualizer, 'model', None)
+            # Visuals state tooltip uses rects from visualsModel
+            vmodel = getattr(controller.visuals, 'model', None)
             if self.panel_rect and vmodel and getattr(vmodel, 'visuals_state_rects', None):
                 local = (mx - self.panel_rect.left, my - self.panel_rect.top)
                 for j, r in enumerate(vmodel.visuals_state_rects):
@@ -207,7 +207,7 @@ class InstancePropertiesView:
             mx, my = pygame.mouse.get_pos()
             if self.panel_rect:
                 local = (mx - self.panel_rect.left, my - self.panel_rect.top)
-                vmodel = getattr(controller.visualizer, 'model', None)
+                vmodel = getattr(controller.visuals, 'model', None)
                 # Folder tooltip
                 for j, r in enumerate(getattr(vmodel, 'visuals_browse_rects', []) or []):
                     try:

@@ -9,12 +9,12 @@ from ..services.buildings_service import (
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
 
-from .visualizer_model import VisualizerModel
-from .visualizer_view import VisualizerView
-from .visualizer_events import VisualizerEvents
+from .visuals_model import VisualsModel
+from .visuals_view import VisualsView
+from .visuals_events import VisualsEvents
 
 
-class VisualizerController:
+class VisualsController:
     """Feature controller for the Visuals table inside Instance Properties.
 
     It owns its own MVC (model/view/events) but delegates data mutations and
@@ -24,9 +24,9 @@ class VisualizerController:
     def __init__(self, parent_controller) -> None:
         # Keep a dynamic reference to the parent controller without importing it here
         self.parent = parent_controller
-        self.model = VisualizerModel()
-        self.view = VisualizerView(self)
-        self.events = VisualizerEvents()
+        self.model = VisualsModel()
+        self.view = VisualsView(self)
+        self.events = VisualsEvents()
 
     # --- Convenience accessors to parent data --------------------------------
     def get_visuals_rows(self):
@@ -484,4 +484,4 @@ class VisualizerController:
         return removed_any
 
 
-__all__ = ["VisualizerController"]
+__all__ = ["VisualsController"]
