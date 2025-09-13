@@ -41,6 +41,57 @@ class VisualsController:
     def get_text_input(self):
         return self.parent.get_text_input()
 
+    # --- Visuals mapping helpers --------------------------------------------
+    def _resolve_json_key_for_state(self, state_key: str) -> str:
+        """Given a display state name (TitleCase), resolve the actual JSON key used."""
+        try:
+            key_map = getattr(self.parent.model, 'visuals_key_map', {}) or {}
+            return str(key_map.get(state_key, state_key))
+        except Exception:
+            return str(state_key)
+
+    def _get_mapping_entry_for_state(self, state_key: str):
+        """Return the raw mapping value from model.visuals for the given state (dict | int | None)."""
+        try:
+            visuals = getattr(self.parent.model, 'visuals', {}) or {}
+        except Exception:
+            visuals = {}
+        try:
+            return visuals.get(self._resolve_json_key_for_state(state_key))
+        except Exception:
+            return None
+
+    def _get_instance_id_for_state(self, state_key: str) -> int | None:
+        """Extract instance_id as int from the mapping of a state, if present and valid."""
+        raw = self._get_mapping_entry_for_state(state_key)
+        try:
+            if raw is None:
+                return None
+            if isinstance(raw, dict):
+                return int(raw.get('instance_id') or raw.get('id') or raw.get('building_instance_id'))
+            return int(raw)
+        except Exception:
+            return None
+
+    def _get_template_id_for_state(self, state_key: str) -> int | None:
+        """Best-effort template_id resolution for a state: prefer explicit mapping, fallback to building index."""
+        raw = self._get_mapping_entry_for_state(state_key)
+        try:
+            if isinstance(raw, dict) and raw.get('template_id') is not None:
+                return int(raw.get('template_id'))
+        except Exception:
+            pass
+        # Fallback via buildings index if instance_id present
+        try:
+            bid = self._get_instance_id_for_state(state_key)
+            idx = getattr(self.parent, '_building_index', {}) or {}
+            if bid is not None and int(bid) in idx:
+                tid_str = idx.get(int(bid))
+                return int(tid_str) if tid_str is not None else None
+        except Exception:
+            pass
+        return None
+
     # --- World/buildings helpers ---------------------------------------------
     def _get_world(self):
         try:
@@ -154,18 +205,8 @@ class VisualsController:
         except Exception:
             pass
         # Fallback: try to center using the instance id mapping and JSON
-        try:
-            visuals = getattr(self.parent.model, 'visuals', {}) or {}
-            key_map = getattr(self.parent.model, 'visuals_key_map', {}) or {}
-            json_key = key_map.get(state_key, state_key)
-            raw = visuals.get(json_key)
-            if raw is None:
-                return None
-            if isinstance(raw, dict):
-                bid = int(raw.get('instance_id') or raw.get('id') or raw.get('building_instance_id'))
-            else:
-                bid = int(raw)
-        except Exception:
+        bid = self._get_instance_id_for_state(state_key)
+        if bid is None:
             return None
         try:
             self._ensure_building_loaded(int(bid))
@@ -372,20 +413,10 @@ class VisualsController:
             except Exception:
                 return True
         # Fallback to cached visibility by instance id
-        visuals = getattr(self.parent.model, 'visuals', {}) or {}
-        key_map = getattr(self.parent.model, 'visuals_key_map', {}) or {}
-        json_key = key_map.get(state_key, state_key)
-        raw = visuals.get(json_key)
-        if raw is None:
+        bid_int = self._get_instance_id_for_state(state_key)
+        if bid_int is None:
             return True
-        try:
-            if isinstance(raw, dict):
-                bid_int = int(raw.get('instance_id') or raw.get('id') or raw.get('building_instance_id'))
-            else:
-                bid_int = int(raw)
-            return bool(self.model.editor_visibility.get(int(bid_int), True))
-        except Exception:
-            return True
+        return bool(self.model.editor_visibility.get(int(bid_int), True))
 
     def toggle_building_visibility_for_state(self, state_key: str) -> None:
         """Toggle only the editor rendering visibility for the building mapped to state_key.
@@ -411,18 +442,8 @@ class VisualsController:
             except Exception:
                 pass
         # Fallback by instance id
-        visuals = getattr(self.parent.model, 'visuals', {}) or {}
-        key_map = getattr(self.parent.model, 'visuals_key_map', {}) or {}
-        json_key = key_map.get(state_key, state_key)
-        raw = visuals.get(json_key)
-        if raw is None:
-            return
-        try:
-            if isinstance(raw, dict):
-                bid_int = int(raw.get('instance_id') or raw.get('id') or raw.get('building_instance_id'))
-            else:
-                bid_int = int(raw)
-        except Exception:
+        bid_int = self._get_instance_id_for_state(state_key)
+        if bid_int is None:
             return
         cur = bool(self.model.editor_visibility.get(int(bid_int), True))
         self._set_building_visible(int(bid_int), not cur)

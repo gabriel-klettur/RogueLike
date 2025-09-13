@@ -8,6 +8,11 @@ except Exception:  # pragma: no cover
     pygame = None  # type: ignore
 
 from roguelike_ui.widgets.hover import draw_hover
+from .visuals_ui import (
+    draw_folder_button,
+    draw_eye_button,
+    draw_clear_button,
+)
 
 
 class VisualsView:
@@ -139,25 +144,14 @@ class VisualsView:
                 if vti is not None:
                     vti.draw(surf, template_rect.x + 4, template_rect.y + 2, color=(255, 255, 255))
                 # 'browse' button
-                pygame.draw.rect(surf, (60, 60, 60), browse_rect)
-                pygame.draw.rect(surf, (150, 150, 150), browse_rect, 1)
-                bx, by = browse_rect.x + 3, browse_rect.y + 3
-                pygame.draw.rect(surf, (230, 200, 120), (bx, by + 4, browse_rect.w - 6, browse_rect.h - 8), 0)
-                pygame.draw.rect(surf, (160, 130, 60), (bx, by + 4, browse_rect.w - 6, browse_rect.h - 8), 1)
-                pygame.draw.rect(surf, (230, 200, 120), (bx + 2, by + 2, 8, 6), 0)
+                draw_folder_button(surf, browse_rect)
                 # 'eye' button
                 visible = True
                 try:
                     visible = bool(pc.is_visual_building_visible(str(state)))
                 except Exception:
                     visible = True
-                pygame.draw.rect(surf, (60, 60, 60), eye_rect)
-                pygame.draw.rect(surf, (150, 150, 150), eye_rect, 1)
-                ex, ey = eye_rect.centerx, eye_rect.centery
-                pygame.draw.ellipse(surf, (220, 220, 220), (eye_rect.x + 3, eye_rect.y + 4, eye_rect.w - 6, eye_rect.h - 8), 1)
-                pygame.draw.circle(surf, (220, 220, 220) if visible else (120, 120, 120), (ex, ey), 3)
-                if not visible:
-                    pygame.draw.line(surf, (200, 80, 80), (eye_rect.left + 3, eye_rect.bottom - 3), (eye_rect.right - 3, eye_rect.top + 3), 2)
+                draw_eye_button(surf, eye_rect, visible)
             else:
                 # Render template id as text; N/A in amber, dim if hidden
                 visible = True
@@ -175,26 +169,11 @@ class VisualsView:
                 t3 = font.render(str(tpl_id), True, c3)
                 surf.blit(t3, (col3_x, ry))
                 # Folder
-                pygame.draw.rect(surf, (60, 60, 60), browse_rect)
-                pygame.draw.rect(surf, (150, 150, 150), browse_rect, 1)
-                bx, by = browse_rect.x + 3, browse_rect.y + 3
-                pygame.draw.rect(surf, (230, 200, 120), (bx, by + 4, browse_rect.w - 6, browse_rect.h - 8), 0)
-                pygame.draw.rect(surf, (160, 130, 60), (bx, by + 4, browse_rect.w - 6, browse_rect.h - 8), 1)
-                pygame.draw.rect(surf, (230, 200, 120), (bx + 2, by + 2, 8, 6), 0)
+                draw_folder_button(surf, browse_rect)
                 # Eye
-                pygame.draw.rect(surf, (60, 60, 60), eye_rect)
-                pygame.draw.rect(surf, (150, 150, 150), eye_rect, 1)
-                ex, ey = eye_rect.centerx, eye_rect.centery
-                pygame.draw.ellipse(surf, (220, 220, 220), (eye_rect.x + 3, eye_rect.y + 4, eye_rect.w - 6, eye_rect.h - 8), 1)
-                pygame.draw.circle(surf, (220, 220, 220) if visible else (120, 120, 120), (ex, ey), 3)
-                if not visible:
-                    pygame.draw.line(surf, (200, 80, 80), (eye_rect.left + 3, eye_rect.bottom - 3), (eye_rect.right - 3, eye_rect.top + 3), 2)
+                draw_eye_button(surf, eye_rect, visible)
                 # Clear (X)
-                pygame.draw.rect(surf, (60, 60, 60), clear_rect)
-                pygame.draw.rect(surf, (150, 150, 150), clear_rect, 1)
-                cx, cy = clear_rect.centerx, clear_rect.centery
-                pygame.draw.line(surf, (220, 120, 120), (cx - 4, cy - 4), (cx + 4, cy + 4), 2)
-                pygame.draw.line(surf, (220, 120, 120), (cx - 4, cy + 4), (cx + 4, cy - 4), 2)
+                draw_clear_button(surf, clear_rect)
 
             # Hover highlight (orange border) over full row
             try:

@@ -1,1 +1,26 @@
-{}
+{
+  "2439224b-9e74-4448-8fe1-a4fe4865106c": {
+    "item_id": "experience_orb",
+    "quantity": 1,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "z_layer": 3,
+    "position": {
+      "x": 1009,
+      "y": 2122
+    },
+    "created_at": 1757795355.1556022
+  },
+  "f2d5ce08-255a-4984-b966-10733d31436c": {
+    "item_id": "experience_orb",
+    "quantity": 1,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "z_layer": 3,
+    "position": {
+      "x": 1187,
+      "y": 2358
+    },
+    "created_at": 1757795356.797595
+  }
+}
