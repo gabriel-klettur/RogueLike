@@ -207,6 +207,13 @@ class RendererManager:
         # 8) Minimap
         @benchmark(perf_log, "3.8. minimap")
         def _bench_minimap():
+            # Do not render minimap when any editor/UI that takes focus is visible, including Spawner Editor
+            spawner_editor_active = False
+            try:
+                w = self.ecs.ecs_world
+                spawner_editor_active = bool(getattr(getattr(w, 'state', None), 'spawner_editor_active', False))
+            except Exception:
+                spawner_editor_active = False
             if (
                 not self.tiles_editor.editor_state.active
                 and not self.buildings_editor.editor_state.active
@@ -218,6 +225,7 @@ class RendererManager:
                 and not getattr(state, 'fsm_editor_visible', False)
                 and not getattr(state, 'class_selector_visible', False)
                 and not (menu and getattr(menu, 'show_menu', False))
+                and not spawner_editor_active
             ):
                 self._render_minimap(screen)
         _bench_minimap()

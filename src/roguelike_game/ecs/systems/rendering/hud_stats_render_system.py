@@ -72,6 +72,13 @@ class HUDStatsRenderSystem:
             # No mostrar HUD cuando UI de menú/selector esté activa
             if bool(getattr(world, 'suppress_hud', False)):
                 return
+            # Ocultar HUD también cuando el Spawner Editor esté activo
+            try:
+                state = getattr(world, 'state', None)
+                if state and getattr(state, 'spawner_editor_active', False):
+                    return
+            except Exception:
+                pass
             player_eid = self._find_player_eid(world)
             if player_eid is None:
                 return

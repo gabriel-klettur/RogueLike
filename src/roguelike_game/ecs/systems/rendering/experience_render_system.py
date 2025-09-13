@@ -15,6 +15,9 @@ class ExperienceRenderSystem:
     def update(self, world, screen, camera):
         # Ocultar barra de experiencia si hay UIs que deben tomar el foco
         state = getattr(world, 'state', None)
+        # Spawner Editor activo
+        if state and getattr(state, 'spawner_editor_active', False):
+            return
         # Entities Editor activo
         if state and getattr(state, 'entities_editor_state', None) and state.entities_editor_state.visible:
             return

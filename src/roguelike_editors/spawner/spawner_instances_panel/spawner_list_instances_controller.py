@@ -23,6 +23,11 @@ class SpawnerListInstancesController:
             pass
         self.view = view or SpawnerListInstancesView()
         self.events = SpawnerListInstancesEventHandler()
+        # Narrower panel width for Instances list as requested (default is 720 in ListPanelView)
+        try:
+            setattr(self.model, 'panel_width', 420)
+        except Exception:
+            pass
         # Raw instances cache corresponding to rows in model.items
         self._instances: List[Dict[str, Any]] = []
         # Optional callback set by parent to react on selection change

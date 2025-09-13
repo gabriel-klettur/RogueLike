@@ -103,6 +103,17 @@ class Game:
             self.ecs.ecs_world.suppress_hud = bool((self.menu and getattr(self.menu, 'show_menu', False)) or getattr(self.state, 'class_selector_visible', False))
         except Exception:
             pass
+        # Propagar visibilidad del Spawner Editor para ocultar minimapa/HUD asociados
+        try:
+            w = self.ecs.ecs_world
+            if hasattr(w, 'state'):
+                setattr(
+                    w.state,
+                    'spawner_editor_active',
+                    bool(getattr(self, 'spawner_editor', None) and getattr(self.spawner_editor, 'model', None) and getattr(self.spawner_editor.model, 'visible', False))
+                )
+        except Exception:
+            pass
         self.renderer.render_game(
             self.state,
             self.screen,

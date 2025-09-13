@@ -44,9 +44,13 @@ class InstancePropertiesView:
             self.panel_rect = None
             self.content_height = 0
             return None
-        x, y = anchor
+        # Anchor to the right edge of the screen: ignore anchor.x, keep anchor.y
+        _, y = anchor
         width = 440
         height = 360
+        # Margin from right/top edges
+        margin_right = 20
+        x = max(0, int(screen.get_width() - width - margin_right))
         self.panel_rect = pygame.Rect(x, y, width, height)
         surf = pygame.Surface(self.panel_rect.size, pygame.SRCALPHA)
         surf.fill((24, 24, 24, 230))

@@ -39,6 +39,9 @@ class SpawnerEditorEventHandler:
         # Drag persistence snapshot
         # {'template_id': str, 'zone': str, 'local_tile': (int,int), 'overrides': dict | None, 'index': int | None}
         self._drag_start_entry: Optional[dict] = None
+        # Live info box dragging (RMB over info box rect)
+        self.info_dragging: bool = False
+        self.info_drag_offset: tuple[int, int] = (0, 0)
 
     # Public API ---------------------------------------------------------------
     def set_game(self, game) -> None:
@@ -56,6 +59,7 @@ class SpawnerEditorEventHandler:
             self.model.dragging_eid = None
             self.model.hovered_eid = None
             self.panning = False
+            self.info_dragging = False
             self._drag_start_entry = None
             try:
                 if world and hasattr(world, 'state'):
@@ -145,6 +149,44 @@ class SpawnerEditorEventHandler:
                     return True
             elif event.type in (pygame.MOUSEWHEEL, pygame.KEYDOWN, pygame.KEYUP):
                 return True
+
+        # Right-click drag for the live info box (when mouse on top of box)
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
+            try:
+                rect = getattr(getattr(world, 'state', None), 'spawner_info_rect', None)
+            except Exception:
+                rect = None
+            if rect is not None:
+                mx, my = event.pos
+                if rect.collidepoint(mx, my):
+                    self.info_dragging = True
+                    self.info_drag_offset = (mx - rect.left, my - rect.top)
+                    try:
+                        if hasattr(world, 'state'):
+                            setattr(world.state, 'spawner_input_suppressed', True)
+                    except Exception:
+                        pass
+                    return True
+
+        if event.type == pygame.MOUSEMOTION and self.info_dragging:
+            mx, my = event.pos
+            left = int(mx - self.info_drag_offset[0])
+            top = int(my - self.info_drag_offset[1])
+            try:
+                if hasattr(world, 'state'):
+                    setattr(world.state, 'spawner_info_pos', (left, top))
+            except Exception:
+                pass
+            return True
+
+        if event.type == pygame.MOUSEBUTTONUP and event.button == 3 and self.info_dragging:
+            self.info_dragging = False
+            try:
+                if hasattr(world, 'state'):
+                    setattr(world.state, 'spawner_input_suppressed', False)
+            except Exception:
+                pass
+            return True
 
         # Remove-mode: allow ESC to exit mode when no deletion is pending
         if event.type == pygame.KEYDOWN and getattr(self.model, 'remove_mode_active', False) and not getattr(self.model, 'pending_delete_confirm', None):
