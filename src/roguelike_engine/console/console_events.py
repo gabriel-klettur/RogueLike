@@ -21,23 +21,81 @@ class ConsoleEvents:
         - Cuando está cerrada, solo se intercepta la tecla de toggle y se deja pasar el resto.
         """
         # Toggle desde KEYDOWN incluso si está cerrada
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_BACKQUOTE:
-            self.controller.toggle()
-            return True
+        if event.type == pygame.KEYDOWN:
+            # Aceptar varias teclas equivalentes según layout (US/ES)
+            # Preferir scancode físico para independencia de layout
+            uni = getattr(event, 'unicode', '') or ''
+            key = event.key
+            sc = getattr(event, 'scancode', 0)
+            st = self.controller.state
+            is_toggle_key = (
+                sc == getattr(pygame, 'SCANCODE_GRAVE', -1)
+                or key == pygame.K_BACKQUOTE
+                or uni in ('`', '~', '´', '¨', 'º', 'ª')
+                # Si está abierta, también aceptar la misma firma con la que se abrió
+                or (st.is_open and (
+                    (st.toggle_scancode is not None and sc == st.toggle_scancode) or
+                    (st.toggle_key is not None and key == st.toggle_key) or
+                    (st.toggle_unicode is not None and uni == st.toggle_unicode)
+                ))
+            )
+            if is_toggle_key:
+                # Edge-triggered: evitar autorepeat; solo actuar en primera pulsación
+                if not st.toggle_held:
+                    # Si está cerrada y vamos a abrir, recordar la firma usada
+                    if not st.is_open:
+                        st.toggle_scancode = sc
+                        st.toggle_key = key
+                        st.toggle_unicode = uni if uni else None
+                    st.toggle_held = True
+                    self.controller.toggle()
+                return True
 
-        # Si la consola NO está abierta, no consumir nada más (permite gameplay)
+        # Si la consola NO está abierta, aún podemos aceptar TEXTINPUT para layouts que no
+        # emiten unicode en KEYDOWN para la tecla de acento (ES):
         if not self.controller.state.is_open:
+            if event.type == pygame.TEXTINPUT:
+                txt = getattr(event, 'text', '') or ''
+                if txt in ('`', '~', '´', '¨', 'º', 'ª'):
+                    # Recordar firma por unicode cuando abrimos por TEXTINPUT
+                    st = self.controller.state
+                    st.toggle_scancode = None
+                    st.toggle_key = None
+                    st.toggle_unicode = txt
+                    self.controller.toggle()
+                    return True
             # Escape cuando está cerrada no se consume, para que lo maneje el juego/menú
             return False
 
         # A partir de aquí, la consola está ABIERTA y debemos consumir teclado
-        # Consumir TEXTINPUT primero (Unicode / pegado)
+        # Consumir TEXTINPUT primero (Unicode / pegado). No cerrar aquí para evitar
+        # doble toggle en teclas que emiten texto además de KEYDOWN.
         if event.type == pygame.TEXTINPUT:
-            self.controller.add_text(getattr(event, 'text', ''))
+            txt = getattr(event, 'text', '') or ''
+            st = self.controller.state
+            # Si el texto corresponde a la tecla de toggle, consumir SIN escribir
+            if txt in ('`', '~', '´', '¨', 'º', 'ª') or (st.toggle_unicode and txt == st.toggle_unicode):
+                return True
+            self.controller.add_text(txt)
             return True
 
-        # Consumir KEYUP sin más (evita activar gameplay por suelta de tecla)
+        # Manejar texto en composición (dead keys envían TEXTEDITING en algunos layouts)
+        if getattr(pygame, 'TEXTEDITING', None) is not None and event.type == pygame.TEXTEDITING:
+            # Consumir para evitar que gameplay reaccione durante composición, sin toggle
+            return True
+
+        # Consumir KEYUP y liberar la tecla de toggle para permitir siguiente flanco
         if event.type == pygame.KEYUP:
+            key = event.key
+            sc = getattr(event, 'scancode', 0)
+            st = self.controller.state
+            if (
+                sc == getattr(pygame, 'SCANCODE_GRAVE', -1)
+                or key == pygame.K_BACKQUOTE
+                or (st.toggle_scancode is not None and sc == st.toggle_scancode)
+                or (st.toggle_key is not None and key == st.toggle_key)
+            ):
+                st.toggle_held = False
             return True
 
         if event.type != pygame.KEYDOWN:

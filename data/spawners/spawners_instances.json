@@ -11,27 +11,27 @@
     },
     "visuals": {
       "AwaitTrigger": {
-        "instance_id": 141,
+        "instance_id": 139,
         "template_id": 157
       },
       "SpawningWave": {
-        "instance_id": 142,
+        "instance_id": 140,
         "template_id": 155
       },
       "WaitCooldown": {
-        "instance_id": 142,
+        "instance_id": 140,
         "template_id": 155
       },
       "WaitClear": {
-        "instance_id": 141,
+        "instance_id": 139,
         "template_id": 157
       },
       "Finished": {
-        "instance_id": 141,
+        "instance_id": 139,
         "template_id": 157
       },
       "WaitRestart": {
-        "instance_id": 142,
+        "instance_id": 140,
         "template_id": 155
       }
     },

@@ -90,9 +90,14 @@ class FireballSystem:
                     # Inmortalidad del jugador en godmode
                     is_player = target in world.components.get('PlayerTagComponent', {})
                     godmode = bool(getattr(getattr(world, 'state', None), 'godmode', False)) and is_player
+                    # One-shot si el caster es jugador y godmode activo
+                    gm_attacker = bool(getattr(getattr(world, 'state', None), 'godmode', False)) and (comp.caster in world.components.get('PlayerTagComponent', {}))
                     if not godmode:
                         hp = world.components['Health'][target]
-                        hp.current_hp = max(0, hp.current_hp - comp.damage)
+                        if gm_attacker:
+                            hp.current_hp = 0
+                        else:
+                            hp.current_hp = max(0, hp.current_hp - comp.damage)
                     # Registrar último atacante para atribuir KO si entra en UnconsciousState (solo si aplica daño)
                     if not godmode:
                         world.components.setdefault('LastAttacker', {})[target] = LastAttacker(comp.caster, time.time())

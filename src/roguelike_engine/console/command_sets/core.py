@@ -106,7 +106,7 @@ def register_core_commands(registry: 'CommandRegistry', game: Optional[Any] = No
     registry.register(
         'godmode', godmode_cmd,
         usage='godmode [on|off|toggle]',
-        help='Activa/desactiva modo dios: sin coste de maná, inmortalidad y dash infinito.',
+        help='Activa/desactiva modo dios: sin coste de maná, invulnerabilidad total y one-shot en ataques del jugador, además de dash infinito.',
         category='system',
         aliases=['/godmode']
     )

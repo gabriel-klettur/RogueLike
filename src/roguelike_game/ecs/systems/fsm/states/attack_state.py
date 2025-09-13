@@ -95,24 +95,27 @@ class AttackState(State):
                 # establecer primera oportunidad tras 1s
                 cd_map[eid] = NPCAttackCooldown(next_time=now + 1)
             elif now >= cd.next_time:
-                # aplicar daño al jugador
-                ph = world.components['Health'][world.player_entity]
-                ph.current_hp = max(0, ph.current_hp - 10)
-                # publicar eventos FSM para que el jugador entre a DamageState
-                try:
-                    attacker_pos = pos
-                    defender_pos = player_pos
-                    from_left = attacker_pos.x < defender_pos.x
-                    qmap = world.components.setdefault('FSMEventQueue', {})
-                    q = qmap.setdefault(world.player_entity, [])
-                    q.append({"type": "OnHit", "from_left": from_left})
-                    if ph.current_hp <= 0:
-                        q.append({"type": "OnDeath"})
-                    # Break player's combo upon taking damage
-                    combo_q = world.components.setdefault('ComboEventQueue', [])
-                    combo_q.append({'type': 'break', 'entity': world.player_entity})
-                except Exception:
-                    pass
+                # respetar godmode: no aplicar daño ni eventos si jugador es inmortal
+                godmode = bool(getattr(getattr(world, 'state', None), 'godmode', False))
+                if not godmode:
+                    # aplicar daño al jugador
+                    ph = world.components['Health'][world.player_entity]
+                    ph.current_hp = max(0, ph.current_hp - 10)
+                    # publicar eventos FSM para que el jugador entre a DamageState
+                    try:
+                        attacker_pos = pos
+                        defender_pos = player_pos
+                        from_left = attacker_pos.x < defender_pos.x
+                        qmap = world.components.setdefault('FSMEventQueue', {})
+                        q = qmap.setdefault(world.player_entity, [])
+                        q.append({"type": "OnHit", "from_left": from_left})
+                        if ph.current_hp <= 0:
+                            q.append({"type": "OnDeath"})
+                        # Break player's combo upon taking damage
+                        combo_q = world.components.setdefault('ComboEventQueue', [])
+                        combo_q.append({'type': 'break', 'entity': world.player_entity})
+                    except Exception:
+                        pass
                 # reset cooldown
                 cd_map[eid] = NPCAttackCooldown(next_time=now + 1)
             return

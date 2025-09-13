@@ -21,6 +21,13 @@ class ConsoleState:
         self.cursor_pos: int = 0
         self.max_lines: int = max_lines
         self.history_scroll: int = 0
+        # Firma de tecla usada para abrir la consola: permite cerrar con la misma
+        self.toggle_scancode: int | None = None
+        self.toggle_key: int | None = None
+        self.toggle_unicode: str | None = None
+        # Estado de retención de la tecla de toggle (para ignorar autorepeat y
+        # que el toggle sea por flanco de bajada)
+        self.toggle_held: bool = False
 
     def add_line(self, line: str) -> None:
         """Añade una línea al historial y mantiene el límite de max_lines."""

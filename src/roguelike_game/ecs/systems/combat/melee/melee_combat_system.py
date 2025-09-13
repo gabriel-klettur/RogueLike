@@ -43,6 +43,15 @@ class MeleeCombatSystem:
             # Cálculo de daño neto (no negativo)
             raw_damage = attacker_stats.power + weapon_bonus - defender_stats.defense
             damage = max(0, raw_damage)
+            # One-shot si atacante es el jugador y godmode está activo
+            is_player_attacker = intent.attacker in world.components.get('PlayerTagComponent', {})
+            try:
+                gm_attacker = bool(getattr(getattr(world, 'state', None), 'godmode', False)) and is_player_attacker
+            except Exception:
+                gm_attacker = False
+            if gm_attacker:
+                # Ajustar daño para reducir HP del objetivo a 0 en este impacto
+                damage = max(damage, defender_stats.current_hp)
             
             # Inmortalidad del jugador en godmode
             is_player_target = intent.target in world.components.get('PlayerTagComponent', {})

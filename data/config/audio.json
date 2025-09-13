@@ -1,7 +1,7 @@
 {
-  "music": 0.6,
-  "ambient": 0.2725880551301684,
-  "sfx": 0.41347626339969373,
+  "music": 0.0,
+  "ambient": 0.0,
+  "sfx": 0.0,
   "tracks": {
     "menu_intro": {
       "path": "assets/audio/music/intro_theme.mp3",

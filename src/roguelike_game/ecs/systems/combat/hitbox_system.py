@@ -135,8 +135,13 @@ class HitboxSystem:
                 is_player_target = target in world.components.get('PlayerTagComponent', {})
                 godmode = bool(getattr(getattr(world, 'state', None), 'godmode', False)) and is_player_target
                 health = healths[target]
+                # One-shot si atacante es jugador y godmode activo
+                gm_attacker = bool(getattr(getattr(world, 'state', None), 'godmode', False)) and (hb.owner in world.components.get('PlayerTagComponent', {}))
                 if not godmode:
-                    health.current_hp = max(0, health.current_hp - hb.damage)
+                    if gm_attacker:
+                        health.current_hp = 0
+                    else:
+                        health.current_hp = max(0, health.current_hp - hb.damage)
                     # record last attacker for KO attribution
                     world.components.setdefault('LastAttacker', {})[target] = LastAttacker(hb.owner, time.time())
                 hb.hit_targets.add(target)
