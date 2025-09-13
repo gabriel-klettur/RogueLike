@@ -3,18 +3,60 @@
   "player": {
     "level": "global_map",
     "pos": [
-      29,
-      64
+      123,
+      61
     ]
   },
-  "npcs": {},
+  "npcs": {
+    "2b345b9c-f708-4f51-ac53-e573ce066e91": {
+      "level": "global_map",
+      "tile": [
+        120,
+        57
+      ],
+      "hp": 50,
+      "dead": false,
+      "prototype": "vendor_alchemist_valeria"
+    },
+    "acedf917-a605-4d15-b247-bbd96b83abe7": {
+      "level": "global_map",
+      "tile": [
+        116,
+        65
+      ],
+      "hp": 0,
+      "dead": true,
+      "prototype": "vendor_wood_gatita"
+    }
+  },
   "levels": {
     "global_map": {
       "player_pos": [
-        29,
-        64
+        123,
+        61
       ],
-      "npc_states": {}
+      "npc_states": {
+        "2b345b9c-f708-4f51-ac53-e573ce066e91": {
+          "level": "global_map",
+          "tile": [
+            120,
+            57
+          ],
+          "hp": 50,
+          "dead": false,
+          "prototype": "vendor_alchemist_valeria"
+        },
+        "acedf917-a605-4d15-b247-bbd96b83abe7": {
+          "level": "global_map",
+          "tile": [
+            116,
+            65
+          ],
+          "hp": 0,
+          "dead": true,
+          "prototype": "vendor_wood_gatita"
+        }
+      }
     }
   },
   "player_inventory": {
@@ -46,11 +88,31 @@
       null
     ]
   },
-  "npc_inventories": {},
+  "npc_inventories": {
+    "2b345b9c-f708-4f51-ac53-e573ce066e91": {
+      "player_id": "c2a7f3a4-5f6b-4b8a-92b3-8a4dd6fb2e11",
+      "capacity": 20,
+      "slots": [
+        {
+          "item": "health_potion",
+          "quantity": 40
+        },
+        {
+          "item": "gold",
+          "quantity": 300
+        }
+      ]
+    },
+    "acedf917-a605-4d15-b247-bbd96b83abe7": {
+      "player_id": null,
+      "capacity": 20,
+      "slots": []
+    }
+  },
   "meta": {
     "name": "partida_2025-09-12_01-49-08",
     "created_at": "2025-09-12T01:49:08",
-    "last_played": "2025-09-13T20:29:18",
+    "last_played": "2025-09-13T22:07:44",
     "player": {
       "xp": 70,
       "level": 4

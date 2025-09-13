@@ -1,1 +1,60 @@
-{}
+{
+  "2b345b9c-f708-4f51-ac53-e573ce066e91": {
+    "template_id": "c2a7f3a4-5f6b-4b8a-92b3-8a4dd6fb2e11",
+    "slots": [
+      {
+        "item": "health_potion",
+        "quantity": 40
+      },
+      {
+        "item": "gold",
+        "quantity": 300
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "acedf917-a605-4d15-b247-bbd96b83abe7": {
+    "template_id": null,
+    "slots": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  }
+}

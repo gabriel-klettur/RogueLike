@@ -1,0 +1,8 @@
+{
+  "template_id": "c2a7f3a4-5f6b-4b8a-92b3-8a4dd6fb2e11",
+  "slots": [
+    { "item": "health_potion", "quantity": 40 },
+    { "item": "gold", "quantity": 300 }
+  ],
+  "schema_version": "1.0.0"
+}

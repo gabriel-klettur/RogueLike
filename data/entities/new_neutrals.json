@@ -2,7 +2,7 @@
   "neutrals": {
     "classes": {
       "vendor_wood_gatita": {
-        "default_name": "Gatita",        
+        "default_name": "Gatita",
         "stats": {
           "hp": 50,
           "speed": 0.8,
@@ -69,46 +69,95 @@
               "w": "assets/npc/neutral/vendors/wooden/gatita_chanchita/normal/gatitachanchita_left.png",
               "sw": null
             },
-            "attack": {
-              "s": null,
+            "attack": {"s": null, "se": null, "e": null, "ne": null, "n": null, "nw": null, "w": null, "sw": null},
+            "death": {"s": null, "se": null, "e": null, "ne": null, "n": null, "nw": null, "w": null, "sw": null},
+            "damage": {"s": null, "se": null, "e": null, "ne": null, "n": null, "nw": null, "w": null, "sw": null},
+            "casting": {"s": null, "se": null, "e": null, "ne": null, "n": null, "nw": null, "w": null, "sw": null},
+            "sprites_data_no-set": {
+              "scale_idle": 0.05,
+              "scale_walk": 0.05,
+              "scale_chase": 0.05,
+              "scale_cast": 0.05,
+              "scale_attack": 0.05,
+              "scale_damage": 0.05,
+              "scale_death": 0.05,
+              "tint": null
+            }
+          }
+        }
+      },
+      "vendor_alchemist_valeria": {
+        "default_name": "Valeria",
+        "stats": {
+          "hp": 50,
+          "speed": 0.8,
+          "faction": "NEUTRAL",
+          "aggro_range": 0,
+          "chat_range": 2,
+          "melee_range": 0,
+          "melee_damage": 0,
+          "melee_cooldown": 999.0,
+          "defense": 0,
+          "power": 0,
+          "damage_duration": 0.0,
+          "chasing_speed": 0.0,
+          "feet_width_factor": 0.5,
+          "feet_height_factor": 0.2,
+          "spawn_padding": 0,
+          "spawn_count": 1,
+          "spawn_margin": 0,
+          "death_dissapear_time": 9999.0
+        },
+        "fsm_set": null,
+        "patrol": null,
+        "assets": {
+          "active_set": "no-sets",
+          "sets": {
+            "sprites_set": {
+              "idle": [],
+              "walk": [],
+              "chase": [],
+              "cast": [],
+              "attack": [],
+              "damage": [],
+              "death": []
+            },
+            "sprites_data_set": {
+              "scale_idle": 0.15,
+              "scale_walk": 0.15,
+              "scale_chase": 0.15,
+              "scale_cast": 0.15,
+              "scale_attack": 0.15,
+              "scale_damage": 0.15,
+              "scale_death": 0.15,
+              "tint": null
+            }
+          },
+          "no-sets": {
+            "idle": {
+              "s": "assets/npc/neutral/vendors/alchemist/normal/valeria_alchemist.png",
               "se": null,
-              "e": null,
+              "e": "assets/npc/neutral/vendors/alchemist/normal/valeria_alchemist.png",
               "ne": null,
-              "n": null,
+              "n": "assets/npc/neutral/vendors/alchemist/normal/valeria_alchemist.png",
               "nw": null,
-              "w": null,
+              "w": "assets/npc/neutral/vendors/alchemist/normal/valeria_alchemist.png",
               "sw": null
             },
-            "death": {
-              "s": null,
+            "walk": {
+              "s": "assets/npc/neutral/vendors/alchemist/normal/valeria_alchemist.png",
               "se": null,
-              "e": null,
+              "e": "assets/npc/neutral/vendors/alchemist/normal/valeria_alchemist.png",
               "ne": null,
-              "n": null,
+              "n": "assets/npc/neutral/vendors/alchemist/normal/valeria_alchemist.png",
               "nw": null,
-              "w": null,
+              "w": "assets/npc/neutral/vendors/alchemist/normal/valeria_alchemist.png",
               "sw": null
             },
-            "damage": {
-              "s": null,
-              "se": null,
-              "e": null,
-              "ne": null,
-              "n": null,
-              "nw": null,
-              "w": null,
-              "sw": null
-            },
-            "casting": {
-              "s": null,
-              "se": null,
-              "e": null,
-              "ne": null,
-              "n": null,
-              "nw": null,
-              "w": null,
-              "sw": null
-            },
+            "attack": {"s": null, "se": null, "e": null, "ne": null, "n": null, "nw": null, "w": null, "sw": null},
+            "death": {"s": null, "se": null, "e": null, "ne": null, "n": null, "nw": null, "w": null, "sw": null},
+            "damage": {"s": null, "se": null, "e": null, "ne": null, "n": null, "nw": null, "w": null, "sw": null},
+            "casting": {"s": null, "se": null, "e": null, "ne": null, "n": null, "nw": null, "w": null, "sw": null},
             "sprites_data_no-set": {
               "scale_idle": 0.05,
               "scale_walk": 0.05,

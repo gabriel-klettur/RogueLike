@@ -8,5 +8,10 @@
     "persona_id": "vendor_wood_gatita",
     "role": "vendor",
     "chat_range": 2
+  },
+  "Valeria": {
+    "persona_id": "vendor_alchemist_valeria",
+    "role": "vendor",
+    "chat_range": 2
   }
 }

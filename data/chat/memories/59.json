@@ -1,0 +1,14 @@
+{
+  "friendship_score": 0,
+  "ephemeral_history": [
+    {
+      "role": "user",
+      "content": "hola Valeria, quien eres/"
+    },
+    {
+      "role": "assistant",
+      "content": "¡Hola, tesoro! Soy Valeria, la apotecaria del pueblo y alquimista de pociones curativas. Mi oficio es darte pociones de calidad a precios justos."
+    }
+  ],
+  "preferred_language": "es"
+}

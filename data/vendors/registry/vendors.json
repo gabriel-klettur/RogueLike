@@ -6,6 +6,14 @@
       "seed_group": "vendor_wood",
       "economy_group": "vendor_wood",
       "prices_override": {}
+    },
+    "valeria": {
+      "seed_specific": "data/vendors/inventory_seed/inventory_vendor_alchemist_valeria.json",
+      "seed_group": "vendor_alchemist",
+      "economy_group": "vendor_alchemist",
+      "prices_override": {
+        "health_potion": {"buy": 25, "sell": 25}
+      }
     }
   }
 }

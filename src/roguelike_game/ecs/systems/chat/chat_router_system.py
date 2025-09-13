@@ -3,6 +3,8 @@ import json
 import logging
 from pathlib import Path
 import os
+import uuid
+from datetime import datetime
 import pygame
 from roguelike_game.ecs.systems.chat.chat_bubble_utils import push_bubble
 from roguelike_engine.chat.service.chat_service import ChatService, ChatJob
@@ -33,12 +35,36 @@ class ChatRouterSystem:
         self._worker = ChatAsyncWorker.instance()
         self._latest_job_for_target: dict[int, str] = {}
         self._job_meta: dict[str, dict] = {}
+        # Memory & session logging
+        try:
+            self._mem_store = MemoryStore(getattr(self, '_root', Path('.')))
+        except Exception:
+            self._mem_store = None
+        try:
+            self._session_id = uuid.uuid4().hex[:8]
+            self._log_dir = getattr(self, '_root', Path('.')) / 'logs' / 'chat_sessions'
+            os.makedirs(self._log_dir, exist_ok=True)
+        except Exception:
+            self._log_dir = None
         # Scheduler interno para mensajes troceados (chat + burbujas)
         # Cada item: {due:int(ms), type:'chat'|'bubble', data:{...}}
         self._scheduled: list[dict] = []
         # Confirmaciones pendientes por target_eid
         # Valor: {'op': 'buy'|'sell', 'item': str, 'qty': int}
         self._pending_confirms: dict[int, dict] = {}
+
+    # --- Logging helper ------------------------------------------------------
+    def _log_line(self, npc_eid: int, sender: str, text: str) -> None:
+        try:
+            if not self._log_dir:
+                return
+            # Un archivo por sesión y por NPC
+            fname = f"sess-{self._session_id}_npc-{int(npc_eid)}.log"
+            path = self._log_dir / fname
+            with path.open('a', encoding='utf-8') as f:
+                f.write(f"[{datetime.now().isoformat(timespec='seconds')}] {sender}: {text}\n")
+        except Exception:
+            pass
 
     def update(self, world, *args):
         state = getattr(world, 'state', None)
@@ -79,6 +105,13 @@ class ChatRouterSystem:
         text = (msg or '').strip()
         if not text:
             return
+        # Persistir historial efímero del usuario y log de sesión
+        try:
+            if self._mem_store is not None and target_eid is not None:
+                self._mem_store.append_ephemeral(str(target_eid), 'user', text)
+            self._log_line(target_eid, 'USER', text)
+        except Exception:
+            pass
         # 0) Si hay confirmación pendiente para este target, interpretar sí/no
         pend = self._pending_confirms.get(target_eid)
         if pend:
@@ -95,7 +128,14 @@ class ChatRouterSystem:
                     elif op == 'sell':
                         self._vendor_sell(world, state, target_eid, item, qty)
                     else:
-                        state.chat_add_message('NPC', 'Operación no reconocida.')
+                        msg2 = 'Operación no reconocida.'
+                        state.chat_add_message('NPC', msg2)
+                        try:
+                            if self._mem_store is not None:
+                                self._mem_store.append_ephemeral(str(target_eid), 'assistant', msg2)
+                            self._log_line(target_eid, 'NPC', msg2)
+                        except Exception:
+                            pass
                 except Exception:
                     pass
                 return
@@ -105,6 +145,12 @@ class ChatRouterSystem:
                 cancel_txt = self._tr(lang, 'Operación cancelada.', 'Operation cancelled.')
                 state.chat_add_message('NPC', cancel_txt)
                 try:
+                    if self._mem_store is not None:
+                        self._mem_store.append_ephemeral(str(target_eid), 'assistant', cancel_txt)
+                    self._log_line(target_eid, 'NPC', cancel_txt)
+                except Exception:
+                    pass
+                try:
                     push_bubble(world, target_eid, cancel_txt, color=(255, 200, 200), ttl_ms=2000)
                 except Exception:
                     pass
@@ -113,6 +159,12 @@ class ChatRouterSystem:
             lang = self._lang_for(target_eid, state)
             ask = self._tr(lang, 'Por favor responde "sí" para confirmar o "no" para cancelar.', 'Please answer "yes" to confirm or "no" to cancel.')
             state.chat_add_message('NPC', ask)
+            try:
+                if self._mem_store is not None:
+                    self._mem_store.append_ephemeral(str(target_eid), 'assistant', ask)
+                self._log_line(target_eid, 'NPC', ask)
+            except Exception:
+                pass
             try:
                 push_bubble(world, target_eid, ask, color=(255, 235, 180), ttl_ms=2400)
             except Exception:
@@ -127,6 +179,12 @@ class ChatRouterSystem:
                 txt = self._vendor_stock(world, target_eid, item)
                 state.chat_add_message('NPC', txt)
                 try:
+                    if self._mem_store is not None:
+                        self._mem_store.append_ephemeral(str(target_eid), 'assistant', txt)
+                    self._log_line(target_eid, 'NPC', txt)
+                except Exception:
+                    pass
+                try:
                     push_bubble(world, target_eid, txt, color=(255,235,180), ttl_ms=2600)
                 except Exception:
                     pass
@@ -137,6 +195,12 @@ class ChatRouterSystem:
                 txt = self._vendor_stock(world, target_eid, item)
                 state.chat_add_message('NPC', txt)
                 try:
+                    if self._mem_store is not None:
+                        self._mem_store.append_ephemeral(str(target_eid), 'assistant', txt)
+                    self._log_line(target_eid, 'NPC', txt)
+                except Exception:
+                    pass
+                try:
                     push_bubble(world, target_eid, txt, color=(255,235,180), ttl_ms=2600)
                 except Exception:
                     pass
@@ -146,6 +210,12 @@ class ChatRouterSystem:
             if m_gold:
                 txt = self._vendor_gold(world, target_eid)
                 state.chat_add_message('NPC', txt)
+                try:
+                    if self._mem_store is not None:
+                        self._mem_store.append_ephemeral(str(target_eid), 'assistant', txt)
+                    self._log_line(target_eid, 'NPC', txt)
+                except Exception:
+                    pass
                 try:
                     push_bubble(world, target_eid, txt, color=(255,235,180), ttl_ms=2600)
                 except Exception:
@@ -159,6 +229,12 @@ class ChatRouterSystem:
                 out = self._vendor_restock(world, target_eid, item, qty)
                 state.chat_add_message('NPC', out)
                 try:
+                    if self._mem_store is not None:
+                        self._mem_store.append_ephemeral(str(target_eid), 'assistant', out)
+                    self._log_line(target_eid, 'NPC', out)
+                except Exception:
+                    pass
+                try:
                     push_bubble(world, target_eid, out, color=(200, 240, 200), ttl_ms=2400)
                 except Exception:
                     pass
@@ -168,6 +244,12 @@ class ChatRouterSystem:
                 qty = int(m2.group(2))
                 out = self._vendor_restock(world, target_eid, 'wood', qty)
                 state.chat_add_message('NPC', out)
+                try:
+                    if self._mem_store is not None:
+                        self._mem_store.append_ephemeral(str(target_eid), 'assistant', out)
+                    self._log_line(target_eid, 'NPC', out)
+                except Exception:
+                    pass
                 try:
                     push_bubble(world, target_eid, out, color=(200, 240, 200), ttl_ms=2400)
                 except Exception:
@@ -269,6 +351,12 @@ class ChatRouterSystem:
             result = vts.buy(world, vendor_eid, item_id, qty)
             state.chat_add_message('NPC', result)
             try:
+                if self._mem_store is not None:
+                    self._mem_store.append_ephemeral(str(vendor_eid), 'assistant', result)
+                self._log_line(vendor_eid, 'NPC', result)
+            except Exception:
+                pass
+            try:
                 push_bubble(world, vendor_eid, result, color=(255, 235, 180), ttl_ms=3000)
             except Exception:
                 pass
@@ -287,6 +375,12 @@ class ChatRouterSystem:
         try:
             result = vts.sell(world, vendor_eid, item_id, qty)
             state.chat_add_message('NPC', result)
+            try:
+                if self._mem_store is not None:
+                    self._mem_store.append_ephemeral(str(vendor_eid), 'assistant', result)
+                self._log_line(vendor_eid, 'NPC', result)
+            except Exception:
+                pass
             try:
                 push_bubble(world, vendor_eid, result, color=(255, 235, 180), ttl_ms=3000)
             except Exception:
@@ -388,6 +482,12 @@ class ChatRouterSystem:
         self._pending_confirms[vendor_eid] = {'op': op, 'item': item_norm, 'qty': int(qty)}
         state.chat_add_message('NPC', pre)
         try:
+            if self._mem_store is not None:
+                self._mem_store.append_ephemeral(str(vendor_eid), 'assistant', pre)
+            self._log_line(vendor_eid, 'NPC', pre)
+        except Exception:
+            pass
+        try:
             push_bubble(world, vendor_eid, pre, color=(255, 235, 180), ttl_ms=3200)
         except Exception:
             pass
@@ -435,6 +535,12 @@ class ChatRouterSystem:
                         txt = self._vendor_stock(world, target_eid, 'wood')
                         state.chat_add_message('NPC', txt)
                         try:
+                            if self._mem_store is not None:
+                                self._mem_store.append_ephemeral(str(target_eid), 'assistant', txt)
+                            self._log_line(target_eid, 'NPC', txt)
+                        except Exception:
+                            pass
+                        try:
                             push_bubble(world, target_eid, txt, color=(255,235,180), ttl_ms=2600)
                         except Exception:
                             pass
@@ -445,6 +551,13 @@ class ChatRouterSystem:
                 if not reply:
                     lang = self._lang_for(target_eid, state)
                     reply = self._tr(lang, 'No entiendo. Usa "buy N wood" o "sell N wood".', 'I don\'t understand. Use "buy N wood" or "sell N wood".')
+                # Persistir historial efímero del asistente y log (mensaje completo)
+                try:
+                    if self._mem_store is not None:
+                        self._mem_store.append_ephemeral(str(target_eid), 'assistant', reply)
+                    self._log_line(target_eid, 'NPC', reply)
+                except Exception:
+                    pass
                 # Programar respuesta en trozos de 8 palabras, con 3s entre partes
                 last_due, placeholder_idx = self._schedule_reply_chunks(
                     world,

@@ -1,5 +1,5 @@
 {
-  "c2557cdc-33f6-4996-ade7-172919f08f5d": {
+  "f4a33fb5-f66b-4195-afae-5d4d8a30fa3a": {
     "template_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
     "slots": [
       null,
@@ -25,11 +25,17 @@
     ],
     "schema_version": "1.0.0"
   },
-  "590943e1-525b-4ad2-aa0f-22311b1c5070": {
+  "06570ba7-a3dc-46ec-95b0-32ebfa5b4a24": {
     "template_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
     "slots": [
-      null,
-      null,
+      {
+        "item": "gold",
+        "quantity": 1
+      },
+      {
+        "item": "wood",
+        "quantity": 1
+      },
       null,
       null,
       null,

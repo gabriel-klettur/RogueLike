@@ -1,0 +1,14 @@
+{
+  "friendship_score": 0,
+  "ephemeral_history": [
+    {
+      "role": "user",
+      "content": "hola gatita"
+    },
+    {
+      "role": "assistant",
+      "content": "¡Hola, corazón! Soy Gatita, la vendedora de madera local. ¿Qué te gustaría llevar hoy?"
+    }
+  ],
+  "preferred_language": "es"
+}
