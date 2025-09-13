@@ -17,6 +17,8 @@ import logging
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.config.config_z_layer import Z_LAYERS, DEFAULT_Z
 from roguelike_engine.buildings.building import Building
+from roguelike_engine.config.config import BUILDINGS_INSTANCES_PATH, BUILDINGS_TEMPLATES_PATH
+import pygame
 
 # Optional: FSM Editor bridge (for validation of set ids). Keep non-fatal.
 try:
@@ -342,6 +344,337 @@ class SpawnerPlacementSystem:
             state_visuals=state_visuals or None,
         )
 
+    # --- Auto-repair helpers -------------------------------------------------
+    def _load_buildings_instances_json(self) -> list[dict]:
+        try:
+            with open(BUILDINGS_INSTANCES_PATH, 'r', encoding='utf-8-sig') as f:
+                data = json.load(f)
+            return data if isinstance(data, list) else []
+        except FileNotFoundError:
+            return []
+        except Exception:
+            return []
+
+    def _write_buildings_instances_json(self, arr: list[dict]) -> None:
+        # Stable order by id
+        try:
+            arr.sort(key=lambda e: int(e.get('id') or 0))
+        except Exception:
+            pass
+        os.makedirs(os.path.dirname(BUILDINGS_INSTANCES_PATH), exist_ok=True)
+        with open(BUILDINGS_INSTANCES_PATH, 'w', encoding='utf-8') as f:
+            json.dump(arr or [], f, ensure_ascii=False, indent=4)
+
+    def _load_buildings_templates_json(self) -> list[dict]:
+        try:
+            with open(BUILDINGS_TEMPLATES_PATH, 'r', encoding='utf-8-sig') as f:
+                data = json.load(f)
+            return data if isinstance(data, list) else []
+        except FileNotFoundError:
+            return []
+        except Exception:
+            return []
+
+    def _get_template_image_path(self, templates: list[dict], template_id: int) -> str | None:
+        for t in templates:
+            try:
+                if int(t.get('id')) == int(template_id):
+                    assets = t.get('assets') if isinstance(t.get('assets'), dict) else {}
+                    path = assets.get('idle') or assets.get('image') or t.get('image')
+                    return str(path) if path else None
+            except Exception:
+                continue
+        return None
+
+    def _calc_centered_rel(self, local_tile: tuple[int, int], tpl_entry: dict | None, img_path: str | None) -> tuple[int, int, tuple[int, int] | None]:
+        # Base rel from tile top-left
+        rel_x = int(local_tile[0] * TILE_SIZE)
+        rel_y = int(local_tile[1] * TILE_SIZE)
+        spawn_cx = int(rel_x + (TILE_SIZE // 2))
+        spawn_cy = int(rel_y + (TILE_SIZE // 2))
+        # Desired scale
+        w = h = None
+        try:
+            if isinstance(tpl_entry, dict) and isinstance(tpl_entry.get('original_scale'), (list, tuple)):
+                oscale = tpl_entry['original_scale']
+                if len(oscale) >= 2:
+                    w, h = int(oscale[0]), int(oscale[1])
+        except Exception:
+            w = h = None
+        br = None
+        if img_path:
+            try:
+                surf = pygame.image.load(img_path)
+                if w is not None and h is not None and w > 0 and h > 0:
+                    surf = pygame.transform.scale(surf, (int(w), int(h)))
+                br = surf.get_bounding_rect(min_alpha=1)
+            except Exception:
+                br = None
+                # best effort: infer scale from image if none provided
+                if w is None or h is None:
+                    try:
+                        iw, ih = surf.get_size()  # type: ignore[name-defined]
+                        w, h = int(iw), int(ih)
+                    except Exception:
+                        w = h = None
+        # Center either bounding rect or full image
+        try:
+            if br is not None and br.w > 0 and br.h > 0:
+                rel_x = int(spawn_cx - (br.x + br.w // 2))
+                rel_y = int(spawn_cy - (br.y + br.h // 2))
+            elif w is not None and h is not None and w > 0 and h > 0:
+                rel_x = int(spawn_cx - (w // 2))
+                rel_y = int(spawn_cy - (h // 2))
+        except Exception:
+            pass
+        scale = (int(w), int(h)) if (w is not None and h is not None and w > 0 and h > 0) else None
+        return rel_x, rel_y, scale
+
+    def _append_building_object_in_world(self, world, inst_entry: dict, tpl_entry: dict | None, img_path: str | None) -> None:
+        try:
+            rel_x = int(inst_entry.get('rel_x') or 0)
+            rel_y = int(inst_entry.get('rel_y') or 0)
+            image_path = img_path or ''
+            solid = True
+            split_ratio = 0.5
+            z_bottom = None
+            z_top = None
+            scale = None
+            if isinstance(tpl_entry, dict):
+                solid = bool(tpl_entry.get('solid', True))
+                try:
+                    split_ratio = float(tpl_entry.get('split_ratio', 0.5))
+                except Exception:
+                    split_ratio = 0.5
+                z_bottom = tpl_entry.get('z_bottom')
+                z_top = tpl_entry.get('z_top')
+            try:
+                if isinstance(inst_entry.get('overrides'), dict) and isinstance(inst_entry['overrides'].get('scale'), (list, tuple)):
+                    sc = inst_entry['overrides']['scale']
+                    if len(sc) >= 2:
+                        scale = (int(sc[0]), int(sc[1]))
+            except Exception:
+                scale = None
+            b = Building(
+                rel_x=rel_x,
+                rel_y=rel_y,
+                image_path=image_path,
+                solid=solid,
+                scale=scale,
+                split_ratio=split_ratio,
+                z_bottom=z_bottom,
+                z_top=z_top,
+            )
+            # Bind identifiers and zone
+            try:
+                setattr(b, 'id', inst_entry.get('id'))
+            except Exception:
+                pass
+            try:
+                setattr(b, 'zone', inst_entry.get('zone'))
+            except Exception:
+                pass
+            # Tag as spawner visual for renderer/debug
+            try:
+                setattr(b, '_is_spawner_visual', True)
+                sid = inst_entry.get('spawner_instance_id') or (inst_entry.get('overrides') or {}).get('spawner_instance_id')
+                if sid is not None:
+                    setattr(b, 'spawner_instance_id', sid)
+                    setattr(b, 'spawn_id', sid)
+            except Exception:
+                pass
+            # Append to world
+            try:
+                if getattr(world, 'buildings', None) is None:
+                    world.buildings = []
+            except Exception:
+                pass
+            try:
+                # Avoid duplicate objects with same id
+                for ob in getattr(world, 'buildings', []) or []:
+                    if getattr(ob, 'id', None) == inst_entry.get('id'):
+                        return
+                world.buildings.append(b)
+            except Exception:
+                pass
+        except Exception:
+            pass
+
+    def _persist_spawner_instance_visuals(self, inst_id: str | None, visuals: dict, ensure_visible_in_game: bool = True) -> None:
+        if not inst_id:
+            return
+        base = config.DATA_DIR
+        path = os.path.join(base, "spawners", "spawners_instances.json")
+        try:
+            with open(path, 'r', encoding='utf-8-sig') as f:
+                data = json.load(f)
+            if not isinstance(data, list):
+                return
+        except FileNotFoundError:
+            return
+        except Exception:
+            return
+        changed = False
+        for i, e in enumerate(data):
+            try:
+                if str(e.get('id')) == str(inst_id):
+                    # write visuals dict back
+                    if e.get('visuals') != visuals:
+                        e['visuals'] = visuals
+                        changed = True
+                    if ensure_visible_in_game:
+                        ov = dict(e.get('overrides') or {})
+                        if not bool(ov.get('visible_in_game', False)):
+                            ov['visible_in_game'] = True
+                            e['overrides'] = ov
+                            changed = True
+                    break
+            except Exception:
+                continue
+        if changed:
+            try:
+                with open(path, 'w', encoding='utf-8') as f:
+                    json.dump(data, f, ensure_ascii=False, indent=4)
+            except Exception:
+                pass
+
+    def _auto_repair_state_visuals(self, world, eid: int, cfg: SpawnerConfig, inst: dict) -> None:
+        """Ensure that for any visuals mapping that has a valid template_id but missing/nonexistent instance_id,
+        we create a Building instance on disk and in-memory, update cfg.state_visuals, and persist visuals back to spawners_instances.json.
+        """
+        vis = inst.get('visuals') if isinstance(inst, dict) else None
+        if not isinstance(vis, dict) or not vis:
+            return
+        # Load buildings data and templates
+        b_arr = self._load_buildings_instances_json()
+        existing_ids = set()
+        max_id = 0
+        for e in b_arr:
+            try:
+                eid_ = int(e.get('id'))
+                existing_ids.add(eid_)
+                if eid_ > max_id:
+                    max_id = eid_
+            except Exception:
+                continue
+        templates = self._load_buildings_templates_json()
+        tmap = {}
+        for t in templates:
+            try:
+                tmap[int(t.get('id'))] = t
+            except Exception:
+                continue
+        # Determine zone and local tile for placement
+        try:
+            zone = str(inst.get('zone')) if inst.get('zone') is not None else 'lobby'
+        except Exception:
+            zone = 'lobby'
+        try:
+            local_tile = inst.get('tile') or (0, 0)
+            local_tile = (int(local_tile[0]), int(local_tile[1]))
+        except Exception:
+            local_tile = (0, 0)
+
+        # Track updated visuals to optionally persist
+        updated_visuals = False
+        # Ensure cfg.state_visuals is a dict we can mutate
+        if getattr(cfg, 'state_visuals', None) is None:
+            try:
+                cfg.state_visuals = {}
+            except Exception:
+                pass
+
+        for key, val in list(vis.items()):
+            # Parse instance_id and template_id from mapping
+            cur_iid = None
+            tpl_id = None
+            if isinstance(val, dict):
+                try:
+                    cur_iid = int(val.get('instance_id') or val.get('id') or val.get('building_instance_id'))
+                except Exception:
+                    cur_iid = None
+                try:
+                    tpl_id = int(val.get('template_id')) if val.get('template_id') is not None else None
+                except Exception:
+                    tpl_id = None
+            else:
+                # legacy int id mapping
+                try:
+                    cur_iid = int(val)
+                except Exception:
+                    cur_iid = None
+            # If instance id exists, keep and normalize cfg mapping
+            if cur_iid is not None and cur_iid in existing_ids:
+                try:
+                    cfg.state_visuals[str(key)] = int(cur_iid)
+                except Exception:
+                    pass
+                continue
+            # Need to create if we have a valid template id
+            if tpl_id is None or tpl_id not in tmap:
+                # Without a template we cannot repair; skip
+                continue
+            # Compute placement and optional scale
+            tpl_entry = tmap.get(tpl_id)
+            img_path = self._get_template_image_path(templates, tpl_id)
+            rel_x, rel_y, scale = self._calc_centered_rel(local_tile, tpl_entry, img_path)
+            new_id = max_id + 1
+            max_id = new_id
+            entry = {
+                'id': int(new_id),
+                'template_id': int(tpl_id),
+                'zone': zone,
+                'rel_x': int(rel_x),
+                'rel_y': int(rel_y),
+                'overrides': {
+                    '_is_spawner_visual': True,
+                },
+                'spawn_id': str(inst.get('id')) if inst.get('id') is not None else None,
+                'spawner_instance_id': str(inst.get('id')) if inst.get('id') is not None else None,
+            }
+            if scale is not None:
+                try:
+                    entry['overrides']['scale'] = [int(scale[0]), int(scale[1])]  # type: ignore[index]
+                except Exception:
+                    pass
+            # Propagate spawner_instance_id into overrides as well
+            try:
+                if inst.get('id') is not None:
+                    entry['overrides']['spawner_instance_id'] = str(inst.get('id'))
+            except Exception:
+                pass
+            # Append to buildings_instances.json and persist
+            b_arr.append(entry)
+            try:
+                self._write_buildings_instances_json(b_arr)
+                existing_ids.add(int(new_id))
+            except Exception:
+                logger.warning("[SpawnerPlacementSystem] Could not persist buildings_instances for auto-repair")
+            # Ensure it exists in memory for immediate visibility
+            self._append_building_object_in_world(world, entry, tpl_entry, img_path)
+            # Update cfg/state + inst visuals mapping in-memory
+            try:
+                cfg.state_visuals[str(key)] = int(new_id)
+            except Exception:
+                pass
+            try:
+                vis[str(key)] = {'instance_id': int(new_id), 'template_id': int(tpl_id)}
+                updated_visuals = True
+            except Exception:
+                pass
+            # Ensure this spawner will try to render visuals
+            try:
+                if not getattr(cfg, 'visible_in_game', False):
+                    cfg.visible_in_game = True
+            except Exception:
+                pass
+        # Persist spawner visuals if we changed them
+        if updated_visuals:
+            try:
+                self._persist_spawner_instance_visuals(str(inst.get('id')) if inst.get('id') is not None else None, vis, ensure_visible_in_game=True)
+            except Exception:
+                pass
+
     def update(self, world, camera=None):
         # Robust option: allow MenuManager to request an empty start without spawners
         # by setting a transient flag on the ECS world. If present, consume it and
@@ -409,6 +742,12 @@ class SpawnerPlacementSystem:
             except Exception:
                 pass
             comps['SpawnerState'][eid] = st
+            # Auto-repair: ensure visual building instances exist for this spawner
+            try:
+                self._auto_repair_state_visuals(world, eid, cfg, inst)
+            except Exception:
+                # Never break game start on optional repair
+                logger.exception("[SpawnerPlacementSystem] auto-repair visuals failed", exc_info=False)
             # Optional runtime visualization: link to an existing Building by building_id
             if getattr(cfg, 'visible_in_game', False) and getattr(cfg, 'building_id', None) is not None:
                 inst_id = inst.get("id")
