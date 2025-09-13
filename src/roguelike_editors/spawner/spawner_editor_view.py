@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import pygame
+from roguelike_ui.ui_blocker import is_blocked
+from roguelike_editors.buildings.tools.z_tool.z_tool_view import ZToolView
+from roguelike_editors.buildings.tools.split_z_tool.split_tool_view import SplitToolView
 
 
 class SpawnerEditorView:
@@ -10,6 +13,23 @@ class SpawnerEditorView:
     """
     def __init__(self, controller):
         self.controller = controller
+        # Small font for ID label (lazy)
+        try:
+            self._id_font = pygame.font.Font(None, 16)
+        except Exception:
+            self._id_font = None
+        # Reuse Building Editor Z tool views for UI parity
+        try:
+            self._z_bottom_view = ZToolView(None, None, target="bottom")
+            self._z_top_view = ZToolView(None, None, target="top")
+        except Exception:
+            self._z_bottom_view = None
+            self._z_top_view = None
+        # Split bar view (visual split ratio control)
+        try:
+            self._split_view = SplitToolView(None, None)
+        except Exception:
+            self._split_view = None
 
     def render(self, screen: pygame.Surface) -> None:
         c = self.controller
@@ -29,6 +49,14 @@ class SpawnerEditorView:
             self._last_manager_rect = None
             self._last_instances_rect = None
             self._last_properties_rect = None
+            self._last_selected_delete_rect = None
+            self._last_selected_resize_rect = None
+            self._last_selected_reset_rect = None
+            self._last_z_bottom_minus_rect = None
+            self._last_z_bottom_plus_rect = None
+            self._last_z_top_minus_rect = None
+            self._last_z_top_plus_rect = None
+            self._last_split_handle_rect = None
         except Exception:
             pass
         # 1) Title bar (always renders with its own font)
@@ -239,6 +267,211 @@ class SpawnerEditorView:
                     ip.render_visuals_picker(screen, cam)
         except Exception:
             pass
+
+        # 7b) Draw hover (cyan) and selection (yellow) outlines for spawner-linked buildings
+        ip = getattr(c, 'instance_properties', None)
+        cam = getattr(c, 'game', None)
+        cam = getattr(cam, 'camera', None)
+        if ip is not None and cam is not None:
+                vmodel = getattr(ip, 'visuals', None)
+                vmodel = getattr(vmodel, 'model', None)
+                sel_bid = getattr(vmodel, 'selected_building_id', None) if vmodel else None
+                hov_bid = getattr(vmodel, 'hovered_building_id', None) if vmodel else None
+                # Per-frame fallback hover detection (robust if events were skipped)
+                try:
+                    mx, my = pygame.mouse.get_pos()
+                    ob_hover = ip.visuals.pick_visual_building_under_cursor(int(mx), int(my))
+                    if ob_hover is not None and getattr(ob_hover, 'id', None) is not None:
+                        hov_bid = int(getattr(ob_hover, 'id'))
+                except Exception:
+                    pass
+                # Choose which building to render overlays for: selected has priority, else hovered
+                target_bid = sel_bid if sel_bid is not None else hov_bid
+                # Draw hover first (cyan), unless it is the same as selected
+                if hov_bid is not None and hov_bid != sel_bid:
+                    ob_h = None
+                    try:
+                        ob_h = ip.visuals._find_building_entity_by_id(int(hov_bid))
+                        if ob_h is None:
+                            ip.visuals._ensure_building_loaded(int(hov_bid))
+                            ob_h = ip.visuals._find_building_entity_by_id(int(hov_bid))
+                    except Exception:
+                        ob_h = None
+                    if ob_h is not None:
+                        try:
+                            img = getattr(ob_h, 'image', getattr(getattr(ob_h, 'model', ob_h), 'image', None))
+                            x = getattr(ob_h, 'x', getattr(getattr(ob_h, 'model', ob_h), 'x', None))
+                            y = getattr(ob_h, 'y', getattr(getattr(ob_h, 'model', ob_h), 'y', None))
+                            if img is not None and x is not None and y is not None:
+                                sx, sy = cam.apply((x, y))
+                                sw, sh = cam.scale(img.get_size())
+                                rect = pygame.Rect(int(sx), int(sy), int(sw), int(sh))
+                                pygame.draw.rect(screen, (0, 255, 255), rect, 2)
+                        except Exception:
+                            pass
+                # Draw selection (yellow) on top
+                if sel_bid is not None:
+                    ob = None
+                    try:
+                        ob = ip.visuals._find_building_entity_by_id(int(sel_bid))
+                        if ob is None:
+                            ip.visuals._ensure_building_loaded(int(sel_bid))
+                            ob = ip.visuals._find_building_entity_by_id(int(sel_bid))
+                    except Exception:
+                        ob = None
+                    if ob is not None:                        
+                        img = getattr(ob, 'image', getattr(getattr(ob, 'model', ob), 'image', None))
+                        x = getattr(ob, 'x', getattr(getattr(ob, 'model', ob), 'x', None))
+                        y = getattr(ob, 'y', getattr(getattr(ob, 'model', ob), 'y', None))
+                        if img is not None and x is not None and y is not None:
+                            sx, sy = cam.apply((x, y))
+                            sw, sh = cam.scale(img.get_size())
+                            rect = pygame.Rect(int(sx), int(sy), int(sw), int(sh))
+                            pygame.draw.rect(screen, (255, 215, 0), rect, 5)
+                            # ID label like Building Editor
+                            try:
+                                if self._id_font is not None:
+                                    label = f"ID {int(sel_bid)}"
+                                    text_surf = self._id_font.render(label, True, (255, 255, 255))
+                                    shadow_surf = self._id_font.render(label, True, (0, 0, 0))
+                                    lx = rect.left
+                                    ly = rect.top - text_surf.get_height() - 2
+                                    if ly < 0:
+                                        ly = rect.top + 2
+                                    screen.blit(shadow_surf, (lx + 1, ly + 1))
+                                    screen.blit(text_surf, (lx, ly))
+                            except Exception:
+                                pass
+                            # Draw Delete (red), Reset (white), and Resize (blue) handles like Building Editor
+                            try:
+                                mouse_pos = pygame.mouse.get_pos()
+                                blocked = bool(is_blocked(*mouse_pos))
+                            except Exception:
+                                mouse_pos = (0, 0)
+                                blocked = False
+                            # Dynamic handle size ~10% of width (min 15, max 65)
+                            handle_size = max(15, min(65, int(sw * 0.10)))
+                            # Delete handle (leftmost of the trio)
+                            del_rect = pygame.Rect(rect.left + sw - 3 * handle_size, rect.top, handle_size, handle_size)
+                            try:
+                                self._last_selected_delete_rect = del_rect.copy()
+                            except Exception:
+                                self._last_selected_delete_rect = del_rect
+                            is_hover_del = (not blocked) and del_rect.collidepoint(mouse_pos)
+                            pygame.draw.rect(screen, (220, 40, 40), del_rect)
+                            pygame.draw.rect(screen, (0, 0, 0), del_rect, 2)
+                            if is_hover_del:
+                                pygame.draw.rect(screen, (255, 255, 0), del_rect, 4)
+                            pygame.draw.line(screen, (255, 255, 255), del_rect.topleft, del_rect.bottomright, 3)
+                            pygame.draw.line(screen, (255, 255, 255), del_rect.topright, del_rect.bottomleft, 3)
+                            # Reset handle (middle)
+                            rst_rect = pygame.Rect(rect.left + sw - 2 * handle_size, rect.top, handle_size, handle_size)
+                            try:
+                                self._last_selected_reset_rect = rst_rect.copy()
+                            except Exception:
+                                self._last_selected_reset_rect = rst_rect
+                            is_hover_rst = (not blocked) and rst_rect.collidepoint(mouse_pos)
+                            pygame.draw.rect(screen, (255, 255, 255), rst_rect)
+                            pygame.draw.rect(screen, (0, 0, 0), rst_rect, 2)
+                            if is_hover_rst:
+                                pygame.draw.rect(screen, (0, 255, 255), rst_rect, 4)
+                            try:
+                                dfont = pygame.font.SysFont("arial", int(handle_size * 0.6), bold=True)
+                                ds = dfont.render('D', True, (0, 0, 0))
+                                screen.blit(ds, ds.get_rect(center=rst_rect.center))
+                            except Exception:
+                                pass
+                            # Resize handle (rightmost)
+                            rz_rect = pygame.Rect(rect.left + sw - handle_size, rect.top, handle_size, handle_size)
+                            try:
+                                self._last_selected_resize_rect = rz_rect.copy()
+                            except Exception:
+                                self._last_selected_resize_rect = rz_rect
+                            is_hover_rz = (not blocked) and rz_rect.collidepoint(mouse_pos)
+                            pygame.draw.rect(screen, (80, 120, 255), rz_rect)
+                            pygame.draw.rect(screen, (0, 0, 0), rz_rect, 2)
+                            if is_hover_rz:
+                                pygame.draw.rect(screen, (255, 0, 255), rz_rect, 4)
+                            # Decorative ellipse + 'R'
+                            try:
+                                pygame.draw.ellipse(screen, (255, 255, 0), rz_rect, 5)
+                                rfont = pygame.font.SysFont("arial", int(handle_size * 0.8), bold=True)
+                                rs = rfont.render('R', True, (255, 255, 0))
+                                screen.blit(rs, rs.get_rect(center=rz_rect.center))
+                            except Exception:
+                                pass
+                            # Z toolbars (bottom/top) using Building Editor UI for parity
+                            try:
+                                if self._z_bottom_view is not None:
+                                    zb = self._z_bottom_view.render(screen, ob, cam)
+                                    if isinstance(zb, dict):
+                                        px, py = zb.get('panel_pos', (0, 0))
+                                        m = zb.get('minus_rect')
+                                        p = zb.get('plus_rect')
+                                        if m is not None:
+                                            self._last_z_bottom_minus_rect = pygame.Rect(px + m.x, py + m.y, m.w, m.h)
+                                        if p is not None:
+                                            self._last_z_bottom_plus_rect = pygame.Rect(px + p.x, py + p.y, p.w, p.h)
+                                if self._z_top_view is not None:
+                                    zt = self._z_top_view.render(screen, ob, cam)
+                                    if isinstance(zt, dict):
+                                        px, py = zt.get('panel_pos', (0, 0))
+                                        m = zt.get('minus_rect')
+                                        p = zt.get('plus_rect')
+                                        if m is not None:
+                                            self._last_z_top_minus_rect = pygame.Rect(px + m.x, py + m.y, m.w, m.h)
+                                        if p is not None:
+                                            self._last_z_top_plus_rect = pygame.Rect(px + p.x, py + p.y, p.w, p.h)
+                            except Exception:
+                                pass
+                            # Split ratio bar and handle
+                            try:
+                                if self._split_view is not None:
+                                    sret = self._split_view.render(screen, ob, cam)
+                                    if isinstance(sret, dict):
+                                        self._last_split_handle_rect = sret.get('handle_rect')
+                            except Exception:
+                                pass
+                # If nothing is selected, still render Z panels and split bar for hovered target
+                if sel_bid is None and target_bid is not None:
+                    ob_t = None
+                    try:
+                        ob_t = ip.visuals._find_building_entity_by_id(int(target_bid))
+                        if ob_t is None:
+                            ip.visuals._ensure_building_loaded(int(target_bid))
+                            ob_t = ip.visuals._find_building_entity_by_id(int(target_bid))
+                    except Exception:
+                        ob_t = None
+                    if ob_t is not None:
+                        try:
+                            # Draw Z panels
+                            if self._z_bottom_view is not None:
+                                zb = self._z_bottom_view.render(screen, ob_t, cam)
+                                if isinstance(zb, dict):
+                                    px, py = zb.get('panel_pos', (0, 0))
+                                    m = zb.get('minus_rect')
+                                    p = zb.get('plus_rect')
+                                    if m is not None:
+                                        self._last_z_bottom_minus_rect = pygame.Rect(px + m.x, py + m.y, m.w, m.h)
+                                    if p is not None:
+                                        self._last_z_bottom_plus_rect = pygame.Rect(px + p.x, py + p.y, p.w, p.h)
+                            if self._z_top_view is not None:
+                                zt = self._z_top_view.render(screen, ob_t, cam)
+                                if isinstance(zt, dict):
+                                    px, py = zt.get('panel_pos', (0, 0))
+                                    m = zt.get('minus_rect')
+                                    p = zt.get('plus_rect')
+                                    if m is not None:
+                                        self._last_z_top_minus_rect = pygame.Rect(px + m.x, py + m.y, m.w, m.h)
+                                    if p is not None:
+                                        self._last_z_top_plus_rect = pygame.Rect(px + p.x, py + p.y, p.w, p.h)
+                            # Split bar
+                            if self._split_view is not None:
+                                sret = self._split_view.render(screen, ob_t, cam)
+                                if isinstance(sret, dict):
+                                    self._last_split_handle_rect = sret.get('handle_rect')
+                        except Exception:
+                            pass
 
         # 6) Delete instance confirmation overlay
         try:

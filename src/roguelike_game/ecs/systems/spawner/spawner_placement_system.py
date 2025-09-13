@@ -455,6 +455,18 @@ class SpawnerPlacementSystem:
                         scale = (int(sc[0]), int(sc[1]))
             except Exception:
                 scale = None
+            # Apply per-instance overrides
+            try:
+                if isinstance(inst_entry.get('overrides'), dict) and (inst_entry['overrides'].get('split_ratio') is not None):
+                    try:
+                        sr = float(inst_entry['overrides']['split_ratio'])
+                        # clamp to safe range
+                        split_ratio = max(0.05, min(sr, 0.95))
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
             b = Building(
                 rel_x=rel_x,
                 rel_y=rel_y,

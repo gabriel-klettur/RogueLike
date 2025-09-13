@@ -91,6 +91,14 @@ class InstancePropertiesController:
             pass
 
     # --- API -----------------------------------------------------------------
+    def set_game(self, game) -> None:
+        """Provide access to game (camera/world) for visuals operations."""
+        try:
+            self.game = game
+        except Exception:
+            self.game = None
+        # No need to pass to visuals: it dereferences parent.game dynamically
+
     def set_instance(self, inst: Optional[Dict[str, Any]], *, index: Optional[int] = None) -> None:
         self.model.selected_instance = inst
         self.model.selected_index = index
@@ -141,6 +149,12 @@ class InstancePropertiesController:
         self._ensure_buildings_index()
         self._ensure_building_templates()
         self._build_visuals_rows()
+        # Clear any previous selection of a visual building when changing instance
+        try:
+            if hasattr(self, 'visuals') and getattr(self.visuals, 'model', None) is not None:
+                self.visuals.model.selected_building_id = None
+        except Exception:
+            pass
         # Garbage collect invalid building instances in JSON (e.g., missing/invalid template_id) first
         try:
             self._gc_invalid_building_instances()

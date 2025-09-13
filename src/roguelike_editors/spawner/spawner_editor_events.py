@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Optional
 import pygame
 import logging
+from roguelike_ui.ui_blocker import is_blocked
 
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_editors.spawner.services import (
@@ -15,6 +16,11 @@ from roguelike_editors.spawner.services import (
     write_instances_json,
 )
 from roguelike_editors.spawner.services.persistence import load_spawners_json, generate_instance_id
+from roguelike_editors.spawner.services.persistence import remove_visual_refs_by_building_id
+from roguelike_editors.spawner.spawner_instance_properties_panel.services.buildings_service import (
+    load_buildings_instances as svc_load_buildings_instances,
+    write_buildings_instances as svc_write_buildings_instances,
+)
 
 
 class SpawnerEditorEventHandler:
@@ -58,6 +64,17 @@ class SpawnerEditorEventHandler:
             self.model.dragging = False
             self.model.dragging_eid = None
             self.model.hovered_eid = None
+            # Also cancel resizing/split dragging if active
+            try:
+                self.model.resizing_visual = False
+                self.model.resizing_visual_bid = None
+            except Exception:
+                pass
+            try:
+                self.model.split_drag_active = False
+                self.model.split_drag_bid = None
+            except Exception:
+                pass
             self.panning = False
             self.info_dragging = False
             self._drag_start_entry = None
@@ -103,6 +120,52 @@ class SpawnerEditorEventHandler:
         except Exception:
             pass
 
+        # Stop split drag on any mouse button release (same behavior as Building Editor)
+        if event.type == pygame.MOUSEBUTTONUP and getattr(self.model, 'split_drag_active', False):
+            # Persist only on LMB release, but always stop dragging
+            bid = getattr(self.model, 'split_drag_bid', None)
+            self.model.split_drag_active = False
+            self.model.split_drag_bid = None
+            # Re-enable gameplay input
+            try:
+                world = getattr(self.game.ecs, 'ecs_world', None)
+                if world is not None and hasattr(world, 'state'):
+                    setattr(world.state, 'spawner_input_suppressed', False)
+            except Exception:
+                pass
+            if bid is not None and event.button == 1:
+                try:
+                    ip = getattr(self.controller, 'instance_properties', None)
+                    ob = ip.visuals._find_building_entity_by_id(int(bid))
+                    cur_ratio = float(getattr(ob, 'split_ratio', 0.5)) if ob is not None else None
+                except Exception:
+                    cur_ratio = None
+                if cur_ratio is not None:
+                    try:
+                        data = svc_load_buildings_instances()
+                    except Exception:
+                        data = []
+                    changed = False
+                    for e in data or []:
+                        try:
+                            if int(e.get('id')) != int(bid):
+                                continue
+                        except Exception:
+                            continue
+                        ov = e.get('overrides') or {}
+                        if not isinstance(ov, dict):
+                            ov = {}
+                        ov['split_ratio'] = round(float(cur_ratio), 3)
+                        e['overrides'] = ov
+                        changed = True
+                        break
+                    if changed:
+                        try:
+                            svc_write_buildings_instances(data)
+                        except Exception:
+                            pass
+            return True
+
         # Add Mode: while active (and before a template is chosen -> placing_template_id is None),
         # block world interactions and allow ESC to cancel, BUT allow MMB panning.
         if getattr(self.model, 'add_mode_active', False) and not getattr(self.model, 'placing_template_id', None):
@@ -134,6 +197,116 @@ class SpawnerEditorEventHandler:
                 except Exception:
                     pass
                 return True
+        # Mouse move while split handle dragging: update split_ratio
+        if event.type == pygame.MOUSEMOTION and getattr(self.model, 'split_drag_active', False) and getattr(self.model, 'split_drag_bid', None) is not None:
+            try:
+                ip = getattr(self.controller, 'instance_properties', None)
+                cam = getattr(self.game, 'camera', None)
+                bid = int(self.model.split_drag_bid)
+                ob = ip.visuals._find_building_entity_by_id(int(bid))
+            except Exception:
+                ob = None
+                cam = None
+            if ob is not None and cam is not None and getattr(ob, 'image', None) is not None:
+                try:
+                    mx, my = event.pos
+                    bx, by = cam.apply((ob.x, ob.y))
+                    _, h_scaled = cam.scale(ob.image.get_size())
+                    rel = (float(my) - float(by)) / float(max(h_scaled, 1))
+                    rel = max(0.05, min(rel, 0.95))
+                    ob.split_ratio = float(rel)
+                    try:
+                        ob.model._cut_world = int(ob.model.image.get_height() * ob.split_ratio)
+                    except Exception:
+                        pass
+                    try:
+                        if getattr(ob, 'controller', None):
+                            ob.controller.update_on_camera_change()
+                    except Exception:
+                        pass
+                    # Persist incrementally to buildings_instances.json as overrides.split_ratio
+                    try:
+                        data = svc_load_buildings_instances()
+                    except Exception:
+                        data = []
+                    changed = False
+                    for e in data or []:
+                        try:
+                            if int(e.get('id')) != int(bid):
+                                continue
+                        except Exception:
+                            continue
+                        ov = e.get('overrides') or {}
+                        if not isinstance(ov, dict):
+                            ov = {}
+                        ov['split_ratio'] = round(float(ob.split_ratio), 3)
+                        e['overrides'] = ov
+                        changed = True
+                        break
+                    if changed:
+                        try:
+                            svc_write_buildings_instances(data)
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
+            return True
+        # Mouse move while resizing selected visual building
+        if event.type == pygame.MOUSEMOTION and getattr(self.model, 'resizing_visual', False) and getattr(self.model, 'resizing_visual_bid', None) is not None:
+            try:
+                ip = getattr(self.controller, 'instance_properties', None)
+                bid = int(self.model.resizing_visual_bid)
+                ob = ip.visuals._find_building_entity_by_id(int(bid))
+            except Exception:
+                ob = None
+            if ob is not None and getattr(ob, 'resize', None) is not None:
+                try:
+                    start_w, start_h = self.model.resize_start_size or ob.image.get_size()
+                except Exception:
+                    start_w = start_h = None
+                if start_w is not None and start_h is not None:
+                    mx, my = event.pos
+                    ox, oy = self.model.resize_origin_mouse or (mx, my)
+                    dx = int(mx - ox)
+                    dy = int(my - oy)
+                    new_w = max(8, int(start_w + dx))
+                    new_h = max(8, int(start_h + dy))
+                    try:
+                        ob.resize(int(new_w), int(new_h))
+                    except Exception:
+                        pass
+            return True
+            # Visuals hover (cyan): only when a spawner instance is selected and UI is not blocking
+            try:
+                ip = getattr(self.controller, 'instance_properties', None)
+                if ip is not None:
+                    # Suppress hover when UI panels under cursor are blocking
+                    if is_blocked(mx, my):
+                        try:
+                            ip.visuals.model.hovered_building_id = None
+                        except Exception:
+                            pass
+                    else:
+                        ob = None
+                        try:
+                            ob = ip.visuals.pick_visual_building_under_cursor(int(mx), int(my))
+                        except Exception:
+                            ob = None
+                        try:
+                            sel = getattr(ip.visuals.model, 'selected_building_id', None)
+                        except Exception:
+                            sel = None
+                        try:
+                            if ob is not None and getattr(ob, 'id', None) is not None:
+                                bid = int(getattr(ob, 'id'))
+                                # Keep hover even if equal to selected (will render as yellow priority)
+                                ip.visuals.model.hovered_building_id = bid
+                            else:
+                                ip.visuals.model.hovered_building_id = None
+                        except Exception:
+                            pass
+            except Exception:
+                pass
             # Consume other inputs so the world does not react while template selection is required,
             # but allow MMB panning to work.
             if event.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP):
@@ -448,6 +621,35 @@ class SpawnerEditorEventHandler:
             except Exception:
                 return False
 
+        # RMB down on split handle: start split drag (same as Building Editor; prioritize over RMB spawner drag)
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
+            # Skip when in modes that repurpose input
+            if getattr(self.model, 'remove_mode_active', False) or getattr(self.model, 'placing_template_id', None):
+                return False
+            try:
+                ip = getattr(self.controller, 'instance_properties', None)
+                vmodel = getattr(getattr(ip, 'visuals', None), 'model', None) if ip else None
+                sel_bid = getattr(vmodel, 'selected_building_id', None) if vmodel else None
+            except Exception:
+                sel_bid = None
+            if sel_bid is not None:
+                try:
+                    split_rect = getattr(getattr(self.controller, 'view', None), '_last_split_handle_rect', None)
+                except Exception:
+                    split_rect = None
+                if split_rect is not None and pygame.Rect(split_rect).collidepoint(*event.pos):
+                    try:
+                        self.model.split_drag_active = True
+                        self.model.split_drag_bid = int(sel_bid)
+                        # Suppress gameplay input while dragging split
+                        world = getattr(self.game.ecs, 'ecs_world', None)
+                        if world is not None and hasattr(world, 'state'):
+                            setattr(world.state, 'spawner_input_suppressed', True)
+                    except Exception:
+                        self.model.split_drag_active = False
+                        self.model.split_drag_bid = None
+                    return True
+
         # RMB down: start drag if clicking near a spawner anchor; otherwise do nothing
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
             # Disable drag/pan when in remove mode
@@ -567,6 +769,245 @@ class SpawnerEditorEventHandler:
             # Not dragging: ignore RMB up (do not affect MMB panning)
             return True
 
+        # LMB: select a visual building linked to the currently selected spawner instance,
+        # or interact with its handles (delete/resize)
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            # Skip when in modes that repurpose LMB
+            if getattr(self.model, 'remove_mode_active', False) or getattr(self.model, 'placing_template_id', None):
+                return False
+            try:
+                ip = getattr(self.controller, 'instance_properties', None)
+                cam = getattr(self.game, 'camera', None)
+                # Only require controller/picker availability; panel may be hidden
+                if ip is not None and cam is not None:
+                    mx, my = event.pos
+                    # First: if we have a selected building, check handle clicks
+                    try:
+                        vmodel = getattr(ip, 'visuals', None)
+                        vmodel = getattr(vmodel, 'model', None)
+                        sel_bid = getattr(vmodel, 'selected_building_id', None) if vmodel else None
+                    except Exception:
+                        sel_bid = None
+                    if sel_bid is not None:
+                        # Read last handle rects from view (overlays computed during render)
+                        try:
+                            del_rect = getattr(getattr(self.controller, 'view', None), '_last_selected_delete_rect', None)
+                            rz_rect  = getattr(getattr(self.controller, 'view', None), '_last_selected_resize_rect', None)
+                            rst_rect = getattr(getattr(self.controller, 'view', None), '_last_selected_reset_rect', None)
+                            zb_minus = getattr(getattr(self.controller, 'view', None), '_last_z_bottom_minus_rect', None)
+                            zb_plus  = getattr(getattr(self.controller, 'view', None), '_last_z_bottom_plus_rect', None)
+                            zt_minus = getattr(getattr(self.controller, 'view', None), '_last_z_top_minus_rect', None)
+                            zt_plus  = getattr(getattr(self.controller, 'view', None), '_last_z_top_plus_rect', None)
+                            split_rect = getattr(getattr(self.controller, 'view', None), '_last_split_handle_rect', None)
+                        except Exception:
+                            del_rect = rz_rect = rst_rect = None
+                            zb_minus = zb_plus = zt_minus = zt_plus = None
+                            split_rect = None
+                        # Delete handle
+                        if del_rect is not None and pygame.Rect(del_rect).collidepoint(mx, my):
+                            try:
+                                bid = int(sel_bid)
+                            except Exception:
+                                bid = None
+                            if bid is not None:
+                                # 1) Clear visuals refs in spawners_instances.json
+                                try:
+                                    remove_visual_refs_by_building_id(int(bid))
+                                except Exception:
+                                    pass
+                                # 2) Remove from buildings_instances.json
+                                try:
+                                    data = svc_load_buildings_instances()
+                                except Exception:
+                                    data = []
+                                kept = []
+                                for e in data or []:
+                                    try:
+                                        if int(e.get('id')) == int(bid):
+                                            continue
+                                    except Exception:
+                                        pass
+                                    kept.append(e)
+                                try:
+                                    svc_write_buildings_instances(kept)
+                                except Exception:
+                                    pass
+                                # 3) Remove entity from world/editor lists
+                                try:
+                                    ip._remove_building_entity_by_id(int(bid))
+                                except Exception:
+                                    pass
+                                # 4) Clear selection/hover
+                                try:
+                                    vmodel.selected_building_id = None
+                                    vmodel.hovered_building_id = None
+                                except Exception:
+                                    pass
+                                return True
+                        # Split handle drag start
+                        if split_rect is not None and pygame.Rect(split_rect).collidepoint(mx, my):
+                            try:
+                                self.model.split_drag_active = True
+                                self.model.split_drag_bid = int(sel_bid)
+                                # Suppress gameplay input while dragging split
+                                if hasattr(world, 'state'):
+                                    setattr(world.state, 'spawner_input_suppressed', True)
+                            except Exception:
+                                self.model.split_drag_active = False
+                                self.model.split_drag_bid = None
+                            return True
+                        # Default (reset size) handle
+                        if rst_rect is not None and pygame.Rect(rst_rect).collidepoint(mx, my):
+                            try:
+                                ob = ip.visuals._find_building_entity_by_id(int(sel_bid))
+                            except Exception:
+                                ob = None
+                            if ob is not None:
+                                # Reset live entity size
+                                try:
+                                    ob.reset_to_original_size()
+                                except Exception:
+                                    pass
+                                # Persist: drop overrides.scale for this building id
+                                try:
+                                    data = svc_load_buildings_instances()
+                                except Exception:
+                                    data = []
+                                changed = False
+                                for e in data or []:
+                                    try:
+                                        if int(e.get('id')) != int(sel_bid):
+                                            continue
+                                    except Exception:
+                                        continue
+                                    ov = e.get('overrides') or {}
+                                    if isinstance(ov, dict) and 'scale' in ov:
+                                        try:
+                                            ov.pop('scale', None)
+                                            # If overrides becomes empty, optionally drop it
+                                            if not ov:
+                                                try:
+                                                    e.pop('overrides', None)
+                                                except Exception:
+                                                    e['overrides'] = {}
+                                            else:
+                                                e['overrides'] = ov
+                                            changed = True
+                                        except Exception:
+                                            pass
+                                    break
+                                if changed:
+                                    try:
+                                        svc_write_buildings_instances(data)
+                                    except Exception:
+                                        pass
+                                return True
+                        # Z bottom/top tool buttons
+                        if any(r is not None for r in (zb_minus, zb_plus, zt_minus, zt_plus)):
+                            # Update ob.z_bottom / ob.z_top and persist overrides
+                            try:
+                                ob = ip.visuals._find_building_entity_by_id(int(sel_bid))
+                            except Exception:
+                                ob = None
+                            consumed = False
+                            if ob is not None:
+                                try:
+                                    if zb_minus is not None and pygame.Rect(zb_minus).collidepoint(mx, my):
+                                        ob.z_bottom = max(0, ob.z_bottom - 1)
+                                        if ob.z_top < ob.z_bottom:
+                                            ob.z_top = ob.z_bottom
+                                        consumed = True
+                                    elif zb_plus is not None and pygame.Rect(zb_plus).collidepoint(mx, my):
+                                        ob.z_bottom = ob.z_bottom + 1
+                                        if ob.z_top < ob.z_bottom:
+                                            ob.z_top = ob.z_bottom
+                                        consumed = True
+                                    elif zt_minus is not None and pygame.Rect(zt_minus).collidepoint(mx, my):
+                                        ob.z_top = max(ob.z_bottom, ob.z_top - 1)
+                                        consumed = True
+                                    elif zt_plus is not None and pygame.Rect(zt_plus).collidepoint(mx, my):
+                                        ob.z_top = max(ob.z_bottom, ob.z_top + 1)
+                                        consumed = True
+                                except Exception:
+                                    consumed = False
+                            if consumed:
+                                # Persist z_bottom/z_top overrides for this building id
+                                try:
+                                    data = svc_load_buildings_instances()
+                                except Exception:
+                                    data = []
+                                for e in data or []:
+                                    try:
+                                        if int(e.get('id')) != int(sel_bid):
+                                            continue
+                                    except Exception:
+                                        continue
+                                    ov = e.get('overrides') or {}
+                                    if not isinstance(ov, dict):
+                                        ov = {}
+                                    try:
+                                        ov['z_bottom'] = int(getattr(ob, 'z_bottom', 0))
+                                    except Exception:
+                                        pass
+                                    try:
+                                        ov['z_top'] = int(getattr(ob, 'z_top', 0))
+                                    except Exception:
+                                        pass
+                                    e['overrides'] = ov
+                                    try:
+                                        svc_write_buildings_instances(data)
+                                    except Exception:
+                                        pass
+                                    break
+                                return True
+                        # Resize handle
+                        if rz_rect is not None and pygame.Rect(rz_rect).collidepoint(mx, my):
+                            # Begin resize drag
+                            try:
+                                ob = ip.visuals._find_building_entity_by_id(int(sel_bid))
+                            except Exception:
+                                ob = None
+                            if ob is not None and getattr(ob, 'image', None) is not None:
+                                self.model.resizing_visual = True
+                                try:
+                                    self.model.resizing_visual_bid = int(sel_bid)
+                                except Exception:
+                                    self.model.resizing_visual_bid = None
+                                self.model.resize_origin_mouse = (int(mx), int(my))
+                                try:
+                                    self.model.resize_start_size = tuple(ob.image.get_size())
+                                except Exception:
+                                    self.model.resize_start_size = None
+                                # Suppress gameplay input while resizing
+                                try:
+                                    if hasattr(world, 'state'):
+                                        setattr(world.state, 'spawner_input_suppressed', True)
+                                except Exception:
+                                    pass
+                                return True
+                    ob = None
+                    try:
+                        ob = ip.visuals.pick_visual_building_under_cursor(int(mx), int(my))
+                    except Exception:
+                        ob = None
+                    if ob is not None:
+                        try:
+                            bid = getattr(ob, 'id', None)
+                            if bid is not None:
+                                ip.visuals.model.selected_building_id = int(bid)
+                                # Consume to prevent gameplay from reacting
+                                return True
+                        except Exception:
+                            pass
+                    # Clicked away: clear selection
+                    try:
+                        ip.visuals.model.selected_building_id = None
+                    except Exception:
+                        pass
+                    # Do not consume so other UI (e.g., panels) can still react if needed
+            except Exception:
+                pass
+
         # Mouse move while dragging: update anchor tile of selected spawner
         if event.type == pygame.MOUSEMOTION and self.model.dragging and self.model.dragging_eid is not None:
             mx, my = event.pos
@@ -580,6 +1021,52 @@ class SpawnerEditorEventHandler:
                 # world.invalidate_spatial_index()
             except Exception:
                 pass
+            return True
+
+        # LMB up: finish resize
+        if event.type == pygame.MOUSEBUTTONUP and event.button == 1 and getattr(self.model, 'resizing_visual', False):
+            self.model.resizing_visual = False
+            bid = getattr(self.model, 'resizing_visual_bid', None)
+            self.model.resizing_visual_bid = None
+            # Re-enable gameplay input
+            try:
+                if hasattr(world, 'state'):
+                    setattr(world.state, 'spawner_input_suppressed', False)
+            except Exception:
+                pass
+            if bid is not None:
+                try:
+                    # Persist new size to buildings_instances.json as overrides.scale
+                    data = svc_load_buildings_instances()
+                except Exception:
+                    data = []
+                changed = False
+                for e in data or []:
+                    try:
+                        if int(e.get('id')) != int(bid):
+                            continue
+                    except Exception:
+                        continue
+                    # Infer current size from the world entity
+                    try:
+                        ip = getattr(self.controller, 'instance_properties', None)
+                        ob = ip.visuals._find_building_entity_by_id(int(bid))
+                        cur_w, cur_h = ob.image.get_size()
+                    except Exception:
+                        cur_w = cur_h = None
+                    if cur_w is not None and cur_h is not None:
+                        ov = e.get('overrides') or {}
+                        if not isinstance(ov, dict):
+                            ov = {}
+                        ov['scale'] = [int(cur_w), int(cur_h)]
+                        e['overrides'] = ov
+                        changed = True
+                        break
+                if changed:
+                    try:
+                        svc_write_buildings_instances(data)
+                    except Exception:
+                        pass
             return True
 
         # While a zone confirmation is pending, capture Y/N or Enter/Esc
