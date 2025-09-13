@@ -1,0 +1,7 @@
+{
+  "template_id": "3f2e1d4c-7b6a-4c5d-9e8f-112233445566",
+  "slots": [
+    { "item": "gold", "quantity": 500 }
+  ],
+  "schema_version": "1.0.0"
+}

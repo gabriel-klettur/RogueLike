@@ -13,5 +13,25 @@
     "persona_id": "vendor_alchemist_valeria",
     "role": "vendor",
     "chat_range": 2
+  },
+  "Mamba": {
+    "persona_id": "vendor_blacksmith_mamba",
+    "role": "vendor",
+    "chat_range": 2
+  },
+  "Abigail": {
+    "persona_id": "vendor_banker_abigail",
+    "role": "vendor",
+    "chat_range": 2
+  },
+  "Pavel": {
+    "persona_id": "vendor_lumberjack_pavel",
+    "role": "vendor",
+    "chat_range": 2
+  },
+  "Roberto": {
+    "persona_id": "vendor_mague_roberto",
+    "role": "vendor",
+    "chat_range": 2
   }
 }

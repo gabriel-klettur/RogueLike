@@ -1,0 +1,8 @@
+{
+  "template_id": "a0c1d2e3-f4b5-4c6d-8e7f-1029384756aa",
+  "slots": [
+    { "item": "iron_sword", "quantity": 3 },
+    { "item": "gold", "quantity": 250 }
+  ],
+  "schema_version": "1.0.0"
+}
