@@ -1,11 +1,11 @@
 {
-  "npc_vendor_wood_gatita": {
-    "persona_id": "vendor_wood_gatita",
+  "npc_vendor_cheff_gatita": {
+    "persona_id": "vendor_cheff_gatita",
     "role": "vendor",
     "chat_range": 140
   },
   "Gatita": {
-    "persona_id": "vendor_wood_gatita",
+    "persona_id": "vendor_cheff_gatita",
     "role": "vendor",
     "chat_range": 2
   },
@@ -14,8 +14,8 @@
     "role": "vendor",
     "chat_range": 2
   },
-  "Mamba": {
-    "persona_id": "vendor_blacksmith_mamba",
+  "Smith": {
+    "persona_id": "vendor_blacksmith_smith",
     "role": "vendor",
     "chat_range": 2
   },

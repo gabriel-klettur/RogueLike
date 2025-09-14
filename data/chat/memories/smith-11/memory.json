@@ -1,0 +1,31 @@
+{
+  "friendship_score": 0,
+  "ephemeral_history": [
+    {
+      "role": "user",
+      "content": "Hola smith que tal? me gusta tu color de piel"
+    },
+    {
+      "role": "assistant",
+      "content": "Saludo, viajero. Soy Smith, herrero del pueblo; el acero nunca me defrauda. ¿Qué necesitas: espada, hacha o piedra de afilar?"
+    },
+    {
+      "role": "user",
+      "content": "cuentame algo sobre ti"
+    },
+    {
+      "role": "assistant",
+      "content": "Soy Smith, herrero del pueblo. Llevo años templando acero y cuido cada filo como si fuera mi propia vida. El calor correcto lo es todo; el filo debe respetarse."
+    },
+    {
+      "role": "user",
+      "content": "Cual a sido la mejor espada que has hecho?"
+    },
+    {
+      "role": "assistant",
+      "content": "La mejor espada fue la que hice para el capitán de la guardia: acero templado con temple lento, filo afilado y equilibrio perfecto; resistió batallas sin perder filo. Si quieres, puedo replicarla con ese mismo temple para ti. ¿Te interesa?"
+    }
+  ],
+  "preferred_language": "es",
+  "has_greeted": true
+}

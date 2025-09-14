@@ -1,7 +1,7 @@
 {
   "neutrals": {
     "classes": {
-      "vendor_wood_gatita": {
+      "vendor_cheff_gatita": {
         "default_name": "Gatita",
         "stats": {
           "hp": 50,
@@ -50,23 +50,23 @@
           },
           "no-sets": {
             "idle": {
-              "s": "assets/npc/neutral/vendors/wooden/gatita_chanchita/normal/gatitachanchita_down.png",
+              "s": "assets/npc/neutral/vendors/cheff/gatita_chanchita/normal/gatitachanchita_down.png",
               "se": null,
-              "e": "assets/npc/neutral/vendors/wooden/gatita_chanchita/normal/gatitachanchita_right.png",
+              "e": "assets/npc/neutral/vendors/cheff/gatita_chanchita/normal/gatitachanchita_right.png",
               "ne": null,
-              "n": "assets/npc/neutral/vendors/wooden/gatita_chanchita/normal/gatitachanchita_top.png",
+              "n": "assets/npc/neutral/vendors/cheff/gatita_chanchita/normal/gatitachanchita_top.png",
               "nw": null,
-              "w": "assets/npc/neutral/vendors/wooden/gatita_chanchita/normal/gatitachanchita_left.png",
+              "w": "assets/npc/neutral/vendors/cheff/gatita_chanchita/normal/gatitachanchita_left.png",
               "sw": null
             },
             "walk": {
-              "s": "assets/npc/neutral/vendors/wooden/gatita_chanchita/normal/gatitachanchita_down.png",
+              "s": "assets/npc/neutral/vendors/cheff/gatita_chanchita/normal/gatitachanchita_down.png",
               "se": null,
-              "e": "assets/npc/neutral/vendors/wooden/gatita_chanchita/normal/gatitachanchita_right.png",
+              "e": "assets/npc/neutral/vendors/cheff/gatita_chanchita/normal/gatitachanchita_right.png",
               "ne": null,
-              "n": "assets/npc/neutral/vendors/wooden/gatita_chanchita/normal/gatitachanchita_top.png",
+              "n": "assets/npc/neutral/vendors/cheff/gatita_chanchita/normal/gatitachanchita_top.png",
               "nw": null,
-              "w": "assets/npc/neutral/vendors/wooden/gatita_chanchita/normal/gatitachanchita_left.png",
+              "w": "assets/npc/neutral/vendors/cheff/gatita_chanchita/normal/gatitachanchita_left.png",
               "sw": null
             },
             "attack": {"s": null, "se": null, "e": null, "ne": null, "n": null, "nw": null, "w": null, "sw": null},
@@ -171,8 +171,8 @@
           }
         }
       },
-      "vendor_blacksmith_mamba": {
-        "default_name": "Mamba",
+      "vendor_blacksmith_smith": {
+        "default_name": "Smith",
         "stats": {
           "hp": 50,
           "speed": 0.8,
@@ -220,23 +220,23 @@
           },
           "no-sets": {
             "idle": {
-              "s": "assets/npc/neutral/vendors/blacksmith/normal/mamba_blacksmith.png",
+              "s": "assets/npc/neutral/vendors/blacksmith/normal/smith_blacksmith.png",
               "se": null,
-              "e": "assets/npc/neutral/vendors/blacksmith/normal/mamba_blacksmith.png",
+              "e": "assets/npc/neutral/vendors/blacksmith/normal/smith_blacksmith.png",
               "ne": null,
-              "n": "assets/npc/neutral/vendors/blacksmith/normal/mamba_blacksmith.png",
+              "n": "assets/npc/neutral/vendors/blacksmith/normal/smith_blacksmith.png",
               "nw": null,
-              "w": "assets/npc/neutral/vendors/blacksmith/normal/mamba_blacksmith.png",
+              "w": "assets/npc/neutral/vendors/blacksmith/normal/smith_blacksmith.png",
               "sw": null
             },
             "walk": {
-              "s": "assets/npc/neutral/vendors/blacksmith/normal/mamba_blacksmith.png",
+              "s": "assets/npc/neutral/vendors/blacksmith/normal/smith_blacksmith.png",
               "se": null,
-              "e": "assets/npc/neutral/vendors/blacksmith/normal/mamba_blacksmith.png",
+              "e": "assets/npc/neutral/vendors/blacksmith/normal/smith_blacksmith.png",
               "ne": null,
-              "n": "assets/npc/neutral/vendors/blacksmith/normal/mamba_blacksmith.png",
+              "n": "assets/npc/neutral/vendors/blacksmith/normal/smith_blacksmith.png",
               "nw": null,
-              "w": "assets/npc/neutral/vendors/blacksmith/normal/mamba_blacksmith.png",
+              "w": "assets/npc/neutral/vendors/blacksmith/normal/smith_blacksmith.png",
               "sw": null
             },
             "attack": {"s": null, "se": null, "e": null, "ne": null, "n": null, "nw": null, "w": null, "sw": null},

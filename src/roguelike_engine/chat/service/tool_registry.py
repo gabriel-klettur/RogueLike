@@ -48,22 +48,37 @@ class ToolRegistry:
     def _normalize_args(self, args: Dict[str, Any]) -> Dict[str, Any]:
         """Normaliza argumentos conversacionales.
 
-        - item: acepta alias y los mapea a 'wooden'.
+        - item: acepta alias comunes (es/en) y los mapea a IDs de ítem válidos
+          cuando sea posible (p. ej., 'madera'->'wood', 'manzana'->'food_apple').
         - quantity: fuerza int >= 1 si es posible.
         """
         out = dict(args or {})
         # item aliases
         item = str(out.get('item', '') or '').lower().strip()
         aliases = {
-            'wood': 'wooden',
-            'wooden': 'wooden',
-            'madera': 'wooden',
-            'maderas': 'wooden',
+            # madera
+            'wood': 'wood',
+            'wooden': 'wood',
+            'madera': 'wood',
+            'maderas': 'wood',
+            # comida básica
+            'apple': 'food_apple',
+            'manzana': 'food_apple',
+            'bread': 'food_bread',
+            'pan': 'food_bread',
+            'borsch': 'food_borscht',
+            'borscht': 'food_borscht',
+            'borsh': 'food_borscht',
+            'varenyky': 'food_varenyky',
+            'dumpling': 'food_varenyky',
+            'dumplings': 'food_varenyky',
+            'pollo': 'food_chicken',
+            'chicken': 'food_chicken',
         }
         if item:
             out['item'] = aliases.get(item, item)
         else:
-            out['item'] = 'wooden'
+            out['item'] = 'wood'
         # quantity safe
         q = out.get('quantity', 1)
         try:
@@ -77,14 +92,15 @@ class ToolRegistry:
 
     def _exec_vendor_stock(self, args: Dict[str, Any]) -> ToolExecResult:
         # Placeholder: devolvería stock y precio.
+        item = str((args or {}).get('item') or 'wood')
         return ToolExecResult(
             ok=True,
-            message="Stock: madera a 1 oro/unidad.",
-            effects={"stock": {"wooden": {"price": 1, "qty": 999}}},
+            message=f"Stock: {item} a 1 oro la unidad.",
+            effects={"stock": {item: {"price": 1, "qty": 999}}},
         )
 
     def _exec_vendor_buy(self, args: Dict[str, Any]) -> ToolExecResult:
-        item = str(args.get("item", "wooden"))
+        item = str(args.get("item", "wood"))
         qty = int(args.get("quantity", 1))
         price = 1
         gold_delta = -price * qty
@@ -100,7 +116,7 @@ class ToolRegistry:
         )
 
     def _exec_vendor_sell(self, args: Dict[str, Any]) -> ToolExecResult:
-        item = str(args.get("item", "wooden"))
+        item = str(args.get("item", "wood"))
         qty = int(args.get("quantity", 1))
         price = 1
         gold_delta = price * qty

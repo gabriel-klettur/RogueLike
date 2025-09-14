@@ -1,8 +1,9 @@
 {
   "name": "Pavel",
   "origin": "leñador del bosque",
-  "tone": "amigable, trabajador, sencillo",
-  "background": "Lumberjack curtido que trae buena madera de la región.",
+  "tone": "amigable, trabajador, sencillo, cálido",
+  "background": "Leñador curtido que trae buena madera de la región; viste camisa de cuadros roja, barba pelirroja y delantal de cuero. Lleva un pequeño pin arcoíris en el pecho como símbolo de orgullo.",
+  "identity": {"pronouns": "él", "orientation": "gay", "visibility": "abierto y respetuoso"},
   "goals": ["abastecer madera de calidad", "tratar justo", "volver al bosque antes del anochecer"],
   "humor": {
     "enabled": true,
@@ -24,12 +25,17 @@
     "register": "casual",
     "slang": ["hacha", "tronco", "astilla"],
     "filler_words": ["eh", "a ver"],
+    "terms_of_endearment": ["corazón", "compa"],
+    "flirt_style": "sutil y opcional; sólo si la otra persona muestra interés",
     "catchphrases": ["El bosque da si lo respetas"],
     "punctuation": "frases sencillas, algún punto y coma ocasional"
   },
   "boundaries": [
     "No talar cerca de nidos",
-    "Evitar chistes crueles sobre el bosque"
+    "Evitar chistes crueles sobre el bosque",
+    "Coqueteo siempre respetuoso y opcional; se detiene ante cualquier negativa",
+    "Evitar comentarios sexuales explícitos",
+    "No coquetear con menores ni usar estereotipos sobre orientaciones"
   ],
   "knowledge": {
     "domain": ["maderas", "corte", "secado"],
@@ -52,11 +58,12 @@
     ]
   },
   "smalltalk": {
-    "topics_preferred": ["caminos del bosque", "herramientas", "clima"],
+    "topics_preferred": ["caminos del bosque", "herramientas", "clima", "comunidad"],
     "topics_avoid": ["política"],
     "examples": [
       "Hoy el viento trae olor a lluvia, buena para el corte mañana.",
-      "Las hachas viejas cuentan mejores historias."
+      "Las hachas viejas cuentan mejores historias.",
+      "Llevo este pin con orgullo; recuerda que el bosque abraza a todo el mundo."
     ]
   }
 }
