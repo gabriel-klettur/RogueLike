@@ -20,6 +20,10 @@ class VendorTradeSystem:
         self._prices_path = os.path.join('data', 'items', 'items_price.json')
         self._global_prices = None  # dict[str, number]
         self._global_prices_mtime = None
+        # Catálogo de ítems para fallback de precios
+        self._items_catalog_path = os.path.join('data', 'items', 'items.json')
+        self._items_catalog = None  # dict[str, dict]
+        self._items_catalog_mtime = None
         # Schema de precios
         self._prices_schema_path = os.path.join('schemas', 'items', 'ItemsPriceSchema.json')
         self._prices_schema = None
@@ -213,6 +217,10 @@ class VendorTradeSystem:
                 if isinstance(entry, dict):
                     v = entry.get(side)
                     return float(v) if self._is_number(v) else None
+            # Fallback: calcular precio desde catálogo si no hay entrada
+            fb = self._fallback_price_from_catalog(item_id)
+            if fb is not None:
+                return float(fb)
         except Exception:
             pass
         return None
@@ -272,6 +280,50 @@ class VendorTradeSystem:
             # No recarga necesaria
             pass
 
+    # --- Catálogo de ítems (fallback de precios) ----------------------------
+    def _ensure_items_catalog_loaded(self):
+        path = self._items_catalog_path
+        try:
+            st = os.stat(path)
+            mtime = st.st_mtime
+        except FileNotFoundError:
+            self._items_catalog = {}
+            self._items_catalog_mtime = None
+            return
+        if self._items_catalog is None or self._items_catalog_mtime != mtime:
+            try:
+                with open(path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                self._items_catalog = data if isinstance(data, dict) else {}
+            except Exception:
+                self._items_catalog = {}
+            self._items_catalog_mtime = mtime
+
+    def _fallback_price_from_catalog(self, item_id: str):
+        """Calcula un precio por defecto usando el catálogo de ítems cuando no hay precio global.
+
+        Regla simple:
+          - Si el item tiene campo 'value', usarlo.
+          - Si es stackable (stackable=true), usar 1 como precio base.
+          - Si no es stackable, usar 10 como precio base.
+        Devuelve precio (float) o None si el item no existe.
+        """
+        try:
+            self._ensure_items_catalog_loaded()
+            cat = self._items_catalog or {}
+            node = cat.get(item_id)
+            if not isinstance(node, dict):
+                return None
+            # Evitar asignar precio especial a la moneda para no romper economía
+            if item_id == 'gold':
+                return None
+            if 'value' in node and self._is_number(node.get('value')):
+                return float(node.get('value'))
+            stackable = bool(node.get('stackable', False))
+            return 1.0 if stackable else 10.0
+        except Exception:
+            return None
+
     @staticmethod
     def _is_number(x):
         try:
@@ -281,15 +333,42 @@ class VendorTradeSystem:
             return False
 
     def _normalize_ids(self, world, vendor_eid: int, item_id: str):
-        """Devuelve (item_id_normalizado, currency_id). Acepta alias como 'wooden' y 'oro'."""
+        """Devuelve (item_id_normalizado, currency_id).
+
+        Reglas de normalización:
+          - Alias básicos: 'wooden'/'madera' -> 'wood'; 'oro' -> 'gold' (moneda)
+          - Resolver por catálogo si 'iid' coincide con el 'name' de un ítem en items.json
+            (p. ej., 'manzana' -> 'food_apple', 'pan' -> 'food_bread').
+        """
         comps = world.components.get('VendorComponent', {})
         vc = comps.get(vendor_eid)
         currency = getattr(vc, 'currency_item_id', 'gold') if vc else 'gold'
         iid = (item_id or '').lower()
+        # Alias comunes
         if iid in ('wooden', 'madera'):
             iid = 'wood'
-        if currency.lower() in ('oro',):
+        # Moneda alias
+        if str(currency).lower() in ('oro',):
             currency = 'gold'
+        # Resolver por catálogo usando el campo 'name' (en español en la mayoría de casos)
+        if iid not in {'wood', 'gold'}:
+            try:
+                self._ensure_items_catalog_loaded()
+                cat = self._items_catalog or {}
+                # Coincidencia directa por clave
+                if iid not in cat:
+                    # Construir mapa nombre->id una vez por llamada
+                    name_to_id = {}
+                    for k, node in cat.items():
+                        if isinstance(node, dict):
+                            nm = str(node.get('name', '')).strip().lower()
+                            if nm:
+                                name_to_id[nm] = k
+                    mapped = name_to_id.get(iid)
+                    if mapped:
+                        iid = mapped
+            except Exception:
+                pass
         return iid, currency
 
     # --- Vendors registry y economía ---------------------------------------

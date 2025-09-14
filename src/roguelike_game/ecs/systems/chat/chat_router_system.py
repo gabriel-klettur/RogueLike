@@ -174,8 +174,9 @@ class ChatRouterSystem:
             except Exception:
                 pass
             return
-        # Comandos directos (no IA) para vendor
-        if role == 'vendor':
+        # Comandos directos (no IA) para vendor o cualquier NPC con capacidad de trade
+        # Consideramos "trader" a cualquier entidad con inventario (puede pagar/recibir)
+        if self._is_trader(world, target_eid):
             # 1) Consulta de stock real (no pasa por IA)
             m_stock = re.match(r"^(?:!stock|muestra\s+stock|ver\s+stock|dime\s+stock)(?:\s+(?:de\s+)?(\w+))?$", text, flags=re.IGNORECASE)
             if m_stock:
@@ -380,6 +381,19 @@ class ChatRouterSystem:
             except Exception:
                 pass
 
+    def _is_trader(self, world, eid: int) -> bool:
+        """Devuelve True si la entidad puede realizar comercio básico.
+
+        Criterio: tiene inventario asignado. Esto permite que cualquier NPC con chat
+        e inventario participe en compra/venta usando VendorTradeSystem (que ya
+        soporta precios globales y moneda por defecto 'gold').
+        """
+        try:
+            invs = world.components.get('InventoryComponent', {})
+            return eid in invs
+        except Exception:
+            return False
+
     def _vendor_sell(self, world, state, vendor_eid, item_id: str, qty: int):
         vts = self._get_vendor_trade_system(world)
         try:
@@ -425,19 +439,17 @@ class ChatRouterSystem:
             if inv and hasattr(inv, 'slots'):
                 for st in getattr(inv, 'slots', []) or []:
                     try:
+                        # Normalizar target usando VendorTradeSystem
+                        vts = self._get_vendor_trade_system(world)
+                        norm_target, _ = vts._normalize_ids(world, vendor_eid, (item_id or 'wood'))
                         iid = str(getattr(st, 'item_id', '')).lower()
-                        target = (item_id or 'wood').lower()
-                        if target in {'wooden', 'madera'}:
-                            target = 'wood'
-                        if st and iid == target:
+                        if st and iid == str(norm_target).lower():
                             qty += int(getattr(st, 'quantity', 0) or 0)
                     except Exception:
                         pass
             # Obtener precio actual
             vts = self._get_vendor_trade_system(world)
-            target_item = (item_id or 'wood').lower()
-            if target_item in {'wooden', 'madera'}:
-                target_item = 'wood'
+            target_item, _ = vts._normalize_ids(world, vendor_eid, (item_id or 'wood'))
             price = vts._get_price(world, vendor_eid, target_item, op='buy') or 1
             # Localización
             lang = self._lang_for(world, vendor_eid, None)
@@ -472,9 +484,7 @@ class ChatRouterSystem:
     def _ask_vendor_confirm(self, world, state, vendor_eid: int, *, op: str, item: str, qty: int) -> None:
         """Pide confirmación antes de ejecutar buy/sell. Muestra precio unitario y total si es posible (localizado)."""
         vts = self._get_vendor_trade_system(world)
-        item_norm = (item or 'wood').lower()
-        if item_norm in {'wooden', 'madera'}:
-            item_norm = 'wood'
+        item_norm, _ = vts._normalize_ids(world, vendor_eid, (item or 'wood'))
         try:
             unit = vts._get_price(world, vendor_eid, item_norm, op=op) or 1
         except Exception:
@@ -533,17 +543,17 @@ class ChatRouterSystem:
                 for call in result.tool_calls:
                     name = getattr(call, 'name', '')
                     args = getattr(call, 'arguments', {}) or {}
-                    if name == 'vendor.buy' and role == 'vendor':
+                    if name == 'vendor.buy' and self._is_trader(world, target_eid):
                         qty = int(args.get('quantity', 1))
                         item = str(args.get('item', 'wood')).lower()
                         self._ask_vendor_confirm(world, state, target_eid, op='buy', item=item, qty=qty)
                         responded = True
-                    elif name == 'vendor.sell' and role == 'vendor':
+                    elif name == 'vendor.sell' and self._is_trader(world, target_eid):
                         qty = int(args.get('quantity', 1))
                         item = str(args.get('item', 'wood')).lower()
                         self._ask_vendor_confirm(world, state, target_eid, op='sell', item=item, qty=qty)
                         responded = True
-                    elif name == 'vendor.stock' and role == 'vendor':
+                    elif name == 'vendor.stock' and self._is_trader(world, target_eid):
                         txt = self._vendor_stock(world, target_eid, 'wood')
                         state.chat_add_message('NPC', txt)
                         try:
