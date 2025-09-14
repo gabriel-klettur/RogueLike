@@ -77,6 +77,7 @@ class RendererManager:
         self._spell_debug_system = None
         self._patrol_debug_system = None
         self._defend_debug_system = None
+        self._npc_attack_debug_system = None
         # Debug logging state caches to avoid spam
         self._last_render_debug_key = None
         self._last_current_layer = None
@@ -187,10 +188,15 @@ class RendererManager:
                     if self._defend_debug_system is None:
                         from roguelike_game.ecs.systems.rendering.defend_area_debug_system import DefendAreaDebugSystem
                         self._defend_debug_system = DefendAreaDebugSystem(perf_log=perf_log)
+                    if self._npc_attack_debug_system is None:
+                        from roguelike_game.ecs.systems.rendering.npc_attack_debug_system import NpcAttackDebugSystem
+                        self._npc_attack_debug_system = NpcAttackDebugSystem(perf_log=perf_log)
                     world = self.ecs.ecs_world
                     # Draw hitbox arcs and colliders, then spell-specific collision hints
                     self._hitbox_debug_system.update(world, screen, camera)
                     self._spell_debug_system.update(world, screen, camera)
+                    # Draw NPC attack traces (melee ticks and hitbox arcs to player)
+                    self._npc_attack_debug_system.update(world, screen, camera)
                     # Draw patrol areas/targets for NPCs with PatrolRoute
                     self._patrol_debug_system.update(world, screen, camera)
                     # Draw defend area circles for NPCs with DefendArea
