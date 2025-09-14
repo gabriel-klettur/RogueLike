@@ -1909,5 +1909,135 @@
             235
         ],
         "id": 163
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_11.png"
+        },
+        "solid": true,
+        "split_ratio": 0.571,
+        "collider_scope": "CG",
+        "original_scale": [
+            233,
+            333
+        ],
+        "id": 164
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_11.png"
+        },
+        "solid": true,
+        "split_ratio": 0.526,
+        "collider_scope": "CG",
+        "original_scale": [
+            233,
+            333
+        ],
+        "id": 165
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_11.png"
+        },
+        "solid": true,
+        "split_ratio": 0.718,
+        "collider_scope": "CG",
+        "original_scale": [
+            233,
+            333
+        ],
+        "id": 166
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_11.png"
+        },
+        "solid": true,
+        "split_ratio": 0.754,
+        "collider_scope": "CG",
+        "original_scale": [
+            233,
+            333
+        ],
+        "id": 167
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_11.png"
+        },
+        "solid": true,
+        "split_ratio": 0.808,
+        "collider_scope": "CG",
+        "original_scale": [
+            233,
+            333
+        ],
+        "id": 168
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_11.png"
+        },
+        "solid": true,
+        "split_ratio": 0.751,
+        "collider_scope": "CG",
+        "original_scale": [
+            233,
+            333
+        ],
+        "id": 169
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_11.png"
+        },
+        "solid": true,
+        "split_ratio": 0.706,
+        "collider_scope": "CG",
+        "original_scale": [
+            233,
+            333
+        ],
+        "id": 170
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_11.png"
+        },
+        "solid": true,
+        "split_ratio": 0.95,
+        "collider_scope": "CG",
+        "original_scale": [
+            233,
+            333
+        ],
+        "id": 171
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_11.png"
+        },
+        "solid": true,
+        "split_ratio": 0.598,
+        "collider_scope": "CG",
+        "original_scale": [
+            233,
+            333
+        ],
+        "id": 172
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_11.png"
+        },
+        "solid": true,
+        "split_ratio": 0.709,
+        "collider_scope": "CG",
+        "original_scale": [
+            233,
+            333
+        ],
+        "id": 173
     }
 ]

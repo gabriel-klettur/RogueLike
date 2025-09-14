@@ -3,80 +3,18 @@
   "player": {
     "level": "global_map",
     "pos": [
-      133,
-      62
+      11,
+      85
     ]
   },
-  "npcs": {
-    "2b345b9c-f708-4f51-ac53-e573ce066e91": {
-      "level": "global_map",
-      "tile": [
-        120,
-        59
-      ],
-      "hp": 50,
-      "dead": false,
-      "prototype": "vendor_alchemist_valeria"
-    },
-    "13f90b5a-cc9d-46c6-b649-2fedbc3f502c": {
-      "level": "global_map",
-      "tile": [
-        133,
-        64
-      ],
-      "hp": 50,
-      "dead": false,
-      "prototype": "vendor_blacksmith_mamba"
-    },
-    "1c650df3-1b3d-4331-85c8-9b1cb9cf01de": {
-      "level": "global_map",
-      "tile": [
-        121,
-        66
-      ],
-      "hp": 50,
-      "dead": false,
-      "prototype": "vendor_banker_abigail"
-    }
-  },
+  "npcs": {},
   "levels": {
     "global_map": {
       "player_pos": [
-        133,
-        62
+        11,
+        85
       ],
-      "npc_states": {
-        "2b345b9c-f708-4f51-ac53-e573ce066e91": {
-          "level": "global_map",
-          "tile": [
-            120,
-            59
-          ],
-          "hp": 50,
-          "dead": false,
-          "prototype": "vendor_alchemist_valeria"
-        },
-        "13f90b5a-cc9d-46c6-b649-2fedbc3f502c": {
-          "level": "global_map",
-          "tile": [
-            133,
-            64
-          ],
-          "hp": 50,
-          "dead": false,
-          "prototype": "vendor_blacksmith_mamba"
-        },
-        "1c650df3-1b3d-4331-85c8-9b1cb9cf01de": {
-          "level": "global_map",
-          "tile": [
-            121,
-            66
-          ],
-          "hp": 50,
-          "dead": false,
-          "prototype": "vendor_banker_abigail"
-        }
-      }
+      "npc_states": {}
     }
   },
   "player_inventory": {
@@ -85,7 +23,7 @@
     "slots": [
       {
         "item": "gold",
-        "quantity": 8
+        "quantity": 1
       },
       null,
       null,
@@ -156,10 +94,10 @@
   "meta": {
     "name": "partida_2025-09-12_01-49-08",
     "created_at": "2025-09-12T01:49:08",
-    "last_played": "2025-09-14T00:01:57",
+    "last_played": "2025-09-14T11:49:48",
     "player": {
-      "xp": 70,
-      "level": 4
+      "xp": 60,
+      "level": 3
     },
     "items_summary": {
       "stacks": 1,

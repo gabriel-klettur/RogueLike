@@ -31,6 +31,28 @@ class SpawnerEditorView:
         except Exception:
             self._split_view = None
 
+    # --- Internal helpers ---------------------------------------------------
+    def _find_building_entity_by_id_world(self, bid: int):
+        """Best-effort resolver that searches directly in the ECS world.
+        Makes the view resilient when Instance Properties visuals is unavailable.
+        """
+        try:
+            world = getattr(getattr(self.controller.game, 'ecs', None), 'ecs_world', None)
+        except Exception:
+            world = None
+        if world is None:
+            return None
+        try:
+            for ob in getattr(world, 'buildings', []) or []:
+                try:
+                    if int(getattr(ob, 'id', None)) == int(bid):
+                        return ob
+                except Exception:
+                    continue
+        except Exception:
+            pass
+        return None
+
     def render(self, screen: pygame.Surface) -> None:
         c = self.controller
         if not c.model.visible:
@@ -317,6 +339,8 @@ class SpawnerEditorView:
                         if ob is None:
                             ip.visuals._ensure_building_loaded(int(sel_bid))
                             ob = ip.visuals._find_building_entity_by_id(int(sel_bid))
+                        if ob is None:
+                            ob = self._find_building_entity_by_id_world(int(sel_bid))
                     except Exception:
                         ob = None
                     if ob is not None:                        
@@ -436,10 +460,16 @@ class SpawnerEditorView:
                 if sel_bid is None and target_bid is not None:
                     ob_t = None
                     try:
-                        ob_t = ip.visuals._find_building_entity_by_id(int(target_bid))
-                        if ob_t is None:
-                            ip.visuals._ensure_building_loaded(int(target_bid))
+                        ob_t = None
+                        try:
                             ob_t = ip.visuals._find_building_entity_by_id(int(target_bid))
+                            if ob_t is None:
+                                ip.visuals._ensure_building_loaded(int(target_bid))
+                                ob_t = ip.visuals._find_building_entity_by_id(int(target_bid))
+                        except Exception:
+                            ob_t = None
+                        if ob_t is None:
+                            ob_t = self._find_building_entity_by_id_world(int(target_bid))
                     except Exception:
                         ob_t = None
                     if ob_t is not None:
