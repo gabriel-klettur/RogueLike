@@ -246,6 +246,12 @@ class Building:
         """Update split ratio and clear view caches."""
         # Clamp value between 0.0 and 1.0
         self.model.split_ratio = max(0.0, min(value, 1.0))
+        # Mantener _cut_world sincronizado con la altura actual de la imagen
+        try:
+            if self.model.image is not None:
+                self.model._cut_world = int(self.model.image.get_height() * self.model.split_ratio)
+        except Exception:
+            pass
         if self.controller:
             self.controller.update_on_camera_change()
 

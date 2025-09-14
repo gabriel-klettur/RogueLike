@@ -1857,5 +1857,57 @@
             384
         ],
         "id": 159
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_3.png"
+        },
+        "solid": true,
+        "split_ratio": 0.672,
+        "collider_scope": "CG",
+        "original_scale": [
+            184,
+            235
+        ],
+        "id": 160
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_3.png"
+        },
+        "solid": true,
+        "split_ratio": 0.417,
+        "collider_scope": "CG",
+        "original_scale": [
+            184,
+            235
+        ],
+        "id": 161
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.622,
+        "collider_scope": "CG",
+        "original_scale": [
+            182,
+            249
+        ],
+        "id": 162
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_3.png"
+        },
+        "solid": true,
+        "split_ratio": 0.689,
+        "collider_scope": "CG",
+        "original_scale": [
+            184,
+            235
+        ],
+        "id": 163
     }
 ]
