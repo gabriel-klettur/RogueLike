@@ -1,0 +1,22 @@
+{
+  "friendship_score": 0,
+  "ephemeral_history": [
+    {
+      "role": "user",
+      "content": "hi"
+    },
+    {
+      "role": "assistant",
+      "content": "¡Hola, corazón! Soy Roberto, el mercader del mague: traigo madera de la zona y productos frescos, a precios justos. ¿Qué buscas hoy?"
+    },
+    {
+      "role": "user",
+      "content": "dame amor"
+    },
+    {
+      "role": "assistant",
+      "content": "¡Aquí está Roberto, el mercader del mague! No vendo amor, pero sí madera fresca y mercancía de la zona a precios justos. ¿Qué producto te gustaría llevar?"
+    }
+  ],
+  "preferred_language": "es"
+}

@@ -82,7 +82,24 @@ class ChatInputController:
                                                 return here.parents[5] if len(here.parents) > 5 else Path('.')
                                             root = _find_repo_root()
                                             ms = MemoryStore(root)
-                                            ms.set_language(str(target), code)
+                                            # Construir clave amigable: <slug-name>-<identity.id>, fallback a eid
+                                            def _mem_key(world, eid: int) -> str:
+                                                try:
+                                                    ident = world.components.get('Identity', {}).get(eid)
+                                                    if ident is not None:
+                                                        name = str(getattr(ident, 'name', '') or '').strip().lower()
+                                                        stable_id = getattr(ident, 'id', None)
+                                                        if stable_id is not None:
+                                                            import re
+                                                            slug = re.sub(r"[^a-z0-9]+", "-", name)
+                                                            slug = re.sub(r"-+", "-", slug).strip('-')
+                                                            if not slug:
+                                                                slug = 'npc'
+                                                            return f"{slug}-{int(stable_id)}"
+                                                except Exception:
+                                                    pass
+                                                return str(eid)
+                                            ms.set_language(_mem_key(world, target), code)
                                     except Exception:
                                         pass
                                     # Cerrar dropdown

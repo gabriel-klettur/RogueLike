@@ -136,8 +136,25 @@ class ChatUISystem:
                         root = Path(__file__).resolve().parents[4]
                     except Exception:
                         root = Path('.')
+                    # Construir clave de memoria amigable: <slug-name>-<identity.id>, fallback a eid
+                    def _mem_key(world, eid: int) -> str:
+                        try:
+                            ident = world.components.get('Identity', {}).get(eid)
+                            if ident is not None:
+                                name = str(getattr(ident, 'name', '') or '').strip().lower()
+                                stable_id = getattr(ident, 'id', None)
+                                if stable_id is not None:
+                                    import re
+                                    slug = re.sub(r"[^a-z0-9]+", "-", name)
+                                    slug = re.sub(r"-+", "-", slug).strip('-')
+                                    if not slug:
+                                        slug = 'npc'
+                                    return f"{slug}-{int(stable_id)}"
+                        except Exception:
+                            pass
+                        return str(eid)
                     ms = MemoryStore(root)
-                    pref = ms.get_language(str(target_eid)) or 'es'
+                    pref = ms.get_language(_mem_key(world, target_eid)) or 'es'
                     state.chat_lang_preference = pref
         except Exception:
             pass

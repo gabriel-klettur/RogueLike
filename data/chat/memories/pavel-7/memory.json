@@ -1,0 +1,14 @@
+{
+  "friendship_score": 0,
+  "ephemeral_history": [
+    {
+      "role": "user",
+      "content": "pavel, cuentame algo interesante"
+    },
+    {
+      "role": "assistant",
+      "content": "¿Sabías que cada tronco registra años de lluvia en sus anillos? El bosque nos habla si sabemos escuchar. Tengo madera de pino y roble recién traída, lista para tus proyectos, a buen precio. ¿Te llevas algo ahora?"
+    }
+  ],
+  "preferred_language": "es"
+}

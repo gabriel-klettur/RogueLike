@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ChatJob:
     player_id: int
-    npc_id: int
+    npc_id: str  # memory key (e.g., "roberto-42"), legacy-compatible
     user_text: str
     role: str
     persona_id: str
@@ -70,11 +70,11 @@ class ChatService:
             persona_id=job.persona_id,
             history=job.history,
             user_text=job.user_text,
-            npc_id=str(job.npc_id),
+            npc_id=job.npc_id,
         )
         offline = False
         # Determinar idioma objetivo para este turno (persistente por NPC)
-        npc_key = str(job.npc_id)
+        npc_key = job.npc_id
         target_code = self._target_language(npc_key, job.user_text or "")
 
         try:

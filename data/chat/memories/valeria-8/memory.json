@@ -1,0 +1,30 @@
+{
+  "friendship_score": 0,
+  "ephemeral_history": [
+    {
+      "role": "user",
+      "content": "Valeria, podrias decirme una buena receta de alquimiaÇ"
+    },
+    {
+      "role": "assistant",
+      "content": "¡Claro, tesoro! Receta básica: mezcla agua de luna, hojas de bruma y polvo de cuarzo, añade una gota de esencia de paz y hierve 3 minutos; filtra y tendrás una poción que regenera salud. Si quieres, la preparo yo misma por 15 monedas."
+    },
+    {
+      "role": "user",
+      "content": "que me acabas de decirÇ"
+    },
+    {
+      "role": "assistant",
+      "content": "Te dije una receta básica de alquimia: mezcla agua de luna, hojas de bruma y polvo de cuarzo, añade una gota de esencia de paz y hierve 3 minutos; filtra y tendrás una poción que regenera salud. También dije que podría preparártela yo misma por 15 monedas."
+    },
+    {
+      "role": "user",
+      "content": "valeria que fue lo que hablamos el otro dia?"
+    },
+    {
+      "role": "assistant",
+      "content": "Hablamos de una receta básica de alquimia: mezcla agua de luna, hojas de bruma y polvo de cuarzo, añade una gota de esencia de paz y hierve 3 minutos, luego filtra para obtener una poción que regenera salud. También mencioné que podría preparártela por 15 monedas."
+    }
+  ],
+  "preferred_language": "es"
+}

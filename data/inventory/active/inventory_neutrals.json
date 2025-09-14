@@ -1,6 +1,6 @@
 {
   "f9efc2fa-032d-45d2-9494-293e2b47bbd0": {
-    "template_id": "c7b8a9d0-e1f2-4a34-b5c6-d7e8f9a0b1c2",
+    "template_id": null,
     "slots": [
       {
         "item": "wood",
@@ -32,7 +32,7 @@
     "schema_version": "1.0.0"
   },
   "80186bd9-35ba-497e-a7f0-3dbd9b012ab7": {
-    "template_id": "f1a2b3c4-d5e6-47f8-9012-abcdef123456",
+    "template_id": null,
     "slots": [
       {
         "item": "wood",
@@ -64,7 +64,7 @@
     "schema_version": "1.0.0"
   },
   "719e9713-b659-4bde-b619-aeb65903c7b0": {
-    "template_id": "c2a7f3a4-5f6b-4b8a-92b3-8a4dd6fb2e11",
+    "template_id": null,
     "slots": [
       {
         "item": "health_potion",

@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 
 @dataclass
@@ -40,19 +40,36 @@ class MemoryStore:
         self.dir = self.root / "data" / "chat" / "memories"
         self.dir.mkdir(parents=True, exist_ok=True)
 
+    # --- Path helpers (new layout only) -------------------------------------
+    def _npc_dir(self, entity_id: str, ensure: bool = False) -> Path:
+        """Directory for a specific NPC/entity where all its memories live.
+
+        Layout: data/chat/memories/<entity_id>/memory.json
+        """
+        d = self.dir / str(entity_id)
+        if ensure:
+            d.mkdir(parents=True, exist_ok=True)
+        return d
+
+    def _memory_path(self, entity_id: str, ensure_dir: bool = False) -> Path:
+        d = self._npc_dir(entity_id, ensure=ensure_dir)
+        return d / "memory.json"
+
     def load(self, entity_id: str) -> ConversationMemory:
-        path = self.dir / f"{entity_id}.json"
-        if not path.exists():
-            return ConversationMemory(friendship_score=0, ephemeral_history=[])
-        try:
-            with path.open("r", encoding="utf-8") as f:
-                data = json.load(f)
-            return ConversationMemory.from_dict(data)
-        except Exception:
-            return ConversationMemory(friendship_score=0, ephemeral_history=[])
+        """Load memory for entity using the new folder layout only."""
+        npath = self._memory_path(entity_id, ensure_dir=False)
+        if npath.exists():
+            try:
+                with npath.open("r", encoding="utf-8") as f:
+                    data = json.load(f)
+                return ConversationMemory.from_dict(data)
+            except Exception:
+                return ConversationMemory(friendship_score=0, ephemeral_history=[])
+        return ConversationMemory(friendship_score=0, ephemeral_history=[])
 
     def save(self, entity_id: str, mem: ConversationMemory) -> None:
-        path = self.dir / f"{entity_id}.json"
+        """Save memory using the new folder layout only."""
+        path = self._memory_path(entity_id, ensure_dir=True)
         try:
             with path.open("w", encoding="utf-8") as f:
                 json.dump(mem.to_dict(), f, ensure_ascii=False, indent=2)
