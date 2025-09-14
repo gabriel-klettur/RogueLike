@@ -548,12 +548,12 @@ def handle_events(game):
                 _open_editor_exclusive(game, 'spells')
             return
         if event.type == pygame.KEYDOWN and event.key == game.input_config.get_key('toggle_particles_editor'):
-            # Particles Editor (exclusive) with Left Ctrl modifier
+            # Particles Editor (exclusive) with Left Alt modifier
             try:
-                lctrl = bool(pygame.key.get_mods() & pygame.KMOD_LCTRL)
+                lalt = bool(pygame.key.get_mods() & pygame.KMOD_LALT)
             except Exception:
-                lctrl = False
-            if lctrl:
+                lalt = False
+            if lalt:
                 try:
                     is_vis = bool(getattr(getattr(game, 'particles_editor', None), 'model', None) and getattr(game.particles_editor.model, 'visible', False))
                 except Exception:

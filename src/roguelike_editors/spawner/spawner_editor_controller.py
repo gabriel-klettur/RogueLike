@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from typing import Optional
 from types import SimpleNamespace
+from dataclasses import dataclass
 import pygame
 import logging
 from roguelike_engine.config.map_config import global_map_settings
-from roguelike_engine.config.config_tiles import TILE_SIZE
-from roguelike_engine.config.config_z_layer import Z_LAYERS, DEFAULT_Z
 from roguelike_editors.spawner.services.persistence import find_instance_in_json
 
 from roguelike_editors.spawner.spawner_editor_model import SpawnerEditorModel
@@ -19,6 +18,20 @@ from roguelike_editors.spawner.spawner_instances_panel.spawner_list_instances_co
 from roguelike_editors.spawner.spawner_instance_properties_panel.instance_properties_controller import InstancePropertiesController
 from roguelike_editors.spawner.spawner_instance_toolbar.spawner_instance_toolbar_controller import SpawnerInstanceToolbarController
 from roguelike_editors.spawner.spawner_tutorial_panel import SpawnerTutorialPanelController
+
+
+@dataclass(frozen=True)
+class _UIState:
+    """Snapshot of transient UI state computed from the model and toolbar.
+
+    Centralizes visibility conditions so both `handle_event` and `render` remain
+    small and consistent.
+    """
+    active_tool: Optional[str]
+    hold: bool
+    placing_active: bool
+    manager_visible: bool
+    instances_visible: bool
 
 
 class SpawnerEditorController:
@@ -89,6 +102,98 @@ class SpawnerEditorController:
             pass
         # Track last manager visible state for pulses
         self._manager_visible_last: bool = False
+
+    # ---- Internal state helpers ---------------------------------------------
+    def _compute_ui_state(self) -> _UIState:
+        """Compute current UI/visibility state based on model and toolbar."""
+        try:
+            active_tool = getattr(getattr(self, 'spawner_toolbar', None), 'model', None)
+            active_tool = getattr(active_tool, 'active_tool', None)
+        except Exception:
+            active_tool = None
+        hold = bool(getattr(self.model, 'hold_focus_active', False))
+        placing_active = bool(getattr(self.model, 'placing_template_id', None))
+        manager_visible = bool(self.model.visible and (active_tool == 'spawner_manager') and not hold)
+        instances_visible = bool(
+            self.model.visible
+            and (active_tool == 'spawner_list')
+            and not hold
+            and not getattr(self.model, 'add_mode_active', False)
+            and not getattr(self.model, 'remove_mode_active', False)
+            and not placing_active
+        )
+        return _UIState(
+            active_tool=active_tool,
+            hold=hold,
+            placing_active=placing_active,
+            manager_visible=manager_visible,
+            instances_visible=instances_visible,
+        )
+
+    def _apply_ui_state(self, state: _UIState) -> None:
+        """Synchronize panels visibility and global flags from a `_UIState`."""
+        # Gate subpanels by editor visibility
+        try:
+            self.spawner_manager.set_visible(bool(state.manager_visible))
+        except Exception:
+            pass
+        # Instances panel visibility (also mirrored to its model for view short-circuit)
+        try:
+            vis = bool(state.instances_visible)
+            self.spawner_instances.model.visible = vis
+        except Exception:
+            pass
+        # Instance Toolbar visible whenever the editor is visible
+        try:
+            self.instance_toolbar.model.visible = bool(self.model.visible)
+        except Exception:
+            pass
+        # Instance Properties visibility depends on selection and Instances visibility
+        try:
+            sel = self.spawner_instances.get_selected_instance()
+            self.instance_properties.model.visible = bool(state.instances_visible and sel is not None)
+        except Exception:
+            pass
+        # Global world flag so gameplay input is suppressed while editor activity is present
+        try:
+            world = getattr(getattr(self, 'game', None), 'ecs', None)
+            world = getattr(world, 'ecs_world', None)
+            if world is not None and hasattr(world, 'state'):
+                setattr(
+                    world.state,
+                    'spawner_editor_active',
+                    bool(self.model.visible and (
+                        state.manager_visible or state.instances_visible or state.placing_active or state.hold
+                    )),
+                )
+        except Exception:
+            pass
+
+    def _update_tutorial_pulses(self, state: _UIState) -> None:
+        """Emit one-frame tutorial pulses when panels change visibility."""
+        try:
+            if (
+                self.model.visible and (state.active_tool == 'spawner_list') and not state.hold
+                and not getattr(self.model, 'add_mode_active', False)
+                and not getattr(self.model, 'remove_mode_active', False)
+                and not state.placing_active and not self._instances_visible_last
+            ):
+                setattr(self.model, 'tutorial_instances_open_pulse', True)
+        except Exception:
+            pass
+        try:
+            if state.manager_visible and not self._manager_visible_last:
+                setattr(self.model, 'tutorial_manager_open_pulse', True)
+        except Exception:
+            pass
+
+    def _maybe_refresh_instances_on_first_show(self, state: _UIState) -> None:
+        """Refresh instances list when the Instances tool becomes visible."""
+        if (self.model.visible and (state.active_tool == 'spawner_list')) and not self._instances_visible_last:
+            try:
+                self.spawner_instances.refresh_from_disk()
+            except Exception:
+                pass
 
     # Hold-to-focus integration ------------------------------------------------
     def _on_start_hold_focus(self, x_px: float, y_px: float) -> None:
@@ -299,82 +404,13 @@ class SpawnerEditorController:
                         return True
             except Exception:
                 pass
-            # Sync visibility with toolbar active tool
-            active_tool = getattr(getattr(self, 'spawner_toolbar', None), 'model', None)
-            active_tool = getattr(active_tool, 'active_tool', None)
-            # Gate subpanels by editor visibility
-            hold = bool(getattr(self.model, 'hold_focus_active', False))
-            mgr_visible = bool(self.model.visible and (active_tool == 'spawner_manager') and not hold)
-            self.spawner_manager.set_visible(mgr_visible)
-            # Hide Instances panel while Add Mode, Remove Mode, or Placement is active
-            placing_active = bool(getattr(self.model, 'placing_template_id', None))
-            instances_visible = bool(
-                self.model.visible
-                and (active_tool == 'spawner_list')
-                and not hold
-                and not getattr(self.model, 'add_mode_active', False)
-                and not getattr(self.model, 'remove_mode_active', False)
-                and not placing_active
-            )
-            # Keep model visible in sync for view short-circuit (stay visible even during hold
-            # so the Instances event handler can receive MOUSEBUTTONUP to end hold)
-            try:
-                # But force hidden during Add Mode, Remove Mode, or Placement
-                self.spawner_instances.model.visible = bool(
-                    self.model.visible
-                    and (active_tool == 'spawner_list')
-                    and not getattr(self.model, 'add_mode_active', False)
-                    and not getattr(self.model, 'remove_mode_active', False)
-                    and not placing_active
-                )
-            except Exception:
-                pass
-            # Keep Instance Toolbar visible whenever the editor is visible
-            try:
-                self.instance_toolbar.model.visible = bool(self.model.visible)
-            except Exception:
-                pass
-            # Sync Instance Properties visibility with active tool and selection
-            try:
-                sel = self.spawner_instances.get_selected_instance()
-                self.instance_properties.model.visible = bool(instances_visible and sel is not None)
-            except Exception:
-                pass
-            # Expose global flag so gameplay input can be suppressed while editor is active
-            try:
-                world = getattr(getattr(self, 'game', None), 'ecs', None)
-                world = getattr(world, 'ecs_world', None)
-                if world is not None and hasattr(world, 'state'):
-                    placing_active = bool(getattr(self.model, 'placing_template_id', None))
-                    setattr(
-                        world.state,
-                        'spawner_editor_active',
-                        bool(self.model.visible and (
-                            getattr(self.spawner_manager.model, 'visible', False) or
-                            instances_visible or placing_active or hold
-                        )),
-                    )
-            except Exception:
-                pass
-            # Tutorial pulses for visibility toggles
-            try:
-                # Instances panel newly opened
-                if (self.model.visible and (active_tool == 'spawner_list') and not hold and not getattr(self.model, 'add_mode_active', False)
-                        and not getattr(self.model, 'remove_mode_active', False) and not placing_active and not self._instances_visible_last):
-                    setattr(self.model, 'tutorial_instances_open_pulse', True)
-                # Manager newly opened
-                if mgr_visible and not self._manager_visible_last:
-                    setattr(self.model, 'tutorial_manager_open_pulse', True)
-            except Exception:
-                pass
-            # Refresh instances list on first show
-            if (self.model.visible and (active_tool == 'spawner_list')) and not self._instances_visible_last:
-                try:
-                    self.spawner_instances.refresh_from_disk()
-                except Exception:
-                    pass
-            self._instances_visible_last = bool(self.model.visible and (active_tool == 'spawner_list'))
-            self._manager_visible_last = bool(mgr_visible)
+            # Compute/apply UI state and side effects
+            state = self._compute_ui_state()
+            self._apply_ui_state(state)
+            self._update_tutorial_pulses(state)
+            self._maybe_refresh_instances_on_first_show(state)
+            self._instances_visible_last = bool(self.model.visible and (state.active_tool == 'spawner_list'))
+            self._manager_visible_last = bool(state.manager_visible)
             # Route Tutorial panel early so it can consume ESC and clicks inside
             try:
                 if hasattr(self, 'tutorial') and self.tutorial.handle_event(event):
@@ -422,52 +458,16 @@ class SpawnerEditorController:
     def render(self, screen: pygame.Surface) -> None:
         try:
             # Sync visibility again before rendering (in case of external toggles)
-            active_tool = getattr(getattr(self, 'spawner_toolbar', None), 'model', None)
-            active_tool = getattr(active_tool, 'active_tool', None)
-            # Gate subpanels by editor visibility
-            hold = bool(getattr(self.model, 'hold_focus_active', False))
-            self.spawner_manager.set_visible(self.model.visible and (active_tool == 'spawner_manager') and not hold)
-            # Hide Instances panel while Add Mode, Remove Mode, or Placement is active
-            placing_active = bool(getattr(self.model, 'placing_template_id', None))
-            instances_visible = bool(
-                self.model.visible
-                and (active_tool == 'spawner_list')
-                and not hold
-                and not getattr(self.model, 'add_mode_active', False)
-                and not getattr(self.model, 'remove_mode_active', False)
-                and not placing_active
-            )
-            # Keep model visible in sync for view short-circuit
-            try:
-                self.spawner_instances.model.visible = bool(instances_visible)
-            except Exception:
-                pass
-            # Keep Instance Toolbar visible whenever the editor is visible
-            try:
-                self.instance_toolbar.model.visible = bool(self.model.visible)
-            except Exception:
-                pass
-            # Expose global flag so gameplay input can be suppressed while editor is active
-            try:
-                world = getattr(getattr(self, 'game', None), 'ecs', None)
-                world = getattr(world, 'ecs_world', None)
-                if world is not None and hasattr(world, 'state'):
-                    placing_active = bool(getattr(self.model, 'placing_template_id', None))
-                    setattr(
-                        world.state,
-                        'spawner_editor_active',
-                        bool(self.model.visible and (self.spawner_manager.model.visible or instances_visible or placing_active)),
-                    )
-            except Exception:
-                pass
-            if (self.model.visible and (active_tool == 'spawner_list')) and not self._instances_visible_last:
+            state = self._compute_ui_state()
+            self._apply_ui_state(state)
+            if (self.model.visible and (state.active_tool == 'spawner_list')) and not self._instances_visible_last:
                 try:
                     self.spawner_instances.refresh_from_disk()
                 except Exception:
                     pass
-            self._instances_visible_last = bool(self.model.visible and (active_tool == 'spawner_list'))
+            self._instances_visible_last = bool(self.model.visible and (state.active_tool == 'spawner_list'))
             # While holding focus, keep camera centered on target
-            if hold and getattr(self.model, 'hold_focus_target_px', None) is not None:
+            if state.hold and getattr(self.model, 'hold_focus_target_px', None) is not None:
                 try:
                     cam = getattr(self.game, 'camera', None)
                     if cam is not None:
