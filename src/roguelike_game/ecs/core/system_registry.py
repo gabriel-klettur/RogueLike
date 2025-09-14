@@ -7,6 +7,7 @@ from roguelike_game.ecs.systems.rendering.health_bar_system import HealthBarSyst
 from roguelike_game.ecs.systems.rendering.nameplate_system import NamePlateSystem
 from roguelike_game.ecs.systems.rendering.mana_bar_render_system import ManaBarRenderSystem
 from roguelike_game.ecs.systems.rendering.mana_regen_aura_render_system import ManaRegenAuraRenderSystem
+from roguelike_game.ecs.systems.rendering.godmode_aura_render_system import GodmodeAuraRenderSystem
 from roguelike_game.ecs.systems.rendering.hud_stats_render_system import HUDStatsRenderSystem
 from roguelike_game.ecs.systems.combat.melee.melee_combat_system import MeleeCombatSystem
 from roguelike_game.ecs.systems.physics.facing_system import FacingSystem
@@ -130,7 +131,7 @@ def get_render_system_classes():
     Se añade dinámicamente SpawnDebug y DeathTimerDebug si estamos en DEBUG.
     """
     base = [
-        HealthBarSystem, DashBarRenderSystem, ManaBarRenderSystem, ManaRegenAuraRenderSystem, NamePlateSystem, ChatBubbleRenderSystem, ExperienceRenderSystem, ComboBarRenderSystem, MagicSpellBarRenderSystem,
+        HealthBarSystem, DashBarRenderSystem, ManaBarRenderSystem, ManaRegenAuraRenderSystem, GodmodeAuraRenderSystem, NamePlateSystem, ChatBubbleRenderSystem, ExperienceRenderSystem, ComboBarRenderSystem, MagicSpellBarRenderSystem,
         FireballRenderSystem, ArcaneFlameRenderSystem, FireworkLaunchRenderSystem, SmokeRenderSystem, SmokeEmitterRenderSystem, SphereMagicShieldRenderSystem, TeleportRenderSystem, ParticleRenderSystem, LightningRenderSystem,
         DeathTimerBarSystem,
         # DropRenderSystem removed: drops rendered via RenderSystem
