@@ -20,6 +20,7 @@ class SpellsToolBarPanelView:
         icon_paths = {
             'tutorial_spells': 'assets/ui/tutorials_button.png',
             'spells_on_map': 'assets/ui/spells_on_map_icon.png',
+            'spells_reload': 'assets/ui/particles_editor/toolbar/particles_reset.png',
             'undo': 'assets/ui/undo.png',
             'redo': 'assets/ui/redo.png',
         }

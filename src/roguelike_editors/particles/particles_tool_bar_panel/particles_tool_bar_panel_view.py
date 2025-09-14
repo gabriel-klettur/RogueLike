@@ -19,6 +19,7 @@ class ParticlesToolBarPanelView:
         icon_paths = {
             'tutorial_particles': 'assets/ui/tutorials_button.png',
             'particles_list': 'assets/ui/particles_editor/toolbar/particles_list.png',
+            'particles_reload': 'assets/ui/particles_editor/toolbar/particles_reset.png',
             'undo': 'assets/ui/undo.png',
             'redo': 'assets/ui/redo.png',
         }

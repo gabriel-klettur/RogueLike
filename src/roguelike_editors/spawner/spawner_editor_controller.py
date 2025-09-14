@@ -81,6 +81,11 @@ class SpawnerEditorController:
         self.view = SpawnerEditorView(self)
         # Tutorial overlay (created after view for alignment)
         self.tutorial = SpawnerTutorialPanelController(self, self.view)
+        # Ensure default tool is the Instances list so panels are visible on startup
+        try:
+            self.spawner_toolbar.set_active('spawner_list')
+        except Exception:
+            pass
         # Wire Add button callback from Templates list to begin placement mode
         try:
             self.spawner_manager.list_controller.on_add_template = self._begin_place_template

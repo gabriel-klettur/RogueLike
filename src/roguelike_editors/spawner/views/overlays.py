@@ -2,9 +2,12 @@ from __future__ import annotations
 
 """Dibujo de overlays auxiliares para la vista del Spawner Editor."""
 
+import logging
 import pygame
 from typing import Optional
 from . import theme
+
+logger = logging.getLogger(__name__)
 
 
 def render_hint_overlay(view, screen: pygame.Surface, title_rect: Optional[pygame.Rect], tb_rect: Optional[pygame.Rect], mgr_rect: Optional[pygame.Rect], inst_rect: Optional[pygame.Rect]) -> None:
@@ -21,8 +24,8 @@ def render_hint_overlay(view, screen: pygame.Surface, title_rect: Optional[pygam
                 base_y = max(base_y, inst_rect.bottom + 6)
             text = c.font.render(theme.HINT_TEXT, True, theme.COLOR_HINT)
             screen.blit(text, (10, base_y))
-    except Exception:
-        pass
+    except (AttributeError, TypeError, ValueError, pygame.error):
+        logger.debug("render_hint_overlay: error while drawing hint", exc_info=True)
 
 
 def render_zone_change_confirmation(view, screen: pygame.Surface) -> None:
@@ -64,8 +67,8 @@ def render_zone_change_confirmation(view, screen: pygame.Surface) -> None:
             x = rect.left + (rect.width - surf.get_width()) // 2
             screen.blit(surf, (x, y))
             y += line_h
-    except Exception:
-        pass
+    except (AttributeError, TypeError, ValueError, pygame.error):
+        logger.debug("render_zone_change_confirmation: error while drawing zone confirm", exc_info=True)
 
 
 def render_delete_instance_confirmation(view, screen: pygame.Surface) -> None:
@@ -108,8 +111,8 @@ def render_delete_instance_confirmation(view, screen: pygame.Surface) -> None:
             x = rect.left + (rect.width - surf.get_width()) // 2
             screen.blit(surf, (x, y))
             y += line_h
-    except Exception:
-        pass
+    except (AttributeError, TypeError, ValueError, pygame.error):
+        logger.debug("render_delete_instance_confirmation: error while drawing delete confirm", exc_info=True)
 
 
 def render_visuals_picker(view, screen: pygame.Surface) -> None:
@@ -126,8 +129,8 @@ def render_visuals_picker(view, screen: pygame.Surface) -> None:
                     picker = ip.get_visuals_picker()
                     if picker is not None and inst_rect_anchor is not None:
                         picker.set_anchors(left_x=int(inst_rect_anchor.left), top_y=int(inst_rect_anchor.bottom + 6), reserved_bottom_h=0)
-                except Exception:
-                    pass
+                except (AttributeError, TypeError, ValueError):
+                    logger.debug("render_visuals_picker: failed to set anchors", exc_info=True)
                 ip.render_visuals_picker(screen, cam)
-    except Exception:
-        pass
+    except (AttributeError, TypeError, ValueError, pygame.error):
+        logger.debug("render_visuals_picker: error while drawing picker", exc_info=True)

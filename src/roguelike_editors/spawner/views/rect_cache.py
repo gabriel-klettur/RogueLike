@@ -2,6 +2,10 @@ from __future__ import annotations
 
 """Helpers para manejar el caché de rects en la vista del Spawner Editor."""
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 def reset_last_rects(view) -> None:
     """Reinicia los rects caché de la UI para el frame actual en `view`."""
@@ -20,5 +24,5 @@ def reset_last_rects(view) -> None:
         view._last_z_top_minus_rect = None
         view._last_z_top_plus_rect = None
         view._last_split_handle_rect = None
-    except Exception:
-        pass
+    except AttributeError:
+        logger.debug("reset_last_rects: failed to reset one or more cached rects", exc_info=True)

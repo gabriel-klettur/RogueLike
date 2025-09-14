@@ -8,8 +8,11 @@ Incluye:
 - Paneles Z (top/bottom) y barra de split reutilizando vistas del editor de edificios.
 """
 
+import logging
 import pygame
 from roguelike_ui.ui_blocker import is_blocked
+
+logger = logging.getLogger(__name__)
 
 
 def _draw_building_rect(screen: pygame.Surface, cam, ob, color, width: int) -> pygame.Rect | None:
@@ -24,7 +27,8 @@ def _draw_building_rect(screen: pygame.Surface, cam, ob, color, width: int) -> p
         rect = pygame.Rect(int(sx), int(sy), int(sw), int(sh))
         pygame.draw.rect(screen, color, rect, width)
         return rect
-    except Exception:
+    except (AttributeError, TypeError, ValueError, pygame.error):
+        logger.debug("_draw_building_rect: failed to compute/draw rect", exc_info=True)
         return None
 
 
@@ -46,8 +50,8 @@ def render_buildings_overlays(view, screen: pygame.Surface) -> None:
         ob_hover = ip.visuals.pick_visual_building_under_cursor(int(mx), int(my))
         if ob_hover is not None and getattr(ob_hover, 'id', None) is not None:
             hov_bid = int(getattr(ob_hover, 'id'))
-    except Exception:
-        pass
+    except (AttributeError, TypeError, ValueError, pygame.error):
+        logger.debug("render_buildings_overlays: fallback hover detection failed", exc_info=True)
 
     target_bid = sel_bid if sel_bid is not None else hov_bid
 
@@ -59,7 +63,8 @@ def render_buildings_overlays(view, screen: pygame.Surface) -> None:
             if ob_h is None:
                 ip.visuals._ensure_building_loaded(int(hov_bid))
                 ob_h = ip.visuals._find_building_entity_by_id(int(hov_bid))
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
+            logger.debug("render_buildings_overlays: ensure/find hover building failed", exc_info=True)
             ob_h = None
         if ob_h is not None:
             _draw_building_rect(screen, cam, ob_h, (0, 255, 255), 2)
@@ -74,7 +79,8 @@ def render_buildings_overlays(view, screen: pygame.Surface) -> None:
                 ob = ip.visuals._find_building_entity_by_id(int(sel_bid))
             if ob is None:
                 ob = view._find_building_entity_by_id_world(int(sel_bid))
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
+            logger.debug("render_buildings_overlays: ensure/find selected building failed", exc_info=True)
             ob = None
         if ob is not None:
             rect = _draw_building_rect(screen, cam, ob, (255, 215, 0), 5)
@@ -91,13 +97,14 @@ def render_buildings_overlays(view, screen: pygame.Surface) -> None:
                             ly = rect.top + 2
                         screen.blit(shadow_surf, (lx + 1, ly + 1))
                         screen.blit(text_surf, (lx, ly))
-                except Exception:
-                    pass
+                except (AttributeError, TypeError, ValueError, pygame.error):
+                    logger.debug("render_buildings_overlays: draw ID label failed", exc_info=True)
                 # Controles Delete/Reset/Resize
                 try:
                     mouse_pos = pygame.mouse.get_pos()
                     blocked = bool(is_blocked(*mouse_pos))
-                except Exception:
+                except (TypeError, ValueError, pygame.error):
+                    logger.debug("render_buildings_overlays: ui_blocker check failed", exc_info=True)
                     mouse_pos = (0, 0)
                     blocked = False
                 sw, sh = rect.width, rect.height
@@ -106,7 +113,7 @@ def render_buildings_overlays(view, screen: pygame.Surface) -> None:
                 del_rect = pygame.Rect(rect.left + sw - 3 * handle_size, rect.top, handle_size, handle_size)
                 try:
                     view._last_selected_delete_rect = del_rect.copy()
-                except Exception:
+                except AttributeError:
                     view._last_selected_delete_rect = del_rect
                 is_hover_del = (not blocked) and del_rect.collidepoint(mouse_pos)
                 pygame.draw.rect(screen, (220, 40, 40), del_rect)
@@ -119,7 +126,7 @@ def render_buildings_overlays(view, screen: pygame.Surface) -> None:
                 rst_rect = pygame.Rect(rect.left + sw - 2 * handle_size, rect.top, handle_size, handle_size)
                 try:
                     view._last_selected_reset_rect = rst_rect.copy()
-                except Exception:
+                except AttributeError:
                     view._last_selected_reset_rect = rst_rect
                 is_hover_rst = (not blocked) and rst_rect.collidepoint(mouse_pos)
                 pygame.draw.rect(screen, (255, 255, 255), rst_rect)
@@ -130,13 +137,13 @@ def render_buildings_overlays(view, screen: pygame.Surface) -> None:
                     dfont = pygame.font.SysFont("arial", int(handle_size * 0.6), bold=True)
                     ds = dfont.render('D', True, (0, 0, 0))
                     screen.blit(ds, ds.get_rect(center=rst_rect.center))
-                except Exception:
+                except (ValueError, pygame.error):
                     pass
                 # Resize
                 rz_rect = pygame.Rect(rect.left + sw - handle_size, rect.top, handle_size, handle_size)
                 try:
                     view._last_selected_resize_rect = rz_rect.copy()
-                except Exception:
+                except AttributeError:
                     view._last_selected_resize_rect = rz_rect
                 is_hover_rz = (not blocked) and rz_rect.collidepoint(mouse_pos)
                 pygame.draw.rect(screen, (80, 120, 255), rz_rect)
@@ -148,7 +155,7 @@ def render_buildings_overlays(view, screen: pygame.Surface) -> None:
                     rfont = pygame.font.SysFont("arial", int(handle_size * 0.8), bold=True)
                     rs = rfont.render('R', True, (255, 255, 0))
                     screen.blit(rs, rs.get_rect(center=rz_rect.center))
-                except Exception:
+                except (ValueError, pygame.error):
                     pass
                 # Z toolbars
                 try:
@@ -172,7 +179,7 @@ def render_buildings_overlays(view, screen: pygame.Surface) -> None:
                                 view._last_z_top_minus_rect = pygame.Rect(px + m.x, py + m.y, m.w, m.h)
                             if p is not None:
                                 view._last_z_top_plus_rect = pygame.Rect(px + p.x, py + p.y, p.w, p.h)
-                except Exception:
+                except (AttributeError, TypeError, ValueError, pygame.error):
                     pass
                 # Split bar
                 try:
@@ -180,7 +187,7 @@ def render_buildings_overlays(view, screen: pygame.Surface) -> None:
                         sret = view._split_view.render(screen, ob, cam)
                         if isinstance(sret, dict):
                             view._last_split_handle_rect = sret.get('handle_rect')
-                except Exception:
+                except (AttributeError, TypeError, ValueError, pygame.error):
                     pass
 
     # Sin selección: aún dibujar Z panels/split para hovered
@@ -191,7 +198,8 @@ def render_buildings_overlays(view, screen: pygame.Surface) -> None:
             if ob_t is None:
                 ip.visuals._ensure_building_loaded(int(target_bid))
                 ob_t = ip.visuals._find_building_entity_by_id(int(target_bid))
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
+            logger.debug("render_buildings_overlays: ensure/find target building failed", exc_info=True)
             ob_t = None
         if ob_t is None:
             ob_t = view._find_building_entity_by_id_world(int(target_bid))
@@ -221,5 +229,5 @@ def render_buildings_overlays(view, screen: pygame.Surface) -> None:
                     sret = view._split_view.render(screen, ob_t, cam)
                     if isinstance(sret, dict):
                         view._last_split_handle_rect = sret.get('handle_rect')
-            except Exception:
-                pass
+            except (AttributeError, TypeError, ValueError, pygame.error):
+                logger.debug("render_buildings_overlays: hovered z/split render failed", exc_info=True)

@@ -53,3 +53,11 @@ def toggle_visible(controller: Any) -> None:
             controller.instance_properties.model.visible = False
         except Exception:
             pass
+    else:
+        # Editor was just opened: default to Instances tool so panels are visible
+        try:
+            tb = getattr(getattr(controller, 'spawner_toolbar', None), 'model', None)
+            if tb is not None and getattr(tb, 'active_tool', None) is None:
+                tb.active_tool = 'spawner_list'
+        except Exception:
+            pass

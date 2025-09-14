@@ -14,7 +14,6 @@ from roguelike_editors.spawner.services.persistence import (
     generate_instance_id,
     load_spawners_json,
 )
-from roguelike_engine.config import config as _cfg
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from .instance_properties_model import InstancePropertiesModel
@@ -62,7 +61,7 @@ class InstancePropertiesController:
         # Toast defaults
         try:
             self._toast_ms = 1600
-        except Exception:
+        except AttributeError:
             pass
         # Strict cleanup policy: when clearing Visuals, also remove untagged
         # building instances that are tied to this spawner via root-level
@@ -70,7 +69,7 @@ class InstancePropertiesController:
         # request ("modo estricto").
         try:
             self.strict_visuals_cleanup = True
-        except Exception:
+        except AttributeError:
             pass
         # Reduce repeated logs: keep a signature of last visuals we logged
         self._last_visuals_log_sig: tuple | None = None
@@ -87,7 +86,7 @@ class InstancePropertiesController:
             self._log.setLevel(logging.DEBUG)
             # Avoid duplicate logs due to root handlers
             self._log.propagate = False
-        except Exception:
+        except (AttributeError, ValueError):
             pass
 
     # --- API -----------------------------------------------------------------
@@ -95,7 +94,7 @@ class InstancePropertiesController:
         """Provide access to game (camera/world) for visuals operations."""
         try:
             self.game = game
-        except Exception:
+        except AttributeError:
             self.game = None
         # No need to pass to visuals: it dereferences parent.game dynamically
 
@@ -108,13 +107,13 @@ class InstancePropertiesController:
                 # Track original id for robust persistence
                 try:
                     self.model.original_id = str(inst.get('id')) if inst.get('id') is not None else None
-                except Exception:
+                except (AttributeError, TypeError, ValueError):
                     self.model.original_id = None
                 tpl = str(inst.get('template_id'))
                 zone = str(inst.get('zone'))
                 tile = tuple(inst.get('tile', [0, 0]))
                 key = (tpl, zone, (int(tile[0]), int(tile[1])))
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             key = None
         self.model.original_key = key
         self.model.visible = inst is not None
@@ -134,17 +133,17 @@ class InstancePropertiesController:
         try:
             if inst is not None and isinstance(inst.get('visuals'), dict):
                 visuals = dict(inst.get('visuals') or {})
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             visuals = {}
         self.model.visuals = visuals
         try:
             self._log.debug(f"[InstanceProps] set_instance: loaded visuals keys={list(visuals.keys()) if isinstance(visuals, dict) else visuals}")
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
         # Ensure buildings index is FRESH to avoid false sanitization of newly created instances
         try:
             self._building_index = None
-        except Exception:
+        except AttributeError:
             pass
         self._ensure_buildings_index()
         self._ensure_building_templates()
@@ -153,17 +152,17 @@ class InstancePropertiesController:
         try:
             if hasattr(self, 'visuals') and getattr(self.visuals, 'model', None) is not None:
                 self.visuals.model.selected_building_id = None
-        except Exception:
+        except AttributeError:
             pass
         # Garbage collect invalid building instances in JSON (e.g., missing/invalid template_id) first
         try:
             self._gc_invalid_building_instances()
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
         # Then sanitize visuals mappings that point to missing instances
         try:
             self._sanitize_visuals_instances()
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             # Best-effort; do not block UI if cleanup fails
             pass
 
@@ -179,11 +178,11 @@ class InstancePropertiesController:
             # Ensure fresh building index to avoid false removals
             try:
                 self._building_index = None
-            except Exception:
+            except AttributeError:
                 pass
             self._ensure_buildings_index()
             self._sanitize_visuals_instances()
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
         # While holding on a visuals row, keep camera centered on its building
         try:
@@ -194,7 +193,7 @@ class InstancePropertiesController:
                 if j is not None and 0 <= int(j) < len(vis_rows):
                     st = str(vis_rows[int(j)][0])
                     self.visuals.center_camera_on_state(st)
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
         return self.view.render(self, screen, anchor=anchor)
 
@@ -212,19 +211,19 @@ class InstancePropertiesController:
             try:
                 import pygame as _pg
                 self._sanitize_block_until_ms = int((_pg.time.get_ticks() or 0) + 600)
-            except Exception:
+            except (ImportError, AttributeError, TypeError, ValueError):
                 self._sanitize_block_until_ms = 0
             self.set_visual_template_via_picker(state_key, int(template_id))
             # Toast feedback
             self._show_toast(f"Template aplicado: {int(template_id)} → {state_key}")
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             # Best effort; keep UI consistent
             pass
         # Close picker after applying
         try:
             self.model.visuals_picker_open = False
             self.model.visuals_picker_state = None
-        except Exception:
+        except AttributeError:
             pass
         self._visuals_picker = None
         # Force refresh rows/index after applying to ensure UI reflects changes immediately
@@ -235,7 +234,7 @@ class InstancePropertiesController:
             # Reload from disk to ensure we keep in sync
             self._reload_selected_from_json()
             self._log.debug(f"[InstanceProps] After picker close, visuals_rows: {self.model.visuals_rows}")
-        except Exception:
+        except (AttributeError, TypeError, ValueError, OSError):
             pass
 
     def open_visuals_picker_for_state(self, state_key: str) -> None:
@@ -251,11 +250,11 @@ class InstancePropertiesController:
             prec = getattr(self.view, 'panel_rect', None)
             if prec is not None and self._visuals_picker is not None:
                 self._visuals_picker.set_anchors(left_x=prec.left, top_y=prec.bottom + 6, reserved_bottom_h=40)
-        except Exception:
+        except AttributeError:
             pass
         try:
             self._log.debug(f"[InstanceProps] Opened VisualsPicker for state={state_key}")
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
 
     def get_visuals_picker(self) -> VisualsPicker | None:
@@ -265,14 +264,14 @@ class InstancePropertiesController:
         if not getattr(self.model, 'visuals_picker_open', False) or self._visuals_picker is None:
             return False
         try:
-            handled = bool(self._visuals_picker.handle_event(event, camera))
-            # Debug a subset of events
+            handled = self._visuals_picker.handle_event(event)
+            # Debug log only for mouse clicks and keydown
             et = getattr(event, 'type', None)
             btn = getattr(event, 'button', None)
             if et in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP):
                 self._log.debug(f"[InstanceProps] Picker event: type={et} btn={btn}")
             return handled
-        except Exception:
+        except AttributeError:
             return False
 
     def render_visuals_picker(self, screen, camera) -> None:
@@ -280,12 +279,12 @@ class InstancePropertiesController:
             # Ensure UI reloads from persisted disk state
             try:
                 self._reload_selected_from_json()
-            except Exception:
+            except (AttributeError, OSError, ValueError, TypeError):
                 pass
             return
         try:
             self._visuals_picker.render(screen, camera)
-        except Exception:
+        except AttributeError:
             pass
 
     # --- Internal helpers ----------------------------------------------------
@@ -307,14 +306,14 @@ class InstancePropertiesController:
             try:
                 if isinstance(inst.get('visuals'), dict):
                     visuals = dict(inst.get('visuals') or {})
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 visuals = {}
             self.model.visuals = visuals
             # Rebuild rows from fresh disk state
             self._ensure_buildings_index()
             self._build_visuals_rows()
             self._log.debug(f"[InstanceProps] _reload_selected_from_json: idx={idx} visuals={visuals}")
-        except Exception:
+        except (AttributeError, TypeError, ValueError, OSError):
             pass
 
     # --- Editor visibility helpers -----------------------------------------
@@ -366,9 +365,9 @@ class InstancePropertiesController:
                         if getattr(arr[i], 'id', None) == int(bid):
                             arr.pop(i)
                             removed_any = True
-                    except Exception:
+                    except (AttributeError, TypeError, ValueError):
                         continue
-        except Exception:
+        except AttributeError:
             pass
         # Remove from editor/game registry
         try:
@@ -381,15 +380,15 @@ class InstancePropertiesController:
                         if getattr(arr2[i], 'id', None) == int(bid):
                             arr2.pop(i)
                             removed_any = True
-                    except Exception:
+                    except (AttributeError, TypeError, ValueError):
                         continue
-        except Exception:
+        except AttributeError:
             pass
         # Best-effort: clear any cached visibility flags
         try:
             if int(bid) in self.visuals.model.editor_visibility:
                 self.visuals.model.editor_visibility.pop(int(bid), None)
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
         return removed_any
 
@@ -400,22 +399,22 @@ class InstancePropertiesController:
         flat: List[Tuple[str, str]] = []
         try:
             flat.append(("id", str(data.get('id'))))
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
         try:
             # Simple fields
             flat.append(("template_id", str(data.get('template_id'))))
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
         try:
             flat.append(("zone", str(data.get('zone'))))
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
         try:
             tile = data.get('tile', [0, 0])
             flat.append(("tile.0", str(tile[0] if isinstance(tile, (list, tuple)) and len(tile) > 0 else 0)))
             flat.append(("tile.1", str(tile[1] if isinstance(tile, (list, tuple)) and len(tile) > 1 else 0)))
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
         # Overrides tree
         try:
@@ -423,12 +422,24 @@ class InstancePropertiesController:
             if isinstance(ov, dict):
                 for k, v in self.view._flatten(ov, prefix="overrides"):  # reuse view flattener
                     flat.append((k, v))
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
         return flat
 
     def get_rows(self) -> List[Tuple[str, str]]:
         return list(self._rows)
+
+    def get_visuals_rows(self) -> List[Tuple[str, str, str]]:
+        """Expose prebuilt visuals rows for the view (state, instance_id, template_id).
+        The view and visuals view call this; missing it causes AttributeError and an empty panel.
+        """
+        try:
+            rows = getattr(self.model, 'visuals_rows', None)
+            if isinstance(rows, list):
+                return list(rows)
+        except Exception:
+            pass
+        return []
 
     # Visuals helpers ---------------------------------------------------------
     def _ensure_buildings_index(self) -> None:
@@ -443,9 +454,9 @@ class InstancePropertiesController:
                         bid = int(e.get('id'))
                         tid = str(e.get('template_id'))
                         idx[bid] = tid
-                    except Exception:
+                    except (AttributeError, TypeError, ValueError):
                         continue
-        except Exception:
+        except (OSError, ValueError, TypeError, AttributeError):
             idx = {}
         self._building_index = idx
 
@@ -460,9 +471,9 @@ class InstancePropertiesController:
                     try:
                         tid = int(e.get('id'))
                         ids.add(tid)
-                    except Exception:
+                    except (AttributeError, TypeError, ValueError):
                         continue
-        except Exception:
+        except (OSError, ValueError, TypeError, AttributeError):
             ids = set()
         self._building_template_ids = ids
 
@@ -478,7 +489,7 @@ class InstancePropertiesController:
             if sig != self._last_visuals_log_sig:
                 self._last_visuals_log_sig = sig
                 self._log.debug(f"[InstanceProps] visuals updated: {visuals}")
-        except Exception:
+        except (TypeError, ValueError):
             pass
         idx = self._building_index or {}
         rows: List[tuple[str, str, str]] = []
@@ -534,7 +545,7 @@ class InstancePropertiesController:
                     if isinstance(inst_val, dict):
                         try:
                             inst_int = int(inst_val.get('instance_id') or inst_val.get('id') or inst_val.get('building_instance_id'))
-                        except Exception:
+                        except (AttributeError, TypeError, ValueError):
                             inst_int = None
                         tpl_from_val = inst_val.get('template_id') if isinstance(inst_val, dict) else None
                         if inst_int is not None:
@@ -548,18 +559,18 @@ class InstancePropertiesController:
                     else:
                         try:
                             inst_int = int(inst_val)
-                        except Exception:
+                        except (TypeError, ValueError):
                             inst_int = None
                         inst_str = str(inst_val)
                         if inst_int is not None and inst_int in idx:
                             tpl_str = idx.get(inst_int, 'N/A')
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 pass
             # Record mapping for later editing/commit operations
             try:
                 if chosen_key is not None:
                     key_map[str(canon)] = str(chosen_key)
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 pass
             rows.append((str(canon), inst_str, tpl_str))
 
@@ -584,7 +595,7 @@ class InstancePropertiesController:
                     if isinstance(inst_id, dict):
                         try:
                             inst_int = int(inst_id.get('instance_id') or inst_id.get('id') or inst_id.get('building_instance_id'))
-                        except Exception:
+                        except (AttributeError, TypeError, ValueError):
                             inst_int = None
                         if inst_int is not None:
                             inst_str = str(inst_int)
@@ -596,22 +607,22 @@ class InstancePropertiesController:
                     else:
                         try:
                             inst_int = int(inst_id)
-                        except Exception:
+                        except (TypeError, ValueError):
                             inst_int = None
                         inst_str = str(inst_id)
                         if inst_int is not None and inst_int in idx:
                             tpl_str = idx.get(inst_int, 'N/A')
-                except Exception:
+                except (AttributeError, TypeError, ValueError):
                     pass
                 rows.append((str(state), inst_str, tpl_str))
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
 
         self.model.visuals_rows = rows
         # Expose the display->JSON key mapping for event handlers/commits
         try:
             self.model.visuals_key_map = key_map
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
 
     def _sanitize_visuals_instances(self) -> None:
@@ -623,8 +634,7 @@ class InstancePropertiesController:
         self._ensure_buildings_index()
         # Ensure we have valid building template ids to allow template-only mappings
         self._ensure_building_templates()
-        # Prefer disk truth: load current visuals for the selected instance and do not recreate
-        # mappings that were already removed on disk (e.g., after deletion via Building Editor).
+        # Prefer disk truth: do not recreate mappings that were already removed on disk
         disk_visuals_keys: set[str] = set()
         try:
             sid = getattr(self.model, 'original_id', None)
@@ -634,18 +644,18 @@ class InstancePropertiesController:
                     vis_disk = data[idx].get('visuals')
                     if isinstance(vis_disk, dict):
                         disk_visuals_keys = {str(k) for k in vis_disk.keys()}
-        except Exception:
+        except (AttributeError, TypeError, ValueError, OSError):
             disk_visuals_keys = set()
-        # Skip sanitization during the debounce window after user changes
+        # Skip sanitization during debounce window
         try:
             import pygame as _pg
             now = int(_pg.time.get_ticks() or 0)
-        except Exception:
+        except (ImportError, AttributeError, TypeError, ValueError):
             now = 0
         if self._sanitize_block_until_ms and now < self._sanitize_block_until_ms:
             try:
                 self._log.debug(f"[InstanceProps] sanitize_visuals: SKIP (debounce) now={now} until={self._sanitize_block_until_ms}")
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 pass
             return
         visuals = dict(getattr(self.model, 'visuals', {}) or {})
@@ -657,12 +667,12 @@ class InstancePropertiesController:
             try:
                 if int(bid) in idx:
                     return True
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 pass
             try:
                 if self._find_building_entity_by_id(int(bid)) is not None:
                     return True
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 pass
             return False
         valid_tpls = self._building_template_ids or set()
@@ -677,12 +687,12 @@ class InstancePropertiesController:
                 if disk_visuals_keys and (str(k) not in disk_visuals_keys):
                     try:
                         self._log.info(f"[InstanceProps] sanitize_visuals: dropping state='{k}' (absent on disk)")
-                    except Exception:
+                    except (AttributeError, TypeError, ValueError):
                         pass
                     visuals.pop(k, None)
                     removed_any = True
                     continue
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 pass
             vid = None
             vtpl = None
@@ -691,28 +701,24 @@ class InstancePropertiesController:
                     vid = int(v.get('instance_id') or v.get('id') or v.get('building_instance_id'))
                     try:
                         vtpl = int(v.get('template_id')) if v.get('template_id') is not None else None
-                    except Exception:
+                    except (AttributeError, TypeError, ValueError):
                         vtpl = None
                 else:
                     vid = int(v)
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 # Non-integer/invalid mapping is invalid
                 vid = None
-            # Keep or repair mapping:
-            # - If building instance exists either on disk or currently spawned in world -> keep
-            # - If mapping has a valid template_id but instance is missing -> auto-repair by creating/reusando una instancia
-            # - Otherwise -> remove
+            # Keep or repair mapping
             repaired = False
             if vid is not None and _building_exists(int(vid)):
                 keep = True
             elif isinstance(v, dict) and vtpl is not None and vtpl in valid_tpls:
-                # Auto-repair: crear/reutilizar instancia para este estado usando el template_id
+                # Auto-repair by creating/reusing an instance for this template
                 try:
-                    # Sembrar el template pendiente para reutilizar el helper estándar
                     try:
                         if not hasattr(self.model, 'visuals_pending_templates') or self.model.visuals_pending_templates is None:
                             self.model.visuals_pending_templates = {}
-                    except Exception:
+                    except (AttributeError, TypeError):
                         pass
                     self.model.visuals_pending_templates[str(k)] = str(int(vtpl))
                     new_id = self.add_building_instance_for_visual(str(k), reveal=False)
@@ -722,12 +728,11 @@ class InstancePropertiesController:
                         repaired_any = True
                         try:
                             self._log.info(f"[InstanceProps] sanitize_visuals: repaired state='{k}' -> instance_id={new_id} tpl={vtpl}")
-                        except Exception:
+                        except (AttributeError, TypeError, ValueError):
                             pass
                     else:
-                        # No pudo repararse; se eliminará más abajo
                         repaired = False
-                except Exception:
+                except (AttributeError, TypeError, ValueError, OSError):
                     repaired = False
                 keep = repaired
             else:
@@ -736,7 +741,7 @@ class InstancePropertiesController:
                 try:
                     reason = 'invalid' if vid is None else 'missing in buildings and no valid template_id'
                     self._log.warning(f"[InstanceProps] sanitize_visuals: removing state='{k}' reason={reason} value={v}")
-                except Exception:
+                except (AttributeError, TypeError, ValueError):
                     pass
                 visuals.pop(k, None)
                 removed_any = True
@@ -746,15 +751,16 @@ class InstancePropertiesController:
             try:
                 if self.model.selected_instance is not None:
                     self.model.selected_instance['visuals'] = visuals
-            except Exception:
+            except AttributeError:
                 pass
             self._persist_instance()
             # Rebuild to refresh UI
             self._build_visuals_rows()
             try:
                 self._log.info(f"[InstanceProps] sanitize_visuals: persisted cleanup/repairs keys={list(visuals.keys())}")
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 pass
+
 
     def _gc_invalid_building_instances(self) -> None:
         """Remove entries from buildings_instances.json with invalid id or template_id.
@@ -775,12 +781,8 @@ class InstancePropertiesController:
         for e in data:
             try:
                 eid = int(e.get('id'))
-            except Exception:
-                removed = True
-                continue
-            try:
                 tid = int(e.get('template_id'))
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 removed = True
                 continue
             if tid not in valid_tpls:
@@ -797,7 +799,7 @@ class InstancePropertiesController:
                     ry = int(e.get('rel_y') or 0)
                     tid = int(e.get('template_id') or -1)
                     return f"{zone}|{rx}|{ry}|{tid}"
-                except Exception:
+                except (AttributeError, TypeError, ValueError):
                     return str(id(e))
             def _score(e: dict) -> tuple:
                 ov = e.get('overrides') if isinstance(e, dict) else None
@@ -809,46 +811,33 @@ class InstancePropertiesController:
                     sid = str(inst.get('id')) if inst.get('id') is not None else None
                     if sid and (str(e.get('spawner_instance_id')) == sid or str((ov or {}).get('spawner_instance_id')) == sid):
                         tied_to_me = 1
-                except Exception:
+                except (AttributeError, TypeError, ValueError):
                     tied_to_me = 0
                 try:
                     neg_id = -int(e.get('id') or 0)
-                except Exception:
+                except (AttributeError, TypeError, ValueError):
                     neg_id = 0
                 return (tied_to_me, is_spawn_vis, neg_id)
-            deduped = []
             for e in kept:
                 k = _key(e)
                 cur = seen.get(k)
-                if cur is None:
+                if cur is None or _score(e) > _score(cur):
                     seen[k] = e
-                else:
-                    if _score(e) > _score(cur):
-                        seen[k] = e
             deduped = list(seen.values())
             if len(deduped) != len(kept):
                 kept = deduped
                 removed = True
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
         if removed:
             try:
                 self._log.warning(f"[InstanceProps] GC/Dedup buildings_instances: before={len(data)} after={len(kept)} removed={len(data)-len(kept)}")
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 pass
             self._write_buildings_instances(kept)
             # Refresh index to reflect removals
             self._building_index = None
             self._ensure_buildings_index()
-
-    def get_visuals_rows(self) -> List[tuple[str, str, str]]:
-        return list(getattr(self.model, 'visuals_rows', []) or [])
-
-    def _parse_int(self, s: str) -> Optional[int]:
-        try:
-            return int(float(str(s).strip()))
-        except Exception:
-            return None
 
     def _validate_template_text(self, text: str) -> tuple[bool, Optional[str], Optional[int]]:
         """Return (is_valid, error_msg, parsed_id). Empty text returns (True, None, None)."""
@@ -872,7 +861,7 @@ class InstancePropertiesController:
             if vti is not None:
                 try:
                     txt = vti.text
-                except Exception:
+                except AttributeError:
                     pass
         ok, msg, _ = self._validate_template_text(txt)
         return ok, msg
@@ -893,7 +882,7 @@ class InstancePropertiesController:
                 if st == state_key:
                     cur_tpl = str(tpl)
                     break
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
         # If template is N/A, start empty
         if cur_tpl.upper() == 'N/A':
@@ -910,7 +899,7 @@ class InstancePropertiesController:
         try:
             import pygame as _pg
             _pg.key.start_text_input()
-        except Exception:
+        except (ImportError, AttributeError, pygame.error):
             pass
 
     def cancel_edit_visual(self) -> None:
@@ -918,7 +907,7 @@ class InstancePropertiesController:
         try:
             import pygame as _pg
             _pg.key.stop_text_input()
-        except Exception:
+        except (ImportError, AttributeError, pygame.error):
             pass
 
     def _load_buildings_instances(self) -> List[Dict[str, Any]]:
@@ -929,7 +918,7 @@ class InstancePropertiesController:
         # Post-write GC to ensure consistency
         try:
             self._gc_invalid_building_instances()
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
 
     def _count_instance_refs_in_visuals(self, inst_id: int) -> int:
@@ -943,7 +932,7 @@ class InstancePropertiesController:
                     val = int(v)
                 if val == inst_id:
                     cnt += 1
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 continue
         return cnt
 
@@ -962,7 +951,7 @@ class InstancePropertiesController:
                 iid = int(e.get('id'))
                 tid = int(e.get('template_id'))
                 tpl_by_id[iid] = tid
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 continue
         for _, val in visuals.items():
             try:
@@ -970,7 +959,7 @@ class InstancePropertiesController:
                     vid = int(val.get('instance_id') or val.get('id') or val.get('building_instance_id'))
                 else:
                     vid = int(val)
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 continue
             if vid in tpl_by_id and tpl_by_id[vid] == int(template_id):
                 return vid
@@ -984,7 +973,7 @@ class InstancePropertiesController:
                 if int(e.get('id')) == source_id:
                     src = e
                     break
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 continue
         if src is None:
             return None
@@ -994,7 +983,7 @@ class InstancePropertiesController:
             ids = [int(e.get('id')) for e in data if e.get('id') is not None]
             if ids:
                 next_id = max(ids) + 1
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
         clone = {
             'id': next_id,
@@ -1022,7 +1011,7 @@ class InstancePropertiesController:
             if sid:
                 clone['spawn_id'] = str(sid)
                 clone['spawner_instance_id'] = str(sid)
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
         data.append(clone)
         self._write_buildings_instances(data)
@@ -1045,7 +1034,7 @@ class InstancePropertiesController:
             try:
                 if vti is not None:
                     vti.activate(new_txt, select_all=False)
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 pass
             return True
         # If empty text -> clear mapping for this state
@@ -1060,22 +1049,21 @@ class InstancePropertiesController:
                     try:
                         if self.model.selected_instance is not None:
                             self.model.selected_instance['visuals'] = visuals
-                    except Exception:
+                    except AttributeError:
                         pass
                     # Persist and refresh
                     self._persist_instance()
                     self._build_visuals_rows()
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 pass
             # Exit edit mode and stop OS text input
             self.model.visuals_editing_state = None
             try:
                 import pygame as _pg
                 _pg.key.stop_text_input()
-            except Exception:
+            except (ImportError, AttributeError, pygame.error):
                 pass
             return True
-
         # Apply the new template id using the same helper as the picker flow
         try:
             if new_tpl_id is not None:
@@ -1083,23 +1071,21 @@ class InstancePropertiesController:
                 try:
                     import pygame as _pg
                     self._sanitize_block_until_ms = int((_pg.time.get_ticks() or 0) + 600)
-                except Exception:
+                except (ImportError, AttributeError, TypeError, ValueError):
                     self._sanitize_block_until_ms = 0
                 self.set_visual_template_via_picker(str(display_state), int(new_tpl_id))
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
         # Exit edit mode and stop OS text input
         self.model.visuals_editing_state = None
         try:
             import pygame as _pg
             _pg.key.stop_text_input()
-        except Exception:
+        except (ImportError, AttributeError, pygame.error):
             pass
         return True
-
     def set_visual_template_via_picker(self, state_key: str, new_tpl_id: int) -> None:
         """Apply a template selection coming from the visuals picker overlay.
-
         Mirrors the logic used by inline text commit and the '+' flow, reusing existing
         helpers to update or clone building instances as needed, then rewires the visuals map
         and persists the spawner instance.
@@ -1109,7 +1095,7 @@ class InstancePropertiesController:
             self._ensure_building_templates()
             if (self._building_template_ids or set()) and new_tpl_id not in (self._building_template_ids or set()):
                 return
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
         # Current visuals row info
         rows = self.get_visuals_rows()
@@ -1118,7 +1104,7 @@ class InstancePropertiesController:
             if st == state_key:
                 try:
                     cur_inst_int = int(float(str(inst_str))) if str(inst_str).strip() != '' and str(inst_str).upper() != 'N/A' else None
-                except Exception:
+                except (ValueError, TypeError):
                     cur_inst_int = None
                 break
         self._log.debug(f"[InstanceProps] set_visual_template_via_picker: state={state_key} tpl={new_tpl_id} cur_inst={cur_inst_int}")
@@ -1127,16 +1113,16 @@ class InstancePropertiesController:
         try:
             self._ensure_buildings_index()
             _exists_on_disk = bool((self._building_index or {}).get(int(cur_inst_int)) is not None) if cur_inst_int is not None else False
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             _exists_on_disk = False
         try:
             _exists_in_world = self._find_building_entity_by_id(int(cur_inst_int)) is not None if cur_inst_int is not None else False
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             _exists_in_world = False
         if cur_inst_int is not None and not (_exists_on_disk or _exists_in_world):
             try:
                 self._log.warning(f"[InstanceProps] set_visual_template_via_picker: instance_id {cur_inst_int} no existe (disco/mundo). Se creará uno nuevo.")
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 pass
             cur_inst_int = None
         # If there was an instance id and user provided a valid template id
@@ -1156,7 +1142,7 @@ class InstancePropertiesController:
                             e['template_id'] = int(desired)
                             changed = True
                             break
-                    except Exception:
+                    except (AttributeError, TypeError, ValueError):
                         continue
                 if changed:
                     self._write_buildings_instances(data)
@@ -1170,7 +1156,7 @@ class InstancePropertiesController:
                             inst_sel = self.model.selected_instance
                             if isinstance(inst_sel, dict) and inst_sel.get('id') is not None:
                                 sid = str(inst_sel.get('id'))
-                        except Exception:
+                        except (AttributeError, TypeError, ValueError):
                             sid = None
                         if sid:
                             for e in data:
@@ -1184,10 +1170,10 @@ class InstancePropertiesController:
                                         ov['spawner_instance_id'] = sid
                                         e['overrides'] = ov
                                         break
-                                except Exception:
+                                except (AttributeError, TypeError, ValueError):
                                     continue
                             self._write_buildings_instances(data)
-                    except Exception:
+                    except (AttributeError, TypeError, ValueError):
                         pass
                     # Ensure visuals mapping stores template as well
                     visuals = getattr(self.model, 'visuals', {}) or {}
@@ -1202,23 +1188,23 @@ class InstancePropertiesController:
                             ov = dict(inst.get('overrides') or {})
                             ov['visible_in_game'] = True
                             inst['overrides'] = ov
-                    except Exception:
+                    except (AttributeError, TypeError, ValueError):
                         pass
                     try:
                         if self.model.selected_instance is not None:
                             self.model.selected_instance['visuals'] = visuals
-                    except Exception:
+                    except AttributeError:
                         pass
                     self._build_visuals_rows()
                     # Persist spawner instance as well to keep ids/keys consistent
                     try:
                         self._persist_instance()
-                    except Exception:
+                    except (AttributeError, TypeError, ValueError):
                         pass
                     # Reveal the updated/assigned building in editor immediately
                     try:
                         self._tag_and_reveal_building(int(cur_inst_int), state_key)
-                    except Exception:
+                    except (AttributeError, TypeError, ValueError):
                         pass
                     self._log.info(f"[InstanceProps] Updated instance {cur_inst_int} -> template {desired}")
                     try:
@@ -1227,7 +1213,7 @@ class InstancePropertiesController:
                             if r[0] == state_key:
                                 self._log.debug(f"[InstanceProps] Row after update: {r}")
                                 break
-                    except Exception:
+                    except (AttributeError, TypeError, ValueError):
                         pass
             else:
                 # Shared by multiple states: clone and rewire only this state
@@ -1245,12 +1231,12 @@ class InstancePropertiesController:
                             ov = dict(inst.get('overrides') or {})
                             ov['visible_in_game'] = True
                             inst['overrides'] = ov
-                    except Exception:
+                    except (AttributeError, TypeError, ValueError):
                         pass
                     try:
                         if self.model.selected_instance is not None:
                             self.model.selected_instance['visuals'] = visuals
-                    except Exception:
+                    except AttributeError:
                         pass
                     self._persist_instance()
                     # Rebuild views/indexes
@@ -1259,7 +1245,7 @@ class InstancePropertiesController:
                     # Reveal newly cloned building in editor
                     try:
                         self._tag_and_reveal_building(int(new_id), state_key)
-                    except Exception:
+                    except (AttributeError, TypeError, ValueError):
                         pass
                     self._log.info(f"[InstanceProps] Cloned instance {cur_inst_int} -> new_id {new_id} tpl {desired} for state {state_key}")
                     try:
@@ -1267,7 +1253,7 @@ class InstancePropertiesController:
                             if r[0] == state_key:
                                 self._log.debug(f"[InstanceProps] Row after clone: {r}")
                                 break
-                    except Exception:
+                    except (AttributeError, TypeError, ValueError):
                         pass
             return
         # If there was no instance id and user provided a valid template id: ALWAYS create centered
@@ -1276,7 +1262,7 @@ class InstancePropertiesController:
             # Prime pending input so add_building_instance_for_visual uses it
             try:
                 self.model.visuals_pending_templates[state_key] = str(desired)
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 pass
             # Create a new instance centered on the owning spawner
             new_id = self.add_building_instance_for_visual(state_key, reveal=False)
@@ -1291,16 +1277,15 @@ class InstancePropertiesController:
             # Reload disk snapshot (add_building_instance_for_visual already attempts it)
             try:
                 self._reload_selected_from_json()
-            except Exception:
+            except (AttributeError, OSError, ValueError, TypeError):
                 pass
         # also toast here as a safety (if picker flow ends here)
         try:
             self._show_toast(f"Template aplicado: {int(new_tpl_id)} → {state_key}")
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
         # Done
         return
-
     def add_building_instance_for_visual(self, state_key: str, reveal: bool = True) -> Optional[int]:
         # Need a template id: prefer current text input if editing this state
         txt = (self.model.visuals_pending_templates or {}).get(state_key, '')
@@ -1309,7 +1294,7 @@ class InstancePropertiesController:
             if vti is not None:
                 try:
                     txt = vti.text
-                except Exception:
+                except AttributeError:
                     pass
         ok, msg, tpl_id = self._validate_template_text(txt)
         if tpl_id is None or not ok:
@@ -1322,36 +1307,20 @@ class InstancePropertiesController:
             json_key = key_map.get(state_key, state_key)
             visuals[json_key] = {'instance_id': reuse_id, 'template_id': int(tpl_id)}
             self.model.visuals = visuals
-            # Ensure runtime will render spawner visuals
-            try:
-                inst = self.model.selected_instance
-                if isinstance(inst, dict):
-                    ov = dict(inst.get('overrides') or {})
-                    ov['visible_in_game'] = True
-                    inst['overrides'] = ov
-            except Exception:
-                pass
             try:
                 if self.model.selected_instance is not None:
                     self.model.selected_instance['visuals'] = visuals
-            except Exception:
-                pass
-            try:
-                self._log.debug(f"[InstanceProps] add_building_instance_for_visual: set visuals[{json_key}]={reuse_id}")
-            except Exception:
+            except AttributeError:
                 pass
             self._persist_instance()
             # Refresh indexes/rows
             self._building_index = None
             self._ensure_buildings_index()
             self._build_visuals_rows()
-            # Exit edit mode
-            self.model.visuals_editing_state = None
-            # Ensure it is visible and tagged for editing (optional)
             if reveal:
                 try:
                     self._tag_and_reveal_building(int(reuse_id), state_key)
-                except Exception:
+                except (AttributeError, TypeError, ValueError):
                     pass
             return reuse_id
         # Load buildings instances and compute next id
@@ -1368,13 +1337,13 @@ class InstancePropertiesController:
         local_tile = (0, 0)
         try:
             zone = str((self.model.selected_instance or {}).get('zone'))
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             zone = None
         try:
             t = (self.model.selected_instance or {}).get('tile', (0, 0))
             if isinstance(t, (list, tuple)) and len(t) >= 2:
                 local_tile = (int(t[0]), int(t[1]))
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             local_tile = (0, 0)
         if not zone:
             zone = 'lobby'
@@ -1382,7 +1351,7 @@ class InstancePropertiesController:
         try:
             rel_x = int(local_tile[0] * TILE_SIZE)
             rel_y = int(local_tile[1] * TILE_SIZE)
-        except Exception:
+        except (TypeError, ValueError):
             rel_x = 0
             rel_y = 0
         # Attempt to reuse an existing instance in the same spot and template to avoid duplicates
@@ -1408,14 +1377,14 @@ class InstancePropertiesController:
                         sid = str((self.model.selected_instance or {}).get('id')) if (self.model.selected_instance or {}).get('id') is not None else None
                         if sid and (str(e.get('spawner_instance_id')) == sid or str((ov or {}).get('spawner_instance_id')) == sid):
                             tied = 1
-                    except Exception:
+                    except (AttributeError, TypeError, ValueError):
                         tied = 0
                     is_tag = 1 if (isinstance(ov, dict) and bool(ov.get('_is_spawner_visual'))) else 0
                     score = (tied, is_tag)
                     if score > best_score:
                         best_score = score
                         best_id = int(e.get('id'))
-                except Exception:
+                except (AttributeError, TypeError, ValueError):
                     continue
             if best_id is not None:
                 visuals = getattr(self.model, 'visuals', {}) or {}
@@ -1426,7 +1395,7 @@ class InstancePropertiesController:
                 try:
                     if self.model.selected_instance is not None:
                         self.model.selected_instance['visuals'] = visuals
-                except Exception:
+                except AttributeError:
                     pass
                 self._persist_instance()
                 # Refresh indexes/rows
@@ -1436,14 +1405,14 @@ class InstancePropertiesController:
                 if reveal:
                     try:
                         self._tag_and_reveal_building(int(best_id), state_key)
-                    except Exception:
+                    except (AttributeError, TypeError, ValueError):
                         pass
                 return best_id
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
         try:
             self._log.debug(f"[InstanceProps] No reusable instance found -> creating new (zone={zone}, tile={local_tile}, tpl={tpl_id})")
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
         # Center the new building on the spawner center (tile center), using the alpha bounding box
         # of the scaled sprite (so transparent margins don't bias centering)
@@ -1466,7 +1435,7 @@ class InstancePropertiesController:
                                 am = str(tentry.get('anchor_mode') or '')
                                 if am:
                                     anchor_mode = am
-                            except Exception:
+                            except (AttributeError, TypeError, ValueError):
                                 pass
                             if isinstance(oscale, (list, tuple)) and len(oscale) >= 2:
                                 w = int(oscale[0]); h = int(oscale[1])
@@ -1479,12 +1448,12 @@ class InstancePropertiesController:
                                         surf = _pg.transform.scale(raw, (int(w), int(h)))
                                         br = surf.get_bounding_rect(min_alpha=1)
                                         brx, bry, brw, brh = br.x, br.y, br.w, br.h
-                                except Exception:
+                                except (AttributeError, TypeError, ValueError, pygame.error):
                                     brw = brh = None
                             break
-                    except Exception:
+                    except (AttributeError, TypeError, ValueError):
                         continue
-            except Exception:
+            except (AttributeError, TypeError, ValueError, OSError):
                 pass
             # Fallback: probe image size and apply same auto-downscale rule (>512 -> quarter)
             if w is None or h is None:
@@ -1502,9 +1471,9 @@ class InstancePropertiesController:
                             surf = _pg.transform.scale(raw, (int(w), int(h)))
                             br = surf.get_bounding_rect(min_alpha=1)
                             brx, bry, brw, brh = br.x, br.y, br.w, br.h
-                        except Exception:
+                        except (AttributeError, TypeError, ValueError, pygame.error):
                             brw = brh = None
-                except Exception:
+                except (AttributeError, TypeError, ValueError, OSError, pygame.error):
                     w = None; h = None
             if w is not None and h is not None and w > 0 and h > 0:
                 if anchor_mode == 'base_center' and brw is not None and brh is not None and brw > 0 and brh > 0:
@@ -1519,7 +1488,7 @@ class InstancePropertiesController:
                     # Fallback: align image geometric center
                     rel_x = int(spawn_cx - (w // 2))
                     rel_y = int(spawn_cy - (h // 2))
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             # If centering fails, keep top-left at tile origin as fallback
             pass
         entry = {
@@ -1545,16 +1514,16 @@ class InstancePropertiesController:
                     # Persist the scale we used for centering so runtime matches
                     if locals().get('w') is not None and locals().get('h') is not None and int(locals()['w']) > 0 and int(locals()['h']) > 0:
                         entry['overrides']['scale'] = [int(locals()['w']), int(locals()['h'])]
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 pass
             # Also include root-level identifiers so save_buildings_split preserves this instance id
             try:
                 if sid:
                     entry['spawn_id'] = str(sid)
                     entry['spawner_instance_id'] = str(sid)
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 pass
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
         data.append(entry)
         self._write_buildings_instances(data)
@@ -1564,12 +1533,12 @@ class InstancePropertiesController:
             # Ensure building is present in world
             try:
                 self.visuals._ensure_building_loaded(int(next_id))
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 pass
             ob = None
             try:
                 ob = self.visuals._find_building_entity_by_id(int(next_id))
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 ob = None
             if ob is not None:
                 # Get the actual scaled surface and its alpha bounding rect
@@ -1578,7 +1547,7 @@ class InstancePropertiesController:
                 try:
                     if surf is not None:
                         br = surf.get_bounding_rect(min_alpha=1)
-                except Exception:
+                except (AttributeError, TypeError, ValueError):
                     br = None
                 if br is not None and br.w > 0 and br.h > 0:
                     # Recompute spawn center (tile center) and correct rels to align bounding center
@@ -1593,16 +1562,16 @@ class InstancePropertiesController:
                                 e['rel_x'] = corr_rx
                                 e['rel_y'] = corr_ry
                                 break
-                        except Exception:
+                        except (AttributeError, TypeError, ValueError):
                             continue
                     self._write_buildings_instances(data)
                     # Update in-world object
                     try:
                         setattr(getattr(ob, 'model', ob), 'rel_x', corr_rx)
                         setattr(getattr(ob, 'model', ob), 'rel_y', corr_ry)
-                    except Exception:
+                    except (AttributeError, TypeError, ValueError):
                         pass
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
         # Update visuals mapping and persist spawner instance
         visuals = getattr(self.model, 'visuals', {}) or {}
@@ -1612,7 +1581,7 @@ class InstancePropertiesController:
         visuals[json_key] = {'instance_id': next_id, 'template_id': int(tpl_id)}
         try:
             self._log.debug(f"[InstanceProps] add_building_instance_for_visual: set visuals[{json_key}]={next_id}")
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
         self.model.visuals = visuals
         # Ensure runtime will render spawner visuals
@@ -1622,22 +1591,22 @@ class InstancePropertiesController:
                 ov = dict(inst.get('overrides') or {})
                 ov['visible_in_game'] = True
                 inst['overrides'] = ov
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
         try:
             if self.model.selected_instance is not None:
                 self.model.selected_instance['visuals'] = visuals
-        except Exception:
+        except AttributeError:
             pass
         try:
             self._log.debug(f"[InstanceProps] add_building_instance_for_visual: model.visuals now={self.model.visuals}")
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
         self._persist_instance()
         # Reload from disk to be 100% sure it persisted and update UI model
         try:
             self._reload_selected_from_json()
-        except Exception:
+        except (AttributeError, OSError, ValueError, TypeError):
             pass
         # Refresh indexes/rows
         self._building_index = None
@@ -1649,10 +1618,9 @@ class InstancePropertiesController:
         if reveal:
             try:
                 self._tag_and_reveal_building(int(next_id), state_key)
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 pass
         return next_id
-
     def clear_visual_for_state(self, state_key: str) -> None:
         """Remove the visual mapping for a given state and clean JSON files.
         - Removes visuals[state_key] from the selected spawner instance and persists
@@ -1678,7 +1646,7 @@ class InstancePropertiesController:
                 bid = int(v.get('instance_id') or v.get('id') or v.get('building_instance_id'))
             else:
                 bid = int(v)
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             bid = None
         # Remove mapping and persist spawner instance
         visuals.pop(json_key, None)
@@ -1686,14 +1654,14 @@ class InstancePropertiesController:
         try:
             if self.model.selected_instance is not None:
                 self.model.selected_instance['visuals'] = visuals
-        except Exception:
+        except AttributeError:
             pass
         # Persist to spawners_instances.json
         self._persist_instance()
         # Reload from disk to ensure UI reflects persisted state
         try:
             self._reload_selected_from_json()
-        except Exception:
+        except (AttributeError, OSError, ValueError, TypeError):
             pass
         # Attempt to remove the building instance from buildings_instances.json if it is ours
         if bid is not None:
@@ -1898,17 +1866,17 @@ class InstancePropertiesController:
             if '.' in t:
                 return float(t)
             return int(t)
-        except Exception:
+        except (ValueError, TypeError):
             pass
         # JSON/list/dict
         if (t.startswith('[') and t.endswith(']')) or (t.startswith('{') and t.endswith('}')):
             try:
                 import json
                 return json.loads(t)
-            except Exception:
+            except (ValueError, TypeError):
                 try:
                     return ast.literal_eval(t)
-                except Exception:
+                except (ValueError, SyntaxError):
                     pass
         return text
 
@@ -1920,7 +1888,7 @@ class InstancePropertiesController:
         if key_path.startswith('tile.'):
             try:
                 idx = int(key_path.split('.')[-1])
-            except Exception:
+            except (ValueError, TypeError):
                 idx = None
             if idx is not None:
                 tile = inst.get('tile')
@@ -1930,15 +1898,11 @@ class InstancePropertiesController:
                     tile.append(0)
                 try:
                     tile[idx] = int(value)
-                except Exception:
+                except (ValueError, TypeError):
                     try:
                         tile[idx] = int(float(value))
-                    except Exception:
+                    except (ValueError, TypeError):
                         pass
-                inst['tile'] = tile
-                return
-        # Normal dotted path set (supports overrides.* tree)
-        self._set_by_path(inst, key_path, value)
 
     def _set_by_path(self, root: Dict[str, Any] | None, path: str, value) -> None:
         if root is None:
@@ -1950,8 +1914,9 @@ class InstancePropertiesController:
             idx: Optional[int] = None
             try:
                 idx = int(part)
-            except Exception:
+            except (TypeError, ValueError):
                 idx = None
+
             if idx is not None and isinstance(cur, list):
                 if is_last:
                     cur[idx] = value
@@ -1978,7 +1943,7 @@ class InstancePropertiesController:
             return
         try:
             self._log.debug(f"[InstanceProps] _persist_instance: about to persist id={inst.get('id')} visuals={inst.get('visuals')}")
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
         # Ensure the in-memory visuals map from the model is applied before persisting
         try:
@@ -1995,7 +1960,7 @@ class InstancePropertiesController:
                             vid = None
                             try:
                                 vid = int(v.get('instance_id') or v.get('id') or v.get('building_instance_id'))
-                            except Exception:
+                            except (TypeError, ValueError, AttributeError):
                                 vid = None
                             tpl = v.get('template_id')
                             if tpl is None and vid is not None and vid in idx:
@@ -2005,12 +1970,12 @@ class InstancePropertiesController:
                             vid = int(v)
                             tpl = idx.get(vid)
                             norm[str(k)] = {'instance_id': vid, 'template_id': tpl}
-                    except Exception:
+                    except (AttributeError, TypeError, ValueError):
                         # Keep as-is if cannot normalize
                         norm[str(k)] = {'instance_id': v, 'template_id': None}
                 try:
                     self._log.debug(f"[InstanceProps] _persist_instance: computed norm_visuals={norm}")
-                except Exception:
+                except (AttributeError, TypeError, ValueError):
                     pass
                 # Guard: avoid wiping visuals unintentionally when model.visuals is empty transiently
                 if norm:
@@ -2023,18 +1988,18 @@ class InstancePropertiesController:
                         if isinstance(cur_vis, dict) and len(cur_vis) > 0:
                             try:
                                 self._log.debug("[InstanceProps] _persist_instance: norm empty, KEEP existing visuals (non-empty)")
-                            except Exception:
+                            except (AttributeError, TypeError, ValueError):
                                 pass
                         else:
                             inst['visuals'] = {}
-                    except Exception:
+                    except (AttributeError, TypeError, ValueError):
                         inst['visuals'] = {}
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             try:
                 visuals_model = getattr(self.model, 'visuals', None)
                 if isinstance(visuals_model, dict):
                     inst['visuals'] = visuals_model
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 pass
         # Reload data fresh
         data = load_instances_json()
@@ -2043,7 +2008,7 @@ class InstancePropertiesController:
         cur_id = None
         try:
             cur_id = str(inst.get('id')) if inst.get('id') is not None else None
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             cur_id = None
         cur_key = None
         try:
@@ -2051,7 +2016,7 @@ class InstancePropertiesController:
             zone = str(inst.get('zone'))
             tile = tuple(inst.get('tile', [0, 0]))
             cur_key = (tpl, zone, (int(tile[0]), int(tile[1])))
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             cur_key = None
 
         # Determine target index prioritizing original id, then index+key, then key search
@@ -2073,10 +2038,11 @@ class InstancePropertiesController:
                         e = data[idx]
                         ek = (str(e.get('template_id')), str(e.get('zone')), (int(e.get('tile', [0, 0])[0]), int(e.get('tile', [0, 0])[1])))
                         ok = (ek == self.model.original_key)
-                except Exception:
+                except (AttributeError, TypeError, ValueError):
                     ok = False
                 if ok:
                     target_idx = idx
+
         # 3) Try original key lookup
         if target_idx is None and self.model.original_key is not None:
             tpl0, zone0, local0 = self.model.original_key
@@ -2093,11 +2059,11 @@ class InstancePropertiesController:
                     if ek == cur_key:
                         target_idx = i
                         break
-                except Exception:
+                except (AttributeError, TypeError, ValueError):
                     continue
         try:
             self._log.debug(f"[InstanceProps] _persist_instance: resolve target_idx={target_idx} original_id={self.model.original_id} selected_index={self.model.selected_index} original_key={self.model.original_key} cur_key={cur_key}")
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
 
         # Ensure a unique 'id' for the instance (handle rename conflicts)
@@ -2106,8 +2072,9 @@ class InstancePropertiesController:
             # Exclude current target from conflict set
             try:
                 existing_ids.discard(str(data[target_idx].get('id')))
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 pass
+
         desired_id = cur_id
         if not desired_id or desired_id in existing_ids:
             inst['id'] = generate_instance_id(inst, existing_ids)
@@ -2128,13 +2095,13 @@ class InstancePropertiesController:
                     write_instances_json(check)
                     try:
                         self._log.warning("[InstanceProps] _persist_instance: on-disk visuals were smaller/empty; rewrote with in-memory snapshot")
-                    except Exception:
+                    except (AttributeError, TypeError, ValueError):
                         pass
-        except Exception:
+        except (AttributeError, TypeError, ValueError, OSError):
             pass
         try:
             self._log.debug(f"[InstanceProps] _persist_instance: wrote instance id={inst.get('id')} with visuals keys={list((inst.get('visuals') or {}).keys()) if isinstance(inst.get('visuals'), dict) else inst.get('visuals')}")
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
         # Update original ids/keys for subsequent edits
         self.model.original_id = str(inst.get('id')) if inst and inst.get('id') is not None else None
@@ -2143,16 +2110,16 @@ class InstancePropertiesController:
         try:
             if self.on_persist is not None:
                 self.on_persist()
-        except Exception:
+        except AttributeError:
             pass
         # Notify editor about saved instance with context (changed key)
         try:
             if self.on_instance_saved is not None:
                 self.on_instance_saved(inst, getattr(self, '_last_edit_key', None))
-        except Exception:
+        except AttributeError:
             pass
+
         # Clear last edit key after notifying
         self._last_edit_key = None
-
 
 __all__ = ["InstancePropertiesController"]

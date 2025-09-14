@@ -69,6 +69,29 @@ def apply_ui_state(controller, state: UIState) -> None:
         controller.instance_properties.model.visible = bool(state.instances_visible and sel is not None)
     except Exception:
         pass
+    # Ensure properties panel binds data whenever it is visible
+    try:
+        sel = controller.spawner_instances.get_selected_instance()
+        if state.instances_visible and sel is not None:
+            # Bind only if unset or different id to avoid needless resets
+            cur = getattr(controller.instance_properties.model, 'selected_instance', None)
+            cur_id = None
+            new_id = None
+            try:
+                if isinstance(cur, dict) and cur.get('id') is not None:
+                    cur_id = str(cur.get('id'))
+            except Exception:
+                cur_id = None
+            try:
+                if isinstance(sel, dict) and sel.get('id') is not None:
+                    new_id = str(sel.get('id'))
+            except Exception:
+                new_id = None
+            if cur is None or cur_id != new_id:
+                idx = getattr(getattr(controller.spawner_instances, 'model', None), 'selected_index', None)
+                controller.instance_properties.set_instance(sel, index=idx)
+    except Exception:
+        pass
     # Global world flag so gameplay input is suppressed while editor activity is present
     try:
         world = getattr(getattr(controller, 'game', None), 'ecs', None)

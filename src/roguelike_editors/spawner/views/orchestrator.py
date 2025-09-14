@@ -5,12 +5,14 @@ from __future__ import annotations
 Extraído de `SpawnerEditorView.render` para mantener la clase de vista ligera.
 Se apoya en los atributos del objeto `view` (fonts, z-tools, split view, cachés de rects).
 """
-
+import logging
 import pygame
 from .rect_cache import reset_last_rects
 from . import overlays
 from . import buildings_overlay
 from . import theme
+
+logger = logging.getLogger(__name__)
 
 
 def orchestrate_render(view, screen: pygame.Surface) -> None:
@@ -27,8 +29,8 @@ def orchestrate_render(view, screen: pygame.Surface) -> None:
     try:
         if getattr(c.model, 'hold_focus_active', False):
             return
-    except Exception:
-        pass
+    except (AttributeError, TypeError):
+        logger.debug("orchestrate_render: hold_focus_active check failed", exc_info=True)
 
     # Reset last rects each frame
     reset_last_rects(view)
@@ -36,12 +38,12 @@ def orchestrate_render(view, screen: pygame.Surface) -> None:
     # 1) Title bar (always renders with its own font)
     try:
         title_rect = c.title_controller.render(screen)
-    except Exception:
+    except (AttributeError, pygame.error):
         title_rect = None
     try:
         view._last_title_rect = title_rect
-    except Exception:
-        pass
+    except AttributeError:
+        logger.debug("orchestrate_render: failed to store last_title_rect", exc_info=True)
     # 2) Spawner toolbar just below title
     tb_rect = None
     try:
@@ -52,12 +54,12 @@ def orchestrate_render(view, screen: pygame.Surface) -> None:
                 anchor = (20, 60)
             c.spawner_toolbar.render(screen, anchor=anchor)
             tb_rect = getattr(getattr(c.spawner_toolbar, 'view', None), 'last_rect', None)
-    except Exception:
-        pass
+    except (AttributeError, TypeError, pygame.error):
+        logger.debug("orchestrate_render: spawner_toolbar render failed", exc_info=True)
     try:
         view._last_toolbar_rect = tb_rect
-    except Exception:
-        pass
+    except AttributeError:
+        logger.debug("orchestrate_render: failed to store last_toolbar_rect", exc_info=True)
     # 2b) Instance Toolbar to the RIGHT of main toolbar when Instances tool is active
     inst_tb_rect = None
     try:
@@ -70,12 +72,12 @@ def orchestrate_render(view, screen: pygame.Surface) -> None:
                 anchor = (base_x, (title_rect.bottom + 8) if title_rect else 90)
             c.instance_toolbar.render(screen, anchor=anchor)
             inst_tb_rect = getattr(getattr(c.instance_toolbar, 'view', None), 'last_rect', None)
-    except Exception:
-        pass
+    except (AttributeError, TypeError, pygame.error):
+        logger.debug("orchestrate_render: instance_toolbar render failed", exc_info=True)
     try:
         view._last_instance_toolbar_rect = inst_tb_rect
-    except Exception:
-        pass
+    except AttributeError:
+        logger.debug("orchestrate_render: failed to store last_instance_toolbar_rect", exc_info=True)
     # 3) Spawner Manager (Templates list) to the RIGHT of toolbar/instance toolbar when active
     mgr_rect = None
     try:
@@ -91,12 +93,12 @@ def orchestrate_render(view, screen: pygame.Surface) -> None:
                 base_x = title_rect.left if title_rect else 20
                 anchor = (base_x, (title_rect.bottom + 8) if title_rect else 90)
             mgr_rect = c.spawner_manager.render(screen, anchor=anchor)
-    except Exception:
-        pass
+    except (AttributeError, TypeError, pygame.error):
+        logger.debug("orchestrate_render: spawner_manager render failed", exc_info=True)
     try:
         view._last_manager_rect = mgr_rect
-    except Exception:
-        pass
+    except AttributeError:
+        logger.debug("orchestrate_render: failed to store last_manager_rect", exc_info=True)
     # 3b) Spawner Instances list (spawners_instances.json) when active, same placement
     inst_rect = None
     try:
@@ -112,12 +114,12 @@ def orchestrate_render(view, screen: pygame.Surface) -> None:
                     base_x = title_rect.left if title_rect else 20
                     anchor = (base_x, (title_rect.bottom + 8) if title_rect else 90)
                 inst_rect = c.spawner_instances.render(screen, anchor=anchor)
-    except Exception:
-        pass
+    except (AttributeError, TypeError, pygame.error):
+        logger.debug("orchestrate_render: spawner_instances render failed", exc_info=True)
     try:
         view._last_instances_rect = inst_rect
-    except Exception:
-        pass
+    except AttributeError:
+        logger.debug("orchestrate_render: failed to store last_instances_rect", exc_info=True)
     # 3c) Instance Properties panel to the RIGHT of Instances list when a selection exists
     try:
         ip = getattr(c, 'instance_properties', None)
@@ -134,10 +136,10 @@ def orchestrate_render(view, screen: pygame.Surface) -> None:
             props_rect = ip.render(screen, anchor=anchor)
             try:
                 view._last_properties_rect = props_rect
-            except Exception:
-                pass
-    except Exception:
-        pass
+            except AttributeError:
+                logger.debug("orchestrate_render: failed to store last_properties_rect", exc_info=True)
+    except (AttributeError, TypeError, pygame.error):
+        logger.debug("orchestrate_render: instance_properties render failed", exc_info=True)
     # 3d) Visual focus overlay when editing a Visuals Template cell: dim the world and re-render properties
     try:
         ip = getattr(c, 'instance_properties', None)
@@ -163,7 +165,7 @@ def orchestrate_render(view, screen: pygame.Surface) -> None:
                         base_x = title_rect.left if title_rect else 20
                         anchor = (base_x + 420, (title_rect.bottom + 8) if title_rect else 90)
                     ip.render(screen, anchor=anchor)
-    except Exception:
+    except (AttributeError, TypeError, pygame.error):
         pass
     # 4) Hint overlay
     overlays.render_hint_overlay(view, screen, title_rect, tb_rect, mgr_rect, inst_rect)

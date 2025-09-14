@@ -4,7 +4,7 @@
     "level": "global_map",
     "pos": [
       14,
-      87
+      60
     ]
   },
   "npcs": {},
@@ -12,7 +12,7 @@
     "global_map": {
       "player_pos": [
         14,
-        87
+        60
       ],
       "npc_states": {}
     }
@@ -23,7 +23,7 @@
     "slots": [
       {
         "item": "gold",
-        "quantity": 1
+        "quantity": 2
       },
       null,
       null,
@@ -94,7 +94,7 @@
   "meta": {
     "name": "partida_2025-09-12_01-49-08",
     "created_at": "2025-09-12T01:49:08",
-    "last_played": "2025-09-14T20:55:23",
+    "last_played": "2025-09-14T20:39:20",
     "player": {
       "xp": 0,
       "level": 0

@@ -6,6 +6,7 @@ import json
 import os
 import pygame
 import logging
+from pathlib import Path
 
 # Reuse Buildings picker UI and events
 from roguelike_editors.buildings.buildings_picker.building_picker_controller import (
@@ -17,7 +18,7 @@ from roguelike_editors.buildings.buildings_picker.building_picker_events import 
 from roguelike_editors.buildings.buildings_picker.building_picker_view import (
     PickerView,
 )
-from roguelike_engine.config.config import BUILDINGS_TEMPLATES_PATH
+from roguelike_engine.config.config import BUILDINGS_TEMPLATES_PATH, ASSETS_DIR
 
 
 @dataclass
@@ -79,17 +80,35 @@ class VisualsPicker:
         base_dir: str = "assets/buildings",
         dim_background: bool = False,
     ) -> None:
-        # Resolve base directory robustly
-        base_abs = base_dir
+        # Resolve base directory robustly using engine config ASSETS_DIR
         try:
-            base_abs = os.path.abspath(base_dir)
-            if not os.path.isdir(base_abs):
-                # Fallback to 'assets' root if specific subdir missing
-                alt = os.path.abspath("assets")
-                base_abs = alt if os.path.isdir(alt) else base_dir
+            assets_root = Path(ASSETS_DIR)
         except Exception:
-            base_abs = base_dir
-        self.state = VisualsPickerState(current_dir=base_abs)
+            assets_root = Path("assets")
+        # Normalize provided base_dir to a Path
+        try:
+            bd = Path(base_dir)
+        except Exception:
+            bd = Path("assets/buildings")
+        # If path is relative or starts with 'assets/', resolve against assets_root
+        base_abs_path: Path
+        try:
+            if not bd.is_absolute():
+                # Strip leading 'assets' if present to avoid assets/assets
+                parts = list(bd.parts)
+                if parts and parts[0].lower() == 'assets':
+                    bd = Path(*parts[1:]) if len(parts) > 1 else Path('.')
+                base_abs_path = assets_root / bd
+            else:
+                base_abs_path = bd
+        except Exception:
+            base_abs_path = assets_root / "buildings"
+        # Fallbacks
+        if not base_abs_path.is_dir():
+            # Prefer 'assets/buildings'
+            cand = assets_root / "buildings"
+            base_abs_path = cand if cand.is_dir() else assets_root
+        self.state = VisualsPickerState(current_dir=str(base_abs_path))
         self.state.picker_active = True
         # UI+events reuse from Buildings picker
         self._picker_view = PickerView(self.state)
@@ -117,7 +136,7 @@ class VisualsPicker:
             self._log.setLevel(logging.DEBUG)
             # Avoid duplicate propagation
             self._log.propagate = False
-        except Exception:
+        except (AttributeError, ValueError):
             pass
 
     def _norm(self, p: str) -> str:
@@ -133,7 +152,7 @@ class VisualsPicker:
         """Normalize a path to our canonical key: forward slashes, assets/ prefix, and lowercase."""
         try:
             return self._norm(p).lower()
-        except Exception:
+        except (AttributeError, TypeError):
             return (p or "").replace("\\", "/").lower()
 
     def _build_assets_index(self) -> None:
@@ -167,7 +186,7 @@ class VisualsPicker:
                                             kk2 = self._norm_key(it)
                                             self._assets_to_tpl[kk2] = tid
                                             _by_basename.setdefault(os.path.basename(kk2), set()).add(tid)
-                    except Exception:
+                    except (AttributeError, TypeError, ValueError):
                         continue
                 # Compute unique basename mapping
                 for bn, tids in _by_basename.items():
@@ -177,9 +196,9 @@ class VisualsPicker:
             try:
                 import logging as _lg
                 _lg.getLogger(__name__).debug(f"[VisualsPicker] assets->tpl mappings: {len(self._assets_to_tpl)}, basename uniques: {len(self._basename_to_tpl)}")
-            except Exception:
+            except (ImportError, AttributeError):
                 pass
-        except Exception:
+        except (OSError, json.JSONDecodeError, ValueError, TypeError):
             self._assets_to_tpl = {}
 
     def open(self) -> None:
@@ -208,7 +227,7 @@ class VisualsPicker:
             # If for some reason entries are empty (e.g., base path resolved late), refresh now
             if not getattr(self.state, 'entries', None):
                 self._picker_ctrl.list_entries()
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
 
     def render(self, screen: pygame.Surface, camera) -> Optional[pygame.Rect]:
@@ -220,7 +239,7 @@ class VisualsPicker:
                 overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
                 overlay.fill((0, 0, 0, 160))
                 screen.blit(overlay, (0, 0))
-            except Exception:
+            except (pygame.error, ValueError, TypeError):
                 pass
         # Render picker panel
         self._picker_view.render(screen, camera)
@@ -234,12 +253,12 @@ class VisualsPicker:
             if getattr(event, 'type', None) in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP) and getattr(event, 'button', None) == 3:
                 self._log.debug("[VisualsPicker] RMB blocked in visuals context")
                 return True
-        except Exception:
+        except (AttributeError, TypeError):
             pass
         # Forward to buildings picker events
         try:
             self._picker_events.handle(event, camera)
-        except Exception as ex:
+        except (AttributeError, TypeError, ValueError) as ex:
             self._log.exception("[VisualsPicker] error forwarding event: %s", ex)
         # After LMB click selection, commit immediately if a file is selected
         selected = getattr(self.state, "selected_entry", None)
@@ -271,7 +290,7 @@ class VisualsPicker:
                     try:
                         self._on_template_selected(int(tpl_id))
                         self._log.info(f"[VisualsPicker] Applied template_id={tpl_id} and closing picker")
-                    except Exception:
+                    except (AttributeError, TypeError, ValueError):
                         pass
                     # Close after commit
                     self.close()

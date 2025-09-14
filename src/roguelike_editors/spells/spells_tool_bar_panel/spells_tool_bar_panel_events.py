@@ -3,6 +3,8 @@ Manejador de eventos para la toolbar de Spells.
 """
 
 import pygame
+from roguelike_game.config.spells_config import reload_spells
+from roguelike_game.config.particles_config import reload_particles
 
 
 class SpellsToolBarPanelEventHandler:
@@ -43,6 +45,30 @@ class SpellsToolBarPanelEventHandler:
             # Redo (placeholder)
             rect = icon_rects.get('redo')
             if rect and rect.collidepoint(pos):
+                return True
+            # Reload spells and particles catalogs
+            rect = icon_rects.get('spells_reload')
+            if rect and rect.collidepoint(pos):
+                try:
+                    reload_spells()
+                except Exception:
+                    pass
+                try:
+                    reload_particles()
+                except Exception:
+                    pass
+                # Reload sprites used by spells in the picker/editor
+                try:
+                    if hasattr(self.controller, 'reload_sprites_from_spells'):
+                        self.controller.reload_sprites_from_spells()
+                except Exception:
+                    pass
+                # Rebuild spell previews so picker reflects updated presets/overrides
+                try:
+                    if hasattr(self.controller, '_rebuild_particle_preview_providers'):
+                        self.controller._rebuild_particle_preview_providers()
+                except Exception:
+                    pass
                 return True
             # Toggle principal
             rect = icon_rects.get('spells_on_map')
