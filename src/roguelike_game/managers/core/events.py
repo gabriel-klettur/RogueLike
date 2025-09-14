@@ -42,6 +42,12 @@ def _close_all_editors(game) -> None:
             game.spells_editor.model.visible = False
     except Exception:
         pass
+    # Particles Editor
+    try:
+        if getattr(getattr(game, 'particles_editor', None), 'model', None) and getattr(game.particles_editor.model, 'visible', False):
+            game.particles_editor.model.visible = False
+    except Exception:
+        pass
     # Entities Editor
     try:
         if getattr(getattr(game, 'entities_editor', None), 'model', None) and getattr(game.entities_editor.model, 'visible', False):
@@ -134,7 +140,7 @@ def _close_all_editors(game) -> None:
 def _open_editor_exclusive(game, target: str) -> None:
     """Close all editors, then open exactly one target editor.
 
-    target in {'spawner','spells','entities','inventory','items','fsm','tiles','buildings','map'}
+    target in {'spawner','spells','particles','entities','inventory','items','fsm','tiles','buildings','map'}
     """
     _close_all_editors(game)
     if target == 'spawner':
@@ -147,6 +153,11 @@ def _open_editor_exclusive(game, target: str) -> None:
     elif target == 'spells':
         try:
             game.spells_editor.model.visible = True
+        except Exception:
+            pass
+    elif target == 'particles':
+        try:
+            game.particles_editor.model.visible = True
         except Exception:
             pass
     elif target == 'entities':
@@ -536,6 +547,22 @@ def handle_events(game):
             else:
                 _open_editor_exclusive(game, 'spells')
             return
+        if event.type == pygame.KEYDOWN and event.key == game.input_config.get_key('toggle_particles_editor'):
+            # Particles Editor (exclusive) with Left Ctrl modifier
+            try:
+                lctrl = bool(pygame.key.get_mods() & pygame.KMOD_LCTRL)
+            except Exception:
+                lctrl = False
+            if lctrl:
+                try:
+                    is_vis = bool(getattr(getattr(game, 'particles_editor', None), 'model', None) and getattr(game.particles_editor.model, 'visible', False))
+                except Exception:
+                    is_vis = False
+                if is_vis:
+                    _close_all_editors(game)
+                else:
+                    _open_editor_exclusive(game, 'particles')
+                return
         if event.type == pygame.KEYDOWN and event.key == game.input_config.get_key('toggle_entities_editor'):
             # Entities Editor (exclusive)
             try:
@@ -705,6 +732,14 @@ def handle_events(game):
                 fsm_visible=getattr(__import__('roguelike_engine.config.config', fromlist=['config']), 'DEBUG_ENTITIES', False),
             )
         return
+
+    # Si el editor de partículas está activo, delegar sus eventos sin detener el juego
+    if hasattr(game, 'particles_editor') and getattr(getattr(game.particles_editor, 'model', None), 'visible', False):
+        for event in events:
+            try:
+                game.particles_editor.handle_event(event)
+            except Exception:
+                pass
 
     # Si el editor de inventario está activo, capturar solo sus eventos
     if hasattr(game, 'inventory_editor') and game.inventory_editor.model.visible:
@@ -981,13 +1016,14 @@ def handle_events(game):
             # Permitir MMB sobre UI cuando ciertos editores están visibles (Spawner/Spells/Items/FSM)
             sp_vis = bool(getattr(getattr(game, 'spawner_editor', None), 'model', None) and getattr(game.spawner_editor.model, 'visible', False))
             spells_vis = bool(getattr(getattr(game, 'spells_editor', None), 'model', None) and getattr(game.spells_editor.model, 'visible', False))
+            particles_vis = bool(getattr(getattr(game, 'particles_editor', None), 'model', None) and getattr(game.particles_editor.model, 'visible', False))
             items_vis = bool(getattr(getattr(game, 'item_editor', None), 'model', None) and getattr(game.item_editor.model, 'visible', False))
             try:
                 import roguelike_engine.config.config as cfg
                 fsm_vis = bool(getattr(cfg, 'DEBUG_ENTITIES', False))
             except Exception:
                 fsm_vis = False
-            allow_mmb_ui = sp_vis or spells_vis or items_vis or fsm_vis
+            allow_mmb_ui = sp_vis or spells_vis or particles_vis or items_vis or fsm_vis
             if btn == 2 and allow_mmb_ui:
                 if getattr(config, 'DEBUG', False):
                     logger.debug("[Events] Allowing MMB event=%s over UI passthrough (down/up) [editor visible]", ev.type)

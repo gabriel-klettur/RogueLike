@@ -37,6 +37,7 @@ from roguelike_game.managers.editors.spells_editor_manager import SpellsEditorMa
 from roguelike_game.managers.editors.items_editor_manager import ItemsEditorManager
 from roguelike_game.managers.editors.inventory_editor_manager import InventoryEditorManager
 from roguelike_game.managers.editors.spawner_editor_manager import SpawnerEditorManager
+from roguelike_game.managers.editors.particles_editor_manager import ParticlesEditorManager
         
 from roguelike_engine.minimap import Minimap
 from roguelike_engine.z_layer.state import ZState
@@ -129,6 +130,7 @@ class GameInitializer:
             ("Cargando editor de inventario"    , partial(self._init_inventory_editor)),
             ("Cargando editor de entidades"     , partial(self._init_entities_editor)),
             ("Cargando editor de hechizos"      , partial(self._init_spells_editor)),
+            ("Cargando editor de partículas"    , partial(self._init_particles_editor)),
             ("Cargando editor de spawner"       , partial(self._init_spawner_editor)),
             ("Cargando minimapa"                , partial(self._init_minimap)),
 
@@ -245,6 +247,9 @@ class GameInitializer:
 
     def _init_spawner_editor(self):
         self.game.spawner_editor = SpawnerEditorManager(self.game)
+
+    def _init_particles_editor(self):
+        self.game.particles_editor = ParticlesEditorManager(self.game)
 
     def _init_minimap(self):
         self.game.minimap = Minimap()
