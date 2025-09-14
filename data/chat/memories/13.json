@@ -1,0 +1,14 @@
+{
+  "friendship_score": 0,
+  "ephemeral_history": [
+    {
+      "role": "user",
+      "content": "hola roberto que te cuentas?"
+    },
+    {
+      "role": "assistant",
+      "content": "¡Hola, corazón! Soy Roberto, traigo madera de la zona y mague fresco, a precios justos. ¿Qué necesitas hoy: tablones, vigas o un poco de mague?"
+    }
+  ],
+  "preferred_language": "es"
+}

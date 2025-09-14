@@ -654,7 +654,7 @@ def handle_events(game):
                     # Abrir chat con target o general
                     state.chat_open = True
                     state.chat_input_buffer = ""
-                    state.chat_target_eid = target_eid
+                    state.chat_bind_target(target_eid)
                     if target_eid is not None:
                         greeting = getattr(chat_map.get(target_eid, None), 'greeting', None)
                         if greeting:
@@ -944,7 +944,7 @@ def handle_events(game):
                                 # Abrir chat con este NPC y consumir evento
                                 try:
                                     state.chat_open = True
-                                    state.chat_target_eid = eid
+                                    state.chat_bind_target(eid)
                                     state.chat_input_buffer = ""
                                     greeting = getattr(chat, 'greeting', None)
                                     if greeting:

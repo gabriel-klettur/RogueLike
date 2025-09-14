@@ -62,9 +62,9 @@ class ChatProximitySystem:
             dist = math.hypot(dx, dy)
             rng = float(getattr(chat, 'chat_range', 0.0) or 0.0)
             if dist <= rng:
-                # Abrir chat con esta entidad
+                # Abrir chat con esta entidad (enlazar historial al target)
                 state.chat_open = True
-                state.chat_target_eid = eid
+                state.chat_bind_target(eid)
                 state.chat_input_buffer = ""
                 try:
                     greeting = getattr(chat, 'greeting', None)

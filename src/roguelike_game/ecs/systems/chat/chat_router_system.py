@@ -584,7 +584,7 @@ class ChatRouterSystem:
                         self._scheduled.append({
                             'due': int(last_due),
                             'type': 'chat_append_suffix',
-                            'data': {'idx': int(placeholder_idx), 'suffix': suffix}
+                            'data': {'idx': int(placeholder_idx), 'suffix': suffix, 'target': int(target_eid)}
                         })
                 else:
                     # Confirmar estado online para la UI
@@ -600,7 +600,9 @@ class ChatRouterSystem:
         """Dispara elementos programados cuyo due <= now.
 
         Cada elemento puede ser:
-          - type='chat': data={'sender': str, 'text': str}
+          - type='chat': data={'sender': str, 'text': str, 'target': optional[int]}
+          - type='chat_set': data={'idx': int, 'sender': str, 'text': str, 'target': optional[int]}
+          - type='chat_append_suffix': data={'idx': int, 'suffix': str, 'target': optional[int]}
           - type='bubble': data={'eid': int, 'text': str, 'color': (r,g,b), 'ttl': int}
         """
         if not self._scheduled:
@@ -621,26 +623,52 @@ class ChatRouterSystem:
                 if typ == 'chat':
                     sender = data.get('sender', 'NPC')
                     text = data.get('text', '')
-                    state.chat_add_message(str(sender), str(text))
+                    target = data.get('target', None)
+                    try:
+                        if target is not None and hasattr(state, 'chat_add_message_for'):
+                            state.chat_add_message_for(int(target), str(sender), str(text))
+                        else:
+                            state.chat_add_message(str(sender), str(text))
+                    except Exception:
+                        state.chat_add_message(str(sender), str(text))
                 elif typ == 'chat_set':
                     # Establece/actualiza el texto de un mensaje existente (placeholder de respuesta)
                     idx = int(data.get('idx', -1))
                     sender = data.get('sender', 'NPC')
                     text = data.get('text', '')
+                    target = data.get('target', None)
                     try:
-                        if 0 <= idx < len(state.chat_messages):
-                            state.chat_messages[idx] = (str(sender), str(text))
+                        if target is not None and hasattr(state, 'chat_history_for'):
+                            hist = state.chat_history_for(int(target))
+                            if 0 <= idx < len(hist):
+                                hist[idx] = (str(sender), str(text))
+                            else:
+                                # fuera de rango: añadir
+                                if hasattr(state, 'chat_add_message_for'):
+                                    state.chat_add_message_for(int(target), str(sender), str(text))
+                                else:
+                                    state.chat_add_message(str(sender), str(text))
                         else:
-                            state.chat_add_message(str(sender), str(text))
+                            if 0 <= idx < len(state.chat_messages):
+                                state.chat_messages[idx] = (str(sender), str(text))
+                            else:
+                                state.chat_add_message(str(sender), str(text))
                     except Exception:
                         state.chat_add_message(str(sender), str(text))
                 elif typ == 'chat_append_suffix':
                     idx = int(data.get('idx', -1))
                     suffix = str(data.get('suffix', ''))
+                    target = data.get('target', None)
                     try:
-                        if 0 <= idx < len(state.chat_messages):
-                            sender, cur = state.chat_messages[idx]
-                            state.chat_messages[idx] = (str(sender), str(cur) + suffix)
+                        if target is not None and hasattr(state, 'chat_history_for'):
+                            hist = state.chat_history_for(int(target))
+                            if 0 <= idx < len(hist):
+                                sender, cur = hist[idx]
+                                hist[idx] = (str(sender), str(cur) + suffix)
+                        else:
+                            if 0 <= idx < len(state.chat_messages):
+                                sender, cur = state.chat_messages[idx]
+                                state.chat_messages[idx] = (str(sender), str(cur) + suffix)
                     except Exception:
                         pass
                 elif typ == 'bubble':
@@ -682,16 +710,16 @@ class ChatRouterSystem:
         except Exception:
             words = [text] if text else []
         if not words:
-            # Programar vacío directo con placeholder
+            # Programar vacío directo con placeholder (target-aware)
             now = pygame.time.get_ticks()
-            # Crear placeholder en historial
             try:
+                placeholder_idx = state.chat_add_message_for(int(target_eid), 'NPC', '…')
+            except Exception:
+                # Fallback
                 state.chat_add_message('NPC', '…')
                 placeholder_idx = len(state.chat_messages) - 1
-            except Exception:
-                placeholder_idx = None
             # Asegurar un set inmediato a vacío (sin puntos)
-            self._scheduled.append({'due': now, 'type': 'chat_set', 'data': {'idx': placeholder_idx if placeholder_idx is not None else -1, 'sender': 'NPC', 'text': ''}})
+            self._scheduled.append({'due': now, 'type': 'chat_set', 'data': {'idx': int(placeholder_idx) if placeholder_idx is not None else -1, 'sender': 'NPC', 'text': '', 'target': int(target_eid)}})
             return now, placeholder_idx
         chunks = []
         i = 0
@@ -702,10 +730,9 @@ class ChatRouterSystem:
             i += n
         now = pygame.time.get_ticks()
         last_due = now
-        # Crear placeholder en el historial
+        # Crear placeholder en el historial del target
         try:
-            state.chat_add_message('NPC', '…')
-            placeholder_idx = len(state.chat_messages) - 1
+            placeholder_idx = state.chat_add_message_for(int(target_eid), 'NPC', '…')
         except Exception:
             placeholder_idx = None
         agg = ''
@@ -718,7 +745,7 @@ class ChatRouterSystem:
             self._scheduled.append({
                 'due': due,
                 'type': 'chat_set',
-                'data': {'idx': placeholder_idx if placeholder_idx is not None else -1, 'sender': 'NPC', 'text': display}
+                'data': {'idx': placeholder_idx if placeholder_idx is not None else -1, 'sender': 'NPC', 'text': display, 'target': int(target_eid)}
             })
             # Burbuja flotante encima del NPC (cada trozo)
             self._scheduled.append({

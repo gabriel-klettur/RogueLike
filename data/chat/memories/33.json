@@ -1,0 +1,22 @@
+{
+  "friendship_score": 0,
+  "ephemeral_history": [
+    {
+      "role": "user",
+      "content": "hola vieja ayudame"
+    },
+    {
+      "role": "assistant",
+      "content": "Tengo 0 de madera a 1 oro la unidad."
+    },
+    {
+      "role": "user",
+      "content": "cuentame algo de ti anciana"
+    },
+    {
+      "role": "assistant",
+      "content": "¡Hola, corazón! Soy Valeria, apotecaria del pueblo y alquimista de pociones de salud. Mi oficio es mezclar hierbas y secretos antiguos para curar y fortalecer, y siempre intento mantener precios justos. ¿Qué remedio buscas hoy?"
+    }
+  ],
+  "preferred_language": "es"
+}

@@ -1,0 +1,14 @@
+{
+  "friendship_score": 0,
+  "ephemeral_history": [
+    {
+      "role": "user",
+      "content": "hola pavel eres le;ador?"
+    },
+    {
+      "role": "assistant",
+      "content": "¡Hola, corazón! Soy Pavel, el leñador de la zona. Trato madera de calidad a precio justo. ¿Qué tipo de troncos buscas hoy?"
+    }
+  ],
+  "preferred_language": "es"
+}
