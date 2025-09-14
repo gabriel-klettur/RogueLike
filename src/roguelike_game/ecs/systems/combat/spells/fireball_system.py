@@ -133,6 +133,14 @@ class FireballSystem:
                                 'source': 'fireball',
                                 'time': float(time.time()),
                             })
+                        # Actualizar HUD de objetivo (centrado arriba)
+                        try:
+                            hud = world.components.setdefault('TargetHUD', {})
+                            hud['target_eid'] = int(target)
+                            hud['last_hit_time'] = float(time.time())
+                            hud.setdefault('ttl_s', 3.0)
+                        except Exception:
+                            pass
 
                     elif is_player:
                         # NPC -> Jugador (omitir efectos de daño en godmode)

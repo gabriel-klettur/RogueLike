@@ -165,6 +165,14 @@ class HitboxSystem:
                         'source': 'hitbox',
                         'time': float(time.time()),
                     })
+                    # Actualizar HUD de objetivo (centrado arriba)
+                    try:
+                        hud = world.components.setdefault('TargetHUD', {})
+                        hud['target_eid'] = int(target)
+                        hud['last_hit_time'] = float(time.time())
+                        hud.setdefault('ttl_s', 3.0)
+                    except Exception:
+                        pass
                 elif target in world.components.get('PlayerTagComponent', {}) and not godmode:
                     # NPC or other entity hit the player -> publish OnHit/OnDeath for player
                     attacker_pos = positions.get(hb.owner)

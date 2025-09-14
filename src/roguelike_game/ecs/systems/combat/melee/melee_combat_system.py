@@ -91,6 +91,14 @@ class MeleeCombatSystem:
                         'damage': float(damage),
                         'source': 'melee'
                     })
+                # Actualizar HUD de objetivo (centrado arriba)
+                try:
+                    hud = world.components.setdefault('TargetHUD', {})
+                    hud['target_eid'] = int(target_eid)
+                    hud['last_hit_time'] = float(time.time())
+                    hud.setdefault('ttl_s', 3.0)
+                except Exception:
+                    pass
             # Jugador recibe daño de NPC/u otro -> publicar evento OnHit y posible OnDeath
             elif is_player_target:
                 if not godmode:

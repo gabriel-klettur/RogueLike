@@ -94,6 +94,7 @@ from roguelike_game.ecs.systems.rendering.dash_bar_render_system import DashBarR
 from roguelike_game.ecs.systems.abilities.combo_system import ComboSystem
 from roguelike_game.ecs.systems.rendering.combo_bar_render_system import ComboBarRenderSystem
 from roguelike_game.ecs.systems.rendering.toast_render_system import ToastRenderSystem
+from roguelike_game.ecs.systems.rendering.target_hud_render_system import TargetHudRenderSystem
 
 def get_update_system_classes():
     """
@@ -143,6 +144,8 @@ def get_render_system_classes():
     base.append(ResurrectionAreaSystem)
     # HUD textual overlay (bottom-left): HP/MP values
     base.append(HUDStatsRenderSystem)
+    # HUD de objetivo (centrado arriba)
+    base.append(TargetHudRenderSystem)
     # Otros sistemas de render (eliminados FlashSystem y TrailSystem de render)
     base.append(DropHoverRenderSystem)
     # Halo de proximidad de chat (círculo amarillo)
