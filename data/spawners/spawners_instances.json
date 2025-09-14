@@ -1,24 +1,24 @@
 [
-  {
-    "template_id": "survival_10",
-    "zone": "Forest",
-    "tile": [
-      27,
-      16
-    ],
-    "overrides": {
-      "visible_in_game": true
-    },
-    "visuals": {
-      "SpawningWave": {
-        "instance_id": 139,
-        "template_id": 155
-      },
-      "Finished": {
-        "instance_id": 141,
-        "template_id": 158
-      }
-    },
-    "id": "survival_10_forest_14_9"
-  }
+    {
+        "template_id": "survival_10",
+        "zone": "Forest",
+        "tile": [
+            27,
+            16
+        ],
+        "overrides": {
+            "visible_in_game": true
+        },
+        "visuals": {
+            "SpawningWave": {
+                "instance_id": 139,
+                "template_id": 155
+            },
+            "Finished": {
+                "instance_id": 140,
+                "template_id": 158
+            }
+        },
+        "id": "survival_10_forest_14_9"
+    }
 ]

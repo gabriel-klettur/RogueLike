@@ -429,6 +429,18 @@ class InstancePropertiesController:
     def get_rows(self) -> List[Tuple[str, str]]:
         return list(self._rows)
 
+    def get_visuals_rows(self) -> List[Tuple[str, str, str]]:
+        """Expose prebuilt visuals rows for the view (state, instance_id, template_id).
+        The view and visuals view call this; missing it causes AttributeError and an empty panel.
+        """
+        try:
+            rows = getattr(self.model, 'visuals_rows', None)
+            if isinstance(rows, list):
+                return list(rows)
+        except Exception:
+            pass
+        return []
+
     # Visuals helpers ---------------------------------------------------------
     def _ensure_buildings_index(self) -> None:
         if self._building_index is not None:

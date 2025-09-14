@@ -6,6 +6,7 @@ import json
 import os
 import pygame
 import logging
+from pathlib import Path
 
 # Reuse Buildings picker UI and events
 from roguelike_editors.buildings.buildings_picker.building_picker_controller import (
@@ -17,7 +18,7 @@ from roguelike_editors.buildings.buildings_picker.building_picker_events import 
 from roguelike_editors.buildings.buildings_picker.building_picker_view import (
     PickerView,
 )
-from roguelike_engine.config.config import BUILDINGS_TEMPLATES_PATH
+from roguelike_engine.config.config import BUILDINGS_TEMPLATES_PATH, ASSETS_DIR
 
 
 @dataclass
@@ -79,17 +80,35 @@ class VisualsPicker:
         base_dir: str = "assets/buildings",
         dim_background: bool = False,
     ) -> None:
-        # Resolve base directory robustly
-        base_abs = base_dir
+        # Resolve base directory robustly using engine config ASSETS_DIR
         try:
-            base_abs = os.path.abspath(base_dir)
-            if not os.path.isdir(base_abs):
-                # Fallback to 'assets' root if specific subdir missing
-                alt = os.path.abspath("assets")
-                base_abs = alt if os.path.isdir(alt) else base_dir
-        except (OSError, ValueError, TypeError):
-            base_abs = base_dir
-        self.state = VisualsPickerState(current_dir=base_abs)
+            assets_root = Path(ASSETS_DIR)
+        except Exception:
+            assets_root = Path("assets")
+        # Normalize provided base_dir to a Path
+        try:
+            bd = Path(base_dir)
+        except Exception:
+            bd = Path("assets/buildings")
+        # If path is relative or starts with 'assets/', resolve against assets_root
+        base_abs_path: Path
+        try:
+            if not bd.is_absolute():
+                # Strip leading 'assets' if present to avoid assets/assets
+                parts = list(bd.parts)
+                if parts and parts[0].lower() == 'assets':
+                    bd = Path(*parts[1:]) if len(parts) > 1 else Path('.')
+                base_abs_path = assets_root / bd
+            else:
+                base_abs_path = bd
+        except Exception:
+            base_abs_path = assets_root / "buildings"
+        # Fallbacks
+        if not base_abs_path.is_dir():
+            # Prefer 'assets/buildings'
+            cand = assets_root / "buildings"
+            base_abs_path = cand if cand.is_dir() else assets_root
+        self.state = VisualsPickerState(current_dir=str(base_abs_path))
         self.state.picker_active = True
         # UI+events reuse from Buildings picker
         self._picker_view = PickerView(self.state)

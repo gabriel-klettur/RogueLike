@@ -69,7 +69,22 @@ class InstancePropertiesView:
             self.content_height = (len(rows) * row_h) + visuals_total_h + padding_bottom
             viewport_top = y_off
             viewport_bottom = height - 8
-            scroll = int(getattr(model, 'scroll_offset', 0) or 0)
+            # Clamp scroll to avoid empty panel when out of range (e.g., after refactors/state changes)
+            viewport_h = max(0, viewport_bottom - viewport_top)
+            max_scroll = max(0, int(self.content_height) - int(viewport_h))
+            try:
+                cur_scroll = int(getattr(model, 'scroll_offset', 0) or 0)
+            except (TypeError, ValueError):
+                cur_scroll = 0
+            if cur_scroll < 0:
+                cur_scroll = 0
+            if cur_scroll > max_scroll:
+                cur_scroll = max_scroll
+            try:
+                model.scroll_offset = cur_scroll
+            except Exception:
+                pass
+            scroll = cur_scroll
             # Reset combo rects each frame
             self.template_combo_rect = None
             self.template_list_rect = None

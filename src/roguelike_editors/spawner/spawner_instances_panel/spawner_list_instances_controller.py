@@ -109,6 +109,10 @@ class SpawnerListInstancesController:
         # Clamp selection if not restored and out of range
         if not restored and self.model.selected_index is not None and not (0 <= self.model.selected_index < len(items)):
             self.model.selected_index = None
+        # If nothing is selected and there are items, auto-select the first one to populate Properties
+        if self.model.selected_index is None and len(items) > 0:
+            self.model.selected_index = 0
+            restored = True
         # Clamp scroll window
         visible_rows = int(getattr(self.model, 'visible_rows', 11) or 11)
         max_off = max(0, len(items) - visible_rows)
