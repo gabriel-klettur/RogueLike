@@ -21,7 +21,7 @@ from .instance_properties_model import InstancePropertiesModel
 from .instance_properties_view import InstancePropertiesView
 from .instance_properties_events import InstancePropertiesEventHandler
 from .visuals.visuals_controller import VisualsController
-from roguelike_editors.spawner.visuals_picker import VisualsPicker
+from .visuals.visuals_picker import VisualsPicker
 from .services.buildings_service import (
     load_buildings_instances as svc_load_buildings_instances,
     write_buildings_instances as svc_write_buildings_instances,
