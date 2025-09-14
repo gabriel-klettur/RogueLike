@@ -53,7 +53,7 @@ class SpawnerEditorEventHandler:
         try:
             self._split_adapter = SimpleNamespace(split_dragging=False, selected_building=None)
             self._split_tool = SplitTool(None, self._split_adapter)
-        except Exception:
+        except (AttributeError, TypeError):
             self._split_adapter = SimpleNamespace(split_dragging=False, selected_building=None)
             self._split_tool = None
         try:
@@ -63,7 +63,7 @@ class SpawnerEditorEventHandler:
                 _z_state = SimpleNamespace(set=lambda *args, **kwargs: None)
             self._z_tool_bottom = ZTool(SimpleNamespace(z_state=_z_state), self._z_adapter, target="bottom")
             self._z_tool_top = ZTool(SimpleNamespace(z_state=_z_state), self._z_adapter, target="top")
-        except Exception:
+        except (AttributeError, TypeError):
             self._z_adapter = SimpleNamespace(active_building=None)
             self._z_tool_bottom = None
             self._z_tool_top = None
@@ -99,13 +99,13 @@ class SpawnerEditorEventHandler:
             try:
                 self.model.resizing_visual = False
                 self.model.resizing_visual_bid = None
-            except Exception:
-                pass
+            except AttributeError:
+                logger.debug("toggle_visible: failed to reset resizing flags", exc_info=True)
             try:
                 self.model.split_drag_active = False
                 self.model.split_drag_bid = None
-            except Exception:
-                pass
+            except AttributeError:
+                logger.debug("toggle_visible: failed to reset split-drag flags", exc_info=True)
             self.panning = False
             self.info_dragging = False
             self._drag_start_entry = None
@@ -114,20 +114,20 @@ class SpawnerEditorEventHandler:
                     setattr(world.state, 'spawner_editor_hovered_eid', None)
                     setattr(world.state, 'spawner_input_suppressed', False)
                     setattr(world.state, 'spawner_editor_active', False)
-            except Exception:
-                pass
+            except AttributeError:
+                logger.debug("toggle_visible: failed to clear world.state flags", exc_info=True)
             # Clear split propagation key to avoid stale propagation next time
             try:
                 setattr(self.model, '_split_propagation_key', None)
-            except Exception:
-                pass
+            except AttributeError:
+                logger.debug("toggle_visible: failed to clear _split_propagation_key", exc_info=True)
         else:
             # Mark editor as active globally
             try:
                 if world and hasattr(world, 'state'):
                     setattr(world.state, 'spawner_editor_active', True)
-            except Exception:
-                pass
+            except AttributeError:
+                logger.debug("toggle_visible: failed to set world.state.spawner_editor_active", exc_info=True)
 
     # Orchestrated event dispatcher ------------------------------------------
     def handle_event(self, event: pygame.event.Event) -> bool:
@@ -145,14 +145,15 @@ class SpawnerEditorEventHandler:
                 handled = False
                 try:
                     handled = bool(ip.handle_visuals_picker_event(event, camera))
-                except Exception:
+                except (AttributeError, TypeError, ValueError):
+                    logger.debug("handle_event: visuals_picker_event handler failed", exc_info=True)
                     handled = False
                 return True if handled or event.type in (
                     pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP, pygame.MOUSEMOTION,
                     pygame.MOUSEWHEEL, pygame.KEYDOWN, pygame.KEYUP
                 ) else False
-        except Exception:
-            pass
+        except (AttributeError, TypeError):
+            logger.debug("handle_event: exception while routing to visuals picker", exc_info=True)
 
         # Split drag END on any mouse button up
         if event.type == pygame.MOUSEBUTTONUP and getattr(self.model, 'split_drag_active', False):
@@ -166,7 +167,7 @@ class SpawnerEditorEventHandler:
             try:
                 if hasattr(ctx.world, 'state'):
                     setattr(ctx.world.state, 'spawner_input_suppressed', False)
-            except Exception:
+            except AttributeError:
                 pass
             return True
         # Split drag MOTION while active
@@ -188,13 +189,13 @@ class SpawnerEditorEventHandler:
             try:
                 vmodel = getattr(getattr(ip, 'model', None), 'visuals', None) if ip else None
                 sel_bid = getattr(vmodel, 'selected_building_id', None) if vmodel else None
-            except Exception:
+            except (AttributeError, TypeError):
                 sel_bid = None
             world_ob = None
             if sel_bid is not None:
                 try:
                     world_ob = ip.visuals._find_building_entity_by_id(int(sel_bid)) if ip and hasattr(ip, 'visuals') else None
-                except Exception:
+                except (AttributeError, TypeError, ValueError):
                     world_ob = None
                 if world_ob is None:
                     from .utils import find_building_in_world_by_id
@@ -229,7 +230,7 @@ class SpawnerEditorEventHandler:
                                 if int(e.get('id')) == int(sel_bid):
                                     changed = True
                                     continue
-                            except Exception:
+                            except (TypeError, ValueError):
                                 pass
                             out.append(e)
                         if changed:
@@ -238,23 +239,23 @@ class SpawnerEditorEventHandler:
                         try:
                             from roguelike_editors.spawner.services.persistence import remove_visual_refs_by_building_id as _rm_vis
                             _rm_vis(int(sel_bid))
-                        except Exception:
-                            pass
+                        except (ImportError, OSError, TypeError, ValueError):
+                            logger.debug("handle_event: failed to remove visuals refs for building id", exc_info=True)
                         # 3) Remove from live world/entities using existing helper
                         try:
                             if ip and hasattr(ip, 'visuals') and hasattr(ip.visuals, '_remove_building_entity_by_id'):
                                 ip.visuals._remove_building_entity_by_id(int(sel_bid))
-                        except Exception:
-                            pass
+                        except (AttributeError, TypeError, ValueError):
+                            logger.debug("handle_event: failed to remove building entity from live world", exc_info=True)
                         # 4) Clear selection
                         try:
                             if ip and hasattr(ip, 'visuals') and hasattr(ip.visuals, 'model'):
                                 ip.visuals.model.selected_building_id = None
-                        except Exception:
-                            pass
+                        except AttributeError:
+                            logger.debug("handle_event: failed to clear selected_building_id", exc_info=True)
                         return True
-                    except Exception:
-                        pass
+                    except (AttributeError, OSError, TypeError, ValueError):
+                        logger.debug("handle_event: delete selected building flow failed", exc_info=True)
             # Else: selection under cursor (LMB-only selection)
             try:
                 if ip is not None and hasattr(ip, 'visuals'):
@@ -264,8 +265,8 @@ class SpawnerEditorEventHandler:
                         if bid is not None:
                             ip.visuals.model.selected_building_id = int(bid)
                             return True
-            except Exception:
-                pass
+            except (AttributeError, TypeError, ValueError):
+                logger.debug("handle_event: failed picking building under cursor for selection", exc_info=True)
 
         # RMB handling: split drag start, reset size, or selection
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
@@ -282,7 +283,7 @@ class SpawnerEditorEventHandler:
                 try:
                     vmodel = getattr(getattr(ip, 'model', None), 'visuals', None) if ip else None
                     sel_bid = getattr(vmodel, 'selected_building_id', None) if vmodel else None
-                except Exception:
+                except (AttributeError, TypeError):
                     sel_bid = None
                 target_bid = sel_bid
                 try:
@@ -292,10 +293,10 @@ class SpawnerEditorEventHandler:
                             target_bid = int(getattr(ob_pick, 'id'))
                             try:
                                 ip.visuals.model.selected_building_id = int(target_bid)
-                            except Exception:
-                                pass
-                except Exception:
-                    pass
+                            except (AttributeError, TypeError, ValueError):
+                                logger.debug("handle_event: failed to set selected_building_id during split-start", exc_info=True)
+                except (AttributeError, TypeError, ValueError):
+                    logger.debug("handle_event: error while determining target_bid for split drag", exc_info=True)
                 if target_bid is not None:
                     if split.begin_split_drag(ctx, int(target_bid), event):
                         return True
@@ -304,7 +305,7 @@ class SpawnerEditorEventHandler:
                 ip = getattr(self.controller, 'instance_properties', None)
                 vmodel = getattr(getattr(ip, 'model', None), 'visuals', None) if ip else None
                 sel_bid = getattr(vmodel, 'selected_building_id', None) if vmodel else None
-            except Exception:
+            except (AttributeError, TypeError):
                 sel_bid = None
             if sel_bid is not None:
                 # Resolve world building and spawner eid
@@ -323,8 +324,8 @@ class SpawnerEditorEventHandler:
                         self.model.dragging_eid = sp_eid
                         if hasattr(ctx.world, 'state'):
                             setattr(ctx.world.state, 'spawner_input_suppressed', True)
-                    except Exception:
-                        pass
+                    except AttributeError:
+                        logger.debug("handle_event: failed to start anchor drag (set flags)", exc_info=True)
                     return True
 
         # Spawner anchor drag MOTION
@@ -357,24 +358,24 @@ class SpawnerEditorEventHandler:
             try:
                 if ip is not None and hasattr(ip, 'visuals'):
                     ob = ip.visuals._find_building_entity_by_id(int(sel_bid))
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 ob = None
             if ob is not None:
                 try:
                     ob.reset_to_original_size()
-                except Exception:
-                    pass
+                except AttributeError:
+                    logger.debug("_reset_selected_building_size: failed to reset entity size", exc_info=True)
                 # Persist: drop overrides.scale
                 try:
                     data = svc_load_buildings_instances()
-                except Exception:
+                except OSError:
                     data = []
                 changed = False
                 for e in data or []:
                     try:
                         if int(e.get('id')) != int(sel_bid):
                             continue
-                    except Exception:
+                    except (TypeError, ValueError):
                         continue
                     ov = e.get('overrides') or {}
                     if isinstance(ov, dict) and 'scale' in ov:
@@ -383,20 +384,21 @@ class SpawnerEditorEventHandler:
                             if not ov:
                                 try:
                                     e.pop('overrides', None)
-                                except Exception:
+                                except KeyError:
+                                    logger.debug("_reset_selected_building_size: failed to pop overrides; setting empty dict", exc_info=True)
                                     e['overrides'] = {}
                             else:
                                 e['overrides'] = ov
                             changed = True
-                        except Exception:
-                            pass
+                        except (AttributeError, KeyError, TypeError):
+                            logger.debug("_reset_selected_building_size: failed updating overrides dict", exc_info=True)
                     break
                 if changed:
                     try:
                         svc_write_buildings_instances(data)
-                    except Exception:
-                        pass
+                    except OSError:
+                        logger.debug("_reset_selected_building_size: failed persisting buildings_instances after reset", exc_info=True)
                 return True
-        except Exception:
-            pass
+        except (AttributeError, TypeError, ValueError):
+            logger.debug("_reset_selected_building_size: unexpected error", exc_info=True)
         return False

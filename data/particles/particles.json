@@ -1,0 +1,167 @@
+{
+  "healing_aura_emitter": {
+    "id": "healing_aura_emitter",
+    "name": "Healing Aura",
+    "type": "aura",
+    "system": {
+      "class": "roguelike_game.ecs.systems.particles.healing_aura_emitter_system.HealingAuraEmitterSystem"
+    },
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "aura",
+        "emit_rate": 3,
+        "speed": 1.0,
+        "lifespan": 60,
+        "size_range": [4, 8],
+        "colors": [[80, 200, 120], [120, 220, 160], [160, 240, 200]],
+        "radius": 24
+      }
+    }
+  },
+  "dash_trail_emitter": {
+    "id": "dash_trail_emitter",
+    "name": "Dash Trail",
+    "type": "dash",
+    "system": {
+      "class": "roguelike_game.ecs.systems.particles.dash_emitter_system.DashEmitterSystem"
+    },
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "dash",
+        "speed_px": 60.0,
+        "colors": [[200, 200, 255], [150, 150, 255], [255, 255, 255]]
+      }
+    }
+  },
+  "laser_beam_emitter": {
+    "id": "laser_beam_emitter",
+    "name": "Laser Beam",
+    "type": "beam",
+    "system": {
+      "class": "roguelike_game.ecs.systems.particles.laser_beam_emitter_system.LaserBeamEmitterSystem"
+    },
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "laser",
+        "colors": [[120, 200, 255]],
+        "thickness": 2
+      }
+    }
+  },
+  "lightning_emitter": {
+    "id": "lightning_emitter",
+    "name": "Lightning",
+    "type": "lightning",
+    "system": {
+      "class": "roguelike_game.ecs.systems.particles.lightning_emitter_system.LightningEmitterSystem"
+    },
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "lightning",
+        "segments": 10,
+        "offset": 10,
+        "lifetime": 8,
+        "colors": [[100, 180, 255], [150, 220, 255]]
+      }
+    }
+  },
+  "slash_emitter": {
+    "id": "slash_emitter",
+    "name": "Slash",
+    "type": "slash",
+    "system": {
+      "class": "roguelike_game.ecs.systems.particles.slash_emitter_system.SlashEmitterSystem"
+    },
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "slash",
+        "speed": 2.5,
+        "size_range": [3, 7],
+        "color": [255, 230, 150],
+        "arc_range_degrees": 90
+      }
+    }
+  },
+  "arcane_flame_emitter": {
+    "id": "arcane_flame_emitter",
+    "name": "Arcane Flame",
+    "type": "arcane_flame",
+    "system": {
+      "class": "roguelike_game.ecs.systems.particles.arcane_flame_emitter_system.ArcaneFlameEmitterSystem"
+    },
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "arcane_flame",
+        "count": 20,
+        "speed": 100.0,
+        "lifespan": 60,
+        "size_range": [2, 6],
+        "colors": [[255, 180, 80], [255, 120, 60], [255, 220, 120]]
+      }
+    }
+  },
+  "smoke_emitter": {
+    "id": "smoke_emitter",
+    "name": "Smoke Emitter",
+    "type": "smoke_emitter",
+    "system": {
+      "class": "roguelike_game.ecs.systems.combat.spells.smoke_emitter_system.SmokeEmitterSystem"
+    },
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "smoke_emitter",
+        "emit_rate": 2,
+        "color": [200, 200, 200]
+      }
+    }
+  },
+  "smoke_burst": {
+    "id": "smoke_burst",
+    "name": "Smoke Burst",
+    "type": "smoke",
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "smoke",
+        "count": 12,
+        "direction": [0.0, -1.0],
+        "color": [200, 200, 200]
+      }
+    }
+  },
+  "firework_launch": {
+    "id": "firework_launch",
+    "name": "Firework Launch",
+    "type": "firework",
+    "model": {
+      "class": "roguelike_game.ecs.systems.rendering.combat.spells.firework_launch.model.FireworkLaunchModel"
+    },
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "firework",
+        "speed": 12.0
+      }
+    }
+  },
+  "explosion_small": {
+    "id": "explosion_small",
+    "name": "Explosion (Small)",
+    "type": "explosion",
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "explosion",
+        "count": 24,
+        "colors": [[255, 180, 80], [255, 120, 60], [255, 220, 120]]
+      }
+    }
+  }
+}

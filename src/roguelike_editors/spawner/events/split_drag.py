@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Optional
 import pygame
+import logging
 
 from roguelike_editors.spawner.spawner_instance_properties_panel.services.buildings_service import (
     load_buildings_instances as svc_load_buildings_instances,
@@ -10,6 +11,7 @@ from roguelike_editors.spawner.spawner_instance_properties_panel.services.buildi
 from .utils import find_building_in_world_by_id, log_info_safe
 from .types import EditorCtx
 
+logger = logging.getLogger(__name__)
 
 def propagate_split_ratio(ctx: EditorCtx, source_ob: Any, ratio: float, ip: Any) -> None:
     world = ctx.world
@@ -19,7 +21,8 @@ def propagate_split_ratio(ctx: EditorCtx, source_ob: Any, ratio: float, ip: Any)
         try:
             if ip is not None and hasattr(ip, 'visuals') and hasattr(ip.visuals, '_get_selected_spawner_id'):
                 sid = ip.visuals._get_selected_spawner_id()
-        except Exception:
+        except (AttributeError, TypeError):
+            logger.debug("propagate_split_ratio: failed to get selected spawner id", exc_info=True)
             sid = None
         if world is not None and sid is not None:
             for ob2 in getattr(world, 'buildings', []) or []:
@@ -31,17 +34,18 @@ def propagate_split_ratio(ctx: EditorCtx, source_ob: Any, ratio: float, ip: Any)
                         continue
                     try:
                         ob2.split_ratio = float(ratio)
-                    except Exception:
-                        pass
+                    except (AttributeError, TypeError, ValueError):
+                        logger.debug("propagate_split_ratio: failed setting split_ratio on sibling", exc_info=True)
                     try:
                         if getattr(ob2, 'controller', None) is not None:
                             ob2.controller.update_on_camera_change()
-                    except Exception:
-                        pass
-                except Exception:
+                    except AttributeError:
+                        logger.debug("propagate_split_ratio: failed to refresh controller on sibling", exc_info=True)
+                except (AttributeError, TypeError, ValueError):
+                    logger.debug("propagate_split_ratio: error iterating sibling buildings by spawner id", exc_info=True)
                     continue
-    except Exception:
-        pass
+    except (AttributeError, TypeError, ValueError):
+        logger.debug("propagate_split_ratio: error in spawner-id propagation branch", exc_info=True)
     # 2) Fallback by (zone, rel_x, rel_y)
     try:
         key = getattr(ctx.model, '_split_propagation_key', None)
@@ -58,17 +62,18 @@ def propagate_split_ratio(ctx: EditorCtx, source_ob: Any, ratio: float, ip: Any)
                         continue
                     try:
                         ob3.split_ratio = float(ratio)
-                    except Exception:
-                        pass
+                    except (AttributeError, TypeError, ValueError):
+                        logger.debug("propagate_split_ratio: failed setting split_ratio on zone/rel match", exc_info=True)
                     try:
                         if getattr(ob3, 'controller', None) is not None:
                             ob3.controller.update_on_camera_change()
-                    except Exception:
-                        pass
-                except Exception:
+                    except AttributeError:
+                        logger.debug("propagate_split_ratio: failed to refresh controller on zone/rel match", exc_info=True)
+                except (AttributeError, TypeError, ValueError):
+                    logger.debug("propagate_split_ratio: error iterating buildings by zone/rel", exc_info=True)
                     continue
-    except Exception:
-        pass
+    except (AttributeError, TypeError, ValueError):
+        logger.debug("propagate_split_ratio: error in zone/rel propagation branch", exc_info=True)
 
 
 def begin_split_drag(ctx: EditorCtx, bid: int, event: pygame.event.Event) -> bool:
@@ -78,7 +83,8 @@ def begin_split_drag(ctx: EditorCtx, bid: int, event: pygame.event.Event) -> boo
         model.split_drag_active = True
         model.split_drag_bid = int(bid)
         setattr(ctx.controller.events, '_split_drag_first_logged', False)
-    except Exception:
+    except (AttributeError, TypeError, ValueError):
+        logger.debug("begin_split_drag: failed to set split drag flags", exc_info=True)
         model.split_drag_active = False
         model.split_drag_bid = None
     if not getattr(model, 'split_drag_active', False):
@@ -88,7 +94,8 @@ def begin_split_drag(ctx: EditorCtx, bid: int, event: pygame.event.Event) -> boo
     try:
         if ip is not None and hasattr(ip, 'visuals'):
             ob = ip.visuals._find_building_entity_by_id(int(bid))
-    except Exception:
+    except (AttributeError, TypeError, ValueError):
+        logger.debug("begin_split_drag: failed to resolve building from visuals", exc_info=True)
         ob = None
     if ob is None:
         ob = find_building_in_world_by_id(ctx.world, int(bid))
@@ -104,26 +111,29 @@ def begin_split_drag(ctx: EditorCtx, bid: int, event: pygame.event.Event) -> boo
             orx = int(getattr(getattr(ob, 'model', ob), 'rel_x', 0))
             ory = int(getattr(getattr(ob, 'model', ob), 'rel_y', 0))
             setattr(model, '_split_propagation_key', (str(oz), int(orx), int(ory)))
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
+            logger.debug("begin_split_drag: failed to set _split_propagation_key", exc_info=True)
             setattr(model, '_split_propagation_key', None)
         # Log start
         try:
             mx, my = event.pos
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
+            logger.debug("begin_split_drag: failed to read event.pos", exc_info=True)
             mx = my = 0
         try:
             sr = getattr(ob, 'split_ratio', None)
             log_info_safe(ctx.logger, "SpawnerEditor: split drag START bid=%s ratio=%s mouse=(%s,%s)", str(bid), f"{sr:.3f}" if isinstance(sr, (int, float)) else str(sr), int(mx), int(my))
-        except Exception:
-            pass
-    except Exception:
+        except (AttributeError, TypeError, ValueError):
+            logger.debug("begin_split_drag: failed to start split tool drag or log start", exc_info=True)
+    except (AttributeError, TypeError, ValueError):
+        logger.debug("begin_split_drag: unexpected error initializing drag", exc_info=True)
         return False
     # Suppress gameplay input during split drag
     try:
         if hasattr(ctx.world, 'state'):
             setattr(ctx.world.state, 'spawner_input_suppressed', True)
-    except Exception:
-        pass
+    except AttributeError:
+        logger.debug("begin_split_drag: failed to suppress gameplay input", exc_info=True)
     return True
 
 
@@ -133,14 +143,14 @@ def update_split_drag(ctx: EditorCtx, event: pygame.event.Event) -> bool:
     model = ctx.model
     try:
         bid = int(model.split_drag_bid)
-    except Exception:
+    except (TypeError, ValueError):
         return False
     # Resolve ob
     ob = None
     try:
         if ip is not None and hasattr(ip, 'visuals'):
             ob = ip.visuals._find_building_entity_by_id(int(bid))
-    except Exception:
+    except (AttributeError, TypeError, ValueError):
         ob = None
     if ob is None:
         ob = find_building_in_world_by_id(ctx.world, int(bid))
@@ -154,41 +164,41 @@ def update_split_drag(ctx: EditorCtx, event: pygame.event.Event) -> bool:
             # Mirror to world entity if different
             try:
                 world_ob = find_building_in_world_by_id(ctx.world, int(bid))
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 world_ob = None
             if world_ob is not None and world_ob is not ob:
                 try:
                     world_ob.split_ratio = float(getattr(ob, 'split_ratio', getattr(world_ob, 'split_ratio', 0.5)))
-                except Exception:
+                except (AttributeError, TypeError, ValueError):
                     pass
                 try:
                     mh = int(getattr(getattr(world_ob, 'model', None), 'image', getattr(world_ob, 'image', None)).get_height())
                     setattr(world_ob.model, '_cut_world', int(mh * float(world_ob.split_ratio)))
-                except Exception:
+                except (AttributeError, TypeError, ValueError):
                     pass
                 try:
                     if hasattr(world_ob, 'controller') and world_ob.controller:
                         world_ob.controller.update_on_camera_change()
-                except Exception:
+                except AttributeError:
                     pass
         # One-time MOTION sample
         if not getattr(ctx.controller.events, '_split_drag_first_logged', False):
             try:
                 src = 'visuals' if (ip is not None and hasattr(ip, 'visuals') and ip.visuals._find_building_entity_by_id(int(bid)) is ob) else 'world'
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 src = 'unknown'
             try:
                 bx, by = cam.apply((getattr(ob, 'x', 0), getattr(ob, 'y', 0)))
                 _, h_scaled = cam.scale(ob.image.get_size())
-            except Exception:
+            except AttributeError:
                 bx = by = h_scaled = None
             try:
                 mx, my = event.pos
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 mx = my = None
             try:
                 ratio_now = float(getattr(ob, 'split_ratio', 0.0))
-            except Exception:
+            except (TypeError, ValueError):
                 ratio_now = None
             log_info_safe(
                 ctx.logger,
@@ -201,10 +211,10 @@ def update_split_drag(ctx: EditorCtx, event: pygame.event.Event) -> bool:
         try:
             cur_r = float(getattr(ob, 'split_ratio', 0.5))
             propagate_split_ratio(ctx, ob, cur_r, ip)
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
         return True
-    except Exception:
+    except (AttributeError, TypeError, ValueError):
         return False
 
 
@@ -220,13 +230,13 @@ def end_split_drag(ctx: EditorCtx, event: pygame.event.Event) -> bool:
         if ctx.split_adapter is not None:
             ctx.split_adapter.split_dragging = False
             ctx.split_adapter.selected_building = None
-    except Exception:
+    except AttributeError:
         pass
     # Re-enable gameplay input
     try:
         if ctx.world is not None and hasattr(ctx.world, 'state'):
             setattr(ctx.world.state, 'spawner_input_suppressed', False)
-    except Exception:
+    except AttributeError:
         pass
     if bid is not None:
         try:
@@ -235,26 +245,28 @@ def end_split_drag(ctx: EditorCtx, event: pygame.event.Event) -> bool:
             try:
                 if ip is not None and hasattr(ip, 'visuals'):
                     ob = ip.visuals._find_building_entity_by_id(int(bid))
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 ob = None
             if ob is None:
                 ob = find_building_in_world_by_id(ctx.world, int(bid))
             cur_ratio = float(getattr(ob, 'split_ratio', 0.5)) if ob is not None else None
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
+            logger.debug("end_split_drag: failed to compute current split ratio", exc_info=True)
             cur_ratio = None
         # Log end
         log_info_safe(ctx.logger, "SpawnerEditor: split drag END bid=%s button=%s ratio=%s", str(bid), str(getattr(event, 'button', None)), f"{cur_ratio:.3f}" if isinstance(cur_ratio, (int, float)) else str(cur_ratio))
         if cur_ratio is not None:
             try:
                 data = svc_load_buildings_instances()
-            except Exception:
+            except OSError:
+                logger.debug("end_split_drag: failed to load buildings_instances for persistence", exc_info=True)
                 data = []
             changed = False
             for e in data or []:
                 try:
                     if int(e.get('id')) != int(bid):
                         continue
-                except Exception:
+                except (ValueError, TypeError):
                     continue
                 ov = e.get('overrides') or {}
                 if not isinstance(ov, dict):
@@ -266,20 +278,20 @@ def end_split_drag(ctx: EditorCtx, event: pygame.event.Event) -> bool:
             if changed:
                 try:
                     svc_write_buildings_instances(data)
-                except Exception:
-                    pass
+                except OSError:
+                    logger.debug("end_split_drag: failed to persist buildings_instances after split", exc_info=True)
             # Propagate end-state
             try:
                 propagate_split_ratio(ctx, ob, float(cur_ratio), ip)
-            except Exception:
-                pass
+            except (AttributeError, TypeError, ValueError):
+                logger.debug("end_split_drag: failed to propagate end-state split ratio", exc_info=True)
     # Reset flags
     try:
         setattr(ctx.controller.events, '_split_drag_first_logged', False)
-    except Exception:
+    except AttributeError:
         pass
     try:
         setattr(model, '_split_propagation_key', None)
-    except Exception:
+    except AttributeError:
         pass
     return True

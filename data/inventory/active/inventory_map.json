@@ -1,1 +1,26 @@
-{}
+{
+  "97c1ba3c-6e72-449f-b2e5-9eab1e5f42e3": {
+    "item_id": "wood",
+    "quantity": 1,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "z_layer": 3,
+    "tile": {
+      "x": 17,
+      "y": 6
+    },
+    "created_at": 1757876821.8840559
+  },
+  "3c1e7ba0-b8cd-4f30-b3a1-c197be4b5e8c": {
+    "item_id": "experience_orb",
+    "quantity": 1,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "z_layer": 3,
+    "position": {
+      "x": 1111,
+      "y": 2286
+    },
+    "created_at": 1757876849.5232728
+  }
+}

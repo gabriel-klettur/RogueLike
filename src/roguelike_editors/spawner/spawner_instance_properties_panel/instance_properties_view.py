@@ -14,12 +14,6 @@ class InstancePropertiesView:
         # Combobox rects (screen-local to panel surface coordinates)
         self.template_combo_rect: pygame.Rect | None = None
         self.template_list_rect: pygame.Rect | None = None
-        # Visuals table rects are now owned by visualsModel; these fields remain
-        # only for backward compatibility and are no longer updated here.
-        self.visuals_template_rects: list[pygame.Rect] = []
-        self.visuals_browse_rects: list[pygame.Rect] = []
-        self.visuals_eye_rects: list[pygame.Rect] = []
-        self.visuals_state_rects: list[pygame.Rect] = []
 
     def _flatten(self, data: Dict[str, Any], prefix: str = "") -> List[Tuple[str, str]]:
         items: List[Tuple[str, str]] = []
@@ -33,7 +27,7 @@ class InstancePropertiesView:
                         value = str(v)
                     else:
                         value = str(v)
-                except Exception:
+                except (TypeError, ValueError):
                     value = repr(v)
                 items.append((key, value))
         return items
@@ -158,14 +152,14 @@ class InstancePropertiesView:
                 viewport_top=viewport_top,
                 viewport_bottom=viewport_bottom,
             )
-        except Exception:
+        except (AttributeError, TypeError, ValueError, pygame.error):
             pass
         screen.blit(surf, self.panel_rect.topleft)
         # UI blocker
         try:
             from roguelike_ui.ui_blocker import register_blocker
             register_blocker(self.panel_rect)
-        except Exception:
+        except (ImportError, AttributeError, TypeError):
             pass
         # Hover tooltip shows key path
         try:
@@ -176,7 +170,7 @@ class InstancePropertiesView:
                     key, _ = rows[hi]
                     mx, my = pygame.mouse.get_pos()
                     draw_tooltip(screen, mx, my, [key])
-        except Exception:
+        except (AttributeError, TypeError, IndexError):
             pass
         # Hover tooltip for Visuals state names: show TitleCase ↔ snake_case equivalence
         try:
@@ -200,7 +194,7 @@ class InstancePropertiesView:
                             snake_str = ''.join(snake)
                             draw_tooltip(screen, mx, my, [f"{state} ↔ {snake_str}"])
                         break
-        except Exception:
+        except (AttributeError, TypeError, IndexError):
             pass
         # Hover tooltip for Visuals controls (folder/eye)
         try:
@@ -216,7 +210,7 @@ class InstancePropertiesView:
                             raise StopIteration
                     except StopIteration:
                         break
-                    except Exception:
+                    except (AttributeError, TypeError):
                         continue
                 # Eye tooltip (toggle)
                 for j, r in enumerate(getattr(vmodel, 'visuals_eye_rects', []) or []):
@@ -231,15 +225,15 @@ class InstancePropertiesView:
                             try:
                                 if state is not None and not controller.is_visual_building_visible(state):
                                     label = show_label
-                            except Exception:
+                            except (AttributeError, TypeError, ValueError):
                                 label = hide_label
                             draw_tooltip(screen, mx, my, [label])
                             raise StopIteration
                     except StopIteration:
                         break
-                    except Exception:
+                    except (AttributeError, TypeError):
                         continue
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
         # Ephemeral toast (bottom-right of the panel)
         try:
@@ -248,7 +242,7 @@ class InstancePropertiesView:
             now = 0
             try:
                 now = pygame.time.get_ticks()
-            except Exception:
+            except (AttributeError, pygame.error):
                 now = 0
             if msg and now < until_ms and self.panel_rect is not None:
                 toast_font = pygame.font.SysFont(None, 18)
@@ -266,10 +260,10 @@ class InstancePropertiesView:
                     shadow = pygame.Surface((box_w, box_h), pygame.SRCALPHA)
                     shadow.fill((0, 0, 0, 100))
                     screen.blit(shadow, (bx + 2, by + 2))
-                except Exception:
+                except (pygame.error, ValueError, TypeError):
                     pass
                 box.blit(txt, (pad_x, pad_y))
                 screen.blit(box, (bx, by))
-        except Exception:
+        except (AttributeError, TypeError, ValueError, pygame.error):
             pass
         return self.panel_rect

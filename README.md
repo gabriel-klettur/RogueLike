@@ -196,6 +196,25 @@ Puedes generar un ejecutable:
 
 ---
 
+## 🧰 Editor de Spawners (UI) — Nomenclatura
+
+Para evitar confusiones en el código del editor de spawners (`src/roguelike_editors/spawner/`), se usan dos controladores distintos con nombres similares:
+
+- `spawner_templates_panel/spawner_manager_controller.py` expone `SpawnerManagerController`.
+  - Representa el panel de la LISTA DE TEMPLATES (plantillas) de spawners.
+  - En la toolbar se activa con la herramienta `spawner_manager`.
+- `spawner_template_properties_panel/spawners_manager_controller.py` expone `SpawnersManagerController` (en plural).
+  - Representa el panel de PROPIEDADES de un template de spawner seleccionado.
+  - Es un subpanel que se muestra dentro del Manager cuando hay una plantilla seleccionada.
+
+Resumen operativo:
+- La tecla/herramienta `spawner_manager` de la toolbar abre/cierra el panel de LISTA de plantillas (Manager).
+- Al seleccionar un template en esa lista, el panel de PROPIEDADES (SpawnersManager) muestra/edita los campos del template.
+
+Nota: La pluralización distinta (manager vs managers) ayuda a distinguir semánticamente “lista de plantillas” (manager) de “propiedades del template” (managers). El código ha sido organizado para que los eventos de la tabla Visuals se gestionen exclusivamente por `VisualsEvents`, evitando duplicaciones.
+
+---
+
 ## 📦 Dependencias
 
 Listado en `requirements.txt`:

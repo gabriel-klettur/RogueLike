@@ -30,13 +30,13 @@ class SpawnerInstanceToolbarController:
             ensure = getattr(self.view, 'ensure_ready', None)
             if ensure:
                 ensure(self.model)
-        except Exception:
+        except AttributeError:
             pass
         toolbar = getattr(self.view, 'toolbar', None)
         if toolbar is not None:
             try:
                 consumed = bool(toolbar.handle_event(event)) or consumed
-            except Exception:
+            except AttributeError:
                 pass
         consumed = self.events.handle_event(self, event) or consumed
         return consumed
@@ -61,7 +61,7 @@ class SpawnerInstanceToolbarController:
                 tpls = load_spawners_json() or []
                 ids = [str(t.get('id')) for t in tpls if isinstance(t, dict) and t.get('id')]
                 self.model.add_templates = ids
-            except Exception:
+            except (ImportError, OSError, ValueError, TypeError):
                 self.model.add_templates = []
         else:
             # Leaving -> clear list
@@ -70,13 +70,13 @@ class SpawnerInstanceToolbarController:
         self.editor_controller.model.add_mode_active = new_state
         try:
             self.model.add_mode_active = new_state
-        except Exception:
+        except AttributeError:
             pass
         # Tutorial pulse when entering Add Mode
         if new_state:
             try:
                 setattr(self.editor_controller.model, 'tutorial_add_mode_on_pulse', True)
-            except Exception:
+            except AttributeError:
                 pass
         # Ensure remove mode is OFF when entering add mode
         if new_state:
@@ -88,18 +88,18 @@ class SpawnerInstanceToolbarController:
                 if world and hasattr(world, 'state'):
                     setattr(world.state, 'spawner_remove_mode', False)
                     setattr(world.state, 'spawner_remove_candidate_eid', None)
-            except Exception:
+            except AttributeError:
                 pass
         # Suppress/re-enable gameplay input
         try:
             world = getattr(getattr(self.editor_controller, 'game', None), 'ecs', None)
             world = getattr(world, 'ecs_world', None)
-        except Exception:
+        except AttributeError:
             world = None
         if world and hasattr(world, 'state'):
             try:
                 setattr(world.state, 'spawner_input_suppressed', bool(new_state))
-            except Exception:
+            except AttributeError:
                 pass
         # If user toggled OFF Add Mode via the button, bring back the Instances panel
         if not new_state:
@@ -107,7 +107,7 @@ class SpawnerInstanceToolbarController:
                 tb = getattr(self.editor_controller, 'spawner_toolbar', None)
                 if tb and getattr(tb, 'model', None) is not None:
                     tb.model.active_tool = 'spawner_list'
-            except Exception:
+            except AttributeError:
                 pass
 
     def on_remove_spawner(self) -> None:
@@ -119,19 +119,19 @@ class SpawnerInstanceToolbarController:
         try:
             # Mirror into toolbar model so view can blink
             self.model.remove_mode_active = new_state
-        except Exception:
+        except AttributeError:
             pass
         # Tutorial pulse when turning ON Remove Mode
         if new_state:
             try:
                 setattr(self.editor_controller.model, 'tutorial_remove_mode_on_pulse', True)
-            except Exception:
+            except AttributeError:
                 pass
         # Reflect to ECS world state for render systems
         try:
             world = getattr(getattr(self.editor_controller, 'game', None), 'ecs', None)
             world = getattr(world, 'ecs_world', None)
-        except Exception:
+        except AttributeError:
             world = None
         if world and hasattr(world, 'state'):
             try:
@@ -139,7 +139,7 @@ class SpawnerInstanceToolbarController:
                 # Clear any prior candidate when toggling
                 if not new_state:
                     setattr(world.state, 'spawner_remove_candidate_eid', None)
-            except Exception:
+            except AttributeError:
                 pass
         # Leave placement mode if entering remove mode
         if new_state:
@@ -147,7 +147,7 @@ class SpawnerInstanceToolbarController:
                 self.editor_controller.model.placing_template_id = None
                 if world and hasattr(world, 'state'):
                     setattr(world.state, 'spawner_input_suppressed', False)
-            except Exception:
+            except AttributeError:
                 pass
             # Also exit Add Mode if it was active
             try:
@@ -157,13 +157,13 @@ class SpawnerInstanceToolbarController:
                 tb = getattr(self.editor_controller, 'spawner_toolbar', None)
                 if tb and getattr(tb, 'model', None) is not None:
                     tb.model.active_tool = None
-            except Exception:
+            except AttributeError:
                 pass
         # Clear any pending confirms when turning off, and restore Instances panel
         if not new_state:
             try:
                 self.editor_controller.model.pending_delete_confirm = None
-            except Exception:
+            except AttributeError:
                 pass
             # Activate 'spawner_list' so instances panel shows again
             try:
@@ -185,9 +185,9 @@ class SpawnerInstanceToolbarController:
                 # Tutorial pulse: template chosen
                 try:
                     setattr(self.editor_controller.model, 'tutorial_template_selected_pulse', True)
-                except Exception:
+                except AttributeError:
                     pass
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
 
 

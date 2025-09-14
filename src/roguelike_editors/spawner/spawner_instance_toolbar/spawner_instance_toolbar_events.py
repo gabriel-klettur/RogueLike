@@ -8,7 +8,7 @@ class SpawnerInstanceToolbarEventHandler:
     def handle_event(self, controller, event) -> bool:
         try:
             import pygame  # type: ignore
-        except Exception:
+        except ImportError:
             return False
 
         toolbar = getattr(controller.view, 'toolbar', None)
@@ -19,7 +19,7 @@ class SpawnerInstanceToolbarEventHandler:
         try:
             panel_pos = toolbar.panel.pos or (toolbar.x, toolbar.y)
             panel_rect = pygame.Rect(panel_pos, toolbar.panel.surface.get_size())
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             return False
         # Optional dropdown rect
         dropdown_rect = getattr(controller.view, 'dropdown_rect', None)
@@ -44,10 +44,10 @@ class SpawnerInstanceToolbarEventHandler:
                         if r.collidepoint(pos):
                             try:
                                 controller.on_add_template_selected(str(tpl_id))
-                            except Exception:
+                            except (AttributeError, TypeError, ValueError):
                                 logger.debug("[InstanceToolbar] on_add_template_selected failed", exc_info=False)
                             return True
-                    except Exception:
+                    except (AttributeError, TypeError, ValueError):
                         continue
                 # Clicked dropdown background -> consume
                 return True
@@ -61,7 +61,7 @@ class SpawnerInstanceToolbarEventHandler:
                     world = getattr(world, 'ecs_world', None)
                     if world and hasattr(world, 'state'):
                         setattr(world.state, 'spawner_input_suppressed', False)
-                except Exception:
+                except AttributeError:
                     pass
                 return True
             # If click is not on panel, ignore
@@ -73,7 +73,7 @@ class SpawnerInstanceToolbarEventHandler:
             if rect and rect.collidepoint(pos):
                 try:
                     controller.on_add_spawner()
-                except Exception:
+                except AttributeError:
                     logger.debug("[InstanceToolbar] on_add_spawner failed", exc_info=False)
                 return True
             # Remove
@@ -81,7 +81,7 @@ class SpawnerInstanceToolbarEventHandler:
             if rect and rect.collidepoint(pos):
                 try:
                     controller.on_remove_spawner()
-                except Exception:
+                except AttributeError:
                     logger.debug("[InstanceToolbar] on_remove_spawner failed", exc_info=False)
                 return True
             # Clicked toolbar background: block

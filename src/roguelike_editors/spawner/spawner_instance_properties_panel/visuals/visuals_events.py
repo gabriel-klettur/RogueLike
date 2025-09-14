@@ -4,7 +4,7 @@ from typing import Optional
 
 try:
     import pygame  # type: ignore
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     pygame = None  # type: ignore
 
 
@@ -20,7 +20,7 @@ class VisualsEvents:
             try:
                 if r and r.collidepoint(local_pos):
                     return j
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 continue
         return None
 
@@ -38,7 +38,7 @@ class VisualsEvents:
             try:
                 controller.model.hold_active = False
                 controller.model.hold_row_index = None
-            except Exception:
+            except AttributeError:
                 pass
             # Restore gameplay follow/input if we had suppressed it
             try:
@@ -47,7 +47,7 @@ class VisualsEvents:
                 if world is not None and hasattr(world, 'state'):
                     setattr(world.state, 'spawner_input_suppressed', False)
                     setattr(world.state, 'spawner_hold_focus', False)
-            except Exception:
+            except AttributeError:
                 pass
             # Immediately recenter camera on Player for feedback
             try:
@@ -62,7 +62,7 @@ class VisualsEvents:
                         tags = comps.get('PlayerTagComponent', {}) or {}
                         try:
                             eid = next(iter(tags.keys())) if tags else None
-                        except Exception:
+                        except (StopIteration, AttributeError, TypeError):
                             eid = None
                     if isinstance(eid, int):
                         pos_map = comps.get('Position', {}) or {}
@@ -71,7 +71,7 @@ class VisualsEvents:
                             zoom = getattr(cam, 'zoom', 1.0) or 1.0
                             cam.offset_x = float(getattr(pos, 'x', 0.0)) - (cam.screen_width / (2 * zoom))
                             cam.offset_y = float(getattr(pos, 'y', 0.0)) - (cam.screen_height / (2 * zoom))
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 pass
             return True
         if not panel_rect.collidepoint(pos):
@@ -83,7 +83,7 @@ class VisualsEvents:
             if et == pygame.MOUSEMOTION:
                 try:
                     controller.model.hover_row_index = None
-                except Exception:
+                except AttributeError:
                     pass
             return False
         # Translate to panel-local coordinates
@@ -94,7 +94,7 @@ class VisualsEvents:
             try:
                 j = self._hit_index(getattr(controller.model, 'visuals_row_rects', []) or [], local)
                 controller.model.hover_row_index = j
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 pass
 
         # If editing a Visuals Template cell, route to its text input first
@@ -108,7 +108,7 @@ class VisualsEvents:
                 if vti is not None:
                     try:
                         vti.deactivate()
-                    except Exception:
+                    except AttributeError:
                         pass
                 pc.commit_visual_edit_if_finished()
                 return True
@@ -159,7 +159,7 @@ class VisualsEvents:
                         self._hit_index(getattr(vmodel, 'visuals_clear_rects', []) or [], local) is not None or
                         self._hit_index(getattr(vmodel, 'visuals_template_rects', []) or [], local) is not None):
                         hit_any_control = True
-                except Exception:
+                except (AttributeError, TypeError, ValueError):
                     hit_any_control = False
                 if not hit_any_control:
                     rows_v = pc.get_visuals_rows()
@@ -177,9 +177,9 @@ class VisualsEvents:
                                 if world is not None and hasattr(world, 'state'):
                                     setattr(world.state, 'spawner_input_suppressed', True)
                                     setattr(world.state, 'spawner_hold_focus', True)
-                            except Exception:
+                            except AttributeError:
                                 pass
-                        except Exception:
+                        except (AttributeError, TypeError, ValueError):
                             pass
                         return True
 
@@ -197,7 +197,7 @@ class VisualsEvents:
                 if vti is not None:
                     try:
                         vti.deactivate()
-                    except Exception:
+                    except AttributeError:
                         pass
                 pc.cancel_edit_visual()
                 return True
@@ -206,7 +206,7 @@ class VisualsEvents:
                 if vti is not None:
                     try:
                         vti.deactivate()
-                    except Exception:
+                    except AttributeError:
                         pass
                 pc.commit_visual_edit_if_finished()
                 return True

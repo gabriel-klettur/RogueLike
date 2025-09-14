@@ -20,10 +20,7 @@ logger = logging.getLogger(__name__)
 _DEDUP_TIMERS: Dict[str, Tuple[int, int]] = {}  # key -> (last_ms, suppressed_count)
 
 def _now_ms() -> int:
-    try:
-        return int(_time.monotonic() * 1000)
-    except Exception:
-        return 0
+    return int(_time.monotonic() * 1000)
 
 def _dedup_should_log(key: str, window_ms: int = 2000) -> Tuple[bool, int]:
     """Return (allow, suppressed_count).
@@ -64,21 +61,24 @@ def load_instances_json() -> List[Dict[str, Any]]:
         # Ensure every instance has a unique 'id' for robust identification
         changed, fixed = ensure_instance_ids(data)
         # Debug: de-duplicate noisy logs within a short window
-        try:
-            key = f"load_instances_json:{path}"
-            allow, suppressed = _dedup_should_log(key, window_ms=2000)
-            if changed:
-                logger.debug(f"[spawner.persistence] load_instances_json: read {len(data)} entries from {path}; changed_ids=True")
-            elif allow:
-                extra = f"; suppressed={suppressed}" if suppressed else ""
-                logger.debug(f"[spawner.persistence] load_instances_json: read {len(data)} entries from {path}{extra}")
-        except Exception:
-            pass
+        key = f"load_instances_json:{path}"
+        allow, suppressed = _dedup_should_log(key, window_ms=2000)
+        if changed:
+            logger.debug(f"[spawner.persistence] load_instances_json: read {len(data)} entries from {path}; changed_ids=True")
+        elif allow:
+            extra = f"; suppressed={suppressed}" if suppressed else ""
+            logger.debug(f"[spawner.persistence] load_instances_json: read {len(data)} entries from {path}{extra}")
         if changed:
             write_instances_json(fixed)
             return fixed
         return data
     except FileNotFoundError:
+        return []
+    except json.JSONDecodeError:
+        logger.debug("load_instances_json: JSON decode error", exc_info=True)
+        return []
+    except OSError:
+        logger.debug("load_instances_json: OS error while reading file", exc_info=True)
         return []
 
 
@@ -95,8 +95,8 @@ def zone_for_global_tile(tx: int, ty: int) -> Optional[str]:
                 continue
             if ox <= tx < ox + w and oy <= ty < oy + h:
                 return name
-    except Exception:
-        pass
+    except (AttributeError, KeyError, TypeError, ValueError):
+        logger.debug("zone_for_global_tile: failed while computing zone", exc_info=True)
     return None
 
 
@@ -117,12 +117,18 @@ def load_spawners_json() -> List[Dict[str, Any]]:
                     if sp.get('building_id') is not None:
                         try:
                             sp['building_id'] = int(sp['building_id'])
-                        except Exception:
+                        except (ValueError, TypeError):
                             pass
-            except Exception:
+            except (AttributeError, KeyError, TypeError):
                 continue
         return data
     except FileNotFoundError:
+        return []
+    except json.JSONDecodeError:
+        logger.debug("load_spawners_json: JSON decode error", exc_info=True)
+        return []
+    except OSError:
+        logger.debug("load_spawners_json: OS error while reading file", exc_info=True)
         return []
 
 
@@ -142,15 +148,12 @@ def write_spawners_json(data: List[Dict[str, Any]]) -> None:
         if sp2.get('building_id') is not None:
             try:
                 sp2['building_id'] = int(sp2['building_id'])
-            except Exception:
+            except (ValueError, TypeError):
                 pass
         cleaned.append(sp2)
     with open(path, 'w', encoding='utf-8') as f:
         json.dump(cleaned, f, ensure_ascii=False, indent=2)
-    try:
-        logger.debug(f"[spawner.persistence] write_spawners_json: wrote {len(cleaned)} templates to {path}")
-    except Exception:
-        pass
+    logger.debug(f"[spawner.persistence] write_spawners_json: wrote {len(cleaned)} templates to {path}")
 
 
 def save_spawner_template(updated: Dict[str, Any]) -> None:
@@ -158,10 +161,7 @@ def save_spawner_template(updated: Dict[str, Any]) -> None:
 
     If an entry with the same 'id' exists, replace it in-place; otherwise append it.
     """
-    try:
-        sid = str(updated.get('id'))
-    except Exception:
-        sid = None  # type: ignore
+    sid = str(updated.get('id')) if isinstance(updated, dict) else None  # type: ignore
     data = load_spawners_json()
     replaced = False
     if sid:
@@ -171,7 +171,7 @@ def save_spawner_template(updated: Dict[str, Any]) -> None:
                     data[i] = updated
                     replaced = True
                     break
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 continue
     if not replaced:
         data.append(updated)
@@ -192,7 +192,7 @@ def rename_spawner_template_id(old_id: str, new_id: str) -> Optional[Dict[str, A
     for sp in data:
         try:
             sid = str(sp.get('id'))
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             continue
         if sid == str(new_id) and sid != str(old_id):
             return None  # conflict
@@ -203,7 +203,7 @@ def rename_spawner_template_id(old_id: str, new_id: str) -> Optional[Dict[str, A
             if str(sp.get('id')) == str(old_id):
                 idx = i
                 break
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             continue
     if idx is None:
         return None
@@ -220,12 +220,12 @@ def rename_spawner_template_id(old_id: str, new_id: str) -> Optional[Dict[str, A
                 if str(inst.get('template_id')) == str(old_id):
                     inst['template_id'] = str(new_id)
                     changed = True
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 continue
         if changed:
             write_instances_json(inst_list)
-    except Exception:
-        pass
+    except (OSError, json.JSONDecodeError):
+        logger.debug("rename_spawner_template_id: failed to update instances with new template_id", exc_info=True)
     return updated_tpl
 
 
@@ -251,14 +251,14 @@ def write_instances_json(data: List[Dict[str, Any]]) -> None:
             if ov2.get('building_id') is not None:
                 try:
                     ov2['building_id'] = int(ov2['building_id'])
-                except Exception:
+                except (ValueError, TypeError):
                     pass
             e['overrides'] = ov2
         # Normalize root building_id
         if e.get('building_id') is not None:
             try:
                 e['building_id'] = int(e['building_id'])
-            except Exception:
+            except (ValueError, TypeError):
                 pass
         cleaned.append(e)
     with open(path, 'w', encoding='utf-8') as f:
@@ -266,10 +266,7 @@ def write_instances_json(data: List[Dict[str, Any]]) -> None:
 
 
 def slugify(s: str) -> str:
-    try:
-        s = str(s)
-    except Exception:
-        s = ""
+    s = str(s)
     s = s.strip().lower()
     s = re.sub(r"[^a-z0-9]+", "_", s)
     s = re.sub(r"_+", "_", s)
@@ -282,7 +279,7 @@ def generate_instance_id(inst: Dict[str, Any], existing_ids: set[str]) -> str:
     try:
         tile = inst.get('tile', [0, 0])
         x, y = int(tile[0]), int(tile[1])
-    except Exception:
+    except (KeyError, TypeError, ValueError, AttributeError):
         x, y = 0, 0
     base = f"{tpl}_{zone}_{x}_{y}" if tpl or zone else f"inst_{x}_{y}"
     if not base:
@@ -340,17 +337,14 @@ def find_instance_by_id(target_id: str) -> tuple[List[Dict[str, Any]], Optional[
                 idx_found = i
                 overrides = inst.get('overrides')
                 break
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             continue
     # Debug: de-duplicate lookups by id
-    try:
-        key = f"find_by_id:{target_id}"
-        allow, suppressed = _dedup_should_log(key, window_ms=2000)
-        if allow:
-            extra = f"; suppressed={suppressed}" if suppressed else ""
-            logger.debug(f"[spawner.persistence] find_instance_by_id('{target_id}') -> idx={idx_found}{extra}")
-    except Exception:
-        pass
+    key = f"find_by_id:{target_id}"
+    allow, suppressed = _dedup_should_log(key, window_ms=2000)
+    if allow:
+        extra = f"; suppressed={suppressed}" if suppressed else ""
+        logger.debug(f"[spawner.persistence] find_instance_by_id('{target_id}') -> idx={idx_found}{extra}")
 
     return data, idx_found, overrides
 
@@ -370,16 +364,13 @@ def find_instance_in_json(template_id: str, zone: str, local_tile: Tuple[int, in
                     idx_found = i
                     overrides = inst.get('overrides')
                     break
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             continue
-    try:
-        key = f"find_in_json:{template_id}:{zone}:{local_tile}"
-        allow, suppressed = _dedup_should_log(key, window_ms=2000)
-        if allow:
-            extra = f"; suppressed={suppressed}" if suppressed else ""
-            logger.debug(f"[spawner.persistence] find_instance_in_json(tpl={template_id}, zone={zone}, tile={local_tile}) -> idx={idx_found}{extra}")
-    except Exception:
-        pass
+    key = f"find_in_json:{template_id}:{zone}:{local_tile}"
+    allow, suppressed = _dedup_should_log(key, window_ms=2000)
+    if allow:
+        extra = f"; suppressed={suppressed}" if suppressed else ""
+        logger.debug(f"[spawner.persistence] find_instance_in_json(tpl={template_id}, zone={zone}, tile={local_tile}) -> idx={idx_found}{extra}")
 
     return data, idx_found, overrides
 
@@ -413,13 +404,17 @@ def persist_drop(world,
     try:
         if drag_start_entry and drag_start_entry.get('id'):
             inst_id = str(drag_start_entry.get('id'))
-    except Exception:
+    except (AttributeError, KeyError, TypeError, ValueError):
+        logger.debug("persist_drop: failed to read snapshot id", exc_info=True)
         inst_id = None
 
     # Try to find by original local tile first (if we captured it)
     orig_local = None
     if drag_start_entry and drag_start_entry.get('local_tile') is not None:
-        orig_local = tuple(drag_start_entry['local_tile'])
+        try:
+            orig_local = tuple(drag_start_entry['local_tile'])
+        except (KeyError, TypeError):
+            orig_local = None
 
     # Where to search the existing entry
     lookup_zone = orig_zone or (drag_start_entry.get('zone') if drag_start_entry else None) or zone
@@ -444,15 +439,15 @@ def persist_drop(world,
             src = drag_start_entry['overrides']
             if isinstance(src, dict):
                 overrides.update(src)
-        except Exception:
-            pass
+        except (KeyError, TypeError, AttributeError):
+            logger.debug("persist_drop: failed to merge snapshot overrides", exc_info=True)
     elif idx_found is not None:
         try:
             src = data[idx_found].get('overrides')
             if isinstance(src, dict):
                 overrides.update(src)
-        except Exception:
-            pass
+        except (IndexError, AttributeError, TypeError):
+            logger.debug("persist_drop: failed to merge existing overrides", exc_info=True)
     # Apply incoming updates (e.g., building_id or other overrides edited in the editor)
     if isinstance(overrides_update, dict):
         overrides.update(overrides_update)
@@ -463,10 +458,10 @@ def persist_drop(world,
         if overrides.get('building_id') is not None:
             try:
                 overrides['building_id'] = int(overrides['building_id'])
-            except Exception:
-                pass
-    except Exception:
-        pass
+            except (ValueError, TypeError):
+                logger.debug("persist_drop: failed to normalize overrides.building_id", exc_info=True)
+    except (AttributeError, KeyError, TypeError):
+        logger.debug("persist_drop: failed to sanitize overrides", exc_info=True)
     if overrides:
         entry['overrides'] = overrides
 
@@ -482,16 +477,13 @@ def persist_drop(world,
                     if str(e.get('id')) == str(inst_id):
                         prev_visuals = e.get('visuals')
                         break
-                except Exception:
+                except (AttributeError, TypeError, ValueError):
                     continue
         if isinstance(prev_visuals, dict) and prev_visuals:
             entry['visuals'] = prev_visuals
-        try:
-            logger.debug(f"[spawner.persistence] persist_drop: tpl={tpl_id} zone={zone} new_local={new_local} idx_found={idx_found} preserved_visuals_len={len(prev_visuals or {})}")
-        except Exception:
-            pass
-    except Exception:
-        pass
+        logger.debug(f"[spawner.persistence] persist_drop: tpl={tpl_id} zone={zone} new_local={new_local} idx_found={idx_found} preserved_visuals_len={len(prev_visuals or {})}")
+    except (AttributeError, TypeError, ValueError, IndexError):
+        logger.debug("persist_drop: failed while preserving visuals", exc_info=True)
 
     # Preserve or assign instance id
     try:
@@ -508,7 +500,7 @@ def persist_drop(world,
                 entry['id'] = inst_id
             else:
                 entry['id'] = generate_instance_id(entry, existing_ids)
-    except Exception:
+    except (AttributeError, IndexError, TypeError, ValueError):
         pass
 
     if idx_found is not None:
@@ -517,10 +509,7 @@ def persist_drop(world,
         data.append(entry)
 
     write_instances_json(data)
-    try:
-        logger.info(f"[spawner.persistence] persist_drop: wrote entry id={entry.get('id')} visuals_len={len((entry.get('visuals') or {}))}")
-    except Exception:
-        pass
+    logger.info(f"[spawner.persistence] persist_drop: wrote entry id={entry.get('id')} visuals_len={len((entry.get('visuals') or {}))}")
 
 
 def remove_visual_refs_by_building_id(bid: int) -> int:
@@ -532,7 +521,7 @@ def remove_visual_refs_by_building_id(bid: int) -> int:
     """
     try:
         bid = int(bid)
-    except Exception:
+    except (ValueError, TypeError):
         return 0
     data = load_instances_json()
     removed = 0
@@ -551,7 +540,7 @@ def remove_visual_refs_by_building_id(bid: int) -> int:
                         vid = int(vid) if vid is not None else None
                     else:
                         vid = int(v)
-                except Exception:
+                except (ValueError, TypeError):
                     vid = None
                 if vid is not None and int(vid) == int(bid):
                     vis.pop(k, None)
@@ -563,8 +552,5 @@ def remove_visual_refs_by_building_id(bid: int) -> int:
             continue
     if changed:
         write_instances_json(data)
-        try:
-            logger.info(f"[spawner.persistence] remove_visual_refs_by_building_id({bid}) -> removed={removed}")
-        except Exception:
-            pass
+        logger.info(f"[spawner.persistence] remove_visual_refs_by_building_id({bid}) -> removed={removed}")
     return removed

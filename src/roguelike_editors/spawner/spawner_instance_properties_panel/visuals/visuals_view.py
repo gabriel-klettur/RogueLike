@@ -4,7 +4,7 @@ from typing import Tuple
 
 try:
     import pygame  # type: ignore
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     pygame = None  # type: ignore
 
 from roguelike_ui.widgets.hover import draw_hover
@@ -138,7 +138,7 @@ class VisualsView:
                 try:
                     if not pc.is_visual_building_visible(str(state)):
                         draw_hover(surf, template_rect, color=(120, 40, 40, 70))
-                except Exception:
+                except (AttributeError, TypeError):
                     pass
                 # Draw text input
                 if vti is not None:
@@ -157,12 +157,12 @@ class VisualsView:
                 visible = True
                 try:
                     visible = bool(pc.is_visual_building_visible(str(state)))
-                except Exception:
+                except (AttributeError, TypeError):
                     visible = True
                 if not visible:
                     try:
                         draw_hover(surf, template_rect, color=(120, 40, 40, 70))
-                    except Exception:
+                    except (ValueError, TypeError):
                         pass
                 base_c = (230, 230, 230) if str(tpl_id).upper() != 'N/A' else (220, 180, 120)
                 c3 = base_c if visible else (150, 150, 150)
@@ -179,7 +179,7 @@ class VisualsView:
             try:
                 if m.hover_row_index is not None and int(m.hover_row_index) == j:
                     pygame.draw.rect(surf, (255, 160, 64), row_rect, 2)
-            except Exception:
+            except (ValueError, TypeError):
                 pass
 
         return visuals_total_h
