@@ -19,8 +19,11 @@ class BuildingView:
         self._camera: CameraProtocol = camera
 
         # Caches por “zoom” redondeado (p. ej. 1.00, 1.25, 2.00)
+        # Nota: mantenemos el caché de imagen escalada por zoom; las partes top/bottom
+        # dependen además del split_ratio, por lo que se indexan por (zoom, split_key).
         self._scaled_cache: dict[float, pygame.Surface] = {}
-        self._render_part_cache: dict[float, tuple[pygame.Surface, pygame.Surface]] = {}
+        self._render_part_cache: dict[tuple[float, float], tuple[pygame.Surface, pygame.Surface]] = {}
+
         # Referencia a la última surface fuente usada; si cambia, invalidamos caches
         self._last_image_ref: pygame.Surface | None = model.image
 
@@ -34,20 +37,24 @@ class BuildingView:
             self.clear_caches()
             self._last_image_ref = self._model.image
         zoom = round(self._camera.zoom, 2)
+        # Asegurar caché de imagen escalada por zoom
         if zoom not in self._scaled_cache:
             orig = self._model.image
             # Calculamos nuevo tamaño, usando camera.scale()
             new_size = self._camera.scale(orig.get_size())
-
             scaled = pygame.transform.scale(orig, new_size)
             self._scaled_cache[zoom] = scaled
 
-            # Dividir en “parte superior” y “parte inferior”
+        # Asegurar caché de partes por (zoom, split_ratio)
+        split_key = round(float(self._model.split_ratio), 4)
+        key = (zoom, split_key)
+        if key not in self._render_part_cache:
+            scaled = self._scaled_cache[zoom]
             w, h = scaled.get_size()
             cut_pixel = int(h * self._model.split_ratio)
             top_surf = scaled.subsurface(pygame.Rect(0, 0, w, cut_pixel)).copy()
             bot_surf = scaled.subsurface(pygame.Rect(0, cut_pixel, w, h - cut_pixel)).copy()
-            self._render_part_cache[zoom] = (top_surf, bot_surf)
+            self._render_part_cache[key] = (top_surf, bot_surf)
         return self._scaled_cache[zoom]
 
     def render_part(self, screen: pygame.Surface, *, top: bool) -> None:
@@ -57,11 +64,13 @@ class BuildingView:
         • Opcionalmente, dibuja un rect de colisión si model.solid y no es la parte top.
         """
         zoom = round(self._camera.zoom, 2)
-        if zoom not in self._render_part_cache:
-            # Forzamos la generación de caches
+        split_key = round(float(self._model.split_ratio), 4)
+        key = (zoom, split_key)
+        if key not in self._render_part_cache:
+            # Forzamos la generación de caches (asegura scaled y partes)
             self._get_scaled_image()
-        top_surf, bot_surf = self._render_part_cache[zoom]
-        
+        top_surf, bot_surf = self._render_part_cache[key]
+
         # Calculamos posición en pantalla, usando camera.apply para las coordenadas de world
         base_x, base_y = self._model.x, self._model.y
         screen_x, screen_y = self._camera.apply((base_x, base_y))

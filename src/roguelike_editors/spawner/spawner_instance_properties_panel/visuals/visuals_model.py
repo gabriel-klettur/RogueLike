@@ -40,6 +40,10 @@ class VisualsModel:
         self.hover_row_index: Optional[int] = None
         self.hold_row_index: Optional[int] = None
         self.hold_active: bool = False
+        # Selected building id for yellow outline highlight when Spawner Editor is active
+        self.selected_building_id: Optional[int] = None
+        # Hovered building id for cyan outline highlight
+        self.hovered_building_id: Optional[int] = None
 
 
 __all__ = ["VisualsModel"]

@@ -7,6 +7,7 @@ from roguelike_game.ecs.systems.rendering.health_bar_system import HealthBarSyst
 from roguelike_game.ecs.systems.rendering.nameplate_system import NamePlateSystem
 from roguelike_game.ecs.systems.rendering.mana_bar_render_system import ManaBarRenderSystem
 from roguelike_game.ecs.systems.rendering.mana_regen_aura_render_system import ManaRegenAuraRenderSystem
+from roguelike_game.ecs.systems.rendering.godmode_aura_render_system import GodmodeAuraRenderSystem
 from roguelike_game.ecs.systems.rendering.hud_stats_render_system import HUDStatsRenderSystem
 from roguelike_game.ecs.systems.combat.melee.melee_combat_system import MeleeCombatSystem
 from roguelike_game.ecs.systems.physics.facing_system import FacingSystem
@@ -93,6 +94,7 @@ from roguelike_game.ecs.systems.rendering.dash_bar_render_system import DashBarR
 from roguelike_game.ecs.systems.abilities.combo_system import ComboSystem
 from roguelike_game.ecs.systems.rendering.combo_bar_render_system import ComboBarRenderSystem
 from roguelike_game.ecs.systems.rendering.toast_render_system import ToastRenderSystem
+from roguelike_game.ecs.systems.rendering.target_hud_render_system import TargetHudRenderSystem
 
 def get_update_system_classes():
     """
@@ -130,7 +132,7 @@ def get_render_system_classes():
     Se añade dinámicamente SpawnDebug y DeathTimerDebug si estamos en DEBUG.
     """
     base = [
-        HealthBarSystem, DashBarRenderSystem, ManaBarRenderSystem, ManaRegenAuraRenderSystem, NamePlateSystem, ChatBubbleRenderSystem, ExperienceRenderSystem, ComboBarRenderSystem, MagicSpellBarRenderSystem,
+        HealthBarSystem, DashBarRenderSystem, ManaBarRenderSystem, ManaRegenAuraRenderSystem, GodmodeAuraRenderSystem, NamePlateSystem, ChatBubbleRenderSystem, ExperienceRenderSystem, ComboBarRenderSystem, MagicSpellBarRenderSystem,
         FireballRenderSystem, ArcaneFlameRenderSystem, FireworkLaunchRenderSystem, SmokeRenderSystem, SmokeEmitterRenderSystem, SphereMagicShieldRenderSystem, TeleportRenderSystem, ParticleRenderSystem, LightningRenderSystem,
         DeathTimerBarSystem,
         # DropRenderSystem removed: drops rendered via RenderSystem
@@ -142,6 +144,8 @@ def get_render_system_classes():
     base.append(ResurrectionAreaSystem)
     # HUD textual overlay (bottom-left): HP/MP values
     base.append(HUDStatsRenderSystem)
+    # HUD de objetivo (centrado arriba)
+    base.append(TargetHudRenderSystem)
     # Otros sistemas de render (eliminados FlashSystem y TrailSystem de render)
     base.append(DropHoverRenderSystem)
     # Halo de proximidad de chat (círculo amarillo)

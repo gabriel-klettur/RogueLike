@@ -54,6 +54,12 @@ class NamePlateSystem:
             # 1) Recuperar componentes
             pos: Position    = comps['Position'][eid]
             id_comp: Identity = comps['Identity'][eid]
+            # Ocultar el nameplate de NPCs hostiles (facción EVIL)
+            try:
+                if id_comp.faction == Faction.EVIL:
+                    continue
+            except Exception:
+                pass
 
             # 2) Convertir posición del mundo a pantalla
             screen_x, screen_y = camera.apply((pos.x, pos.y))

@@ -3,6 +3,7 @@ from roguelike_game.ecs.systems.fsm.state import State
 from roguelike_game.ecs.components.transform.velocity import Velocity
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.ecs.systems.fsm.anim_bridge import set_mapped_anim, primary_direction_from_vector
+from roguelike_game.ecs.utils.position_utils import compute_entity_center
 
 
 class ChaseState(State):
@@ -23,7 +24,7 @@ class ChaseState(State):
         if hp_cmp.current_hp <= 0:
             # Import local para evitar importación circular con UnconsciousState
             from roguelike_game.ecs.systems.fsm.states.unconscious_state import UnconsciousState
-            world.components['NPCState'][entity].fsm.change_state(UnconsciousState(), entity)
+            world.components['NPCState'][eid].fsm.change_state(UnconsciousState(), entity)
             return
         # Si el jugador está inconsciente (HP<=0) o ya tiene DeathTimer, no perseguir
         try:
@@ -37,12 +38,38 @@ class ChaseState(State):
                 return
         except Exception:
             pass
-        pos = world.components['Position'][entity]
-        player_pos = world.player_position
-        if not player_pos:
+        comps = world.components
+        pos_map = comps.get('Position', {})
+        spr_map = comps.get('Sprite', {})
+        scl_map = comps.get('Scale', {})
+        pos = pos_map.get(eid)
+        if pos is None:
             return
-        dx = player_pos.x - pos.x
-        dy = player_pos.y - pos.y
+        player_id = getattr(world, 'player_entity', None)
+        ppos = pos_map.get(player_id) if player_id is not None else None
+        if ppos is None:
+            return
+        # Compute centers for NPC and Player
+        try:
+            aspr = spr_map.get(eid)
+            ascl = scl_map.get(eid)
+            if aspr:
+                ac = compute_entity_center(pos, aspr, ascl)
+                x1, y1 = float(ac.x), float(ac.y)
+            else:
+                x1, y1 = float(pos.x), float(pos.y)
+            dspr = spr_map.get(player_id)
+            dscl = scl_map.get(player_id)
+            if dspr:
+                dc = compute_entity_center(ppos, dspr, dscl)
+                x2, y2 = float(dc.x), float(dc.y)
+            else:
+                x2, y2 = float(ppos.x), float(ppos.y)
+        except Exception:
+            x1, y1 = float(pos.x), float(pos.y)
+            x2, y2 = float(ppos.x), float(ppos.y)
+        dx = x2 - x1
+        dy = y2 - y1
         dist_sq = dx*dx + dy*dy
         # Leash: no salir del área defendida si existe y leash está activo
         try:
@@ -74,11 +101,10 @@ class ChaseState(State):
         set_mapped_anim(entity, 'ChaseState', direction)
 
         # Si dentro de rango melee: cambiar a AttackState
-        mr_cmp = world.components['MeleeRange'][entity]
+        mr_cmp = world.components['MeleeRange'][eid]
         melee_dist_sq = (mr_cmp.range * TILE_SIZE) ** 2
-        dx = world.player_position.x - world.components['Position'][entity].x
-        dy = world.player_position.y - world.components['Position'][entity].y
-        if dx*dx + dy*dy <= melee_dist_sq:            
+        # If within melee range by center distance, switch to AttackState
+        if dist_sq <= melee_dist_sq:
             # Import local para evitar importación circular con AttackState
             from roguelike_game.ecs.systems.fsm.states.attack_state import AttackState
             world.components['NPCState'][eid].fsm.change_state(AttackState(), entity)
@@ -86,9 +112,9 @@ class ChaseState(State):
         # Si jugador sale de rango de aggro, volver a patrulla SOLO si no hay área de defensa
         has_defend = world.components.get('DefendArea', {}).get(eid) is not None
         if not has_defend:
-            aggro_radius = world.components['AggroRange'][entity].radius * TILE_SIZE
+            aggro_radius = world.components['AggroRange'][eid].radius * TILE_SIZE
             if dist_sq > aggro_radius**2:            
-                npc_state = world.components['NPCState'][entity]            
+                npc_state = world.components['NPCState'][eid]            
                 from roguelike_game.ecs.systems.fsm.states.monster.patrol_state import PatrolState
                 npc_state.fsm.change_state(PatrolState(), entity)
                 return

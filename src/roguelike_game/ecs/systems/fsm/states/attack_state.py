@@ -6,6 +6,7 @@ from roguelike_game.ecs.components.combat.health import Health
 from roguelike_engine.config.config_tiles import TILE_SIZE
 import time
 from roguelike_game.ecs.systems.fsm.anim_bridge import set_mapped_anim, primary_direction_from_vector
+from roguelike_game.ecs.utils.position_utils import compute_entity_center
 
 class AttackState(State):
     """
@@ -39,14 +40,35 @@ class AttackState(State):
         except Exception:
             # Si algo falla con el contexto, no bloquear la entrada al estado
             pass
-        # Establecer animación de ataque según dirección hacia el jugador
-        player_pos = world.player_position
-        pos = world.components['Position'].get(eid)
-        if player_pos and pos:
-            dx = player_pos.x - pos.x
-            dy = player_pos.y - pos.y
-            direction = primary_direction_from_vector(dx, dy)
-        else:
+        # Establecer animación de ataque según dirección hacia el jugador (usando centros)
+        comps = world.components
+        pos_map = comps.get('Position', {})
+        spr_map = comps.get('Sprite', {})
+        scl_map = comps.get('Scale', {})
+        pos = pos_map.get(eid)
+        spr = spr_map.get(eid)
+        scl = scl_map.get(eid)
+        player_id = getattr(world, 'player_entity', None)
+        ppos = pos_map.get(player_id) if player_id is not None else None
+        pspr = spr_map.get(player_id) if player_id is not None else None
+        pscl = scl_map.get(player_id) if player_id is not None else None
+        direction = None
+        try:
+            if pos and ppos:
+                if spr:
+                    c1 = compute_entity_center(pos, spr, scl)
+                    x1, y1 = float(c1.x), float(c1.y)
+                else:
+                    x1, y1 = float(pos.x), float(pos.y)
+                if pspr:
+                    c2 = compute_entity_center(ppos, pspr, pscl)
+                    x2, y2 = float(c2.x), float(c2.y)
+                else:
+                    x2, y2 = float(ppos.x), float(ppos.y)
+                dx = x2 - x1
+                dy = y2 - y1
+                direction = primary_direction_from_vector(dx, dy)
+        except Exception:
             direction = None
         set_mapped_anim(entity, 'AttackState', direction, reset_frame=True)
 
@@ -75,14 +97,36 @@ class AttackState(State):
             from roguelike_game.ecs.systems.fsm.states.monster.patrol_state import PatrolState
             world.components['NPCState'][eid].fsm.change_state(PatrolState(), entity)
             return
-        # Obtener posiciones del NPC y jugador
-        pos = world.components['Position'][eid]
-        player_pos = world.player_position
-        if not player_pos:
+        # Obtener centros del NPC y jugador para cálculos de distancia y origen
+        comps = world.components
+        pos_map = comps.get('Position', {})
+        spr_map = comps.get('Sprite', {})
+        scl_map = comps.get('Scale', {})
+        pos = pos_map.get(eid)
+        spr = spr_map.get(eid)
+        scl = scl_map.get(eid)
+        player_id = getattr(world, 'player_entity', None)
+        ppos = pos_map.get(player_id) if player_id is not None else None
+        pspr = spr_map.get(player_id) if player_id is not None else None
+        pscl = scl_map.get(player_id) if player_id is not None else None
+        if not pos or not ppos:
             return
-
-        dx = player_pos.x - pos.x
-        dy = player_pos.y - pos.y
+        try:
+            if spr:
+                c1 = compute_entity_center(pos, spr, scl)
+                x1, y1 = float(c1.x), float(c1.y)
+            else:
+                x1, y1 = float(pos.x), float(pos.y)
+            if pspr:
+                c2 = compute_entity_center(ppos, pspr, pscl)
+                x2, y2 = float(c2.x), float(c2.y)
+            else:
+                x2, y2 = float(ppos.x), float(ppos.y)
+        except Exception:
+            x1, y1 = float(pos.x), float(pos.y)
+            x2, y2 = float(ppos.x), float(ppos.y)
+        dx = x2 - x1
+        dy = y2 - y1
         dist_sq = dx*dx + dy*dy
         # Si dentro de rango melee: atacar y quedarse en AttackState
         mr_cmp = world.components['MeleeRange'][eid]
@@ -101,11 +145,48 @@ class AttackState(State):
                     # aplicar daño al jugador
                     ph = world.components['Health'][world.player_entity]
                     ph.current_hp = max(0, ph.current_hp - 10)
+                    # Publicar evento de depuración para visualizar origen e impacto del daño NPC->Player (centro a centro)
+                    try:
+                        dbg = world.components.setdefault('DebugAttackEvents', {})
+                        q = dbg.setdefault('_queue', [])
+                        pos_map = world.components.get('Position', {})
+                        spr_map = world.components.get('Sprite', {})
+                        scl_map = world.components.get('Scale', {})
+                        ap = pos_map.get(eid)
+                        aspr = spr_map.get(eid)
+                        ascl = scl_map.get(eid)
+                        pid = world.player_entity
+                        pp = pos_map.get(pid)
+                        pspr = spr_map.get(pid)
+                        pscl = scl_map.get(pid)
+                        if ap and pp:
+                            try:
+                                if aspr:
+                                    ac = compute_entity_center(ap, aspr, ascl)
+                                    ax, ay = float(ac.x), float(ac.y)
+                                else:
+                                    ax, ay = float(ap.x), float(ap.y)
+                                if pspr:
+                                    pc = compute_entity_center(pp, pspr, pscl)
+                                    px, py = float(pc.x), float(pc.y)
+                                else:
+                                    px, py = float(pp.x), float(pp.y)
+                                q.append({
+                                    'type': 'NPC_MELEE',
+                                    'attacker': int(eid),
+                                    'target': int(pid),
+                                    'posA': (ax, ay),
+                                    'posB': (px, py),
+                                    'damage': float(10),
+                                    'time': float(now),
+                                })
+                            except Exception:
+                                pass
+                    except Exception:
+                        pass
                     # publicar eventos FSM para que el jugador entre a DamageState
                     try:
-                        attacker_pos = pos
-                        defender_pos = player_pos
-                        from_left = attacker_pos.x < defender_pos.x
+                        from_left = x1 < x2
                         qmap = world.components.setdefault('FSMEventQueue', {})
                         q = qmap.setdefault(world.player_entity, [])
                         q.append({"type": "OnHit", "from_left": from_left})

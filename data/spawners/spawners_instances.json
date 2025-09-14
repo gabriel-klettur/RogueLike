@@ -10,29 +10,29 @@
       "visible_in_game": true
     },
     "visuals": {
-      "AwaitTrigger": {
-        "instance_id": 139,
-        "template_id": 157
-      },
       "SpawningWave": {
-        "instance_id": 140,
+        "instance_id": 139,
         "template_id": 155
       },
       "WaitCooldown": {
         "instance_id": 140,
         "template_id": 155
       },
-      "WaitClear": {
-        "instance_id": 139,
-        "template_id": 157
-      },
       "Finished": {
         "instance_id": 141,
         "template_id": 158
       },
       "WaitRestart": {
-        "instance_id": 140,
+        "instance_id": 142,
         "template_id": 155
+      },
+      "AwaitTrigger": {
+        "instance_id": 142,
+        "template_id": 157
+      },
+      "WaitClear": {
+        "instance_id": 142,
+        "template_id": 157
       }
     },
     "id": "survival_10_forest_14_9"

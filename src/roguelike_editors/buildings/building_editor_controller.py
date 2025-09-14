@@ -161,7 +161,7 @@ class BuildingEditorController:
         if self.editor.resizing:
             logger.info("✅ Resize terminado.")
         if self.editor.split_dragging:
-            logger.info("✅ Split ratio fijado:", round(self.editor.selected_building.split_ratio, 2))
+            logger.info("✅ Split ratio fijado: %.2f", float(self.editor.selected_building.split_ratio))
 
         # Guarda el building para recalcularlo
         building = self.editor.selected_building

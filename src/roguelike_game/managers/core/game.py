@@ -131,6 +131,9 @@ class Game:
         self.inventory_editor.draw(self.screen)
         self.entities_editor.draw(self.screen)
         self.spells_editor.draw(self.screen)
+        # Particles Editor overlay
+        if hasattr(self, 'particles_editor'):
+            self.particles_editor.draw(self.screen)
         # Spawner Editor overlay
         if hasattr(self, 'spawner_editor'):
             self.spawner_editor.draw(self.screen)

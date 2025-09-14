@@ -8,6 +8,14 @@ import roguelike_engine.config.config as config
 from types import SimpleNamespace
 from roguelike_ui.ui_blocker import clear_blockers
 
+# Opcional: soporte NumPy para recolor más preciso
+try:
+    import numpy as np
+    from pygame import surfarray
+    HAS_NUMPY = True
+except Exception:
+    HAS_NUMPY = False
+
 # Sistema de orden Z
 from roguelike_engine.z_layer.render import render_z_ordered
 
@@ -69,6 +77,7 @@ class RendererManager:
         self._spell_debug_system = None
         self._patrol_debug_system = None
         self._defend_debug_system = None
+        self._npc_attack_debug_system = None
         # Debug logging state caches to avoid spam
         self._last_render_debug_key = None
         self._last_current_layer = None
@@ -179,10 +188,15 @@ class RendererManager:
                     if self._defend_debug_system is None:
                         from roguelike_game.ecs.systems.rendering.defend_area_debug_system import DefendAreaDebugSystem
                         self._defend_debug_system = DefendAreaDebugSystem(perf_log=perf_log)
+                    if self._npc_attack_debug_system is None:
+                        from roguelike_game.ecs.systems.rendering.npc_attack_debug_system import NpcAttackDebugSystem
+                        self._npc_attack_debug_system = NpcAttackDebugSystem(perf_log=perf_log)
                     world = self.ecs.ecs_world
                     # Draw hitbox arcs and colliders, then spell-specific collision hints
                     self._hitbox_debug_system.update(world, screen, camera)
                     self._spell_debug_system.update(world, screen, camera)
+                    # Draw NPC attack traces (melee ticks and hitbox arcs to player)
+                    self._npc_attack_debug_system.update(world, screen, camera)
                     # Draw patrol areas/targets for NPCs with PatrolRoute
                     self._patrol_debug_system.update(world, screen, camera)
                     # Draw defend area circles for NPCs with DefendArea
@@ -516,11 +530,14 @@ class RendererManager:
 
 class _NPCWrapper:
     """Envoltorio optimizado para renderizar NPCs dentro de render_z_ordered."""
-    __slots__ = ('eid', 'pos_map', 'sprite_map', 'scale_map')
-    # Cache de superficies escaladas: {(eid, scale): Surface}
+    __slots__ = ('world', 'eid', 'pos_map', 'sprite_map', 'scale_map')
+    # Cache de superficies escaladas: {(eid, scale, id(orig)): Surface}
     _scale_cache = {}
+    # Cache de superficies teñidas: {(id(image), r, g, b): Surface}
+    _tinted_cache = {}
 
     def __init__(self, world, eid):
+        self.world = world
         comps = world.components
         self.eid = eid
         self.pos_map = comps['Position']
@@ -555,4 +572,61 @@ class _NPCWrapper:
                 _NPCWrapper._scale_cache[key] = image
         else:
             image = orig
+
+        # Tinte amarillo si es el jugador en godmode
+        try:
+            is_player = (eid == getattr(self.world, 'player_entity', None))
+            godmode = bool(getattr(getattr(self.world, 'state', None), 'godmode', False))
+        except Exception:
+            is_player = False
+            godmode = False
+        if is_player and godmode:
+            color = (255, 230, 100)
+            tkey = (id(image), color[0], color[1], color[2])
+            tinted = _NPCWrapper._tinted_cache.get(tkey)
+            if tinted is None:
+                tinted = self._tint_surface(image, color)
+                _NPCWrapper._tinted_cache[tkey] = tinted
+            image = tinted
+
         blit(image, apply((self.x, self.y)))
+
+    @staticmethod
+    def _tint_surface(surface: pygame.Surface, color: tuple[int, int, int]) -> pygame.Surface:
+        """Aplica tinte amarillo manteniendo alpha del sprite.
+        Con NumPy: recolorea por luminancia al tono dado para un resultado uniforme.
+        Sin NumPy: fallback por blending multiplicativo + aditivo.
+        """
+        try:
+            if HAS_NUMPY:
+                rgb = surfarray.array3d(surface).astype('float32')
+                lum = (0.299 * rgb[:, :, 0] + 0.587 * rgb[:, :, 1] + 0.114 * rgb[:, :, 2])
+                r_fac = color[0] / 255.0
+                g_fac = color[1] / 255.0
+                b_fac = color[2] / 255.0
+                new_rgb = np.zeros_like(rgb)
+                new_rgb[:, :, 0] = np.clip(lum * r_fac, 0, 255)
+                new_rgb[:, :, 1] = np.clip(lum * g_fac, 0, 255)
+                new_rgb[:, :, 2] = np.clip(lum * b_fac, 0, 255)
+                new_rgb = new_rgb.astype('uint8')
+                out = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+                surfarray.blit_array(out, new_rgb)
+                try:
+                    src_a = surfarray.array_alpha(surface)
+                    dst_a = surfarray.pixels_alpha(out)
+                    dst_a[:, :] = src_a
+                    del dst_a
+                except Exception:
+                    pass
+                return out
+            else:
+                img = surface.copy()
+                tint = pygame.Surface(img.get_size(), pygame.SRCALPHA)
+                tint.fill((color[0], color[1], color[2], 255))
+                img.blit(tint, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+                boost = pygame.Surface(img.get_size(), pygame.SRCALPHA)
+                boost.fill((40, 35, 0, 0))
+                img.blit(boost, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
+                return img
+        except Exception:
+            return surface

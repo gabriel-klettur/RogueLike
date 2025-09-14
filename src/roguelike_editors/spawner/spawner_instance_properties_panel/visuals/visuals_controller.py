@@ -12,6 +12,7 @@ from roguelike_engine.config.config_tiles import TILE_SIZE
 from .visuals_model import VisualsModel
 from .visuals_view import VisualsView
 from .visuals_events import VisualsEvents
+from roguelike_editors.spawner.services import load_instances_json as load_spawners_instances_json
 
 
 class VisualsController:
@@ -447,6 +448,151 @@ class VisualsController:
             return
         cur = bool(self.model.editor_visibility.get(int(bid_int), True))
         self._set_building_visible(int(bid_int), not cur)
+
+    # --- Hit-testing ----------------------------------------------------------
+    def pick_visual_building_under_cursor(self, mx: int, my: int):
+        """Return the building entity under the cursor that is linked to the currently
+        selected spawner instance (via tags or visuals mapping). Returns the entity or None.
+
+        Preference order:
+        1) Entities tagged as spawner visuals for this spawner (fast path)
+        2) Entities whose id appears in the current visuals mapping
+        """
+        cam = getattr(self.parent.game, 'camera', None)
+        if cam is None:
+            return None
+        sid = self._get_selected_spawner_id()
+        # Helper to compute on-screen rect bounds without pygame.Rect
+        def _screen_bounds(ob) -> tuple[int, int, int, int] | None:
+            try:
+                # World pixel coords
+                x = getattr(ob, 'x', getattr(getattr(ob, 'model', ob), 'x', None))
+                y = getattr(ob, 'y', getattr(getattr(ob, 'model', ob), 'y', None))
+                img = getattr(ob, 'image', getattr(getattr(ob, 'model', ob), 'image', None))
+                if x is None or y is None or img is None:
+                    return None
+                w, h = img.get_size()
+                # Apply camera transform
+                sx, sy = cam.apply((x, y))
+                sw, sh = cam.scale((w, h))
+                return int(sx), int(sy), int(sw), int(sh)
+            except Exception:
+                return None
+        # 1) Prefer tagged entities for this spawner id (or any tagged if no selection)
+        for ob in self._iter_building_entities():
+            try:
+                if not getattr(ob, '_is_spawner_visual', False):
+                    continue
+                if sid is not None:
+                    if str(getattr(ob, 'spawner_instance_id', getattr(ob, 'spawn_id', ''))) != str(sid):
+                        continue
+                b = _screen_bounds(ob)
+                if b is None:
+                    continue
+                sx, sy, sw, sh = b
+                if sx <= mx <= sx + sw and sy <= my <= sy + sh:
+                    return ob
+            except Exception:
+                continue
+        # 2) Fallback: check by ids in visuals mapping (ensure loaded before hit-test)
+        try:
+            visuals = getattr(self.parent.model, 'visuals', {}) or {}
+        except Exception:
+            visuals = {}
+        ids: list[int] = []
+        for v in visuals.values():
+            try:
+                if isinstance(v, dict):
+                    bid = int(v.get('instance_id') or v.get('id') or v.get('building_instance_id'))
+                else:
+                    bid = int(v)
+                ids.append(bid)
+            except Exception:
+                continue
+        # Try each id explicitly so we can ensure it's present for hit-testing
+        for bid in ids:
+            try:
+                ob = self._find_building_entity_by_id(int(bid))
+                if ob is None:
+                    # Attempt to load on demand
+                    self._ensure_building_loaded(int(bid))
+                    ob = self._find_building_entity_by_id(int(bid))
+                if ob is None:
+                    continue
+                b = _screen_bounds(ob)
+                if b is None:
+                    continue
+                sx, sy, sw, sh = b
+                if sx <= mx <= sx + sw and sy <= my <= sy + sh:
+                    return ob
+            except Exception:
+                continue
+        # 3) Last fallback: check any building under cursor that is spawner-linked by disk data
+        for ob in self._iter_building_entities():
+            try:
+                b = _screen_bounds(ob)
+                if b is None:
+                    continue
+                sx, sy, sw, sh = b
+                if not (sx <= mx <= sx + sw and sy <= my <= sy + sh):
+                    continue
+                bid = getattr(ob, 'id', None)
+                if bid is None:
+                    continue
+                if self._is_spawner_visual_building_id(int(bid)):
+                    return ob
+            except Exception:
+                continue
+        return None
+
+    def _is_spawner_visual_building_id(self, bid: int) -> bool:
+        """Return True if building id appears linked to any spawner (by JSON).
+        Checks buildings_instances.json overrides and spawners_instances.json visuals.
+        """
+        # 1) buildings_instances.json overrides
+        try:
+            for e in load_buildings_instances():
+                try:
+                    if int(e.get('id')) != int(bid):
+                        continue
+                    ov = e.get('overrides') or {}
+                    if isinstance(ov, dict):
+                        if bool(ov.get('_is_spawner_visual', False)):
+                            return True
+                    # also consider root-level ids
+                    if e.get('spawner_instance_id') is not None or e.get('spawn_id') is not None:
+                        return True
+                    break
+                except Exception:
+                    continue
+        except Exception:
+            pass
+        # 2) spawners_instances.json visuals mapping
+        try:
+            arr = load_spawners_instances_json() or []
+        except Exception:
+            arr = []
+        try:
+            for inst in arr:
+                try:
+                    vis = inst.get('visuals') if isinstance(inst, dict) else None
+                    if not isinstance(vis, dict):
+                        continue
+                    for v in vis.values():
+                        try:
+                            if isinstance(v, dict):
+                                vid = int(v.get('instance_id') or v.get('id') or v.get('building_instance_id'))
+                            else:
+                                vid = int(v)
+                        except Exception:
+                            continue
+                        if vid == int(bid):
+                            return True
+                except Exception:
+                    continue
+        except Exception:
+            pass
+        return False
 
     def open_picker(self, state_key: str) -> None:
         """Delegates to parent to open the Visuals Picker for the given state."""

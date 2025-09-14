@@ -4,6 +4,7 @@ from roguelike_game.ecs.components.combat.health import Health
 from roguelike_game.ecs.components.transform.scale import Scale
 from roguelike_game.ecs.components.rendering.sprite import Sprite
 from roguelike_engine.utils.benchmark import benchmark
+from roguelike_game.ecs.components.core.identity import Identity, Faction
 
 # Entities (Identity.name, lowercase) excluded from health bar rendering
 EXCLUDED_IN_HEALTH_BAR = {
@@ -54,6 +55,13 @@ class HealthBarSystem:
                 name_lower = ''
             if name_lower in EXCLUDED_IN_HEALTH_BAR:
                 continue
+            # 2.3) Ocultar barra de vida sobre la cabeza de NPCs hostiles (facción EVIL)
+            try:
+                if identity and getattr(identity, 'faction', None) == Faction.EVIL:
+                    # No dibujar barra sobre la cabeza; se mostrará solo en el HUD centrado
+                    continue
+            except Exception:
+                pass
 
             # 3) Obtener componentes necesarios
             pos: Position = world.components['Position'][eid]

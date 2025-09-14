@@ -46,3 +46,11 @@ class SpawnerEditorModel:
     #   'local_tile': tuple[int,int],
     # }
     pending_delete_confirm: dict | None = None
+    # Resize mode for selected visual building
+    resizing_visual: bool = False
+    resizing_visual_bid: int | None = None
+    resize_origin_mouse: tuple[int, int] | None = None
+    resize_start_size: tuple[int, int] | None = None
+    # Split ratio dragging for selected visual building
+    split_drag_active: bool = False
+    split_drag_bid: int | None = None
