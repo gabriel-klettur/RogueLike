@@ -3,12 +3,29 @@
   "ephemeral_history": [
     {
       "role": "user",
-      "content": "pavel, cuentame algo interesante"
+      "content": "hi pavel"
     },
     {
       "role": "assistant",
-      "content": "¿Sabías que cada tronco registra años de lluvia en sus anillos? El bosque nos habla si sabemos escuchar. Tengo madera de pino y roble recién traída, lista para tus proyectos, a buen precio. ¿Te llevas algo ahora?"
+      "content": "¡Hola, corazón! ¿Buscas madera fresca?"
+    },
+    {
+      "role": "user",
+      "content": "quiero tu madera fresca"
+    },
+    {
+      "role": "assistant",
+      "content": "Tengo 120 de madera a 1 oro la unidad."
+    },
+    {
+      "role": "user",
+      "content": "cuentame algo de tu vida"
+    },
+    {
+      "role": "assistant",
+      "content": "Crecí entre troncos y susurros del bosque; cada corte me recuerda que el trabajo honesto da frutos. Hablo con los árboles al amanecer y llevo mi talismán de corteza para buena suerte. Vuelvo al bosque antes del anochecer, siempre con respeto."
     }
   ],
-  "preferred_language": "es"
+  "preferred_language": "es",
+  "has_greeted": true
 }

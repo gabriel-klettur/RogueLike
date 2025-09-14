@@ -17,12 +17,14 @@ class ConversationMemory:
     friendship_score: int = 0
     ephemeral_history: List[Dict[str, str]] = None  # [{role, content}]
     preferred_language: str = ""  # 'es', 'en', etc. (opcional)
+    has_greeted: bool = False  # True si ya se presentó en alguna ocasión
 
     def to_dict(self) -> Dict[str, Any]:
         return {
             "friendship_score": self.friendship_score,
             "ephemeral_history": self.ephemeral_history or [],
             "preferred_language": self.preferred_language or "",
+            "has_greeted": bool(self.has_greeted),
         }
 
     @staticmethod
@@ -31,6 +33,10 @@ class ConversationMemory:
         cm.friendship_score = int(data.get("friendship_score", 0))
         cm.ephemeral_history = list(data.get("ephemeral_history", []))
         cm.preferred_language = str(data.get("preferred_language", "") or "")
+        try:
+            cm.has_greeted = bool(data.get("has_greeted", False))
+        except Exception:
+            cm.has_greeted = False
         return cm
 
 
@@ -103,3 +109,16 @@ class MemoryStore:
     def get_language(self, entity_id: str) -> str:
         mem = self.load(entity_id)
         return (mem.preferred_language or "").strip().lower()
+
+    # --- Greeting helpers ---
+    def has_greeted_flag(self, entity_id: str) -> bool:
+        try:
+            mem = self.load(entity_id)
+            return bool(getattr(mem, 'has_greeted', False))
+        except Exception:
+            return False
+
+    def mark_greeted(self, entity_id: str) -> None:
+        mem = self.load(entity_id)
+        mem.has_greeted = True
+        self.save(entity_id, mem)

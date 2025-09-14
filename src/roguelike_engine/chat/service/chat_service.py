@@ -76,6 +76,20 @@ class ChatService:
         # Determinar idioma objetivo para este turno (persistente por NPC)
         npc_key = job.npc_id
         target_code = self._target_language(npc_key, job.user_text or "")
+        # Determinar política de emojis según la persona
+        emoji_allowed = False
+        emoji_palette = []
+        try:
+            ppath = self.root / "data" / "chat" / "personas" / f"{job.persona_id}.json"
+            with ppath.open("r", encoding="utf-8") as f:
+                pobj = json.load(f)
+            st = pobj.get("style") or {}
+            emoji_allowed = bool(st.get("emoji", False))
+            sp = pobj.get("speech") or {}
+            if isinstance(sp.get("emoji_palette"), list):
+                emoji_palette = [str(x) for x in sp.get("emoji_palette")]
+        except Exception:
+            pass
 
         try:
             logger.debug("[ChatService] Calling provider=%s offline_pre=%s", self.provider_name, offline)
@@ -95,7 +109,7 @@ class ChatService:
             dummy = DummyProvider()
             llm_res = dummy.generate(messages, tools=self.tools_spec)
 
-        text, effects, calls = self._handle_result(llm_res)
+        text, effects, calls = self._handle_result(llm_res, keep_emojis=emoji_allowed, emoji_palette=emoji_palette)
         # Si la respuesta textual no coincide con el idioma objetivo y no estamos offline, realizar hasta dos reintentos
         try:
             res_code = self._detect_language(text or "")
@@ -111,7 +125,7 @@ class ChatService:
                 )
                 messages_retry_1 = list(messages) + [LLMMessage(role="system", content=enforce)]
                 llm_res2 = self.provider.generate(messages_retry_1, tools=self.tools_spec)
-                text2, effects2, calls2 = self._handle_result(llm_res2)
+                text2, effects2, calls2 = self._handle_result(llm_res2, keep_emojis=emoji_allowed, emoji_palette=emoji_palette)
                 res_code2 = self._detect_language(text2 or "")
                 if res_code2 == target_code:
                     text, effects, calls = text2, effects2, calls2
@@ -128,7 +142,7 @@ class ChatService:
                         LLMMessage(role="user", content=job.user_text or ""),
                     ]
                     llm_res3 = self.provider.generate(minimal_msgs, tools=self.tools_spec)
-                    text3, effects3, calls3 = self._handle_result(llm_res3)
+                    text3, effects3, calls3 = self._handle_result(llm_res3, keep_emojis=emoji_allowed, emoji_palette=emoji_palette)
                     res_code3 = self._detect_language(text3 or "")
                     if res_code3 != target_code:
                         # Reintento 3: reescritura del texto previo al idioma objetivo
@@ -141,11 +155,33 @@ class ChatService:
                             LLMMessage(role="user", content=(text3 or text2 or text or "")),
                         ]
                         llm_res4 = self.provider.generate(rewrite_msgs, tools=self.tools_spec)
-                        text4, effects4, calls4 = self._handle_result(llm_res4)
-                        text, effects, calls = text4 or text3 or text2 or text, effects4 or effects3 or effects2 or effects, calls4 or calls3 or calls2 or calls
+                        text4, effects4, calls4 = self._handle_result(llm_res4, keep_emojis=emoji_allowed, emoji_palette=emoji_palette)
+                        res_code4 = self._detect_language(text4 or "")
+                        if res_code4 != target_code:
+                            # Reintento 4: reescritura del texto previo al idioma objetivo
+                            if target_code == "en":
+                                rewrite_sys = "Rewrite the following text into English only. Do not add or remove meaning. Do not include any translation or bilingual phrasing."
+                            else:
+                                rewrite_sys = "Reescribe el siguiente texto en español únicamente. No agregues ni quites significado. No incluyas traducciones ni frases bilingües."
+                            rewrite_msgs = [
+                                LLMMessage(role="system", content=rewrite_sys),
+                                LLMMessage(role="user", content=(text3 or text2 or text or "")),
+                            ]
+                            llm_res5 = self.provider.generate(rewrite_msgs, tools=self.tools_spec)
+                            text5, effects5, calls5 = self._handle_result(llm_res5, keep_emojis=emoji_allowed, emoji_palette=emoji_palette)
+                            text, effects, calls = text5 or text4 or text3 or text2 or text, effects5 or effects4 or effects3 or effects2 or effects, calls5 or calls4 or calls3 or calls2 or calls
+                        else:
+                            # Preferir el último intento válido
+                            text, effects, calls = text4 or text3 or text2 or text, effects4 or effects3 or effects2 or effects, calls4 or calls3 or calls2 or calls
                     else:
                         # Preferir el último intento válido
                         text, effects, calls = text3 or text2 or text, effects3 or effects2 or effects, calls3 or calls2 or calls
+        except Exception:
+            pass
+        # Marcar como saludado/presentado tras la primera interacción con este NPC
+        try:
+            if job.npc_id and not self.ctx_builder.memory.has_greeted_flag(job.npc_id):
+                self.ctx_builder.memory.mark_greeted(job.npc_id)
         except Exception:
             pass
         return ChatResult(text=text, effects=effects, tool_calls=calls or [], provider=self.provider_name, offline=offline)
@@ -251,17 +287,17 @@ class ChatService:
                     continue
         return tools
 
-    def _handle_result(self, res: LLMResult) -> tuple[str, Dict[str, Any], List[LLMToolCall]]:
+    def _handle_result(self, res: LLMResult, *, keep_emojis: bool = False, emoji_palette: Optional[List[str]] = None) -> tuple[str, Dict[str, Any], List[LLMToolCall]]:
         # Si hay tool-calls, ejecutarlas y construir respuesta
         calls: List[LLMToolCall] = []
         if res.tool_calls:
             merged_effects: Dict[str, Any] = {}
-            last_msg = sanitize_text(res.text or "")
+            last_msg = sanitize_text(res.text or "", keep_emojis=keep_emojis, emoji_palette=emoji_palette)
             for call in res.tool_calls:
                 calls.append(call)
                 tr: ToolExecResult = self.registry.execute(call.name, call.arguments)
                 # Sanear mensaje de tool si aporta texto
-                msg = sanitize_text(tr.message or "")
+                msg = sanitize_text(tr.message or "", keep_emojis=keep_emojis, emoji_palette=emoji_palette)
                 last_msg = msg or last_msg
                 # Merge naive de efectos
                 for k, v in (tr.effects or {}).items():
@@ -274,9 +310,9 @@ class ChatService:
                                 merged_effects[k][ik] = merged_effects[k].get(ik, 0) + iv
                         else:
                             merged_effects[k] = v
-            return sanitize_text(last_msg) or sanitize_text(res.text or ""), merged_effects, calls
+            return sanitize_text(last_msg, keep_emojis=keep_emojis, emoji_palette=emoji_palette) or sanitize_text(res.text or "", keep_emojis=keep_emojis, emoji_palette=emoji_palette), merged_effects, calls
         # Sin tools: devolver texto simple
-        return sanitize_text(res.text or ""), {}, calls
+        return sanitize_text(res.text or "", keep_emojis=keep_emojis, emoji_palette=emoji_palette), {}, calls
 
     # --- Idioma helpers (solo verificación/enforcement; el objetivo lo define el selector) ---
     def _detect_language(self, text: str) -> str:
