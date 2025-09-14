@@ -64,7 +64,7 @@ class VisualsView:
 
         # Title
         if not (y_start_visuals + row_h < viewport_top or y_start_visuals > viewport_bottom):
-            vis_title = title_font.render("Visuals", True, (240, 240, 180))
+            vis_title = title_font.render("Building Instance for states - Spawners", True, (240, 240, 180))
             surf.blit(vis_title, (10, y_start_visuals))
 
         # Header

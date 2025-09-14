@@ -16,7 +16,23 @@
             },
             "Finished": {
                 "instance_id": 140,
-                "template_id": 158
+                "template_id": 140
+            },
+            "AwaitTrigger": {
+                "instance_id": 140,
+                "template_id": 157
+            },
+            "WaitCooldown": {
+                "instance_id": 140,
+                "template_id": 157
+            },
+            "WaitClear": {
+                "instance_id": 140,
+                "template_id": 157
+            },
+            "WaitRestart": {
+                "instance_id": 140,
+                "template_id": 157
             }
         },
         "id": "survival_10_forest_14_9"

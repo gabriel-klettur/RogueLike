@@ -52,7 +52,7 @@ class InstancePropertiesView:
         try:
             title_font = pygame.font.SysFont(None, 22)
             font = pygame.font.SysFont(None, 18)
-            header = "Instance Properties"
+            header = "Spawner Instance Properties"
             title = title_font.render(header, True, (240, 240, 240))
             surf.blit(title, (10, 6))
             # Rows

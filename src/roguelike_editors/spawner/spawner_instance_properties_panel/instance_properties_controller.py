@@ -264,14 +264,16 @@ class InstancePropertiesController:
         if not getattr(self.model, 'visuals_picker_open', False) or self._visuals_picker is None:
             return False
         try:
-            handled = self._visuals_picker.handle_event(event)
+            handled = self._visuals_picker.handle_event(event, camera)
             # Debug log only for mouse clicks and keydown
             et = getattr(event, 'type', None)
             btn = getattr(event, 'button', None)
             if et in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP):
                 self._log.debug(f"[InstanceProps] Picker event: type={et} btn={btn}")
             return handled
-        except AttributeError:
+        except Exception:
+            # Be defensive: never let picker event handling crash the editor loop
+            self._log.debug("[InstanceProps] handle_visuals_picker_event: exception while handling picker event", exc_info=True)
             return False
 
     def render_visuals_picker(self, screen, camera) -> None:
@@ -839,6 +841,17 @@ class InstancePropertiesController:
             self._building_index = None
             self._ensure_buildings_index()
 
+    def _parse_int(self, t: str) -> Optional[int]:
+        """Parse an integer from string safely. Returns None if invalid."""
+        try:
+            s = (t or "").strip()
+            if s == "":
+                return None
+            # Accept decimal integers only
+            return int(s)
+        except (ValueError, TypeError):
+            return None
+
     def _validate_template_text(self, text: str) -> tuple[bool, Optional[str], Optional[int]]:
         """Return (is_valid, error_msg, parsed_id). Empty text returns (True, None, None)."""
         t = (text or '').strip()
@@ -887,7 +900,13 @@ class InstancePropertiesController:
         # If template is N/A, start empty
         if cur_tpl.upper() == 'N/A':
             cur_tpl = ''
-        self.model.visuals_pending_templates[state_key] = cur_tpl
+        # Ensure dict exists
+        try:
+            if not hasattr(self.model, 'visuals_pending_templates') or getattr(self.model, 'visuals_pending_templates') is None:
+                self.model.visuals_pending_templates = {}
+        except AttributeError:
+            self.model.visuals_pending_templates = {}
+        self.model.visuals_pending_templates[str(state_key)] = cur_tpl
         # Activate visuals's dedicated text input
         vti = getattr(self.visuals.model, 'text_input', None)
         if vti is None:
@@ -1261,8 +1280,13 @@ class InstancePropertiesController:
             desired = int(new_tpl_id)
             # Prime pending input so add_building_instance_for_visual uses it
             try:
-                self.model.visuals_pending_templates[state_key] = str(desired)
+                if not hasattr(self.model, 'visuals_pending_templates') or getattr(self.model, 'visuals_pending_templates') is None:
+                    self.model.visuals_pending_templates = {}
+                # Use string keys consistently (state_key can be TitleCase)
+                self.model.visuals_pending_templates[str(state_key)] = str(desired)
             except (AttributeError, TypeError, ValueError):
+                # If this fails, add_building_instance_for_visual may return None (no tpl). We prefer to proceed
+                # and let higher levels surface the issue, but we avoid raising here to keep UI responsive.
                 pass
             # Create a new instance centered on the owning spawner
             new_id = self.add_building_instance_for_visual(state_key, reveal=False)
