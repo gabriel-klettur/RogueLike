@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 
 @dataclass
@@ -17,12 +17,14 @@ class ConversationMemory:
     friendship_score: int = 0
     ephemeral_history: List[Dict[str, str]] = None  # [{role, content}]
     preferred_language: str = ""  # 'es', 'en', etc. (opcional)
+    has_greeted: bool = False  # True si ya se presentó en alguna ocasión
 
     def to_dict(self) -> Dict[str, Any]:
         return {
             "friendship_score": self.friendship_score,
             "ephemeral_history": self.ephemeral_history or [],
             "preferred_language": self.preferred_language or "",
+            "has_greeted": bool(self.has_greeted),
         }
 
     @staticmethod
@@ -31,6 +33,10 @@ class ConversationMemory:
         cm.friendship_score = int(data.get("friendship_score", 0))
         cm.ephemeral_history = list(data.get("ephemeral_history", []))
         cm.preferred_language = str(data.get("preferred_language", "") or "")
+        try:
+            cm.has_greeted = bool(data.get("has_greeted", False))
+        except Exception:
+            cm.has_greeted = False
         return cm
 
 
@@ -40,19 +46,36 @@ class MemoryStore:
         self.dir = self.root / "data" / "chat" / "memories"
         self.dir.mkdir(parents=True, exist_ok=True)
 
+    # --- Path helpers (new layout only) -------------------------------------
+    def _npc_dir(self, entity_id: str, ensure: bool = False) -> Path:
+        """Directory for a specific NPC/entity where all its memories live.
+
+        Layout: data/chat/memories/<entity_id>/memory.json
+        """
+        d = self.dir / str(entity_id)
+        if ensure:
+            d.mkdir(parents=True, exist_ok=True)
+        return d
+
+    def _memory_path(self, entity_id: str, ensure_dir: bool = False) -> Path:
+        d = self._npc_dir(entity_id, ensure=ensure_dir)
+        return d / "memory.json"
+
     def load(self, entity_id: str) -> ConversationMemory:
-        path = self.dir / f"{entity_id}.json"
-        if not path.exists():
-            return ConversationMemory(friendship_score=0, ephemeral_history=[])
-        try:
-            with path.open("r", encoding="utf-8") as f:
-                data = json.load(f)
-            return ConversationMemory.from_dict(data)
-        except Exception:
-            return ConversationMemory(friendship_score=0, ephemeral_history=[])
+        """Load memory for entity using the new folder layout only."""
+        npath = self._memory_path(entity_id, ensure_dir=False)
+        if npath.exists():
+            try:
+                with npath.open("r", encoding="utf-8") as f:
+                    data = json.load(f)
+                return ConversationMemory.from_dict(data)
+            except Exception:
+                return ConversationMemory(friendship_score=0, ephemeral_history=[])
+        return ConversationMemory(friendship_score=0, ephemeral_history=[])
 
     def save(self, entity_id: str, mem: ConversationMemory) -> None:
-        path = self.dir / f"{entity_id}.json"
+        """Save memory using the new folder layout only."""
+        path = self._memory_path(entity_id, ensure_dir=True)
         try:
             with path.open("w", encoding="utf-8") as f:
                 json.dump(mem.to_dict(), f, ensure_ascii=False, indent=2)
@@ -86,3 +109,16 @@ class MemoryStore:
     def get_language(self, entity_id: str) -> str:
         mem = self.load(entity_id)
         return (mem.preferred_language or "").strip().lower()
+
+    # --- Greeting helpers ---
+    def has_greeted_flag(self, entity_id: str) -> bool:
+        try:
+            mem = self.load(entity_id)
+            return bool(getattr(mem, 'has_greeted', False))
+        except Exception:
+            return False
+
+    def mark_greeted(self, entity_id: str) -> None:
+        mem = self.load(entity_id)
+        mem.has_greeted = True
+        self.save(entity_id, mem)

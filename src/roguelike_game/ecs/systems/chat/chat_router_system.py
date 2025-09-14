@@ -108,7 +108,8 @@ class ChatRouterSystem:
         # Persistir historial efímero del usuario y log de sesión
         try:
             if self._mem_store is not None and target_eid is not None:
-                self._mem_store.append_ephemeral(str(target_eid), 'user', text)
+                mem_key = self._memory_key(world, target_eid)
+                self._mem_store.append_ephemeral(mem_key, 'user', text)
             self._log_line(target_eid, 'USER', text)
         except Exception:
             pass
@@ -132,7 +133,8 @@ class ChatRouterSystem:
                         state.chat_add_message('NPC', msg2)
                         try:
                             if self._mem_store is not None:
-                                self._mem_store.append_ephemeral(str(target_eid), 'assistant', msg2)
+                                mem_key = self._memory_key(world, target_eid)
+                                self._mem_store.append_ephemeral(mem_key, 'assistant', msg2)
                             self._log_line(target_eid, 'NPC', msg2)
                         except Exception:
                             pass
@@ -141,12 +143,13 @@ class ChatRouterSystem:
                 return
             if self._is_negative(text):
                 self._pending_confirms.pop(target_eid, None)
-                lang = self._lang_for(target_eid, state)
+                lang = self._lang_for(world, target_eid, state)
                 cancel_txt = self._tr(lang, 'Operación cancelada.', 'Operation cancelled.')
                 state.chat_add_message('NPC', cancel_txt)
                 try:
                     if self._mem_store is not None:
-                        self._mem_store.append_ephemeral(str(target_eid), 'assistant', cancel_txt)
+                        mem_key = self._memory_key(world, target_eid)
+                        self._mem_store.append_ephemeral(mem_key, 'assistant', cancel_txt)
                     self._log_line(target_eid, 'NPC', cancel_txt)
                 except Exception:
                     pass
@@ -156,12 +159,13 @@ class ChatRouterSystem:
                     pass
                 return
             # Si no es sí/no, aclarar
-            lang = self._lang_for(target_eid, state)
+            lang = self._lang_for(world, target_eid, state)
             ask = self._tr(lang, 'Por favor responde "sí" para confirmar o "no" para cancelar.', 'Please answer "yes" to confirm or "no" to cancel.')
             state.chat_add_message('NPC', ask)
             try:
                 if self._mem_store is not None:
-                    self._mem_store.append_ephemeral(str(target_eid), 'assistant', ask)
+                    mem_key = self._memory_key(world, target_eid)
+                    self._mem_store.append_ephemeral(mem_key, 'assistant', ask)
                 self._log_line(target_eid, 'NPC', ask)
             except Exception:
                 pass
@@ -170,8 +174,9 @@ class ChatRouterSystem:
             except Exception:
                 pass
             return
-        # Comandos directos (no IA) para vendor
-        if role == 'vendor':
+        # Comandos directos (no IA) para vendor o cualquier NPC con capacidad de trade
+        # Consideramos "trader" a cualquier entidad con inventario (puede pagar/recibir)
+        if self._is_trader(world, target_eid):
             # 1) Consulta de stock real (no pasa por IA)
             m_stock = re.match(r"^(?:!stock|muestra\s+stock|ver\s+stock|dime\s+stock)(?:\s+(?:de\s+)?(\w+))?$", text, flags=re.IGNORECASE)
             if m_stock:
@@ -180,7 +185,8 @@ class ChatRouterSystem:
                 state.chat_add_message('NPC', txt)
                 try:
                     if self._mem_store is not None:
-                        self._mem_store.append_ephemeral(str(target_eid), 'assistant', txt)
+                        mem_key = self._memory_key(world, target_eid)
+                        self._mem_store.append_ephemeral(mem_key, 'assistant', txt)
                     self._log_line(target_eid, 'NPC', txt)
                 except Exception:
                     pass
@@ -196,7 +202,8 @@ class ChatRouterSystem:
                 state.chat_add_message('NPC', txt)
                 try:
                     if self._mem_store is not None:
-                        self._mem_store.append_ephemeral(str(target_eid), 'assistant', txt)
+                        mem_key = self._memory_key(world, target_eid)
+                        self._mem_store.append_ephemeral(mem_key, 'assistant', txt)
                     self._log_line(target_eid, 'NPC', txt)
                 except Exception:
                     pass
@@ -212,7 +219,8 @@ class ChatRouterSystem:
                 state.chat_add_message('NPC', txt)
                 try:
                     if self._mem_store is not None:
-                        self._mem_store.append_ephemeral(str(target_eid), 'assistant', txt)
+                        mem_key = self._memory_key(world, target_eid)
+                        self._mem_store.append_ephemeral(mem_key, 'assistant', txt)
                     self._log_line(target_eid, 'NPC', txt)
                 except Exception:
                     pass
@@ -230,7 +238,8 @@ class ChatRouterSystem:
                 state.chat_add_message('NPC', out)
                 try:
                     if self._mem_store is not None:
-                        self._mem_store.append_ephemeral(str(target_eid), 'assistant', out)
+                        mem_key = self._memory_key(world, target_eid)
+                        self._mem_store.append_ephemeral(mem_key, 'assistant', out)
                     self._log_line(target_eid, 'NPC', out)
                 except Exception:
                     pass
@@ -246,7 +255,8 @@ class ChatRouterSystem:
                 state.chat_add_message('NPC', out)
                 try:
                     if self._mem_store is not None:
-                        self._mem_store.append_ephemeral(str(target_eid), 'assistant', out)
+                        mem_key = self._memory_key(world, target_eid)
+                        self._mem_store.append_ephemeral(mem_key, 'assistant', out)
                     self._log_line(target_eid, 'NPC', out)
                 except Exception:
                     pass
@@ -287,7 +297,7 @@ class ChatRouterSystem:
             ui_lang = (getattr(state, 'chat_lang_preference', None) or '').strip().lower()
             if ui_lang in {'es', 'en'}:
                 ms = MemoryStore(getattr(self, '_root', Path('.')))
-                ms.set_language(str(target_eid), ui_lang)
+                ms.set_language(self._memory_key(world, target_eid), ui_lang)
         except Exception:
             pass
         # Estimar status online/offline antes de enviar (para mostrar en el título inmediatamente)
@@ -301,7 +311,7 @@ class ChatRouterSystem:
                 pass
         job = ChatJob(
             player_id=player_id,
-            npc_id=target_eid,
+            npc_id=self._memory_key(world, target_eid),
             user_text=text,
             role=str(role),
             persona_id=str(persona_id or ''),
@@ -352,7 +362,8 @@ class ChatRouterSystem:
             state.chat_add_message('NPC', result)
             try:
                 if self._mem_store is not None:
-                    self._mem_store.append_ephemeral(str(vendor_eid), 'assistant', result)
+                    mem_key = self._memory_key(world, vendor_eid)
+                    self._mem_store.append_ephemeral(mem_key, 'assistant', result)
                 self._log_line(vendor_eid, 'NPC', result)
             except Exception:
                 pass
@@ -362,13 +373,26 @@ class ChatRouterSystem:
                 pass
         except Exception as e:
             logger.exception("Vendor buy error")
-            lang = self._lang_for(vendor_eid)
+            lang = self._lang_for(world, vendor_eid, state)
             text = self._tr(lang, f"No pude completar la compra: {e}", f"I couldn't complete the purchase: {e}")
             state.chat_add_message('NPC', text)
             try:
                 push_bubble(world, vendor_eid, text, color=(255, 200, 200), ttl_ms=3000)
             except Exception:
                 pass
+
+    def _is_trader(self, world, eid: int) -> bool:
+        """Devuelve True si la entidad puede realizar comercio básico.
+
+        Criterio: tiene inventario asignado. Esto permite que cualquier NPC con chat
+        e inventario participe en compra/venta usando VendorTradeSystem (que ya
+        soporta precios globales y moneda por defecto 'gold').
+        """
+        try:
+            invs = world.components.get('InventoryComponent', {})
+            return eid in invs
+        except Exception:
+            return False
 
     def _vendor_sell(self, world, state, vendor_eid, item_id: str, qty: int):
         vts = self._get_vendor_trade_system(world)
@@ -377,7 +401,8 @@ class ChatRouterSystem:
             state.chat_add_message('NPC', result)
             try:
                 if self._mem_store is not None:
-                    self._mem_store.append_ephemeral(str(vendor_eid), 'assistant', result)
+                    mem_key = self._memory_key(world, vendor_eid)
+                    self._mem_store.append_ephemeral(mem_key, 'assistant', result)
                 self._log_line(vendor_eid, 'NPC', result)
             except Exception:
                 pass
@@ -387,7 +412,7 @@ class ChatRouterSystem:
                 pass
         except Exception as e:
             logger.exception("Vendor sell error")
-            lang = self._lang_for(vendor_eid)
+            lang = self._lang_for(world, vendor_eid, state)
             text = self._tr(lang, f"No pude completar la venta: {e}", f"I couldn't complete the sale: {e}")
             state.chat_add_message('NPC', text)
             try:
@@ -414,22 +439,20 @@ class ChatRouterSystem:
             if inv and hasattr(inv, 'slots'):
                 for st in getattr(inv, 'slots', []) or []:
                     try:
+                        # Normalizar target usando VendorTradeSystem
+                        vts = self._get_vendor_trade_system(world)
+                        norm_target, _ = vts._normalize_ids(world, vendor_eid, (item_id or 'wood'))
                         iid = str(getattr(st, 'item_id', '')).lower()
-                        target = (item_id or 'wood').lower()
-                        if target in {'wooden', 'madera'}:
-                            target = 'wood'
-                        if st and iid == target:
+                        if st and iid == str(norm_target).lower():
                             qty += int(getattr(st, 'quantity', 0) or 0)
                     except Exception:
                         pass
             # Obtener precio actual
             vts = self._get_vendor_trade_system(world)
-            target_item = (item_id or 'wood').lower()
-            if target_item in {'wooden', 'madera'}:
-                target_item = 'wood'
+            target_item, _ = vts._normalize_ids(world, vendor_eid, (item_id or 'wood'))
             price = vts._get_price(world, vendor_eid, target_item, op='buy') or 1
             # Localización
-            lang = self._lang_for(vendor_eid)
+            lang = self._lang_for(world, vendor_eid, None)
             if lang == 'es':
                 nice = 'madera' if target_item == 'wood' else target_item
                 return f"Tengo {qty} de {nice} a {int(price)} oro la unidad."
@@ -437,7 +460,7 @@ class ChatRouterSystem:
                 nice = 'wood' if target_item == 'wood' else target_item
                 return f"I have {qty} of {nice} at {int(price)} gold each."
         except Exception:
-            lang = self._lang_for(vendor_eid)
+            lang = self._lang_for(world, vendor_eid, None)
             return "Tengo stock a 1 oro la unidad." if lang == 'es' else "I have stock at 1 gold each."
 
     def _vendor_restock(self, world, vendor_eid: int, item_id: str, qty: int) -> str:
@@ -445,7 +468,7 @@ class ChatRouterSystem:
         try:
             return vts.restock(world, vendor_eid, item_id, qty)
         except Exception as e:
-            lang = self._lang_for(vendor_eid)
+            lang = self._lang_for(world, vendor_eid, None)
             return (f"No pude actualizar stock: {e}" if lang == 'es' else f"Couldn't update stock: {e}")
 
     def _vendor_gold(self, world, vendor_eid: int) -> str:
@@ -455,20 +478,18 @@ class ChatRouterSystem:
             gold = int(vts.get_stock(world, vendor_eid, 'gold'))
         except Exception:
             gold = 0
-        lang = self._lang_for(vendor_eid)
+        lang = self._lang_for(world, vendor_eid, None)
         return (f"Tengo {gold} de oro disponible para pagar." if lang == 'es' else f"I have {gold} gold available to pay.")
 
     def _ask_vendor_confirm(self, world, state, vendor_eid: int, *, op: str, item: str, qty: int) -> None:
         """Pide confirmación antes de ejecutar buy/sell. Muestra precio unitario y total si es posible (localizado)."""
         vts = self._get_vendor_trade_system(world)
-        item_norm = (item or 'wood').lower()
-        if item_norm in {'wooden', 'madera'}:
-            item_norm = 'wood'
+        item_norm, _ = vts._normalize_ids(world, vendor_eid, (item or 'wood'))
         try:
             unit = vts._get_price(world, vendor_eid, item_norm, op=op) or 1
         except Exception:
             unit = 1
-        lang = self._lang_for(vendor_eid)
+        lang = self._lang_for(world, vendor_eid, state)
         nice_es = 'madera' if item_norm == 'wood' else item_norm
         nice_en = 'wood' if item_norm == 'wood' else item_norm
         total = int(unit) * int(qty)
@@ -483,7 +504,8 @@ class ChatRouterSystem:
         state.chat_add_message('NPC', pre)
         try:
             if self._mem_store is not None:
-                self._mem_store.append_ephemeral(str(vendor_eid), 'assistant', pre)
+                mem_key = self._memory_key(world, vendor_eid)
+                self._mem_store.append_ephemeral(mem_key, 'assistant', pre)
             self._log_line(vendor_eid, 'NPC', pre)
         except Exception:
             pass
@@ -521,22 +543,23 @@ class ChatRouterSystem:
                 for call in result.tool_calls:
                     name = getattr(call, 'name', '')
                     args = getattr(call, 'arguments', {}) or {}
-                    if name == 'vendor.buy' and role == 'vendor':
+                    if name == 'vendor.buy' and self._is_trader(world, target_eid):
                         qty = int(args.get('quantity', 1))
                         item = str(args.get('item', 'wood')).lower()
                         self._ask_vendor_confirm(world, state, target_eid, op='buy', item=item, qty=qty)
                         responded = True
-                    elif name == 'vendor.sell' and role == 'vendor':
+                    elif name == 'vendor.sell' and self._is_trader(world, target_eid):
                         qty = int(args.get('quantity', 1))
                         item = str(args.get('item', 'wood')).lower()
                         self._ask_vendor_confirm(world, state, target_eid, op='sell', item=item, qty=qty)
                         responded = True
-                    elif name == 'vendor.stock' and role == 'vendor':
+                    elif name == 'vendor.stock' and self._is_trader(world, target_eid):
                         txt = self._vendor_stock(world, target_eid, 'wood')
                         state.chat_add_message('NPC', txt)
                         try:
                             if self._mem_store is not None:
-                                self._mem_store.append_ephemeral(str(target_eid), 'assistant', txt)
+                                mem_key = self._memory_key(world, target_eid)
+                                self._mem_store.append_ephemeral(mem_key, 'assistant', txt)
                             self._log_line(target_eid, 'NPC', txt)
                         except Exception:
                             pass
@@ -549,12 +572,13 @@ class ChatRouterSystem:
             if not responded:
                 reply = (getattr(result, 'text', None) or '').strip()
                 if not reply:
-                    lang = self._lang_for(target_eid, state)
-                    reply = self._tr(lang, 'No entiendo. Usa "buy N wood" o "sell N wood".', 'I don\'t understand. Use "buy N wood" or "sell N wood".')
+                    lang = self._lang_for(world, target_eid, state)
+                    reply = self._tr(lang, 'No entiendo. Usa "buy N wood" o "sell N wood".', "I don't understand. Use \"buy N wood\" or \"sell N wood\".")
                 # Persistir historial efímero del asistente y log (mensaje completo)
                 try:
                     if self._mem_store is not None:
-                        self._mem_store.append_ephemeral(str(target_eid), 'assistant', reply)
+                        mem_key = self._memory_key(world, target_eid)
+                        self._mem_store.append_ephemeral(mem_key, 'assistant', reply)
                     self._log_line(target_eid, 'NPC', reply)
                 except Exception:
                     pass
@@ -579,12 +603,12 @@ class ChatRouterSystem:
                         pass
                     # Añadir sufijo en el mismo mensaje del panel al finalizar
                     if 'last_due' in locals() and last_due is not None and 'placeholder_idx' in locals() and placeholder_idx is not None:
-                        lang = self._lang_for(target_eid, state)
+                        lang = self._lang_for(world, target_eid, state)
                         suffix = self._tr(lang, ' (modo offline)', ' (offline mode)')
                         self._scheduled.append({
                             'due': int(last_due),
                             'type': 'chat_append_suffix',
-                            'data': {'idx': int(placeholder_idx), 'suffix': suffix}
+                            'data': {'idx': int(placeholder_idx), 'suffix': suffix, 'target': int(target_eid)}
                         })
                 else:
                     # Confirmar estado online para la UI
@@ -600,7 +624,9 @@ class ChatRouterSystem:
         """Dispara elementos programados cuyo due <= now.
 
         Cada elemento puede ser:
-          - type='chat': data={'sender': str, 'text': str}
+          - type='chat': data={'sender': str, 'text': str, 'target': optional[int]}
+          - type='chat_set': data={'idx': int, 'sender': str, 'text': str, 'target': optional[int]}
+          - type='chat_append_suffix': data={'idx': int, 'suffix': str, 'target': optional[int]}
           - type='bubble': data={'eid': int, 'text': str, 'color': (r,g,b), 'ttl': int}
         """
         if not self._scheduled:
@@ -621,26 +647,52 @@ class ChatRouterSystem:
                 if typ == 'chat':
                     sender = data.get('sender', 'NPC')
                     text = data.get('text', '')
-                    state.chat_add_message(str(sender), str(text))
+                    target = data.get('target', None)
+                    try:
+                        if target is not None and hasattr(state, 'chat_add_message_for'):
+                            state.chat_add_message_for(int(target), str(sender), str(text))
+                        else:
+                            state.chat_add_message(str(sender), str(text))
+                    except Exception:
+                        state.chat_add_message(str(sender), str(text))
                 elif typ == 'chat_set':
                     # Establece/actualiza el texto de un mensaje existente (placeholder de respuesta)
                     idx = int(data.get('idx', -1))
                     sender = data.get('sender', 'NPC')
                     text = data.get('text', '')
+                    target = data.get('target', None)
                     try:
-                        if 0 <= idx < len(state.chat_messages):
-                            state.chat_messages[idx] = (str(sender), str(text))
+                        if target is not None and hasattr(state, 'chat_history_for'):
+                            hist = state.chat_history_for(int(target))
+                            if 0 <= idx < len(hist):
+                                hist[idx] = (str(sender), str(text))
+                            else:
+                                # fuera de rango: añadir
+                                if hasattr(state, 'chat_add_message_for'):
+                                    state.chat_add_message_for(int(target), str(sender), str(text))
+                                else:
+                                    state.chat_add_message(str(sender), str(text))
                         else:
-                            state.chat_add_message(str(sender), str(text))
+                            if 0 <= idx < len(state.chat_messages):
+                                state.chat_messages[idx] = (str(sender), str(text))
+                            else:
+                                state.chat_add_message(str(sender), str(text))
                     except Exception:
                         state.chat_add_message(str(sender), str(text))
                 elif typ == 'chat_append_suffix':
                     idx = int(data.get('idx', -1))
                     suffix = str(data.get('suffix', ''))
+                    target = data.get('target', None)
                     try:
-                        if 0 <= idx < len(state.chat_messages):
-                            sender, cur = state.chat_messages[idx]
-                            state.chat_messages[idx] = (str(sender), str(cur) + suffix)
+                        if target is not None and hasattr(state, 'chat_history_for'):
+                            hist = state.chat_history_for(int(target))
+                            if 0 <= idx < len(hist):
+                                sender, cur = hist[idx]
+                                hist[idx] = (str(sender), str(cur) + suffix)
+                        else:
+                            if 0 <= idx < len(state.chat_messages):
+                                sender, cur = state.chat_messages[idx]
+                                state.chat_messages[idx] = (str(sender), str(cur) + suffix)
                     except Exception:
                         pass
                 elif typ == 'bubble':
@@ -682,16 +734,16 @@ class ChatRouterSystem:
         except Exception:
             words = [text] if text else []
         if not words:
-            # Programar vacío directo con placeholder
+            # Programar vacío directo con placeholder (target-aware)
             now = pygame.time.get_ticks()
-            # Crear placeholder en historial
             try:
+                placeholder_idx = state.chat_add_message_for(int(target_eid), 'NPC', '…')
+            except Exception:
+                # Fallback
                 state.chat_add_message('NPC', '…')
                 placeholder_idx = len(state.chat_messages) - 1
-            except Exception:
-                placeholder_idx = None
             # Asegurar un set inmediato a vacío (sin puntos)
-            self._scheduled.append({'due': now, 'type': 'chat_set', 'data': {'idx': placeholder_idx if placeholder_idx is not None else -1, 'sender': 'NPC', 'text': ''}})
+            self._scheduled.append({'due': now, 'type': 'chat_set', 'data': {'idx': int(placeholder_idx) if placeholder_idx is not None else -1, 'sender': 'NPC', 'text': '', 'target': int(target_eid)}})
             return now, placeholder_idx
         chunks = []
         i = 0
@@ -702,10 +754,9 @@ class ChatRouterSystem:
             i += n
         now = pygame.time.get_ticks()
         last_due = now
-        # Crear placeholder en el historial
+        # Crear placeholder en el historial del target
         try:
-            state.chat_add_message('NPC', '…')
-            placeholder_idx = len(state.chat_messages) - 1
+            placeholder_idx = state.chat_add_message_for(int(target_eid), 'NPC', '…')
         except Exception:
             placeholder_idx = None
         agg = ''
@@ -718,7 +769,7 @@ class ChatRouterSystem:
             self._scheduled.append({
                 'due': due,
                 'type': 'chat_set',
-                'data': {'idx': placeholder_idx if placeholder_idx is not None else -1, 'sender': 'NPC', 'text': display}
+                'data': {'idx': placeholder_idx if placeholder_idx is not None else -1, 'sender': 'NPC', 'text': display, 'target': int(target_eid)}
             })
             # Burbuja flotante encima del NPC (cada trozo)
             self._scheduled.append({
@@ -729,12 +780,12 @@ class ChatRouterSystem:
         return last_due, placeholder_idx
 
     # --- Localización sencilla ---------------------------------------------
-    def _lang_for(self, npc_eid: int, state=None) -> str:
+    def _lang_for(self, world, npc_eid: int, state=None) -> str:
         """Determina el idioma actual para un NPC.
 
         Prioriza el idioma del selector en `state.chat_lang_preference` si está definido
         (para reflejar cambios mid-conversación). Si no, usa la preferencia persistida
-        en MemoryStore. Devuelve siempre 'es' o 'en'.
+        en MemoryStore (clave amigable). Devuelve siempre 'es' o 'en'.
         """
         try:
             if state is not None:
@@ -745,10 +796,34 @@ class ChatRouterSystem:
             pass
         try:
             ms = MemoryStore(getattr(self, '_root', Path('.')))
-            code = (ms.get_language(str(npc_eid)) or 'es').lower()
+            mem_key = self._memory_key(world, npc_eid)
+            code = (ms.get_language(mem_key) or 'es').lower()
             return 'en' if code == 'en' else 'es'
         except Exception:
             return 'es'
+
+    def _memory_key(self, world, npc_eid: int) -> str:
+        """Construye una clave de memoria amigable y estable para un NPC.
+
+        Formato: "<slug-name>-<identity.id>" cuando hay Identity; fallback a str(eid).
+        """
+        try:
+            ident = world.components.get('Identity', {}).get(npc_eid)
+            if ident is not None:
+                name = str(getattr(ident, 'name', '') or '').strip()
+                stable_id = getattr(ident, 'id', None)
+                if stable_id is None:
+                    raise ValueError('no stable id')
+                slug = name.lower()
+                import re
+                slug = re.sub(r"[^a-z0-9]+", "-", slug)
+                slug = re.sub(r"-+", "-", slug).strip('-')
+                if not slug:
+                    slug = 'npc'
+                return f"{slug}-{int(stable_id)}"
+        except Exception:
+            pass
+        return str(npc_eid)
 
     def _tr(self, code: str, es_text: str, en_text: str) -> str:
         return es_text if (code or 'es') == 'es' else en_text

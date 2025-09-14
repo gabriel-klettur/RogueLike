@@ -1,0 +1,15 @@
+{
+  "friendship_score": 0,
+  "ephemeral_history": [
+    {
+      "role": "user",
+      "content": "buenas! que tienes para venderme?"
+    },
+    {
+      "role": "assistant",
+      "content": "Tengo 0 de madera a 1 oro la unidad."
+    }
+  ],
+  "preferred_language": "es",
+  "has_greeted": true
+}

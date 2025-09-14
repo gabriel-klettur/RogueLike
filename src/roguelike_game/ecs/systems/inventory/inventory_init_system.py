@@ -94,6 +94,10 @@ class InventoryInitSystem:
         self._vendors_registry_mtime = None
         self.inventory_seed_schema_path = os.path.join('schemas', 'vendors', 'InventorySeedSchema.json')
         self._inventory_seed_schema = None
+        # Catálogo de ítems para sembrar stock comerciable en NPCs con chat
+        self.items_catalog_path = os.path.join('data', 'items', 'items.json')
+        self._items_catalog = None
+        self._items_catalog_mtime = None
 
     
     def update(self, world, *args):
@@ -319,6 +323,13 @@ class InventoryInitSystem:
                         self.dirty_monsters = True
             # Asignar componente e inicializar marcado
             world.components['InventoryComponent'][eid] = inv_comp
+            # Si el NPC tiene chat, asegurar capacidad de comercio básica (oro + algo de stock)
+            try:
+                has_chat = eid in comps.get('ChatComponent', {})
+            except Exception:
+                has_chat = False
+            if has_chat:
+                self._maybe_seed_trader(eid, inv_comp, is_neutral=is_neutral, active_store=active_store, iid=iid)
             self.initialized.add(eid)
 
         # Remove entries for monsters/neutrals no longer present
@@ -377,3 +388,81 @@ class InventoryInitSystem:
             return None
         vendors = reg.get('vendors') or {}
         return vendors.get(identity_key)
+
+    # --- Helpers: catálogo de ítems y siembra para comercio -----------------
+    def _ensure_items_catalog_loaded(self):
+        path = self.items_catalog_path
+        try:
+            st = os.stat(path)
+            mtime = st.st_mtime
+        except FileNotFoundError:
+            self._items_catalog = {}
+            self._items_catalog_mtime = None
+            return
+        if self._items_catalog is None or self._items_catalog_mtime != mtime:
+            try:
+                with open(path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                self._items_catalog = data if isinstance(data, dict) else {}
+            except Exception:
+                self._items_catalog = {}
+            self._items_catalog_mtime = mtime
+
+    def _maybe_seed_trader(self, eid: int, inv_comp: InventoryComponent, *, is_neutral: bool, active_store: dict, iid: str):
+        """Garantiza que un NPC con chat tenga oro y algo de stock vendible.
+
+        Reglas:
+          - Asegura al menos MIN_GOLD de 'gold'.
+          - Si no tiene ningún ítem vendible (excluyendo 'gold'), añade hasta MAX_SEED_ITEMS
+            ítems stackeables del catálogo, con cantidades pequeñas.
+        Persiste los cambios en el almacén activo correspondiente y marca dirty.
+        """
+        MIN_GOLD = 50
+        MAX_SEED_ITEMS = 3
+        # Oro mínimo
+        try:
+            if not inv_comp.has('gold', MIN_GOLD):
+                # Calcular faltante aproximado (no necesitamos exactitud perfecta)
+                # InventoryComponent no expone cantidad actual, así que añadimos MIN_GOLD como tope razonable
+                inv_comp.add('gold', MIN_GOLD)
+        except Exception:
+            pass
+        # Si no tiene stock vendible (excluyendo oro), sembrar algunos ítems
+        try:
+            has_stock = any(
+                st is not None and getattr(st, 'item_id', '') != 'gold'
+                for st in getattr(inv_comp, 'slots', []) or []
+            )
+        except Exception:
+            has_stock = False
+        if not has_stock:
+            # Cargar catálogo y elegir candidatos stackeables y no especiales
+            self._ensure_items_catalog_loaded()
+            cat = self._items_catalog or {}
+            candidates = []
+            for iid_item, node in cat.items():
+                if not isinstance(node, dict):
+                    continue
+                if iid_item in {'gold', 'experience_orb'}:
+                    continue
+                if node.get('quest_id'):
+                    continue
+                if bool(node.get('stackable', False)):
+                    candidates.append((iid_item, int(node.get('max_stack', 10) or 10)))
+            random.shuffle(candidates)
+            to_add = candidates[:MAX_SEED_ITEMS]
+            for item_id, max_stack in to_add:
+                qty = max(1, min(max_stack, random.randint(1, min(5, max_stack if max_stack > 0 else 5))))
+                inv_comp.add(item_id, qty)
+        # Persistir cambios del inventario en el almacén activo
+        entry_prev = active_store.get(iid, {}) or {}
+        template_id = entry_prev.get('template_id', inv_comp.player_id)
+        active_store[iid] = {
+            'template_id': template_id,
+            'slots': inv_comp.serialize().get('slots'),
+            'schema_version': self.schema_version
+        }
+        if is_neutral:
+            self.dirty_neutrals = True
+        else:
+            self.dirty_monsters = True

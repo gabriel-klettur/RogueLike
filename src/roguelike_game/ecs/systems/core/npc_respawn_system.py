@@ -22,9 +22,14 @@ class NpcRespawnSystem:
         # Throttling / dedup de logs
         self._last_summary_sig = None
         self._last_summary_t = 0.0
-        self._summary_interval = 1.0  # seconds
+        self._summary_interval = 5.0  # seconds
         self._skip_logged: Dict[Tuple[str, str], float] = {}
-        self._skip_log_interval = 3.0  # seconds
+        self._skip_log_interval = 30.0  # seconds
+        # Heartbeat para el resumen cuando no hay cambios
+        self._heartbeat_interval = 30.0  # seconds between identical summaries
+        # Throttle para el mensaje de "no requests"
+        self._last_no_req_t = 0.0
+        self._no_req_interval = 15.0  # seconds
 
     def update(self, world, *args):
         # Fuente de estados guardados: MapManager._local_state['npc_states']
@@ -48,7 +53,8 @@ class NpcRespawnSystem:
         # Resumen con throttling
         now = time.time()
         summary_sig = (len(states), len(present_ids), len(self._requested))
-        if (now - self._last_summary_t) >= self._summary_interval or summary_sig != self._last_summary_sig:
+        # Emitir resumen solo si cambió el estado o cada cierto heartbeat
+        if summary_sig != self._last_summary_sig or (now - self._last_summary_t) >= self._heartbeat_interval:
             try:
                 logger.debug(
                     "[NpcRespawn] level=%s states_total=%s present=%s already_requested=%s",
@@ -134,8 +140,9 @@ class NpcRespawnSystem:
             if enqueued:
                 logger.info("[NpcRespawn] total enqueued=%s for level=%s", enqueued, current_level)
             else:
-                # Solo reportar "no requests" cuando toque el resumen
-                if (now - self._last_summary_t) < 0.05:  # el resumen fue emitido justo ahora
+                # Reportar "no requests" con throttle independiente para evitar spam
+                if (now - self._last_no_req_t) >= self._no_req_interval:
                     logger.debug("[NpcRespawn] no requests enqueued for level=%s", current_level)
+                    self._last_no_req_t = now
         except Exception:
             pass

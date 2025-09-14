@@ -66,18 +66,15 @@ class ChatUISystem:
             state.chat_block_rect = panel_rect
         except Exception:
             pass
-        # Título (dinámico: mostrar nombre del vendor si aplica)
+        # Título (dinámico): mostrar nombre del target si existe
         title_text = "Chat"
         try:
             target_eid = getattr(state, 'chat_target_eid', None)
             if target_eid is not None:
-                chat_comp = world.components.get('ChatComponent', {}).get(target_eid)
-                role = getattr(chat_comp, 'role', 'generic') if chat_comp else 'generic'
-                if role == 'vendor':
-                    ident = world.components.get('Identity', {}).get(target_eid)
-                    name = getattr(ident, 'name', None)
-                    if name:
-                        title_text = str(name)
+                ident = world.components.get('Identity', {}).get(target_eid)
+                name = getattr(ident, 'name', None)
+                if name:
+                    title_text = str(name)
         except Exception:
             pass
         title = small.render(title_text, True, (255,255,0))
@@ -139,8 +136,25 @@ class ChatUISystem:
                         root = Path(__file__).resolve().parents[4]
                     except Exception:
                         root = Path('.')
+                    # Construir clave de memoria amigable: <slug-name>-<identity.id>, fallback a eid
+                    def _mem_key(world, eid: int) -> str:
+                        try:
+                            ident = world.components.get('Identity', {}).get(eid)
+                            if ident is not None:
+                                name = str(getattr(ident, 'name', '') or '').strip().lower()
+                                stable_id = getattr(ident, 'id', None)
+                                if stable_id is not None:
+                                    import re
+                                    slug = re.sub(r"[^a-z0-9]+", "-", name)
+                                    slug = re.sub(r"-+", "-", slug).strip('-')
+                                    if not slug:
+                                        slug = 'npc'
+                                    return f"{slug}-{int(stable_id)}"
+                        except Exception:
+                            pass
+                        return str(eid)
                     ms = MemoryStore(root)
-                    pref = ms.get_language(str(target_eid)) or 'es'
+                    pref = ms.get_language(_mem_key(world, target_eid)) or 'es'
                     state.chat_lang_preference = pref
         except Exception:
             pass
@@ -308,13 +322,25 @@ class ChatUISystem:
         raw_messages = list(getattr(state, 'chat_messages', []))
         wrapped_lines = []  # list[(sender:str, line:str, is_first:bool, prefix_w:int)]
         for sender, text in raw_messages:
-            prefix = f"{sender}: "
+            # Mostrar el nombre del NPC en vez de la etiqueta genérica 'NPC'
+            display_sender = sender
+            try:
+                if sender == 'NPC':
+                    tgt = getattr(state, 'chat_target_eid', None)
+                    if tgt is not None:
+                        ident = world.components.get('Identity', {}).get(tgt)
+                        name = getattr(ident, 'name', None)
+                        if name:
+                            display_sender = str(name)
+            except Exception:
+                pass
+            prefix = f"{display_sender}: "
             pref_surf = small.render(prefix, True, (220,220,100))
             pref_w = pref_surf.get_width()
             first_width = max(0, msg_area_w - pref_w - 12)  # margen para scrollbar
             # Wrap
             for i, seg in enumerate(_wrap_text_small(small, text or "", first_width)):
-                wrapped_lines.append((sender, seg, i == 0, pref_w))
+                wrapped_lines.append((display_sender, seg, i == 0, pref_w))
 
         total_lines = len(wrapped_lines)
         visible_lines = max(1, msg_area_h // line_height)

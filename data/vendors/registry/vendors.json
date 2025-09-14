@@ -1,10 +1,16 @@
 {
   "$schema_version": "1.0.0",
   "vendors": {
-    "vendor_wood_gatita": {
-      "seed_specific": "data/vendors/inventory_seed/inventory_vendor_wood_gatita.json",
-      "seed_group": "vendor_wood",
-      "economy_group": "vendor_wood",
+    "vendor_cheff_gatita": {
+      "seed_specific": "data/vendors/inventory_seed/inventory_vendor_cheff_gatita.json",
+      "seed_group": "vendor_cheff",
+      "economy_group": "vendor_cheff",
+      "prices_override": {}
+    },
+    "gatita": {
+      "seed_specific": "data/vendors/inventory_seed/inventory_vendor_cheff_gatita.json",
+      "seed_group": "vendor_cheff",
+      "economy_group": "vendor_cheff",
       "prices_override": {}
     },
     "valeria": {
@@ -15,8 +21,8 @@
         "health_potion": {"buy": 25, "sell": 25}
       }
     },
-    "mamba": {
-      "seed_specific": "data/vendors/inventory_seed/inventory_vendor_blacksmith_mamba.json",
+    "Smith": {
+      "seed_specific": "data/vendors/inventory_seed/inventory_vendor_blacksmith_smith.json",
       "seed_group": "vendor_blacksmith",
       "economy_group": "vendor_blacksmith",
       "prices_override": {

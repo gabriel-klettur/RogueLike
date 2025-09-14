@@ -1,5 +1,22 @@
 {
   "wood": { "buy": 1, "sell": 1 },
   "health_potion": { "buy": 25, "sell": 25 },
-  "iron_sword": { "buy": 50, "sell": 50 }
+  "iron_sword": { "buy": 50, "sell": 50 },
+  "bucket": { "buy": 10, "sell": 10 },
+  "bucket_water": { "buy": 10, "sell": 10 },
+  "energy_potion": { "buy": 1, "sell": 1 },
+  "explosion_potion": { "buy": 1, "sell": 1 },
+  "food_chicken": { "buy": 1, "sell": 1 },
+  "food_apple": { "buy": 1, "sell": 1 },
+  "food_bread": { "buy": 1, "sell": 1 },
+  "food_borscht": { "buy": 1, "sell": 1 },
+  "food_varenyky": { "buy": 1, "sell": 1 },
+  "image_item_not_found": { "buy": 10, "sell": 10 },
+  "iron_ingot": { "buy": 1, "sell": 1 },
+  "mana_potion": { "buy": 1, "sell": 1 },
+  "poison_potion": { "buy": 1, "sell": 1 },
+  "wizard_staff_lvl_1": { "buy": 150, "sell": 150 },
+  "wizard_staff_lvl_2": { "buy": 300, "sell": 300 },
+  "wizard_staff_lvl_3": { "buy": 600, "sell": 600 },
+  "ghjgjh": { "buy": 10, "sell": 10 }
 }
