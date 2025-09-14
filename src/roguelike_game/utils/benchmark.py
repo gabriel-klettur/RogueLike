@@ -13,11 +13,11 @@ def setup_benchmark_logger(base_dir: str | None = None) -> logging.Logger:
     Configura un logger especializado en benchmarks y retorna la instancia.
     """
     if base_dir is None:
-        # Dos niveles arriba de este archivo
+        # Tres niveles arriba (desde src/roguelike_game/utils -> raíz del proyecto)
         root = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "..", "..")
+            os.path.join(os.path.dirname(__file__), "..", "..", "..")
         )
-        base_dir = os.path.join(root, "logs", "benchmarks")
+        base_dir = os.path.join(root, "logs", "diagnostics")
 
     os.makedirs(base_dir, exist_ok=True)
     ts = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -34,20 +34,20 @@ def setup_benchmark_logger(base_dir: str | None = None) -> logging.Logger:
     return logger
 
 
-def save_benchmarks(benchmarks: dict, base_dir: str | None = None) -> None:
+def save_benchmarks(benchmarks: dict, base_dir: str | None = None) -> tuple[str, str]:
     """
     Genera un JSON resumen de los benchmarks con estadísticas y top eventos.
     """
     if base_dir is None:
         root = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "..", "..")
+            os.path.join(os.path.dirname(__file__), "..", "..", "..")
         )
-        base_dir = os.path.join(root, "logs", "benchmarks")
+        base_dir = os.path.join(root, "logs", "diagnostics")
 
     os.makedirs(base_dir, exist_ok=True)
     ts_iso = datetime.now().isoformat(timespec='seconds')
     ts_fn = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    filepath = os.path.join(base_dir, f'benchmarks_run_{ts_fn}.json')
+    json_path = os.path.join(base_dir, f'benchmarks_run_{ts_fn}.json')
 
     # Estadísticas básicas
     summary: dict[str, dict] = {}
@@ -86,9 +86,56 @@ def save_benchmarks(benchmarks: dict, base_dir: str | None = None) -> None:
         'benchmarks': grouped
     }
 
-    with open(filepath, 'w', encoding='utf-8') as f:
+    with open(json_path, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=2)
 
     logging.getLogger('benchmarks').info(
-        f'Benchmarks summary written to {filepath}'
+        f'Benchmarks summary written to {json_path}'
     )
+
+    # Additionally, emit a human-friendly .log table summary without colliding with engine logger .log
+    log_path = os.path.join(base_dir, f'benchmarks_summary_{ts_fn}.log')
+    try:
+        lines: list[str] = []
+        lines.append(f"Run: {ts_iso}")
+        # Flatten grouped metrics for table rows (name -> stats)
+        rows: list[tuple[str, float, float, float, int]] = []
+        for group_name, group in (data.get('benchmarks') or {}).items():
+            for name, stats in (group or {}).items():
+                rows.append((
+                    name,
+                    stats.get('avg'),
+                    stats.get('min'),
+                    stats.get('max'),
+                    stats.get('count'),
+                ))
+        # Sort rows by avg desc
+        rows.sort(key=lambda r: (r[1] is None, r[1] if r[1] is not None else 0.0), reverse=True)
+        # Compute column widths
+        header = ["Metric Key", "Avg(ms)", "Min(ms)", "Max(ms)", "Samples"]
+        col_w = [len(h) for h in header]
+        for r in rows:
+            col_w[0] = max(col_w[0], len(str(r[0])))
+            col_w[1] = max(col_w[1], len(f"{r[1]}"))
+            col_w[2] = max(col_w[2], len(f"{r[2]}"))
+            col_w[3] = max(col_w[3], len(f"{r[3]}"))
+            col_w[4] = max(col_w[4], len(f"{r[4]}"))
+        fmt = f"{{:<{col_w[0]}}}  {{:>{col_w[1]}}}  {{:>{col_w[2]}}}  {{:>{col_w[3]}}}  {{:>{col_w[4]}}}"
+        lines.append("")
+        lines.append(fmt.format(*header))
+        lines.append("-" * (sum(col_w) + 2 * (len(header) - 1) + 2))
+        for r in rows:
+            a = "{:.3f}".format(r[1]) if isinstance(r[1], (int, float)) else str(r[1])
+            mi = "{:.3f}".format(r[2]) if isinstance(r[2], (int, float)) else str(r[2])
+            ma = "{:.3f}".format(r[3]) if isinstance(r[3], (int, float)) else str(r[3])
+            lines.append(fmt.format(str(r[0]), a, mi, ma, str(r[4])))
+        with open(log_path, 'w', encoding='utf-8') as lf:
+            lf.write("\n".join(lines) + "\n")
+        logging.getLogger('benchmarks').info(
+            f'Benchmarks table summary written to {log_path}'
+        )
+    except Exception:
+        logging.getLogger('benchmarks').exception('Failed to write benchmarks table summary')
+        log_path = ""
+
+    return json_path, log_path

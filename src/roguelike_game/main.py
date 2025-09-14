@@ -2,7 +2,7 @@ import pygame
 from roguelike_engine.utils.loader import load_image
 from roguelike_engine.config.config import SCREEN_WIDTH, SCREEN_HEIGHT
 
-from roguelike_game.utils.benchmark import setup_benchmark_logger, save_benchmarks
+from roguelike_game.utils.benchmark import setup_benchmark_logger
 from roguelike_game.managers.core.game import Game
 from typing import Tuple, Any, Dict, DefaultDict, List
 from collections import defaultdict
@@ -82,7 +82,7 @@ def run_game_loop(game: Game,
                   performance_log: Dict[str, list]) -> None:
     """
     Ejecuta el bucle principal `game.run()`, captura excepciones para el logger
-    y en el `finally` cierra el juego, guarda benchmarks y sale de Pygame.
+    y en el `finally` cierra el juego y sale de Pygame.
     """
     logger.info("Running game loop...")
     try:
@@ -93,10 +93,9 @@ def run_game_loop(game: Game,
     finally:
         game.shutdown()
         logger.info("Shutting down game...")
-        save_benchmarks(performance_log)
-        logger.info("Saving benchmarks...")
         pygame.quit()
         logger.info("Quitting Pygame...")
+
 
 def main() -> None:
 
