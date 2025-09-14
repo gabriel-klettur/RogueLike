@@ -4,6 +4,7 @@ from .particles_view import ParticlesEditorView
 from .particles_tool_bar_panel.particles_tool_bar_panel_model import ParticlesToolBarPanelModel
 from .particles_tool_bar_panel.particles_tool_bar_panel_view import ParticlesToolBarPanelView
 from .particles_tool_bar_panel.particles_tool_bar_panel_events import ParticlesToolBarPanelEventHandler
+from .particles_tool_bar_panel.particles_tool_bar_panel_controller import ParticlesToolBarPanelController
 
 class ParticlesEditorController:
     """Minimal controller for Particles Editor."""
@@ -15,6 +16,9 @@ class ParticlesEditorController:
         self.particles_toolbar_model = ParticlesToolBarPanelModel()
         self.particles_toolbar_view = ParticlesToolBarPanelView(self, self.particles_toolbar_model)
         self.particles_toolbar_events = ParticlesToolBarPanelEventHandler(self, self.particles_toolbar_model)
+        self.particles_toolbar_controller = ParticlesToolBarPanelController(
+            self, self.particles_toolbar_model, self.particles_toolbar_view, self.particles_toolbar_events
+        )
 
     def toggle_visible(self):
         self.model.visible = not bool(self.model.visible)
@@ -23,14 +27,9 @@ class ParticlesEditorController:
         # Solo manejar eventos del toolbar cuando el editor está visible
         if not getattr(self.model, 'visible', False):
             return
-        # Toolbar drag and basic event routing
+        # Delegar eventos al controlador del toolbar
         try:
-            if hasattr(self.particles_toolbar_view, 'handle_event') and self.particles_toolbar_view.handle_event(event):
-                return
-        except Exception:
-            pass
-        try:
-            if hasattr(self.particles_toolbar_events, 'handle_event') and self.particles_toolbar_events.handle_event(event):
+            if self.particles_toolbar_controller.handle_event(event):
                 return
         except Exception:
             pass
@@ -43,7 +42,7 @@ class ParticlesEditorController:
         self.view.draw(screen)
         # Render toolbar below the title
         try:
-            self.particles_toolbar_view.render(screen)
+            self.particles_toolbar_controller.render(screen)
         except Exception:
             pass
 
