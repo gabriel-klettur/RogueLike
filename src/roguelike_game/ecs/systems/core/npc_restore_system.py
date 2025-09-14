@@ -22,7 +22,9 @@ class NpcRestoreSystem:
         # Throttling del resumen de debug
         self._last_summary_sig = None
         self._last_summary_t = 0.0
-        self._summary_interval = 1.0  # seconds
+        self._summary_interval = 5.0  # seconds
+        # Heartbeat para emitir el resumen aunque no cambie el estado
+        self._heartbeat_interval = 30.0  # seconds between identical summaries
 
     def update(self, world, *args):
         try:
@@ -47,10 +49,10 @@ class NpcRestoreSystem:
             except Exception:
                 return None
 
-        # Resumen con throttling
+        # Resumen con throttling y heartbeat
         now = time.time()
         summary_sig = (len(states), len(self._applied))
-        if (now - self._last_summary_t) >= self._summary_interval or summary_sig != self._last_summary_sig:
+        if summary_sig != self._last_summary_sig or (now - self._last_summary_t) >= self._heartbeat_interval:
             try:
                 logger.debug(
                     "[NpcRestore] level=%s states_total=%s already_applied=%s",
