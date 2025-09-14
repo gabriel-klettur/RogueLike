@@ -4,6 +4,7 @@ from pathlib import Path
 from roguelike_ui.services.json_persistence import load_from_json
 from roguelike_engine.utils.loader import load_image, load_sprite_sheet
 from roguelike_game.factories.monster.sprite_loader import create_sprite_component
+from roguelike_game.factories.monster.config import reload_monster_defs
 
 from roguelike_game.config.players_config import PLAYER_ASSETS
 from roguelike_editors.entities.entities_title.entities_title_model import EntitiesTitleModel
@@ -20,6 +21,8 @@ class EntitiesEditorModel:
     def __init__(self, data_dir: Path = Path('data')):
         # Editor global
         self.active: bool = False
+        # Persist base data directory for runtime reloads
+        self.data_dir: Path = data_dir
         # Carga de datos JSON
         players_path = data_dir / 'entities' / 'new_players.json'
         players_root = load_from_json(str(players_path))
@@ -77,7 +80,7 @@ class EntitiesEditorModel:
                 self.assets[pid] = load_image(f'assets/npc/player/{pid}/{pid}_1_down.png')
             except Exception:
                 pass
-                # Monstruos: cargar imagenes de idle y aplicar tint desde JSON
+            # Monstruos: cargar imagenes de idle y aplicar tint desde JSON
         # Hostiles + Neutrales: cargar sprites con la factory
         for mid in self.monsters.keys():
             try:
@@ -101,6 +104,43 @@ class EntitiesEditorModel:
         self.spawn_entity_type: Optional[str] = None  # id de entidad a colocar
         # Delete mode para entidades en el mapa
         self.delete_mode_active: bool = False  # indica si estamos en modo borrado
+
+    def reload_neutrals(self) -> None:
+        """
+        Recarga el dataset de neutrales desde data/entities/new_neutrals.json y
+        reconstruye íconos de picker para neutrales recién añadidos. Mantiene
+        las referencias de dict in-place para que los controllers/vistas sigan
+        apuntando a los mismos objetos.
+        """
+        try:
+            neutrals_path = self.data_dir / 'entities' / 'new_neutrals.json'
+            if not neutrals_path.exists():
+                return
+            neutrals_root = load_from_json(str(neutrals_path)) or {}
+            new_classes = neutrals_root.get('neutrals', {}).get('classes', {}) or {}
+            # Actualizar dict en sitio (preservar referencias)
+            self.neutrals.clear()
+            self.neutrals.update(new_classes)
+            # Actualizar vista combinada (monsters) para consumo de propiedades/íconos
+            self.monsters.clear()
+            self.monsters.update(self.hostiles)
+            self.monsters.update(self.neutrals)
+            # Recargar definiciones (stats/assets) para que la factory conozca nuevas clases
+            try:
+                reload_monster_defs()
+            except Exception:
+                pass
+            # Construir assets para neutrales que no estén en caché de íconos
+            for mid in self.neutrals.keys():
+                if mid not in self.assets:
+                    try:
+                        sprite, _ = create_sprite_component(mid)
+                        self.assets[mid] = sprite.image
+                    except Exception:
+                        pass
+        except Exception:
+            # Evitar reventar el editor si hay algún problema de lectura
+            pass
 
     @property
     def visible(self) -> bool:

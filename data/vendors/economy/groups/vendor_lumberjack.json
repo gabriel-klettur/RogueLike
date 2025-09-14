@@ -1,0 +1,10 @@
+{
+  "whitelist": ["wood"],
+  "blacklist": [],
+  "margins": {
+    "default": { "buy": 1.0, "sell": 1.0 },
+    "items": {
+      "wood": { "buy": 1.0, "sell": 1.0 }
+    }
+  }
+}
