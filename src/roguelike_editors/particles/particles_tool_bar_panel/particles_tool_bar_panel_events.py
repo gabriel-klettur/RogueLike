@@ -3,6 +3,7 @@ Manejador de eventos para la toolbar de Partículas.
 """
 
 import pygame
+from roguelike_game.config.particles_config import reload_particles
 
 class ParticlesToolBarPanelEventHandler:
     """Maneja eventos de la toolbar de Partículas."""
@@ -44,6 +45,20 @@ class ParticlesToolBarPanelEventHandler:
                 return True
             rect = icon_rects.get('redo')
             if rect and rect.collidepoint(pos):
+                return True
+            # Reload particles catalog and rebuild picker
+            rect = icon_rects.get('particles_reload')
+            if rect and rect.collidepoint(pos):
+                try:
+                    reload_particles()
+                except Exception:
+                    pass
+                try:
+                    picker = getattr(self.controller, 'particles_picker_controller', None)
+                    if picker:
+                        picker.rebuild()
+                except Exception:
+                    pass
                 return True
             # Toggle principal (lista de partículas)
             rect = icon_rects.get('particles_list')
