@@ -7,6 +7,7 @@ from roguelike_game.managers.core.update_manager import update_game
 from roguelike_game.managers.core.loop_manager import GameLoop
 from roguelike_game.managers.core.shutdown_manager import ShutdownManager
 from roguelike_game.managers.core.initializer import GameInitializer
+from roguelike_engine.diagnostics.recorder import recorder
 
 class Game:
     
@@ -173,6 +174,11 @@ class Game:
     def shutdown(self):
         """Guarda todo y cierra."""
         self.shutdown_manager.shutdown()
+        # Flush diagnostics session if overlay left open
+        try:
+            recorder.finish_if_active(self)
+        except Exception:
+            pass
         # Parar servicio de audio si está activo
         try:
             svc = getattr(self, 'audio_service', None)

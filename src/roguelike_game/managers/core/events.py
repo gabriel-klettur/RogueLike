@@ -14,6 +14,7 @@ from roguelike_ui.ui_blocker import is_blocked
 from roguelike_game.ecs.systems.chat.chat_input_controller import ChatInputController
 from roguelike_game.ecs.systems.chat.chat_ui_system import handle_chat_ui_events
 from roguelike_game.ecs.systems.chat.chat_bubble_utils import push_bubble
+from roguelike_engine.diagnostics.recorder import recorder
 
 import logging
 logger = logging.getLogger(__name__)
@@ -597,7 +598,13 @@ def handle_events(game):
                 _open_editor_exclusive(game, 'items')
             return
         if event.type == pygame.KEYDOWN and event.key == game.input_config.get_key('toggle_debug_overlay'):
-            config.DEBUG = not config.DEBUG
+            new_val = not config.DEBUG
+            config.DEBUG = new_val
+            # Start/stop diagnostics recording session on toggle
+            try:
+                recorder.on_toggle(new_val, game)
+            except Exception:
+                pass
             logger.debug(f"🧪 DEBUG {'activado' if config.DEBUG else 'desactivado'}")
             return
         # FSM Editor (Entities Spy): exclusive toggle
