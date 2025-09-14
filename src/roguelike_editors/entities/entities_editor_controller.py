@@ -280,6 +280,16 @@ class EntitiesEditorController:
                     except Exception:
                         pass
                 return True
+            # Reload neutrals from JSON (hot-reload) to pick up new classes without restarting
+            if mods & pygame.KMOD_CTRL and event.key == pygame.K_r:
+                try:
+                    self.model.reload_neutrals()
+                    # Force a redraw so the picker refreshes the grid
+                    self.render(self.game.screen)
+                    logger.debug(" Neutrals reloaded via Ctrl+R")
+                except Exception:
+                    pass
+                return True
         if self.title_controller.handle_event(event):
             return True
         if self.toolbar_controller.handle_event(event):

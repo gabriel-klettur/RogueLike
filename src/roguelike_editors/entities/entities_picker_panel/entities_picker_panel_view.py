@@ -290,8 +290,14 @@ class EntityPickerPanelView:
         new_h = max(1, int(orig_h * scale))
         icon_surf = pygame.transform.smoothscale(icon, (new_w, new_h))
         if ent_id not in self._center_pixel_logged:
-            center = (self.cell_size // 2, self.cell_size // 2)
-            center_pixel = icon_surf.get_at(center)
+            # Usar el centro real del icono escalado (no el centro de la celda),
+            # para evitar IndexError en superficies más pequeñas que cell_size.
+            cx = max(0, min(new_w - 1, new_w // 2))
+            cy = max(0, min(new_h - 1, new_h // 2))
+            try:
+                center_pixel = icon_surf.get_at((cx, cy))
+            except Exception:
+                center_pixel = pygame.Color(0, 0, 0, 0)
             logger.debug(f' ent_id={ent_id} original_asset_size={icon.get_size()} scaled_asset_size={icon_surf.get_size()} center_pixel={center_pixel}')
             self._center_pixel_logged.add(ent_id)
 

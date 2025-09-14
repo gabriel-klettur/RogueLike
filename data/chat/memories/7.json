@@ -1,0 +1,14 @@
+{
+  "friendship_score": 0,
+  "ephemeral_history": [
+    {
+      "role": "user",
+      "content": "hi"
+    },
+    {
+      "role": "assistant",
+      "content": "¡Saludos, aventurero! Soy Mamba, herrero del pueblo, listo para forjar o mantener tu equipo. ¿Qué necesitas: arma de hierro, afilar o revisión de equipo? Dime y te doy precio y stock al instante."
+    }
+  ],
+  "preferred_language": "es"
+}
