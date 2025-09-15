@@ -53,6 +53,9 @@ class SpawnerEditorModel:
     resizing_visual_bid: int | None = None
     resize_origin_mouse: tuple[int, int] | None = None
     resize_start_size: tuple[int, int] | None = None
+    # Move (RMB-drag) for selected visual building
+    moving_visual: bool = False
+    moving_visual_bid: int | None = None
     # Split ratio dragging for selected visual building
     split_drag_active: bool = False
     split_drag_bid: int | None = None

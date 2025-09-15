@@ -1989,7 +1989,17 @@ class InstancePropertiesController:
                             tpl = v.get('template_id')
                             if tpl is None and vid is not None and vid in idx:
                                 tpl = idx.get(vid)
-                            norm[str(k)] = {'instance_id': vid if vid is not None else v, 'template_id': tpl}
+                            entry = {'instance_id': vid if vid is not None else v, 'template_id': tpl}
+                            # Preserve offset if present and non-zero (drop [0,0] to avoid JSON noise)
+                            try:
+                                off = v.get('offset')
+                                if isinstance(off, (list, tuple)) and len(off) == 2:
+                                    dx, dy = int(off[0]), int(off[1])
+                                    if dx != 0 or dy != 0:
+                                        entry['offset'] = [dx, dy]  # type: ignore[index]
+                            except Exception:
+                                pass
+                            norm[str(k)] = entry
                         else:
                             vid = int(v)
                             tpl = idx.get(vid)

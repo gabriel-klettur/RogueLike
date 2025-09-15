@@ -14,7 +14,8 @@ from . import resize as rz
 from . import confirmations as conf
 from ..services.picking import pick_spawner_under_cursor
 from ..services import zone_for_global_tile
-from ..services.persistence import find_instance_in_json, persist_drop
+from ..services.persistence import find_instance_in_json, persist_drop, load_instances_json, write_instances_json
+from roguelike_engine.config.config_tiles import TILE_SIZE
 
 # Tools from Buildings Editor reused by the Spawner Editor
 from roguelike_editors.buildings.tools.split_z_tool.split_tool import SplitTool
@@ -51,6 +52,8 @@ class SpawnerEditorEventHandler:
         self.pan_offset_start: tuple[float, float] = (0.0, 0.0)
         # Snapshot used by zone confirmation flow
         self._drag_start_entry: Optional[dict] = None
+        # Visual moving (RMB-drag) helpers
+        self._moving_visual_delta_world: tuple[int, int] | None = None
 
         # Shared tools adapters (reuse Buildings Editor logic)
         try:
@@ -163,6 +166,150 @@ class SpawnerEditorEventHandler:
         if event.type == pygame.MOUSEBUTTONUP and getattr(self.model, 'split_drag_active', False):
             if split.end_split_drag(ctx, event):
                 return True
+        # RMB up: finish moving a visual building (persist offset and building rel position)
+        if event.type == pygame.MOUSEBUTTONUP and event.button == 3 and getattr(self.model, 'moving_visual', False):
+            bid = getattr(self.model, 'moving_visual_bid', None)
+            self.model.moving_visual = False
+            try:
+                ip = getattr(self.controller, 'instance_properties', None)
+                ob = None
+                if bid is not None and ip is not None and hasattr(ip, 'visuals'):
+                    try:
+                        ob = ip.visuals._find_building_entity_by_id(int(bid))
+                    except Exception:
+                        ob = None
+                # Clear drag guard on the world object
+                try:
+                    if ob is not None:
+                        setattr(ob, '_spawner_visual_dragging', False)
+                except Exception:
+                    pass
+                # Persist offset in spawners_instances.json (relative to spawner center)
+                try:
+                    sel_inst = getattr(getattr(self.controller.instance_properties, 'model', None), 'selected_instance', None)
+                except Exception:
+                    sel_inst = None
+                if ob is not None and sel_inst is not None and isinstance(sel_inst, dict):
+                    try:
+                        # Resolve spawner EID for this building (tagged during runtime sync)
+                        sp_eid = getattr(ob, '_spawner_eid', None)
+                        cfg = world.components['SpawnerConfig'][sp_eid] if sp_eid is not None else None
+                        zone = getattr(cfg, 'zone', None) or getattr(ob, 'zone', None) or 'lobby'
+                        off_x, off_y = (0, 0)
+                        try:
+                            from roguelike_engine.config.map_config import global_map_settings as _gms
+                            off_x, off_y = _gms.zone_offsets.get(str(zone), (0, 0))
+                        except Exception:
+                            off_x, off_y = (0, 0)
+                        # Anchor center in zone-relative px
+                        ax, ay = (0, 0)
+                        try:
+                            tx, ty = cfg.anchor_tile
+                            ax = int((int(tx) - int(off_x)) * TILE_SIZE + TILE_SIZE // 2)
+                            ay = int((int(ty) - int(off_y)) * TILE_SIZE + TILE_SIZE // 2)
+                        except Exception:
+                            # Fallback: compute from selected instance tile
+                            try:
+                                t = sel_inst.get('tile', [0, 0])
+                                ax = int(int(t[0]) * TILE_SIZE + TILE_SIZE // 2)
+                                ay = int(int(t[1]) * TILE_SIZE + TILE_SIZE // 2)
+                            except Exception:
+                                ax, ay = (0, 0)
+                        # Compute offset = building.rel - anchor_center (zone-relative px)
+                        dx = int(getattr(ob, 'rel_x', getattr(getattr(ob, 'model', ob), 'rel_x', 0)) or 0) - ax
+                        dy = int(getattr(ob, 'rel_y', getattr(getattr(ob, 'model', ob), 'rel_y', 0)) or 0) - ay
+                        # Update visuals mapping entry that points to this building id
+                        arr = load_instances_json()
+                        # Identify instance on disk by id
+                        cur_id = str(sel_inst.get('id')) if sel_inst.get('id') is not None else None
+                        for inst in arr:
+                            try:
+                                if str(inst.get('id')) != cur_id:
+                                    continue
+                                vis = inst.get('visuals') if isinstance(inst.get('visuals'), dict) else {}
+                                changed = False
+                                for k, v in vis.items():
+                                    try:
+                                        vid = None
+                                        if isinstance(v, dict):
+                                            vid = int(v.get('instance_id') or v.get('id') or v.get('building_instance_id'))
+                                        else:
+                                            vid = int(v)
+                                    except Exception:
+                                        vid = None
+                                    if vid is not None and int(vid) == int(bid):
+                                        # ensure dict form and write/remove offset as needed
+                                        if not isinstance(v, dict):
+                                            entry = {'instance_id': vid, 'template_id': None}
+                                            if int(dx) != 0 or int(dy) != 0:
+                                                entry['offset'] = [int(dx), int(dy)]  # type: ignore[index]
+                                            vis[k] = entry
+                                        else:
+                                            vv = dict(v)
+                                            if int(dx) != 0 or int(dy) != 0:
+                                                vv['offset'] = [int(dx), int(dy)]
+                                            else:
+                                                # Drop zero offsets to keep JSON clean
+                                                try:
+                                                    vv.pop('offset', None)
+                                                except Exception:
+                                                    pass
+                                            vis[k] = vv
+                                        inst['visuals'] = vis
+                                        changed = True
+                                        break
+                                if changed:
+                                    write_instances_json(arr)
+                                    # Also update cfg.visuals_offsets_px in-memory for this mapping key
+                                    try:
+                                        if cfg is not None:
+                                            if getattr(cfg, 'visuals_offsets_px', None) is None:
+                                                cfg.visuals_offsets_px = {}
+                                            key_l = str(k).strip().lower()
+                                            cfg.visuals_offsets_px[key_l] = (int(dx), int(dy))
+                                    except Exception:
+                                        pass
+                                    break
+                            except Exception:
+                                continue
+                        # Persist buildings_instances rel_x/rel_y for this building id
+                        try:
+                            data = svc_load_buildings_instances()
+                        except OSError:
+                            data = []
+                        changed2 = False
+                        for e in data or []:
+                            try:
+                                if int(e.get('id')) != int(bid):
+                                    continue
+                            except Exception:
+                                continue
+                            try:
+                                e['rel_x'] = int(getattr(ob, 'rel_x', getattr(getattr(ob, 'model', ob), 'rel_x', 0)) or 0)
+                                e['rel_y'] = int(getattr(ob, 'rel_y', getattr(getattr(ob, 'model', ob), 'rel_y', 0)) or 0)
+                                e['zone'] = str(zone)
+                                changed2 = True
+                            except Exception:
+                                pass
+                            break
+                        if changed2:
+                            try:
+                                svc_write_buildings_instances(data)
+                            except OSError:
+                                pass
+                    except Exception:
+                        logger.debug("RMB up: visual persist failed", exc_info=True)
+                # Clear world input suppression now that move finished
+                try:
+                    if hasattr(world, 'state'):
+                        setattr(world.state, 'spawner_input_suppressed', False)
+                except Exception:
+                    pass
+                # Clear delta cache
+                self._moving_visual_delta_world = None
+            except Exception:
+                logger.debug("RMB up: finalize moving_visual failed", exc_info=True)
+            return True
         # RMB up: stop anchor drag if active and persist movement (or ask for zone confirm)
         if event.type == pygame.MOUSEBUTTONUP and event.button == 3 and getattr(self.model, 'dragging', False):
             eid = getattr(self.model, 'dragging_eid', None)
@@ -444,6 +591,48 @@ class SpawnerEditorEventHandler:
             view = getattr(self.controller, 'view', None)
             ip = getattr(self.controller, 'instance_properties', None)
             mx, my = event.pos
+            # Before split/anchor drag: begin moving a visual if clicked over it
+            try:
+                if ip is not None and hasattr(ip, 'visuals'):
+                    ob = ip.visuals.pick_visual_building_under_cursor(int(mx), int(my))
+                else:
+                    ob = None
+            except Exception:
+                ob = None
+            if ob is not None and getattr(ip.visuals.model, 'selected_building_id', None) is not None:
+                try:
+                    bid = int(getattr(ob, 'id'))
+                    # Select it if not yet selected
+                    try:
+                        if int(getattr(ip.visuals.model, 'selected_building_id') or -1) != bid:
+                            ip.visuals.model.selected_building_id = bid
+                    except Exception:
+                        pass
+                    # Begin move
+                    self.model.moving_visual = True
+                    self.model.moving_visual_bid = bid
+                    # Mark object to prevent runtime override during drag
+                    try:
+                        setattr(ob, '_spawner_visual_dragging', True)
+                    except Exception:
+                        pass
+                    # Suppress gameplay input while moving visual
+                    try:
+                        if hasattr(world, 'state'):
+                            setattr(world.state, 'spawner_input_suppressed', True)
+                    except Exception:
+                        pass
+                    # Capture mouse-to-object delta in world px
+                    try:
+                        z = getattr(camera, 'zoom', 1.0) or 1.0
+                        wx = int(mx / z + camera.offset_x)
+                        wy = int(my / z + camera.offset_y)
+                        self._moving_visual_delta_world = (int(ob.x) - wx, int(ob.y) - wy)
+                    except Exception:
+                        self._moving_visual_delta_world = (0, 0)
+                    return True
+                except Exception:
+                    logger.debug("handle_event: failed to start moving visual", exc_info=True)
             split_rect = getattr(view, '_last_split_handle_rect', None) if view is not None else None
             rst_rect = getattr(view, '_last_selected_reset_rect', None) if view is not None else None
             # 1) Split handle: begin split drag
@@ -526,6 +715,50 @@ class SpawnerEditorEventHandler:
         if event.type == pygame.MOUSEMOTION and getattr(self.model, 'dragging', False) and getattr(self.model, 'dragging_eid', None) is not None:
             if anchor.update_anchor_drag_motion(ctx, event):
                 return True
+        # Visual building move MOTION (RMB drag)
+        if event.type == pygame.MOUSEMOTION and getattr(self.model, 'moving_visual', False) and getattr(self.model, 'moving_visual_bid', None) is not None:
+            try:
+                ip = getattr(self.controller, 'instance_properties', None)
+                ob = None
+                bid = int(self.model.moving_visual_bid)
+                if ip is not None and hasattr(ip, 'visuals'):
+                    try:
+                        ob = ip.visuals._find_building_entity_by_id(bid)
+                    except Exception:
+                        ob = None
+                if ob is not None:
+                    # Compute new world top-left from mouse + delta
+                    mx, my = event.pos
+                    z = getattr(camera, 'zoom', 1.0) or 1.0
+                    wx = int(mx / z + camera.offset_x)
+                    wy = int(my / z + camera.offset_y)
+                    dx, dy = self._moving_visual_delta_world or (0, 0)
+                    world_x = int(wx + dx)
+                    world_y = int(wy + dy)
+                    # Convert to zone-relative px for rel_x/rel_y
+                    zone = getattr(ob, 'zone', None)
+                    if zone is None:
+                        try:
+                            zone = getattr(getattr(ob, 'model', ob), 'zone', None)
+                        except Exception:
+                            zone = None
+                    if not zone:
+                        zone = 'lobby'
+                    try:
+                        from roguelike_engine.config.map_config import global_map_settings as _gms
+                        off_x, off_y = _gms.zone_offsets.get(str(zone), (0, 0))
+                    except Exception:
+                        off_x, off_y = (0, 0)
+                    rel_x = int(world_x - int(off_x) * TILE_SIZE)
+                    rel_y = int(world_y - int(off_y) * TILE_SIZE)
+                    try:
+                        setattr(ob, 'rel_x', rel_x)
+                        setattr(ob, 'rel_y', rel_y)
+                    except Exception:
+                        pass
+            except Exception:
+                logger.debug("handle_event: moving visual motion failed", exc_info=True)
+            return True
 
         # LMB up: finish resize
         if event.type == pygame.MOUSEBUTTONUP and event.button == 1 and getattr(self.model, 'resizing_visual', False):

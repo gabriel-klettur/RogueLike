@@ -332,6 +332,28 @@ class SpawnerPlacementSystem:
         except Exception:
             pass
 
+        # Collect optional per-state pixel offsets for visuals (relative to spawner center, zone-relative px)
+        visuals_offsets_px: Dict[str, tuple[int, int]] = {}
+        try:
+            ivis = inst.get("visuals")
+            if isinstance(ivis, dict):
+                for sk, sv in ivis.items():
+                    try:
+                        # New format: dict {instance_id, template_id}
+                        if isinstance(sv, dict):
+                            off = sv.get('offset')
+                            if isinstance(off, (list, tuple)) and len(off) == 2:
+                                dx, dy = int(off[0]), int(off[1])
+                                # Normalize key both as-is and lowercase runtime token for convenience
+                                visuals_offsets_px[str(sk).strip().lower()] = (dx, dy)
+                        else:
+                            # legacy int id mapping
+                            pass
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
         return SpawnerConfig(
             template_id=tpl.get("id", ""),
             zone=inst.get("zone", tpl.get("zone", "lobby")),
@@ -350,6 +372,7 @@ class SpawnerPlacementSystem:
             visible_in_game=visible_in_game,
             building_id=building_id,
             state_visuals=state_visuals or None,
+            visuals_offsets_px=visuals_offsets_px or None,
         )
 
     # --- Auto-repair helpers -------------------------------------------------
@@ -617,12 +640,30 @@ class SpawnerPlacementSystem:
                     tpl_id = int(val.get('template_id')) if val.get('template_id') is not None else None
                 except Exception:
                     tpl_id = None
+                # Preserve optional offset if present
+                try:
+                    off = val.get('offset')
+                    if isinstance(off, (list, tuple)) and len(off) == 2:
+                        dx, dy = int(off[0]), int(off[1])
+                        # Normalize key both as-is and lowercase runtime token for convenience
+                        try:
+                            if getattr(cfg, 'visuals_offsets_px', None) is None:
+                                cfg.visuals_offsets_px = {}
+                        except Exception:
+                            pass
+                        try:
+                            cfg.visuals_offsets_px[str(key).strip().lower()] = (dx, dy)
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
             else:
                 # legacy int id mapping
                 try:
                     cur_iid = int(val)
                 except Exception:
                     cur_iid = None
+
             # If instance id exists, keep and normalize cfg mapping
             if cur_iid is not None and cur_iid in existing_ids:
                 try:
@@ -672,16 +713,26 @@ class SpawnerPlacementSystem:
                 logger.warning("[SpawnerPlacementSystem] Could not persist buildings_instances for auto-repair")
             # Ensure it exists in memory for immediate visibility
             self._append_building_object_in_world(world, entry, tpl_entry, img_path)
-            # Update cfg/state + inst visuals mapping in-memory
+            # Update cfg/state + inst visuals mapping in-memory (preserve any existing offset field if present)
             try:
                 cfg.state_visuals[str(key)] = int(new_id)
             except Exception:
                 pass
             try:
-                vis[str(key)] = {'instance_id': int(new_id), 'template_id': int(tpl_id)}
+                preserved_offset = None
+                try:
+                    if isinstance(val, dict) and isinstance(val.get('offset'), (list, tuple)) and len(val.get('offset')) == 2:
+                        preserved_offset = [int(val['offset'][0]), int(val['offset'][1])]
+                except Exception:
+                    preserved_offset = None
+                entry_map = {'instance_id': int(new_id), 'template_id': int(tpl_id)}
+                if preserved_offset is not None:
+                    entry_map['offset'] = preserved_offset  # type: ignore[index]
+                vis[str(key)] = entry_map
                 updated_visuals = True
             except Exception:
                 pass
+
             # Ensure this spawner will try to render visuals
             try:
                 if not getattr(cfg, 'visible_in_game', False):
