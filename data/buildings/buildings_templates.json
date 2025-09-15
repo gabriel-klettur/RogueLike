@@ -2039,5 +2039,18 @@
             333
         ],
         "id": 173
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/totems/totem_sufriendo.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            384
+        ],
+        "id": 174
     }
 ]

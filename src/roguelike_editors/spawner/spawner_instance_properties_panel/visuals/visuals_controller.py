@@ -625,6 +625,31 @@ class VisualsController:
 
     # ... (rest of the code remains the same)
 
+    # --- Delegations to parent InstancePropertiesController ------------------
+    def begin_edit_visual(self, state_key: str) -> None:
+        """Begin inline editing of the Template cell for the given visuals state.
+
+        VisualsEvents expects this symbol on the visuals controller; delegate
+        to the parent controller which owns the edit TextInput and commit/cancel
+        logic. This enables clicking the Template cell to start editing.
+        """
+        try:
+            self.parent.begin_edit_visual(state_key)
+        except AttributeError:
+            # Defensive: if parent does not expose the method, ignore gracefully
+            logger.debug("VisualsController.begin_edit_visual: parent missing method", exc_info=True)
+
+    def clear_visual_for_state(self, state_key: str) -> None:
+        """Clear the mapping for a given visuals state (invoked by Clear 'X' button).
+
+        Delegates to the parent controller which performs persistence, optional
+        strict cleanup of orphaned building instances, and UI refresh.
+        """
+        try:
+            self.parent.clear_visual_for_state(state_key)
+        except AttributeError:
+            logger.debug("VisualsController.clear_visual_for_state: parent missing method", exc_info=True)
+
     # --- Hard removal helper --------------------------------------------------
     def _remove_building_entity_by_id(self, bid: int) -> bool:
         """Remove any Building object with id 'bid' from the live world and editor lists.
