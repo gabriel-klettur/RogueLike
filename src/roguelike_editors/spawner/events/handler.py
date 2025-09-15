@@ -13,6 +13,8 @@ from . import anchor_drag as anchor
 from . import resize as rz
 from . import confirmations as conf
 from ..services.picking import pick_spawner_under_cursor
+from ..services import zone_for_global_tile
+from ..services.persistence import find_instance_in_json, persist_drop
 
 # Tools from Buildings Editor reused by the Spawner Editor
 from roguelike_editors.buildings.tools.split_z_tool.split_tool import SplitTool
@@ -161,16 +163,53 @@ class SpawnerEditorEventHandler:
         if event.type == pygame.MOUSEBUTTONUP and getattr(self.model, 'split_drag_active', False):
             if split.end_split_drag(ctx, event):
                 return True
-        # RMB up: stop anchor drag if active
+        # RMB up: stop anchor drag if active and persist movement (or ask for zone confirm)
         if event.type == pygame.MOUSEBUTTONUP and event.button == 3 and getattr(self.model, 'dragging', False):
-            # Stop dragging the spawner anchor and re-enable input
+            eid = getattr(self.model, 'dragging_eid', None)
             self.model.dragging = False
             self.model.dragging_eid = None
             try:
-                if hasattr(ctx.world, 'state'):
-                    setattr(ctx.world.state, 'spawner_input_suppressed', False)
-            except AttributeError:
-                pass
+                if isinstance(eid, int) and eid in world.components.get('SpawnerConfig', {}):
+                    cfg = world.components['SpawnerConfig'][eid]
+                    tx, ty = cfg.anchor_tile
+                    proposed_zone = zone_for_global_tile(int(tx), int(ty))
+                    # Snapshot captured at drag start
+                    snapshot = getattr(self, '_drag_start_entry', None) or {}
+                    orig_zone = snapshot.get('zone') or getattr(cfg, 'zone', None)
+                    orig_local = snapshot.get('local_tile') or snapshot.get('orig_local')
+                    if proposed_zone and str(proposed_zone) != str(orig_zone):
+                        # Ask confirmation before moving across zones
+                        try:
+                            self.model.pending_zone_confirm = {
+                                'eid': eid,
+                                'orig_zone': orig_zone,
+                                'proposed_zone': proposed_zone,
+                                'orig_local': orig_local,
+                            }
+                            if hasattr(world, 'state'):
+                                setattr(world.state, 'spawner_input_suppressed', True)
+                        except Exception:
+                            pass
+                    else:
+                        # Persist movement in same zone
+                        try:
+                            persist_drop(world, eid, snapshot, orig_zone=orig_zone)
+                        except Exception:
+                            logger.debug("RMB up: persist_drop failed", exc_info=True)
+                        # Refresh instances list to reflect new tile
+                        try:
+                            self.controller.spawner_instances.refresh_from_disk()
+                        except Exception:
+                            pass
+                        # Clear suppression and snapshot
+                        try:
+                            if hasattr(world, 'state'):
+                                setattr(world.state, 'spawner_input_suppressed', False)
+                        except Exception:
+                            pass
+                        self._drag_start_entry = None
+            except Exception:
+                logger.debug("RMB up: error finalizing anchor drag", exc_info=True)
             return True
         # Split drag MOTION while active
         if event.type == pygame.MOUSEMOTION and getattr(self.model, 'split_drag_active', False) and getattr(self.model, 'split_drag_bid', None) is not None:
@@ -348,6 +387,46 @@ class SpawnerEditorEventHandler:
                             ip.visuals.model.selected_building_id = None
                     except Exception:
                         pass
+                    # Begin anchor drag on spawner center (RMB)
+                    try:
+                        self.model.dragging = True
+                        self.model.dragging_eid = eid
+                        if hasattr(world, 'state'):
+                            setattr(world.state, 'spawner_input_suppressed', True)
+                    except Exception:
+                        logger.debug("handle_event: failed to start spawner anchor drag", exc_info=True)
+                    # Capture snapshot for persistence at drop
+                    try:
+                        cfg = world.components['SpawnerConfig'][eid]
+                        zone = getattr(cfg, 'zone', None)
+                        tx, ty = cfg.anchor_tile
+                        # compute local from zone
+                        orig_zone = zone
+                        off = (0, 0)
+                        try:
+                            from roguelike_engine.config.map_config import global_map_settings as _gms
+                            off = _gms.zone_offsets.get(zone, (0, 0)) if zone else (0, 0)
+                        except Exception:
+                            off = (0, 0)
+                        local = (int(tx - off[0]), int(ty - off[1]))
+                        # Try to resolve id/overrides from JSON
+                        inst_list, idx_found, overrides = find_instance_in_json(str(getattr(cfg, 'template_id', '')), str(zone), tuple(local))
+                        inst_id = None
+                        try:
+                            if idx_found is not None:
+                                inst_id = inst_list[idx_found].get('id')
+                        except Exception:
+                            inst_id = None
+                        self._drag_start_entry = {
+                            'id': inst_id,
+                            'zone': zone,
+                            'orig_zone': orig_zone,
+                            'local_tile': local,
+                            'orig_local': local,
+                            'overrides': overrides if isinstance(overrides, dict) else None,
+                        }
+                    except Exception:
+                        logger.debug("handle_event: failed to capture drag snapshot", exc_info=True)
                     # Consume RMB to avoid interacting with building handles when clicking spawner anchor
                     return True
             except Exception:
@@ -416,6 +495,31 @@ class SpawnerEditorEventHandler:
                             setattr(ctx.world.state, 'spawner_input_suppressed', True)
                     except AttributeError:
                         logger.debug("handle_event: failed to start anchor drag (set flags)", exc_info=True)
+                    # Capture snapshot for persistence when starting drag via building-selected path
+                    try:
+                        cfg = world.components['SpawnerConfig'][sp_eid]
+                        zone = getattr(cfg, 'zone', None)
+                        tx, ty = cfg.anchor_tile
+                        from roguelike_engine.config.map_config import global_map_settings as _gms
+                        off = _gms.zone_offsets.get(zone, (0, 0)) if zone else (0, 0)
+                        local = (int(tx - off[0]), int(ty - off[1]))
+                        inst_list, idx_found, overrides = find_instance_in_json(str(getattr(cfg, 'template_id', '')), str(zone), tuple(local))
+                        inst_id = None
+                        try:
+                            if idx_found is not None:
+                                inst_id = inst_list[idx_found].get('id')
+                        except Exception:
+                            inst_id = None
+                        self._drag_start_entry = {
+                            'id': inst_id,
+                            'zone': zone,
+                            'orig_zone': zone,
+                            'local_tile': local,
+                            'orig_local': local,
+                            'overrides': overrides if isinstance(overrides, dict) else None,
+                        }
+                    except Exception:
+                        logger.debug("handle_event: failed to capture drag snapshot (building path)", exc_info=True)
                     return True
 
         # Spawner anchor drag MOTION
