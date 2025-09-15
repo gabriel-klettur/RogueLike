@@ -104,16 +104,13 @@ class RendererManager:
         if entities is not None:
             self.entities = entities
 
-        @benchmark(perf_log, "3.0. init_and_cleaning")
-        def _init_and_cleaning():
+        # Build pipeline steps as plain callables
+        def _step_init_and_cleaning():
             screen.fill((0, 0, 0))
             self._dirty_rects = []
             clear_blockers()
-        _init_and_cleaning()
 
-        # 1) Map
-        @benchmark(perf_log, "3.1. map")
-        def _bench_map():
+        def _step_map():
             try:
                 logger = logging.getLogger(__name__)
                 es = getattr(self.tiles_editor, 'editor_state', None)
@@ -137,11 +134,8 @@ class RendererManager:
             except Exception:
                 pass
             self._render_map(camera, screen, map)
-        _bench_map()
 
-        # 5) ECS trail snapshots
-        @benchmark(perf_log, "3.5. ecs_trail")
-        def _bench_ecs_trail():
+        def _step_ecs_trail():
             for eid, trail in self.ecs.ecs_world.components.get('TrailComponent', {}).items():
                 for snap in trail.snapshots:
                     orig = snap.image
@@ -152,27 +146,18 @@ class RendererManager:
                     else:
                         image_scaled = orig
                     screen.blit(image_scaled, camera.apply(snap.pos))
-        _bench_ecs_trail()
 
-        # 2) Entidades orden Z
-        @benchmark(perf_log, "3.2. z_entities")
-        def _bench_z_entities():
+        def _step_z_entities():
             # Skip entity rendering in collision-only mode
             if not (self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.toolbar_state.show_collisions and not self.tiles_editor.editor_state.toolbar_state.show_collisions_overlay):
                 self._render_z_entities(state, camera, screen, entities)
-        _bench_z_entities()
 
-        # 4) Capa del Tile Editor
-        @benchmark(perf_log, "3.4. tile_editor")
-        def _bench_tile_editor():
+        def _step_tile_editor():
             # Skip tile editor UI in collision-only mode
             if not (self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.toolbar_state.show_collisions and not self.tiles_editor.editor_state.toolbar_state.show_collisions_overlay):
                 self._render_tile_editor_layer(state, screen, camera, map)
-        _bench_tile_editor()
 
-        # Debug overlays for hitboxes, spells, and patrols (F9 toggles config.DEBUG)
-        @benchmark(perf_log, "3.55. spell_debug")
-        def _bench_spell_debug():
+        def _step_spell_debug():
             if getattr(config, "DEBUG", False):
                 try:
                     # Lazy import and instantiate debug systems
@@ -204,23 +189,14 @@ class RendererManager:
                 except Exception:
                     # Never break main render due to optional debug overlays
                     pass
-        _bench_spell_debug()
 
-        # 6) Crosshair
-        @benchmark(perf_log, "3.6. crosshair")
-        def _bench_crosshair():
+        def _step_crosshair():
             draw_mouse_crosshair(screen, camera)
-        _bench_crosshair()
 
-        # 7) Menú
-        @benchmark(perf_log, "3.7. menu")
-        def _bench_menu():
+        def _step_menu():
             self._render_menu(screen, menu)
-        _bench_menu()
 
-        # 8) Minimap
-        @benchmark(perf_log, "3.8. minimap")
-        def _bench_minimap():
+        def _step_minimap():
             # Do not render minimap when any editor/UI that takes focus is visible, including Spawner Editor
             spawner_editor_active = False
             try:
@@ -242,14 +218,29 @@ class RendererManager:
                 and not spawner_editor_active
             ):
                 self._render_minimap(screen)
-        _bench_minimap()
 
-        # 11) Editores
-        @benchmark(perf_log, "3.11. editors")
-        def _bench_editors():
+        def _step_editors():
             self._render_editors()
-        _bench_editors()
 
+        steps = [
+            ("3.0. init_and_cleaning", _step_init_and_cleaning),
+            ("3.1. map", _step_map),
+            ("3.5. ecs_trail", _step_ecs_trail),
+            ("3.2. z_entities", _step_z_entities),
+            ("3.4. tile_editor", _step_tile_editor),
+            ("3.55. spell_debug", _step_spell_debug),
+            ("3.6. crosshair", _step_crosshair),
+            ("3.7. menu", _step_menu),
+            ("3.8. minimap", _step_minimap),
+            ("3.11. editors", _step_editors),
+        ]
+
+        # Execute steps with benchmark via loop, capturing function per-iteration
+        for key, fn in steps:
+            @benchmark(perf_log, key)
+            def _run(sfn=fn):
+                sfn()
+            _run()
 
         # Debug: overlay y bordes
         debug_entities = SimpleNamespace(player=self.ecs.ecs_world.player_position)

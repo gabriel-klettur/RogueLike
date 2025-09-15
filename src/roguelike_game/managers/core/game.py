@@ -86,7 +86,7 @@ class Game:
             item_editor=self.item_editor,
         )
 
-    @benchmark(lambda self: self.perf_log, "3.TOTAL: RENDER [EDITORS]")
+    @benchmark(lambda self: self.perf_log, "3.TOTAL: RENDER [EDITORSSSSS]")
     def render(self):
         # Renderiza el mundo
         # Propaga visibilidad del Spells Editor al estado para que el renderer pueda ocultar minimapa/leyenda

@@ -77,8 +77,7 @@ class DiagnosticsOverlay:
 
     def handle_event(self, event) -> bool:
         return handle_overlay_event(self.model, self.view, event)
-
-    @benchmark(lambda self: self.perf_log, "3.12. diagnostics.render")
+    
     def render(
         self,
         screen,
