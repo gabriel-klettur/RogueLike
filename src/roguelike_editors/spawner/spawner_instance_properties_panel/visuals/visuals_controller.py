@@ -409,6 +409,193 @@ class VisualsController:
         except Exception:
             pass
 
+    def tag_building_for_state(self, bid: int, state_key: str, *, visible: bool = True, center: bool = False) -> None:
+        """Tag a building as a spawner visual for a given state without forcing camera centering by default.
+
+        - Ensures the building entity exists in the world (loads if needed).
+        - Tags linkage fields (_is_spawner_visual, spawn_id/spawner_instance_id, spawner_state_key, _spawner_eid).
+        - Applies editor visibility via the editor_hidden flag using _set_building_visible.
+        - Optionally recenters camera if center=True.
+        """
+        ob = self._find_building_entity_by_id(int(bid))
+        if ob is None:
+            try:
+                self._ensure_building_loaded(int(bid))
+            except Exception:
+                pass
+            ob = self._find_building_entity_by_id(int(bid))
+            if ob is None:
+                return
+        # Basic tags for editor/runtime linking and debug
+        try:
+            setattr(ob, '_is_spawner_visual', True)
+        except Exception:
+            pass
+        try:
+            inst = self.parent.model.selected_instance or {}
+            sid = str(inst.get('id')) if inst.get('id') is not None else None
+            if sid is not None:
+                setattr(ob, 'spawner_instance_id', sid)
+                setattr(ob, 'spawn_id', sid)
+        except Exception:
+            pass
+        try:
+            setattr(ob, 'spawner_state_key', str(state_key))
+        except Exception:
+            pass
+        # Link to spawner eid if available
+        try:
+            world = self._get_world()
+            comps = getattr(world, 'components', {}) if world else {}
+            if world and 'SpawnerConfig' in comps:
+                for eid in world.get_entities_with('SpawnerConfig'):
+                    try:
+                        cfg = comps['SpawnerConfig'][eid]
+                        if getattr(ob, 'spawn_id', None) == str(getattr(cfg, 'instance_id', getattr(cfg, 'template_id', ''))):
+                            setattr(ob, '_spawner_eid', eid)
+                            setattr(ob, '_world_ref', world)
+                            break
+                    except Exception:
+                        continue
+        except Exception:
+            pass
+        # Apply editor visibility only (do not touch runtime_hidden here)
+        try:
+            self._set_building_visible(int(bid), bool(visible))
+        except Exception:
+            pass
+        # Position the building relative to the spawner's anchor immediately using visuals offset (editor quality-of-life)
+        try:
+            # Do not override while dragging this visual in the editor
+            if not bool(getattr(ob, '_spawner_visual_dragging', False)):
+                inst = getattr(self.parent.model, 'selected_instance', None)
+                if isinstance(inst, dict):
+                    zone = str(inst.get('zone') or 'lobby')
+                    # Ensure same zone
+                    try:
+                        if getattr(ob, 'zone', None) != zone:
+                            setattr(ob, 'zone', zone)
+                    except Exception:
+                        pass
+                    # Compute anchor center in zone-relative pixels
+                    tile = inst.get('tile') or (0, 0)
+                    try:
+                        tx, ty = int(tile[0]), int(tile[1])
+                    except Exception:
+                        tx, ty = 0, 0
+                    anchor_cx = int(tx * TILE_SIZE + TILE_SIZE // 2)
+                    anchor_cy = int(ty * TILE_SIZE + TILE_SIZE // 2)
+                    # Resolve per-state offset from visuals mapping (if any)
+                    off_dx, off_dy = 0, 0
+                    try:
+                        raw = self._get_mapping_entry_for_state(state_key)
+                        if isinstance(raw, dict):
+                            off = raw.get('offset')
+                            if isinstance(off, (list, tuple)) and len(off) == 2:
+                                off_dx = int(off[0])
+                                off_dy = int(off[1])
+                    except Exception:
+                        off_dx = off_dy = 0
+                    try:
+                        setattr(ob, 'rel_x', int(anchor_cx + off_dx))
+                        setattr(ob, 'rel_y', int(anchor_cy + off_dy))
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+        # Optional camera center
+        if center:
+            try:
+                cam = getattr(self.parent.game, 'camera', None)
+                if cam is not None:
+                    bx = by = None
+                    bzone = 'lobby'
+                    for e in load_buildings_instances():
+                        try:
+                            if int(e.get('id')) == int(bid):
+                                bzone = str(e.get('zone') or 'lobby')
+                                rx = int(e.get('rel_x') or 0)
+                                ry = int(e.get('rel_y') or 0)
+                                off = global_map_settings.zone_offsets.get(bzone, (0, 0))
+                                bx = int(off[0] * TILE_SIZE) + int(rx)
+                                by = int(off[1] * TILE_SIZE) + int(ry)
+                                break
+                        except Exception:
+                            continue
+                    if bx is not None and by is not None:
+                        zoom = getattr(cam, 'zoom', 1.0) or 1.0
+                        cam.offset_x = float(bx) - (cam.screen_width / (2 * zoom))
+                        cam.offset_y = float(by) - (cam.screen_height / (2 * zoom))
+            except Exception:
+                pass
+
+    def reveal_all_mapped_buildings(self) -> None:
+        """Ensure that every building referenced by the current instance visuals mapping is
+        present in the world, tagged to this spawner, and editor-visible according to the
+        per-building `editor_visibility` cache (defaulting to True when absent).
+        """
+        visuals = dict(getattr(self.parent.model, 'visuals', {}) or {})
+        vis_cache = getattr(self.model, 'editor_visibility', {}) or {}
+        # Ensure we have access to controller helpers
+        ipc = self.parent
+        for state_key, entry in visuals.items():
+            bid = None
+            tpl_id = None
+            try:
+                if isinstance(entry, dict):
+                    bid = entry.get('instance_id') or entry.get('id') or entry.get('building_instance_id')
+                    bid = int(bid) if bid is not None else None
+                    try:
+                        tpl_id = int(entry.get('template_id')) if entry.get('template_id') is not None else None
+                    except Exception:
+                        tpl_id = None
+                else:
+                    bid = int(entry)
+            except Exception:
+                bid = None
+            # If the mapping points to a non-existent instance but has template_id, auto-create it
+            ob = None
+            if bid is not None:
+                try:
+                    ob = self._find_building_entity_by_id(int(bid))
+                    if ob is None:
+                        self._ensure_building_loaded(int(bid))
+                        ob = self._find_building_entity_by_id(int(bid))
+                except Exception:
+                    ob = None
+            if ob is None and tpl_id is not None:
+                # Prime pending template for this state and create a new instance
+                try:
+                    if not hasattr(ipc.model, 'visuals_pending_templates') or ipc.model.visuals_pending_templates is None:
+                        ipc.model.visuals_pending_templates = {}
+                except Exception:
+                    ipc.model.visuals_pending_templates = {}
+                try:
+                    ipc.model.visuals_pending_templates[str(state_key)] = str(int(tpl_id))
+                except Exception:
+                    ipc.model.visuals_pending_templates[str(state_key)] = str(tpl_id)
+                new_id = None
+                try:
+                    new_id = ipc.add_building_instance_for_visual(str(state_key), reveal=False)
+                except Exception:
+                    new_id = None
+                if new_id is not None:
+                    # Update local visuals map for immediate use (controller persists inside helper)
+                    visuals[str(state_key)] = {'instance_id': int(new_id), 'template_id': int(tpl_id)}
+                    bid = int(new_id)
+            if bid is None:
+                continue
+            # Default visible True unless user toggled it off in this editor session
+            visible = bool(vis_cache.get(int(bid), True))
+            self.tag_building_for_state(int(bid), str(state_key), visible=visible, center=False)
+        # Reflect any mapping updates back on the model for consistency
+        try:
+            ipc.model.visuals = visuals
+            if isinstance(ipc.model.selected_instance, dict):
+                ipc.model.selected_instance['visuals'] = visuals
+        except Exception:
+            pass
+
     def is_building_visible_for_state(self, state_key: str) -> bool:
         # Prefer reading from the live entity (robust across restarts)
         ob = self._find_visual_entity_for_state(state_key)

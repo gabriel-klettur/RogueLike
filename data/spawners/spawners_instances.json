@@ -18,20 +18,28 @@
           -77
         ]
       },
-      "WaitCooldown": {
-        "instance_id": 140,
-        "template_id": 157,
-        "offset": [
-          -249,
-          -17
-        ]
-      },
       "Finished": {
-        "instance_id": 141,
+        "instance_id": 140,
         "template_id": 158,
         "offset": [
-          -244,
-          -311
+          -328,
+          -239
+        ]
+      },
+      "WaitCooldown": {
+        "instance_id": 141,
+        "template_id": 155,
+        "offset": [
+          -245,
+          -384
+        ]
+      },
+      "WaitClear": {
+        "instance_id": 142,
+        "template_id": 157,
+        "offset": [
+          -72,
+          -134
         ]
       }
     },

@@ -135,6 +135,16 @@ class SpawnerEditorEventHandler:
                     setattr(world.state, 'spawner_editor_active', True)
             except AttributeError:
                 logger.debug("toggle_visible: failed to set world.state.spawner_editor_active", exc_info=True)
+            # Reveal all mapped visuals for the currently selected instance (if any)
+            try:
+                ip = getattr(self.controller, 'instance_properties', None)
+                if ip is not None and hasattr(ip, 'visuals'):
+                    # Only when a spawner instance is selected
+                    sel_inst = getattr(getattr(ip, 'model', None), 'selected_instance', None)
+                    if isinstance(sel_inst, dict):
+                        ip.visuals.reveal_all_mapped_buildings()
+            except Exception:
+                logger.debug("toggle_visible: reveal_all_mapped_buildings failed on open", exc_info=True)
 
     # Orchestrated event dispatcher ------------------------------------------
     def handle_event(self, event: pygame.event.Event) -> bool:

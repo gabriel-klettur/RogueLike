@@ -17,6 +17,16 @@ def on_instance_selection_changed(controller: Any, selected_index: Optional[int]
         controller.instance_properties.model.visible = bool(instances_visible and inst is not None)
     except Exception:
         pass
+    # When a spawner instance is selected while the editor is open, ensure all mapped
+    # visuals are present and tagged, and apply editor-only visibility according to the
+    # Visuals table (eye toggles).
+    try:
+        if inst is not None and bool(getattr(getattr(controller, 'model', None), 'visible', False)):
+            ip = getattr(controller, 'instance_properties', None)
+            if ip is not None and hasattr(ip, 'visuals'):
+                ip.visuals.reveal_all_mapped_buildings()
+    except Exception:
+        pass
     try:
         if inst is not None:
             setattr(controller.model, 'tutorial_instance_selected_pulse', True)

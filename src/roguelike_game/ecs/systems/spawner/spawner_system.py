@@ -143,6 +143,30 @@ class SpawnerRuntimeSystem:
         except Exception:
             mapping_ids = set()
         # If visuals are disabled, hide any linked building for this spawner and return
+        # Editor-active: show all mapped visuals and skip exclusivity so the editor can
+        # manage per-building visibility via editor_hidden flags.
+        try:
+            editor_active = bool(getattr(getattr(world, 'state', None), 'spawner_editor_active', False))
+        except Exception:
+            editor_active = False
+        if editor_active:
+            try:
+                for ob in getattr(world, 'buildings', []) or []:
+                    try:
+                        bid = getattr(ob, 'id', None)
+                        if bid in mapping_ids:
+                            # Tag linkage and ensure runtime shows them; editor can still hide via editor_hidden
+                            setattr(ob, '_spawner_eid', eid)
+                            setattr(ob, '_world_ref', world)
+                            setattr(ob, '_is_spawner_visual', True)
+                            setattr(ob, 'runtime_hidden', False)
+                    except Exception:
+                        continue
+            except Exception:
+                pass
+            # Do not track desired in editor mode to avoid churn
+            self._last_visual_id[eid] = None
+            return
         if not getattr(cfg, 'visible_in_game', False):
             # Log only on transition to disabled
             try:
