@@ -10,41 +10,33 @@
       "visible_in_game": true
     },
     "visuals": {
-      "AwaitTrigger": {
-        "instance_id": 139,
-        "template_id": 157,
-        "offset": [
-          91,
-          -227
-        ]
-      },
       "Finished": {
-        "instance_id": 140,
+        "instance_id": 139,
         "template_id": 158,
         "offset": [
           -309,
           -96
         ]
       },
-      "WaitCooldown": {
-        "instance_id": 141,
-        "template_id": 155,
-        "offset": [
-          -10,
-          -5
-        ]
-      },
       "WaitClear": {
-        "instance_id": 142,
+        "instance_id": 141,
         "template_id": 157,
         "offset": [
           -234,
           -278
-        ],
-        "scale": [
-          225,
-          337
         ]
+      },
+      "AwaitTrigger": {
+        "instance_id": 142,
+        "template_id": 157,
+        "offset": [
+          51,
+          -276
+        ]
+      },
+      "WaitCooldown": {
+        "instance_id": 143,
+        "template_id": 155
       }
     },
     "id": "survival_10_forest_14_9"
