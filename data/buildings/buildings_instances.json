@@ -1741,7 +1741,6 @@
         "zone": "Forest",
         "rel_x": 752,
         "rel_y": 327,
-        "spawn_id": "survival_10_forest_14_9",
         "overrides": {
             "scale": [
                 256,
@@ -1749,7 +1748,7 @@
             ],
             "z_bottom": 3,
             "z_top": 5,
-            "z": 3
+            "z": 1
         }
     }
 ]
