@@ -956,88 +956,10 @@ class InstancePropertiesController:
         return cnt
 
     def _find_existing_visual_instance_by_template(self, template_id: int) -> Optional[int]:
-        """Return an instance id already referenced by this spawner's visuals that uses the given template_id.
-        This ensures we reuse the same building instance across states when they share the same template.
+        """(Disabled) Reuse is not allowed: each state must have its own building instance.
+        Always return None so creation flow clones/creates a new instance.
         """
-        visuals = getattr(self.model, 'visuals', {}) or {}
-        if not visuals:
-            return None
-        data = self._load_buildings_instances()
-        # Build id -> template_id map for quick lookup
-        tpl_by_id: dict[int, int] = {}
-        for e in data:
-            try:
-                iid = int(e.get('id'))
-                tid = int(e.get('template_id'))
-                tpl_by_id[iid] = tid
-            except (AttributeError, TypeError, ValueError):
-                continue
-        for _, val in visuals.items():
-            try:
-                if isinstance(val, dict):
-                    vid = int(val.get('instance_id') or val.get('id') or val.get('building_instance_id'))
-                else:
-                    vid = int(val)
-            except (AttributeError, TypeError, ValueError):
-                continue
-            if vid in tpl_by_id and tpl_by_id[vid] == int(template_id):
-                return vid
         return None
-
-    def _clone_instance_with_new_template(self, source_id: int, new_template_id: int) -> Optional[int]:
-        data = self._load_buildings_instances()
-        src = None
-        for e in data:
-            try:
-                if int(e.get('id')) == source_id:
-                    src = e
-                    break
-            except (AttributeError, TypeError, ValueError):
-                continue
-        if src is None:
-            return None
-        # Compute next id
-        next_id = 1
-        try:
-            ids = [int(e.get('id')) for e in data if e.get('id') is not None]
-            if ids:
-                next_id = max(ids) + 1
-        except (AttributeError, TypeError, ValueError):
-            pass
-        clone = {
-            'id': next_id,
-            'template_id': int(new_template_id),
-            'zone': src.get('zone'),
-            'rel_x': src.get('rel_x'),
-            'rel_y': src.get('rel_y'),
-        }
-        # Copy overrides if present
-        if isinstance(src.get('overrides'), dict):
-            clone['overrides'] = src['overrides']
-        else:
-            clone['overrides'] = {}
-        # Tag as spawner visual to protect from global building saves
-        try:
-            if isinstance(self.model.selected_instance, dict):
-                sid = str(self.model.selected_instance.get('id')) if self.model.selected_instance.get('id') is not None else None
-            else:
-                sid = None
-            if isinstance(clone.get('overrides'), dict):
-                clone['overrides']['_is_spawner_visual'] = True
-                if sid:
-                    clone['overrides']['spawner_instance_id'] = sid
-            # Also persist root-level spawn identifiers so loader/saver can preserve IDs
-            if sid:
-                clone['spawn_id'] = str(sid)
-                clone['spawner_instance_id'] = str(sid)
-        except (AttributeError, TypeError, ValueError):
-            pass
-        data.append(clone)
-        self._write_buildings_instances(data)
-        # Refresh index
-        self._building_index = None
-        self._ensure_buildings_index()
-        return next_id
 
     def commit_visual_edit_if_finished(self) -> bool:
         display_state = getattr(self.model, 'visuals_editing_state', None)
@@ -1103,6 +1025,7 @@ class InstancePropertiesController:
         except (ImportError, AttributeError, pygame.error):
             pass
         return True
+
     def set_visual_template_via_picker(self, state_key: str, new_tpl_id: int) -> None:
         """Apply a template selection coming from the visuals picker overlay.
         Mirrors the logic used by inline text commit and the '+' flow, reusing existing
@@ -1310,6 +1233,7 @@ class InstancePropertiesController:
             pass
         # Done
         return
+
     def add_building_instance_for_visual(self, state_key: str, reveal: bool = True) -> Optional[int]:
         # Need a template id: prefer current text input if editing this state
         txt = (self.model.visuals_pending_templates or {}).get(state_key, '')
@@ -1323,30 +1247,7 @@ class InstancePropertiesController:
         ok, msg, tpl_id = self._validate_template_text(txt)
         if tpl_id is None or not ok:
             return None
-        # Prefer reuse: check if another state already uses an instance with this template
-        reuse_id = self._find_existing_visual_instance_by_template(int(tpl_id))
-        if reuse_id is not None:
-            visuals = getattr(self.model, 'visuals', {}) or {}
-            key_map = getattr(self.model, 'visuals_key_map', {}) or {}
-            json_key = key_map.get(state_key, state_key)
-            visuals[json_key] = {'instance_id': reuse_id, 'template_id': int(tpl_id)}
-            self.model.visuals = visuals
-            try:
-                if self.model.selected_instance is not None:
-                    self.model.selected_instance['visuals'] = visuals
-            except AttributeError:
-                pass
-            self._persist_instance()
-            # Refresh indexes/rows
-            self._building_index = None
-            self._ensure_buildings_index()
-            self._build_visuals_rows()
-            if reveal:
-                try:
-                    self._tag_and_reveal_building(int(reuse_id), state_key)
-                except (AttributeError, TypeError, ValueError):
-                    pass
-            return reuse_id
+        # Reuse disabled: always proceed to create a fresh instance for this state
         # Load buildings instances and compute next id
         data = self._load_buildings_instances()
         next_id = 1
@@ -1378,6 +1279,7 @@ class InstancePropertiesController:
         except (TypeError, ValueError):
             rel_x = 0
             rel_y = 0
+        # Reuse disabled: keep next_id as a fresh id for the new instance
         # Attempt to reuse an existing instance in the same spot and template to avoid duplicates
         try:
             zone_norm = zone

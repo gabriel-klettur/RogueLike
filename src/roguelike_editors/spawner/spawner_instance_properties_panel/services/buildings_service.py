@@ -31,10 +31,9 @@ def write_buildings_instances(data: List[Dict[str, Any]]) -> None:
         _old = load_buildings_instances()
     except Exception:
         _old = []
-    # Deduplicate by (zone, rel_x, rel_y, template_id)
+    # Deduplicate by (zone, rel_x, rel_y, template_id) BUT do not merge entries linked to spawners.
     try:
         _before = len(data or [])
-        seen: dict[str, Dict[str, Any]] = {}
         def _key(e: Dict[str, Any]) -> str:
             try:
                 zone = str(e.get('zone') or 'lobby')
@@ -44,38 +43,48 @@ def write_buildings_instances(data: List[Dict[str, Any]]) -> None:
                 return f"{zone}|{rx}|{ry}|{tid}"
             except Exception:
                 return f"{e!r}"
-        def _score(e: Dict[str, Any]) -> tuple:
-            # Prefer entries explicitly tagged as spawner visuals, then lower id to keep oldest
-            ov = e.get('overrides') if isinstance(e, dict) else None
-            is_spawn_vis = 1 if (isinstance(ov, dict) and bool(ov.get('_is_spawner_visual'))) else 0
+        def _is_spawner_linked(e: Dict[str, Any]) -> bool:
             try:
-                # negative so lower id wins on max()
-                neg_id = -int(e.get('id') or 0)
+                ov = e.get('overrides') if isinstance(e, dict) else None
+                if isinstance(ov, dict) and (ov.get('_is_spawner_visual') or ov.get('spawner_instance_id')):
+                    return True
+                if str(e.get('spawner_instance_id') or '') or str(e.get('spawn_id') or ''):
+                    return True
             except Exception:
-                neg_id = 0
-            return (is_spawn_vis, neg_id)
-        # Gather duplicates for logging
+                pass
+            return False
+        # Partition: protected (spawner-linked) vs normal
+        protected: List[Dict[str, Any]] = []
+        normal: List[Dict[str, Any]] = []
+        for e in list(data or []):
+            (protected if _is_spawner_linked(e) else normal).append(e)
+        # Deduplicate only normal entries
+        seen: dict[str, Dict[str, Any]] = {}
+        # For normal entries, prefer lower id to keep oldest
+        def _score_normal(e: Dict[str, Any]) -> int:
+            try:
+                return -int(e.get('id') or 0)
+            except Exception:
+                return 0
+        # Gather duplicates for logging only among normals
         _dups: dict[str, list[Dict[str, Any]]] = {}
-        for e in list(data or []):
-            try:
-                k = _key(e)
-            except Exception:
-                k = str(id(e))
+        for e in normal:
+            k = _key(e)
             _dups.setdefault(k, []).append(e)
-        for e in list(data or []):
+        for e in normal:
             k = _key(e)
             cur = seen.get(k)
-            if cur is None:
+            if cur is None or _score_normal(e) > _score_normal(cur):
                 seen[k] = e
-            else:
-                # Keep the one with better score (spawner_visual preferred, then lower id)
-                if _score(e) > _score(cur):
-                    seen[k] = e
-        data = list(seen.values())
+        dedup_normal = list(seen.values())
+        # Drop normals that collide with any protected key
+        prot_keys = { _key(e) for e in protected }
+        dedup_normal = [e for e in dedup_normal if _key(e) not in prot_keys]
+        # Combine back
+        data = protected + dedup_normal
         _after = len(data)
         try:
-            _log.debug(f"[BuildingsService] write_buildings_instances: dedup {_before}->{_after} entries (removed={_before-_after})")
-            # Log dedup selection details (keys with >1 candidates)
+            _log.debug(f"[BuildingsService] write_buildings_instances: dedup(normal) {len(normal)} -> {len(dedup_normal)}; protected kept={len(protected)}; total {_before}->{_after} (removed={_before-_after})")
             for k, candidates in _dups.items():
                 if len(candidates) > 1:
                     try:
