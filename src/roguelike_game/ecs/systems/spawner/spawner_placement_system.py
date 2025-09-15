@@ -631,6 +631,8 @@ class SpawnerPlacementSystem:
             # Parse instance_id and template_id from mapping
             cur_iid = None
             tpl_id = None
+            # Optional visuals-provided scale override
+            visuals_scale: tuple[int, int] | None = None
             if isinstance(val, dict):
                 try:
                     cur_iid = int(val.get('instance_id') or val.get('id') or val.get('building_instance_id'))
@@ -655,6 +657,15 @@ class SpawnerPlacementSystem:
                             cfg.visuals_offsets_px[str(key).strip().lower()] = (dx, dy)
                         except Exception:
                             pass
+                    # Read optional scale override from visuals mapping
+                    sc = val.get('scale')
+                    if isinstance(sc, (list, tuple)) and len(sc) == 2:
+                        try:
+                            sw, sh = int(sc[0]), int(sc[1])
+                            if sw > 0 and sh > 0:
+                                visuals_scale = (sw, sh)
+                        except Exception:
+                            visuals_scale = None
                 except Exception:
                     pass
             else:
@@ -670,6 +681,36 @@ class SpawnerPlacementSystem:
                     cfg.state_visuals[str(key)] = int(cur_iid)
                 except Exception:
                     pass
+                # If visuals provided a scale override, persist it into the existing building instance
+                if visuals_scale is not None:
+                    try:
+                        changed_bi = False
+                        for e in b_arr:
+                            try:
+                                if int(e.get('id')) != int(cur_iid):
+                                    continue
+                            except Exception:
+                                continue
+                            ov = e.get('overrides') or {}
+                            if not isinstance(ov, dict):
+                                ov = {}
+                            try:
+                                cur_sc = ov.get('scale')
+                                cur_sc_t = (int(cur_sc[0]), int(cur_sc[1])) if isinstance(cur_sc, (list, tuple)) and len(cur_sc) == 2 else None
+                            except Exception:
+                                cur_sc_t = None
+                            if cur_sc_t != visuals_scale:
+                                ov['scale'] = [int(visuals_scale[0]), int(visuals_scale[1])]
+                                e['overrides'] = ov
+                                changed_bi = True
+                            break
+                        if changed_bi:
+                            try:
+                                self._write_buildings_instances_json(b_arr)
+                            except Exception:
+                                logger.warning("[SpawnerPlacementSystem] Could not persist scale override for existing building instance")
+                    except Exception:
+                        pass
                 continue
             # Need to create if we have a valid template id
             if tpl_id is None or tpl_id not in tmap:
@@ -693,7 +734,13 @@ class SpawnerPlacementSystem:
                 'spawn_id': str(inst.get('id')) if inst.get('id') is not None else None,
                 'spawner_instance_id': str(inst.get('id')) if inst.get('id') is not None else None,
             }
-            if scale is not None:
+            # Prefer visuals-provided scale over template-derived one
+            if visuals_scale is not None:
+                try:
+                    entry['overrides']['scale'] = [int(visuals_scale[0]), int(visuals_scale[1])]  # type: ignore[index]
+                except Exception:
+                    pass
+            elif scale is not None:
                 try:
                     entry['overrides']['scale'] = [int(scale[0]), int(scale[1])]  # type: ignore[index]
                 except Exception:

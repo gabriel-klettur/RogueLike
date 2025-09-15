@@ -1,44 +1,44 @@
 [
-  {
-    "template_id": "survival_10",
-    "zone": "Forest",
-    "tile": [
-      26,
-      16
-    ],
-    "overrides": {
-      "visible_in_game": true
-    },
-    "visuals": {
-      "Finished": {
-        "instance_id": 139,
-        "template_id": 158,
-        "offset": [
-          -309,
-          -96
-        ]
-      },
-      "WaitClear": {
-        "instance_id": 141,
-        "template_id": 157,
-        "offset": [
-          -234,
-          -278
-        ]
-      },
-      "AwaitTrigger": {
-        "instance_id": 142,
-        "template_id": 157,
-        "offset": [
-          51,
-          -276
-        ]
-      },
-      "WaitCooldown": {
-        "instance_id": 143,
-        "template_id": 155
-      }
-    },
-    "id": "survival_10_forest_14_9"
-  }
+    {
+        "template_id": "survival_10",
+        "zone": "Forest",
+        "tile": [
+            26,
+            16
+        ],
+        "overrides": {
+            "visible_in_game": true
+        },
+        "visuals": {
+            "Finished": {
+                "instance_id": 139,
+                "template_id": 158,
+                "offset": [
+                    -272,
+                    -33
+                ]
+            },
+            "WaitClear": {
+                "instance_id": 140,
+                "template_id": 157,
+                "offset": [
+                    -234,
+                    -278
+                ]
+            },
+            "AwaitTrigger": {
+                "instance_id": 141,
+                "template_id": 157,
+                "offset": [
+                    51,
+                    -276
+                ]
+            },
+            "WaitCooldown": {
+                "instance_id": 142,
+                "template_id": 155
+            }
+        },
+        "id": "survival_10_forest_14_9"
+    }
 ]

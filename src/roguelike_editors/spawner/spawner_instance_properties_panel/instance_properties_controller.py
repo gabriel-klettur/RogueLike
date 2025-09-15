@@ -1958,6 +1958,15 @@ class InstancePropertiesController:
                                     dx, dy = int(off[0]), int(off[1])
                                     if dx != 0 or dy != 0:
                                         entry['offset'] = [dx, dy]  # type: ignore[index]
+                                # Preserve scale if present and valid (>0)
+                                sc = v.get('scale')
+                                if isinstance(sc, (list, tuple)) and len(sc) == 2:
+                                    try:
+                                        sw, sh = int(sc[0]), int(sc[1])
+                                        if sw > 0 and sh > 0:
+                                            entry['scale'] = [sw, sh]  # type: ignore[index]
+                                    except (TypeError, ValueError):
+                                        pass
                             except Exception:
                                 pass
                             norm[str(k)] = entry
