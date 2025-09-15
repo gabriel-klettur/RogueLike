@@ -16,6 +16,8 @@ class SpawnerEditorModel:
     dragging: bool = False
     dragging_eid: int | None = None
     hovered_eid: int | None = None
+    # Currently selected spawner entity (for selection ring / actions)
+    selected_eid: int | None = None
     # Title submodel for consistent title bar rendering
     title_model: SpawnerTitleModel = field(default_factory=SpawnerTitleModel)
     # Pending zone confirmation overlay data, or None

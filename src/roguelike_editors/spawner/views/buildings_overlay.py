@@ -10,6 +10,7 @@ Incluye:
 
 import logging
 import pygame
+from ..services.picking import pick_spawner_under_cursor
 from roguelike_ui.ui_blocker import is_blocked
 
 logger = logging.getLogger(__name__)
@@ -35,21 +36,34 @@ def _draw_building_rect(screen: pygame.Surface, cam, ob, color, width: int) -> p
 def render_buildings_overlays(view, screen: pygame.Surface) -> None:
     c = view.controller
     ip = getattr(c, 'instance_properties', None)
-    cam = getattr(getattr(c, 'game', None), 'camera', None)
+    game = getattr(c, 'game', None)
+    cam = getattr(game, 'camera', None)
     if ip is None or cam is None:
         return
+    world = getattr(getattr(c, 'game', None), 'ecs', None)
+    world = getattr(world, 'ecs_world', None)
 
     vmodel = getattr(ip, 'visuals', None)
     vmodel = getattr(vmodel, 'model', None)
     sel_bid = getattr(vmodel, 'selected_building_id', None) if vmodel else None
     hov_bid = getattr(vmodel, 'hovered_building_id', None) if vmodel else None
 
-    # Per-frame fallback hover detection
+    # Per-frame fallback hover detection (suppressed when hovering a spawner anchor)
     try:
         mx, my = pygame.mouse.get_pos()
-        ob_hover = ip.visuals.pick_visual_building_under_cursor(int(mx), int(my))
-        if ob_hover is not None and getattr(ob_hover, 'id', None) is not None:
-            hov_bid = int(getattr(ob_hover, 'id'))
+        sp_hover = None
+        try:
+            if world is not None:
+                sp_hover = pick_spawner_under_cursor(world, cam, int(mx), int(my))
+        except Exception:
+            sp_hover = None
+        if sp_hover is None:
+            ob_hover = ip.visuals.pick_visual_building_under_cursor(int(mx), int(my))
+            if ob_hover is not None and getattr(ob_hover, 'id', None) is not None:
+                hov_bid = int(getattr(ob_hover, 'id'))
+        else:
+            # When hovering a spawner, do not hover any building (priority to spawner)
+            hov_bid = None
     except (AttributeError, TypeError, ValueError, pygame.error):
         logger.debug("render_buildings_overlays: fallback hover detection failed", exc_info=True)
 

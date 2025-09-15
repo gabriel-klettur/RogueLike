@@ -12,6 +12,7 @@ from . import selection as sel
 from . import anchor_drag as anchor
 from . import resize as rz
 from . import confirmations as conf
+from ..services.picking import pick_spawner_under_cursor
 
 # Tools from Buildings Editor reused by the Spawner Editor
 from roguelike_editors.buildings.tools.split_z_tool.split_tool import SplitTool
@@ -112,6 +113,7 @@ class SpawnerEditorEventHandler:
             try:
                 if world and hasattr(world, 'state'):
                     setattr(world.state, 'spawner_editor_hovered_eid', None)
+                    setattr(world.state, 'spawner_selected_eid', None)
                     setattr(world.state, 'spawner_input_suppressed', False)
                     setattr(world.state, 'spawner_editor_active', False)
             except AttributeError:
@@ -175,15 +177,65 @@ class SpawnerEditorEventHandler:
             if split.update_split_drag(ctx, event):
                 return True
 
+        # Hover: detect spawner anchor under cursor when not dragging/resizing/splitting
+        if event.type == pygame.MOUSEMOTION and not getattr(self.model, 'dragging', False) and not getattr(self.model, 'resizing_visual', False) and not getattr(self.model, 'split_drag_active', False):
+            try:
+                mx, my = event.pos
+                eid = pick_spawner_under_cursor(world, camera, int(mx), int(my))
+                # Mirror to model and world.state for renderer
+                try:
+                    self.model.hovered_eid = eid
+                except Exception:
+                    pass
+                try:
+                    if hasattr(world, 'state'):
+                        setattr(world.state, 'spawner_editor_hovered_eid', eid)
+                except Exception:
+                    pass
+            except Exception:
+                logger.debug("handle_event: hover pick failed", exc_info=True)
+
         # Resize MOTION while active
         if event.type == pygame.MOUSEMOTION and getattr(self.model, 'resizing_visual', False):
             if rz.update_resize_motion(ctx, event):
                 return True
 
-        # LMB handling: overlay buttons (Default/Resize/Remove) and selection
+        # LMB handling: allow selecting a spawner by clicking near its anchor. If a spawner is under cursor, consume the event
+        # to give it priority over buildings (no building hover/click should trigger in that case). Otherwise, process building UI.
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             ip = getattr(self.controller, 'instance_properties', None)
             mx, my = event.pos
+            # 0) Spawner anchor selection
+            try:
+                eid = pick_spawner_under_cursor(world, camera, int(mx), int(my))
+                if eid is not None:
+                    try:
+                        self.model.selected_eid = eid
+                    except Exception:
+                        pass
+                    try:
+                        if hasattr(world, 'state'):
+                            setattr(world.state, 'spawner_selected_eid', eid)
+                    except Exception:
+                        pass
+                    # Also clear any selected building when selecting a spawner
+                    try:
+                        if ip is not None and hasattr(ip, 'visuals') and hasattr(ip.visuals, 'model'):
+                            ip.visuals.model.selected_building_id = None
+                    except Exception:
+                        pass
+                    # Priority: consume event so buildings do not receive hover/click
+                    return True
+            except Exception:
+                logger.debug("handle_event: spawner anchor selection failed", exc_info=True)
+            # If not clicking a spawner anchor, clear spawner selection (lose focus)
+            try:
+                if getattr(self.model, 'selected_eid', None) is not None:
+                    self.model.selected_eid = None
+                if hasattr(world, 'state'):
+                    setattr(world.state, 'spawner_selected_eid', None)
+            except Exception:
+                pass
             # Compute handle rects for the currently selected building (like Building Editor)
             sel_bid = None
             try:
@@ -265,11 +317,49 @@ class SpawnerEditorEventHandler:
                         if bid is not None:
                             ip.visuals.model.selected_building_id = int(bid)
                             return True
+                    else:
+                        # Clicked empty space (not spawner, not building): clear building selection
+                        try:
+                            ip.visuals.model.selected_building_id = None
+                        except Exception:
+                            pass
             except (AttributeError, TypeError, ValueError):
                 logger.debug("handle_event: failed picking building under cursor for selection", exc_info=True)
 
-        # RMB handling: split drag start, reset size, or selection
+        # RMB handling: give spawner anchor priority over buildings as well
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
+            try:
+                mx, my = event.pos
+                eid = pick_spawner_under_cursor(world, camera, int(mx), int(my))
+                if eid is not None:
+                    try:
+                        self.model.selected_eid = eid
+                    except Exception:
+                        pass
+                    try:
+                        if hasattr(world, 'state'):
+                            setattr(world.state, 'spawner_selected_eid', eid)
+                    except Exception:
+                        pass
+                    # Clear building selection when selecting a spawner with RMB too
+                    try:
+                        ip = getattr(self.controller, 'instance_properties', None)
+                        if ip is not None and hasattr(ip, 'visuals') and hasattr(ip.visuals, 'model'):
+                            ip.visuals.model.selected_building_id = None
+                    except Exception:
+                        pass
+                    # Consume RMB to avoid interacting with building handles when clicking spawner anchor
+                    return True
+            except Exception:
+                logger.debug("handle_event: spawner anchor RMB selection failed", exc_info=True)
+            # Not clicking a spawner anchor: clear spawner selection before other interactions
+            try:
+                if getattr(self.model, 'selected_eid', None) is not None:
+                    self.model.selected_eid = None
+                if hasattr(world, 'state'):
+                    setattr(world.state, 'spawner_selected_eid', None)
+            except Exception:
+                pass
             if getattr(self.model, 'remove_mode_active', False) or getattr(self.model, 'placing_template_id', None):
                 return False
             view = getattr(self.controller, 'view', None)

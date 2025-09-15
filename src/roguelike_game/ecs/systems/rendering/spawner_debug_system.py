@@ -70,8 +70,13 @@ class SpawnerDebugRenderSystem:
                 self.font = None
     
     def update(self, world, screen, camera):
-        # Only render when the Spawner Editor is visible
-        if not getattr(config, 'DEBUG_SPAWNER', False):
+        # Render when Spawner Editor is active OR when global DEBUG_SPAWNER is on
+        editor_active = False
+        try:
+            editor_active = bool(getattr(getattr(world, 'state', None), 'spawner_editor_active', False))
+        except Exception:
+            editor_active = False
+        if not editor_active and not getattr(config, 'DEBUG_SPAWNER', False):
             return
         comps = world.components
         if 'SpawnerConfig' not in comps:
@@ -79,11 +84,16 @@ class SpawnerDebugRenderSystem:
         self._ensure_font()
         zoom = getattr(camera, 'zoom', 1.0) or 1.0
         hovered_eid = None
+        selected_eid = None
         remove_candidate = None
         try:
             hovered_eid = getattr(getattr(world, 'state', None), 'spawner_editor_hovered_eid', None)
         except Exception:
             hovered_eid = None
+        try:
+            selected_eid = getattr(getattr(world, 'state', None), 'spawner_selected_eid', None)
+        except Exception:
+            selected_eid = None
         try:
             remove_candidate = getattr(getattr(world, 'state', None), 'spawner_remove_candidate_eid', None)
         except Exception:
@@ -100,24 +110,38 @@ class SpawnerDebugRenderSystem:
             py = ty * TILE_SIZE + TILE_SIZE // 2
             sx, sy = camera.apply((px, py))
 
-            # Draw anchor (crosshair + dot)
+            # Draw anchor (crosshair + dot) with hover/selection rings
             cx, cy = int(sx), int(sy)
-            base_col = (0, 200, 255)
+            base_cyan = (0, 200, 255)
+            yellow = (255, 220, 0)
             is_hover = (eid == hovered_eid)
+            is_selected = (eid == selected_eid)
             is_remove_sel = (eid == remove_candidate)
+            # Priority: remove (red) > selected (yellow) > hover (cyan)
             if is_remove_sel:
-                dot_col = (255, 60, 60)
-                cross_col = (255, 60, 60)
-                # Red selection halo
-                halo_r = int(14 * zoom)
-                pygame.draw.circle(screen, (255, 60, 60), (cx, cy), max(halo_r, 8), width=3)
+                ring_col = (255, 60, 60)
+                ring_r = max(int(16 * zoom), 10)
+                ring_w = 3
+                pygame.draw.circle(screen, ring_col, (cx, cy), ring_r, width=ring_w)
+                dot_col = ring_col
+                cross_col = ring_col
+            elif is_selected:
+                ring_col = yellow
+                ring_r = max(int(16 * zoom), 10)  # slightly larger than hover
+                ring_w = 4
+                pygame.draw.circle(screen, ring_col, (cx, cy), ring_r, width=ring_w)
+                dot_col = yellow
+                cross_col = yellow
+            elif is_hover:
+                ring_col = base_cyan
+                ring_r = max(int(12 * zoom), 8)
+                ring_w = 3
+                pygame.draw.circle(screen, ring_col, (cx, cy), ring_r, width=ring_w)
+                dot_col = base_cyan
+                cross_col = base_cyan
             else:
-                dot_col = (255, 220, 0) if is_hover else base_col
-                cross_col = (255, 220, 0) if is_hover else base_col
-                # Yellow hover halo
-                if is_hover:
-                    halo_r = int(14 * zoom)
-                    pygame.draw.circle(screen, (255, 220, 0), (cx, cy), max(halo_r, 8), width=3)
+                dot_col = base_cyan
+                cross_col = base_cyan
             pygame.draw.circle(screen, dot_col, (cx, cy), 4)
             arm = 8
             pygame.draw.line(screen, cross_col, (cx - arm, cy), (cx + arm, cy), 2)
