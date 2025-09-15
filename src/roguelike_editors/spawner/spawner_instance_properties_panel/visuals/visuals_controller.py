@@ -5,6 +5,7 @@ import logging
 from roguelike_engine.buildings.factory import build_from_config
 from ..services.buildings_service import (
     load_buildings_instances,
+    write_buildings_instances,
     get_template_image_path,
 )
 from roguelike_engine.config.map_config import global_map_settings
@@ -499,6 +500,29 @@ class VisualsController:
                     try:
                         setattr(ob, 'rel_x', int(anchor_cx + off_dx))
                         setattr(ob, 'rel_y', int(anchor_cy + off_dy))
+                    except Exception:
+                        pass
+                    # Persist updated placement to buildings_instances.json so it sticks across reloads
+                    try:
+                        arr = load_buildings_instances()
+                        changed = False
+                        for ee in arr:
+                            try:
+                                if int(ee.get('id')) == int(bid):
+                                    if str(ee.get('zone') or 'lobby') != str(zone):
+                                        ee['zone'] = str(zone)
+                                        changed = True
+                                    if int(ee.get('rel_x') or 0) != int(anchor_cx + off_dx):
+                                        ee['rel_x'] = int(anchor_cx + off_dx)
+                                        changed = True
+                                    if int(ee.get('rel_y') or 0) != int(anchor_cy + off_dy):
+                                        ee['rel_y'] = int(anchor_cy + off_dy)
+                                        changed = True
+                                    break
+                            except Exception:
+                                continue
+                        if changed:
+                            write_buildings_instances(arr)
                     except Exception:
                         pass
         except Exception:

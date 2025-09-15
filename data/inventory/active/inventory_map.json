@@ -1,14 +1,26 @@
 {
-  "aab1d9d2-f951-48b5-8bde-85939806b37a": {
-    "item_id": "wood",
+  "c2d7eb4d-866b-485b-9b6d-8c9b70b1bab1": {
+    "item_id": "gold",
     "quantity": 1,
     "zone_id": "Forest",
     "schema_version": "1.0.0",
     "z_layer": 3,
     "tile": {
-      "x": 21,
-      "y": 13
+      "x": 22,
+      "y": 25
     },
-    "created_at": 1757956598.1914635
+    "created_at": 1757957515.4432838
+  },
+  "3febdc0e-9443-416e-ab6a-342288a86e29": {
+    "item_id": "gold",
+    "quantity": 1,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "z_layer": 3,
+    "tile": {
+      "x": 24,
+      "y": 7
+    },
+    "created_at": 1757957535.3024669
   }
 }
