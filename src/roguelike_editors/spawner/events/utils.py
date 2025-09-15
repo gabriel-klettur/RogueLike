@@ -52,20 +52,6 @@ def compute_spawner_handle_rects(camera: Any, building: Any) -> dict[str, Option
         bw, bh = camera.scale(building.image.get_size())
     except (AttributeError, TypeError):
         return {'delete': None, 'reset': None, 'resize': None}
-
-
-def get_selected_building_id(ip_controller: Any) -> Optional[int]:
-    """Return the selected building id from InstanceProperties' VisualsModel.
-
-    Centralizes the source of truth so event modules don't diverge. Returns an
-    int or None if unavailable.
-    """
-    try:
-        vmodel = getattr(getattr(ip_controller, 'visuals', None), 'model', None) if ip_controller else None
-        bid = getattr(vmodel, 'selected_building_id', None) if vmodel else None
-        return int(bid) if bid is not None else None
-    except (AttributeError, TypeError, ValueError):
-        return None
     try:
         handle_size = max(15, min(65, int(bw * 0.10)))
     except (TypeError, ValueError):

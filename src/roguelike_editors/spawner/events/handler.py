@@ -402,11 +402,15 @@ class SpawnerEditorEventHandler:
             ip = getattr(self.controller, 'instance_properties', None)
             mx, my = event.pos
             # 0) Building overlay handles for the currently selected building (Delete/Reset/Resize)
-            from .utils import get_selected_building_id
-            sel_bid = get_selected_building_id(ip)
+            sel_bid = None
+            try:
+                vmodel = getattr(getattr(ip, 'visuals', None), 'model', None) if ip else None
+                sel_bid = getattr(vmodel, 'selected_building_id', None) if vmodel else None
+            except (AttributeError, TypeError):
+                sel_bid = None
             world_ob = None
             try:
-                logger.debug("[SpawnerEditor] LMB down at (%s,%s); sel_bid=%s", mx, my, sel_bid)
+                print(f"[SpawnerEditor] LMB down at ({mx},{my}); sel_bid={sel_bid}")
             except Exception:
                 pass
             if sel_bid is not None:
@@ -418,7 +422,7 @@ class SpawnerEditorEventHandler:
                     from .utils import find_building_in_world_by_id
                     world_ob = find_building_in_world_by_id(ctx.world, int(sel_bid))
             try:
-                logger.debug("[SpawnerEditor] LMB sel_bid=%s world_ob_resolved=%s", sel_bid, world_ob is not None)
+                print(f"[SpawnerEditor] LMB sel_bid={sel_bid} world_ob_resolved={world_ob is not None}")
             except Exception:
                 pass
             # Also detect a building under cursor to allow handle clicks even if not yet selected
@@ -448,7 +452,7 @@ class SpawnerEditorEventHandler:
                                 return bool(r and _pg.Rect(r).collidepoint(mx, my))
                             except Exception:
                                 return False
-                        logger.debug("[SpawnerEditor] UI collisions: props=%s insts=%s mgr=%s tb=%s itb=%s", _hit(props), _hit(insts), _hit(mgr), _hit(tb), _hit(itb))
+                        print(f"[SpawnerEditor] UI collisions: props={_hit(props)} insts={_hit(insts)} mgr={_hit(mgr)} tb={_hit(tb)} itb={_hit(itb)}")
                 except Exception:
                     pass
                 del_rect = getattr(view, '_last_selected_delete_rect', None) if view is not None else None
@@ -462,11 +466,11 @@ class SpawnerEditorEventHandler:
                     rst_rect = rst_rect or rects.get('reset')
                     rz_rect = rz_rect or rects.get('resize')
                 try:
-                    logger.debug("[SpawnerEditor] LMB handles present: del=%s rst=%s rz=%s", del_rect is not None, rst_rect is not None, rz_rect is not None)
+                    print(f"[SpawnerEditor] LMB handles present: del={del_rect is not None} rst={rst_rect is not None} rz={rz_rect is not None}")
                 except Exception:
                     pass
                 try:
-                    logger.debug("[SpawnerEditor] LMB handle hit-tests: del=%s rst=%s rz=%s", bool(del_rect and del_rect.collidepoint(mx, my)), bool(rst_rect and rst_rect.collidepoint(mx, my)), bool(rz_rect and rz_rect.collidepoint(mx, my)))
+                    print(f"[SpawnerEditor] LMB handle hit-tests: del={bool(del_rect and del_rect.collidepoint(mx,my))} rst={bool(rst_rect and rst_rect.collidepoint(mx,my))} rz={bool(rz_rect and rz_rect.collidepoint(mx,my))}")
                 except Exception:
                     pass
                 # Default (reset size)
@@ -496,7 +500,7 @@ class SpawnerEditorEventHandler:
                                 if bid is not None and hasattr(ip, 'visuals') and hasattr(ip.visuals, 'model'):
                                     ip.visuals.model.selected_building_id = int(bid)
                                     sel_bid = int(bid)
-                                    logger.debug("[SpawnerEditor] LMB autoselected building on resize click: bid=%s", bid)
+                                    print(f"[SpawnerEditor] LMB autoselected building on resize click: bid={bid}")
                             except Exception:
                                 pass
                     started = False
@@ -505,7 +509,7 @@ class SpawnerEditorEventHandler:
                     except Exception:
                         started = False
                     try:
-                        logger.debug("[SpawnerEditor] LMB start resize: sel_bid=%s started=%s", sel_bid, started)
+                        print(f"[SpawnerEditor] LMB start resize: sel_bid={sel_bid} started={started}")
                     except Exception:
                         pass
                     if started:
@@ -578,7 +582,7 @@ class SpawnerEditorEventHandler:
                             bid = getattr(ob, 'id', None)
                             if bid is not None:
                                 ip.visuals.model.selected_building_id = int(bid)
-                                logger.debug("[SpawnerEditor] LMB selected building via early-pick: bid=%s", bid)
+                                print(f"[SpawnerEditor] LMB selected building via early-pick: bid={bid}")
                                 return True
                         except Exception:
                             pass

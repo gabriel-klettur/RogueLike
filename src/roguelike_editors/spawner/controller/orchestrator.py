@@ -10,9 +10,6 @@ Contiene funciones puras que actúan sobre el `controller` (fachada) para:
 
 from typing import Any
 import pygame
-import logging
-
-logger = logging.getLogger(__name__)
 
 from .ui_state import (
     UIState,
@@ -106,13 +103,13 @@ def handle_event(controller: Any, event: pygame.event.Event) -> bool:
         # Event handler modular (drag de ancla, resize, split, confirmaciones, etc.)
         try:
             if event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
-                logger.debug("[SpawnerEditor] Orchestrator routing LMB to core: pos=%s", getattr(event, 'pos', None))
+                print(f"[SpawnerEditor] Orchestrator routing LMB to core: pos={getattr(event,'pos',None)}")
         except Exception:
             pass
         _ret = controller.events.handle_event(event)
         try:
             if event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
-                logger.debug("[SpawnerEditor] Core handler returned: %s", _ret)
+                print(f"[SpawnerEditor] Core handler returned: {_ret}")
         except Exception:
             pass
         return _ret
