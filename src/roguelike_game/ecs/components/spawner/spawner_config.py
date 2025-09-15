@@ -54,3 +54,6 @@ class SpawnerConfig:
     building_id: Optional[int] = None
     # Optional per-state visuals mapping: { state_id: building_id }
     state_visuals: Optional[Dict[str, int]] = None
+    # Optional per-state pixel offsets for visuals relative to spawner center (zone-relative px)
+    # Keys are normalized to lowercase runtime tokens (e.g., 'await_trigger', 'wait_cooldown')
+    visuals_offsets_px: Optional[Dict[str, Tuple[int, int]]] = None

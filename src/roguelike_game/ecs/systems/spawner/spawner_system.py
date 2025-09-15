@@ -12,6 +12,7 @@ import roguelike_engine.config.config as config
 from roguelike_game.ecs.components.spawn.spawn_request import SpawnRequest
 import logging
 from roguelike_game.ecs.systems.spawner.placement_utils import collect_blocked_tiles as util_collect_blocked, collect_npc_tiles as util_collect_npcs, choose_spawn_tile
+from roguelike_engine.config.map_config import global_map_settings
 
 logger = logging.getLogger(__name__)
 
@@ -142,6 +143,30 @@ class SpawnerRuntimeSystem:
         except Exception:
             mapping_ids = set()
         # If visuals are disabled, hide any linked building for this spawner and return
+        # Editor-active: show all mapped visuals and skip exclusivity so the editor can
+        # manage per-building visibility via editor_hidden flags.
+        try:
+            editor_active = bool(getattr(getattr(world, 'state', None), 'spawner_editor_active', False))
+        except Exception:
+            editor_active = False
+        if editor_active:
+            try:
+                for ob in getattr(world, 'buildings', []) or []:
+                    try:
+                        bid = getattr(ob, 'id', None)
+                        if bid in mapping_ids:
+                            # Tag linkage and ensure runtime shows them; editor can still hide via editor_hidden
+                            setattr(ob, '_spawner_eid', eid)
+                            setattr(ob, '_world_ref', world)
+                            setattr(ob, '_is_spawner_visual', True)
+                            setattr(ob, 'runtime_hidden', False)
+                    except Exception:
+                        continue
+            except Exception:
+                pass
+            # Do not track desired in editor mode to avoid churn
+            self._last_visual_id[eid] = None
+            return
         if not getattr(cfg, 'visible_in_game', False):
             # Log only on transition to disabled
             try:
@@ -187,16 +212,54 @@ class SpawnerRuntimeSystem:
         # Ensure all mapped buildings are tagged to this spawner and set exclusive runtime visibility
         try:
             dup_count = 0
+            # Compute anchor center in zone-relative pixels for positioning
+            try:
+                tx, ty = cfg.anchor_tile
+                zone = getattr(cfg, 'zone', None) or 'lobby'
+                off_x, off_y = global_map_settings.zone_offsets.get(str(zone), (0, 0))
+                anchor_cx = int((int(tx) - int(off_x)) * TILE_SIZE + TILE_SIZE // 2)
+                anchor_cy = int((int(ty) - int(off_y)) * TILE_SIZE + TILE_SIZE // 2)
+            except Exception:
+                anchor_cx = None
+                anchor_cy = None
+            # Determine offset for current state (lowercase token)
+            cur_key = self._current_state_key(st)
+            off_dx, off_dy = 0, 0
+            try:
+                offs = getattr(cfg, 'visuals_offsets_px', None) or {}
+                if cur_key and cur_key in offs:
+                    off_dx, off_dy = offs[cur_key]
+                elif cur_key:
+                    # try camel/title variations stored lowercased
+                    camel = ''.join(part.title() for part in cur_key.split('_'))
+                    if camel.lower() in offs:
+                        off_dx, off_dy = offs[camel.lower()]
+            except Exception:
+                off_dx, off_dy = 0, 0
             for ob in getattr(world, 'buildings', []) or []:
                 try:
-                    if getattr(ob, 'id', None) in mapping_ids:
+                    bid = getattr(ob, 'id', None)
+                    if bid in mapping_ids:
                         # Tag linkage and editor/runtime markers for renderer
                         setattr(ob, '_spawner_eid', eid)
                         setattr(ob, '_world_ref', world)
                         setattr(ob, '_is_spawner_visual', True)
                         # Exclusive visibility: only desired remains visible
-                        setattr(ob, 'runtime_hidden', getattr(ob, 'id', None) != desired)
-                    if getattr(ob, 'id', None) == desired:
+                        visible_this = (bid == desired)
+                        setattr(ob, 'runtime_hidden', not visible_this)
+                        if visible_this and anchor_cx is not None and anchor_cy is not None:
+                            # Place building relative to spawner center applying offset
+                            try:
+                                # Ensure building in the same zone
+                                if getattr(ob, 'zone', None) != zone:
+                                    setattr(ob, 'zone', zone)
+                                # Do not override position while editor is dragging this visual
+                                if not bool(getattr(ob, '_spawner_visual_dragging', False)):
+                                    setattr(ob, 'rel_x', int(anchor_cx + int(off_dx)))
+                                    setattr(ob, 'rel_y', int(anchor_cy + int(off_dy)))
+                            except Exception:
+                                pass
+                    if bid == desired:
                         dup_count += 1
                 except Exception:
                     continue
