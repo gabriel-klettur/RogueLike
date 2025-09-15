@@ -396,50 +396,23 @@ class SpawnerEditorEventHandler:
             if rz.update_resize_motion(ctx, event):
                 return True
 
-        # LMB handling: allow selecting a spawner by clicking near its anchor. If a spawner is under cursor, consume the event
-        # to give it priority over buildings (no building hover/click should trigger in that case). Otherwise, process building UI.
+        # LMB handling: prioritize building UI handles (Delete/Reset/Resize) for the currently selected building.
+        # If not clicking a handle, allow selecting a spawner by clicking near its anchor (spawner gets priority over general building selection).
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             ip = getattr(self.controller, 'instance_properties', None)
             mx, my = event.pos
-            # 0) Spawner anchor selection
-            try:
-                eid = pick_spawner_under_cursor(world, camera, int(mx), int(my))
-                if eid is not None:
-                    try:
-                        self.model.selected_eid = eid
-                    except Exception:
-                        pass
-                    try:
-                        if hasattr(world, 'state'):
-                            setattr(world.state, 'spawner_selected_eid', eid)
-                    except Exception:
-                        pass
-                    # Also clear any selected building when selecting a spawner
-                    try:
-                        if ip is not None and hasattr(ip, 'visuals') and hasattr(ip.visuals, 'model'):
-                            ip.visuals.model.selected_building_id = None
-                    except Exception:
-                        pass
-                    # Priority: consume event so buildings do not receive hover/click
-                    return True
-            except Exception:
-                logger.debug("handle_event: spawner anchor selection failed", exc_info=True)
-            # If not clicking a spawner anchor, clear spawner selection (lose focus)
-            try:
-                if getattr(self.model, 'selected_eid', None) is not None:
-                    self.model.selected_eid = None
-                if hasattr(world, 'state'):
-                    setattr(world.state, 'spawner_selected_eid', None)
-            except Exception:
-                pass
-            # Compute handle rects for the currently selected building (like Building Editor)
+            # 0) Building overlay handles for the currently selected building (Delete/Reset/Resize)
             sel_bid = None
             try:
-                vmodel = getattr(getattr(ip, 'model', None), 'visuals', None) if ip else None
+                vmodel = getattr(getattr(ip, 'visuals', None), 'model', None) if ip else None
                 sel_bid = getattr(vmodel, 'selected_building_id', None) if vmodel else None
             except (AttributeError, TypeError):
                 sel_bid = None
             world_ob = None
+            try:
+                print(f"[SpawnerEditor] LMB down at ({mx},{my}); sel_bid={sel_bid}")
+            except Exception:
+                pass
             if sel_bid is not None:
                 try:
                     world_ob = ip.visuals._find_building_entity_by_id(int(sel_bid)) if ip and hasattr(ip, 'visuals') else None
@@ -448,19 +421,98 @@ class SpawnerEditorEventHandler:
                 if world_ob is None:
                     from .utils import find_building_in_world_by_id
                     world_ob = find_building_in_world_by_id(ctx.world, int(sel_bid))
+            try:
+                print(f"[SpawnerEditor] LMB sel_bid={sel_bid} world_ob_resolved={world_ob is not None}")
+            except Exception:
+                pass
+            # Also detect a building under cursor to allow handle clicks even if not yet selected
+            ob_under = None
+            try:
+                if ip is not None and hasattr(ip, 'visuals'):
+                    ob_under = ip.visuals.pick_visual_building_under_cursor(int(mx), int(my))
+            except Exception:
+                ob_under = None
+            # If we have no selected world_ob, but have a building under cursor, use it for handle hit-testing
+            if world_ob is None and ob_under is not None:
+                world_ob = ob_under
             if world_ob is not None:
-                from .utils import compute_spawner_handle_rects
-                rects = compute_spawner_handle_rects(ctx.camera, world_ob)
-                del_rect = rects.get('delete')
-                rst_rect = rects.get('reset')
-                rz_rect = rects.get('resize')
+                # Prefer view-cached rects from the last render pass to match exactly what was drawn
+                view = getattr(self.controller, 'view', None)
+                # Debug: check if click falls inside any cached panel rects (may explain swallowed events upstream)
+                try:
+                    if view is not None:
+                        props = getattr(view, '_last_properties_rect', None)
+                        insts = getattr(view, '_last_instances_rect', None)
+                        mgr = getattr(view, '_last_manager_rect', None)
+                        tb = getattr(view, '_last_toolbar_rect', None)
+                        itb = getattr(view, '_last_instance_toolbar_rect', None)
+                        def _hit(r):
+                            try:
+                                import pygame as _pg
+                                return bool(r and _pg.Rect(r).collidepoint(mx, my))
+                            except Exception:
+                                return False
+                        print(f"[SpawnerEditor] UI collisions: props={_hit(props)} insts={_hit(insts)} mgr={_hit(mgr)} tb={_hit(tb)} itb={_hit(itb)}")
+                except Exception:
+                    pass
+                del_rect = getattr(view, '_last_selected_delete_rect', None) if view is not None else None
+                rst_rect = getattr(view, '_last_selected_reset_rect', None) if view is not None else None
+                rz_rect = getattr(view, '_last_selected_resize_rect', None) if view is not None else None
+                # Fallback to computing rects if the view cache is missing
+                if del_rect is None or rst_rect is None or rz_rect is None:
+                    from .utils import compute_spawner_handle_rects
+                    rects = compute_spawner_handle_rects(ctx.camera, world_ob)
+                    del_rect = del_rect or rects.get('delete')
+                    rst_rect = rst_rect or rects.get('reset')
+                    rz_rect = rz_rect or rects.get('resize')
+                try:
+                    print(f"[SpawnerEditor] LMB handles present: del={del_rect is not None} rst={rst_rect is not None} rz={rz_rect is not None}")
+                except Exception:
+                    pass
+                try:
+                    print(f"[SpawnerEditor] LMB handle hit-tests: del={bool(del_rect and del_rect.collidepoint(mx,my))} rst={bool(rst_rect and rst_rect.collidepoint(mx,my))} rz={bool(rz_rect and rz_rect.collidepoint(mx,my))}")
+                except Exception:
+                    pass
                 # Default (reset size)
                 if rst_rect is not None and rst_rect.collidepoint(mx, my):
                     if self._reset_selected_building_size(sel_bid):
                         return True
-                # Resize: begin resize mode for selected building
+                # Resize: begin resize mode for selected building or for the building under cursor
                 if rz_rect is not None and rz_rect.collidepoint(mx, my):
-                    if rz.start_resize(ctx, event):
+                    # If no selection yet but we have a building under cursor, select it first (respect visibility/instance)
+                    if sel_bid is None and ob_under is not None:
+                        try:
+                            hidden = bool(getattr(ob_under, 'editor_hidden', False))
+                        except Exception:
+                            hidden = False
+                        same_instance = True
+                        try:
+                            sel_inst = getattr(getattr(ip, 'model', None), 'selected_instance', None)
+                            sel_sid = str(sel_inst.get('id')) if isinstance(sel_inst, dict) and sel_inst.get('id') is not None else None
+                            ob_sid = str(getattr(ob_under, 'spawner_instance_id', getattr(ob_under, 'spawn_id', '')))
+                            if sel_sid is not None:
+                                same_instance = (ob_sid == sel_sid)
+                        except Exception:
+                            same_instance = True
+                        if (not hidden) and same_instance:
+                            try:
+                                bid = getattr(ob_under, 'id', None)
+                                if bid is not None and hasattr(ip, 'visuals') and hasattr(ip.visuals, 'model'):
+                                    ip.visuals.model.selected_building_id = int(bid)
+                                    sel_bid = int(bid)
+                                    print(f"[SpawnerEditor] LMB autoselected building on resize click: bid={bid}")
+                            except Exception:
+                                pass
+                    started = False
+                    try:
+                        started = bool(rz.start_resize(ctx, event))
+                    except Exception:
+                        started = False
+                    try:
+                        print(f"[SpawnerEditor] LMB start resize: sel_bid={sel_bid} started={started}")
+                    except Exception:
+                        pass
+                    if started:
                         return True
                 # Remove: delete the selected building instance (parity with Building Editor)
                 if del_rect is not None and del_rect.collidepoint(mx, my):
@@ -504,6 +556,68 @@ class SpawnerEditorEventHandler:
                         return True
                     except (AttributeError, OSError, TypeError, ValueError):
                         logger.debug("handle_event: delete selected building flow failed", exc_info=True)
+            # 0b) If no building selected yet, prioritize selecting a building under cursor before spawner anchor
+            if sel_bid is None and ip is not None and hasattr(ip, 'visuals'):
+                try:
+                    ob = ip.visuals.pick_visual_building_under_cursor(int(mx), int(my))
+                except Exception:
+                    ob = None
+                if ob is not None:
+                    # Only allow selecting if visible and matches selected spawner instance
+                    try:
+                        hidden = bool(getattr(ob, 'editor_hidden', False))
+                    except Exception:
+                        hidden = False
+                    same_instance = True
+                    try:
+                        sel_inst = getattr(getattr(ip, 'model', None), 'selected_instance', None)
+                        sel_sid = str(sel_inst.get('id')) if isinstance(sel_inst, dict) and sel_inst.get('id') is not None else None
+                        ob_sid = str(getattr(ob, 'spawner_instance_id', getattr(ob, 'spawn_id', '')))
+                        if sel_sid is not None:
+                            same_instance = (ob_sid == sel_sid)
+                    except Exception:
+                        same_instance = True
+                    if (not hidden) and same_instance:
+                        try:
+                            bid = getattr(ob, 'id', None)
+                            if bid is not None:
+                                ip.visuals.model.selected_building_id = int(bid)
+                                print(f"[SpawnerEditor] LMB selected building via early-pick: bid={bid}")
+                                return True
+                        except Exception:
+                            pass
+
+            # 1) Spawner anchor selection (only if not clicking a handle)
+            try:
+                eid = pick_spawner_under_cursor(world, camera, int(mx), int(my))
+                if eid is not None:
+                    try:
+                        self.model.selected_eid = eid
+                    except Exception:
+                        pass
+                    try:
+                        if hasattr(world, 'state'):
+                            setattr(world.state, 'spawner_selected_eid', eid)
+                    except Exception:
+                        pass
+                    # Also clear any selected building when selecting a spawner
+                    try:
+                        if ip is not None and hasattr(ip, 'visuals') and hasattr(ip.visuals, 'model'):
+                            ip.visuals.model.selected_building_id = None
+                    except Exception:
+                        pass
+                    # Priority: consume event so buildings do not receive hover/click
+                    return True
+            except Exception:
+                logger.debug("handle_event: spawner anchor selection failed", exc_info=True)
+            # If not clicking a spawner anchor, clear spawner selection (lose focus)
+            try:
+                if getattr(self.model, 'selected_eid', None) is not None:
+                    self.model.selected_eid = None
+                if hasattr(world, 'state'):
+                    setattr(world.state, 'spawner_selected_eid', None)
+            except Exception:
+                pass
             # Else: selection under cursor (LMB-only selection)
             try:
                 if ip is not None and hasattr(ip, 'visuals'):
@@ -690,7 +804,7 @@ class SpawnerEditorEventHandler:
             if split_rect is not None and pygame.Rect(split_rect).collidepoint(mx, my):
                 sel_bid = None
                 try:
-                    vmodel = getattr(getattr(ip, 'model', None), 'visuals', None) if ip else None
+                    vmodel = getattr(getattr(ip, 'visuals', None), 'model', None) if ip else None
                     sel_bid = getattr(vmodel, 'selected_building_id', None) if vmodel else None
                 except (AttributeError, TypeError):
                     sel_bid = None
@@ -712,7 +826,7 @@ class SpawnerEditorEventHandler:
             # 2) Otherwise: start anchor drag for currently selected building's spawner
             try:
                 ip = getattr(self.controller, 'instance_properties', None)
-                vmodel = getattr(getattr(ip, 'model', None), 'visuals', None) if ip else None
+                vmodel = getattr(getattr(ip, 'visuals', None), 'model', None) if ip else None
                 sel_bid = getattr(vmodel, 'selected_building_id', None) if vmodel else None
             except (AttributeError, TypeError):
                 sel_bid = None
@@ -876,6 +990,77 @@ class SpawnerEditorEventHandler:
                         svc_write_buildings_instances(data)
                     except OSError:
                         logger.debug("_reset_selected_building_size: failed persisting buildings_instances after reset", exc_info=True)
+                # Also remove any per-visuals scale stored under spawners_instances.json for this selected instance
+                try:
+                    from roguelike_editors.spawner.services.persistence import load_instances_json as _sp_load, write_instances_json as _sp_write
+                except Exception:
+                    _sp_load = _sp_write = None
+                try:
+                    if _sp_load is not None and _sp_write is not None:
+                        inst_list = _sp_load()
+                        changed_vis = False
+                        # Identify currently selected spawner instance id
+                        sel_inst = getattr(getattr(self.controller.instance_properties, 'model', None), 'selected_instance', None)
+                        target_id = str(sel_inst.get('id')) if isinstance(sel_inst, dict) and sel_inst.get('id') is not None else None
+                        if target_id is not None:
+                            for inst in inst_list or []:
+                                try:
+                                    if str(inst.get('id')) != target_id:
+                                        continue
+                                    vis = inst.get('visuals') if isinstance(inst.get('visuals'), dict) else {}
+                                    # Iterate all state mappings and remove 'scale' for entries pointing to this building id
+                                    for k, v in list(vis.items()):
+                                        try:
+                                            if isinstance(v, dict):
+                                                vid = int(v.get('instance_id') or v.get('id') or v.get('building_instance_id'))
+                                            else:
+                                                vid = int(v)
+                                        except Exception:
+                                            vid = None
+                                        if vid is not None and int(vid) == int(sel_bid):
+                                            if isinstance(v, dict) and 'scale' in v:
+                                                vv = dict(v)
+                                                try:
+                                                    vv.pop('scale', None)
+                                                except Exception:
+                                                    pass
+                                                vis[k] = vv
+                                                inst['visuals'] = vis
+                                                changed_vis = True
+                                    break
+                                except Exception:
+                                    continue
+                            if changed_vis:
+                                try:
+                                    _sp_write(inst_list)
+                                except OSError:
+                                    logger.debug("_reset_selected_building_size: failed persisting spawners_instances visuals after reset", exc_info=True)
+                        # Update in-memory mapping as well
+                        try:
+                            if isinstance(getattr(self.controller.instance_properties.model, 'visuals', None), dict):
+                                vm = dict(self.controller.instance_properties.model.visuals)
+                                for k, v in list(vm.items()):
+                                    try:
+                                        if isinstance(v, dict):
+                                            vid = int(v.get('instance_id') or v.get('id') or v.get('building_instance_id'))
+                                        else:
+                                            vid = int(v)
+                                    except Exception:
+                                        vid = None
+                                    if vid is not None and int(vid) == int(sel_bid) and isinstance(v, dict) and 'scale' in v:
+                                        vv = dict(v)
+                                        try:
+                                            vv.pop('scale', None)
+                                        except Exception:
+                                            pass
+                                        vm[k] = vv
+                                self.controller.instance_properties.model.visuals = vm
+                                if isinstance(self.controller.instance_properties.model.selected_instance, dict):
+                                    self.controller.instance_properties.model.selected_instance['visuals'] = vm
+                        except Exception:
+                            logger.debug("_reset_selected_building_size: failed updating in-memory visuals map after reset", exc_info=True)
+                except Exception:
+                    logger.debug("_reset_selected_building_size: error while clearing visuals scale", exc_info=True)
                 return True
         except (AttributeError, TypeError, ValueError):
             logger.debug("_reset_selected_building_size: unexpected error", exc_info=True)

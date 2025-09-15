@@ -101,7 +101,18 @@ def handle_event(controller: Any, event: pygame.event.Event) -> bool:
             return True
 
         # Event handler modular (drag de ancla, resize, split, confirmaciones, etc.)
-        return controller.events.handle_event(event)
+        try:
+            if event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
+                print(f"[SpawnerEditor] Orchestrator routing LMB to core: pos={getattr(event,'pos',None)}")
+        except Exception:
+            pass
+        _ret = controller.events.handle_event(event)
+        try:
+            if event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
+                print(f"[SpawnerEditor] Core handler returned: {_ret}")
+        except Exception:
+            pass
+        return _ret
     except Exception:
         return False
 

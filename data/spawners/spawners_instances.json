@@ -14,32 +14,36 @@
         "instance_id": 139,
         "template_id": 157,
         "offset": [
-          -125,
-          -170
+          91,
+          -227
         ]
       },
       "Finished": {
         "instance_id": 140,
         "template_id": 158,
         "offset": [
-          -128,
-          -168
+          -309,
+          -96
         ]
       },
       "WaitCooldown": {
         "instance_id": 141,
         "template_id": 155,
         "offset": [
-          -127,
-          -167
+          -10,
+          -5
         ]
       },
       "WaitClear": {
         "instance_id": 142,
         "template_id": 157,
         "offset": [
-          -125,
-          -206
+          -234,
+          -278
+        ],
+        "scale": [
+          225,
+          337
         ]
       }
     },
