@@ -509,10 +509,26 @@ class SpawnerEditorEventHandler:
                 if ip is not None and hasattr(ip, 'visuals'):
                     ob = ip.visuals.pick_visual_building_under_cursor(int(mx), int(my))
                     if ob is not None:
-                        bid = getattr(ob, 'id', None)
-                        if bid is not None:
-                            ip.visuals.model.selected_building_id = int(bid)
-                            return True
+                        # Only allow selecting if visible in editor (not hidden) and belongs to the selected spawner instance
+                        try:
+                            hidden = bool(getattr(ob, 'editor_hidden', False))
+                        except Exception:
+                            hidden = False
+                        same_instance = True
+                        try:
+                            sel_inst = getattr(getattr(ip, 'model', None), 'selected_instance', None)
+                            sel_sid = str(sel_inst.get('id')) if isinstance(sel_inst, dict) and sel_inst.get('id') is not None else None
+                            ob_sid = str(getattr(ob, 'spawner_instance_id', getattr(ob, 'spawn_id', '')))
+                            if sel_sid is not None:
+                                same_instance = (ob_sid == sel_sid)
+                        except Exception:
+                            same_instance = True
+                        if (not hidden) and same_instance:
+                            bid = getattr(ob, 'id', None)
+                            if bid is not None:
+                                ip.visuals.model.selected_building_id = int(bid)
+                                return True
+                        # If hidden or mismatched instance, do not change selection
                     else:
                         # Clicked empty space (not spawner, not building): clear building selection
                         try:
@@ -611,38 +627,63 @@ class SpawnerEditorEventHandler:
                 ob = None
             if ob is not None and getattr(ip.visuals.model, 'selected_building_id', None) is not None:
                 try:
-                    bid = int(getattr(ob, 'id'))
-                    # Select it if not yet selected
+                    # Require that the building under cursor is the SAME as the one already selected
+                    # Do NOT auto-select on RMB; only allow moving previously selected and visible visuals
+                    sel_bid = None
                     try:
-                        if int(getattr(ip.visuals.model, 'selected_building_id') or -1) != bid:
-                            ip.visuals.model.selected_building_id = bid
+                        sel_bid = int(getattr(ip.visuals.model, 'selected_building_id') or -1)
                     except Exception:
-                        pass
-                    # Begin move
-                    self.model.moving_visual = True
-                    self.model.moving_visual_bid = bid
-                    # Mark object to prevent runtime override during drag
+                        sel_bid = None
+                    bid = None
                     try:
-                        setattr(ob, '_spawner_visual_dragging', True)
+                        bid = int(getattr(ob, 'id'))
                     except Exception:
-                        pass
-                    # Suppress gameplay input while moving visual
-                    try:
-                        if hasattr(world, 'state'):
-                            setattr(world.state, 'spawner_input_suppressed', True)
-                    except Exception:
-                        pass
-                    # Capture mouse-to-object delta in world px
-                    try:
-                        z = getattr(camera, 'zoom', 1.0) or 1.0
-                        wx = int(mx / z + camera.offset_x)
-                        wy = int(my / z + camera.offset_y)
-                        self._moving_visual_delta_world = (int(ob.x) - wx, int(ob.y) - wy)
-                    except Exception:
-                        self._moving_visual_delta_world = (0, 0)
-                    return True
+                        bid = None
+                    if sel_bid is not None and bid is not None and int(sel_bid) == int(bid):
+                        # Check not hidden in editor (visibility toggled from State-Instancia-Template table)
+                        hidden = False
+                        try:
+                            hidden = bool(getattr(ob, 'editor_hidden', False))
+                        except Exception:
+                            hidden = False
+                        # Ensure it belongs to the currently selected spawner instance (when one is selected)
+                        same_instance = True
+                        try:
+                            sel_inst = getattr(getattr(ip, 'model', None), 'selected_instance', None)
+                            sel_sid = str(sel_inst.get('id')) if isinstance(sel_inst, dict) and sel_inst.get('id') is not None else None
+                            ob_sid = str(getattr(ob, 'spawner_instance_id', getattr(ob, 'spawn_id', '')))
+                            if sel_sid is not None:
+                                same_instance = (ob_sid == sel_sid)
+                        except Exception:
+                            same_instance = True
+                        if (not hidden) and same_instance:
+                            # Begin move
+                            self.model.moving_visual = True
+                            self.model.moving_visual_bid = bid
+                            # Mark object to prevent runtime override during drag
+                            try:
+                                setattr(ob, '_spawner_visual_dragging', True)
+                            except Exception:
+                                pass
+                            # Suppress gameplay input while moving visual
+                            try:
+                                if hasattr(world, 'state'):
+                                    setattr(world.state, 'spawner_input_suppressed', True)
+                            except Exception:
+                                pass
+                            # Capture mouse-to-object delta in world px
+                            try:
+                                z = getattr(camera, 'zoom', 1.0) or 1.0
+                                wx = int(mx / z + camera.offset_x)
+                                wy = int(my / z + camera.offset_y)
+                                self._moving_visual_delta_world = (int(ob.x) - wx, int(ob.y) - wy)
+                            except Exception:
+                                self._moving_visual_delta_world = (0, 0)
+                            return True
+                        # Else: either hidden or does not belong to selected spawner; do not start move
+                    # If clicked a different building than selected, do not auto-select or move on RMB
                 except Exception:
-                    logger.debug("handle_event: failed to start moving visual", exc_info=True)
+                    logger.debug("handle_event: failed to evaluate moving visual guards", exc_info=True)
             split_rect = getattr(view, '_last_split_handle_rect', None) if view is not None else None
             rst_rect = getattr(view, '_last_selected_reset_rect', None) if view is not None else None
             # 1) Split handle: begin split drag
