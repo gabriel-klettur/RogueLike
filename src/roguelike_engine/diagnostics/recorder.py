@@ -5,6 +5,7 @@ import threading
 from datetime import datetime
 from typing import Optional, Any, Dict, List
 import logging
+from roguelike_engine.log_config import build_log_filepath
 
 # Build a stable snapshot of the current perf_log in two representations
 from .overlay.services import perf_tree as _perf
@@ -237,13 +238,15 @@ class DiagnosticsSessionRecorder:
     def _flush_to_file(self, data: Dict[str, Any]) -> None:
         # Compute output path
         root = os.getcwd()
-        out_dir = os.path.join(root, 'logs')
+        out_dir = os.path.join(root, 'logs', 'diagnostics')
         os.makedirs(out_dir, exist_ok=True)
-        started_at = data.get("started_at", datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'))
-        # Safe filename with timestamp
-        ts_label = started_at.replace(':', '').replace('-', '').replace('T', 'T').replace('Z', 'Z')
-        fname = f"session_{ts_label}.json"
-        out_path = os.path.join(out_dir, fname)
+        # Build datetime from session start if available to keep consistent naming
+        try:
+            ts_val = float(data.get("_started_ts", 0.0) or 0.0)
+            dt = datetime.utcfromtimestamp(ts_val) if ts_val > 0 else datetime.utcnow()
+        except Exception:
+            dt = datetime.utcnow()
+        out_path = str(build_log_filepath('diagnostics_session', directory=out_dir, extension='json', now_dt=dt))
         # Remove internal fields
         data = dict(data)
         data.pop("_started_ts", None)
@@ -348,17 +351,20 @@ class DiagnosticsSessionRecorder:
         root = os.getcwd()
         out_dir = os.path.join(root, 'logs', 'benchmarks')
         os.makedirs(out_dir, exist_ok=True)
-        started_at = data.get("started_at", datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'))
-        ts_label = started_at.replace(':', '').replace('-', '').replace('T', 'T').replace('Z', 'Z')
+        try:
+            ts_val = float(data.get("_started_ts", 0.0) or 0.0)
+            dt = datetime.utcfromtimestamp(ts_val) if ts_val > 0 else datetime.utcnow()
+        except Exception:
+            dt = datetime.utcnow()
         summary = self._build_summary(data)
         # JSON summary
-        json_path = os.path.join(out_dir, f'session_summary_{ts_label}.json')
+        json_path = str(build_log_filepath('diagnostics_session_summary', directory=out_dir, extension='json', now_dt=dt))
         tmp_json = json_path + '.tmp'
         with open(tmp_json, 'w', encoding='utf-8') as f:
             json.dump(summary, f, ensure_ascii=False, indent=2)
         os.replace(tmp_json, json_path)
         # LOG table (human-friendly)
-        log_path = os.path.join(out_dir, f'session_summary_{ts_label}.log')
+        log_path = str(build_log_filepath('diagnostics_session_summary', directory=out_dir, extension='log', now_dt=dt))
         lines: List[str] = []
         lines.append(f"Session: {summary.get('session_id')}  Started: {summary.get('started_at')}  Ended: {summary.get('ended_at')}  Duration: {summary.get('duration_seconds'):.2f}s")
         gc = summary.get('game_context') or {}

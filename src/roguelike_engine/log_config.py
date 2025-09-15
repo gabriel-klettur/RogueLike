@@ -8,6 +8,7 @@ import logging.config
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 import os
+from datetime import datetime
 
 # ANSI color codes
 RESET = "\033[0m"
@@ -45,7 +46,16 @@ class ColorFormatter(logging.Formatter):
         name_part  = f"{COLOR_NAME}[{record.name}]{RESET}"
         return f"{time_part}{level_part}{name_part}: {msg_part}"
 
+def build_log_filepath(base_name: str, directory: str = "logs", extension: str = "log", now_dt: datetime | None = None) -> Path:
+    """
+    Build a standardized timestamped log filepath with the pattern:
+    "nombre_nombre_nombre_dia_mes_year--hora_minuto_segundo.extension"
 
+    Example: build_log_filepath("roguelike") -> logs/roguelike_15_09_2025--11_22_30.log
+    """
+    now = now_dt or datetime.now()
+    filename = f"{base_name}_{now.day:02d}_{now.month:02d}_{now.year:04d}--{now.hour:02d}_{now.minute:02d}_{now.second:02d}.{extension}"
+    return Path(directory) / filename
 
 def init_logging(config_path: str = None, level: str = "INFO", logfile: str = None) -> None:
     """
