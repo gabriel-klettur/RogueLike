@@ -74,8 +74,7 @@ class AudioSystem:
             return float(self._playlist_interval_s)
         except Exception:
             return 120.0
-
-    @benchmark(lambda self: self.perf_log, "AudioSystem.update")
+    
     def update(self, world, camera=None):
         bus = get_bus()
         if bus is None:
