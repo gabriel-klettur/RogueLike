@@ -12,6 +12,8 @@ import logging
 import pygame
 from ..services.picking import pick_spawner_under_cursor
 from roguelike_ui.ui_blocker import is_blocked
+from roguelike_engine.config.map_config import global_map_settings
+from roguelike_engine.config.config_tiles import TILE_SIZE
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +33,77 @@ def _draw_building_rect(screen: pygame.Surface, cam, ob, color, width: int) -> p
     except (AttributeError, TypeError, ValueError, pygame.error):
         logger.debug("_draw_building_rect: failed to compute/draw rect", exc_info=True)
         return None
+
+
+def _state_color(state_key: str) -> tuple[int, int, int]:
+    """Map a state key to a stable color from a small palette."""
+    palette = [
+        (255, 50, 50),   # red
+        (255, 165, 0),   # orange
+        (255, 215, 0),   # gold
+        (50, 205, 50),   # limegreen
+        (64, 224, 208),  # turquoise
+        (65, 105, 225),  # royalblue
+        (186, 85, 211),  # mediumorchid
+        (255, 105, 180), # hotpink
+    ]
+    try:
+        s = sum(ord(ch) for ch in str(state_key))
+    except Exception:
+        s = 0
+    return palette[s % len(palette)]
+
+
+def _draw_spawner_to_building_line(screen: pygame.Surface, cam, view, ob, *, color: tuple[int, int, int] = (255, 50, 50), label: str | None = None) -> None:
+    """Draw a colored line from the spawner's center (selected instance) to the building's center.
+    Optionally label the midpoint with the state name.
+    Requires: view.controller.instance_properties.model.selected_instance to be set.
+    """
+    try:
+        ip = getattr(view.controller, 'instance_properties', None)
+        inst = getattr(getattr(ip, 'model', None), 'selected_instance', None)
+        if not isinstance(inst, dict):
+            return
+        zone = str(inst.get('zone') or 'lobby')
+        off_x, off_y = global_map_settings.zone_offsets.get(zone, (0, 0))
+        tile = inst.get('tile') or (0, 0)
+        tx = int(tile[0])
+        ty = int(tile[1])
+        # World px for spawner center
+        spx = int((int(off_x) + tx) * TILE_SIZE + TILE_SIZE // 2)
+        spy = int((int(off_y) + ty) * TILE_SIZE + TILE_SIZE // 2)
+        # Building center in world px
+        img = getattr(ob, 'image', getattr(getattr(ob, 'model', ob), 'image', None))
+        x = getattr(ob, 'x', getattr(getattr(ob, 'model', ob), 'x', None))
+        y = getattr(ob, 'y', getattr(getattr(ob, 'model', ob), 'y', None))
+        if img is None or x is None or y is None:
+            return
+        bw, bh = img.get_size()
+        bx = int(x) + int(bw // 2)
+        by = int(y) + int(bh // 2)
+        # To screen
+        sp_sx, sp_sy = cam.apply((spx, spy))
+        b_sx, b_sy = cam.apply((bx, by))
+        pygame.draw.line(screen, color, (int(sp_sx), int(sp_sy)), (int(b_sx), int(b_sy)), 3)
+        # Optional label at the midpoint
+        if label:
+            mx = int((sp_sx + b_sx) / 2)
+            my = int((sp_sy + b_sy) / 2)
+            try:
+                font = getattr(view, '_label_font', None)
+                if font is None:
+                    font = pygame.font.SysFont('arial', 14, bold=True)
+                    setattr(view, '_label_font', font)
+                ts = font.render(str(label), True, (255, 255, 255))
+                sh = font.render(str(label), True, (0, 0, 0))
+                rect = ts.get_rect(center=(mx, my))
+                screen.blit(sh, (rect.x + 1, rect.y + 1))
+                screen.blit(ts, rect)
+            except (pygame.error, ValueError):
+                pass
+    except Exception:
+        # Non-fatal in overlay
+        pass
 
 
 def render_buildings_overlays(view, screen: pygame.Surface) -> None:
@@ -69,6 +142,33 @@ def render_buildings_overlays(view, screen: pygame.Surface) -> None:
 
     target_bid = sel_bid if sel_bid is not None else hov_bid
 
+    # Lines for ALL visuals of the selected spawner instance (may saturate by request)
+    try:
+        vis_map = getattr(getattr(ip, 'model', None), 'visuals', {}) or {}
+        for _k, _v in list(vis_map.items()):
+            try:
+                if isinstance(_v, dict):
+                    _bid = int(_v.get('instance_id') or _v.get('id') or _v.get('building_instance_id'))
+                else:
+                    _bid = int(_v)
+            except (AttributeError, TypeError, ValueError):
+                continue
+            ob_all = None
+            try:
+                ob_all = ip.visuals._find_building_entity_by_id(int(_bid))
+                if ob_all is None:
+                    ip.visuals._ensure_building_loaded(int(_bid))
+                    ob_all = ip.visuals._find_building_entity_by_id(int(_bid))
+                if ob_all is None:
+                    ob_all = view._find_building_entity_by_id_world(int(_bid))
+            except (AttributeError, TypeError, ValueError):
+                ob_all = None
+            if ob_all is not None:
+                color = _state_color(str(_k))
+                _draw_spawner_to_building_line(screen, cam, view, ob_all, color=color, label=str(_k))
+    except Exception:
+        pass
+
     # Hover (cian)
     if hov_bid is not None and hov_bid != sel_bid:
         ob_h = None
@@ -99,6 +199,8 @@ def render_buildings_overlays(view, screen: pygame.Surface) -> None:
         if ob is not None:
             rect = _draw_building_rect(screen, cam, ob, (255, 215, 0), 5)
             if rect is not None:
+                # Red link line from spawner center to building center
+                _draw_spawner_to_building_line(screen, cam, view, ob)
                 # ID label
                 try:
                     if view._id_font is not None:
@@ -218,6 +320,8 @@ def render_buildings_overlays(view, screen: pygame.Surface) -> None:
         if ob_t is None:
             ob_t = view._find_building_entity_by_id_world(int(target_bid))
         if ob_t is not None:
+            # Red link line also for hovered target (no selection)
+            _draw_spawner_to_building_line(screen, cam, view, ob_t)
             try:
                 if view._z_bottom_view is not None:
                     zb = view._z_bottom_view.render(screen, ob_t, cam)

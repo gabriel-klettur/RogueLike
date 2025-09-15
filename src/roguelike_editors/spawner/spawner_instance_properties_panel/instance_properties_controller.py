@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Optional, List, Dict, Any, Tuple
 import ast
+import time
 
 import pygame
 from roguelike_ui.widgets.double_click_detector import DoubleClickDetector
@@ -89,6 +90,11 @@ class InstancePropertiesController:
         except (AttributeError, ValueError):
             pass
 
+        # Log rate-limiting state
+        self._log_last: Dict[str, Tuple[int, str]] = {}
+        # Throttle post-write GC to avoid tight loops
+        self._last_post_write_gc_ms: int = 0
+
     # --- API -----------------------------------------------------------------
     def set_game(self, game) -> None:
         """Provide access to game (camera/world) for visuals operations."""
@@ -97,6 +103,51 @@ class InstancePropertiesController:
         except AttributeError:
             self.game = None
         # No need to pass to visuals: it dereferences parent.game dynamically
+
+    # --- Logging helpers -----------------------------------------------------
+    def _now_ms(self) -> int:
+        try:
+            import pygame as _pg
+            return int(_pg.time.get_ticks() or 0)
+        except (ImportError, AttributeError, TypeError, ValueError):
+            try:
+                return int(time.time() * 1000)
+            except Exception:
+                return 0
+
+    def _should_log(self, key: str, msg: str, interval_ms: int = 800) -> bool:
+        try:
+            now = self._now_ms()
+            last = self._log_last.get(key)
+            if last is not None:
+                last_ts, last_msg = last
+                if (now - last_ts) < int(interval_ms) and str(last_msg) == str(msg):
+                    return False
+            self._log_last[key] = (now, str(msg))
+            return True
+        except Exception:
+            return True
+
+    def _log_info_rl(self, key: str, msg: str, interval_ms: int = 800) -> None:
+        if self._should_log(key, msg, interval_ms):
+            try:
+                self._log.info(msg)
+            except Exception:
+                pass
+
+    def _log_debug_rl(self, key: str, msg: str, interval_ms: int = 800) -> None:
+        if self._should_log(key, msg, interval_ms):
+            try:
+                self._log.debug(msg)
+            except Exception:
+                pass
+
+    def _log_warning_rl(self, key: str, msg: str, interval_ms: int = 800) -> None:
+        if self._should_log(key, msg, interval_ms):
+            try:
+                self._log.warning(msg)
+            except Exception:
+                pass
 
     def set_instance(self, inst: Optional[Dict[str, Any]], *, index: Optional[int] = None) -> None:
         self.model.selected_instance = inst
@@ -137,7 +188,7 @@ class InstancePropertiesController:
             visuals = {}
         self.model.visuals = visuals
         try:
-            self._log.debug(f"[InstanceProps] set_instance: loaded visuals keys={list(visuals.keys()) if isinstance(visuals, dict) else visuals}")
+            self._log_debug_rl("set_instance_loaded", f"[InstanceProps] set_instance: loaded visuals keys={list(visuals.keys()) if isinstance(visuals, dict) else visuals}", 1200)
         except (AttributeError, TypeError, ValueError):
             pass
         # Ensure buildings index is FRESH to avoid false sanitization of newly created instances
@@ -656,7 +707,7 @@ class InstancePropertiesController:
             now = 0
         if self._sanitize_block_until_ms and now < self._sanitize_block_until_ms:
             try:
-                self._log.debug(f"[InstanceProps] sanitize_visuals: SKIP (debounce) now={now} until={self._sanitize_block_until_ms}")
+                self._log_debug_rl("sanitize_skip_debounce", f"[InstanceProps] sanitize_visuals: SKIP (debounce) now={now} until={self._sanitize_block_until_ms}")
             except (AttributeError, TypeError, ValueError):
                 pass
             return
@@ -688,7 +739,7 @@ class InstancePropertiesController:
             try:
                 if disk_visuals_keys and (str(k) not in disk_visuals_keys):
                     try:
-                        self._log.info(f"[InstanceProps] sanitize_visuals: dropping state='{k}' (absent on disk)")
+                        self._log_info_rl(f"sanitize_drop_{k}", f"[InstanceProps] sanitize_visuals: dropping state='{k}' (absent on disk)")
                     except (AttributeError, TypeError, ValueError):
                         pass
                     visuals.pop(k, None)
@@ -729,7 +780,7 @@ class InstancePropertiesController:
                         repaired = True
                         repaired_any = True
                         try:
-                            self._log.info(f"[InstanceProps] sanitize_visuals: repaired state='{k}' -> instance_id={new_id} tpl={vtpl}")
+                            self._log_info_rl(f"sanitize_repair_{k}", f"[InstanceProps] sanitize_visuals: repaired state='{k}' -> instance_id={new_id} tpl={vtpl}")
                         except (AttributeError, TypeError, ValueError):
                             pass
                     else:
@@ -742,7 +793,7 @@ class InstancePropertiesController:
             if not keep and not repaired:
                 try:
                     reason = 'invalid' if vid is None else 'missing in buildings and no valid template_id'
-                    self._log.warning(f"[InstanceProps] sanitize_visuals: removing state='{k}' reason={reason} value={v}")
+                    self._log_warning_rl(f"sanitize_remove_{k}", f"[InstanceProps] sanitize_visuals: removing state='{k}' reason={reason} value={v}")
                 except (AttributeError, TypeError, ValueError):
                     pass
                 visuals.pop(k, None)
@@ -759,7 +810,7 @@ class InstancePropertiesController:
             # Rebuild to refresh UI
             self._build_visuals_rows()
             try:
-                self._log.info(f"[InstanceProps] sanitize_visuals: persisted cleanup/repairs keys={list(visuals.keys())}")
+                self._log_info_rl("sanitize_persisted", f"[InstanceProps] sanitize_visuals: persisted cleanup/repairs keys={list(visuals.keys())}")
             except (AttributeError, TypeError, ValueError):
                 pass
 
@@ -791,9 +842,9 @@ class InstancePropertiesController:
                 removed = True
                 continue
             kept.append(e)
-        # Then deduplicate by (zone,rel_x,rel_y,template_id)
+        # Then deduplicate by (zone,rel_x,rel_y,template_id) for NORMAL entries only.
+        # Entries linked to spawners are PROTECTED and not deduplicated here.
         try:
-            seen: dict[str, dict] = {}
             def _key(e: dict) -> str:
                 try:
                     zone = str(e.get('zone') or 'lobby')
@@ -803,29 +854,34 @@ class InstancePropertiesController:
                     return f"{zone}|{rx}|{ry}|{tid}"
                 except (AttributeError, TypeError, ValueError):
                     return str(id(e))
-            def _score(e: dict) -> tuple:
-                ov = e.get('overrides') if isinstance(e, dict) else None
-                is_spawn_vis = 1 if (isinstance(ov, dict) and bool(ov.get('_is_spawner_visual'))) else 0
-                # Prefer entries tied to current selected spawner if available
-                tied_to_me = 0
+            def _is_spawner_linked(e: dict) -> bool:
                 try:
-                    inst = self.model.selected_instance or {}
-                    sid = str(inst.get('id')) if inst.get('id') is not None else None
-                    if sid and (str(e.get('spawner_instance_id')) == sid or str((ov or {}).get('spawner_instance_id')) == sid):
-                        tied_to_me = 1
-                except (AttributeError, TypeError, ValueError):
-                    tied_to_me = 0
+                    ov = e.get('overrides') if isinstance(e, dict) else None
+                    if isinstance(ov, dict) and (ov.get('_is_spawner_visual') or ov.get('spawner_instance_id')):
+                        return True
+                    if str(e.get('spawner_instance_id') or '') or str(e.get('spawn_id') or ''):
+                        return True
+                except Exception:
+                    pass
+                return False
+            protected = [e for e in kept if _is_spawner_linked(e)]
+            normal = [e for e in kept if not _is_spawner_linked(e)]
+            seen: dict[str, dict] = {}
+            def _score_normal(e: dict) -> int:
                 try:
-                    neg_id = -int(e.get('id') or 0)
-                except (AttributeError, TypeError, ValueError):
-                    neg_id = 0
-                return (tied_to_me, is_spawn_vis, neg_id)
-            for e in kept:
+                    return -int(e.get('id') or 0)
+                except Exception:
+                    return 0
+            for e in normal:
                 k = _key(e)
                 cur = seen.get(k)
-                if cur is None or _score(e) > _score(cur):
+                if cur is None or _score_normal(e) > _score_normal(cur):
                     seen[k] = e
-            deduped = list(seen.values())
+            dedup_normal = list(seen.values())
+            # Drop normals that collide with any protected key
+            pkeys = { _key(e) for e in protected }
+            dedup_normal = [e for e in dedup_normal if _key(e) not in pkeys]
+            deduped = protected + dedup_normal
             if len(deduped) != len(kept):
                 kept = deduped
                 removed = True
@@ -833,7 +889,7 @@ class InstancePropertiesController:
             pass
         if removed:
             try:
-                self._log.warning(f"[InstanceProps] GC/Dedup buildings_instances: before={len(data)} after={len(kept)} removed={len(data)-len(kept)}")
+                self._log_warning_rl("gc_dedup", f"[InstanceProps] GC/Dedup buildings_instances: before={len(data)} after={len(kept)} removed={len(data)-len(kept)}", 1500)
             except (AttributeError, TypeError, ValueError):
                 pass
             self._write_buildings_instances(kept)
@@ -934,9 +990,12 @@ class InstancePropertiesController:
 
     def _write_buildings_instances(self, data: List[Dict[str, Any]]) -> None:
         svc_write_buildings_instances(data)
-        # Post-write GC to ensure consistency
+        # Post-write GC to ensure consistency, but throttle to avoid tight loops
         try:
-            self._gc_invalid_building_instances()
+            now = self._now_ms()
+            if not self._last_post_write_gc_ms or (now - self._last_post_write_gc_ms) > 1500:
+                self._last_post_write_gc_ms = now
+                self._gc_invalid_building_instances()
         except (AttributeError, TypeError, ValueError):
             pass
 
@@ -956,88 +1015,10 @@ class InstancePropertiesController:
         return cnt
 
     def _find_existing_visual_instance_by_template(self, template_id: int) -> Optional[int]:
-        """Return an instance id already referenced by this spawner's visuals that uses the given template_id.
-        This ensures we reuse the same building instance across states when they share the same template.
+        """(Disabled) Reuse is not allowed: each state must have its own building instance.
+        Always return None so creation flow clones/creates a new instance.
         """
-        visuals = getattr(self.model, 'visuals', {}) or {}
-        if not visuals:
-            return None
-        data = self._load_buildings_instances()
-        # Build id -> template_id map for quick lookup
-        tpl_by_id: dict[int, int] = {}
-        for e in data:
-            try:
-                iid = int(e.get('id'))
-                tid = int(e.get('template_id'))
-                tpl_by_id[iid] = tid
-            except (AttributeError, TypeError, ValueError):
-                continue
-        for _, val in visuals.items():
-            try:
-                if isinstance(val, dict):
-                    vid = int(val.get('instance_id') or val.get('id') or val.get('building_instance_id'))
-                else:
-                    vid = int(val)
-            except (AttributeError, TypeError, ValueError):
-                continue
-            if vid in tpl_by_id and tpl_by_id[vid] == int(template_id):
-                return vid
         return None
-
-    def _clone_instance_with_new_template(self, source_id: int, new_template_id: int) -> Optional[int]:
-        data = self._load_buildings_instances()
-        src = None
-        for e in data:
-            try:
-                if int(e.get('id')) == source_id:
-                    src = e
-                    break
-            except (AttributeError, TypeError, ValueError):
-                continue
-        if src is None:
-            return None
-        # Compute next id
-        next_id = 1
-        try:
-            ids = [int(e.get('id')) for e in data if e.get('id') is not None]
-            if ids:
-                next_id = max(ids) + 1
-        except (AttributeError, TypeError, ValueError):
-            pass
-        clone = {
-            'id': next_id,
-            'template_id': int(new_template_id),
-            'zone': src.get('zone'),
-            'rel_x': src.get('rel_x'),
-            'rel_y': src.get('rel_y'),
-        }
-        # Copy overrides if present
-        if isinstance(src.get('overrides'), dict):
-            clone['overrides'] = src['overrides']
-        else:
-            clone['overrides'] = {}
-        # Tag as spawner visual to protect from global building saves
-        try:
-            if isinstance(self.model.selected_instance, dict):
-                sid = str(self.model.selected_instance.get('id')) if self.model.selected_instance.get('id') is not None else None
-            else:
-                sid = None
-            if isinstance(clone.get('overrides'), dict):
-                clone['overrides']['_is_spawner_visual'] = True
-                if sid:
-                    clone['overrides']['spawner_instance_id'] = sid
-            # Also persist root-level spawn identifiers so loader/saver can preserve IDs
-            if sid:
-                clone['spawn_id'] = str(sid)
-                clone['spawner_instance_id'] = str(sid)
-        except (AttributeError, TypeError, ValueError):
-            pass
-        data.append(clone)
-        self._write_buildings_instances(data)
-        # Refresh index
-        self._building_index = None
-        self._ensure_buildings_index()
-        return next_id
 
     def commit_visual_edit_if_finished(self) -> bool:
         display_state = getattr(self.model, 'visuals_editing_state', None)
@@ -1103,6 +1084,7 @@ class InstancePropertiesController:
         except (ImportError, AttributeError, pygame.error):
             pass
         return True
+
     def set_visual_template_via_picker(self, state_key: str, new_tpl_id: int) -> None:
         """Apply a template selection coming from the visuals picker overlay.
         Mirrors the logic used by inline text commit and the '+' flow, reusing existing
@@ -1310,6 +1292,7 @@ class InstancePropertiesController:
             pass
         # Done
         return
+
     def add_building_instance_for_visual(self, state_key: str, reveal: bool = True) -> Optional[int]:
         # Need a template id: prefer current text input if editing this state
         txt = (self.model.visuals_pending_templates or {}).get(state_key, '')
@@ -1323,30 +1306,7 @@ class InstancePropertiesController:
         ok, msg, tpl_id = self._validate_template_text(txt)
         if tpl_id is None or not ok:
             return None
-        # Prefer reuse: check if another state already uses an instance with this template
-        reuse_id = self._find_existing_visual_instance_by_template(int(tpl_id))
-        if reuse_id is not None:
-            visuals = getattr(self.model, 'visuals', {}) or {}
-            key_map = getattr(self.model, 'visuals_key_map', {}) or {}
-            json_key = key_map.get(state_key, state_key)
-            visuals[json_key] = {'instance_id': reuse_id, 'template_id': int(tpl_id)}
-            self.model.visuals = visuals
-            try:
-                if self.model.selected_instance is not None:
-                    self.model.selected_instance['visuals'] = visuals
-            except AttributeError:
-                pass
-            self._persist_instance()
-            # Refresh indexes/rows
-            self._building_index = None
-            self._ensure_buildings_index()
-            self._build_visuals_rows()
-            if reveal:
-                try:
-                    self._tag_and_reveal_building(int(reuse_id), state_key)
-                except (AttributeError, TypeError, ValueError):
-                    pass
-            return reuse_id
+        # Reuse disabled: always proceed to create a fresh instance for this state
         # Load buildings instances and compute next id
         data = self._load_buildings_instances()
         next_id = 1
@@ -1378,6 +1338,7 @@ class InstancePropertiesController:
         except (TypeError, ValueError):
             rel_x = 0
             rel_y = 0
+        # Reuse disabled: keep next_id as a fresh id for the new instance
         # Attempt to reuse an existing instance in the same spot and template to avoid duplicates
         try:
             zone_norm = zone
@@ -1966,7 +1927,7 @@ class InstancePropertiesController:
         if inst is None:
             return
         try:
-            self._log.debug(f"[InstanceProps] _persist_instance: about to persist id={inst.get('id')} visuals={inst.get('visuals')}")
+            self._log_debug_rl("persist_about", f"[InstanceProps] _persist_instance: about to persist id={inst.get('id')} visuals={inst.get('visuals')}")
         except (AttributeError, TypeError, ValueError):
             pass
         # Ensure the in-memory visuals map from the model is applied before persisting
@@ -2008,7 +1969,7 @@ class InstancePropertiesController:
                         # Keep as-is if cannot normalize
                         norm[str(k)] = {'instance_id': v, 'template_id': None}
                 try:
-                    self._log.debug(f"[InstanceProps] _persist_instance: computed norm_visuals={norm}")
+                    self._log_debug_rl("persist_norm", f"[InstanceProps] _persist_instance: computed norm_visuals={norm}")
                 except (AttributeError, TypeError, ValueError):
                     pass
                 # Guard: avoid wiping visuals unintentionally when model.visuals is empty transiently
@@ -2021,7 +1982,7 @@ class InstancePropertiesController:
                         cur_vis = inst.get('visuals')
                         if isinstance(cur_vis, dict) and len(cur_vis) > 0:
                             try:
-                                self._log.debug("[InstanceProps] _persist_instance: norm empty, KEEP existing visuals (non-empty)")
+                                self._log_debug_rl("persist_keep_nonempty", "[InstanceProps] _persist_instance: norm empty, KEEP existing visuals (non-empty)")
                             except (AttributeError, TypeError, ValueError):
                                 pass
                         else:
@@ -2096,7 +2057,7 @@ class InstancePropertiesController:
                 except (AttributeError, TypeError, ValueError):
                     continue
         try:
-            self._log.debug(f"[InstanceProps] _persist_instance: resolve target_idx={target_idx} original_id={self.model.original_id} selected_index={self.model.selected_index} original_key={self.model.original_key} cur_key={cur_key}")
+            self._log_debug_rl("persist_resolve", f"[InstanceProps] _persist_instance: resolve target_idx={target_idx} original_id={self.model.original_id} selected_index={self.model.selected_index} original_key={self.model.original_key} cur_key={cur_key}")
         except (AttributeError, TypeError, ValueError):
             pass
 
@@ -2118,6 +2079,13 @@ class InstancePropertiesController:
         else:
             data.append(inst)
         write_instances_json(data)
+        # After writing, debounce sanitize to avoid immediate repair/cleanup loop
+        try:
+            now = self._now_ms()
+            # Give a short window for indexes to refresh and UI to settle
+            self._sanitize_block_until_ms = max(self._sanitize_block_until_ms, now + 600)
+        except Exception:
+            pass
         # Verify round-trip persisted visuals; if lost accidentally, rewrite once with model snapshot
         try:
             check, idx_check, _ = find_instance_by_id(str(inst.get('id')))
@@ -2134,7 +2102,7 @@ class InstancePropertiesController:
         except (AttributeError, TypeError, ValueError, OSError):
             pass
         try:
-            self._log.debug(f"[InstanceProps] _persist_instance: wrote instance id={inst.get('id')} with visuals keys={list((inst.get('visuals') or {}).keys()) if isinstance(inst.get('visuals'), dict) else inst.get('visuals')}")
+            self._log_debug_rl("persist_wrote", f"[InstanceProps] _persist_instance: wrote instance id={inst.get('id')} with visuals keys={list((inst.get('visuals') or {}).keys()) if isinstance(inst.get('visuals'), dict) else inst.get('visuals')}")
         except (AttributeError, TypeError, ValueError):
             pass
         # Update original ids/keys for subsequent edits

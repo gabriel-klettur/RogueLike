@@ -9,7 +9,32 @@
     "overrides": {
       "visible_in_game": true
     },
-    "visuals": {},
+    "visuals": {
+      "AwaitTrigger": {
+        "instance_id": 139,
+        "template_id": 157,
+        "offset": [
+          111,
+          -77
+        ]
+      },
+      "WaitCooldown": {
+        "instance_id": 140,
+        "template_id": 157,
+        "offset": [
+          -249,
+          -17
+        ]
+      },
+      "Finished": {
+        "instance_id": 141,
+        "template_id": 158,
+        "offset": [
+          -244,
+          -311
+        ]
+      }
+    },
     "id": "survival_10_forest_14_9"
   }
 ]

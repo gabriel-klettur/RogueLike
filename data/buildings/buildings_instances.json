@@ -1734,5 +1734,21 @@
             "z_top": 6,
             "z": 2
         }
+    },
+    {
+        "id": 141,
+        "template_id": 158,
+        "zone": "Forest",
+        "rel_x": 604,
+        "rel_y": 217,
+        "overrides": {
+            "scale": [
+                256,
+                384
+            ],
+            "z_bottom": 3,
+            "z_top": 5,
+            "z": 1
+        }
     }
 ]
