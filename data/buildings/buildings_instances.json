@@ -1736,71 +1736,20 @@
         }
     },
     {
-        "id": 139,
-        "template_id": 155,
-        "zone": "Forest",
-        "rel_x": 752,
-        "rel_y": 334,
-        "overrides": {
-            "_is_spawner_visual": true,
-            "scale": [
-                256,
-                384
-            ],
-            "spawner_instance_id": "survival_10_forest_14_9"
-        },
-        "spawn_id": "survival_10_forest_14_9",
-        "spawner_instance_id": "survival_10_forest_14_9"
-    },
-    {
-        "id": 140,
-        "template_id": 155,
-        "zone": "Forest",
-        "rel_x": 752,
-        "rel_y": 334,
-        "overrides": {
-            "_is_spawner_visual": true,
-            "scale": [
-                256,
-                384
-            ],
-            "spawner_instance_id": "survival_10_forest_14_9"
-        },
-        "spawn_id": "survival_10_forest_14_9",
-        "spawner_instance_id": "survival_10_forest_14_9"
-    },
-    {
         "id": 141,
         "template_id": 158,
         "zone": "Forest",
         "rel_x": 752,
         "rel_y": 327,
+        "spawn_id": "survival_10_forest_14_9",
         "overrides": {
-            "_is_spawner_visual": true,
             "scale": [
                 256,
                 384
             ],
-            "spawner_instance_id": "survival_10_forest_14_9"
-        },
-        "spawn_id": "survival_10_forest_14_9",
-        "spawner_instance_id": "survival_10_forest_14_9"
-    },
-    {
-        "id": 142,
-        "template_id": 155,
-        "zone": "Forest",
-        "rel_x": 752,
-        "rel_y": 334,
-        "overrides": {
-            "_is_spawner_visual": true,
-            "scale": [
-                256,
-                384
-            ],
-            "spawner_instance_id": "survival_10_forest_14_9"
-        },
-        "spawn_id": "survival_10_forest_14_9",
-        "spawner_instance_id": "survival_10_forest_14_9"
+            "z_bottom": 3,
+            "z_top": 5,
+            "z": 3
+        }
     }
 ]

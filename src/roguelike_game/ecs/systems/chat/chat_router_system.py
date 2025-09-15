@@ -5,6 +5,7 @@ from pathlib import Path
 import os
 import uuid
 from datetime import datetime
+from roguelike_engine.log_config import build_log_filepath
 import pygame
 from roguelike_game.ecs.systems.chat.chat_bubble_utils import push_bubble
 from roguelike_engine.chat.service.chat_service import ChatService, ChatJob
@@ -42,10 +43,13 @@ class ChatRouterSystem:
             self._mem_store = None
         try:
             self._session_id = uuid.uuid4().hex[:8]
+            self._session_dt = datetime.now()
             self._log_dir = getattr(self, '_root', Path('.')) / 'logs' / 'chat_sessions'
             os.makedirs(self._log_dir, exist_ok=True)
         except Exception:
             self._log_dir = None
+        # Cache de archivo por NPC
+        self._npc_log_path: dict[int, str] = {}
         # Scheduler interno para mensajes troceados (chat + burbujas)
         # Cada item: {due:int(ms), type:'chat'|'bubble', data:{...}}
         self._scheduled: list[dict] = []
@@ -54,13 +58,43 @@ class ChatRouterSystem:
         self._pending_confirms: dict[int, dict] = {}
 
     # --- Logging helper ------------------------------------------------------
-    def _log_line(self, npc_eid: int, sender: str, text: str) -> None:
+    def _log_line(self, world, npc_eid: int, sender: str, text: str, role: str | None = None) -> None:
         try:
             if not self._log_dir:
                 return
-            # Un archivo por sesión y por NPC
-            fname = f"sess-{self._session_id}_npc-{int(npc_eid)}.log"
-            path = self._log_dir / fname
+            # Construir o reutilizar path por NPC con nombre estandarizado
+            path_str = self._npc_log_path.get(int(npc_eid))
+            if not path_str:
+                # Resolver rol y nombre del NPC
+                if role is None:
+                    try:
+                        chat = world.components.get('ChatComponent', {}).get(npc_eid)
+                        role = getattr(chat, 'role', None) if chat else None
+                    except Exception:
+                        role = None
+                role_s = str(role or 'npc')
+                # Nombre visible del NPC
+                name_s = f"npc-{int(npc_eid)}"
+                try:
+                    ident = world.components.get('Identity', {}).get(npc_eid)
+                    nm = getattr(ident, 'name', None) or getattr(ident, 'id', None)
+                    if nm:
+                        name_s = str(nm)
+                except Exception:
+                    pass
+                # Sanitizar
+                def _slug(s: str) -> str:
+                    try:
+                        s2 = s.strip().lower().replace(' ', '_')
+                        return re.sub(r"[^a-z0-9_\-]", '', s2)
+                    except Exception:
+                        return str(s)
+                base = f"chat_session_{_slug(role_s)}_{_slug(name_s)}"
+                path = build_log_filepath(base, directory=str(self._log_dir), extension='log', now_dt=getattr(self, '_session_dt', None))
+                path_str = str(path)
+                self._npc_log_path[int(npc_eid)] = path_str
+            else:
+                path = Path(path_str)
             with path.open('a', encoding='utf-8') as f:
                 f.write(f"[{datetime.now().isoformat(timespec='seconds')}] {sender}: {text}\n")
         except Exception:
@@ -110,7 +144,7 @@ class ChatRouterSystem:
             if self._mem_store is not None and target_eid is not None:
                 mem_key = self._memory_key(world, target_eid)
                 self._mem_store.append_ephemeral(mem_key, 'user', text)
-            self._log_line(target_eid, 'USER', text)
+            self._log_line(world, target_eid, 'USER', text, role)
         except Exception:
             pass
         # 0) Si hay confirmación pendiente para este target, interpretar sí/no
@@ -135,7 +169,7 @@ class ChatRouterSystem:
                             if self._mem_store is not None:
                                 mem_key = self._memory_key(world, target_eid)
                                 self._mem_store.append_ephemeral(mem_key, 'assistant', msg2)
-                            self._log_line(target_eid, 'NPC', msg2)
+                            self._log_line(world, target_eid, 'NPC', msg2, role)
                         except Exception:
                             pass
                 except Exception:
@@ -150,7 +184,7 @@ class ChatRouterSystem:
                     if self._mem_store is not None:
                         mem_key = self._memory_key(world, target_eid)
                         self._mem_store.append_ephemeral(mem_key, 'assistant', cancel_txt)
-                    self._log_line(target_eid, 'NPC', cancel_txt)
+                    self._log_line(world, target_eid, 'NPC', cancel_txt, role)
                 except Exception:
                     pass
                 try:
@@ -166,7 +200,7 @@ class ChatRouterSystem:
                 if self._mem_store is not None:
                     mem_key = self._memory_key(world, target_eid)
                     self._mem_store.append_ephemeral(mem_key, 'assistant', ask)
-                self._log_line(target_eid, 'NPC', ask)
+                self._log_line(world, target_eid, 'NPC', ask, role)
             except Exception:
                 pass
             try:
@@ -187,7 +221,7 @@ class ChatRouterSystem:
                     if self._mem_store is not None:
                         mem_key = self._memory_key(world, target_eid)
                         self._mem_store.append_ephemeral(mem_key, 'assistant', txt)
-                    self._log_line(target_eid, 'NPC', txt)
+                    self._log_line(world, target_eid, 'NPC', txt, role)
                 except Exception:
                     pass
                 try:
@@ -204,7 +238,7 @@ class ChatRouterSystem:
                     if self._mem_store is not None:
                         mem_key = self._memory_key(world, target_eid)
                         self._mem_store.append_ephemeral(mem_key, 'assistant', txt)
-                    self._log_line(target_eid, 'NPC', txt)
+                    self._log_line(world, target_eid, 'NPC', txt, role)
                 except Exception:
                     pass
                 try:
@@ -221,7 +255,7 @@ class ChatRouterSystem:
                     if self._mem_store is not None:
                         mem_key = self._memory_key(world, target_eid)
                         self._mem_store.append_ephemeral(mem_key, 'assistant', txt)
-                    self._log_line(target_eid, 'NPC', txt)
+                    self._log_line(world, target_eid, 'NPC', txt, role)
                 except Exception:
                     pass
                 try:
@@ -240,7 +274,7 @@ class ChatRouterSystem:
                     if self._mem_store is not None:
                         mem_key = self._memory_key(world, target_eid)
                         self._mem_store.append_ephemeral(mem_key, 'assistant', out)
-                    self._log_line(target_eid, 'NPC', out)
+                    self._log_line(world, target_eid, 'NPC', out, role)
                 except Exception:
                     pass
                 try:
@@ -257,7 +291,7 @@ class ChatRouterSystem:
                     if self._mem_store is not None:
                         mem_key = self._memory_key(world, target_eid)
                         self._mem_store.append_ephemeral(mem_key, 'assistant', out)
-                    self._log_line(target_eid, 'NPC', out)
+                    self._log_line(world, target_eid, 'NPC', out, role)
                 except Exception:
                     pass
                 try:
@@ -364,7 +398,7 @@ class ChatRouterSystem:
                 if self._mem_store is not None:
                     mem_key = self._memory_key(world, vendor_eid)
                     self._mem_store.append_ephemeral(mem_key, 'assistant', result)
-                self._log_line(vendor_eid, 'NPC', result)
+                self._log_line(world, vendor_eid, 'NPC', result, role=None)
             except Exception:
                 pass
             try:
@@ -506,7 +540,7 @@ class ChatRouterSystem:
             if self._mem_store is not None:
                 mem_key = self._memory_key(world, vendor_eid)
                 self._mem_store.append_ephemeral(mem_key, 'assistant', pre)
-            self._log_line(vendor_eid, 'NPC', pre)
+            self._log_line(world, vendor_eid, 'NPC', pre, role=None)
         except Exception:
             pass
         try:
@@ -560,7 +594,7 @@ class ChatRouterSystem:
                             if self._mem_store is not None:
                                 mem_key = self._memory_key(world, target_eid)
                                 self._mem_store.append_ephemeral(mem_key, 'assistant', txt)
-                            self._log_line(target_eid, 'NPC', txt)
+                            self._log_line(world, target_eid, 'NPC', txt, role)
                         except Exception:
                             pass
                         try:
@@ -579,7 +613,7 @@ class ChatRouterSystem:
                     if self._mem_store is not None:
                         mem_key = self._memory_key(world, target_eid)
                         self._mem_store.append_ephemeral(mem_key, 'assistant', reply)
-                    self._log_line(target_eid, 'NPC', reply)
+                    self._log_line(world, target_eid, 'NPC', reply, role)
                 except Exception:
                     pass
                 # Programar respuesta en trozos de 8 palabras, con 3s entre partes

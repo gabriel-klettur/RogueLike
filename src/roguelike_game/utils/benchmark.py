@@ -4,6 +4,7 @@ import logging
 import statistics
 import heapq
 from datetime import datetime
+from roguelike_engine.log_config import build_log_filepath
 
 from collections import defaultdict
 
@@ -17,11 +18,11 @@ def setup_benchmark_logger(base_dir: str | None = None) -> logging.Logger:
         root = os.path.abspath(
             os.path.join(os.path.dirname(__file__), "..", "..", "..")
         )
-        base_dir = os.path.join(root, "logs", "diagnostics")
+        base_dir = os.path.join(root, "logs", "benchmarks")
 
     os.makedirs(base_dir, exist_ok=True)
-    ts = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    filepath = os.path.join(base_dir, f"benchmarks_run_{ts}.log")
+    _dt = datetime.now()
+    filepath = str(build_log_filepath("benchmarks_run", directory=base_dir, extension="log", now_dt=_dt))
 
     logger = logging.getLogger("benchmarks")
     logger.setLevel(logging.INFO)
@@ -42,12 +43,12 @@ def save_benchmarks(benchmarks: dict, base_dir: str | None = None) -> tuple[str,
         root = os.path.abspath(
             os.path.join(os.path.dirname(__file__), "..", "..", "..")
         )
-        base_dir = os.path.join(root, "logs", "diagnostics")
+        base_dir = os.path.join(root, "logs", "benchmarks")
 
     os.makedirs(base_dir, exist_ok=True)
-    ts_iso = datetime.now().isoformat(timespec='seconds')
-    ts_fn = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    json_path = os.path.join(base_dir, f'benchmarks_run_{ts_fn}.json')
+    _dt = datetime.now()
+    ts_iso = _dt.isoformat(timespec='seconds')
+    json_path = str(build_log_filepath('benchmarks_run', directory=base_dir, extension='json', now_dt=_dt))
 
     # Estadísticas básicas
     summary: dict[str, dict] = {}
@@ -94,7 +95,7 @@ def save_benchmarks(benchmarks: dict, base_dir: str | None = None) -> tuple[str,
     )
 
     # Additionally, emit a human-friendly .log table summary without colliding with engine logger .log
-    log_path = os.path.join(base_dir, f'benchmarks_summary_{ts_fn}.log')
+    log_path = str(build_log_filepath('benchmarks_summary', directory=base_dir, extension='log', now_dt=_dt))
     try:
         lines: list[str] = []
         lines.append(f"Run: {ts_iso}")

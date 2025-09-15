@@ -3,6 +3,7 @@ import logging
 from pathlib import Path
 from functools import partial
 from datetime import datetime
+
 import cProfile, pstats
 
 import pygame
@@ -46,6 +47,7 @@ from roguelike_game.managers.items.loader import ItemsLoader
 from roguelike_game.managers.core.audio_manager import AudioManager
 from roguelike_engine.audio.service import AudioService, AudioBus
 from roguelike_engine.audio.config import load_audio_catalog
+from roguelike_engine.log_config import build_log_filepath
 
 import logging
 logger = logging.getLogger(__name__)
@@ -88,13 +90,15 @@ class GameInitializer:
         self.extra_stages           = extra_stages
         self.extra_systems_stages   = extra_systems_stages
 
-        # Preparar archivo de log de etapas
+        # Preparar archivo de log de etapas (nombre estandarizado)
         logs_dir = Path('logs')
-        logs_dir.mkdir(exist_ok=True)
-        ts = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        self.stage_log_path = logs_dir / f'stage_times_{ts}.log'
+        logs_dir.mkdir(parents=True, exist_ok=True)
+        (logs_dir / 'init').mkdir(parents=True, exist_ok=True)
+        (logs_dir / 'profile').mkdir(parents=True, exist_ok=True)
+        self._ts_dt = datetime.now()
+        self.stage_log_path = build_log_filepath('stage_times', directory=str(logs_dir / 'init'), extension='log', now_dt=self._ts_dt)
         with open(self.stage_log_path, 'w', encoding='utf-8') as f:
-            f.write(f"[{datetime.now().isoformat()}] Inicio de inicialización\n")
+            f.write(f"[{self._ts_dt.isoformat()}] Inicio de inicialización\n")
         # Añadir FileHandler para log de etapas
         fh = logging.FileHandler(self.stage_log_path, mode='a', encoding='utf-8')
         fh.setLevel(logging.INFO)
@@ -261,7 +265,7 @@ class GameInitializer:
         g.ecs = ECSManager(self.screen, g.map, g.buildings, self.perf_log)
         g.ecs.ecs_world.state = g.state        
         pr.disable()
-        logf = Path('logs') / f'ecs_init_profile_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log'
+        logf = build_log_filepath('ecs_init_profile', directory='logs/profile', extension='log', now_dt=getattr(self, '_ts_dt', None))
         with open(logf, 'w') as pf:
             p = pstats.Stats(pr, stream=pf)
             p.sort_stats('tottime').print_stats(30)
@@ -361,9 +365,9 @@ class GameInitializer:
         try:
             # Volumen desde audio_config (o mantener el del bus)
             try:
-                mv = float(g.audio_config.get('music'))
+                mv = float(g.audio_config.get('music')) if g.audio_config else 0.6
             except Exception:
-                mv = None
+                mv = 0.6
             intro_path = None
             try:
                 from roguelike_engine.audio.config import load_audio_catalog
