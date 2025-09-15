@@ -21,6 +21,10 @@
       "WaitCooldown": {
         "instance_id": 140,
         "template_id": 155
+      },
+      "Finished": {
+        "instance_id": 141,
+        "template_id": 158
       }
     },
     "id": "survival_10_forest_14_9"

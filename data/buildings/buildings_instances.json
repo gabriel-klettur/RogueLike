@@ -1736,27 +1736,11 @@
         }
     },
     {
-        "id": 139,
-        "template_id": 154,
-        "zone": "Forest",
-        "rel_x": 753,
-        "rel_y": 336,
-        "overrides": {
-            "scale": [
-                256,
-                384
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 1
-        }
-    },
-    {
-        "id": 140,
-        "template_id": 155,
+        "id": 141,
+        "template_id": 158,
         "zone": "Forest",
         "rel_x": 752,
-        "rel_y": 334,
+        "rel_y": 327,
         "overrides": {
             "scale": [
                 256,

@@ -324,9 +324,17 @@ class SpawnerPlacementSystem:
         off_x, off_y = global_map_settings.zone_offsets.get(zone, (0, 0))
         anchor_tile = (off_x + int(local_tx), off_y + int(local_ty))
 
+        # If there are per-state visuals defined (from template or instance), enable in-game visuals by default
+        # unless explicitly disabled by overrides earlier. This ensures runtime show/hide per state works out-of-the-box.
+        try:
+            if not visible_in_game and state_visuals:
+                visible_in_game = True
+        except Exception:
+            pass
+
         return SpawnerConfig(
-            template_id=tpl.get("id", "unknown"),
-            zone=zone,
+            template_id=tpl.get("id", ""),
+            zone=inst.get("zone", tpl.get("zone", "lobby")),
             anchor_tile=anchor_tile,
             spawner_type=spawner_type,
             trigger=trigger,
