@@ -8,6 +8,7 @@ import cProfile, pstats
 
 import pygame
 import roguelike_engine.config.config as config
+from roguelike_engine.buildings import auto_importer as _auto_importer
 from roguelike_engine.camera.camera import Camera
 from roguelike_engine.utils.loading_screen import LoadingScreen
 from roguelike_engine.world.world import WorldManager
@@ -123,6 +124,7 @@ class GameInitializer:
             ("Inicializando audio"              , partial(self._init_audio)),
             ("Inicializando estado Principal"   , partial(self._init_state)),
             ("Cargando mapa"                    , partial(self._init_map)),
+            ("Auto-importar edificios (DEV)"    , partial(self._dev_auto_import_buildings)),
             ("Cargando edificios"               , partial(self._init_buildings)),
             ("Inicializando ECS"                , partial(self._init_ecs)),
             ("Cargando catálogo de ítems"       , partial(self._init_items)),
@@ -217,6 +219,17 @@ class GameInitializer:
             g.map = MapManager(self.map_name)
             g.world.maps[g.map.name] = g.map
             g.world.current_level = g.map.name
+
+    def _dev_auto_import_buildings(self):
+        """Escanea assets/buildings y crea nuevas plantillas/instancias si la flag DEV está activa."""
+        try:
+            if bool(getattr(config, 'DEV_AUTO_IMPORT_BUILDINGS', False)):
+                try:
+                    _auto_importer.run(verbose=True)
+                except Exception as e:
+                    logger.warning(f"[AutoImporter] Error al auto-importar: {e}")
+        except Exception as e:
+            logger.debug(f"[Initializer] Config no disponible para auto-import: {e}")
 
     def _init_buildings(self):
         self.game.buildings = BuildingsManager(self.game.z_state, self.game.map)

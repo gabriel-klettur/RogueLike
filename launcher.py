@@ -12,17 +12,6 @@ init_logging(level="DEBUG", logfile=str(build_log_filepath("roguelike", director
 import logging
 from roguelike_game.main import main
 
-# DEV: auto-importar nuevos assets de buildings como plantillas si la bandera está activa
-try:
-    from roguelike_engine.config import config as _cfg
-    if getattr(_cfg, 'DEV_AUTO_IMPORT_BUILDINGS', False):
-        try:
-            from roguelike_engine.buildings import auto_importer as _auto
-            _auto.run(verbose=True)
-        except Exception as _e:
-            logging.warning(f"[AutoImporter] Error al auto-importar: {_e}")
-except Exception as _e:
-    logging.debug(f"[Launcher] Config no disponible para auto-import: {_e}")
 
 if __name__ == "__main__":
     try:
