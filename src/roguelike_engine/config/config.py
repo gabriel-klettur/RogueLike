@@ -65,6 +65,8 @@ BUILDINGS_INSTANCES_PATH = str(BUILDINGS_INSTANCES_PATH)
 
 #! ------------------------ DEV/TOOLS FLAGS -----------------------
 # Auto-importar nuevas imágenes de assets/buildings como plantillas al iniciar (solo DEV)
+# TODO: deshabilitar en producción
+# TODO Deberia estar en True cada vez que agregamos nuevas imagenes a nuestros buildings
 DEV_AUTO_IMPORT_BUILDINGS = True
 # Patrones a excluir (fnmatch) al escanear assets/buildings
 DEV_AUTO_IMPORT_EXCLUDES = [
