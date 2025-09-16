@@ -8,72 +8,23 @@ from roguelike_editors.spawner.spawner_instance_properties_panel.services.buildi
     load_buildings_instances as svc_load_buildings_instances,
     write_buildings_instances as svc_write_buildings_instances,
 )
+from roguelike_editors.spawner.services.persistence import (
+    load_instances_json as sp_load_instances,
+    write_instances_json as sp_write_instances,
+)
 from .utils import find_building_in_world_by_id, log_info_safe
 from .types import EditorCtx
 
 logger = logging.getLogger(__name__)
 
 def propagate_split_ratio(ctx: EditorCtx, source_ob: Any, ratio: float, ip: Any) -> None:
-    world = ctx.world
-    # 1) Propagate by spawner instance id
-    try:
-        sid = None
-        try:
-            if ip is not None and hasattr(ip, 'visuals') and hasattr(ip.visuals, '_get_selected_spawner_id'):
-                sid = ip.visuals._get_selected_spawner_id()
-        except (AttributeError, TypeError):
-            logger.debug("propagate_split_ratio: failed to get selected spawner id", exc_info=True)
-            sid = None
-        if world is not None and sid is not None:
-            for ob2 in getattr(world, 'buildings', []) or []:
-                try:
-                    s2 = str(getattr(ob2, 'spawner_instance_id', getattr(ob2, 'spawn_id', '')))
-                    if s2 != str(sid):
-                        continue
-                    if getattr(ob2, 'id', None) == getattr(source_ob, 'id', None):
-                        continue
-                    try:
-                        ob2.split_ratio = float(ratio)
-                    except (AttributeError, TypeError, ValueError):
-                        logger.debug("propagate_split_ratio: failed setting split_ratio on sibling", exc_info=True)
-                    try:
-                        if getattr(ob2, 'controller', None) is not None:
-                            ob2.controller.update_on_camera_change()
-                    except AttributeError:
-                        logger.debug("propagate_split_ratio: failed to refresh controller on sibling", exc_info=True)
-                except (AttributeError, TypeError, ValueError):
-                    logger.debug("propagate_split_ratio: error iterating sibling buildings by spawner id", exc_info=True)
-                    continue
-    except (AttributeError, TypeError, ValueError):
-        logger.debug("propagate_split_ratio: error in spawner-id propagation branch", exc_info=True)
-    # 2) Fallback by (zone, rel_x, rel_y)
-    try:
-        key = getattr(ctx.model, '_split_propagation_key', None)
-        if world is not None and key is not None:
-            kz, kx, ky = key
-            for ob3 in getattr(world, 'buildings', []) or []:
-                try:
-                    mz = getattr(getattr(ob3, 'model', ob3), 'zone', None) or 'lobby'
-                    mxr = int(getattr(getattr(ob3, 'model', ob3), 'rel_x', -999999))
-                    myr = int(getattr(getattr(ob3, 'model', ob3), 'rel_y', -999999))
-                    if str(mz) != str(kz) or int(mxr) != int(kx) or int(myr) != int(ky):
-                        continue
-                    if getattr(ob3, 'id', None) == getattr(source_ob, 'id', None):
-                        continue
-                    try:
-                        ob3.split_ratio = float(ratio)
-                    except (AttributeError, TypeError, ValueError):
-                        logger.debug("propagate_split_ratio: failed setting split_ratio on zone/rel match", exc_info=True)
-                    try:
-                        if getattr(ob3, 'controller', None) is not None:
-                            ob3.controller.update_on_camera_change()
-                    except AttributeError:
-                        logger.debug("propagate_split_ratio: failed to refresh controller on zone/rel match", exc_info=True)
-                except (AttributeError, TypeError, ValueError):
-                    logger.debug("propagate_split_ratio: error iterating buildings by zone/rel", exc_info=True)
-                    continue
-    except (AttributeError, TypeError, ValueError):
-        logger.debug("propagate_split_ratio: error in zone/rel propagation branch", exc_info=True)
+    """Per-visual-instance behavior: do not propagate split_ratio to other buildings.
+
+    Previously we mirrored the split ratio across all buildings linked to the same spawner
+    (or sharing zone/rel). Now each visual state/instance has its own independent split.
+    This function remains as a no-op to keep call sites intact.
+    """
+    return None
 
 
 def begin_split_drag(ctx: EditorCtx, bid: int, event: pygame.event.Event) -> bool:
@@ -256,30 +207,85 @@ def end_split_drag(ctx: EditorCtx, event: pygame.event.Event) -> bool:
         # Log end
         log_info_safe(ctx.logger, "SpawnerEditor: split drag END bid=%s button=%s ratio=%s", str(bid), str(getattr(event, 'button', None)), f"{cur_ratio:.3f}" if isinstance(cur_ratio, (int, float)) else str(cur_ratio))
         if cur_ratio is not None:
+            # Persist per-visual split_ratio inside spawners_instances.json for the selected spawner instance
+            try:
+                sel_inst = getattr(getattr(getattr(ctx.controller, 'instance_properties', None), 'model', None), 'selected_instance', None)
+            except AttributeError:
+                sel_inst = None
+            try:
+                if isinstance(sel_inst, dict) and sel_inst.get('id') is not None:
+                    arr = sp_load_instances()
+                    target_id = str(sel_inst.get('id'))
+                    updated = False
+                    for inst in arr or []:
+                        try:
+                            if str(inst.get('id')) != target_id:
+                                continue
+                            vis = inst.get('visuals') if isinstance(inst.get('visuals'), dict) else {}
+                            for k, v in list(vis.items()):
+                                try:
+                                    if isinstance(v, dict):
+                                        vid = int(v.get('instance_id') or v.get('id') or v.get('building_instance_id'))
+                                    else:
+                                        vid = int(v)
+                                except (TypeError, ValueError):
+                                    vid = None
+                                if vid is not None and int(vid) == int(bid):
+                                    if not isinstance(v, dict):
+                                        entry = {'instance_id': int(vid), 'template_id': v if not isinstance(v, dict) else v.get('template_id')}
+                                        entry['split_ratio'] = round(float(cur_ratio), 3)
+                                        vis[k] = entry
+                                    else:
+                                        vv = dict(v)
+                                        vv['split_ratio'] = round(float(cur_ratio), 3)
+                                        vis[k] = vv
+                                    inst['visuals'] = vis
+                                    updated = True
+                                    break
+                            if updated:
+                                break
+                        except Exception:
+                            continue
+                    if updated:
+                        try:
+                            sp_write_instances(arr)
+                        except OSError:
+                            logger.debug("end_split_drag: failed to persist spawners_instances split_ratio", exc_info=True)
+            except Exception:
+                logger.debug("end_split_drag: error updating spawners_instances split_ratio", exc_info=True)
+            # Cleanup: remove legacy overrides.split_ratio from buildings_instances.json for this building id
             try:
                 data = svc_load_buildings_instances()
             except OSError:
-                logger.debug("end_split_drag: failed to load buildings_instances for persistence", exc_info=True)
                 data = []
-            changed = False
+            cleaned = False
             for e in data or []:
                 try:
                     if int(e.get('id')) != int(bid):
                         continue
-                except (ValueError, TypeError):
+                except Exception:
                     continue
                 ov = e.get('overrides') or {}
-                if not isinstance(ov, dict):
-                    ov = {}
-                ov['split_ratio'] = round(float(cur_ratio), 3)
-                e['overrides'] = ov
-                changed = True
+                if isinstance(ov, dict) and 'split_ratio' in ov:
+                    try:
+                        ov.pop('split_ratio', None)
+                    except Exception:
+                        pass
+                    # remove empty overrides dict to keep file tidy
+                    if not ov:
+                        try:
+                            e.pop('overrides', None)
+                        except Exception:
+                            e['overrides'] = {}
+                    else:
+                        e['overrides'] = ov
+                    cleaned = True
                 break
-            if changed:
+            if cleaned:
                 try:
                     svc_write_buildings_instances(data)
                 except OSError:
-                    logger.debug("end_split_drag: failed to persist buildings_instances after split", exc_info=True)
+                    logger.debug("end_split_drag: failed to persist cleanup on buildings_instances", exc_info=True)
             # Propagate end-state
             try:
                 propagate_split_ratio(ctx, ob, float(cur_ratio), ip)

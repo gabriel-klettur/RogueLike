@@ -8,6 +8,10 @@ from roguelike_editors.spawner.spawner_instance_properties_panel.services.buildi
     load_buildings_instances as svc_load_buildings_instances,
     write_buildings_instances as svc_write_buildings_instances,
 )
+from roguelike_editors.spawner.services.persistence import (
+    load_instances_json as sp_load_instances_json,
+    write_instances_json as sp_write_instances_json,
+)
 from .types import EditorCtx
 
 logger = logging.getLogger(__name__)
@@ -20,7 +24,8 @@ def start_resize(ctx: EditorCtx, event: pygame.event.Event) -> bool:
     ip = getattr(ctx.controller, 'instance_properties', None)
     sel_bid = None
     try:
-        vmodel = getattr(getattr(ip, 'model', None), 'visuals', None) if ip else None
+        # IMPORTANT: selection lives in InstanceProperties.visuals.model, not in InstanceProperties.model.visuals
+        vmodel = getattr(getattr(ip, 'visuals', None), 'model', None) if ip else None
         sel_bid = getattr(vmodel, 'selected_building_id', None) if vmodel else None
     except (AttributeError, TypeError):
         sel_bid = None
@@ -53,6 +58,10 @@ def start_resize(ctx: EditorCtx, event: pygame.event.Event) -> bool:
         model.initial_size = (int(w0), int(h0))
         if hasattr(ctx.world, 'state'):
             setattr(ctx.world.state, 'spawner_input_suppressed', True)
+        try:
+            logger.debug(f"[resize] start sel_bid={sel_bid} origin=({mx},{my}) initial=({w0},{h0})")
+        except Exception:
+            pass
     except (AttributeError, TypeError, ValueError):
         logger.debug("start_resize: failed to set resize flags or suppress input", exc_info=True)
     return True
@@ -102,6 +111,10 @@ def update_resize_motion(ctx: EditorCtx, event: pygame.event.Event) -> bool:
         cur_size = None
     try:
         ob.resize(int(new_w), int(new_h))
+        try:
+            logger.debug(f"[resize] motion bid={bid} new_size=({new_w},{new_h}) from delta=({dx},{dy})")
+        except Exception:
+            pass
     except (AttributeError, TypeError, ValueError):
         logger.debug("update_resize_motion: failed to resize object", exc_info=True)
         return False
@@ -128,37 +141,110 @@ def finish_resize(ctx: EditorCtx, event: pygame.event.Event) -> bool:
         logger.debug("finish_resize: failed to clear input suppression", exc_info=True)
     if bid is None:
         return True
+    # Read current size from world entity
+    try:
+        ip = getattr(ctx.controller, 'instance_properties', None)
+        ob = ip.visuals._find_building_entity_by_id(int(bid))
+        cur_w, cur_h = ob.image.get_size()
+    except (AttributeError, TypeError, ValueError):
+        logger.debug("finish_resize: failed to resolve object or current size", exc_info=True)
+        cur_w = cur_h = None
+
+    # 1) Persist to buildings_instances.json (global per-building), for backward compatibility
     try:
         data = svc_load_buildings_instances()
     except OSError:
         logger.debug("finish_resize: failed to load buildings_instances", exc_info=True)
         data = []
-    changed = False
-    for e in data or []:
-        try:
-            if int(e.get('id')) != int(bid):
+    changed_bi = False
+    if cur_w is not None and cur_h is not None:
+        for e in data or []:
+            try:
+                if int(e.get('id')) != int(bid):
+                    continue
+            except (ValueError, TypeError):
                 continue
-        except (ValueError, TypeError):
-            continue
-        # Infer current size from the world entity
-        try:
-            ip = getattr(ctx.controller, 'instance_properties', None)
-            ob = ip.visuals._find_building_entity_by_id(int(bid))
-            cur_w, cur_h = ob.image.get_size()
-        except (AttributeError, TypeError, ValueError):
-            logger.debug("finish_resize: failed to resolve object or current size", exc_info=True)
-            cur_w = cur_h = None
-        if cur_w is not None and cur_h is not None:
             ov = e.get('overrides') or {}
             if not isinstance(ov, dict):
                 ov = {}
             ov['scale'] = [int(cur_w), int(cur_h)]
             e['overrides'] = ov
-            changed = True
+            changed_bi = True
             break
-    if changed:
+    if changed_bi:
         try:
             svc_write_buildings_instances(data)
         except OSError:
             logger.debug("finish_resize: failed to persist buildings_instances after resize", exc_info=True)
+
+    # 2) Persist to spawners_instances.json inside the selected instance's visuals mapping
+    try:
+        inst_data = sp_load_instances_json()
+    except OSError:
+        logger.debug("finish_resize: failed to load spawners_instances.json", exc_info=True)
+        inst_data = []
+    changed_sp = False
+    sel_inst = None
+    try:
+        sel_inst = getattr(getattr(ctx.controller.instance_properties, 'model', None), 'selected_instance', None)
+    except Exception:
+        sel_inst = None
+    target_id = str(sel_inst.get('id')) if isinstance(sel_inst, dict) and sel_inst.get('id') is not None else None
+    if target_id is not None and cur_w is not None and cur_h is not None:
+        for inst in inst_data or []:
+            try:
+                if str(inst.get('id')) != target_id:
+                    continue
+                vis = inst.get('visuals') if isinstance(inst.get('visuals'), dict) else {}
+                # find mapping entry referencing this building id and set scale
+                for k, v in list(vis.items()):
+                    try:
+                        if isinstance(v, dict):
+                            vid = int(v.get('instance_id') or v.get('id') or v.get('building_instance_id'))
+                        else:
+                            vid = int(v)
+                    except Exception:
+                        vid = None
+                    if vid is not None and int(vid) == int(bid):
+                        if not isinstance(v, dict):
+                            v = {'instance_id': int(vid)}
+                        v['scale'] = [int(cur_w), int(cur_h)]
+                        vis[k] = v
+                        inst['visuals'] = vis
+                        changed_sp = True
+                        break
+                break
+            except Exception:
+                continue
+    if changed_sp:
+        try:
+            sp_write_instances_json(inst_data)
+        except OSError:
+            logger.debug("finish_resize: failed to persist spawners_instances.json after resize", exc_info=True)
+
+    # 3) Update in-memory mapping on the selected instance model (so UI/state is in sync)
+    try:
+        ipc = getattr(ctx.controller, 'instance_properties', None)
+        if ipc is not None and isinstance(getattr(ipc.model, 'visuals', None), dict):
+            vis_map = dict(ipc.model.visuals)
+            for k, v in list(vis_map.items()):
+                try:
+                    if isinstance(v, dict):
+                        vid = int(v.get('instance_id') or v.get('id') or v.get('building_instance_id'))
+                    else:
+                        vid = int(v)
+                except Exception:
+                    vid = None
+                if vid is not None and int(vid) == int(bid):
+                    if not isinstance(v, dict):
+                        v = {'instance_id': int(vid)}
+                    v['scale'] = [int(cur_w), int(cur_h)] if (cur_w is not None and cur_h is not None) else v.get('scale')
+                    vis_map[k] = v
+                    ipc.model.visuals = vis_map
+                    if isinstance(ipc.model.selected_instance, dict):
+                        ipc.model.selected_instance['visuals'] = vis_map
+                    break
+    except Exception:
+        logger.debug("finish_resize: failed to update in-memory visuals mapping with scale", exc_info=True)
+
     return True

@@ -4,43 +4,55 @@
     "zone": "Forest",
     "tile": [
       26,
-      16
+      18
     ],
     "overrides": {
       "visible_in_game": true
     },
     "visuals": {
-      "AwaitTrigger": {
-        "instance_id": 139,
-        "template_id": 157,
-        "offset": [
-          -125,
-          -170
-        ]
-      },
       "Finished": {
-        "instance_id": 140,
+        "instance_id": 139,
         "template_id": 158,
         "offset": [
-          -128,
-          -168
-        ]
-      },
-      "WaitCooldown": {
-        "instance_id": 141,
-        "template_id": 155,
-        "offset": [
-          -127,
-          -167
-        ]
+          68,
+          -83
+        ],
+        "scale": [
+          257,
+          385
+        ],
+        "split_ratio": 0.769
       },
       "WaitClear": {
-        "instance_id": 142,
+        "instance_id": 140,
         "template_id": 157,
         "offset": [
-          -125,
-          -206
-        ]
+          149,
+          -469
+        ],
+        "scale": [
+          262,
+          392
+        ],
+        "split_ratio": 0.781
+      },
+      "AwaitTrigger": {
+        "instance_id": 141,
+        "template_id": 157,
+        "offset": [
+          -332,
+          -157
+        ],
+        "split_ratio": 0.763
+      },
+      "WaitCooldown": {
+        "instance_id": 142,
+        "template_id": 155,
+        "offset": [
+          -99,
+          -449
+        ],
+        "split_ratio": 0.807
       }
     },
     "id": "survival_10_forest_14_9"

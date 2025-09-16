@@ -384,6 +384,21 @@ class VisualsController:
         except Exception:
             pass
         self._set_building_visible(int(bid), True)
+        # Apply scale from visuals mapping if present (respect per-instance visuals scale)
+        try:
+            raw = self._get_mapping_entry_for_state(state_key)
+            if isinstance(raw, dict):
+                sc = raw.get('scale')
+                if isinstance(sc, (list, tuple)) and len(sc) == 2:
+                    try:
+                        w = int(sc[0])
+                        h = int(sc[1])
+                        if w > 0 and h > 0:
+                            ob.resize(int(w), int(h))
+                    except Exception:
+                        pass
+        except Exception:
+            pass
         # Center camera on the revealed building for user feedback
         try:
             cam = getattr(self.parent.game, 'camera', None)
@@ -500,6 +515,31 @@ class VisualsController:
                     try:
                         setattr(ob, 'rel_x', int(anchor_cx + off_dx))
                         setattr(ob, 'rel_y', int(anchor_cy + off_dy))
+                    except Exception:
+                        pass
+                    # Apply scale from visuals mapping if present
+                    try:
+                        raw = self._get_mapping_entry_for_state(state_key)
+                        if isinstance(raw, dict):
+                            sc = raw.get('scale')
+                            if isinstance(sc, (list, tuple)) and len(sc) == 2:
+                                w = int(sc[0])
+                                h = int(sc[1])
+                                if w > 0 and h > 0:
+                                    ob.resize(int(w), int(h))
+                    except Exception:
+                        pass
+                    # Apply split_ratio from visuals mapping if present
+                    try:
+                        raw = self._get_mapping_entry_for_state(state_key)
+                        if isinstance(raw, dict) and raw.get('split_ratio') is not None:
+                            try:
+                                sr = float(raw.get('split_ratio'))
+                            except (TypeError, ValueError):
+                                sr = None
+                            if sr is not None:
+                                # Building.split_ratio setter clamps to [0..1] and updates _cut_world + view caches
+                                ob.split_ratio = float(sr)
                     except Exception:
                         pass
                     # Persist updated placement to buildings_instances.json so it sticks across reloads

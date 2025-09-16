@@ -57,3 +57,5 @@ class SpawnerConfig:
     # Optional per-state pixel offsets for visuals relative to spawner center (zone-relative px)
     # Keys are normalized to lowercase runtime tokens (e.g., 'await_trigger', 'wait_cooldown')
     visuals_offsets_px: Optional[Dict[str, Tuple[int, int]]] = None
+    # Optional per-state split ratios for visuals; keys normalized to lowercase runtime tokens
+    visuals_split_ratio: Optional[Dict[str, float]] = None

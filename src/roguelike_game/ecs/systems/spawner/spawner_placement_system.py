@@ -526,6 +526,50 @@ class SpawnerPlacementSystem:
                     setattr(b, 'spawn_id', sid)
             except Exception:
                 pass
+            # If this building is linked to a spawner instance (has sid), prefer split_ratio from spawners_instances.json visuals mapping
+            try:
+                sid_val = inst_entry.get('spawner_instance_id') or (inst_entry.get('overrides') or {}).get('spawner_instance_id') or inst_entry.get('spawn_id')
+                bid_val = inst_entry.get('id')
+                if sid_val is not None and bid_val is not None:
+                    try:
+                        sid_str = str(sid_val)
+                        bid_int = int(bid_val)
+                    except Exception:
+                        sid_str = None
+                        bid_int = None
+                    if sid_str is not None and bid_int is not None:
+                        # Load spawners instances and find matching visuals entry
+                        for inst in (self._load_instances() or []):
+                            try:
+                                if str(inst.get('id')) != sid_str:
+                                    continue
+                                vis = inst.get('visuals') if isinstance(inst.get('visuals'), dict) else {}
+                                for _, v in list(vis.items()):
+                                    try:
+                                        if isinstance(v, dict):
+                                            vid = int(v.get('instance_id') or v.get('id') or v.get('building_instance_id'))
+                                        else:
+                                            vid = int(v)
+                                    except Exception:
+                                        vid = None
+                                    if vid is not None and int(vid) == int(bid_int):
+                                        # Found mapping for this building; apply split_ratio if provided
+                                        try:
+                                            if isinstance(v, dict) and (v.get('split_ratio') is not None):
+                                                sr = float(v.get('split_ratio'))
+                                                # Match editor clamp range to avoid invisible handles
+                                                sr = max(0.05, min(sr, 0.95))
+                                                b.split_ratio = float(sr)
+                                        except Exception:
+                                            pass
+                                        raise StopIteration
+                                raise StopIteration
+                            except StopIteration:
+                                break
+                            except Exception:
+                                continue
+            except Exception:
+                pass
             # Append to world
             try:
                 if getattr(world, 'buildings', None) is None:
@@ -631,6 +675,8 @@ class SpawnerPlacementSystem:
             # Parse instance_id and template_id from mapping
             cur_iid = None
             tpl_id = None
+            # Optional visuals-provided scale override
+            visuals_scale: tuple[int, int] | None = None
             if isinstance(val, dict):
                 try:
                     cur_iid = int(val.get('instance_id') or val.get('id') or val.get('building_instance_id'))
@@ -655,6 +701,15 @@ class SpawnerPlacementSystem:
                             cfg.visuals_offsets_px[str(key).strip().lower()] = (dx, dy)
                         except Exception:
                             pass
+                    # Read optional scale override from visuals mapping
+                    sc = val.get('scale')
+                    if isinstance(sc, (list, tuple)) and len(sc) == 2:
+                        try:
+                            sw, sh = int(sc[0]), int(sc[1])
+                            if sw > 0 and sh > 0:
+                                visuals_scale = (sw, sh)
+                        except Exception:
+                            visuals_scale = None
                 except Exception:
                     pass
             else:
@@ -670,6 +725,36 @@ class SpawnerPlacementSystem:
                     cfg.state_visuals[str(key)] = int(cur_iid)
                 except Exception:
                     pass
+                # If visuals provided a scale override, persist it into the existing building instance
+                if visuals_scale is not None:
+                    try:
+                        changed_bi = False
+                        for e in b_arr:
+                            try:
+                                if int(e.get('id')) != int(cur_iid):
+                                    continue
+                            except Exception:
+                                continue
+                            ov = e.get('overrides') or {}
+                            if not isinstance(ov, dict):
+                                ov = {}
+                            try:
+                                cur_sc = ov.get('scale')
+                                cur_sc_t = (int(cur_sc[0]), int(cur_sc[1])) if isinstance(cur_sc, (list, tuple)) and len(cur_sc) == 2 else None
+                            except Exception:
+                                cur_sc_t = None
+                            if cur_sc_t != visuals_scale:
+                                ov['scale'] = [int(visuals_scale[0]), int(visuals_scale[1])]
+                                e['overrides'] = ov
+                                changed_bi = True
+                            break
+                        if changed_bi:
+                            try:
+                                self._write_buildings_instances_json(b_arr)
+                            except Exception:
+                                logger.warning("[SpawnerPlacementSystem] Could not persist scale override for existing building instance")
+                    except Exception:
+                        pass
                 continue
             # Need to create if we have a valid template id
             if tpl_id is None or tpl_id not in tmap:
@@ -693,7 +778,13 @@ class SpawnerPlacementSystem:
                 'spawn_id': str(inst.get('id')) if inst.get('id') is not None else None,
                 'spawner_instance_id': str(inst.get('id')) if inst.get('id') is not None else None,
             }
-            if scale is not None:
+            # Prefer visuals-provided scale over template-derived one
+            if visuals_scale is not None:
+                try:
+                    entry['overrides']['scale'] = [int(visuals_scale[0]), int(visuals_scale[1])]  # type: ignore[index]
+                except Exception:
+                    pass
+            elif scale is not None:
                 try:
                     entry['overrides']['scale'] = [int(scale[0]), int(scale[1])]  # type: ignore[index]
                 except Exception:
@@ -725,7 +816,14 @@ class SpawnerPlacementSystem:
                         preserved_offset = [int(val['offset'][0]), int(val['offset'][1])]
                 except Exception:
                     preserved_offset = None
-                entry_map = {'instance_id': int(new_id), 'template_id': int(tpl_id)}
+                # Preserve any existing fields from visuals mapping (e.g., 'scale', 'split_ratio', etc.)
+                # when we create the new mapping. Start from the existing dict if present.
+                if isinstance(val, dict):
+                    entry_map = dict(val)
+                else:
+                    entry_map = {}
+                entry_map['instance_id'] = int(new_id)
+                entry_map['template_id'] = int(tpl_id)
                 if preserved_offset is not None:
                     entry_map['offset'] = preserved_offset  # type: ignore[index]
                 vis[str(key)] = entry_map

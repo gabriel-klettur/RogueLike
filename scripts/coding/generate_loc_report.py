@@ -246,22 +246,26 @@ def write_reports(
             md.write(f"## {dir_key} — Total LOC: {total_loc}\n\n")
             if not files:
                 md.write("(Sin archivos directos con extensiones consideradas)\n\n")
-                continue
-
-            if print_top and print_top > 0:
-                show_files = files[:print_top]
-                note_extra = len(files) - len(show_files)
             else:
-                show_files = files
-                note_extra = 0
+                if print_top and print_top > 0:
+                    show_files = files[:print_top]
+                    note_extra = len(files) - len(show_files)
+                else:
+                    show_files = files
+                    note_extra = 0
 
-            md.write("Archivo | LOC\n")
-            md.write("--- | ---:\n")
-            for fs in show_files:
-                md.write(f"`{fs.rel_path}` | {fs.loc}\n")
-            md.write("\n")
-            if note_extra > 0:
-                md.write(f"_... y {note_extra} archivos más en esta carpeta._\n\n")
+                md.write("Archivo | LOC\n")
+                md.write("--- | ---:\n")
+                for fs in show_files:
+                    md.write(f"`{fs.rel_path}` | {fs.loc}\n")
+                md.write("\n")
+                if note_extra > 0:
+                    md.write(f"_... y {note_extra} archivos más en esta carpeta._\n\n")
+
+            direct_loc = sum(fs.loc for fs in files)
+            subfolders_loc = max(total_loc - direct_loc, 0)
+            md.write(f"LOC directos en esta carpeta: {direct_loc}\n")
+            md.write(f"LOC en subcarpetas: {subfolders_loc}\n\n")
 
     # CSV (carpetas)
     with csv_dirs_path.open("w", newline="", encoding="utf-8") as fcsv:
