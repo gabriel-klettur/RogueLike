@@ -28,7 +28,17 @@ class ParticlesPickerView:
         grid_rect = pygame.Rect(gx, gy, total_w, total_h)
         self.model.grid_rect = grid_rect
         # Draw background
-        pygame.draw.rect(screen, (25, 25, 25), grid_rect.inflate(8, 8), border_radius=6)
+        panel_rect = grid_rect.inflate(8, 8)
+        pygame.draw.rect(screen, (25, 25, 25), panel_rect, border_radius=6)
+        # Blink border in add-mode to guide user to select a preset
+        if getattr(self.model, 'add_mode_active', False):
+            t = pygame.time.get_ticks()
+            on = (t // 250) % 2 == 0
+            color = (255, 220, 0) if on else (160, 130, 0)
+            try:
+                pygame.draw.rect(screen, color, panel_rect, width=3, border_radius=8)
+            except Exception:
+                pass
         # Draw cells
         for idx, (pid, pdef) in enumerate(items):
             r = idx // cols
@@ -41,7 +51,11 @@ class ParticlesPickerView:
             if self.model.hovered_id == pid:
                 bg_col = (60, 60, 70)
             if self.model.selected_id == pid:
-                bg_col = (70, 70, 80)
+                # Selected highlight; in add mode use yellow-ish background
+                if getattr(self.model, 'add_mode_active', False):
+                    bg_col = (90, 80, 40)
+                else:
+                    bg_col = (70, 70, 80)
             pygame.draw.rect(screen, bg_col, rect, border_radius=6)
             pygame.draw.rect(screen, (80, 80, 90), rect, width=1, border_radius=6)
             # Render preview
@@ -60,3 +74,20 @@ class ParticlesPickerView:
                 label = str(pdef.get("name") or pid)
                 small = self.font.render(label, True, (220, 220, 220))
                 screen.blit(small, (rect.x + 6, rect.bottom + 2))
+            # Add-mode blinking overlay and border on the selected cell
+            if getattr(self.model, 'add_mode_active', False) and self.model.selected_id == pid:
+                t = pygame.time.get_ticks()
+                on = (t // 250) % 2 == 0
+                # Translucent yellow overlay
+                try:
+                    overlay = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+                    alpha = 90 if on else 45
+                    overlay.fill((255, 220, 0, alpha))
+                    screen.blit(overlay, rect.topleft)
+                except Exception:
+                    pass
+                # Yellow border
+                try:
+                    pygame.draw.rect(screen, (255, 220, 0), rect, width=3, border_radius=6)
+                except Exception:
+                    pass

@@ -15,6 +15,13 @@ from roguelike_game.ecs.systems.chat.chat_input_controller import ChatInputContr
 from roguelike_game.ecs.systems.chat.chat_ui_system import handle_chat_ui_events
 from roguelike_game.ecs.systems.chat.chat_bubble_utils import push_bubble
 from roguelike_engine.diagnostics.recorder import recorder
+from roguelike_editors.particles.services.instances_service import (
+    append_instance as _particles_append_instance,
+    remove_nearest_instance as _particles_remove_nearest,
+)
+from roguelike_game.config.particles_config import get_preset as _get_particle_preset
+from roguelike_game.ecs.components.transform.position import Position as _EcsPosition
+from roguelike_game.ecs.components.particles.particle_component import ParticleComponent as _EcsParticleComp
 
 import logging
 logger = logging.getLogger(__name__)
@@ -1069,7 +1076,157 @@ def handle_events(game):
             elif is_blocked(mx, my) and mmb_held and allow_mmb_ui:
                 logger.debug("[Events] Allowing MOUSEMOTION with MMB held over UI [editor visible]")
     remaining_events = [e for idx, e in enumerate(events) if idx not in consumed_idx and idx not in blocked_idx]
-    # Pass remaining events and diagnostics overlay to the engine input handler
+
+    # Particles Editor: handle Add-to-map and Remove-from-map on LMB
+    pass_events = []
+    try:
+        pe = getattr(game, 'particles_editor', None)
+        particles_editor_visible = bool(getattr(getattr(pe, 'model', None), 'visible', False))
+        add_active = False
+        remove_active = False
+        selected_pid = None
+        if particles_editor_visible and getattr(pe, 'controller', None):
+            try:
+                ar_model = getattr(pe.controller, 'particles_add_remove_model', None)
+                add_active = add_active or (ar_model is not None and getattr(ar_model, 'active_tool', None) == 'particles_add')
+                remove_active = remove_active or (ar_model is not None and getattr(ar_model, 'active_tool', None) == 'particles_remove')
+            except Exception:
+                pass
+            try:
+                picker = getattr(pe.controller, 'particles_picker_controller', None)
+                if picker is not None:
+                    selected_pid = getattr(picker.model, 'selected_id', None)
+                    add_active = add_active or bool(getattr(picker.model, 'add_mode_active', False))
+                    remove_active = remove_active or bool(getattr(picker.model, 'delete_mode_active', False))
+            except Exception:
+                selected_pid = None
+        # Process remaining events: consume first LMB-down on map to place particle
+        for ev in remaining_events:
+            if add_active and selected_pid and ev.type == pygame.MOUSEBUTTONDOWN and getattr(ev, 'button', None) == 1:
+                mx, my = getattr(ev, 'pos', (None, None))
+                if mx is not None and not is_blocked(mx, my):
+                    # Convert to world coordinates
+                    try:
+                        wx = mx / float(getattr(game.camera, 'zoom', 1.0) or 1.0) + float(getattr(game.camera, 'offset_x', 0.0) or 0.0)
+                        wy = my / float(getattr(game.camera, 'zoom', 1.0) or 1.0) + float(getattr(game.camera, 'offset_y', 0.0) or 0.0)
+                    except Exception:
+                        wx, wy = None, None
+                    if wx is not None and wy is not None:
+                        # Persist to JSON
+                        try:
+                            _particles_append_instance(str(selected_pid), float(wx), float(wy))
+                        except Exception:
+                            pass
+                        # Spawn a simple runtime ECS particle for immediate feedback
+                        try:
+                            world = getattr(getattr(game, 'ecs', None), 'ecs_world', None)
+                            if world is not None:
+                                eid = world.create_entity()
+                                # Derive optional defaults from preset
+                                try:
+                                    p = _get_particle_preset(str(selected_pid))
+                                except Exception:
+                                    p = None
+                                color = (255, 220, 0)
+                                size = 8
+                                lifespan = 180
+                                try:
+                                    if p is not None:
+                                        vfx = getattr(p, 'vfx', {}) if hasattr(p, 'vfx') else (p.get('vfx', {}) if hasattr(p, 'get') else {})
+                                        color = tuple(vfx.get('color', color)) if isinstance(vfx.get('color'), (list, tuple)) else color
+                                        size = int(vfx.get('size', size)) if vfx.get('size') is not None else size
+                                        lifespan = int(vfx.get('lifespan', lifespan)) if vfx.get('lifespan') is not None else lifespan
+                                except Exception:
+                                    pass
+                                world.components.setdefault('Position', {})[eid] = _EcsPosition(float(wx), float(wy))
+                                world.components.setdefault('ParticleComponent', {})[eid] = _EcsParticleComp(0.0, 0.0, color, int(size), int(lifespan))
+                        except Exception:
+                            pass
+                        # Exit add mode and stop blinking on picker
+                        try:
+                            if pe and getattr(pe, 'controller', None):
+                                try:
+                                    ar_model = getattr(pe.controller, 'particles_add_remove_model', None)
+                                    if ar_model is not None:
+                                        ar_model.active_tool = None
+                                except Exception:
+                                    pass
+                                try:
+                                    picker = getattr(pe.controller, 'particles_picker_controller', None)
+                                    if picker is not None:
+                                        picker.model.add_mode_active = False
+                                except Exception:
+                                    pass
+                        except Exception:
+                            pass
+                        # consume this event
+                        continue
+            elif remove_active and ev.type == pygame.MOUSEBUTTONDOWN and getattr(ev, 'button', None) == 1:
+                mx, my = getattr(ev, 'pos', (None, None))
+                if mx is not None and not is_blocked(mx, my):
+                    # Convert to world coordinates
+                    try:
+                        wx = mx / float(getattr(game.camera, 'zoom', 1.0) or 1.0) + float(getattr(game.camera, 'offset_x', 0.0) or 0.0)
+                        wy = my / float(getattr(game.camera, 'zoom', 1.0) or 1.0) + float(getattr(game.camera, 'offset_y', 0.0) or 0.0)
+                    except Exception:
+                        wx, wy = None, None
+                    if wx is not None and wy is not None:
+                        removed = None
+                        # Persist removal of nearest instance
+                        try:
+                            removed = _particles_remove_nearest(float(wx), float(wy))
+                        except Exception:
+                            removed = None
+                        # If something was removed, also delete nearest runtime ECS particle entity
+                        if removed is not None:
+                            try:
+                                world = getattr(getattr(game, 'ecs', None), 'ecs_world', None)
+                                if world is not None:
+                                    pos_map = world.components.get('Position', {})
+                                    particles = world.components.get('ParticleComponent', {})
+                                    best_e = None
+                                    best_d2 = None
+                                    for eid in list(particles.keys()):
+                                        pos = pos_map.get(eid)
+                                        if pos is None:
+                                            continue
+                                        dx = float(wx) - float(getattr(pos, 'x', 0.0))
+                                        dy = float(wy) - float(getattr(pos, 'y', 0.0))
+                                        d2 = dx*dx + dy*dy
+                                        if best_d2 is None or d2 < best_d2:
+                                            best_d2 = d2
+                                            best_e = eid
+                                    # Threshold similar to persistence (48px)
+                                    if best_e is not None and (best_d2 is None or best_d2 <= 48.0*48.0):
+                                        world.remove_entity(best_e)
+                            except Exception:
+                                pass
+                        # Exit remove mode always, mirroring spells editor
+                        try:
+                            if pe and getattr(pe, 'controller', None):
+                                try:
+                                    ar_model = getattr(pe.controller, 'particles_add_remove_model', None)
+                                    if ar_model is not None:
+                                        ar_model.active_tool = None
+                                except Exception:
+                                    pass
+                                try:
+                                    picker = getattr(pe.controller, 'particles_picker_controller', None)
+                                    if picker is not None:
+                                        picker.model.delete_mode_active = False
+                                except Exception:
+                                    pass
+                        except Exception:
+                            pass
+                        # consume this event
+                        continue
+            # default: keep event
+            pass_events.append(ev)
+    except Exception:
+        # On any error, fall back to passing all remaining events
+        pass_events = list(remaining_events)
+
+    # Pass remaining (possibly filtered) events and diagnostics overlay to the engine input handler
     engine_handle_events(
         game.state,
         game.camera,
@@ -1081,7 +1238,7 @@ def handle_events(game):
         game.buildings_editor,
         game.map_editor,
         game.spawner_editor,
-        remaining_events,
+        pass_events,
         diagnostics_overlay=overlay,
         spells_editor=getattr(game, 'spells_editor', None),
         item_editor=getattr(game, 'item_editor', None),

@@ -65,7 +65,31 @@ class ParticlesToolBarPanelEventHandler:
             if rect and rect.collidepoint(pos):
                 if self.model.active_tool == 'particles_list':
                     self.model.active_tool = None
+                    # Hide Add/Remove panel and reset modes when closing the list
+                    try:
+                        ar = getattr(self.controller, 'particles_add_remove_model', None)
+                        if ar is not None:
+                            ar.visible = False
+                            ar.active_tool = None
+                    except Exception:
+                        pass
+                    try:
+                        # Turn off delete mode in editor and picker
+                        self.controller.model.delete_mode_active = False
+                        picker = getattr(self.controller, 'particles_picker_controller', None)
+                        if picker is not None:
+                            picker.model.delete_mode_active = False
+                            picker.model.add_mode_active = False
+                    except Exception:
+                        pass
                 else:
                     self.model.active_tool = 'particles_list'
+                    # Show Add/Remove panel when opening the list
+                    try:
+                        ar = getattr(self.controller, 'particles_add_remove_model', None)
+                        if ar is not None:
+                            ar.visible = True
+                    except Exception:
+                        pass
                 return True
         return False

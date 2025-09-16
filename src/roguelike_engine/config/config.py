@@ -62,6 +62,11 @@ BUILDINGS_TEMPLATES_PATH = str(BUILDINGS_TEMPLATES_PATH)
 BUILDINGS_INSTANCES_PATH = Path(DATA_DIR) / "buildings" / "buildings_instances.json"
 BUILDINGS_INSTANCES_PATH = str(BUILDINGS_INSTANCES_PATH)
 
+#!------------------------ PARTICLES CONFIG ------------------------
+# Persistencia de instancias de partículas colocadas en el mapa
+PARTICLES_INSTANCES_PATH = Path(DATA_DIR) / "particles" / "particles_instances.json"
+PARTICLES_INSTANCES_PATH = str(PARTICLES_INSTANCES_PATH)
+
 
 #! ------------------------ DEV/TOOLS FLAGS -----------------------
 # Auto-importar nuevas imágenes de assets/buildings como plantillas al iniciar (solo DEV)
