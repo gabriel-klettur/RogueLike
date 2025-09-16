@@ -5,6 +5,7 @@ import pygame
 
 from ...services.picking import pick_spawner_under_cursor
 from .. import resize as rz
+from .. import split_drag as split
 from .. import types as etypes
 from ..utils import compute_spawner_handle_rects, find_building_in_world_by_id
 from .helpers import reset_selected_building_size
@@ -100,6 +101,30 @@ def handle_mousedown_left(h, ctx: etypes.EditorCtx, event: pygame.event.Event) -
                 pass
             if started:
                 return True
+        # Split handle with LMB: begin split drag (parity with RMB)
+        try:
+            split_rect = getattr(view, '_last_split_handle_rect', None) if view is not None else None
+        except Exception:
+            split_rect = None
+        if split_rect is not None and pygame.Rect(split_rect).collidepoint(mx, my):
+            target_bid = sel_bid
+            try:
+                if target_bid is None and ip is not None and hasattr(ip, 'visuals'):
+                    ob_pick = ip.visuals.pick_visual_building_under_cursor(int(mx), int(my))
+                    if ob_pick is not None and getattr(ob_pick, 'id', None) is not None:
+                        target_bid = int(getattr(ob_pick, 'id'))
+                        try:
+                            ip.visuals.model.selected_building_id = int(target_bid)
+                        except (AttributeError, TypeError, ValueError):
+                            logging.getLogger(__name__).debug("LMB split-start: failed to set selected_building_id", exc_info=True)
+            except (AttributeError, TypeError, ValueError):
+                logging.getLogger(__name__).debug("LMB split-start: error while determining target_bid", exc_info=True)
+            if target_bid is not None:
+                try:
+                    if split.begin_split_drag(ctx, int(target_bid), event):
+                        return True
+                except Exception:
+                    logging.getLogger(__name__).debug("LMB split-start: begin_split_drag failed", exc_info=True)
         # Remove: delete the selected building instance (parity with Building Editor)
         if del_rect is not None and del_rect.collidepoint(mx, my):
             try:

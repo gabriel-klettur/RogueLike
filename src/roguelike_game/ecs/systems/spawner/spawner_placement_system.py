@@ -526,6 +526,50 @@ class SpawnerPlacementSystem:
                     setattr(b, 'spawn_id', sid)
             except Exception:
                 pass
+            # If this building is linked to a spawner instance (has sid), prefer split_ratio from spawners_instances.json visuals mapping
+            try:
+                sid_val = inst_entry.get('spawner_instance_id') or (inst_entry.get('overrides') or {}).get('spawner_instance_id') or inst_entry.get('spawn_id')
+                bid_val = inst_entry.get('id')
+                if sid_val is not None and bid_val is not None:
+                    try:
+                        sid_str = str(sid_val)
+                        bid_int = int(bid_val)
+                    except Exception:
+                        sid_str = None
+                        bid_int = None
+                    if sid_str is not None and bid_int is not None:
+                        # Load spawners instances and find matching visuals entry
+                        for inst in (self._load_instances() or []):
+                            try:
+                                if str(inst.get('id')) != sid_str:
+                                    continue
+                                vis = inst.get('visuals') if isinstance(inst.get('visuals'), dict) else {}
+                                for _, v in list(vis.items()):
+                                    try:
+                                        if isinstance(v, dict):
+                                            vid = int(v.get('instance_id') or v.get('id') or v.get('building_instance_id'))
+                                        else:
+                                            vid = int(v)
+                                    except Exception:
+                                        vid = None
+                                    if vid is not None and int(vid) == int(bid_int):
+                                        # Found mapping for this building; apply split_ratio if provided
+                                        try:
+                                            if isinstance(v, dict) and (v.get('split_ratio') is not None):
+                                                sr = float(v.get('split_ratio'))
+                                                # Match editor clamp range to avoid invisible handles
+                                                sr = max(0.05, min(sr, 0.95))
+                                                b.split_ratio = float(sr)
+                                        except Exception:
+                                            pass
+                                        raise StopIteration
+                                raise StopIteration
+                            except StopIteration:
+                                break
+                            except Exception:
+                                continue
+            except Exception:
+                pass
             # Append to world
             try:
                 if getattr(world, 'buildings', None) is None:

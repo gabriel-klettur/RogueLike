@@ -3,8 +3,8 @@
         "template_id": "survival_10",
         "zone": "Forest",
         "tile": [
-            26,
-            16
+            27,
+            19
         ],
         "overrides": {
             "visible_in_game": true
@@ -14,29 +14,33 @@
                 "instance_id": 139,
                 "template_id": 158,
                 "offset": [
-                    -272,
-                    -33
+                    -126,
+                    -263
                 ]
             },
             "WaitClear": {
                 "instance_id": 140,
                 "template_id": 157,
                 "offset": [
-                    -234,
-                    -278
+                    -127,
+                    -263
                 ]
             },
             "AwaitTrigger": {
                 "instance_id": 141,
                 "template_id": 157,
                 "offset": [
-                    51,
-                    -276
+                    -125,
+                    -259
                 ]
             },
             "WaitCooldown": {
                 "instance_id": 142,
-                "template_id": 155
+                "template_id": 155,
+                "offset": [
+                    -130,
+                    -261
+                ]
             }
         },
         "id": "survival_10_forest_14_9"

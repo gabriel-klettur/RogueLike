@@ -529,6 +529,19 @@ class VisualsController:
                                     ob.resize(int(w), int(h))
                     except Exception:
                         pass
+                    # Apply split_ratio from visuals mapping if present
+                    try:
+                        raw = self._get_mapping_entry_for_state(state_key)
+                        if isinstance(raw, dict) and raw.get('split_ratio') is not None:
+                            try:
+                                sr = float(raw.get('split_ratio'))
+                            except (TypeError, ValueError):
+                                sr = None
+                            if sr is not None:
+                                # Building.split_ratio setter clamps to [0..1] and updates _cut_world + view caches
+                                ob.split_ratio = float(sr)
+                    except Exception:
+                        pass
                     # Persist updated placement to buildings_instances.json so it sticks across reloads
                     try:
                         arr = load_buildings_instances()
