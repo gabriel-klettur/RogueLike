@@ -18,10 +18,10 @@
           -83
         ],
         "scale": [
-          257,
-          385
+          205,
+          307
         ],
-        "split_ratio": 0.769
+        "split_ratio": 0.635
       },
       "WaitClear": {
         "instance_id": 140,
@@ -31,8 +31,8 @@
           -469
         ],
         "scale": [
-          262,
-          392
+          414,
+          619
         ],
         "split_ratio": 0.781
       },
@@ -43,7 +43,7 @@
           -332,
           -157
         ],
-        "split_ratio": 0.763
+        "split_ratio": 0.458
       },
       "WaitCooldown": {
         "instance_id": 142,
