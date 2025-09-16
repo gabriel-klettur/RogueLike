@@ -816,7 +816,14 @@ class SpawnerPlacementSystem:
                         preserved_offset = [int(val['offset'][0]), int(val['offset'][1])]
                 except Exception:
                     preserved_offset = None
-                entry_map = {'instance_id': int(new_id), 'template_id': int(tpl_id)}
+                # Preserve any existing fields from visuals mapping (e.g., 'scale', 'split_ratio', etc.)
+                # when we create the new mapping. Start from the existing dict if present.
+                if isinstance(val, dict):
+                    entry_map = dict(val)
+                else:
+                    entry_map = {}
+                entry_map['instance_id'] = int(new_id)
+                entry_map['template_id'] = int(tpl_id)
                 if preserved_offset is not None:
                     entry_map['offset'] = preserved_offset  # type: ignore[index]
                 vis[str(key)] = entry_map
