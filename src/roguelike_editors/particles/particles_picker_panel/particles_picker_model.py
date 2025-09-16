@@ -19,3 +19,6 @@ class ParticlesPickerModel:
         # Hover/selection (future use)
         self.hovered_id: Optional[str] = None
         self.selected_id: Optional[str] = None
+        # Modes
+        self.delete_mode_active: bool = False
+        self.add_mode_active: bool = False

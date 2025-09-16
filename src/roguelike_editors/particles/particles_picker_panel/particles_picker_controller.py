@@ -20,9 +20,12 @@ class ParticlesPickerController:
     def __init__(self, font: pygame.font.Font | None):
         self.model = ParticlesPickerModel()
         self.view = ParticlesPickerView(self.model, font)
-        self.events = ParticlesPickerEventHandler(self.model)
+        # Event handler receives a reference to this controller for rebuild() and back-refs
+        self.events = ParticlesPickerEventHandler(self.model, controller=self)
         self._last_ticks = 0
         self._built = False
+        # Back-reference to the parent editor controller (set by ParticlesEditorController)
+        self.editor_controller = None
 
     def set_anchor(self, x: int | None, y: int | None) -> None:
         if x is not None and y is not None:

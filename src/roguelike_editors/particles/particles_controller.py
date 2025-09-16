@@ -7,6 +7,18 @@ from .particles_tool_bar_panel.particles_tool_bar_panel_events import ParticlesT
 from .particles_tool_bar_panel.particles_tool_bar_panel_controller import ParticlesToolBarPanelController
 from .particles_picker_panel.particles_picker_controller import ParticlesPickerController
 from roguelike_editors.entities.services.constants import UI_MARGIN
+from .particles_add_remove_panel.particles_add_remove_panel_model import (
+    ParticlesAddRemovePanelModel,
+)
+from .particles_add_remove_panel.particles_add_remove_panel_view import (
+    ParticlesAddRemovePanelView,
+)
+from .particles_add_remove_panel.particles_add_remove_panel_events import (
+    ParticlesAddRemovePanelEventHandler,
+)
+from .particles_add_remove_panel.particles_add_remove_panel_controller import (
+    ParticlesAddRemovePanelController,
+)
 
 class ParticlesEditorController:
     """Minimal controller for Particles Editor."""
@@ -23,6 +35,26 @@ class ParticlesEditorController:
         )
         # Picker MVC (lista de presets de partículas)
         self.particles_picker_controller = ParticlesPickerController(self.font)
+        try:
+            # Provide back-reference so picker events can access editor state
+            self.particles_picker_controller.editor_controller = self
+            # Ensure delete mode starts disabled
+            self.particles_picker_controller.model.delete_mode_active = False
+        except Exception:
+            pass
+        # Add/Remove MVC (panel lateral con acciones sobre partículas)
+        self.particles_add_remove_model = ParticlesAddRemovePanelModel()
+        self.particles_add_remove_view = ParticlesAddRemovePanelView(self, self.particles_add_remove_model)
+        self.particles_add_remove_events = ParticlesAddRemovePanelEventHandler(self, self.particles_add_remove_model)
+        self.particles_add_remove_controller = ParticlesAddRemovePanelController(
+            self, self.particles_add_remove_model, self.particles_add_remove_view, self.particles_add_remove_events
+        )
+        # Ensure ToolbarView uses the panel controller for active-state checks
+        try:
+            if hasattr(self.particles_add_remove_view, 'widget'):
+                self.particles_add_remove_view.widget.controller = self.particles_add_remove_controller
+        except Exception:
+            pass
 
     def toggle_visible(self):
         self.model.visible = not bool(self.model.visible)
@@ -37,9 +69,13 @@ class ParticlesEditorController:
                 return
         except Exception:
             pass
-        # Reenviar eventos al picker cuando esté activo
+        # Reenviar eventos al panel Add/Remove y picker cuando 'particles_list' esté activo
         try:
             if getattr(self.particles_toolbar_model, 'active_tool', None) == 'particles_list':
+                # Primero, panel Add/Remove
+                if self.particles_add_remove_controller.handle_event(event):
+                    return
+                # Luego, picker grid
                 if self.particles_picker_controller.handle_event(event):
                     return
         except Exception:
@@ -56,22 +92,37 @@ class ParticlesEditorController:
             self.particles_toolbar_controller.render(screen)
         except Exception:
             pass
-        # Render picker grid a la derecha de la toolbar cuando la herramienta esté activa
+        # Render panel Add/Remove y picker grid a la derecha cuando la herramienta esté activa
         try:
             if getattr(self.particles_toolbar_model, 'active_tool', None) == 'particles_list':
-                tb_widget = getattr(self.particles_toolbar_view, 'widget', None)
+                # Asegurar visibilidad del panel Add/Remove
+                self.particles_add_remove_model.visible = True
+                # Renderizar panel Add/Remove a la derecha del toolbar
+                self.particles_add_remove_controller.render(screen)
+
+                # Calcular posición del picker a la derecha del panel Add/Remove
                 left_x = None
                 top_y = None
-                if tb_widget is not None:
+                ar_widget = getattr(self.particles_add_remove_view, 'widget', None)
+                if ar_widget is not None:
                     try:
-                        # Intentar usar el tamaño real del panel
-                        w, h = tb_widget.panel.surface.get_size()
-                        left_x = int(tb_widget.x + w + UI_MARGIN)
-                        top_y = int(tb_widget.y)
+                        ar_pos = ar_widget.panel.pos or (ar_widget.x, ar_widget.y)
+                        ar_w, _ = ar_widget.panel.surface.get_size()
+                        left_x = int(ar_pos[0] + ar_w + UI_MARGIN)
+                        top_y = int(ar_pos[1])
                     except Exception:
-                        # Fallback al tamaño base del icono
-                        left_x = int(tb_widget.x + getattr(self.particles_toolbar_view, 'size', 48) + UI_MARGIN)
-                        top_y = int(tb_widget.y)
+                        pass
+                if left_x is None or top_y is None:
+                    # Fallback: colocar a la derecha del toolbar
+                    tb_widget = getattr(self.particles_toolbar_view, 'widget', None)
+                    if tb_widget is not None:
+                        try:
+                            w, _ = tb_widget.panel.surface.get_size()
+                            left_x = int((tb_widget.panel.pos or (tb_widget.x, tb_widget.y))[0] + w + UI_MARGIN)
+                            top_y = int((tb_widget.panel.pos or (tb_widget.x, tb_widget.y))[1])
+                        except Exception:
+                            left_x = int(tb_widget.x + getattr(self.particles_toolbar_view, 'size', 48) + UI_MARGIN)
+                            top_y = int(tb_widget.y)
                 if left_x is None or top_y is None:
                     # Fallback general, debajo del título
                     title_rect = getattr(self.view, 'title_rect', None)
@@ -80,8 +131,12 @@ class ParticlesEditorController:
                         top_y = int(title_rect.bottom + UI_MARGIN)
                     else:
                         left_x, top_y = 16, 80
+
                 self.particles_picker_controller.set_anchor(left_x, top_y)
                 self.particles_picker_controller.draw(screen)
+            else:
+                # Ocultar panel Add/Remove si no está activa la lista
+                self.particles_add_remove_model.visible = False
         except Exception:
             pass
 
