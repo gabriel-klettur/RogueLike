@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 
 class InstancePropertiesEventHandler:
     def handle_event(self, controller, event) -> bool:
@@ -17,7 +19,15 @@ class InstancePropertiesEventHandler:
         et = getattr(event, 'type', None)
         pos = getattr(event, 'pos', None) or pygame.mouse.get_pos()
 
-        # Helpers
+        # 1) Visuals delegation: let VisualsEvents own all visuals interactions
+        try:
+            vctrl = getattr(controller, 'visuals', None)
+            if vctrl is not None and vctrl.events.handle_event(vctrl, event, rect):
+                return True
+        except Exception:
+            pass
+
+        # 2) Non-visuals helpers (rows and scrolling)
         y_off = 30
         row_h = 20
         rows = controller.get_rows()
@@ -36,8 +46,8 @@ class InstancePropertiesEventHandler:
                 return gi
             return None
 
+        # 3) Mouse wheel: scroll combo list or panel
         if et == pygame.MOUSEWHEEL and rect.collidepoint(pos):
-            # If combo is open and mouse is over its list, scroll combo list
             local = (pos[0] - rect.left, pos[1] - rect.top)
             if getattr(model, 'template_combo_open', False) and getattr(view, 'template_list_rect', None):
                 lrect = view.template_list_rect
@@ -59,12 +69,11 @@ class InstancePropertiesEventHandler:
             model.scroll_offset = max(0, min(max_scroll, new_offset))
             return True
 
-        # Hover tracking
+        # 4) Hover tracking for rows and template combo list
         if et == pygame.MOUSEMOTION:
             if rect.collidepoint(pos):
                 gi = compute_row_index(pos[1])
                 model.hovered_index = gi
-                # Update combo hover when open
                 if getattr(model, 'template_combo_open', False):
                     local = (pos[0] - rect.left, pos[1] - rect.top)
                     lrect = getattr(view, 'template_list_rect', None)
@@ -85,7 +94,7 @@ class InstancePropertiesEventHandler:
             else:
                 model.hovered_index = None
 
-        # If editing, route to text input first
+        # 5) Regular row editing via TextInput (non-visuals)
         if controller.is_editing():
             # ESC cancels
             if et == pygame.KEYDOWN and getattr(event, 'key', None) == pygame.K_ESCAPE:
@@ -114,10 +123,12 @@ class InstancePropertiesEventHandler:
                 if ti is not None:
                     ti_rect_screen = None
                     try:
-                        ti_rect_screen = pygame.Rect(rect.left + ti.last_rect.x,
-                                                     rect.top + ti.last_rect.y,
-                                                     ti.last_rect.width,
-                                                     ti.last_rect.height)
+                        ti_rect_screen = pygame.Rect(
+                            rect.left + ti.last_rect.x,
+                            rect.top + ti.last_rect.y,
+                            ti.last_rect.width,
+                            ti.last_rect.height,
+                        )
                     except Exception:
                         ti_rect_screen = None
                     if ti_rect_screen is None or not ti_rect_screen.collidepoint(pos):
@@ -125,13 +136,12 @@ class InstancePropertiesEventHandler:
                         controller.commit_edit_if_finished()
                         return True
 
-        # Consume mouse clicks inside the panel
+        # 6) Mouse clicks inside panel (template combo and rows)
         if et in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP) and rect.collidepoint(pos):
             local = (pos[0] - rect.left, pos[1] - rect.top)
             if et == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
                 # If combo is open, prioritize clicks on its UI
                 if getattr(model, 'template_combo_open', False):
-                    # Click on list selects
                     lrect = getattr(view, 'template_list_rect', None)
                     if lrect is not None and lrect.collidepoint(local):
                         row_h_local = row_h
@@ -143,17 +153,15 @@ class InstancePropertiesEventHandler:
                         model.template_combo_open = False
                         model.template_hovered_index = None
                         return True
-                    # Click outside list closes combo unless on combo rect
-                    crect = getattr(view, 'template_combo_rect', None)
-                    if crect is None or not crect.collidepoint(local):
-                        model.template_combo_open = False
-                        model.template_hovered_index = None
-                        return True
+                # Click outside list closes combo unless on combo rect
+                crect = getattr(view, 'template_combo_rect', None)
+                if crect is None or not crect.collidepoint(local):
+                    model.template_combo_open = False
+                    model.template_hovered_index = None
                 # Toggle combo if clicking on template_id row's combo rect
                 crect = getattr(view, 'template_combo_rect', None)
                 if crect is not None and crect.collidepoint(local):
                     model.template_combo_open = not bool(getattr(model, 'template_combo_open', False))
-                    # When opening, initialize hovered/scroll to current selection
                     if model.template_combo_open:
                         cur_idx = controller.get_current_template_index()
                         opts = controller.get_template_options()
@@ -174,7 +182,6 @@ class InstancePropertiesEventHandler:
                     except Exception:
                         key = None
                     if str(key) == 'template_id':
-                        # Click on template row but not on combo box area -> toggle too
                         model.template_combo_open = not bool(getattr(model, 'template_combo_open', False))
                         if model.template_combo_open:
                             cur_idx = controller.get_current_template_index()
@@ -193,7 +200,7 @@ class InstancePropertiesEventHandler:
                         return True
             return True
 
-        # Keyboard for combo when open
+        # 7) Keyboard for combo when open
         if et == pygame.KEYDOWN and getattr(model, 'template_combo_open', False):
             key = getattr(event, 'key', None)
             opts = controller.get_template_options()
@@ -219,7 +226,6 @@ class InstancePropertiesEventHandler:
                 delta = -1 if key == pygame.K_UP else 1
                 new_idx = max(0, min(len(opts) - 1, cur + delta))
                 model.template_hovered_index = new_idx
-                # keep in view
                 visible_rows = min(8, max(1, len(opts)))
                 start = int(getattr(model, 'template_scroll_offset', 0) or 0)
                 end = start + visible_rows - 1

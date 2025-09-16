@@ -6,6 +6,8 @@ from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.abilities.explosion_component import ExplosionComponent
 from roguelike_game.ecs.systems.combat.explosions_models import FireExplosionModel
 from roguelike_game.ecs.components.physics.mask_collider import MaskCollider
+import time
+from roguelike_game.ecs.components.combat.last_attacker import LastAttacker
 
 class FireballSystem:
     """
@@ -85,8 +87,20 @@ class FireballSystem:
                                 break
 
                 if hit:
-                    hp = world.components['Health'][target]
-                    hp.current_hp = max(0, hp.current_hp - comp.damage)
+                    # Inmortalidad del jugador en godmode
+                    is_player = target in world.components.get('PlayerTagComponent', {})
+                    godmode = bool(getattr(getattr(world, 'state', None), 'godmode', False)) and is_player
+                    # One-shot si el caster es jugador y godmode activo
+                    gm_attacker = bool(getattr(getattr(world, 'state', None), 'godmode', False)) and (comp.caster in world.components.get('PlayerTagComponent', {}))
+                    if not godmode:
+                        hp = world.components['Health'][target]
+                        if gm_attacker:
+                            hp.current_hp = 0
+                        else:
+                            hp.current_hp = max(0, hp.current_hp - comp.damage)
+                    # Registrar último atacante para atribuir KO si entra en UnconsciousState (solo si aplica daño)
+                    if not godmode:
+                        world.components.setdefault('LastAttacker', {})[target] = LastAttacker(comp.caster, time.time())
                     # Push debug event for outline persistence (consumed by SpellCollisionDebugSystem)
                     dbg = world.components.setdefault('DebugSpellHits', {})
                     queue = dbg.setdefault('_queue', [])
@@ -102,21 +116,50 @@ class FireballSystem:
                         qmap = world.components.setdefault('FSMEventQueue', {})
                         q = qmap.setdefault(target, [])
                         q.append({"type": "OnHit", "from_left": from_left})
-                        if hp.current_hp <= 0:
-                            q.append({"type": "OnDeath"})
-                    elif target in world.components.get('PlayerTagComponent', {}):
-                        # NPC -> Jugador
-                        attacker_pos = world.components['Position'].get(caster)
-                        defender_pos = world.components['Position'].get(target)
-                        if attacker_pos and defender_pos:
-                            from_left = attacker_pos.x < defender_pos.x
-                        else:
-                            from_left = False
-                        qmap = world.components.setdefault('FSMEventQueue', {})
-                        q = qmap.setdefault(target, [])
-                        q.append({"type": "OnHit", "from_left": from_left})
-                        if hp.current_hp <= 0:
-                            q.append({"type": "OnDeath"})
+                        if not godmode:
+                            hp = world.components['Health'][target]
+                            if hp.current_hp <= 0:
+                                q.append({"type": "OnDeath"})
+                                # Evento de kill para combo basado en muertes
+                                combo_q = world.components.setdefault('ComboEventQueue', [])
+                                combo_q.append({'type': 'kill', 'entity': caster, 'target': target})
+                                world.components.setdefault('ComboKillCounted', set()).add(target)
+                            # Evento de COMBO
+                            combo_q = world.components.setdefault('ComboEventQueue', [])
+                            combo_q.append({
+                                'attacker': caster,
+                                'target': target,
+                                'damage': float(comp.damage),
+                                'source': 'fireball',
+                                'time': float(time.time()),
+                            })
+                        # Actualizar HUD de objetivo (centrado arriba)
+                        try:
+                            hud = world.components.setdefault('TargetHUD', {})
+                            hud['target_eid'] = int(target)
+                            hud['last_hit_time'] = float(time.time())
+                            hud.setdefault('ttl_s', 3.0)
+                        except Exception:
+                            pass
+
+                    elif is_player:
+                        # NPC -> Jugador (omitir efectos de daño en godmode)
+                        if not godmode:
+                            attacker_pos = world.components['Position'].get(caster)
+                            defender_pos = world.components['Position'].get(target)
+                            if attacker_pos and defender_pos:
+                                from_left = attacker_pos.x < defender_pos.x
+                            else:
+                                from_left = False
+                            qmap = world.components.setdefault('FSMEventQueue', {})
+                            q = qmap.setdefault(target, [])
+                            q.append({"type": "OnHit", "from_left": from_left})
+                            hp = world.components['Health'][target]
+                            if hp.current_hp <= 0:
+                                q.append({"type": "OnDeath"})
+                            # Romper combo del jugador al recibir daño
+                            combo_q = world.components.setdefault('ComboEventQueue', [])
+                            combo_q.append({'type': 'break', 'entity': target})
                     break
 
             # Colisión con tiles sólidos

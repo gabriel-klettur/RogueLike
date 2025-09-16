@@ -15,6 +15,9 @@ class ExperienceRenderSystem:
     def update(self, world, screen, camera):
         # Ocultar barra de experiencia si hay UIs que deben tomar el foco
         state = getattr(world, 'state', None)
+        # Spawner Editor activo
+        if state and getattr(state, 'spawner_editor_active', False):
+            return
         # Entities Editor activo
         if state and getattr(state, 'entities_editor_state', None) and state.entities_editor_state.visible:
             return
@@ -31,8 +34,9 @@ class ExperienceRenderSystem:
             screen_w, screen_h = screen.get_size()
             margin = 20
             bar_height = 10
-            bar_width = screen_w - margin * 2
-            x = margin
+            # Usar mitad del ancho de la pantalla y centrar
+            bar_width = int(screen_w * 0.5)
+            x = (screen_w - bar_width) // 2
             y = screen_h - bar_height - margin
             # Fondo
             pygame.draw.rect(screen, (50, 50, 50), (x, y, bar_width, bar_height))

@@ -7,6 +7,7 @@ class Tool(Enum):
     """
     Enumeración de herramientas disponibles en la toolbar.
     """
+    TUTORIAL = "tutorial_tiles"
     DELETE = "delete"
     DEFAULT = "default"
     VIEW = "view"
@@ -26,6 +27,7 @@ class TileToolbarEventHandler:
         self.controller = toolbar_controller
         # Mapear cada herramienta con su método handler
         self._click_handlers = {
+            Tool.TUTORIAL: self._handle_tutorial,
             Tool.DELETE: self._handle_delete,
             Tool.DEFAULT: self._handle_default,
             Tool.VIEW: self._handle_view,
@@ -78,6 +80,14 @@ class TileToolbarEventHandler:
                 return handler(tool_name, map, camera)
 
         return False
+
+    def _handle_tutorial(self, tool_name, map, camera=None):
+        """Toggle the Tiles Tutorial panel overlay without changing current tool."""
+        ctrl = getattr(self.controller, 'editor_controller', None)
+        tut = getattr(ctrl, 'tutorial_controller', None) if ctrl else None
+        if tut:
+            tut.toggle()
+        return True
 
     def _handle_delete(self, tool_name, map, camera=None):
         """Toggle delete tool; delete selected tile."""
@@ -157,6 +167,12 @@ class TileToolbarEventHandler:
         """Alternar la vista de capas."""
         ts = self.controller.editor_state.toolbar_state
         ts.layers_view_open = not ts.layers_view_open
+        # Tutorial pulse when opening layers
+        if ts.layers_view_open:
+            try:
+                setattr(self.controller.editor_state, 'tutorial_layers_open_pulse', True)
+            except Exception:
+                pass
         return True
 
     def _handle_view_collisions(self, tool_name, map, camera=None):
@@ -182,6 +198,12 @@ class TileToolbarEventHandler:
             ts.collision_choice = None
 
         ts.layers_view_open = False
+        # Tutorial pulse when entering collisions mode
+        if active:
+            try:
+                setattr(self.controller.editor_state, 'tutorial_collisions_mode_pulse', True)
+            except Exception:
+                pass
         return True
 
     def _handle_select(self, tool_name, map, camera=None):

@@ -15,7 +15,7 @@ def editor_controller():
 
 
 def test_change_to_player_category(editor_controller):
-    panel_model = SimpleNamespace(current_category='monsters', selected_eid='old')
+    panel_model = SimpleNamespace(current_category='hostile', selected_eid='old')
     tc = TabsController(editor_controller, panel_model)
     tc.change_category('player')
     assert panel_model.current_category == 'player'
@@ -25,15 +25,17 @@ def test_change_to_player_category(editor_controller):
     assert editor_controller.model.editing_side == 'active'
 
 
-def test_change_to_monsters_category(monkeypatch, editor_controller):
+def test_change_to_hostile_category(monkeypatch, editor_controller):
     # stub load_from_json
     loaded = {'m1': {}, 'm2': {}}
     monkeypatch.setattr(tabs_ctrl, 'load_from_json', lambda path: loaded)
     panel_model = SimpleNamespace(current_category='player', selected_eid='old')
     tc = TabsController(editor_controller, panel_model)
-    tc.change_category('monsters')
-    assert panel_model.current_category == 'monsters'
+    tc.change_category('hostile')
+    assert panel_model.current_category == 'hostile'
+    # Alias cargado en ambas claves
     assert editor_controller.model.active_data['monsters'] == loaded
+    assert editor_controller.model.active_data['hostile'] == loaded
     # first key selected
     first = next(iter(loaded.keys()))
     assert panel_model.selected_eid == first

@@ -13,7 +13,7 @@ class ListPanelView:
         try:
             import pygame  # type: ignore
             x, y = anchor
-            width = 720
+            width = int(getattr(model, 'panel_width', 720) or 720)
             height = 260
             self.panel_rect = pygame.Rect(x, y, width, height)
             surf = pygame.Surface(self.panel_rect.size, pygame.SRCALPHA)

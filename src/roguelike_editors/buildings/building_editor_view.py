@@ -67,11 +67,54 @@ class BuildingEditorView:
         if self.editor.picker_active:
             self.picker_view.render(screen, camera)
 
+        # Cachear el rect del edificio hovered para superposiciones externas (p.ej., tutorial)
+        try:
+            hb = getattr(self.editor, 'hovered_building', None)
+            if hb:
+                x, y = camera.apply((hb.x, hb.y))
+                w, h = camera.scale(hb.image.get_size())
+                self._last_hovered_building_rect = pygame.Rect(x, y, w, h)
+            else:
+                self._last_hovered_building_rect = None
+        except Exception:
+            pass
+
         # Suppress building hover visuals (outline, handles) when UI is blocking
         try:
             mx, my = pygame.mouse.get_pos()
-            if is_blocked(mx, my):
-                return
+            ui_blocked = bool(is_blocked(mx, my))
+        except Exception:
+            ui_blocked = False
+
+        # Reset per-frame tool UI rect caches for overlays
+        try:
+            self._last_split_handle_rect = None
+            self._last_z_bottom_minus_rect = None
+            self._last_z_bottom_plus_rect = None
+            self._last_z_top_minus_rect = None
+            self._last_z_top_plus_rect = None
+        except Exception:
+            pass
+
+        # Draw hover outline only when UI is NOT blocking. If remove mode is active, use red border
+        # and a semi-transparent red fill; otherwise, use the standard cyan outline.
+        try:
+            if not ui_blocked:
+                hb = getattr(self.editor, 'hovered_building', None)
+                ab = getattr(self.editor, 'active_building', None)
+                if hb is not None and hb is not ab:
+                    x, y = camera.apply((hb.x, hb.y))
+                    w, h = camera.scale(hb.image.get_size())
+                    hover_rect = pygame.Rect(x, y, w, h)
+                    if getattr(self.editor, 'remove_mode_active', False):
+                        # Semi-transparent red fill
+                        fill = pygame.Surface((hover_rect.width, hover_rect.height), pygame.SRCALPHA)
+                        fill.fill((255, 0, 0, 60))  # 60 alpha for subtle overlay
+                        screen.blit(fill, (hover_rect.left, hover_rect.top))
+                        # Red border
+                        pygame.draw.rect(screen, (255, 0, 0), hover_rect, 3)
+                    else:
+                        pygame.draw.rect(screen, (0, 255, 255), hover_rect, 2)  # cyan, thin
         except Exception:
             pass
 
@@ -82,8 +125,13 @@ class BuildingEditorView:
             x, y = camera.apply((b.x, b.y))
             w, h = camera.scale(b.image.get_size())
             rect = pygame.Rect(x, y, w, h)
-            pygame.draw.rect(screen, (0, 255, 255), rect, 4)
-            pygame.draw.rect(screen, (255, 255, 255), rect, 1)
+            # Exponer el rect del edificio activo para overlays (tutorial)
+            try:
+                self._last_active_building_rect = rect
+            except Exception:
+                pass
+            # Active selection outline: yellow, thicker
+            pygame.draw.rect(screen, (255, 215, 0), rect, 5)
             # Render small ID label near the top-left of the building rect
             try:
                 if self._id_font is not None:
@@ -101,14 +149,127 @@ class BuildingEditorView:
                         screen.blit(text_surf, (lx, ly))
             except Exception:
                 pass
-            # Ocultar handles de herramientas en modo colisiones (colliders_mode)
-            if not getattr(self.editor, 'colliders_mode', False):
+            # Ocultar handles de herramientas en modo colisiones o cuando la UI bloquea
+            if (not getattr(self.editor, 'colliders_mode', False)) and (not ui_blocked):
                 self.default_view.render_reset_handle(screen, b, camera)
-                self.split_view.render(screen, b, camera)
-                self.z_bottom_view.render(screen, b, camera)
-                self.z_top_view.render(screen, b, camera)
-            # Render toggle CG/CU bottom-right
+                # Split handle
+                try:
+                    split_bounds = self.split_view.render(screen, b, camera)
+                    if isinstance(split_bounds, dict):
+                        hr = split_bounds.get('handle_rect')
+                        if hr is not None:
+                            self._last_split_handle_rect = hr.copy()
+                except Exception:
+                    pass
+                # Z bottom
+                try:
+                    zb = self.z_bottom_view.render(screen, b, camera)
+                    if isinstance(zb, dict):
+                        px, py = zb.get('panel_pos', (0, 0))
+                        m = zb.get('minus_rect')
+                        p = zb.get('plus_rect')
+                        if m is not None:
+                            self._last_z_bottom_minus_rect = pygame.Rect(px + m.x, py + m.y, m.w, m.h)
+                        if p is not None:
+                            self._last_z_bottom_plus_rect = pygame.Rect(px + p.x, py + p.y, p.w, p.h)
+                except Exception:
+                    pass
+                # Z top
+                try:
+                    zt = self.z_top_view.render(screen, b, camera)
+                    if isinstance(zt, dict):
+                        px, py = zt.get('panel_pos', (0, 0))
+                        m = zt.get('minus_rect')
+                        p = zt.get('plus_rect')
+                        if m is not None:
+                            self._last_z_top_minus_rect = pygame.Rect(px + m.x, py + m.y, m.w, m.h)
+                        if p is not None:
+                            self._last_z_top_plus_rect = pygame.Rect(px + p.x, py + p.y, p.w, p.h)
+                except Exception:
+                    pass
+            # Render toggle CG/CU bottom-right when UI is not blocked (also visible in colliders_mode)
             try:
-                self.collider_scope_view.render(screen, b, camera)
+                if not ui_blocked:
+                    self.collider_scope_view.render(screen, b, camera)
             except Exception:
                 pass
+
+        # --- Confirmation modal overlay (render last, on top) ---
+        try:
+            if getattr(self.editor, 'confirm_delete_visible', False):
+                self._render_confirm_delete_modal(screen)
+        except Exception:
+            pass
+
+    def _render_confirm_delete_modal(self, screen) -> None:
+        # Backdrop dim
+        try:
+            w, h = screen.get_size()
+        except Exception:
+            return
+        try:
+            dim = pygame.Surface((w, h), pygame.SRCALPHA)
+            dim.fill((0, 0, 0, 140))
+            screen.blit(dim, (0, 0))
+        except Exception:
+            pass
+        # Panel
+        panel_w = min(520, int(w * 0.8))
+        panel_h = 200
+        px = (w - panel_w) // 2
+        py = (h - panel_h) // 2
+        panel_rect = pygame.Rect(px, py, panel_w, panel_h)
+        try:
+            pygame.draw.rect(screen, (30, 30, 30), panel_rect, border_radius=8)
+            pygame.draw.rect(screen, (220, 220, 220), panel_rect, 2, border_radius=8)
+        except Exception:
+            pass
+        # Text (multi-line)
+        text = getattr(self.editor, 'confirm_delete_text', "¿Eliminar?") or "¿Eliminar?"
+        try:
+            font = pygame.font.Font(None, 24)
+        except Exception:
+            font = None
+        lines = []
+        if font is not None:
+            for raw in str(text).split("\n"):
+                try:
+                    surf = font.render(raw, True, (240, 240, 240))
+                    lines.append(surf)
+                except Exception:
+                    continue
+        y = panel_rect.top + 16
+        for s in lines:
+            try:
+                screen.blit(s, (panel_rect.left + 16, y))
+                y += s.get_height() + 6
+            except Exception:
+                continue
+        # Buttons
+        btn_w = 140
+        btn_h = 36
+        gap = 20
+        bx = panel_rect.centerx - btn_w - (gap // 2)
+        by = panel_rect.bottom - btn_h - 16
+        yes_rect = pygame.Rect(bx, by, btn_w, btn_h)
+        no_rect = pygame.Rect(panel_rect.centerx + (gap // 2), by, btn_w, btn_h)
+        try:
+            # Yes button (Eliminar)
+            pygame.draw.rect(screen, (180, 40, 40), yes_rect, border_radius=6)
+            pygame.draw.rect(screen, (255, 255, 255), yes_rect, 2, border_radius=6)
+            yfont = pygame.font.Font(None, 28)
+            ys = yfont.render("Eliminar", True, (255, 255, 255))
+            screen.blit(ys, (yes_rect.centerx - ys.get_width() // 2, yes_rect.centery - ys.get_height() // 2))
+            # No button (Cancelar)
+            pygame.draw.rect(screen, (60, 60, 60), no_rect, border_radius=6)
+            pygame.draw.rect(screen, (255, 255, 255), no_rect, 2, border_radius=6)
+            ns = yfont.render("Cancelar", True, (255, 255, 255))
+            screen.blit(ns, (no_rect.centerx - ns.get_width() // 2, no_rect.centery - ns.get_height() // 2))
+        except Exception:
+            pass
+        # Expose rects for event handler
+        try:
+            self.editor.confirm_yes_rect = yes_rect
+            self.editor.confirm_no_rect = no_rect
+        except Exception:
+            pass

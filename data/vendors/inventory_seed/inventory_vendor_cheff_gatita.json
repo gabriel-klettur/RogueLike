@@ -1,0 +1,11 @@
+{
+  "template_id": "2c9f9b8a-b0a3-4e8c-9f32-9f6c6a51b5a1",
+  "slots": [
+    { "item": "food_apple", "quantity": 40 },
+    { "item": "food_bread", "quantity": 25 },
+    { "item": "food_borscht", "quantity": 15 },
+    { "item": "food_varenyky", "quantity": 20 },
+    { "item": "gold", "quantity": 200 }
+  ],
+  "schema_version": "1.0.0"
+}

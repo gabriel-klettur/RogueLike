@@ -10,6 +10,15 @@ from roguelike_engine.utils.benchmark import benchmark
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.ecs.utils.collider_utils import build_collider_rect, get_circle_world
 from roguelike_game.ecs.components.physics.circle_collider import CircleCollider
+from roguelike_game.ecs.systems.rendering.spawner.spawner_anchor_debug_system import (
+    SpawnerAnchorDebugRenderSystem,
+)
+from roguelike_game.ecs.systems.rendering.spawner.spawner_info_overlay_system import (
+    SpawnerInfoOverlaySystem,
+)
+from roguelike_game.ecs.systems.rendering.spawner.collider_velocity_debug_system import (
+    ColliderAndVelocityDebugSystem,
+)
 try:
     # Optional: highlight FSM set + params in Editor when hovering a spawner
     from roguelike_editors.fsm.services.fsm_runtime_bridge import (
@@ -29,6 +38,10 @@ class SpawnerDebugRenderSystem:
         self._last_pos: dict[int, tuple[float, float]] = {}
         self._last_dir: dict[int, tuple[float, float]] = {}
         self._stuck_frames: dict[int, int] = {}
+        # New split systems (lazy)
+        self._anchor_sys: SpawnerAnchorDebugRenderSystem | None = None
+        self._overlay_sys: SpawnerInfoOverlaySystem | None = None
+        self._collider_sys: ColliderAndVelocityDebugSystem | None = None
 
     def _auto_bottom_band_metrics(self, mask) -> tuple[int, int]:
         """Return (auto_center_x, avg_width) on the bottom band using weighted centroid of opaque pixels.
@@ -70,8 +83,30 @@ class SpawnerDebugRenderSystem:
                 self.font = None
     
     def update(self, world, screen, camera):
-        # Only render when the Spawner Editor is visible
-        if not getattr(config, 'DEBUG_SPAWNER', False):
+        # New path: delegate to split systems and return early.
+        try:
+            if self._anchor_sys is None:
+                self._anchor_sys = SpawnerAnchorDebugRenderSystem(perf_log=self.perf_log)
+            if self._collider_sys is None:
+                self._collider_sys = ColliderAndVelocityDebugSystem(perf_log=self.perf_log)
+            if self._overlay_sys is None:
+                self._overlay_sys = SpawnerInfoOverlaySystem(perf_log=self.perf_log)
+            # Order: anchor → colliders/velocity → overlay on top
+            self._anchor_sys.update(world, screen, camera)
+            self._collider_sys.update(world, screen, camera)
+            self._overlay_sys.update(world, screen, camera)
+            return
+        except Exception:
+            # Fallback to legacy path below if split systems fail for any reason
+            pass
+        # Legacy path (kept for fallback compatibility):
+        # Render when Spawner Editor is active OR when global DEBUG_SPAWNER is on
+        editor_active = False
+        try:
+            editor_active = bool(getattr(getattr(world, 'state', None), 'spawner_editor_active', False))
+        except Exception:
+            editor_active = False
+        if not editor_active and not getattr(config, 'DEBUG_SPAWNER', False):
             return
         comps = world.components
         if 'SpawnerConfig' not in comps:
@@ -79,11 +114,16 @@ class SpawnerDebugRenderSystem:
         self._ensure_font()
         zoom = getattr(camera, 'zoom', 1.0) or 1.0
         hovered_eid = None
+        selected_eid = None
         remove_candidate = None
         try:
             hovered_eid = getattr(getattr(world, 'state', None), 'spawner_editor_hovered_eid', None)
         except Exception:
             hovered_eid = None
+        try:
+            selected_eid = getattr(getattr(world, 'state', None), 'spawner_selected_eid', None)
+        except Exception:
+            selected_eid = None
         try:
             remove_candidate = getattr(getattr(world, 'state', None), 'spawner_remove_candidate_eid', None)
         except Exception:
@@ -100,24 +140,38 @@ class SpawnerDebugRenderSystem:
             py = ty * TILE_SIZE + TILE_SIZE // 2
             sx, sy = camera.apply((px, py))
 
-            # Draw anchor (crosshair + dot)
+            # Draw anchor (crosshair + dot) with hover/selection rings
             cx, cy = int(sx), int(sy)
-            base_col = (0, 200, 255)
+            base_cyan = (0, 200, 255)
+            yellow = (255, 220, 0)
             is_hover = (eid == hovered_eid)
+            is_selected = (eid == selected_eid)
             is_remove_sel = (eid == remove_candidate)
+            # Priority: remove (red) > selected (yellow) > hover (cyan)
             if is_remove_sel:
-                dot_col = (255, 60, 60)
-                cross_col = (255, 60, 60)
-                # Red selection halo
-                halo_r = int(14 * zoom)
-                pygame.draw.circle(screen, (255, 60, 60), (cx, cy), max(halo_r, 8), width=3)
+                ring_col = (255, 60, 60)
+                ring_r = max(int(16 * zoom), 10)
+                ring_w = 3
+                pygame.draw.circle(screen, ring_col, (cx, cy), ring_r, width=ring_w)
+                dot_col = ring_col
+                cross_col = ring_col
+            elif is_selected:
+                ring_col = yellow
+                ring_r = max(int(16 * zoom), 10)  # slightly larger than hover
+                ring_w = 4
+                pygame.draw.circle(screen, ring_col, (cx, cy), ring_r, width=ring_w)
+                dot_col = yellow
+                cross_col = yellow
+            elif is_hover:
+                ring_col = base_cyan
+                ring_r = max(int(12 * zoom), 8)
+                ring_w = 3
+                pygame.draw.circle(screen, ring_col, (cx, cy), ring_r, width=ring_w)
+                dot_col = base_cyan
+                cross_col = base_cyan
             else:
-                dot_col = (255, 220, 0) if is_hover else base_col
-                cross_col = (255, 220, 0) if is_hover else base_col
-                # Yellow hover halo
-                if is_hover:
-                    halo_r = int(14 * zoom)
-                    pygame.draw.circle(screen, (255, 220, 0), (cx, cy), max(halo_r, 8), width=3)
+                dot_col = base_cyan
+                cross_col = base_cyan
             pygame.draw.circle(screen, dot_col, (cx, cy), 4)
             arm = 8
             pygame.draw.line(screen, cross_col, (cx - arm, cy), (cx + arm, cy), 2)
@@ -128,12 +182,9 @@ class SpawnerDebugRenderSystem:
                 radius_tiles = int((cfg.trigger or {}).get('radius', 5))
                 r_px_world = radius_tiles * TILE_SIZE
                 r_px = max(1, int(r_px_world * zoom))
-                # Filled alpha overlay for high visibility
-                size = r_px * 2
-                overlay = pygame.Surface((size, size), pygame.SRCALPHA)
-                pygame.draw.circle(overlay, (0, 200, 255, 50), (r_px, r_px), r_px, width=0)
-                pygame.draw.circle(overlay, (0, 200, 255, 180), (r_px, r_px), r_px, width=2)
-                screen.blit(overlay, (cx - r_px, cy - r_px))
+                # Only draw outline (no fill) and make the cyan border thicker
+                outline_w = 4
+                pygame.draw.circle(screen, (0, 200, 255), (cx, cy), r_px, width=outline_w)
 
             # Draw spawn_radius if numeric (>0) to visualize random-in-area (circle or square)
             try:
@@ -148,16 +199,13 @@ class SpawnerDebugRenderSystem:
                 shape = str(getattr(cfg, 'spawner_shape', 'circle') or 'circle').lower()
                 size = r_px * 2
                 overlay = pygame.Surface((size, size), pygame.SRCALPHA)
-                # green overlay (different from proximity cyan)
+                # green outline (no fill), thicker border to improve visibility
                 if shape == 'square':
-                    rect = pygame.Rect(0, 0, size, size)
-                    overlay.fill((60, 220, 80, 40))
-                    screen.blit(overlay, (cx - r_px, cy - r_px))
-                    pygame.draw.rect(screen, (60, 220, 80, 180), pygame.Rect(cx - r_px, cy - r_px, size, size), width=2)
+                    outline_w = 4
+                    pygame.draw.rect(screen, (60, 220, 80), pygame.Rect(cx - r_px, cy - r_px, size, size), width=outline_w)
                 else:
-                    pygame.draw.circle(overlay, (60, 220, 80, 40), (r_px, r_px), r_px, width=0)
-                    pygame.draw.circle(overlay, (60, 220, 80, 180), (r_px, r_px), r_px, width=2)
-                    screen.blit(overlay, (cx - r_px, cy - r_px))
+                    outline_w = 4
+                    pygame.draw.circle(screen, (60, 220, 80), (cx, cy), r_px, width=outline_w)
 
             # Optional label
             if self.font:
@@ -240,7 +288,7 @@ class SpawnerDebugRenderSystem:
                 # Remove empty entries if FSM line is blank
                 lines = [t for t in lines if t]
 
-                # Render multiline with translucent background, centered at (cx, cy)
+                # Render multiline with translucent background, positioned relative to anchor
                 cyan = (0, 200, 255)
                 padding = 4
                 line_gap = 1
@@ -259,7 +307,28 @@ class SpawnerDebugRenderSystem:
                     x = (box_w - srf.get_width()) // 2
                     box.blit(srf, (x, y))
                     y += srf.get_height() + line_gap
-                screen.blit(box, (cx - box_w // 2, cy - box_h // 2))
+                # Default position: 400px above the anchor (centered on anchor X)
+                default_left = int(cx - box_w // 2)
+                default_top = int(cy - box_h // 2 - 400)
+                # Allow manual dragging override via world.state.spawner_info_pos (absolute top-left)
+                pos_left = default_left
+                pos_top = default_top
+                try:
+                    st = getattr(world, 'state', None)
+                    if st is not None:
+                        manual = getattr(st, 'spawner_info_pos', None)
+                        if isinstance(manual, (tuple, list)) and len(manual) == 2:
+                            pos_left = int(manual[0])
+                            pos_top = int(manual[1])
+                except Exception:
+                    pass
+                screen.blit(box, (pos_left, pos_top))
+                # Expose rect for input handling (dragging) in editor events
+                try:
+                    if getattr(world, 'state', None) is not None:
+                        setattr(world.state, 'spawner_info_rect', pygame.Rect(pos_left, pos_top, box_w, box_h))
+                except Exception:
+                    pass
                 # If hovered and we have linter warnings, draw them near the anchor
                 if is_hover and highlight_warnings:
                     warn_padding = 4
@@ -276,8 +345,8 @@ class SpawnerDebugRenderSystem:
                         wx = warn_padding
                         wb.blit(srf, (wx, wy))
                         wy += srf.get_height() + warn_gap
-                    # Place to the right of the main box
-                    screen.blit(wb, (cx + box_w // 2 + 6, cy - (wb.get_height() // 2)))
+                    # Place to the right of the main box position
+                    screen.blit(wb, (pos_left + box_w + 6, pos_top + (box_h - wb.get_height()) // 2))
 
         # Update Editor highlight context once per frame
         if _fsm_set_highlight_ctx is not None:

@@ -35,7 +35,48 @@ class PlayerSpellCooldownState(State):
             spell_key = self.fsm.context.get('spell', '')
             logger.debug(f" Eid={entity.id} state PlayerSpellCooldownState -> IdleState (cooldown {elapsed:.2f}s spell={spell_key})")
             # Recast automático: si automatic y botón sigue presionado, reiniciar la sub-FSM a PrepareSpellState
-            if self.fsm.context.get('automatic', False) and pygame.mouse.get_pressed()[0]:                
+            if self.fsm.context.get('automatic', False) and pygame.mouse.get_pressed()[0]:
+                # Godmode: omitir chequeo de maná para el jugador
+                try:
+                    world = entity.world
+                    godmode = bool(getattr(getattr(world, 'state', None), 'godmode', False)) and (entity.id == getattr(world, 'player_entity', None))
+                except Exception:
+                    godmode = False
+                if not godmode:
+                    # Verificar que hay maná suficiente ANTES de recastear
+                    try:
+                        world = entity.world
+                        mana_comp = world.components.get('Mana', {}).get(entity.id)
+                        mana_cost = float(SPELLS.get(spell_key, {}).get('mana_cost', 0))
+                        cur = float(getattr(mana_comp, 'current_mana', 0)) if mana_comp is not None else 0.0
+                    except Exception:
+                        mana_cost = 0.0
+                        cur = 0.0
+                    if mana_cost > 0 and cur < mana_cost:
+                        # Feedback no intrusivo y antispam (1s)
+                        now = time.time()
+                        last_warn = float(self.fsm.context.get('_no_mana_warn_ts', 0.0))
+                        if now - last_warn > 1.0:
+                            try:
+                                from roguelike_game.ecs.systems.chat.chat_bubble_utils import push_bubble
+                                push_bubble(entity.world, entity.id, 'No tengo suficiente maná', color=(240, 200, 200), ttl_ms=1200)
+                            except Exception:
+                                pass
+                            try:
+                                flash_store = getattr(world, '_mana_flash_until', None)
+                                if not isinstance(flash_store, dict):
+                                    flash_store = {}
+                                    setattr(world, '_mana_flash_until', flash_store)
+                                import time as _time
+                                flash_store[entity.id] = _time.time() + 0.5
+                            except Exception:
+                                pass
+                            self.fsm.context['_no_mana_warn_ts'] = now
+                        # Reintentar pronto sin spamear recasteo: espera corta
+                        retry_wait = 0.2
+                        self.fsm.context['cooldown_start'] = now - (duration - retry_wait)
+                        return
+                # Suficiente maná o godmode: proceder a preparar siguiente cast
                 from roguelike_game.ecs.systems.fsm.states.spell.prepare_spell_state import PrepareSpellState
                 self.fsm.change_state(PrepareSpellState(), entity)
                 return

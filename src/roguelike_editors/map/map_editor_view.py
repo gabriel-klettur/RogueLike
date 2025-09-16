@@ -72,6 +72,11 @@ class MapEditorView:
         if self.title_view:
             self.title_view.state = self.state
             title_rect = self.title_view.render(screen)
+            # Cache for overlays (e.g., tutorial positioning)
+            try:
+                self._last_title_rect = title_rect
+            except Exception:
+                pass
             # Align toolbar panel flush left (matching title's left) and just below the title (preserve dragging later)
             try:
                 toolbar = getattr(self.controller, "toolbar", None)
@@ -182,6 +187,13 @@ class MapEditorView:
 
             # Dibujar borde de zona
             pygame.draw.rect(screen, outline_color, (*screen_tl, *screen_size), 2)
+
+            # Cachear rect de zona seleccionada para overlays externos (tutorial)
+            try:
+                if zone_name == self.state.selected_zone:
+                    self._last_selected_zone_rect = pygame.Rect(*screen_tl, *screen_size)
+            except Exception:
+                pass
 
             # Si está en modo de pendiente de borrado, resaltar en rojo
             if self.state.pending_delete_zone == zone_name:

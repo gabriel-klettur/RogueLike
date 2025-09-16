@@ -55,6 +55,12 @@ class TileToolbarController:
         """
         state = self.editor_state.toolbar_state
         current = self.editor_state.current_tool
+        # Tutorial tool reflects the overlay active state
+        if tool == "tutorial_tiles":
+            try:
+                return bool(getattr(self.editor_controller, 'tutorial_controller', None) and self.editor_controller.tutorial_controller.is_active())
+            except Exception:
+                return False
         if tool == "view":
             return bool(state.view_active)
         if tool == "view_layers":
@@ -116,6 +122,11 @@ class TileToolbarController:
         if not asset_name:
             return
         self._select_and_load(asset_name, tile, game_map)
+        # Tutorial pulse: eyedropper used
+        try:
+            setattr(self.editor_state, 'tutorial_eyedropper_pulse', True)
+        except Exception:
+            pass
 
     def update(self, mouse_pos, camera, game_map):
         """
@@ -166,6 +177,11 @@ class TileToolbarController:
         changed = self._clear_tiles_in_region(tile, game_map)
         # Throttled partial chunk updates for feedback during drag
         if changed:
+            # Tutorial pulse: delete action performed
+            try:
+                setattr(self.editor_state, 'tutorial_delete_pulse', True)
+            except Exception:
+                pass
             now = pygame.time.get_ticks()
             last = getattr(self.editor_controller, "_last_chunk_update_ms", 0)
             if now - last >= BRUSH_UPDATE_THROTTLE_MS:
@@ -229,6 +245,11 @@ class TileToolbarController:
         changed = self._reset_region_in_memory(tile, game_map, base_map, camera)
         # Throttled partial chunk updates for feedback during drag
         if changed:
+            # Tutorial pulse: default action performed
+            try:
+                setattr(self.editor_state, 'tutorial_default_pulse', True)
+            except Exception:
+                pass
             now = pygame.time.get_ticks()
             last = getattr(self.editor_controller, "_last_chunk_update_ms", 0)
             if now - last >= BRUSH_UPDATE_THROTTLE_MS:

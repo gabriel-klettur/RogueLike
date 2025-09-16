@@ -15,6 +15,7 @@ from roguelike_game.ecs.systems.fsm.states.idle_state import IdleState
 from roguelike_game.ecs.systems.fsm.states.player.move_state import MoveState
 from roguelike_game.ecs.systems.fsm.states.player.player_attack_state import PlayerAttackState
 from roguelike_game.ecs.systems.fsm.states.player.player_spell_select_state import PlayerSpellSelectState
+from roguelike_game.ecs.systems.fsm.states.unconscious_state import UnconsciousState
 from roguelike_game.ecs.systems.fsm.fsm_system import _EntityProxy
 from roguelike_game.config.input_config import InputConfig
 from roguelike_game.config.spells_config import reload_spells
@@ -38,6 +39,8 @@ class InputSystem:
 
         self.prev_toggle = {}
         self.prev_toggle_inventory = {}
+        # Estado previo para interacción contextual (flanco ascendente)
+        self.prev_interact = {}
         # Estado previo de hechizos para detección de flancos
         self.prev_spell_keys = {}
         # Estado previo de ataque para detección de flanco ascendente
@@ -50,6 +53,45 @@ class InputSystem:
         self._prev_suppressed = {}
     
     def update(self, world, *args):
+
+        # Suppress ALL gameplay input when Console is open (keyboard focus is for console)
+        if hasattr(world, 'state') and bool(getattr(world.state, 'console_open', False)):
+            spell_attrs = ['lightball','slash','healing_aura','darkball','iceball','lightning','arcane_flame','firework_launch','smoke','smoke_emitter','sphere_magic_shield','teleport']
+            for eid, inp in world.components.get('InputComponent', {}).items():
+                # Anular entradas de gameplay mientras se escribe en la consola
+                inp.click = False
+                inp.move_x = 0
+                inp.move_y = 0
+                inp.attack = False
+                inp.interact = False
+                inp.show_all_drops = False
+                for name in spell_attrs:
+                    setattr(inp, f'spell_{name}', False)
+                inp.toggle_editor = False
+                inp.toggle_inventory = False
+                # Detener movimiento del jugador sin pausar la simulación global
+                vel = world.components.get('Velocity', {}).get(eid)
+                if vel:
+                    vel.vx = 0
+                    vel.vy = 0
+                # Limpiar memorias de flancos para evitar disparos al cerrar la consola
+                self.prev_click[eid] = False
+                self.prev_right[eid] = False
+                self.prev_mouse[(eid, 'fireball')] = False
+                self.prev_mouse[(eid, 'dash')] = False
+                self.prev_toggle[eid] = False
+                self.prev_toggle_inventory[eid] = False
+                self.prev_interact[eid] = False
+                for name in spell_attrs:
+                    self.prev_spell_keys[(eid, name)] = 0
+                self.prev_attack[eid] = False
+                for base in ('fireball','laser_beam','dash'):
+                    self.prev_action_slots[(eid, f'{base}_kb_a')] = False
+                    self.prev_action_slots[(eid, f'{base}_kb_b')] = False
+                # Resetear memorias de ratón de hechizos mapeados por mouse (p.ej. slash)
+                self.prev_mouse[(eid, 'spell_slash')] = False
+            return
+
         # Suppress game clicks when Item Editor is open
         # world.state.item_editor_state is set by ItemsEditorManager
         if hasattr(world, 'state') and getattr(world.state, 'item_editor_state', None) and world.state.item_editor_state.visible:
@@ -61,6 +103,7 @@ class InputSystem:
                 inp.move_x = 0
                 inp.move_y = 0
                 inp.attack = False
+                inp.interact = False
                 inp.show_all_drops = False
                 for name in spell_attrs:
                     setattr(inp, f'spell_{name}', False)
@@ -78,6 +121,7 @@ class InputSystem:
                 self.prev_mouse[(eid, 'dash')] = False
                 self.prev_toggle[eid] = False
                 self.prev_toggle_inventory[eid] = False
+                self.prev_interact[eid] = False
                 for name in spell_attrs:
                     self.prev_spell_keys[(eid, name)] = 0
                 # Reset attack edge state
@@ -86,6 +130,8 @@ class InputSystem:
                 for base in ('fireball','laser_beam','dash'):
                     self.prev_action_slots[(eid, f'{base}_kb_a')] = False
                     self.prev_action_slots[(eid, f'{base}_kb_b')] = False
+                # Resetear memorias de ratón de hechizos mapeados por mouse (p.ej. slash)
+                self.prev_mouse[(eid, 'spell_slash')] = False
             return
 
         # Suppress ALL gameplay input when Class Selector is open
@@ -97,6 +143,7 @@ class InputSystem:
                 inp.move_x = 0
                 inp.move_y = 0
                 inp.attack = False
+                inp.interact = False
                 inp.show_all_drops = False
                 for name in spell_attrs:
                     setattr(inp, f'spell_{name}', False)
@@ -114,6 +161,7 @@ class InputSystem:
                 self.prev_mouse[(eid, 'dash')] = False
                 self.prev_toggle[eid] = False
                 self.prev_toggle_inventory[eid] = False
+                self.prev_interact[eid] = False
                 for name in spell_attrs:
                     self.prev_spell_keys[(eid, name)] = 0
                 # Reset attack edge state
@@ -128,6 +176,7 @@ class InputSystem:
                 inp.move_x = 0
                 inp.move_y = 0
                 inp.attack = False
+                inp.interact = False
                 inp.show_all_drops = False
                 for name in spell_attrs:
                     setattr(inp, f'spell_{name}', False)
@@ -143,12 +192,50 @@ class InputSystem:
                 self.prev_mouse[(eid, 'dash')] = False
                 self.prev_toggle[eid] = False
                 self.prev_toggle_inventory[eid] = False
+                self.prev_interact[eid] = False
                 for name in spell_attrs:
                     self.prev_spell_keys[(eid, name)] = 0
                 self.prev_attack[eid] = False
                 for base in ('fireball','laser_beam','dash'):
                     self.prev_action_slots[(eid, f'{base}_kb_a')] = False
                     self.prev_action_slots[(eid, f'{base}_kb_b')] = False
+            return
+
+        # Suppress ALL gameplay input when Chat UI is open (give keyboard focus to chat only)
+        if hasattr(world, 'state') and bool(getattr(world.state, 'chat_open', False)):
+            spell_attrs = ['lightball','slash','healing_aura','darkball','iceball','lightning','arcane_flame','firework_launch','smoke','smoke_emitter','sphere_magic_shield','teleport']
+            for eid, inp in world.components.get('InputComponent', {}).items():
+                # Anular entradas de gameplay mientras se escribe en el chat
+                inp.click = False
+                inp.move_x = 0
+                inp.move_y = 0
+                inp.attack = False
+                inp.interact = False
+                inp.show_all_drops = False
+                for name in spell_attrs:
+                    setattr(inp, f'spell_{name}', False)
+                inp.toggle_editor = False
+                inp.toggle_inventory = False
+                # Detener movimiento del jugador sin pausar la simulación global
+                vel = world.components.get('Velocity', {}).get(eid)
+                if vel:
+                    vel.vx = 0
+                    vel.vy = 0
+                # Limpiar memorias de flancos para evitar disparos al cerrar el chat
+                self.prev_click[eid] = False
+                self.prev_right[eid] = False
+                self.prev_mouse[(eid, 'fireball')] = False
+                self.prev_mouse[(eid, 'dash')] = False
+                self.prev_toggle[eid] = False
+                self.prev_toggle_inventory[eid] = False
+                self.prev_interact[eid] = False
+                for name in spell_attrs:
+                    self.prev_spell_keys[(eid, name)] = 0
+                self.prev_attack[eid] = False
+                for base in ('fireball','laser_beam','dash'):
+                    self.prev_action_slots[(eid, f'{base}_kb_a')] = False
+                    self.prev_action_slots[(eid, f'{base}_kb_b')] = False
+            # Salir temprano: el chat tiene el foco del teclado y procesará eventos por su cuenta
             return
 
         # Recargar bindings para aplicar cambios guardados sin reiniciar
@@ -181,6 +268,47 @@ class InputSystem:
         # Flag para mostrar todos los drops
         alt_down = bool(pygame.key.get_mods() & pygame.KMOD_ALT)
         for eid, inp in world.components.get('InputComponent', {}).items():
+            # 0) Si el jugador está inconsciente: bloquear completamente entradas y movimiento
+            if eid in world.components.get('PlayerTagComponent', {}):
+                state_comp = world.components.get('NPCState', {}).get(eid)
+                if state_comp and isinstance(state_comp.fsm.current_state, UnconsciousState):
+                    # Limpiar inputs actuales
+                    inp.click = False
+                    inp.move_x = 0
+                    inp.move_y = 0
+                    inp.attack = False
+                    inp.interact = False
+                    inp.show_all_drops = False
+                    # Desactivar hechizos
+                    for name in ['lightball','slash','healing_aura','darkball','iceball','lightning','arcane_flame','firework_launch','smoke','smoke_emitter','sphere_magic_shield','teleport']:
+                        setattr(inp, f'spell_{name}', False)
+                    # Bloquear toggles
+                    inp.toggle_editor = False
+                    inp.toggle_inventory = False
+                    # Zero velocity para no moverse
+                    vel = world.components.get('Velocity', {}).get(eid)
+                    if vel:
+                        vel.vx = 0
+                        vel.vy = 0
+                    # Cancelar acciones pendientes (hechizos/dash) del frame
+                    try:
+                        world.components.get('WantsToCastSpell', {}).pop(eid, None)
+                    except Exception:
+                        pass
+                    # Resetear memorias de flancos para no disparar al salir
+                    self.prev_click[eid] = False
+                    self.prev_right[eid] = False
+                    self.prev_toggle[eid] = False
+                    self.prev_toggle_inventory[eid] = False
+                    self.prev_interact[eid] = False
+                    for name in ['lightball','slash','healing_aura','darkball','iceball','lightning','arcane_flame','firework_launch','smoke','smoke_emitter','sphere_magic_shield','teleport']:
+                        self.prev_spell_keys[(eid, name)] = 0
+                    self.prev_attack[eid] = False
+                    for base in ('fireball','laser_beam','dash'):
+                        self.prev_action_slots[(eid, f'{base}_kb_a')] = False
+                        self.prev_action_slots[(eid, f'{base}_kb_b')] = False
+                    # Saltar procesamiento de esta entidad en este frame
+                    continue
             # Asignar flag show_all_drops
             inp.show_all_drops = alt_down
             # Movimiento en ejes X e Y (soporta múltiples teclas por acción)
@@ -299,6 +427,15 @@ class InputSystem:
                 inp.toggle_inventory = False
             self.prev_toggle_inventory[eid] = curr_inv
 
+            # Interact action: rising-edge detection (OR of multiple bindings)
+            curr_interact = any_pressed("interact")
+            prev_inter = self.prev_interact.get(eid, False)
+            if curr_interact and not prev_inter:
+                inp.interact = True
+            else:
+                inp.interact = False
+            self.prev_interact[eid] = curr_interact
+
             # Control de click: desactivar cuando se arrastra un ítem o el panel de inventario
             dragging_items = any(isinstance(s, DropDragSystem) and s.dragging_eid is not None for s in getattr(world, 'update_systems', []))
             dragging_ui = any(isinstance(s, InventoryUISystem) and s.dragging for s in getattr(world, 'render_systems', []))
@@ -321,9 +458,13 @@ class InputSystem:
                 inp.click = False
                 self.prev_click[eid] = False
                 self.prev_right[eid] = False
+                inp.interact = False
+                self.prev_interact[eid] = False
                 # Reset mouse action edges
                 self.prev_mouse[(eid, 'fireball')] = False
                 self.prev_mouse[(eid, 'dash')] = False
+                # Resetear memorias de ratón de hechizos mapeados por mouse (p.ej. slash)
+                self.prev_mouse[(eid, 'spell_slash')] = False
                 # Reset keyboard slot edges
                 for base in ('fireball','laser_beam','dash'):
                     self.prev_action_slots[(eid, f'{base}_kb_a')] = False
@@ -409,3 +550,15 @@ class InputSystem:
                     logger.debug(f"[DEBUG][{time.time():.3f}] eid={eid} mouse-button({dash_btn}) -> dash")
                     world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='dash')
                 self.prev_mouse[(eid, 'dash')] = curr_dash_mouse
+
+                # --- Hechizos activados por ratón (genérico): mouse_spell_<name> ---
+                # Permite mapear, por ejemplo, 'mouse_spell_slash': 'M_RIGHT'
+                for name in ['lightball','slash','healing_aura','darkball','iceball','lightning','arcane_flame','firework_launch','smoke','smoke_emitter','sphere_magic_shield','teleport']:
+                    btn = self.config.get_mouse_button_for_binding(f"mouse_spell_{name}")
+                    if isinstance(btn, int):
+                        curr_spell_mouse = bool(mouse_pressed[btn]) and not ui_blocked
+                        prev_spell_mouse = self.prev_mouse.get((eid, f'spell_{name}'), False)
+                        edge = (curr_spell_mouse and not prev_spell_mouse)
+                        if eid in world.components.get('PlayerTagComponent', {}) and edge:
+                            world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell=name)
+                        self.prev_mouse[(eid, f'spell_{name}')] = curr_spell_mouse

@@ -15,7 +15,7 @@ class EntityPickerPanelView:
 
 
     """
-    Vista que renderiza el panel UI del editor de entidades (jugadores y monstruos).
+    Vista que renderiza el panel UI del editor de entidades (jugadores y hostiles).
 
     Características:
     - Panel dinámico con scroll.
@@ -104,12 +104,24 @@ class EntityPickerPanelView:
             self._picker_logged = False
             return
 
-        # Lista completa de entidades (jugador + monstruos)
+        # Lista completa de entidades (jugador + hostiles)
         if model.active_tab == "Players":
             entity_ids = list(model.player_stats.keys())
+        elif model.active_tab == "Hostile":
+            # Ocultar entradas de hostiles marcadas como pendientes (no confirmadas)
+            entity_ids = [
+                mid for mid, m in model.monsters.items()
+                if not (isinstance(m, dict) and m.get('__pending__'))
+            ]
+        elif model.active_tab == "Neutral":
+            # Mostrar neutrales directamente desde el dataset dedicado, ocultando '__pending__'
+            entity_ids = [
+                mid for mid, m in model.neutrals.items()
+                if not (isinstance(m, dict) and m.get('__pending__'))
+            ]
         else:
-            # Ocultar entradas de monstruos marcadas como pendientes (no confirmadas)
-            entity_ids = [mid for mid, m in model.monsters.items() if not (isinstance(m, dict) and m.get('__pending__'))]
+            # Otras pestañas aún no implementadas
+            entity_ids = []
 
         # Reset debug flag on tab change
         if self._last_active_tab != model.active_tab:
@@ -201,13 +213,13 @@ class EntityPickerPanelView:
     # SUBRENDERIZADO
     # ----------------------------
     def _draw_tabs(self, screen: pygame.Surface, model: EntityPickerPanelModel) -> None:
-        """Dibuja las pestañas Players/Monsters en el encabezado del panel."""
+        """Dibuja las pestañas Players/Hostile/Neutral/Aliades/Specials en el encabezado del panel."""
         font_h = self.font.get_height()
         padding_x, padding_y = 10, 5
         x_cursor, y = self.x, self.y
         model.tab_rects.clear()
         mouse_pos = pygame.mouse.get_pos()
-        for label in ("Players", "Monsters"):
+        for label in ("Players", "Hostile", "Neutral", "Aliades", "Specials"):
             text_w, text_h = self.font.size(label)
             w = text_w + padding_x * 2
             h = text_h + padding_y * 2
@@ -278,8 +290,14 @@ class EntityPickerPanelView:
         new_h = max(1, int(orig_h * scale))
         icon_surf = pygame.transform.smoothscale(icon, (new_w, new_h))
         if ent_id not in self._center_pixel_logged:
-            center = (self.cell_size // 2, self.cell_size // 2)
-            center_pixel = icon_surf.get_at(center)
+            # Usar el centro real del icono escalado (no el centro de la celda),
+            # para evitar IndexError en superficies más pequeñas que cell_size.
+            cx = max(0, min(new_w - 1, new_w // 2))
+            cy = max(0, min(new_h - 1, new_h // 2))
+            try:
+                center_pixel = icon_surf.get_at((cx, cy))
+            except Exception:
+                center_pixel = pygame.Color(0, 0, 0, 0)
             logger.debug(f' ent_id={ent_id} original_asset_size={icon.get_size()} scaled_asset_size={icon_surf.get_size()} center_pixel={center_pixel}')
             self._center_pixel_logged.add(ent_id)
 

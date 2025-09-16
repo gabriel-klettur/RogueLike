@@ -2,13 +2,11 @@ import os
 import json
 from typing import List
 from roguelike_engine.config.config import (
-    BUILDINGS_DATA_PATH,
-    BUILDINGS_COLLISIONS_DATA_PATH,
-    BUILDINGS_TEMPLATES_PATH,
-    BUILDINGS_INSTANCES_PATH,
     BUILDINGS_COLLISIONS_BY_IMAGE_PATH,
     BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH,
     BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH,
+    BUILDINGS_TEMPLATES_PATH,
+    BUILDINGS_INSTANCES_PATH,
 )
 from roguelike_engine.z_layer.persistence import extract_z_from_json
 from roguelike_engine.config.config_tiles import TILE_SIZE
@@ -64,70 +62,39 @@ def _canonicalize_zone(zone: str) -> str:
         return zone
 
 def _load_collisions_sources():
-    """Load collisions from split files if present, else fallback to legacy combined file.
+    """Load collisions exclusively from split files. No legacy fallback.
 
     Split files format (each file is a plain dict):
       - BUILDINGS_COLLISIONS_BY_IMAGE_PATH -> { image_path: {width,height,collision} }
       - BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH -> { spawn_id: {width,height,collision} }
       - BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH -> { id: {width,height,collision} }
 
-    Legacy combined file (supports both new keyed and legacy keyed variants) is used only if
-    none of the split files exist.
+    If none of the split files exist, returns empty dicts and logs a warning.
     """
-    try:
-        use_split = any(
-            os.path.exists(p) for p in (
-                BUILDINGS_COLLISIONS_BY_IMAGE_PATH,
-                BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH,
-                BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH,
-            )
-        )
-    except Exception:
-        use_split = False
-
-    if use_split:
-        def _read_dict(path):
-            try:
-                if os.path.exists(path):
-                    with open(path, 'r', encoding='utf-8-sig') as f:
-                        d = json.load(f) or {}
-                        return d if isinstance(d, dict) else {}
-            except Exception:
-                return {}
+    def _read_dict(path):
+        try:
+            if os.path.exists(path):
+                with open(path, 'r', encoding='utf-8-sig') as f:
+                    d = json.load(f) or {}
+                    return d if isinstance(d, dict) else {}
+        except Exception:
             return {}
-        collisions_global = _read_dict(BUILDINGS_COLLISIONS_BY_IMAGE_PATH)
-        collisions_instances = _read_dict(BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH)
-        collisions_by_id = _read_dict(BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH)
-        return collisions_global, collisions_instances, collisions_by_id
+        return {}
 
-    # Fallback: legacy single file
-    try:
-        with open(BUILDINGS_COLLISIONS_DATA_PATH, 'r', encoding='utf-8-sig') as cf:
-            raw_cd = json.load(cf) or {}
-    except Exception:
-        raw_cd = {}
-    try:
-        if isinstance(raw_cd, dict):
-            if any(k in raw_cd for k in ("by_image_path", "by_spawn_id", "by_building_instance_id")):
-                collisions_global = raw_cd.get("by_image_path", {}) or {}
-                collisions_instances = raw_cd.get("by_spawn_id", {}) or {}
-                collisions_by_id = raw_cd.get("by_building_instance_id", {}) or {}
-            elif any(k in raw_cd for k in ("global", "instances", "by_building_id")):
-                collisions_global = raw_cd.get("global", {}) or {}
-                collisions_instances = raw_cd.get("instances", {}) or {}
-                collisions_by_id = raw_cd.get("by_building_id", {}) or {}
-            else:
-                collisions_global = raw_cd
-                collisions_instances = {}
-                collisions_by_id = {}
-        else:
-            collisions_global = {}
-            collisions_instances = {}
-            collisions_by_id = {}
-    except Exception:
-        collisions_global = {}
-        collisions_instances = {}
-        collisions_by_id = {}
+    exists_any = any(
+        os.path.exists(p) for p in (
+            BUILDINGS_COLLISIONS_BY_IMAGE_PATH,
+            BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH,
+            BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH,
+        )
+    )
+    if not exists_any:
+        logger.warning("[Buildings] Split collisions files not found; using empty collisions maps.")
+        return {}, {}, {}
+
+    collisions_global = _read_dict(BUILDINGS_COLLISIONS_BY_IMAGE_PATH)
+    collisions_instances = _read_dict(BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH)
+    collisions_by_id = _read_dict(BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH)
     return collisions_global, collisions_instances, collisions_by_id
 
 def _apply_collision_for_building(b: Building,
@@ -149,7 +116,10 @@ def _apply_collision_for_building(b: Building,
         scope = entry.get("collider_scope", "CG")
         if scope == 'CU':
             # 1) Per-building-instance collisions (new scheme)
-            bid = entry.get("id")
+            # Prefer instance id on the Building object; fallback to any id in entry (template id)
+            bid = getattr(b, "id", None)
+            if bid is None:
+                bid = entry.get("id")
             if bid is not None:
                 bid_str = str(bid)
                 if bid_str in collisions_by_id:
@@ -272,6 +242,67 @@ def _load_from_split(z_state=None) -> List[Building]:
         logger.error(f"[Buildings] Error reading instances: {e}")
         instances_raw = []
 
+    # Diagnostics: duplicates and tagging status
+    try:
+        total = len(instances_raw)
+        key_counts = {}
+        root_spawn = 0
+        tagged_override = 0
+        for e in instances_raw:
+            try:
+                k = f"{str(e.get('zone') or 'lobby')}|{int(e.get('rel_x') or 0)}|{int(e.get('rel_y') or 0)}|{int(e.get('template_id') or -1)}"
+            except Exception:
+                k = str(id(e))
+            key_counts[k] = key_counts.get(k, 0) + 1
+            try:
+                if e.get('spawn_id') is not None or e.get('spawner_instance_id') is not None:
+                    root_spawn += 1
+            except Exception:
+                pass
+            try:
+                ov = e.get('overrides') if isinstance(e, dict) else None
+                if isinstance(ov, dict) and bool(ov.get('_is_spawner_visual')):
+                    tagged_override += 1
+            except Exception:
+                pass
+        dups = sum(1 for c in key_counts.values() if c > 1)
+        logger.debug(f"[Buildings][split] instances file: total={total}, duplicate_pos_tpl_keys={dups}, root_spawn_tags={root_spawn}, override_spawner_visual_tags={tagged_override}")
+    except Exception:
+        pass
+
+    # Best-effort dedup on load to avoid double-building objects in memory
+    try:
+        before = len(instances_raw)
+        seen: dict[str, dict] = {}
+        def _key(e: dict) -> str:
+            try:
+                return f"{str(e.get('zone') or 'lobby')}|{int(e.get('rel_x') or 0)}|{int(e.get('rel_y') or 0)}|{int(e.get('template_id') or -1)}"
+            except Exception:
+                return str(id(e))
+        def _score(e: dict) -> tuple:
+            has_root_sid = 1 if (e.get('spawn_id') is not None or e.get('spawner_instance_id') is not None) else 0
+            ov = e.get('overrides') if isinstance(e, dict) else None
+            has_tag = 1 if (isinstance(ov, dict) and bool(ov.get('_is_spawner_visual'))) else 0
+            try:
+                neg_id = -int(e.get('id') or 0)
+            except Exception:
+                neg_id = 0
+            return (has_root_sid, has_tag, neg_id)
+        for e in list(instances_raw):
+            k = _key(e)
+            cur = seen.get(k)
+            if cur is None:
+                seen[k] = e
+            else:
+                if _score(e) > _score(cur):
+                    seen[k] = e
+        instances_dedup = list(seen.values())
+        if len(instances_dedup) != before:
+            logger.warning(f"[Buildings][split] Dedup on load by pos/tpl: {before}->{len(instances_dedup)} (removed={before-len(instances_dedup)})")
+        instances_raw = instances_dedup
+    except Exception:
+        pass
+
     buildings: List[Building] = []
     for inst in instances_raw:
         try:
@@ -314,6 +345,13 @@ def _load_from_split(z_state=None) -> List[Building]:
             entry['rel_y'] = rel_y
             if inst.get('zone'):
                 entry['zone'] = _canonicalize_zone(inst['zone'])
+
+            # Bind instance id into merged entry to support per-instance lookups
+            try:
+                if inst.get('id') is not None:
+                    entry['id'] = inst.get('id')
+            except Exception:
+                pass
 
             # Ensure assets.idle exists after merge
             assets = entry.get('assets') or {}
@@ -385,6 +423,26 @@ def _load_from_split(z_state=None) -> List[Building]:
         except Exception as e:
             logger.error(f"[Buildings][split] Error creating building from instance: {e}")
 
+    # Final safety: deduplicate by building id in memory
+    try:
+        seen_ids = set()
+        unique = []
+        removed = 0
+        for b in buildings:
+            bid = getattr(b, 'id', None)
+            if bid is None:
+                unique.append(b)
+                continue
+            if bid in seen_ids:
+                removed += 1
+                continue
+            seen_ids.add(bid)
+            unique.append(b)
+        if removed:
+            logger.warning(f"[Buildings][split] Removed {removed} duplicated Building objects by id in memory")
+        buildings = unique
+    except Exception:
+        pass
     logger.info(f"[Buildings][Cargando Edificios SPLIT] {len(buildings)} edificios (templates+instances)")
     return buildings
 
@@ -392,139 +450,13 @@ def load_buildings_from_json(
     z_state=None
 ) -> List:
     """
-    Carga edificios desde JSON usando coordenadas relativas.
-    - Si `z_state` se proporciona, inyecta la capa Z.
+    Carga edificios desde JSON en modo split (templates + instances) usando coordenadas relativas.
+    - Si `z_state` se proporciona, inyecta la capa Z en los objetos creados.
+    - Si faltan los archivos split requeridos, devuelve lista vacía con warning (no hay fallback legacy).
     """
-    # Prefer explicitly provided combined file if it exists (tests may monkeypatch BUILDINGS_DATA_PATH);
-    # only fall back to split files when the combined file is not available.
-    try:
-        if not os.path.exists(BUILDINGS_DATA_PATH):
-            if os.path.exists(BUILDINGS_TEMPLATES_PATH) and os.path.exists(BUILDINGS_INSTANCES_PATH):
-                return _load_from_split(z_state)
-    except Exception:
-        pass
-    if not os.path.exists(BUILDINGS_DATA_PATH):
-        logger.warning(f"⚠️ Archivo no encontrado: {BUILDINGS_DATA_PATH}")
-        return []
-
-    # Cargar colisiones (legacy path)
-    collisions_global, collisions_instances, collisions_by_id = _load_collisions_sources()
-
-    with open(BUILDINGS_DATA_PATH, "r", encoding="utf-8-sig") as f:
-        try:
-            data = json.load(f)
-        except json.JSONDecodeError as e:
-            logger.error(f"❌ Error al leer JSON: {e}")
-            return []
-
-    # Auto-asignación de IDs faltantes (persistente y backward-compatible)
-    changed_ids = False
-    try:
-        existing_ids = [int(e.get("id")) for e in data if isinstance(e, dict) and str(e.get("id")).isdigit()]
-        next_id = (max(existing_ids) + 1) if existing_ids else 1
-        for e in data:
-            if "id" not in e or e.get("id") is None or (isinstance(e.get("id"), str) and not str(e.get("id")).isdigit()):
-                e["id"] = next_id
-                next_id += 1
-                changed_ids = True
-    except Exception:
-        # Si algo falla, no impedimos la carga; simplemente no persistimos
-        changed_ids = False
-
-    if changed_ids:
-        try:
-            with open(BUILDINGS_DATA_PATH, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=4)
-            logger.info("[Buildings] IDs auto-asignados y persistidos en buildings_data.json")
-        except Exception as _e:
-            logger.warning(f"[Buildings] No se pudo persistir IDs auto-asignados: {_e}")
-
-    buildings: List[Building] = []
-
-    for entry in data:
-        try:
-            #logger.debug(f"📥 Entrada cruda desde JSON: {entry}")
-
-            # Accept both new JSON structure (assets.idle) and legacy (image_path)
-            _img_path = None
-            try:
-                assets = entry.get("assets") or {}
-                if isinstance(assets, dict):
-                    _img_path = _normalize_asset_path(assets.get("idle"))
-            except Exception:
-                _img_path = None
-            if not _img_path:
-                try:
-                    _img_path = _normalize_asset_path(entry.get("image_path"))
-                except Exception:
-                    _img_path = None
-            if not _img_path:
-                raise ValueError(f"[Buildings][loader] Missing required assets.idle/image_path (id={entry.get('id')}, zone={entry.get('zone')}, rel=({entry.get('rel_x')},{entry.get('rel_y')}))")
-
-            b = Building(
-                rel_x=entry.get("rel_x", 0),
-                rel_y=entry.get("rel_y", 0),
-                image_path=_img_path,
-                solid=entry.get("solid", True),
-                scale=tuple(entry["scale"]) if "scale" in entry else None,
-                split_ratio=entry.get("split_ratio", 0.5),
-                z_bottom=entry.get("z_bottom"),
-                z_top=entry.get("z_top"),
-            )
-            # spawn_id (enlaza con spawner instance)
-            try:
-                sid = entry.get("spawn_id")
-                if sid is not None:
-                    setattr(b, "spawn_id", str(sid))
-                    setattr(b, "spawner_instance_id", str(sid))
-            except Exception:
-                pass
-
-            # Inicializar collision_map y aplicar overrides
-            _apply_collision_for_building(b, entry, collisions_global, collisions_instances, collisions_by_id)
-
-            # Aplicar capa Z
-            if z_state:
-                extract_z_from_json(entry, z_state, b)
-
-            # Asignar zona si viene en JSON
-            if entry.get("zone"):
-                b.zone = _canonicalize_zone(entry["zone"]) 
-
-            # ────────────────────────────────────────────────────────────────
-            # Multi-image visual support (backward compatible):
-            # If 'images_by_state' is present, configure the model mapping and optional initial state.
-            # If 'state_thresholds' present, store them for runtime mapping from damage ratio.
-            try:
-                images_by_state = entry.get("images_by_state")
-                if isinstance(images_by_state, dict) and images_by_state:
-                    initial_state = entry.get("initial_visual_state")
-                    # Apply mapping first; this will keep current displayed scale
-                    b.model.set_images_by_state(images_by_state, initial_state=initial_state)
-                thresholds = entry.get("state_thresholds")
-                if thresholds is not None:
-                    b.model.set_state_thresholds(thresholds if isinstance(thresholds, list) else None)
-            except Exception as _e:
-                logger.warning(f"[Buildings][loader] Could not apply images_by_state/state_thresholds: {_e}", exc_info=False)
-
-            # Alcance de colisión por edificio (CG/CU)
-            try:
-                b.collider_scope = entry.get("collider_scope", "CG")
-            except Exception:
-                pass
-
-            # Asignar ID del edificio al objeto cargado
-            try:
-                setattr(b, "id", entry.get("id"))
-            except Exception:
-                pass
-
-            # Restaurar escala original si estaba en JSON
-            if entry.get("original_scale"):
-                b.original_scale = tuple(entry["original_scale"])
-
-            buildings.append(b)
-        except Exception as e:
-            logger.error(f"[Buildings][loader] Error creando edificio desde entrada legacy: {e}")
-            continue
-    return buildings
+    if os.path.exists(BUILDINGS_TEMPLATES_PATH) and os.path.exists(BUILDINGS_INSTANCES_PATH):
+        return _load_from_split(z_state)
+    logger.warning(
+        f"[Buildings][split] Archivos requeridos no encontrados: templates={BUILDINGS_TEMPLATES_PATH} instances={BUILDINGS_INSTANCES_PATH}. No se cargan edificios."
+    )
+    return []

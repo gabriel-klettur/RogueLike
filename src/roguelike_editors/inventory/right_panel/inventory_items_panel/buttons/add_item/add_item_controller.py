@@ -95,7 +95,7 @@ class AddItemController:
                             else:
                                 slots.append({'item': self.model.selected_item, 'quantity': quantity})
                     default_player['slots'] = slots
-            elif cat == 'monsters':
+            elif cat in ('monsters', 'hostile'):
                 # Determine target template_id: prefer explicit selection from left list
                 sel_tid = getattr(self.editor_model, 'selected_default_template_id', None)
                 template_id = None
@@ -125,7 +125,7 @@ class AddItemController:
         # Active side: JSON and ECS
         if editing_side == 'active':
             active_map = self.editor_model.active_data.get(cat, {})
-            if cat == 'monsters':
+            if cat in ('monsters', 'hostile'):
                 inst_comp = self.world.components.get('MonsterInstanceComponent', {}).get(eid)
                 key = inst_comp.instance_id if inst_comp else str(eid)
             else:
@@ -145,7 +145,7 @@ class AddItemController:
                     slots.append({'item': self.model.selected_item, 'quantity': quantity})
             entry['slots'] = slots
             active_map[key] = entry
-            if cat == 'monsters':
+            if cat in ('monsters', 'hostile'):
                 inst_map = self.world.components.get('MonsterInstanceComponent', {})
                 numeric_eid = next((e for e, comp in inst_map.items() if comp.instance_id == key), None)
             else:

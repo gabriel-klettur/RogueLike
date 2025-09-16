@@ -4,13 +4,7 @@ import logging
 from roguelike_ui.ui_blocker import is_blocked
 
 from roguelike_editors.buildings.utils.save_buildings_to_json import (
-    save_buildings_to_json,
     save_buildings_split,
-)
-from roguelike_engine.config.config import (
-    BUILDINGS_DATA_PATH,
-    BUILDINGS_TEMPLATES_PATH,
-    BUILDINGS_INSTANCES_PATH,
 )
 from roguelike_editors.buildings.buildings_picker.building_picker_events import BuildingPickerEventHandler
 
@@ -41,6 +35,42 @@ class BuildingEditorEventHandler:
         if events is None:
             events = pygame.event.get()
         for ev in events:
+            # Si hay confirmación de borrado visible, interceptar todo aquí
+            try:
+                if getattr(self.editor, 'confirm_delete_visible', False):
+                    et = getattr(ev, 'type', None)
+                    if et == pygame.MOUSEBUTTONDOWN and getattr(ev, 'button', None) == 1:
+                        mx, my = getattr(ev, 'pos', (0, 0))
+                        yesr = getattr(self.editor, 'confirm_yes_rect', None)
+                        nor = getattr(self.editor, 'confirm_no_rect', None)
+                        if yesr is not None and pygame.Rect(yesr).collidepoint(mx, my):
+                            self.controller.confirm_delete_yes(entities.buildings)
+                            continue
+                        if nor is not None and pygame.Rect(nor).collidepoint(mx, my):
+                            self.controller.confirm_delete_no()
+                            continue
+                        # Clic fuera: no hacer nada, mantener modal
+                        continue
+                    if et == pygame.KEYDOWN:
+                        key = getattr(ev, 'key', None)
+                        if key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+                            self.controller.confirm_delete_yes(entities.buildings)
+                            continue
+                        if key == pygame.K_ESCAPE:
+                            self.controller.confirm_delete_no()
+                            continue
+                    # Mientras está visible, suprimir resto de manejadores
+                    continue
+            except Exception:
+                pass
+            # Si el panel de Tutorial está activo, delegar primero sus eventos de mouse
+            if ev.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP, pygame.MOUSEMOTION, pygame.MOUSEWHEEL):
+                try:
+                    tutorial = getattr(self, 'tutorial', None)
+                    if tutorial and tutorial.is_active() and tutorial.handle_event(ev):
+                        continue
+                except Exception:
+                    pass
             # Early guard: iniciar drag del panel del picker con RMB dentro del panel pero fuera del grid/scrollbar
             if (
                 ev.type == pygame.MOUSEBUTTONDOWN
@@ -137,6 +167,13 @@ class BuildingEditorEventHandler:
                         continue
                 except Exception:
                     pass
+                # Delegar al panel de Tutorial si está activo (por si clicks fuera de botones deban ser ignorados)
+                try:
+                    tutorial = getattr(self, 'tutorial', None)
+                    if tutorial and tutorial.is_active() and tutorial.handle_event(ev):
+                        continue
+                except Exception:
+                    pass
             # Delegar al panel de colisiones (si está activo). Consume el evento si corresponde.
             try:
                 colliders = getattr(self, 'colliders', None)
@@ -169,9 +206,8 @@ class BuildingEditorEventHandler:
                 # Persist building changes if editor active
                 if self.editor.active:
                     try:
-                        save_buildings_to_json(
+                        save_buildings_split(
                             self.buildings,
-                            BUILDINGS_DATA_PATH,
                             z_state=self.state.z_state,
                             zone_offsets=self.zone_offsets,
                         )
@@ -193,6 +229,13 @@ class BuildingEditorEventHandler:
 
             # --- Teclas cuando estoy en modo “editor” sin picker ---
             if ev.type == pygame.KEYDOWN:
+                # Si el Tutorial está activo, permitirle consumir teclas (ESC para cerrar)
+                try:
+                    tutorial = getattr(self, 'tutorial', None)
+                    if tutorial and tutorial.is_active() and tutorial.handle_event(ev):
+                        continue
+                except Exception:
+                    pass
                 # Ctrl+P (o simplemente P) → toggle picker
                 if ev.key == pygame.K_p:
                     self.controller.toggle_picker()
@@ -208,32 +251,13 @@ class BuildingEditorEventHandler:
                     self.editor.split_dragging = False
                     
                     try:
-                        save_buildings_to_json(
+                        save_buildings_split(
                             entities.buildings,
-                            BUILDINGS_DATA_PATH,
                             z_state=self.state.z_state,
                             zone_offsets=self.zone_offsets,
                         )
                     except Exception:
                         pass
-                    return
-
-                # D → reset (default) sobre hovered_building
-                if ev.key == pygame.K_d and not getattr(self.editor, 'colliders_mode', False) and self.editor.hovered_building:
-                    self.controller.default_tool.apply_reset(self.editor.hovered_building)
-                    logger.info("🔄 Reset (default) aplicado con D sobre hovered_building")
-                    return
-
-                # R → iniciar resize sobre hovered_building (al presionar)
-                if ev.key == pygame.K_r and not getattr(self.editor, 'colliders_mode', False) and self.editor.hovered_building:
-                    mx, my = pygame.mouse.get_pos()
-                    self.controller._start_resize(self.editor.hovered_building, (mx, my))
-                    logger.info("🔧 Resize iniciado con R sobre hovered_building")
-                    return
-
-                # Ctrl+Z → undo eliminación de edificio
-                if ev.key == pygame.K_z and (ev.mod & pygame.KMOD_CTRL):
-                    self._undo_delete(entities.buildings)
                     return
 
                 # Ctrl+S → guardar sin salir
@@ -241,9 +265,8 @@ class BuildingEditorEventHandler:
                     logger.info("Ctrl+S: saving buildings")
 
                     try:
-                        save_buildings_to_json(
+                        save_buildings_split(
                             entities.buildings,
-                            BUILDINGS_DATA_PATH,
                             z_state=self.state.z_state,
                             zone_offsets=self.zone_offsets,
                         )
@@ -252,15 +275,44 @@ class BuildingEditorEventHandler:
 
                     return
 
+                # Ctrl+Z → Undo delete (restaurar edificio)
+                if ev.key == pygame.K_z and (ev.mod & pygame.KMOD_CTRL):
+                    self._undo_delete(entities.buildings)
+                    return
+
+                # R → iniciar resize SOLO sobre active_building (no en modo colliders)
+                if ev.key == pygame.K_r and not getattr(self.editor, 'colliders_mode', False):
+                    ab = getattr(self.editor, 'active_building', None)
+                    if ab is not None:
+                        try:
+                            mouse_pos = pygame.mouse.get_pos()
+                        except Exception:
+                            mouse_pos = (0, 0)
+                        self.controller._start_resize(ab, mouse_pos)
+                    return
+
                 # N → colocar edificio aleatorio sin picker
                 if ev.key == pygame.K_n and not getattr(self.editor, 'colliders_mode', False):
                     self.controller.placer_tool.place_building_at_mouse(entities.buildings)
                     return
 
-                # Supr → borrar edificio bajo el ratón
+                # Supr → borrar SOLO active_building
                 if ev.key == pygame.K_DELETE and not getattr(self.editor, 'colliders_mode', False):
-                    self.controller.delete_tool.delete_building_at_mouse(entities)
-
+                    ab = getattr(self.editor, 'active_building', None)
+                    if ab is not None:
+                        logger.info("⌫ Supr: confirmar eliminación de edificio activo")
+                        self.controller._ask_confirm_delete(ab)
+                    return
+                # D → reset SOLO sobre active_building (no en modo colliders)
+                if ev.key == pygame.K_d and not getattr(self.editor, 'colliders_mode', False):
+                    ab = getattr(self.editor, 'active_building', None)
+                    if ab is not None:
+                        try:
+                            self.controller.default_tool.apply_reset(ab)
+                        except Exception:
+                            # No romper flujo del editor si la herramienta falla
+                            pass
+                    return
             # --- Mouse en modo editor (handles y split) ---
             if ev.type == pygame.MOUSEBUTTONDOWN:
                 mx, my = pygame.mouse.get_pos()
@@ -271,9 +323,8 @@ class BuildingEditorEventHandler:
                 self.controller.on_mouse_up(ev.button, camera, entities.buildings)
                 # Persistir cambios de edificios (posición, tamaño, split)
                 try:
-                    save_buildings_to_json(
+                    save_buildings_split(
                         entities.buildings,
-                        BUILDINGS_DATA_PATH,
                         z_state=self.state.z_state,
                         zone_offsets=self.zone_offsets,
                     )
@@ -283,47 +334,79 @@ class BuildingEditorEventHandler:
             elif ev.type == pygame.MOUSEMOTION:
                 mx, my = ev.pos
                 # If mouse is over any registered UI panel (Tiles/Buildings/Map),
-                # suppress Buildings Editor hover/active states to avoid bleed-through visuals.
+                # suppress ONLY hover state to avoid bleed-through visuals, but KEEP active selection.
                 try:
                     if is_blocked(mx, my):
                         self.editor.hovered_buildings = []
                         self.editor.hovered_building = None
-                        self.editor.active_building = None
                         return
                 except Exception:
                     pass
 
-                # Clear active building if mouse leaves its bounds in editor mode
-                if self.editor.current_tool == 'select':
-                    world_x = mx / camera.zoom + camera.offset_x
-                    world_y = my / camera.zoom + camera.offset_y
-                    ab = getattr(self.editor, 'active_building', None)
-                    if ab and not ab.rect.collidepoint(world_x, world_y):
-                        self.editor.active_building = None
-                # Delegate motion and update hover list
+                # Do NOT clear active_building on mouse leave; selection should persist until changed explicitly
+                # Delegate motion and update hover list (no auto-select on hover)
                 self.controller.on_mouse_motion(ev.pos, camera, entities.buildings)
-                # Focus active building for select mode
-                if self.editor.current_tool == 'select' and getattr(self.editor, 'active_building', None) is None:
-                    hb = getattr(self.editor, 'hovered_building', None)
-                    if hb:
-                        self.editor.active_building = hb
             elif ev.type == pygame.MOUSEWHEEL:
-                self._handle_mouse_wheel(ev, entities.buildings)
+                self._handle_mouse_wheel(ev, camera, entities.buildings)
 
 
-    def _handle_mouse_wheel(self, ev, buildings):
-        """Cycle hovered building when multiple under cursor."""
-        hovered_list = self.editor.hovered_buildings
-        if len(hovered_list) > 1:
-            idx = self.editor.hovered_building_index
-            idx = (idx + (-1 if ev.y < 0 else 1)) % len(hovered_list)
-            self.editor.hovered_building_index = idx
-            self.editor.hovered_building = hovered_list[idx]
+    def _handle_mouse_wheel(self, ev, camera, buildings):
+        """Recompute overlapped buildings under cursor and cycle selection."""
+        # Prefer existing precomputed hovered list (e.g., set during motion or by tests)
+        hovered_list = list(getattr(self.editor, 'hovered_buildings', []) or [])
+        if not hovered_list:
+            # Seed from current mouse position only when no list is present
+            mx, my = pygame.mouse.get_pos()
+            hovered_list = self.controller._buildings_under_mouse((mx, my), camera, buildings)
+            self.editor.hovered_buildings = hovered_list
+            if not hovered_list:
+                return
+        # Try to keep continuity with current hovered building if present
+        cur = getattr(self.editor, 'hovered_building', None)
+        try:
+            base_idx = hovered_list.index(cur) if cur in hovered_list else self.editor.hovered_building_index
+        except Exception:
+            base_idx = 0
+        delta = -1 if getattr(ev, 'y', 0) < 0 else 1
+        idx = (base_idx + delta) % len(hovered_list)
+        self.editor.hovered_building_index = idx
+        self.editor.hovered_building = hovered_list[idx]
+        # Evitar auto-selección durante el tutorial: no promover hovered -> active con la rueda
+        tutorial_active = False
+        try:
+            t = getattr(self, 'tutorial', None)
+            tutorial_active = bool(t and t.is_active())
+        except Exception:
+            tutorial_active = False
+        # Solo auto-seleccionar si NO está activo el tutorial
+        if (not tutorial_active) and getattr(self.editor, 'current_tool', 'select') == 'select' and not getattr(self.editor, 'colliders_mode', False):
+            self.editor.active_building = hovered_list[idx]
 
     def _undo_delete(self, buildings):
         if hasattr(self.editor, 'undo_stack') and self.editor.undo_stack:
-            building, idx = self.editor.undo_stack.pop()
-            buildings.insert(idx, building)
-            # Opcional: selecciona el edificio restaurado
+            try:
+                building, idx = self.editor.undo_stack.pop()
+            except Exception:
+                logger.info("⚠️ Undo: pila corrupta o elemento inválido")
+                return
+            try:
+                buildings.insert(idx, building)
+            except Exception:
+                buildings.append(building)
+            logger.info(f"✅ Undo: edificio restaurado en índice {idx}")
+            # Marcar hover para feedback, pero NO auto-seleccionar si el tutorial está activo
             self.editor.hovered_building = building
-            self.editor.selected_building = building
+            try:
+                t = getattr(self, 'tutorial', None)
+                if not (t and t.is_active()):
+                    self.editor.selected_building = building
+            except Exception:
+                # Si no hay info del tutorial, mantener el comportamiento previo
+                self.editor.selected_building = building
+            # Pulso para el tutorial (también cuando proviene del botón de toolbar)
+            try:
+                setattr(self.editor, 'tutorial_undo_delete_pulse', True)
+            except Exception:
+                pass
+        else:
+            logger.info("ℹ️ Undo: no hay operaciones de eliminación para deshacer")

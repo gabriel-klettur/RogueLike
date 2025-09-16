@@ -45,6 +45,8 @@ class SpellConfig:
     interruptible: bool = False
     automatic: bool = False
     automatic_cast_punish: float = 1.0
+    # Costes
+    mana_cost: float = 0.0
 
     # Common projectile-like fields
     speed: float = 0.0
@@ -114,6 +116,8 @@ SCHEMA_KEYS: List[str] = [
     # Casting rules
     "max_instances", "allow_overlap", "allow_movement", "interruptible",
     "automatic", "automatic_cast_punish",
+    # Costs
+    "mana_cost",
     # Common
     "speed", "damage", "lifespan", "range", "sprite", "scale",
     # Areas / durations

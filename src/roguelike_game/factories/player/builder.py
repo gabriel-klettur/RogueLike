@@ -4,7 +4,7 @@ Builder para crear la entidad jugador usando coordenadas en píxeles.
 import time
 import pygame
 from roguelike_game.factories.player.loader import load_and_scale_sprites, extract_initial_frame, build_animator_map, build_masks_map
-from roguelike_game.factories.player.config import DEFAULT_CLASS, ANIMATION_INTERVAL, INITIAL_ANIMATION_STATE, PLAYER_STATS, MELEE_WEAPON_CFG, DEFAULT_TRAIL, DEFAULT_DAMAGE_DURATION
+from roguelike_game.factories.player.config import DEFAULT_CLASS, ANIMATION_INTERVAL, INITIAL_ANIMATION_STATE, PLAYER_STATS, MELEE_WEAPON_CFG, DEFAULT_TRAIL, DEFAULT_DAMAGE_DURATION, DEFAULT_DAMAGE_STOP_PROBABILITY
 from roguelike_game.factories.player.collider import create_body_and_feet
 from roguelike_engine.config.config_z_layer import Z_LAYERS
 from roguelike_engine.config.config_tiles import TILE_SIZE
@@ -30,6 +30,10 @@ from roguelike_game.ecs.components.fsm.npc_state import NPCState
 from roguelike_game.ecs.systems.fsm.states.idle_state import IdleState
 from roguelike_game.ecs.systems.fsm.fsm import FiniteStateMachine
 from roguelike_editors.fsm.services.fsm_runtime_bridge import build_fsm_for_archetype
+from roguelike_game.config.spells_config import SPELLS
+from roguelike_game.ecs.components.abilities.dash_meter_component import DashMeterComponent
+from roguelike_game.ecs.components.abilities.combo_counter_component import ComboCounterComponent
+from roguelike_game.ecs.components.abilities.combo_rules_component import ComboRulesComponent
 
 
 class PlayerBuilder:
@@ -77,7 +81,8 @@ class PlayerBuilder:
         comps["Health"][eid] = Health(max_hp, max_hp)
         # Daño configurable (duración del estado Damage) desde JSON
         dmg_duration = PLAYER_STATS[class_player].get("damage_duration", DEFAULT_DAMAGE_DURATION)
-        comps["DamageConfig"][eid] = DamageConfig(float(dmg_duration))
+        stop_prob = float(PLAYER_STATS[class_player].get("damage_stop_probability", DEFAULT_DAMAGE_STOP_PROBABILITY))
+        comps["DamageConfig"][eid] = DamageConfig(float(dmg_duration), stop_probability=stop_prob)
         comps["CombatStats"][eid] = CombatStats(current_hp=max_hp, max_hp=max_hp,
                                                 power=PLAYER_STATS[class_player]["basic_attack"],
                                                 defense=PLAYER_STATS[class_player]["basic_armor"])
@@ -95,6 +100,38 @@ class PlayerBuilder:
         trail_params = PLAYER_STATS[class_player].get("basic_trail", DEFAULT_TRAIL)
         trail_cfg = TrailConfig(interval=trail_params["interval"], life_time=trail_params["life_time"], max_trails=trail_params["max_trails"])
         comps["TrailComponent"][eid] = TrailComponent(config=trail_cfg)
+        # Dash charges (sequential policy): total y recarga por carga
+        try:
+            dash_total = int(PLAYER_STATS[class_player].get("dash_charges", 1))
+        except Exception:
+            dash_total = 1
+        # Fallback de recarga: stats.dash_recharge_s o cooldown del spell 'dash' desde spells.json
+        dash_recharge_s = PLAYER_STATS[class_player].get("dash_recharge_s")
+        if dash_recharge_s is None:
+            try:
+                dash_recharge_s = float(SPELLS.get('dash', {}).get('cooldown_duration', 1.0))
+            except Exception:
+                dash_recharge_s = 1.0
+        comps.setdefault("DashMeterComponent", {})[eid] = DashMeterComponent(
+            total=max(1, dash_total),
+            current=max(1, dash_total),
+            recharge_s=float(dash_recharge_s),
+            policy='sequential'
+        )
+        # Combo: contador y reglas por defecto
+        comps.setdefault("ComboCounterComponent", {})[eid] = ComboCounterComponent(
+            window_s=2.0,
+            same_target_cooldown_s=0.5,
+            min_window_s=0.3,
+            difficulty_increase_per_hit=0.05,
+            break_flash_duration_s=0.3,
+        )
+        comps.setdefault("ComboRulesComponent", {})[eid] = ComboRulesComponent(
+            allowed_sources={'melee': True, 'hitbox': True, 'fireball': True},
+            min_damage=1.0,
+            require_enemy=True,
+            require_unique_target=True,
+        )
         # FSM (JSON-driven with fallback)
         built = None
         try:

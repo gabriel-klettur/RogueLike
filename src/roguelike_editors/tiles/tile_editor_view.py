@@ -132,3 +132,8 @@ class TileEditorView:
             screen.blit(shadow_surf, shadow_rect)
             # Text
             screen.blit(text_surf, text_rect)
+        # Tutorial overlay (render on top)
+        try:
+            self.controller.tutorial_controller.render(screen)
+        except Exception:
+            pass

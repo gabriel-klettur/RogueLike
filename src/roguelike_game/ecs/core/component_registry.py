@@ -13,16 +13,24 @@ def create_empty_component_store():
         'ExplosionComponent': {},
         'AuraComponent': {}, 'LaserBeamComponent': {}, 'ParticleComponent': {}, 'SlashEmitterComponent': {},
         'HitboxComponent': {},
+        'LastAttacker': {},
         'SpawnRequest': {}, 'CombatStats': {}, 'MeleeWeapon': {}, 'MeleeRange': {},
         'WantsToMelee': {}, 'AttackCooldown': {}, 'WantsToCastSpell': {}, 'AggroRange': {},
         # AI defend/leash area per NPC
         'DefendArea': {},
         'ChaseTarget': {}, 'FacingCooldown': {}, 'InputComponent': {}, 'InventoryComponent': {}, 'PhysicalItemComponent': {}, 'CollectibleComponent': {}, 'ExperienceComponent': {},
         'CameraFollowComponent': {}, 'PlayerTagComponent': {}, 'NPCTagComponent': {}, 'MonsterInstanceComponent': {}, 'InCombat': {},
+        'MonsterArchetype': {},
+        # Chat & Vendor
+        'ChatComponent': {}, 'VendorComponent': {},
         'TempZLayer': {},
         'FlashComponent': {}, 'TrailComponent': {}, 'GrayscaleComponent': {},
+        # Abilities / Resources
+        'DashMeterComponent': {},
+        # Combo system
+        'ComboCounterComponent': {}, 'ComboRulesComponent': {},
         # Spawner components
-        'SpawnerConfig': {}, 'SpawnerState': {},
+        'SpawnerConfig': {}, 'SpawnerState': {}, 'SpawnerChild': {},
         # Buildings
         'BuildingHealth': {},            # key -> { current_hp, max_hp }
     }

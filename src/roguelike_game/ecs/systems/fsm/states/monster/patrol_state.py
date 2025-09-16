@@ -36,9 +36,9 @@ class PatrolState(State):
         # Verificar muerte
         hp_cmp = world.components['Health'][eid]
         if hp_cmp.current_hp <= 0:
-            # Import local para evitar importación circular con DeathState
-            from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
-            world.components['NPCState'][eid].fsm.change_state(DeathState(), entity)
+            # Import local para evitar importación circular con UnconsciousState
+            from roguelike_game.ecs.systems.fsm.states.unconscious_state import UnconsciousState
+            world.components['NPCState'][eid].fsm.change_state(UnconsciousState(), entity)
             return
         # Asegurar componentes requeridos para patrulla
         comps = world.components

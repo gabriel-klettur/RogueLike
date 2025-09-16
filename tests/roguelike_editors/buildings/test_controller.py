@@ -110,6 +110,9 @@ def test_ctl_003_split_handle_starts_drag(camera, surface_factory):
     ctl, editor, buildings = _make_controller(camera, surface_factory)
     b = buildings[0]
 
+    # New behavior: split handle responds only for the currently active building
+    editor.active_building = b
+
     # Compute a point within split handle rect
     bx, by = camera.apply((b.x, b.y))
     _, h_scaled = camera.scale(b.image.get_size())
@@ -141,6 +144,9 @@ def test_ctl_005_delete_handle_removes_and_stacks(camera, surface_factory):
     ctl, editor, buildings = _make_controller(camera, surface_factory)
     b = buildings[0]
 
+    # New behavior: delete handle (red button) is only considered on the active building
+    editor.active_building = b
+
     # Click inside delete handle rect
     rect = ctl.default_view.get_delete_handle_rect(b, camera)
     ctl.on_mouse_down(rect.center, 1, camera, buildings)
@@ -160,6 +166,9 @@ def test_ctl_006_reset_handle_invokes_apply_reset(camera, surface_factory, monke
 
     calls = []
     monkeypatch.setattr(ctl.default_tool, "apply_reset", lambda bb: calls.append(bb))
+
+    # New behavior: reset handle acts only on active building
+    editor.active_building = b
 
     rect = ctl.default_view.get_reset_handle_rect(b, camera)
     ctl.on_mouse_down(rect.center, 1, camera, buildings)
@@ -182,6 +191,9 @@ def test_ctl_007_resize_handle_starts_resizing(camera, surface_factory):
     # Sanity: this should be considered inside by the tool
     assert ctl.resize_tool.check_resize_handle_click(*pos, b, camera) is True
 
+    # New behavior: resize handle acts only on active building
+    editor.active_building = b
+
     ctl.on_mouse_down(pos, 1, camera, buildings)
     assert editor.resizing is True and editor.selected_building is b
     assert editor.resize_origin == pos
@@ -198,7 +210,8 @@ def test_ctl_008_rmb_drag_selection_and_topmost(camera, surface_factory):
     b.rect.topleft = (0, 0)
     buildings.append(b)
 
-    # Case A: hovered set -> drag that building
+    # Case A: RMB drag only works on active building
+    editor.active_building = a
     editor.hovered_building = a
     ctl.on_mouse_down((a.x + 10, a.y + 10), 3, camera, buildings)
     assert editor.dragging is True and editor.selected_building is a
@@ -207,8 +220,9 @@ def test_ctl_008_rmb_drag_selection_and_topmost(camera, surface_factory):
     editor.dragging = False
     editor.selected_building = None
     editor.hovered_building = None
+    # New behavior: RMB drag requires active building; set top-most as active explicitly
+    editor.active_building = b
     ctl.on_mouse_down((5, 5), 3, camera, buildings)
-    # b was appended last and is top-most due to reversed iteration
     assert editor.dragging is True and editor.selected_building is b
 
 
@@ -227,6 +241,9 @@ def test_ctl_009_z_buttons_click_updates_z(camera, surface_factory):
 
     zs = ZState()
     ctl.state.z_state = zs
+
+    # New behavior: Z tools act only on the active building
+    editor.active_building = b
 
     # Click '-' on bottom tool
     minus_rect, plus_rect = ctl.z_tool_bottom._get_button_rects(b, camera)

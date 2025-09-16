@@ -23,7 +23,7 @@ except Exception:
     BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH = "data/buildings/buildings_collisions_by_spawn_id.json"
     BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH = "data/buildings/buildings_collisions_by_building_instance_id.json"
 
-from roguelike_editors.buildings.utils.save_buildings_to_json import save_buildings_to_json, save_buildings_split
+from roguelike_editors.buildings.utils.save_buildings_to_json import save_buildings_split
 
 logger = logging.getLogger(__name__)
 
@@ -45,16 +45,34 @@ class BuildingCollidersPanelEventHandler:
             w_img, h_img = b.image.get_size()
             rect = pygame.Rect(x_b, y_b, w_img, h_img)
             if rect.collidepoint(world_x, world_y):
+                # Restringir el pintado únicamente al edificio actualmente activo (selección persistente)
+                try:
+                    active = getattr(self.editor_state, 'active_building', None)
+                except Exception:
+                    active = None
+                if active is None or active is not b:
+                    try:
+                        logger.info("[Colliders] Ignorado pintado: el edificio bajo el cursor no es el activo")
+                    except Exception:
+                        pass
+                    # Continuar buscando por si hay otro edificio solapado que sí sea el seleccionado
+                    continue
                 self.model.active_building = b
                 col = int((world_x - x_b) // TILE_SIZE)
                 row = int((world_y - y_b) // TILE_SIZE)
                 if 0 <= row < len(b.collision_map) and 0 <= col < len(b.collision_map[0]):
                     # Pinta en el edificio activo
                     b.collision_map[row][col] = self.model.choice
-                    # Invalida caches
+                    # Tutorial: marcar pulso de pintado
                     try:
-                        b.model._collision_tiles_cache = None
-                        b.model._collision_tile_objs = None
+                        setattr(self.editor_state, 'tutorial_colliders_painted_pulse', True)
+                        setattr(self.editor_state, 'tutorial_colliders_painted_on_selected_pulse', True)
+                    except Exception:
+                        pass
+                    # Invalida caches de colisión del edificio editado
+                    try:
+                        b._collision_tiles_cache = None
+                        b._collision_tile_objs = None
                     except Exception:
                         pass
                     # Según alcance seleccionado en la UI (editor_state), propagar a todos los que comparten image_path
@@ -82,8 +100,8 @@ class BuildingCollidersPanelEventHandler:
                                 if c2 >= cols2: c2 = cols2 - 1
                                 other.collision_map[r2][c2] = self.model.choice
                                 try:
-                                    other.model._collision_tiles_cache = None
-                                    other.model._collision_tile_objs = None
+                                    other._collision_tiles_cache = None
+                                    other._collision_tile_objs = None
                                 except Exception:
                                     pass
                             except Exception:
@@ -189,22 +207,33 @@ class BuildingCollidersPanelEventHandler:
                 w, h = self.model.picker_panel_size
                 if x0 <= mx <= x0 + w and y0 <= my <= y0 + h:
                     if event.button == 1:
-                        # Botón 'Save CU' (guardar overrides por instancia en buildings_data.json)
+                        # Botón 'Save CU' (guardar overrides por instancia en archivos split)
                         try:
                             save_rect = self.model.picker_rects.get('save_cu')
                             if save_rect and save_rect.collidepoint((mx, my)):
-                                if os.path.exists(BUILDINGS_TEMPLATES_PATH) and os.path.exists(BUILDINGS_INSTANCES_PATH):
-                                    save_buildings_split(buildings)
-                                    logger.info("[Colliders][CU] Overrides guardados (si existen) en split files")
-                                else:
-                                    save_buildings_to_json(buildings)
-                                    logger.info("[Colliders][CU] Overrides guardados (si existen) en buildings_data.json")
+                                # Persistir SIEMPRE en archivos split
+                                save_buildings_split(buildings)
+                                logger.info("[Colliders][CU] Overrides guardados en archivos split")
+                                # Tutorial: pulso de guardado por botón
+                                try:
+                                    setattr(self.editor_state, 'tutorial_colliders_saved_button_pulse', True)
+                                except Exception:
+                                    pass
                                 return True
                         except Exception:
                             pass
                         for ch, rect in self.model.picker_rects.items():
                             if rect.collidepoint((mx, my)):
                                 self.model.choice = ch
+                                # Tutorial: selección de brocha
+                                try:
+                                    setattr(self.editor_state, 'tutorial_colliders_choice_pulse', True)
+                                except Exception:
+                                    pass
+                                try:
+                                    logger.info(f"[Colliders] Seleccionado tipo '{ch}' en el picker")
+                                except Exception:
+                                    pass
                                 return True
                     elif event.button == 3:
                         self.model.picker_dragging = True
@@ -230,6 +259,11 @@ class BuildingCollidersPanelEventHandler:
             if self.model.picker_dragging:
                 dx, dy = self.model.picker_drag_offset
                 self.model.picker_pos = (mx - dx, my - dy)
+                # Tutorial: movimiento del picker
+                try:
+                    setattr(self.editor_state, 'tutorial_colliders_picker_moved_pulse', True)
+                except Exception:
+                    pass
                 return True
             if self.model.brush_dragging and self.model.choice:
                 self._paint_at_mouse(camera, buildings)

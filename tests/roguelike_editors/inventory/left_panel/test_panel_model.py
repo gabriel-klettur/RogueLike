@@ -8,7 +8,7 @@ def test_default_models_and_focus():
     assert m.tabs_model is not None
     assert m.list_model is not None
     # Default categories and selected_eid
-    assert m.categories == ['player', 'monsters', 'map']
+    assert m.categories == ['player', 'hostile', 'map']
     assert m.current_category == 'player'
     assert m.selected_eid is None
     # Default camera focus

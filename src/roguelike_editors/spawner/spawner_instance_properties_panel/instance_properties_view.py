@@ -27,7 +27,7 @@ class InstancePropertiesView:
                         value = str(v)
                     else:
                         value = str(v)
-                except Exception:
+                except (TypeError, ValueError):
                     value = repr(v)
                 items.append((key, value))
         return items
@@ -38,9 +38,13 @@ class InstancePropertiesView:
             self.panel_rect = None
             self.content_height = 0
             return None
-        x, y = anchor
+        # Anchor to the right edge of the screen: ignore anchor.x, keep anchor.y
+        _, y = anchor
         width = 440
         height = 360
+        # Margin from right/top edges
+        margin_right = 20
+        x = max(0, int(screen.get_width() - width - margin_right))
         self.panel_rect = pygame.Rect(x, y, width, height)
         surf = pygame.Surface(self.panel_rect.size, pygame.SRCALPHA)
         surf.fill((24, 24, 24, 230))
@@ -48,7 +52,7 @@ class InstancePropertiesView:
         try:
             title_font = pygame.font.SysFont(None, 22)
             font = pygame.font.SysFont(None, 18)
-            header = "Instance Properties"
+            header = "Spawner Instance Properties"
             title = title_font.render(header, True, (240, 240, 240))
             surf.blit(title, (10, 6))
             # Rows
@@ -56,10 +60,31 @@ class InstancePropertiesView:
             rows = controller.get_rows()
             row_h = 20
             padding_bottom = 6
-            self.content_height = len(rows) * row_h + padding_bottom
+            # Compute Visuals section height via visuals view (delegation)
+            visuals_rows = controller.get_visuals_rows()
+            visuals_spacing = 8  # spacing before visuals section
+            # y where the visuals section begins
+            visuals_total_h = visuals_spacing + row_h + row_h + (len(visuals_rows) if len(visuals_rows) > 0 else 1) * row_h
+            # content height is rows height + visuals block + padding
+            self.content_height = (len(rows) * row_h) + visuals_total_h + padding_bottom
             viewport_top = y_off
             viewport_bottom = height - 8
-            scroll = int(getattr(model, 'scroll_offset', 0) or 0)
+            # Clamp scroll to avoid empty panel when out of range (e.g., after refactors/state changes)
+            viewport_h = max(0, viewport_bottom - viewport_top)
+            max_scroll = max(0, int(self.content_height) - int(viewport_h))
+            try:
+                cur_scroll = int(getattr(model, 'scroll_offset', 0) or 0)
+            except (TypeError, ValueError):
+                cur_scroll = 0
+            if cur_scroll < 0:
+                cur_scroll = 0
+            if cur_scroll > max_scroll:
+                cur_scroll = max_scroll
+            try:
+                model.scroll_offset = cur_scroll
+            except Exception:
+                pass
+            scroll = cur_scroll
             # Reset combo rects each frame
             self.template_combo_rect = None
             self.template_list_rect = None
@@ -127,14 +152,29 @@ class InstancePropertiesView:
                     else:
                         val_text = font.render(str(v), True, (230, 230, 230))
                         surf.blit(val_text, (210, row_y))
-        except Exception:
+
+            # Visuals section (delegated to visualsView)
+            base_rows_h = len(rows) * row_h
+            y_start_visuals = y_off + base_rows_h - scroll + visuals_spacing
+            visuals_total_h = controller.visuals.view.render_table(
+                surf,
+                self.panel_rect,
+                title_font=title_font,
+                font=font,
+                width=width,
+                row_h=row_h,
+                y_start_visuals=y_start_visuals,
+                viewport_top=viewport_top,
+                viewport_bottom=viewport_bottom,
+            )
+        except (AttributeError, TypeError, ValueError, pygame.error):
             pass
         screen.blit(surf, self.panel_rect.topleft)
         # UI blocker
         try:
             from roguelike_ui.ui_blocker import register_blocker
             register_blocker(self.panel_rect)
-        except Exception:
+        except (ImportError, AttributeError, TypeError):
             pass
         # Hover tooltip shows key path
         try:
@@ -145,6 +185,100 @@ class InstancePropertiesView:
                     key, _ = rows[hi]
                     mx, my = pygame.mouse.get_pos()
                     draw_tooltip(screen, mx, my, [key])
-        except Exception:
+        except (AttributeError, TypeError, IndexError):
+            pass
+        # Hover tooltip for Visuals state names: show TitleCase ↔ snake_case equivalence
+        try:
+            mx, my = pygame.mouse.get_pos()
+            # Visuals state tooltip uses rects from visualsModel
+            vmodel = getattr(controller.visuals, 'model', None)
+            if self.panel_rect and vmodel and getattr(vmodel, 'visuals_state_rects', None):
+                local = (mx - self.panel_rect.left, my - self.panel_rect.top)
+                for j, r in enumerate(vmodel.visuals_state_rects):
+                    if r and r.collidepoint(local):
+                        vis_rows = controller.get_visuals_rows()
+                        if 0 <= j < len(vis_rows):
+                            state = str(vis_rows[j][0])
+                            # Build snake_case equivalent
+                            s = state
+                            snake = []
+                            for i, ch in enumerate(s):
+                                if ch.isupper() and i > 0:
+                                    snake.append('_')
+                                snake.append(ch.lower())
+                            snake_str = ''.join(snake)
+                            draw_tooltip(screen, mx, my, [f"{state} ↔ {snake_str}"])
+                        break
+        except (AttributeError, TypeError, IndexError):
+            pass
+        # Hover tooltip for Visuals controls (folder/eye)
+        try:
+            mx, my = pygame.mouse.get_pos()
+            if self.panel_rect:
+                local = (mx - self.panel_rect.left, my - self.panel_rect.top)
+                vmodel = getattr(controller.visuals, 'model', None)
+                # Folder tooltip
+                for j, r in enumerate(getattr(vmodel, 'visuals_browse_rects', []) or []):
+                    try:
+                        if r and r.collidepoint(local):
+                            draw_tooltip(screen, mx, my, ["Abrir selector de templates (Buildings Picker)"])
+                            raise StopIteration
+                    except StopIteration:
+                        break
+                    except (AttributeError, TypeError):
+                        continue
+                # Eye tooltip (toggle)
+                for j, r in enumerate(getattr(vmodel, 'visuals_eye_rects', []) or []):
+                    try:
+                        if r and r.collidepoint(local):
+                            # Decide label based on current visibility
+                            vis_rows = controller.get_visuals_rows()
+                            state = str(vis_rows[j][0]) if 0 <= j < len(vis_rows) else None
+                            show_label = "Mostrar en edición"
+                            hide_label = "Ocultar en edición"
+                            label = hide_label
+                            try:
+                                if state is not None and not controller.is_visual_building_visible(state):
+                                    label = show_label
+                            except (AttributeError, TypeError, ValueError):
+                                label = hide_label
+                            draw_tooltip(screen, mx, my, [label])
+                            raise StopIteration
+                    except StopIteration:
+                        break
+                    except (AttributeError, TypeError):
+                        continue
+        except (AttributeError, TypeError, ValueError):
+            pass
+        # Ephemeral toast (bottom-right of the panel)
+        try:
+            msg = getattr(model, 'toast_message', None)
+            until_ms = int(getattr(model, 'toast_until_ms', 0) or 0)
+            now = 0
+            try:
+                now = pygame.time.get_ticks()
+            except (AttributeError, pygame.error):
+                now = 0
+            if msg and now < until_ms and self.panel_rect is not None:
+                toast_font = pygame.font.SysFont(None, 18)
+                txt = toast_font.render(str(msg), True, (255, 255, 255))
+                pad_x, pad_y = 10, 6
+                box_w = txt.get_width() + pad_x * 2
+                box_h = txt.get_height() + pad_y * 2
+                bx = self.panel_rect.right - box_w - 12
+                by = self.panel_rect.bottom - box_h - 12
+                box = pygame.Surface((box_w, box_h), pygame.SRCALPHA)
+                box.fill((20, 20, 20, 210))
+                pygame.draw.rect(box, (200, 200, 200), box.get_rect(), 1)
+                # subtle shadow
+                try:
+                    shadow = pygame.Surface((box_w, box_h), pygame.SRCALPHA)
+                    shadow.fill((0, 0, 0, 100))
+                    screen.blit(shadow, (bx + 2, by + 2))
+                except (pygame.error, ValueError, TypeError):
+                    pass
+                box.blit(txt, (pad_x, pad_y))
+                screen.blit(box, (bx, by))
+        except (AttributeError, TypeError, ValueError, pygame.error):
             pass
         return self.panel_rect

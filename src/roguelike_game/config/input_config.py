@@ -49,6 +49,7 @@ class InputConfig:
                 "spell_teleport": "K_j",
                 "pause": "K_ESCAPE",
                 # Editor toggles (defaults)
+                "toggle_particles_editor": "K_F1",
                 "toggle_spawner_editor": "K_F3",
                 "toggle_spells_editor": "K_F4",
                 "toggle_entities_editor": "K_F5",
@@ -70,6 +71,8 @@ class InputConfig:
 
         # Ensure presence of editor toggle bindings in user config for discoverability
         ensured = False
+        if "toggle_particles_editor" not in self.bindings:
+            self.bindings["toggle_particles_editor"] = "K_F1"; ensured = True
         if "toggle_spawner_editor" not in self.bindings:
             self.bindings["toggle_spawner_editor"] = "K_F3"; ensured = True
         if "toggle_spells_editor" not in self.bindings:
@@ -95,6 +98,10 @@ class InputConfig:
             self.save()
         if "toggle_inventory" not in self.bindings:
             self.bindings["toggle_inventory"] = "K_i"
+            self.save()
+        # Ensure interact binding exists (contextual interactions like vendors, doors)
+        if "interact" not in self.bindings:
+            self.bindings["interact"] = "K_RETURN"
             self.save()
 
         # Asegurar binding para lightning
@@ -184,6 +191,7 @@ class InputConfig:
             "spell_teleport": pygame.K_j,
             "pause": pygame.K_ESCAPE,
             # Editor toggles (defaults)
+            "toggle_particles_editor": pygame.K_F1,
             "toggle_spawner_editor": pygame.K_F3,
             "toggle_spells_editor": pygame.K_F4,
             "toggle_entities_editor": pygame.K_F5,
@@ -196,6 +204,7 @@ class InputConfig:
             "toggle_debug_overlay": pygame.K_F9,
             # Gameplay inventory (not editor)
             "toggle_inventory": pygame.K_i,
+            "interact": pygame.K_RETURN,
             "select_class": pygame.K_F2
         }
 
@@ -281,6 +290,7 @@ class InputConfig:
             "spell_sphere_magic_shield": pygame.K_t,
             "spell_teleport": pygame.K_j,
             "pause": pygame.K_ESCAPE,
+            "toggle_particles_editor": pygame.K_F1,
             "toggle_spawner_editor": pygame.K_F3,
             "toggle_spells_editor": pygame.K_F4,
             "toggle_entities_editor": pygame.K_F5,
@@ -292,6 +302,7 @@ class InputConfig:
             "toggle_fsm_editor": pygame.K_F12,
             "toggle_debug_overlay": pygame.K_F9,
             "toggle_inventory": pygame.K_i,
+            "interact": pygame.K_RETURN,
             "select_class": pygame.K_F2,
         }
         if action in defaults:

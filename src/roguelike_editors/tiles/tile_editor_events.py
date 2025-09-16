@@ -1,4 +1,5 @@
 import pygame
+from roguelike_engine.config.config_camera import ALLOWED_ZOOMS, next_allowed_zoom
 from roguelike_engine.map.model.layer import Layer
 from roguelike_editors.tiles.common.events import cycle_enum
 
@@ -80,6 +81,12 @@ class TileEditorEventHandler:
             elif ev.type == pygame.MOUSEWHEEL:
                 self._on_mouse_wheel(ev, camera)
             # Delegate to panel event handlers
+            # Tutorial overlay events (consume clicks inside panel and ESC to close)
+            try:
+                if self.controller.tutorial_controller.handle_event(ev):
+                    continue
+            except Exception:
+                pass
             # Toolbar drag events
             self.toolbar_tool.handle_event(ev)
             if self.editor_state.toolbar_state.view_active:
@@ -244,19 +251,34 @@ class TileEditorEventHandler:
 
 
     def _on_mouse_wheel(self, ev, camera):
-        # Zoom entero con rueda cuando botón medio presionado
+        # Zoom discreto con rueda cuando botón medio presionado (panning)
         if self.panning:
-            current = int(camera.zoom)
-            if ev.y > 0:
-                camera.zoom = current + 1
-            elif ev.y < 0:
-                camera.zoom = max(1, current - 1)
+            mx, my = pygame.mouse.get_pos()
+            z = float(getattr(camera, 'zoom', 1.0)) or 1.0
+            # World point under cursor before zoom
+            wx = mx / z + float(getattr(camera, 'offset_x', 0.0) or 0.0)
+            wy = my / z + float(getattr(camera, 'offset_y', 0.0) or 0.0)
+            allowed = ALLOWED_ZOOMS
+            new_z = next_allowed_zoom(z, +1, allowed) if ev.y > 0 else next_allowed_zoom(z, -1, allowed)
+            if abs(new_z - z) > 1e-9:
+                camera.zoom = new_z
+                # Keep same world point under cursor
+                camera.offset_x = wx - mx / camera.zoom
+                camera.offset_y = wy - my / camera.zoom
             return
         # Ciclar capas si estamos en modo brush
         if self.editor_state.current_tool == "brush":
             self.editor_state.current_layer = cycle_enum(self.editor_state.current_layer, 1 if ev.y > 0 else -1, Layer)
+            try:
+                setattr(self.editor_state, 'tutorial_layer_changed_pulse', True)
+            except Exception:
+                pass
             return
         # Cambiar layer seleccionado con rueda cuando panel de vista activo
         if self.editor_state.toolbar_state.view_active:
             self.editor_state.current_layer = cycle_enum(self.editor_state.current_layer, 1 if ev.y > 0 else -1, Layer)
+            try:
+                setattr(self.editor_state, 'tutorial_layer_changed_pulse', True)
+            except Exception:
+                pass
             return

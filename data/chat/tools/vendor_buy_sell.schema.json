@@ -1,0 +1,33 @@
+{
+  "functions": [
+    {
+      "name": "vendor.buy",
+      "description": "Vender items al jugador al precio configurado",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "item": {"type": "string"},
+          "quantity": {"type": "integer", "minimum": 1}
+        },
+        "required": ["item", "quantity"]
+      }
+    },
+    {
+      "name": "vendor.sell",
+      "description": "Comprar items del jugador al precio configurado",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "item": {"type": "string"},
+          "quantity": {"type": "integer", "minimum": 1}
+        },
+        "required": ["item", "quantity"]
+      }
+    },
+    {
+      "name": "vendor.stock",
+      "description": "Consultar stock disponible y precio",
+      "parameters": {"type": "object", "properties": {}}
+    }
+  ]
+}

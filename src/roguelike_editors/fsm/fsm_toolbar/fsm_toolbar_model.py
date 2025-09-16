@@ -10,6 +10,7 @@ DEFAULT_BUTTONS: List[str] = [
     "set_properties",
     "undo",
     "redo",
+    "tutorial_fsm",
 ]
 
 

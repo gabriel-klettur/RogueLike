@@ -5,6 +5,10 @@ from roguelike_game.ecs.systems.physics.movement_collision_system import Movemen
 from roguelike_game.ecs.systems.rendering.animation_system import AnimationSystem
 from roguelike_game.ecs.systems.rendering.health_bar_system import HealthBarSystem
 from roguelike_game.ecs.systems.rendering.nameplate_system import NamePlateSystem
+from roguelike_game.ecs.systems.rendering.mana_bar_render_system import ManaBarRenderSystem
+from roguelike_game.ecs.systems.rendering.mana_regen_aura_render_system import ManaRegenAuraRenderSystem
+from roguelike_game.ecs.systems.rendering.godmode_aura_render_system import GodmodeAuraRenderSystem
+from roguelike_game.ecs.systems.rendering.hud_stats_render_system import HUDStatsRenderSystem
 from roguelike_game.ecs.systems.combat.melee.melee_combat_system import MeleeCombatSystem
 from roguelike_game.ecs.systems.physics.facing_system import FacingSystem
 from roguelike_game.ecs.systems.physics.player_facing_system import PlayerFacingSystem
@@ -53,6 +57,8 @@ from roguelike_game.ecs.systems.experience.experience_system import ExperienceSy
 from roguelike_game.ecs.systems.rendering.magic_spell_bar_system import MagicSpellBarSystem
 from roguelike_game.ecs.systems.physics.coin_pickup_system import CoinPickupSystem
 from roguelike_game.ecs.systems.core.spawn_stabilization_system import SpawnStabilizationSystem
+from roguelike_game.ecs.systems.core.npc_restore_system import NpcRestoreSystem
+from roguelike_game.ecs.systems.core.npc_respawn_system import NpcRespawnSystem
 from roguelike_game.ecs.systems.experience.orb_attraction_system import OrbAttractionSystem
 from roguelike_game.ecs.systems.inventory.inventory_init_system import InventoryInitSystem
 from roguelike_game.ecs.systems.inventory.death_drop_system import DeathDropSystem
@@ -75,6 +81,20 @@ from roguelike_game.ecs.systems.rendering.resurrection_area_system import Resurr
 from roguelike_game.ecs.systems.rendering.experience_render_system import ExperienceRenderSystem
 from roguelike_game.ecs.systems.rendering.magic_spell_bar_render_system import MagicSpellBarRenderSystem
 from roguelike_game.ecs.systems.rendering.spawner_debug_system import SpawnerDebugRenderSystem
+from roguelike_game.ecs.systems.audio.audio_system import AudioSystem
+from roguelike_game.ecs.systems.chat.chat_proximity_system import ChatProximitySystem
+from roguelike_game.ecs.systems.chat.chat_router_system import ChatRouterSystem
+from roguelike_game.ecs.systems.chat.chat_ui_system import ChatUISystem
+from roguelike_game.ecs.systems.vendors.vendor_trade_system import VendorTradeSystem
+from roguelike_game.ecs.systems.rendering.chat_proximity_render_system import ChatProximityRenderSystem
+from roguelike_game.ecs.systems.rendering.chat_bubble_render_system import ChatBubbleRenderSystem
+from roguelike_game.ecs.systems.abilities.dash_resource_system import DashResourceSystem
+from roguelike_game.ecs.systems.abilities.mana_regen_system import ManaRegenSystem
+from roguelike_game.ecs.systems.rendering.dash_bar_render_system import DashBarRenderSystem
+from roguelike_game.ecs.systems.abilities.combo_system import ComboSystem
+from roguelike_game.ecs.systems.rendering.combo_bar_render_system import ComboBarRenderSystem
+from roguelike_game.ecs.systems.rendering.toast_render_system import ToastRenderSystem
+from roguelike_game.ecs.systems.rendering.target_hud_render_system import TargetHudRenderSystem
 
 def get_update_system_classes():
     """
@@ -84,18 +104,26 @@ def get_update_system_classes():
         FSMSystem,
         # Spawner systems (runtime M1)
         SpawnerPlacementSystem, SpawnerTriggerSystem, SpawnerRuntimeSystem,
+        # Antes de procesar SpawnRequest, generar requests faltantes por NPCs persistidos
+        NpcRespawnSystem,
         # Process spawn requests and immediately stabilize overlapped spawns
         SpawnSystem,
         SpawnStabilizationSystem,
+        # Apply restored state (position/hp) once entities exist and are stabilized
+        NpcRestoreSystem,
         # Player & input
-        PlayerFacingSystem, FacingSystem, DropDragSystem, InputSystem,
+        PlayerFacingSystem, FacingSystem, DropDragSystem, InputSystem, ChatProximitySystem, DashResourceSystem, ManaRegenSystem,
         MovementCollisionSystem,
         # Combat & spells
-        MeleeCombatSystem, SpellCastingSystem, ArcaneFlameSystem, SmokeSystem, SmokeEmitterSystem, SphereMagicShieldSystem, TeleportSystem, FireworkLaunchSystem, AuraSystem, ParticleSystem, ExplosionSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, LightningEmitterSystem, FireballSystem, LightningSystem, DashSystem, HitboxSystem, BuildingDamageSystem,
+        MeleeCombatSystem, SpellCastingSystem, ArcaneFlameSystem, SmokeSystem, SmokeEmitterSystem, SphereMagicShieldSystem, TeleportSystem, FireworkLaunchSystem, AuraSystem, ParticleSystem, ExplosionSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, LightningEmitterSystem, FireballSystem, LightningSystem, DashSystem, HitboxSystem, ComboSystem, BuildingDamageSystem,
         TrailSystem,
         AnimationSystem, FlashSystem, 
         # Inventory & pickups (keyboard drop disabled; only drag-and-drop allowed)
         InventoryInitSystem, DeathDropSystem, InventoryPickupSystem, ConsumeSystem, InventoryTransferSystem, InventoryDragSystem, MapLoadDropsSystem, TempZLayerSystem, DropDespawnSystem, CoinPickupSystem, OrbAttractionSystem, ExperienceSystem, MagicSpellBarSystem, ExpansionSystem,
+        # Chat & Trade
+        ChatRouterSystem, VendorTradeSystem,
+        # Audio bridge
+        AudioSystem,
     ]
 
 def get_render_system_classes():
@@ -104,7 +132,7 @@ def get_render_system_classes():
     Se añade dinámicamente SpawnDebug y DeathTimerDebug si estamos en DEBUG.
     """
     base = [
-        HealthBarSystem, NamePlateSystem, ExperienceRenderSystem, MagicSpellBarRenderSystem,
+        HealthBarSystem, DashBarRenderSystem, ManaBarRenderSystem, ManaRegenAuraRenderSystem, GodmodeAuraRenderSystem, NamePlateSystem, ChatBubbleRenderSystem, ExperienceRenderSystem, ComboBarRenderSystem, MagicSpellBarRenderSystem,
         FireballRenderSystem, ArcaneFlameRenderSystem, FireworkLaunchRenderSystem, SmokeRenderSystem, SmokeEmitterRenderSystem, SphereMagicShieldRenderSystem, TeleportRenderSystem, ParticleRenderSystem, LightningRenderSystem,
         DeathTimerBarSystem,
         # DropRenderSystem removed: drops rendered via RenderSystem
@@ -114,9 +142,19 @@ def get_render_system_classes():
     base.append(EntitiesDebugSystem)
     base.append(GrayscaleRenderSystem)
     base.append(ResurrectionAreaSystem)
+    # HUD textual overlay (bottom-left): HP/MP values
+    base.append(HUDStatsRenderSystem)
+    # HUD de objetivo (centrado arriba)
+    base.append(TargetHudRenderSystem)
     # Otros sistemas de render (eliminados FlashSystem y TrailSystem de render)
     base.append(DropHoverRenderSystem)
+    # Halo de proximidad de chat (círculo amarillo)
+    base.append(ChatProximityRenderSystem)
     base.append(InventoryUISystem)
+    # Toasts HUD (esquina inferior derecha)
+    base.append(ToastRenderSystem)
+    # Chat UI overlay
+    base.append(ChatUISystem)
     # Spawner debug overlay always visible above game objects
     base.append(SpawnerDebugRenderSystem)
     # FlashSystem y TrailSystem son sistemas de update, no deben ir en render

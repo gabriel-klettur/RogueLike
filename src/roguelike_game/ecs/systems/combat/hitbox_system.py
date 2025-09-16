@@ -2,6 +2,9 @@ import math
 import pygame
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.ecs.utils.collider_utils import build_collider_rect
+import time
+from roguelike_game.ecs.components.combat.last_attacker import LastAttacker
+from roguelike_game.ecs.utils.position_utils import compute_entity_center
 
 import logging
 logger = logging.getLogger(__name__)
@@ -129,9 +132,19 @@ class HitboxSystem:
                 identity = world.components.get('Identity', {}).get(target)
                 name = identity.name if identity else 'Unknown'
                 logger.debug(f"[DEBUG][HitboxSystem] Hit! target {target} ({name}), hp_before={healths[target].current_hp}, damage={hb.damage}")
-                # apply damage
+                # apply damage (omit if player in godmode)
+                is_player_target = target in world.components.get('PlayerTagComponent', {})
+                godmode = bool(getattr(getattr(world, 'state', None), 'godmode', False)) and is_player_target
                 health = healths[target]
-                health.current_hp = max(0, health.current_hp - hb.damage)
+                # One-shot si atacante es jugador y godmode activo
+                gm_attacker = bool(getattr(getattr(world, 'state', None), 'godmode', False)) and (hb.owner in world.components.get('PlayerTagComponent', {}))
+                if not godmode:
+                    if gm_attacker:
+                        health.current_hp = 0
+                    else:
+                        health.current_hp = max(0, health.current_hp - hb.damage)
+                    # record last attacker for KO attribution
+                    world.components.setdefault('LastAttacker', {})[target] = LastAttacker(hb.owner, time.time())
                 hb.hit_targets.add(target)
                 if hb.owner in world.components.get('PlayerTagComponent', {}):
                     attacker_pos = world.components['Position'][hb.owner]
@@ -142,16 +155,85 @@ class HitboxSystem:
                     q.append({"type": "OnHit", "from_left": from_left})
                     if health.current_hp <= 0:
                         q.append({"type": "OnDeath"})
-                elif target in world.components.get('PlayerTagComponent', {}):
+                        # Evento de kill para combo basado en muertes
+                        combo_q = world.components.setdefault('ComboEventQueue', [])
+                        combo_q.append({'type': 'kill', 'entity': hb.owner, 'target': target})
+                    combo_q = world.components.setdefault('ComboEventQueue', [])
+                    combo_q.append({
+                        'attacker': hb.owner,
+                        'target': target,
+                        'damage': float(hb.damage),
+                        'source': 'hitbox',
+                        'time': float(time.time()),
+                    })
+                    # Actualizar HUD de objetivo (centrado arriba)
+                    try:
+                        hud = world.components.setdefault('TargetHUD', {})
+                        hud['target_eid'] = int(target)
+                        hud['last_hit_time'] = float(time.time())
+                        hud.setdefault('ttl_s', 3.0)
+                    except Exception:
+                        pass
+                elif target in world.components.get('PlayerTagComponent', {}) and not godmode:
                     # NPC or other entity hit the player -> publish OnHit/OnDeath for player
                     attacker_pos = positions.get(hb.owner)
                     defender_pos = positions.get(target)
-                    if attacker_pos and defender_pos:
-                        from_left = attacker_pos.x < defender_pos.x
-                    else:
-                        from_left = False
+                    # Compute centers when possible for consistent facing/origin
+                    try:
+                        spr_map = world.components.get('Sprite', {})
+                        scl_map = world.components.get('Scale', {})
+                        if attacker_pos:
+                            aspr = spr_map.get(hb.owner)
+                            ascl = scl_map.get(hb.owner)
+                            if aspr:
+                                ac = compute_entity_center(attacker_pos, aspr, ascl)
+                                ax = float(ac.x)
+                            else:
+                                ax = float(attacker_pos.x)
+                        else:
+                            ax = float(cx)
+                        if defender_pos:
+                            dspr = spr_map.get(target)
+                            dscl = scl_map.get(target)
+                            if dspr:
+                                dc = compute_entity_center(defender_pos, dspr, dscl)
+                                dx_center = float(dc.x)
+                            else:
+                                dx_center = float(defender_pos.x)
+                        else:
+                            dx_center = float(cx)
+                        from_left = ax < dx_center
+                    except Exception:
+                        from_left = bool(attacker_pos and defender_pos and (attacker_pos.x < defender_pos.x))
                     qmap = world.components.setdefault('FSMEventQueue', {})
                     q = qmap.setdefault(target, [])
                     q.append({"type": "OnHit", "from_left": from_left})
                     if health.current_hp <= 0:
                         q.append({"type": "OnDeath"})
+                    # Break player's combo upon taking damage
+                    combo_q = world.components.setdefault('ComboEventQueue', [])
+                    combo_q.append({'type': 'break', 'entity': target})
+                    # Publish debug event to visualize NPC hitbox hit on the player
+                    try:
+                        dbg = world.components.setdefault('DebugAttackEvents', {})
+                        dq = dbg.setdefault('_queue', [])
+                        player_pos = defender_pos
+                        # Use hitbox center as origin to reflect actual attack origin
+                        src_x = cx
+                        src_y = cy
+                        if player_pos:
+                            dq.append({
+                                'type': 'NPC_HITBOX_HIT',
+                                'attacker': int(hb.owner),
+                                'target': int(target),
+                                'posA': (float(src_x), float(src_y)),
+                                'posB': (float(player_pos.x), float(player_pos.y)),
+                                'hb_center': (float(cx), float(cy)),
+                                'hb_radius': float(r),
+                                'arc_angle': float(hb.arc_angle),
+                                'direction': (float(hb.direction[0]), float(hb.direction[1])),
+                                'damage': float(hb.damage),
+                                'time': float(time.time()),
+                            })
+                    except Exception:
+                        pass

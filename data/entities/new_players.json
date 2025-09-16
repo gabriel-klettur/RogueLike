@@ -24,6 +24,7 @@
     "cooldown": 1.0
   },
   "DEFAULT_DAMAGE_DURATION": 0.25,
+  "DEFAULT_DAMAGE_STOP_PROBABILITY": 0.25,
   "players": {
     "classes": {
       "dwarf": {
@@ -44,7 +45,10 @@
           },
           "basic_death_timer_duration": 10.0,
           "drag_drop_range": 128,
-          "attack_duration": null
+          "attack_duration": null,
+          "dash_charges": 4,
+          "damage_stop_probability": 0.25,
+          "mana_regen_per_second": 1.0
         },
         "assets": {
           "active_set": "sets",
@@ -176,7 +180,10 @@
             "max_trails": 50
           },
           "basic_death_timer_duration": 8.0,
-          "drag_drop_range": 128
+          "drag_drop_range": 128,
+          "dash_charges": 1,
+          "damage_stop_probability": 0.25,
+          "mana_regen_per_second": 1.0
         },
         "assets": {
           "active_set": "sets",
@@ -300,7 +307,10 @@
             "max_trails": 50
           },
           "basic_death_timer_duration": 8.0,
-          "drag_drop_range": 128
+          "drag_drop_range": 128,
+          "dash_charges": 1,
+          "damage_stop_probability": 0.25,
+          "mana_regen_per_second": 1.0
         },
         "assets": {
           "active_set": "sets",
@@ -414,7 +424,10 @@
             "max_trails": 50
           },
           "basic_death_timer_duration": 8.0,
-          "drag_drop_range": 128
+          "drag_drop_range": 128,
+          "dash_charges": 1,
+          "damage_stop_probability": 0.25,
+          "mana_regen_per_second": 1.0
         },
         "assets": {
           "active_set": "sets",
@@ -538,7 +551,10 @@
             "max_trails": 50
           },
           "basic_death_timer_duration": 8.0,
-          "drag_drop_range": 128
+          "drag_drop_range": 128,
+          "dash_charges": 1,
+          "damage_stop_probability": 0.25,
+          "mana_regen_per_second": 1.0
         },
         "assets": {
           "active_set": "sets",

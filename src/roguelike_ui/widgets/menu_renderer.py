@@ -12,6 +12,7 @@ class MenuRenderer:
     def __init__(self, font_size=36):
         # Tipografía base
         self.font = pygame.font.SysFont("Arial", font_size)
+        self.font_size = int(font_size)
 
         # Estilos
         self.panel_bg = (22, 24, 28)
@@ -22,6 +23,9 @@ class MenuRenderer:
         self.accent_color = (255, 200, 0)
         self.highlight_color = (255, 200, 0, 38)  # bajo alfa para pill
         self.border_color = (255, 220, 0)
+        # Tokens para botones (unificados)
+        self.button_bg = (255, 255, 255, 22)
+        self.button_pad_x = 14
 
         # Layout
         self.padding_x = 28
@@ -33,6 +37,18 @@ class MenuRenderer:
 
         # Registro de blits para pruebas/depuración
         self.last_blits = []
+
+    # ---- Elementos comunes ----
+    def _draw_button(self, panel, rect: pygame.Rect, text_surface: pygame.Surface, *, hover: bool = False, active: bool = False):
+        """
+        Dibuja un botón estándar (fondo translúcido, borde en hover/activo) y centra el texto.
+        """
+        pygame.draw.rect(panel, self.button_bg, rect, border_radius=self.radius // 2)
+        if hover or active:
+            pygame.draw.rect(panel, self.border_color, rect, width=2, border_radius=self.radius // 2)
+        tx = rect.x + (rect.width - text_surface.get_width()) // 2
+        ty = rect.y + (rect.height - text_surface.get_height()) // 2
+        panel.blit(text_surface, (tx, ty))
 
     # ---- Utilidades de dibujo ----
     def _draw_overlay(self, screen):
@@ -81,7 +97,7 @@ class MenuRenderer:
         return pygame.Rect(x, y, w, h)
 
     # ---- Render principal ----
-    def draw(self, screen, selected, options, scroll_offset: int = 0):
+    def draw(self, screen, selected, options, scroll_offset: int = 0, panel_top_min: int | None = None):
         """
         Dibuja el menú principal con estilo profesional.
         Devuelve el rect total actualizado (usamos el overlay a pantalla completa).
@@ -89,13 +105,25 @@ class MenuRenderer:
         # 1) Overlay
         overlay_rect = self._draw_overlay(screen)
 
-        # 2) Medidas dinámicas
-        w, h = self._measure_menu(options)
-        # Limitar a la pantalla con margen de seguridad
+        # Limitar a pantalla con margen de seguridad
         sw, sh = screen.get_size()
-        w = min(w, int(sw * 0.9))
+        w, h = self._measure_menu(options)
+        w = min(w, int(sw * 0.95))
         h = min(h, int(sh * 0.85))
+        # Centrar por defecto
         panel_rect = self._center_rect(screen, (w, h))
+        # Empujar bajo el logo si se especifica panel_top_min (pequeño margen)
+        if isinstance(panel_top_min, int):
+            extra = max(24, int(self.line_height))
+            desired_top = panel_top_min + extra
+            if panel_rect.top < desired_top:
+                panel_rect.top = desired_top
+        
+        # No salir por abajo
+        if panel_rect.bottom > (sh - 8):
+            panel_rect.bottom = sh - 8
+        # Exponer el rect del panel para overlays externos (logo, etc.)
+        self.last_menu_panel_rect = panel_rect
 
         # 3) Sombra y panel
         self._draw_shadow(screen, panel_rect)
@@ -253,7 +281,8 @@ class MenuRenderer:
                           caret_pos: int = 0,
                           hover_load_button: bool = False,
                           hover_delete_button: bool = False,
-                          select_all_edit: bool = False) -> pygame.Rect:
+                          select_all_edit: bool = False,
+                          panel_top_min: int | None = None) -> pygame.Rect:
         """
         Dibuja un panel de "cargar partida" con estilo profesional, tamaño fijo opcional,
         scroll vertical en la lista y layout expuesto para hit-testing.
@@ -299,7 +328,18 @@ class MenuRenderer:
         else:
             w, h = fixed_panel_size
 
+        # Centrar por defecto y luego aplicar empuje bajo el logo si corresponde
         panel_rect = self._center_rect(screen, (w, h))
+        if isinstance(panel_top_min, int):
+            sw, sh = screen.get_size()
+            extra = max(24, int(self.line_height)) + 100  # empuje adicional solicitado
+            desired_top = panel_top_min + extra
+            bottom_margin = 12
+            max_h_available = max(60, (sh - bottom_margin) - desired_top)
+            if h > max_h_available:
+                h = max_h_available
+                panel_rect.height = h
+            panel_rect.top = desired_top
 
         # 4) Sombra y panel
         self._draw_shadow(screen, panel_rect)
@@ -550,7 +590,8 @@ class MenuRenderer:
                               row_scroll_offset: int = 0,
                               hovered_row: int | None = None, hovered_col: int | None = None,
                               fixed_size: tuple[int, int] | None = None,
-                              fixed_col_widths: list[int] | None = None):
+                              fixed_col_widths: list[int] | None = None,
+                              panel_top_min: int | None = None):
         """
         Dibuja una tabla con una barra de pestañas encima.
         - tabs: etiquetas de pestañas (lista de strings)
@@ -591,17 +632,25 @@ class MenuRenderer:
         # altura: padding + tabs + gap + header + gap + rows
         h = (self.padding_y * 2 + tabs_h + self.item_gap // 2 + header_h + self.item_gap + rows_h)
 
-        # Limitar a pantalla
+        # Limitar a pantalla (ancho/alto máximo básicos)
         sw, sh = screen.get_size()
         if fixed_size is not None:
             fw, fh = fixed_size
-            # Asegurar que no exceda la pantalla
             w = min(fw, int(sw * 0.95))
             h = min(fh, int(sh * 0.85))
         else:
             w = min(w, int(sw * 0.95))
             h = min(h, int(sh * 0.85))
+        # Centrar por defecto (se empujará con panel_top_min si aplica)
         panel_rect = self._center_rect(screen, (w, h))
+        if isinstance(panel_top_min, int) and panel_rect.top < panel_top_min:
+            # Si el top mínimo es muy bajo, reducir h para no desbordar
+            bottom_margin = 12
+            max_h_available = max(60, (sh - bottom_margin) - panel_top_min)
+            if h > max_h_available:
+                h = max_h_available
+                panel_rect.height = h
+            panel_rect.top = panel_top_min
 
         # 3) Sombra y panel
         self._draw_shadow(screen, panel_rect)

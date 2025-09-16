@@ -26,3 +26,24 @@ class InstancePropertiesModel:
     template_options: list[str] = field(default_factory=list)
     template_hovered_index: Optional[int] = None
     template_scroll_offset: int = 0
+
+    # Visuals (read-only table)
+    # Raw visuals dict from the selected spawner instance (e.g., {"AwaitTrigger": 113, ...})
+    visuals: Dict[str, Any] = field(default_factory=dict)
+    # Prebuilt rows for rendering: (state, building_instance_id, template_id_str)
+    visuals_rows: list[tuple[str, str, str]] = field(default_factory=list)
+
+    # Visuals editing state
+    visuals_hovered_index: Optional[int] = None
+    visuals_editing_state: Optional[str] = None  # which state key is being edited
+    visuals_pending_templates: Dict[str, str] = field(default_factory=dict)  # state -> pending template str
+
+    # Thumbnails picker state for Visuals Template selection
+    visuals_picker_open: bool = False
+    visuals_picker_scroll_offset: int = 0
+    visuals_picker_hovered_index: Optional[int] = None
+    visuals_picker_state: Optional[str] = None
+
+    # Ephemeral toast notification (rendered by the view)
+    toast_message: Optional[str] = None
+    toast_until_ms: int = 0

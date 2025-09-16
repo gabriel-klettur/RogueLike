@@ -2,10 +2,11 @@ import pygame
 from roguelike_engine.utils.loader import load_image
 from roguelike_engine.config.config import SCREEN_WIDTH, SCREEN_HEIGHT
 
-from roguelike_game.utils.benchmark import setup_benchmark_logger, save_benchmarks
+from roguelike_game.utils.benchmark import setup_benchmark_logger
 from roguelike_game.managers.core.game import Game
 from typing import Tuple, Any, Dict, DefaultDict, List
 from collections import defaultdict
+from roguelike_engine.utils.benchmark import benchmark
 
 import logging
 logger = logging.getLogger(__name__)
@@ -14,7 +15,11 @@ logger = logging.getLogger(__name__)
 def init_pygame() -> None:
     """Inicializa Pygame y hace visible el cursor."""
     logger.info("Initializing Pygame...")
-    pygame.init()
+    try:
+        # Preajuste opcional para latencia/compatibilidad (lo maneja el backend de audio)
+        pygame.init()
+    except Exception as e:
+        logger.exception(f"No se pudo inicializar Pygame: {e}")
     pygame.mouse.set_visible(True)
 
 
@@ -50,7 +55,6 @@ def init_performance_tools() -> Tuple[Dict[str, list], Any]:
     bench_logger = setup_benchmark_logger()
     return performance_log, bench_logger
 
-
 def create_game(screen: pygame.Surface,
                 performance_log: Dict[str, list],
                 map_name: str = None,
@@ -72,13 +76,13 @@ def create_game(screen: pygame.Surface,
         raise RuntimeError("Game state not initialized properly!")
     return game
 
-
+@benchmark(lambda: performance_log, "0. TOTAL: RUN GAME LOOP")
 def run_game_loop(game: Game,
                   bench_logger: Any,
                   performance_log: Dict[str, list]) -> None:
     """
     Ejecuta el bucle principal `game.run()`, captura excepciones para el logger
-    y en el `finally` cierra el juego, guarda benchmarks y sale de Pygame.
+    y en el `finally` cierra el juego y sale de Pygame.
     """
     logger.info("Running game loop...")
     try:
@@ -89,10 +93,9 @@ def run_game_loop(game: Game,
     finally:
         game.shutdown()
         logger.info("Shutting down game...")
-        save_benchmarks(performance_log)
-        logger.info("Saving benchmarks...")
         pygame.quit()
         logger.info("Quitting Pygame...")
+
 
 def main() -> None:
 

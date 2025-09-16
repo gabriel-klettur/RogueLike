@@ -4,6 +4,7 @@ from roguelike_engine.diagnostics.overlay.model import DiagnosticsOverlayModel
 from roguelike_engine.diagnostics.overlay.view import DiagnosticsOverlayView
 from roguelike_engine.diagnostics.overlay.controller import DiagnosticsOverlayController
 from roguelike_engine.diagnostics.overlay.events import handle_event as handle_overlay_event
+from roguelike_engine.diagnostics.recorder import recorder
 
 
 class DiagnosticsOverlay:
@@ -76,8 +77,7 @@ class DiagnosticsOverlay:
 
     def handle_event(self, event) -> bool:
         return handle_overlay_event(self.model, self.view, event)
-
-    @benchmark(lambda self: self.perf_log, "3.12. diagnostics.render")
+    
     def render(
         self,
         screen,
@@ -89,6 +89,11 @@ class DiagnosticsOverlay:
         position=(8, 8),
         show_borders=False,
     ):
+        # Sample current diagnostics roughly once per second while visible
+        try:
+            recorder.record_tick(self.model, state, camera, map_manager, entities)
+        except Exception:
+            pass
         self.controller.render(
             screen,
             state=state,

@@ -23,19 +23,22 @@ class TabsController:
         self.panel_model.selected_eid = None
         self.editor_controller.model.current_category = category
         
-        # Si cambiamos a 'monsters', recargar datos activos desde JSON
-        if category == 'monsters':
-            self._handle_monsters_category()
+        # Si cambiamos a 'monsters' o 'hostile', recargar datos activos desde JSON
+        if category in ('monsters', 'hostile'):
+            self._handle_monsters_category(category)
         elif category == 'player':
             self._handle_player_category()
     
-    def _handle_monsters_category(self):
+    def _handle_monsters_category(self, category: str = 'monsters'):
         """
         Maneja la lógica específica para la categoría de monstruos.
         """
         active_path = self.editor_controller.data_controller.paths['monsters']['active']
         try:
-            self.editor_controller.model.active_data['monsters'] = load_from_json(active_path)
+            data = load_from_json(active_path)
+            # Reflejar en ambas claves para transición 'hostile' <-> 'monsters'
+            self.editor_controller.model.active_data['monsters'] = data
+            self.editor_controller.model.active_data['hostile'] = data
         except Exception as e:
             logger.error("[TabsController] Error recargando inventory_monsters.json:", e)
         
@@ -48,8 +51,8 @@ class TabsController:
         self.editor_controller.model.editing_side = 'active'
         
         # Auto-seleccionar primer monstruo para mostrar sus items en el grid
-        monsters = self.editor_controller.model.active_data.get('monsters', {})
-        first_mon = next(iter(monsters.keys()), None)
+        monsters_map = self.editor_controller.model.active_data.get(category, {})
+        first_mon = next(iter(monsters_map.keys()), None)
         if first_mon:
             self._select_entity(first_mon)
     

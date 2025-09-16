@@ -1,12 +1,12 @@
 import pygame
-import os
 import logging
 logger = logging.getLogger(__name__)
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.config.config_editor import TILE_PAINT_BATCH, TILE_PAINT_TICK
-from roguelike_engine.config.config import BUILDINGS_TEMPLATES_PATH, BUILDINGS_INSTANCES_PATH
-from roguelike_editors.buildings.utils.save_buildings_to_json import save_buildings_to_json, save_buildings_split
+from roguelike_engine.config.config_camera import ALLOWED_ZOOMS, next_allowed_zoom
+from roguelike_editors.buildings.utils.save_buildings_to_json import save_buildings_split
+
 from roguelike_engine.map.model.overlay.overlay_manager import load_layers, save_layers
 from roguelike_game.ecs.core.spatial_index import SpatialIndex
 from roguelike_ui.ui_blocker import is_blocked
@@ -48,6 +48,14 @@ class MapEditorEventHandler:
                 self.controller.toolbar.view.handle_event(ev)
             except Exception:
                 pass
+            # Delegar eventos al panel de Tutorial si está activo, para bloquear clicks/teclas (ESC) sobre el panel
+            if ev.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP, pygame.MOUSEMOTION, pygame.MOUSEWHEEL, pygame.KEYDOWN):
+                try:
+                    tutorial = getattr(self, 'tutorial', None)
+                    if tutorial and tutorial.is_active() and tutorial.handle_event(ev):
+                        continue
+                except Exception:
+                    pass
             if ev.type == pygame.QUIT:
                 # Persist camera if the editor is active and app is quitting
                 try:
@@ -210,6 +218,11 @@ class MapEditorEventHandler:
                 logger.exception(f"[MapEditor] Error finalizing paint tiles for zone={zone}: {e}")
             finally:
                 self._clear_async_state()
+                # Pulso para el tutorial (finalización de pintado)
+                try:
+                    setattr(self.state, 'tutorial_paint_tiles_finalized_pulse', True)
+                except Exception:
+                    pass
 
     def _apply_tile_overlay(self, tile):
         orig = tile.tile_type
@@ -244,7 +257,7 @@ class MapEditorEventHandler:
 
     def _finalize_paint_tiles(self, zone):
         start = pygame.time.get_ticks()
-        layers = load_layers(zone)
+        layers = self.controller.zones.load_layers(zone)
         off_x, off_y = global_map_settings.zone_offsets.get(zone)
         wz, hz = global_map_settings.zone_size
         grid = [["" for _ in range(wz)] for _ in range(hz)]
@@ -255,7 +268,7 @@ class MapEditorEventHandler:
                 grid[ly][lx] = t.overlay_code
         painted = sum(1 for row in grid for code in row if code)
         layers[Layer.Ground] = grid
-        save_layers(zone, layers)
+        self.controller.zones.save_layers(zone, layers)
         # Merge the zone-sized grid back into the world-sized Ground layer
         merge_zone_to_world(self.map_manager, zone, grid)
         elapsed = pygame.time.get_ticks() - start
@@ -269,6 +282,11 @@ class MapEditorEventHandler:
             self.state.undo_stack.append(self.state.current_command)
             self.state.redo_stack.clear()
             self.state.current_command = None
+        # Pulso para el tutorial: finalizar pintado (redundante por seguridad)
+        try:
+            setattr(self.state, 'tutorial_paint_tiles_finalized_pulse', True)
+        except Exception:
+            pass
 
     def _perform_undo(self, camera):
         if not self.state.undo_stack:
@@ -280,6 +298,11 @@ class MapEditorEventHandler:
                 self.map_manager.view.update_chunks(self.map_manager, camera, cells)
         finally:
             self.state.redo_stack.append(cmd)
+            # Pulso para el tutorial
+            try:
+                setattr(self.state, 'tutorial_undo_performed_pulse', True)
+            except Exception:
+                pass
 
     def _perform_redo(self, camera):
         if not self.state.redo_stack:
@@ -291,6 +314,11 @@ class MapEditorEventHandler:
                 self.map_manager.view.update_chunks(self.map_manager, camera, cells)
         finally:
             self.state.undo_stack.append(cmd)
+            # Pulso para el tutorial
+            try:
+                setattr(self.state, 'tutorial_redo_performed_pulse', True)
+            except Exception:
+                pass
 
     def _handle_clear_colliders_execution(self):
         idx = self.state.execution_index
@@ -301,11 +329,14 @@ class MapEditorEventHandler:
             try:
                 self.controller.toolbar.clear_colliders.finalize(zone)
             finally:
-                self.manager.game.ecs.ecs_world.spatial_index = SpatialIndex(
-                    self.map_manager, self.manager.game.buildings.buildings
-                )
+                # Reconstruir el índice espacial mediante la API del mundo
+                self.manager.game.ecs.ecs_world.rebuild_spatial_index()
                 self._clear_async_state()
-
+                # Pulso para el tutorial: finalizado
+                try:
+                    setattr(self.state, 'tutorial_clear_colliders_finalized_pulse', True)
+                except Exception:
+                    pass
 
     def _handle_paint_colliders_execution(self):
         idx = self.state.execution_index
@@ -316,12 +347,14 @@ class MapEditorEventHandler:
             try:
                 self.controller.toolbar.paint_colliders.finalize(zone)
             finally:
-                self.manager.game.ecs.ecs_world.spatial_index = SpatialIndex(
-                    self.map_manager, self.manager.game.buildings.buildings
-                )
+                # Reconstruir el índice espacial mediante la API del mundo
+                self.manager.game.ecs.ecs_world.rebuild_spatial_index()
                 self._clear_async_state()
-
-    
+                # Pulso para el tutorial: finalizado
+                try:
+                    setattr(self.state, 'tutorial_paint_colliders_finalized_pulse', True)
+                except Exception:
+                    pass
 
     def _clear_async_state(self):
         self.state.executing_tool = None
@@ -336,13 +369,25 @@ class MapEditorEventHandler:
     # -------------------------------------------------------------
     def _handle_zoom(self, ev, camera):
         mx, my = pygame.mouse.get_pos()
+        # World point under cursor before zoom
         wx = mx / camera.zoom + camera.offset_x
         wy = my / camera.zoom + camera.offset_y
-        zoom_step = 0.1
-        new_zoom = camera.zoom + zoom_step if ev.y > 0 else camera.zoom - zoom_step
-        camera.zoom = max(new_zoom, 0.01)
-        camera.offset_x = wx - mx / camera.zoom
-        camera.offset_y = wy - my / camera.zoom
+        # Allowed discrete zoom scales to avoid rendering artifacts
+        allowed = ALLOWED_ZOOMS
+        z = float(getattr(camera, 'zoom', 1.0)) or 1.0
+        # Choose next/prev scale centrally
+        new_z = next_allowed_zoom(z, +1, allowed) if ev.y > 0 else next_allowed_zoom(z, -1, allowed)
+        # Apply only if changed
+        if abs(new_z - z) > 1e-9:
+            camera.zoom = new_z
+            # Keep the same world point under the cursor
+            camera.offset_x = wx - mx / camera.zoom
+            camera.offset_y = wy - my / camera.zoom
+            # Pulso tutorial
+            try:
+                setattr(self.state, 'tutorial_camera_zoom_changed_pulse', True)
+            except Exception:
+                pass
 
     def _start_panning(self, ev, camera):
         self.state.panning = True
@@ -353,11 +398,17 @@ class MapEditorEventHandler:
         mx, my = ev.pos
         dx = (mx - self.state.pan_start_mouse[0]) / camera.zoom
         dy = (my - self.state.pan_start_mouse[1]) / camera.zoom
+
         # Grab-to-pan: arrastrar el mapa hacia la derecha desplaza el contenido hacia la derecha.
         # Con la convención de render (screen = (world - offset) * zoom),
         # esto implica restar el delta al offset de cámara.
         camera.offset_x = self.state.pan_start_offset[0] - dx
         camera.offset_y = self.state.pan_start_offset[1] - dy
+        # Pulso tutorial
+        try:
+            setattr(self.state, 'tutorial_camera_panned_pulse', True)
+        except Exception:
+            pass
 
     def _handle_keyboard_pan(self, camera):
         """
@@ -371,6 +422,10 @@ class MapEditorEventHandler:
             step = 20 / max(camera.zoom, 0.01)  # 20 px en pantalla por frame aprox.
             camera.offset_x += dx * step
             camera.offset_y += dy * step
+            try:
+                setattr(self.state, 'tutorial_camera_panned_pulse', True)
+            except Exception:
+                pass
 
     def _handle_renaming_keys(self, ev) -> bool:
         if ev.key == pygame.K_RETURN:
@@ -383,19 +438,12 @@ class MapEditorEventHandler:
                     if getattr(b, "zone", None) == old_zone:
                         b.zone = new_name
                         logger.debug(f"[MapEditor] building {b} zone updated from {old_zone} to {new_name}")
-                if os.path.exists(BUILDINGS_TEMPLATES_PATH) and os.path.exists(BUILDINGS_INSTANCES_PATH):
-                    save_buildings_split(
-                        self.manager.game.buildings.buildings,
-                        z_state=self.manager.game.z_state,
-                        zone_offsets=global_map_settings.zone_offsets,
-                    )
-                else:
-                    save_buildings_to_json(
-                        self.manager.game.buildings.buildings,
-                        z_state=self.manager.game.z_state,
-                        zone_offsets=global_map_settings.zone_offsets,
-                    )
-                logger.debug("[MapEditor] persisted buildings_data.json after rename")
+                save_buildings_split(
+                    self.manager.game.buildings.buildings,
+                    z_state=self.manager.game.z_state,
+                    zone_offsets=global_map_settings.zone_offsets,
+                )
+                logger.debug("[MapEditor] persisted buildings split files after rename")
                 self.state.selected_zone = new_name
             else:
                 logger.info(f"[MapEditor] rename aborted for {old_zone} -> {new_name}")
@@ -425,19 +473,12 @@ class MapEditorEventHandler:
                     if getattr(b, "zone", None) == old_zone:
                         b.zone = new_name
                         logger.debug(f"[MapEditor] building {b} zone updated from {old_zone} to {new_name}")
-                if os.path.exists(BUILDINGS_TEMPLATES_PATH) and os.path.exists(BUILDINGS_INSTANCES_PATH):
-                    save_buildings_split(
-                        self.manager.game.buildings.buildings,
-                        z_state=self.manager.game.z_state,
-                        zone_offsets=global_map_settings.zone_offsets,
-                    )
-                else:
-                    save_buildings_to_json(
-                        self.manager.game.buildings.buildings,
-                        z_state=self.manager.game.z_state,
-                        zone_offsets=global_map_settings.zone_offsets,
-                    )
-                logger.debug("[MapEditor] persisted buildings_data.json after rename")
+                save_buildings_split(
+                    self.manager.game.buildings.buildings,
+                    z_state=self.manager.game.z_state,
+                    zone_offsets=global_map_settings.zone_offsets,
+                )
+                logger.debug("[MapEditor] persisted buildings split files after rename")
                 self.state.selected_zone = new_name
             else:
                 logger.info(f"[MapEditor] rename aborted for {old_zone} -> {new_name}")
@@ -447,8 +488,6 @@ class MapEditorEventHandler:
         self.state.rename_accept_rect = None
         pygame.key.set_repeat()
         return True
-
-    
 
     # -------------------------------------------------------------
     # 3. HANDLERS DE DIÁLOGOS DE CONFIRMACIÓN
@@ -466,6 +505,11 @@ class MapEditorEventHandler:
                 # Establecer código de overlay antes de iniciar la ejecución
                 self.state.tile_code = "floor"
                 tiles = self.map_manager.tiles_by_zone.get(zone, [])
+                # Pulso tutorial: confirmado
+                try:
+                    setattr(self.state, 'tutorial_paint_tiles_confirmed_pulse', True)
+                except Exception:
+                    pass
                 self.state.begin_async_tool("paint_tiles", zone, tiles)
                 # Initialize undo/redo command for this batch
                 self.state.current_command = PaintTilesCommand(zone, self.state.tile_code)
@@ -474,6 +518,7 @@ class MapEditorEventHandler:
                 )
                 self.state.reset_paint_tiles_dialog()
                 return True
+
             if self.state.confirm_paint_no_rect and self.state.confirm_paint_no_rect.collidepoint(ev.pos):
                 logger.info("[MapEditor] Paint tiles canceled")
                 self.state.reset_paint_tiles_dialog()

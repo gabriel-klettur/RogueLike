@@ -274,6 +274,26 @@ class SetAssetCommand(Command):
                 new_order[k] = v
         target.clear()
         target.update(new_order)
+        # Sincronizar también hostiles/neutrals del editor al deshacer
+        try:
+            if not is_player:
+                path2, _, entry2 = load_entity_data(self.old_id, self.controller.model.player_stats, self.controller.model.monsters)
+                base2 = os.path.basename(path2).lower()
+                editor_model = self.controller.editor_controller.model
+                try:
+                    editor_model.hostiles.pop(self.new_id, None)
+                except Exception:
+                    pass
+                try:
+                    editor_model.neutrals.pop(self.new_id, None)
+                except Exception:
+                    pass
+                if base2 == 'new_neutrals.json':
+                    editor_model.neutrals[self.old_id] = copy.deepcopy(entry2)
+                else:
+                    editor_model.hostiles[self.old_id] = copy.deepcopy(entry2)
+        except Exception:
+            pass
         # If player, also re-key editor model 'classes' dict and player_assets back
         try:
             if is_player:
@@ -411,10 +431,26 @@ class RenameEntityCommand(Command):
     _saved_entry: Any = None
 
     def _persist_rename(self, src_id: str, dst_id: str) -> None:
-        # Generic: resolve source file and section by membership
+        # Resolver archivo y sección correcta (players/hostiles/neutrals)
         path, _, entry = load_entity_data(src_id, self.controller.model.player_stats, self.controller.model.monsters)
         root = load_from_json(path)
-        section = 'players' if src_id in self.controller.model.player_stats else 'monsters'
+        base = os.path.basename(path).lower()
+        if base == 'new_players.json':
+            section = 'players'
+        elif base == 'new_hostiles.json':
+            section = 'hostiles'
+        elif base == 'new_neutrals.json':
+            section = 'neutrals'
+        else:
+            # Fallback por pertenencia/facción
+            if src_id in self.controller.model.player_stats:
+                section = 'players'
+            else:
+                try:
+                    faction = (entry or {}).get('stats', {}).get('faction')
+                except Exception:
+                    faction = None
+                section = 'neutrals' if faction == 'NEUTRAL' else 'hostiles'
         classes = root.setdefault(section, {}).setdefault('classes', {})
         # Rebuild dict to preserve insertion order while replacing the key in-place
         new_classes = {}
@@ -457,6 +493,28 @@ class RenameEntityCommand(Command):
                 new_order[k] = v
         target.clear()
         target.update(new_order)
+        # Mantener sincronizados los datasets del editor (hostiles/neutrals) para el Picker
+        try:
+            if not is_player:
+                path2, _, entry2 = load_entity_data(self.new_id, self.controller.model.player_stats, self.controller.model.monsters)
+                base2 = os.path.basename(path2).lower()
+                editor_model = self.controller.editor_controller.model
+                # Eliminar claves antiguas si existían
+                try:
+                    editor_model.hostiles.pop(self.old_id, None)
+                except Exception:
+                    pass
+                try:
+                    editor_model.neutrals.pop(self.old_id, None)
+                except Exception:
+                    pass
+                # Insertar en el diccionario correcto
+                if base2 == 'new_neutrals.json':
+                    editor_model.neutrals[self.new_id] = copy.deepcopy(entry2)
+                else:
+                    editor_model.hostiles[self.new_id] = copy.deepcopy(entry2)
+        except Exception:
+            pass
         # If player, also re-key editor model 'classes' dict and player_assets mapping
         try:
             if is_player:
@@ -515,16 +573,31 @@ class DeleteEntityDefinitionCommand(Command):
     description: str = "Delete entity definition"
     _saved_entry: Any = None
     _saved_index: Optional[int] = None
-    _section: Optional[str] = None  # 'players' or 'monsters'
+    _section: Optional[str] = None  # 'players' or 'hostiles'
     _path: Optional[str] = None
     _saved_default: Any = None
 
     def _persist_delete(self) -> None:
-        # Resolve file and section by membership
+        # Resolver archivo y sección correcta (players/hostiles/neutrals)
         path, _, entry = load_entity_data(self.ent_id, self.controller.model.player_stats, self.controller.model.monsters)
         self._path = path
         root = load_from_json(path)
-        self._section = 'players' if self.ent_id in self.controller.model.player_stats else 'monsters'
+        base = os.path.basename(path).lower()
+        if base == 'new_players.json':
+            self._section = 'players'
+        elif base == 'new_hostiles.json':
+            self._section = 'hostiles'
+        elif base == 'new_neutrals.json':
+            self._section = 'neutrals'
+        else:
+            if self.ent_id in self.controller.model.player_stats:
+                self._section = 'players'
+            else:
+                try:
+                    faction = (entry or {}).get('stats', {}).get('faction')
+                except Exception:
+                    faction = None
+                self._section = 'neutrals' if faction == 'NEUTRAL' else 'hostiles'
         classes = root.setdefault(self._section, {}).setdefault('classes', {})
         # Save state for undo
         self._saved_entry = copy.deepcopy(entry)
@@ -572,6 +645,15 @@ class DeleteEntityDefinitionCommand(Command):
                 pass
         else:
             self.controller.model.monsters.pop(self.ent_id, None)
+            # También eliminar de los datasets del editor (hostiles/neutrals) según la sección detectada
+            try:
+                editor_model = self.controller.editor_controller.model
+                if self._section == 'neutrals':
+                    editor_model.neutrals.pop(self.ent_id, None)
+                else:
+                    editor_model.hostiles.pop(self.ent_id, None)
+            except Exception:
+                pass
         # Remove from global assets used by picker icons
         try:
             assets = self.controller.editor_controller.model.assets
@@ -681,6 +763,19 @@ class DeleteEntityDefinitionCommand(Command):
                     new_order[self.ent_id] = copy.deepcopy(self._saved_entry)
         target.clear()
         target.update(new_order)
+        # Restaurar también en el modelo del editor para que el Picker se actualice
+        try:
+            editor_model = self.controller.editor_controller.model
+            if is_player:
+                # Nada adicional; players no se listan en hostiles/neutrals
+                pass
+            else:
+                if self._section == 'neutrals':
+                    editor_model.neutrals[self.ent_id] = copy.deepcopy(self._saved_entry)
+                else:
+                    editor_model.hostiles[self.ent_id] = copy.deepcopy(self._saved_entry)
+        except Exception:
+            pass
         # Restore supporting mirrors
         if is_player:
             try:

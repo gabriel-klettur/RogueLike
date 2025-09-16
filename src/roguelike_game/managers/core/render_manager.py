@@ -1,4 +1,5 @@
 import pygame
+import logging
 from roguelike_engine.utils.mouse import draw_mouse_crosshair
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_engine.diagnostics import DiagnosticsOverlay, render_diagnostics_overlay
@@ -7,11 +8,19 @@ import roguelike_engine.config.config as config
 from types import SimpleNamespace
 from roguelike_ui.ui_blocker import clear_blockers
 
+# Opcional: soporte NumPy para recolor más preciso
+try:
+    import numpy as np
+    from pygame import surfarray
+    HAS_NUMPY = True
+except Exception:
+    HAS_NUMPY = False
+
 # Sistema de orden Z
 from roguelike_engine.z_layer.render import render_z_ordered
 
 # Importar el decorador centralizado de benchmark
-from roguelike_engine.zone.view.zone_view import ZoneView
+from roguelike_engine.zone.zone_view import ZoneView
 
 
 class RendererManager:
@@ -68,9 +77,11 @@ class RendererManager:
         self._spell_debug_system = None
         self._patrol_debug_system = None
         self._defend_debug_system = None
-        # Cache para help overlay: (mode_key, screen_size) -> (surface, rect)
-        self._help_overlay_key = None
-        self._help_overlay_surf = None
+        self._npc_attack_debug_system = None
+        # Debug logging state caches to avoid spam
+        self._last_render_debug_key = None
+        self._last_current_layer = None
+        self._last_collision_only = None
 
     def render_game(
         self,
@@ -86,23 +97,45 @@ class RendererManager:
 
         # guardar state para _render_editors
         self._last_state = state
+        # Sync latest references in case the game swapped map/entities (e.g., load/save)
+        # This ensures editor redraw paths that use self.map/self.entities point to current objects
+        if map is not None:
+            self.map = map
+        if entities is not None:
+            self.entities = entities
 
-        @benchmark(perf_log, "3.0. init_and_cleaning")
-        def _init_and_cleaning():
+        # Build pipeline steps as plain callables
+        def _step_init_and_cleaning():
             screen.fill((0, 0, 0))
             self._dirty_rects = []
             clear_blockers()
-        _init_and_cleaning()
 
-        # 1) Map
-        @benchmark(perf_log, "3.1. map")
-        def _bench_map():
+        def _step_map():
+            try:
+                logger = logging.getLogger(__name__)
+                es = getattr(self.tiles_editor, 'editor_state', None)
+                tc = es.toolbar_state if es else None
+                key = (
+                    bool(es and es.active),
+                    bool(getattr(tc, 'show_collisions', False)),
+                    bool(getattr(tc, 'show_collisions_overlay', False)),
+                    getattr(es, 'current_tool', None),
+                    round(float(getattr(camera, 'zoom', 1.0)), 2),
+                )
+                if key != self._last_render_debug_key:
+                    if key[0]:
+                        logger.debug(
+                            "[Render] TileEditor active: collisions=%s overlay=%s tool=%s zoom=%.2f",
+                            key[1], key[2], key[3], key[4]
+                        )
+                    else:
+                        logger.debug("[Render] TileEditor inactive; zoom=%.2f", key[4])
+                    self._last_render_debug_key = key
+            except Exception:
+                pass
             self._render_map(camera, screen, map)
-        _bench_map()
 
-        # 5) ECS trail snapshots
-        @benchmark(perf_log, "3.5. ecs_trail")
-        def _bench_ecs_trail():
+        def _step_ecs_trail():
             for eid, trail in self.ecs.ecs_world.components.get('TrailComponent', {}).items():
                 for snap in trail.snapshots:
                     orig = snap.image
@@ -113,27 +146,18 @@ class RendererManager:
                     else:
                         image_scaled = orig
                     screen.blit(image_scaled, camera.apply(snap.pos))
-        _bench_ecs_trail()
 
-        # 2) Entidades orden Z
-        @benchmark(perf_log, "3.2. z_entities")
-        def _bench_z_entities():
+        def _step_z_entities():
             # Skip entity rendering in collision-only mode
             if not (self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.toolbar_state.show_collisions and not self.tiles_editor.editor_state.toolbar_state.show_collisions_overlay):
                 self._render_z_entities(state, camera, screen, entities)
-        _bench_z_entities()
 
-        # 4) Capa del Tile Editor
-        @benchmark(perf_log, "3.4. tile_editor")
-        def _bench_tile_editor():
+        def _step_tile_editor():
             # Skip tile editor UI in collision-only mode
             if not (self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.toolbar_state.show_collisions and not self.tiles_editor.editor_state.toolbar_state.show_collisions_overlay):
                 self._render_tile_editor_layer(state, screen, camera, map)
-        _bench_tile_editor()
 
-        # Debug overlays for hitboxes, spells, and patrols (F9 toggles config.DEBUG)
-        @benchmark(perf_log, "3.55. spell_debug")
-        def _bench_spell_debug():
+        def _step_spell_debug():
             if getattr(config, "DEBUG", False):
                 try:
                     # Lazy import and instantiate debug systems
@@ -149,10 +173,15 @@ class RendererManager:
                     if self._defend_debug_system is None:
                         from roguelike_game.ecs.systems.rendering.defend_area_debug_system import DefendAreaDebugSystem
                         self._defend_debug_system = DefendAreaDebugSystem(perf_log=perf_log)
+                    if self._npc_attack_debug_system is None:
+                        from roguelike_game.ecs.systems.rendering.npc_attack_debug_system import NpcAttackDebugSystem
+                        self._npc_attack_debug_system = NpcAttackDebugSystem(perf_log=perf_log)
                     world = self.ecs.ecs_world
                     # Draw hitbox arcs and colliders, then spell-specific collision hints
                     self._hitbox_debug_system.update(world, screen, camera)
                     self._spell_debug_system.update(world, screen, camera)
+                    # Draw NPC attack traces (melee ticks and hitbox arcs to player)
+                    self._npc_attack_debug_system.update(world, screen, camera)
                     # Draw patrol areas/targets for NPCs with PatrolRoute
                     self._patrol_debug_system.update(world, screen, camera)
                     # Draw defend area circles for NPCs with DefendArea
@@ -160,23 +189,21 @@ class RendererManager:
                 except Exception:
                     # Never break main render due to optional debug overlays
                     pass
-        _bench_spell_debug()
 
-        # 6) Crosshair
-        @benchmark(perf_log, "3.6. crosshair")
-        def _bench_crosshair():
+        def _step_crosshair():
             draw_mouse_crosshair(screen, camera)
-        _bench_crosshair()
 
-        # 7) Menú
-        @benchmark(perf_log, "3.7. menu")
-        def _bench_menu():
+        def _step_menu():
             self._render_menu(screen, menu)
-        _bench_menu()
 
-        # 8) Minimap
-        @benchmark(perf_log, "3.8. minimap")
-        def _bench_minimap():
+        def _step_minimap():
+            # Do not render minimap when any editor/UI that takes focus is visible, including Spawner Editor
+            spawner_editor_active = False
+            try:
+                w = self.ecs.ecs_world
+                spawner_editor_active = bool(getattr(getattr(w, 'state', None), 'spawner_editor_active', False))
+            except Exception:
+                spawner_editor_active = False
             if (
                 not self.tiles_editor.editor_state.active
                 and not self.buildings_editor.editor_state.active
@@ -187,24 +214,39 @@ class RendererManager:
                 and not getattr(state, 'spells_editor_visible', False)
                 and not getattr(state, 'fsm_editor_visible', False)
                 and not getattr(state, 'class_selector_visible', False)
+                and not (menu and getattr(menu, 'show_menu', False))
+                and not spawner_editor_active
             ):
                 self._render_minimap(screen)
-        _bench_minimap()
 
-        # 11) Editores
-        @benchmark(perf_log, "3.11. editors")
-        def _bench_editors():
+        def _step_editors():
             self._render_editors()
-        _bench_editors()
 
+        steps = [
+            ("3.0. init_and_cleaning", _step_init_and_cleaning),
+            ("3.1. map", _step_map),
+            ("3.5. ecs_trail", _step_ecs_trail),
+            ("3.2. z_entities", _step_z_entities),
+            ("3.4. tile_editor", _step_tile_editor),
+            ("3.55. spell_debug", _step_spell_debug),
+            ("3.6. crosshair", _step_crosshair),
+            ("3.7. menu", _step_menu),
+            ("3.8. minimap", _step_minimap),
+            ("3.11. editors", _step_editors),
+        ]
+
+        # Execute steps with benchmark via loop, capturing function per-iteration
+        for key, fn in steps:
+            @benchmark(perf_log, key)
+            def _run(sfn=fn):
+                sfn()
+            _run()
 
         # Debug: overlay y bordes
         debug_entities = SimpleNamespace(player=self.ecs.ecs_world.player_position)
         render_diagnostics_overlay(self.diagnostics_overlay, screen, state, camera, self.map, debug_entities, show_borders=True)
         # Resaltar área de expansión de dungeon
         self._render_expand_area(self._last_state)
-        # Mostrar ayuda de controles según el modo
-        self._render_help_overlay(state)
 
         # Reemplazar dirty rects por flip completo para rendimiento constante
         return self._dirty_rects
@@ -265,24 +307,42 @@ class RendererManager:
     def _render_map(self, camera, screen, map):
         # Filter tile layers in Map Editor mode using visible_layers state
         if self.map_editor.editor_state.active:
-            # Invalidate cache on layer visibility change
             visible = self.map_editor.editor_state.visible_layers
+            # Invalidate cache and log only on visibility change
             if visible != self._last_map_visible_layers:
-                self.map.view.invalidate_cache()
+                map.view.invalidate_cache()
                 self._last_map_visible_layers = visible.copy()
+                try:
+                    logger = logging.getLogger(__name__)
+                    vis_names = {getattr(k, 'name', str(k)): v for k, v in visible.items()}
+                    logger.debug("[Render][MapEditor] visible_layers=%s", vis_names)
+                except Exception:
+                    pass
             orig = map.tiles_by_layer
             filtered = {layer: tiles for layer, tiles in orig.items() if visible.get(layer, True)}
             map.tiles_by_layer = filtered
             try:
-                dirty_rects = self.map.view.render(screen, camera, map)
+                dirty_rects = map.view.render(screen, camera, map)
             finally:
                 map.tiles_by_layer = orig
             self._dirty_rects.extend(dirty_rects)
             return
-        # Collision-only mode: render only collision grid
-        if self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.toolbar_state.show_collisions and not self.tiles_editor.editor_state.toolbar_state.show_collisions_overlay:
+        # Collision-only mode: render only collision grid (log only on toggle)
+        co_mode = (
+            self.tiles_editor.editor_state.active
+            and self.tiles_editor.editor_state.toolbar_state.show_collisions
+            and not self.tiles_editor.editor_state.toolbar_state.show_collisions_overlay
+        )
+        last_co = getattr(self, '_last_collision_only', None)
+        if co_mode and co_mode != last_co:
+            try:
+                logging.getLogger(__name__).debug("[Render] Collision-only mode active -> skipping tile layers")
+            except Exception:
+                pass
+        if co_mode:
             dirty = self._render_collisions(screen, camera, map)
             self._dirty_rects.extend(dirty)
+            self._last_collision_only = co_mode
             return
         # Layer visibility filter when tile editor is active
         editor_state = getattr(self.tiles_editor, 'editor_state', None)
@@ -290,17 +350,34 @@ class RendererManager:
             visible = editor_state.toolbar_state.visible_layers
             # Only invalidate cache on visibility change
             if visible != self._last_visible_layers:
-                self.map.view.invalidate_cache()
+                map.view.invalidate_cache()
                 self._last_visible_layers = visible.copy()
+                try:
+                    logger = logging.getLogger(__name__)
+                    vis_names = {getattr(k, 'name', str(k)): v for k, v in visible.items()}
+                    logger.debug("[Render][TilesEditor] visible_layers=%s", vis_names)
+                except Exception:
+                    pass
+            # Log current layer only when it changes
+            try:
+                current_layer = getattr(editor_state, 'current_layer', None)
+                if current_layer != self._last_current_layer:
+                    logging.getLogger(__name__).debug("[Render][TilesEditor] current_layer=%s", current_layer)
+                    self._last_current_layer = current_layer
+            except Exception:
+                pass
             # Temporarily filter map layers mapping for rendering
             orig_layers = map.layers
             filtered_layers = {layer: orig_layers[layer] for layer in orig_layers if visible.get(layer, True)}
             map.layers = filtered_layers
-            dirty_rects = self.map.view.render(screen, camera, map)
+            dirty_rects = map.view.render(screen, camera, map)
             map.layers = orig_layers
         else:
-            dirty_rects = self.map.view.render(screen, camera, map)
+            dirty_rects = map.view.render(screen, camera, map)
         self._dirty_rects.extend(dirty_rects)
+        # Update collision-only toggle state when not in collision-only mode
+        if getattr(self, '_last_collision_only', None) != co_mode:
+            self._last_collision_only = co_mode
         # Overlay collision grid in overlay mode
         if self.tiles_editor.editor_state.active and self.tiles_editor.editor_state.toolbar_state.show_collisions_overlay:
             dirty2 = self._render_collisions(screen, camera, map)
@@ -329,7 +406,26 @@ class RendererManager:
         editor_state = self.tiles_editor.editor_state
         if not ((editor_state.active and not editor_state.toolbar_state.show_buildings)
                 or (editor_state.active and editor_state.toolbar_state.show_collisions and not editor_state.toolbar_state.show_collisions_overlay)):
+            # Determine if Spawner Editor is active to gate editor_hidden
+            spawner_editor_active = False
+            try:
+                w = self.ecs.ecs_world
+                spawner_editor_active = bool(getattr(getattr(w, 'state', None), 'spawner_editor_active', False))
+            except Exception:
+                spawner_editor_active = False
             for b in entities.buildings:
+                # Respect editor/runtime visibility flags and basic visibility toggle
+                try:
+                    # editor_hidden only applies while spawner editor is active; runtime_hidden always applies
+                    if (spawner_editor_active and getattr(b, 'editor_hidden', False)) or getattr(b, 'runtime_hidden', False):
+                        continue
+                except Exception:
+                    pass
+                try:
+                    if hasattr(b, 'visible') and not getattr(b, 'visible', True):
+                        continue
+                except Exception:
+                    pass
                 if not camera.is_in_view(b.x, b.y, b.image.get_size()):
                     continue
                 for part in b.get_parts():
@@ -406,96 +502,6 @@ class RendererManager:
                 dirty.append(text_rect)
         return dirty
 
-    def _render_help_overlay(self, state):
-        # Cachea el overlay de ayuda para evitar renderizado de texto cada frame
-        screen = self.screen
-        size = screen.get_size()
-        # Ocultar la leyenda de comandos cuando un editor de superposición está visible
-        # (Entities Editor, Inventory Editor, etc.)
-        # Ocultar también cuando el selector de clases está visible
-        if getattr(state, 'class_selector_visible', False):
-            return
-        if hasattr(state, 'entities_editor_state') and getattr(state.entities_editor_state, 'visible', False):
-            return
-        if hasattr(state, 'inventory_editor_state') and getattr(state.inventory_editor_state, 'visible', False):
-            return
-        if hasattr(state, 'item_editor_state') and getattr(state.item_editor_state, 'visible', False):
-            return
-        # Ocultar también cuando el Buildings Editor está activo
-        if self.buildings_editor.editor_state.active:
-            return
-        # Ocultar también cuando el Tiles Editor o Map Editor están activos
-        if self.tiles_editor.editor_state.active:
-            return
-        if self.map_editor.editor_state.active:
-            return
-        # Ocultar cuando el Spells Editor está visible
-        if getattr(state, 'spells_editor_visible', False):
-            return
-        # Ocultar cuando el FSM Editor está visible
-        if getattr(state, 'fsm_editor_visible', False):
-            return
-        if self.map_editor.editor_state.active:
-            mode = 'map'
-        elif self.buildings_editor.editor_state.active:
-            mode = 'buildings'
-        elif self.tiles_editor.editor_state.active:
-            mode = 'tiles'
-        elif config.DEBUG:
-            mode = 'debug'
-        else:
-            mode = 'normal'
-        key = (mode, size)
-        if key != self._help_overlay_key:
-            # Reconstruir overlay            
-            screen_w, screen_h = size
-            if mode == 'map':
-                lines = ["Modo Edición Mapas:", "F11: modo", "ESC: salir",
-                         "N: duplicar zona", "L: cargar zonas", "Ctrl+S: guardar zonas",
-                         "D: borrar zona", "H: ocultar zona", "Click Izq: toolbar",
-                         "Click Medio: arrastrar", "Rueda: zoom"]
-            elif mode == 'buildings':
-                lines = [
-                    "Modo Edición Edificios:", "F10: modo", "P: selector edificio",
-                    "ESC: salir", "D: reset", "R: redimensionar",
-                    "Ctrl+S: guardar", "Ctrl+Z: deshacer", "N: aleatorio",
-                    "Supr: borrar"
-                ]
-            elif mode == 'tiles':
-                lines = ["Modo Edición Tiles:", "F8: editor tiles", "ESC: salir",
-                         "B: alternar edificios", "Click Izq: pintar", "Rueda: capa",
-                         "Click Der: arrastrar"]
-            elif mode == 'debug':
-                lines = [
-                    "Debug Mode:",
-                    "F9: Toggle Debug Overlay",
-                    "F12: Toggle FSM Editor",
-                    "Mouse Wheel: Scroll Overlay"
-                ]
-            else:
-                lines = ["Normal Mode:", "ESC: Menu", "[IN DUNGEON] Red area expand dungeon", "F8:Tiles Editor", "F9: Debug Mode","F10: Buildings Editor",
-                         "F11: Map Editor", "F5: Entities Editor",                         
-                         "E: Slash","X: Healing", "Mouse left: Fire Ball", "Mouse right: Slash",
-                         "Mouse middle: Laser Beam"
-                         ]
-            font = pygame.font.SysFont("Arial", 14)
-            pad = 5
-            texts = [font.render(l, True, (255,255,255)) for l in lines]
-            lh = texts[0].get_height() if texts else 0
-            bw = max((t.get_width() for t in texts), default=0) + pad*2
-            bh = len(texts)*lh + pad*2
-            overlay = pygame.Surface((bw, bh), flags=pygame.SRCALPHA)
-            overlay.fill((0,0,0,128))
-            for i, t in enumerate(texts):
-                overlay.blit(t, (pad, pad + i*lh))
-            rect = overlay.get_rect()
-            rect.bottomright = (screen_w - pad, screen_h - pad)
-            self._help_overlay_surf = (overlay, rect)
-            self._help_overlay_key = key
-        # Blitear overlay cacheado
-        surf, rect = self._help_overlay_surf
-        screen.blit(surf, rect)
-
     def _render_expand_area(self, state):
         """Dibuja overlay semitransparente en los 9 tiles del trigger de expansión."""
         if not hasattr(state, 'expand_area_coords'):
@@ -515,11 +521,14 @@ class RendererManager:
 
 class _NPCWrapper:
     """Envoltorio optimizado para renderizar NPCs dentro de render_z_ordered."""
-    __slots__ = ('eid', 'pos_map', 'sprite_map', 'scale_map')
-    # Cache de superficies escaladas: {(eid, scale): Surface}
+    __slots__ = ('world', 'eid', 'pos_map', 'sprite_map', 'scale_map')
+    # Cache de superficies escaladas: {(eid, scale, id(orig)): Surface}
     _scale_cache = {}
+    # Cache de superficies teñidas: {(id(image), r, g, b): Surface}
+    _tinted_cache = {}
 
     def __init__(self, world, eid):
+        self.world = world
         comps = world.components
         self.eid = eid
         self.pos_map = comps['Position']
@@ -554,4 +563,61 @@ class _NPCWrapper:
                 _NPCWrapper._scale_cache[key] = image
         else:
             image = orig
+
+        # Tinte amarillo si es el jugador en godmode
+        try:
+            is_player = (eid == getattr(self.world, 'player_entity', None))
+            godmode = bool(getattr(getattr(self.world, 'state', None), 'godmode', False))
+        except Exception:
+            is_player = False
+            godmode = False
+        if is_player and godmode:
+            color = (255, 230, 100)
+            tkey = (id(image), color[0], color[1], color[2])
+            tinted = _NPCWrapper._tinted_cache.get(tkey)
+            if tinted is None:
+                tinted = self._tint_surface(image, color)
+                _NPCWrapper._tinted_cache[tkey] = tinted
+            image = tinted
+
         blit(image, apply((self.x, self.y)))
+
+    @staticmethod
+    def _tint_surface(surface: pygame.Surface, color: tuple[int, int, int]) -> pygame.Surface:
+        """Aplica tinte amarillo manteniendo alpha del sprite.
+        Con NumPy: recolorea por luminancia al tono dado para un resultado uniforme.
+        Sin NumPy: fallback por blending multiplicativo + aditivo.
+        """
+        try:
+            if HAS_NUMPY:
+                rgb = surfarray.array3d(surface).astype('float32')
+                lum = (0.299 * rgb[:, :, 0] + 0.587 * rgb[:, :, 1] + 0.114 * rgb[:, :, 2])
+                r_fac = color[0] / 255.0
+                g_fac = color[1] / 255.0
+                b_fac = color[2] / 255.0
+                new_rgb = np.zeros_like(rgb)
+                new_rgb[:, :, 0] = np.clip(lum * r_fac, 0, 255)
+                new_rgb[:, :, 1] = np.clip(lum * g_fac, 0, 255)
+                new_rgb[:, :, 2] = np.clip(lum * b_fac, 0, 255)
+                new_rgb = new_rgb.astype('uint8')
+                out = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+                surfarray.blit_array(out, new_rgb)
+                try:
+                    src_a = surfarray.array_alpha(surface)
+                    dst_a = surfarray.pixels_alpha(out)
+                    dst_a[:, :] = src_a
+                    del dst_a
+                except Exception:
+                    pass
+                return out
+            else:
+                img = surface.copy()
+                tint = pygame.Surface(img.get_size(), pygame.SRCALPHA)
+                tint.fill((color[0], color[1], color[2], 255))
+                img.blit(tint, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+                boost = pygame.Surface(img.get_size(), pygame.SRCALPHA)
+                boost.fill((40, 35, 0, 0))
+                img.blit(boost, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
+                return img
+        except Exception:
+            return surface

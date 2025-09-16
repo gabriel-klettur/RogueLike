@@ -11,6 +11,12 @@ class TextInput:
         self.text = ""
         self.cursor = 0
         self.active = False
+        # wrapping cache (for multi-line draw)
+        self._wrap_lines: list[dict] | None = None  # each: {'text': str, 'start': int, 'end': int}
+        self._wrap_x: int = 0
+        self._wrap_y: int = 0
+        self._wrap_line_h: int = self.font.get_height()
+        self._wrap_max_w: int = 0
         # selection and rendering state
         self.selection_start = 0
         self.selection_end = 0
@@ -125,20 +131,41 @@ class TextInput:
                 self.selection_start = self.cursor
                 self.selection_end = self.cursor
             return True
-        # Mouse click: reposition caret
+        # Mouse click: reposition caret (supports wrapped and single-line)
         if event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
             mx, my = event.pos
             if hasattr(self, 'last_rect') and self.last_rect.collidepoint(mx, my):
-                rel_x = mx - self.last_draw_x
-                best_i = 0
-                best_diff = abs(rel_x)
-                for i in range(1, len(self.text) + 1):
-                    pos = self.font.size(self.text[:i])[0]
-                    diff = abs(rel_x - pos)
-                    if diff < best_diff:
-                        best_diff = diff
-                        best_i = i
-                self.cursor = best_i
+                # If we have wrapping info from last draw_wrapped(), use it
+                if self._wrap_lines and self._wrap_max_w > 0:
+                    rel_x = mx - self._wrap_x
+                    rel_y = my - self._wrap_y
+                    line_h = self._wrap_line_h
+                    line_idx = max(0, min(len(self._wrap_lines) - 1, rel_y // max(1, line_h)))
+                    line = self._wrap_lines[int(line_idx)]
+                    lx = max(0, int(rel_x))
+                    # find nearest char within this line
+                    best_i = line['start']
+                    best_diff = abs(lx)
+                    segment = line['text']
+                    for i in range(1, len(segment) + 1):
+                        pos = self.font.size(segment[:i])[0]
+                        diff = abs(lx - pos)
+                        if diff < best_diff:
+                            best_diff = diff
+                            best_i = line['start'] + i
+                    self.cursor = max(line['start'], min(line['end'], best_i))
+                else:
+                    # single-line fallback
+                    rel_x = mx - self.last_draw_x
+                    best_i = 0
+                    best_diff = abs(rel_x)
+                    for i in range(1, len(self.text) + 1):
+                        pos = self.font.size(self.text[:i])[0]
+                        diff = abs(rel_x - pos)
+                        if diff < best_diff:
+                            best_diff = diff
+                            best_i = i
+                    self.cursor = best_i
                 self.selection_start = self.cursor
                 self.selection_end = self.cursor
                 return True
@@ -212,3 +239,177 @@ class TextInput:
                 cy1 = y
                 cy2 = y + self.font.get_height()
                 pygame.draw.line(surface, color, (cx, cy1), (cx, cy2), 1)
+
+    def draw_wrapped(self, surface: pygame.Surface, x: int, y: int, max_width: int, color=(255,255,255), align_bottom: bool = True):
+        """Renderiza el texto con word-wrap dentro de max_width.
+
+        Si align_bottom es True, el bloque total se alinea desde abajo (última línea
+        coincide verticalmente con y + font_height), ideal para paneles donde el input
+        debe crecer hacia arriba.
+        """
+        # Build wrapped lines and index mapping
+        words = list(self.text)
+        # We'll wrap based on words split by spaces, but keep indices
+        tokens: list[tuple[str, int, int]] = []  # (tok, start, end)
+        i = 0
+        buf = ''
+        buf_start = 0
+        while i < len(self.text):
+            ch = self.text[i]
+            if ch.isspace():
+                if buf:
+                    tokens.append((buf, buf_start, buf_start + len(buf)))
+                    buf = ''
+                tokens.append((ch, i, i + 1))
+                i += 1
+                buf_start = i
+                continue
+            if not buf:
+                buf_start = i
+            buf += ch
+            i += 1
+        if buf:
+            tokens.append((buf, buf_start, buf_start + len(buf)))
+
+        lines: list[dict] = []  # {'text': str, 'start': int, 'end': int}
+        cur_text = ''
+        cur_start = 0
+        cur_end = 0
+        first_token = True
+        def flush_line():
+            nonlocal cur_text, cur_start, cur_end
+            if cur_text:
+                lines.append({'text': cur_text, 'start': cur_start, 'end': cur_end})
+                cur_text = ''
+        for tok, s, e in tokens:
+            add = tok if first_token else (tok)
+            first_token = False if cur_text else True  # not used further
+            proposal = (cur_text + tok)
+            if self.font.size(proposal)[0] <= max_width or not cur_text:
+                if not cur_text:
+                    cur_start = s
+                cur_text = proposal
+                cur_end = e
+            else:
+                # wrap
+                flush_line()
+                cur_text = tok
+                cur_start = s
+                cur_end = e
+        flush_line()
+        if not lines:
+            lines = [{'text': '', 'start': 0, 'end': 0}]
+
+        line_h = self.font.get_linesize()
+        total_h = line_h * len(lines)
+        start_y = y
+        if align_bottom:
+            start_y = y - (total_h - self.font.get_height())
+
+        # Save wrap info for mouse interactions
+        self._wrap_lines = lines
+        self._wrap_x = x
+        self._wrap_y = start_y
+        self._wrap_line_h = line_h
+        self._wrap_max_w = max_width
+
+        # Define last_rect covering entire area
+        self.last_draw_x = x
+        self.last_draw_y = start_y
+        self.last_rect = pygame.Rect(x, start_y, max_width, total_h)
+
+        # Selection highlight per line
+        i0, i1 = sorted((self.selection_start, self.selection_end))
+        for li, line in enumerate(lines):
+            ly = start_y + li * line_h
+            # selection range overlap in this line
+            sel_s = max(line['start'], i0)
+            sel_e = min(line['end'], i1)
+            if sel_e > sel_s:
+                pre = line['text'][:max(0, sel_s - line['start'])]
+                mid = line['text'][max(0, sel_s - line['start']):max(0, sel_e - line['start'])]
+                pre_w = self.font.size(pre)[0]
+                mid_w = self.font.size(mid)[0]
+                sel_rect = pygame.Rect(x + pre_w, ly, mid_w, self.font.get_height())
+                surface.fill((173, 216, 230), sel_rect)
+
+        # Draw text lines
+        for li, line in enumerate(lines):
+            ly = start_y + li * line_h
+            txt_surf = self.font.render(line['text'], True, color)
+            surface.blit(txt_surf, (x, ly))
+
+        # Caret blinking
+        if self.active:
+            t = get_ticks()
+            if (t % self.blink_interval) < (self.blink_interval // 2):
+                # Find caret line
+                caret_line_idx = 0
+                for li, line in enumerate(lines):
+                    if line['start'] <= self.cursor <= line['end']:
+                        caret_line_idx = li
+                        line_obj = line
+                        break
+                else:
+                    caret_line_idx = len(lines) - 1
+                    line_obj = lines[-1]
+                within = max(0, self.cursor - line_obj['start'])
+                cx_off = self.font.size(line_obj['text'][:within])[0]
+                cx = x + cx_off
+                cy1 = start_y + caret_line_idx * line_h
+                cy2 = cy1 + self.font.get_height()
+                pygame.draw.line(surface, color, (cx, cy1), (cx, cy2), 1)
+
+    def measure_wrapped(self, max_width: int) -> tuple[int, int]:
+        """Calcula número de líneas y altura total al envolver dentro de max_width.
+
+        Devuelve (num_lineas, altura_total_en_px). También actualiza el caché
+        de envoltura (_wrap_lines) para que los clics funcionen antes de dibujar.
+        """
+        # Tokenizar por espacios preservando índices
+        tokens: list[tuple[str, int, int]] = []
+        i = 0
+        buf = ''
+        buf_start = 0
+        while i < len(self.text):
+            ch = self.text[i]
+            if ch.isspace():
+                if buf:
+                    tokens.append((buf, buf_start, buf_start + len(buf)))
+                    buf = ''
+                tokens.append((ch, i, i + 1))
+                i += 1
+                buf_start = i
+                continue
+            if not buf:
+                buf_start = i
+            buf += ch
+            i += 1
+        if buf:
+            tokens.append((buf, buf_start, buf_start + len(buf)))
+
+        lines: list[dict] = []
+        cur_text = ''
+        cur_start = 0
+        cur_end = 0
+        for tok, s, e in tokens:
+            proposal = cur_text + tok
+            if self.font.size(proposal)[0] <= max_width or not cur_text:
+                if not cur_text:
+                    cur_start = s
+                cur_text = proposal
+                cur_end = e
+            else:
+                lines.append({'text': cur_text, 'start': cur_start, 'end': cur_end})
+                cur_text = tok
+                cur_start = s
+                cur_end = e
+        if cur_text:
+            lines.append({'text': cur_text, 'start': cur_start, 'end': cur_end})
+        if not lines:
+            lines = [{'text': '', 'start': 0, 'end': 0}]
+        self._wrap_lines = lines
+        self._wrap_max_w = max_width
+        line_h = self.font.get_linesize()
+        total_h = line_h * len(lines)
+        return len(lines), total_h

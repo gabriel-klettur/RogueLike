@@ -8,8 +8,12 @@ def save_to_json(path: str, key: str, value, indent: int = 2):
     full = os.path.abspath(path)
     data = {}
     if os.path.exists(full):
-        with open(full, encoding='utf-8') as f:
-            data = json.load(f)
+        try:
+            with open(full, encoding='utf-8-sig') as f:
+                data = json.load(f)
+        except Exception:
+            # Si el archivo está vacío o corrupto, empezamos desde un dict vacío
+            data = {}
     data[key] = value
     os.makedirs(os.path.dirname(full), exist_ok=True)
     with open(full, 'w', encoding='utf-8') as f:
@@ -22,8 +26,19 @@ def load_from_json(path: str) -> dict:
     """
     full = os.path.abspath(path)
     if os.path.exists(full):
-        with open(full, encoding='utf-8') as f:
-            return json.load(f)
+        try:
+            with open(full, encoding='utf-8-sig') as f:
+                content = f.read()
+                if content is None:
+                    return {}
+                if not str(content).strip():
+                    return {}
+                # Volver al inicio para json.load
+                f.seek(0)
+                return json.load(f)
+        except Exception:
+            # En caso de JSON inválido o lectura fallida, devolver dict vacío
+            return {}
     return {}
 
 
@@ -34,8 +49,12 @@ def remove_from_json(path: str, key: str, indent: int = 2) -> bool:
     full = os.path.abspath(path)
     if not os.path.exists(full):
         return False
-    with open(full, encoding='utf-8') as f:
-        data = json.load(f)
+    try:
+        with open(full, encoding='utf-8-sig') as f:
+            data = json.load(f)
+    except Exception:
+        # No se puede cargar: nada que eliminar
+        return False
     if key in data:
         del data[key]
         with open(full, 'w', encoding='utf-8') as f:

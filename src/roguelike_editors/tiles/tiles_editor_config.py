@@ -10,8 +10,9 @@ CLR_BORDER     = (255, 255, 255)
 CLR_HOVER      = (255, 230, 0)
 CLR_SELECTION  = (255, 200, 0)
 
-TOOLS = ["select", "brush", "eyedropper", "view", "view_layers", "view_collisions", "delete", "default"]
+TOOLS = ["tutorial_tiles", "select", "brush", "eyedropper", "view", "view_layers", "view_collisions", "delete", "default"]
 ICON_PATHS_TILE_TOOLBAR = {
+    "tutorial_tiles":   "assets/ui/tutorials_button.png",
     "select":           "assets/ui/select_tool.png",
     "brush":            "assets/ui/brush_tool.png",
     "eyedropper":       "assets/ui/eyedropper_tool.png",

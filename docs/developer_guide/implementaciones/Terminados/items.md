@@ -7,14 +7,15 @@ Este documento detalla los metadatos y atributos de cada ítem disponible en el 
 
 ## Getting Started
 1. Instala dependencias: `pip install -r requirements.txt`
-2. Valida JSON Schema con: `check-jsonschema --schemafile schemas/ItemSchema.json data/items.json`
+2. Valida JSON Schema con: `check-jsonschema --schemafile schemas/ItemSchema.json data/items/items.json`
 3. Ejecuta tests: `pytest`
 
 ## Estructura de directorios
 ```
 project_root/
   data/
-    items.json
+    items/
+      items.json
   schemas/
     ItemSchema.json
   docs/
@@ -143,7 +144,7 @@ Lee y accede a ítems desde JSON:
 ```python
 from roguelike_game.ecs.components.item_models import load_items
 
-items = load_items('data/items.json')
+items = load_items('data/items/items.json')
 item = items['gold']
 print(item.name, item.max_stack)
 ```

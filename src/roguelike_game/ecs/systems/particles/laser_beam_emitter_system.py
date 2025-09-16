@@ -82,8 +82,18 @@ class LaserBeamEmitterSystem:
                     continue
                 pdist = abs(tdx * dy - tdy * dx) / length
                 if pdist <= half_thickness + br:
-                    hp = world.components['Health'][target]
-                    hp.current_hp = max(0, hp.current_hp - beam.damage)
+                    # Respetar godmode: invulnerabilidad del jugador
+                    is_player_target = target in world.components.get('PlayerTagComponent', {})
+                    gm_target = bool(getattr(getattr(world, 'state', None), 'godmode', False)) and is_player_target
+                    # One-shot si el caster es jugador y godmode activo
+                    gm_attacker = bool(getattr(getattr(world, 'state', None), 'godmode', False)) and (caster in world.components.get('PlayerTagComponent', {}))
+                    if not gm_target:
+                        hp = world.components['Health'][target]
+                        if gm_attacker:
+                            hp.current_hp = 0
+                        else:
+                            hp.current_hp = max(0, hp.current_hp - beam.damage)
+
             # 3. Quitar componente si expiró la duración
             if beam.duration is not None and now >= beam.start_time + beam.duration:
                 to_remove.append(caster)

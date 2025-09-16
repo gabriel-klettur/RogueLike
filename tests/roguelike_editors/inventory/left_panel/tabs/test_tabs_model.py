@@ -4,7 +4,7 @@ from roguelike_editors.inventory.left_panel.tabs.tabs_model import TabsModel
 
 def test_default_values():
     m = TabsModel()
-    assert m.categories == ['player', 'monsters', 'map']
+    assert m.categories == ['player', 'hostile', 'map']
     assert m.current_category == 'player'
 
 

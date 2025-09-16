@@ -39,6 +39,10 @@ class InventoryUISystem:
     PULSE_SUCCESS_COLOR = (80, 220, 120)
     # Umbral para considerar "listo para arrastrar" (mostrar verde antes de activar el drag)
     DRAG_READY_RATIO = 1.0
+    # Resaltar cambios de cantidad (incremento/decremento)
+    INCREASE_COLOR = (80, 220, 120)   # verde
+    DECREASE_COLOR = (230, 90, 90)    # rojo
+    QUANTITY_FLASH_DURATION_MS = 900
 
     def __init__(self, perf_log=None, items_path=None):
         """
@@ -80,6 +84,12 @@ class InventoryUISystem:
                 except Exception:
                     surf = None
                 self.icon_surfaces[item_id] = surf
+        # Track de cantidades por slot para resaltar incrementos/decrementos
+        self._slot_last_qty: dict[int, int] = {}
+        # Map idx -> {'start': ms, 'color': (r,g,b), 'kind': 'inc'|'dec'}
+        self._slot_flash: dict[int, dict] = {}
+        # Cambios detectados mientras la UI está cerrada: idx -> {'color':(r,g,b), 'kind':'inc'|'dec'}
+        self._pending_flash_buffer: dict[int, dict] = {}
 
     def _ease_out_cubic(self, x: float) -> float:
         """Suavizado ease-out para el progreso visual (0..1)."""
@@ -198,9 +208,45 @@ class InventoryUISystem:
                 if surf:
                     img = pygame.transform.scale(surf, (size - 10, size - 10))
                     screen.blit(img, (x + 5, y + 5))
-                qty_surf = self.font.render(str(stack.quantity), True, self.TEXT_COLOR)
+                # Cambiar color del texto si hay flash activo
+                qty_color = self.TEXT_COLOR
+                flash = self._slot_flash.get(idx)
+                if flash:
+                    now = pygame.time.get_ticks()
+                    elapsed = now - int(flash.get('start', 0) or 0)
+                    if elapsed <= self.QUANTITY_FLASH_DURATION_MS:
+                        base = flash.get('color', self.INCREASE_COLOR)
+                        # interpolar hacia blanco a medida que se apaga
+                        t = max(0.0, min(1.0, elapsed / float(self.QUANTITY_FLASH_DURATION_MS)))
+                        inv = 1.0 - t
+                        qty_color = (
+                            int(base[0] * inv + self.TEXT_COLOR[0] * t),
+                            int(base[1] * inv + self.TEXT_COLOR[1] * t),
+                            int(base[2] * inv + self.TEXT_COLOR[2] * t),
+                        )
+                    else:
+                        # Expirado
+                        self._slot_flash.pop(idx, None)
+                qty_surf = self.font.render(str(stack.quantity), True, qty_color)
                 qty_rect = qty_surf.get_rect(bottomright=(x + size - 5, y + size - 5))
                 screen.blit(qty_surf, qty_rect)
+            # Overlay flash por cambio de cantidad (relleno suave + borde)
+            flash = self._slot_flash.get(idx)
+            if flash:
+                now = pygame.time.get_ticks()
+                elapsed = now - int(flash.get('start', 0) or 0)
+                if elapsed <= self.QUANTITY_FLASH_DURATION_MS:
+                    k = 1.0 - max(0.0, min(1.0, elapsed / float(self.QUANTITY_FLASH_DURATION_MS)))
+                    col = flash.get('color', self.INCREASE_COLOR)
+                    alpha = int(180 * k)
+                    overlay = pygame.Surface((size, size), pygame.SRCALPHA)
+                    overlay.fill((*col, max(0, alpha // 3)))
+                    screen.blit(overlay, (x, y))
+                    border = pygame.Surface((size, size), pygame.SRCALPHA)
+                    pygame.draw.rect(border, (*col, alpha), border.get_rect(), 3)
+                    screen.blit(border, (x, y))
+                else:
+                    self._slot_flash.pop(idx, None)
             # Dibujar progreso de agarre (hold-to-drag) si aplica para este slot
             if highlight_idx is not None and idx == highlight_idx and grab_progress > 0.0:
                 p = max(0.0, min(1.0, float(grab_progress)))
@@ -231,9 +277,47 @@ class InventoryUISystem:
         """
         Update de UI de inventario: toggle, arrastre y render.
         """
+        prev_visible = self.visible
+        slots = self._get_slots(world)
+        if slots:
+            # Detectar cambios SIEMPRE, incluso si no visible. Si no visible: bufferizar.
+            try:
+                now_ts = pygame.time.get_ticks()
+                total_slots = self.GRID_COLS * self.GRID_ROWS
+                for idx in range(total_slots):
+                    stack = slots[idx] if idx < len(slots) else None
+                    qty = int(getattr(stack, 'quantity', 0) or 0) if stack else 0
+                    last = self._slot_last_qty.get(idx)
+                    if last is None:
+                        self._slot_last_qty[idx] = qty
+                        continue
+                    if qty != last:
+                        inc = qty > last
+                        color = self.INCREASE_COLOR if inc else self.DECREASE_COLOR
+                        if self.visible:
+                            # UI visible: disparar flash inmediato
+                            self._slot_flash[idx] = {'start': int(now_ts), 'color': color, 'kind': 'inc' if inc else 'dec'}
+                        else:
+                            # UI cerrada: bufferizar para reproducir al abrir
+                            self._pending_flash_buffer[idx] = {'color': color, 'kind': 'inc' if inc else 'dec'}
+                        self._slot_last_qty[idx] = qty
+                # Actualizar last_qty para slots que no entraron antes (nuevos tamaños)
+                for idx in range(len(slots), total_slots):
+                    if idx not in self._slot_last_qty:
+                        self._slot_last_qty[idx] = 0
+            except Exception:
+                pass
+        # Manejar toggle y visibilidad
         if not self._handle_toggle(world):
             return
-        slots = self._get_slots(world)
+        # Si se acaba de abrir, reproducir flashes pendientes con tiempo fresco
+        if not prev_visible and self.visible and self._pending_flash_buffer:
+            now0 = pygame.time.get_ticks()
+            for idx, meta in list(self._pending_flash_buffer.items()):
+                col = meta.get('color', self.INCREASE_COLOR)
+                kind = meta.get('kind', 'inc')
+                self._slot_flash[idx] = {'start': int(now0), 'color': col, 'kind': kind}
+            self._pending_flash_buffer.clear()
         if not slots:
             return
         initial_rect = self._compute_panel_rect(screen, len(slots))

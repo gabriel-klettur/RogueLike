@@ -79,8 +79,8 @@ class InventoryEditorModel:
     def current_category(self, value: str):
         self.left_panel_model.current_category = value
         logger.debug(f"[DEBUG][Model] InventoryEditorModel.current_category set to {value}")
-        # Clear template selection when leaving monsters category
-        if value != 'monsters':
+        # Clear template selection when leaving monsters/hostile category
+        if value not in ('monsters', 'hostile'):
             self.selected_default_template_id = None
         # Clear player class selection when leaving player category
         if value != 'player':

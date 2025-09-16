@@ -1,0 +1,29 @@
+{
+  "player_id": "8e81f96e-e83e-44ac-80f4-d0cdb66bc2dd",
+  "capacity": 20,
+  "slots": [
+    null,
+    {
+      "item": "wood",
+      "quantity": 10
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ]
+}

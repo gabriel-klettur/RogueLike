@@ -70,7 +70,7 @@ def test_evt_012_persist_on_mouse_up(camera, surface_factory, monkeypatch):
         calls.append((buildings, filepath, z_state, zone_offsets))
         return True
 
-    monkeypatch.setattr(ev_mod, "save_buildings_to_json", _fake_save, raising=True)
+    monkeypatch.setattr(ev_mod, "save_buildings_split", _fake_save, raising=True)
 
     up = pygame.event.Event(pygame.MOUSEBUTTONUP, {"button": 1, "pos": (0, 0)})
     handler.handle(camera, entities, [up])
@@ -116,7 +116,7 @@ def test_evt_002_quit_persists_and_stops(camera, surface_factory, monkeypatch):
         calls.append((buildings, filepath, z_state, zone_offsets))
         return True
 
-    monkeypatch.setattr(ev_mod, "save_buildings_to_json", _fake_save, raising=True)
+    monkeypatch.setattr(ev_mod, "save_buildings_split", _fake_save, raising=True)
 
     ev = pygame.event.Event(pygame.QUIT)
     handler.handle(camera, entities, [ev])
@@ -140,7 +140,7 @@ def test_evt_003_escape_closes_and_saves(camera, surface_factory, monkeypatch):
         calls.append((buildings, filepath, z_state, zone_offsets))
         return True
 
-    monkeypatch.setattr(ev_mod, "save_buildings_to_json", _fake_save, raising=True)
+    monkeypatch.setattr(ev_mod, "save_buildings_split", _fake_save, raising=True)
 
     ev = pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_ESCAPE})
     handler.handle(camera, entities, [ev])
@@ -178,6 +178,9 @@ def test_evt_005_reset_with_d_applies_default_tool(camera, surface_factory, monk
 
     monkeypatch.setattr(controller.default_tool, "apply_reset", _spy_reset, raising=True)
 
+    # New behavior: D applies reset only on active_building
+    editor.active_building = entities.buildings[0]
+
     ev_d = pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_d})
     handler.handle(camera, entities, [ev_d])
 
@@ -201,6 +204,8 @@ def test_evt_006_resize_with_r_keydown_and_keyup(camera, surface_factory, monkey
     monkeypatch.setattr(controller, "_start_resize", _spy_start_resize, raising=True)
     monkeypatch.setattr(pygame.mouse, "get_pos", lambda: (50, 60), raising=True)
 
+    # New behavior: R starts resize only on active_building
+    editor.active_building = entities.buildings[0]
     ev_down = pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_r})
     handler.handle(camera, entities, [ev_down])
     assert calls["start"] == 1
@@ -257,7 +262,7 @@ def test_evt_008_ctrl_s_persists_without_closing(camera, surface_factory, monkey
         calls.append((buildings, filepath, z_state, zone_offsets))
         return True
 
-    monkeypatch.setattr(ev_mod, "save_buildings_to_json", _fake_save, raising=True)
+    monkeypatch.setattr(ev_mod, "save_buildings_split", _fake_save, raising=True)
 
     ev = pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_s, "mod": pygame.KMOD_CTRL})
     handler.handle(camera, entities, [ev])
@@ -283,18 +288,22 @@ def test_evt_009_place_with_n_increases_buildings(camera, surface_factory, monke
     assert entities.buildings[-1].image_path == "new.png"
 
 
-def test_evt_010_delete_key_calls_delete_tool_and_respects_colliders_mode(camera, surface_factory, monkeypatch):
+def test_evt_010_delete_key_calls_delete_and_respects_colliders_mode(camera, surface_factory, monkeypatch):
     handler, state, editor, controller, entities = _make_handler(camera, surface_factory)
 
-    calls = {"delete": 0}
+    calls = {"delete": 0, "args": None}
 
-    def _spy_delete(ents):
+    # Spy the controller's internal delete (current behavior)
+    def _spy_delete_internal(building_arg, buildings_list):
         calls["delete"] += 1
+        calls["args"] = (building_arg, list(buildings_list))
 
-    monkeypatch.setattr(controller.delete_tool, "delete_building_at_mouse", _spy_delete, raising=True)
+    monkeypatch.setattr(controller, "_delete_building", _spy_delete_internal, raising=True)
 
     # When not in colliders mode, it should call delete
     editor.colliders_mode = False
+    # New behavior: Delete acts only on active_building
+    editor.active_building = entities.buildings[0]
     ev = pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_DELETE})
     handler.handle(camera, entities, [ev])
     assert calls["delete"] == 1
@@ -325,7 +334,7 @@ def test_evt_011_mouse_events_delegated_to_controller(camera, surface_factory, m
 
     # Avoid disk IO on MOUSEBUTTONUP persistence
     import roguelike_editors.buildings.building_editor_events as ev_mod
-    monkeypatch.setattr(ev_mod, "save_buildings_to_json", lambda *a, **k: True, raising=True)
+    monkeypatch.setattr(ev_mod, "save_buildings_split", lambda *a, **k: True, raising=True)
 
     evs = [
         pygame.event.Event(pygame.MOUSEBUTTONDOWN, {"button": 1, "pos": (10, 10)}),
@@ -339,7 +348,7 @@ def test_evt_011_mouse_events_delegated_to_controller(camera, surface_factory, m
     assert called["up"] == 1
 
 
-def test_evt_013_ui_blocker_clears_hover_and_active_on_motion(camera, surface_factory, monkeypatch):
+def test_evt_013_ui_blocker_clears_hover_but_keeps_active_on_motion(camera, surface_factory, monkeypatch):
     handler, state, editor, controller, entities = _make_handler(camera, surface_factory)
 
     # Seed active and hovered states
@@ -357,22 +366,23 @@ def test_evt_013_ui_blocker_clears_hover_and_active_on_motion(camera, surface_fa
 
     assert editor.hovered_buildings == []
     assert editor.hovered_building is None
-    assert editor.active_building is None
+    # New behavior: keep active selection when UI blocks mouse motion
+    assert editor.active_building is entities.buildings[0]
 
 
-def test_evt_014_select_focuses_active_and_clears_when_outside(camera, surface_factory):
+def test_evt_014_select_sets_active_on_click_and_persists_on_motion(camera, surface_factory):
     handler, state, editor, controller, entities = _make_handler(camera, surface_factory)
     editor.current_tool = 'select'
 
-    # Move inside building rect -> should focus active_building
-    ev1 = pygame.event.Event(pygame.MOUSEMOTION, {"pos": (1, 1), "rel": (0, 0)})
-    handler.handle(camera, entities, [ev1])
+    # Click inside building rect -> should persist active_building
+    ev_click = pygame.event.Event(pygame.MOUSEBUTTONDOWN, {"button": 1, "pos": (1, 1)})
+    handler.handle(camera, entities, [ev_click])
     assert editor.active_building is not None
 
-    # Move outside building rect -> should clear active_building
+    # Move outside building rect -> active_building should remain (no auto-clear on leave)
     ev2 = pygame.event.Event(pygame.MOUSEMOTION, {"pos": (999, 999), "rel": (0, 0)})
     handler.handle(camera, entities, [ev2])
-    assert editor.active_building is None
+    assert editor.active_building is not None
 
 
 def test_evt_015_mouse_wheel_cycles_hovered(camera, surface_factory):

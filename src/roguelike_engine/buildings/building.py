@@ -1,5 +1,8 @@
 import pygame
 import types
+from typing import Optional
+from roguelike_engine.buildings.services.types import CameraProtocol
+from roguelike_engine.buildings.rendering.parts import RenderablePart
 
 from roguelike_engine.buildings.building_model import BuildingModel
 from roguelike_engine.buildings.building_controller import BuildingController
@@ -19,7 +22,7 @@ class Building:
         rel_x: int,
         rel_y: int,
         image_path: str,
-        camera=None,
+        camera: Optional[CameraProtocol] = None,
         *,
         solid: bool = True,
         scale: tuple[int, int] | None = None,
@@ -28,8 +31,8 @@ class Building:
         z_top: int | None = None
     ):
         """
-        Crea internamente el BuildingModel y el BuildingController (que a su vez
-        generará la BuildingView ligada a la cámara). Luego se podrá llamar a:
+        Crea internamente el BuildingModel y, si hay cámara, el BuildingController (que a su vez
+        generará la BuildingView ligada a esa cámara). Luego se podrá llamar a:
           • assign_zone(zone_name)
           • load_collision_map(collision_data)
           • render(screen)
@@ -53,7 +56,7 @@ class Building:
         else:
             self.controller = None
 
-    def assign_zone(self, zone_name: str):
+    def assign_zone(self, zone_name: str) -> None:
         """
         Asigna la zona al BuildingModel y actualiza sus coordenadas absolutas.
         Debe llamarse antes de renderizar si la zona no se había establecido aún.
@@ -61,7 +64,7 @@ class Building:
         if self.controller:
             self.controller.assign_zone(zone_name)
 
-    def load_collision_map(self, collision_data: list[list[str]]):
+    def load_collision_map(self, collision_data: list[list[str]]) -> None:
         """
         Carga en el modelo la matriz de strings ('#' / '.') que define las
         celdas sólidas de este edificio. Al asignarla, se invalidan los caches
@@ -70,7 +73,7 @@ class Building:
         if self.controller:
             self.controller.load_collision_map(collision_data)
 
-    def render(self, screen):
+    def render(self, screen: pygame.Surface) -> None:
         """
         Llama al controlador para que dibuje primero la parte inferior (bottom)
         y luego la superior (top) del edificio, usando la vista y el modelo.
@@ -78,7 +81,7 @@ class Building:
         if self.controller:
             self.controller.render(screen)
 
-    def update_on_camera_change(self):
+    def update_on_camera_change(self) -> None:
         """
         Debe invocarse cuando la cámara cambie (zoom u offset) para que la vista
         invalide sus caches de superficies escaladas.
@@ -96,8 +99,7 @@ class Building:
         """Setter for absolute X coordinate."""
         self.model.x = value
         # invalidate collision tiles cache when moving building
-        self.model._collision_tiles_cache = None
-        self.model._collision_tile_objs = None
+        self.model.invalidate_collision_caches()
         if self.controller:
             self.controller.update_on_camera_change()
 
@@ -111,8 +113,7 @@ class Building:
         """Setter for absolute Y coordinate."""
         self.model.y = value
         # invalidate collision tiles cache when moving building
-        self.model._collision_tiles_cache = None
-        self.model._collision_tile_objs = None
+        self.model.invalidate_collision_caches()
         if self.controller:
             self.controller.update_on_camera_change()
 
@@ -245,6 +246,12 @@ class Building:
         """Update split ratio and clear view caches."""
         # Clamp value between 0.0 and 1.0
         self.model.split_ratio = max(0.0, min(value, 1.0))
+        # Mantener _cut_world sincronizado con la altura actual de la imagen
+        try:
+            if self.model.image is not None:
+                self.model._cut_world = int(self.model.image.get_height() * self.model.split_ratio)
+        except Exception:
+            pass
         if self.controller:
             self.controller.update_on_camera_change()
 
@@ -269,12 +276,12 @@ class Building:
         """Set solidity of building."""
         self.model.solid = value
 
-    def get_parts(self) -> list[types.SimpleNamespace]:
+    def get_parts(self) -> list[RenderablePart]:
         """
         Retorna partes renderizables (bottom y top) para render z-ordenado.
         Cada parte expone x, y, z, image y método render(screen, camera).
         """
-        parts = []
+        parts: list[RenderablePart] = []
         for top in (False, True):
             zval = self.z_bottom if not top else self.z_top
             def _render(screen, camera, top=top):
@@ -282,24 +289,25 @@ class Building:
                 if self.controller is None:
                     self.controller = BuildingController(self.model, camera)
                 self.controller.view.render_part(screen, top=top)
-            part = types.SimpleNamespace(
+            part = RenderablePart(
                 x=self.x,
                 y=self.y,
                 z=zval,
                 image=self.image,
-                render=_render
+                render=_render,
             )
             parts.append(part)
         return parts
 
-    def resize(self, new_width: int, new_height: int):
+    def resize(self, new_width: int, new_height: int) -> None:
         """
-        Redimensiona la imagen del edificio a new_width×new_height, invalidando
-        caches de renderizado internos. Se delega en el modelo.
+        Redimensiona la imagen del edificio delegando en el modelo y refresca
+        los caches de vista/controlador para que el cambio se refleje de inmediato.
         """
         self.model.resize(new_width, new_height)
-        # Después de cambiar el tamaño en el modelo, limpiar caches de vista
-        self.update_on_camera_change()
+        if self.controller:
+            # Limpiar caches de la vista y forzar re-escalado en próximo render
+            self.controller.update_on_camera_change()
 
     def reset_to_original_size(self):
         """

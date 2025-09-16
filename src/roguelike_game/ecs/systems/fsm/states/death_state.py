@@ -1,85 +1,117 @@
 from roguelike_game.ecs.systems.fsm.state import State
-from roguelike_game.ecs.components.combat.death_timer import DeathTimer
 from roguelike_game.ecs.components.rendering.grayscale_component import GrayscaleComponent
 from roguelike_game.ecs.components.transform.z_layer import ZLayer
 from roguelike_engine.config.config_z_layer import Z_LAYERS
+from roguelike_game.ecs.components.transform.velocity import Velocity
 
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
-from roguelike_game.config.players_config import PLAYER_STATS
-from roguelike_game.factories.monster.config import MONSTER_STATS, MONSTER_DEFAULTS
-import time
 import json
 import os
+from roguelike_game.ecs.utils.position_utils import compute_foot_tile
 
 import logging
 logger = logging.getLogger(__name__)
 
 class DeathState(State):
     """
-    Estado Death: gestiona temporizador y eliminación de entidad muerta.
+    Estado Death: estado final.
+    - Para NPCs: elimina inmediatamente la entidad y limpia inventario.
+    - Para Player: aplica escala de grises y permite lógica de revive en lobby.
+    El temporizador de desaparición se gestiona en UnconsciousState.
     """
     def enter(self, entity):
-        """Registra temporizador."""
         world = entity.world
         eid = entity.id
-
         logger.debug(f"[DeathState.enter] eid={eid}, is_player={eid in world.components.get('PlayerTagComponent', {})}")
-        # Determinar duración del temporizador de muerte
-        duration = None
-        # Preferencia: si es jugador, usar configuración de players.json
-        pt = world.components.get('PlayerTagComponent', {}).get(eid)
-        if pt:
-            cls_name = getattr(pt, 'class_name', None)
-            if cls_name and cls_name in PLAYER_STATS:
-                duration = PLAYER_STATS[cls_name].get('basic_death_timer_duration', 60.0)
+        # Asegurar que no quede parpadeo activo: eliminar FlashComponent si existe
+        world.components.get('FlashComponent', {}).pop(eid, None)
+        # Anular cualquier movimiento residual
+        vel_map = world.components.get('Velocity', {})
+        if eid in vel_map:
+            try:
+                vel_map[eid].vx = 0
+                vel_map[eid].vy = 0
+            except Exception:
+                world.components.setdefault('Velocity', {})[eid] = Velocity(0, 0)
         else:
-            # Si no es jugador, intentar leer duración por clase de monstruo desde MONSTER_STATS
-            identity = world.components.get('Identity', {}).get(eid)
-            monster_class = getattr(identity, 'name', None) if identity else None
-            stats = MONSTER_STATS.get(monster_class, {}) if (monster_class and monster_class in MONSTER_STATS) else {}
-            # Solo soportar la clave oficial: 'death_dissapear_time'. Fallback al DEFAULT del JSON.
-            duration = stats.get('death_dissapear_time')
-            if duration is None:
-                duration = MONSTER_DEFAULTS.get('death_dissapear_time')
-        logger.debug(f"[DeathState.enter] eid={eid} death_timer_duration={duration}")
-        world.components['DeathTimer'][eid] = DeathTimer(time.time(), duration)
-        # Cambiar el sprite al de muerte para ocultar el sprite anterior
-        sprite = world.components.get('Sprite', {}).get(eid)
-        if sprite and hasattr(sprite, 'death_image'):
-            sprite.image = sprite.death_image
-            # Deshabilitar animación para no sobreescribir el sprite de muerte
-            world.components.get('Animator', {}).pop(eid, None)
-            world.components.get('AnimationTimer', {}).pop(eid, None)
-        # Bajar la capa Z del cadáver para que los drops puedan renderizar por encima sin tapar a vivos
-        world.components.setdefault('ZLayer', {})[eid] = ZLayer(Z_LAYERS.get('low_object', 2))
-
+            world.components.setdefault('Velocity', {})[eid] = Velocity(0, 0)
+        # Deshabilitar animación para no sobreescribir
+        world.components.get('Animator', {}).pop(eid, None)
+        world.components.get('AnimationTimer', {}).pop(eid, None)
+        # NPCs: persist quick-death flag and remove immediately
+        if eid not in world.components.get('PlayerTagComponent', {}):
+            # Registrar muerte en el estado local del mapa para evitar respawns no deseados
+            try:
+                inst_cmp = world.components.get('MonsterInstanceComponent', {}).get(eid)
+                instance_id = getattr(inst_cmp, 'instance_id', None) if inst_cmp is not None else None
+                if instance_id:
+                    tile = compute_foot_tile(world, eid, TILE_SIZE)
+                    tx, ty = (int(tile[0]), int(tile[1])) if tile else (None, None)
+                    level_name = getattr(world.map_manager, 'name', None)
+                    # Determinar prototipo
+                    proto = None
+                    at = world.components.get('MonsterArchetype', {}).get(eid)
+                    if at is not None:
+                        try:
+                            proto = getattr(at, 'type', None)
+                        except Exception:
+                            proto = None
+                    if not proto:
+                        ident = world.components.get('Identity', {}).get(eid)
+                        if ident is not None:
+                            try:
+                                proto = str(getattr(ident, 'name', None) or '')
+                            except Exception:
+                                proto = None
+                    st = {
+                        'level': level_name,
+                        'tile': [int(tx), int(ty)] if tx is not None and ty is not None else None,
+                        'hp': 0,
+                        'dead': True,
+                        'prototype': proto,
+                    }
+                    try:
+                        m = getattr(world, 'map_manager', None)
+                        if m is not None:
+                            ls = getattr(m, '_local_state', None)
+                            if isinstance(ls, dict):
+                                npc_states = ls.setdefault('npc_states', {})
+                                npc_states[str(instance_id)] = st
+                                try:
+                                    logger.info(
+                                        "[DeathState] Marked NPC instance_id=%s dead at level=%s tile=%s",
+                                        instance_id, level_name, st.get('tile')
+                                    )
+                                except Exception:
+                                    pass
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+            world.remove_entity(eid)
+            # Limpiar inventario activo para este monstruo
+            try:
+                with open(os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_monsters.json'), 'r') as f:
+                    inv = json.load(f)
+            except (json.JSONDecodeError, FileNotFoundError):
+                inv = {}
+            inv.pop(str(eid), None)
+            with open(os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_monsters.json'), 'w') as f:
+                json.dump(inv, f, indent=2)
+            return
+        # Player: aplicar grayscale si no presente
+        comps = world.components
+        if eid not in comps.get('GrayscaleComponent', {}):
+            comps.setdefault('GrayscaleComponent', {})[eid] = GrayscaleComponent()
+        # Asegurar ZLayer adecuado del jugador (sobre cadáveres y objetos bajos)
+        comps.setdefault('ZLayer', {})[eid] = ZLayer(Z_LAYERS.get('player', 4))
 
     def execute(self, entity, dt):
-        """Espera a que expire el temporizador antes de eliminar la entidad."""
+        """Lógica de revive del jugador en lobby 3x3."""
         world = entity.world
         nid = entity.id
-        dt_cmp = world.components['DeathTimer'][nid]
-        now = time.time()
-        elapsed = now - dt_cmp.start_time
-        duration = dt_cmp.duration
         comps = world.components
-        # Ejecutar acciones tras expiración del temporizador
-        if elapsed >= duration:
-            if nid in comps.get('PlayerTagComponent', {}):
-                if nid not in comps.get('GrayscaleComponent', {}):
-                    comps['GrayscaleComponent'][nid] = GrayscaleComponent()
-            else:
-                world.remove_entity(nid)
-                # Limpiar inventario activo para este monstruo
-                try:
-                    with open(os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_monsters.json'), 'r') as f:
-                        inv = json.load(f)
-                except (json.JSONDecodeError, FileNotFoundError):
-                    inv = {}
-                inv.pop(str(nid), None)
-                with open(os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_monsters.json'), 'w') as f:
-                    json.dump(inv, f, indent=2)
         # Lógica de resurrección: si está en lobby 3x3 y en gris, revivir
         if nid in comps.get('PlayerTagComponent', {}) and nid in comps.get('GrayscaleComponent', {}):
             pos = world.components.get('Position', {}).get(nid)
@@ -92,34 +124,18 @@ class DeathState(State):
                 center_tx = lob_x + cw // 2
                 center_ty = lob_y + ch // 2
                 if center_tx-1 <= tx <= center_tx+1 and center_ty-1 <= ty <= center_ty+1:
-                    # Revivir: quitar grayscale, timer y restaurar vida
+                    # Revivir: quitar grayscale y restaurar vida
                     comps['GrayscaleComponent'].pop(nid, None)
-                    comps['DeathTimer'].pop(nid, None)
                     hp = world.components.get('Health', {}).get(nid)
                     if hp:
                         hp.current_hp = hp.max_hp
-                    # Restaurar ZLayer del jugador
-                    comps.setdefault('ZLayer', {})[nid] = ZLayer(Z_LAYERS.get('player', 4))
                     # Cambiar FSM a IdleState
                     npc_state = comps.get('NPCState', {}).get(nid)
                     if npc_state:
                         from roguelike_game.ecs.systems.fsm.states.idle_state import IdleState
                         npc_state.fsm.change_state(IdleState(), entity)
                     logger.debug(f"[DeathState.execute] eid={nid} revived in lobby")
-        # Debug logs: solo una vez cada segundo
-        if now - dt_cmp.last_log_time >= 1.0:
-            if elapsed >= duration:
-                logger.debug(f"[DeathState.execute] Timer expired for eid={nid}")
-                if nid in comps.get('PlayerTagComponent', {}):
-                    logger.debug(f"[DeathState.execute] eid={nid} is Player -> grayscaling once")
-                else:
-                    logger.debug(f"[DeathState.execute] eid={nid} removed from world")
-            else:
-                logger.debug(f"[DeathState.execute] eid={nid}, elapsed={elapsed:.2f}/{duration} - waiting")
-            dt_cmp.last_log_time = now
-
 
     def exit(self, entity):
-        """Limpia si fuera necesario."""
         logger.debug(f"[DeathState.exit] eid={entity.id}")
         pass

@@ -1,0 +1,10 @@
+{
+  "provider": "gpt5-nano",
+  "api_url": "https://api.openai.com/v1/responses",
+  "model": "gpt-5-nano",
+  "timeouts_s": 15,
+  "retry": {"max": 2, "backoff_s": 1.0},
+  "defaults": {"max_tokens": 384, "temperature": 0.2},
+  "per_role_overrides": {"vendor": {"temperature": 0.1}},
+  "streaming": false
+}

@@ -17,9 +17,9 @@ class IdleState(State):
         if hp_cmp and hp_cmp.current_hp <= 0:
             npc_state = world.components.get('NPCState', {}).get(entity.id)
             if npc_state:
-                # Import local para evitar importación circular con DeathState
-                from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
-                npc_state.fsm.change_state(DeathState(), entity)
+                # Import local para evitar importación circular con UnconsciousState
+                from roguelike_game.ecs.systems.fsm.states.unconscious_state import UnconsciousState
+                npc_state.fsm.change_state(UnconsciousState(), entity)
             return
         # Verificar aggro solo para NPCs con AggroRange
         rng_cmp = world.components.get('AggroRange', {}).get(entity.id)

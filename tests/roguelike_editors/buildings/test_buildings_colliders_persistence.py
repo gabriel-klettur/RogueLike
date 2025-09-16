@@ -93,6 +93,10 @@ def test_col_002_cu_saves_by_building_instance_id(monkeypatch, tmp_path, surface
         _is_spawner_visual=False, spawner_instance_id=None,
     )
 
+    # Enforced behavior: brush paints only on the currently selected (active) building.
+    # Set the active building so that CU saves by building_instance_id.
+    editor_state.active_building = b
+
     model = Model(active=True)
     model.choice = '#'
     h = Handler(state=types.SimpleNamespace(), editor_state=editor_state, model=model)
@@ -126,57 +130,44 @@ def test_col_003_loader_priority_by_scope(monkeypatch, tmp_path, surface_factory
     import roguelike_engine.buildings.building_model as building_model_mod
     monkeypatch.setattr(building_model_mod, "load_image", _fake_load_image, raising=True)
 
-    # Prepare data: one CG and one CU
-    buildings_data = [
-        {
-            "id": 1,
-            "zone": "lobby",
-            "rel_x": 0,
-            "rel_y": 0,
-            "assets": {"idle": "/virtual/dummy.png"},
-            "solid": True,
-            "scale": [64, 64],
-            "collider_scope": "CG",
-        },
-        {
-            "id": 2,
-            "zone": "lobby",
-            "rel_x": 64,
-            "rel_y": 0,
-            "assets": {"idle": "/virtual/dummy.png"},
-            "solid": True,
-            "scale": [64, 64],
-            "collider_scope": "CU",
-        },
+    # Prepare split data: templates + instances, and split collisions files
+    # Templates define visual/size; instances define position/zone and collider_scope via overrides
+    templates = [
+        {"id": 100, "assets": {"idle": "/virtual/dummy.png"}, "solid": True, "scale": [64, 64]},
+        {"id": 101, "assets": {"idle": "/virtual/dummy.png"}, "solid": True, "scale": [64, 64]},
     ]
-    buildings_json = tmp_path / "buildings_data.json"
-    buildings_json.write_text(json.dumps(buildings_data), encoding="utf-8")
+    instances = [
+        {"id": 1, "template_id": 100, "zone": "lobby", "rel_x": 0, "rel_y": 0, "overrides": {"collider_scope": "CG"}},
+        {"id": 2, "template_id": 101, "zone": "lobby", "rel_x": 64, "rel_y": 0, "overrides": {"collider_scope": "CU"}},
+    ]
+    templates_json = tmp_path / "buildings_templates.json"
+    instances_json = tmp_path / "buildings_instances.json"
+    templates_json.write_text(json.dumps(templates), encoding="utf-8")
+    instances_json.write_text(json.dumps(instances), encoding="utf-8")
 
-    # Collisions: by_image_path and by_building_instance_id
-    collisions = {
-        "by_image_path": {
-            "/virtual/dummy.png": {"width": 2, "height": 2, "collision": [["#", "#"], ["#", "#"]]}
-        },
-        "by_building_instance_id": {
-            "2": {"width": 2, "height": 2, "collision": [[".", "."], [".", "."]]}
-        },
-        # include a legacy spawn for completeness; should be ignored by CG and used after CU by_building_instance_id
-        "by_spawn_id": {"legacy": {"width": 2, "height": 2, "collision": [["x", "x"], ["x", "x"]]}}
+    # Split collisions: by_image_path and by_building_instance_id
+    by_image = {
+        "/virtual/dummy.png": {"width": 2, "height": 2, "collision": [["#", "#"], ["#", "#"]]}
     }
-    collisions_json = tmp_path / "buildings_collisions_data.json"
-    collisions_json.write_text(json.dumps(collisions), encoding="utf-8")
+    by_binst = {
+        "2": {"width": 2, "height": 2, "collision": [[".", "."], [".", "."]]}
+    }
+    by_spawn = {"legacy": {"width": 2, "height": 2, "collision": [["x", "x"], ["x", "x"]]}}
+    by_image_json = tmp_path / "buildings_collisions_by_image.json"
+    by_binst_json = tmp_path / "buildings_collisions_by_building_instance_id.json"
+    by_spawn_json = tmp_path / "buildings_collisions_by_spawn_id.json"
+    by_image_json.write_text(json.dumps(by_image), encoding="utf-8")
+    by_binst_json.write_text(json.dumps(by_binst), encoding="utf-8")
+    by_spawn_json.write_text(json.dumps(by_spawn), encoding="utf-8")
 
-    # Load with patched paths
+    # Load with patched split paths
     import importlib
     load_mod = importlib.import_module("roguelike_editors.buildings.utils.load_buildings_from_json")
-    monkeypatch.setattr(load_mod, "BUILDINGS_DATA_PATH", str(buildings_json), raising=True)
-    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_DATA_PATH", str(collisions_json), raising=True)
-    # Force legacy combined path by making split files appear absent
-    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_BY_IMAGE_PATH", str(tmp_path / "no_by_image.json"), raising=True)
-    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH", str(tmp_path / "no_by_spawn.json"), raising=True)
-    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH", str(tmp_path / "no_by_binst.json"), raising=True)
-    monkeypatch.setattr(load_mod, "BUILDINGS_TEMPLATES_PATH", str(tmp_path / "no_templates.json"), raising=True)
-    monkeypatch.setattr(load_mod, "BUILDINGS_INSTANCES_PATH", str(tmp_path / "no_instances.json"), raising=True)
+    monkeypatch.setattr(load_mod, "BUILDINGS_TEMPLATES_PATH", str(templates_json), raising=True)
+    monkeypatch.setattr(load_mod, "BUILDINGS_INSTANCES_PATH", str(instances_json), raising=True)
+    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_BY_IMAGE_PATH", str(by_image_json), raising=True)
+    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH", str(by_spawn_json), raising=True)
+    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH", str(by_binst_json), raising=True)
 
     buildings = load_mod.load_buildings_from_json()
     assert len(buildings) == 2

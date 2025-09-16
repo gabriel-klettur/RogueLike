@@ -6,7 +6,7 @@
 """
 from __future__ import annotations
 from typing import Any, Dict, Optional, Tuple
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from .fsm_persistence import (
     load_all,
@@ -35,7 +35,7 @@ class _Cached:
     # animation mapping document
     anim_map: Dict[str, Any]
     # ids index JSON (SET_IDS/STATES_BY_SET/TRANSITIONS_BY_SET)
-    ids_index: Dict[str, Any]
+    ids_index: Dict[str, Any] = field(default_factory=dict)
 
 
 _CACHE: Optional[_Cached] = None
@@ -258,6 +258,8 @@ def build_fsm_from_set(set_def: Dict[str, Any]) -> Tuple[FiniteStateMachine, str
         fsm.context.setdefault("allow_death", True)
         # Always allow transitioning to DamageState by default unless explicitly disabled elsewhere.
         fsm.context.setdefault("allow_damage", True)
+        # Always allow transitioning to UnconsciousState by default unless explicitly disabled elsewhere.
+        fsm.context.setdefault("allow_unconscious", True)
         # If no explicit Damage transition exists, fall back to a sensible Monster policy.
         if "damage_next_class" not in fsm.context:
             if "AlertChaseState" in allowed_classes:

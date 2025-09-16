@@ -4,7 +4,7 @@ from pathlib import Path
 
 # Carga de configuración de jugadores en nuevo formato
 env_path = Path(__file__).resolve().parents[4] / "data" / "entities" / "new_players.json"
-with open(env_path, encoding="utf-8") as f:
+with open(env_path, encoding="utf-8-sig") as f:
     _player_cfg = json.load(f)
 
 # Tamaño original y renderizado de sprites
@@ -22,6 +22,8 @@ ANIMATION_INTERVAL = _player_cfg["ANIMATION_INTERVAL"]
 INITIAL_ANIMATION_STATE = _player_cfg["INITIAL_ANIMATION_STATE"]
 MELEE_WEAPON_CFG = _player_cfg["MELEE_WEAPON"]
 DEFAULT_DAMAGE_DURATION = _player_cfg.get("DEFAULT_DAMAGE_DURATION", 0.25)
+# Probabilidad por defecto de quedarse quieto al recibir daño (stun) si la clase no la define
+DEFAULT_DAMAGE_STOP_PROBABILITY = _player_cfg.get("DEFAULT_DAMAGE_STOP_PROBABILITY", 0.25)
 DEFAULT_TRAIL = _player_cfg["DEFAULT_TRAIL"]
 FEET_WIDTH_DIVISOR = _player_cfg["FEET_WIDTH_DIVISOR"]
 FEET_HEIGHT_DIVISOR = _player_cfg["FEET_HEIGHT_DIVISOR"]

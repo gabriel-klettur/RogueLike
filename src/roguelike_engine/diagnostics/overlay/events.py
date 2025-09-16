@@ -1,10 +1,12 @@
 import pygame
-
 from .model import DiagnosticsOverlayModel
 from .view import DiagnosticsOverlayView
 
+def handle_event(model: DiagnosticsOverlayModel, view: DiagnosticsOverlayView, event: pygame.event.Event) -> bool:
+    """Route mouse/keyboard events for the DiagnosticsOverlay.
 
-def handle_event(model: DiagnosticsOverlayModel, view: DiagnosticsOverlayView, event) -> bool:
+    Returns True if the overlay consumed the event, False otherwise.
+    """
     et = event.type
     # Scroll wheel moves panel content
     if et == pygame.MOUSEWHEEL:

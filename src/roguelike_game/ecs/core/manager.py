@@ -83,11 +83,11 @@ class ECSWorld:
             if all(eid in comps.get(ct, {}) for ct in component_types):
                 yield eid
     
+    @benchmark(lambda self: self.perf_log, "5.TOTAL: ECS UPDATE [CORE]")
     def update(self, camera):
         # Reconstruir SpatialIndex sólo si ha sido invalidado
         if self._spatial_index_dirty:
-            self.spatial_index = SpatialIndex(self.map_manager, self.buildings)
-            self._spatial_index_dirty = False
+            self.rebuild_spatial_index()
         
         # Ejecutar cada sistema de update
         for i, system in enumerate(self.update_systems, start=1):
@@ -97,6 +97,7 @@ class ECSWorld:
                 sys.update(self, camera)
             _update_sys()
     
+    @benchmark(lambda self: self.perf_log, "4.TOTAL: ECS RENDER [CORE]")
     def render(self, screen, camera):
         # Si el Graph Panel del FSM Editor está visible, no dibujar overlays del ECS
         # (barras de vida, debug, etc.) para que no se vean por encima del panel.
@@ -132,7 +133,19 @@ class ECSWorld:
         if eid in self.entities:
             self.entities.remove(eid)
         for comp_dict in self.components.values():
-            comp_dict.pop(eid, None)
+            # Algunos "component stores" no son dicts (p.ej., colas de eventos como listas).
+            # Asegurar eliminación segura según el tipo de contenedor.
+            try:
+                if isinstance(comp_dict, dict):
+                    comp_dict.pop(eid, None)
+                elif isinstance(comp_dict, set):
+                    comp_dict.discard(eid)
+                else:
+                    # listas/otros tipos: no están indexados por eid, ignorar
+                    pass
+            except Exception:
+                # Nunca romper la eliminación de entidad por un componente anómalo
+                pass
 
     def get_solid_tiles_for_rect(self, rect):
         # Delegamos totalmente al spatial_index
@@ -141,6 +154,17 @@ class ECSWorld:
     def invalidate_spatial_index(self):
         """Marca SpatialIndex para reconstrucción en el próximo update."""
         self._spatial_index_dirty = True
+
+    def rebuild_spatial_index(self):
+        """
+        Reconstruye el índice espacial inmediatamente usando el `map_manager` y los
+        `buildings` actuales del mundo, y limpia la bandera de suciedad.
+
+        Preferir este método (o `invalidate_spatial_index`) desde sistemas y editores
+        en lugar de asignar `world.spatial_index = SpatialIndex(...)` directamente.
+        """
+        self.spatial_index = SpatialIndex(self.map_manager, self.buildings)
+        self._spatial_index_dirty = False
 
     def get_entities_in_camera(self, camera, *component_types):
         """

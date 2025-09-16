@@ -10,19 +10,22 @@ class MenuConfigurator:
     Navegación: Arriba/Abajo (o W/S, A/D), Enter para reasignar, ESC para volver.
     """
 
-    def __init__(self, input_config, screen, font):
+    def __init__(self, input_config, screen, font, underlay_provider=None, base_font_size: int | None = None):
         self.config = input_config
         self.screen = screen
         self.font = font
-        # Usamos nuestro propio renderer para mantener estética; reducimos bastante el tamaño
-        # de letra para la vista de Opciones.
-        try:
-            # Si hay una fuente grande activa en el juego, aquí usamos una más pequeña.
-            base = int(self.font.get_height())
-            font_size = max(14, min(18, int(base * 0.6)))
-        except Exception:
-            font_size = 16
-        self.renderer = MenuRenderer(font_size=font_size)
+        # Dibuja el background/logo del menú de inicio y devuelve la Y mínima del panel
+        # Firma esperada: underlay_provider(screen) -> panel_top_min | None
+        self.underlay_provider = underlay_provider
+        # Usamos un tamaño de fuente estandarizado si se provee.
+        if isinstance(base_font_size, int) and base_font_size > 6:
+            self.renderer = MenuRenderer(font_size=base_font_size)
+        else:
+            try:
+                font_size = int(self.font.get_height()) if font else 18
+            except Exception:
+                font_size = 18
+            self.renderer = MenuRenderer(font_size=font_size)
         # Tabs: (label visible, key interna)
         self.tabs: list[tuple[str, str]] = [
             ("General", "general"),
@@ -241,6 +244,25 @@ class MenuConfigurator:
                 max_offset = max(0, total_rows - max_visible)
                 row_scroll_offset = max(0, min(row_scroll_offset, max_offset))
 
+            # Underlay: persistir background/logo cuando venimos del menú de inicio
+            panel_top_min = None
+            if callable(self.underlay_provider):
+                try:
+                    panel_top_min = self.underlay_provider(self.screen)
+                except Exception:
+                    panel_top_min = None
+            # Añadir un margen extra bajo el logo para que el panel no lo roce
+            try:
+                sh = self.screen.get_size()[1]
+            except Exception:
+                sh = 720
+            if isinstance(panel_top_min, int):
+                # Margen pequeño para despegar del logo
+                extra = max(24, int(self.renderer.line_height))
+                panel_top_min = panel_top_min + extra
+            else:
+                # Sin logo (pausa, etc.): no forzamos desplazamiento
+                panel_top_min = None
             # Dibujar tabla con pestañas
             self.renderer.draw_table_with_tabs(
                 self.screen,
@@ -255,6 +277,7 @@ class MenuConfigurator:
                 hovered_col=hovered_col,
                 fixed_size=self._fixed_panel_size,
                 fixed_col_widths=self._fixed_col_widths,
+                panel_top_min=panel_top_min,
             )
             pygame.display.flip()
             clock.tick(60)

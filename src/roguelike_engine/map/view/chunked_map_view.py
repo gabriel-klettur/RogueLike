@@ -7,6 +7,8 @@ from roguelike_engine.tile.utils.loader import get_sprite_for_tile
 
 import logging
 logger = logging.getLogger(__name__)
+# Disable very chatty map chunk build logs by default
+DEBUG_CHUNKED: bool = False
 
 # Cache scaled sprites per (sprite, zoom)
 _SCALED_CACHE: dict[tuple[pygame.Surface, float], pygame.Surface] = {}
@@ -23,7 +25,9 @@ class ChunkedMapView:
         self.chunks_by_zoom: dict[float, dict[tuple[int,int], pygame.Surface]] = {}
 
     def _build_chunk_surfaces(self, map_model: MapModel, zoom: float):
-        logger.debug(f" _build_chunk_surfaces called for zoom {zoom}")
+        if DEBUG_CHUNKED:
+            logger.debug(f" _build_chunk_surfaces called for zoom {zoom}")
+
         """
         Pre-dibuja cada chunk (bloque de tiles) en una surface escalada
         y la guarda en self.chunks_by_zoom[zoom].
@@ -54,9 +58,11 @@ class ChunkedMapView:
                     if key not in sprite_map:
                         sprite_map[key] = get_sprite_for_tile(char, code)
 
-        # Debug: imprimir claves sin sprite en sprite_map
-        missing = [k for k, s in sprite_map.items() if s is None]
-        logger.debug(f" claves sin sprite: {missing}")
+        # Debug opcional: imprimir claves sin sprite en sprite_map
+        if DEBUG_CHUNKED:
+            missing = [k for k, s in sprite_map.items() if s is None]
+            logger.debug(f" claves sin sprite: {missing}")
+
         layers_ordered = sorted(map_model.layers.keys(), key=lambda l: l.value)
         for cy in range(n_chunks_y):
             for cx in range(n_chunks_x):
@@ -64,12 +70,12 @@ class ChunkedMapView:
                 tile_w = min(cs, width  - cx*cs)
                 tile_h = min(cs, height - cy*cs)
 
-                # tamaño en píxeles tras escalar
-                pix_w = int(tile_w * TILE_SIZE * zoom)
-                pix_h = int(tile_h * TILE_SIZE * zoom)
+                # tamaño en píxeles tras escalar (usar redondeo para evitar acumulación de truncado)
+                pix_w = int(round(tile_w * TILE_SIZE * zoom))
+                pix_h = int(round(tile_h * TILE_SIZE * zoom))
 
                 surf = pygame.Surface((pix_w, pix_h), pygame.SRCALPHA)
-                zkey = round(zoom * 10) / 10.0
+                zkey = float(zoom)
 
                 # dibujar cada tile por capa en orden usando raw_layers
                 for ty in range(cy*cs, cy*cs + tile_h):
@@ -81,8 +87,9 @@ class ChunkedMapView:
                             if not code and layer != Layer.Ground:
                                 continue
                             sprite = sprite_map.get((char, code))
-                            if sprite is None:
+                            if sprite is None and DEBUG_CHUNKED:
                                 logger.debug(f" sin sprite para tile ({ty},{tx}) char={char}, code={code}")
+
                             if not sprite:
                                 continue
                             # scaled cache
@@ -90,11 +97,11 @@ class ChunkedMapView:
                             scaled = _SCALED_CACHE.get(skey)
                             if scaled is None:
                                 sw, sh = sprite.get_size()
-                                scaled = pygame.transform.scale(sprite, (int(sw * zoom), int(sh * zoom)))
+                                scaled = pygame.transform.scale(sprite, (int(round(sw * zoom)), int(round(sh * zoom))))
                                 _SCALED_CACHE[skey] = scaled
                             # posición dentro del chunk
-                            px = int((tx - cx*cs) * TILE_SIZE * zoom)
-                            py = int((ty - cy*cs) * TILE_SIZE * zoom)
+                            px = int(round((tx - cx*cs) * TILE_SIZE * zoom))
+                            py = int(round((ty - cy*cs) * TILE_SIZE * zoom))
                             surf.blit(scaled, (px, py))
 
                 chunk_dict[(cx, cy)] = surf
@@ -102,7 +109,9 @@ class ChunkedMapView:
         self.chunks_by_zoom[zoom] = chunk_dict
 
     def invalidate_cache(self):
-        logger.debug(f" invalidate_cache called")
+        if DEBUG_CHUNKED:
+            logger.debug(f" invalidate_cache called")
+
         """Forzar reconstrucción de todos los chunks en el próximo render."""
         self.chunks_by_zoom.clear()
 
@@ -110,8 +119,9 @@ class ChunkedMapView:
         """
         Rebuild only the chunks containing the given tile coordinates.
         """
-        # Determine zoom level (quantized)
-        zoom = max(round(camera.zoom * 10) / 10.0, 0.1)
+        # Determine zoom level (exact)
+        zoom = max(float(getattr(camera, 'zoom', 1.0)) or 1.0, 0.1)
+
         # Ensure base cache exists
         if zoom not in self.chunks_by_zoom:
             self._build_chunk_surfaces(map_model, zoom)
@@ -140,8 +150,9 @@ class ChunkedMapView:
             height = len(matrix)
             tile_w = min(cs, width - cx*cs)
             tile_h = min(cs, height - cy*cs)
-            pix_w = int(tile_w * TILE_SIZE * zoom)
-            pix_h = int(tile_h * TILE_SIZE * zoom)
+            pix_w = int(round(tile_w * TILE_SIZE * zoom))
+            pix_h = int(round(tile_h * TILE_SIZE * zoom))
+
             surf = pygame.Surface((pix_w, pix_h), pygame.SRCALPHA)
             for ty in range(cy*cs, cy*cs + tile_h):
                 for tx in range(cx*cs, cx*cs + tile_w):
@@ -157,10 +168,11 @@ class ChunkedMapView:
                         scaled = _SCALED_CACHE.get(skey)
                         if scaled is None:
                             sw, sh = sprite.get_size()
-                            scaled = pygame.transform.scale(sprite, (int(sw * zoom), int(sh * zoom)))
+                            scaled = pygame.transform.scale(sprite, (int(round(sw * zoom)), int(round(sh * zoom))))
                             _SCALED_CACHE[skey] = scaled
-                        px = int((tx - cx*cs) * TILE_SIZE * zoom)
-                        py = int((ty - cy*cs) * TILE_SIZE * zoom)
+                        px = int(round((tx - cx*cs) * TILE_SIZE * zoom))
+                        py = int(round((ty - cy*cs) * TILE_SIZE * zoom))
+
                         surf.blit(scaled, (px, py))
             # Store updated chunk
             self.chunks_by_zoom[zoom][(cx, cy)] = surf
@@ -178,8 +190,8 @@ class ChunkedMapView:
         """
         dirty_rects: list[pygame.Rect] = []
         screen_w, screen_h = screen.get_size()
-        # Quantize zoom for caching and clamp to minimum to avoid division by zero
-        zoom = max(round(camera.zoom * 10) / 10.0, 0.1)
+        # Use exact zoom and clamp to minimum to avoid division by zero
+        zoom = max(float(getattr(camera, 'zoom', 1.0)) or 1.0, 0.1)
 
         # rebuild cache para este zoom si falta
         if zoom not in self.chunks_by_zoom:

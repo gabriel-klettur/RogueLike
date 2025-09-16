@@ -40,9 +40,23 @@ class MapToolBarPanelEvents:
 
         for tool_name, rect in c.icon_rects.items():
             if rect and rect.collidepoint(mouse_pos):
+                if tool_name == "map_tutorial":
+                    try:
+                        tm = getattr(c, 'editor_manager', None)
+                        if tm and getattr(tm, 'tutorial', None):
+                            tm.tutorial.toggle()
+                            return True
+                    except Exception:
+                        return True
                 if tool_name == "view_layers":
                     # Delegar al controlador ViewLayers (mantiene consistencia y exclusividad si aplica)
                     opened = c.view_layers.toggle()
+                    # Tutorial pulse: layers view opened
+                    try:
+                        if opened:
+                            setattr(c.editor, 'tutorial_layers_view_opened_pulse', True)
+                    except Exception:
+                        pass
                     logger.debug(f"[DEBUG][Toolbar/Events] layers_view_open -> {opened}")
                     return True
                 if tool_name == "add_zone":
