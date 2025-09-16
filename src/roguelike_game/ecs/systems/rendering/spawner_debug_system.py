@@ -10,6 +10,15 @@ from roguelike_engine.utils.benchmark import benchmark
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.ecs.utils.collider_utils import build_collider_rect, get_circle_world
 from roguelike_game.ecs.components.physics.circle_collider import CircleCollider
+from roguelike_game.ecs.systems.rendering.spawner.spawner_anchor_debug_system import (
+    SpawnerAnchorDebugRenderSystem,
+)
+from roguelike_game.ecs.systems.rendering.spawner.spawner_info_overlay_system import (
+    SpawnerInfoOverlaySystem,
+)
+from roguelike_game.ecs.systems.rendering.spawner.collider_velocity_debug_system import (
+    ColliderAndVelocityDebugSystem,
+)
 try:
     # Optional: highlight FSM set + params in Editor when hovering a spawner
     from roguelike_editors.fsm.services.fsm_runtime_bridge import (
@@ -29,6 +38,10 @@ class SpawnerDebugRenderSystem:
         self._last_pos: dict[int, tuple[float, float]] = {}
         self._last_dir: dict[int, tuple[float, float]] = {}
         self._stuck_frames: dict[int, int] = {}
+        # New split systems (lazy)
+        self._anchor_sys: SpawnerAnchorDebugRenderSystem | None = None
+        self._overlay_sys: SpawnerInfoOverlaySystem | None = None
+        self._collider_sys: ColliderAndVelocityDebugSystem | None = None
 
     def _auto_bottom_band_metrics(self, mask) -> tuple[int, int]:
         """Return (auto_center_x, avg_width) on the bottom band using weighted centroid of opaque pixels.
@@ -70,6 +83,23 @@ class SpawnerDebugRenderSystem:
                 self.font = None
     
     def update(self, world, screen, camera):
+        # New path: delegate to split systems and return early.
+        try:
+            if self._anchor_sys is None:
+                self._anchor_sys = SpawnerAnchorDebugRenderSystem(perf_log=self.perf_log)
+            if self._collider_sys is None:
+                self._collider_sys = ColliderAndVelocityDebugSystem(perf_log=self.perf_log)
+            if self._overlay_sys is None:
+                self._overlay_sys = SpawnerInfoOverlaySystem(perf_log=self.perf_log)
+            # Order: anchor → colliders/velocity → overlay on top
+            self._anchor_sys.update(world, screen, camera)
+            self._collider_sys.update(world, screen, camera)
+            self._overlay_sys.update(world, screen, camera)
+            return
+        except Exception:
+            # Fallback to legacy path below if split systems fail for any reason
+            pass
+        # Legacy path (kept for fallback compatibility):
         # Render when Spawner Editor is active OR when global DEBUG_SPAWNER is on
         editor_active = False
         try:

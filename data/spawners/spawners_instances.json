@@ -14,25 +14,25 @@
         "instance_id": 139,
         "template_id": 158,
         "offset": [
-          68,
-          -83
+          -127,
+          -233
         ],
+        "split_ratio": 0.635,
         "scale": [
-          205,
-          307
-        ],
-        "split_ratio": 0.635
+          258,
+          386
+        ]
       },
       "WaitClear": {
         "instance_id": 140,
         "template_id": 157,
         "offset": [
-          149,
-          -469
+          -124,
+          -226
         ],
         "scale": [
-          414,
-          619
+          257,
+          384
         ],
         "split_ratio": 0.781
       },
@@ -40,8 +40,8 @@
         "instance_id": 141,
         "template_id": 157,
         "offset": [
-          -332,
-          -157
+          -128,
+          -234
         ],
         "split_ratio": 0.458
       },
@@ -49,8 +49,8 @@
         "instance_id": 142,
         "template_id": 155,
         "offset": [
-          -99,
-          -449
+          -117,
+          -237
         ],
         "split_ratio": 0.807
       }
