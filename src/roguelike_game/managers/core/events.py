@@ -15,6 +15,7 @@ from roguelike_game.ecs.systems.chat.chat_input_controller import ChatInputContr
 from roguelike_game.ecs.systems.chat.chat_ui_system import handle_chat_ui_events
 from roguelike_game.ecs.systems.chat.chat_bubble_utils import push_bubble
 from roguelike_engine.diagnostics.recorder import recorder
+from roguelike_game.config.hot_reload import reload_all_game_data
 from roguelike_editors.particles.services.instances_service import (
     append_instance as _particles_append_instance,
     remove_nearest_instance as _particles_remove_nearest,
@@ -346,10 +347,38 @@ def handle_events(game):
     except Exception:
         pass
 
+    # Hot-reload (F1) debe funcionar SIEMPRE, incluso con el menú o consola abiertos
+    for event in events:
+        if event.type == pygame.KEYDOWN:
+            try:
+                reload_key = game.input_config.get_key('reload_data')
+            except Exception:
+                reload_key = pygame.K_F1
+            if event.key in (reload_key, pygame.K_F1):
+                # No disparar si se mantiene ALT (Alt+F1 se reserva para el editor de partículas)
+                try:
+                    mods = pygame.key.get_mods()
+                except Exception:
+                    mods = 0
+                if not bool(mods & (pygame.KMOD_LALT | pygame.KMOD_RALT)):
+                    logger.info("[core.events] F1 hot-reload detected (pre-reload)")
+                    try:
+                        summary = reload_all_game_data(game)
+                        try:
+                            total_groups = sum(1 for _ in (summary or {}).items())
+                            total_items = sum(int(v or 0) for v in (summary or {}).values())
+                            logger.info("[core.events] reload_data: groups=%d total_items=%d summary=%s", int(total_groups), int(total_items), summary)
+                        except Exception:
+                            logger.info("[core.events] reload_data summary: %s", summary)
+                    except Exception:
+                        logger.exception("[core.events] reload_data binding failed")
+                    return
+
     # Priorizar consola (modo compatibilidad): si algún evento es consumido por la consola, no propagar
     for event in events:
         if game.console_events.process_event(event):
             return
+
     # ESC: si el selector de clase está abierto, ciérralo; si no, comportamiento según modo de menú
     for event in events:
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
@@ -528,6 +557,25 @@ def handle_events(game):
     # Debug overlay ya pudo haber consumido algunos eventos arriba.
 
     for event in events:
+        # F1 (o binding configurado): hot-reload (particles, buildings, spawners, tiles, spells, entities, items)
+        # No disparar si se mantiene ALT (Alt+F1 se reserva para el editor de partículas)
+        if event.type == pygame.KEYDOWN and event.key == game.input_config.get_key('reload_data'):
+            try:
+                mods = pygame.key.get_mods()
+            except Exception:
+                mods = 0
+            if not bool(mods & (pygame.KMOD_LALT | pygame.KMOD_RALT)):
+                try:
+                    summary = reload_all_game_data(game)
+                    try:
+                        total_groups = sum(1 for _ in (summary or {}).items())
+                        total_items = sum(int(v or 0) for v in (summary or {}).values())
+                        logger.info("[core.events] reload_data: groups=%d total_items=%d summary=%s", int(total_groups), int(total_items), summary)
+                    except Exception:
+                        logger.info("[core.events] reload_data summary: %s", summary)
+                except Exception:
+                    logger.exception("[core.events] reload_data binding failed")
+                return
         if event.type == pygame.KEYDOWN and event.key == game.input_config.get_key('select_class'):
             game.class_selector.show = not game.class_selector.show
             # Sync blocker flag with visibility on toggle

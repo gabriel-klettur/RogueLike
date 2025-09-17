@@ -1,11 +1,34 @@
 {
-  "74dd6ab8-579d-4c2d-88d7-796aef25282a": {
+  "2f1f773a-98c7-4477-92fc-35c815f92776": {
     "template_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
     "slots": [
-      {
-        "item": "experience_orb",
-        "quantity": 1
-      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "cc6b5ba3-a600-4503-b567-bdf291ed3697": {
+    "template_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    "slots": [
+      null,
       null,
       null,
       null,
